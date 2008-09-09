@@ -7,7 +7,7 @@ import linecache
 import sys
 
 __all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
-           "resetwarnings"]
+           "resetwarnings", "catch_warnings"]
 
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
@@ -274,28 +274,20 @@ class WarningMessage(object):
                                     self.filename, self.lineno, self.line))
 
 
-class WarningsRecorder(list):
-
-    """Record the result of various showwarning() calls."""
-
-    def showwarning(self, *args, **kwargs):
-        self.append(WarningMessage(*args, **kwargs))
-
-    def __getattr__(self, attr):
-        return getattr(self[-1], attr)
-
-    def reset(self):
-        del self[:]
-
-
 class catch_warnings(object):
 
-    """Guard the warnings filter from being permanently changed and optionally
-    record the details of any warnings that are issued.
+    """A context manager that copies and restores the warnings filter upon
+    exiting the context.
 
-    Context manager returns an instance of warnings.WarningRecorder which is a
-    list of WarningMessage instances. Attributes on WarningRecorder are
-    redirected to the last created WarningMessage instance.
+    The 'record' argument specifies whether warnings should be captured by a
+    custom implementation of warnings.showwarning() and be appended to a list
+    returned by the context manager. Otherwise None is returned by the context
+    manager. The objects appended to the list are arguments whose attributes
+    mirror the arguments to showwarning().
+
+    The 'module' argument is to specify an alternative module to the module
+    named 'warnings' and imported under that name. This argument is only useful
+    when testing the warnings module itself.
 
     """
 
@@ -307,17 +299,21 @@ class catch_warnings(object):
         keyword-only.
 
         """
-        self._recorder = WarningsRecorder() if record else None
+        self._record = record
         self._module = sys.modules['warnings'] if module is None else module
 
     def __enter__(self):
         self._filters = self._module.filters
         self._module.filters = self._filters[:]
         self._showwarning = self._module.showwarning
-        if self._recorder is not None:
-            self._recorder.reset()  # In case the instance is being reused.
-            self._module.showwarning = self._recorder.showwarning
-        return self._recorder
+        if self._record:
+            log = []
+            def showwarning(*args, **kwargs):
+                log.append(WarningMessage(*args, **kwargs))
+            self._module.showwarning = showwarning
+            return log
+        else:
+            return None
 
     def __exit__(self, *exc_info):
         self._module.filters = self._filters

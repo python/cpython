@@ -160,6 +160,67 @@ ImportWarning can also be enabled explicitly in Python code using::
    warnings.simplefilter('default', ImportWarning)
 
 
+.. _warning-suppress:
+
+Temporarily Suppressing Warnings
+--------------------------------
+
+If you are using code that you know will raise a warning, such some deprecated
+function, but do not want to see the warning, then suppress the warning using
+the :class:`catch_warnings` context manager::
+
+    import warnings
+
+    def fxn():
+        warnings.warn("deprecated", DeprecationWarning)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fxn()
+
+While within the context manager all warnings will simply be ignored. This
+allows you to use known-deprecated code without having to see the warning while
+not suppressing the warning for other code that might not be aware of its use
+of deprecated code.
+
+
+.. _warning-testing:
+
+Testing Warnings
+----------------
+
+To test warnings raised by code, use the :class:`catch_warnings` context
+manager. With it you can temporarily mutate the warnings filter to facilitate
+your testing. For instance, do the following to capture all raised warnings to
+check::
+
+    import warnings
+
+    def fxn():
+        warnings.warn("deprecated", DeprecationWarning)
+
+    with warnings.catch_warnings(record=True) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
+        # Trigger a warning.
+        fxn()
+        # Verify some things
+        assert len(w) == 1
+        assert isinstance(w[-1].category, DeprecationWarning)
+        assert "deprecated" in str(w[-1].message)
+
+One can also cause all warnings to be exceptions by using ``error`` instead of
+``always``. One thing to be aware of is that if a warning has already been
+raised because of a ``once``/``default`` rule, then no matter what filters are
+set the warning will not be seen again unless the warnings registry related to
+the warning has been cleared.
+
+Once the context manager exits, the warnings filter is restored to its state
+when the context was entered. This prevents tests from changing the warnings
+filter in unexpected ways between tests and leading to indeterminate test
+results.
+
+
 .. _warning-functions:
 
 Available Functions
@@ -248,31 +309,22 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
-Available Classes
------------------
+Available Context Managers
+--------------------------
 
 .. class:: catch_warnings([\*, record=False, module=None])
 
-    A context manager that guards the warnings filter from being permanently
-    mutated. The manager returns an instance of :class:`WarningsRecorder`. The 
-    *record* argument specifies whether warnings that would typically be
-    handled by :func:`showwarning` should instead be recorded by the
-    :class:`WarningsRecorder` instance. This argument is typically set when
-    testing for expected warnings behavior. The *module* argument may be a
-    module object that is to be used instead of the :mod:`warnings` module.
-    This argument should only be set when testing the :mod:`warnings` module 
-    or some similar use-case.
+    A context manager that copies and, upon exit, restores the warnings filter.
+    If the *record* argument is False (the default) the context manager returns
+    :class:`None`. If *record* is true, a list is returned that is populated
+    with objects as seen by a custom :func:`showwarning` function (which also
+    suppresses output to ``sys.stdout``). Each object has attributes with the
+    same names as the arguments to :func:`showwarning`.
 
-    Typical usage of the context manager is like so::
-
-        def fxn():
-            warn("fxn is deprecated", DeprecationWarning)
-            return "spam spam bacon spam"
-
-        # The function 'fxn' is known to raise a DeprecationWarning.
-        with catch_warnings() as w:
-            warnings.filterwarning('ignore', 'fxn is deprecated', DeprecationWarning)
-            fxn()  # DeprecationWarning is temporarily suppressed.
+    The *module* argument takes a module that will be used instead of the
+    module returned when you import :mod:`warnings` whose filter will be
+    protected. This arguments exists primarily for testing the :mod:`warnings`
+    module itself.
 
     .. versionadded:: 2.6
 
@@ -280,19 +332,3 @@ Available Classes
 
        Constructor arguments turned into keyword-only arguments.
 
-
-.. class:: WarningsRecorder()
-
-    A subclass of :class:`list` that stores all warnings passed to
-    :func:`showwarning` when returned by a :class:`catch_warnings` context
-    manager created with its *record* argument set to ``True``. Each recorded
-    warning is represented by an object whose attributes correspond to the
-    arguments to :func:`showwarning`. As a convenience, a
-    :class:`WarningsRecorder` instance has the attributes of the last
-    recorded warning set on the :class:`WarningsRecorder` instance as well.
-
-    .. method:: reset()
-
-        Delete all recorded warnings.
-
-    .. versionadded:: 2.6
