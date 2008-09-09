@@ -183,6 +183,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 	errno = EINVAL;
 	return -1;
     }
+    cbuf[res] = '\0'; /* buf will be null terminated */
     r1 = mbstowcs(buf, cbuf, bufsiz);
     if (r1 == -1) {
 	errno = EINVAL;
@@ -559,8 +560,6 @@ calculate_path(void)
         wchar_t tmpbuffer[MAXPATHLEN+1];
         int linklen = _Py_wreadlink(progpath, tmpbuffer, MAXPATHLEN);
         while (linklen != -1) {
-            /* It's not null terminated! */
-            tmpbuffer[linklen] = '\0';
             if (tmpbuffer[0] == SEP)
                 /* tmpbuffer should never be longer than MAXPATHLEN,
                    but extra check does not hurt */
