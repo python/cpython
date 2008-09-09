@@ -665,9 +665,8 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: memoryview(obj)
 
-   Return a "memory view" object created from the given argument.
-   
-   XXX: To be documented.
+   Return a "memory view" object created from the given argument.  See
+   :ref:`typememoryview` for more information.
 
 
 .. function:: min(iterable[, args...], *[, key])
