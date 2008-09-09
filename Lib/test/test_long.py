@@ -279,6 +279,10 @@ class LongTest(unittest.TestCase):
         self.assertEqual(long(314), 314L)
         self.assertEqual(long(3.14), 3L)
         self.assertEqual(long(314L), 314L)
+        # Check that long() of basic types actually returns a long
+        self.assertEqual(type(long(314)), long)
+        self.assertEqual(type(long(3.14)), long)
+        self.assertEqual(type(long(314L)), long)
         # Check that conversion from float truncates towards zero
         self.assertEqual(long(-3.14), -3L)
         self.assertEqual(long(3.9), 3L)
