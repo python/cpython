@@ -3,7 +3,6 @@
 import linecache
 import sys
 import types
-import itertools
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -130,7 +129,10 @@ def _iter_chain(exc, custom_tb=None, seen=None):
         its.append(_iter_chain(context, None, seen))
         its.append([(_context_message, None)])
     its.append([(exc, custom_tb or exc.__traceback__)])
-    return itertools.chain(*its)
+    # itertools.chain is in an extension module and may be unavailable
+    for it in its:
+        for x in it:
+            yield x
 
 
 def print_exception(etype, value, tb, limit=None, file=None, chain=True):
