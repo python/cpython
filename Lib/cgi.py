@@ -168,7 +168,7 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument."""
-    warn("cgi.parse_qsl is deprecated, use urllib.parse.parse_qs instead",
+    warn("cgi.parse_qsl is deprecated, use urllib.parse.parse_qsl instead",
             DeprecationWarning)
     return urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing)
 
