@@ -96,6 +96,8 @@ C API
 Library
 -------
 
+- Issue #3800: fix filter() related bug in formatter.py.
+
 - Issue #874900: fix behaviour of threading module after a fork.
 
 - Issue #3535: zipfile couldn't read some zip files larger than 2GB.

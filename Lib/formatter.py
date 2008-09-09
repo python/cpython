@@ -255,7 +255,7 @@ class AbstractFormatter:
 
     def push_margin(self, margin):
         self.margin_stack.append(margin)
-        fstack = filter(None, self.margin_stack)
+        fstack = [m for m in self.margin_stack if m]
         if not margin and fstack:
             margin = fstack[-1]
         self.writer.new_margin(margin, len(fstack))
@@ -263,7 +263,7 @@ class AbstractFormatter:
     def pop_margin(self):
         if self.margin_stack:
             del self.margin_stack[-1]
-        fstack = filter(None, self.margin_stack)
+        fstack = [m for m in self.margin_stack if m]
         if fstack:
             margin = fstack[-1]
         else:
