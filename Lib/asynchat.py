@@ -50,7 +50,6 @@ import socket
 import asyncore
 from collections import deque
 from sys import py3kwarning
-from test.test_support import catch_warning
 from warnings import filterwarnings, catch_warnings
 
 class async_chat (asyncore.dispatcher):

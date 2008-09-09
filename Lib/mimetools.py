@@ -5,7 +5,7 @@ import os
 import sys
 import tempfile
 from warnings import filterwarnings, catch_warnings
-with catch_warnings(record=False):
+with catch_warnings():
     if sys.py3kwarning:
         filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
     import rfc822

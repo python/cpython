@@ -182,8 +182,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
 def test_main():
     test_support.requires('network')
-    from warnings import filterwarnings
-    with test_support.catch_warning(record=False):
+    from warnings import filterwarnings, catch_warnings
+    with catch_warnings():
         filterwarnings('ignore', '.*urllib\.urlopen.*Python 3.0',
                         DeprecationWarning)
         test_support.run_unittest(URLTimeoutTest,

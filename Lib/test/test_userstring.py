@@ -135,7 +135,7 @@ class MutableStringTest(UserStringTest):
         self.assertEqual(s, "")
 
 def test_main():
-    with test_support.catch_warning(record=False):
+    with warnings.catch_warnings():
         warnings.filterwarnings("ignore", ".*MutableString",
                                 DeprecationWarning)
         test_support.run_unittest(UserStringTest, MutableStringTest)

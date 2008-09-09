@@ -18,7 +18,7 @@ __all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_modul
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
            "fcmp", "have_unicode", "is_jython", "TESTFN", "HOST", "FUZZ",
            "findfile", "verify", "vereq", "sortdict", "check_syntax_error",
-           "open_urlresource", "catch_warning", "CleanImport",
+           "open_urlresource", "CleanImport",
            "EnvironmentVarGuard", "captured_output",
            "captured_stdout", "TransientResource", "transient_internet",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
@@ -52,7 +52,7 @@ class ResourceDenied(TestSkipped):
 def import_module(name, deprecated=False):
     """Import the module to be tested, raising TestSkipped if it is not
     available."""
-    with catch_warning(record=False):
+    with warnings.catch_warnings():
         if deprecated:
             warnings.filterwarnings("ignore", ".+ (module|package)",
                                     DeprecationWarning)
@@ -379,10 +379,6 @@ def open_urlresource(url):
     print >> get_original_stdout(), '\tfetching %s ...' % url
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
-
-
-def catch_warning(module=warnings, record=True):
-    return warnings.catch_warnings(record=record, module=module)
 
 
 class CleanImport(object):
