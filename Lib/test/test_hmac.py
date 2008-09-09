@@ -211,7 +211,7 @@ class TestVectorsTestCase(unittest.TestCase):
             def digest(self):
                 return self._x.digest()
 
-        with support.catch_warning():
+        with warnings.catch_warnings():
             warnings.simplefilter('error', RuntimeWarning)
             try:
                 hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)

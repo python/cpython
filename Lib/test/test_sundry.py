@@ -7,7 +7,7 @@ import warnings
 
 class TestUntestedModules(unittest.TestCase):
     def test_at_least_import_untested_modules(self):
-        with support.catch_warning():
+        with warnings.catch_warnings(record=True):
             import aifc
             import bdb
             import cgitb

@@ -1,7 +1,7 @@
 import sys
 sys.path = ['.'] + sys.path
 
-from test.support import verbose, run_unittest, catch_warning
+from test.support import verbose, run_unittest
 import re
 from re import Scanner
 import sys, os, traceback

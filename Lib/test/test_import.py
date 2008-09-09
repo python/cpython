@@ -6,7 +6,7 @@ import sys
 import py_compile
 import warnings
 import imp
-from test.support import unlink, TESTFN, unload, run_unittest, catch_warning
+from test.support import unlink, TESTFN, unload, run_unittest
 
 
 def remove_files(name):
@@ -153,7 +153,7 @@ class ImportTest(unittest.TestCase):
         self.assert_(y is test.support, y.__name__)
 
     def test_import_initless_directory_warning(self):
-        with catch_warning():
+        with warnings.catch_warnings():
             # Just a random non-package directory we always expect to be
             # somewhere in sys.path...
             warnings.simplefilter('error', ImportWarning)
