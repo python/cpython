@@ -2780,17 +2780,18 @@ _compile(PyObject* self_, PyObject* args)
         arg = *code++;                                  \
         VTRACE(("%lu (arg)\n", (unsigned long)arg));    \
     } while (0)
-#define GET_SKIP                                        \
+#define GET_SKIP_ADJ(adj)                               \
     do {                                                \
         VTRACE(("%p= ", code));                         \
         if (code >= end) FAIL;                          \
         skip = *code;                                   \
         VTRACE(("%lu (skip to %p)\n",                   \
                (unsigned long)skip, code+skip));        \
-        if (code+skip < code || code+skip > end)        \
+        if (code+skip-adj < code || code+skip-adj > end)\
             FAIL;                                       \
         code++;                                         \
     } while (0)
+#define GET_SKIP GET_SKIP_ADJ(0)
 
 static int
 _validate_charset(SRE_CODE *code, SRE_CODE *end)
@@ -3097,7 +3098,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             GET_ARG;
             if (arg >= groups)
                 FAIL;
-            GET_SKIP;
+            GET_SKIP_ADJ(1);
             code--; /* The skip is relative to the first arg! */
             /* There are two possibilities here: if there is both a 'then'
                part and an 'else' part, the generated code looks like:
