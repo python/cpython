@@ -416,11 +416,25 @@ class ReTests(unittest.TestCase):
 
     def test_re_escape(self):
         p=""
+        self.assertEqual(re.escape(p), p)
         for i in range(0, 256):
             p = p + chr(i)
             self.assertEqual(re.match(re.escape(chr(i)), chr(i)) is not None,
                              True)
             self.assertEqual(re.match(re.escape(chr(i)), chr(i)).span(), (0,1))
+
+        pat=re.compile(re.escape(p))
+        self.assertEqual(pat.match(p) is not None, True)
+        self.assertEqual(pat.match(p).span(), (0,256))
+
+    def test_re_escape_byte(self):
+        p=b""
+        self.assertEqual(re.escape(p), p)
+        for i in range(0, 256):
+            b = bytes([i])
+            p += b
+            self.assertEqual(re.match(re.escape(b), b) is not None, True)
+            self.assertEqual(re.match(re.escape(b), b).span(), (0,1))
 
         pat=re.compile(re.escape(p))
         self.assertEqual(pat.match(p) is not None, True)
