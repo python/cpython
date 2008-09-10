@@ -68,6 +68,8 @@ C-API
 Library
 -------
 
+- Issue #3811: The Unicode database was updated to 5.1.
+
 - Issue #3809: Fixed spurious 'test.blah' file left behind by test_logging.
 
 - Issue 3781: Clean up the API for warnings.catch_warnings() by having it

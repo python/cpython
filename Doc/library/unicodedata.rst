@@ -16,11 +16,11 @@
 
 This module provides access to the Unicode Character Database which defines
 character properties for all Unicode characters. The data in this database is
-based on the :file:`UnicodeData.txt` file version 4.1.0 which is publicly
+based on the :file:`UnicodeData.txt` file version 5.1.0 which is publicly
 available from ftp://ftp.unicode.org/.
 
 The module uses the same names and symbols as defined by the UnicodeData File
-Format 4.1.0 (see http://www.unicode.org/Public/4.1.0/ucd/UCD.html).  It defines
+Format 5.1.0 (see http://www.unicode.org/Public/5.1.0/ucd/UCD.html).  It defines
 the following functions:
 
 
