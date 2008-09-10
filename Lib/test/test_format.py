@@ -216,8 +216,8 @@ class FormatTest(unittest.TestCase):
         testformat("%o", 0o42, "42")
         testformat("%o", -0o42, "-42")
         testformat("%o", float(0o42), "42")
-        testformat("%r", "\u0370", "'\\u0370'")  # non printable
-        testformat("%a", "\u0370", "'\\u0370'")  # non printable
+        testformat("%r", "\u0378", "'\\u0378'")  # non printable
+        testformat("%a", "\u0378", "'\\u0378'")  # non printable
         testformat("%r", "\u0374", "'\u0374'")   # printable
         testformat("%a", "\u0374", "'\\u0374'")  # printable
         # Test exception for unknown format characters

@@ -429,7 +429,7 @@ class UnicodeTest(
         # some defined Unicode character
         self.assertTrue("\u0374".isprintable())
         # undefined character
-        self.assertFalse("\u0370".isprintable())
+        self.assertFalse("\u0378".isprintable())
         # single surrogate character
         self.assertFalse("\ud800".isprintable())
 
@@ -611,11 +611,11 @@ class UnicodeTest(
         self.assertEqual('{0!r}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r}'.format(F('Hello')), 'F(Hello)')
-        self.assertEqual('{0!r}'.format('\u0370'), "'\\u0370'") # nonprintable
+        self.assertEqual('{0!r}'.format('\u0378'), "'\\u0378'") # nonprintable
         self.assertEqual('{0!r}'.format('\u0374'), "'\u0374'")  # printable
         self.assertEqual('{0!r}'.format(F('\u0374')), 'F(\u0374)')
         self.assertEqual('{0!a}'.format('Hello'), "'Hello'")
-        self.assertEqual('{0!a}'.format('\u0370'), "'\\u0370'") # nonprintable
+        self.assertEqual('{0!a}'.format('\u0378'), "'\\u0378'") # nonprintable
         self.assertEqual('{0!a}'.format('\u0374'), "'\\u0374'") # printable
         self.assertEqual('{0!a:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!a}'.format(F('Hello')), 'F(Hello)')
