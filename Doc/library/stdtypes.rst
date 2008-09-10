@@ -2319,8 +2319,8 @@ simple bytes or complex data structures.
 
    .. attribute:: strides
 
-      A tuple of integers the length of :attr:`~memoryview.ndim` giving the size
-      in bytes to access each element for each dimension of the array.
+      A tuple of integers the length of :attr:`ndim` giving the size in bytes to
+      access each element for each dimension of the array.
 
    .. attribute:: size
 
