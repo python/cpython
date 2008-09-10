@@ -47,8 +47,8 @@ connection_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (handle == INVALID_HANDLE_VALUE || (Py_ssize_t)handle < 0) {
-		PyErr_Format(PyExc_IOError, "invalid handle %" 
-			     PY_FORMAT_SIZE_T "d", (Py_ssize_t)handle);
+		PyErr_Format(PyExc_IOError, "invalid handle %zd",
+			     (Py_ssize_t)handle);
 		return NULL;
 	}
 
@@ -396,7 +396,7 @@ connection_repr(ConnectionObject *self)
 	static char *conn_type[] = {"read-only", "write-only", "read-write"};
 
 	assert(self->flags >= 1 && self->flags <= 3);
-	return FROM_FORMAT("<%s %s, handle %" PY_FORMAT_SIZE_T "d>", 
+	return FROM_FORMAT("<%s %s, handle %zd>", 
 			   conn_type[self->flags - 1],
 			   CONNECTION_NAME, (Py_ssize_t)self->handle);
 }

@@ -12,6 +12,14 @@ What's New in Python 2.6 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #3743: In a few places, PY_FORMAT_SIZE_T was incorrectly used with
+  PyString_FromFormat or PyErr_Format to display size_t values. The macro
+  PY_FORMAT_SIZE_T is designed to select the correct format for the OS
+  ``printf`` function, whereas PyString_FromFormat has an independent
+  implementation and uses "%zd" on all platforms for size_t values.
+  This makes a difference on win64, where ``printf`` needs "%Id" to display
+  64bit values.
+
 - Issue #3634: _weakref.ref(Exception).__init__() gave invalid return value on
   error.
 
