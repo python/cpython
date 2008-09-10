@@ -28,10 +28,10 @@
 import sys
 
 SCRIPT = sys.argv[0]
-VERSION = "2.5"
+VERSION = "2.6"
 
 # The Unicode Database
-UNIDATA_VERSION = "4.1.0"
+UNIDATA_VERSION = "5.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -62,6 +62,7 @@ UPPER_MASK = 0x80
 XID_START_MASK = 0x100
 XID_CONTINUE_MASK = 0x200
 PRINTABLE_MASK = 0x400
+NODELTA_MASK = 0x800
 
 def maketables(trace=0):
 
@@ -361,6 +362,7 @@ def makeunicodetype(unicode, trace):
             bidirectional = record[4]
             properties = record[16]
             flags = 0
+            delta = True
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
                 flags |= ALPHA_MASK
             if category == "Ll":
@@ -379,25 +381,36 @@ def makeunicodetype(unicode, trace):
                 flags |= XID_START_MASK
             if "XID_Continue" in properties:
                 flags |= XID_CONTINUE_MASK
-            # use delta predictor for upper/lower/title
+            # use delta predictor for upper/lower/title if it fits
             if record[12]:
                 upper = int(record[12], 16) - char
-                assert -32768 <= upper <= 32767
-                upper = upper & 0xffff
+                if  -32768 <= upper <= 32767 and delta:
+                    upper = upper & 0xffff
+                else:
+                    upper += char
+                    delta = False
             else:
                 upper = 0
             if record[13]:
                 lower = int(record[13], 16) - char
-                assert -32768 <= lower <= 32767
-                lower = lower & 0xffff
+                if -32768 <= lower <= 32767 and delta:
+                    lower = lower & 0xffff
+                else:
+                    lower += char
+                    delta = False
             else:
                 lower = 0
             if record[14]:
                 title = int(record[14], 16) - char
-                assert -32768 <= lower <= 32767
-                title = title & 0xffff
+                if -32768 <= lower <= 32767 and delta:
+                    title = title & 0xffff
+                else:
+                    title += char
+                    delta = False
             else:
                 title = 0
+            if not delta:
+                flags |= NODELTA_MASK
             # decimal digit, integer digit
             decimal = 0
             if record[6]:
@@ -626,6 +639,7 @@ def merge_old_version(version, new, old):
     bidir_changes = [0xFF]*0x110000
     category_changes = [0xFF]*0x110000
     decimal_changes = [0xFF]*0x110000
+    mirrored_changes = [0xFF]*0x110000
     # In numeric data, 0 means "no change",
     # -1 means "did not have a numeric value
     numeric_changes = [0] * 0x110000
@@ -672,6 +686,11 @@ def merge_old_version(version, new, old):
                         else:
                             assert re.match("^[0-9]+$", value)
                             numeric_changes[i] = int(value)
+                    elif k == 9:
+                        if value == 'Y':
+                            mirrored_changes[i] = '1'
+                        else:
+                            mirrored_changes[i] = '0'
                     elif k == 11:
                         # change to ISO comment, ignore
                         pass
@@ -691,7 +710,8 @@ def merge_old_version(version, new, old):
                         class Difference(Exception):pass
                         raise Difference(hex(i), k, old.table[i], new.table[i])
     new.changed.append((version, list(zip(bidir_changes, category_changes,
-                                     decimal_changes, numeric_changes)),
+                                     decimal_changes, mirrored_changes,
+                                     numeric_changes)),
                         normalization_changes))
 
 

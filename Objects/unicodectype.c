@@ -22,6 +22,7 @@
 #define XID_START_MASK 0x100
 #define XID_CONTINUE_MASK 0x200
 #define PRINTABLE_MASK 0x400
+#define NODELTA_MASK 0x800
 
 typedef struct {
     const Py_UNICODE upper;
@@ -84,6 +85,9 @@ Py_UNICODE _PyUnicode_ToTitlecase(register Py_UNICODE ch)
         delta = ctype->title;
     else
 	delta = ctype->upper;
+
+    if (ctype->flags & NODELTA_MASK)
+	return delta;
 
     if (delta >= 32768)
 	    delta -= 65536;
@@ -767,6 +771,8 @@ Py_UNICODE _PyUnicode_ToUppercase(Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
     int delta = ctype->upper;
+    if (ctype->flags & NODELTA_MASK)
+	return delta;
     if (delta >= 32768)
 	    delta -= 65536;
     return ch + delta;
@@ -779,6 +785,8 @@ Py_UNICODE _PyUnicode_ToLowercase(Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
     int delta = ctype->lower;
+    if (ctype->flags & NODELTA_MASK)
+	return delta;
     if (delta >= 32768)
 	    delta -= 65536;
     return ch + delta;
