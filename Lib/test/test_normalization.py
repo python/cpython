@@ -3,10 +3,17 @@ import unittest
 
 import sys
 import os
-from unicodedata import normalize
+from unicodedata import normalize, unidata_version
 
 TESTDATAFILE = "NormalizationTest" + os.extsep + "txt"
-TESTDATAURL = "http://www.unicode.org/Public/5.1.0/ucd/" + TESTDATAFILE
+TESTDATAURL = "http://www.unicode.org/Public/" + unidata_version + "/ucd/" + TESTDATAFILE
+
+if os.path.exists(TESTDATAFILE):
+    f = open(TESTDATAFILE)
+    l = f.readline()
+    f.close()
+    if not unidata_version in l:
+        os.unlink(TESTDATAFILE)
 
 class RangeError(Exception):
     pass
