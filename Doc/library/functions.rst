@@ -664,6 +664,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: memoryview(obj)
+   :noindex:
 
    Return a "memory view" object created from the given argument.  See
    :ref:`typememoryview` for more information.
