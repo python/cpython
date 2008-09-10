@@ -146,7 +146,7 @@ class CommonMemoryTests:
         self.assertEquals(m.itemsize, 1)
         self.assertEquals(m.ndim, 1)
         self.assertEquals(m.shape, (6,))
-        self.assertEquals(m.size, 6)
+        self.assertEquals(len(m), 6)
         self.assertEquals(m.strides, (1,))
         self.assertEquals(m.suboffsets, None)
         return m

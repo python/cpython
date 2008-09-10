@@ -12,6 +12,8 @@ What's New in Python 3.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #3827: memoryview lost its size attribute in favor of using len(view).
+
 - Issue #3813: could not lanch python.exe via symbolic link on cygwin.
 
 - Issue #3705: fix crash when given a non-ascii value on the command line for

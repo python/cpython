@@ -370,12 +370,6 @@ memory_suboffsets_get(PyMemoryViewObject *self)
 }
 
 static PyObject *
-memory_size_get(PyMemoryViewObject *self)
-{
-        return PyLong_FromSsize_t(self->view.len);
-}
-
-static PyObject *
 memory_readonly_get(PyMemoryViewObject *self)
 {
         return PyBool_FromLong(self->view.readonly);
@@ -393,7 +387,6 @@ static PyGetSetDef memory_getsetlist[] ={
         {"shape",	(getter)memory_shape_get,	NULL, NULL},
         {"strides",	(getter)memory_strides_get,	NULL, NULL},
         {"suboffsets",	(getter)memory_suboffsets_get,	NULL, NULL},
-        {"size",	(getter)memory_size_get,	NULL, NULL},
         {"readonly",	(getter)memory_readonly_get,	NULL, NULL},
         {"ndim",	(getter)memory_ndim_get,	NULL, NULL},
         {NULL, NULL, NULL, NULL},
