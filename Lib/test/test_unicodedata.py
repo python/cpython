@@ -16,7 +16,7 @@ encoding = 'utf-8'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'c198ed264497f108434b3f576d4107237221cc8a'
+    expectedchecksum = 'aef99984a58c8e1e5363a3175f2ff9608599a93e'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -75,7 +75,7 @@ class UnicodeDatabaseTest(unittest.TestCase):
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # update this, if the database changes
-    expectedchecksum = '4e389f97e9f88b8b7ab743121fd643089116f9f2'
+    expectedchecksum = '3136d5afd787dc2bcb1bdcac95e385349fbebbca'
 
     def test_function_checksum(self):
         data = []
@@ -224,6 +224,16 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
 
     def test_bug_1704793(self):
         self.assertEquals(self.db.lookup("GOTHIC LETTER FAIHU"), u'\U00010346')
+
+    def test_ucd_510(self):
+        import unicodedata
+        # In UCD 5.1.0, a mirrored property changed wrt. UCD 3.2.0
+        self.assert_(unicodedata.mirrored(u"\u0f3a"))
+        self.assert_(not unicodedata.ucd_3_2_0.mirrored(u"\u0f3a"))
+        # Also, we now have two ways of representing
+        # the upper-case mapping: as delta, or as absolute value
+        self.assert_(u"a".upper()==u'A')
+        self.assert_(u"\u1d79".upper()==u'\ua77d')
 
 def test_main():
     test.test_support.run_unittest(
