@@ -615,10 +615,10 @@ class ConfigFileTest(BaseTest):
     args=(sys.stdout,)
 
     [handler_hand2]
-    class=FileHandler
+    class=StreamHandler
     level=NOTSET
     formatter=form1
-    args=('test.blah', 'a')
+    args=(sys.stderr,)
 
     [formatter_form1]
     format=%(levelname)s ++ %(message)s
