@@ -6,7 +6,7 @@ import os
 from unicodedata import normalize
 
 TESTDATAFILE = "NormalizationTest.txt"
-TESTDATAURL = "http://www.unicode.org/Public/4.1.0/ucd/" + TESTDATAFILE
+TESTDATAURL = "http://www.unicode.org/Public/5.1.0/ucd/" + TESTDATAFILE
 
 class RangeError(Exception):
     pass
