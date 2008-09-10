@@ -671,7 +671,7 @@ deque_repr(PyObject *deque)
 	}
 	if (((dequeobject *)deque)->maxlen != -1)
 
-		result = PyUnicode_FromFormat("deque(%R, maxlen=%" PY_FORMAT_SIZE_T "d)", 
+		result = PyUnicode_FromFormat("deque(%R, maxlen=%zd)", 
                                               aslist, ((dequeobject *)deque)->maxlen);
 	else
 		result = PyUnicode_FromFormat("deque(%R)", aslist);
