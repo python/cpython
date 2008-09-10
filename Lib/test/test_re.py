@@ -116,6 +116,10 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.compile, pattern, re.I)
 
+    def test_bug_3629(self):
+        # A regex that triggered a bug in the sre-code validator
+        re.compile("(?P<quote>)(?(quote))")
+
     def test_sub_template_numeric_escape(self):
         # bug 776311 and friends
         self.assertEqual(re.sub('x', r'\0', 'x'), '\0')
