@@ -211,23 +211,38 @@ def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
     return _compile(pattern, flags|T)
 
-_alphanum = {}
-for c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890':
-    _alphanum[c] = 1
-del c
+_alphanum_str = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
+_alphanum_bytes = frozenset(
+    b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
 
 def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
-    s = list(pattern)
-    alphanum = _alphanum
-    for i in range(len(pattern)):
-        c = pattern[i]
-        if c not in alphanum:
-            if c == "\000":
-                s[i] = "\\000"
+    if isinstance(pattern, str):
+        alphanum = _alphanum_str
+        s = list(pattern)
+        for i in range(len(pattern)):
+            c = pattern[i]
+            if c not in alphanum:
+                if c == "\000":
+                    s[i] = "\\000"
+                else:
+                    s[i] = "\\" + c
+        return "".join(s)
+    else:
+        alphanum = _alphanum_bytes
+        s = []
+        esc = ord(b"\\")
+        for c in pattern:
+            if c in alphanum:
+                s.append(c)
             else:
-                s[i] = "\\" + c
-    return pattern[:0].join(s)
+                if c == 0:
+                    s.extend(b"\\000")
+                else:
+                    s.append(esc)
+                    s.append(c)
+        return bytes(s)
 
 # --------------------------------------------------------------------
 # internals
@@ -248,7 +263,8 @@ def _compile(*key):
     pattern, flags = key
     if isinstance(pattern, _pattern_type):
         if flags:
-            raise ValueError('Cannot process flags argument with a compiled pattern')
+            raise ValueError(
+                "Cannot process flags argument with a compiled pattern")
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
@@ -325,7 +341,7 @@ class Scanner:
             if i == j:
                 break
             action = self.lexicon[m.lastindex-1][1]
-            if hasattr(action, '__call__'):
+            if hasattr(action, "__call__"):
                 self.match = m
                 action = action(self, m.group())
             if action is not None:
