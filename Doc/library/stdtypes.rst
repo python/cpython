@@ -2246,6 +2246,8 @@ simple bytes or complex data structures.
    buffer protocol.  Builtin objects that support the buffer protocol include
    :class:`bytes` and :class:`bytearray`.
 
+   ``len(view)`` returns the total number of bytes in the memoryview, *view*.
+
    A :class:`memoryview` supports slicing to expose its data.  Taking a single
    index will return a single byte.  Full slicing will result in a subview::
 
@@ -2321,10 +2323,6 @@ simple bytes or complex data structures.
 
       A tuple of integers the length of :attr:`ndim` giving the size in bytes to
       access each element for each dimension of the array.
-
-   .. attribute:: size
-
-      The number of bytes in the buffer.  Also available as ``len(view)``.
 
    .. memoryview.suboffsets isn't documented because it only seems useful for C
 
