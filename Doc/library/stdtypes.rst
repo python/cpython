@@ -2283,11 +2283,18 @@ simple bytes or complex data structures.
    Notice how the size of the memoryview object can not be changed.
 
 
-   :class:`memoryview` has one method:
+   :class:`memoryview` has two methods:
 
    .. method:: tobytes()
 
-      Convert the data in the buffer to a bytestring and return it.
+      Return the data in the buffer as a bytestring.
+
+   .. method:: tolist()
+
+      Return the data in the buffer as a list of integers. ::
+
+         >>> memoryview(b'abc').tolist()
+         [97, 98, 99]
 
    There are also several readonly attributes available:
 
