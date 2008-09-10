@@ -2237,17 +2237,17 @@ memoryview Types
 ================
 
 :class:`memoryview`\s allow Python code to access the internal data of an object
-that supports the buffer protocol.  Memory can be interpreted as simple bytes or
-complex data structures.
+that supports the buffer protocol without copying.  Memory can be interpreted as
+simple bytes or complex data structures.
 
 .. class:: memoryview(obj)
 
-   Create a :class:`memoryview`\s that references *obj*.  *obj* must support the
+   Create a :class:`memoryview` that references *obj*.  *obj* must support the
    buffer protocol.  Builtin objects that support the buffer protocol include
    :class:`bytes` and :class:`bytearray`.
 
-   A :class:`memoryview`\s supports slicing to expose its data.  Taking a single
-   index will return a single byte.  Full slicing will result in a subview/ ::
+   A :class:`memoryview` supports slicing to expose its data.  Taking a single
+   index will return a single byte.  Full slicing will result in a subview::
 
       >>> v = memoryview(b'abcefg')
       >>> v[1]
@@ -2262,8 +2262,8 @@ complex data structures.
       <memory at 0x744f18>
       >>> bytes(v[4:-1])
 
-   If the object the memoryview is over supports changing it's data, the
-   memoryview supports slice assignment. ::
+   If the object the memory view is over supports changing its data, the
+   memoryview supports slice assignment::
 
       >>> data = bytearray(b'abcefg')
       >>> v = memoryview(data)
@@ -2302,8 +2302,8 @@ complex data structures.
 
    .. attribute:: shape
 
-      A tuple of integers the length of :attr:`~memoryview.ndim` giving the
-      shape of the memory as a N-dimensional array.
+      A tuple of integers the length of :attr:`ndim` giving the shape of the
+      memory as a N-dimensional array.
 
    .. attribute:: ndim
 
