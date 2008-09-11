@@ -39,19 +39,19 @@ def main(fixer_pkg, args=None):
     refactor_stdin = False
     options, args = parser.parse_args(args)
     if options.list_fixes:
-        print "Available transformations for the -f/--fix option:"
+        print("Available transformations for the -f/--fix option:")
         for fixname in refactor.get_all_fix_names(fixer_pkg):
-            print fixname
+            print(fixname)
         if not args:
             return 0
     if not args:
-        print >>sys.stderr, "At least one file or directory argument required."
-        print >>sys.stderr, "Use --help to show usage."
+        print("At least one file or directory argument required.", file=sys.stderr)
+        print("Use --help to show usage.", file=sys.stderr)
         return 2
     if "-" in args:
         refactor_stdin = True
         if options.write:
-            print >>sys.stderr, "Can't write to stdin."
+            print("Can't write to stdin.", file=sys.stderr)
             return 2
 
     # Set up logging handler
