@@ -1515,8 +1515,8 @@ save_tuple(Picklerobject *self, PyObject *args)
 static int
 batch_list(Picklerobject *self, PyObject *iter)
 {
-	PyObject *obj;
-	PyObject *slice[BATCHSIZE];
+	PyObject *obj = NULL;
+	PyObject *firstitem = NULL;
 	int i, n;
 
 	static char append = APPEND;
@@ -1545,45 +1545,69 @@ batch_list(Picklerobject *self, PyObject *iter)
 
 	/* proto > 0:  write in batches of BATCHSIZE. */
 	do {
-		/* Get next group of (no more than) BATCHSIZE elements. */
-		for (n = 0; n < BATCHSIZE; ++n) {
+		/* Get first item */
+		firstitem = PyIter_Next(iter);
+		if (firstitem == NULL) {
+			if (PyErr_Occurred())
+				goto BatchFailed;
+
+			/* nothing more to add */
+			break;
+		}
+
+		/* Try to get a second item */
+		obj = PyIter_Next(iter);
+		if (obj == NULL) {
+			if (PyErr_Occurred())
+				goto BatchFailed;
+
+			/* Only one item to write */
+			if (save(self, firstitem, 0) < 0)
+				goto BatchFailed;
+			if (self->write_func(self, &append, 1) < 0)
+				goto BatchFailed;
+			Py_CLEAR(firstitem);
+			break;
+		}
+
+		/* More than one item to write */
+
+		/* Pump out MARK, items, APPENDS. */
+		if (self->write_func(self, &MARKv, 1) < 0)
+			goto BatchFailed;
+		
+		if (save(self, firstitem, 0) < 0)
+			goto BatchFailed;
+		Py_CLEAR(firstitem);
+		n = 1;
+		
+		/* Fetch and save up to BATCHSIZE items */
+		while (obj) {
+			if (save(self, obj, 0) < 0)
+				goto BatchFailed;
+			Py_CLEAR(obj);
+			n += 1;
+			
+			if (n == BATCHSIZE)
+				break;
+
 			obj = PyIter_Next(iter);
 			if (obj == NULL) {
 				if (PyErr_Occurred())
 					goto BatchFailed;
 				break;
 			}
-			slice[n] = obj;
 		}
 
-		if (n > 1) {
-			/* Pump out MARK, slice[0:n], APPENDS. */
-			if (self->write_func(self, &MARKv, 1) < 0)
-				goto BatchFailed;
-			for (i = 0; i < n; ++i) {
-				if (save(self, slice[i], 0) < 0)
-					goto BatchFailed;
-			}
-			if (self->write_func(self, &appends, 1) < 0)
-				goto BatchFailed;
-		}
-		else if (n == 1) {
-			if (save(self, slice[0], 0) < 0)
-				goto BatchFailed;
-			if (self->write_func(self, &append, 1) < 0)
-				goto BatchFailed;
-		}
+		if (self->write_func(self, &appends, 1) < 0)
+			goto BatchFailed;
 
-		for (i = 0; i < n; ++i) {
-			Py_DECREF(slice[i]);
-		}
 	} while (n == BATCHSIZE);
 	return 0;
 
 BatchFailed:
-	while (--n >= 0) {
-		Py_DECREF(slice[n]);
-	}
+	Py_XDECREF(firstitem);
+	Py_XDECREF(obj);
 	return -1;
 }
 
@@ -1659,8 +1683,8 @@ save_list(Picklerobject *self, PyObject *args)
 static int
 batch_dict(Picklerobject *self, PyObject *iter)
 {
-	PyObject *p;
-	PyObject *slice[BATCHSIZE];
+	PyObject *p = NULL;
+	PyObject *firstitem = NULL;
 	int i, n;
 
 	static char setitem = SETITEM;
@@ -1696,56 +1720,85 @@ batch_dict(Picklerobject *self, PyObject *iter)
 
 	/* proto > 0:  write in batches of BATCHSIZE. */
 	do {
-		/* Get next group of (no more than) BATCHSIZE elements. */
-		for (n = 0; n < BATCHSIZE; ++n) {
+		/* Get first item */
+		firstitem = PyIter_Next(iter);
+		if (firstitem == NULL) {
+			if (PyErr_Occurred())
+				goto BatchFailed;
+
+			/* nothing more to add */
+			break;
+		}
+		if (!PyTuple_Check(firstitem) || PyTuple_Size(firstitem) != 2) {
+			PyErr_SetString(PyExc_TypeError, "dict items "
+					"iterator must return 2-tuples");
+			goto BatchFailed;
+		}
+
+		/* Try to get a second item */
+		p = PyIter_Next(iter);
+		if (p == NULL) {
+			if (PyErr_Occurred())
+				goto BatchFailed;
+
+			/* Only one item to write */
+			if (save(self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
+				goto BatchFailed;
+			if (save(self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+				goto BatchFailed;
+			if (self->write_func(self, &setitem, 1) < 0)
+				goto BatchFailed;
+			Py_CLEAR(firstitem);
+			break;
+		}
+
+		/* More than one item to write */
+
+		/* Pump out MARK, items, SETITEMS. */
+		if (self->write_func(self, &MARKv, 1) < 0)
+			goto BatchFailed;
+
+		if (save(self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
+			goto BatchFailed;
+		if (save(self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+			goto BatchFailed;
+		Py_CLEAR(firstitem);
+		n = 1;
+
+		/* Fetch and save up to BATCHSIZE items */
+		while (p) {
+			if (!PyTuple_Check(p) || PyTuple_Size(p) != 2) {
+				PyErr_SetString(PyExc_TypeError, "dict items "
+					"iterator must return 2-tuples");
+				goto BatchFailed;
+			}
+			if (save(self, PyTuple_GET_ITEM(p, 0), 0) < 0)
+				goto BatchFailed;
+			if (save(self, PyTuple_GET_ITEM(p, 1), 0) < 0)
+				goto BatchFailed;
+			Py_CLEAR(p);
+			n += 1;
+
+			if (n == BATCHSIZE)
+				break;
+
 			p = PyIter_Next(iter);
 			if (p == NULL) {
 				if (PyErr_Occurred())
 					goto BatchFailed;
 				break;
 			}
-			if (!PyTuple_Check(p) || PyTuple_Size(p) != 2) {
-				PyErr_SetString(PyExc_TypeError, "dict items "
-					"iterator must return 2-tuples");
-				goto BatchFailed;
-			}
-			slice[n] = p;
 		}
 
-		if (n > 1) {
-			/* Pump out MARK, slice[0:n], SETITEMS. */
-			if (self->write_func(self, &MARKv, 1) < 0)
-				goto BatchFailed;
-			for (i = 0; i < n; ++i) {
-				p = slice[i];
-				if (save(self, PyTuple_GET_ITEM(p, 0), 0) < 0)
-					goto BatchFailed;
-				if (save(self, PyTuple_GET_ITEM(p, 1), 0) < 0)
-					goto BatchFailed;
-			}
-			if (self->write_func(self, &setitems, 1) < 0)
-				goto BatchFailed;
-		}
-		else if (n == 1) {
-			p = slice[0];
-			if (save(self, PyTuple_GET_ITEM(p, 0), 0) < 0)
-				goto BatchFailed;
-			if (save(self, PyTuple_GET_ITEM(p, 1), 0) < 0)
-				goto BatchFailed;
-			if (self->write_func(self, &setitem, 1) < 0)
-				goto BatchFailed;
-		}
+		if (self->write_func(self, &setitems, 1) < 0)
+			goto BatchFailed;
 
-		for (i = 0; i < n; ++i) {
-			Py_DECREF(slice[i]);
-		}
 	} while (n == BATCHSIZE);
 	return 0;
 
 BatchFailed:
-	while (--n >= 0) {
-		Py_DECREF(slice[n]);
-	}
+	Py_XDECREF(firstitem);
+	Py_XDECREF(p);
 	return -1;
 }
 

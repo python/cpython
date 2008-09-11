@@ -75,6 +75,9 @@ C-API
 Library
 -------
 
+- Issue #3640: Pickling a list or a dict uses less local variables, to reduce
+  stack usage in the case of deeply nested objects.
+
 - Issue #3629: Fix sre "bytecode" validator for an end case.
 
 - Issue #3811: The Unicode database was updated to 5.1.
