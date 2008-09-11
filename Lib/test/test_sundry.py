@@ -8,7 +8,7 @@ import warnings
 
 class TestUntestedModules(unittest.TestCase):
     def test_at_least_import_untested_modules(self):
-        with warnings.catch_warnings(record=True):
+        with warnings.catch_warnings():
             import CGIHTTPServer
             import aifc
             import audiodev

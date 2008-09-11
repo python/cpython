@@ -60,16 +60,16 @@ class SymtableTest(unittest.TestCase):
         def check(w, msg):
             self.assertEqual(str(w.message), msg)
         sym = self.top.lookup("glob")
-        with warnings.catch_warnings(record=True) as w:
+        with test_support.check_warnings() as w:
             warnings.simplefilter("always", DeprecationWarning)
             self.assertFalse(sym.is_vararg())
-            check(w[-1].message, "is_vararg() is obsolete and will be removed")
+            check(w, "is_vararg() is obsolete and will be removed")
+            w.reset()
             self.assertFalse(sym.is_keywordarg())
-            check(w[-1].message,
-                    "is_keywordarg() is obsolete and will be removed")
+            check(w, "is_keywordarg() is obsolete and will be removed")
+            w.reset()
             self.assertFalse(sym.is_in_tuple())
-            check(w[-1].message,
-                    "is_in_tuple() is obsolete and will be removed")
+            check(w, "is_in_tuple() is obsolete and will be removed")
 
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
