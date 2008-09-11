@@ -20,6 +20,7 @@ MemoryError.
 """
 
 import sys
+import itertools
 
 class RecursiveBlowup1:
     def __init__(self):
@@ -59,6 +60,24 @@ def test_getitem():
 def test_recurse():
     return test_recurse()
 
+def test_cpickle(_cache={}):
+    import io
+    try:
+        import _pickle
+    except ImportError:
+        print("cannot import _pickle, skipped!")
+        return
+    l = None
+    for n in itertools.count():
+        try:
+            l = _cache[n]
+            continue  # Already tried and it works, let's save some time
+        except KeyError:
+            for i in range(100):
+                l = [l]
+        _pickle.Pickler(io.BytesIO(), protocol=-1).dump(l)
+        _cache[n] = l
+
 def check_limit(n, test_func_name):
     sys.setrecursionlimit(n)
     if test_func_name.startswith("test_"):
@@ -81,5 +100,6 @@ while 1:
     check_limit(limit, "test_init")
     check_limit(limit, "test_getattr")
     check_limit(limit, "test_getitem")
+    check_limit(limit, "test_cpickle")
     print("Limit of %d is fine" % limit)
     limit = limit + 100
