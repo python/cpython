@@ -12,6 +12,8 @@ What's New in Python 2.6 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #3642: Suppress warning in obmalloc when size_t is larger than uint.
+
 - Issue #3743: In a few places, PY_FORMAT_SIZE_T was incorrectly used with
   PyString_FromFormat or PyErr_Format to display size_t values. The macro
   PY_FORMAT_SIZE_T is designed to select the correct format for the OS
@@ -51,9 +53,6 @@ Core and Builtins
 - Fix compiler warnings in opt mode which would lead to invalid memory reads.
 
 - Fix problem using wrong name in decimal module reported by pychecker.
-
-- Issue #3642: Changed type of numarenas from uint to size_t
-  in order to silence a compilier warning on 64bit OSes.
 
 - Silenced another compiler warning about a used but not defined
   function 'stringlib_contains_obj'.
