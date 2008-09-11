@@ -79,9 +79,13 @@ Library
 
 - Issue #3811: The Unicode database was updated to 5.1.
 
+- Issue #3781: Further warnings.catch_warnings() cleanup to prevent
+  silent misbehaviour when a single instance is nested in multiple
+  with statements, or when the methods are invoked in the wrong order.
+
 - Issue #3809: Fixed spurious 'test.blah' file left behind by test_logging.
 
-- Issue 3781: Clean up the API for warnings.catch_warnings() by having it
+- Issue #3781: Clean up the API for warnings.catch_warnings() by having it
   return a list or None rather than a custom object.
 
 - Issue #1638033: Cookie.Morsel gained the httponly attribute.
@@ -141,6 +145,10 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #3781: Add test.test_support.check_warnings() as a convenience
+  wrapper for warnings.catch_warnings() that makes it easier to check
+  that expected warning messages are being reported.
 
 - Issue #3796: Some tests functions were not enabled in test_float.
 

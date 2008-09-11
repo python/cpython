@@ -5,7 +5,7 @@ import shutil
 import sys
 import py_compile
 import warnings
-from test.test_support import unlink, TESTFN, unload, run_unittest
+from test.test_support import unlink, TESTFN, unload, run_unittest, check_warnings
 
 
 def remove_files(name):
@@ -279,17 +279,17 @@ class RelativeImport(unittest.TestCase):
         check_relative()
         # Check relative fails with only __package__ wrong
         ns = dict(__package__='foo', __name__='test.notarealmodule')
-        with warnings.catch_warnings(record=True) as w:
+        with check_warnings() as w:
             check_absolute()
-            self.assert_('foo' in str(w[-1].message))
-            self.assertEqual(w[-1].category, RuntimeWarning)
+            self.assert_('foo' in str(w.message))
+            self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check relative fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
-        with warnings.catch_warnings(record=True) as w:
+        with check_warnings() as w:
             check_absolute()
-            self.assert_('foo' in str(w[-1].message))
-            self.assertEqual(w[-1].category, RuntimeWarning)
+            self.assert_('foo' in str(w.message))
+            self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check both fail with package set to a non-string
         ns = dict(__package__=object())

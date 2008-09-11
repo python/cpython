@@ -291,18 +291,26 @@ The :mod:`test.test_support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: catch_warning(module=warnings, record=True)
+.. function:: check_warnings()
 
-   Return a context manager that guards the warnings filter from being
-   permanently changed and optionally alters the :func:`showwarning`
-   function to record the details of any warnings that are issued in the
-   managed context. Details of the most recent call to :func:`showwarning`
-   are saved directly on the context manager, while details of previous
-   warnings can be retrieved from the ``warnings`` list.
+   A convenience wrapper for ``warnings.catch_warnings()`` that makes
+   it easier to test that a warning was correctly raised with a single
+   assertion. It is approximately equivalent to calling
+   ``warnings.catch_warnings(record=True)``.
+
+   The main difference is that on entry to the context manager, a
+   :class:`WarningRecorder` instance is returned instead of a simple list.
+   The underlying warnings list is available via the recorder object's
+   :attr:`warnings` attribute, while the attributes of the last raised
+   warning are also accessible directly on the object. If no warning has
+   been raised, then the latter attributes will all be :const:`None`.
+
+   A :meth:`reset` method is also provided on the recorder object. This
+   method simply clears the warning list.
 
    The context manager is used like this::
 
-      with catch_warning() as w:
+      with check_warnings() as w:
           warnings.simplefilter("always")
           warnings.warn("foo")
           assert str(w.message) == "foo"
@@ -310,15 +318,8 @@ The :mod:`test.test_support` module defines the following functions:
           assert str(w.message) == "bar"
           assert str(w.warnings[0].message) == "foo"
           assert str(w.warnings[1].message) == "bar"
-
-   By default, the real :mod:`warnings` module is affected - the ability
-   to select a different module is provided for the benefit of the
-   :mod:`warnings` module's  own unit tests.
-   The ``record`` argument specifies whether or not the :func:`showwarning`
-   function is replaced. Note that recording the warnings in this fashion
-   also prevents them from being written to sys.stderr. If set to ``False``,
-   the standard handling of warning messages is left in place (however, the
-   original handling is still restored at the end of the block).
+          w.reset()
+          assert len(w.warnings) == 0
 
    .. versionadded:: 2.6
 
@@ -366,4 +367,10 @@ The :mod:`test.test_support` module defines the following classes:
 
    Temporarily unset the environment variable ``envvar``.
 
+.. class:: WarningsRecorder()
+
+   Class used to record warnings for unit tests. See documentation of
+   :func:`check_warnings` above for more details.
+
+   .. versionadded:: 2.6
 
