@@ -517,7 +517,7 @@ new_arena(void)
 #endif
 	if (unused_arena_objects == NULL) {
 		uint i;
-		size_t numarenas;
+		uint numarenas;
 		size_t nbytes;
 
 		/* Double the number of arena objects on each allocation.
@@ -526,8 +526,10 @@ new_arena(void)
 		numarenas = maxarenas ? maxarenas << 1 : INITIAL_ARENA_OBJECTS;
 		if (numarenas <= maxarenas)
 			return NULL;	/* overflow */
+#if SIZEOF_SIZE_T <= SIZEOF_INT
 		if (numarenas > PY_SIZE_MAX / sizeof(*arenas))
 			return NULL;	/* overflow */
+#endif
 		nbytes = numarenas * sizeof(*arenas);
 		arenaobj = (struct arena_object *)realloc(arenas, nbytes);
 		if (arenaobj == NULL)
