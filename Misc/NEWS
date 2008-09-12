@@ -151,6 +151,10 @@ Extension Modules
 - Issue #3103: Reduced globals symbols used by sqlite3 module and made sure all
   remaining ones have "pysqlite_" prefix.
 
+- Issue #3846: Release the GIL during sqlite3_prepare calls. This improves
+  concurrent access to the same SQLite database from multiple
+  threads/processes.
+
 Tests
 -----
 
