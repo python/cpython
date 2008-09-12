@@ -790,11 +790,13 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         }
         statement_completed = 1;
 
+        Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare(self->connection->db,
                              script_cstr,
                              -1,
                              &statement,
                              &script_cstr);
+        Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->connection->db, NULL);
             goto error;
