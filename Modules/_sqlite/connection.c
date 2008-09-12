@@ -1389,7 +1389,7 @@ static PyMethodDef connection_methods[] = {
     {"interrupt", (PyCFunction)pysqlite_connection_interrupt, METH_NOARGS,
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
-        PyDoc_STR("Returns iterator to the dump of the database in an SQL text format.")},
+        PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,

@@ -146,6 +146,8 @@ Extension Modules
 - Issue #3643: Added a few more checks to _testcapi to prevent segfaults by
   exploitation of poor argument checking.
 
+- sqlite3: Changed docstring of iterdump() to mark method as "Non-standard".
+
 Tests
 -----
 
