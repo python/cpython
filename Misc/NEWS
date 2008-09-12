@@ -148,6 +148,9 @@ Extension Modules
 
 - sqlite3: Changed docstring of iterdump() to mark method as "Non-standard".
 
+- Issue #3103: Reduced globals symbols used by sqlite3 module and made sure all
+  remaining ones have "pysqlite_" prefix.
+
 Tests
 -----
 

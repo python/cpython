@@ -250,7 +250,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             if (!_need_adapt(current_param)) {
                 adapted = current_param;
             } else {
-                adapted = microprotocols_adapt(current_param, (PyObject*)&pysqlite_PrepareProtocolType, NULL);
+                adapted = pysqlite_microprotocols_adapt(current_param, (PyObject*)&pysqlite_PrepareProtocolType, NULL);
                 if (adapted) {
                     Py_DECREF(current_param);
                 } else {
@@ -295,7 +295,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             if (!_need_adapt(current_param)) {
                 adapted = current_param;
             } else {
-                adapted = microprotocols_adapt(current_param, (PyObject*)&pysqlite_PrepareProtocolType, NULL);
+                adapted = pysqlite_microprotocols_adapt(current_param, (PyObject*)&pysqlite_PrepareProtocolType, NULL);
                 if (adapted) {
                     Py_DECREF(current_param);
                 } else {
