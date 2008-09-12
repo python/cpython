@@ -160,7 +160,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
         pysqlite_BaseTypeAdapted = 1;
     }
 
-    rc = microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
+    rc = pysqlite_microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
     if (rc == -1)
         return NULL;
 
@@ -244,8 +244,8 @@ static PyMethodDef module_methods[] = {
      METH_VARARGS, module_register_adapter_doc},
     {"register_converter", (PyCFunction)module_register_converter,
      METH_VARARGS, module_register_converter_doc},
-    {"adapt",  (PyCFunction)psyco_microprotocols_adapt, METH_VARARGS,
-     psyco_microprotocols_adapt_doc},
+    {"adapt",  (PyCFunction)pysqlite_adapt, METH_VARARGS,
+     pysqlite_adapt_doc},
     {"enable_callback_tracebacks",  (PyCFunction)enable_callback_tracebacks,
      METH_VARARGS, enable_callback_tracebacks_doc},
     {NULL, NULL}
@@ -423,7 +423,7 @@ PyMODINIT_FUNC init_sqlite3(void)
     Py_DECREF(tmp_obj);
 
     /* initialize microprotocols layer */
-    microprotocols_init(dict);
+    pysqlite_microprotocols_init(dict);
 
     /* initialize the default converters */
     converters_init(dict);
