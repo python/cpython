@@ -292,6 +292,7 @@ Referencing the name ``a`` hereafter is an error (at least until another value
 is assigned to it).  We'll find other uses for :keyword:`del` later.
 
 
+.. _tut-tuples:
 
 Tuples and Sequences
 ====================
