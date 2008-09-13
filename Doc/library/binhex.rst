@@ -58,7 +58,7 @@ There is an alternative, more powerful interface to the coder and decoder, see
 the source for details.
 
 If you code or decode textfiles on non-Macintosh platforms they will still use
-the Macintosh newline convention (carriage-return as end of line).
+the old Macintosh newline convention (carriage-return as end of line).
 
 As of this writing, :func:`hexbin` appears to not work in all cases.
 

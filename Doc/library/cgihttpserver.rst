@@ -19,8 +19,7 @@ run CGI scripts.
 
 .. note::
 
-   This module can run CGI scripts on Unix and Windows systems; on Mac OS it will
-   only be able to run Python scripts within the same process as itself.
+   This module can run CGI scripts on Unix and Windows systems.
 
 .. note::
 

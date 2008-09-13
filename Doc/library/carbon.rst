@@ -1,11 +1,11 @@
 
 .. _toolbox:
 
-*********************
-MacOS Toolbox Modules
-*********************
+**********************
+Mac OS Toolbox Modules
+**********************
 
-There are a set of modules that provide interfaces to various MacOS toolboxes.
+There are a set of modules that provide interfaces to various Mac OS toolboxes.
 If applicable the module will define a number of Python objects for the various
 structures declared by the toolbox, and operations will be implemented as
 methods of the object.  Other operations will be implemented as functions in the
@@ -240,7 +240,7 @@ The ``CFBase``, ``CFArray``, ``CFData``, ``CFDictionary``, ``CFString`` and
    :deprecated:
 
 
-This module is only fully available on MacOS9 and earlier under classic PPC
+This module is only fully available on Mac OS 9 and earlier under classic PPC
 MacPython.  Very limited functionality is available under Carbon MacPython.
 
 .. index:: single: Scrap Manager

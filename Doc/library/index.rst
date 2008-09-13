@@ -23,7 +23,7 @@ everyday programming. Some of these modules are explicitly designed to
 encourage and enhance the portability of Python programs by abstracting
 away platform-specifics into platform-neutral APIs.
 
-The Python installers for the Windows and Mac platforms usually include
+The Python installers for the Windows platform usually includes
 the entire standard library and often also include many additional
 components. For Unix-like operating systems Python is normally provided
 as a collection of packages, so it may be necessary to use the packaging

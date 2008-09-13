@@ -1,4 +1,3 @@
-
 :mod:`MacOS` --- Access to Mac OS interpreter features
 ======================================================
 

@@ -24,6 +24,11 @@ the :mod:`os` module, but using them is of course a threat to portability!
 
 .. note::
 
+   If not separately noted, all functions that claim "Availability: Unix" are
+   supported on Mac OS X, which builds on a Unix core.
+
+.. note::
+
    All functions in this module raise :exc:`OSError` in the case of invalid or
    inaccessible file names and paths, or other arguments that have the correct
    type, but are not accepted by the operating system.
@@ -44,7 +49,7 @@ the :mod:`os` module, but using them is of course a threat to portability!
 .. data:: path
 
    The corresponding operating system dependent standard module for pathname
-   operations, such as :mod:`posixpath` or :mod:`macpath`.  Thus, given the proper
+   operations, such as :mod:`posixpath` or :mod:`ntpath`.  Thus, given the proper
    imports, ``os.path.split(file)`` is equivalent to but more portable than
    ``posixpath.split(file)``.  Note that this is also an importable module: it may
    be imported directly as :mod:`os.path`.
@@ -81,8 +86,9 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may cause
-      memory leaks.  Refer to the system documentation for :cfunc:`putenv`.
+      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      cause memory leaks.  Refer to the system documentation for
+      :cfunc:`putenv`.
 
    If :func:`putenv` is not provided, a modified copy of this mapping  may be
    passed to the appropriate process-creation functions to cause  child processes
@@ -202,8 +208,8 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may cause
-      memory leaks. Refer to the system documentation for putenv.
+      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      cause memory leaks. Refer to the system documentation for putenv.
 
    When :func:`putenv` is supported, assignments to items in ``os.environ`` are
    automatically translated into corresponding calls to :func:`putenv`; however,
@@ -338,7 +344,7 @@ These functions create new file objects. (See also :func:`open`.)
 
    Return an open file object connected to the file descriptor *fd*.  The *mode*
    and *bufsize* arguments have the same meaning as the corresponding arguments to
-   the built-in :func:`open` function. Availability: Macintosh, Unix, Windows.
+   the built-in :func:`open` function. Availability: Unix, Windows.
 
    .. versionchanged:: 2.3
       When specified, the *mode* argument must now start with one of the letters
@@ -359,7 +365,7 @@ These functions create new file objects. (See also :func:`open`.)
    status of the command (encoded in the format specified for :func:`wait`) is
    available as the return value of the :meth:`close` method of the file object,
    except that when the exit status is zero (termination without errors), ``None``
-   is returned. Availability: Macintosh, Unix, Windows.
+   is returned. Availability: Unix, Windows.
 
    .. deprecated:: 2.6
       This function is obsolete.  Use the :mod:`subprocess` module.  Check 
@@ -376,7 +382,7 @@ These functions create new file objects. (See also :func:`open`.)
 
    Return a new file object opened in update mode (``w+b``).  The file has no
    directory entries associated with it and will be automatically deleted once
-   there are no file descriptors for the file. Availability: Macintosh, Unix,
+   there are no file descriptors for the file. Availability: Unix,
    Windows.
 
 There are a number of different :func:`popen\*` functions that provide slightly
@@ -415,7 +421,7 @@ functions, see :ref:`popen2-flow-control`.
       This function is obsolete.  Use the :mod:`subprocess` module.  Check 
       especially the :ref:`subprocess-replacements` section.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. versionadded:: 2.0
 
@@ -429,7 +435,7 @@ functions, see :ref:`popen2-flow-control`.
       This function is obsolete.  Use the :mod:`subprocess` module.  Check 
       especially the :ref:`subprocess-replacements` section.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. versionadded:: 2.0
 
@@ -443,7 +449,7 @@ functions, see :ref:`popen2-flow-control`.
       This function is obsolete.  Use the :mod:`subprocess` module.  Check 
       especially the :ref:`subprocess-replacements` section.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. versionadded:: 2.0
 
@@ -473,7 +479,7 @@ by file descriptors.
 
 .. function:: close(fd)
 
-   Close file descriptor *fd*. Availability: Macintosh, Unix, Windows.
+   Close file descriptor *fd*. Availability: Unix, Windows.
 
    .. note::
 
@@ -486,7 +492,7 @@ by file descriptors.
 .. function:: closerange(fd_low, fd_high)
 
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
-   ignoring errors. Availability: Macintosh, Unix, Windows. Equivalent to::
+   ignoring errors. Availability: Unix, Windows. Equivalent to::
 
       for fd in xrange(fd_low, fd_high):
           try:
@@ -499,14 +505,14 @@ by file descriptors.
 
 .. function:: dup(fd)
 
-   Return a duplicate of file descriptor *fd*. Availability: Macintosh, Unix,
+   Return a duplicate of file descriptor *fd*. Availability: Unix,
    Windows.
 
 
 .. function:: dup2(fd, fd2)
 
    Duplicate file descriptor *fd* to *fd2*, closing the latter first if necessary.
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
 
 .. function:: fchmod(fd, mode)
@@ -541,7 +547,7 @@ by file descriptors.
    additional names as well.  The names known to the host operating system are
    given in the ``pathconf_names`` dictionary.  For configuration variables not
    included in that mapping, passing an integer for *name* is also accepted.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    If *name* is a string and is not known, :exc:`ValueError` is raised.  If a
    specific value for *name* is not supported by the host system, even if it is
@@ -552,7 +558,7 @@ by file descriptors.
 .. function:: fstat(fd)
 
    Return status for file descriptor *fd*, like :func:`stat`. Availability:
-   Macintosh, Unix, Windows.
+   Unix, Windows.
 
 
 .. function:: fstatvfs(fd)
@@ -568,20 +574,20 @@ by file descriptors.
 
    If you're starting with a Python file object *f*, first do ``f.flush()``, and
    then do ``os.fsync(f.fileno())``, to ensure that all internal buffers associated
-   with *f* are written to disk. Availability: Macintosh, Unix, and Windows
+   with *f* are written to disk. Availability: Unix, and Windows
    starting in 2.2.3.
 
 
 .. function:: ftruncate(fd, length)
 
    Truncate the file corresponding to file descriptor *fd*, so that it is at most
-   *length* bytes in size. Availability: Macintosh, Unix.
+   *length* bytes in size. Availability: Unix.
 
 
 .. function:: isatty(fd)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
-   tty(-like) device, else ``False``. Availability: Macintosh, Unix.
+   tty(-like) device, else ``False``. Availability: Unix.
 
 
 .. function:: lseek(fd, pos, how)
@@ -590,7 +596,7 @@ by file descriptors.
    by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
    beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
    current position; :const:`os.SEEK_END` or ``2`` to set it relative to the end of
-   the file. Availability: Macintosh, Unix, Windows.
+   the file. Availability: Unix, Windows.
 
 
 .. function:: open(file, flags[, mode])
@@ -598,7 +604,7 @@ by file descriptors.
    Open the file *file* and set various flags according to *flags* and possibly its
    mode according to *mode*. The default *mode* is ``0777`` (octal), and the
    current umask value is first masked out.  Return the file descriptor for the
-   newly opened file. Availability: Macintosh, Unix, Windows.
+   newly opened file. Availability: Unix, Windows.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
@@ -618,21 +624,21 @@ by file descriptors.
 
    Open a new pseudo-terminal pair. Return a pair of file descriptors ``(master,
    slave)`` for the pty and the tty, respectively. For a (slightly) more portable
-   approach, use the :mod:`pty` module. Availability: Macintosh, some flavors of
+   approach, use the :mod:`pty` module. Availability: some flavors of
    Unix.
 
 
 .. function:: pipe()
 
    Create a pipe.  Return a pair of file descriptors ``(r, w)`` usable for reading
-   and writing, respectively. Availability: Macintosh, Unix, Windows.
+   and writing, respectively. Availability: Unix, Windows.
 
 
 .. function:: read(fd, n)
 
    Read at most *n* bytes from file descriptor *fd*. Return a string containing the
    bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty string is returned. Availability: Macintosh, Unix, Windows.
+   empty string is returned. Availability: Unix, Windows.
 
    .. note::
 
@@ -646,26 +652,26 @@ by file descriptors.
 .. function:: tcgetpgrp(fd)
 
    Return the process group associated with the terminal given by *fd* (an open
-   file descriptor as returned by :func:`open`). Availability: Macintosh, Unix.
+   file descriptor as returned by :func:`open`). Availability: Unix.
 
 
 .. function:: tcsetpgrp(fd, pg)
 
    Set the process group associated with the terminal given by *fd* (an open file
-   descriptor as returned by :func:`open`) to *pg*. Availability: Macintosh, Unix.
+   descriptor as returned by :func:`open`) to *pg*. Availability: Unix.
 
 
 .. function:: ttyname(fd)
 
    Return a string which specifies the terminal device associated with
    file descriptor *fd*.  If *fd* is not associated with a terminal device, an
-   exception is raised. Availability:Macintosh, Unix.
+   exception is raised. Availability: Unix.
 
 
 .. function:: write(fd, str)
 
    Write the string *str* to file descriptor *fd*. Return the number of bytes
-   actually written. Availability: Macintosh, Unix, Windows.
+   actually written. Availability: Unix, Windows.
 
    .. note::
 
@@ -690,7 +696,7 @@ platforms.  For descriptions of their availability and use, consult
           O_TRUNC
 
    Options for the *flag* argument to the :func:`open` function. These can be
-   combined using the bitwise OR operator ``|``. Availability: Macintosh, Unix, Windows.
+   combined using the bitwise OR operator ``|``. Availability: Unix, Windows.
 
 
 .. data:: O_DSYNC
@@ -703,7 +709,7 @@ platforms.  For descriptions of their availability and use, consult
           O_EXLOCK
 
    More options for the *flag* argument to the :func:`open` function. Availability:
-   Macintosh, Unix.
+   Unix.
 
 
 .. data:: O_BINARY
@@ -733,7 +739,7 @@ platforms.  For descriptions of their availability and use, consult
           SEEK_END
 
    Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
-   respectively. Availability: Windows, Macintosh, Unix.
+   respectively. Availability: Windows, Unix.
 
    .. versionadded:: 2.5
 
@@ -752,7 +758,7 @@ Files and Directories
    can be the inclusive OR of one or more of :const:`R_OK`, :const:`W_OK`, and
    :const:`X_OK` to test permissions.  Return :const:`True` if access is allowed,
    :const:`False` if not. See the Unix man page :manpage:`access(2)` for more
-   information. Availability: Macintosh, Unix, Windows.
+   information. Availability: Unix, Windows.
 
    .. note::
 
@@ -796,7 +802,7 @@ Files and Directories
 
    .. index:: single: directory; changing
 
-   Change the current working directory to *path*. Availability: Macintosh, Unix,
+   Change the current working directory to *path*. Availability: Unix,
    Windows.
 
 
@@ -812,13 +818,13 @@ Files and Directories
 .. function:: getcwd()
 
    Return a string representing the current working directory. Availability:
-   Macintosh, Unix, Windows.
+   Unix, Windows.
 
 
 .. function:: getcwdu()
 
    Return a Unicode object representing the current working directory.
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. versionadded:: 2.3
 
@@ -839,7 +845,7 @@ Files and Directories
    * ``SF_NOUNLINK``
    * ``SF_SNAPSHOT``
 
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.6
 
@@ -847,7 +853,7 @@ Files and Directories
 .. function:: chroot(path)
 
    Change the root directory of the current process to *path*. Availability:
-   Macintosh, Unix.
+   Unix.
 
    .. versionadded:: 2.2
 
@@ -879,7 +885,7 @@ Files and Directories
    * ``stat.S_IWOTH``
    * ``stat.S_IXOTH``
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. note::
 
@@ -892,7 +898,7 @@ Files and Directories
 .. function:: chown(path, uid, gid)
 
    Change the owner and group id of *path* to the numeric *uid* and *gid*. To leave
-   one of the ids unchanged, set it to -1. Availability: Macintosh, Unix.
+   one of the ids unchanged, set it to -1. Availability: Unix.
 
 
 .. function:: lchflags(path, flags)
@@ -915,21 +921,21 @@ Files and Directories
 .. function:: lchown(path, uid, gid)
 
    Change the owner and group id of *path* to the numeric *uid* and *gid*. This
-   function will not follow symbolic links. Availability: Macintosh, Unix.
+   function will not follow symbolic links. Availability: Unix.
 
    .. versionadded:: 2.3
 
 
 .. function:: link(src, dst)
 
-   Create a hard link pointing to *src* named *dst*. Availability: Macintosh, Unix.
+   Create a hard link pointing to *src* named *dst*. Availability: Unix.
 
 
 .. function:: listdir(path)
 
    Return a list containing the names of the entries in the directory. The list is
    in arbitrary order.  It does not include the special entries ``'.'`` and
-   ``'..'`` even if they are present in the directory. Availability: Macintosh,
+   ``'..'`` even if they are present in the directory. Availability:
    Unix, Windows.
 
    .. versionchanged:: 2.3
@@ -948,7 +954,7 @@ Files and Directories
 
    Create a FIFO (a named pipe) named *path* with numeric mode *mode*.  The default
    *mode* is ``0666`` (octal).  The current umask value is first masked out from
-   the mode. Availability: Macintosh, Unix.
+   the mode. Availability: Unix.
 
    FIFOs are pipes that can be accessed like regular files.  FIFOs exist until they
    are deleted (for example with :func:`os.unlink`). Generally, FIFOs are used as
@@ -998,7 +1004,7 @@ Files and Directories
 
    Create a directory named *path* with numeric mode *mode*. The default *mode* is
    ``0777`` (octal).  On some systems, *mode* is ignored.  Where it is used, the
-   current umask value is first masked out. Availability: Macintosh, Unix, Windows.
+   current umask value is first masked out. Availability: Unix, Windows.
 
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
@@ -1036,7 +1042,7 @@ Files and Directories
    additional names as well.  The names known to the host operating system are
    given in the ``pathconf_names`` dictionary.  For configuration variables not
    included in that mapping, passing an integer for *name* is also accepted.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    If *name* is a string and is not known, :exc:`ValueError` is raised.  If a
    specific value for *name* is not supported by the host system, even if it is
@@ -1049,7 +1055,7 @@ Files and Directories
    Dictionary mapping names accepted by :func:`pathconf` and :func:`fpathconf` to
    the integer values defined for those names by the host operating system.  This
    can be used to determine the set of names known to the system. Availability:
-   Macintosh, Unix.
+   Unix.
 
 
 .. function:: readlink(path)
@@ -1062,7 +1068,7 @@ Files and Directories
    .. versionchanged:: 2.6
       If the *path* is a Unicode object the result will also be a Unicode object.
 
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: remove(path)
@@ -1072,7 +1078,7 @@ Files and Directories
    :func:`unlink` function documented below.  On Windows, attempting to remove a
    file that is in use causes an exception to be raised; on Unix, the directory
    entry is removed but the storage allocated to the file is not made available
-   until the original file is no longer in use. Availability: Macintosh, Unix,
+   until the original file is no longer in use. Availability: Unix,
    Windows.
 
 
@@ -1101,7 +1107,7 @@ Files and Directories
    the renaming will be an atomic operation (this is a POSIX requirement).  On
    Windows, if *dst* already exists, :exc:`OSError` will be raised even if it is a
    file; there may be no way to implement an atomic rename when *dst* names an
-   existing file. Availability: Macintosh, Unix, Windows.
+   existing file. Availability: Unix, Windows.
 
 
 .. function:: renames(old, new)
@@ -1121,7 +1127,7 @@ Files and Directories
 
 .. function:: rmdir(path)
 
-   Remove the directory *path*. Availability: Macintosh, Unix, Windows.
+   Remove the directory *path*. Availability: Unix, Windows.
 
 
 .. function:: stat(path)
@@ -1185,7 +1191,7 @@ Files and Directories
       :attr:`st_mtime` has 2-second resolution, and :attr:`st_atime` has only 1-day
       resolution.  See your operating system documentation for details.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    .. versionchanged:: 2.2
       Added access to values as attributes of the returned object.
@@ -1265,7 +1271,7 @@ Files and Directories
       Use of :func:`tempnam` is vulnerable to symlink attacks; consider using
       :func:`tmpfile` (section :ref:`os-newstreams`) instead.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
 
 .. function:: tmpnam()
@@ -1297,7 +1303,7 @@ Files and Directories
 .. function:: unlink(path)
 
    Remove the file *path*.  This is the same function as :func:`remove`; the
-   :func:`unlink` name is its traditional Unix name. Availability: Macintosh, Unix,
+   :func:`unlink` name is its traditional Unix name. Availability: Unix,
    Windows.
 
 
@@ -1317,7 +1323,7 @@ Files and Directories
    .. versionchanged:: 2.0
       Added support for ``None`` for *times*.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
 
 .. function:: walk(top[, topdown=True [, onerror=None[, followlinks=False]]])
@@ -1430,7 +1436,7 @@ to be ignored.
    behavior is to produce a core dump; on Windows, the process immediately returns
    an exit code of ``3``.  Be aware that programs which use :func:`signal.signal`
    to register a handler for :const:`SIGABRT` will behave differently.
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
 
 .. function:: execl(path, arg0, arg1, ...)
@@ -1471,14 +1477,14 @@ to be ignored.
    used to define the environment variables for the new process (these are used
    instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
-   inherit the environment of the current process. Availability: Macintosh, Unix,
+   inherit the environment of the current process. Availability: Unix,
    Windows.
 
 
 .. function:: _exit(n)
 
    Exit to the system with status *n*, without calling cleanup handlers, flushing
-   stdio buffers, etc. Availability: Macintosh, Unix, Windows.
+   stdio buffers, etc. Availability: Unix, Windows.
 
    .. note::
 
@@ -1498,7 +1504,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: EX_OK
 
-   Exit code that means no error occurred. Availability: Macintosh, Unix.
+   Exit code that means no error occurred. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1506,15 +1512,14 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_USAGE
 
    Exit code that means the command was used incorrectly, such as when the wrong
-   number of arguments are given. Availability: Macintosh, Unix.
+   number of arguments are given. Availability: Unix.
 
    .. versionadded:: 2.3
 
 
 .. data:: EX_DATAERR
 
-   Exit code that means the input data was incorrect. Availability: Macintosh,
-   Unix.
+   Exit code that means the input data was incorrect. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1522,23 +1527,21 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_NOINPUT
 
    Exit code that means an input file did not exist or was not readable.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.3
 
 
 .. data:: EX_NOUSER
 
-   Exit code that means a specified user did not exist. Availability: Macintosh,
-   Unix.
+   Exit code that means a specified user did not exist. Availability: Unix.
 
    .. versionadded:: 2.3
 
 
 .. data:: EX_NOHOST
 
-   Exit code that means a specified host did not exist. Availability: Macintosh,
-   Unix.
+   Exit code that means a specified host did not exist. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1546,7 +1549,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_UNAVAILABLE
 
    Exit code that means that a required service is unavailable. Availability:
-   Macintosh, Unix.
+   Unix.
 
    .. versionadded:: 2.3
 
@@ -1554,7 +1557,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_SOFTWARE
 
    Exit code that means an internal software error was detected. Availability:
-   Macintosh, Unix.
+   Unix.
 
    .. versionadded:: 2.3
 
@@ -1562,7 +1565,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_OSERR
 
    Exit code that means an operating system error was detected, such as the
-   inability to fork or create a pipe. Availability: Macintosh, Unix.
+   inability to fork or create a pipe. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1570,7 +1573,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_OSFILE
 
    Exit code that means some system file did not exist, could not be opened, or had
-   some other kind of error. Availability: Macintosh, Unix.
+   some other kind of error. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1578,7 +1581,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_CANTCREAT
 
    Exit code that means a user specified output file could not be created.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1586,7 +1589,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_IOERR
 
    Exit code that means that an error occurred while doing I/O on some file.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1595,7 +1598,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Exit code that means a temporary failure occurred.  This indicates something
    that may not really be an error, such as a network connection that couldn't be
-   made during a retryable operation. Availability: Macintosh, Unix.
+   made during a retryable operation. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1603,7 +1606,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_PROTOCOL
 
    Exit code that means that a protocol exchange was illegal, invalid, or not
-   understood. Availability: Macintosh, Unix.
+   understood. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1611,8 +1614,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_NOPERM
 
    Exit code that means that there were insufficient permissions to perform the
-   operation (but not intended for file system problems). Availability: Macintosh,
-   Unix.
+   operation (but not intended for file system problems). Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1620,7 +1622,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_CONFIG
 
    Exit code that means that some kind of configuration error occurred.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1628,7 +1630,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: EX_NOTFOUND
 
    Exit code that means something like "an entry was not found". Availability:
-   Macintosh, Unix.
+   Unix.
 
    .. versionadded:: 2.3
 
@@ -1637,7 +1639,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Fork a child process.  Return ``0`` in the child and the child's process id in the
    parent.  If an error occurs :exc:`OSError` is raised.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: forkpty()
@@ -1647,7 +1649,7 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
-   Availability: Macintosh, some flavors of Unix.
+   Availability: some flavors of Unix.
 
 
 .. function:: kill(pid, sig)
@@ -1658,7 +1660,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Send signal *sig* to the process *pid*.  Constants for the specific signals
    available on the host platform are defined in the :mod:`signal` module.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: killpg(pgid, sig)
@@ -1667,8 +1669,7 @@ written in Python, such as a mail server's external command delivery program.
       single: process; killing
       single: process; signalling
 
-   Send the signal *sig* to the process group *pgid*. Availability: Macintosh,
-   Unix.
+   Send the signal *sig* to the process group *pgid*. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1676,14 +1677,13 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: nice(increment)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: plock(op)
 
    Lock program segments into memory.  The value of *op* (defined in
-   ``<sys/lock.h>``) determines which segments are locked. Availability: Macintosh,
-   Unix.
+   ``<sys/lock.h>``) determines which segments are locked. Availability: Unix.
 
 
 .. function:: popen(...)
@@ -1765,7 +1765,7 @@ written in Python, such as a mail server's external command delivery program.
    Possible values for the *mode* parameter to the :func:`spawn\*` family of
    functions.  If either of these values is given, the :func:`spawn\*` functions
    will return as soon as the new process has been created, with the process id as
-   the return value. Availability: Macintosh, Unix, Windows.
+   the return value. Availability: Unix, Windows.
 
    .. versionadded:: 1.6
 
@@ -1776,7 +1776,7 @@ written in Python, such as a mail server's external command delivery program.
    functions.  If this is given as *mode*, the :func:`spawn\*` functions will not
    return until the new process has run to completion and will return the exit code
    of the process the run is successful, or ``-signal`` if a signal kills the
-   process. Availability: Macintosh, Unix, Windows.
+   process. Availability: Unix, Windows.
 
    .. versionadded:: 1.6
 
@@ -1841,7 +1841,7 @@ written in Python, such as a mail server's external command delivery program.
    the command run; on systems using a non-native shell, consult your shell
    documentation.
 
-   Availability: Macintosh, Unix, Windows.
+   Availability: Unix, Windows.
 
    The :mod:`subprocess` module provides more powerful facilities for spawning new
    processes and retrieving their results; using that module is preferable to using
@@ -1855,7 +1855,7 @@ written in Python, such as a mail server's external command delivery program.
    other) times, in seconds.  The items are: user time, system time, children's
    user time, children's system time, and elapsed real time since a fixed point in
    the past, in that order.  See the Unix manual page :manpage:`times(2)` or the
-   corresponding Windows Platform API documentation. Availability: Macintosh, Unix,
+   corresponding Windows Platform API documentation. Availability: Unix,
    Windows.  On Windows, only the first two items are filled, the others are zero.
 
 
@@ -1865,7 +1865,7 @@ written in Python, such as a mail server's external command delivery program.
    and exit status indication: a 16-bit number, whose low byte is the signal number
    that killed the process, and whose high byte is the exit status (if the signal
    number is zero); the high bit of the low byte is set if a core file was
-   produced. Availability: Macintosh, Unix.
+   produced. Availability: Unix.
 
 
 .. function:: waitpid(pid, options)
@@ -1923,7 +1923,7 @@ written in Python, such as a mail server's external command delivery program.
 
    The option for :func:`waitpid` to return immediately if no child process status
    is available immediately. The function returns ``(0, 0)`` in this case.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. data:: WCONTINUED
@@ -1939,7 +1939,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option causes child processes to be reported if they have been stopped but
    their current state has not been reported since they were stopped. Availability:
-   Macintosh, Unix.
+   Unix.
 
    .. versionadded:: 2.3
 
@@ -1951,7 +1951,7 @@ used to determine the disposition of a process.
 .. function:: WCOREDUMP(status)
 
    Return ``True`` if a core dump was generated for the process, otherwise
-   return ``False``. Availability: Macintosh, Unix.
+   return ``False``. Availability: Unix.
 
    .. versionadded:: 2.3
 
@@ -1973,32 +1973,30 @@ used to determine the disposition of a process.
 .. function:: WIFSIGNALED(status)
 
    Return ``True`` if the process exited due to a signal, otherwise return
-   ``False``. Availability: Macintosh, Unix.
+   ``False``. Availability: Unix.
 
 
 .. function:: WIFEXITED(status)
 
    Return ``True`` if the process exited using the :manpage:`exit(2)` system call,
-   otherwise return ``False``. Availability: Macintosh, Unix.
+   otherwise return ``False``. Availability: Unix.
 
 
 .. function:: WEXITSTATUS(status)
 
    If ``WIFEXITED(status)`` is true, return the integer parameter to the
    :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: WSTOPSIG(status)
 
-   Return the signal which caused the process to stop. Availability: Macintosh,
-   Unix.
+   Return the signal which caused the process to stop. Availability: Unix.
 
 
 .. function:: WTERMSIG(status)
 
-   Return the signal which caused the process to exit. Availability: Macintosh,
-   Unix.
+   Return the signal which caused the process to exit. Availability: Unix.
 
 
 .. _os-path:
@@ -2016,7 +2014,7 @@ Miscellaneous System Information
    The names known to the host operating system are given as the keys of the
    ``confstr_names`` dictionary.  For configuration variables not included in that
    mapping, passing an integer for *name* is also accepted. Availability:
-   Macintosh, Unix.
+   Unix.
 
    If the configuration value specified by *name* isn't defined, ``None`` is
    returned.
@@ -2031,7 +2029,7 @@ Miscellaneous System Information
 
    Dictionary mapping names accepted by :func:`confstr` to the integer values
    defined for those names by the host operating system. This can be used to
-   determine the set of names known to the system. Availability: Macintosh, Unix.
+   determine the set of names known to the system. Availability: Unix.
 
 
 .. function:: getloadavg()
@@ -2049,14 +2047,14 @@ Miscellaneous System Information
    specified by *name* isn't defined, ``-1`` is returned.  The comments regarding
    the *name* parameter for :func:`confstr` apply here as well; the dictionary that
    provides information on the known names is given by ``sysconf_names``.
-   Availability: Macintosh, Unix.
+   Availability: Unix.
 
 
 .. data:: sysconf_names
 
    Dictionary mapping names accepted by :func:`sysconf` to the integer values
    defined for those names by the host operating system. This can be used to
-   determine the set of names known to the system. Availability: Macintosh, Unix.
+   determine the set of names known to the system. Availability: Unix.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
@@ -2067,22 +2065,22 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 .. data:: curdir
 
    The constant string used by the operating system to refer to the current
-   directory. For example: ``'.'`` for POSIX or ``':'`` for Mac OS 9. Also
-   available via :mod:`os.path`.
+   directory. This is ``'.'`` for Windows and POSIX. Also available via
+   :mod:`os.path`.
 
 
 .. data:: pardir
 
    The constant string used by the operating system to refer to the parent
-   directory. For example: ``'..'`` for POSIX or ``'::'`` for Mac OS 9. Also
-   available via :mod:`os.path`.
+   directory. This is ``'..'`` for Windows and POSIX. Also available via
+   :mod:`os.path`.
 
 
 .. data:: sep
 
-   The character used by the operating system to separate pathname components, for
-   example, ``'/'`` for POSIX or ``':'`` for Mac OS 9.  Note that knowing this is
-   not sufficient to be able to parse or concatenate pathnames --- use
+   The character used by the operating system to separate pathname components.
+   This is ``'/'`` for POSIX and ``'\\'`` for Windows.  Note that knowing this
+   is not sufficient to be able to parse or concatenate pathnames --- use
    :func:`os.path.split` and :func:`os.path.join` --- but it is occasionally
    useful. Also available via :mod:`os.path`.
 
@@ -2119,16 +2117,16 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 .. data:: linesep
 
    The string used to separate (or, rather, terminate) lines on the current
-   platform.  This may be a single character, such as  ``'\n'`` for POSIX or
-   ``'\r'`` for Mac OS, or multiple  characters, for example, ``'\r\n'`` for
-   Windows. Do not use *os.linesep* as a line terminator when writing files  opened
-   in text mode (the default); use a single ``'\n'`` instead,  on all platforms.
+   platform.  This may be a single character, such as ``'\n'`` for POSIX, or
+   multiple characters, for example, ``'\r\n'`` for Windows. Do not use
+   *os.linesep* as a line terminator when writing files opened in text mode (the
+   default); use a single ``'\n'`` instead, on all platforms.
 
 
 .. data:: devnull
 
-   The file path of the null device. For example: ``'/dev/null'`` for POSIX or
-   ``'Dev:Nul'`` for Mac OS 9. Also available via :mod:`os.path`.
+   The file path of the null device. For example: ``'/dev/null'`` for POSIX.
+   Also available via :mod:`os.path`.
 
    .. versionadded:: 2.4
 

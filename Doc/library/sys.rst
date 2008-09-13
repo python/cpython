@@ -582,8 +582,8 @@ always available.
    ================ ===========================
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   MacOS X          ``'darwin'``
-   MacOS 9          ``'mac'``
+   Mac OS X         ``'darwin'``
+   Mac OS 9         ``'mac'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
    RiscOS           ``'riscos'``

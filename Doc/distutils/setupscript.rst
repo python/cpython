@@ -46,9 +46,7 @@ Distutils will take care of converting this platform-neutral representation into
 whatever is appropriate on your current platform before actually using the
 pathname.  This makes your setup script portable across operating systems, which
 of course is one of the major goals of the Distutils.  In this spirit, all
-pathnames in this document are slash-separated.  (Mac OS 9 programmers should
-keep in mind that the *absence* of a leading slash indicates a relative path,
-the opposite of the Mac OS convention with colons.)
+pathnames in this document are slash-separated.
 
 This, of course, only applies to pathnames given to Distutils functions.  If
 you, for example, use standard Python functions such as :func:`glob.glob` or

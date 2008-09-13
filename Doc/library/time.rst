@@ -67,8 +67,7 @@ An explanation of some terminology and conventions is in order.
 
 * The precision of the various real-time functions may be less than suggested by
   the units in which their value or argument is expressed. E.g. on most Unix
-  systems, the clock "ticks" only 50 or 100 times a second, and on the Mac, times
-  are only accurate to whole seconds.
+  systems, the clock "ticks" only 50 or 100 times a second.
 
 * On the other hand, the precision of :func:`time` and :func:`sleep` is better
   than their Unix equivalents: times are expressed as floating point numbers,

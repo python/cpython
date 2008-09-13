@@ -151,10 +151,10 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on MacOS platforms; requires the standard MacPython :mod:`ic` module.
+   Only on Mac OS platforms; requires the standard MacPython :mod:`ic` module.
 
 (4)
-   Only on MacOS X platform.
+   Only on Mac OS X platform.
 
 Here are some simple examples::
 
