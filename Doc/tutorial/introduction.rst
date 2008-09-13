@@ -13,9 +13,11 @@ end a multi-line command.
 
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
-``#``, and extend to the end of the physical line.  A comment may appear at
-the start of a line or following whitespace or code, but not within a string
+``#``, and extend to the end of the physical line.  A comment may appear at the
+start of a line or following whitespace or code, but not within a string
 literal.  A hash character within a string literal is just a hash character.
+Since comments are to clarify code and are not interpreted by Python, they may
+be omitted when typing in examples.
 
 Some examples::
 
@@ -76,6 +78,15 @@ A value can be assigned to several variables simultaneously::
    0
    >>> z
    0
+
+Variables must be "defined" (assigned a value) before they can be used, or an
+error will occur::
+
+   >>> # try to access an undefined variable
+   ... n
+   Traceback (most recent call last):   
+     File "<stdin>", line 1, in <module>
+   NameError: name 'n' is not defined
 
 There is full support for floating point; operators with mixed type operands
 convert the integer operand to floating point::
@@ -269,7 +280,7 @@ omitted second index defaults to the size of the string being sliced. ::
    >>> word[2:]    # Everything except the first two characters
    'lpA'
 
-Unlike a C string, Python strings cannot be changed.  Assigning to an  indexed
+Unlike a C string, Python strings cannot be changed.  Assigning to an indexed
 position in the string results in an error::
 
    >>> word[0] = 'x'

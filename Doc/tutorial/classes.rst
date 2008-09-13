@@ -208,7 +208,7 @@ the class's namespace when the class object was created.  So, if the class
 definition looked like this::
 
    class MyClass:
-       "A simple example class"
+       """A simple example class"""
        i = 12345
        def f(self):
            return 'hello world'
