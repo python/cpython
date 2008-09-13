@@ -181,6 +181,8 @@ Tests
 Build
 -----
 
+- Issue #3833: Use a different upgrade code for Win64 installers.
+
 - Issue #2271: Set SecureCustomProperties so that installation will properly
   use the TARGETDIR even for unprivileged users.
 
