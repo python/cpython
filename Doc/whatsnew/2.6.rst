@@ -1806,12 +1806,10 @@ changes, or look through the Subversion logs for all the details.
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
-.. |uacute| unicode:: 0xA9
-
-* The :mod:`bsddb` module also has a new maintainer, Jes|uacute|s Cea,
-  and the package is now available as a standalone package.
-  The web page for the package is
-  `www.jcea.es/programacion/pybsddb.htm <http://www.jcea.es/programacion/pybsddb.htm>`__.
+* The :mod:`bsddb` module also has a new maintainer, Jesús Cea, and the package
+  is now available as a standalone package.  The web page for the package is
+  `www.jcea.es/programacion/pybsddb.htm
+  <http://www.jcea.es/programacion/pybsddb.htm>`__.
 
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
