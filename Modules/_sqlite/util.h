@@ -28,7 +28,7 @@
 #include "sqlite3.h"
 #include "connection.h"
 
-int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, pysqlite_Connection* connection);
+int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection);
 
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.

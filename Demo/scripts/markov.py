@@ -110,7 +110,7 @@ def test():
 def tuple(list):
     if len(list) == 0: return ()
     if len(list) == 1: return (list[0],)
-    i = len(list)/2
+    i = len(list)//2
     return tuple(list[:i]) + tuple(list[i:])
 
 if __name__ == "__main__":

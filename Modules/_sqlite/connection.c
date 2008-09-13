@@ -38,7 +38,7 @@
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level);
 
 
-void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int len)
+static void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int len)
 {
     /* in older SQLite versions, calling sqlite3_result_error in callbacks
      * triggers a bug in SQLite that leads either to irritating results or
@@ -304,7 +304,7 @@ PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
         goto error;
     }
 
-    rc = _sqlite_step_with_busyhandler(statement, self);
+    rc = pysqlite_step(statement, self);
     if (rc == SQLITE_DONE) {
         self->inTransaction = 1;
     } else {
@@ -347,7 +347,7 @@ PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args)
             goto error;
         }
 
-        rc = _sqlite_step_with_busyhandler(statement, self);
+        rc = pysqlite_step(statement, self);
         if (rc == SQLITE_DONE) {
             self->inTransaction = 0;
         } else {
@@ -393,7 +393,7 @@ PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args
             goto error;
         }
 
-        rc = _sqlite_step_with_busyhandler(statement, self);
+        rc = pysqlite_step(statement, self);
         if (rc == SQLITE_DONE) {
             self->inTransaction = 0;
         } else {
@@ -1316,8 +1316,7 @@ static PyMethodDef connection_methods[] = {
     {"interrupt", (PyCFunction)pysqlite_connection_interrupt, METH_NOARGS,
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
-        PyDoc_STR("Returns iterator to the dump of the database in an SQL text"
-                  "format.")},
+        PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,

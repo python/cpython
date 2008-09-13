@@ -83,7 +83,7 @@ def makestatus(name, thisuser):
                 lines.append(line)
     #
     if totaljobs:
-        line = '%d K' % ((totalbytes+1023)/1024)
+        line = '%d K' % ((totalbytes+1023)//1024)
         if totaljobs != len(users):
             line = line + ' (%d jobs)' % totaljobs
         if len(users) == 1:
@@ -95,7 +95,7 @@ def makestatus(name, thisuser):
                     line =  line + ' (%s first)' % thisuser
                 else:
                     line = line + ' (%d K before %s)' % (
-                                   (aheadbytes+1023)/1024, thisuser)
+                                   (aheadbytes+1023)//1024, thisuser)
         lines.append(line)
     #
     sts = pipe.close()
