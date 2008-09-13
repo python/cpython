@@ -326,7 +326,7 @@ This module provides the following functions.
    ``'posix'``, ``'nt'``), and *compiler*  defaults to the default compiler for
    that platform. Currently only ``'posix'`` and ``'nt'`` are supported, and the
    default compilers are "traditional Unix interface" (:class:`UnixCCompiler`
-   class) and Visual C++(:class:`MSVCCompiler` class).  Note that it's perfectly
+   class) and Visual C++ (:class:`MSVCCompiler` class).  Note that it's perfectly
    possible to ask for a Unix compiler object under Windows, and a Microsoft
    compiler object under Unix---if you supply a value for *compiler*, *plat* is
    ignored.

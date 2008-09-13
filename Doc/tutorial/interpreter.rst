@@ -160,9 +160,9 @@ shell scripts, by putting the line ::
 (assuming that the interpreter is on the user's :envvar:`PATH`) at the beginning
 of the script and giving the file an executable mode.  The ``#!`` must be the
 first two characters of the file.  On some platforms, this first line must end
-with a Unix-style line ending (``'\n'``), not a Mac OS (``'\r'``) or Windows
-(``'\r\n'``) line ending.  Note that the hash, or pound, character, ``'#'``, is
-used to start a comment in Python.
+with a Unix-style line ending (``'\n'``), not a Windows (``'\r\n'``) line
+ending.  Note that the hash, or pound, character, ``'#'``, is used to start a
+comment in Python.
 
 The script can be given an executable mode, or permission, using the
 :program:`chmod` command::

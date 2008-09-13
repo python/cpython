@@ -302,8 +302,8 @@ or the :command:`bdist` command with the :option:`--formats` option::
 
 If you have a pure module distribution (only containing pure Python modules and
 packages), the resulting installer will be version independent and have a name
-like :file:`foo-1.0.win32.exe`.  These installers can even be created on Unix or
-Mac OS platforms.
+like :file:`foo-1.0.win32.exe`.  These installers can even be created on Unix
+platforms or Mac OS X.
 
 If you have a non-pure distribution, the extensions can only be created on a
 Windows platform, and will be Python version dependent. The installer filename

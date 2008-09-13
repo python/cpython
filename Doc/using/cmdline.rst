@@ -451,7 +451,7 @@ These environment variables influence Python's behavior.
 
    If this environment variable is set, ``sys.argv[0]`` will be set to its
    value instead of the value got through the C runtime.  Only works on
-   MacOS X.
+   Mac OS X.
 
 
 Debug-mode variables
