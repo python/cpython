@@ -345,7 +345,6 @@ of an empty list to the slice).  For example::
 Referencing the name ``a`` hereafter is an error (at least until another value
 is assigned to it).  We'll find other uses for :keyword:`del` later.
 
-.. _tut-tuples:
 
 .. _tut-tuples:
 
