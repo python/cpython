@@ -25,10 +25,9 @@ the Python interpreter to run some Python code.
 
 So if you are embedding Python, you are providing your own main program.  One of
 the things this main program has to do is initialize the Python interpreter.  At
-the very least, you have to call the function :cfunc:`Py_Initialize` (on Mac OS,
-call :cfunc:`PyMac_Initialize` instead).  There are optional calls to pass
-command line arguments to Python.  Then later you can call the interpreter from
-any part of the application.
+the very least, you have to call the function :cfunc:`Py_Initialize`.  There are
+optional calls to pass command line arguments to Python.  Then later you can
+call the interpreter from any part of the application.
 
 There are several different ways to call the interpreter: you can pass a string
 containing Python statements to :cfunc:`PyRun_SimpleString`, or you can pass a

@@ -8,8 +8,8 @@
 
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
-platforms, as well as on Windows and Macintosh systems.  (Tk itself is not part
-of Python; it is maintained at ActiveState.)
+platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
+is maintained at ActiveState.)
 
 .. seealso::
 

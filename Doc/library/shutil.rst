@@ -22,7 +22,7 @@ copying and removal. For operations on individual files, see also the
    can't copy all file metadata.
    
    On POSIX platforms, this means that file owner and group are lost as well
-   as ACLs.  On MacOS, the resource fork and other metadata are not used.
+   as ACLs.  On Mac OS, the resource fork and other metadata are not used.
    This means that resources will be lost and file type and creator codes will
    not be correct. On Windows, file owners, ACLs and alternate data streams
    are not copied.

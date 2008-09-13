@@ -507,7 +507,7 @@ Unicode filenames
 Most of the operating systems in common use today support filenames that contain
 arbitrary Unicode characters.  Usually this is implemented by converting the
 Unicode string into some encoding that varies depending on the system.  For
-example, MacOS X uses UTF-8 while Windows uses a configurable encoding; on
+example, Mac OS X uses UTF-8 while Windows uses a configurable encoding; on
 Windows, Python uses the name "mbcs" to refer to whatever the currently
 configured encoding is.  On Unix systems, there will only be a filesystem
 encoding if you've set the ``LANG`` or ``LC_CTYPE`` environment variables; if

@@ -16,8 +16,7 @@ IDLE has the following features:
 
 * coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
 
-* cross-platform: works on Windows and Unix (on Mac OS, there are currently
-  problems with Tcl/Tk)
+* cross-platform: works on Windows and Unix
 
 * multi-window text editor with multiple undo, Python colorizing and many other
   features, e.g. smart indent and call tips

@@ -49,7 +49,7 @@ Physical lines
 A physical line is a sequence of characters terminated by an end-of-line
 sequence.  In source files, any of the standard platform line termination
 sequences can be used - the Unix form using ASCII LF (linefeed), the Windows
-form using the ASCII sequence CR LF (return followed by linefeed), or the
+form using the ASCII sequence CR LF (return followed by linefeed), or the old
 Macintosh form using the ASCII CR (return) character.  All of these forms can be
 used equally, regardless of platform.
 
