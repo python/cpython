@@ -80,9 +80,9 @@ class Packer(xdr.Packer):
 
 
 # Exceptions
-BadRPCFormat = 'rpc.BadRPCFormat'
-BadRPCVersion = 'rpc.BadRPCVersion'
-GarbageArgs = 'rpc.GarbageArgs'
+class BadRPCFormat(Exception): pass
+class BadRPCVersion(Exception): pass
+class GarbageArgs(Exception): pass
 
 class Unpacker(xdr.Unpacker):
 
