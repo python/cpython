@@ -172,6 +172,10 @@ if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
     raise SystemError("msisupport.dll for incorrect architecture")
 if msilib.Win64:
     upgrade_code = upgrade_code_64
+    # Bump the last digit of the code by one, so that 32-bit and 64-bit
+    # releases get separate product codes
+    digit = hex((int(product_code[-2],16)+1)%16)[-1]
+    product_code = product_code[:-2] + digit + '}'
 
 if testpackage:
     ext = 'px'
@@ -201,11 +205,15 @@ def build_database():
         uc = upgrade_code_snapshot
     else:
         uc = upgrade_code
+    if msilib.Win64:
+        productsuffix = " (64-bit)"
+    else:
+        productsuffix = ""
     # schema represents the installer 2.0 database schema.
     # sequence is the set of standard sequences
     # (ui/execute, admin/advt/install)
     db = msilib.init_database("python-%s%s.msi" % (full_current_version, msilib.arch_ext),
-                  schema, ProductName="Python "+full_current_version,
+                  schema, ProductName="Python "+full_current_version+productsuffix,
                   ProductCode=product_code,
                   ProductVersion=current_version,
                   Manufacturer=u"Python Software Foundation")
