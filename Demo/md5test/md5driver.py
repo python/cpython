@@ -32,7 +32,7 @@ def MDTimeTrial():
 
     filsiz = 1 << 8
     filler = makestr(0, filsiz-1)
-    data = filler * (TEST_BLOCK_SIZE / filsiz);
+    data = filler * (TEST_BLOCK_SIZE // filsiz)
     data = data + filler[:(TEST_BLOCK_SIZE % filsiz)]
 
     del filsiz, filler
@@ -62,7 +62,7 @@ def MDString(str):
 
 
 def MDFile(filename):
-    f = open(filename, 'rb');
+    f = open(filename, 'rb')
     mdContext = md5.new()
 
     while 1:
