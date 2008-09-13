@@ -8,7 +8,7 @@
 # regression test, the filterwarnings() call has been added to
 # regrtest.py.
 
-from test.test_support import run_unittest, check_syntax_error
+from test.support import run_unittest, check_syntax_error
 import unittest
 import sys
 # testing import *
@@ -32,8 +32,10 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(0o377, 255)
         self.assertEquals(2147483647, 0o17777777777)
         self.assertEquals(0b1001, 9)
+        # "0x" is not a valid literal
+        self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxsize
-        if maxint == 2147483647:
+        if maxsize == 2147483647:
             self.assertEquals(-2147483647-1, -0o20000000000)
             # XXX -2147483648
             self.assert_(0o37777777777 > 0)
@@ -45,7 +47,7 @@ class TokenTests(unittest.TestCase):
                     x = eval(s)
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
-        elif maxint == 9223372036854775807:
+        elif maxsize == 9223372036854775807:
             self.assertEquals(-9223372036854775807-1, -0o1000000000000000000000)
             self.assert_(0o1777777777777777777777 > 0)
             self.assert_(0xffffffffffffffff > 0)
@@ -58,7 +60,7 @@ class TokenTests(unittest.TestCase):
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         else:
-            self.fail('Weird maxint value %r' % maxint)
+            self.fail('Weird maxsize value %r' % maxsize)
 
     def testLongIntegers(self):
         x = 0
@@ -263,6 +265,14 @@ class GrammarTests(unittest.TestCase):
         d22v(*(1, 2, 3, 4))
         d22v(1, 2, *(3, 4, 5))
         d22v(1, *(2, 3), **{'d': 4})
+
+        # keyword argument type tests
+        try:
+            str('x', **{b'foo':1 })
+        except TypeError:
+            pass
+        else:
+            self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)
@@ -273,6 +283,14 @@ class GrammarTests(unittest.TestCase):
         def pos2key2dict(p1, p2, *, k1=100, k2, **kwarg): return p1,p2,k1,k2,kwarg
         pos2key2dict(1,2,k2=100,tokwarg1=100,tokwarg2=200)
         pos2key2dict(1,2,tokwarg1=100,tokwarg2=200, k2=100)
+
+        # keyword arguments after *arglist
+        def f(*args, **kwargs):
+            return args, kwargs
+        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+                                                    {'x':2, 'y':5}))
+        self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
+        self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
 
         # argument annotation tests
         def f(x) -> list: pass
@@ -308,6 +326,10 @@ class GrammarTests(unittest.TestCase):
         def f(*, k=1): return closure
         def f() -> int: return closure
 
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
@@ -321,6 +343,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(l5(1, 2), 5)
         self.assertEquals(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
+        check_syntax_error(self, "lambda (None,): None")
         l6 = lambda x, y, *, k=20: x+y+k
         self.assertEquals(l6(1,2), 1+2+20)
         self.assertEquals(l6(1,2,k=10), 1+2+10)
@@ -497,6 +520,15 @@ class GrammarTests(unittest.TestCase):
         while 0: pass
         while 0: pass
         else: pass
+
+        # Issue1920: "while 0" is optimized away,
+        # ensure that the "else" clause is still present.
+        x = 0
+        while 0:
+            x = 1
+        else:
+            x = 2
+        self.assertEquals(x, 2)
 
     def testFor(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]

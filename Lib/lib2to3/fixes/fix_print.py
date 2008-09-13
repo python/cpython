@@ -29,7 +29,7 @@ parend_expr = patcomp.compile_pattern(
 class FixPrint(fixer_base.ConditionalFix):
 
     PATTERN = """
-              simple_stmt< bare='print' any > | print_stmt
+              simple_stmt< any* bare='print' any* > | print_stmt
               """
 
     skip_on = '__future__.print_function'
