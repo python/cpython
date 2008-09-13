@@ -206,7 +206,7 @@ Window objects have the following methods, among others:
 
 .. method:: Window.open()
 
-   Override this method to open a window. Store the MacOS window-id in
+   Override this method to open a window. Store the Mac OS window-id in
    :attr:`self.wid` and call the :meth:`do_postopen` method to register the window
    with the parent application.
 

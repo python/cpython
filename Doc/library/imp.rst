@@ -42,8 +42,8 @@ This module provides an interface to the mechanisms used to implement the
    searched, but first it searches a few special places: it tries to find a
    built-in module with the given name (:const:`C_BUILTIN`), then a frozen
    module (:const:`PY_FROZEN`), and on some systems some other places are looked
-   in as well (on the Mac, it looks for a resource (:const:`PY_RESOURCE`); on
-   Windows, it looks in the registry which may point to a specific file).
+   in as well (on Windows, it looks in the registry which may point to a
+   specific file).
 
    If search is successful, the return value is a 3-element tuple ``(file,
    pathname, description)``:
@@ -151,12 +151,6 @@ indicate the search result of :func:`find_module`.
 .. data:: C_EXTENSION
 
    The module was found as dynamically loadable shared library.
-
-
-.. data:: PY_RESOURCE
-
-   The module was found as a Mac OS 9 resource.  This value can only be returned on
-   a Mac OS 9 or earlier Macintosh.
 
 
 .. data:: PKG_DIRECTORY

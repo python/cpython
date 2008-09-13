@@ -1,8 +1,8 @@
 .. _mac-specific-services:
 
-*************************
-MacOS X specific services
-*************************
+**************************
+Mac OS X specific services
+**************************
 
 This chapter describes modules that are only available on the Mac OS X platform.
 
@@ -12,7 +12,7 @@ Mac-specific Python programming.
 
 .. warning::
 
-   These modules are deprecated and are removed in 3.0
+   These modules are deprecated and are removed in 3.0.
 
 
 .. toctree::

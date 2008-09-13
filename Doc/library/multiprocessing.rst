@@ -480,7 +480,7 @@ For an example of the usage of queues for interprocess communication see
       multithreading/multiprocessing semantics, this number is not reliable.
 
       Note that this may raise :exc:`NotImplementedError` on Unix platforms like
-      MacOS X where ``sem_getvalue()`` is not implemented.
+      Mac OS X where ``sem_getvalue()`` is not implemented.
 
    .. method:: empty()
 
@@ -774,7 +774,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
 
-   (On Mac OSX this is indistinguishable from :class:`Semaphore` because
+   (On Mac OS X this is indistinguishable from :class:`Semaphore` because
    ``sem_getvalue()`` is not implemented on that platform).
 
 .. class:: Condition([lock])

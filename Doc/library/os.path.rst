@@ -226,13 +226,13 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    Return ``True`` if both pathname arguments refer to the same file or directory
    (as indicated by device number and i-node number). Raise an exception if a
-   :func:`os.stat` call on either pathname fails. Availability:  Macintosh, Unix.
+   :func:`os.stat` call on either pathname fails. Availability: Unix.
 
 
 .. function:: sameopenfile(fp1, fp2)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
-   Availability:  Macintosh, Unix.
+   Availability: Unix.
 
 
 .. function:: samestat(stat1, stat2)
@@ -240,7 +240,7 @@ write files see :func:`open`, and for accessing the filesystem see the
    Return ``True`` if the stat tuples *stat1* and *stat2* refer to the same file.
    These structures may have been returned by :func:`fstat`, :func:`lstat`, or
    :func:`stat`.  This function implements the underlying comparison used by
-   :func:`samefile` and :func:`sameopenfile`. Availability:  Macintosh, Unix.
+   :func:`samefile` and :func:`sameopenfile`. Availability: Unix.
 
 
 .. function:: split(path)

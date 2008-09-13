@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse MacOS X ``.plist`` files
-===============================================================
+:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
+================================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse MacOS X plist files.
+   :synopsis: Generate and parse Mac OS X plist files.
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
 .. (harvested from docstrings in the original file)
@@ -16,7 +16,7 @@
    single: property list
 
 This module provides an interface for reading and writing the "property list"
-XML files used mainly by MacOS X.
+XML files used mainly by Mac OS X.
 
 The property list (``.plist``) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
@@ -73,7 +73,7 @@ This module defines the following functions:
 .. function:: readPlistFromResource(path[, restype='plst'[, resid=0]])
 
     Read a plist from the resource with type *restype* from the resource fork of
-    *path*.  Availability: MacOS X.
+    *path*.  Availability: Mac OS X.
 
     .. warning::
 
@@ -84,7 +84,7 @@ This module defines the following functions:
 .. function:: writePlistToResource(rootObject, path[, restype='plst'[, resid=0]])
 
     Write *rootObject* as a resource with type *restype* to the resource fork of
-    *path*.  Availability: MacOS X.
+    *path*.  Availability: Mac OS X.
 
     .. warning::
 

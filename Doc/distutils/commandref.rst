@@ -88,7 +88,7 @@ regular filename characters, ``?`` matches any single regular filename
 character, and ``[range]`` matches any of the characters in *range* (e.g.,
 ``a-z``, ``a-zA-Z``, ``a-f0-9_.``).  The definition of "regular filename
 character" is platform-specific: on Unix it is anything except slash; on Windows
-anything except backslash or colon; on Mac OS 9 anything except colon.
+anything except backslash or colon.
 
 **\*\*** Windows support not there yet **\*\***
 

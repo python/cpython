@@ -528,11 +528,11 @@ all users using a machine or a particular site installation.
 Python 2.6 introduces a convention for user-specific site directories.
 The directory varies depending on the platform:
 
-* Unix and MacOS: :file:`~/.local/`
+* Unix and Mac OS X: :file:`~/.local/`
 * Windows: :file:`%APPDATA%/Python`
 
 Within this directory, there will be version-specific subdirectories,
-such as :file:`lib/python2.6/site-packages` on Unix/MacOS and
+such as :file:`lib/python2.6/site-packages` on Unix/Mac OS and
 :file:`Python26/site-packages` on Windows.
 
 If you don't like the default directory, it can be overridden by an
@@ -2784,12 +2784,12 @@ Ippolito.
 The :mod:`plistlib` module: A Property-List Parser
 --------------------------------------------------
 
-The ``.plist`` format is commonly used on MacOS X to
+The ``.plist`` format is commonly used on Mac OS X to
 store basic data types (numbers, strings, lists,
 and dictionaries) by serializing them into an XML-based format.
 It resembles the XML-RPC serialization of data types.
 
-Despite being primarily used on MacOS X, the format
+Despite being primarily used on Mac OS X, the format
 has nothing Mac-specific about it and the Python implementation works
 on any platform that Python supports, so the :mod:`plistlib` module
 has been promoted to the standard library.
@@ -2905,7 +2905,7 @@ Changes to Python's build process and to the C API include:
   :file:`PCbuild` directory for the build files.  (Implemented by
   Christian Heimes.)
 
-* On MacOS X, Python 2.6 can be compiled as a 4-way universal build.
+* On Mac OS X, Python 2.6 can be compiled as a 4-way universal build.
   The :program:`configure` script
   can take a :option:`--with-universal-archs=[32-bit|64-bit|all]`
   switch, controlling whether the binaries are built for 32-bit
@@ -3057,7 +3057,7 @@ Port-Specific Changes: Windows
 
 .. ======================================================================
 
-Port-Specific Changes: MacOS X
+Port-Specific Changes: Mac OS X
 -----------------------------------
 
 * When compiling a framework build of Python, you can now specify the
@@ -3069,7 +3069,7 @@ Port-Specific Changes: MacOS X
   :func:`macostools.touched` function to be removed because it depended on the
   :mod:`macfs` module.  (:issue:`1490190`)
 
-* Many other MacOS modules have been deprecated and will removed in
+* Many other Mac OS modules have been deprecated and will removed in
   Python 3.0:
   :mod:`_builtinSuites`,
   :mod:`aepack`,

@@ -390,8 +390,7 @@ files. Don't try this on Windows. On Windows, ``select`` works with sockets
 only. Also note that in C, many of the more advanced socket options are done
 differently on Windows. In fact, on Windows I usually use threads (which work
 very, very well) with my sockets. Face it, if you want any kind of performance,
-your code will look very different on Windows than on Unix. (I haven't the
-foggiest how you do this stuff on a Mac.)
+your code will look very different on Windows than on Unix.
 
 
 Performance
