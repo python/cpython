@@ -8,10 +8,8 @@
 import sys
 from math import sqrt
 
-error = 'fact.error'            # exception
-
 def fact(n):
-    if n < 1: raise error   # fact() argument should be >= 1
+    if n < 1: raise ValueError # fact() argument should be >= 1
     if n == 1: return []    # special case
     res = []
     # Treat even factors special, so we can use i = i+2 later
