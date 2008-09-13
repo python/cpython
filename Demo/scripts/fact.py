@@ -17,14 +17,14 @@ def fact(n):
     # Treat even factors special, so we can use i = i+2 later
     while n%2 == 0:
         res.append(2)
-        n = n/2
+        n = n//2
     # Try odd numbers up to sqrt(n)
     limit = sqrt(float(n+1))
     i = 3
     while i <= limit:
         if n%i == 0:
             res.append(i)
-            n = n/i
+            n = n//i
             limit = sqrt(n+1)
         else:
             i = i+2

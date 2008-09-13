@@ -17,11 +17,11 @@ def main():
         p, q, k = k*k, 2L*k+1L, k+1L
         a, b, a1, b1 = a1, b1, p*a+q*a1, p*b+q*b1
         # Print common digits
-        d, d1 = a/b, a1/b1
+        d, d1 = a//b, a1//b1
         while d == d1:
             output(d)
             a, a1 = 10L*(a%b), 10L*(a1%b1)
-            d, d1 = a/b, a1/b1
+            d, d1 = a//b, a1//b1
 
 def output(d):
     # Use write() to avoid spaces between the digits

@@ -91,7 +91,7 @@ def sendportcmd(s, f, port):
     hostname = gethostname()
     hostaddr = gethostbyname(hostname)
     hbytes = string.splitfields(hostaddr, '.')
-    pbytes = [repr(port/256), repr(port%256)]
+    pbytes = [repr(port//256), repr(port%256)]
     bytes = hbytes + pbytes
     cmd = 'PORT ' + string.joinfields(bytes, ',')
     s.send(cmd + '\r\n')
