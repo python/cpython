@@ -1,7 +1,7 @@
 .. _reference-index:
 
 #################################
-  The Python language reference
+  The Python Language Reference
 #################################
 
 :Release: |version|
