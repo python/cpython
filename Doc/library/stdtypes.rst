@@ -449,7 +449,18 @@ Notes:
 Additional Methods on Float
 ---------------------------
 
-The float type has some additional methods to support conversion to
+The float type has some additional methods.
+
+.. method:: float.as_integer_ratio()
+
+    Return a pair of integers whose ratio is exactly equal to the
+    original float and with a positive denominator.  Raises
+    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
+    NaNs.
+    
+    .. versionadded:: 2.6
+
+Two methods support conversion to
 and from hexadecimal strings.  Since Python's floats are stored
 internally as binary numbers, converting a float to or from a
 *decimal* string usually involves a small rounding error.  In
