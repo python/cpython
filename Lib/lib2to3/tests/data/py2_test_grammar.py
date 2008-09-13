@@ -1,4 +1,4 @@
-# Python 2's Lib/test/test_grammar.py (r54061)
+# Python 2's Lib/test/test_grammar.py (r66189)
 
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
@@ -32,6 +32,8 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(0xff, 255)
         self.assertEquals(0377, 255)
         self.assertEquals(2147483647, 017777777777)
+        # "0x" is not a valid literal
+        self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxint
         if maxint == 2147483647:
             self.assertEquals(-2147483647-1, -020000000000)
@@ -282,6 +284,18 @@ class GrammarTests(unittest.TestCase):
         def d32v((x,)): pass
         d32v((1,))
 
+        # keyword arguments after *arglist
+        def f(*args, **kwargs):
+            return args, kwargs
+        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+                                                    {'x':2, 'y':5}))
+        self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
+        self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
+
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
@@ -295,6 +309,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(l5(1, 2), 5)
         self.assertEquals(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
+        check_syntax_error(self, "lambda (None,): None")
 
     ### stmt: simple_stmt | compound_stmt
     # Tested below
@@ -572,6 +587,15 @@ hello world
         while 0: pass
         else: pass
 
+        # Issue1920: "while 0" is optimized away,
+        # ensure that the "else" clause is still present.
+        x = 0
+        while 0:
+            x = 1
+        else:
+            x = 2
+        self.assertEquals(x, 2)
+
     def testFor(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
         for i in 1, 2, 3: pass
@@ -602,7 +626,7 @@ hello world
     def testTry(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
-        ### except_clause: 'except' [expr [',' expr]]
+        ### except_clause: 'except' [expr [('as' | ',') expr]]
         try:
             1/0
         except ZeroDivisionError:
@@ -611,7 +635,7 @@ hello world
             pass
         try: 1/0
         except EOFError: pass
-        except TypeError, msg: pass
+        except TypeError as msg: pass
         except RuntimeError, msg: pass
         except: pass
         else: pass
@@ -770,6 +794,16 @@ hello world
             def meth1(self): pass
             def meth2(self, arg): pass
             def meth3(self, a1, a2): pass
+        # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        # decorators: decorator+
+        # decorated: decorators (classdef | funcdef)
+        def class_decorator(x):
+            x.decorated = True
+            return x
+        @class_decorator
+        class G:
+            pass
+        self.assertEqual(G.decorated, True)
 
     def testListcomps(self):
         # list comprehension tests
