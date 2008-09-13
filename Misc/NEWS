@@ -15,6 +15,14 @@ Core and Builtins
 Library
 -------
 
+Tools/Demos
+-----------
+
+- Issue #3850: recursion tests in Misc/find_recursion_limit.py can raise
+  AttributeError instead of RuntimeError, depending in which C API call
+  exactly the recursion limit is exceeded. Consequently, both exception types
+  are caught and silenced.
+
 
 What's New in Python 2.6 release candidate 1?
 =============================================
