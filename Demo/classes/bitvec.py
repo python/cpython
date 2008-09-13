@@ -6,7 +6,8 @@
 
 import sys; rprt = sys.stderr.write #for debugging
 
-error = 'bitvec.error'
+class error(Exception):
+    pass
 
 
 def _check_value(value):
