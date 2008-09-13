@@ -631,7 +631,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         /* Keep trying the SQL statement until the schema stops changing. */
         while (1) {
             /* Actually execute the SQL statement. */
-            rc = _sqlite_step_with_busyhandler(self->statement->st, self->connection);
+            rc = pysqlite_step(self->statement->st, self->connection);
             if (rc == SQLITE_DONE ||  rc == SQLITE_ROW) {
                 /* If it worked, let's get out of the loop */
                 break;
@@ -815,11 +815,13 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         }
         statement_completed = 1;
 
+        Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare(self->connection->db,
                              script_cstr,
                              -1,
                              &statement,
                              &script_cstr);
+        Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->connection->db, NULL);
             goto error;
@@ -828,7 +830,7 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         /* execute statement, and ignore results of SELECT statements */
         rc = SQLITE_ROW;
         while (rc == SQLITE_ROW) {
-            rc = _sqlite_step_with_busyhandler(statement, self->connection);
+            rc = pysqlite_step(statement, self->connection);
             /* TODO: we probably need more error handling here */
         }
 
@@ -896,7 +898,7 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
 
     if (self->statement) {
-        rc = _sqlite_step_with_busyhandler(self->statement->st, self->connection);
+        rc = pysqlite_step(self->statement->st, self->connection);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             (void)pysqlite_statement_reset(self->statement);
             Py_DECREF(next_row);

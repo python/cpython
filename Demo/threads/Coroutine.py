@@ -93,8 +93,8 @@ class _CoEvent:
         self.e.wait()
         self.e.clear()
 
-Killed = 'Coroutine.Killed'
-EarlyExit = 'Coroutine.EarlyExit'
+class Killed(Exception): pass
+class EarlyExit(Exception): pass
 
 class Coroutine:
     def __init__(self):

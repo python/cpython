@@ -99,9 +99,9 @@ def mkdate(xxx_todo_changeme1):
     # was different then...
     (year, month, day) = xxx_todo_changeme1
     days = year*365                 # years, roughly
-    days = days + (year+3)/4        # plus leap years, roughly
-    days = days - (year+99)/100     # minus non-leap years every century
-    days = days + (year+399)/400    # plus leap years every 4 centirues
+    days = days + (year+3)//4        # plus leap years, roughly
+    days = days - (year+99)//100     # minus non-leap years every century
+    days = days + (year+399)//400    # plus leap years every 4 centirues
     for i in range(1, month):
         if i == 2 and calendar.isleap(year):
             days = days + 29

@@ -24,7 +24,7 @@
 #include "module.h"
 #include "connection.h"
 
-int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
 {
     int rc;
 
