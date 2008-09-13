@@ -68,7 +68,7 @@ def _days_in_year(year):      # number of days in year
     return 365 + _is_leap(year)
 
 def _days_before_year(year):  # number of days before year
-    return year*365L + (year+3)/4 - (year+99)/100 + (year+399)/400
+    return year*365L + (year+3)//4 - (year+99)//100 + (year+399)//400
 
 def _days_in_month(month, year):      # number of days in month of year
     if month == 2 and _is_leap(year): return 29
@@ -92,9 +92,9 @@ def _num2date(n):             # return date with ordinal n
     del ans.ord, ans.month, ans.day, ans.year # un-initialize it
     ans.ord = n
 
-    n400 = (n-1)/_DI400Y                # # of 400-year blocks preceding
+    n400 = (n-1)//_DI400Y                # # of 400-year blocks preceding
     year, n = 400 * n400, n - _DI400Y * n400
-    more = n / 365
+    more = n // 365
     dby = _days_before_year(more)
     if dby >= n:
         more = more - 1
@@ -104,7 +104,7 @@ def _num2date(n):             # return date with ordinal n
     try: year = int(year)               # chop to int, if it fits
     except (ValueError, OverflowError): pass
 
-    month = min(n/29 + 1, 12)
+    month = min(n//29 + 1, 12)
     dbm = _days_before_month(month, year)
     if dbm >= n:
         month = month - 1
@@ -174,7 +174,9 @@ def today():
     local = time.localtime(time.time())
     return Date(local[1], local[2], local[0])
 
-DateTestError = 'DateTestError'
+class DateTestError(Exception):
+    pass
+
 def test(firstyear, lastyear):
     a = Date(9,30,1913)
     b = Date(9,30,1914)
@@ -220,3 +222,6 @@ def test(firstyear, lastyear):
            (fd.month,fd.day,fd.year,ld.month,ld.day,ld.year):
             raise DateTestError, ('num->date failed', y)
         y = y + 1
+
+if __name__ == '__main__':
+    test(1850, 2150)
