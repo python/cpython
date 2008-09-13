@@ -197,7 +197,7 @@ def recvfile_real(local, remote, name):
     dt = t2-t1
     print size, "bytes in", round(dt), "seconds",
     if dt:
-        print "i.e.", int(size/dt), "bytes/sec",
+        print "i.e.", size//dt, "bytes/sec",
     print
     remote._recv(id) # ignored
 

@@ -104,7 +104,7 @@ def main():
 
 def showbar(dict, title):
     n = len(title)
-    print '='*((70-n)/2), title, '='*((71-n)/2)
+    print '='*((70-n)//2), title, '='*((71-n)//2)
     list = []
     keys = dict.keys()
     keys.sort()
@@ -126,7 +126,7 @@ def show(dict, title, maxitems):
     if len(dict) > maxitems:
         title = title + ' (first %d)'%maxitems
     n = len(title)
-    print '='*((70-n)/2), title, '='*((71-n)/2)
+    print '='*((70-n)//2), title, '='*((71-n)//2)
     list = []
     keys = dict.keys()
     for key in keys:

@@ -88,7 +88,7 @@ class Array:
         if self.speed == "fastest":
             msecs = 0
         elif self.speed == "fast":
-            msecs = msecs/10
+            msecs = msecs//10
         elif self.speed == "single-step":
             msecs = 1000000000
         if not self.stop_mainloop:
@@ -320,7 +320,7 @@ class ArrayItem:
         return outcome
 
     def position(self):
-        x1 = (self.index+1)*XGRID - WIDTH/2
+        x1 = (self.index+1)*XGRID - WIDTH//2
         x2 = x1+WIDTH
         y2 = (self.array.maxvalue+1)*YGRID
         y1 = y2 - (self.value)*YGRID
@@ -349,7 +349,7 @@ def interpolate(oldpts, newpts, n):
     res = [tuple(oldpts)]
     for i in range(1, n):
         for k in range(len(pts)):
-            pts[k] = oldpts[k] + (newpts[k] - oldpts[k])*i/n
+            pts[k] = oldpts[k] + (newpts[k] - oldpts[k])*i//n
         res.append(tuple(pts))
     res.append(tuple(newpts))
     return res
@@ -359,7 +359,7 @@ def interpolate(oldpts, newpts, n):
 
 def uniform(array):
     size = array.getsize()
-    array.setdata([(size+1)/2] * size)
+    array.setdata([(size+1)//2] * size)
     array.reset("Uniform data, size %d" % size)
 
 def distinct(array):
@@ -429,7 +429,7 @@ def quicksort(array):
                         j = j-1
                 continue
             array.message("Choosing pivot")
-            j, i, k = first, (first+last)/2, last-1
+            j, i, k = first, (first+last)//2, last-1
             if array.compare(k, i) < 0:
                 array.swap(k, i)
             if array.compare(k, j) < 0:

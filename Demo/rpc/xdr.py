@@ -57,7 +57,7 @@ class Packer:
     def pack_fstring(self, n, s):
         if n < 0:
             raise ValueError, 'fstring size must be nonnegative'
-        n = ((n+3)/4)*4
+        n = ((n + 3)//4)*4
         data = s[:n]
         data = data + (n - len(data)) * '\0'
         self.buf = self.buf + data
@@ -164,7 +164,7 @@ class Unpacker:
         if n < 0:
             raise ValueError, 'fstring size must be nonnegative'
         i = self.pos
-        j = i + (n+3)/4*4
+        j = i + (n+3)//4*4
         if j > len(self.buf):
             raise EOFError
         self.pos = j

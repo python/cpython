@@ -35,15 +35,15 @@ class Tkhanoi:
 
         # Add background bitmap
         if bitmap:
-            self.bitmap = c.create_bitmap(width/2, height/2,
+            self.bitmap = c.create_bitmap(width//2, height//2,
                                           bitmap=bitmap,
                                           foreground='blue')
 
         # Generate pegs
         pegwidth = 10
-        pegheight = height/2
-        pegdist = width/3
-        x1, y1 = (pegdist-pegwidth)/2, height*1/3
+        pegheight = height//2
+        pegdist = width//3
+        x1, y1 = (pegdist-pegwidth)//2, height*1//3
         x2, y2 = x1+pegwidth, y1+pegheight
         self.pegs = []
         p = c.create_rectangle(x1, y1, x2, y2, fill='black')
@@ -57,14 +57,14 @@ class Tkhanoi:
         self.tk.update()
 
         # Generate pieces
-        pieceheight = pegheight/16
-        maxpiecewidth = pegdist*2/3
+        pieceheight = pegheight//16
+        maxpiecewidth = pegdist*2//3
         minpiecewidth = 2*pegwidth
         self.pegstate = [[], [], []]
         self.pieces = {}
-        x1, y1 = (pegdist-maxpiecewidth)/2, y2-pieceheight-2
+        x1, y1 = (pegdist-maxpiecewidth)//2, y2-pieceheight-2
         x2, y2 = x1+maxpiecewidth, y1+pieceheight
-        dx = (maxpiecewidth-minpiecewidth) / (2*max(1, n-1))
+        dx = (maxpiecewidth-minpiecewidth) // (2*max(1, n-1))
         for i in range(n, 0, -1):
             p = c.create_rectangle(x1, y1, x2, y2, fill='red')
             self.pieces[i] = p
@@ -101,10 +101,10 @@ class Tkhanoi:
 
         # Move it towards peg b
         bx1, by1, bx2, by2 = c.bbox(self.pegs[b])
-        newcenter = (bx1+bx2)/2
+        newcenter = (bx1+bx2)//2
         while 1:
             x1, y1, x2, y2 = c.bbox(p)
-            center = (x1+x2)/2
+            center = (x1+x2)//2
             if center == newcenter: break
             if center > newcenter: c.move(p, -1, 0)
             else: c.move(p, 1, 0)

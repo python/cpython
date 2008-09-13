@@ -168,7 +168,7 @@ class Card:
         self.group = Group(canvas)
 
         text = "%s  %s" % (VALNAMES[value], suit)
-        self.__text = CanvasText(canvas, CARDWIDTH/2, 0,
+        self.__text = CanvasText(canvas, CARDWIDTH//2, 0,
                                anchor=N, fill=self.color, text=text)
         self.group.addtag_withtag(self.__text)
 
@@ -589,7 +589,7 @@ class Solitaire:
 
     def animatedmoveto(self, card, dest):
         for i in range(10, 0, -1):
-            dx, dy = (dest.x-card.x)/i, (dest.y-card.y)/i
+            dx, dy = (dest.x-card.x)//i, (dest.y-card.y)//i
             card.moveby(dx, dy)
             self.master.update_idletasks()
 
