@@ -64,8 +64,11 @@ current_version = "%s.%d" % (short_version, FIELD3)
 # This should never change. The UpgradeCode of this package can be
 # used in the Upgrade table of future packages to make the future
 # package replace this one. See "UpgradeCode Property".
+# upgrade_code gets set to upgrade_code_64 when we have determined
+# that the target is Win64.
 upgrade_code_snapshot='{92A24481-3ECB-40FC-8836-04B7966EC0D5}'
 upgrade_code='{65E6DE48-A358-434D-AA4F-4AF72DB4718F}'
+upgrade_code_64='{6A965A0C-6EE6-4E3A-9983-3263F56311EC}'
 
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
@@ -167,6 +170,8 @@ dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
     raise SystemError, "msisupport.dll for incorrect architecture"
+if msilib.Win64:
+    upgrade_code = upgrade_code_64
 
 if testpackage:
     ext = 'px'
