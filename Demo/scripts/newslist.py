@@ -321,7 +321,7 @@ def main():
     tree={}
 
     # Check that the output directory exists
-    checkopdir(pagedir);
+    checkopdir(pagedir)
 
     try:
         print 'Connecting to '+newshost+'...'
