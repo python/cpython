@@ -862,6 +862,7 @@ def generate_license():
     import shutil, glob
     out = open("LICENSE.txt", "w")
     shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
+    shutil.copyfileobj(open("crtlicense.txt"), out)
     for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
                       ("Berkeley DB", "db-*", "LICENSE"),
                       ("openssl", "openssl-*", "LICENSE"),
