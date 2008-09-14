@@ -23,6 +23,12 @@ Tools/Demos
   exactly the recursion limit is exceeded. Consequently, both exception types
   are caught and silenced.
 
+Build
+-----
+
+- Issue #3617: Include a licensing statement regarding the Microsoft
+  C runtime in the Windows installer.
+
 
 What's New in Python 2.6 release candidate 1?
 =============================================
