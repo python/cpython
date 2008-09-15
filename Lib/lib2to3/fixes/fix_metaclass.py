@@ -17,8 +17,6 @@
 """
 # Author: Jack Diederich
 
-import os
-
 # Local imports
 from .. import fixer_base
 from ..pygram import token
@@ -216,7 +214,7 @@ class FixMetaclass(fixer_base.BaseFix):
             pass_leaf = Leaf(text_type, 'pass')
             pass_leaf.set_prefix(orig_meta_prefix)
             node.append_child(pass_leaf)
-            node.append_child(Leaf(token.NEWLINE, os.linesep))
+            node.append_child(Leaf(token.NEWLINE, '\n'))
 
         elif len(suite.children) > 1 and \
                  (suite.children[-2].type == token.INDENT and
@@ -224,4 +222,4 @@ class FixMetaclass(fixer_base.BaseFix):
             # there was only one line in the class body and it was __metaclass__
             pass_leaf = Leaf(text_type, 'pass')
             suite.insert_child(-1, pass_leaf)
-            suite.insert_child(-1, Leaf(token.NEWLINE, os.linesep))
+            suite.insert_child(-1, Leaf(token.NEWLINE, '\n'))
