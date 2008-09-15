@@ -129,7 +129,7 @@ def fork():
 
 def _writen(fd, data):
     """Write all the data to a descriptor."""
-    while data != '':
+    while data:
         n = os.write(fd, data)
         data = data[n:]
 

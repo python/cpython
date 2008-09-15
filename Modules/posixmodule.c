@@ -4896,7 +4896,7 @@ posix_write(PyObject *self, PyObject *args)
 	int fd;
 	Py_ssize_t size;
 
-	if (!PyArg_ParseTuple(args, "is*:write", &fd, &pbuf))
+	if (!PyArg_ParseTuple(args, "iy*:write", &fd, &pbuf))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, pbuf.buf, (size_t)pbuf.len);

@@ -128,7 +128,7 @@ class ProcessTestCase(unittest.TestCase):
         # stdin is set to open file descriptor
         tf = tempfile.TemporaryFile()
         d = tf.fileno()
-        os.write(d, "pear")
+        os.write(d, b"pear")
         os.lseek(d, 0, 0)
         p = subprocess.Popen([sys.executable, "-c",
                          'import sys; sys.exit(sys.stdin.read() == "pear")'],
@@ -237,7 +237,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdout_filedes_of_stdout(self):
         # stdout is set to 1 (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stdout.fileno(), '.\n'))"
+        cmd = r"import sys, os; sys.exit(os.write(sys.stdout.fileno(), b'.\n'))"
         rc = subprocess.call([sys.executable, "-c", cmd], stdout=1)
         self.assertEquals(rc, 2)
 
@@ -548,11 +548,12 @@ class ProcessTestCase(unittest.TestCase):
 
         def test_args_string(self):
             # args is a string
-            f, fname = self.mkstemp()
-            os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec '%s' -c 'import sys; sys.exit(47)'\n" %
-                        sys.executable)
-            os.close(f)
+            fd, fname = self.mkstemp()
+            # reopen in text mode
+            with open(fd, "w") as fobj:
+                fobj.write("#!/bin/sh\n")
+                fobj.write("exec '%s' -c 'import sys; sys.exit(47)'\n" %
+                            sys.executable)
             os.chmod(fname, 0o700)
             p = subprocess.Popen(fname)
             p.wait()
@@ -590,11 +591,12 @@ class ProcessTestCase(unittest.TestCase):
 
         def test_call_string(self):
             # call() function with string argument on UNIX
-            f, fname = self.mkstemp()
-            os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec '%s' -c 'import sys; sys.exit(47)'\n" %
-                        sys.executable)
-            os.close(f)
+            fd, fname = self.mkstemp()
+            # reopen in text mode
+            with open(fd, "w") as fobj:
+                fobj.write("#!/bin/sh\n")
+                fobj.write("exec '%s' -c 'import sys; sys.exit(47)'\n" %
+                            sys.executable)
             os.chmod(fname, 0o700)
             rc = subprocess.call(fname)
             os.remove(fname)

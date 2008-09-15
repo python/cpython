@@ -7,8 +7,8 @@ import signal
 from test.support import verbose, TestSkipped, run_unittest
 import unittest
 
-TEST_STRING_1 = "I wish to buy a fish license.\n"
-TEST_STRING_2 = "For my pet fish, Eric.\n"
+TEST_STRING_1 = b"I wish to buy a fish license.\n"
+TEST_STRING_2 = b"For my pet fish, Eric.\n"
 
 if verbose:
     def debug(msg):

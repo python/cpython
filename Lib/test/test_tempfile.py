@@ -252,7 +252,7 @@ class test__mkstemp_inner(TC):
         # _mkstemp_inner can create files in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
-            self.do_create(dir=dir).write("blat")
+            self.do_create(dir=dir).write(b"blat")
         finally:
             os.rmdir(dir)
 

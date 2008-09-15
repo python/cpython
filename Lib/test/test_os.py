@@ -41,7 +41,7 @@ class FileTests(unittest.TestCase):
             os.close(second)
         # close a fd that is open, and one that isn't
         os.closerange(first, first + 2)
-        self.assertRaises(OSError, os.write, first, "a")
+        self.assertRaises(OSError, os.write, first, b"a")
 
     def test_rename(self):
         path = support.TESTFN
@@ -49,6 +49,28 @@ class FileTests(unittest.TestCase):
         self.assertRaises(TypeError, os.rename, path, 0)
         new = sys.getrefcount(path)
         self.assertEqual(old, new)
+
+    def test_read(self):
+        with open(support.TESTFN, "w+b") as fobj:
+            fobj.write(b"spam")
+            fobj.flush()
+            fd = fobj.fileno()
+            os.lseek(fd, 0, 0)
+            s = os.read(fd, 4)
+            self.assertEqual(type(s), bytes)
+            self.assertEqual(s, b"spam")
+
+    def test_write(self):
+        # os.write() accepts bytes- and buffer-like objects but not strings
+        fd = os.open(support.TESTFN, os.O_CREAT | os.O_WRONLY)
+        self.assertRaises(TypeError, os.write, fd, "beans")
+        os.write(fd, b"bacon\n")
+        os.write(fd, bytearray(b"eggs\n"))
+        os.write(fd, memoryview(b"spam\n"))
+        os.close(fd)
+        with open(support.TESTFN, "rb") as fobj:
+            self.assertEqual(fobj.read(), b"bacon\neggs\nspam\n")
+
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
