@@ -45,6 +45,11 @@ Glossary
 
       Any expression may be used within the argument list, and the evaluated
       value is passed to the local variable.
+
+   attribute
+      A value associated with an object which is referenced by name using
+      dotted expressions.  For example, if an object *o* has an attribute
+      *a* it would be referenced as *o.a*.
     
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
@@ -57,6 +62,11 @@ Glossary
       second time (recompilation from source to bytecode can be avoided).  This
       "intermediate language" is said to run on a :term:`virtual machine`
       that executes the machine code corresponding to each bytecode.
+
+   class
+      A template for creating user-defined objects. Class definitions
+      normally contain method definitions which operate on instances of the
+      class.
     
    classic class
       Any class which does not inherit from :class:`object`.  See
@@ -341,6 +351,11 @@ Glossary
       pre-conditions before making calls or lookups.  This style contrasts with
       the :term:`EAFP` approach and is characterized by the presence of many
       :keyword:`if` statements.
+
+   list
+      A built-in Python :term:`sequence`.  Despite its name it is more akin
+      to an array in other languages than to a linked list since access to
+      elements are O(1).
     
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -417,6 +432,11 @@ Glossary
       descriptors, properties, and :meth:`__getattribute__`.
 
       More information can be found in :ref:`newstyle`.
+
+   object
+      Any data with state (attributes or value) and defined behavior
+      (methods).  Also the ultimate base class of any :term:`new-style
+      class`.
     
    positional argument
       The arguments assigned to local names inside a function or method,
@@ -482,6 +502,15 @@ Glossary
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or a one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`print`.
+
+   triple-quoted string
+      A string which is bound by three instances of either a quotation mark
+      (") or an apostrophe (').  While they don't provide any functionality
+      not available with single-quoted strings, they are useful for a number
+      of reasons.  They allow you to include unescaped single and double
+      quotes within a string and they can span multiple lines without the
+      use of the continuation character, making them especially useful when
+      writing docstrings.
 
    type
       The type of a Python object determines what kind of object it is; every
