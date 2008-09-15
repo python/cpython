@@ -3156,9 +3156,12 @@ that may require changes to your code:
   before adding elements from the iterable.  This change makes the
   behavior match ``list.__init__()``.
 
-* :meth:`object.__init__` previously accepted arbitrary arguments and keyword
-  arguments.  In Python 2.6, this is no longer allowed and will result in a
-  :exc:`TypeError`.  See issue :issue:`1683368`.
+* :meth:`object.__init__` previously accepted arbitrary arguments and
+  keyword arguments, ignoring them.  In Python 2.6, this is no longer
+  allowed and will result in a :exc:`TypeError`.  This will affect 
+  :meth:`__init__` methods that end up calling the corresponding 
+  method on :class:`object` (perhaps through using :func:`super`).
+  See :issue:`1683368` for discussion.
 
 * The :class:`Decimal` constructor now accepts leading and trailing
   whitespace when passed a string.  Previously it would raise an
