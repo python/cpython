@@ -314,7 +314,7 @@ class test__mkstemp_inner(TC):
         if not has_textmode:
             return            # ugh, can't use TestSkipped.
 
-        self.do_create(bin=0).write("blat\n")
+        self.do_create(bin=0).write(b"blat\n")
         # XXX should test that the file really is a text file
 
 test_classes.append(test__mkstemp_inner)
