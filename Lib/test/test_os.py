@@ -69,7 +69,8 @@ class FileTests(unittest.TestCase):
         os.write(fd, memoryview(b"spam\n"))
         os.close(fd)
         with open(support.TESTFN, "rb") as fobj:
-            self.assertEqual(fobj.read(), b"bacon\neggs\nspam\n")
+            self.assertEqual(fobj.read().splitlines(),
+                [b"bacon", b"eggs", b"spam"])
 
 
 class TemporaryFileTests(unittest.TestCase):
