@@ -9,16 +9,17 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The typical Python prompt of the interactive shell.  Often seen for code
-      examples that can be tried right away in the interpreter.
+      The default Python prompt of the interactive shell.  Often seen for code
+      examples which can be executed interactively in the interpreter.
     
    ``...``
-      The typical Python prompt of the interactive shell when entering code for
-      an indented code block.
+      The default Python prompt of the interactive shell when entering code for
+      an indented code block or within a pair of matching left and right
+      delimiters (parentheses, square brackets or curly braces).
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
-      handling most of the incompatibilites that can be detected by parsing the
+      handling most of the incompatibilites which can be detected by parsing the
       source and traversing the parse tree.
 
       2to3 is available in the standard library as :mod:`lib2to3`; a standalone
@@ -34,12 +35,13 @@ Glossary
       ABC with the :mod:`abc` module.
 
    argument
-      A value passed to a function or method, assigned to a name local to
-      the body.  A function or method may have both positional arguments and
-      keyword arguments in its definition.  Positional and keyword arguments
-      may be variable-length: ``*`` accepts or passes (if in the function
-      definition or call) several positional arguments in a list, while ``**``
-      does the same for keyword arguments in a dictionary.
+      A value passed to a function or method, assigned to a named local
+      variable in the function body.  A function or method may have both
+      positional arguments and keyword arguments in its definition.
+      Positional and keyword arguments may be variable-length: ``*`` accepts
+      or passes (if in the function definition or call) several positional
+      arguments in a list, while ``**`` does the same for keyword arguments
+      in a dictionary.
 
       Any expression may be used within the argument list, and the evaluated
       value is passed to the local variable.
@@ -53,12 +55,12 @@ Glossary
       of a Python program in the interpreter.  The bytecode is also cached in
       ``.pyc`` and ``.pyo`` files so that executing the same file is faster the
       second time (recompilation from source to bytecode can be avoided).  This
-      "intermediate language" is said to run on a "virtual machine" that calls
-      the subroutines corresponding to each bytecode.
+      "intermediate language" is said to run on a :term:`virtual machine`
+      that executes the machine code corresponding to each bytecode.
     
    classic class
       Any class which does not inherit from :class:`object`.  See
-      :term:`new-style class`.
+      :term:`new-style class`.  Classic classes will be removed in Python 3.0.
     
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -86,9 +88,14 @@ Glossary
       it's almost certain you can safely ignore them.
     
    context manager
-      An objects that controls the environment seen in a :keyword:`with`
+      An object which controls the environment seen in a :keyword:`with`
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
+
+   CPython
+      The canonical implementation of the Python programming language.  The
+      term "CPython" is used in contexts when necessary to distinguish this
+      implementation from others such as Jython or IronPython.
 
    decorator
       A function returning another function, usually applied as a function
@@ -107,7 +114,7 @@ Glossary
              ...
 
    descriptor
-      Any *new-style* object that defines the methods :meth:`__get__`,
+      Any *new-style* object which defines the methods :meth:`__get__`,
       :meth:`__set__`, or :meth:`__delete__`.  When a class attribute is a
       descriptor, its special binding behavior is triggered upon attribute
       lookup.  Normally, using *a.b* to get, set or delete an attribute looks up
@@ -121,20 +128,20 @@ Glossary
     
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The use
-      of :class:`dict` much resembles that for :class:`list`, but the keys can
-      be any object with a :meth:`__hash__` function, not just integers starting
-      from zero.  Called a hash in Perl.
+      of :class:`dict` closely resembles that for :class:`list`, but the keys can
+      be any object with a :meth:`__hash__` function, not just integers.
+      Called a hash in Perl.
 
    docstring
-      A docstring ("documentation string") is a string literal that appears as
-      the first thing in a class or function suite.  While ignored when the
-      suite is executed, it is recognized by the compiler and put into the
-      :attr:`__doc__` attribute of the class or function.  Since it is available
-      via introspection, it is the canonical place for documentation of the
+      A string literal which appears as the first expression in a class,
+      function or module.  While ignored when the suite is executed, it is
+      recognized by the compiler and put into the :attr:`__doc__` attribute
+      of the enclosing class, function or module.  Since it is available via
+      introspection, it is the canonical place for documentation of the
       object.
     
    duck-typing 
-      Pythonic programming style that determines an object's type by inspection
+      A pythonic programming style which determines an object's type by inspection
       of its method or attribute signature rather than by explicit relationship
       to some type object ("If it looks like a duck and quacks like a duck, it
       must be a duck.")  By emphasizing interfaces rather than specific types,
@@ -149,20 +156,20 @@ Glossary
       style assumes the existence of valid keys or attributes and catches
       exceptions if the assumption proves false.  This clean and fast style is
       characterized by the presence of many :keyword:`try` and :keyword:`except`
-      statements.  The technique contrasts with the :term:`LBYL` style that is
-      common in many other languages such as C.
+      statements.  The technique contrasts with the :term:`LBYL` style 
+      common to many other languages such as C.
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals, names,
-      attribute access, operators or function calls that all return a value.
-      In contrast to other languages, not all language constructs are expressions,
-      but there are also :term:`statement`\s that cannot be used as expressions,
-      such as :keyword:`print` or :keyword:`if`.  Assignments are also not
-      expressions.
+      attribute access, operators or function calls which all return a value.
+      In contrast to many other languages, not all language constructs are expressions.
+      There are also :term:`statement`\s which cannot be used as expressions,
+      such as :keyword:`print` or :keyword:`if`.  Assignments are also statements,
+      not expressions.
 
    extension module
-      A module written in C, using Python's C API to interact with the core and
+      A module written in C or C++, using Python's C API to interact with the core and
       with user code.
 
    function
@@ -193,10 +200,10 @@ Glossary
       collector that is able to detect and break reference cycles.
     
    generator
-      A function that returns an iterator.  It looks like a normal function
+      A function which returns an iterator.  It looks like a normal function
       except that values are returned to the caller using a :keyword:`yield`
       statement instead of a :keyword:`return` statement.  Generator functions
-      often contain one or more :keyword:`for` or :keyword:`while` loops that
+      often contain one or more :keyword:`for` or :keyword:`while` loops which
       :keyword:`yield` elements back to the caller.  The function execution is
       stopped at the :keyword:`yield` keyword (returning the result) and is
       resumed there when the next element is requested by calling the
@@ -217,39 +224,41 @@ Glossary
       See :term:`global interpreter lock`.
     
    global interpreter lock
-      The lock used by Python threads to assure that only one thread can be run
-      at a time.  This simplifies Python by assuring that no two processes can
-      access the same memory at the same time.  Locking the entire interpreter
-      makes it easier for the interpreter to be multi-threaded, at the expense
-      of some parallelism on multi-processor machines.  Efforts have been made
-      in the past to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity), but performance suffered in the
-      common single-processor case.
+      The lock used by Python threads to assure that only one thread
+      executes in the :term:`CPython` :term:`virtual machine` at a time.
+      This simplifies the CPython implementation by assuring that no two
+      processes can access the same memory at the same time.  Locking the
+      entire interpreter makes it easier for the interpreter to be
+      multi-threaded, at the expense of much of the parallelism afforded by
+      multi-processor machines.  Efforts have been made in the past to
+      create a "free-threaded" interpreter (one which locks shared data at a
+      much finer granularity), but so far none have been successful because
+      performance suffered in the common single-processor case.
 
    hashable
-      An object is *hashable* if it has a hash value that never changes during
+      An object is *hashable* if it has a hash value which never changes during
       its lifetime (it needs a :meth:`__hash__` method), and can be compared to
       other objects (it needs an :meth:`__eq__` or :meth:`__cmp__` method).
-      Hashable objects that compare equal must have the same hash value.
+      Hashable objects which compare equal must have the same hash value.
 
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable, while all mutable
-      containers (such as lists or dictionaries) are not.  Objects that are
+      All of Python's immutable built-in objects are hashable, while no mutable
+      containers (such as lists or dictionaries) are.  Objects which are
       instances of user-defined classes are hashable by default; they all
       compare unequal, and their hash value is their :func:`id`.
     
    IDLE
       An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment that ships with the standard distribution of
+      and interpreter environment which ships with the standard distribution of
       Python.  Good for beginners, it also serves as clear example code for
       those wanting to implement a moderately sophisticated, multi-platform GUI
       application.
     
    immutable
-      An object with fixed value.  Immutable objects are numbers, strings or
-      tuples (and more).  Such an object cannot be altered.  A new object has to
+      An object with a fixed value.  Immutable objects include numbers, strings and
+      tuples.  Such an object cannot be altered.  A new object has to
       be created if a different value has to be stored.  They play an important
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.
@@ -267,18 +276,21 @@ Glossary
       instead of the ``/`` operator.  See also :term:`__future__`.
     
    interactive
-      Python has an interactive interpreter which means that you can try out
-      things and immediately see their results.  Just launch ``python`` with no
-      arguments (possibly by selecting it from your computer's main menu). It is
-      a very powerful way to test out new ideas or inspect modules and packages
-      (remember ``help(x)``).
+      Python has an interactive interpreter which means you can enter
+      statements and expressions at the interpreter prompt, immediately
+      execute them and see their results.  Just launch ``python`` with no
+      arguments (possibly by selecting it from your computer's main
+      menu). It is a very powerful way to test out new ideas or inspect
+      modules and packages (remember ``help(x)``).
     
    interpreted
-      Python is an interpreted language, as opposed to a compiled one.  This
-      means that the source files can be run directly without first creating an
-      executable which is then run.  Interpreted languages typically have a
-      shorter development/debug cycle than compiled ones, though their programs
-      generally also run more slowly.  See also :term:`interactive`.
+      Python is an interpreted language, as opposed to a compiled one,
+      though the distinction can be blurry because of the presence of the
+      bytecode compiler.  This means that source files can be run directly
+      without explicitly creating an executable which is then run.
+      Interpreted languages typically have a shorter development/debug cycle
+      than compiled ones, though their programs generally also run more
+      slowly.  See also :term:`interactive`.
     
    iterable
       A container object capable of returning its members one at a
@@ -299,13 +311,13 @@ Glossary
    iterator
       An object representing a stream of data.  Repeated calls to the iterator's
       :meth:`next` method return successive items in the stream.  When no more
-      data is available a :exc:`StopIteration` exception is raised instead.  At
+      data are available a :exc:`StopIteration` exception is raised instead.  At
       this point, the iterator object is exhausted and any further calls to its
       :meth:`next` method just raise :exc:`StopIteration` again.  Iterators are
       required to have an :meth:`__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
       places where other iterables are accepted.  One notable exception is code
-      that attempts multiple iteration passes.  A container object (such as a
+      which attempts multiple iteration passes.  A container object (such as a
       :class:`list`) produces a fresh new iterator each time you pass it to the
       :func:`iter` function or use it in a :keyword:`for` loop.  Attempting this
       with an iterator will just return the same exhausted iterator object used
@@ -331,15 +343,15 @@ Glossary
       :keyword:`if` statements.
     
    list comprehension
-      A compact way to process all or a subset of elements in a sequence and
+      A compact way to process all or part of the elements in a sequence and
       return a list with the results.  ``result = ["0x%02x" % x for x in
-      range(256) if x % 2 == 0]`` generates a list of strings containing hex
-      numbers (0x..) that are even and in the range from 0 to 255. The
-      :keyword:`if` clause is optional.  If omitted, all elements in
-      ``range(256)`` are processed.
+      range(256) if x % 2 == 0]`` generates a list of strings containing
+      even hex numbers (0x..) in the range from 0 to 255. The :keyword:`if`
+      clause is optional.  If omitted, all elements in ``range(256)`` are
+      processed.
     
    mapping
-      A container object (such as :class:`dict`) that supports arbitrary key
+      A container object (such as :class:`dict`) which supports arbitrary key
       lookups using the special method :meth:`__getitem__`.
     
    metaclass
@@ -356,7 +368,7 @@ Glossary
       More information can be found in :ref:`metaclasses`.
 
    method
-      A function that is defined inside a class body.  If called as an attribute
+      A function which is defined inside a class body.  If called as an attribute
       of an instance of that class, the method will get the instance object as
       its first :term:`argument` (which is usually called ``self``).
       See :term:`function` and :term:`nested scope`.
@@ -366,7 +378,7 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      Any tuple subclass whose indexable fields are also accessible with
+      Any tuple subclass whose indexable elements are also accessible using
       named attributes (for example, :func:`time.localtime` returns a
       tuple-like object where the *year* is accessible either with an
       index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
@@ -388,7 +400,7 @@ Glossary
       it clear which module implements a function.  For instance, writing
       :func:`random.seed` or :func:`itertools.izip` makes it clear that those
       functions are implemented by the :mod:`random` and :mod:`itertools`
-      modules respectively.
+      modules, respectively.
     
    nested scope
       The ability to refer to a variable in an enclosing definition.  For
@@ -399,11 +411,10 @@ Glossary
       scope.  Likewise, global variables read and write to the global namespace.
     
    new-style class
-      Any class that inherits from :class:`object`.  This includes all built-in
+      Any class which inherits from :class:`object`.  This includes all built-in
       types like :class:`list` and :class:`dict`.  Only new-style classes can
       use Python's newer, versatile features like :attr:`__slots__`,
-      descriptors, properties, :meth:`__getattribute__`, class methods, and
-      static methods.
+      descriptors, properties, and :meth:`__getattribute__`.
 
       More information can be found in :ref:`newstyle`.
     
@@ -420,11 +431,12 @@ Glossary
       is also abbreviated "Py3k".
 
    Pythonic
-      An idea or piece of code which closely follows the most common idioms of
-      the Python language, rather than implementing code using concepts common
-      in other languages.  For example, a common idiom in Python is the :keyword:`for`
-      loop structure; other languages don't have this easy keyword, so people
-      use a numerical counter instead::
+      An idea or piece of code which closely follows the most common idioms
+      of the Python language, rather than implementing code using concepts
+      common to other languages.  For example, a common idiom in Python is
+      to loop over all elements of an iterable using a :keyword:`for`
+      statement.  Many other languages don't have this type of construct, so
+      people unfamiliar with Python sometimes use a numerical counter instead::
      
           for i in range(len(food)):
               print food[i]
@@ -435,11 +447,13 @@ Glossary
              print piece
 
    reference count
-      The number of places where a certain object is referenced to.  When the
-      reference count drops to zero, an object is deallocated.  While reference
-      counting is invisible on the Python code level, it is used on the
-      implementation level to keep track of allocated memory.
-    
+      The number of references to an object.  When the reference count of an
+      object drops to zero, it is deallocated.  Reference counting is
+      generally not visible to Python code, but it is a key element of the
+      :term:`CPython` implementation.  The :mod:`sys` module defines a
+      :func:`getrefcount` function that programmers can call to return the
+      reference count for a particular object.
+
    __slots__
       A declaration inside a :term:`new-style class` that saves memory by
       pre-declaring space for instance attributes and eliminating instance
@@ -449,7 +463,8 @@ Glossary
     
    sequence
       An :term:`iterable` which supports efficient element access using integer
-      indices via the :meth:`__getitem__` and :meth:`__len__` special methods.
+      indices via the :meth:`__getitem__` special method and defines a
+      :meth:`len` method that returns the length of the sequence.
       Some built-in sequence types are :class:`list`, :class:`str`,
       :class:`tuple`, and :class:`unicode`. Note that :class:`dict` also
       supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
@@ -472,6 +487,10 @@ Glossary
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
       :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
+
+   virtual machine
+      A computer defined entirely in software.  Python's virtual machine
+      executes the :term:`bytecode` emitted by the bytecode compiler.
     
    Zen of Python
       Listing of Python design principles and philosophies that are helpful in
