@@ -31,10 +31,10 @@ suggests your programs come from or are endorsed by Microsoft;
 
 - distribute Microsoft's Distributable Code to run on a platform other
 than Microsoft operating systems, run-time technologies or application
-platforms;
+platforms; or
 
 - include Microsoft Distributable Code in malicious, deceptive or
-unlawful programs; or
+unlawful programs.
 
 These restrictions apply only to the Microsoft Distributable Code as
 defined above, not to Python itself or any programs running on the
