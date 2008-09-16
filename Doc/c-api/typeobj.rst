@@ -1196,101 +1196,47 @@ Buffer Object Structures
 ========================
 
 .. sectionauthor:: Greg J. Stein <greg@lyra.org>
+.. sectionauthor:: Benjamin Peterson
 
 
 The buffer interface exports a model where an object can expose its internal
-data as a set of chunks of data, where each chunk is specified as a
-pointer/length pair.  These chunks are called :dfn:`segments` and are presumed
-to be non-contiguous in memory.
+data.
 
 If an object does not export the buffer interface, then its :attr:`tp_as_buffer`
 member in the :ctype:`PyTypeObject` structure should be *NULL*.  Otherwise, the
 :attr:`tp_as_buffer` will point to a :ctype:`PyBufferProcs` structure.
 
-.. note::
 
-   It is very important that your :ctype:`PyTypeObject` structure uses
-   :const:`Py_TPFLAGS_DEFAULT` for the value of the :attr:`tp_flags` member rather
-   than ``0``.  This tells the Python runtime that your :ctype:`PyBufferProcs`
-   structure contains the :attr:`bf_getcharbuffer` slot. Older versions of Python
-   did not have this member, so a new Python interpreter using an old extension
-   needs to be able to test for its presence before using it.
-
-.. XXX out of date!
 .. ctype:: PyBufferProcs
 
    Structure used to hold the function pointers which define an implementation of
    the buffer protocol.
 
-   The first slot is :attr:`bf_getreadbuffer`, of type :ctype:`getreadbufferproc`.
-   If this slot is *NULL*, then the object does not support reading from the
-   internal data.  This is non-sensical, so implementors should fill this in, but
-   callers should test that the slot contains a non-*NULL* value.
+   .. cmember:: getbufferproc bf_getbuffer
 
-   The next slot is :attr:`bf_getwritebuffer` having type
-   :ctype:`getwritebufferproc`.  This slot may be *NULL* if the object does not
-   allow writing into its returned buffers.
-
-   The third slot is :attr:`bf_getsegcount`, with type :ctype:`getsegcountproc`.
-   This slot must not be *NULL* and is used to inform the caller how many segments
-   the object contains.  Simple objects such as :ctype:`PyString_Type` and
-   :ctype:`PyBuffer_Type` objects contain a single segment.
-
-   .. index:: single: PyType_HasFeature()
-
-   The last slot is :attr:`bf_getcharbuffer`, of type :ctype:`getcharbufferproc`.
-   This slot will only be present if the :const:`Py_TPFLAGS_HAVE_GETCHARBUFFER`
-   flag is present in the :attr:`tp_flags` field of the object's
-   :ctype:`PyTypeObject`. Before using this slot, the caller should test whether it
-   is present by using the :cfunc:`PyType_HasFeature` function.  If the flag is
-   present, :attr:`bf_getcharbuffer` may be *NULL*, indicating that the object's
-   contents cannot be used as *8-bit characters*. The slot function may also raise
-   an error if the object's contents cannot be interpreted as 8-bit characters.
-   For example, if the object is an array which is configured to hold floating
-   point values, an exception may be raised if a caller attempts to use
-   :attr:`bf_getcharbuffer` to fetch a sequence of 8-bit characters. This notion of
-   exporting the internal buffers as "text" is used to distinguish between objects
-   that are binary in nature, and those which have character-based content.
-
-   .. note::
-
-      The current policy seems to state that these characters may be multi-byte
-      characters. This implies that a buffer size of *N* does not mean there are *N*
-      characters present.
+      This should fill a :ctype:`Py_buffer` with the necessary data for
+      exporting the type.  The signature of :data:`getbufferproc` is ``int
+      (PyObject *obj, PyObject *view, int flags)``.  *obj* is the object to
+      export, *view* is the :ctype:`Py_buffer` struct to fill, and *flags* gives
+      the conditions the caller wants the memory under.  (See
+      :cfunc:`PyObject_GetBuffer` for all flags.)  :cmember:`bf_getbuffer` is
+      responsible for filling *view* with the approiate information.
+      (:cfunc:`PyBuffer_FillView` can be used in simple cases.)  See
+      :ctype:`Py_buffer`\s docs for what needs to be filled in.
 
 
-.. ctype:: Py_ssize_t (*readbufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
+   .. cmember:: releasebufferproc bf_releasebuffer
 
-   Return a pointer to a readable segment of the buffer in ``*ptrptr``.  This
-   function is allowed to raise an exception, in which case it must return ``-1``.
-   The *segment* which is specified must be zero or positive, and strictly less
-   than the number of segments returned by the :attr:`bf_getsegcount` slot
-   function.  On success, it returns the length of the segment, and sets
-   ``*ptrptr`` to a pointer to that memory.
+      This should release the resources of the buffer.  The signature of
+      :cdata:`releasebufferproc` is ``void (PyObject *obj, Py_buffer *view)``.
+      If the :cdata:`bf_releasebuffer` function is not provided (i.e. it is
+      *NULL*), then it does not ever need to be called.
 
+      The exporter of the buffer interface must make sure that any memory
+      pointed to in the :ctype:`Py_buffer` structure remains valid until
+      releasebuffer is called.  Exporters will need to define a
+      :cdata:`bf_releasebuffer` function if they can re-allocate their memory,
+      strides, shape, suboffsets, or format variables which they might share
+      through the struct bufferinfo.
 
-.. ctype:: Py_ssize_t (*writebufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
-
-   Return a pointer to a writable memory buffer in ``*ptrptr``, and the length of
-   that segment as the function return value.  The memory buffer must correspond to
-   buffer segment *segment*.  Must return ``-1`` and set an exception on error.
-   :exc:`TypeError` should be raised if the object only supports read-only buffers,
-   and :exc:`SystemError` should be raised when *segment* specifies a segment that
-   doesn't exist.
-
-   .. Why doesn't it raise ValueError for this one?
-      GJS: because you shouldn't be calling it with an invalid
-      segment. That indicates a blatant programming error in the C code.
-
-
-.. ctype:: Py_ssize_t (*segcountproc) (PyObject *self, Py_ssize_t *lenp)
-
-   Return the number of memory segments which comprise the buffer.  If *lenp* is
-   not *NULL*, the implementation must report the sum of the sizes (in bytes) of
-   all segments in ``*lenp``. The function cannot fail.
-
-
-.. ctype:: Py_ssize_t (*charbufferproc) (PyObject *self, Py_ssize_t segment, const char **ptrptr)
-
-   Return the size of the segment *segment* that *ptrptr*  is set to.  ``*ptrptr``
-   is set to the memory buffer. Returns ``-1`` on error.
+      See :cfunc:`PyBuffer_Release`.
