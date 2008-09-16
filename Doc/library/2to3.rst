@@ -79,12 +79,12 @@ flag.  Note that *only* doctests will be refactored.
 The :option:`-v` option enables the output of more information on the
 translation process.
 
-When the :option:`-p` is passed to it, 2to3 treats ``print`` as a function
-instead of a statement.  This is useful when ``from __future__ import
-print_function`` is being used.  If this option is not given, the print fixer
-will surround print calls in an extra set of parentheses because it cannot
-differentiate between the and print statement with parentheses (such as ``print
-("a" + "b" + "c")``) and a true function call.
+When the :option:`-p` is passed, 2to3 treats ``print`` as a function instead of
+a statement.  This is useful when ``from __future__ import print_function`` is
+being used.  If this option is not given, the print fixer will surround print
+calls in an extra set of parentheses because it cannot differentiate between the
+and print statement with parentheses (such as ``print ("a" + "b" + "c")``) and a
+true function call.
 
 
 :mod:`lib2to3` - 2to3's library
