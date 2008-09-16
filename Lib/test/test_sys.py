@@ -580,7 +580,7 @@ class SizeofTest(unittest.TestCase):
         check(reversed(''), size(h + 'PP'))
         # range
         check(range(1), size(h + '3P'))
-        check(range(66000), size(h + '3l'))
+        check(range(66000), size(h + '3P'))
         # set
         # frozenset
         PySet_MINSIZE = 8
