@@ -1723,9 +1723,6 @@ Optimizations
   free lists when garbage-collecting the highest generation of objects.
   This may return memory to the operating system sooner.
 
-The net result of the 2.6 optimizations is that Python 2.6 runs the pystone
-benchmark around XXX% faster than Python 2.5.
-
 .. ======================================================================
 
 .. _new-26-interpreter:
@@ -1794,7 +1791,6 @@ changes, or look through the Subversion logs for all the details.
   :mod:`mimetools`,
   :mod:`multifile`,
   :mod:`new`,
-  :mod:`popen2`,
   :mod:`pure`,
   :mod:`statvfs`,
   :mod:`sunaudiodev`,
@@ -1806,12 +1802,10 @@ changes, or look through the Subversion logs for all the details.
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
-.. |uacute| unicode:: 0xA9
-
-* The :mod:`bsddb` module also has a new maintainer, Jes|uacute|s Cea,
-  and the package is now available as a standalone package.
-  The web page for the package is
-  `www.jcea.es/programacion/pybsddb.htm <http://www.jcea.es/programacion/pybsddb.htm>`__.
+* The :mod:`bsddb` module also has a new maintainer, Jesús Cea, and the package
+  is now available as a standalone package.  The web page for the package is
+  `www.jcea.es/programacion/pybsddb.htm
+  <http://www.jcea.es/programacion/pybsddb.htm>`__.
 
 * The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
@@ -2134,6 +2128,13 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
+* The :mod:`MimeWriter` module and :mod:`mimify` module
+  have been deprecated; use the :mod:`email`
+  package instead.
+
+* The :mod:`md5` module has been deprecated; use the :mod:`hashlib` module
+  instead.
+
 * :class:`mmap` objects now have a :meth:`rfind` method that searches for a
   substring beginning at the end of the string and searching
   backwards.  The :meth:`find` method also gained an *end* parameter
@@ -2216,6 +2217,9 @@ changes, or look through the Subversion logs for all the details.
   and can optionally take new command-line arguments for the program.
   (Contributed by Rocky Bernstein; :issue:`1393667`.)
 
+* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
+  provides better locking.
+
   The :func:`post_mortem` function, used to begin debugging a
   traceback, will now use the traceback returned by :func:`sys.exc_info`
   if no traceback is supplied.   (Contributed by Facundo Batista;
@@ -2225,6 +2229,9 @@ changes, or look through the Subversion logs for all the details.
   that takes a string containing a pickle and removes some unused
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
+
+* The :mod:`popen2` module has been deprecated; use the :mod:`subprocess`
+  module.
 
 * A :func:`get_data` function was added to the :mod:`pkgutil`
   module that returns the contents of resource files included
@@ -2304,6 +2311,9 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
+
+* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
+  instead.
 
 * The :func:`shutil.copytree` function now has an optional *ignore* argument
   that takes a callable object.  This callable will receive each directory path
@@ -2390,6 +2400,10 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Pedro Werneck and Jeffrey Yasskin;
   :issue:`742598`, :issue:`1193577`.)
 
+* The :mod:`sqlite3` module, maintained by Gerhard Haering,
+  has been updated from version 2.3.2 in Python 2.5 to 
+  version 2.4.1.
+ 
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
@@ -3157,6 +3171,13 @@ that may require changes to your code:
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
   behavior match ``list.__init__()``.
+
+* :meth:`object.__init__` previously accepted arbitrary arguments and
+  keyword arguments, ignoring them.  In Python 2.6, this is no longer
+  allowed and will result in a :exc:`TypeError`.  This will affect 
+  :meth:`__init__` methods that end up calling the corresponding 
+  method on :class:`object` (perhaps through using :func:`super`).
+  See :issue:`1683368` for discussion.
 
 * The :class:`Decimal` constructor now accepts leading and trailing
   whitespace when passed a string.  Previously it would raise an

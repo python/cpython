@@ -368,7 +368,7 @@ complicated example::
 As you can see, the :keyword:`finally` clause is executed in any event.  The
 :exc:`TypeError` raised by dividing two strings is not handled by the
 :keyword:`except` clause and therefore re-raised after the :keyword:`finally`
-clauses has been executed.
+clause has been executed.
 
 In real world applications, the :keyword:`finally` clause is useful for
 releasing external resources (such as files or network connections), regardless
