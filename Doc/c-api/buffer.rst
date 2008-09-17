@@ -50,6 +50,7 @@ could be used to pass around structured data in its native, in-memory format.
       A pointer to the start of the memory for the object.
 
    .. cmember:: Py_ssize_t len
+      :noindex:
 
       The total length of the memory in bytes.
 
@@ -58,6 +59,7 @@ could be used to pass around structured data in its native, in-memory format.
       An indicator of whether the buffer is read only.
 
    .. cmember:: const char *format
+      :noindex:
 
       A *NULL* terminated string in :mod:`struct` module style syntax giving the
       contents of the elements available through the buffer.  If this is *NULL*,

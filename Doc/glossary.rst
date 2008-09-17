@@ -430,8 +430,6 @@ Glossary
       versatile features like :attr:`__slots__`, descriptors, properties,
       :meth:`__getattribute__`, class methods, and static methods.
 
-      More information can be found in :ref:`newstyle`.
-
    object
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
