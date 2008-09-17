@@ -1723,9 +1723,6 @@ Optimizations
   free lists when garbage-collecting the highest generation of objects.
   This may return memory to the operating system sooner.
 
-The net result of the 2.6 optimizations is that Python 2.6 runs the pystone
-benchmark around XXX% faster than Python 2.5.
-
 .. ======================================================================
 
 .. _new-26-interpreter:
