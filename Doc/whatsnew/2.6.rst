@@ -1794,7 +1794,6 @@ changes, or look through the Subversion logs for all the details.
   :mod:`mimetools`,
   :mod:`multifile`,
   :mod:`new`,
-  :mod:`popen2`,
   :mod:`pure`,
   :mod:`statvfs`,
   :mod:`sunaudiodev`,
@@ -2132,6 +2131,15 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
+* The :mod:`MimeWriter` module has been deprecated; use the email
+  package instead.
+
+* The :mod:`mimify` module has been deprecated; use the email package
+  instead.
+
+* The :mod:`md5` module has been deprecated; use the hashlib module
+  instead.
+
 * :class:`mmap` objects now have a :meth:`rfind` method that searches for a
   substring beginning at the end of the string and searching
   backwards.  The :meth:`find` method also gained an *end* parameter
@@ -2214,6 +2222,9 @@ changes, or look through the Subversion logs for all the details.
   and can optionally take new command-line arguments for the program.
   (Contributed by Rocky Bernstein; :issue:`1393667`.)
 
+* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
+  provides better locking.
+
   The :func:`post_mortem` function, used to begin debugging a
   traceback, will now use the traceback returned by :func:`sys.exc_info`
   if no traceback is supplied.   (Contributed by Facundo Batista;
@@ -2223,6 +2234,9 @@ changes, or look through the Subversion logs for all the details.
   that takes a string containing a pickle and removes some unused
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
+
+* The :mod:`popen2` module has been deprecated; use the subprocess
+  module.
 
 * A :func:`get_data` function was added to the :mod:`pkgutil`
   module that returns the contents of resource files included
@@ -2285,6 +2299,9 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`rlcompleter` module's :meth:`Completer.complete()` method
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
+
+* The :mod:`sha` module has been deprecated; use the hashlib module
+  instead.
 
 * The :mod:`sched` module's :class:`scheduler` instances now
   have a read-only :attr:`queue` attribute that returns the
