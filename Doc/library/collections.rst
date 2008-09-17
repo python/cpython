@@ -359,7 +359,7 @@ in Unix::
 
    .. method:: defaultdict.__missing__(key)
 
-      If the :attr:`default_factory` attribute is ``None``, this raises an
+      If the :attr:`default_factory` attribute is ``None``, this raises a
       :exc:`KeyError` exception with the *key* as argument.
 
       If :attr:`default_factory` is not ``None``, it is called without arguments
