@@ -11,8 +11,13 @@ libraries.  These functions compile Python source files in a directory tree,
 allowing users without permission to write to the libraries to take advantage of
 cached byte-code files.
 
-The source file for this module may also be used as a script to compile Python
-sources in directories named on the command line or in ``sys.path``.
+This module may also be used as a script (using the :option:`-m` Python flag) to
+compile Python sources.  Directories to recursively traverse (passing
+:option:`-l` stops the recursive behavior) for sources are listed on the command
+line.  If no arguments are given, the invocation is equivalent to ``-l
+sys.path``.  Printing lists of the files compiled can be disabled with the
+:option:`-q` flag.  In addition, the :option:`-x` option takes a regular
+expression argument.  All files that match the expression will be skipped.
 
 
 .. function:: compile_dir(dir[, maxlevels[, ddir[, force[,  rx[, quiet]]]]])
