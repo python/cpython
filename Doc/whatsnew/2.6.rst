@@ -2295,9 +2295,6 @@ changes, or look through the Subversion logs for all the details.
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
 
-* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
-  instead.
-
 * The :mod:`sched` module's :class:`scheduler` instances now
   have a read-only :attr:`queue` attribute that returns the
   contents of the scheduler's queue, represented as a list of
@@ -2314,6 +2311,9 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
+
+* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
+  instead.
 
 * The :func:`shutil.copytree` function now has an optional *ignore* argument
   that takes a callable object.  This callable will receive each directory path
@@ -2400,6 +2400,10 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Pedro Werneck and Jeffrey Yasskin;
   :issue:`742598`, :issue:`1193577`.)
 
+* The :mod:`sqlite3` module, maintained by Gerhard Haering,
+  has been updated from version 2.3.2 in Python 2.5 to 
+  version 2.4.1.
+ 
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
