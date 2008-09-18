@@ -357,9 +357,10 @@ class MSVCCompiler(CCompiler) :
 
             vc_env = query_vcvarsall(VERSION, plat_spec)
 
-            self.__paths = vc_env['path'].split(os.pathsep)
-            os.environ['lib'] = vc_env['lib']
-            os.environ['include'] = vc_env['include']
+            # take care to only use strings in the environment.
+            self.__paths = vc_env['path'].encode('mbcs').split(os.pathsep)
+            os.environ['lib'] = vc_env['lib'].encode('mbcs')
+            os.environ['include'] = vc_env['include'].encode('mbcs')
 
             if len(self.__paths) == 0:
                 raise DistutilsPlatformError("Python was built with %s, "
