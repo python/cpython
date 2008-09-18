@@ -173,6 +173,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue 3886: [CVE-2008-2316] Possible integer overflow in the _hashopenssl
+  module was closed.
+
 - Issue 1179: [CVE-2007-4965] Integer overflow in imageop module.
   Also fixes rgbimg module.
 
