@@ -12,8 +12,11 @@ What's New in Python 2.6 release candidate 2?
 Core and Builtins
 -----------------
 
-Library
--------
+Extension Modules
+-----------------
+
+- Issue #3886: Possible integer overflows in the _hashopenssl module were
+  closed.
 
 Tools/Demos
 -----------
