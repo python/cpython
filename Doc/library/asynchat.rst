@@ -278,8 +278,8 @@ any extraneous data sent by the web client are ignored. ::
 
    class http_request_handler(asynchat.async_chat):
 
-       def __init__(self, conn, addr, sessions, log):
-           asynchat.async_chat.__init__(self, conn=conn)
+       def __init__(self, sock, addr, sessions, log):
+           asynchat.async_chat.__init__(self, sock=sock)
            self.addr = addr
            self.sessions = sessions
            self.ibuffer = []
