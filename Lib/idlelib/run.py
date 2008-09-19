@@ -73,7 +73,7 @@ def main(del_exitfunc=False):
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
                                   args=((LOCALHOST, port),))
-    sockthread.set_daemon(True)
+    sockthread.daemon = True
     sockthread.start()
     while 1:
         try:
