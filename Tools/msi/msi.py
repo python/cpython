@@ -843,7 +843,11 @@ def add_features(db):
 
 def extract_msvcr90():
     # Find the redistributable files
-    dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\x86\Microsoft.VC90.CRT")
+    if msilib.Win64:
+        arch = "amd64"
+    else:
+        arch = "x86"
+    dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\%s\Microsoft.VC90.CRT" % arch)
 
     result = []
     installer = msilib.MakeInstaller()
