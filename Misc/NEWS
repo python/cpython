@@ -15,6 +15,11 @@ Core and Builtins
 Library
 -------
 
+Build
+-----
+
+- Bug #3887: Package x64 version of CRT for AMD64 Windows binaries.
+
 
 What's New in Python 2.6 release candidate 2?
 =============================================
