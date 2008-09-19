@@ -2453,18 +2453,18 @@ changes, or look through the Subversion logs for all the details.
   by calling :func:`sys.getprofile` and :func:`sys.gettrace`.
   (Contributed by Georg Brandl; :issue:`1648`.)
 
-* The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
-  POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
-  format that was already supported.  The default format
-  is GNU tar; specify the ``format`` parameter to open a file
-  using a different format::
+* The :mod:`tarfile` module now supports POSIX.1-2001 (pax) tarfiles in
+  addition to the POSIX.1-1988 (ustar) and GNU tar formats that were
+  already supported.  The default format is GNU tar; specify the
+  ``format`` parameter to open a file using a different format::
 
     tar = tarfile.open("output.tar", "w",
                        format=tarfile.PAX_FORMAT)
 
-  The new ``errors`` parameter specifies an error handling scheme for
-  character conversions.  ``'strict'``, ``'ignore'``, and
-  ``'replace'`` are the three standard ways Python can handle errors,;
+  The new ``encoding`` and ``errors`` parameters specify an encoding and
+  an error handling scheme for character conversions.  ``'strict'``,
+  ``'ignore'``, and ``'replace'`` are the three standard ways Python can
+  handle errors,;
   ``'utf-8'`` is a special value that replaces bad characters with
   their UTF-8 representation.  (Character conversions occur because the
   PAX format supports Unicode filenames, defaulting to UTF-8 encoding.)
