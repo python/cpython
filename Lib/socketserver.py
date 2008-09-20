@@ -566,7 +566,7 @@ class ThreadingMixIn:
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         if self.daemon_threads:
-            t.set_daemon(True)
+            t.daemon = True
         t.start()
 
 
