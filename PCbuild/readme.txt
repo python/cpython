@@ -21,7 +21,7 @@ configuration.
 
 The PCbuild directory is compatible with all versions of Visual Studio from
 VS C++ Express Edition over the standard edition up to the professional
-edition. However the express edition does support features like solution
+edition. However the express edition does not support features like solution
 folders or profile guided optimization (PGO). The missing bits and pieces
 won't stop you from building Python.
 
