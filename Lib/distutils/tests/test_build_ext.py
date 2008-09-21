@@ -62,8 +62,8 @@ class BuildExtTestCase(unittest.TestCase):
         # Get everything back to normal
         support.unload('xx')
         sys.path = self.sys_path
-        # XXX on Windows the test leaves a directory with xx.pyd in TEMP
-        shutil.rmtree(self.tmp_dir, False if os.name != "nt" else True)
+        # XXX on Windows the test leaves a directory with xx module in TEMP
+        shutil.rmtree(self.tmp_dir, os.name == 'nt' or sys.platform == 'cygwin')
 
 def test_suite():
     if not sysconfig.python_build:
