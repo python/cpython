@@ -23,7 +23,7 @@ mode as fast as possible.
 """
 
 import math
-from tkinter.turtle import Turtle, mainloop
+from turtle import Turtle, mainloop
 from time import clock
 
 # wrapper for any additional drawing routines

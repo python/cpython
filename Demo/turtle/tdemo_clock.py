@@ -10,7 +10,7 @@ and time
    Press STOP to exit the program!
   ------------------------------------
 """
-from tkinter.turtle import *
+from turtle import *
 from datetime import datetime
 
 mode("logo")

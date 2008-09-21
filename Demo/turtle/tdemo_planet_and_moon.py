@@ -17,7 +17,7 @@ the left mouse button with mouse over the
 scrollbar of the canvas.
 
 """
-from tkinter.turtle import Shape, Turtle, mainloop, Vec2D as Vec
+from turtle import Shape, Turtle, mainloop, Vec2D as Vec
 from time import sleep
 
 G = 8

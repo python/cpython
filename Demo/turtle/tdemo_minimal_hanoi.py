@@ -17,7 +17,7 @@ stretched to rectangles by shapesize()
        To exit press STOP button
  ---------------------------------------
 """
-from tkinter.turtle import *
+from turtle import *
 
 class Disc(Turtle):
     def __init__(self, n):

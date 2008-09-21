@@ -8,7 +8,7 @@ from idlelib.ColorDelegator import ColorDelegator
 from idlelib.textView import view_file # TextViewer
 from imp import reload
 
-from tkinter import turtle
+import turtle
 import time
 
 STARTUP = 1

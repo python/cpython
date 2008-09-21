@@ -13,7 +13,7 @@ Intentionally no variables are used except for the
 colorloop:
 """
 
-from tkinter.turtle import *
+from turtle import *
 
 def main():
     peacecolors = ("red3",  "orange", "yellow",

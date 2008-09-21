@@ -15,7 +15,7 @@ A simple  eventdriven paint program
           To exit press STOP button
  -------------------------------------------
 """
-from tkinter.turtle import *
+from turtle import *
 
 def switchupdown(x=0, y=0):
     if pen()["pendown"]:

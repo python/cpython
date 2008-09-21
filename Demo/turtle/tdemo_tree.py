@@ -15,7 +15,7 @@ always yields None.
 current pen is cloned. So in the end there
 are 1024 turtles.
 """
-from tkinter.turtle import Turtle, mainloop
+from turtle import Turtle, mainloop
 from time import clock
 
 def tree(plist, l, a, f):
