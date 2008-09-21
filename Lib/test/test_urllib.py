@@ -94,6 +94,31 @@ class urlopen_FileTests(unittest.TestCase):
         for line in self.returned_obj.__iter__():
             self.assertEqual(line, self.text)
 
+
+class ProxyTests(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        # Save all proxy related env vars
+        self._saved_environ = dict([(k, v) for k, v in os.environ.iteritems()
+                                    if k.lower().find('proxy') >= 0])
+        # Delete all proxy related env vars
+        for k in self._saved_environ:
+            del os.environ[k]
+
+    def tearDown(self):
+        unittest.TestCase.tearDown(self)
+        # Restore all proxy related env vars
+        for k, v in self._saved_environ:
+            os.environ[k] = v
+
+    def test_getproxies_environment_keep_no_proxies(self):
+        os.environ['NO_PROXY'] = 'localhost'
+        proxies = urllib.getproxies_environment()
+        # getproxies_environment use lowered case truncated (no '_proxy') keys
+        self.assertEquals('localhost', proxies['no'])
+
+
 class urlopen_HttpTests(unittest.TestCase):
     """Test urlopen() opening a fake http connection."""
 
@@ -648,6 +673,7 @@ def test_main():
             urlopen_FileTests,
             urlopen_HttpTests,
             urlretrieve_FileTests,
+            ProxyTests,
             QuotingTests,
             UnquotingTests,
             urlencode_Tests,
