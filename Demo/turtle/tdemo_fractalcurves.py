@@ -11,7 +11,7 @@ The CurvesTurtle class and the fractal-curve-
 methods are taken from the PythonCard example
 scripts for turtle-graphics.
 """
-from tkinter.turtle import *
+from turtle import *
 from time import sleep, clock
 
 class CurvesTurtle(Pen):

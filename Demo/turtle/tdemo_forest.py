@@ -11,7 +11,7 @@ This example is a 'breadth-first'-rewrite of
 a Logo program written by Erich Neuwirth. See:
 http://homepage.univie.ac.at/erich.neuwirth/
 """
-from tkinter.turtle import Turtle, colormode, tracer, mainloop
+from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange
 from time import clock
 

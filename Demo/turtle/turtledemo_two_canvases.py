@@ -3,7 +3,7 @@
 """turtle example: Using TurtleScreen and RawTurtle
 for drawing on two distinct canvases.
 """
-from tkinter.turtle import TurtleScreen, RawTurtle, TK
+from turtle import TurtleScreen, RawTurtle, TK
 
 root = TK.Tk()
 cv1 = TK.Canvas(root, width=300, height=200, bg="#ddffff")
