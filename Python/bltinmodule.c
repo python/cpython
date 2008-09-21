@@ -1597,12 +1597,29 @@ builtin_input(PyObject *self, PyObject *args)
 		else
 			Py_DECREF(tmp);
 		if (promptarg != NULL) {
-			po = PyObject_Str(promptarg);
+			PyObject *stringpo;
+			PyObject *stdout_encoding;
+			stdout_encoding = PyObject_GetAttrString(fout,
+								 "encoding");
+			if (stdout_encoding == NULL) {
+				Py_DECREF(stdin_encoding);
+				return NULL;
+			}
+			stringpo = PyObject_Str(promptarg);
+			if (stringpo == NULL) {
+				Py_DECREF(stdin_encoding);
+				Py_DECREF(stdout_encoding);
+				return NULL;
+			}
+			po = PyUnicode_AsEncodedString(stringpo,
+				_PyUnicode_AsString(stdout_encoding), NULL);
+			Py_DECREF(stdout_encoding);
+			Py_DECREF(stringpo);
 			if (po == NULL) {
 				Py_DECREF(stdin_encoding);
 				return NULL;
 			}
-			prompt = _PyUnicode_AsString(po);
+			prompt = PyBytes_AsString(po);
 			if (prompt == NULL) {
 				Py_DECREF(stdin_encoding);
 				Py_DECREF(po);
