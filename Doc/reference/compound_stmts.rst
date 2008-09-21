@@ -52,7 +52,6 @@ Summarizing:
                 : | `with_stmt`
                 : | `funcdef`
                 : | `classdef`
-                : | `decorated`
    suite: `stmt_list` NEWLINE | NEWLINE INDENT `statement`+ DEDENT
    statement: `stmt_list` NEWLINE | `compound_stmt`
    stmt_list: `simple_stmt` (";" `simple_stmt`)* [";"]
