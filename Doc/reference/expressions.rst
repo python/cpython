@@ -223,7 +223,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist::
-   set_display: "{" [`expression_list` | `comprehension`] "}"
+   set_display: "{" (`expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -231,19 +231,8 @@ list of expressions is supplied, its elements are evaluated from left to right
 and added to the set object.  When a comprehension is supplied, the set is
 constructed from the elements resulting from the comprehension.
 
-
-Variables used in the generator expression are evaluated lazily in a separate
-scope when the :meth:`next` method is called for the generator object (in the
-same fashion as for normal generators).  However, the :keyword:`in` expression
-of the leftmost :keyword:`for` clause is immediately evaluated in the current
-scope so that an error produced by it can be seen before any other possible
-error in the code that handles the generator expression.  Subsequent
-:keyword:`for` and :keyword:`if` clauses cannot be evaluated immediately since
-they may depend on the previous :keyword:`for` loop.  For example:
-``(x*y for x in range(10) for y in bar(x))``.
-
-The parentheses can be omitted on calls with only one argument. See section
-:ref:`calls` for the detail.
+An empty set cannot be constructed with ``{}``; this literal constructs an empty
+dictionary.
 
 
 .. _dict:
