@@ -786,6 +786,7 @@ class HardlinkTest(unittest.TestCase):
         self.tar.add(self.foo)
 
     def tearDown(self):
+        self.tar.close()
         os.remove(self.foo)
         os.remove(self.bar)
 
