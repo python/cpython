@@ -413,7 +413,6 @@ A function definition defines a user-defined function object (see section
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`]? ":" `suite`
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
-   funcdef: "def" `funcname` "(" [`parameter_list`] ")" ":" `suite`
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: (`defparameter` ",")*
                  : (  "*" [`parameter`] ("," `defparameter`)*
