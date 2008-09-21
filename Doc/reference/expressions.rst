@@ -598,8 +598,7 @@ A call calls a callable object (e.g., a function) with a possibly empty series
 of arguments:
 
 .. productionlist::
-   call: `primary` "(" [`argument_list` [","]
-       : | `expression` `genexpr_for`] ")"
+   call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `keyword_arguments`]
                 :   ["," "*" `expression`] ["," `keyword_arguments`]
                 :   ["," "**" `expression`]
