@@ -188,7 +188,9 @@ be found in any statistics text.
 
 .. function:: uniform(a, b)
 
-   Return a random floating point number *N* such that ``a <= N < b``.
+   Return a random floating point number *N* such that ``a <= N < b`` for
+   ``a <= b`` and ``b <= N < a`` for ``b < a``.
+
 
 .. function:: triangular(low, high, mode)
 
