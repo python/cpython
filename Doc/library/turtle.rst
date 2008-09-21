@@ -2,7 +2,7 @@
 :mod:`turtle` --- Turtle graphics for Tk
 ========================================
 
-.. module:: tkinter.turtle
+.. module:: turtle
    :synopsis: Turtle graphics for Tk
 .. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
 
@@ -1887,5 +1887,5 @@ Changes since Python 2.6
 - A method :meth:`Turtle.filling` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
-  Python 2.6
+  Python 2.6.
 
