@@ -1607,7 +1607,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 }
 
 PyDoc_STRVAR(kqueue_queue_control_doc,
-"control(changelist, max_events=0[, timeout=None]) -> eventlist\n\
+"control(changelist, max_events[, timeout=None]) -> eventlist\n\
 \n\
 Calls the kernel kevent function.\n\
 - changelist must be a list of kevent objects describing the changes\n\

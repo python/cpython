@@ -50,7 +50,7 @@ The module defines the following:
    .. versionadded:: 2.6
 
 
-.. function:: kqueue(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)
+.. function:: kevent(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)
 
    (Only supported on BSD.)  Returns a kernel event object object; see section
    :ref:`kevent-objects` below for the methods supported by kqueue objects.
@@ -272,12 +272,12 @@ Kqueue Objects
    Return the file descriptor number of the control fd.
 
 
-.. method:: epoll.fromfd(fd)
+.. method:: kqueue.fromfd(fd)
 
    Create a kqueue object from a given file descriptor.
 
 
-.. method:: control(changelist, max_events=0[, timeout=None]) -> eventlist
+.. method:: kqueue.control(changelist, max_events[, timeout=None]) -> eventlist
 
    Low level interface to kevent
 
