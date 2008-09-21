@@ -99,7 +99,7 @@ Other modules that provide Tk support include:
    Drag-and-drop support for :mod:`tkinter`. This is experimental and should 
    become deprecated when it is replaced  with the Tk DND.
 
-:mod:`tkinter.turtle`
+:mod:`turtle`
    Turtle graphics in a Tk window.
 
 

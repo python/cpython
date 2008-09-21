@@ -35,7 +35,7 @@ alternatives, see the :ref:`other-gui-packages` section.
    tkinter.rst
    tkinter.tix.rst
    tkinter.scrolledtext.rst
-   tkinter.turtle.rst
+   turtle.rst
    idle.rst
    othergui.rst
 
