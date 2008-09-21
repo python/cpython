@@ -38,9 +38,6 @@ Available make targets are:
 
  * "html", which builds standalone HTML files for offline viewing.
 
- * "web", which builds files usable with the Sphinx.web application (used to
-   serve the docs online at http://docs.python.org/).
-
  * "htmlhelp", which builds HTML files and a HTML Help project file usable to
    convert them into a single Compiled HTML (.chm) file -- these are popular
    under Microsoft Windows, but very handy on every platform.

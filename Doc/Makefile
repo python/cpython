@@ -13,12 +13,11 @@ SOURCES      =
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help checkout update build html web htmlhelp clean coverage
+.PHONY: help checkout update build html htmlhelp clean coverage
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html      to make standalone HTML files"
-	@echo "  web       to make file usable by Sphinx.web"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text      to make plain text files"
@@ -58,12 +57,6 @@ build: checkout
 html: BUILDER = html
 html: build
 	@echo "Build finished. The HTML pages are in build/html."
-
-web: BUILDER = web
-web: build
-	@echo "Build finished; now you can run"
-	@echo "  PYTHONPATH=tools $(PYTHON) -m sphinx.web build/web"
-	@echo "to start the server."
 
 htmlhelp: BUILDER = htmlhelp
 htmlhelp: build
