@@ -410,7 +410,7 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist::
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`]? ":" `suite`
+   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
