@@ -104,7 +104,7 @@ winsound
 
 Python-controlled subprojects that wrap external projects:
 _bsddb
-    Wraps Berkeley DB 4.4.20, which is currently built by _bsddb44.vcproj.
+    Wraps Berkeley DB 4.7.25, which is currently built by _bsddb.vcproj.
     project (see below).
 _sqlite3
     Wraps SQLite 3.5.9, which is currently built by sqlite3.vcproj (see below).
@@ -213,7 +213,7 @@ So for a release build, you'd call it as:
 
 This will be cleaned up in the future; ideally Tcl/Tk will be brought into our
 pcbuild.sln as custom .vcproj files, just as we've recently done with the
-_bsddb44.vcproj and sqlite3.vcproj files, which will remove the need for
+_bsddb.vcproj and sqlite3.vcproj files, which will remove the need for
 Tcl/Tk to be built separately via a batch file.
 
 XXX trent.nelson 02-Apr-08:
