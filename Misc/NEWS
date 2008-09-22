@@ -80,6 +80,9 @@ Core and builtins
   that may be required when linking against readline.  This fixes issues
   with x86_64 builds on some platforms (a few Linux flavors and OpenBSD).
 
+- Issue #3678: Correctly pass LDFLAGS and LDLAST to the linker on shared
+  library targets in the Makefile.
+
 Library
 -------
 
