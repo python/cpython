@@ -1248,12 +1248,12 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		s++;
 
 	/* infinities and nans */
-	if (PyOS_mystrnicmp(s, "nan", 4) == 0) {
+	if (PyOS_strnicmp(s, "nan", 4) == 0) {
 		x = Py_NAN;
 		goto finished;
 	}
-	if (PyOS_mystrnicmp(s, "inf", 4) == 0 ||
-	    PyOS_mystrnicmp(s, "infinity", 9) == 0) {
+	if (PyOS_strnicmp(s, "inf", 4) == 0 ||
+	    PyOS_strnicmp(s, "infinity", 9) == 0) {
 		x = sign*Py_HUGE_VAL;
 		goto finished;
 	}
