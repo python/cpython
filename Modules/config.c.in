@@ -51,8 +51,8 @@ struct _inittab _PyImport_Inittab[] = {
 	/* This lives in gcmodule.c */
 	{"gc", PyInit_gc},
 
-    /* This lives in _warnings.c */
-    {"_warnings", _PyWarnings_Init},
+	/* This lives in _warnings.c */
+	{"_warnings", _PyWarnings_Init},
 
 	/* Sentinel */
 	{0, 0}

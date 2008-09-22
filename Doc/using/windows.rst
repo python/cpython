@@ -140,7 +140,7 @@ directory of your Python distribution, delimited by a semicolon from other
 entries.  An example variable could look like this (assuming the first two
 entries are Windows' default)::
 
-    C:\WINNT\system32;C:\WINNT;C:\Python25
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Python25
 
 Typing :command:`python` on your command prompt will now fire up the Python
 interpreter.  Thus, you can also execute your scripts with command line options,
@@ -276,11 +276,11 @@ releases are built, the source tree contains solutions/project files.  View the
 +====================+==============+=======================+
 | :file:`PC/VC6/`    | 6.0          | 97                    |
 +--------------------+--------------+-----------------------+
-| :file:`PCbuild/`   | 7.1          | 2003                  |
+| :file:`PC/VS7.1/`  | 7.1          | 2003                  |
 +--------------------+--------------+-----------------------+
-| :file:`PCbuild8/`  | 8.0          | 2005                  |
+| :file:`PC/VS8.0/`  | 8.0          | 2005                  |
 +--------------------+--------------+-----------------------+
-| :file:`PCbuild9/`  | 9.0          | 2008                  |
+| :file:`PCbuild/`   | 9.0          | 2008                  |
 +--------------------+--------------+-----------------------+
 
 Note that not all of these build directories are fully supported.  Read the

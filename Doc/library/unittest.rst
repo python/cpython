@@ -591,7 +591,8 @@ failures.
             TestCase.failUnlessAlmostEqual(first, second[, places[, msg]])
 
    Test that *first* and *second* are approximately equal by computing the
-   difference, rounding to the given number of *places*, and comparing to zero.
+   difference, rounding to the given number of decimal *places* (default 7), 
+   and comparing to zero.
    Note that comparing a given number of decimal places is not the same as
    comparing a given number of significant digits. If the values do not compare
    equal, the test will fail with the explanation given by *msg*, or :const:`None`.
@@ -601,7 +602,8 @@ failures.
             TestCase.failIfAlmostEqual(first, second[, places[, msg]])
 
    Test that *first* and *second* are not approximately equal by computing the
-   difference, rounding to the given number of *places*, and comparing to zero.
+   difference, rounding to the given number of decimal *places* (default 7), 
+   and comparing to zero.
    Note that comparing a given number of decimal places is not the same as
    comparing a given number of significant digits. If the values do not compare
    equal, the test will fail with the explanation given by *msg*, or :const:`None`.
