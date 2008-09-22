@@ -287,7 +287,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/binascii.c \
 		Modules/cmathmodule.c \
 		Modules/_codecsmodule.c \
-		Modules/collectionsmodule.c \
+		Modules/_collectionsmodule.c \
 		Modules/cPickle.c \
 		Modules/cStringIO.c \
 		Modules/_csv.c \
@@ -295,6 +295,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/dlmodule.c \
 		Modules/errnomodule.c \
 		Modules/fcntlmodule.c \
+		Modules/_fileio.c \
 		Modules/_functoolsmodule.c \
 		Modules/_heapqmodule.c \
 		Modules/imageop.c \
@@ -305,7 +306,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/md5module.c \
 		Modules/operator.c \
 		Modules/_randommodule.c \
-		Modules/rgbimgmodule.c \
 		Modules/shamodule.c \
 		Modules/sha256module.c \
 		Modules/sha512module.c \
@@ -343,6 +343,8 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/compile.c \
 		Python/codecs.c \
 		Python/errors.c \
+		Python/formatter_string.c \
+		Python/formatter_unicode.c \
 		Python/frozen.c \
 		Python/frozenmain.c \
 		Python/future.c \
@@ -359,8 +361,10 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/modsupport.c \
 		Python/mysnprintf.c \
 		Python/mystrtoul.c \
+		Python/peephole.c \
 		Python/pyarena.c \
 		Python/pyfpe.c \
+		Python/pymath.c \
 		Python/pystate.c \
 		Python/pystrtod.c \
 		Python/pythonrun.c \
@@ -370,11 +374,14 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/traceback.c \
 		Python/getopt.c \
 		Python/dynload_shlib.c \
-		Python/thread.c)
+		Python/thread.c \
+		Python/_warnings.c)
 SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/abstract.c \
 		Objects/boolobject.c \
 		Objects/bufferobject.c \
+		Objects/bytearrayobject.c \
+		Objects/bytes_methods.c \
 		Objects/cellobject.c \
 		Objects/classobject.c \
 		Objects/cobject.c \
