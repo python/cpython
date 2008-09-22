@@ -169,6 +169,12 @@ class RegressionTests(unittest.TestCase):
         con = sqlite.connect(":memory:")
         setattr(con, "isolation_level", "\xe9")
 
+    def CheckStrSubclass(self):
+        """
+        The Python 3.0 port of the module didn't cope with values of subclasses of str.
+        """
+        class MyStr(str): pass
+        self.con.execute("select ?", (MyStr("abc"),))
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
