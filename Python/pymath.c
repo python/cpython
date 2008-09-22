@@ -35,6 +35,8 @@ copysign(double x, double y)
 #endif /* HAVE_COPYSIGN */
 
 #ifndef HAVE_LOG1P
+#include <float.h>
+
 double
 log1p(double x)
 {
