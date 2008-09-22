@@ -2106,9 +2106,6 @@ def getproxies_environment():
     proxies = {}
     for name, value in os.environ.items():
         name = name.lower()
-        if name == 'no_proxy':
-            # handled in proxy_bypass_environment
-            continue
         if value and name[-6:] == '_proxy':
             proxies[name[:-6]] = value
     return proxies

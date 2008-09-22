@@ -247,7 +247,7 @@ operation and an assignment statement:
 
 .. productionlist::
    augmented_assignment_stmt: `target` `augop` (`expression_list` | `yield_expression`)
-   augop: "+=" | "-=" | "*=" | "/=" | "%=" | "**="
+   augop: "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 
 (See section :ref:`primaries` for the syntax definitions for the last three

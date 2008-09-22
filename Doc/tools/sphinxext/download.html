@@ -1,21 +1,37 @@
 {% extends "layout.html" %}
 {% set title = 'Download' %}
+{% set dlbase = 'http://docs.python.org/ftp/python/doc/' + release %}
 {% block body %}
 
 <h1>Download Python {{ release }} Documentation
   {%- if last_updated %} (last updated on {{ last_updated }}){% endif %}</h1>
 
-<p>Currently, the development documentation isn't packaged for download.</p>
-
-<!--
 <p>To download an archive containing all the documents for this version of
 Python in one of various formats, follow one of links in this table. The numbers
 in the table are the size of the download files in Kilobytes.</p>
 
-{# XXX download links #}
+<table class="docutils">
+  <tr><th>Format</th><th>Packed as .zip</th><th>Packed as .tar.bz2</th></tr>
+  <tr><td>PDF (US-Letter paper size)</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-letter.zip">Download</a> (ca. 8 MB)</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-letter.tar.bz2">Download</a> (ca. 8 MB)</td>
+  </tr>
+  <tr><td>PDF (A4 paper size)</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-a4.zip">Download</a> (ca. 8 MB)</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-a4.tar.bz2">Download</a> (ca. 8 MB)</td>
+  </tr>
+  <tr><td>HTML</td>
+    <td><a href="{{ dlbase }}/python-docs-html.zip">Download</a> (ca. 6 MB)</td>
+    <td><a href="{{ dlbase }}/python-docs-html.tar.bz2">Download</a> (ca. 4 MB)</td>
+  </tr>
+  <tr><td>Plain Text</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-text.zip">Download</a> (ca. 2 MB)</td>
+    <td><a href="{{ dlbase }}/python-docs-pdf-text.tar.bz2">Download</a> (ca. 1.5 MB)</td>
+  </tr>
+</table>
 
 
-<p>These archives contain all the content in the documentation section.</p>
+<p>These archives contain all the content in the documentation.</p>
 
 <h2>Unpacking</h2>
 
@@ -26,22 +42,12 @@ used to handle the ZIP archives if desired. The .tar.bz2 archives provide the
 best compression and fastest download times.</p>
 
 <p>Windows users can use the ZIP archives since those are customary on that
-platform. These are created on Unix using the InfoZIP zip program. They may be
-unpacked using the free WiZ tool (from the InfoZIP developers) or any other
-tool for handling ZIP archives; any of them should work.</p>
-
-<p>Note that the .tar.bz2 files are smaller than the other archives; Windows
-users may want to install the bzip2 tools on their systems as well. Windows
-binaries for a command-line tool are available at <a
-href="http://www.bzip.org">The bzip2 and libbzip2 official home page</a>, but
-most other archiving utilities support the tar and bzip2 formats as well.</p>
+platform. These are created on Unix using the InfoZIP zip program.</p>
 
 
 <h2>Problems</h2>
 
 <p>If you have comments or suggestions for the Python documentation, please send
 email to <a href="docs@python.org">docs@python.org</a>.</p>
-
--->
 
 {% endblock %}

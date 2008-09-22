@@ -1086,16 +1086,29 @@ are always available.  They are listed here in alphabetical order.
 
    .. XXX updated as per http://www.artima.com/weblogs/viewpost.jsp?thread=208549 but needs checking
 
+   Return a "super" object that acts like the superclass of *type*.
 
-   Return a "super" object that acts like the superclass of *type*.  If the
-   second argument is omitted the super object returned is unbound.  If the
-   second argument is an object, ``isinstance(obj, type)`` must be true.  If the
-   second argument is a type, ``issubclass(type2, type)`` must be
-   true. :func:`super` only works for :term:`new-style class`\es.  Calling
-   :func:`super()` without arguments is equivalent to ``super(this_class,
+   If the second argument is omitted the super object returned is unbound.  If
+   the second argument is an object, ``isinstance(obj, type)`` must be true.  If
+   the second argument is a type, ``issubclass(type2, type)`` must be true.
+   Calling :func:`super` without arguments is equivalent to ``super(this_class,
    first_arg)``.
 
-   A typical use for calling a cooperative superclass method is::
+   There are two typical use cases for "super".  In a class hierarchy with
+   single inheritance, "super" can be used to refer to parent classes without
+   naming them explicitly, thus making the code more maintainable.  This use
+   closely parallels the use of "super" in other programming languages.
+   
+   The second use case is to support cooperative multiple inheritence in a
+   dynamic execution environment.  This use case is unique to Python and is 
+   not found in statically compiled languages or languages that only support 
+   single inheritance.  This makes in possible to implement "diamond diagrams"
+   where multiple base classes implement the same method.  Good design dictates
+   that this method have the same calling signature in every case (because the
+   order of parent calls is determined at runtime and because that order adapts
+   to changes in the class hierarchy).
+
+   For both use cases, a typical superclass call looks like this::
 
       class C(B):
           def method(self, arg):
@@ -1103,6 +1116,8 @@ are always available.  They are listed here in alphabetical order.
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
+   It does so by implementing its own :meth:`__getattribute__` method for searching
+   parent classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``. Also, :func:`super` is not
    limited to use inside methods: under the hood it searches the stack
