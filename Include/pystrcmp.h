@@ -8,7 +8,7 @@ extern "C" {
 PyAPI_FUNC(int) PyOS_mystrnicmp(const char *, const char *, Py_ssize_t);
 PyAPI_FUNC(int) PyOS_mystricmp(const char *, const char *);
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) || defined(PYOS_OS2)
 #define PyOS_strnicmp strnicmp
 #define PyOS_stricmp stricmp
 #else
