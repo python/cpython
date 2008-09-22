@@ -20,6 +20,11 @@ Library
 
 - Bug #3884: Make the turtle module toplevel again.
 
+Extension Modules
+-----------------
+
+- Issue #3659: Subclasses of str didn't work as SQL parameters.
+
 
 What's New in Python 3.0 release candidate 1
 ============================================
