@@ -573,6 +573,15 @@ class BasicTestCase(unittest.TestCase):
 
     #----------------------------------------
 
+    def test07_verify(self):
+        # Verify bug solved in 4.7.3pre8
+        self.d.close()
+        d = db.DB(self.env)
+        d.verify(self.filename)
+
+
+    #----------------------------------------
+
 
 #----------------------------------------------------------------------
 
@@ -602,13 +611,13 @@ class BasicWithEnvTestCase(BasicTestCase):
 
     #----------------------------------------
 
-    def test07_EnvRemoveAndRename(self):
+    def test08_EnvRemoveAndRename(self):
         if not self.env:
             return
 
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test07_EnvRemoveAndRename..." % self.__class__.__name__
+            print "Running %s.test08_EnvRemoveAndRename..." % self.__class__.__name__
 
         # can't rename or remove an open DB
         self.d.close()
@@ -619,7 +628,7 @@ class BasicWithEnvTestCase(BasicTestCase):
 
     # dbremove and dbrename are in 4.1 and later
     if db.version() < (4,1):
-        del test07_EnvRemoveAndRename
+        del test08_EnvRemoveAndRename
 
     #----------------------------------------
 
@@ -720,11 +729,11 @@ class BasicTransactionTestCase(BasicTestCase):
 
     #----------------------------------------
 
-    def test07_TxnTruncate(self):
+    def test08_TxnTruncate(self):
         d = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test07_TxnTruncate..." % self.__class__.__name__
+            print "Running %s.test08_TxnTruncate..." % self.__class__.__name__
 
         d.put("abcde", "ABCDE");
         txn = self.env.txn_begin()
@@ -737,7 +746,7 @@ class BasicTransactionTestCase(BasicTestCase):
 
     #----------------------------------------
 
-    def test08_TxnLateUse(self):
+    def test09_TxnLateUse(self):
         txn = self.env.txn_begin()
         txn.abort()
         try:
@@ -771,11 +780,11 @@ class BTreeRecnoTestCase(BasicTestCase):
     dbtype     = db.DB_BTREE
     dbsetflags = db.DB_RECNUM
 
-    def test07_RecnoInBTree(self):
+    def test08_RecnoInBTree(self):
         d = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test07_RecnoInBTree..." % self.__class__.__name__
+            print "Running %s.test08_RecnoInBTree..." % self.__class__.__name__
 
         rec = d.get(200)
         self.assertEqual(type(rec), type(()))
@@ -805,11 +814,11 @@ class BTreeRecnoWithThreadFlagTestCase(BTreeRecnoTestCase):
 class BasicDUPTestCase(BasicTestCase):
     dbsetflags = db.DB_DUP
 
-    def test08_DuplicateKeys(self):
+    def test09_DuplicateKeys(self):
         d = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test08_DuplicateKeys..." % \
+            print "Running %s.test09_DuplicateKeys..." % \
                   self.__class__.__name__
 
         d.put("dup0", "before")
@@ -878,11 +887,11 @@ class BasicMultiDBTestCase(BasicTestCase):
         else:
             return db.DB_BTREE
 
-    def test09_MultiDB(self):
+    def test10_MultiDB(self):
         d1 = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test09_MultiDB..." % self.__class__.__name__
+            print "Running %s.test10_MultiDB..." % self.__class__.__name__
 
         d2 = db.DB(self.env)
         d2.open(self.filename, "second", self.dbtype,
@@ -1014,9 +1023,20 @@ class DBPrivateObject(PrivateObject) :
         self.obj = db.DB()
 
 class CrashAndBurn(unittest.TestCase) :
-    def test01_OpenCrash(self) :
-        # See http://bugs.python.org/issue3307
-        self.assertRaises(db.DBInvalidArgError, db.DB, None, 65535)
+    import sys
+    if sys.version_info[:3] < (2, 4, 0):
+        def assertTrue(self, expr, msg=None):
+            self.failUnless(expr,msg=msg)
+
+    #def test01_OpenCrash(self) :
+    #    # See http://bugs.python.org/issue3307
+    #    self.assertRaises(db.DBInvalidArgError, db.DB, None, 65535)
+
+    def test02_DBEnv_dealloc(self):
+        # http://bugs.python.org/issue3885
+        import gc
+        self.assertRaises(db.DBInvalidArgError, db.DBEnv, ~db.DB_RPCCLIENT)
+        gc.collect()
 
 
 #----------------------------------------------------------------------
@@ -1044,7 +1064,7 @@ def test_suite():
     suite.addTest(unittest.makeSuite(HashMultiDBTestCase))
     suite.addTest(unittest.makeSuite(DBEnvPrivateObject))
     suite.addTest(unittest.makeSuite(DBPrivateObject))
-    #suite.addTest(unittest.makeSuite(CrashAndBurn))
+    suite.addTest(unittest.makeSuite(CrashAndBurn))
 
     return suite
 
