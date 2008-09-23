@@ -989,7 +989,7 @@ newDBObject(DBEnvObject* arg, int flags)
 
 
 /* Forward declaration */
-static PyObject *DB_close_internal(DBObject* self, int flags);
+static PyObject *DB_close_internal(DBObject* self, int flags, int do_not_close);
 
 static void
 DB_dealloc(DBObject* self)
@@ -997,8 +997,15 @@ DB_dealloc(DBObject* self)
   PyObject *dummy;
 
     if (self->db != NULL) {
-      dummy=DB_close_internal(self,0);
-      Py_XDECREF(dummy);
+        dummy=DB_close_internal(self, 0, 0);
+        /*
+        ** Raising exceptions while doing
+        ** garbage collection is a fatal error.
+        */
+        if (dummy)
+            Py_DECREF(dummy);
+        else
+            PyErr_Clear();
     }
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -1052,8 +1059,15 @@ DBCursor_dealloc(DBCursorObject* self)
     PyObject *dummy;
 
     if (self->dbc != NULL) {
-      dummy=DBC_close_internal(self);
-      Py_XDECREF(dummy);
+        dummy=DBC_close_internal(self);
+        /*
+        ** Raising exceptions while doing
+        ** garbage collection is a fatal error.
+        */
+        if (dummy)
+            Py_DECREF(dummy);
+        else
+            PyErr_Clear();
     }
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -1071,6 +1085,7 @@ newDBEnvObject(int flags)
     if (self == NULL)
         return NULL;
 
+    self->db_env = NULL;
     self->closed = 1;
     self->flags = flags;
     self->moduleFlags.getReturnsNone = DEFAULT_GET_RETURNS_NONE;
@@ -1107,8 +1122,15 @@ DBEnv_dealloc(DBEnvObject* self)
   PyObject *dummy;
 
     if (self->db_env) {
-      dummy=DBEnv_close_internal(self,0);
-      Py_XDECREF(dummy);
+        dummy=DBEnv_close_internal(self, 0);
+        /*
+        ** Raising exceptions while doing
+        ** garbage collection is a fatal error.
+        */
+        if (dummy)
+            Py_DECREF(dummy);
+        else
+            PyErr_Clear();
     }
 
     Py_XDECREF(self->event_notifyCallback);
@@ -1186,8 +1208,17 @@ DBTxn_dealloc(DBTxnObject* self)
 
     if (self->txn) {
         int flag_prepare = self->flag_prepare;
+
         dummy=DBTxn_abort_discard_internal(self,0);
-        Py_XDECREF(dummy);
+        /*
+        ** Raising exceptions while doing
+        ** garbage collection is a fatal error.
+        */
+        if (dummy)
+            Py_DECREF(dummy);
+        else
+            PyErr_Clear();
+
         if (!flag_prepare) {
             PyErr_Warn(PyExc_RuntimeWarning,
               "DBTxn aborted in destructor.  No prior commit() or abort().");
@@ -1280,7 +1311,14 @@ DBSequence_dealloc(DBSequenceObject* self)
 
     if (self->sequence != NULL) {
         dummy=DBSequence_close_internal(self,0,0);
-        Py_XDECREF(dummy);
+        /*
+        ** Raising exceptions while doing
+        ** garbage collection is a fatal error.
+        */
+        if (dummy)
+            Py_DECREF(dummy);
+        else
+            PyErr_Clear();
     }
 
     if (self->in_weakreflist != NULL) {
@@ -1485,10 +1523,10 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
 
 
 static PyObject*
-DB_close_internal(DBObject* self, int flags)
+DB_close_internal(DBObject* self, int flags, int do_not_close)
 {
     PyObject *dummy;
-    int err;
+    int err = 0;
 
     if (self->db != NULL) {
         /* Can be NULL if db is not in an environment */
@@ -1511,10 +1549,20 @@ DB_close_internal(DBObject* self, int flags)
         }
 #endif
 
-        MYDB_BEGIN_ALLOW_THREADS;
-        err = self->db->close(self->db, flags);
-        MYDB_END_ALLOW_THREADS;
-        self->db = NULL;
+        /*
+        ** "do_not_close" is used to dispose all related objects in the
+        ** tree, without actually releasing the "root" object.
+        ** This is done, for example, because function calls like
+        ** "DB.verify()" implicitly close the underlying handle. So
+        ** the handle doesn't need to be closed, but related objects
+        ** must be cleaned up.
+        */
+        if (!do_not_close) {
+            MYDB_BEGIN_ALLOW_THREADS;
+            err = self->db->close(self->db, flags);
+            MYDB_END_ALLOW_THREADS;
+            self->db = NULL;
+        }
         RETURN_IF_ERR();
     }
     RETURN_NONE();
@@ -1526,7 +1574,7 @@ DB_close(DBObject* self, PyObject* args)
     int flags=0;
     if (!PyArg_ParseTuple(args,"|i:close", &flags))
         return NULL;
-    return DB_close_internal(self,flags);
+    return DB_close_internal(self, flags, 0);
 }
 
 
@@ -2146,7 +2194,7 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
     if (makeDBError(err)) {
         PyObject *dummy;
 
-        dummy=DB_close_internal(self,0);
+        dummy=DB_close_internal(self, 0, 0);
         Py_XDECREF(dummy);
         return NULL;
     }
@@ -2840,20 +2888,23 @@ DB_verify(DBObject* self, PyObject* args, PyObject* kwargs)
 	/* XXX(nnorwitz): it should probably be an exception if outFile
 	   can't be opened. */
 
-    MYDB_BEGIN_ALLOW_THREADS;
-    err = self->db->verify(self->db, fileName, dbName, outFile, flags);
-    MYDB_END_ALLOW_THREADS;
-    if (outFile)
-        fclose(outFile);
-
     {  /* DB.verify acts as a DB handle destructor (like close) */
         PyObject *error;
 
-        error=DB_close_internal(self,0);
+        error=DB_close_internal(self, 0, 1);
         if (error ) {
           return error;
         }
      }
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db->verify(self->db, fileName, dbName, outFile, flags);
+    MYDB_END_ALLOW_THREADS;
+
+    self->db = NULL;  /* Implicit close; related objects already released */
+
+    if (outFile)
+        fclose(outFile);
 
     RETURN_IF_ERR();
     RETURN_NONE();
@@ -3978,7 +4029,7 @@ DBEnv_close_internal(DBEnvObject* self, int flags)
           Py_XDECREF(dummy);
         }
         while(self->children_dbs) {
-          dummy=DB_close_internal(self->children_dbs,0);
+          dummy=DB_close_internal(self->children_dbs, 0, 0);
           Py_XDECREF(dummy);
         }
     }
@@ -4003,7 +4054,7 @@ DBEnv_close(DBEnvObject* self, PyObject* args)
 
     if (!PyArg_ParseTuple(args, "|i:close", &flags))
         return NULL;
-    return DBEnv_close_internal(self,flags);
+    return DBEnv_close_internal(self, flags);
 }
 
 
@@ -5949,7 +6000,7 @@ DBTxn_abort_discard_internal(DBTxnObject* self, int discard)
     }
 #endif
     while (self->children_dbs) {
-        dummy=DB_close_internal(self->children_dbs,0);
+        dummy=DB_close_internal(self->children_dbs, 0, 0);
         Py_XDECREF(dummy);
     }
 
@@ -6030,6 +6081,14 @@ DBSequence_close_internal(DBSequenceObject* self, int flags, int do_not_close)
             self->txn=NULL;
         }
 
+        /*
+        ** "do_not_close" is used to dispose all related objects in the
+        ** tree, without actually releasing the "root" object.
+        ** This is done, for example, because function calls like
+        ** "DBSequence.remove()" implicitly close the underlying handle. So
+        ** the handle doesn't need to be closed, but related objects
+        ** must be cleaned up.
+        */
         if (!do_not_close) {
             MYDB_BEGIN_ALLOW_THREADS
             err = self->sequence->close(self->sequence, flags);
