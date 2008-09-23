@@ -236,7 +236,7 @@ sequence with comparable semantics, for example, yet many people write their own
 ::
 
    import sys, operator, functools
-   nums = map(float, sys.argv[1:])
+   nums = list(map(float, sys.argv[1:]))
    print(functools.reduce(operator.add, nums) / len(nums))
 
 This cute little script prints the average of all numbers given on the command

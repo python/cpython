@@ -661,41 +661,44 @@ This can also be written as a list comprehension:
 
 ``functools.reduce(func, iter, [initial_value])`` cumulatively performs an
 operation on all the iterable's elements and, therefore, can't be applied to
-infinite iterables.  ``func`` must be a function that takes two elements and
-returns a single value.  :func:`functools.reduce` takes the first two elements A
-and B returned by the iterator and calculates ``func(A, B)``.  It then requests
-the third element, C, calculates ``func(func(A, B), C)``, combines this result
-with the fourth element returned, and continues until the iterable is exhausted.
-If the iterable returns no values at all, a :exc:`TypeError` exception is
-raised.  If the initial value is supplied, it's used as a starting point and
-``func(initial_value, A)`` is the first calculation. ::
+infinite iterables.  (Note it is not in :mod:`builtins`, but in the
+:mod:`functools` module.)  ``func`` must be a function that takes two elements
+and returns a single value.  :func:`functools.reduce` takes the first two
+elements A and B returned by the iterator and calculates ``func(A, B)``.  It
+then requests the third element, C, calculates ``func(func(A, B), C)``, combines
+this result with the fourth element returned, and continues until the iterable
+is exhausted.  If the iterable returns no values at all, a :exc:`TypeError`
+exception is raised.  If the initial value is supplied, it's used as a starting
+point and ``func(initial_value, A)`` is the first calculation. ::
 
-    >>> import operator
-    >>> reduce(operator.concat, ['A', 'BB', 'C'])
+    >>> import operator, functools
+    >>> functools.reduce(operator.concat, ['A', 'BB', 'C'])
     'ABBC'
-    >>> reduce(operator.concat, [])
+    >>> functools.reduce(operator.concat, [])
     Traceback (most recent call last):
       ...
     TypeError: reduce() of empty sequence with no initial value
-    >>> reduce(operator.mul, [1,2,3], 1)
+    >>> functools.reduce(operator.mul, [1,2,3], 1)
     6
-    >>> reduce(operator.mul, [], 1)
+    >>> functools.reduce(operator.mul, [], 1)
     1
 
-If you use :func:`operator.add` with :func:`reduce`, you'll add up all the
+If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all the
 elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it:
 
-    >>> reduce(operator.add, [1,2,3,4], 0)
+    >>> import functools
+    >>> functools.reduce(operator.add, [1,2,3,4], 0)
     10
     >>> sum([1,2,3,4])
     10
     >>> sum([])
     0
 
-For many uses of :func:`reduce`, though, it can be clearer to just write the
+For many uses of :func:`functools.reduce`, though, it can be clearer to just write the
 obvious :keyword:`for` loop::
 
+   import functools
    # Instead of:
    product = functools.reduce(operator.mul, [1,2,3], 1)
 
@@ -807,16 +810,18 @@ hard to read.  Quick, what's the following code doing?
 
 ::
 
-    total = reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
+    import functools
+    total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
 
 You can figure it out, but it takes time to disentangle the expression to figure
 out what's going on.  Using a short nested ``def`` statements makes things a
 little bit better::
 
+    import functools
     def combine (a, b):
         return 0, a[1] + b[1]
 
-    total = reduce(combine, items)[1]
+    total = functools.reduce(combine, items)[1]
 
 But it would be best of all if I had simply used a ``for`` loop::
 
@@ -828,7 +833,7 @@ Or the :func:`sum` built-in and a generator expression::
 
      total = sum(b for a,b in items)
 
-Many uses of :func:`reduce` are clearer when written as ``for`` loops.
+Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
 
 Fredrik Lundh once suggested the following set of rules for refactoring uses of
 ``lambda``:
@@ -1153,14 +1158,15 @@ is equivalent to::
     f(*g(5, 6))
 
 Even though ``compose()`` only accepts two functions, it's trivial to build up a
-version that will compose any number of functions. We'll use ``functools.reduce()``,
-``compose()`` and ``partial()`` (the last of which is provided by both
-``functional`` and ``functools``). ::
+version that will compose any number of functions. We'll use
+:func:`functools.reduce`, ``compose()`` and ``partial()`` (the last of which is
+provided by both ``functional`` and ``functools``). ::
 
     from functional import compose, partial
+    import functools
         
 
-    multi_compose = partial(reduce, compose)
+    multi_compose = partial(functools.reduce, compose)
         
     
 We can also use ``map()``, ``compose()`` and ``partial()`` to craft a version of
@@ -1211,9 +1217,10 @@ is equivalent to::
         return foldl(func, func(start, seq[0]), seq[1:])
 
 Speaking of equivalence, the above ``foldl`` call can be expressed in terms of
-the built-in ``reduce`` like so::
+the built-in :func:`functools.reduce` like so::
 
-    reduce(f, [1, 2, 3], 0)
+    import functools
+    functools.reduce(f, [1, 2, 3], 0)
 
 
 We can use ``foldl()``, ``operator.concat()`` and ``partial()`` to write a
@@ -1341,7 +1348,6 @@ features in Python 2.5.
     Built-in functions
             map
             filter
-            reduce
 
 .. comment
 
