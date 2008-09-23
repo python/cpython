@@ -10,6 +10,8 @@
 
 /* Forward declaration (for atexit_cleanup) */
 static PyObject *atexit_clear(PyObject*);
+/* Forward declaration (for atexit_callfuncs) */
+static void atexit_cleanup(void);
 
 /* ===================================================================== */
 /* Callback machinery. */
@@ -26,7 +28,7 @@ static int callback_len = 32;
 
 /* Installed into pythonrun.c's atexit mechanism */
 
-void
+static void
 atexit_callfuncs(void)
 {
     PyObject *exc_type = NULL, *exc_value, *exc_tb, *r;
@@ -60,11 +62,13 @@ atexit_callfuncs(void)
         }
     }
     
+    atexit_cleanup();
+
     if (exc_type)
         PyErr_Restore(exc_type, exc_value, exc_tb);
 }
 
-void
+static void
 atexit_delete_cb(int i)
 {
     atexit_callback *cb = atexit_callbacks[i];
@@ -75,7 +79,7 @@ atexit_delete_cb(int i)
     PyMem_Free(cb);    
 }
 
-void
+static void
 atexit_cleanup(void)
 {
     PyObject *r = atexit_clear(NULL);
@@ -260,8 +264,5 @@ PyInit_atexit(void)
         return NULL;
     
     _Py_PyAtExit(atexit_callfuncs);
-    /* Register a callback that will free
-       atexit_callbacks, otherwise valgrind will report memory leaks. */
-    Py_AtExit(atexit_cleanup);
     return m;
 }
