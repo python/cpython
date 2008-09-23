@@ -44,6 +44,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(self.stream.getvalue(),
                             "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
 
+    def test_badargs(self):
+        atexit.register(lambda: 1, 0, 0, (x for x in (1,2)), 0, 0)
+        self.assertRaises(TypeError, atexit._run_exitfuncs)
+
     def test_order(self):
         # be sure handlers are executed in reverse order
         atexit.register(h1)
