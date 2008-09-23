@@ -22,6 +22,19 @@ class TestCase(unittest.TestCase):
             atexit._exithandlers = save_handlers
         self.assertEqual(s.getvalue(), "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
 
+    def test_badargs(self):
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(lambda: 1, 0, 0, (x for x in (1,2)), 0, 0)
+            self.assertRaises(TypeError, atexit._run_exitfuncs)
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+
     def test_order(self):
         # be sure handlers are executed in reverse order
         s = StringIO.StringIO()
