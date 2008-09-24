@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3547: Fixed ctypes structures bitfields of varying integer
+  sizes.
+
 - Issue #3879: A regression in urllib.getproxies_enviroment was fixed.
 
 Build

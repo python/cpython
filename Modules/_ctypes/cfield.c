@@ -163,7 +163,7 @@ CField_FromDesc(PyObject *desc, Py_ssize_t index,
 		break;
 
 	case EXPAND_BITFIELD:
-		/* XXX needs more */
+		*poffset += dict->size - *pfield_size/8;
 		*psize += dict->size - *pfield_size/8;
 
 		*pfield_size = dict->size * 8;
