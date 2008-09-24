@@ -1168,8 +1168,7 @@ Basic customization
    .. index::
       single: comparisons
 
-   These are the so-called "rich comparison" methods, and are called for comparison
-   operators in preference to :meth:`__cmp__` below. The correspondence between
+   These are the so-called "rich comparison" methods. The correspondence between
    operator symbols and method names is as follows: ``x<y`` calls ``x.__lt__(y)``,
    ``x<=y`` calls ``x.__le__(y)``, ``x==y`` calls ``x.__eq__(y)``, ``x!=y`` calls
    ``x.__ne__(y)``, ``x>y`` calls ``x.__gt__(y)``, and ``x>=y`` calls
@@ -1198,28 +1197,11 @@ Basic customization
    Arguments to rich comparison methods are never coerced.
 
 
-.. method:: object.__cmp__(self, other)
-
-   .. index::
-      builtin: cmp
-      single: comparisons
-
-   Called by comparison operations if rich comparison (see above) is not
-   defined.  Should return a negative integer if ``self < other``, zero if
-   ``self == other``, a positive integer if ``self > other``.  If no
-   :meth:`__cmp__`, :meth:`__eq__` or :meth:`__ne__` operation is defined, class
-   instances are compared by object identity ("address").  See also the
-   description of :meth:`__hash__` for some important notes on creating
-   :term:`hashable` objects which support custom comparison operations and are
-   usable as dictionary keys.
-
-
 .. method:: object.__hash__(self)
 
    .. index::
       object: dictionary
       builtin: hash
-      single: __cmp__() (object method)
 
    Called for the key object for dictionary operations, and by the built-in
    function :func:`hash`.  Should return an integer usable as a hash value
@@ -1228,37 +1210,35 @@ Basic customization
    (e.g., using exclusive or) the hash values for the components of the object that
    also play a part in comparison of objects.
 
-   If a class does not define a :meth:`__cmp__` or :meth:`__eq__` method it
-   should not define a :meth:`__hash__` operation either; if it defines
-   :meth:`__cmp__` or :meth:`__eq__` but not :meth:`__hash__`, its instances
-   will not be usable as dictionary keys.  If a class defines mutable objects
-   and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
-   implement :meth:`__hash__`, since the dictionary implementation requires that
-   a key's hash value is immutable (if the object's hash value changes, it will
-   be in the wrong hash bucket).
+   If a class does not define an :meth:`__eq__` method it should not define a
+   :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
+   :meth:`__hash__`, its instances will not be usable as dictionary keys.  If a
+   class defines mutable objects and implements an :meth:`__eq__` method, it
+   should not implement :meth:`__hash__`, since the dictionary implementation
+   requires that a key's hash value is immutable (if the object's hash value
+   changes, it will be in the wrong hash bucket).
 
-   User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
+   User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
    and ``x.__hash__()`` returns ``id(x)``.
 
    Classes which inherit a :meth:`__hash__` method from a parent class but
-   change the meaning of :meth:`__cmp__` or :meth:`__eq__` such that the hash
-   value returned is no longer appropriate (e.g. by switching to a value-based
-   concept of equality instead of the default identity based equality) can
-   explicitly flag themselves as being unhashable by setting
-   ``__hash__ = None`` in the class definition. Doing so means that not only
-   will instances of the class raise an appropriate :exc:`TypeError` when
-   a program attempts to retrieve their hash value, but they will also be
-   correctly identified as unhashable when checking
-   ``isinstance(obj, collections.Hashable)`` (unlike classes which define
-   their own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
+   change the meaning of :meth:`__eq__` such that the hash value returned is no
+   longer appropriate (e.g. by switching to a value-based concept of equality
+   instead of the default identity based equality) can explicitly flag
+   themselves as being unhashable by setting ``__hash__ = None`` in the class
+   definition. Doing so means that not only will instances of the class raise an
+   appropriate :exc:`TypeError` when a program attempts to retrieve their hash
+   value, but they will also be correctly identified as unhashable when checking
+   ``isinstance(obj, collections.Hashable)`` (unlike classes which define their
+   own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
 
-   If a class that overrrides :meth:`__cmp__` or :meth:`__eq__` needs to
-   retain the implementation of :meth:`__hash__` from a parent class,
-   the interpreter must be told this explicitly by setting
-   ``__hash__ = <ParentClass>.__hash__``. Otherwise the inheritance of
-   :meth:`__hash__` will be blocked, just as if :attr:`__hash__` had been
-   explicitly set to :const:`None`.
+   If a class that overrrides :meth:`__eq__` needs to retain the implementation
+   of :meth:`__hash__` from a parent class, the interpreter must be told this
+   explicitly by setting ``__hash__ = <ParentClass>.__hash__``. Otherwise the
+   inheritance of :meth:`__hash__` will be blocked, just as if :attr:`__hash__`
+   had been explicitly set to :const:`None`.
+
 
 .. method:: object.__bool__(self)
 

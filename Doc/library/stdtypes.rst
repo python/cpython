@@ -173,7 +173,6 @@ any operand is a complex number, the objects are of different types that cannot
 be compared, or other cases where there is no defined ordering.
 
 .. index:: 
-   single: __cmp__() (instance method)
    single: __eq__() (instance method)
    single: __ne__() (instance method)
    single: __lt__() (instance method)
@@ -181,15 +180,14 @@ be compared, or other cases where there is no defined ordering.
    single: __gt__() (instance method)
    single: __ge__() (instance method)
 
-Instances of a class normally compare as non-equal unless the class defines the
-:meth:`__eq__` or :meth:`__cmp__` method.
+Non-identical instances of a class normally compare as non-equal unless the
+class defines the :meth:`__eq__` method.
 
 Instances of a class cannot be ordered with respect to other instances of the
 same class, or other types of object, unless the class defines enough of the
-methods :meth:`__cmp__`, :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and
-:meth:`__ge__` (in general, either :meth:`__cmp__` or both :meth:`__lt__` and
-:meth:`__eq__` are sufficient, if you want the conventional meanings of the
-comparison operators).
+methods :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` (in
+general, :meth:`__lt__` and :meth:`__eq__` are sufficient, if you want the
+conventional meanings of the comparison operators).
 
 The behavior of the :keyword:`is` and :keyword:`is not` operators cannot be
 customized; also they can be applied to any two objects and never raise an
@@ -1642,8 +1640,7 @@ The constructors for both classes work the same:
    The subset and equality comparisons do not generalize to a complete ordering
    function.  For example, any two disjoint sets are not equal and are not
    subsets of each other, so *all* of the following return ``False``: ``a<b``,
-   ``a==b``, or ``a>b``. Accordingly, sets do not implement the :meth:`__cmp__`
-   method.
+   ``a==b``, or ``a>b``.
 
    Since sets only define partial ordering (subset relationships), the output of
    the :meth:`list.sort` method is undefined for lists of sets.
