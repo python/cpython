@@ -20,6 +20,9 @@ Library
 
 - Bug #3884: Make the turtle module toplevel again.
 
+- Issue #3547: Fixed ctypes structures bitfields of varying integer
+  sizes.
+
 Extension Modules
 -----------------
 
