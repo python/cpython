@@ -375,15 +375,14 @@ Decimal objects
 
    .. method:: compare(other[, context])
 
-      Compare the values of two Decimal instances.  This operation behaves in
-      the same way as the usual comparison method :meth:`__cmp__`, except that
-      :meth:`compare` returns a Decimal instance rather than an integer, and if
-      either operand is a NaN then the result is a NaN::
+      Compare the values of two Decimal instances.  :meth:`compare` returns a
+      Decimal instance, and if either operand is a NaN then the result is a
+      NaN::
 
-         a or b is a NaN ==> Decimal('NaN')
-         a < b           ==> Decimal('-1')
-         a == b          ==> Decimal('0')
-         a > b           ==> Decimal('1')
+         a or b is a NaN  ==> Decimal('NaN')
+         a < b            ==> Decimal('-1')
+         a == b           ==> Decimal('0')
+         a > b            ==> Decimal('1')
 
    .. method:: compare_signal(other[, context])
 

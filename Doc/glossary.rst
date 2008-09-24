@@ -246,8 +246,8 @@ Glossary
    hashable
       An object is *hashable* if it has a hash value which never changes during
       its lifetime (it needs a :meth:`__hash__` method), and can be compared to
-      other objects (it needs an :meth:`__eq__` or :meth:`__cmp__` method).
-      Hashable objects which compare equal must have the same hash value.
+      other objects (it needs an :meth:`__eq__` method).  Hashable objects which
+      compare equal must have the same hash value.
 
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
