@@ -19,6 +19,8 @@
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 
+#define MUNCH_SIZE INT_MAX
+
 
 #ifndef HASH_OBJ_CONSTRUCTOR
 #define HASH_OBJ_CONSTRUCTOR 0
@@ -182,10 +184,17 @@ EVP_update(EVPobject *self, PyObject *args)
         return NULL;
 
     MY_GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
-
-    EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
-                     Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
-
+    if (view.len > 0 && view.len <= MUNCH_SIZE) {
+        EVP_DigestUpdate(&self->ctx, view.buf, view.len);
+    } else {
+        Py_ssize_t offset = 0, len = view.len;
+        while (len) {
+            unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
+            EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf + offset, process);
+            len -= process;
+            offset += process;
+        }
+    }
     PyBuffer_Release(&view);
 
     Py_INCREF(Py_None);
@@ -284,11 +293,21 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (data_obj) {
-        EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
-                         Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+        if (len > 0 && len <= MUNCH_SIZE) {
+        EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
+                                                          unsigned int));
+        } else {
+            Py_ssize_t offset = 0, len = view.len;
+            while (len) {
+                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
+                EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf + offset, process);
+                len -= process;
+                offset += process;
+            }
+        }
         PyBuffer_Release(&view);
     }
-
+    
     return 0;
 }
 #endif
@@ -357,7 +376,7 @@ static PyTypeObject EVPtype = {
 static PyObject *
 EVPnew(PyObject *name_obj,
        const EVP_MD *digest, const EVP_MD_CTX *initial_ctx,
-       const unsigned char *cp, unsigned int len)
+       const unsigned char *cp, Py_ssize_t len)
 {
     EVPobject *self;
 
@@ -375,8 +394,20 @@ EVPnew(PyObject *name_obj,
         EVP_DigestInit(&self->ctx, digest);
     }
 
-    if (cp && len)
-        EVP_DigestUpdate(&self->ctx, cp, len);
+    if (cp && len) {
+        if (len > 0 && len <= MUNCH_SIZE) {
+            EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
+                                                              unsigned int));
+        } else {
+            Py_ssize_t offset = 0;
+            while (len) {
+                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
+                EVP_DigestUpdate(&self->ctx, cp + offset, process);
+                len -= process;
+                offset += process;
+            }
+        }
+    }
 
     return (PyObject *)self;
 }
@@ -417,8 +448,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     digest = EVP_get_digestbyname(name);
 
-    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf,
-                        Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf, view.len);
 
     if (data_obj)
         PyBuffer_Release(&view);
@@ -452,7 +482,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                     NULL, \
                     CONST_new_ ## NAME ## _ctx_p, \
                     (unsigned char*)view.buf, \
-                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int)); \
+                    view.len); \
      \
         if (data_obj) \
             PyBuffer_Release(&view); \
