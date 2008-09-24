@@ -371,9 +371,9 @@ Encoders and decoders
             
          def default(self, o):
             try:
-               iterable = iter(o)
+                iterable = iter(o)
             except TypeError:
-               pass
+                pass
             else:
                 return list(iterable)
             return JSONEncoder.default(self, o)
