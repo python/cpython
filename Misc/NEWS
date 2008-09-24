@@ -86,6 +86,9 @@ Core and builtins
 Library
 -------
 
+- Issue #3547: Fixed ctypes structures bitfields of varying integer
+  sizes.
+
 - Issue #3762: platform.architecture() fails if python is lanched via
   its symbolic link.
 
