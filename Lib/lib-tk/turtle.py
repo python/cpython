@@ -732,7 +732,7 @@ class TurtleScreenBase(object):
         """Configure image item as to draw image object
         at position (x,y) on canvas)
         """
-        self.cv.coords(item, (x, -y))
+        self.cv.coords(item, (x * self.xscale, -y * self.yscale))
         self.cv.itemconfig(item, image=image)
 
     def _setbgpic(self, item, image):
