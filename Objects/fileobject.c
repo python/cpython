@@ -305,10 +305,17 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 #endif
                 /* EINVAL is returned when an invalid filename or
                  * an invalid mode is supplied. */
-		if (errno == EINVAL)
-			PyErr_Format(PyExc_IOError,
-                                     "invalid filename: %s or mode: %s",
-				     name, mode);
+		if (errno == EINVAL) {
+			PyObject *v;
+			char message[100];
+			PyOS_snprintf(message, 100, 
+			    "invalid mode ('%.50s') or filename", mode);
+			v = Py_BuildValue("(isO)", errno, message, f->f_name);
+			if (v != NULL) {
+				PyErr_SetObject(PyExc_IOError, v);
+				Py_DECREF(v);
+			}
+		}
 		else
 			PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, f->f_name);
 		f = NULL;
