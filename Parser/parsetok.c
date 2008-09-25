@@ -137,19 +137,22 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			err_ret->error = tok->done;
 			break;
 		}
-		if (type == ENDMARKER && started) {
-			type = NEWLINE; /* Add an extra newline */
-			handling_with = handling_import = 0;
-			started = 0;
-			/* Add the right number of dedent tokens,
-			   except if a certain flag is given --
-			   codeop.py uses this. */
-			if (tok->indent &&
-			    !(flags & PyPARSE_DONT_IMPLY_DEDENT))
-			{
-				tok->pendin = -tok->indent;
-				tok->indent = 0;
+		if (started) {
+			if (type == ENDMARKER) {
+				type = NEWLINE; /* Add an extra newline */
+				started = 0;
+				/* Add the right number of dedent tokens,
+				   except if a certain flag is given --
+				   codeop.py uses this. */
+				if (tok->indent &&
+				    !(flags & PyPARSE_DONT_IMPLY_DEDENT))
+				{
+					tok->pendin = -tok->indent;
+					tok->indent = 0;
+				}
 			}
+			if (type == NEWLINE)
+				handling_with = handling_import = 0;
 		}
 		else
 			started = 1;
