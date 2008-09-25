@@ -57,6 +57,9 @@ class AnyDBMTestCase(unittest.TestCase):
     def test_error(self):
         self.assert_(issubclass(self.module.error, IOError))
 
+    def test_anydbm_not_existing(self):
+        self.assertRaises(dbm.error, dbm.open, _fname)
+
     def test_anydbm_creation(self):
         f = dbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
