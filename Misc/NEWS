@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3950: Made turtle respect scale factors.
+
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
   sizes.
 
