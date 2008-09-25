@@ -12,6 +12,8 @@ What's New in Python 2.6 final
 Core and Builtins
 -----------------
 
+- Bug #3951: Py_USING_MEMORY_DEBUGGER should not be enabled by default.
+
 Library
 -------
 
