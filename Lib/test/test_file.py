@@ -134,6 +134,16 @@ class OtherFileTests(unittest.TestCase):
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
 
+        # Some invalid modes fail on Windows, but pass on Unix
+        # Issue3965: avoid a crash on Windows when filename is unicode
+        for name in (TESTFN, unicode(TESTFN), unicode(TESTFN + '\t')):
+            try:
+                f = open(name, "rr")
+            except IOError:
+                pass
+            else:
+                f.close()
+
     def testStdin(self):
         # This causes the interpreter to exit on OSF1 v5.1.
         if sys.platform != 'osf1V5':

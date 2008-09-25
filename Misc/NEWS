@@ -12,6 +12,9 @@ What's New in Python 2.6 final
 Core and Builtins
 -----------------
 
+- Issue #3965: Fixed a crash on Windows when open() is given an invalid
+  filename or mode, and the filename is a unicode string.
+
 - Bug #3951: Py_USING_MEMORY_DEBUGGER should not be enabled by default.
 
 Library
