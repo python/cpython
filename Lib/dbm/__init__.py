@@ -76,13 +76,13 @@ def open(file, flag = 'r', mode = 0o666):
             # file doesn't exist and the new flag was used so use default type
             mod = _defaultmod
         else:
-            raise error("need 'c' or 'n' flag to open new db")
+            raise error[0]("need 'c' or 'n' flag to open new db")
     elif result == "":
         # db type cannot be determined
-        raise error("db type could not be determined")
+        raise error[0]("db type could not be determined")
     elif result not in _modules:
-        raise error("db type is {0}, but the module is not "
-                    "available".format(result))
+        raise error[0]("db type is {0}, but the module is not "
+                       "available".format(result))
     else:
         mod = _modules[result]
     return mod.open(file, flag, mode)

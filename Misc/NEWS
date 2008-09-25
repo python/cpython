@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3929: When the database cannot be opened, dbm.open() would incorrectly
+  raise a TypeError: "'tuple' object is not callable" instead of the expected
+  dbm.error.
+
 - Bug #3884: Make the turtle module toplevel again.
 
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
