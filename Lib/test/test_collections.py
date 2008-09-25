@@ -34,6 +34,11 @@ class TestNamedTuple(unittest.TestCase):
         namedtuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
         namedtuple('_', 'a b c')        # Test leading underscores in a typename
 
+        nt = namedtuple('nt', u'the quick brown fox')                       # check unicode input
+        self.assert_("u'" not in repr(nt._fields))
+        nt = namedtuple('nt', (u'the', u'quick'))                           # check unicode input
+        self.assert_("u'" not in repr(nt._fields))
+
         self.assertRaises(TypeError, Point._make, [11])                     # catch too few args
         self.assertRaises(TypeError, Point._make, [11, 22, 33])             # catch too many args
 
