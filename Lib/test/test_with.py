@@ -9,6 +9,7 @@ __email__ = "mbland at acm dot org"
 
 import sys
 import unittest
+import StringIO
 from collections import deque
 from contextlib import GeneratorContextManager, contextmanager
 from test.test_support import run_unittest
@@ -625,12 +626,44 @@ class ExitSwallowsExceptionTestCase(unittest.TestCase):
             self.fail("ZeroDivisionError should have been raised")
 
 
+class NewKeywordsWarningTestCase(unittest.TestCase):
+
+    def check(self, code, word=None):
+        save = sys.stderr
+        sys.stderr = stream = StringIO.StringIO()
+        try:
+            compile(code, "<string>", "exec", 0, True)
+        finally:
+            sys.stderr = save
+        if word:
+            self.assert_("Warning: %r will become a reserved keyword in Python 2.6" % word
+                         in stream.getvalue())
+        else:
+            self.assertEqual(stream.getvalue(), "")
+
+    def test_basic(self):
+        self.check("as = 4", "as")
+        self.check("with = 4", "with")
+        self.check("class as: pass", "as")
+        self.check("class with: pass", "with")
+        self.check("obj.as = 4", "as")
+        self.check("with.obj = 4", "with")
+        self.check("def with(): pass", "with")
+        self.check("do(); with = 23", "with")
+
+    def test_after_import(self):
+        # issue 3936
+        self.check("import sys\nas = 4", "as")
+        self.check("import sys\nwith = 4", "with")
+
+
 def test_main():
     run_unittest(FailureTestCase, NonexceptionalTestCase,
                  NestedNonexceptionalTestCase, ExceptionalTestCase,
                  NonLocalFlowControlTestCase,
                  AssignmentTargetTestCase,
-                 ExitSwallowsExceptionTestCase)
+                 ExitSwallowsExceptionTestCase,
+                 NewKeywordsWarningTestCase)
 
 
 if __name__ == '__main__':

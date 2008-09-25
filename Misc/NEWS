@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #3936: The parser warnings for using "as" and "with" as variable names
+  didn't fire after import statements.
+
 - Issue #3751: str.rpartition would perform a left-partition when called with
   a unicode argument.
 
