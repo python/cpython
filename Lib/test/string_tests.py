@@ -107,6 +107,14 @@ class BaseTest(unittest.TestCase):
         self.checkequal(2, 'aaa', 'count', '', -1)
         self.checkequal(4, 'aaa', 'count', '', -10)
 
+        self.checkequal(1, '', 'count', '')
+        self.checkequal(0, '', 'count', '', 1, 1)
+        self.checkequal(0, '', 'count', '', sys.maxsize, 0)
+
+        self.checkequal(0, '', 'count', 'xx')
+        self.checkequal(0, '', 'count', 'xx', 1, 1)
+        self.checkequal(0, '', 'count', 'xx', sys.maxsize, 0)
+
         self.checkraises(TypeError, 'hello', 'count')
         self.checkraises(TypeError, 'hello', 'count', 42)
 
@@ -155,6 +163,14 @@ class BaseTest(unittest.TestCase):
 
         self.checkraises(TypeError, 'hello', 'find')
         self.checkraises(TypeError, 'hello', 'find', 42)
+
+        self.checkequal(0, '', 'find', '')
+        self.checkequal(-1, '', 'find', '', 1, 1)
+        self.checkequal(-1, '', 'find', '', sys.maxsize, 0)
+
+        self.checkequal(-1, '', 'find', 'xx')
+        self.checkequal(-1, '', 'find', 'xx', 1, 1)
+        self.checkequal(-1, '', 'find', 'xx', sys.maxsize, 0)
 
         # For a variety of combinations,
         #    verify that str.find() matches __contains__

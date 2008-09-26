@@ -14,11 +14,10 @@ stringlib_find(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 {
     Py_ssize_t pos;
 
-    if (sub_len == 0) {
-        if (str_len < 0)
-            return -1;
+    if (str_len < 0)
+        return -1;
+    if (sub_len == 0)
         return offset;
-    }
 
     pos = fastsearch(str, str_len, sub, sub_len, FAST_SEARCH);
 
