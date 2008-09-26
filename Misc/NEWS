@@ -89,6 +89,8 @@ Core and builtins
 Library
 -------
 
+- Issues #3968 and #3969: two minor turtle problems.
+
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
   sizes.
 
