@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #3967: Fixed a crash in the count() and find() methods of string-like
+  objects, when the "start" parameter is a huge value.
+
 - Issue #3936: The parser warnings for using "as" and "with" as variable names
   didn't fire after import statements.
 
