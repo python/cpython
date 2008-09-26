@@ -206,3 +206,12 @@ both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::
        return module;
    #endif
    }
+
+
+Other options
+=============
+
+If you are writing a new extension module, you might consider `Cython
+<http://www.cython.org>`_.  It translates a Python-like language to C.  The
+extension modules it creates are compatible with Python 3.x and 2.x.
+
