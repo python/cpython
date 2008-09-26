@@ -268,16 +268,16 @@ int
 PyObject_CheckReadBuffer(PyObject *obj)
 {
 	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;
+	Py_buffer view;
 
 	if (pb == NULL ||
 	    pb->bf_getbuffer == NULL)
 		return 0;
-	if ((*pb->bf_getbuffer)(obj, NULL, PyBUF_SIMPLE) == -1) {
+	if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE) == -1) {
 		PyErr_Clear();
 		return 0;
 	}
-	if (*pb->bf_releasebuffer != NULL)
-		(*pb->bf_releasebuffer)(obj, NULL);
+	PyBuffer_Release(&view);
 	return 1;
 }
 
