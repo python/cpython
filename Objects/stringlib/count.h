@@ -13,11 +13,10 @@ stringlib_count(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 {
     Py_ssize_t count;
 
-    if (sub_len == 0) {
-        if (str_len < 0)
-            return 0; /* start > len(str) */
+    if (str_len < 0)
+        return 0; /* start > len(str) */
+    if (sub_len == 0)
         return str_len + 1;
-    }
 
     count = fastsearch(str, str_len, sub, sub_len, FAST_COUNT);
 
