@@ -306,6 +306,7 @@ class RawPen:
                                             {'fill': self._color,
                                              'smooth': smooth})
                 self._items.append(item)
+                self._canvas.update()
         self._path = []
         self._filling = flag
         if flag:
