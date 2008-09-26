@@ -762,7 +762,7 @@ def setup(**geometry):
 
     startx = geometry.get('startx', _startx)
     if startx >= 0 or startx == None:
-        _startx = _startx
+        _startx = startx
     else:
         raise ValueError, "startx can not be less than 0"
 
