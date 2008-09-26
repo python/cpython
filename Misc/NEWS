@@ -12,6 +12,8 @@ What's New in Python 3.0 release candidate 2
 Core and Builtins
 -----------------
 
+- Issue #3946: PyObject_CheckReadBuffer crashed on a memoryview object.
+
 - Issue #1688: On Windows, the input() prompt was not correctly displayed if it
   contains non-ascii characters.
 

@@ -242,6 +242,7 @@ class BuiltinTest(unittest.TestCase):
         compile(source='pass', filename='?', mode='exec')
         compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
         compile('pass', '?', dont_inherit=1, mode='exec')
+        compile(memoryview(b"text"), "name", "exec")
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'single', 0xff)
