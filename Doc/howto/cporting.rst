@@ -27,13 +27,13 @@ The easiest way to compile only some code for 3.0 is to check if
    #endif
 
 API functions that are not present can be aliased to their equivalents within
-conditional block.
+conditional blocks.
 
 
 Changes to Object APIs
 ======================
 
-Python 3.0 merged together some types with simliar functions while cleanly
+Python 3.0 merged together some types with similar functions while cleanly
 separating others.
 
 
@@ -121,7 +121,7 @@ Module initialization and state
 
 Python 3.0 has a revamped extension module initialization system.  (See PEP
 :pep:`3121`.)  Instead of storing module state in globals, they should be stored
-in a interpreter specific structure.  Creating modules that act correctly in
+in an interpreter specific structure.  Creating modules that act correctly in
 both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::
 
    #include "Python.h"
