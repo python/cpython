@@ -12,6 +12,9 @@ What's New in Python 2.6 final
 Core and Builtins
 -----------------
 
+- Issue #3967: Fixed a crash in the count() and find() methods of string-like
+  objects, when the "start" parameter is a huge value.
+
 - Issue #3965: Fixed a crash on Windows when open() is given an invalid
   filename or mode, and the filename is a unicode string.
 
