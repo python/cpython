@@ -71,6 +71,7 @@ all_errors = (Error, IOError, EOFError)
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
 CRLF = '\r\n'
+B_CRLF = b'\r\n'
 
 # The class itself
 class FTP:
@@ -472,9 +473,9 @@ class FTP:
         while 1:
             buf = fp.readline()
             if not buf: break
-            if buf[-2:] != CRLF:
-                if buf[-1] in CRLF: buf = buf[:-1]
-                buf = buf + CRLF
+            if buf[-2:] != B_CRLF:
+                if buf[-1] in B_CRLF: buf = buf[:-1]
+                buf = buf + B_CRLF
             conn.sendall(buf)
             if callback: callback(buf)
         conn.close()
