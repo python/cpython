@@ -95,4 +95,10 @@ true function call.
 .. moduleauthor:: Guido van Rossum
 .. moduleauthor:: Collin Winter
 
+
+.. warning::
+
+   The :mod:`lib2to3` API should be considered unstable and may change
+   drastically in the future.
+
 .. XXX What is the public interface anyway?
