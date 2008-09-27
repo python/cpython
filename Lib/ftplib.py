@@ -254,7 +254,7 @@ class FTP:
         port number.
         '''
         hbytes = host.split('.')
-        pbytes = [repr(port/256), repr(port%256)]
+        pbytes = [repr(port//256), repr(port%256)]
         bytes = hbytes + pbytes
         cmd = 'PORT ' + ','.join(bytes)
         return self.voidcmd(cmd)
