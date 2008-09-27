@@ -62,10 +62,11 @@ and :file:`bar.pth` contains::
 
    bar
 
-Then the following directories are added to ``sys.path``, in this order::
+Then the following version-specific directories are added to
+``sys.path``, in this order::
 
-   /usr/local/lib/python2.6/site-packages/bar
-   /usr/local/lib/python2.6/site-packages/foo
+   /usr/local/lib/pythonX.Y/site-packages/bar
+   /usr/local/lib/pythonX.Y/site-packages/foo
 
 Note that :file:`bletch` is omitted because it doesn't exist; the :file:`bar`
 directory precedes the :file:`foo` directory because :file:`bar.pth` comes
