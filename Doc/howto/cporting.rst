@@ -45,7 +45,7 @@ Python 3.0's :func:`str` (``PyString_*`` functions in C) type is equivalent to
 2.x's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has become
 :func:`bytes`.  Python 2.6 and later provide a compatibility header,
 :file:`bytesobject.h`, mapping ``PyBytes`` names to ``PyString`` ones.  For best
-interpolation with 3.0, :ctype:`PyUnicode` should be used for textual data and
+compatibility with 3.0, :ctype:`PyUnicode` should be used for textual data and
 :ctype:`PyBytes` for binary data.  It's also important to remember that
 :ctype:`PyBytes` and :ctype:`PyUnicode` in 3.0 are not interchangeable like
 :ctype:`PyString` and :ctype:`PyString` are in 2.x.  The following example shows
@@ -68,6 +68,7 @@ best practices with regards to :ctype:`PyUnicode`, :ctype:`PyString`, and
        return result;
    }
 
+   /* just a forward */
    static char * do_encode(PyObject *);
 
    /* bytes example */
@@ -94,14 +95,12 @@ long/int Unification
 In Python 3.0, there is only one integer type.  It is called :func:`int` on the
 Python level, but actually corresponds to 2.x's :func:`long` type.  In the
 C-API, ``PyInt_*`` functions are replaced by their ``PyLong_*`` neighbors.  The
-best course of action here is probably aliasing ``PyInt_*`` functions to
-``PyLong_*`` variants or using the abstract ``PyNumber_*`` APIs. ::
+best course of action here is using the ``PyInt_*`` functions aliased to
+``PyLong_*`` found in :file:`intobject.h`.  The the abstract ``PyNumber_*`` APIs
+can also be used in some cases. ::
 
    #include "Python.h"
-
-   #if PY_MAJOR_VERSION >= 3
-   #define PyInt_FromLong PyLong_FromLong
-   #endif
+   #include "intobject.h"
 
    static PyObject *
    add_ints(PyObject *self, PyObject *args) {
