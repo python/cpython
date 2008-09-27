@@ -348,7 +348,7 @@ class TestFTPClass(TestCase):
         self.client.dir(lambda x: l.append(x))
         self.assertEqual(''.join(l), LIST_DATA.replace('\r\n', ''))
 
-    def Xtest_makeport(self):
+    def test_makeport(self):
         self.client.makeport()
         # IPv4 is in use, just make sure send_eprt has not been used
         self.assertEqual(self.server.handler.last_received_cmd, 'port')
