@@ -43,7 +43,7 @@ def namedtuple(typename, field_names, verbose=False):
     # generating informative error messages and preventing template injection attacks.
     if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
-    field_names = tuple(field_names)
+    field_names = tuple(map(str, field_names))
     for name in (typename,) + field_names:
         if not all(c.isalnum() or c=='_' for c in name):
             raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)

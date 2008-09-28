@@ -14,6 +14,7 @@ Currently, the HOWTOs are:
    :maxdepth: 1
 
    advocacy.rst
+   cporting.rst
    curses.rst
    doanddont.rst
    functional.rst

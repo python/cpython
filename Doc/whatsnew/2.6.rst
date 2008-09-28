@@ -1806,8 +1806,11 @@ changes, or look through the Subversion logs for all the details.
   is now available as a standalone package.  The web page for the package is
   `www.jcea.es/programacion/pybsddb.htm
   <http://www.jcea.es/programacion/pybsddb.htm>`__.
+  The plan is to remove the package from the standard library
+  in Python 3.0, because its pace of releases is much more frequent than
+  Python's.
 
-* The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
+  The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes; :issue:`1551443`.)
 
@@ -1816,6 +1819,12 @@ changes, or look through the Subversion logs for all the details.
   with URLs that include query strings such as
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
+
+  The :func:`parse_qs` and :func:`parse_qsl` functions have been 
+  relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
+  The versions still available in the :mod:`cgi` module will 
+  trigger :exc:`PendingDeprecationWarning` messages in 2.6
+  (:issue:`600362`).
 
 * The :mod:`cmath` module underwent extensive revision,
   contributed by Mark Dickinson and Christian Heimes.
@@ -1899,6 +1908,11 @@ changes, or look through the Subversion logs for all the details.
     deque([2, 3, 4], maxlen=3)
 
   (Contributed by Raymond Hettinger.)
+
+* The :mod:`Cookie` module's :class:`Morsel` objects now support an
+  :attr:`httponly` attribute.  In some browsers. cookies with this attribute
+  set cannot be accessed or manipulated by JavaScript code.
+  (Contributed by Arvin Schnell; :issue:`1638033`.)
 
 * A new window method in the :mod:`curses` module,
   :meth:`chgat`, changes the display attributes for a certain number of
@@ -2498,8 +2512,9 @@ changes, or look through the Subversion logs for all the details.
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
   (Contributed by Alexander Belopolsky; :issue:`2021`.)
 
-* The :mod:`test.test_support` module now contains an
-  :func:`EnvironmentVarGuard`
+* The :mod:`test.test_support` module gained a number 
+  of context managers useful for writing tests. 
+  :func:`EnvironmentVarGuard` is a 
   context manager that temporarily changes environment variables and
   automatically restores them to their old values.
 
@@ -2513,6 +2528,16 @@ changes, or look through the Subversion logs for all the details.
                                       errno=errno.ETIMEDOUT):
           f = urllib.urlopen('https://sf.net')
           ...
+
+  Finally, :func:`check_warnings` resets the :mod:`warning` module's 
+  warning filters and returns an object that will record all warning
+  messages triggered (:issue:`3781`)::
+
+      with test_support.check_warnings() as wrec:
+          warnings.simplefilter("always")
+          ... code that triggers a warning ...
+          assert str(wrec.message) == "function is outdated"
+	  assert len(wrec.warnings) == 1, "Multiple warnings raised"
 
   (Contributed by Brett Cannon.)
 
@@ -2600,11 +2625,19 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Facundo Batista.)
 
+* The Unicode database provided by the :mod:`unicodedata` module
+  has been updated to version 5.1.0.  (Updated by 
+  Martin von Loewis; :issue:`3811`.)
+
 * The :mod:`warnings` module's :func:`formatwarning` and :func:`showwarning`
   gained an optional *line* argument that can be used to supply the
   line of source code.  (Added as part of :issue:`1631171`, which re-implemented
   part of the :mod:`warnings` module in C code.)
 
+  A new function, :func:`catch_warnings`, is a context manager
+  intended for testing purposes that lets you temporarily modify the
+  warning filters and then restore their original values (:issue:`3781`).
+  
 * The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
   their socket by passing True as the ``bind_and_activate``

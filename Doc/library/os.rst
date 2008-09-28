@@ -1215,7 +1215,13 @@ to be ignored.
    These functions all execute a new program, replacing the current process; they
    do not return.  On Unix, the new executable is loaded into the current process,
    and will have the same process id as the caller.  Errors will be reported as
-   :exc:`OSError` exceptions.
+   :exc:`OSError` exceptions.  
+
+   The current process is replaced immediately. Open file objects and
+   descriptors are not flushed, so if there may be data buffered
+   on these open files, you should flush them using
+   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`exec\*` function.
 
    The "l" and "v" variants of the :func:`exec\*` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
@@ -1241,8 +1247,9 @@ to be ignored.
    used to define the environment variables for the new process (these are used
    instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
-   inherit the environment of the current process. Availability: Unix,
-   Windows.
+   inherit the environment of the current process. 
+
+   Availability: Unix, Windows.
 
 
 .. function:: _exit(n)

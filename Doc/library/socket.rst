@@ -207,18 +207,18 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: getaddrinfo(host, port[, family[, socktype[, proto[, flags]]]])
 
    Resolves the *host*/*port* argument, into a sequence of 5-tuples that contain
-   all the necessary argument for the sockets manipulation. *host* is a domain
-   name, a string representation of IPv4/v6 address or ``None``. *port* is a string
-   service name (like ``'http'``), a numeric port number or ``None``.
+   all the necessary arguments for creating the corresponding socket. *host* is a domain
+   name, a string representation of an IPv4/v6 address or ``None``. *port* is a string
+   service name such as ``'http'``, a numeric port number or ``None``.
+   The rest of the arguments are optional and must be numeric if specified.  
+   By passing ``None`` as the value of *host* and *port*, , you can pass ``NULL`` to the C API.
 
-   The rest of the arguments are optional and must be numeric if specified.  For
-   *host* and *port*, by passing ``None``, you can pass ``NULL`` to the C API.
    The :func:`getaddrinfo` function returns a list of 5-tuples with the following
    structure:
 
    ``(family, socktype, proto, canonname, sockaddr)``
 
-   *family*, *socktype*, *proto* are all integer and are meant to be passed to the
+   *family*, *socktype*, *proto* are all integers and are meant to be passed to the
    :func:`socket` function. *canonname* is a string representing the canonical name
    of the *host*. It can be a numeric IPv4/v6 address when :const:`AI_CANONNAME` is
    specified for a numeric *host*. *sockaddr* is a tuple describing a socket
@@ -230,7 +230,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a fully qualified domain name for *name*. If *name* is omitted or empty,
    it is interpreted as the local host.  To find the fully qualified name, the
-   hostname returned by :func:`gethostbyaddr` is checked, then aliases for the
+   hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
    case no fully qualified domain name is available, the hostname as returned by
    :func:`gethostname` is returned.
