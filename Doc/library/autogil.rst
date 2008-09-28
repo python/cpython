@@ -15,7 +15,7 @@ running an event loop.
 
 .. warning::
 
-   This module is removed in 3.0.
+   This module has been removed in 3.0.
 
 
 .. exception:: AutoGILError
