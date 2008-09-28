@@ -6,6 +6,11 @@
 <h1>Download Python {{ release }} Documentation
   {%- if last_updated %} (last updated on {{ last_updated }}){% endif %}</h1>
 
+{% if 'a' in release or 'b' in release or 'c' in release %}
+<p>We don't package the documentation for development releases for download.
+  Downloads will be available for the final release.</p>
+
+{% else %}
 <p>To download an archive containing all the documents for this version of
 Python in one of various formats, follow one of links in this table. The numbers
 in the table are the size of the download files in Kilobytes.</p>
@@ -49,5 +54,6 @@ platform. These are created on Unix using the InfoZIP zip program.</p>
 
 <p>If you have comments or suggestions for the Python documentation, please send
 email to <a href="docs@python.org">docs@python.org</a>.</p>
+{% endif %}
 
 {% endblock %}
