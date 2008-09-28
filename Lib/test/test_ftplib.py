@@ -212,6 +212,11 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
     def handle_accept(self):
         conn, addr = self.accept()
         self.handler = self.handler(conn)
+        self.close()
+
+    def handle_connect(self):
+        self.close()
+    handle_read = handle_connect
 
     def writable(self):
         return 0
