@@ -670,7 +670,7 @@ Extension Modules
 
 - Support for Windows 9x has been removed from the winsound module.
 
-- bsddb module updated to version 4.7.3pre2.
+- bsddb module updated to version 4.7.3.
   http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.7.3. This
   code should be compatible with Python 3.0.
 
