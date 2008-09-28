@@ -1198,16 +1198,31 @@ traditional Unix exit status for command-line errors).
 Querying and manipulating your option parser
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, it's useful to poke around your option parser and see what's there.
-OptionParser provides a couple of methods to help you out:
+The default behavior of the option parser can be customized slightly,
+and you can also poke around your option parser and see what's there.
+OptionParser provides several methods to help you out:
 
-``has_option(opt_str)``
-   Return true if the OptionParser has an option with  option string ``opt_str``
-   (e.g., ``"-q"`` or ``"--verbose"``).
+``disable_interspersed_args()``
+  Set parsing to stop on the first non-option. Use this if you have a
+  command processor which runs another command which has options of
+  its own and you want to make sure these options don't get
+  confused. For example, each command might have a different
+  set of options.
+
+``enable_interspersed_args()``
+  Set parsing to not stop on the first non-option, allowing
+  interspersing switches with command arguments.  For example,
+  ``"-s arg1 --long arg2"`` would return ``["arg1", "arg2"]``
+  as the command arguments and ``-s, --long`` as options.
+  This is the default behavior.
 
 ``get_option(opt_str)``
    Returns the Option instance with the option string ``opt_str``, or ``None`` if
    no options have that option string.
+
+``has_option(opt_str)``
+   Return true if the OptionParser has an option with option string ``opt_str``
+   (e.g., ``"-q"`` or ``"--verbose"``).
 
 ``remove_option(opt_str)``
    If the OptionParser has an option corresponding to ``opt_str``, that option is
