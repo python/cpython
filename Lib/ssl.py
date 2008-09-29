@@ -434,7 +434,18 @@ def sslwrap_simple (sock, keyfile=None, certfile=None):
     for compability with Python 2.5 and earlier.  Will disappear in
     Python 3.0."""
 
-    ssl_sock = _ssl.sslwrap(sock._sock, 0, keyfile, certfile, CERT_NONE,
+    if hasattr(sock, "_sock"):
+        sock = sock._sock
+
+    ssl_sock = _ssl.sslwrap(sock, 0, keyfile, certfile, CERT_NONE,
                             PROTOCOL_SSLv23, None)
-    ssl_sock.do_handshake()
+    try:
+        sock.getpeername()
+    except:
+        # no, no connection yet
+        pass
+    else:
+        # yes, do the handshake
+        ssl_sock.do_handshake()
+
     return ssl_sock
