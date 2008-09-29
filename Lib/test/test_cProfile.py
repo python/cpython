@@ -1,6 +1,5 @@
 """Test suite for the cProfile module."""
-
-import cProfile, pstats, sys
+import cProfile, pstats, sys, test.test_support
 
 # In order to have reproducible time, we simulate a timer in the global
 # variable 'ticks', which represents simulated time in milliseconds.
@@ -23,6 +22,7 @@ def test_main():
     st.strip_dirs().sort_stats('stdname').print_stats()
     st.print_callees()
     st.print_callers()
+    test_bad_counter_during_dealloc()
 
 def timer():
     return ticks
@@ -118,6 +118,21 @@ class C:
         global ticks
         ticks += 1
         raise AttributeError
+
+# Issue 3895.
+def test_bad_counter_during_dealloc():
+    import _lsprof
+    # Must use a file as StringIO doesn't trigger the bug.
+    sys.stderr = open(test.test_support.TESTFN, 'w')
+    try:
+        obj = _lsprof.Profiler(lambda: int)
+        obj.enable()
+        obj = _lsprof.Profiler(1)
+        obj.disable()
+    finally:
+        sys.stderr = sys.__stderr__
+        test.test_support.unlink(test.test_support.TESTFN)
+
 
 if __name__ == "__main__":
     test_main()
