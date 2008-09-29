@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3965: Allow repeated calls to turtle.Screen, by making it a
+  true singleton object.
+
 - Issue #3911: ftplib.FTP.makeport() could give invalid port numbers.
 
 - Issue #3929: When the database cannot be opened, dbm.open() would incorrectly

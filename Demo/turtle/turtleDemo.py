@@ -96,8 +96,8 @@ class DemoWindow(object):
         left_frame.pack(side=LEFT, fill=BOTH, expand=0)
         self.graph_frame = g_frame = Frame(root)
 
-        turtle.Screen._root = g_frame
-        turtle.Screen._canvas = turtle.ScrolledCanvas(g_frame, 800, 600, 1000, 800)
+        turtle._Screen._root = g_frame
+        turtle._Screen._canvas = turtle.ScrolledCanvas(g_frame, 800, 600, 1000, 800)
         #xturtle.Screen._canvas.pack(expand=1, fill="both")
         self.screen = _s_ = turtle.Screen()
 #####

@@ -40,10 +40,10 @@ The object-oriented interface uses essentially two+two classes:
    :class:`ScrolledCanvas` as argument.  It should be used when :mod:`turtle` is
    used as part of some application.
 
-   Derived from :class:`TurtleScreen` is the subclass :class:`Screen`.  Screen
-   is implemented as sort of singleton, so there can exist only one instance of
-   Screen at a time.  It should be used when :mod:`turtle` is used as a
-   standalone tool for doing graphics.
+   The function :func:`Screen` returns a singleton object of a
+   :class:`TurtleScreen` subclass. This function should be used when
+   :mod:`turtle` is used as a standalone tool for doing graphics.
+   As a singleton object, inheriting from its class is not possible.
 
    All methods of TurtleScreen/Screen also exist as functions, i.e. as part of
    the procedure-oriented interface.
