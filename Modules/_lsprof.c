@@ -150,7 +150,16 @@ static PY_LONG_LONG CallExternalTimer(ProfilerObject *pObj)
 	}
 	Py_DECREF(o);
 	if (PyErr_Occurred()) {
-		PyErr_WriteUnraisable((PyObject *) pObj);
+		PyObject *context = (PyObject *)pObj;
+		/* May have been called by profiler_dealloc(). */
+		if (context->ob_refcnt < 1) {
+			context = PyString_FromString("profiler calling an "
+							"external timer");
+			if (context == NULL) {
+				return 0;
+			}
+		}
+		PyErr_WriteUnraisable(context);
 		return 0;
 	}
 	return result;

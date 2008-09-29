@@ -92,6 +92,9 @@ Core and builtins
 Library
 -------
 
+- Issue #3895: _lsprof could be crashed with an external timer that did not
+  return a float when a Profiler object is garbage collected.
+
 - Issues #3968 and #3969: two minor turtle problems.
 
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
