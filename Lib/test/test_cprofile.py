@@ -1,7 +1,7 @@
 """Test suite for the cProfile module."""
 
 import sys
-from test.test_support import run_unittest
+from test.test_support import run_unittest, TESTFN, unlink
 
 # rip off all interesting stuff from test_profile
 import cProfile
@@ -9,6 +9,20 @@ from test.test_profile import ProfileTest, regenerate_expected_output
 
 class CProfileTest(ProfileTest):
     profilerclass = cProfile.Profile
+
+    # Issue 3895.
+    def test_bad_counter_during_dealloc(self):
+        import _lsprof
+        # Must use a file as StringIO doesn't trigger the bug.
+        sys.stderr = open(TESTFN, 'w')
+        try:
+            obj = _lsprof.Profiler(lambda: int)
+            obj.enable()
+            obj = _lsprof.Profiler(1)
+            obj.disable()
+        finally:
+            sys.stderr = sys.__stderr__
+            unlink(TESTFN)
 
 
 def test_main():
