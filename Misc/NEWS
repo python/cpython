@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3895: It was possible to crash the interpreter when an external timer
+  was used with cProfile that returned an object that could not be converted
+  into a float.
+
 - Issue #3950: Made turtle respect scale factors.
 
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
