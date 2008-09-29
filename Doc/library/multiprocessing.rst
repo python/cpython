@@ -6,7 +6,7 @@
 
 
 Introduction
-----------------------
+------------
 
 :mod:`multiprocessing` is a package that supports spawning processes using an
 API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
@@ -28,7 +28,7 @@ multiprocess program is ::
    from multiprocessing import Process
 
    def f(name):
-       print 'hello', name
+       print('hello', name)
 
    if __name__ == '__main__':
        p = Process(target=f, args=('bob',))
@@ -62,7 +62,7 @@ processes:
            q = Queue()
            p = Process(target=f, args=(q,))
            p.start()
-           print q.get()    # prints "[42, None, 'hello']"
+           print(q.get())    # prints "[42, None, 'hello']"
            p.join()
 
    Queues are thread and process safe.
@@ -82,7 +82,7 @@ processes:
           parent_conn, child_conn = Pipe()
           p = Process(target=f, args=(child_conn,))
           p.start()
-          print parent_conn.recv()   # prints "[42, None, 'hello']"
+          print(parent_conn.recv())   # prints "[42, None, 'hello']"
           p.join()
 
    The two connection objects returned by :func:`Pipe` represent the two ends of
@@ -105,7 +105,7 @@ that only one process prints to standard output at a time::
 
    def f(l, i):
        l.acquire()
-       print 'hello world', i
+       print('hello world', i)
        l.release()
 
    if __name__ == '__main__':
@@ -148,8 +148,8 @@ However, if you really do need to use some shared data then
           p.start()
           p.join()
 
-          print num.value
-          print arr[:]
+          print(num.value)
+          print(arr[:])
 
    will print ::
 
@@ -195,8 +195,8 @@ However, if you really do need to use some shared data then
           p.start()
           p.join()
 
-          print d
-          print l
+          print(d)
+          print(l)
 
    will print ::
 
@@ -224,10 +224,10 @@ For example::
        return x*x
 
    if __name__ == '__main__':
-       pool = Pool(processes=4)              # start 4 worker processes
-       result = pool.applyAsync(f, [10])     # evaluate "f(10)" asynchronously
-       print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
-       print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
+       pool = Pool(processes=4)           # start 4 worker processes
+       result = pool.applyAsync(f, [10])  # evaluate "f(10)" asynchronously
+       print(result.get(timeout=1))       # prints "100" unless your computer is *very* slow
+       print(pool.map(f, range(10)))      # prints "[0, 1, 4,..., 81]"
 
 
 Reference
@@ -371,13 +371,13 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
        >>> import processing, time, signal
        >>> p = processing.Process(target=time.sleep, args=(1000,))
-       >>> print p, p.is_alive()
+       >>> print(p, p.is_alive())
        <Process(Process-1, initial)> False
        >>> p.start()
-       >>> print p, p.is_alive()
+       >>> print(p, p.is_alive())
        <Process(Process-1, started)> True
        >>> p.terminate()
-       >>> print p, p.is_alive()
+       >>> print(p, p.is_alive())
        <Process(Process-1, stopped[SIGTERM])> False
        >>> p.exitcode == -signal.SIGTERM
        True
@@ -612,7 +612,7 @@ Miscellaneous
       from multiprocessing import Process, freeze_support
 
       def f():
-          print 'hello world!'
+          print('hello world!')
 
       if __name__ == '__main__':
           freeze_support()
@@ -1011,13 +1011,13 @@ process::
        p.start()
        p.join()
 
-       print n.value
-       print x.value
-       print s.value
-       print [(a.x, a.y) for a in A]
+       print(n.value)
+       print(x.value)
+       print(s.value)
+       print([(a.x, a.y) for a in A])
 
 
-.. highlightlang:: none
+.. highlight:: none
 
 The results printed are ::
 
@@ -1026,7 +1026,7 @@ The results printed are ::
     HELLO WORLD
     [(3.515625, 39.0625), (33.0625, 4.0), (5.640625, 90.25)]
 
-.. highlightlang:: python
+.. highlight:: python
 
 
 .. _multiprocessing-managers:
@@ -1212,7 +1212,7 @@ However, when using a proxy for a namespace object, an attribute beginning with
    >>> Global.x = 10
    >>> Global.y = 'hello'
    >>> Global._z = 12.3    # this is an attribute of the proxy
-   >>> print Global
+   >>> print(Global)
    Namespace(x=10, y='hello')
 
 
@@ -1240,8 +1240,8 @@ callables with the manager class.  For example::
        manager = MyManager()
        manager.start()
        maths = manager.Maths()
-       print maths.add(4, 3)         # prints 7
-       print maths.mul(7, 8)         # prints 56
+       print(maths.add(4, 3))         # prints 7
+       print(maths.mul(7, 8))         # prints 56
 
 
 Using a remote manager
@@ -1300,9 +1300,9 @@ referent can::
    >>> from multiprocessing import Manager
    >>> manager = Manager()
    >>> l = manager.list([i*i for i in range(10)])
-   >>> print l
+   >>> print(l)
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-   >>> print repr(l)
+   >>> print(repr(l))
    <ListProxy object, typeid 'list' at 0xb799974c>
    >>> l[4]
    16
@@ -1321,10 +1321,10 @@ itself.  This means, for example, that one shared object can contain a second::
    >>> a = manager.list()
    >>> b = manager.list()
    >>> a.append(b)         # referent of a now contains referent of b
-   >>> print a, b
+   >>> print(a, b)
    [[]] []
    >>> b.append('hello')
-   >>> print a, b
+   >>> print(a, b)
    [['hello']] ['hello']
 
 .. note::
@@ -1529,18 +1529,18 @@ The following example demonstrates the use of a pool::
        pool = Pool(processes=4)              # start 4 worker processes
 
        result = pool.applyAsync(f, (10,))    # evaluate "f(10)" asynchronously
-       print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
+       print(result.get(timeout=1))          # prints "100" unless your computer is *very* slow
 
-       print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
+       print(pool.map(f, range(10)))         # prints "[0, 1, 4,..., 81]"
 
        it = pool.imap(f, range(10))
-       print it.next()                       # prints "0"
-       print it.next()                       # prints "1"
-       print it.next(timeout=1)              # prints "4" unless your computer is *very* slow
+       print(next(it))                       # prints "0"
+       print(next(it))                       # prints "1"
+       print(it.next(timeout=1))             # prints "4" unless your computer is *very* slow
 
        import time
        result = pool.applyAsync(time.sleep, (10,))
-       print result.get(timeout=1)           # raises TimeoutError
+       print(result.get(timeout=1))          # raises TimeoutError
 
 
 .. _multiprocessing-listeners-clients:
@@ -1670,7 +1670,7 @@ the client::
    listener = Listener(address, authkey='secret password')
 
    conn = listener.accept()
-   print 'connection accepted from', listener.last_accepted
+   print('connection accepted from', listener.last_accepted)
 
    conn.send([2.25, None, 'junk', float])
 
@@ -1690,13 +1690,13 @@ server::
    address = ('localhost', 6000)
    conn = Client(address, authkey='secret password')
 
-   print conn.recv()                 # => [2.25, None, 'junk', float]
+   print(conn.recv())                  # => [2.25, None, 'junk', float]
 
-   print conn.recv_bytes()            # => 'hello'
+   print(conn.recv_bytes())            # => 'hello'
 
    arr = array('i', [0, 0, 0, 0, 0])
-   print conn.recv_bytes_into(arr)     # => 8
-   print arr                         # => array('i', [42, 1729, 0, 0, 0])
+   print(conn.recv_bytes_into(arr))    # => 8
+   print(arr)                          # => array('i', [42, 1729, 0, 0, 0])
 
    conn.close()
 
@@ -1957,7 +1957,7 @@ Safe importing of main module
         from multiprocessing import Process
 
         def foo():
-            print 'hello'
+            print('hello')
 
         p = Process(target=foo)
         p.start()
@@ -1968,7 +1968,7 @@ Safe importing of main module
        from multiprocessing import Process, freeze_support
 
        def foo():
-           print 'hello'
+           print('hello')
 
        if __name__ == '__main__':
            freeze_support()
