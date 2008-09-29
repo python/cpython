@@ -153,7 +153,7 @@ _ssl
     build process will automatically select the latest version.
 
     You must install the NASM assembler from
-        http://www.kernel.org/pub/software/devel/nasm/binaries/win32/
+        http://nasm.sf.net
     for x86 builds.  Put nasmw.exe anywhere in your PATH.
 
     You can also install ActivePerl from
