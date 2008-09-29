@@ -223,8 +223,9 @@ class BitFieldTest(unittest.TestCase):
                         ("d", c_short, 4),
                         ("e", c_short, 4),
                         ("f", c_int, 24)]
-        # MS compilers do NOT combine c_short and c_int into
-        # one field, gcc does.
+        # MSVC does NOT combine c_short and c_int into one field, GCC
+        # does (unless GCC is run with '-mms-bitfields' which
+        # produces code compatible with MSVC).
         if os.name in ("nt", "ce"):
             self.failUnlessEqual(sizeof(X), sizeof(c_int) * 4)
         else:
