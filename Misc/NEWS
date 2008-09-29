@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3965: Allow repeated calls to turtle.Screen, by making it a
+  true singleton object.
+
 - Issue #3895: It was possible to crash the interpreter when an external timer
   was used with cProfile that returned an object that could not be converted
   into a float.

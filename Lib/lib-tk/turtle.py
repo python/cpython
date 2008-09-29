@@ -2422,7 +2422,7 @@ class RawTurtle(TPen, TNavigator):
                  shape=_CFG["shape"],
                  undobuffersize=_CFG["undobuffersize"],
                  visible=_CFG["visible"]):
-        if isinstance(canvas, Screen):
+        if isinstance(canvas, _Screen):
             self.screen = canvas
         elif isinstance(canvas, TurtleScreen):
             if canvas not in RawTurtle.screens:
@@ -3539,29 +3539,33 @@ class RawTurtle(TPen, TNavigator):
 
 RawPen = RawTurtle
 
-###  Screen - Klasse  ########################
+###  Screen - Singleton  ########################
 
-class Screen(TurtleScreen):
+def Screen():
+    """Return the singleton screen object.
+    If none exists at the moment, create a new one and return it,
+    else return the existing one."""
+    if Turtle._screen is None:
+        Turtle._screen = _Screen()
+    return Turtle._screen
+
+class _Screen(TurtleScreen):
 
     _root = None
     _canvas = None
     _title = _CFG["title"]
 
-    # Borg-Idiom
-
-    _shared_state = {}
-
-    def __new__(cls, *args, **kwargs):
-        obj = object.__new__(cls, *args, **kwargs)
-        obj.__dict__ = cls._shared_state
-        return obj
-
     def __init__(self):
-        if Screen._root is None:
-            Screen._root = self._root = _Root()
-            self._root.title(Screen._title)
+        # XXX there is no need for this code to be conditional,
+        # as there will be only a single _Screen instance, anyway
+        # XXX actually, the turtle demo is injecting root window,
+        # so perhaps the conditional creation of a root should be
+        # preserved (perhaps by passing it as an optional parameter)
+        if _Screen._root is None:
+            _Screen._root = self._root = _Root()
+            self._root.title(_Screen._title)
             self._root.ondestroy(self._destroy)
-        if Screen._canvas is None:
+        if _Screen._canvas is None:
             width = _CFG["width"]
             height = _CFG["height"]
             canvwidth = _CFG["canvwidth"]
@@ -3569,10 +3573,9 @@ class Screen(TurtleScreen):
             leftright = _CFG["leftright"]
             topbottom = _CFG["topbottom"]
             self._root.setupcanvas(width, height, canvwidth, canvheight)
-            Screen._canvas = self._root._getcanvas()
+            _Screen._canvas = self._root._getcanvas()
             self.setup(width, height, leftright, topbottom)
-        TurtleScreen.__init__(self, Screen._canvas)
-        Turtle._screen = self
+        TurtleScreen.__init__(self, _Screen._canvas)
 
     def setup(self, width=_CFG["width"], height=_CFG["height"],
               startx=_CFG["leftright"], starty=_CFG["topbottom"]):
@@ -3626,17 +3629,17 @@ class Screen(TurtleScreen):
         Example (for a Screen instance named screen):
         >>> screen.title("Welcome to the turtle-zoo!")
         """
-        if Screen._root is not None:
-            Screen._root.title(titlestring)
-        Screen._title = titlestring
+        if _Screen._root is not None:
+            _Screen._root.title(titlestring)
+        _Screen._title = titlestring
 
     def _destroy(self):
         root = self._root
-        if root is Screen._root:
+        if root is _Screen._root:
             Turtle._pen = None
             Turtle._screen = None
-            Screen._root = None
-            Screen._canvas = None
+            _Screen._root = None
+            _Screen._canvas = None
         TurtleScreen._RUNNING = True
         root.destroy()
 
@@ -3728,7 +3731,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
     docsdict = {}
 
     for methodname in _tg_screen_functions:
-        key = "Screen."+methodname
+        key = "_Screen."+methodname
         docsdict[key] = eval(key).__doc__
     for methodname in _tg_turtle_functions:
         key = "Turtle."+methodname
@@ -3842,14 +3845,14 @@ def _screen_docrevise(docstr):
 
 
 for methodname in _tg_screen_functions:
-    pl1, pl2 = getmethparlist(eval('Screen.' + methodname))
+    pl1, pl2 = getmethparlist(eval('_Screen.' + methodname))
     if pl1 == "":
         print ">>>>>>", pl1, pl2
         continue
     defstr = ("def %(key)s%(pl1)s: return _getscreen().%(key)s%(pl2)s" %
                                    {'key':methodname, 'pl1':pl1, 'pl2':pl2})
     exec defstr
-    eval(methodname).__doc__ = _screen_docrevise(eval('Screen.'+methodname).__doc__)
+    eval(methodname).__doc__ = _screen_docrevise(eval('_Screen.'+methodname).__doc__)
 
 for methodname in _tg_turtle_functions:
     pl1, pl2 = getmethparlist(eval('Turtle.' + methodname))
