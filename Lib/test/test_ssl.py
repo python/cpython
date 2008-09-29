@@ -34,6 +34,21 @@ def handle_error(prefix):
     if test_support.verbose:
         sys.stdout.write(prefix + exc_format)
 
+    def testSimpleSSLwrap(self):
+        try:
+            ssl.sslwrap_simple(socket.socket(socket.AF_INET))
+        except IOError, e:
+            if e.errno == 32: # broken pipe when ssl_sock.do_handshake(), this test doesn't care about that
+                pass
+            else:
+                raise
+        try:
+            ssl.sslwrap_simple(socket.socket(socket.AF_INET)._sock)
+        except IOError, e:
+            if e.errno == 32: # broken pipe when ssl_sock.do_handshake(), this test doesn't care about that
+                pass
+            else:
+                raise
 
 class BasicTests(unittest.TestCase):
 
@@ -57,7 +72,6 @@ class BasicTests(unittest.TestCase):
             pass
         finally:
             s.close()
-
 
     def testCrucialConstants(self):
         ssl.PROTOCOL_SSLv2
