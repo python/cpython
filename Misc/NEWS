@@ -37,6 +37,9 @@ Library
 
 - Issue #3879: A regression in urllib.getproxies_enviroment was fixed.
 
+- Issue #3863: Disabled a unit test of fork being called from a thread
+  when running on platforms known to exhibit OS bugs when attempting that.
+
 Build
 -----
 
