@@ -190,6 +190,9 @@ Library
 Extension Modules
 -----------------
 
+- Security Issue #2: imageop did not validate arguments correctly and could
+  segfault as a result.
+
 - Issue 3886: [CVE-2008-2316] Possible integer overflow in the _hashopenssl
   module was closed.
 
