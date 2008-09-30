@@ -1786,6 +1786,8 @@ s_pack_into(PyObject *self, PyObject *args)
 
 	/* Extract the offset from the first argument */
 	offset = PyLong_AsSsize_t(PyTuple_GET_ITEM(args, 1));
+	if (offset == -1 && PyErr_Occurred())
+		return NULL;
 
 	/* Support negative offsets. */
 	if (offset < 0)
