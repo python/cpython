@@ -20,11 +20,11 @@ Windows.
 
 .. warning::
 
-    This package largely requires a functioning shared semaphore
-    implementation on the host operating system to function. Without one, the 
+    Some of this package's functionality requires a functioning shared semaphore
+    implementation on the host operating system. Without one, the 
     :mod:`multiprocessing.synchronize` module will be disabled, and attempts to 
-    import it will result in an ImportError. See 
-    http://bugs.python.org/issue3770 for additional information.
+    import it will result in an :exc:`ImportError`. See 
+    :issue:`3770` for additional information.
 
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
