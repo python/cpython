@@ -285,7 +285,7 @@ Number Protocol
 .. cfunction:: PyObject* PyNumber_Index(PyObject *o)
 
    Returns the *o* converted to a Python int or long on success or *NULL* with a
-   TypeError exception raised on failure.
+   :exc:`TypeError` exception raised on failure.
 
    .. versionadded:: 2.5
 
