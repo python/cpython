@@ -18,6 +18,14 @@ import socket
 import random
 import logging
 
+
+# Work around broken sem_open implementations
+try:
+    import multiprocessing.synchronize
+except ImportError, e:
+    from test.test_support import TestSkipped
+    raise TestSkipped(e)
+
 import multiprocessing.dummy
 import multiprocessing.connection
 import multiprocessing.managers
