@@ -54,6 +54,9 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Security Issue #2: imageop did not validate arguments correctly and could
+  segfault as a result.
+
 - Issue #3886: Possible integer overflows in the _hashopenssl module were
   closed.
 
