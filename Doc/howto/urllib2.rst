@@ -182,11 +182,12 @@ which comes after we have a look at what happens when things go wrong.
 Handling Exceptions
 ===================
 
-*urlopen* raises ``URLError`` when it cannot handle a response (though as usual
-with Python APIs, builtin exceptions such as ValueError, TypeError etc. may also
+*urlopen* raises :exc:`URLError` when it cannot handle a response (though as usual
+with Python APIs, builtin exceptions such as 
+:exc:`ValueError`, :exc:`TypeError` etc. may also
 be raised).
 
-``HTTPError`` is the subclass of ``URLError`` raised in the specific case of
+:exc:`HTTPError` is the subclass of :exc:`URLError` raised in the specific case of
 HTTP URLs.
 
 URLError
@@ -215,12 +216,12 @@ the status code indicates that the server is unable to fulfil the request. The
 default handlers will handle some of these responses for you (for example, if
 the response is a "redirection" that requests the client fetch the document from
 a different URL, urllib2 will handle that for you). For those it can't handle,
-urlopen will raise an ``HTTPError``. Typical errors include '404' (page not
+urlopen will raise an :exc:`HTTPError`. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
 See section 10 of RFC 2616 for a reference on all the HTTP error codes.
 
-The ``HTTPError`` instance raised will have an integer 'code' attribute, which
+The :exc:`HTTPError` instance raised will have an integer 'code' attribute, which
 corresponds to the error sent by the server.
 
 Error Codes
@@ -303,7 +304,7 @@ dictionary is reproduced here for convenience ::
         }
 
 When an error is raised the server responds by returning an HTTP error code
-*and* an error page. You can use the ``HTTPError`` instance as a response on the
+*and* an error page. You can use the :exc:`HTTPError` instance as a response on the
 page returned. This means that as well as the code attribute, it also has read,
 geturl, and info, methods. ::
 
@@ -325,7 +326,7 @@ geturl, and info, methods. ::
 Wrapping it Up
 --------------
 
-So if you want to be prepared for ``HTTPError`` *or* ``URLError`` there are two
+So if you want to be prepared for :exc:`HTTPError` *or* :exc:`URLError` there are two
 basic approaches. I prefer the second approach.
 
 Number 1
@@ -351,7 +352,7 @@ Number 1
 .. note::
 
     The ``except HTTPError`` *must* come first, otherwise ``except URLError``
-    will *also* catch an ``HTTPError``.
+    will *also* catch an :exc:`HTTPError`.
 
 Number 2
 ~~~~~~~~
@@ -376,8 +377,8 @@ Number 2
 info and geturl
 ===============
 
-The response returned by urlopen (or the ``HTTPError`` instance) has two useful
-methods ``info`` and ``geturl``.
+The response returned by urlopen (or the :exc:`HTTPError` instance) has two useful
+methods :meth:`info` and :meth:`geturl`.
 
 **geturl** - this returns the real URL of the page fetched. This is useful
 because ``urlopen`` (or the opener object used) may have followed a
