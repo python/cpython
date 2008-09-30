@@ -221,6 +221,8 @@ bytesio_read(BytesIOObject *self, PyObject *args)
 
     if (PyLong_Check(arg)) {
         size = PyLong_AsSsize_t(arg);
+        if (size == -1 && PyErr_Occurred())
+            return NULL;
     }
     else if (arg == Py_None) {
         /* Read until EOF is reached, by default. */
@@ -288,6 +290,8 @@ bytesio_readline(BytesIOObject *self, PyObject *args)
 
     if (PyLong_Check(arg)) {
         size = PyLong_AsSsize_t(arg);
+        if (size == -1 && PyErr_Occurred())
+            return NULL;
     }
     else if (arg == Py_None) {
         /* No size limit, by default. */
@@ -332,6 +336,8 @@ bytesio_readlines(BytesIOObject *self, PyObject *args)
 
     if (PyLong_Check(arg)) {
         maxsize = PyLong_AsSsize_t(arg);
+        if (maxsize == -1 && PyErr_Occurred())
+            return NULL;
     }
     else if (arg == Py_None) {
         /* No size limit, by default. */
@@ -415,6 +421,8 @@ bytesio_truncate(BytesIOObject *self, PyObject *args)
 
     if (PyLong_Check(arg)) {
         size = PyLong_AsSsize_t(arg);
+        if (size == -1 && PyErr_Occurred())
+            return NULL;
     }
     else if (arg == Py_None) {
         /* Truncate to current position if no argument is passed. */
