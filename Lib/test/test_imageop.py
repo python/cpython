@@ -5,9 +5,9 @@
    Roger E. Masse
 """
 
-from test.test_support import verbose, unlink
+from test.test_support import verbose, unlink, run_unittest
 
-import imageop, uu, os
+import imageop, uu, os, unittest
 
 import warnings
 warnings.filterwarnings("ignore",
@@ -15,7 +15,66 @@ warnings.filterwarnings("ignore",
                         DeprecationWarning,
                         ".*test_imageop")
 
-def main(use_rgbimg=1):
+SIZES = (1, 2, 3, 4)
+_VALUES = (1, 2, 2**10, 2**15-1, 2**15, 2**15+1, 2**31-2, 2**31-1)
+VALUES = tuple( -x for x in reversed(_VALUES) ) + (0,) + _VALUES
+AAAAA = "A" * 1024
+
+
+class InputValidationTests(unittest.TestCase):
+
+    def _check(self, name, size=None, *extra):
+        func = getattr(imageop, name)
+        for height in VALUES:
+            for width in VALUES:
+                strlen = abs(width * height)
+                if size:
+                    strlen *= size
+                if strlen < 1024:
+                    data = "A" * strlen
+                else:
+                    data = AAAAA
+                if size:
+                    arguments = (data, size, width, height) + extra
+                else:
+                    arguments = (data, width, height) + extra
+                try:
+                    func(*arguments)
+                except (ValueError, imageop.error):
+                    pass
+
+    def check_size(self, name, *extra):
+        for size in SIZES:
+            self._check(name, size, *extra)
+
+    def check(self, name, *extra):
+        self._check(name, None, *extra)
+
+    def test_input_validation(self):
+        self.check_size("crop", 0, 0, 0, 0)
+        self.check_size("scale", 1, 0)
+        self.check_size("scale", -1, -1)
+        self.check_size("tovideo")
+        self.check("grey2mono", 128)
+        self.check("grey2grey4")
+        self.check("grey2grey2")
+        self.check("dither2mono")
+        self.check("dither2grey2")
+        self.check("mono2grey", 0, 0)
+        self.check("grey22grey")
+        self.check("rgb2rgb8") # nlen*4 == len
+        self.check("rgb82rgb")
+        self.check("rgb2grey")
+        self.check("grey2rgb")
+
+
+def test_main(use_rgbimg=True):
+    run_unittest(InputValidationTests)
+
+    try:
+        import imgfile
+    except ImportError:
+        return
 
     # Create binary test files
     uu.decode(get_qualified_path('testrgb'+os.extsep+'uue'), 'test'+os.extsep+'rgb')
@@ -171,7 +230,3 @@ def get_qualified_path(name):
         if os.path.exists(fullname):
             return fullname
     return name
-
-# rgbimg (unlike imgfile) is portable to platforms other than SGI.
-# So we prefer to use it.
-main(use_rgbimg=1)
