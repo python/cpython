@@ -279,7 +279,7 @@ is considered sufficient for this determination.
 
 .. cfunction:: long PyObject_HashNotImplemented(PyObject *o)
 
-   Set a TypeError indicating that ``type(o)`` is not hashable and return ``-1``.
+   Set a :exc:`TypeError` indicating that ``type(o)`` is not hashable and return ``-1``.
    This function receives special treatment when stored in a ``tp_hash`` slot,
    allowing a type to explicitly indicate to the interpreter that it is not
    hashable.
