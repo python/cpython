@@ -43,6 +43,9 @@ Library
 Build
 -----
 
+- Bug #3989: Package the 2to3 script (as 2to3.py) in the Windows
+  installer.
+
 - Bug #3887: Package x64 version of CRT for AMD64 Windows binaries.
 
 
