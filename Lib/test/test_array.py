@@ -1011,20 +1011,21 @@ class DoubleTest(FPTest):
     minitemsize = 8
 
     def test_alloc_overflow(self):
+        from sys import maxsize
         a = array.array('d', [-1]*65536)
         try:
-            a *= 65536
+            a *= maxsize//65536 + 1
         except MemoryError:
             pass
         else:
-            self.fail("a *= 2**16 didn't raise MemoryError")
+            self.fail("Array of size > maxsize created - MemoryError expected")
         b = array.array('d', [ 2.71828183, 3.14159265, -1])
         try:
-            b * 1431655766
+            b * (maxsize//3 + 1)
         except MemoryError:
             pass
         else:
-            self.fail("a * 1431655766 didn't raise MemoryError")
+            self.fail("Array of size > maxsize created - MemoryError expected")
 
 tests.append(DoubleTest)
 
