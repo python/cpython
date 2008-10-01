@@ -22,5 +22,5 @@ __revision__ = "$Id$"
 #
 
 #--start constants--
-__version__ = "2.6rc2"
+__version__ = "2.6"
 #--end constants--
