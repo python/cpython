@@ -12,6 +12,9 @@ What's New in Python 2.6.1 alpha 1
 Core and Builtins
 -----------------
 
+- Fixed a broken comment in Objects/frameobject.c. Python is now C89 compatible
+  again.
+
 Library
 -------
 
