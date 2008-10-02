@@ -29,7 +29,7 @@ class PosixTester(unittest.TestCase):
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
         # no side-effects which we need to cleanup (e.g., fork, wait, abort)
-        NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdu", "uname",
+        NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdb", "uname",
                              "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
                              "getpid", "getpgrp", "getppid", "getuid",

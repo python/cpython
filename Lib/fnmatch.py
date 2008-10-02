@@ -37,15 +37,24 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
+def _compile_pattern(pat):
+    regex = _cache.get(pat)
+    if regex is None:
+        if isinstance(pat, bytes):
+            pat_str = str(pat, 'ISO-8859-1')
+            res_str = translate(pat_str)
+            res = bytes(res_str, 'ISO-8859-1')
+        else:
+            res = translate(pat)
+        _cache[pat] = regex = re.compile(res)
+    return regex.match
+
 def filter(names, pat):
     """Return the subset of the list NAMES that match PAT"""
     import os,posixpath
-    result=[]
-    pat=os.path.normcase(pat)
-    if not pat in _cache:
-        res = translate(pat)
-        _cache[pat] = re.compile(res)
-    match=_cache[pat].match
+    result = []
+    pat = os.path.normcase(pat)
+    match = _compile_pattern(pat)
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
         for name in names:
@@ -64,10 +73,8 @@ def fnmatchcase(name, pat):
     its arguments.
     """
 
-    if not pat in _cache:
-        res = translate(pat)
-        _cache[pat] = re.compile(res)
-    return _cache[pat].match(name) is not None
+    match = _compile_pattern(pat)
+    return match(name) is not None
 
 def translate(pat):
     """Translate a shell PATTERN to a regular expression.

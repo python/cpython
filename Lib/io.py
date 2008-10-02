@@ -82,14 +82,13 @@ class BlockingIOError(IOError):
 def open(file, mode="r", buffering=None, encoding=None, errors=None,
          newline=None, closefd=True):
 
-    r"""Open file and return a stream. If the file cannot be opened, an IOError is
-    raised.
+    r"""Open file and return a stream.  Raise IOError upon failure.
 
-    file is either a string giving the name (and the path if the file
-    isn't in the current working directory) of the file to be opened or an
-    integer file descriptor of the file to be wrapped. (If a file
-    descriptor is given, it is closed when the returned I/O object is
-    closed, unless closefd is set to False.)
+    file is either a text or byte string giving the name (and the path
+    if the file isn't in the current working directory) of the file to
+    be opened or an integer file descriptor of the file to be
+    wrapped. (If a file descriptor is given, it is closed when the
+    returned I/O object is closed, unless closefd is set to False.)
 
     mode is an optional string that specifies the mode in which the file
     is opened. It defaults to 'r' which means open for reading in text
@@ -180,7 +179,7 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
     opened in a text mode, and for bytes a BytesIO can be used like a file
     opened in a binary mode.
     """
-    if not isinstance(file, (str, int)):
+    if not isinstance(file, (str, bytes, int)):
         raise TypeError("invalid file: %r" % file)
     if not isinstance(mode, str):
         raise TypeError("invalid mode: %r" % mode)

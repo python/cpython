@@ -1968,63 +1968,18 @@ posix_lchown(PyObject *self, PyObject *args)
 
 
 #ifdef HAVE_GETCWD
-PyDoc_STRVAR(posix_getcwd__doc__,
-"getcwd() -> path\n\n\
-Return a string representing the current working directory.");
-
 static PyObject *
-posix_getcwd(PyObject *self, PyObject *noargs)
-{
-	int bufsize_incr = 1024;
-	int bufsize = 0;
-	char *tmpbuf = NULL;
-	char *res = NULL;
-	PyObject *dynamic_return;
-
-	Py_BEGIN_ALLOW_THREADS
-	do {
-		bufsize = bufsize + bufsize_incr;
-		tmpbuf = malloc(bufsize);
-		if (tmpbuf == NULL) {
-			break;
-		}
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-		res = _getcwd2(tmpbuf, bufsize);
-#else
-		res = getcwd(tmpbuf, bufsize);
-#endif
-
-		if (res == NULL) {
-			free(tmpbuf);
-		}
-	} while ((res == NULL) && (errno == ERANGE));
-	Py_END_ALLOW_THREADS
-
-	if (res == NULL)
-		return posix_error();
-
-	dynamic_return = PyUnicode_FromString(tmpbuf);
-	free(tmpbuf);
-
-	return dynamic_return;
-}
-
-PyDoc_STRVAR(posix_getcwdu__doc__,
-"getcwdu() -> path\n\n\
-Return a unicode string representing the current working directory.");
-
-static PyObject *
-posix_getcwdu(PyObject *self, PyObject *noargs)
+posix_getcwd(int use_bytes)
 {
 	char buf[1026];
 	char *res;
 
 #ifdef Py_WIN_WIDE_FILENAMES
-	DWORD len;
-	if (unicode_file_names()) {
+	if (!use_bytes && unicode_file_names()) {
 		wchar_t wbuf[1026];
 		wchar_t *wbuf2 = wbuf;
 		PyObject *resobj;
+		DWORD len;
 		Py_BEGIN_ALLOW_THREADS
 		len = GetCurrentDirectoryW(sizeof wbuf/ sizeof wbuf[0], wbuf);
 		/* If the buffer is large enough, len does not include the
@@ -2059,7 +2014,29 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 	Py_END_ALLOW_THREADS
 	if (res == NULL)
 		return posix_error();
+	if (use_bytes)
+		return PyBytes_FromStringAndSize(buf, strlen(buf));
 	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"strict");
+}
+
+PyDoc_STRVAR(posix_getcwd__doc__,
+"getcwd() -> path\n\n\
+Return a unicode string representing the current working directory.");
+
+static PyObject *
+posix_getcwd_unicode(PyObject *self)
+{
+    return posix_getcwd(0);
+}
+
+PyDoc_STRVAR(posix_getcwdb__doc__,
+"getcwdb() -> path\n\n\
+Return a bytes string representing the current working directory.");
+
+static PyObject *
+posix_getcwd_bytes(PyObject *self)
+{
+    return posix_getcwd(1);
 }
 #endif
 
@@ -2378,9 +2355,12 @@ posix_listdir(PyObject *self, PyObject *args)
 				v = w;
 			}
 			else {
-				/* fall back to the original byte string, as
-				   discussed in patch #683592 */
+				/* Ignore undecodable filenames, as discussed
+				 * in issue 3187. To include these,
+				 * use getcwdb(). */
 				PyErr_Clear();
+				Py_DECREF(v);
+				continue;
 			}
 		}
 		if (PyList_Append(d, v) != 0) {
@@ -4477,9 +4457,7 @@ posix_readlink(PyObject *self, PyObject *args)
 			v = w;
 		}
 		else {
-			/* fall back to the original byte string, as
-			   discussed in patch #683592 */
-			PyErr_Clear();
+			v = NULL;
 		}
 	}
 	return v;
@@ -6810,8 +6788,10 @@ static PyMethodDef posix_methods[] = {
 	{"ctermid",	posix_ctermid, METH_NOARGS, posix_ctermid__doc__},
 #endif
 #ifdef HAVE_GETCWD
-	{"getcwd",	posix_getcwd, METH_NOARGS, posix_getcwd__doc__},
-	{"getcwdu",	posix_getcwdu, METH_NOARGS, posix_getcwdu__doc__},
+	{"getcwd",	(PyCFunction)posix_getcwd_unicode,
+	METH_NOARGS, posix_getcwd__doc__},
+	{"getcwdb",	(PyCFunction)posix_getcwd_bytes,
+	METH_NOARGS, posix_getcwdb__doc__},
 #endif
 #ifdef HAVE_LINK
 	{"link",	posix_link, METH_VARARGS, posix_link__doc__},
