@@ -115,19 +115,19 @@ static char unicode_default_encoding[100];
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x0009: /* HORIZONTAL TABULATION */
-//     case 0x000A: /* LINE FEED */
-//     case 0x000B: /* VERTICAL TABULATION */
-//     case 0x000C: /* FORM FEED */
-//     case 0x000D: /* CARRIAGE RETURN */
+/*     case 0x0009: * HORIZONTAL TABULATION */
+/*     case 0x000A: * LINE FEED */
+/*     case 0x000B: * VERTICAL TABULATION */
+/*     case 0x000C: * FORM FEED */
+/*     case 0x000D: * CARRIAGE RETURN */
 	0, 1, 1, 1, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x001C: /* FILE SEPARATOR */
-//     case 0x001D: /* GROUP SEPARATOR */
-//     case 0x001E: /* RECORD SEPARATOR */
-//     case 0x001F: /* UNIT SEPARATOR */
+/*     case 0x001C: * FILE SEPARATOR */
+/*     case 0x001D: * GROUP SEPARATOR */
+/*     case 0x001E: * RECORD SEPARATOR */
+/*     case 0x001F: * UNIT SEPARATOR */
 	0, 0, 0, 0, 1, 1, 1, 1,
-//     case 0x0020: /* SPACE */
+/*     case 0x0020: * SPACE */
 	1, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -146,13 +146,13 @@ const unsigned char _Py_ascii_whitespace[] = {
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
-//         0x000A, /* LINE FEED */
-//         0x000D, /* CARRIAGE RETURN */
+/*         0x000A, * LINE FEED */
+/*         0x000D, * CARRIAGE RETURN */
 	0, 0, 1, 0, 0, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-//         0x001C, /* FILE SEPARATOR */
-//         0x001D, /* GROUP SEPARATOR */
-//         0x001E, /* RECORD SEPARATOR */
+/*         0x001C, * FILE SEPARATOR */
+/*         0x001D, * GROUP SEPARATOR */
+/*         0x001E, * RECORD SEPARATOR */
 	0, 0, 0, 0, 1, 1, 1, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
