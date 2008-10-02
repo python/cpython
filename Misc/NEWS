@@ -4,8 +4,11 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 3.0 release candidate 2
-============================================
+What's New in Python 3.0 beta 5
+===============================
+
+[Note: due to the number of unresolved issues we're going back to beta
+ releases for a while.]
 
 *Release date: XX-XXX-2008*
 
@@ -21,6 +24,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #3187: Better support for "undecodable" filenames.  Code by Victor
+  Stinner, with small tweaks by GvR.
 
 - Issue #3965: Allow repeated calls to turtle.Screen, by making it a
   true singleton object.

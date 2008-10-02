@@ -37,6 +37,15 @@ class FnmatchTestCase(unittest.TestCase):
         check('a', r'[!\]')
         check('\\', r'[!\]', 0)
 
+    def test_mix_bytes_str(self):
+        self.assertRaises(TypeError, fnmatch, 'test', b'*')
+        self.assertRaises(TypeError, fnmatch, b'test', '*')
+        self.assertRaises(TypeError, fnmatchcase, 'test', b'*')
+        self.assertRaises(TypeError, fnmatchcase, b'test', '*')
+
+    def test_bytes(self):
+        self.check_match(b'test', b'te*')
+        self.check_match(b'test\xff', b'te*\xff')
 
 def test_main():
     support.run_unittest(FnmatchTestCase)
