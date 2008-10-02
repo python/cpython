@@ -388,10 +388,10 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* closure,
     return FFI_BAD_ABI;
   }
 
-  // we currently don't support certain kinds of arguments for raw
+  /* we currently don't support certain kinds of arguments for raw
   // closures.  This should be implemented by a separate assembly language
   // routine, since it would require argument processing, something we
-  // don't do now for performance.
+  // don't do now for performance. */
 
   for (i = cif->nargs-1; i >= 0; i--)
     {
