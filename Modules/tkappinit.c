@@ -71,7 +71,7 @@ Tcl_AppInit(Tcl_Interp *interp)
 #endif
 
 #ifdef WITH_XXX
-		// Initialize modules that don't require Tk
+		/* Initialize modules that don't require Tk */
 #endif
 
 	_tkinter_skip_tk_init =	Tcl_GetVar(interp, "_tkinter_skip_tk_init", TCL_GLOBAL_ONLY);
