@@ -107,7 +107,7 @@ timeval_from_double(double d, struct timeval *tv)
     tv->tv_usec = fmod(d, 1.0) * 1000000.0;
 }
 
-static inline double
+Py_LOCAL_INLINE(double)
 double_from_timeval(struct timeval *tv)
 {
     return tv->tv_sec + (double)(tv->tv_usec / 1000000.0);
