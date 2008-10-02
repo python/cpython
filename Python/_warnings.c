@@ -377,7 +377,7 @@ warn_explicit(PyObject *category, PyObject *message,
         }
     }
 
-    if (rc == 1)  // Already warned for this module. */
+    if (rc == 1)  /* Already warned for this module. */
         goto return_none;
     if (rc == 0) {
         PyObject *show_fxn = get_warnings_attr("showwarning");
@@ -800,8 +800,8 @@ static PyMethodDef warnings_functions[] = {
         warn_doc},
     {"warn_explicit", (PyCFunction)warnings_warn_explicit,
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
-    // XXX(brett.cannon): add showwarning?
-    // XXX(brett.cannon): Reasonable to add formatwarning?
+    /* XXX(brett.cannon): add showwarning? */
+    /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}	        /* sentinel */
 };
 
