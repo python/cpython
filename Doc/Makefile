@@ -111,7 +111,7 @@ dist:
 
 	# archive the HTML
 	make html
-	cp -a build/html dist/python$(DISTVERSION)-docs-html
+	cp -pPR build/html dist/python$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python$(DISTVERSION)-docs-html.tar python$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python$(DISTVERSION)-docs-html.zip python$(DISTVERSION)-docs-html)
@@ -120,7 +120,7 @@ dist:
 
 	# archive the text build
 	make text
-	cp -a build/text dist/python$(DISTVERSION)-docs-text
+	cp -pPR build/text dist/python$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python$(DISTVERSION)-docs-text.tar python$(DISTVERSION)-docs-text
 	bzip2 -9 -k dist/python$(DISTVERSION)-docs-text.tar
 	(cd dist; zip -q -r -9 python$(DISTVERSION)-docs-text.zip python$(DISTVERSION)-docs-text)
