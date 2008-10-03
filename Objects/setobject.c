@@ -754,7 +754,8 @@ set_pop(PySetObject *so)
 	return key;
 }
 
-PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
+PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.\n\
+Raises KeyError if the set is empty.");
 
 static int
 set_traverse(PySetObject *so, visitproc visit, void *arg)
