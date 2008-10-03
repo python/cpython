@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3187: Add sys.setfilesystemencoding.
+
 - Issue #3187: Better support for "undecodable" filenames.  Code by Victor
   Stinner, with small tweaks by GvR.
 

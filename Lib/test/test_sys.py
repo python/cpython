@@ -658,6 +658,11 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, size(vh) + self.P * len(sys.flags))
 
+    def test_setfilesystemencoding(self):
+        old = sys.getfilesystemencoding()
+        sys.setfilesystemencoding("iso-8859-1")
+        self.assertEqual(sys.getfilesystemencoding(), "iso-8859-1")
+        sys.setfilesystemencoding(old)
 
 def test_main():
     test.support.run_unittest(SysModuleTest, SizeofTest)
