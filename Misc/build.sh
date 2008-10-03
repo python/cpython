@@ -50,9 +50,9 @@ FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
-REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
+REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/2.6"
 RESULT_FILE="$DIR/build/index.html"
-INSTALL_DIR="/tmp/python-test/local"
+INSTALL_DIR="/tmp/python-test-2.6/local"
 RSYNC_OPTS="-aC -e ssh"
 
 # Always run the installed version of Python.
@@ -77,7 +77,7 @@ LEAKY_TESTS="test_(asynchat|cmd_line|docxmlrpc|dumbdbm|file|ftplib|httpservers|i
 LEAKY_SKIPS="-x test_compiler test_logging"
 
 # Change this flag to "yes" for old releases to only update/build the docs.
-BUILD_DISABLED="no"
+BUILD_DISABLED="yes"
 
 ## utility functions
 current_time() {
