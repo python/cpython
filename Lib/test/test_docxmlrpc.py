@@ -9,9 +9,9 @@ import xmlrpclib
 PORT = None
 
 def server(evt, numrequests):
-    try:
-        serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
+    serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
 
+    try:
         global PORT
         PORT = serv.socket.getsockname()[1]
 
