@@ -17,14 +17,33 @@
 */
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
 const char *Py_FileSystemDefaultEncoding = "mbcs";
-const int Py_HasFileSystemDefaultEncoding = 1;
+int Py_HasFileSystemDefaultEncoding = 1;
 #elif defined(__APPLE__)
 const char *Py_FileSystemDefaultEncoding = "utf-8";
-const int Py_HasFileSystemDefaultEncoding = 1;
+int Py_HasFileSystemDefaultEncoding = 1;
 #else
 const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
-const int Py_HasFileSystemDefaultEncoding = 0;
+int Py_HasFileSystemDefaultEncoding = 0;
 #endif
+
+int
+_Py_SetFileSystemEncoding(PyObject *s)
+{
+	PyObject *defenc;
+	if (!PyUnicode_Check(s)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	defenc = _PyUnicode_AsDefaultEncodedString(s, NULL);
+	if (!defenc)
+		return -1;
+	if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding)
+		/* A file system encoding was set at run-time */
+		free((char*)Py_FileSystemDefaultEncoding);
+	Py_FileSystemDefaultEncoding = strdup(PyBytes_AsString(defenc));
+	Py_HasFileSystemDefaultEncoding = 0;
+	return 0;
+}
 
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
