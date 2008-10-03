@@ -331,17 +331,25 @@ def expandvars(path):
             return path
         import string
         varchars = bytes(string.ascii_letters + string.digits + '_-', 'ascii')
+        quote = b'\''
+        percent = b'%'
+        brace = b'{'
+        dollar = b'$'
     else:
         if '$' not in path and '%' not in path:
             return path
         import string
         varchars = string.ascii_letters + string.digits + '_-'
+        quote = '\''
+        percent = '%'
+        brace = '{'
+        dollar = '$'
     res = path[:0]
     index = 0
     pathlen = len(path)
     while index < pathlen:
         c = path[index:index+1]
-        if c in ('\'', b'\''):   # no expansion within single quotes
+        if c == quote:   # no expansion within single quotes
             path = path[index + 1:]
             pathlen = len(path)
             try:
@@ -350,11 +358,7 @@ def expandvars(path):
             except ValueError:
                 res = res + path
                 index = pathlen - 1
-        elif c in ('%', b'%'):  # variable or '%'
-            if isinstance(path, bytes):
-                percent = b'%'
-            else:
-                percent = '%'
+        elif c == percent:  # variable or '%'
             if path[index + 1:index + 2] == percent:
                 res = res + c
                 index = index + 1
@@ -377,11 +381,11 @@ def expandvars(path):
                     if isinstance(path, bytes):
                         value = value.encode('ascii')
                     res = res + value
-        elif c in ('$', b'$'):  # variable or '$$'
-            if path[index + 1:index + 2] == '$':
+        elif c == dollar:  # variable or '$$'
+            if path[index + 1:index + 2] == dollar:
                 res = res + c
                 index = index + 1
-            elif path[index + 1:index + 2] in ('{', b'{'):
+            elif path[index + 1:index + 2] == brace:
                 path = path[index+2:]
                 pathlen = len(path)
                 try:
@@ -438,6 +442,7 @@ def expandvars(path):
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     sep = _get_sep(path)
+    dotdot = _get_dot(path) * 2
     path = path.replace(_get_altsep(path), sep)
     prefix, path = splitdrive(path)
     # We need to be careful here. If the prefix is empty, and the path starts
@@ -462,21 +467,13 @@ def normpath(path):
     comps = path.split(sep)
     i = 0
     while i < len(comps):
-        if comps[i] in ('.', '', b'.', b''):
+        if not comps[i] or comps[i] == _get_dot(path):
             del comps[i]
-        elif comps[i] == '..':
-            if i > 0 and comps[i-1] != '..':
+        elif comps[i] == dotdot:
+            if i > 0 and comps[i-1] != dotdot:
                 del comps[i-1:i+1]
                 i -= 1
-            elif i == 0 and prefix.endswith("\\"):
-                del comps[i]
-            else:
-                i += 1
-        elif comps[i] == b'..':
-            if i > 0 and comps[i-1] != b'..':
-                del comps[i-1:i+1]
-                i -= 1
-            elif i == 0 and prefix.endswith(b"\\"):
+            elif i == 0 and prefix.endswith(_get_sep(path)):
                 del comps[i]
             else:
                 i += 1
