@@ -115,7 +115,7 @@ Decodes obj using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
 a ValueError. Other possible values are 'ignore' and 'replace'\n\
-as well as any other name registerd with codecs.register_error that is\n\
+as well as any other name registered with codecs.register_error that is\n\
 able to handle ValueErrors.");
 
 static PyObject *
