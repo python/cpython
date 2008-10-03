@@ -1651,7 +1651,7 @@ static PyObject *
 posix_chdir(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return win32_1str(args, "chdir", "s:chdir", win32_chdir, "U:chdir", win32_wchdir);
+	return win32_1str(args, "chdir", "y:chdir", win32_chdir, "U:chdir", win32_wchdir);
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
 	return posix_1str(args, "et:chdir", _chdir2);
 #elif defined(__VMS)
@@ -2586,7 +2586,7 @@ static PyObject *
 posix_rmdir(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return win32_1str(args, "rmdir", "s:rmdir", RemoveDirectoryA, "U:rmdir", RemoveDirectoryW);
+	return win32_1str(args, "rmdir", "y:rmdir", RemoveDirectoryA, "U:rmdir", RemoveDirectoryW);
 #else
 	return posix_1str(args, "et:rmdir", rmdir);
 #endif
@@ -2667,7 +2667,7 @@ static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return win32_1str(args, "remove", "s:remove", DeleteFileA, "U:remove", DeleteFileW);
+	return win32_1str(args, "remove", "y:remove", DeleteFileA, "U:remove", DeleteFileW);
 #else
 	return posix_1str(args, "et:remove", unlink);
 #endif
