@@ -36,7 +36,7 @@ PyDoc_STRVAR(MultibyteCodec_Decode__doc__,
 Decodes `string' using I, an MultibyteCodec instance. errors may be given\n\
 to set a different error handling scheme. Default is 'strict' meaning\n\
 that encoding errors raise a UnicodeDecodeError. Other possible values\n\
-are 'ignore' and 'replace' as well as any other name registerd with\n\
+are 'ignore' and 'replace' as well as any other name registered with\n\
 codecs.register_error that is able to handle UnicodeDecodeErrors.");
 
 static char *codeckwarglist[] = {"input", "errors", NULL};
