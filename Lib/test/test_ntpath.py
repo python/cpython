@@ -12,6 +12,23 @@ def tester(fn, wantResult):
         raise TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), str(gotResult)))
 
+    # then with bytes
+    fn = fn.replace("('", "(b'")
+    fn = fn.replace('("', '(b"')
+    fn = fn.replace("['", "[b'")
+    fn = fn.replace('["', '[b"')
+    fn = fn.replace(", '", ", b'")
+    fn = fn.replace(', "', ', b"')
+    gotResult = eval(fn)
+    if isinstance(wantResult, str):
+        wantResult = wantResult.encode('ascii')
+    elif isinstance(wantResult, tuple):
+        wantResult = tuple(r.encode('ascii') for r in wantResult)
+
+    gotResult = eval(fn)
+    if wantResult != gotResult:
+        raise TestFailed("%s should return: %s but returned: %s" \
+              %(str(fn), str(wantResult), repr(gotResult)))
 
 class TestNtpath(unittest.TestCase):
     def test_splitext(self):
