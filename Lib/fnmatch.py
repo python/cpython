@@ -14,7 +14,8 @@ import re
 
 __all__ = ["filter", "fnmatch","fnmatchcase","translate"]
 
-_cache = {}
+_cache = {}  # Maps text patterns to compiled regexen.
+_cacheb = {}  # Ditto for bytes patterns.
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
@@ -38,7 +39,8 @@ def fnmatch(name, pat):
     return fnmatchcase(name, pat)
 
 def _compile_pattern(pat):
-    regex = _cache.get(pat)
+    cache = _cacheb if isinstance(pat, bytes) else _cache
+    regex = cache.get(pat)
     if regex is None:
         if isinstance(pat, bytes):
             pat_str = str(pat, 'ISO-8859-1')
@@ -46,7 +48,7 @@ def _compile_pattern(pat):
             res = bytes(res_str, 'ISO-8859-1')
         else:
             res = translate(pat)
-        _cache[pat] = regex = re.compile(res)
+        cache[pat] = regex = re.compile(res)
     return regex.match
 
 def filter(names, pat):
