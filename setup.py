@@ -1019,6 +1019,14 @@ class PyBuildExt(build_ext):
                 )
             libraries = []
 
+        elif platform.startswith('openbsd'):
+            macros = dict(                  # OpenBSD
+                HAVE_SEM_OPEN=0,            # Not implemented
+                HAVE_SEM_TIMEDWAIT=0,
+                HAVE_FD_TRANSFER=1,
+                )
+            libraries = []
+
         else:                                   # Linux and other unices
             macros = dict(
                 HAVE_SEM_OPEN=1,

@@ -1390,7 +1390,7 @@ ctypes private copy to `value` and returns the former value.
 
 The *use_last_error* parameter, when set to True, enables the same
 mechanism for the Windows error code which is managed by the
-GetLastError() and SetLastError() Windows api functions;
+:func:`GetLastError` and :func:`SetLastError` Windows API functions;
 `ctypes.get_last_error()` and `ctypes.set_last_error(value)` are used
 to request and change the ctypes private copy of the windows error
 code.
