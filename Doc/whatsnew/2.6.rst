@@ -8,7 +8,7 @@
 :Release: |release|
 :Date: |today|
 
-.. $Id: whatsnew26.tex 55746 2007-06-02 18:33:53Z neal.norwitz $
+.. $Id$
    Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
