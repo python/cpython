@@ -69,9 +69,9 @@ output must only depend on its input.
 Some languages are very strict about purity and don't even have assignment
 statements such as ``a=3`` or ``c = a + b``, but it's difficult to avoid all
 side effects.  Printing to the screen or writing to a disk file are side
-effects, for example.  For example, in Python a ``print`` statement or a
-``time.sleep(1)`` both return no useful value; they're only called for their
-side effects of sending some text to the screen or pausing execution for a
+effects, for example.  For example, in Python a call to the :func:`print` or
+:func:`time.sleep` function both return no useful value; they're only called for
+their side effects of sending some text to the screen or pausing execution for a
 second.
 
 Python programs written in functional style usually won't go to the extreme of
@@ -1031,8 +1031,8 @@ value and an iterator for the elements with that key.
                  ...
                 ]
 
-    def get_state ((city, state)):
-        return state
+    def get_state (city_state):
+        return city_state[1]
 
     itertools.groupby(city_list, get_state) =>
       ('AL', iterator-1),
