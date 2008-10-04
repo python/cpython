@@ -1548,7 +1548,7 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 #ifdef Py_NAN
 	if (Py_IS_NAN(self)) {
 	  PyErr_SetString(PyExc_ValueError,
-			  "Cannot pass nan to float.as_integer_ratio.");
+			  "Cannot pass NaN to float.as_integer_ratio.");
 	  return NULL;
 	}
 #endif
@@ -1607,7 +1607,7 @@ PyDoc_STRVAR(float_as_integer_ratio_doc,
 "\n"
 "Returns a pair of integers, whose ratio is exactly equal to the original\n"
 "float and with a positive denominator.\n"
-"Raises OverflowError on infinities and a ValueError on nans.\n"
+"Raises OverflowError on infinities and a ValueError on NaNs.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
 "(10, 1)\n"
