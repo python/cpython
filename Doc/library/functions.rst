@@ -832,7 +832,7 @@ are always available.  They are listed here in alphabetical order.
    must be of integer types, and *y* must be non-negative.
 
 
-.. function:: print([object, ...][, sep=' '][, end='\n'][, file=sys.stdout])
+.. function:: print([object, ...][, sep=' '][, end='\\n'][, file=sys.stdout])
 
    Print *object*\(s) to the stream *file*, separated by *sep* and followed by
    *end*.  *sep*, *end* and *file*, if present, must be given as keyword
