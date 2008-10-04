@@ -655,10 +655,47 @@ class WildcardPattern(BasePattern):
         elif self.name == "bare_name":
             yield self._bare_name_matches(nodes)
         else:
-            for count, r in self._recursive_matches(nodes, 0):
-                if self.name:
-                    r[self.name] = nodes[:count]
-                yield count, r
+            try:
+                for count, r in self._recursive_matches(nodes, 0):
+                    if self.name:
+                        r[self.name] = nodes[:count]
+                    yield count, r
+            except RuntimeError:
+                # We fall back to the iterative pattern matching scheme if the recursive
+                # scheme hits the recursion limit.
+                for count, r in self._iterative_matches(nodes):
+                    if self.name:
+                        r[self.name] = nodes[:count]
+                    yield count, r
+
+    def _iterative_matches(self, nodes):
+        """Helper to iteratively yield the matches."""
+        nodelen = len(nodes)
+        if 0 >= self.min:
+            yield 0, {}
+
+        results = []
+        # generate matches that use just one alt from self.content
+        for alt in self.content:
+            for c, r in generate_matches(alt, nodes):
+                yield c, r
+                results.append((c, r))
+
+        # for each match, iterate down the nodes
+        while results:
+            new_results = []
+            for c0, r0 in results:
+                # stop if the entire set of nodes has been matched
+                if c0 < nodelen and c0 <= self.max:
+                    for alt in self.content:
+                        for c1, r1 in generate_matches(alt, nodes[c0:]):
+                            if c1 > 0:
+                                r = {}
+                                r.update(r0)
+                                r.update(r1)
+                                yield c0 + c1, r
+                                new_results.append((c0 + c1, r))
+            results = new_results
 
     def _bare_name_matches(self, nodes):
         """Special optimized matcher for bare_name."""
