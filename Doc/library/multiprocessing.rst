@@ -16,6 +16,13 @@ to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
 
+.. warning::
+
+    Some of this package's functionality requires a functioning shared semaphore
+    implementation on the host operating system. Without one, the 
+    :mod:`multiprocessing.synchronize` module will be disabled, and attempts to 
+    import it will result in an :exc:`ImportError`. See 
+    :issue:`3770` for additional information.
 
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

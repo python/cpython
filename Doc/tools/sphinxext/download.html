@@ -3,14 +3,15 @@
 {% set dlbase = 'http://docs.python.org/ftp/python/doc/' + release %}
 {% block body %}
 
-<h1>Download Python {{ release }} Documentation
-  {%- if last_updated %} (last updated on {{ last_updated }}){% endif %}</h1>
+<h1>Download Python {{ release }} Documentation</h1>
 
 {% if 'a' in release or 'b' in release or 'c' in release %}
 <p>We don't package the documentation for development releases for download.
   Downloads will be available for the final release.</p>
 
 {% else %}
+{% if last_updated %}<p><b>Last updated on: {{ last_updated }}.</b></p>{% endif %}
+
 <p>To download an archive containing all the documents for this version of
 Python in one of various formats, follow one of links in this table. The numbers
 in the table are the size of the download files in Kilobytes.</p>

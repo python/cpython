@@ -133,7 +133,7 @@ This module also defines four shortcut functions:
 .. function:: check_call(*popenargs, **kwargs)
 
    Run command with arguments.  Wait for command to complete. If the exit code was
-   zero then return, otherwise raise :exc:`CalledProcessError.` The
+   zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`returncode` attribute.
 

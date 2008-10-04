@@ -21,6 +21,17 @@ from multiprocessing.process import current_process
 from multiprocessing.util import Finalize, register_after_fork, debug
 from multiprocessing.forking import assert_spawning, Popen
 
+# Try to import the mp.synchronize module cleanly, if it fails
+# raise ImportError for platforms lacking a working sem_open implementation.
+# See issue 3770
+try:
+    from _multiprocessing import SemLock
+except (ImportError):
+    raise ImportError("This platform lacks a functioning sem_open" +
+                      " implementation, therefore, the required" +
+                      " synchronization primitives needed will not" +
+                      " function, see issue 3770.")
+
 #
 # Constants
 #
