@@ -2753,7 +2753,7 @@ representing a literal expression, parses and evaluates it, and
 returns the resulting value.  A literal expression is a Python
 expression containing only strings, numbers, dictionaries,
 etc. but no statements or function calls.  If you need to
-evaluate an expression but accept the security risk of using an
+evaluate an expression but cannot accept the security risk of using an
 :func:`eval` call, :func:`literal_eval` will handle it safely::
 
     >>> literal = '("a", "b", {2:4, 3:8, 1:2})'
@@ -3039,7 +3039,7 @@ Changes to Python's build process and to the C API include:
   ``numfree``, and a macro ``Py<typename>_MAXFREELIST`` is
   always defined.
 
-* A new Makefile target, "make check", prepares the Python source tree
+* A new Makefile target, "make patchcheck", prepares the Python source tree
   for making a patch: it fixes trailing whitespace in all modified
   ``.py`` files, checks whether the documentation has been changed,
   and reports whether the :file:`Misc/ACKS` and :file:`Misc/NEWS` files
@@ -3267,6 +3267,6 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Kent
-Johnson, Chris Lambacher, Antoine Pitrou.
+article: Georg Brandl, Steve Brown, Nick Coghlan, Ralph Corderoy, 
+Jim Jewett, Kent Johnson, Chris Lambacher, Antoine Pitrou, Brian Warner.
 
