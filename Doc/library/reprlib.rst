@@ -126,7 +126,7 @@ for file objects could be added::
            if obj.name in ['<stdin>', '<stdout>', '<stderr>']:
                return obj.name
            else:
-               return `obj`
+               return repr(obj)
 
    aRepr = MyRepr()
    print aRepr.repr(sys.stdin)          # prints '<stdin>'
