@@ -9,10 +9,10 @@ except ImportError:
     import support
 
 # Python imports
+import os
 import unittest
 from itertools import chain
 from operator import itemgetter
-from os.path import dirname, pathsep
 
 # Local imports
 from .. import pygram
@@ -3274,13 +3274,18 @@ class Test_import(FixerTestCase):
         # Need to replace fix_import's exists method
         # so we can check that it's doing the right thing
         self.files_checked = []
+        self.present_files = set()
         self.always_exists = True
         def fake_exists(name):
             self.files_checked.append(name)
-            return self.always_exists
+            return self.always_exists or (name in self.present_files)
 
         from ..fixes import fix_import
         fix_import.exists = fake_exists
+
+    def tearDown(self):
+        from lib2to3.fixes import fix_import
+        fix_import.exists = os.path.exists
 
     def check_both(self, b, a):
         self.always_exists = True
@@ -3291,10 +3296,12 @@ class Test_import(FixerTestCase):
     def test_files_checked(self):
         def p(path):
             # Takes a unix path and returns a path with correct separators
-            return pathsep.join(path.split("/"))
+            return os.path.pathsep.join(path.split("/"))
 
         self.always_exists = False
-        expected_extensions = ('.py', pathsep, '.pyc', '.so', '.sl', '.pyd')
+        self.present_files = set(['__init__.py'])
+        expected_extensions = ('.py', os.path.pathsep, '.pyc', '.so',
+                               '.sl', '.pyd')
         names_to_test = (p("/spam/eggs.py"), "ni.py", p("../../shrubbery.py"))
 
         for name in names_to_test:
@@ -3302,11 +3309,32 @@ class Test_import(FixerTestCase):
             self.filename = name
             self.unchanged("import jam")
 
-            if dirname(name): name = dirname(name) + '/jam'
-            else:             name = 'jam'
+            if os.path.dirname(name):
+                name = os.path.dirname(name) + '/jam'
+            else:
+                name = 'jam'
             expected_checks = set(name + ext for ext in expected_extensions)
+            expected_checks.add("__init__.py")
 
-            self.failUnlessEqual(set(self.files_checked), expected_checks)
+            self.assertEqual(set(self.files_checked), expected_checks)
+
+    def test_not_in_package(self):
+        s = "import bar"
+        self.always_exists = False
+        self.present_files = set(["bar.py"])
+        self.unchanged(s)
+
+    def test_in_package(self):
+        b = "import bar"
+        a = "from . import bar"
+        self.always_exists = False
+        self.present_files = set(["__init__.py", "bar.py"])
+        self.check(b, a)
+
+    def test_comments_and_indent(self):
+        b = "import bar # Foo"
+        a = "from . import bar # Foo"
+        self.check(b, a)
 
     def test_from(self):
         b = "from foo import bar, baz"
@@ -3574,6 +3602,67 @@ class Test_metaclass(FixerTestCase):
         # keywords in the class statement
         b = """class m(a, arg=23): __metaclass__ = Meta"""
         a = """class m(a, arg=23, metaclass=Meta): pass"""
+        self.check(b, a)
+
+
+class Test_getcwdu(FixerTestCase):
+
+    fixer = 'getcwdu'
+
+    def test_basic(self):
+        b = """os.getcwdu"""
+        a = """os.getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu()"""
+        a = """os.getcwd()"""
+        self.check(b, a)
+
+        b = """meth = os.getcwdu"""
+        a = """meth = os.getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu(args)"""
+        a = """os.getcwd(args)"""
+        self.check(b, a)
+
+    def test_comment(self):
+        b = """os.getcwdu() # Foo"""
+        a = """os.getcwd() # Foo"""
+        self.check(b, a)
+
+    def test_unchanged(self):
+        s = """os.getcwd()"""
+        self.unchanged(s)
+
+        s = """getcwdu()"""
+        self.unchanged(s)
+
+        s = """os.getcwdb()"""
+        self.unchanged(s)
+
+    def test_indentation(self):
+        b = """
+            if 1:
+                os.getcwdu()
+            """
+        a = """
+            if 1:
+                os.getcwd()
+            """
+        self.check(b, a)
+
+    def test_multilation(self):
+        b = """os .getcwdu()"""
+        a = """os .getcwd()"""
+        self.check(b, a)
+
+        b = """os.  getcwdu"""
+        a = """os.  getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu (  )"""
+        a = """os.getcwd (  )"""
         self.check(b, a)
 
 

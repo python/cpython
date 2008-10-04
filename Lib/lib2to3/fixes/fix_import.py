@@ -54,6 +54,10 @@ def probably_a_local_import(imp_name, file_path):
     imp_name = imp_name.split('.', 1)[0].strip()
     base_path = dirname(file_path)
     base_path = join(base_path, imp_name)
+    # If there is no __init__.py next to the file its not in a package
+    # so can't be a relative import.
+    if not exists(join(dirname(base_path), '__init__.py')):
+        return False
     for ext in ['.py', pathsep, '.pyc', '.so', '.sl', '.pyd']:
         if exists(base_path + ext):
             return True
