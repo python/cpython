@@ -714,7 +714,7 @@ Python's division operator, ``/``, behaves like C's division operator when
 presented with two integer arguments: it returns an integer result that's
 truncated down when there would be a fractional part.  For example, ``3/2`` is
 1, not 1.5, and ``(-1)/2`` is -1, not -0.5.  This means that the results of
-divison can vary unexpectedly depending on the type of the two operands and
+division can vary unexpectedly depending on the type of the two operands and
 because Python is dynamically typed, it can be difficult to determine the
 possible types of the operands.
 

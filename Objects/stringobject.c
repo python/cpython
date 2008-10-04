@@ -1591,9 +1591,9 @@ string_split(PyStringObject *self, PyObject *args)
 PyDoc_STRVAR(partition__doc__,
 "S.partition(sep) -> (head, sep, tail)\n\
 \n\
-Searches for the separator sep in S, and returns the part before it,\n\
+Search for the separator sep in S, and return the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
-found, returns S and two empty strings.");
+found, return S and two empty strings.");
 
 static PyObject *
 string_partition(PyStringObject *self, PyObject *sep_obj)
@@ -1622,9 +1622,9 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 PyDoc_STRVAR(rpartition__doc__,
 "S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
-Searches for the separator sep in S, starting at the end of S, and returns\n\
+Search for the separator sep in S, starting at the end of S, and return\n\
 the part before it, the separator itself, and the part after it.  If the\n\
-separator is not found, returns two empty strings and S.");
+separator is not found, return two empty strings and S.");
 
 static PyObject *
 string_rpartition(PyStringObject *self, PyObject *sep_obj)
@@ -3357,7 +3357,7 @@ Decodes S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
 a UnicodeDecodeError. Other possible values are 'ignore' and 'replace'\n\
-as well as any other name registerd with codecs.register_error that is\n\
+as well as any other name registered with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
@@ -3506,7 +3506,7 @@ pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
 PyDoc_STRVAR(ljust__doc__,
 "S.ljust(width[, fillchar]) -> string\n"
 "\n"
-"Return S left justified in a string of length width. Padding is\n"
+"Return S left-justified in a string of length width. Padding is\n"
 "done using the specified fill character (default is a space).");
 
 static PyObject *
@@ -3530,7 +3530,7 @@ string_ljust(PyStringObject *self, PyObject *args)
 PyDoc_STRVAR(rjust__doc__,
 "S.rjust(width[, fillchar]) -> string\n"
 "\n"
-"Return S right justified in a string of length width. Padding is\n"
+"Return S right-justified in a string of length width. Padding is\n"
 "done using the specified fill character (default is a space)");
 
 static PyObject *
