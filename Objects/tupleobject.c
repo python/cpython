@@ -719,7 +719,9 @@ tuple_sizeof(PyTupleObject *self)
 }
 
 PyDoc_STRVAR(index_doc,
-"T.index(value, [start, [stop]]) -> integer -- return first index of value");
+"T.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
+"Raises ValueError if the value is not present."
+);
 PyDoc_STRVAR(count_doc,
 "T.count(value) -> integer -- return number of occurrences of value");
 PyDoc_STRVAR(sizeof_doc,
