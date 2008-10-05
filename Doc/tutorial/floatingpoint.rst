@@ -138,7 +138,39 @@ method's format specifiers in :ref:`formatstrings`.
 If you are a heavy user of floating point operations you should take a look
 at the Numerical Python package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <http://scipy.org>.
- 
+
+Python provides tools that may help on those rare occasions when you really
+*do* want to know the exact value of a float.  The
+:meth:`float.as_integer_ratio` method expresses the value of a float as a
+fraction::
+
+   >>> x = 3.14159
+   >>> x.as_integer_ratio()
+   (3537115888337719L, 1125899906842624L)
+
+Since the ratio is exact, it can be used to losslessly recreate the
+original value::
+
+    >>> x == 3537115888337719 / 1125899906842624
+    True
+
+The :meth:`float.hex` method expresses a float in hexadecimal (base
+16), again giving the exact value stored by your computer::
+
+   >>> x.hex()
+   '0x1.921f9f01b866ep+1'
+
+This precise hexadecimal representation can be used to reconstruct
+the float value exactly::
+
+    >>> x == float.fromhex('0x1.921f9f01b866ep+1')
+    True
+
+Since the representation is exact, it is useful for reliably porting values
+across different versions of Python (platform independence) and exchanging
+data with other languages that support the same format (such as Java and C99).
+
+
 .. _tut-fp-error:
 
 Representation Error
