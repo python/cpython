@@ -30,31 +30,27 @@ def _copy_file_contents(src, dst, buffer_size=16*1024):
         try:
             fsrc = open(src, 'rb')
         except os.error as e:
-            (errno, errstr) = e
-            raise DistutilsFileError("could not open '%s': %s" % (src, errstr))
+            raise DistutilsFileError("could not open '%s': %s" % (src, e.strerror))
 
         if os.path.exists(dst):
             try:
                 os.unlink(dst)
             except os.error as e:
-                (errno, errstr) = e
                 raise DistutilsFileError(
-                      "could not delete '%s': %s" % (dst, errstr))
+                      "could not delete '%s': %s" % (dst, e.strerror))
 
         try:
             fdst = open(dst, 'wb')
         except os.error as e:
-            (errno, errstr) = e
             raise DistutilsFileError(
-                  "could not create '%s': %s" % (dst, errstr))
+                  "could not create '%s': %s" % (dst, e.strerror))
 
         while True:
             try:
                 buf = fsrc.read(buffer_size)
             except os.error as e:
-                (errno, errstr) = e
                 raise DistutilsFileError(
-                      "could not read from '%s': %s" % (src, errstr))
+                      "could not read from '%s': %s" % (src, e.strerror))
 
             if not buf:
                 break
@@ -62,9 +58,8 @@ def _copy_file_contents(src, dst, buffer_size=16*1024):
             try:
                 fdst.write(buf)
             except os.error as e:
-                (errno, errstr) = e
                 raise DistutilsFileError(
-                      "could not write to '%s': %s" % (dst, errstr))
+                      "could not write to '%s': %s" % (dst, e.strerror))
     finally:
         if fdst:
             fdst.close()
