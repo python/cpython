@@ -135,6 +135,14 @@ display of your final results to the number of decimal digits you expect.
 :func:`str` usually suffices, and for finer control see the :meth:`str.format`
 method's format specifiers in :ref:`formatstrings`.
 
+For use cases which require exact decimal representation, try using the
+:mod:`decimal` module which implements decimal arithmetic suitable for
+accounting applications and high-precision applications.
+
+Another form of exact arithmetic is supported by the :mod:`fractions` module
+which implements arithmetic based on rational numbers (so the numbers like
+1/3 can be represented exactly).
+
 If you are a heavy user of floating point operations you should take a look
 at the Numerical Python package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <http://scipy.org>.
