@@ -1205,6 +1205,6 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
-.PHONY: smelly funny
+.PHONY: smelly funny patchcheck
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
