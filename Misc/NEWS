@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4014: Don't claim that Python has an Alpha release status, in addition
+  to claiming it is Mature.
+
 
 What's New in Python 2.6 final
 ==============================
