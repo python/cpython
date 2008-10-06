@@ -17,12 +17,13 @@ class PlatformTest(unittest.TestCase):
                     'import platform; print platform.architecture()']
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
                 return p.communicate()
-            symlink = os.path.abspath(test_support.TESTFN)
-            os.symlink(sys.executable, symlink)
+            real = os.path.realpath(sys.executable)
+            link = os.path.abspath(test_support.TESTFN)
+            os.symlink(real, link)
             try:
-                self.assertEqual(get(sys.executable), get(symlink))
+                self.assertEqual(get(real), get(link))
             finally:
-                os.remove(symlink)
+                os.remove(link)
 
     def test_machine(self):
         res = platform.machine()
