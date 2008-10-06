@@ -10,6 +10,9 @@ from test.test_profile import ProfileTest, regenerate_expected_output
 class CProfileTest(ProfileTest):
     profilerclass = cProfile.Profile
 
+    def get_expected_output(self):
+        return _ProfileOutput
+
 
 def test_main():
     run_unittest(CProfileTest)
@@ -23,7 +26,8 @@ def main():
 
 # Don't remove this comment. Everything below it is auto-generated.
 #--cut--------------------------------------------------------------------------
-CProfileTest.expected_output['print_stats'] = """\
+_ProfileOutput = {}
+_ProfileOutput['print_stats'] = """\
        28    0.028    0.001    0.028    0.001 profilee.py:110(__getattr__)
         1    0.270    0.270    1.000    1.000 profilee.py:25(testfunc)
      23/3    0.150    0.007    0.170    0.057 profilee.py:35(factorial)
@@ -33,7 +37,7 @@ CProfileTest.expected_output['print_stats'] = """\
         2    0.000    0.000    0.140    0.070 profilee.py:84(helper2_indirect)
         8    0.312    0.039    0.400    0.050 profilee.py:88(helper2)
         8    0.064    0.008    0.080    0.010 profilee.py:98(subhelper)"""
-CProfileTest.expected_output['print_callers'] = """\
+_ProfileOutput['print_callers'] = """\
 profilee.py:110(__getattr__)                      <-      16    0.016    0.016  profilee.py:98(subhelper)
 profilee.py:25(testfunc)                          <-       1    0.270    1.000  <string>:1(<module>)
 profilee.py:35(factorial)                         <-       1    0.014    0.130  profilee.py:25(testfunc)
@@ -50,7 +54,7 @@ profilee.py:98(subhelper)                         <-       8    0.064    0.080  
 {built-in method hasattr}                         <-       4    0.000    0.004  profilee.py:73(helper1)
                                                            8    0.000    0.008  profilee.py:88(helper2)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  profilee.py:73(helper1)"""
-CProfileTest.expected_output['print_callees'] = """\
+_ProfileOutput['print_callees'] = """\
 <string>:1(<module>)                              ->       1    0.270    1.000  profilee.py:25(testfunc)
 profilee.py:110(__getattr__)                      ->
 profilee.py:25(testfunc)                          ->       1    0.014    0.130  profilee.py:35(factorial)
