@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4014: Don't claim that Python has an Alpha release status, in addition
+  to claiming it is Mature.
+
 - Issue #3187: Add sys.setfilesystemencoding.
 
 - Issue #3187: Better support for "undecodable" filenames.  Code by Victor
