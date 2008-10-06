@@ -1,20 +1,12 @@
-"""optparse - a powerful, extensible, and easy-to-use option parser.
+"""A powerful, extensible, and easy-to-use option parser.
 
 By Greg Ward <gward@python.net>
 
-Originally distributed as Optik; see http://optik.sourceforge.net/ .
-
-If you have problems with this module, please do not file bugs,
-patches, or feature requests with Python; instead, use Optik's
-SourceForge project page:
-  http://sourceforge.net/projects/optik
+Originally distributed as Optik.
 
 For support, use the optik-users@lists.sourceforge.net mailing list
 (http://lists.sourceforge.net/lists/listinfo/optik-users).
 """
-
-# Python developers: please do not make changes to this file, since
-# it is automatically generated from the Optik source code.
 
 __version__ = "1.5.3"
 
