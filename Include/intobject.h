@@ -11,7 +11,11 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
 #warning "DeprecationWarning: intobject.h is going to be removed in 3.1"
+#elif defined(MS_WINDOWS)
+#pragma message("DeprecationWarning: intobject.h is going to be removed in 3.1")
+#endif
 
 #define PyInt_Check(op) PyLong_Check(op)
 #define PyInt_FromString PyLong_FromString
