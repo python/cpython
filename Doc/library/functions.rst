@@ -710,10 +710,11 @@ are always available.  They are listed here in alphabetical order.
 
    Open a file.  If the file cannot be opened, :exc:`IOError` is raised.
    
-   *file* is either a string giving the name (and the path if the file isn't in
-   the current working directory) of the file to be opened or an integer file
-   descriptor of the file to be wrapped.  (If a file descriptor is given, it is
-   closed when the returned I/O object is closed, unless *closefd* is set to
+   *file* is either a string or bytes object giving the name (and the
+   path if the file isn't in the current working directory) of the
+   file to be opened or an integer file descriptor of the file to be
+   wrapped.  (If a file descriptor is given, it is closed when the
+   returned I/O object is closed, unless *closefd* is set to
    ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
