@@ -1,9 +1,6 @@
 from test import test_support
 import unittest
-import os
-import random
 import dbm
-from dbm import error
 
 class DbmTestCase(unittest.TestCase):
 
@@ -18,11 +15,16 @@ class DbmTestCase(unittest.TestCase):
 
     def test_keys(self):
         self.d = dbm.open(self.filename, 'c')
-        self.assert_(self.d.keys() == [])
-        self.d['a'] = 'b'
-        self.d['12345678910'] = '019237410982340912840198242'
-        self.d.keys()
-        self.assert_(self.d.has_key('a'))
+        self.assertEqual(self.d.keys(), [])
+        a = [('a', 'b'), ('12345678910', '019237410982340912840198242')]
+        for k, v in a:
+            self.d[k] = v
+        self.assertEqual(sorted(self.d.keys()), sorted(k for (k, v) in a))
+        for k, v in a:
+            self.assert_(k in self.d)
+            self.assertEqual(self.d[k], v)
+        self.assert_('xxx' not in self.d)
+        self.assertRaises(KeyError, lambda: self.d['xxx'])
         self.d.close()
 
     def test_modes(self):
