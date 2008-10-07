@@ -693,13 +693,13 @@ Files and Directories
 
 .. function:: getcwd()
 
-   Return a bytestring representing the current working directory.
+   Return a string representing the current working directory.
    Availability: Unix, Windows.
 
 
-.. function:: getcwdu()
+.. function:: getcwdb()
 
-   Return a string representing the current working directory.
+   Return a bytestring  representing the current working directory.
    Availability: Unix, Windows.
 
 
@@ -801,8 +801,10 @@ Files and Directories
    ``'..'`` even if they are present in the directory. Availability:
    Unix, Windows.
 
-   On Windows NT/2k/XP and Unix, if *path* is a Unicode object, the result will be
-   a list of Unicode objects.
+   If *path* is a Unicode object, the result will be a list of Unicode objects.
+   If a filename can not be decoded to unicode, it is skipped. If *path* is a
+   bytes string, the result will be list of bytes objects included files
+   skipped by the unicode version.
 
 
 .. function:: lstat(path)
@@ -916,7 +918,9 @@ Files and Directories
    be converted to an absolute pathname using ``os.path.join(os.path.dirname(path),
    result)``.
 
-   If the *path* is a Unicode object, the result will also be a Unicode object.
+   If the *path* is an Unicode object, the result will also be a Unicode object
+   and may raise an UnicodeDecodeError. If the *path* is a bytes object, the
+   result will be a bytes object.
 
    Availability: Unix.
 
