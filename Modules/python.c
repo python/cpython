@@ -34,7 +34,7 @@ main(int argc, char **argv)
 	fpsetmask(m & ~FP_X_OFL);
 #endif
 	if (!argv_copy || !argv_copy2) {
-		fprintf(stderr, "out of memory");
+		fprintf(stderr, "out of memory\n");
 		return 1;
 	}
 	oldloc = setlocale(LC_ALL, NULL);
@@ -51,18 +51,18 @@ main(int argc, char **argv)
 #endif
 		size_t count;
 		if (argsize == (size_t)-1) {
-			fprintf(stderr, "Could not convert argument %d to string", i);
+			fprintf(stderr, "Could not convert argument %d to string\n", i);
 			return 1;
 		}
 		argv_copy[i] = PyMem_Malloc((argsize+1)*sizeof(wchar_t));
 		argv_copy2[i] = argv_copy[i];
 		if (!argv_copy[i]) {
-			fprintf(stderr, "out of memory");
+			fprintf(stderr, "out of memory\n");
 			return 1;
 		}
 		count = mbstowcs(argv_copy[i], argv[i], argsize+1);
 		if (count == (size_t)-1) {
-			fprintf(stderr, "Could not convert argument %d to string", i);
+			fprintf(stderr, "Could not convert argument %d to string\n", i);
 			return 1;
 		}
 	}
