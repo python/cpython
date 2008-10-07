@@ -382,6 +382,17 @@ class TestSet(TestJointOps):
             else:
                 self.fail()
 
+    def test_remove_keyerror_set(self):
+        key = self.thetype([3, 4])
+        try:
+            self.s.remove(key)
+        except KeyError as e:
+            self.assert_(e.args[0] is key,
+                         "KeyError should be {0}, not {1}".format(key,
+                                                                  e.args[0]))
+        else:
+            self.fail()
+
     def test_discard(self):
         self.s.discard('a')
         self.assert_('a' not in self.s)

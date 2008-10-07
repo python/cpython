@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4069: When set.remove(element) is used with a set element, the element
+  is temporarily replaced with an equivalent frozenset.  But the eventual
+  KeyError would always report the empty frozenset([]) as the missing key. Now
+  it correctly refers to the initial element.
+
 Library
 -------
 
