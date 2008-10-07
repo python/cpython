@@ -7,13 +7,15 @@ from test import test_support
 class TestCase(unittest.TestCase):
     def setUp(self):
         s = StringIO.StringIO()
+        self.save_stdout = sys.stdout
+        self.save_stderr = sys.stderr
         sys.stdout = sys.stderr = self.subst_io = s
         self.save_handlers = atexit._exithandlers
         atexit._exithandlers = []
 
     def tearDown(self):
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+        sys.stdout = self.save_stdout
+        sys.stderr = self.save_stderr
         atexit._exithandlers = self.save_handlers
 
     def test_args(self):
