@@ -694,6 +694,8 @@ Files and Directories
 .. function:: getcwd()
 
    Return a string representing the current working directory.
+   May raise UnicodeDecodeError if the current directory path fails
+   to decode in the file system encoding.
    Availability: Unix, Windows.
 
 
