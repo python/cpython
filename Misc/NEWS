@@ -15,6 +15,8 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #3740: Null-initialize module state.
+
 - Issue #3946: PyObject_CheckReadBuffer crashed on a memoryview object.
 
 - Issue #1688: On Windows, the input() prompt was not correctly displayed if it
