@@ -949,6 +949,20 @@ or using a :class:`bytes` constructor.  For future compatibility,
 Python 2.6 adds :class:`bytes` as a synonym for the :class:`str` type,
 and it also supports the ``b''`` notation.
 
+
+The 2.6 :class:`str` differs from 3.0's :class:`bytes` type in various
+ways; most notably, the constructor is completely different.  In 3.0,
+``bytes([65, 66, 67])`` is 3 elements long, containing the bytes
+representing ``ABC``; in 2.6, ``bytes([65, 66, 67])`` returns the
+12-byte string representing the :func:`str` of the list.
+
+The primary use of :class:`bytes` in 2.6 will be to write tests of
+object type such as ``isinstance(x, bytes)``.  This will help the 2to3
+converter, which can't tell whether 2.x code intends strings to
+contain either characters or 8-bit bytes; you can now 
+use either :class:`bytes` or :class:`str` to represent your intention 
+exactly, and the resulting code will also be correct in Python 3.0.
+
 There's also a ``__future__`` import that causes all string literals
 to become Unicode strings.  This means that ``\u`` escape sequences
 can be used to include Unicode characters::
