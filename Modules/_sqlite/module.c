@@ -128,12 +128,15 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObjec
 {
     PyTypeObject* type;
     PyObject* caster;
+    int rc;
 
     if (!PyArg_ParseTuple(args, "OO", &type, &caster)) {
         return NULL;
     }
 
-    microprotocols_add(type, (PyObject*)&SQLitePrepareProtocolType, caster);
+    rc = microprotocols_add(type, (PyObject*)&SQLitePrepareProtocolType, caster);
+    if (rc == -1)
+        return NULL;
 
     Py_INCREF(Py_None);
     return Py_None;

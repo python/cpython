@@ -215,6 +215,9 @@ Extension Modules
 - Issue #1471: Arguments to fcntl.ioctl are no longer broken on 64-bit OpenBSD
   and similar platforms due to sign extension.
 
+- Issue #3312: Fix two crashes in sqlite3.
+
+
 Tests
 -----
 
