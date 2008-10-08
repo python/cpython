@@ -19,6 +19,12 @@ path names. Vice versa, using bytes objects cannot represent all file
 names on Windows (in the standard ``mbcs`` encoding), hence Windows
 applications should use string objects to access all files.
 
+.. note::
+
+   All of these functions accept either only bytes or only string objects as
+   their parameters.  The result is an object of the same type, if a path or
+   file name is returned.
+
 .. warning::
 
    On Windows, many of these functions do not properly support UNC pathnames.

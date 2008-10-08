@@ -24,6 +24,12 @@ the :mod:`os` module, but using them is of course a threat to portability!
 
 .. note::
 
+   All functions accepting path or file names accept both bytes and string
+   objects, and result in an object of the same type, if a path or file name is
+   returned.
+
+.. note::
+
    If not separately noted, all functions that claim "Availability: Unix" are
    supported on Mac OS X, which builds on a Unix core.
 
@@ -693,15 +699,16 @@ Files and Directories
 
 .. function:: getcwd()
 
-   Return a string representing the current working directory.
-   May raise UnicodeDecodeError if the current directory path fails
-   to decode in the file system encoding.
-   Availability: Unix, Windows.
+   Return a string representing the current working directory.  On Unix
+   platforms, this function may raise :exc:`UnicodeDecodeError` if the name of
+   the current directory is not decodable in the file system encoding.  Use
+   :func:`getcwdb` if you need the call to never fail. Availability: Unix,
+   Windows.
 
 
 .. function:: getcwdb()
 
-   Return a bytestring  representing the current working directory.
+   Return a bytestring representing the current working directory.
    Availability: Unix, Windows.
 
 
@@ -798,15 +805,15 @@ Files and Directories
 
 .. function:: listdir(path)
 
-   Return a list containing the names of the entries in the directory. The list is
-   in arbitrary order.  It does not include the special entries ``'.'`` and
-   ``'..'`` even if they are present in the directory. Availability:
-   Unix, Windows.
+   Return a list containing the names of the entries in the directory. The list
+   is in arbitrary order.  It does not include the special entries ``.`` and
+   ``..`` even if they are present in the directory. Availability: Unix,
+   Windows.
 
-   If *path* is a Unicode object, the result will be a list of Unicode objects.
-   If a filename can not be decoded to unicode, it is skipped. If *path* is a
-   bytes string, the result will be list of bytes objects included files
-   skipped by the unicode version.
+   This function can be called with a bytes or string argument.  In the bytes
+   case, all filenames will be listed as returned by the underlying API.  In the
+   string case, filenames will be decoded using the file system encoding, and
+   skipped if a decoding error occurs.
 
 
 .. function:: lstat(path)
@@ -920,9 +927,9 @@ Files and Directories
    be converted to an absolute pathname using ``os.path.join(os.path.dirname(path),
    result)``.
 
-   If the *path* is an Unicode object, the result will also be a Unicode object
-   and may raise an UnicodeDecodeError. If the *path* is a bytes object, the
-   result will be a bytes object.
+   If the *path* is a string object, the result will also be a string object,
+   and the call may raise an UnicodeDecodeError. If the *path* is a bytes
+   object, the result will be a bytes object.
 
    Availability: Unix.
 
