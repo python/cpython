@@ -1109,7 +1109,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 .. ======================================================================
 
 
-.. _interactive:
+.. _25interactive:
 
 Interactive Interpreter Changes
 -------------------------------
@@ -1211,7 +1211,7 @@ marked in the following list.
 .. ======================================================================
 
 
-.. _modules:
+.. _25modules:
 
 New, Improved, and Removed Modules
 ==================================
