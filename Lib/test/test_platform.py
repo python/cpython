@@ -2,12 +2,28 @@ import sys
 import os
 import unittest
 import platform
+import subprocess
 
 from test import test_support
 
 class PlatformTest(unittest.TestCase):
     def test_architecture(self):
         res = platform.architecture()
+
+    if hasattr(os, "symlink"):
+        def test_architecture_via_symlink(self): # issue3762
+            def get(python):
+                cmd = [python, '-c',
+                    'import platform; print platform.architecture()']
+                p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+                return p.communicate()
+            real = os.path.realpath(sys.executable)
+            link = os.path.abspath(test_support.TESTFN)
+            os.symlink(real, link)
+            try:
+                self.assertEqual(get(real), get(link))
+            finally:
+                os.remove(link)
 
     def test_machine(self):
         res = platform.machine()
