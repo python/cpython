@@ -788,10 +788,11 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The features recognized by Python 2.5 are ``absolute_import``, ``division``,
-``generators``, ``nested_scopes`` and ``with_statement``.  ``generators`` and
-``nested_scopes``  are redundant in Python version 2.3 and above because they
-are always enabled.
+The features recognized by Python 2.6 are ``unicode_literals``,
+``print_function``, ``absolute_import``, ``division``, ``generators``,
+``nested_scopes`` and ``with_statement``.  ``generators``, ``with_statement``,
+``nested_scopes`` are redundant in Python version 2.6 and above because they are
+always enabled.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating
