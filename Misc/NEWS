@@ -15,6 +15,10 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issues #2384 and #3975: Tracebacks were not correctly printed when the
+  source file contains a ``coding:`` header: the wrong line was displayed, and
+  the encoding was not respected.
+
 - Issue #3740: Null-initialize module state.
 
 - Issue #3946: PyObject_CheckReadBuffer crashed on a memoryview object.

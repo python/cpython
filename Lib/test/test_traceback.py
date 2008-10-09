@@ -6,6 +6,7 @@ import sys
 import unittest
 import re
 from test.support import run_unittest, is_jython, Error, captured_output
+from test.support import TESTFN, unlink
 
 import traceback
 
@@ -89,6 +90,70 @@ class SyntaxTracebackCases(unittest.TestCase):
     def test_without_exception(self):
         err = traceback.format_exception_only(None, None)
         self.assertEqual(err, ['None\n'])
+
+    def test_encoded_file(self):
+        # Test that tracebacks are correctly printed for encoded source files:
+        # - correct line number (Issue2384)
+        # - respect file encoding (Issue3975)
+        import tempfile, sys, subprocess, os
+
+        # The spawned subprocess has its stdout redirected to a PIPE, and its
+        # encoding may be different from the current interpreter, on Windows
+        # at least.
+        process = subprocess.Popen([sys.executable, "-c",
+                                    "import sys; print(sys.stdout.encoding)"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        stdout, stderr = process.communicate()
+        output_encoding = str(stdout, 'ascii').splitlines()[0]
+
+        def do_test(firstlines, message, charset, lineno):
+            # Raise the message in a subprocess, and catch the output
+            try:
+                output = open(TESTFN, "w", encoding=charset)
+                output.write("""{0}if 1:
+                    import traceback;
+                    raise RuntimeError('{1}')
+                    """.format(firstlines, message))
+                output.close()
+                process = subprocess.Popen([sys.executable, TESTFN],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                stdout, stderr = process.communicate()
+                stdout = stdout.decode(output_encoding).splitlines()
+            finally:
+                unlink(TESTFN)
+
+            # The source lines are encoded with the 'backslashreplace' handler
+            encoded_message = message.encode(output_encoding,
+                                             'backslashreplace')
+            # and we just decoded them with the output_encoding.
+            message_ascii = encoded_message.decode(output_encoding)
+
+            err_line = "raise RuntimeError('{0}')".format(message_ascii)
+            err_msg = "RuntimeError: {0}".format(message_ascii)
+
+            self.assert_(("line %s" % lineno) in stdout[1],
+                "Invalid line number: {0!r} instead of {1}".format(
+                    stdout[1], lineno))
+            self.assert_(stdout[2].endswith(err_line),
+                "Invalid traceback line: {0!r} instead of {1!r}".format(
+                    stdout[2], err_line))
+            self.assert_(stdout[3] == err_msg,
+                "Invalid error message: {0!r} instead of {1!r}".format(
+                    stdout[3], err_msg))
+
+        do_test("", "foo", "ascii", 3)
+        for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
+            if charset == "ascii":
+                text = "foo"
+            elif charset == "GBK":
+                text = "\u4E02\u5100"
+            else:
+                text = "h\xe9 ho"
+            do_test("# coding: {0}\n".format(charset),
+                    text, charset, 4)
+            do_test("#!shebang\n# coding: {0}\n".format(charset),
+                    text, charset, 5)
 
 
 class TracebackFormatTests(unittest.TestCase):

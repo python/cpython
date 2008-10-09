@@ -8,8 +8,14 @@
 #include "structmember.h"
 #include "osdefs.h"
 #include "traceback.h"
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #define OFF(x) offsetof(PyTracebackObject, x)
+
+/* Method from Parser/tokenizer.c */
+extern char * PyTokenizer_FindEncoding(int);
 
 static PyObject *
 tb_dir(PyTracebackObject *self)
@@ -128,102 +134,156 @@ PyTraceBack_Here(PyFrameObject *frame)
 	return 0;
 }
 
+static int
+_Py_FindSourceFile(const char* filename, char* namebuf, size_t namelen, int open_flags)
+{
+	int i;
+	int fd = -1;
+	PyObject *v;
+	Py_ssize_t _npath;
+	int npath;
+	size_t taillen;
+	PyObject *syspath;
+	const char* path;
+	const char* tail;
+	Py_ssize_t len;
+
+	/* Search tail of filename in sys.path before giving up */
+	tail = strrchr(filename, SEP);
+	if (tail == NULL)
+		tail = filename;
+	else
+		tail++;
+	taillen = strlen(tail);
+
+	syspath = PySys_GetObject("path");
+	if (syspath == NULL || !PyList_Check(syspath))
+		return -1;
+	_npath = PyList_Size(syspath);
+	npath = Py_SAFE_DOWNCAST(_npath, Py_ssize_t, int);
+
+	for (i = 0; i < npath; i++) {
+		v = PyList_GetItem(syspath, i);
+		if (v == NULL) {
+			PyErr_Clear();
+			break;
+		}
+		if (!PyUnicode_Check(v))
+			continue;
+		path = _PyUnicode_AsStringAndSize(v, &len);
+		if (len + 1 + taillen >= (Py_ssize_t)namelen - 1)
+			continue; /* Too long */
+		strcpy(namebuf, path);
+		if (strlen(namebuf) != len)
+			continue; /* v contains '\0' */
+		if (len > 0 && namebuf[len-1] != SEP)
+			namebuf[len++] = SEP;
+		strcpy(namebuf+len, tail);
+		Py_BEGIN_ALLOW_THREADS
+		fd = open(namebuf, open_flags);
+		Py_END_ALLOW_THREADS
+		if (0 <= fd) {
+			return fd;
+		}
+	}
+	return -1;
+}
+
 int
 _Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
 {
 	int err = 0;
-	FILE *xfp = NULL;
-	char linebuf[2000];
+	int fd;
 	int i;
-	char namebuf[MAXPATHLEN+1];
+	char *found_encoding;
+	char *encoding;
+	PyObject *fob = NULL;
+	PyObject *lineobj = NULL;
+#ifdef O_BINARY
+	const int open_flags = O_RDONLY | O_BINARY;   /* necessary for Windows */
+#else
+	const int open_flags = O_RDONLY;
+#endif
+	char buf[MAXPATHLEN+1];
+	Py_UNICODE *u, *p;
+	Py_ssize_t len;
 
+	/* open the file */
 	if (filename == NULL)
-		return -1;
-	xfp = fopen(filename, "r" PY_STDIOTEXTMODE);
-	if (xfp == NULL) {
-		/* Search tail of filename in sys.path before giving up */
-		PyObject *path;
-		const char *tail = strrchr(filename, SEP);
-		if (tail == NULL)
-			tail = filename;
-		else
-			tail++;
-		path = PySys_GetObject("path");
-		if (path != NULL && PyList_Check(path)) {
-			Py_ssize_t _npath = PyList_Size(path);
-			int npath = Py_SAFE_DOWNCAST(_npath, Py_ssize_t, int);
-			size_t taillen = strlen(tail);
-			for (i = 0; i < npath; i++) {
-				PyObject *v = PyList_GetItem(path, i);
-				if (v == NULL) {
-					PyErr_Clear();
-					break;
-				}
-				if (PyBytes_Check(v)) {
-					size_t len;
-					len = PyBytes_GET_SIZE(v);
-					if (len + 1 + taillen >= MAXPATHLEN)
-						continue; /* Too long */
-					strcpy(namebuf, PyBytes_AsString(v));
-					if (strlen(namebuf) != len)
-						continue; /* v contains '\0' */
-					if (len > 0 && namebuf[len-1] != SEP)
-						namebuf[len++] = SEP;
-					strcpy(namebuf+len, tail);
-					xfp = fopen(namebuf, "r" PY_STDIOTEXTMODE);
-					if (xfp != NULL) {
-						filename = namebuf;
-						break;
-					}
-				}
-			}
-		}
+		return 0;
+	Py_BEGIN_ALLOW_THREADS
+	fd = open(filename, open_flags);
+	Py_END_ALLOW_THREADS
+	if (fd < 0) {
+		fd = _Py_FindSourceFile(filename, buf, sizeof(buf), open_flags);
+		if (fd < 0)
+			return 0;
+		filename = buf;
 	}
 
-        if (xfp == NULL)
-            return err;
-        if (err != 0) {
-            fclose(xfp);
-            return err;
-        }
+	/* use the right encoding to decode the file as unicode */
+	found_encoding = PyTokenizer_FindEncoding(fd);
+	encoding = (found_encoding != NULL) ? found_encoding :
+		(char*)PyUnicode_GetDefaultEncoding();
+	lseek(fd, 0, 0); /* Reset position */
+	fob = PyFile_FromFd(fd, (char*)filename, "r", -1, (char*)encoding,
+		NULL, NULL, 1);
+	PyMem_FREE(found_encoding);
+	if (fob == NULL) {
+		PyErr_Clear();
+		close(fd);
+		return 0;
+	}
 
+	/* get the line number lineno */
 	for (i = 0; i < lineno; i++) {
-		char* pLastChar = &linebuf[sizeof(linebuf)-2];
-		do {
-			*pLastChar = '\0';
-			if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf, xfp, NULL) == NULL)
-				break;
-			/* fgets read *something*; if it didn't get as
-			   far as pLastChar, it must have found a newline
-			   or hit the end of the file;	if pLastChar is \n,
-			   it obviously found a newline; else we haven't
-			   yet seen a newline, so must continue */
-		} while (*pLastChar != '\0' && *pLastChar != '\n');
-	}
-	if (i == lineno) {
-		char buf[11];
-		char *p = linebuf;
-		while (*p == ' ' || *p == '\t' || *p == '\014')
-			p++;
-
-		/* Write some spaces before the line */
-		strcpy(buf, "          ");
-		assert (strlen(buf) == 10);
-		while (indent > 0) {
-			if(indent < 10)
-				buf[indent] = '\0';
-			err = PyFile_WriteString(buf, f);
-			if (err != 0)
-				break;
-			indent -= 10;
+		Py_XDECREF(lineobj);
+		lineobj = PyFile_GetLine(fob, -1);
+		if (!lineobj) {
+			err = -1;
+			break;
 		}
-
-		if (err == 0)
-			err = PyFile_WriteString(p, f);
-		if (err == 0 && strchr(p, '\n') == NULL)
-			err = PyFile_WriteString("\n", f);
 	}
-	fclose(xfp);
+	Py_DECREF(fob);
+	if (!lineobj || !PyUnicode_Check(lineobj)) {
+		Py_XDECREF(lineobj);
+		return err;
+	}
+
+	/* remove the indentation of the line */
+	u = PyUnicode_AS_UNICODE(lineobj);
+	len = PyUnicode_GET_SIZE(lineobj);
+	for (p=u; *p == ' ' || *p == '\t' || *p == '\014'; p++)
+		len--;
+	if (u != p) {
+		PyObject *truncated;
+		truncated = PyUnicode_FromUnicode(p, len);
+		if (truncated) {
+			Py_DECREF(lineobj);
+			lineobj = truncated;
+		} else {
+			PyErr_Clear();
+		}
+	}
+
+	/* Write some spaces before the line */
+	strcpy(buf, "          ");
+	assert (strlen(buf) == 10);
+	while (indent > 0) {
+		if(indent < 10)
+			buf[indent] = '\0';
+		err = PyFile_WriteString(buf, f);
+		if (err != 0)
+			break;
+		indent -= 10;
+	}
+
+	/* finally display the line */
+	if (err == 0)
+		err = PyFile_WriteObject(lineobj, f, Py_PRINT_RAW);
+	Py_DECREF(lineobj);
+	if  (err == 0)
+		err = PyFile_WriteString("\n", f);
 	return err;
 }
 
