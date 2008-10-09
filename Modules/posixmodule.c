@@ -732,8 +732,10 @@ win32_wchdir(LPCWSTR path)
 			return FALSE;
 		}
 		result = GetCurrentDirectoryW(result, new_path);
-		if (!result)
+		if (!result) {
+			free(new_path);
 			return FALSE;
+		}
 	}
 	if (wcsncmp(new_path, L"\\\\", 2) == 0 ||
 	    wcsncmp(new_path, L"//", 2) == 0)
