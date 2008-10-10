@@ -1387,6 +1387,18 @@ available.  They are listed here in alphabetical order.
    makes possible an idiom for clustering a data series into n-length groups
    using ``zip(*[iter(s)]*n)``.
 
+   :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
+   list::
+
+      >>> x = [1, 2, 3]
+      >>> y = [4, 5, 6]
+      >>> zipped = zip(x, y)
+      >>> zipped
+      [(1, 4), (2, 5), (3, 6)]
+      >>> x2, y2 = zip(*zipped)
+      >>> x == x2, y == y2
+      True
+
    .. versionadded:: 2.0
 
    .. versionchanged:: 2.4
