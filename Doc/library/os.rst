@@ -1389,6 +1389,10 @@ written in Python, such as a mail server's external command delivery program.
 
    Fork a child process.  Return ``0`` in the child and the child's process id in the
    parent.  If an error occurs :exc:`OSError` is raised.
+
+   Note that some platforms including FreeBSD <= 6.3, Cygwin and OS/2 EMX have
+   known issues when using fork() from a thread.
+
    Availability: Unix.
 
 
