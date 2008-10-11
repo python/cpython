@@ -8,7 +8,7 @@
 :Release: |release|
 :Date: |today|
 
-.. $Id: whatsnew26.tex 55746 2007-06-02 18:33:53Z neal.norwitz $
+.. $Id$
    Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
@@ -49,9 +49,8 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.6.  The release
-schedule is described in :pep:`361`; currently the final release is
-scheduled for October 1 2008.
+This article explains the new features in Python 2.6, released on October 1
+2008.  The release schedule is described in :pep:`361`.
 
 The major theme of Python 2.6 is preparing the migration path to
 Python 3.0, a major redesign of the language.  Whenever possible,
@@ -663,33 +662,33 @@ and :meth:`Semaphore` to create shared locks.)
     from multiprocessing import Pool, Manager
 
     def factorial(N, dictionary):
-	"Compute a factorial."
-	# Calculate the result
-	fact = 1L
-	for i in range(1, N+1):
-	    fact = fact * i
+        "Compute a factorial."
+        # Calculate the result
+        fact = 1L
+        for i in range(1, N+1):
+            fact = fact * i
 
         # Store result in dictionary
-	dictionary[N] = fact
+        dictionary[N] = fact
 
     if __name__ == '__main__':
-	p = Pool(5)
-	mgr = Manager()
-	d = mgr.dict()         # Create shared dictionary
+        p = Pool(5)
+        mgr = Manager()
+        d = mgr.dict()         # Create shared dictionary
 
-	# Run tasks using the pool
-	for N in range(1, 1000, 10):
-	    p.apply_async(factorial, (N, d))
+        # Run tasks using the pool
+        for N in range(1, 1000, 10):
+            p.apply_async(factorial, (N, d))
 
-	# Mark pool as closed -- no more tasks can be added.
-	p.close()
+    # Mark pool as closed -- no more tasks can be added.
+    p.close()
 
-	# Wait for tasks to exit
-	p.join()
+    # Wait for tasks to exit
+    p.join()
 
-	# Output results
-	for k, v in sorted(d.items()):
-	    print k, v
+    # Output results
+    for k, v in sorted(d.items()):
+        print k, v
 
 This will produce the output::
 
@@ -724,32 +723,33 @@ In 2.6, both 8-bit and Unicode strings have a `.format()` method that
 treats the string as a template and takes the arguments to be formatted.
 The formatting template uses curly brackets (`{`, `}`) as special characters::
 
-     # Substitute positional argument 0 into the string.
-     "User ID: {0}".format("root") -> "User ID: root"
-
-     # Use the named keyword arguments
-     'User ID: {uid}   Last seen: {last_login}'.format(
-            uid='root',
-            last_login = '5 Mar 2008 07:20') ->
-       'User ID: root   Last seen: 5 Mar 2008 07:20'
+     >>> # Substitute positional argument 0 into the string.
+     >>> "User ID: {0}".format("root")
+     'User ID: root'
+     >>> # Use the named keyword arguments
+     >>> "User ID: {uid}   Last seen: {last_login}".format(
+     ...    uid="root",
+     ...    last_login = "5 Mar 2008 07:20")
+     'User ID: root   Last seen: 5 Mar 2008 07:20'
 
 Curly brackets can be escaped by doubling them::
 
-     format("Empty dict: {{}}") -> "Empty dict: {}"
+     >>> format("Empty dict: {{}}")
+     "Empty dict: {}"
 
 Field names can be integers indicating positional arguments, such as
 ``{0}``, ``{1}``, etc. or names of keyword arguments.  You can also
 supply compound field names that read attributes or access dictionary keys::
 
-    import sys
-    'Platform: {0.platform}\nPython version: {0.version}'.format(sys) ->
-        'Platform: darwin\n
-         Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41) \n
-         [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
+    >>> import sys
+    >>> print 'Platform: {0.platform}\nPython version: {0.version}'.format(sys)
+    Platform: darwin
+    Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41) 
+    [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
 
-    import mimetypes
-    'Content-type: {0[.mp4]}'.format(mimetypes.types_map) ->
-        'Content-type: video/mp4'
+    >>> import mimetypes
+    >>> 'Content-type: {0[.mp4]}'.format(mimetypes.types_map)
+    'Content-type: video/mp4'
 
 Note that when using dictionary-style notation such as ``[.mp4]``, you
 don't need to put any quotation marks around the string; it will look
@@ -761,30 +761,25 @@ So far we've shown how to specify which field to substitute into the
 resulting string.  The precise formatting used is also controllable by
 adding a colon followed by a format specifier.  For example::
 
-     # Field 0: left justify, pad to 15 characters
-     # Field 1: right justify, pad to 6 characters
-     fmt = '{0:15} ${1:>6}'
-
-     fmt.format('Registration', 35) ->
-       'Registration    $    35'
-
-     fmt.format('Tutorial', 50) ->
-       'Tutorial        $    50'
-
-     fmt.format('Banquet', 125) ->
-       'Banquet         $   125'
+     >>> # Field 0: left justify, pad to 15 characters
+     >>> # Field 1: right justify, pad to 6 characters
+     >>> fmt = '{0:15} ${1:>6}'
+     >>> fmt.format('Registration', 35)
+     'Registration    $    35'
+     >>> fmt.format('Tutorial', 50)
+     'Tutorial        $    50'
+     >>> fmt.format('Banquet', 125)
+     'Banquet         $   125'
 
 Format specifiers can reference other fields through nesting::
 
-    fmt = '{0:{1}}'
-
-    width = 15
-    fmt.format('Invoice #1234', width) ->
-      'Invoice #1234  '
-
-    width = 35
-    fmt.format('Invoice #1234', width) ->
-      'Invoice #1234                      '
+    >>> fmt = '{0:{1}}'
+    >>> width = 15
+    >>> fmt.format('Invoice #1234', width)
+    'Invoice #1234  '
+    >>> width = 35
+    >>> fmt.format('Invoice #1234', width)
+    'Invoice #1234                      '
 
 The alignment of a field within the desired width can be specified:
 
@@ -799,7 +794,7 @@ Character        Effect
 
 Format specifiers can also include a presentation type, which
 controls how the value is formatted.  For example, floating-point numbers
-can be formatted as a general number or in exponential notation:
+can be formatted as a general number or in exponential notation::
 
     >>> '{0:g}'.format(3.75)
     '3.75'
@@ -807,25 +802,27 @@ can be formatted as a general number or in exponential notation:
     '3.750000e+00'
 
 A variety of presentation types are available.  Consult the 2.6
-documentation for a :ref:`complete list <formatstrings>`; here's a sample::
+documentation for a :ref:`complete list <formatstrings>`; here's a sample:
 
-        'b' - Binary. Outputs the number in base 2.
-        'c' - Character. Converts the integer to the corresponding
-              Unicode character before printing.
-        'd' - Decimal Integer. Outputs the number in base 10.
-        'o' - Octal format. Outputs the number in base 8.
-        'x' - Hex format. Outputs the number in base 16, using lower-
-              case letters for the digits above 9.
-        'e' - Exponent notation. Prints the number in scientific
-              notation using the letter 'e' to indicate the exponent.
-        'g' - General format. This prints the number as a fixed-point
-              number, unless the number is too large, in which case
-              it switches to 'e' exponent notation.
-        'n' - Number. This is the same as 'g' (for floats) or 'd' (for
-              integers), except that it uses the current locale setting to
-              insert the appropriate number separator characters.
-        '%' - Percentage. Multiplies the number by 100 and displays
-              in fixed ('f') format, followed by a percent sign.
+===== ========================================================================
+``b`` Binary. Outputs the number in base 2.
+``c`` Character. Converts the integer to the corresponding Unicode character
+      before printing.
+``d`` Decimal Integer. Outputs the number in base 10.
+``o`` Octal format. Outputs the number in base 8.
+``x`` Hex format. Outputs the number in base 16, using lower-case letters for
+      the digits above 9.
+``e`` Exponent notation. Prints the number in scientific notation using the
+      letter 'e' to indicate the exponent.
+``g`` General format. This prints the number as a fixed-point number, unless
+      the number is too large, in which case it switches to 'e' exponent
+      notation.
+``n`` Number. This is the same as 'g' (for floats) or 'd' (for integers),
+      except that it uses the current locale setting to insert the appropriate
+      number separator characters.
+``%`` Percentage. Multiplies the number by 100 and displays in fixed ('f')
+      format, followed by a percent sign.
+===== ========================================================================
 
 Classes and types can define a :meth:`__format__` method to control how they're
 formatted.  It receives a single argument, the format specifier::
@@ -866,12 +863,13 @@ by doing ``def print(...)`` or importing a new function from somewhere else.
 Python 2.6 has a ``__future__`` import that removes ``print`` as language
 syntax, letting you use the functional form instead.  For example::
 
-    from __future__ import print_function
-    print('# of entries', len(dictionary), file=sys.stderr)
+    >>> from __future__ import print_function
+    >>> print('# of entries', len(dictionary), file=sys.stderr)
 
 The signature of the new function is::
 
     def print(*args, sep=' ', end='\n', file=None)
+
 
 The parameters are:
 
@@ -950,6 +948,20 @@ or using a :class:`bytes` constructor.  For future compatibility,
 Python 2.6 adds :class:`bytes` as a synonym for the :class:`str` type,
 and it also supports the ``b''`` notation.
 
+
+The 2.6 :class:`str` differs from 3.0's :class:`bytes` type in various
+ways; most notably, the constructor is completely different.  In 3.0,
+``bytes([65, 66, 67])`` is 3 elements long, containing the bytes
+representing ``ABC``; in 2.6, ``bytes([65, 66, 67])`` returns the
+12-byte string representing the :func:`str` of the list.
+
+The primary use of :class:`bytes` in 2.6 will be to write tests of
+object type such as ``isinstance(x, bytes)``.  This will help the 2to3
+converter, which can't tell whether 2.x code intends strings to
+contain either characters or 8-bit bytes; you can now 
+use either :class:`bytes` or :class:`str` to represent your intention 
+exactly, and the resulting code will also be correct in Python 3.0.
+
 There's also a ``__future__`` import that causes all string literals
 to become Unicode strings.  This means that ``\u`` escape sequences
 can be used to include Unicode characters::
@@ -988,6 +1000,8 @@ Byte arrays support most of the methods of string types, such as
 :meth:`startswith`/:meth:`endswith`, :meth:`find`/:meth:`rfind`,
 and some of the methods of lists, such as :meth:`append`,
 :meth:`pop`,  and :meth:`reverse`.
+
+::
 
     >>> b = bytearray('ABC')
     >>> b.append('d')
@@ -1211,8 +1225,8 @@ To check whether an object supports a particular interface, you can
 now write::
 
     def func(d):
-	if not isinstance(d, collections.MutableMapping):
-	    raise ValueError("Mapping object expected, not %r" % d)
+        if not isinstance(d, collections.MutableMapping):
+            raise ValueError("Mapping object expected, not %r" % d)
 
 Don't feel that you must now begin writing lots of checks as in the
 above example.  Python has a strong tradition of duck-typing, where
@@ -1224,22 +1238,22 @@ do it where it's absolutely necessary.
 You can write your own ABCs by using ``abc.ABCMeta`` as the
 metaclass in a class definition::
 
-  from abc import ABCMeta, abstractmethod
+    from abc import ABCMeta, abstractmethod
 
-  class Drawable():
-      __metaclass__ = ABCMeta
+    class Drawable():
+        __metaclass__ = ABCMeta
 
-      @abstractmethod
-      def draw(self, x, y, scale=1.0):
-	  pass
+        @abstractmethod
+        def draw(self, x, y, scale=1.0):
+            pass
 
-      def draw_doubled(self, x, y):
-	  self.draw(x, y, scale=2.0)
+        def draw_doubled(self, x, y):
+            self.draw(x, y, scale=2.0)
 
 
-  class Square(Drawable):
-      def draw(self, x, y, scale):
-          ...
+    class Square(Drawable):
+        def draw(self, x, y, scale):
+            ...
 
 
 In the :class:`Drawable` ABC above, the :meth:`draw_doubled` method
@@ -1259,7 +1273,7 @@ try to create an instance of a subclass lacking the method::
     >>> class Circle(Drawable):
     ...     pass
     ...
-    >>> c=Circle()
+    >>> c = Circle()
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
     TypeError: Can't instantiate abstract class Circle with abstract methods draw
@@ -1318,7 +1332,7 @@ built-in returns the binary representation for a number::
 The :func:`int` and :func:`long` built-ins will now accept the "0o"
 and "0b" prefixes when base-8 or base-2 are requested, or when the
 *base* argument is zero (signalling that the base used should be
-determined from the string):
+determined from the string)::
 
     >>> int ('0o52', 0)
     42
@@ -1491,7 +1505,7 @@ Some smaller changes made to the core Python language are:
   (Contributed by Alexander Belopolsky; :issue:`1686487`.)
 
   It's also become legal to provide keyword arguments after a ``*args`` argument
-  to a function call.
+  to a function call. ::
 
     >>> def f(*args, **kw):
     ...     print args, kw
@@ -1532,17 +1546,17 @@ Some smaller changes made to the core Python language are:
   property. You would use them like this::
 
     class C(object):
-	@property
-	def x(self):
-	    return self._x
+        @property
+        def x(self):
+            return self._x
 
-	@x.setter
-	def x(self, value):
-	    self._x = value
+        @x.setter
+        def x(self, value):
+            self._x = value
 
-	@x.deleter
-	def x(self):
-	    del self._x
+        @x.deleter
+        def x(self):
+            del self._x
 
     class D(C):
         @C.x.getter
@@ -1865,8 +1879,8 @@ changes, or look through the Subversion logs for all the details.
 
      >>> var_type = collections.namedtuple('variable',
      ...             'id name type size')
-     # Names are separated by spaces or commas.
-     # 'id, name, type, size' would also work.
+     >>> # Names are separated by spaces or commas.
+     >>> # 'id, name, type, size' would also work.
      >>> var_type._fields
      ('id', 'name', 'type', 'size')
 
@@ -1916,11 +1930,13 @@ changes, or look through the Subversion logs for all the details.
 
 * A new window method in the :mod:`curses` module,
   :meth:`chgat`, changes the display attributes for a certain number of
-  characters on a single line.  (Contributed by Fabian Kreutz.)  ::
+  characters on a single line.  (Contributed by Fabian Kreutz.)
+  
+  ::
 
      # Boldface text starting at y=0,x=21
      # and affecting the rest of the line.
-     stdscr.chgat(0,21, curses.A_BOLD)
+     stdscr.chgat(0, 21, curses.A_BOLD)
 
   The :class:`Textbox` class in the :mod:`curses.textpad` module
   now supports editing in insert mode as well as overwrite mode.
@@ -1986,8 +2002,8 @@ changes, or look through the Subversion logs for all the details.
   order, and returns a new generator that returns the contents of all
   the iterators, also in sorted order.  For example::
 
-     heapq.merge([1, 3, 5, 9], [2, 8, 16]) ->
-       [1, 2, 3, 5, 8, 9, 16]
+      >>> list(heapq.merge([1, 3, 5, 9], [2, 8, 16]))
+      [1, 2, 3, 5, 8, 9, 16]
 
   Another new function, ``heappushpop(heap, item)``,
   pushes *item* onto *heap*, then pops off and returns the smallest item.
@@ -2021,57 +2037,55 @@ changes, or look through the Subversion logs for all the details.
   each of the elements; if some of the iterables are shorter than
   others, the missing values are set to *fillvalue*.  For example::
 
-     itertools.izip_longest([1,2,3], [1,2,3,4,5]) ->
-       (1, 1), (2, 2), (3, 3), (None, 4), (None, 5)
+     >>> tuple(itertools.izip_longest([1,2,3], [1,2,3,4,5]))
+     ((1, 1), (2, 2), (3, 3), (None, 4), (None, 5))
 
   ``product(iter1, iter2, ..., [repeat=N])`` returns the Cartesian product
   of the supplied iterables, a set of tuples containing
   every possible combination of the elements returned from each iterable. ::
 
-     itertools.product([1,2,3], [4,5,6]) ->
-        (1, 4), (1, 5), (1, 6),
-	(2, 4), (2, 5), (2, 6),
-	(3, 4), (3, 5), (3, 6)
+     >>> list(itertools.product([1,2,3], [4,5,6]))
+     [(1, 4), (1, 5), (1, 6),
+	  (2, 4), (2, 5), (2, 6),
+	  (3, 4), (3, 5), (3, 6)]
 
   The optional *repeat* keyword argument is used for taking the
   product of an iterable or a set of iterables with themselves,
   repeated *N* times.  With a single iterable argument, *N*-tuples
   are returned::
 
-     itertools.product([1,2], repeat=3) ->
-        (1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2),
-        (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)
+     >>> list(itertools.product([1,2], repeat=3))
+     [(1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2),
+      (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)]
 
   With two iterables, *2N*-tuples are returned. ::
 
-     itertools.product([1,2], [3,4], repeat=2) ->
-        (1, 3, 1, 3), (1, 3, 1, 4), (1, 3, 2, 3), (1, 3, 2, 4),
-        (1, 4, 1, 3), (1, 4, 1, 4), (1, 4, 2, 3), (1, 4, 2, 4),
-        (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4),
-        (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)
+     >>> list(itertools.product([1,2], [3,4], repeat=2))
+     [(1, 3, 1, 3), (1, 3, 1, 4), (1, 3, 2, 3), (1, 3, 2, 4),
+      (1, 4, 1, 3), (1, 4, 1, 4), (1, 4, 2, 3), (1, 4, 2, 4),
+      (2, 3, 1, 3), (2, 3, 1, 4), (2, 3, 2, 3), (2, 3, 2, 4),
+      (2, 4, 1, 3), (2, 4, 1, 4), (2, 4, 2, 3), (2, 4, 2, 4)]
 
   ``combinations(iterable, r)`` returns sub-sequences of length *r* from
   the elements of *iterable*. ::
 
-    itertools.combinations('123', 2) ->
-       ('1', '2'), ('1', '3'), ('2', '3')
-
-    itertools.combinations('123', 3) ->
-       ('1', '2', '3')
-
-    itertools.combinations('1234', 3) ->
-       ('1', '2', '3'), ('1', '2', '4'), ('1', '3', '4'),
-       ('2', '3', '4')
+    >>> list(itertools.combinations('123', 2))
+    [('1', '2'), ('1', '3'), ('2', '3')]
+    >>> list(itertools.combinations('123', 3))
+    [('1', '2', '3')]
+    >>> list(itertools.combinations('1234', 3))
+    [('1', '2', '3'), ('1', '2', '4'),
+     ('1', '3', '4'), ('2', '3', '4')]
 
   ``permutations(iter[, r])`` returns all the permutations of length *r* of
   the iterable's elements.  If *r* is not specified, it will default to the
   number of elements produced by the iterable. ::
 
-    itertools.permutations([1,2,3,4], 2) ->
-       (1, 2), (1, 3), (1, 4),
-       (2, 1), (2, 3), (2, 4),
-       (3, 1), (3, 2), (3, 4),
-       (4, 1), (4, 2), (4, 3)
+    >>> list(itertools.permutations([1,2,3,4], 2))
+    [(1, 2), (1, 3), (1, 4),
+     (2, 1), (2, 3), (2, 4),
+     (3, 1), (3, 2), (3, 4),
+     (4, 1), (4, 2), (4, 3)]
 
   ``itertools.chain(*iterables)`` is an existing function in
   :mod:`itertools` that gained a new constructor in Python 2.6.
@@ -2080,8 +2094,8 @@ changes, or look through the Subversion logs for all the details.
   then return all the elements of the first iterable, then
   all the elements of the second, and so on. ::
 
-    chain.from_iterable([[1,2,3], [4,5,6]]) ->
-        1, 2, 3, 4, 5, 6
+    >>> list(itertools.chain.from_iterable([[1,2,3], [4,5,6]]))
+    [1, 2, 3, 4, 5, 6]
 
   (All contributed by Raymond Hettinger.)
 
@@ -2252,16 +2266,15 @@ changes, or look through the Subversion logs for all the details.
   with an installed Python package.  For example::
 
     >>> import pkgutil
-    >>> pkgutil.get_data('test', 'exception_hierarchy.txt')
-    'BaseException
+    >>> print pkgutil.get_data('test', 'exception_hierarchy.txt')
+    BaseException
      +-- SystemExit
      +-- KeyboardInterrupt
      +-- GeneratorExit
      +-- Exception
           +-- StopIteration
           +-- StandardError
-     ...'
-    >>>
+     ...
 
   (Contributed by Paul Moore; :issue:`2439`.)
 
@@ -2535,9 +2548,9 @@ changes, or look through the Subversion logs for all the details.
 
       with test_support.check_warnings() as wrec:
           warnings.simplefilter("always")
-          ... code that triggers a warning ...
+          # ... code that triggers a warning ...
           assert str(wrec.message) == "function is outdated"
-	  assert len(wrec.warnings) == 1, "Multiple warnings raised"
+          assert len(wrec.warnings) == 1, "Multiple warnings raised"
 
   (Contributed by Brett Cannon.)
 
@@ -2711,7 +2724,7 @@ for debugging::
     t = ast.parse("""
     d = {}
     for i in 'abcdefghijklm':
-	d[i + i] = ord(i) - ord('a') + 1
+        d[i + i] = ord(i) - ord('a') + 1
     print d
     """)
     print ast.dump(t)
@@ -2720,32 +2733,32 @@ This outputs a deeply nested tree::
 
     Module(body=[
       Assign(targets=[
-	Name(id='d', ctx=Store())
+        Name(id='d', ctx=Store())
        ], value=Dict(keys=[], values=[]))
       For(target=Name(id='i', ctx=Store()),
-	  iter=Str(s='abcdefghijklm'), body=[
-	Assign(targets=[
-	  Subscript(value=
-	   Name(id='d', ctx=Load()),
-	     slice=
-	     Index(value=
-	    BinOp(left=Name(id='i', ctx=Load()), op=Add(),
-	     right=Name(id='i', ctx=Load()))), ctx=Store())
-	 ], value=
-	 BinOp(left=
-	  BinOp(left=
-	   Call(func=
-	    Name(id='ord', ctx=Load()), args=[
-	     Name(id='i', ctx=Load())
-	    ], keywords=[], starargs=None, kwargs=None),
-	   op=Sub(), right=Call(func=
-	    Name(id='ord', ctx=Load()), args=[
-	     Str(s='a')
-	    ], keywords=[], starargs=None, kwargs=None)),
-          op=Add(), right=Num(n=1)))
-       ], orelse=[])
-      Print(dest=None, values=[
-	Name(id='d', ctx=Load())
+          iter=Str(s='abcdefghijklm'), body=[
+        Assign(targets=[
+          Subscript(value=
+            Name(id='d', ctx=Load()),
+              slice=
+              Index(value=
+                BinOp(left=Name(id='i', ctx=Load()), op=Add(),
+                 right=Name(id='i', ctx=Load()))), ctx=Store())
+         ], value=
+         BinOp(left=
+          BinOp(left=
+           Call(func=
+            Name(id='ord', ctx=Load()), args=[
+              Name(id='i', ctx=Load())
+             ], keywords=[], starargs=None, kwargs=None),
+           op=Sub(), right=Call(func=
+            Name(id='ord', ctx=Load()), args=[
+              Str(s='a')
+             ], keywords=[], starargs=None, kwargs=None)),
+           op=Add(), right=Num(n=1)))
+        ], orelse=[])
+       Print(dest=None, values=[
+         Name(id='d', ctx=Load())
        ], nl=True)
      ])
 
@@ -2754,7 +2767,7 @@ representing a literal expression, parses and evaluates it, and
 returns the resulting value.  A literal expression is a Python
 expression containing only strings, numbers, dictionaries,
 etc. but no statements or function calls.  If you need to
-evaluate an expression but accept the security risk of using an
+evaluate an expression but cannot accept the security risk of using an
 :func:`eval` call, :func:`literal_eval` will handle it safely::
 
     >>> literal = '("a", "b", {2:4, 3:8, 1:2})'
@@ -2849,8 +2862,8 @@ Using the module is simple::
 
     # Create data structure
     data_struct = dict(lastAccessed=datetime.datetime.now(),
-		       version=1,
-		       categories=('Personal','Shared','Private'))
+                       version=1,
+                       categories=('Personal','Shared','Private'))
 
     # Create string containing XML.
     plist_str = plistlib.writePlistToString(data_struct)
@@ -3040,7 +3053,7 @@ Changes to Python's build process and to the C API include:
   ``numfree``, and a macro ``Py<typename>_MAXFREELIST`` is
   always defined.
 
-* A new Makefile target, "make check", prepares the Python source tree
+* A new Makefile target, "make patchcheck", prepares the Python source tree
   for making a patch: it fixes trailing whitespace in all modified
   ``.py`` files, checks whether the documentation has been changed,
   and reports whether the :file:`Misc/ACKS` and :file:`Misc/NEWS` files
@@ -3261,13 +3274,13 @@ that may require changes to your code:
 .. ======================================================================
 
 
-.. _acks:
+.. _26acks:
 
 Acknowledgements
 ================
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Georg Brandl, Steve Brown, Nick Coghlan, Jim Jewett, Kent
-Johnson, Chris Lambacher, Antoine Pitrou.
+article: Georg Brandl, Steve Brown, Nick Coghlan, Ralph Corderoy, 
+Jim Jewett, Kent Johnson, Chris Lambacher, Antoine Pitrou, Brian Warner.
 

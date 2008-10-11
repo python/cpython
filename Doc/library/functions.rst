@@ -22,9 +22,8 @@ are always available.  They are listed here in alphabetical order.
    The function is invoked by the :keyword:`import` statement.  It mainly exists
    so that you can replace it with another function that has a compatible
    interface, in order to change the semantics of the :keyword:`import`
-   statement. See also the built-in module :mod:`imp`, which
-   defines some useful operations out of which you can build your own
-   :func:`__import__` function.
+   statement.  See the built-in module :mod:`imp`, which defines some useful
+   operations out of which you can build your own :func:`__import__` function.
 
    For example, the statement ``import spam`` results in the following call:
    ``__import__('spam', globals(), locals(), [], -1)``; the statement
@@ -1200,6 +1199,18 @@ are always available.  They are listed here in alphabetical order.
    :func:`zip` should only be used with unequal length inputs when you don't
    care about trailing, unmatched values from the longer iterables.  If those
    values are important, use :func:`itertools.zip_longest` instead.
+
+   :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
+   list::
+
+      >>> x = [1, 2, 3]
+      >>> y = [4, 5, 6]
+      >>> zipped = zip(x, y)
+      >>> zipped
+      [(1, 4), (2, 5), (3, 6)]
+      >>> x2, y2 = zip(*zipped)
+      >>> x == x2, y == y2
+      True
 
 
 .. rubric:: Footnotes

@@ -730,7 +730,8 @@ class PyBuildExt(build_ext):
             ]
             sqlite_libfile = self.compiler.find_library_file(
                                 sqlite_dirs_to_check + lib_dirs, 'sqlite3')
-            sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
+            if sqlite_libfile:
+                sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
 
         if sqlite_incdir and sqlite_libdir:
             sqlite_srcs = ['_sqlite/cache.c',

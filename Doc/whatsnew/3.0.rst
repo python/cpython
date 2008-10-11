@@ -440,7 +440,7 @@ Platform-specific changes go here.
 .. ======================================================================
 
 
-.. _section-other:
+.. _30section-other:
 
 Other Changes and Fixes
 =======================

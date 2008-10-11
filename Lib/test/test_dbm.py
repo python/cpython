@@ -140,6 +140,23 @@ class WhichDBTestCase(unittest.TestCase):
 
     def setUp(self):
         delete_files()
+        self.filename = test.support.TESTFN
+        self.d = dbm.open(self.filename, 'c')
+        self.d.close()
+
+    def test_keys(self):
+        self.d = dbm.open(self.filename, 'c')
+        self.assertEqual(self.d.keys(), [])
+        a = [(b'a', b'b'), (b'12345678910', b'019237410982340912840198242')]
+        for k, v in a:
+            self.d[k] = v
+        self.assertEqual(sorted(self.d.keys()), sorted(k for (k, v) in a))
+        for k, v in a:
+            self.assert_(k in self.d)
+            self.assertEqual(self.d[k], v)
+        self.assert_('xxx' not in self.d)
+        self.assertRaises(KeyError, lambda: self.d['xxx'])
+        self.d.close()
 
 
 def test_main():

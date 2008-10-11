@@ -16,9 +16,9 @@ release schedule.
 The changes in Python 2.5 are an interesting mix of language and library
 improvements. The library enhancements will be more important to Python's user
 community, I think, because several widely-useful packages were added.  New
-modules include ElementTree for XML processing (section :ref:`module-etree`),
-the SQLite database module (section :ref:`module-sqlite`), and the :mod:`ctypes`
-module for calling C functions (section :ref:`module-ctypes`).
+modules include ElementTree for XML processing (:mod:`xml.etree`),
+the SQLite database module (:mod:`sqlite`), and the :mod:`ctypes`
+module for calling C functions.
 
 The language changes are of middling significance.  Some pleasant new features
 were added, but most of them aren't features that you'll use every day.
@@ -736,7 +736,7 @@ add a :keyword:`return` statement at the marked location. ::
                # return False
 
 
-.. _module-contextlib:
+.. _contextlibmod:
 
 The contextlib module
 ---------------------
@@ -1109,7 +1109,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 .. ======================================================================
 
 
-.. _interactive:
+.. _25interactive:
 
 Interactive Interpreter Changes
 -------------------------------
@@ -1211,7 +1211,7 @@ marked in the following list.
 .. ======================================================================
 
 
-.. _modules:
+.. _25modules:
 
 New, Improved, and Removed Modules
 ==================================
@@ -1273,7 +1273,7 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Raymond Hettinger.)
 
 * New module: The :mod:`contextlib` module contains helper functions for use
-  with the new ':keyword:`with`' statement.  See section :ref:`module-contextlib`
+  with the new ':keyword:`with`' statement.  See section :ref:`contextlibmod`
   for more about this module.
 
 * New module: The :mod:`cProfile` module is a C implementation of  the existing
@@ -2271,8 +2271,6 @@ code:
 
 .. ======================================================================
 
-
-.. _acks:
 
 Acknowledgements
 ================

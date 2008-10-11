@@ -751,9 +751,14 @@ win32_wchdir(LPCWSTR path)
 	if (!result)
 		return FALSE;
 	if (result > MAX_PATH+1) {
-		new_path = malloc(result);
+		new_path = malloc(result * sizeof(wchar_t));
 		if (!new_path) {
 			SetLastError(ERROR_OUTOFMEMORY);
+			return FALSE;
+		}
+		result = GetCurrentDirectoryW(result, new_path);
+		if (!result) {
+			free(new_path);
 			return FALSE;
 		}
 	}
