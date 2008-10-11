@@ -154,8 +154,8 @@ class WhichDBTestCase(unittest.TestCase):
         for k, v in a:
             self.assert_(k in self.d)
             self.assertEqual(self.d[k], v)
-        self.assert_('xxx' not in self.d)
-        self.assertRaises(KeyError, lambda: self.d['xxx'])
+        self.assert_(b'xxx' not in self.d)
+        self.assertRaises(KeyError, lambda: self.d[b'xxx'])
         self.d.close()
 
 
