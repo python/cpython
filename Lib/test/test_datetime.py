@@ -249,7 +249,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(TypeError, lambda: a // x)
         self.assertRaises(TypeError, lambda: x // a)
 
-        # Divison of int by timedelta doesn't make sense.
+        # Division of int by timedelta doesn't make sense.
         # Division by zero doesn't make sense.
         for zero in 0, 0:
             self.assertRaises(TypeError, lambda: zero // a)

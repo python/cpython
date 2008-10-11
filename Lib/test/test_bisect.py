@@ -196,6 +196,17 @@ class TestInsort(unittest.TestCase):
     def test_backcompatibility(self):
         self.assertEqual(self.module.insort, self.module.insort_right)
 
+    def test_listDerived(self):
+        class List(list):
+            data = []
+            def insert(self, index, item):
+                self.data.insert(index, item)
+
+        lst = List()
+        self.module.insort_left(lst, 10)
+        self.module.insort_right(lst, 5)
+        self.assertEqual([5, 10], lst.data)
+
 class TestInsortPython(TestInsort):
     module = py_bisect
 

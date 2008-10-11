@@ -1870,16 +1870,18 @@ PyDoc_STRVAR(setdefault_doc__,
 "D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D");
 
 PyDoc_STRVAR(pop__doc__,
-"D.pop(k[,d]) -> v, remove specified key and return the corresponding value\n\
+"D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n\
 If key is not found, d is returned if given, otherwise KeyError is raised");
 
 PyDoc_STRVAR(popitem__doc__,
 "D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
-2-tuple; but raise KeyError if D is empty");
+2-tuple; but raise KeyError if D is empty.");
 
 PyDoc_STRVAR(update__doc__,
-"D.update(E, **F) -> None.  Update D from E and F: for k in E: D[k] = E[k]\
-\n(if E has keys else: for (k, v) in E: D[k] = v) then: for k in F: D[k] = F[k]");
+"D.update(E, **F) -> None.  Update D from dict/iterable E and F.\n"
+"If E has a .keys() method, does:     for k in E: D[k] = E[k]\n\
+If E lacks .keys() method, does:     for (k, v) in E: D[k] = v\n\
+In either case, this is followed by: for k in F: D[k] = F[k]");
 
 PyDoc_STRVAR(fromkeys__doc__,
 "dict.fromkeys(S[,v]) -> New dict with keys from S and values equal to v.\n\

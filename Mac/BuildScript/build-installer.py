@@ -130,8 +130,8 @@ LIBRARY_RECIPES = [
     ),
 
     dict(
-        name="SQLite 3.3.5",
-        url="http://www.sqlite.org/sqlite-3.3.5.tar.gz",
+        name="SQLite 3.6.3",
+        url="http://www.sqlite.org/sqlite-3.6.3.tar.gz",
         checksum='93f742986e8bc2dfa34792e16df017a6feccf3a2',
         configure_pre=[
             '--enable-threadsafe',
@@ -171,8 +171,8 @@ LIBRARY_RECIPES = [
             ),
     ),
     dict(
-        name="Sleepycat DB 4.4",
-        url="http://downloads.sleepycat.com/db-4.4.20.tar.gz",
+        name="Sleepycat DB 4.7.25",
+        url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
         #name="Sleepycat DB 4.3.29",
         #url="http://downloads.sleepycat.com/db-4.3.29.tar.gz",
         buildDir="build_unix",
@@ -586,21 +586,23 @@ def buildPythonDocs():
     version = getVersion()
     docdir = os.path.join(rootDir, 'pydocs')
 
+    novername = 'python-docs-html.tar.bz2'
     name = 'html-%s.tar.bz2'%(getFullVersion(),)
     sourceArchive = os.path.join(DEPSRC, name)
     if os.path.exists(sourceArchive):
         print("Using local copy of %s"%(name,))
 
     else:
-        print("Downloading %s"%(name,))
+        print "Downloading %s"%(novername,)
         downloadURL('http://www.python.org/ftp/python/doc/%s/%s'%(
-            getFullVersion(), name), sourceArchive)
+            getFullVersion(), novername), sourceArchive)
         print("Archive for %s stored as %s"%(name, sourceArchive))
 
     extractArchive(os.path.dirname(docdir), sourceArchive)
+
     os.rename(
             os.path.join(
-                os.path.dirname(docdir), 'Python-Docs-%s'%(getFullVersion(),)),
+                os.path.dirname(docdir), 'python-docs-html'),
             docdir)
 
 
@@ -1029,11 +1031,11 @@ def main():
     buildPython()
     buildPythonDocs()
     fn = os.path.join(WORKDIR, "_root", "Applications",
-                "MacPython %s"%(getVersion(),), "Update Shell Profile.command")
+                "Python %s"%(getVersion(),), "Update Shell Profile.command")
     patchFile("scripts/postflight.patch-profile",  fn)
     os.chmod(fn, 0755)
 
-    folder = os.path.join(WORKDIR, "_root", "Applications", "MacPython %s"%(
+    folder = os.path.join(WORKDIR, "_root", "Applications", "Python %s"%(
         getVersion(),))
     os.chmod(folder, 0755)
     setIcon(folder, "../Icons/Python Folder.icns")

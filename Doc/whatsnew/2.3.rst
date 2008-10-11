@@ -1196,7 +1196,7 @@ Optimizations
 
 * The ``SET_LINENO`` opcode is now gone.  This may provide a small speed
   increase, depending on your compiler's idiosyncrasies. See section
-  :ref:`section-other` for a longer explanation. (Removed by Michael Hudson.)
+  :ref:`23section-other` for a longer explanation. (Removed by Michael Hudson.)
 
 * :func:`xrange` objects now have their own iterator, making ``for i in
   xrange(n)`` slightly faster than ``for i in range(n)``.  (Patch by Raymond
@@ -1951,7 +1951,7 @@ Other new platforms now supported by Python include AtheOS
 .. ======================================================================
 
 
-.. _section-other:
+.. _23section-other:
 
 Other Changes and Fixes
 =======================
@@ -2062,7 +2062,7 @@ code:
 .. ======================================================================
 
 
-.. _acks:
+.. _23acks:
 
 Acknowledgements
 ================

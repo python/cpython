@@ -775,9 +775,9 @@ can appear before a future statement are:
 .. XXX change this if future is cleaned out
 
 The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``nested_scopes`` and ``with_statement``.  They are all
-redundant because they are always enabled, and only kept for backwards
-compatibility.
+``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
+``with_statement``.  They are all redundant because they are always enabled, and
+only kept for backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating

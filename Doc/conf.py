@@ -41,13 +41,6 @@ today_fmt = '%B %d, %Y'
 
 # List of files that shouldn't be included in the build.
 unused_docs = [
-    'whatsnew/2.0',
-    'whatsnew/2.1',
-    'whatsnew/2.2',
-    'whatsnew/2.3',
-    'whatsnew/2.4',
-    'whatsnew/2.5',
-    'whatsnew/2.6',
     'maclib/scrap',
     'library/xmllib',
     'library/xml.etree',

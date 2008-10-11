@@ -26,12 +26,13 @@ def raise2():
 class TestCase(unittest.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
+        self.save_stdout, self.save_stderr = sys.stderr, sys.stdout
         sys.stdout = sys.stderr = self.stream
         atexit._clear()
 
     def tearDown(self):
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+        sys.stdout = self.save_stdout
+        sys.stderr = self.save_stderr
         atexit._clear()
 
     def test_args(self):

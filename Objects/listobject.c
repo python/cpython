@@ -2286,11 +2286,14 @@ PyDoc_STRVAR(extend_doc,
 PyDoc_STRVAR(insert_doc,
 "L.insert(index, object) -- insert object before index");
 PyDoc_STRVAR(pop_doc,
-"L.pop([index]) -> item -- remove and return item at index (default last)");
+"L.pop([index]) -> item -- remove and return item at index (default last).\n"
+"Raises IndexError if list is empty or index is out of range.");
 PyDoc_STRVAR(remove_doc,
-"L.remove(value) -- remove first occurrence of value");
+"L.remove(value) -- remove first occurrence of value.\n"
+"Raises ValueError if the value is not present.");
 PyDoc_STRVAR(index_doc,
-"L.index(value, [start, [stop]]) -> integer -- return first index of value");
+"L.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
+"Raises ValueError if the value is not present.");
 PyDoc_STRVAR(count_doc,
 "L.count(value) -> integer -- return number of occurrences of value");
 PyDoc_STRVAR(reverse_doc,

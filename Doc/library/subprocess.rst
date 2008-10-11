@@ -334,8 +334,8 @@ Replacing /bin/sh shell backquote
    output = Popen(["mycmd", "myarg"], stdout=PIPE).communicate()[0]
 
 
-Replacing shell pipe line
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing shell pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 

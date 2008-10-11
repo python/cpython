@@ -176,8 +176,8 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 # The task to run while instrument when building the profile-opt target
-PROFILE_TASK=	Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
-#PROFILE_TASK=	Lib/test/regrtest.py
+PROFILE_TASK=	$(srcdir)/Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
+#PROFILE_TASK=	$(srcdir)/Lib/test/regrtest.py
 
 # === Definitions added by makesetup ===
 

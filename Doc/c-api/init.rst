@@ -744,11 +744,11 @@ created.
    :cmacro:`Py_END_ALLOW_THREADS` macros is acceptable.
 
    The return value is an opaque "handle" to the thread state when
-   :cfunc:`PyGILState_Acquire` was called, and must be passed to
+   :cfunc:`PyGILState_Ensure` was called, and must be passed to
    :cfunc:`PyGILState_Release` to ensure Python is left in the same state. Even
    though recursive calls are allowed, these handles *cannot* be shared - each
-   unique call to :cfunc:`PyGILState_Ensure` must save the handle for its call to
-   :cfunc:`PyGILState_Release`.
+   unique call to :cfunc:`PyGILState_Ensure` must save the handle for its call
+   to :cfunc:`PyGILState_Release`.
 
    When the function returns, the current thread will hold the GIL. Failure is a
    fatal error.
