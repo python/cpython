@@ -58,6 +58,11 @@ Extension Modules
 
 - Issue #3659: Subclasses of str didn't work as SQL parameters.
 
+Build
+-----
+
+- Issue #4018: Disable "for me" installations on Vista.
+
 
 What's New in Python 3.0 release candidate 1
 ============================================
