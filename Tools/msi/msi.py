@@ -217,7 +217,8 @@ def build_database():
                   schema, ProductName="Python "+full_current_version+productsuffix,
                   ProductCode=product_code,
                   ProductVersion=current_version,
-                  Manufacturer=u"Python Software Foundation")
+                  Manufacturer=u"Python Software Foundation",
+                  request_uac = True)
     # The default sequencing of the RemoveExistingProducts action causes
     # removal of files that got just installed. Place it after
     # InstallInitialize, so we first uninstall everything, but still roll
@@ -697,10 +698,11 @@ def add_ui(db):
                         "AdminInstall", "Next", "Cancel")
     whichusers.title("Select whether to install [ProductName] for all users of this computer.")
     # A radio group with two options: allusers, justme
-    g = whichusers.radiogroup("AdminInstall", 135, 60, 160, 50, 3,
+    g = whichusers.radiogroup("AdminInstall", 135, 60, 235, 80, 3,
                               "WhichUsers", "", "Next")
+    g.condition("Disable", "VersionNT=600") # Not available on Vista and Windows 2008
     g.add("ALL", 0, 5, 150, 20, "Install for all users")
-    g.add("JUSTME", 0, 25, 150, 20, "Install just for me")
+    g.add("JUSTME", 0, 25, 235, 20, "Install just for me (not available on Windows Vista)")
 
     whichusers.back("Back", None, active=0)
 
