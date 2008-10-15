@@ -24,7 +24,8 @@ try:
 except ImportError:
     pass
 else:
-    def idle_formatwarning_subproc(message, category, filename, lineno):
+    def idle_formatwarning_subproc(message, category, filename, lineno,
+                                   line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
         s += '  File \"%s\", line %s\n' % (filename, lineno)
