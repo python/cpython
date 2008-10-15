@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4072: Restore build_py_2to3.
+
 - Issue #4014: Don't claim that Python has an Alpha release status, in addition
   to claiming it is Mature.
 
@@ -62,6 +64,11 @@ Build
 -----
 
 - Issue #4018: Disable "for me" installations on Vista.
+
+Tools/Demos
+-----------
+
+- Issue #4072: Add a distutils demo for build_py_2to3.
 
 
 What's New in Python 3.0 release candidate 1
