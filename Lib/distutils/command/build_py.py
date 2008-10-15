@@ -384,6 +384,18 @@ class build_py (Command):
             byte_compile(files, optimize=self.optimize,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)
 
+from lib2to3.refactor import RefactoringTool, get_fixers_from_package
+class DistutilsRefactoringTool(RefactoringTool):
+    def log_error(self, msg, *args, **kw):
+        # XXX ignores kw
+        log.error(msg, *args)
+
+    def log_message(self, msg, *args):
+        log.info(msg, *args)
+
+    def log_debug(self, msg, *args):
+        log.debug(msg, *args)
+
 class build_py_2to3(build_py):
     def run(self):
         self.updated_files = []
@@ -396,18 +408,12 @@ class build_py_2to3(build_py):
             self.build_package_data()
 
         # 2to3
-        from lib2to3.refactor import RefactoringTool
-        class Options:
-            pass
-        o = Options()
-        o.doctests_only = False
-        o.fix = []
-        o.list_fixes = []
-        o.print_function = False
-        o.verbose = False
-        o.write = True
-        r = RefactoringTool(o)
-        r.refactor_args(self.updated_files)
+        fixers = get_fixers_from_package('lib2to3.fixes')
+        options = dict(fix=[], list_fixes=[],
+                       print_function=False, verbose=False,
+                       write=True)
+        r = DistutilsRefactoringTool(fixers, options)
+        r.refactor(self.updated_files, write=True)
 
         # Remaining base class code
         self.byte_compile(self.get_outputs(include_bytecode=0))

@@ -1,0 +1,3 @@
+This project demonstrates how a distutils package
+can support Python 2.x and Python 3.x from a single
+source, using lib2to3.
