@@ -123,7 +123,6 @@ class TestRefactoringTool(unittest.TestCase):
 
     def test_refactor_file(self):
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
-        backup = test_file + ".bak"
         old_contents = open(test_file, "r").read()
         rt = self.rt()
 
@@ -133,14 +132,8 @@ class TestRefactoringTool(unittest.TestCase):
         rt.refactor_file(test_file, True)
         try:
             self.assertNotEqual(old_contents, open(test_file, "r").read())
-            self.assertTrue(os.path.exists(backup))
-            self.assertEqual(old_contents, open(backup, "r").read())
         finally:
             open(test_file, "w").write(old_contents)
-            try:
-                os.unlink(backup)
-            except OSError:
-                pass
 
     def test_refactor_docstring(self):
         rt = self.rt()
