@@ -225,14 +225,14 @@ A simple example illustrating typical use::
 
    tn = telnetlib.Telnet(HOST)
 
-   tn.read_until("login: ")
-   tn.write(user + "\n")
+   tn.read_until(b"login: ")
+   tn.write(user.encode('ascii') + b"\n")
    if password:
-       tn.read_until("Password: ")
-       tn.write(password + "\n")
+       tn.read_until(b"Password: ")
+       tn.write(password.encode('ascii') + b"\n")
 
-   tn.write("ls\n")
-   tn.write("exit\n")
+   tn.write(b"ls\n")
+   tn.write(b"exit\n")
 
    print(tn.read_all())
 
