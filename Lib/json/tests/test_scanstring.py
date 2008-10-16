@@ -2,6 +2,7 @@ import sys
 import decimal
 from unittest import TestCase
 
+import json
 import json.decoder
 
 class TestScanString(TestCase):
@@ -101,3 +102,9 @@ class TestScanString(TestCase):
         self.assertEquals(
             scanstring('["Bad value", truth]', 2, None, True),
             ('Bad value', 12))
+
+    def test_issue3623(self):
+        self.assertRaises(ValueError, json.decoder.scanstring, b"xxx", 1,
+                          "xxx")
+        self.assertRaises(UnicodeDecodeError,
+                          json.encoder.encode_basestring_ascii, b"xx\xff")

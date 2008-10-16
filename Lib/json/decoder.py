@@ -18,11 +18,15 @@ NaN, PosInf, NegInf = float('nan'), float('inf'), float('-inf')
 
 
 def linecol(doc, pos):
-    lineno = doc.count('\n', 0, pos) + 1
+    if isinstance(doc, bytes):
+        newline = b'\n'
+    else:
+        newline = '\n'
+    lineno = doc.count(newline, 0, pos) + 1
     if lineno == 1:
         colno = pos
     else:
-        colno = pos - doc.rindex('\n', 0, pos)
+        colno = pos - doc.rindex(newline, 0, pos)
     return lineno, colno
 
 
