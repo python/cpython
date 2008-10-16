@@ -179,7 +179,7 @@ of Stellenbosch, South Africa.  Martin von Loewis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
 http://svn.python.org/view/tracker/importer/ and may be useful to
-other projects wished to move from SourceForge to Roundup.
+other projects wishing to move from SourceForge to Roundup.
 
 .. seealso::
 
@@ -3282,5 +3282,6 @@ Acknowledgements
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Georg Brandl, Steve Brown, Nick Coghlan, Ralph Corderoy, 
-Jim Jewett, Kent Johnson, Chris Lambacher, Antoine Pitrou, Brian Warner.
+Jim Jewett, Kent Johnson, Chris Lambacher,  Martin Michlmayr, 
+Antoine Pitrou, Brian Warner.
 
