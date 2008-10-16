@@ -447,9 +447,6 @@ PyAPI_FUNC(int) PyCallable_Check(PyObject *);
 
 PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 
-/* A slot function whose address we need to compare */
-extern int _PyObject_SlotCompare(PyObject *, PyObject *);
-
 
 /* PyObject_Dir(obj) acts like Python builtins.dir(obj), returning a
    list of strings.  PyObject_Dir(NULL) is like builtins.dir(),

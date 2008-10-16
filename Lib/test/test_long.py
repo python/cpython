@@ -669,10 +669,22 @@ class LongTest(unittest.TestCase):
                 else:
                     raise TypeError("can't deal with %r" % val)
 
-            def __cmp__(self, other):
+            def _cmp__(self, other):
                 if not isinstance(other, Rat):
                     other = Rat(other)
                 return cmp(self.n * other.d, self.d * other.n)
+            def __eq__(self, other):
+                return self._cmp__(other) == 0
+            def __ne__(self, other):
+                return self._cmp__(other) != 0
+            def __ge__(self, other):
+                return self._cmp__(other) >= 0
+            def __gt__(self, other):
+                return self._cmp__(other) > 0
+            def __le__(self, other):
+                return self._cmp__(other) <= 0
+            def __lt__(self, other):
+                return self._cmp__(other) < 0
 
         cases = [0, 0.001, 0.99, 1.0, 1.5, 1e20, 1e200]
         # 2**48 is an important boundary in the internals.  2**53 is an

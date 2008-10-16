@@ -78,7 +78,6 @@ class HashInheritanceTestCase(unittest.TestCase):
                       ]
     error_expected = [NoHash(),
                       OnlyEquality(),
-                      OnlyCmp(),
                       ]
 
     def test_default_hash(self):
