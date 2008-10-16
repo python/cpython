@@ -254,6 +254,7 @@ class PyBuildExt(build_ext):
         # the environment variable is not set even though the value were passed
         # into configure and stored in the Makefile (issue found on OS X 10.3).
         for env_var, arg_name, dir_list in (
+                ('LDFLAGS', '-R', self.compiler.runtime_library_dirs),
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
@@ -792,7 +793,7 @@ class PyBuildExt(build_ext):
                         break
                     else:
                         if sqlite_setup_debug:
-                            print "%s: version %d is too old, need >= %s"%(d,
+                            print "%s: version %r is too old, need >= %r"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION)
                 elif sqlite_setup_debug:
                     print "sqlite: %s had no SQLITE_VERSION"%(f,)
