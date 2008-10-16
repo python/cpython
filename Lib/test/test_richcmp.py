@@ -198,13 +198,11 @@ class MiscTest(unittest.TestCase):
             def __le__(self, other): raise TestFailed("This shouldn't happen")
             def __ge__(self, other): raise TestFailed("This shouldn't happen")
             def __ne__(self, other): raise TestFailed("This shouldn't happen")
-            def __cmp__(self, other): raise RuntimeError("expected")
         a = Misb()
         b = Misb()
         self.assertEqual(a<b, 0)
         self.assertEqual(a==b, 0)
         self.assertEqual(a>b, 0)
-        self.assertRaises(RuntimeError, cmp, a, b)
 
     def test_not(self):
         # Check that exceptions in __bool__ are properly

@@ -202,9 +202,6 @@ class TestJointOps(unittest.TestCase):
         s = self.thetype(t)
         self.assertEqual(len(s), 3)
 
-    def test_compare(self):
-        self.assertRaises(TypeError, self.s.__cmp__, self.s)
-
     def test_sub_and_super(self):
         p, q, r = map(self.thetype, ['ab', 'abcde', 'def'])
         self.assert_(p < q)

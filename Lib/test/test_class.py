@@ -92,10 +92,6 @@ def __float__(self, *args):
     return 1.0
 
 @trackCall
-def __cmp__(self, *args):
-    return 0
-
-@trackCall
 def __eq__(self, *args):
     return True
 
@@ -464,11 +460,6 @@ class ClassTests(unittest.TestCase):
             pass
 
         hash(C0()) # This should work; the next two should raise TypeError
-
-        class C1:
-            def __cmp__(self, other): return 0
-
-        self.assertRaises(TypeError, hash, C1())
 
         class C2:
             def __eq__(self, other): return 1
