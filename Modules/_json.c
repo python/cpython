@@ -179,11 +179,13 @@ raise_errmsg(char *msg, PyObject *s, Py_ssize_t end)
         errmsg_fn = PyObject_GetAttrString(decoder, "errmsg");
         if (errmsg_fn == NULL)
             return;
-        Py_XDECREF(decoder);
+        Py_DECREF(decoder);
     }
     pymsg = PyObject_CallFunction(errmsg_fn, "(zOn)", msg, s, end);
-    PyErr_SetObject(PyExc_ValueError, pymsg);
-    Py_DECREF(pymsg);
+    if (pymsg) {
+        PyErr_SetObject(PyExc_ValueError, pymsg);
+        Py_DECREF(pymsg);
+    }
 /*
 
 def linecol(doc, pos):
