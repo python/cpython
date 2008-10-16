@@ -1,7 +1,7 @@
 # Very rudimentary test of threading module
 
 import test.support
-from test.support import verbose, catch_warning
+from test.support import verbose
 import random
 import re
 import sys

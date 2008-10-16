@@ -214,7 +214,8 @@ class WarnTests(unittest.TestCase):
     def test_warn_nonstandard_types(self):
         # warn() should handle non-standard types without issue.
         for ob in (Warning, None, 42):
-            with support.catch_warning(self.module) as w:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
                 self.module.warn(ob)
                 # Don't directly compare objects since
                 # ``Warning() != Warning()``.
@@ -526,19 +527,23 @@ class CatchWarningTests(BaseTest):
         wmod = self.module
         orig_filters = wmod.filters
         orig_showwarning = wmod.showwarning
-        with support.catch_warning(module=wmod):
+        # Ensure both showwarning and filters are restored when recording
+        with wmod.catch_warnings(module=wmod, record=True):
             wmod.filters = wmod.showwarning = object()
         self.assert_(wmod.filters is orig_filters)
         self.assert_(wmod.showwarning is orig_showwarning)
-        with support.catch_warning(module=wmod, record=False):
+        # Same test, but with recording disabled
+        with wmod.catch_warnings(module=wmod, record=False):
             wmod.filters = wmod.showwarning = object()
         self.assert_(wmod.filters is orig_filters)
         self.assert_(wmod.showwarning is orig_showwarning)
 
     def test_catch_warnings_recording(self):
         wmod = self.module
-        with support.catch_warning(module=wmod) as w:
+        # Ensure warnings are recorded when requested
+        with wmod.catch_warnings(module=wmod, record=True) as w:
             self.assertEqual(w, [])
+            self.assert_(type(w) is list)
             wmod.simplefilter("always")
             wmod.warn("foo")
             self.assertEqual(str(w[-1].message), "foo")
@@ -548,10 +553,58 @@ class CatchWarningTests(BaseTest):
             self.assertEqual(str(w[1].message), "bar")
             del w[:]
             self.assertEqual(w, [])
+        # Ensure warnings are not recorded when not requested
         orig_showwarning = wmod.showwarning
-        with support.catch_warning(module=wmod, record=False) as w:
+        with wmod.catch_warnings(module=wmod, record=False) as w:
             self.assert_(w is None)
             self.assert_(wmod.showwarning is orig_showwarning)
+
+    def test_catch_warnings_reentry_guard(self):
+        wmod = self.module
+        # Ensure catch_warnings is protected against incorrect usage
+        x = wmod.catch_warnings(module=wmod, record=True)
+        self.assertRaises(RuntimeError, x.__exit__)
+        with x:
+            self.assertRaises(RuntimeError, x.__enter__)
+        # Same test, but with recording disabled
+        x = wmod.catch_warnings(module=wmod, record=False)
+        self.assertRaises(RuntimeError, x.__exit__)
+        with x:
+            self.assertRaises(RuntimeError, x.__enter__)
+
+    def test_catch_warnings_defaults(self):
+        wmod = self.module
+        orig_filters = wmod.filters
+        orig_showwarning = wmod.showwarning
+        # Ensure default behaviour is not to record warnings
+        with wmod.catch_warnings(module=wmod) as w:
+            self.assert_(w is None)
+            self.assert_(wmod.showwarning is orig_showwarning)
+            self.assert_(wmod.filters is not orig_filters)
+        self.assert_(wmod.filters is orig_filters)
+        if wmod is sys.modules['warnings']:
+            # Ensure the default module is this one
+            with wmod.catch_warnings() as w:
+                self.assert_(w is None)
+                self.assert_(wmod.showwarning is orig_showwarning)
+                self.assert_(wmod.filters is not orig_filters)
+            self.assert_(wmod.filters is orig_filters)
+
+    def test_check_warnings(self):
+        # Explicit tests for the test.support convenience wrapper
+        wmod = self.module
+        if wmod is sys.modules['warnings']:
+            with support.check_warnings() as w:
+                self.assertEqual(w.warnings, [])
+                wmod.simplefilter("always")
+                wmod.warn("foo")
+                self.assertEqual(str(w.message), "foo")
+                wmod.warn("bar")
+                self.assertEqual(str(w.message), "bar")
+                self.assertEqual(str(w.warnings[0].message), "foo")
+                self.assertEqual(str(w.warnings[1].message), "bar")
+                w.reset()
+                self.assertEqual(w.warnings, [])
 
 class CCatchWarningTests(CatchWarningTests):
     module = c_warnings
