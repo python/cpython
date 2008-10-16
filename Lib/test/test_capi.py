@@ -2,10 +2,34 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import sys
+import unittest
 from test import support
 import _testcapi
 
+def testfunction(self):
+    """some doc"""
+    return self
+
+class InstanceMethod:
+    id = _testcapi.instancemethod(id)
+    testfunction = _testcapi.instancemethod(testfunction)
+
+class CAPITest(unittest.TestCase):
+
+    def test_instancemethod(self):
+        inst = InstanceMethod()
+        self.assertEqual(id(inst), inst.id())
+        self.assert_(inst.testfunction() is inst)
+        self.assertEqual(inst.testfunction.__doc__, testfunction.__doc__)
+        self.assertEqual(InstanceMethod.testfunction.__doc__, testfunction.__doc__)
+
+        InstanceMethod.testfunction.attribute = "test"
+        self.assertEqual(testfunction.attribute, "test")
+        self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
+
+
 def test_main():
+    support.run_unittest(CAPITest)
 
     for name in dir(_testcapi):
         if name.startswith('test_'):
@@ -46,6 +70,7 @@ def test_main():
         t = threading.Thread(target=TestThreadState)
         t.start()
         t.join()
+
 
 if __name__ == "__main__":
     test_main()
