@@ -301,8 +301,21 @@ class catch_warnings(object):
         """
         self._record = record
         self._module = sys.modules['warnings'] if module is None else module
+        self._entered = False
+
+    def __repr__(self):
+        args = []
+        if self._record:
+            args.append("record=True")
+        if self._module is not sys.modules['warnings']:
+            args.append("module=%r" % self._module)
+        name = type(self).__name__
+        return "%s(%s)" % (name, ", ".join(args))
 
     def __enter__(self):
+        if self._entered:
+            raise RuntimeError("Cannot enter %r twice" % self)
+        self._entered = True
         self._filters = self._module.filters
         self._module.filters = self._filters[:]
         self._showwarning = self._module.showwarning
@@ -316,6 +329,8 @@ class catch_warnings(object):
             return None
 
     def __exit__(self, *exc_info):
+        if not self._entered:
+            raise RuntimeError("Cannot exit %r without entering first" % self)
         self._module.filters = self._filters
         self._module.showwarning = self._showwarning
 

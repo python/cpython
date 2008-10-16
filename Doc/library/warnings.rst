@@ -165,9 +165,9 @@ ImportWarning can also be enabled explicitly in Python code using::
 Temporarily Suppressing Warnings
 --------------------------------
 
-If you are using code that you know will raise a warning, such some deprecated
-function, but do not want to see the warning, then suppress the warning using
-the :class:`catch_warnings` context manager::
+If you are using code that you know will raise a warning, such as a deprecated
+function, but do not want to see the warning, then it is possible to suppress
+the warning using the :class:`catch_warnings` context manager::
 
     import warnings
 
@@ -218,7 +218,15 @@ the warning has been cleared.
 Once the context manager exits, the warnings filter is restored to its state
 when the context was entered. This prevents tests from changing the warnings
 filter in unexpected ways between tests and leading to indeterminate test
-results.
+results. The :func:`showwarning` function in the module is also restored to
+its original value.
+
+When testing multiple operations that raise the same kind of warning, it
+is important to test them in a manner that confirms each operation is raising
+a new warning (e.g. set warnings to be raised as exceptions and check the
+operations raise exceptions, check that the length of the warning list
+continues to increase after each operation, or else delete the previous
+entries from the warnings list before each new operation).
 
 
 .. _warning-functions:
@@ -314,19 +322,19 @@ Available Context Managers
 
 .. class:: catch_warnings([\*, record=False, module=None])
 
-    A context manager that copies and, upon exit, restores the warnings filter.
-    If the *record* argument is False (the default) the context manager returns
-    :class:`None`. If *record* is true, a list is returned that is populated
-    with objects as seen by a custom :func:`showwarning` function (which also
-    suppresses output to ``sys.stdout``). Each object has attributes with the
-    same names as the arguments to :func:`showwarning`.
+    A context manager that copies and, upon exit, restores the warnings filter
+    and the :func:`showwarning` function.
+    If the *record* argument is :const:`False` (the default) the context manager
+    returns :class:`None` on entry. If *record* is :const:`True`, a list is
+    returned that is progressively populated with objects as seen by a custom
+    :func:`showwarning` function (which also suppresses output to ``sys.stdout``).
+    Each object in the list has attributes with the same names as the arguments to
+    :func:`showwarning`.
 
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`warnings` whose filter will be
-    protected. This arguments exists primarily for testing the :mod:`warnings`
+    protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
-
-    .. versionadded:: 2.6
 
     .. versionchanged:: 3.0
 
