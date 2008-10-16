@@ -271,6 +271,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
                 goto bail;
             }
             if (PyList_Append(chunks, chunk)) {
+                Py_DECREF(chunk);
                 goto bail;
             }
             Py_DECREF(chunk);
@@ -372,6 +373,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
             goto bail;
         }
         if (PyList_Append(chunks, chunk)) {
+            Py_DECREF(chunk);
             goto bail;
         }
         Py_DECREF(chunk);
@@ -381,8 +383,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
     if (rval == NULL) {
         goto bail;
     }
-    Py_DECREF(chunks);
-    chunks = NULL;
+    Py_CLEAR(chunks);
     return Py_BuildValue("(Nn)", rval, end);
 bail:
     Py_XDECREF(chunks);
@@ -533,6 +534,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
             goto bail;
         }
         if (PyList_Append(chunks, chunk)) {
+            Py_DECREF(chunk);
             goto bail;
         }
         Py_DECREF(chunk);
