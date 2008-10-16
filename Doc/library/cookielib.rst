@@ -324,6 +324,11 @@ http://wwwsearch.sf.net/ClientCookie/.
 
    .. note::
 
+      Version 3 of the Firefox web browser no longer writes cookies in the
+      ``cookies.txt`` file format.
+
+   .. note::
+
       This loses information about RFC 2965 cookies, and also about newer or
       non-standard cookie-attributes such as ``port``.
 
