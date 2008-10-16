@@ -474,10 +474,6 @@ win32_error_unicode(char* function, Py_UNICODE* filename)
 		return PyErr_SetFromWindowsErr(errno);
 }
 
-static PyObject *_PyUnicode_FromFileSystemEncodedObject(register PyObject *obj)
-{
-}
-
 static int
 convert_to_unicode(PyObject **param)
 {
@@ -688,7 +684,7 @@ win32_1str(PyObject* args, char* func,
    chdir is essentially a wrapper around SetCurrentDirectory; however,
    it also needs to set "magic" environment variables indicating
    the per-drive current directory, which are of the form =<drive>: */
-BOOL __stdcall
+static BOOL __stdcall
 win32_chdir(LPCSTR path)
 {
 	char new_path[MAX_PATH+1];
@@ -713,7 +709,7 @@ win32_chdir(LPCSTR path)
 
 /* The Unicode version differs from the ANSI version
    since the current directory might exceed MAX_PATH characters */
-BOOL __stdcall
+static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
 	wchar_t _new_path[MAX_PATH+1], *new_path = _new_path;
