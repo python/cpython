@@ -378,8 +378,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    Example usage of some of the methods of :class:`Process`::
 
-       >>> import processing, time, signal
-       >>> p = processing.Process(target=time.sleep, args=(1000,))
+       >>> import multiprocessing, time, signal
+       >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print p, p.is_alive()
        <Process(Process-1, initial)> False
        >>> p.start()
@@ -1781,12 +1781,12 @@ handler type) for messages from different processes to get mixed up.
 
 Below is an example session with logging turned on::
 
-    >>> import processing, logging
-    >>> logger = processing.getLogger()
+    >>> import multiprocessing, logging
+    >>> logger = multiprocessing.getLogger()
     >>> logger.setLevel(logging.INFO)
     >>> logger.warning('doomed')
     [WARNING/MainProcess] doomed
-    >>> m = processing.Manager()
+    >>> m = multiprocessing.Manager()
     [INFO/SyncManager-1] child process calling self.run()
     [INFO/SyncManager-1] manager bound to '\\\\.\\pipe\\pyc-2776-0-lj0tfa'
     >>> del m
