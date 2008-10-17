@@ -1387,7 +1387,7 @@ makepathobject(const wchar_t *path, wchar_t delim)
 	for (i = 0; ; i++) {
 		p = wcschr(path, delim);
 		if (p == NULL)
-			p = wcschr(path, L'\0'); /* End of string */
+			p = path + wcslen(path); /* End of string */
 		w = PyUnicode_FromWideChar(path, (Py_ssize_t)(p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
