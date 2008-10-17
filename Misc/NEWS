@@ -74,6 +74,8 @@ Build
 Tools/Demos
 -----------
 
+- Issue #3717: Fix Demo/embed/demo.c.
+
 - Issue #4072: Add a distutils demo for build_py_2to3.
 
 
