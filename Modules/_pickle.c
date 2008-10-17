@@ -421,6 +421,11 @@ pickler_write(PicklerObject *self, const char *s, Py_ssize_t n)
 {
     PyObject *data, *result;
 
+    if (self->write_buf == NULL) {
+        PyErr_SetString(PyExc_SystemError, "invalid write buffer");
+        return -1;
+    }
+
     if (s == NULL) {
         if (!(self->buf_size))
             return 0;
@@ -2377,6 +2382,16 @@ static PyObject *
 Pickler_dump(PicklerObject *self, PyObject *args)
 {
     PyObject *obj;
+
+    /* Check whether the Pickler was initialized correctly (issue3664).
+       Developers often forget to call __init__() in their subclasses, which
+       would trigger a segfault without this check. */
+    if (self->write == NULL) {
+        PyErr_Format(PicklingError, 
+                     "Pickler.__init__() was not called by %s.__init__()",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, "O:dump", &obj))
         return NULL;

@@ -33,7 +33,10 @@ Core and Builtins
 Library
 -------
 
-- telnetlib now works completely in bytes.
+- Issue #3664: The pickle module could segfault if a subclass of Pickler fails
+  to call the base __init__ method.
+
+- Issue #3725: telnetlib now works completely in bytes.
 
 - Issue #4072: Restore build_py_2to3.
 
