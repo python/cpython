@@ -996,6 +996,20 @@ class AbstractPickleModuleTests(unittest.TestCase):
         pickle.Pickler(f, -1)
         pickle.Pickler(f, protocol=-1)
 
+    def test_bad_init(self):
+        # Test issue3664 (pickle can segfault from a badly initialized Pickler).
+        from io import BytesIO
+        # Override initialization without calling __init__() of the superclass.
+        class BadPickler(pickle.Pickler):
+            def __init__(self): pass
+
+        class BadUnpickler(pickle.Unpickler):
+            def __init__(self): pass
+
+        self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
+        self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
+
+
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
