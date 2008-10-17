@@ -22,6 +22,8 @@ CYGWIN*) PYTHON=./python.exe;;
 *)      PYTHON=./python;;
 esac
 
+PYTHON="$PYTHON -bb"
+
 # Unset PYTHONPATH, just to be sure.
 unset PYTHONPATH
 
