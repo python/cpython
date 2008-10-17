@@ -818,7 +818,7 @@ string_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 
 	/* Make sure both arguments are strings. */
 	if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
-		if (Py_BytesWarningFlag && (op == Py_EQ) &&
+		if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE) &&
 		    (PyObject_IsInstance((PyObject*)a,
 					 (PyObject*)&PyUnicode_Type) ||
 		    PyObject_IsInstance((PyObject*)b,

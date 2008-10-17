@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import copy
+import operator
 import pickle
 import tempfile
 import unittest
@@ -862,6 +863,17 @@ class AssortedBytesTest(unittest.TestCase):
         # bytearray.replace must always return a new bytearray
         b = bytearray()
         self.failIf(b.replace(b'', b'') is b)
+
+    def test_compare(self):
+        if sys.flags.bytes_warning:
+            warnings.simplefilter('error', BytesWarning)
+            self.assertRaises(BytesWarning, operator.eq, b'', '')
+            self.assertRaises(BytesWarning, operator.ne, b'', '')
+            self.assertRaises(BytesWarning, operator.eq, bytearray(b''), '')
+            self.assertRaises(BytesWarning, operator.ne, bytearray(b''), '')
+        else:
+            # raise test.support.TestSkipped("BytesWarning is needed for this test: use -bb option")
+            pass
 
     # Optimizations:
     # __iter__? (optimization)
