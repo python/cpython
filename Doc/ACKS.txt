@@ -189,6 +189,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Reuben Sumner
    * Kalle Svensson
    * Jim Tittsler
+   * David Turner
    * Ville Vainio
    * Martijn Vries
    * Charles G. Waldman
