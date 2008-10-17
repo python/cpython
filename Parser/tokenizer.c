@@ -135,6 +135,7 @@ tok_new(void)
 	tok->decoding_state = STATE_INIT;
 	tok->decoding_erred = 0;
 	tok->read_coding_spec = 0;
+	tok->enc = NULL;
 	tok->encoding = NULL;
         tok->cont_line = 0;
 #ifndef PGEN
@@ -274,8 +275,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 		tok->read_coding_spec = 1;
 		if (tok->encoding == NULL) {
 			assert(tok->decoding_state == STATE_RAW);
-			if (strcmp(cs, "utf-8") == 0 ||
-			    strcmp(cs, "iso-8859-1") == 0) {
+			if (strcmp(cs, "utf-8") == 0) {
 				tok->encoding = cs;
 			} else {
 				r = set_readline(tok, cs);
