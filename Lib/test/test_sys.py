@@ -166,6 +166,9 @@ class SysModuleTest(unittest.TestCase):
             self.assert_(isinstance(v[3], int))
             self.assert_(isinstance(v[4], str))
 
+    def test_call_tracing(self):
+        self.assertRaises(TypeError, sys.call_tracing, type, 2)
+
     def test_dlopenflags(self):
         if hasattr(sys, "setdlopenflags"):
             self.assert_(hasattr(sys, "getdlopenflags"))

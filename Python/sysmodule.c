@@ -783,7 +783,7 @@ static PyObject *
 sys_call_tracing(PyObject *self, PyObject *args)
 {
 	PyObject *func, *funcargs;
-	if (!PyArg_UnpackTuple(args, "call_tracing", 2, 2, &func, &funcargs))
+	if (!PyArg_ParseTuple(args, "OO!:call_tracing", &func, &PyTuple_Type, &funcargs))
 		return NULL;
 	return _PyEval_CallTracing(func, funcargs);
 }
