@@ -49,14 +49,14 @@ struct tok_state {
 	enum decoding_state decoding_state;
 	int decoding_erred;	/* whether erred in decoding  */
 	int read_coding_spec;	/* whether 'coding:...' has been read  */
-	char *encoding;
+	char *encoding;         /* Source encoding. */
 	int cont_line;          /* whether we are in a continuation line. */
 	const char* line_start;	/* pointer to start of current line */
 #ifndef PGEN
 	PyObject *decoding_readline; /* codecs.open(...).readline */
 	PyObject *decoding_buffer;
 #endif
-	const char* enc;
+	const char* enc;        /* Encoding for the current str. */
 	const char* str;
 };
 

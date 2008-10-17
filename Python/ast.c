@@ -3160,9 +3160,6 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
     if (encoding == NULL) {
         buf = (char *)s;
         u = NULL;
-    } else if (strcmp(encoding, "iso-8859-1") == 0) {
-        buf = (char *)s;
-        u = NULL;
     } else {
         /* check for integer overflow */
         if (len > PY_SIZE_MAX / 4)
@@ -3275,8 +3272,7 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
         }
     }
     need_encoding = (!*bytesmode && c->c_encoding != NULL &&
-                     strcmp(c->c_encoding, "utf-8") != 0 &&
-                     strcmp(c->c_encoding, "iso-8859-1") != 0);
+                     strcmp(c->c_encoding, "utf-8") != 0);
     if (rawmode || strchr(s, '\\') == NULL) {
         if (need_encoding) {
             PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
