@@ -32,6 +32,8 @@ Library
 Build
 -----
 
+- Issue #4091: Install pythonxy.dll in system32 again.
+
 - Issue #4018: Disable "for me" installations on Vista.
 
 - Issue #3758: Add ``patchcheck`` build target to .PHONY.

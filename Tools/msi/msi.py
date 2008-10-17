@@ -915,9 +915,7 @@ def add_files(db):
     root.add_file("%s/pythonw.exe" % PCBUILD)
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
-    #dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
-    #install python30.dll into root dir for now
-    dlldir = root
+    dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
 
     pydll = "python%s%s.dll" % (major, minor)
     pydllsrc = os.path.join(srcdir, PCBUILD, pydll)
