@@ -939,7 +939,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
        error, even if the comparison is for equality. */
     if (PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type) ||
         PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type)) {
-        if (Py_BytesWarningFlag && op == Py_EQ) {
+        if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;
