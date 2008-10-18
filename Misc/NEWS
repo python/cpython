@@ -92,6 +92,9 @@ Core and builtins
 Library
 -------
 
+- Assigning methods to ctypes.Structure and ctypes.Union subclasses
+  after creation of the class does now work correctly.  See Issue #1700288.
+
 - Issue #3895: _lsprof could be crashed with an external timer that did not
   return a float when a Profiler object is garbage collected.
 
