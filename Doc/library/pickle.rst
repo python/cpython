@@ -27,7 +27,7 @@ Relationship to other Python modules
 ------------------------------------
 
 The :mod:`pickle` module has an transparent optimizer (:mod:`_pickle`) written
-in C. It is used whenever available. Otherwise the pure Python implementation is
+in C.  It is used whenever available.  Otherwise the pure Python implementation is
 used.
 
 Python has a more primitive serialization module called :mod:`marshal`, but in
@@ -108,7 +108,7 @@ There are currently 4 different protocols which can be used for pickling.
   efficient pickling of :term:`new-style class`\es.
 
 * Protocol version 3 was added in Python 3.0.  It has explicit support for
-  bytes and cannot be unpickled by Python 2.x pickle modules. This is
+  bytes and cannot be unpickled by Python 2.x pickle modules.  This is
   the current recommended protocol, use it whenever it is possible.
 
 Refer to :pep:`307` for more information.
@@ -166,7 +166,7 @@ process more convenient:
    Python needed to read the pickle produced.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument. It can thus be a file object opened for binary writing, a
+   argument.  It can thus be a file object opened for binary writing, a
    io.BytesIO instance, or any other custom object that meets this interface.
 
 .. function:: dumps(obj[, protocol])
@@ -220,7 +220,7 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: PickleError
 
-   Common base class for the other pickling exceptions. It inherits
+   Common base class for the other pickling exceptions.  It inherits
    :exc:`Exception`.
 
 .. exception:: PicklingError
@@ -228,10 +228,13 @@ The :mod:`pickle` module defines three exceptions:
    Error raised when an unpicklable object is encountered by :class:`Pickler`.
    It inherits :exc:`PickleError`.
 
+   Refer to :ref:`pickle-picklable` to learn what kinds of objects can be
+   pickled.
+
 .. exception:: UnpicklingError
 
    Error raised when there a problem unpickling an object, such as a data
-   corruption or a security violation. It inherits :exc:`PickleError`.
+   corruption or a security violation.  It inherits :exc:`PickleError`.
 
    Note that other exceptions may also be raised during unpickling, including
    (but not necessarily limited to) AttributeError, EOFError, ImportError, and
@@ -254,7 +257,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    Python needed to read the pickle produced.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument. It can thus be a file object opened for binary writing, a
+   argument.  It can thus be a file object opened for binary writing, a
    io.BytesIO instance, or any other custom object that meets this interface.
 
    .. method:: dump(obj)
@@ -276,8 +279,8 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    .. method:: clear_memo()
 
-      Deprecated.  Use the :meth:`clear` method on the :attr:`memo`.  Clear the
-      pickler's memo, useful when reusing picklers.
+      Deprecated.  Use the :meth:`clear` method on :attr:`memo`, instead.
+      Clear the pickler's memo, useful when reusing picklers.
 
    .. attribute:: fast
 
@@ -329,24 +332,28 @@ return the old value, not the modified one.
 
       Read a pickled object representation from the open file object given in
       the constructor, and return the reconstituted object hierarchy specified
-      therein. Bytes past the pickled object's representation are ignored.
+      therein.  Bytes past the pickled object's representation are ignored.
 
    .. method:: persistent_load(pid)
 
       Raise an :exc:`UnpickingError` by default.
 
       If defined, :meth:`persistent_load` should return the object specified by
-      the persistent ID *pid*. On errors, such as if an invalid persistent ID is
-      encountered, an :exc:`UnpickingError` should be raised.
+      the persistent ID *pid*.  If an invalid persistent ID is encountered, an
+      :exc:`UnpickingError` should be raised.
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
    .. method:: find_class(module, name)
 
-      Import *module* if necessary and return the object called *name* from it.
-      Subclasses may override this to gain control over what type of objects can
-      be loaded, potentially reducing security risks.
+      Import *module* if necessary and return the object called *name* from it,
+      where the *module* and *name* arguments are :class:`str` objects.
 
+      Subclasses may override this to gain control over what type of objects and
+      how they can be loaded, potentially reducing security risks.
+
+
+.. _pickle-picklable:
 
 What can be pickled and unpickled?
 ----------------------------------
@@ -372,9 +379,9 @@ The following types can be pickled:
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
-been written to the underlying file. Trying to pickle a highly recursive data
+been written to the underlying file.  Trying to pickle a highly recursive data
 structure may exceed the maximum recursion depth, a :exc:`RuntimeError` will be
-raised in this case. You can carefully raise this limit with
+raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
 Note that functions (built-in and user-defined) are pickled by "fully qualified"
@@ -390,7 +397,7 @@ pickled, so in the following example the class attribute ``attr`` is not
 restored in the unpickling environment::
 
    class Foo:
-       attr = 'a class attr'
+       attr = 'A class attribute'
 
    picklestring = pickle.dumps(Foo)
 
@@ -571,79 +578,30 @@ Pickling and unpickling external objects
 
 For the benefit of object persistence, the :mod:`pickle` module supports the
 notion of a reference to an object outside the pickled data stream.  Such
-objects are referenced by a "persistent id", which is just an arbitrary string
-of printable ASCII characters. The resolution of such names is not defined by
-the :mod:`pickle` module; it will delegate this resolution to user defined
-functions on the pickler and unpickler.
+objects are referenced by a persistent ID, which should be either a string of
+alphanumeric characters (for protocol 0) [#]_ or just an arbitrary object (for
+any newer protocol).
 
-To define external persistent id resolution, you need to set the
-:attr:`persistent_id` attribute of the pickler object and the
-:attr:`persistent_load` attribute of the unpickler object.
+The resolution of such persistent IDs is not defined by the :mod:`pickle`
+module; it will delegate this resolution to the user defined methods on the
+pickler and unpickler, :meth:`persistent_id` and :meth:`persistent_load`
+respectively.
 
 To pickle objects that have an external persistent id, the pickler must have a
-custom :func:`persistent_id` method that takes an object as an argument and
+custom :meth:`persistent_id` method that takes an object as an argument and
 returns either ``None`` or the persistent id for that object.  When ``None`` is
-returned, the pickler simply pickles the object as normal.  When a persistent id
-string is returned, the pickler will pickle that string, along with a marker so
-that the unpickler will recognize the string as a persistent id.
+returned, the pickler simply pickles the object as normal.  When a persistent ID
+string is returned, the pickler will pickle that object, along with a marker so
+that the unpickler will recognize it as a persistent ID.
 
 To unpickle external objects, the unpickler must have a custom
-:func:`persistent_load` function that takes a persistent id string and returns
-the referenced object.
+:meth:`persistent_load` method that takes a persistent ID object and returns the
+referenced object.
 
-Here's a silly example that *might* shed more light::
+Example:
 
-   import pickle
-   from io import StringIO
-
-   src = StringIO()
-   p = pickle.Pickler(src)
-
-   def persistent_id(obj):
-       if hasattr(obj, 'x'):
-           return 'the value %d' % obj.x
-       else:
-           return None
-
-   p.persistent_id = persistent_id
-
-   class Integer:
-       def __init__(self, x):
-           self.x = x
-       def __str__(self):
-           return 'My name is integer %d' % self.x
-
-   i = Integer(7)
-   print(i)
-   p.dump(i)
-
-   datastream = src.getvalue()
-   print(repr(datastream))
-   dst = StringIO(datastream)
-
-   up = pickle.Unpickler(dst)
-
-   class FancyInteger(Integer):
-       def __str__(self):
-           return 'I am the integer %d' % self.x
-
-   def persistent_load(persid):
-       if persid.startswith('the value '):
-           value = int(persid.split()[2])
-           return FancyInteger(value)
-       else:
-           raise pickle.UnpicklingError('Invalid persistent id')
-
-   up.persistent_load = persistent_load
-
-   j = up.load()
-   print(j)
-
-
-.. BAW: pickle supports something called inst_persistent_id()
-   which appears to give unknown types a second shot at producing a persistent
-   id.  Since Jim Fulton can't remember why it was added or what it's for, I'm
-   leaving it undocumented.
+.. highlightlang:: python
+.. literalinclude:: ../includes/dbpickle.py
 
 
 .. _pickle-sub:
@@ -808,5 +766,10 @@ the same process or a new process. ::
 
 .. [#] These methods can also be used to implement copying class instances.
 
-.. [#] This protocol is also used by the shallow and deep copying operations defined in
-   the :mod:`copy` module.
+.. [#] This protocol is also used by the shallow and deep copying operations
+   defined in the :mod:`copy` module.
+
+.. [#] The limitation on alphanumeric characters is due to the fact the
+   persistent IDs, in protocol 0, are delimited by the newline character.
+   Therefore if any kind of newline characters, such as \r and \n, occurs in
+   persistent IDs, the resulting pickle will become unreadable.
