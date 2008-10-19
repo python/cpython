@@ -17,9 +17,9 @@ wmain(int argc, wchar_t **argv)
 int
 main(int argc, char **argv)
 {
-	wchar_t **argv_copy = PyMem_Malloc(sizeof(wchar_t*)*argc);
+	wchar_t **argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*argc);
 	/* We need a second copies, as Python might modify the first one. */
-	wchar_t **argv_copy2 = PyMem_Malloc(sizeof(wchar_t*)*argc);
+	wchar_t **argv_copy2 = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*argc);
 	int i, res;
 	char *oldloc;
 	/* 754 requires that FP exceptions run in "no stop" mode by default,
@@ -54,7 +54,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "Could not convert argument %d to string\n", i);
 			return 1;
 		}
-		argv_copy[i] = PyMem_Malloc((argsize+1)*sizeof(wchar_t));
+		argv_copy[i] = (wchar_t *)PyMem_Malloc((argsize+1)*sizeof(wchar_t));
 		argv_copy2[i] = argv_copy[i];
 		if (!argv_copy[i]) {
 			fprintf(stderr, "out of memory\n");

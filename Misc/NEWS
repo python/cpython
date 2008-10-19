@@ -15,6 +15,8 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4146: Compilation on OpenBSD has been restored.
+
 - Issue #3574: compile() incorrectly handled source code encoded as Latin-1.
 
 - Issues #2384 and #3975: Tracebacks were not correctly printed when the
