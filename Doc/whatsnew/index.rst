@@ -9,7 +9,7 @@ important changes between major Python versions.  They are a "must read" for
 anyone wishing to stay up-to-date after a new release.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    3.0.rst
    2.7.rst

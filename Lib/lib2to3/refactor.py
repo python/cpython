@@ -36,9 +36,7 @@ def get_all_fix_names(fixer_pkg, remove_prefix=True):
     pkg = __import__(fixer_pkg, [], [], ["*"])
     fixer_dir = os.path.dirname(pkg.__file__)
     fix_names = []
-    names = os.listdir(fixer_dir)
-    names.sort()
-    for name in names:
+    for name in sorted(os.listdir(fixer_dir)):
         if name.startswith("fix_") and name.endswith(".py"):
             if remove_prefix:
                 name = name[4:]
@@ -253,7 +251,7 @@ class RefactoringTool(object):
             there were errors during the parse.
         """
         try:
-            tree = self.driver.parse_string(data,1)
+            tree = self.driver.parse_string(data)
         except Exception as err:
             self.log_error("Can't parse %s: %s: %s",
                            name, err.__class__.__name__, err)
@@ -352,23 +350,13 @@ class RefactoringTool(object):
         else:
             self.log_debug("Not writing changes to %s", filename)
 
-    def write_file(self, new_text, filename, old_text=None):
+    def write_file(self, new_text, filename, old_text):
         """Writes a string to a file.
 
         It first shows a unified diff between the old text and the new text, and
         then rewrites the file; the latter is only done if the write option is
         set.
         """
-        backup = filename + ".bak"
-        if os.path.lexists(backup):
-            try:
-                os.remove(backup)
-            except os.error as err:
-                self.log_message("Can't remove backup %s", backup)
-        try:
-            os.rename(filename, backup)
-        except os.error as err:
-            self.log_message("Can't rename %s to %s", filename, backup)
         try:
             f = open(filename, "w")
         except os.error as err:

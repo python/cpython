@@ -889,7 +889,8 @@ are always available.  They are listed here in alphabetical order.
    best explained with an example::
 
       class C(object):
-          def __init__(self): self._x = None
+          def __init__(self):
+              self._x = None
 
           @property
           def x(self):

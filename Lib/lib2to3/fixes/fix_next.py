@@ -28,15 +28,19 @@ class FixNext(fixer_base.BaseFix):
                      any* > >
     |
     global=global_stmt< 'global' any* 'next' any* >
-    |
-    mod=file_input< any+ >
     """
 
     order = "pre" # Pre-order tree traversal
 
     def start_tree(self, tree, filename):
         super(FixNext, self).start_tree(tree, filename)
-        self.shadowed_next = False
+
+        n = find_binding('next', tree)
+        if n:
+            self.warning(n, bind_warning)
+            self.shadowed_next = True
+        else:
+            self.shadowed_next = False
 
     def transform(self, node, results):
         assert results
@@ -69,11 +73,6 @@ class FixNext(fixer_base.BaseFix):
         elif "global" in results:
             self.warning(node, bind_warning)
             self.shadowed_next = True
-        elif mod:
-            n = find_binding('next', mod)
-            if n:
-                self.warning(n, bind_warning)
-                self.shadowed_next = True
 
 
 ### The following functions help test if node is part of an assignment
