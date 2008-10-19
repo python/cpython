@@ -1484,10 +1484,11 @@ By default, classes are constructed using :func:`type`. A class definition is
 read into a separate namespace and the value of class name is bound to the
 result of ``type(name, bases, dict)``.
 
-When the class definition is read, if *__metaclass__* is defined then the
-callable assigned to it will be called instead of :func:`type`. This allows
-classes or functions to be written which monitor or alter the class creation
-process:
+When the class definition is read, if a callable ``metaclass`` keyword argument
+is passed after the bases in the class definition, the callable given will be
+called instead of :func:`type`.  If other keyword arguments are passed, they
+will also be passed to the metaclass.  This allows classes or functions to be
+written which monitor or alter the class creation process:
 
 * Modifying the class dictionary prior to the class being created.
 
@@ -1508,21 +1509,19 @@ You can of course also override other class methods (or add new methods); for
 example defining a custom :meth:`__call__` method in the metaclass allows custom
 behavior when the class is called, e.g. not always creating a new instance.
 
-
-.. data:: __metaclass__
-
-   This variable can be any callable accepting arguments for ``name``, ``bases``,
-   and ``dict``.  Upon class creation, the callable is used instead of the built-in
-   :func:`type`.
+If the metaclass has a :meth:`__prepare__` attribute (usually implemented as a
+class or static method), it is called before the class body is evaluated with
+the name of the class and a tuple of its bases for arguments.  It should return
+an object that supports the mapping interface that will be used to store the
+namespace of the class.  The default is a plain dictionary.  This could be used,
+for example, to keep track of the order that class attributes are declared in by
+returning an ordered dictionary.
 
 The appropriate metaclass is determined by the following precedence rules:
 
-* If ``dict['__metaclass__']`` exists, it is used.
+* If the ``metaclass`` keyword argument is based with the bases, it is used.
 
-* Otherwise, if there is at least one base class, its metaclass is used (this
-  looks for a *__class__* attribute first and if not found, uses its type).
-
-* Otherwise, if a global variable named __metaclass__ exists, it is used.
+* Otherwise, if there is at least one base class, its metaclass is used.
 
 * Otherwise, the default metaclass (:class:`type`) is used.
 
@@ -1922,8 +1921,7 @@ correctness, implicit special method lookup may also bypass the
    ...       print "Metaclass getattribute invoked"
    ...       return type.__getattribute__(*args)
    ...
-   >>> class C(object):
-   ...     __metaclass__ = Meta
+   >>> class C(object, metaclass=Meta):
    ...     def __len__(self):
    ...         return 10
    ...     def __getattribute__(*args):
