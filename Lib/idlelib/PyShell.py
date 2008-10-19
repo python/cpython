@@ -52,18 +52,22 @@ try:
 except ImportError:
     pass
 else:
-    def idle_showwarning(message, category, filename, lineno):
+    def idle_showwarning(message, category, filename, lineno,
+                         file=None, line=None):
         file = warning_stream
         try:
-            file.write(warnings.formatwarning(message, category, filename, lineno))
+            file.write(warnings.formatwarning(message, category, filename,\
+                                              lineno, file=file, line=line))
         except IOError:
             pass  ## file (probably __stderr__) is invalid, warning dropped.
     warnings.showwarning = idle_showwarning
-    def idle_formatwarning(message, category, filename, lineno):
+    def idle_formatwarning(message, category, filename, lineno,
+                           file=None, line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
         s += '  File \"%s\", line %s\n' % (filename, lineno)
-        line = linecache.getline(filename, lineno).strip()
+        line = linecache.getline(filename, lineno).strip() \
+            if line is None else line
         if line:
             s += "    %s\n" % line
         s += "%s: %s\n>>> " % (category.__name__, message)

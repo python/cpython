@@ -228,7 +228,9 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
-the :keyword:`in` operator, and subscript references such as ``d[-1]``.
+the :keyword:`in` operator, and subscript references such as ``d[-1]``.  Indexed
+access is O(1) at both ends but slows to O(n) in the middle.  For fast random
+access, use lists instead.
 
 Example:
 
