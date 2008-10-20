@@ -300,13 +300,13 @@ parameters to be passed in as a tuple acceptable for parsing via
 
 The :const:`METH_KEYWORDS` bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C function should
-accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
+accept a third ``PyObject \*`` parameter which will be a dictionary of keywords.
 Use :cfunc:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
 function.
 
 The method table must be referenced in the module definition structure::
 
-   struct PyModuleDef spammodule = {
+   static struct PyModuleDef spammodule = {
       PyModuleDef_HEAD_INIT,
       "spam",   /* name of module */
       spam_doc, /* module documentation, may be NULL */
