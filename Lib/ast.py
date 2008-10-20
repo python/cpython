@@ -26,6 +26,7 @@
     :license: Python License.
 """
 from _ast import *
+from _ast import __version__
 
 
 def parse(expr, filename='<unknown>', mode='exec'):
