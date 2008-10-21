@@ -122,6 +122,40 @@ class PlatformTest(unittest.TestCase):
             executable = executable + '.exe'
         res = platform.libc_ver(sys.executable)
 
+    def test_parse_release_file(self):
+
+        for input, output in (
+            # Examples of release file contents:
+            ('SuSE Linux 9.3 (x86-64)', ('SuSE Linux ', '9.3', 'x86-64')),
+            ('SUSE LINUX 10.1 (X86-64)', ('SUSE LINUX ', '10.1', 'X86-64')),
+            ('SUSE LINUX 10.1 (i586)', ('SUSE LINUX ', '10.1', 'i586')),
+            ('Fedora Core release 5 (Bordeaux)', ('Fedora Core', '5', 'Bordeaux')),
+            ('Red Hat Linux release 8.0 (Psyche)', ('Red Hat Linux', '8.0', 'Psyche')),
+            ('Red Hat Linux release 9 (Shrike)', ('Red Hat Linux', '9', 'Shrike')),
+            ('Red Hat Enterprise Linux release 4 (Nahant)', ('Red Hat Enterprise Linux', '4', 'Nahant')),
+            ('CentOS release 4', ('CentOS', '4', None)),
+            ('Rocks release 4.2.1 (Cydonia)', ('Rocks', '4.2.1', 'Cydonia')),
+            ):
+            self.assertEqual(platform._parse_release_file(input), output)
+
+    def test_sys_version(self):
+
+        platform._sys_version_cache.clear()
+        for input, output in (
+            ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
+             ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
+            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
+             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
+            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
+             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
+            ):
+            # branch and revision are not "parsed", but fetched
+            # from sys.subversion.  Ignore them
+            (name, version, branch, revision, buildno, builddate, compiler) \
+                   = platform._sys_version(input)
+            self.assertEqual(
+                (name, version, '', '', buildno, builddate, compiler), output)
+
 def test_main():
     test_support.run_unittest(
         PlatformTest
