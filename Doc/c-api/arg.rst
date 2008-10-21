@@ -424,6 +424,14 @@ and the following format units are left untouched.
       Convert a C string and its length to a Python object.  If the C string pointer
       is *NULL*, the length is ignored and ``None`` is returned.
 
+   ``y`` (bytes) [char \*, int]
+      This converts a C string to a Python :func:`bytes` object.  If the C
+      string pointer is *NULL*, ``None`` is returned.
+
+   ``y#`` (bytes) [char \*, int]
+      This converts a C string and its lengths to a Python object.  If the C
+      string pointer is *NULL*, ``None`` is returned.
+
    ``z`` (string or ``None``) [char \*]
       Same as ``s``.
 
