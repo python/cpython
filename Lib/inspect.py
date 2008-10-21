@@ -819,7 +819,7 @@ def getargvalues(frame):
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
     args, varargs, varkw = getargs(frame.f_code)
-    return args, varargs, varkw, frame.f_locals
+    return ArgInfo(args, varargs, varkw, frame.f_locals)
 
 def joinseq(seq):
     if len(seq) == 1:
