@@ -791,7 +791,7 @@ maninstall:
 		fi; \
 	done
 	$(INSTALL_DATA) $(srcdir)/Misc/python.man \
-		$(DESTDIR)$(MANDIR)/man1/python.1
+		$(DESTDIR)$(MANDIR)/man1/python$(VERSION).1
 
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
