@@ -1224,9 +1224,7 @@ def post_mortem(t=None):
 
     p = Pdb()
     p.reset()
-    while t.tb_next is not None:
-        t = t.tb_next
-    p.interaction(t.tb_frame, t)
+    p.interaction(None, t)
 
 def pm():
     post_mortem(sys.last_traceback)
@@ -1289,9 +1287,7 @@ def main():
             print "Uncaught exception. Entering post mortem debugging"
             print "Running 'cont' or 'step' will restart the program"
             t = sys.exc_info()[2]
-            while t.tb_next is not None:
-                t = t.tb_next
-            pdb.interaction(t.tb_frame,t)
+            pdb.interaction(None, t)
             print "Post mortem debugger finished. The "+mainpyfile+" will be restarted"
 
 
