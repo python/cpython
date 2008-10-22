@@ -320,6 +320,8 @@ class Bdb:
         while t is not None:
             stack.append((t.tb_frame, t.tb_lineno))
             t = t.tb_next
+        if f is None:
+            i = max(0, len(stack) - 1)
         return stack, i
 
     #
