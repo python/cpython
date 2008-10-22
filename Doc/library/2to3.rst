@@ -50,8 +50,7 @@ After transformation, :file:`example.py` looks like this::
    name = input()
    greet(name)
 
-Comments and and exact indentation are preserved throughout the translation
-process.
+Comments and exact indentation are preserved throughout the translation process.
 
 By default, 2to3 runs a set of predefined fixers.  The :option:`-l` flag lists
 all available fixers.  An explicit set of fixers to run can be given with
