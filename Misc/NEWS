@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4150: Pdb's "up" command now works for generator frames in post-mortem
+  debugging.
+
 - Issue #4092: Return ArgInfo as promised in the documentation from
   inspect.getargvalues.
 
