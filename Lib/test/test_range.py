@@ -65,7 +65,7 @@ class RangeTest(unittest.TestCase):
     def test_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
                      (13, 21, 3), (-2, 2, 2)]
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
                 r = range(*t)
                 self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
