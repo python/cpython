@@ -1663,8 +1663,8 @@ Notes on using *__slots__*
   defined.  As a result, subclasses will have a *__dict__* unless they also define
   *__slots__*.
 
-* *__slots__* do not work for classes derived from "variable-length" built-in
-  types such as :class:`long`, :class:`str` and :class:`tuple`.
+* Nonempty *__slots__* does not work for classes derived from "variable-length"
+  built-in types such as :class:`long`, :class:`str` and :class:`tuple`.
 
 * Any non-string iterable may be assigned to *__slots__*. Mappings may also be
   used; however, in the future, special meaning may be assigned to the values
