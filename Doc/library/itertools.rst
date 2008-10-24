@@ -295,10 +295,10 @@ loops that truncate the stream.
           except IndexError:
               pass
 
-   If one of the iterables is potentially infinite, then the
-   :func:`izip_longest` function should be wrapped with something that limits
-   the number of calls (for example :func:`islice` or :func:`takewhile`).  If
-   not specified, *fillvalue* defaults to ``None``.
+   If one of the iterables is potentially infinite, then the :func:`zip_longest`
+   function should be wrapped with something that limits the number of calls
+   (for example :func:`islice` or :func:`takewhile`).  If not specified,
+   *fillvalue* defaults to ``None``.
 
 
 .. function:: permutations(iterable[, r])
@@ -590,7 +590,7 @@ which incur interpreter overhead.
 
    def compress(data, selectors):
        "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
-       return (d for d, s in izip(data, selectors) if s)
+       return (d for d, s in zip(data, selectors) if s)
 
    def combinations_with_replacement(iterable, r):
        "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"

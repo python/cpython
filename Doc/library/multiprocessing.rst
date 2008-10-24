@@ -1433,8 +1433,8 @@ with the :class:`Pool` class.
 
    .. method:: apply(func[, args[, kwds]])
 
-      Equivalent of the :func:`apply` builtin function.  It blocks till the
-      result is ready.
+      Call *func* with arguments *args* and keyword arguments *kwds*.  It blocks
+      till the result is ready.
 
    .. method:: apply_async(func[, args[, kwds[, callback]]])
 
@@ -1465,7 +1465,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      An equivalent of :func:`itertools.imap`.
+      An lazier version of :meth:`map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
