@@ -111,15 +111,17 @@ There are currently 4 different protocols which can be used for pickling.
   bytes and cannot be unpickled by Python 2.x pickle modules.  This is
   the current recommended protocol, use it whenever it is possible.
 
-Refer to :pep:`307` for more information.
+Refer to :pep:`307` for information about improvements brought by
+protocol 2.  See :mod:`pickletools`'s source code for extensive
+comments about opcodes used by pickle protocols.
 
 If a *protocol* is not specified, protocol 3 is used.  If *protocol* is
 specified as a negative value or :const:`HIGHEST_PROTOCOL`, the highest
 protocol version available will be used.
 
 
-Usage
------
+Module Interface
+----------------
 
 To serialize an object hierarchy, you first create a pickler, then you call the
 pickler's :meth:`dump` method.  To de-serialize a data stream, you first create
@@ -347,10 +349,13 @@ return the old value, not the modified one.
    .. method:: find_class(module, name)
 
       Import *module* if necessary and return the object called *name* from it,
-      where the *module* and *name* arguments are :class:`str` objects.
+      where the *module* and *name* arguments are :class:`str` objects.  Note,
+      unlike its name suggests, :meth:`find_class` is also used for finding
+      functions.
 
       Subclasses may override this to gain control over what type of objects and
-      how they can be loaded, potentially reducing security risks.
+      how they can be loaded, potentially reducing security risks. Refer to
+      :ref:`pickle-restrict` for details.
 
 
 .. _pickle-picklable:
@@ -424,7 +429,7 @@ protocol provides a standard way for you to define, customize, and control how
 your objects are serialized and de-serialized.  The description in this section
 doesn't cover specific customizations that you can employ to make the unpickling
 environment slightly safer from untrusted pickle data streams; see section
-:ref:`pickle-sub` for more details.
+:ref:`pickle-restrict` for more details.
 
 
 .. _pickle-inst:
@@ -600,41 +605,85 @@ referenced object.
 
 Example:
 
+.. XXX Work around for some bug in sphinx/pygments.
 .. highlightlang:: python
 .. literalinclude:: ../includes/dbpickle.py
+.. highlightlang:: python3
 
+.. _pickle-restrict:
 
-.. _pickle-sub:
-
-Subclassing Unpicklers
-----------------------
+Restricting Globals
+^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   single: load_global() (pickle protocol)
-   single: find_global() (pickle protocol)
+   single: find_class() (pickle protocol)
 
-By default, unpickling will import any class that it finds in the pickle data.
-You can control exactly what gets unpickled and what gets called by customizing
-your unpickler.
+By default, unpickling will import any class or function that it finds in the
+pickle data.  For many applications, this behaviour is unacceptable as it
+permits the unpickler to import and invoke arbitrary code.  Just consider what
+this hand-crafted pickle data stream does when loaded::
 
-You need to derive a subclass from :class:`Unpickler`, overriding the
-:meth:`load_global` method.  :meth:`load_global` should read two lines from the
-pickle data stream where the first line will the name of the module containing
-the class and the second line will be the name of the instance's class.  It then
-looks up the class, possibly importing the module and digging out the attribute,
-then it appends what it finds to the unpickler's stack.  Later on, this class
-will be assigned to the :attr:`__class__` attribute of an empty class, as a way
-of magically creating an instance without calling its class's
-:meth:`__init__`. Your job (should you choose to accept it), would be to have
-:meth:`load_global` push onto the unpickler's stack, a known safe version of any
-class you deem safe to unpickle.  It is up to you to produce such a class.  Or
-you could raise an error if you want to disallow all unpickling of instances.
-If this sounds like a hack, you're right.  Refer to the source code to make this
-work.
+    >>> import pickle
+    >>> pickle.loads(b"cos\nsystem\n(S'echo hello world'\ntR.")
+    hello world
+    0
 
-The moral of the story is that you should be really careful about the source of
-the strings your application unpickles.
+In this example, the unpickler imports the :func:`os.system` function and then
+apply the string argument "echo hello world".  Although this example is
+inoffensive, it is not difficult to imagine one that could damage your system.
 
+For this reason, you may want to control what gets unpickled by customizing
+:meth:`Unpickler.find_class`.  Unlike its name suggests, :meth:`find_class` is
+called whenever a global (i.e., a class or a function) is requested.  Thus it is
+possible to either forbid completely globals or restrict them to a safe subset.
+
+Here is an example of an unpickler allowing only few safe classes from the
+:mod:`builtins` module to be loaded::
+
+   import builtins
+   import io
+   import pickle
+
+   safe_builtins = {
+       'range',
+       'complex',
+       'set',
+       'frozenset',
+       'slice',
+   }
+
+   class RestrictedUnpickler(pickle.Unpickler):
+       def find_class(self, module, name):
+           # Only allow safe classes from builtins.
+           if module == "builtins" and name in safe_builtins:
+               return getattr(builtins, name)
+           # Forbid everything else.
+           raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
+                                        (module, name))
+
+   def restricted_loads(s):
+       """Helper function analogous to pickle.loads()."""
+       return RestrictedUnpickler(io.BytesIO(s)).load()
+
+A sample usage of our unpickler working has intended::
+
+    >>> restricted_loads(pickle.dumps([1, 2, range(15)]))
+    [1, 2, range(0, 15)]
+    >>> restricted_loads(b"cos\nsystem\n(S'echo hello world'\ntR.")
+    Traceback (most recent call last):
+      ...
+    pickle.UnpicklingError: global 'os.system' is forbidden
+    >>> restricted_loads(b'cbuiltins\neval\n'
+    ...                  b'(S\'getattr(__import__("os"), "system")'
+    ...                  b'("echo hello world")\'\ntR.')
+    Traceback (most recent call last):
+      ...
+    pickle.UnpicklingError: global 'builtins.eval' is forbidden
+
+As our examples shows, you have to be careful with what you allow to
+be unpickled.  Therefore if security is a concern, you may want to consider
+alternatives such as the marshalling API in :mod:`xmlrpc.client` or
+third-party solutions.
 
 .. _pickle-example:
 
@@ -769,7 +818,7 @@ the same process or a new process. ::
 .. [#] This protocol is also used by the shallow and deep copying operations
    defined in the :mod:`copy` module.
 
-.. [#] The limitation on alphanumeric characters is due to the fact the
-   persistent IDs, in protocol 0, are delimited by the newline character.
-   Therefore if any kind of newline characters, such as \r and \n, occurs in
+.. [#] The limitation on alphanumeric characters is due to the fact
+   the persistent IDs, in protocol 0, are delimited by the newline
+   character.  Therefore if any kind of newline characters occurs in
    persistent IDs, the resulting pickle will become unreadable.
