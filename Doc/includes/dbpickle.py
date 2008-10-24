@@ -46,7 +46,7 @@ class DBUnpickler(pickle.Unpickler):
             raise pickle.UnpicklingError("unsupported persistent object")
 
 
-def main(verbose=True):
+def main():
     import io, pprint
 
     # Initialize and populate our database.
@@ -68,20 +68,18 @@ def main(verbose=True):
     file = io.BytesIO()
     DBPickler(file).dump(memos)
 
-    if verbose:
-        print("Records to be pickled:")
-        pprint.pprint(memos)
+    print("Pickled records:")
+    pprint.pprint(memos)
 
     # Update a record, just for good measure.
     cursor.execute("UPDATE memos SET task='learn italian' WHERE key=1")
 
-    # Load the reports from the pickle data stream.
+    # Load the records from the pickle data stream.
     file.seek(0)
     memos = DBUnpickler(file, conn).load()
 
-    if verbose:
-        print("Unpickled records:")
-        pprint.pprint(memos)
+    print("Unpickled records:")
+    pprint.pprint(memos)
 
 
 if __name__ == '__main__':
