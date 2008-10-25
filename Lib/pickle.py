@@ -179,8 +179,6 @@ class _Pickler:
     def __init__(self, file, protocol=None):
         """This takes a binary file for writing a pickle data stream.
 
-        All protocols now read and write bytes.
-
         The optional protocol argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3.  The default
         protocol is 3; a backward-incompatible protocol designed for
