@@ -804,7 +804,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
     return 0;
 }
 
-static int add_ast_fields()
+static int add_ast_fields(void)
 {
     PyObject *empty_tuple, *d;
     if (PyType_Ready(&AST_type) < 0)

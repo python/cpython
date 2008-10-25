@@ -117,7 +117,6 @@ class urlopen_FileTests(unittest.TestCase):
 class ProxyTests(unittest.TestCase):
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
         # Save all proxy related env vars
         self._saved_environ = dict([(k, v) for k, v in os.environ.items()
                                     if k.lower().find('proxy') >= 0])
@@ -126,9 +125,8 @@ class ProxyTests(unittest.TestCase):
             del os.environ[k]
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self)
         # Restore all proxy related env vars
-        for k, v in self._saved_environ:
+        for k, v in self._saved_environ.items():
             os.environ[k] = v
 
     def test_getproxies_environment_keep_no_proxies(self):
