@@ -28,53 +28,35 @@ class TestPy3KWarnings(unittest.TestCase):
             exec "`2`" in {}
         self.assertWarning(None, w, expected)
 
-    def test_bool_assign(self):
+    def test_forbidden_names(self):
         # So we don't screw up our globals
         def safe_exec(expr):
             def f(**kwargs): pass
             exec expr in {'f' : f}
 
-        expected = "assignment to True or False is forbidden in 3.x"
+        tests = [("True", "assignment to True or False is forbidden in 3.x"),
+                 ("False", "assignment to True or False is forbidden in 3.x"),
+                 ("nonlocal", "nonlocal is a keyword in 3.x")]
         with check_warnings() as w:
-            safe_exec("True = False")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("False = True")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            try:
-                safe_exec("obj.False = True")
-            except NameError: pass
-            self.assertWarning(None, w, expected)
-            w.reset()
-            try:
-                safe_exec("obj.True = False")
-            except NameError: pass
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("def False(): pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("def True(): pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("class False: pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("class True: pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("def f(True=43): pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("def f(False=None): pass")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("f(False=True)")
-            self.assertWarning(None, w, expected)
-            w.reset()
-            safe_exec("f(True=1)")
-            self.assertWarning(None, w, expected)
+            for keyword, expected in tests:
+                safe_exec("{0} = False".format(keyword))
+                self.assertWarning(None, w, expected)
+                w.reset()
+                try:
+                    safe_exec("obj.{0} = True".format(keyword))
+                except NameError:
+                    pass
+                self.assertWarning(None, w, expected)
+                w.reset()
+                safe_exec("def {0}(): pass".format(keyword))
+                self.assertWarning(None, w, expected)
+                w.reset()
+                safe_exec("class {0}: pass".format(keyword))
+                self.assertWarning(None, w, expected)
+                w.reset()
+                safe_exec("def f({0}=43): pass".format(keyword))
+                self.assertWarning(None, w, expected)
+                w.reset()
 
 
     def test_type_inequality_comparisons(self):
