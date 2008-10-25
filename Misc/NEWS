@@ -13,7 +13,7 @@ Core and Builtins
 -----------------
 
 - Using ``nonlocal`` as a variable name will now raise a Py3k SyntaxWarning
-  because it is a reserved work in 3.x.
+  because it is a reserved word in 3.x.
 
 - On windows, os.chdir given unicode was not working if GetCurrentDirectoryW
   returned a path longer than MAX_PATH. (But It's doubtful this code path is
