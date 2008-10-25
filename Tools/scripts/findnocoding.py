@@ -62,11 +62,11 @@ def needs_declaration(fullpath):
         infile.close()
         return False
 
-    # check the whole file for non-ASCII characters
+    # check the whole file for non utf-8 characters
     rest = infile.read()
     infile.close()
 
-    if has_correct_encoding(line1+line2+rest, "ascii"):
+    if has_correct_encoding(line1+line2+rest, "utf-8"):
         return False
 
     return True
