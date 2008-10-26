@@ -89,18 +89,22 @@ class FutureTest(unittest.TestCase):
         #       the parser hack disabled. If a new keyword is introduced in
         #       2.6, change this to refer to the new future import.
         try:
-            exec "from __future__ import division, with_statement; with = 0"
+            exec "from __future__ import print_function; print 0"
         except SyntaxError:
             pass
         else:
             self.fail("syntax error didn't occur")
 
         try:
-            exec "from __future__ import (with_statement, division); with = 0"
+            exec "from __future__ import (print_function); print 0"
         except SyntaxError:
             pass
         else:
             self.fail("syntax error didn't occur")
+
+    def test_multiple_features(self):
+        test_support.unload("test.test_future5")
+        from test import test_future5
 
 
 def test_main():
