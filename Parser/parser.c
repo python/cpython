@@ -210,13 +210,10 @@ future_hack(parser_state *ps)
 			char *str_ch = STR(CHILD(cch, 0));
 			if (strcmp(str_ch, FUTURE_WITH_STATEMENT) == 0) {
 				ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
-				break;
 			} else if (strcmp(str_ch, FUTURE_PRINT_FUNCTION) == 0) {
 				ps->p_flags |= CO_FUTURE_PRINT_FUNCTION;
-				break;
 			} else if (strcmp(str_ch, FUTURE_UNICODE_LITERALS) == 0) {
 				ps->p_flags |= CO_FUTURE_UNICODE_LITERALS;
-				break;
 			}
 		}
 	}
