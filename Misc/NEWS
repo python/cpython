@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4209: Enabling unicode_literals and the print_function in the same
+  __future__ import didn't work.
+
 - Using ``nonlocal`` as a variable name will now raise a Py3k SyntaxWarning
   because it is a reserved word in 3.x.
 
