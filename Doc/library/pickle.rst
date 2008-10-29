@@ -115,10 +115,6 @@ Refer to :pep:`307` for information about improvements brought by
 protocol 2.  See :mod:`pickletools`'s source code for extensive
 comments about opcodes used by pickle protocols.
 
-If a *protocol* is not specified, protocol 3 is used.  If *protocol* is
-specified as a negative value or :const:`HIGHEST_PROTOCOL`, the highest
-protocol version available will be used.
-
 
 Module Interface
 ----------------
@@ -286,11 +282,11 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    .. attribute:: fast
 
-      Enable fast mode if set to a true value.  The fast mode disables the usage
-      of memo, therefore speeding the pickling process by not generating
-      superfluous PUT opcodes.  It should not be used with self-referential
-      objects, doing otherwise will cause :class:`Pickler` to recurse
-      infinitely.
+      Deprecated. Enable fast mode if set to a true value.  The fast mode
+      disables the usage of memo, therefore speeding the pickling process by not
+      generating superfluous PUT opcodes.  It should not be used with
+      self-referential objects, doing otherwise will cause :class:`Pickler` to
+      recurse infinitely.
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
@@ -299,6 +295,8 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       Dictionary holding previously pickled objects to allow shared or
       recursive objects to pickled by reference as opposed to by value.
 
+
+.. XXX Move these comments to somewhere more appropriate.
 
 It is possible to make multiple calls to the :meth:`dump` method of the same
 :class:`Pickler` instance.  These must then be matched to the same number of
@@ -380,7 +378,7 @@ The following types can be pickled:
 * classes that are defined at the top level of a module
 
 * instances of such classes whose :attr:`__dict__` or :meth:`__setstate__` is
-  picklable  (see section :ref:`pickle-protocol` for details)
+  picklable  (see section :ref:`pickle-inst` for details)
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -418,164 +416,130 @@ be worthwhile to put a version number in the objects so that suitable
 conversions can be made by the class's :meth:`__setstate__` method.
 
 
-.. _pickle-protocol:
-
-The pickle protocol
--------------------
-
-This section describes the "pickling protocol" that defines the interface
-between the pickler/unpickler and the objects that are being serialized.  This
-protocol provides a standard way for you to define, customize, and control how
-your objects are serialized and de-serialized.  The description in this section
-doesn't cover specific customizations that you can employ to make the unpickling
-environment slightly safer from untrusted pickle data streams; see section
-:ref:`pickle-restrict` for more details.
-
-
 .. _pickle-inst:
 
-Pickling and unpickling normal class instances
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pickling Class Instances
+------------------------
 
-.. index::
-   single: __getinitargs__() (copy protocol)
-   single: __init__() (instance constructor)
+In this section, we describe the general mechanisms available to you to define,
+customize, and control how class instances are pickled and unpickled.
 
-.. XXX is __getinitargs__ only used with old-style classes?
-.. XXX update w.r.t Py3k's classes
+In most cases, no additional code is needed to make instances picklable.  By
+default, pickle will retrieve the class and the attributes of an instance via
+introspection. When a class instance is unpickled, its :meth:`__init__` method
+is usually *not* invoked.  The default behaviour first creates an uninitialized
+instance and then restores the saved attributes.  The following code shows an
+implementation of this behaviour::
 
-When a pickled class instance is unpickled, its :meth:`__init__` method is
-normally *not* invoked.  If it is desirable that the :meth:`__init__` method be
-called on unpickling, an old-style class can define a method
-:meth:`__getinitargs__`, which should return a *tuple* containing the arguments
-to be passed to the class constructor (:meth:`__init__` for example).  The
-:meth:`__getinitargs__` method is called at pickle time; the tuple it returns is
-incorporated in the pickle for the instance.
+   def save(obj):
+       return (obj.__class__, obj.__dict__)
+
+   def load(cls, attributes):
+       obj = cls.__new__(cls)
+       obj.__dict__.update(attributes)
+       return obj
 
 .. index:: single: __getnewargs__() (copy protocol)
 
-New-style types can provide a :meth:`__getnewargs__` method that is used for
-protocol 2.  Implementing this method is needed if the type establishes some
-internal invariants when the instance is created, or if the memory allocation is
-affected by the values passed to the :meth:`__new__` method for the type (as it
-is for tuples and strings).  Instances of a :term:`new-style class` :class:`C`
-are created using ::
+Classes can alter the default behaviour by providing one or severals special
+methods.  In protocol 2 and newer, classes that implements the
+:meth:`__getnewargs__` method can dictate the values passed to the
+:meth:`__new__` method upon unpickling.  This is often needed for classes
+whose :meth:`__new__` method requires arguments.
 
-   obj = C.__new__(C, *args)
-
-
-where *args* is the result of calling :meth:`__getnewargs__` on the original
-object; if there is no :meth:`__getnewargs__`, an empty tuple is assumed.
-
-.. index::
-   single: __getstate__() (copy protocol)
-   single: __setstate__() (copy protocol)
-   single: __dict__ (instance attribute)
+.. index:: single: __getstate__() (copy protocol)
 
 Classes can further influence how their instances are pickled; if the class
-defines the method :meth:`__getstate__`, it is called and the return state is
+defines the method :meth:`__getstate__`, it is called and the returned object is
 pickled as the contents for the instance, instead of the contents of the
-instance's dictionary.  If there is no :meth:`__getstate__` method, the
-instance's :attr:`__dict__` is pickled.
+instance's dictionary.  If the :meth:`__getstate__` method is absent, the
+instance's :attr:`__dict__` is pickled as usual.
 
-Upon unpickling, if the class also defines the method :meth:`__setstate__`, it
-is called with the unpickled state. [#]_  If there is no :meth:`__setstate__`
-method, the pickled state must be a dictionary and its items are assigned to the
-new instance's dictionary.  If a class defines both :meth:`__getstate__` and
-:meth:`__setstate__`, the state object needn't be a dictionary and these methods
-can do what they want. [#]_
+.. index:: single: __setstate__() (copy protocol)
 
-.. warning::
+Upon unpickling, if the class defines :meth:`__setstate__`, it is called with
+the unpickled state.  In that case, there is no requirement for the state object
+to be a dictionary. Otherwise, the pickled state must be a dictionary and its
+items are assigned to the new instance's dictionary.
+
+.. note::
 
    If :meth:`__getstate__` returns a false value, the :meth:`__setstate__`
    method will not be called.
 
-
-Pickling and unpickling extension types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Refer to the section :ref:`pickle-state` for more information about how to use
+the methods :meth:`__getstate__` and :meth:`__setstate__`.
 
 .. index::
-   single: __reduce__() (pickle protocol)
-   single: __reduce_ex__() (pickle protocol)
-   single: __safe_for_unpickling__ (pickle protocol)
+   pair: copy; protocol
+   single: __reduce__() (copy protocol)
 
-When the :class:`Pickler` encounters an object of a type it knows nothing about
---- such as an extension type --- it looks in two places for a hint of how to
-pickle it.  One alternative is for the object to implement a :meth:`__reduce__`
-method.  If provided, at pickling time :meth:`__reduce__` will be called with no
-arguments, and it must return either a string or a tuple.
+As we shall see, pickle does not use directly the methods described above.  In
+fact, these methods are part of the copy protocol which implements the
+:meth:`__reduce__` special method.  The copy protocol provides a unified
+interface for retrieving the data necessary for pickling and copying
+objects. [#]_ 
 
-If a string is returned, it names a global variable whose contents are pickled
-as normal.  The string returned by :meth:`__reduce__` should be the object's
-local name relative to its module; the pickle module searches the module
-namespace to determine the object's module.
+Although powerful, implementing :meth:`__reduce__` directly in your classes is
+error prone.  For this reason, class designers should use the high-level
+interface (i.e., :meth:`__getnewargs__`, :meth:`__getstate__` and
+:meth:`__setstate__`) whenever possible.  We will show however cases where using
+:meth:`__reduce__` is the only option or leads to more efficient pickling or
+both.
 
-When a tuple is returned, it must be between two and five elements long.
-Optional elements can either be omitted, or ``None`` can be provided as their
-value.  The contents of this tuple are pickled as normal and used to
-reconstruct the object at unpickling time.  The semantics of each element are:
+The interface is currently defined as follow. The :meth:`__reduce__` method
+takes no argument and shall return either a string or preferably a tuple (the
+returned object is often refered as the "reduce value").
+
+If a string is returned, the string should be interpreted as the name of a
+global variable.  It should be the object's local name relative to its module;
+the pickle module searches the module namespace to determine the object's
+module.  This behaviour is typically useful for singletons.
+
+When a tuple is returned, it must be between two and five items long.  Optional
+items can either be omitted, or ``None`` can be provided as their value.  The
+semantics of each item are in order:
+
+.. XXX Mention __newobj__ special-case?
 
 * A callable object that will be called to create the initial version of the
-  object.  The next element of the tuple will provide arguments for this callable,
-  and later elements provide additional state information that will subsequently
-  be used to fully reconstruct the pickled data.
+  object.
 
-  In the unpickling environment this object must be either a class, a callable
-  registered as a "safe constructor" (see below), or it must have an attribute
-  :attr:`__safe_for_unpickling__` with a true value. Otherwise, an
-  :exc:`UnpicklingError` will be raised in the unpickling environment.  Note that
-  as usual, the callable itself is pickled by name.
-
-* A tuple of arguments for the callable object, not ``None``.
+* A tuple of arguments for the callable object. An empty tuple must be given if
+  the callable does not accept any argument.
 
 * Optionally, the object's state, which will be passed to the object's
-  :meth:`__setstate__` method as described in section :ref:`pickle-inst`.  If the
-  object has no :meth:`__setstate__` method, then, as above, the value must be a
-  dictionary and it will be added to the object's :attr:`__dict__`.
+  :meth:`__setstate__` method as previously described.  If the object has no
+  such method then, the value must be a dictionary and it will be added to the
+  object's :attr:`__dict__` attribute.
 
-* Optionally, an iterator (and not a sequence) yielding successive list items.
-  These list items will be pickled, and appended to the object using either
-  ``obj.append(item)`` or ``obj.extend(list_of_items)``.  This is primarily used
-  for list subclasses, but may be used by other classes as long as they have
+* Optionally, an iterator (and not a sequence) yielding successive items.  These
+  items will be appended to the object either using ``obj.append(item)`` or, in
+  batch, using ``obj.extend(list_of_items)``.  This is primarily used for list
+  subclasses, but may be used by other classes as long as they have
   :meth:`append` and :meth:`extend` methods with the appropriate signature.
   (Whether :meth:`append` or :meth:`extend` is used depends on which pickle
-  protocol version is used as well as the number of items to append, so both must
-  be supported.)
+  protocol version is used as well as the number of items to append, so both
+  must be supported.)
 
-* Optionally, an iterator (not a sequence) yielding successive dictionary items,
-  which should be tuples of the form ``(key, value)``.  These items will be
-  pickled and stored to the object using ``obj[key] = value``. This is primarily
-  used for dictionary subclasses, but may be used by other classes as long as they
-  implement :meth:`__setitem__`.
+* Optionally, an iterator (not a sequence) yielding successive key-value pairs.
+  These items will be stored to the object using ``obj[key] = value``.  This is
+  primarily used for dictionary subclasses, but may be used by other classes as
+  long as they implement :meth:`__setitem__`.
 
-It is sometimes useful to know the protocol version when implementing
-:meth:`__reduce__`.  This can be done by implementing a method named
-:meth:`__reduce_ex__` instead of :meth:`__reduce__`. :meth:`__reduce_ex__`, when
-it exists, is called in preference over :meth:`__reduce__` (you may still
-provide :meth:`__reduce__` for backwards compatibility).  The
-:meth:`__reduce_ex__` method will be called with a single integer argument, the
-protocol version.
+.. index:: single: __reduce_ex__() (copy protocol)
 
-The :class:`object` class implements both :meth:`__reduce__` and
-:meth:`__reduce_ex__`; however, if a subclass overrides :meth:`__reduce__` but
-not :meth:`__reduce_ex__`, the :meth:`__reduce_ex__` implementation detects this
-and calls :meth:`__reduce__`.
-
-An alternative to implementing a :meth:`__reduce__` method on the object to be
-pickled, is to register the callable with the :mod:`copyreg` module.  This
-module provides a way for programs to register "reduction functions" and
-constructors for user-defined types.   Reduction functions have the same
-semantics and interface as the :meth:`__reduce__` method described above, except
-that they are called with a single argument, the object to be pickled.
-
-The registered constructor is deemed a "safe constructor" for purposes of
-unpickling as described above.
-
+Alternatively, a :meth:`__reduce_ex__` method may be defined.  The only
+difference is this method should take a single integer argument, the protocol
+version.  When defined, pickle will prefer it over the :meth:`__reduce__`
+method.  In addition, :meth:`__reduce__` automatically becomes a synonym for the
+extended version.  The main use for this method is to provide
+backwards-compatible reduce values for older Python releases.
 
 .. _pickle-persistent:
 
-Pickling and unpickling external objects
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Persistence of External Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
    single: persistent_id (pickle protocol)
@@ -603,17 +567,85 @@ To unpickle external objects, the unpickler must have a custom
 :meth:`persistent_load` method that takes a persistent ID object and returns the
 referenced object.
 
-Example:
+Here is a comprehensive example presenting how persistent ID can be used to
+pickle external objects by reference.
 
 .. XXX Work around for some bug in sphinx/pygments.
 .. highlightlang:: python
 .. literalinclude:: ../includes/dbpickle.py
 .. highlightlang:: python3
 
+.. _pickle-state:
+
+Handling Stateful Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __getstate__() (copy protocol)
+   single: __setstate__() (copy protocol)
+
+Here's an example that shows how to modify pickling behavior for a class.
+The :class:`TextReader` class opens a text file, and returns the line number and
+line contents each time its :meth:`readline` method is called. If a
+:class:`TextReader` instance is pickled, all attributes *except* the file object
+member are saved. When the instance is unpickled, the file is reopened, and
+reading resumes from the last location. The :meth:`__setstate__` and
+:meth:`__getstate__` methods are used to implement this behavior. ::
+
+   class TextReader:
+       """Print and number lines in a text file."""
+
+       def __init__(self, filename):
+           self.filename = filename
+           self.file = open(filename)
+           self.lineno = 0
+
+       def readline(self):
+           self.lineno += 1
+           line = self.file.readline()
+           if not line:
+               return None
+           if line.endswith("\n"):
+               line = line[:-1]
+           return "%i: %s" % (self.lineno, line)
+
+       def __getstate__(self):
+           # Copy the object's state from self.__dict__ which contains
+           # all our instance attributes. Always use the dict.copy()
+           # method to avoid modifying the original state.
+           state = self.__dict__.copy()
+           # Remove the unpicklable entries.
+           del state['file']
+           return state
+
+       def __setstate__(self, state):
+           # Restore instance attributes (i.e., filename and lineno).
+           self.__dict__.update(state)
+           # Restore the previously opened file's state. To do so, we need to
+           # reopen it and read from it until the line count is restored.
+           file = open(self.filename)
+           for _ in range(self.lineno):
+               file.readline()
+           # Finally, save the file.
+           self.file = file
+
+
+A sample usage might be something like this::
+
+   >>> reader = TextReader("hello.txt")
+   >>> reader.readline()
+   '1: Hello world!'
+   >>> reader.readline()
+   '2: I am line number two.'
+   >>> new_reader = pickle.loads(pickle.dumps(reader))
+   >>> new_reader.readline()
+   '3: Goodbye!'
+
+
 .. _pickle-restrict:
 
 Restricting Globals
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 .. index::
    single: find_class() (pickle protocol)
@@ -653,6 +685,7 @@ Here is an example of an unpickler allowing only few safe classes from the
    }
 
    class RestrictedUnpickler(pickle.Unpickler):
+
        def find_class(self, module, name):
            # Only allow safe classes from builtins.
            if module == "builtins" and name in safe_builtins:
@@ -680,10 +713,15 @@ A sample usage of our unpickler working has intended::
       ...
     pickle.UnpicklingError: global 'builtins.eval' is forbidden
 
-As our examples shows, you have to be careful with what you allow to
-be unpickled.  Therefore if security is a concern, you may want to consider
-alternatives such as the marshalling API in :mod:`xmlrpc.client` or
-third-party solutions.
+
+.. XXX Add note about how extension codes could evade our protection
+   mechanism (e.g. cached classes do not invokes find_class()). 
+
+As our examples shows, you have to be careful with what you allow to be
+unpickled.  Therefore if security is a concern, you may want to consider
+alternatives such as the marshalling API in :mod:`xmlrpc.client` or third-party
+solutions.
+
 
 .. _pickle-example:
 
@@ -728,69 +766,6 @@ can't be sure if the ASCII or binary format was used. ::
 
    pkl_file.close()
 
-Here's a larger example that shows how to modify pickling behavior for a class.
-The :class:`TextReader` class opens a text file, and returns the line number and
-line contents each time its :meth:`readline` method is called. If a
-:class:`TextReader` instance is pickled, all attributes *except* the file object
-member are saved. When the instance is unpickled, the file is reopened, and
-reading resumes from the last location. The :meth:`__setstate__` and
-:meth:`__getstate__` methods are used to implement this behavior. ::
-
-   #!/usr/local/bin/python
-
-   class TextReader:
-       """Print and number lines in a text file."""
-       def __init__(self, file):
-           self.file = file
-           self.fh = open(file)
-           self.lineno = 0
-
-       def readline(self):
-           self.lineno = self.lineno + 1
-           line = self.fh.readline()
-           if not line:
-               return None
-           if line.endswith("\n"):
-               line = line[:-1]
-           return "%d: %s" % (self.lineno, line)
-
-       def __getstate__(self):
-           odict = self.__dict__.copy() # copy the dict since we change it
-           del odict['fh']              # remove filehandle entry
-           return odict
-
-       def __setstate__(self, dict):
-           fh = open(dict['file'])      # reopen file
-           count = dict['lineno']       # read from file...
-           while count:                 # until line count is restored
-               fh.readline()
-               count = count - 1
-           self.__dict__.update(dict)   # update attributes
-           self.fh = fh                 # save the file object
-
-A sample usage might be something like this::
-
-   >>> import TextReader
-   >>> obj = TextReader.TextReader("TextReader.py")
-   >>> obj.readline()
-   '1: #!/usr/local/bin/python'
-   >>> obj.readline()
-   '2: '
-   >>> obj.readline()
-   '3: class TextReader:'
-   >>> import pickle
-   >>> pickle.dump(obj, open('save.p', 'wb'))
-
-If you want to see that :mod:`pickle` works across Python processes, start
-another Python session, before continuing.  What follows can happen from either
-the same process or a new process. ::
-
-   >>> import pickle
-   >>> reader = pickle.load(open('save.p', 'rb'))
-   >>> reader.readline()
-   '4:     """Print and number lines in a text file."""'
-
-
 .. seealso::
 
    Module :mod:`copyreg`
@@ -813,10 +788,8 @@ the same process or a new process. ::
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.
 
-.. [#] These methods can also be used to implement copying class instances.
-
-.. [#] This protocol is also used by the shallow and deep copying operations
-   defined in the :mod:`copy` module.
+.. [#] The :mod:`copy` module uses this protocol for shallow and deep copying
+   operations.
 
 .. [#] The limitation on alphanumeric characters is due to the fact
    the persistent IDs, in protocol 0, are delimited by the newline
