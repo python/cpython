@@ -224,6 +224,8 @@ the appropriate function arguments, instead.
    :data:`tempdir` is not ``None``, this simply returns its contents; otherwise,
    the search described above is performed, and the result returned.
 
+   .. versionadded:: 2.3
+
 
 .. data:: template
 
