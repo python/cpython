@@ -15,6 +15,9 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4237: io.FileIO() was raising invalid warnings caused by
+  insufficient initialization of PyFileIOObject struct members.
+
 - Issue #4170: Pickling a collections.defaultdict object would crash the
   interpreter.
 
