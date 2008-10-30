@@ -15,6 +15,8 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue 3723: Fixed initialization of subinterpreters.
+
 - Issue #4213: The file system encoding is now normalized by the
   codec subsystem, for example UTF-8 is turned into utf-8.
 
