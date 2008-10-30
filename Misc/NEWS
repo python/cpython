@@ -15,6 +15,9 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4213: The file system encoding is now normalized by the
+  codec subsystem, for example UTF-8 is turned into utf-8.
+
 - Issue #4200: Changed the atexit module to store its state in its
   PyModuleDef atexitmodule. This fixes a bug with multiple subinterpeters.
 
