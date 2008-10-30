@@ -15,6 +15,9 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4170: Pickling a collections.defaultdict object would crash the
+  interpreter.
+
 - Issue #4146: Compilation on OpenBSD has been restored.
 
 - Issue #3574: compile() incorrectly handled source code encoded as Latin-1.
