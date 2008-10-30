@@ -86,6 +86,10 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kews)
 	self = (PyFileIOObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
 		self->fd = -1;
+		self->readable = 0;
+		self->writable = 0;
+		self->seekable = -1;
+		self->closefd = 1;
 		self->weakreflist = NULL;
 	}
 
@@ -179,8 +183,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	    }
 	}
 
-	self->readable = self->writable = 0;
-	self->seekable = -1;
 	s = mode;
 	while (*s) {
 		switch (*s++) {
