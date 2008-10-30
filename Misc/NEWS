@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Fixed a modulefinder crash on certain relative imports.
+
 - Issue #4150: Pdb's "up" command now works for generator frames in post-mortem
   debugging.
 
