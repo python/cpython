@@ -2,6 +2,7 @@
 
 import os
 import copy
+import pickle
 import tempfile
 import unittest
 from test import support
@@ -164,6 +165,13 @@ class TestDefaultDict(unittest.TestCase):
         finally:
             os.remove(tfn)
 
+    def test_pickleing(self):
+        d = defaultdict(int)
+        d[1]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(d, proto)
+            o = pickle.loads(s)
+            self.assertEqual(d, o)
 
 def test_main():
     support.run_unittest(TestDefaultDict)
