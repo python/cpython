@@ -126,6 +126,37 @@ add_flag(int flag, const char *envs)
 	return flag;
 }
 
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+static char*
+get_codeset(void)
+{
+	char* codeset;
+	PyObject *codec, *name;
+
+	codeset = nl_langinfo(CODESET);
+	if (!codeset || codeset[0] == '\0')
+		return NULL;
+
+	codec = _PyCodec_Lookup(codeset);
+	if (!codec)
+		goto error;
+
+	name = PyObject_GetAttrString(codec, "name");
+	Py_CLEAR(codec);
+	if (!name)
+		goto error;
+
+	codeset = strdup(_PyUnicode_AsString(name));
+	Py_DECREF(name);
+	return codeset;
+
+error:
+	Py_XDECREF(codec);
+	PyErr_Clear();
+	return NULL;
+}
+#endif
+
 void
 Py_InitializeEx(int install_sigs)
 {
@@ -257,15 +288,7 @@ Py_InitializeEx(int install_sigs)
 	   initialized by other means. Also set the encoding of
 	   stdin and stdout if these are terminals.  */
 
-	codeset = nl_langinfo(CODESET);
-	if (codeset && *codeset) {
-	    if (PyCodec_KnownEncoding(codeset))
-		codeset = strdup(codeset);
-	    else
-		codeset = NULL;
-	} else
-		codeset = NULL;
-
+	codeset = get_codeset();
 	if (codeset) {
 		if (!Py_FileSystemDefaultEncoding)
 			Py_FileSystemDefaultEncoding = codeset;
