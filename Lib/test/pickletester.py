@@ -849,6 +849,29 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(y._reduce_called, 1)
 
+    def test_reduce_bad_iterator(self):
+        # Issue4176: crash when 4th and 5th items of __reduce__()
+        # are not iterators
+        class C(object):
+            def __reduce__(self):
+                # 4th item is not an iterator
+                return list, (), None, [], None
+        class D(object):
+            def __reduce__(self):
+                # 5th item is not an iterator
+                return dict, (), None, None, []
+
+        # Protocol 0 is less strict and also accept iterables.
+        for proto in 0, 1, 2:
+            try:
+                self.dumps(C(), proto)
+            except (AttributeError, pickle.PickleError, cPickle.PickleError):
+                pass
+            try:
+                self.dumps(D(), proto)
+            except (AttributeError, pickle.PickleError, cPickle.PickleError):
+                pass
+
 # Test classes for reduce_ex
 
 class REX_one(object):
