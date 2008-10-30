@@ -1236,6 +1236,13 @@ class MiscIOTest(unittest.TestCase):
             else:
                 self.assert_(issubclass(obj, io.IOBase))
 
+    def test_fileio_warnings(self):
+        with test_support.check_warnings() as w:
+            self.assertEqual(w.warnings, [])
+            self.assertRaises(TypeError, io.FileIO, [])
+            self.assertEqual(w.warnings, [])
+            self.assertRaises(ValueError, io.FileIO, "/some/invalid/name", "rt")
+            self.assertEqual(w.warnings, [])
 
 def test_main():
     test_support.run_unittest(IOTest, BytesIOTest, StringIOTest,
