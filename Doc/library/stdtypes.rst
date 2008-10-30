@@ -246,14 +246,15 @@ Complex numbers have a real and imaginary part, which are each implemented using
    pair: octal; literals
 
 Numbers are created by numeric literals or as the result of built-in functions
-and operators.  Unadorned integer literals (including hex and octal numbers)
-yield plain integers unless the value they denote is too large to be represented
-as a plain integer, in which case they yield a long integer.  Integer literals
-with an ``'L'`` or ``'l'`` suffix yield long integers (``'L'`` is preferred
-because ``1l`` looks too much like eleven!).  Numeric literals containing a
-decimal point or an exponent sign yield floating point numbers.  Appending
-``'j'`` or ``'J'`` to a numeric literal yields a complex number with a zero real
-part. A complex numeric literal is the sum of a real and an imaginary part.
+and operators.  Unadorned integer literals (including binary, hex, and octal
+numbers) yield plain integers unless the value they denote is too large to be
+represented as a plain integer, in which case they yield a long integer.
+Integer literals with an ``'L'`` or ``'l'`` suffix yield long integers (``'L'``
+is preferred because ``1l`` looks too much like eleven!).  Numeric literals
+containing a decimal point or an exponent sign yield floating point numbers.
+Appending ``'j'`` or ``'J'`` to a numeric literal yields a complex number with a
+zero real part. A complex numeric literal is the sum of a real and an imaginary
+part.
 
 .. index::
    single: arithmetic
