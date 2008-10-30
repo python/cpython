@@ -112,6 +112,15 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.3
 
 
+.. function:: bin(x)
+
+   Convert an integer number to a binary string. The result is a valid Python
+   expression.  If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer.
+
+   .. versionadded:: 2.6
+
+
 .. function:: bool([x])
 
    Convert a value to a Boolean, using the standard truth testing procedure.  If

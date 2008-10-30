@@ -629,10 +629,11 @@ definitions:
 
 .. productionlist::
    longinteger: `integer` ("l" | "L")
-   integer: `decimalinteger` | `octinteger` | `hexinteger`
+   integer: `decimalinteger` | `octinteger` | `hexinteger` | `bininteger`
    decimalinteger: `nonzerodigit` `digit`* | "0"
    octinteger: "0" `octdigit`+
    hexinteger: "0" ("x" | "X") `hexdigit`+
+   bininteger: "0" ("b" | "B") `bindigit`+
    nonzerodigit: "1"..."9"
    octdigit: "0"..."7"
    hexdigit: `digit` | "a"..."f" | "A"..."F"
