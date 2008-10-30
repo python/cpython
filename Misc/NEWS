@@ -15,6 +15,9 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
+  method does not return iterators for the 4th and 5th items.
+
 - Issue 3723: Fixed initialization of subinterpreters.
 
 - Issue #4213: The file system encoding is now normalized by the

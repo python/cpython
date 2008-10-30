@@ -1961,8 +1961,9 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     PyObject *callable;
     PyObject *argtup;
     PyObject *state = NULL;
-    PyObject *listitems = NULL;
-    PyObject *dictitems = NULL;
+    PyObject *listitems = Py_None;
+    PyObject *dictitems = Py_None;
+    Py_ssize_t size;
 
     int use_newobj = self->proto >= 2;
 
@@ -1970,27 +1971,48 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     const char build_op = BUILD;
     const char newobj_op = NEWOBJ;
 
+    size = PyTuple_Size(args);
+    if (size < 2 || size > 5) {
+        PyErr_SetString(PicklingError, "tuple returned by "
+                        "__reduce__ must contain 2 through 5 elements");
+        return -1;
+    }
+
     if (!PyArg_UnpackTuple(args, "save_reduce", 2, 5,
                            &callable, &argtup, &state, &listitems, &dictitems))
         return -1;
 
     if (!PyCallable_Check(callable)) {
-        PyErr_SetString(PicklingError,
-                        "first argument of save_reduce() must be callable");
+        PyErr_SetString(PicklingError, "first item of the tuple "
+                        "returned by __reduce__ must be callable");
         return -1;
     }
     if (!PyTuple_Check(argtup)) {
-        PyErr_SetString(PicklingError,
-                        "second argument of save_reduce() must be a tuple");
+        PyErr_SetString(PicklingError, "second item of the tuple "
+                        "returned by __reduce__ must be a tuple");
         return -1;
     }
 
     if (state == Py_None)
         state = NULL;
+
     if (listitems == Py_None)
         listitems = NULL;
+    else if (!PyIter_Check(listitems)) {
+        PyErr_Format(PicklingError, "Fourth element of tuple"
+                     "returned by __reduce__ must be an iterator, not %s",
+                     Py_TYPE(listitems)->tp_name);
+        return -1;
+    }
+
     if (dictitems == Py_None)
         dictitems = NULL;
+    else if (!PyIter_Check(dictitems)) {
+        PyErr_Format(PicklingError, "Fifth element of tuple"
+                     "returned by __reduce__ must be an iterator, not %s",
+                     Py_TYPE(dictitems)->tp_name);
+        return -1;
+    }
 
     /* Protocol 2 special case: if callable's name is __newobj__, use
        NEWOBJ. */
@@ -2307,16 +2329,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     if (!PyTuple_Check(reduce_value)) {
         PyErr_SetString(PicklingError,
                         "__reduce__ must return a string or tuple");
-        goto error;
-    }
-    if (Py_SIZE(reduce_value) < 2 || Py_SIZE(reduce_value) > 5) {
-        PyErr_SetString(PicklingError, "tuple returned by __reduce__ "
-                        "must contain 2 through 5 elements");
-        goto error;
-    }
-    if (!PyTuple_Check(PyTuple_GET_ITEM(reduce_value, 1))) {
-        PyErr_SetString(PicklingError, "second item of the tuple "
-                        "returned by __reduce__ must be a tuple");
         goto error;
     }
 

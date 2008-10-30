@@ -876,6 +876,22 @@ class AbstractPickleTests(unittest.TestCase):
         d = self.dumps(x, 2)
         self.assertRaises(RuntimeError, self.loads, d)
 
+    def test_reduce_bad_iterator(self):
+        # Issue4176: crash when 4th and 5th items of __reduce__()
+        # are not iterators
+        class C(object):
+            def __reduce__(self):
+                # 4th item is not an iterator
+                return list, (), None, [], None
+        class D(object):
+            def __reduce__(self):
+                # 5th item is not an iterator
+                return dict, (), None, None, []
+
+        for proto in protocols:
+            self.assertRaises(pickle.PickleError, self.dumps, C(), proto)
+            self.assertRaises(pickle.PickleError, self.dumps, D(), proto)
+
 # Test classes for reduce_ex
 
 class REX_one(object):
