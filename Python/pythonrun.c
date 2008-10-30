@@ -562,8 +562,13 @@ Py_NewInterpreter(void)
 			goto handle_error;
 		Py_INCREF(interp->builtins);
 	}
+
+	/* initialize builtin exceptions */
+	_PyExc_Init();
+
 	sysmod = _PyImport_FindExtension("sys", "sys");
 	if (bimod != NULL && sysmod != NULL) {
+		PyObject *pstderr;
 		interp->sysdict = PyModule_GetDict(sysmod);
 		if (interp->sysdict == NULL)
 			goto handle_error;
@@ -571,7 +576,18 @@ Py_NewInterpreter(void)
 		PySys_SetPath(Py_GetPath());
 		PyDict_SetItemString(interp->sysdict, "modules",
 				     interp->modules);
+		/* Set up a preliminary stderr printer until we have enough
+		   infrastructure for the io module in place. */
+		pstderr = PyFile_NewStdPrinter(fileno(stderr));
+		if (pstderr == NULL)
+			Py_FatalError("Py_Initialize: can't set preliminary stderr");
+		PySys_SetObject("stderr", pstderr);
+		PySys_SetObject("__stderr__", pstderr);
+
 		_PyImportHooks_Init();
+                if (initstdio() < 0)
+                    Py_FatalError(
+                        "Py_Initialize: can't initialize sys standard streams");
 		initmain();
 		if (!Py_NoSiteFlag)
 			initsite();

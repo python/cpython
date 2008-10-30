@@ -1231,7 +1231,7 @@ static struct PyModuleDef sysmodule = {
 	PyModuleDef_HEAD_INIT,
 	"sys",
 	sys_doc,
-	0,
+	-1, /* multiple "initialization" just copies the module dict. */
 	sys_methods,
 	NULL,
 	NULL,

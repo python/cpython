@@ -869,5 +869,6 @@ static int _PyCodecRegistry_Init(void)
 	return -1;
     }
     Py_DECREF(mod);
+    interp->codecs_initialized = 1;
     return 0;
 }

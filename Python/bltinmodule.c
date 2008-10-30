@@ -2282,7 +2282,7 @@ static struct PyModuleDef builtinsmodule = {
 	PyModuleDef_HEAD_INIT,
 	"builtins",
 	builtin_doc,
-	0,
+	-1, /* multiple "initialization" just copies the module dict. */
 	builtin_methods,
 	NULL,
 	NULL,
