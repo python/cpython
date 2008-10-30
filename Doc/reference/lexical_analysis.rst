@@ -605,6 +605,7 @@ Numeric literals
    single: long integer literal
    single: floating point literal
    single: hexadecimal literal
+   single: binary literal
    single: octal literal
    single: decimal literal
    single: imaginary literal
@@ -629,12 +630,14 @@ definitions:
 
 .. productionlist::
    longinteger: `integer` ("l" | "L")
-   integer: `decimalinteger` | `octinteger` | `hexinteger`
+   integer: `decimalinteger` | `octinteger` | `hexinteger` | `bininteger`
    decimalinteger: `nonzerodigit` `digit`* | "0"
-   octinteger: "0" `octdigit`+
+   octinteger: "0" ("o" | "O") `octdigit`+ | "0" `octdigit`+
    hexinteger: "0" ("x" | "X") `hexdigit`+
+   bininteger: "0" ("b" | "B") `bindigit`+
    nonzerodigit: "1"..."9"
    octdigit: "0"..."7"
+   bindigit: "0" | "1"
    hexdigit: `digit` | "a"..."f" | "A"..."F"
 
 Although both lower case ``'l'`` and upper case ``'L'`` are allowed as suffix
