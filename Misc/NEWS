@@ -12,6 +12,9 @@ What's New in Python 2.6.1 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
+  method does not return iterators for the 4th and 5th items.
+
 - Issue #4209: Enabling unicode_literals and the print_function in the same
   __future__ import didn't work.
 
