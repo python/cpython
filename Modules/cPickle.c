@@ -2141,19 +2141,28 @@ save_pers(Picklerobject *self, PyObject *args, PyObject *f)
  * appropriate __reduce__ method for ob.
  */
 static int
-save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
+save_reduce(Picklerobject *self, PyObject *args, PyObject *fn, PyObject *ob)
 {
 	PyObject *callable;
 	PyObject *argtup;
-        PyObject *state = NULL;
-        PyObject *listitems = NULL;
-        PyObject *dictitems = NULL;
+	PyObject *state = NULL;
+	PyObject *listitems = Py_None;
+	PyObject *dictitems = Py_None;
+	Py_ssize_t size;
 
 	int use_newobj = self->proto >= 2;
 
 	static char reduce = REDUCE;
 	static char build = BUILD;
 	static char newobj = NEWOBJ;
+
+	size = PyTuple_Size(args);
+	if (size < 2 || size > 5) {
+		cPickle_ErrFormat(PicklingError, "tuple returned by "
+			"%s must contain 2 through 5 elements",
+			"O", fn);
+		return -1;
+	}
 
 	if (! PyArg_UnpackTuple(args, "save_reduce", 2, 5,
 				&callable,
@@ -2164,17 +2173,32 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
 		return -1;
 
 	if (!PyTuple_Check(argtup)) {
-		PyErr_SetString(PicklingError,
-				"args from reduce() should be a tuple");
+		cPickle_ErrFormat(PicklingError, "Second element of "
+			"tuple returned by %s must be a tuple",
+			"O", fn);
 		return -1;
 	}
 
 	if (state == Py_None)
 		state = NULL;
+
 	if (listitems == Py_None)
 		listitems = NULL;
+	else if (!PyIter_Check(listitems)) {
+		cPickle_ErrFormat(PicklingError, "Fourth element of "
+			"tuple returned by %s must be an iterator, not %s",
+			"Os", fn, listitems->ob_type->tp_name);
+		return -1;
+	}
+
 	if (dictitems == Py_None)
 		dictitems = NULL;
+	else if (!PyIter_Check(dictitems)) {
+		cPickle_ErrFormat(PicklingError, "Fifth element of "
+			"tuple returned by %s must be an iterator, not %s",
+			"Os", fn, dictitems->ob_type->tp_name);
+		return -1;
+	}
 
         /* Protocol 2 special case: if callable's name is __newobj__, use
          * NEWOBJ.  This consumes a lot of code.
@@ -2298,9 +2322,8 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 {
 	PyTypeObject *type;
 	PyObject *py_ob_id = 0, *__reduce__ = 0, *t = 0;
-	PyObject *arg_tup;
 	int res = -1;
-	int tmp, size;
+	int tmp;
 
         if (self->nesting++ > Py_GetRecursionLimit()){
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2527,30 +2550,14 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		goto finally;
 	}
 
-	if (! PyTuple_Check(t)) {
+	if (!PyTuple_Check(t)) {
 		cPickle_ErrFormat(PicklingError, "Value returned by "
 				"%s must be string or tuple",
 				"O", __reduce__);
 		goto finally;
 	}
 
-	size = PyTuple_Size(t);
-	if (size < 2 || size > 5) {
-		cPickle_ErrFormat(PicklingError, "tuple returned by "
-			"%s must contain 2 through 5 elements",
-			"O", __reduce__);
-		goto finally;
-	}
-
-	arg_tup = PyTuple_GET_ITEM(t, 1);
-	if (!(PyTuple_Check(arg_tup) || arg_tup == Py_None))  {
-		cPickle_ErrFormat(PicklingError, "Second element of "
-			"tuple returned by %s must be a tuple",
-			"O", __reduce__);
-		goto finally;
-	}
-
-	res = save_reduce(self, t, args);
+	res = save_reduce(self, t, __reduce__, args);
 
   finally:
 	self->nesting--;
