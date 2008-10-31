@@ -25,6 +25,15 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def check_expr(self, s):
         self.roundtrip(parser.expr, s)
 
+    def test_flags_passed(self):
+        # The unicode literals flags has to be passed from the paser to AST
+        # generation.
+        suite = parser.suite("from __future__ import unicode_literals; x = ''")
+        code = suite.compile()
+        scope = {}
+        exec code in scope
+        self.assertTrue(isinstance(scope["x"], unicode))
+
     def check_suite(self, s):
         self.roundtrip(parser.suite, s)
 

@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
+  exec statement.
+
 - Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
   method does not return iterators for the 4th and 5th items.
 

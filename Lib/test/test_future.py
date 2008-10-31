@@ -106,6 +106,11 @@ class FutureTest(unittest.TestCase):
         test_support.unload("test.test_future5")
         from test import test_future5
 
+    def test_unicode_literals_exec(self):
+        scope = {}
+        exec "from __future__ import unicode_literals; x = ''" in scope
+        self.assertTrue(isinstance(scope["x"], unicode))
+
 
 def test_main():
     test_support.run_unittest(FutureTest)
