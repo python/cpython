@@ -1417,16 +1417,19 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 		       PyCompilerFlags *flags, PyArena *arena)
 {
 	mod_ty mod;
+	PyCompilerFlags localflags;
 	perrdetail err;
 	int iflags = PARSER_FLAGS(flags);
 
 	node *n = PyParser_ParseStringFlagsFilenameEx(s, filename,
 					&_PyParser_Grammar, start, &err,
 					&iflags);
+	if (flags == NULL) {
+		localflags.cf_flags = 0;
+		flags = &localflags;
+	}
 	if (n) {
-		if (flags) {
-			flags->cf_flags |= iflags & PyCF_MASK;
-		}
+		flags->cf_flags |= iflags & PyCF_MASK;
 		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;
@@ -1443,15 +1446,18 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
 		     PyArena *arena)
 {
 	mod_ty mod;
+	PyCompilerFlags localflags;
 	perrdetail err;
 	int iflags = PARSER_FLAGS(flags);
 
 	node *n = PyParser_ParseFileFlagsEx(fp, filename, &_PyParser_Grammar,
 				start, ps1, ps2, &err, &iflags);
+	if (flags == NULL) {
+		localflags.cf_flags = 0;
+		flags = &localflags;
+	}
 	if (n) {
-		if (flags) {
-			flags->cf_flags |= iflags & PyCF_MASK;
-		}
+		flags->cf_flags |= iflags & PyCF_MASK;
 		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;

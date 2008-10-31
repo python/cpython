@@ -26,12 +26,20 @@
  */
 
 #include "Python.h"                     /* general Python API             */
+#include "Python-ast.h"                 /* mod_ty */
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+#include "grammar.h"
+#include "parsetok.h"
                                         /* ISTERMINAL() / ISNONTERMINAL() */
-#include "compile.h"                    /* PyNode_Compile()               */
+#include "compile.h"
+#undef Yield
+#include "ast.h"
+#include "pyarena.h"
+
+extern grammar _PyParser_Grammar; /* From graminit.c */
 
 #ifdef lint
 #include <note.h>
@@ -156,6 +164,7 @@ typedef struct {
     PyObject_HEAD                       /* standard object header           */
     node* st_node;                      /* the node* returned by the parser */
     int   st_type;                      /* EXPR or SUITE ?                  */
+    PyCompilerFlags st_flags;           /* Parser and compiler flags        */
 } PyST_Object;
 
 
@@ -260,6 +269,7 @@ parser_newstobject(node *st, int type)
     if (o != 0) {
         o->st_node = st;
         o->st_type = type;
+        o->st_flags.cf_flags = 0;
     }
     else {
         PyNode_Free(st);
@@ -394,6 +404,8 @@ static PyObject*
 parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
 {
     PyObject*     res = 0;
+    PyArena*      arena;
+    mod_ty        mod;
     char*         str = "<syntax-tree>";
     int ok;
 
@@ -406,8 +418,16 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "|s:compile", &keywords[1],
                                          &str);
 
-    if (ok)
-        res = (PyObject *)PyNode_Compile(self->st_node, str);
+    if (ok) {
+        arena = PyArena_New();
+        if (arena) {
+           mod = PyAST_FromNode(self->st_node, &(self->st_flags), str, arena);
+           if (mod) {
+               res = (PyObject *)PyAST_Compile(mod, str, &(self->st_flags), arena);
+           }
+           PyArena_Free(arena);
+        }
+    }
 
     return (res);
 }
@@ -523,16 +543,25 @@ parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
 {
     char*     string = 0;
     PyObject* res    = 0;
+    int flags        = 0;
+    perrdetail err;
 
     static char *keywords[] = {"source", NULL};
 
     if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
-        node* n = PyParser_SimpleParseString(string,
-                                             (type == PyST_EXPR)
-                                             ? eval_input : file_input);
+        node* n = PyParser_ParseStringFlagsFilenameEx(string, NULL,
+                                                       &_PyParser_Grammar,
+                                                      (type == PyST_EXPR)
+                                                      ? eval_input : file_input,
+                                                      &err, &flags);
 
-	if (n)
+	if (n) {
 	    res = parser_newstobject(n, type);
+            if (res)
+                ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+        }
+        else
+            PyParser_SetError(&err);
     }
     return (res);
 }
