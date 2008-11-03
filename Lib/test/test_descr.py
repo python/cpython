@@ -1020,14 +1020,10 @@ order (MRO) for bases """
             def __del__(self_):
                 self.assertEqual(self_.a, 1)
                 self.assertEqual(self_.b, 2)
-
-        save_stderr = sys.stderr
-        sys.stderr = sys.stdout
-        h = H()
-        try:
+        with test_support.captured_output('stderr') as s:
+            h = H()
             del h
-        finally:
-            sys.stderr = save_stderr
+        self.assertEqual(s.getvalue(), '')
 
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...

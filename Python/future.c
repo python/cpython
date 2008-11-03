@@ -8,6 +8,8 @@
 #include "symtable.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
+#define ERR_LATE_FUTURE \
+"from __future__ imports must occur at the beginning of the file"
 
 static int
 future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
