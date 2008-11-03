@@ -1931,6 +1931,8 @@ class BaseWidget(Misc):
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
         BaseWidget._setup(self, master, cnf)
+        if self._tclCommands is None:
+            self._tclCommands = []
         classes = []
         for k in cnf.keys():
             if type(k) is ClassType:
@@ -2668,20 +2670,20 @@ class Menu(Widget):
         """Add separator at INDEX."""
         self.insert(index, 'separator', cnf or kw)
     def delete(self, index1, index2=None):
-        """Delete menu items between INDEX1 and INDEX2 (not included)."""
+        """Delete menu items between INDEX1 and INDEX2 (included)."""
         if index2 is None:
             index2 = index1
-        cmds = []
-        (num_index1, num_index2) = (self.index(index1), self.index(index2))
-        if (num_index1 is not None) and (num_index2 is not None):
-            for i in range(num_index1, num_index2 + 1):
-                if 'command' in self.entryconfig(i):
-                    c = str(self.entrycget(i, 'command'))
-                    if c in self._tclCommands:
-                        cmds.append(c)
+
+        num_index1, num_index2 = self.index(index1), self.index(index2)
+        if (num_index1 is None) or (num_index2 is None):
+            num_index1, num_index2 = 0, -1
+
+        for i in range(num_index1, num_index2 + 1):
+            if 'command' in self.entryconfig(i):
+                c = str(self.entrycget(i, 'command'))
+                if c:
+                    self.deletecommand(c)
         self.tk.call(self._w, 'delete', index1, index2)
-        for c in cmds:
-            self.deletecommand(c)
     def entrycget(self, index, option):
         """Return the resource value of an menu item for OPTION at INDEX."""
         return self.tk.call(self._w, 'entrycget', index, '-' + option)
