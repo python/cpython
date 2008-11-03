@@ -1,4 +1,5 @@
 import parser
+import os
 import unittest
 import sys
 from test import test_support
@@ -179,6 +180,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
             "from sys.path import (dirname, basename as my_basename)")
         self.check_suite(
             "from sys.path import (dirname, basename as my_basename,)")
+        self.check_suite("from .bogus import x")
 
     def test_basic_import_statement(self):
         self.check_suite("import sys")
