@@ -310,7 +310,10 @@ class ModuleFinder:
     def _add_badmodule(self, name, caller):
         if name not in self.badmodules:
             self.badmodules[name] = {}
-        self.badmodules[name][caller.__name__] = 1
+        if caller:
+            self.badmodules[name][caller.__name__] = 1
+        else:
+            self.badmodules[name]["-"] = 1
 
     def _safe_import_hook(self, name, caller, fromlist, level=-1):
         # wrapper for self.import_hook() that won't raise ImportError

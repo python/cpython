@@ -190,6 +190,19 @@ a/b/c/e.py
 a/b/c/f.py
 """]
 
+relative_import_test_3 = [
+    "a.module",
+    ["a", "a.module"],
+    ["a.bar"],
+    [],
+    """\
+a/__init__.py
+                                def foo(): pass
+a/module.py
+                                from . import foo
+                                from . import bar
+"""]
+
 def open_file(path):
     ##print "#", os.path.abspath(path)
     dirname = os.path.dirname(path)
@@ -255,6 +268,9 @@ class ModuleFinderTest(unittest.TestCase):
 
         def test_relative_imports_2(self):
             self._do_test(relative_import_test_2)
+
+        def test_relative_imports_3(self):
+            self._do_test(relative_import_test_3)
 
 def test_main():
     distutils.log.set_threshold(distutils.log.WARN)

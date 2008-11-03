@@ -1245,6 +1245,7 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, io.FileIO, "/some/invalid/name", "rt")
             self.assertEqual(w.warnings, [])
 
+
 def test_main():
     support.run_unittest(IOTest, BytesIOTest, StringIOTest,
                               BufferedReaderTest, BufferedWriterTest,
