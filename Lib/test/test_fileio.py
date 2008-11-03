@@ -7,7 +7,7 @@ import unittest
 from array import array
 from weakref import proxy
 
-from test.test_support import TESTFN, findfile, run_unittest
+from test.test_support import TESTFN, findfile, check_warnings, run_unittest
 from UserList import UserList
 
 import _fileio
@@ -240,6 +240,14 @@ class OtherFileTests(unittest.TestCase):
 
     def testInvalidInit(self):
         self.assertRaises(TypeError, _fileio._FileIO, "1", 0, 0)
+
+    def testWarnings(self):
+        with check_warnings() as w:
+            self.assertEqual(w.warnings, [])
+            self.assertRaises(TypeError, _fileio._FileIO, [])
+            self.assertEqual(w.warnings, [])
+            self.assertRaises(ValueError, _fileio._FileIO, "/some/invalid/name", "rt")
+            self.assertEqual(w.warnings, [])
 
 
 def test_main():
