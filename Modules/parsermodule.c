@@ -1804,10 +1804,10 @@ static int
 count_from_dots(node *tree)
 {
         int i;
-        for (i = 0; i < NCH(tree); i++)
+        for (i = 1; i < NCH(tree); i++)
 		if (TYPE(CHILD(tree, i)) != DOT)
 			break;
-        return i;
+        return i-1;
 }
 
 /* 'from' ('.'* dotted_name | '.') 'import' ('*' | '(' import_as_names ')' |
