@@ -97,6 +97,9 @@ Core and builtins
 Library
 -------
 
+- Issue #3774: Fixed an error when create a Tkinter menu item without command
+  and then remove it.
+
 - Assigning methods to ctypes.Structure and ctypes.Union subclasses
   after creation of the class does now work correctly.  See Issue #1700288.
 
