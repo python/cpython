@@ -2098,11 +2098,18 @@ _ACEOF
   # but used in struct sockaddr.sa_family. Reported by Tim Rice.
   SCO_SV/3.2)
     define_xopen_source=no;;
-  # On FreeBSD 4.8 and MacOS X 10.2, a bug in ncurses.h means that
-  # it craps out if _XOPEN_EXTENDED_SOURCE is defined. Apparently,
-  # this is fixed in 10.3, which identifies itself as Darwin/7.*
-  # This should hopefully be fixed in FreeBSD 4.9
-  FreeBSD/4.8* | Darwin/6* )
+  # On FreeBSD 4, the math functions C89 does not cover are never defined
+  # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
+  FreeBSD/4.*)
+    define_xopen_source=no;;
+  # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
+  # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
+  # identifies itself as Darwin/7.*
+  # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+  # disables platform specific features beyond repair.
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+  # has no effect, don't bother defining them
+  Darwin/[6789].*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
@@ -2113,13 +2120,6 @@ _ACEOF
     if test `uname -r` -eq 1; then
       define_xopen_source=no
     fi
-    ;;
-  # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
-  # disables platform specific features beyond repair.
-  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
-  # has no effect, don't bother defining them
-  Darwin/[789].*)
-    define_xopen_source=no
     ;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
