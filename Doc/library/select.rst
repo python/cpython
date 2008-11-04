@@ -363,7 +363,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    Filter specific flags
 
 
-   *:const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags*
+   :const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
@@ -372,7 +372,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +----------------------------+--------------------------------------------+
 
 
-   *:const:`KQ_FILTER_VNODE` filter flags*
+   :const:`KQ_FILTER_VNODE` filter flags
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
@@ -393,7 +393,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +----------------------------+--------------------------------------------+
 
 
-   *:const:`KQ_FILTER_PROC` filter flags*
+   :const:`KQ_FILTER_PROC` filter flags
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
@@ -416,7 +416,7 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_NOTE_TRACKERR`  | unable to attach to a child                |
    +----------------------------+--------------------------------------------+
 
-   *:const:`KQ_FILTER_NETDEV` filter flags* [not available on Mac OS X]
+   :const:`KQ_FILTER_NETDEV` filter flags [not available on Mac OS X]
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
