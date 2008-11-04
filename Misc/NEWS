@@ -96,6 +96,8 @@ Build
 
 - Issue #4018: Disable "for me" installations on Vista.
 
+- Issue #4204: Fixed module build errors on FreeBSD 4.
+
 Tools/Demos
 -----------
 

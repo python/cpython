@@ -35,7 +35,11 @@
 #define completion_matches(x, y) \
 	rl_completion_matches((x), ((rl_compentry_func_t *)(y)))
 #else
+#if defined(_RL_FUNCTION_TYPEDEF)
 extern char **completion_matches(char *, rl_compentry_func_t *);
+#else
+extern char **completion_matches(char *, CPFunction *);
+#endif
 #endif
 
 static void
@@ -213,7 +217,11 @@ set_completion_display_matches_hook(PyObject *self, PyObject *args)
 	   default completion display. */
 	rl_completion_display_matches_hook =
 		completion_display_matches_hook ?
+#if defined(_RL_FUNCTION_TYPEDEF)
 		(rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
+#else
+		(VFunction *)on_completion_display_matches_hook : 0;
+#endif
 #endif
 	return result;
 

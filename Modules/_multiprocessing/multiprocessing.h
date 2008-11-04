@@ -20,7 +20,9 @@
 #  define SEM_VALUE_MAX LONG_MAX
 #else
 #  include <fcntl.h>                 /* O_CREAT and O_EXCL */
+#  include <netinet/in.h>
 #  include <sys/socket.h>
+#  include <sys/uio.h>
 #  include <arpa/inet.h>             /* htonl() and ntohl() */
 #  if HAVE_SEM_OPEN
 #    include <semaphore.h>
