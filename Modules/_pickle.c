@@ -1963,12 +1963,20 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     PyObject *state = NULL;
     PyObject *listitems = Py_None;
     PyObject *dictitems = Py_None;
+    Py_ssize_t size;
 
     int use_newobj = self->proto >= 2;
 
     const char reduce_op = REDUCE;
     const char build_op = BUILD;
     const char newobj_op = NEWOBJ;
+
+    size = PyTuple_Size(args);
+    if (size < 2 || size > 5) {
+        PyErr_SetString(PicklingError, "tuple returned by "
+                        "__reduce__ must contain 2 through 5 elements");
+        return -1;
+    }
 
     if (!PyArg_UnpackTuple(args, "save_reduce", 2, 5,
                            &callable, &argtup, &state, &listitems, &dictitems))
@@ -2146,7 +2154,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     PyObject *reduce_value = NULL;
     PyObject *memo_key = NULL;
     int status = 0;
-    Py_ssize_t size;
 
     if (Py_EnterRecursiveCall(" while pickling an object") < 0)
         return -1;
@@ -2322,13 +2329,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     if (!PyTuple_Check(reduce_value)) {
         PyErr_SetString(PicklingError,
                         "__reduce__ must return a string or tuple");
-        goto error;
-    }
-
-    size = PyTuple_Size(reduce_value);
-    if (size < 2 || size > 5) {
-        PyErr_SetString(PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 through 5 elements");
         goto error;
     }
 

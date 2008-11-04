@@ -345,9 +345,6 @@ class _Pickler:
         else:
             self.write(PERSID + str(pid).encode("ascii") + b'\n')
 
-    def _isiter(self, obj):
-        return hasattr(obj, '__next__') and hasattr(obj, '__iter__')
-
     def save_reduce(self, func, args, state=None,
                     listitems=None, dictitems=None, obj=None):
         # This API is called by some subclasses
@@ -359,16 +356,6 @@ class _Pickler:
         # Assert that func is callable
         if not hasattr(func, '__call__'):
             raise PicklingError("func from save_reduce() should be callable")
-
-        # Assert that listitems is an iterator
-        if listitems is not None and not self._isiter(listitems):
-            raise PicklingError("listitems from save_reduce() should be an "
-                                "iterator")
-
-        # Assert that dictitems is an iterator
-        if dictitems is not None and not self._isiter(dictitems):
-            raise PicklingError("dictitems from save_reduce() should be an "
-                                "iterator")
 
         save = self.save
         write = self.write
