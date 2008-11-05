@@ -213,8 +213,10 @@ I/O Base Classes
 
    .. method:: close()
 
-      Flush and close this stream.  This method has no effect if the file is
-      already closed.
+      Flush and close this stream. This method has no effect if the file is
+      already closed. Once the file is closed, any operation on the file 
+      (e.g. reading or writing) will raise an :exc:`IOError`. The internal
+      file descriptor isn't closed if *closefd* was False.
 
    .. attribute:: closed
 

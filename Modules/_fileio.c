@@ -61,10 +61,7 @@ static PyObject *
 fileio_close(PyFileIOObject *self)
 {
 	if (!self->closefd) {
-		if (PyErr_WarnEx(PyExc_RuntimeWarning,
-				 "Trying to close unclosable fd!", 3) < 0) {
-			return NULL;
-		}
+		self->fd = -1;
 		Py_RETURN_NONE;
 	}
 	errno = internal_close(self);
@@ -821,6 +818,12 @@ get_closed(PyFileIOObject *self, void *closure)
 }
 
 static PyObject *
+get_closefd(PyFileIOObject *self, void *closure)
+{
+	return PyBool_FromLong((long)(self->closefd));
+}
+
+static PyObject *
 get_mode(PyFileIOObject *self, void *closure)
 {
 	return PyUnicode_FromString(mode_string(self));
@@ -828,6 +831,8 @@ get_mode(PyFileIOObject *self, void *closure)
 
 static PyGetSetDef fileio_getsetlist[] = {
 	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
+	{"closefd", (getter)get_closefd, NULL, 
+		"True if the file descriptor will be closed"},
 	{"mode", (getter)get_mode, NULL, "String giving the file mode"},
 	{0},
 };
