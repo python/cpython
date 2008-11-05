@@ -75,7 +75,7 @@ The second subclass allows for connections created by a child process:
 
    This is a subclass derived from :class:`IMAP4` that connects to the
    ``stdin/stdout`` file descriptors created by passing *command* to
-   ``os.popen2()``.
+   ``subprocess.Popen()``.
 
 
 The following utility functions are defined:
@@ -467,13 +467,6 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.xatom(name[, arg[, ...]])
 
    Allow simple extension commands notified by server in ``CAPABILITY`` response.
-
-Instances of :class:`IMAP4_SSL` have just one additional method:
-
-
-.. method:: IMAP4_SSL.ssl()
-
-   Returns SSLObject instance used for the secure connection with the server.
 
 The following attributes are defined on instances of :class:`IMAP4`:
 
