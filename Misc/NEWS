@@ -15,6 +15,9 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #4211: The __path__ attribute of frozen packages is now a list instead
+  of a string as required by PEP 302.
+
 - Issue #3727: Fixed poplib
 
 - Issue #3714: Fixed nntplib by using bytes where appropriate.

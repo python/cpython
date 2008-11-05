@@ -1293,37 +1293,16 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		Py_DECREF(meta_path);
 	}
 
-	if (path != NULL && PyUnicode_Check(path)) {
-		/* The only type of submodule allowed inside a "frozen"
-		   package are other frozen modules or packages. */
-		char *p = _PyUnicode_AsString(path);
-		if (strlen(p) + 1 + strlen(name) >= (size_t)buflen) {
-			PyErr_SetString(PyExc_ImportError,
-					"full frozen module name too long");
-			return NULL;
-		}
-		strcpy(buf, p);
-		strcat(buf, ".");
-		strcat(buf, name);
-		strcpy(name, buf);
-		if (find_frozen(name) != NULL) {
-			strcpy(buf, name);
-			return &fd_frozen;
-		}
-		PyErr_Format(PyExc_ImportError,
-			     "No frozen submodule named %.200s", name);
-		return NULL;
+	if (find_frozen(fullname) != NULL) {
+		strcpy(buf, fullname);
+		return &fd_frozen;
 	}
+
 	if (path == NULL) {
 		if (is_builtin(name)) {
 			strcpy(buf, name);
 			return &fd_builtin;
 		}
-		if ((find_frozen(name)) != NULL) {
-			strcpy(buf, name);
-			return &fd_frozen;
-		}
-
 #ifdef MS_COREDLL
 		fp = PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
 		if (fp != NULL) {
@@ -1333,6 +1312,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #endif
 		path = PySys_GetObject("path");
 	}
+
 	if (path == NULL || !PyList_Check(path)) {
 		PyErr_SetString(PyExc_ImportError,
 				"sys.path must be a list of directory names");
@@ -1886,6 +1866,9 @@ find_frozen(char *name)
 {
 	struct _frozen *p;
 
+	if (!name)
+		return NULL;
+
 	for (p = PyImport_FrozenModules; ; p++) {
 		if (p->name == NULL)
 			return NULL;
@@ -1959,7 +1942,7 @@ PyImport_ImportFrozenModule(char *name)
 	}
 	if (ispackage) {
 		/* Set __path__ to the package name */
-		PyObject *d, *s;
+		PyObject *d, *s, *l;
 		int err;
 		m = PyImport_AddModule(name);
 		if (m == NULL)
@@ -1968,8 +1951,14 @@ PyImport_ImportFrozenModule(char *name)
 		s = PyUnicode_InternFromString(name);
 		if (s == NULL)
 			goto err_return;
-		err = PyDict_SetItemString(d, "__path__", s);
-		Py_DECREF(s);
+		l = PyList_New(1);
+		if (l == NULL) {
+			Py_DECREF(s);
+			goto err_return;
+		}
+		PyList_SET_ITEM(l, 0, s);
+		err = PyDict_SetItemString(d, "__path__", l);
+		Py_DECREF(l);
 		if (err != 0)
 			goto err_return;
 	}
