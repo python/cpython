@@ -15,6 +15,8 @@ What's New in Python 3.0 beta 5
 Core and Builtins
 -----------------
 
+- Issue #1210: Fixed imaplib and its documentation.
+
 - Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
   method on file objects with closefd=False. The file descriptor is still
   kept open but the file object behaves like a closed file. The ``FileIO``
