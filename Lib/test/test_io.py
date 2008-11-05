@@ -1260,6 +1260,7 @@ class MiscIOTest(unittest.TestCase):
             else:
                 self.assert_(issubclass(obj, io.IOBase))
 
+
 def test_main():
     support.run_unittest(IOTest, BytesIOTest, StringIOTest,
                               BufferedReaderTest, BufferedWriterTest,
