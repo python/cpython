@@ -103,6 +103,8 @@ Extension Modules
 Build
 -----
 
+- Issue #4120: Exclude manifest from extension modules in VS2008.
+
 - Issue #4091: Install pythonxy.dll in system32 again.
 
 - Issue #4018: Disable "for me" installations on Vista.
