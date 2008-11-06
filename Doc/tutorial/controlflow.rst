@@ -166,8 +166,8 @@ required syntactically but the program requires no action. For example::
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
    ... 
 
-This is commonly used for creating minimal classes like with exceptions, or
-for skipping unwanted exceptions::
+This is commonly used for creating minimal classes such as exceptions, or
+for ignoring unwanted exceptions::
 
    >>> class ParserError(Exception):
    ...     pass
@@ -178,7 +178,7 @@ for skipping unwanted exceptions::
    ...     pass
    ... 
 
-Another place it can be used is as a place-holder for a function or
+Another place :keyword:`pass` can be used is as a place-holder for a function or
 conditional body when you are working on new code, allowing you to keep
 thinking at a more abstract level.  However, as :keyword:`pass` is silently
 ignored, a better choice may be to raise a :exc:`NotImplementedError`
@@ -193,12 +193,14 @@ exception::
 
 If :keyword:`pass` were used here and you later ran tests, they may fail
 without indicating why.  Using :exc:`NotImplementedError` causes this code
-to raise an exception, allowing you to tell exactly where code that you
-need to complete is.  Note the two call styles of the exceptions above.
-The comment style is useful in that when you remove the exception you can
-easily leave the comment, which ideally would be a good description for
-the block of code the exception is a placeholder for.  The call-style
-will raise a more useful exception however.
+to raise an exception, telling you exactly where the incomplete code 
+is.  Note the two calling styles of the exceptions above.
+The first style, with no message but with an accompanying comment, 
+lets you easily leave the comment when you remove the exception,
+which ideally would be a good description for
+the block of code the exception is a placeholder for.  However, the 
+third example, providing a message for the exception, will produce 
+a more useful traceback.
 
 .. _tut-functions:
 
