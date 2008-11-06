@@ -940,10 +940,12 @@ def add_files(db):
     root.add_file(manifest[0], **manifest[1])
     root.add_file(crtdll[0], **crtdll[1])
     # Copy the manifest
-    manifest_dlls = manifest[0]+".root"
-    open(manifest_dlls, "w").write(open(manifest[1]['src']).read().replace("msvcr","../msvcr"))
-    DLLs.start_component("msvcr90_dlls", feature=private_crt)
-    DLLs.add_file(manifest[0], src=os.path.abspath(manifest_dlls))
+    # Actually, don't do that anymore - no DLL in DLLs should have a manifest
+    # dependency on msvcr90.dll anymore, so this should not be necessary
+    #manifest_dlls = manifest[0]+".root"
+    #open(manifest_dlls, "w").write(open(manifest[1]['src']).read().replace("msvcr","../msvcr"))
+    #DLLs.start_component("msvcr90_dlls", feature=private_crt)
+    #DLLs.add_file(manifest[0], src=os.path.abspath(manifest_dlls))
 
     # Now start the main component for the DLLs directory;
     # no regular files have been added to the directory yet.
