@@ -166,6 +166,39 @@ required syntactically but the program requires no action. For example::
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
    ... 
 
+This is commonly used for creating minimal classes like with exceptions, or
+for skipping unwanted exceptions::
+
+   >>> class ParserError(Exception):
+   ...     pass
+   ... 
+   >>> try:
+   ...     import audioop
+   ... except ImportError:
+   ...     pass
+   ... 
+
+Another place it can be used is as a place-holder for a function or
+conditional body when you are working on new code, allowing you to keep
+thinking at a more abstract level.  However, as :keyword:`pass` is silently
+ignored, a better choice may be to raise a :exc:`NotImplementedError`
+exception::
+
+   >>> def initlog(*args):
+   ...     raise NotImplementedError   # Open logfile if not already open
+   ...     if not logfp:
+   ...         raise NotImplementedError  # Set up dummy log back-end
+   ...     raise NotImplementedError('Call log initialization handler')
+   ... 
+
+If :keyword:`pass` were used here and you later ran tests, they may fail
+without indicating why.  Using :exc:`NotImplementedError` causes this code
+to raise an exception, allowing you to tell exactly where code that you
+need to complete is.  Note the two call styles of the exceptions above.
+The comment style is useful in that when you remove the exception you can
+easily leave the comment, which ideally would be a good description for
+the block of code the exception is a placeholder for.  The call-style
+will raise a more useful exception however.
 
 .. _tut-functions:
 
