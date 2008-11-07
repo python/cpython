@@ -37,8 +37,8 @@ It can be converted to Python 3.x code via 2to3 on the command line::
 
 A diff against the original source file is printed.  2to3 can also write the
 needed modifications right back to the source file.  (Of course, a backup of the
-original is also be made.)  Writing the changes back is enabled with the
-:option:`-w` flag::
+original is also be made unless :option:`-n` is also given.)  Writing the
+changes back is enabled with the :option:`-w` flag::
 
    $ 2to3 -w example.py
 
@@ -50,15 +50,18 @@ After transformation, :file:`example.py` looks like this::
    name = input()
    greet(name)
 
-Comments and and exact indentation are preserved throughout the translation
-process.
+Comments and exact indentation are preserved throughout the translation process.
 
 By default, 2to3 runs a set of predefined fixers.  The :option:`-l` flag lists
-all available fixers.  An explicit set of fixers to run can be given by use of
-the :option:`-f` flag.  The following example runs only the ``imports`` and
-``has_key`` fixers::
+all available fixers.  An explicit set of fixers to run can be given with
+:option:`-f`.  Likewise the :option:`-x` explicitly disables a fixer.  The
+following example runs only the ``imports`` and ``has_key`` fixers::
 
    $ 2to3 -f imports -f has_key example.py
+
+This command runs every fixer except the ``apply`` fixer::
+
+   $ 2to3 -x apply example.py
 
 Some fixers are *explicit*, meaning they aren't run by default and must be
 listed on the command line to be run.  Here, in addition to the default fixers,
@@ -68,25 +71,25 @@ the ``idioms`` fixer is run::
 
 Notice how passing ``all`` enables all default fixers.
 
-Sometimes 2to3 will find a place in your source code that needs to be
-changed, but 2to3 cannot fix automatically.  In this case, 2to3 will print a
-warning beneath the diff for a file.  You should address the warning in order to
-have compliant 3.x code.
+Sometimes 2to3 will find a place in your source code that needs to be changed,
+but 2to3 cannot fix automatically.  In this case, 2to3 will print a warning
+beneath the diff for a file.  You should address the warning in order to have
+compliant 3.x code.
 
 2to3 can also refactor doctests.  To enable this mode, use the :option:`-d`
 flag.  Note that *only* doctests will be refactored.  This also doesn't require
 the module to be valid Python.  For example, doctest like examples in a reST
 document could also be refactored with this option.
 
-The :option:`-v` option enables the output of more information on the
-translation process.
+The :option:`-v` option enables output of more information on the translation
+process.
 
-When the :option:`-p` is passed, 2to3 treats ``print`` as a function instead
-of a statement.  This is useful when ``from __future__ import print_function``
-is being used.  If this option is not given, the print fixer will surround
-print calls in an extra set of parentheses because it cannot differentiate
-between the print statement with parentheses (such as ``print ("a" + "b" +
-"c")``) and a true function call.
+When the :option:`-p` is passed, 2to3 treats ``print`` as a function instead of
+a statement.  This is useful when ``from __future__ import print_function`` is
+being used.  If this option is not given, the print fixer will surround print
+calls in an extra set of parentheses because it cannot differentiate between the
+print statement with parentheses (such as ``print ("a" + "b" + "c")``) and a
+true function call.
 
 
 :mod:`lib2to3` - 2to3's library

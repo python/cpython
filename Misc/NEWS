@@ -49,6 +49,8 @@ Library
 - Issue #4092: Return ArgInfo as promised in the documentation from
   inspect.getargvalues.
 
+- Issue #3935: Properly support list subclasses in bisect's C implementation.
+
 - Issue #4014: Don't claim that Python has an Alpha release status, in addition
   to claiming it is Mature.
 

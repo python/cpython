@@ -1924,7 +1924,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: has_key(key)
 
-      ``dict.has_key(key)`` is equivalent to ``key in d``, but deprecated.
+      Test for the presence of *key* in the dictionary.  :meth:`has_key` is
+      deprecated in favor of ``key in d``.
 
    .. method:: items()
 

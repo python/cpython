@@ -1,20 +1,12 @@
-"""optparse - a powerful, extensible, and easy-to-use option parser.
+"""A powerful, extensible, and easy-to-use option parser.
 
 By Greg Ward <gward@python.net>
 
-Originally distributed as Optik; see http://optik.sourceforge.net/ .
-
-If you have problems with this module, please do not file bugs,
-patches, or feature requests with Python; instead, use Optik's
-SourceForge project page:
-  http://sourceforge.net/projects/optik
+Originally distributed as Optik.
 
 For support, use the optik-users@lists.sourceforge.net mailing list
 (http://lists.sourceforge.net/lists/listinfo/optik-users).
 """
-
-# Python developers: please do not make changes to this file, since
-# it is automatically generated from the Optik source code.
 
 __version__ = "1.5.3"
 
@@ -1274,9 +1266,19 @@ class OptionParser (OptionContainer):
             self.usage = usage
 
     def enable_interspersed_args(self):
+        """Set parsing to not stop on the first non-option, allowing
+        interspersing switches with command arguments. This is the
+        default behavior. See also disable_interspersed_args() and the
+        class documentation description of the attribute
+        allow_interspersed_args."""
         self.allow_interspersed_args = True
 
     def disable_interspersed_args(self):
+        """Set parsing to stop on the first non-option. Use this if
+        you have a command processor which runs another command that
+        has options of its own and you want to make sure these options
+        don't get confused.
+        """
         self.allow_interspersed_args = False
 
     def set_process_default_values(self, process):

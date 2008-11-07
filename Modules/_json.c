@@ -179,11 +179,13 @@ raise_errmsg(char *msg, PyObject *s, Py_ssize_t end)
         errmsg_fn = PyObject_GetAttrString(decoder, "errmsg");
         if (errmsg_fn == NULL)
             return;
-        Py_XDECREF(decoder);
+        Py_DECREF(decoder);
     }
     pymsg = PyObject_CallFunction(errmsg_fn, "(zOn)", msg, s, end);
-    PyErr_SetObject(PyExc_ValueError, pymsg);
-    Py_DECREF(pymsg);
+    if (pymsg) {
+        PyErr_SetObject(PyExc_ValueError, pymsg);
+        Py_DECREF(pymsg);
+    }
 /*
 
 def linecol(doc, pos):
@@ -269,6 +271,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
                 goto bail;
             }
             if (PyList_Append(chunks, chunk)) {
+                Py_DECREF(chunk);
                 goto bail;
             }
             Py_DECREF(chunk);
@@ -370,6 +373,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
             goto bail;
         }
         if (PyList_Append(chunks, chunk)) {
+            Py_DECREF(chunk);
             goto bail;
         }
         Py_DECREF(chunk);
@@ -379,8 +383,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict)
     if (rval == NULL) {
         goto bail;
     }
-    Py_DECREF(chunks);
-    chunks = NULL;
+    Py_CLEAR(chunks);
     return Py_BuildValue("(Nn)", rval, end);
 bail:
     Py_XDECREF(chunks);
@@ -429,6 +432,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
                 goto bail;
             }
             if (PyList_Append(chunks, chunk)) {
+                Py_DECREF(chunk);
                 goto bail;
             }
             Py_DECREF(chunk);
@@ -530,6 +534,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
             goto bail;
         }
         if (PyList_Append(chunks, chunk)) {
+            Py_DECREF(chunk);
             goto bail;
         }
         Py_DECREF(chunk);
@@ -539,8 +544,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict)
     if (rval == NULL) {
         goto bail;
     }
-    Py_DECREF(chunks);
-    chunks = NULL;
+    Py_CLEAR(chunks);
     return Py_BuildValue("(Nn)", rval, end);
 bail:
     Py_XDECREF(chunks);
