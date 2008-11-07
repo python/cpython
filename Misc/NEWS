@@ -16,6 +16,11 @@ Core and Builtins
 Library
 -------
 
+Build
+-----
+
+- Issue #1656675: Register a drop handler for .py* files on Windows.
+
 
 What's New in Python 3.0 release candidate 2
 ============================================
