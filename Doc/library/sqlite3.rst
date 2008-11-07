@@ -62,10 +62,10 @@ may use a different placeholder, such as ``%s`` or ``:1``.) For example::
    c.execute('select * from stocks where symbol=?', t)
 
    # Larger example
-   for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
+   for t in [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
              ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
              ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-            ):
+            ]:
        c.execute('insert into stocks values (?,?,?,?,?)', t)
 
 To retrieve data after executing a SELECT statement, you can either treat the
@@ -421,10 +421,9 @@ Connection Objects
       import sqlite3, os
 
       con = sqlite3.connect('existing_db.db')
-      full_dump = os.linesep.join(con.iterdump())
-      f = open('dump.sql', 'w')
-      f.writelines(full_dump)
-      f.close()
+      with open('dump.sql', 'w') as f:
+          for line in con.iterdump():
+              f.write('%s\n' % line)
 
 
 .. _sqlite3-cursor-objects:
@@ -800,8 +799,8 @@ call, or via the :attr:`isolation_level` property of connections.
 If you want **autocommit mode**, then set :attr:`isolation_level` to None.
 
 Otherwise leave it at its default, which will result in a plain "BEGIN"
-statement, or set it to one of SQLite's supported isolation levels: DEFERRED,
-IMMEDIATE or EXCLUSIVE.
+statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
+"IMMEDIATE" or "EXCLUSIVE".
 
 
 

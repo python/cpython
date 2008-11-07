@@ -145,6 +145,7 @@ Since creating a message object structure from a string or a file object is such
 a common task, two functions are provided as a convenience.  They are available
 in the top-level :mod:`email` package namespace.
 
+.. currentmodule:: email
 
 .. function:: message_from_string(s[, _class[, strict]])
 
