@@ -180,6 +180,166 @@ when implemented, are mapped to module-level functions.
 All of the methods described below are executed atomically.
 
 
+.. _thread-objects:
+
+Thread Objects
+--------------
+
+This class represents an activity that is run in a separate thread of control.
+There are two ways to specify the activity: by passing a callable object to the
+constructor, or by overriding the :meth:`run` method in a subclass.  No other
+methods (except for the constructor) should be overridden in a subclass.  In
+other words,  *only*  override the :meth:`__init__` and :meth:`run` methods of
+this class.
+
+Once a thread object is created, its activity must be started by calling the
+thread's :meth:`start` method.  This invokes the :meth:`run` method in a
+separate thread of control.
+
+Once the thread's activity is started, the thread is considered 'alive'. It
+stops being alive when its :meth:`run` method terminates -- either normally, or
+by raising an unhandled exception.  The :meth:`is_alive` method tests whether the
+thread is alive.
+
+Other threads can call a thread's :meth:`join` method.  This blocks the calling
+thread until the thread whose :meth:`join` method is called is terminated.
+
+A thread has a name.  The name can be passed to the constructor, and read or
+changed through the :attr:`name` attribute.
+
+A thread can be flagged as a "daemon thread".  The significance of this flag is
+that the entire Python program exits when only daemon threads are left.  The
+initial value is inherited from the creating thread.  The flag can be set
+through the :attr:`daemon` attribute.
+
+There is a "main thread" object; this corresponds to the initial thread of
+control in the Python program.  It is not a daemon thread.
+
+There is the possibility that "dummy thread objects" are created. These are
+thread objects corresponding to "alien threads", which are threads of control
+started outside the threading module, such as directly from C code.  Dummy
+thread objects have limited functionality; they are always considered alive and
+daemonic, and cannot be :meth:`join`\ ed.  They are never deleted, since it is
+impossible to detect the termination of alien threads.
+
+
+.. class:: Thread(group=None, target=None, name=None, args=(), kwargs={})
+
+   This constructor should always be called with keyword arguments.  Arguments are:
+
+   *group* should be ``None``; reserved for future extension when a
+   :class:`ThreadGroup` class is implemented.
+
+   *target* is the callable object to be invoked by the :meth:`run` method.
+   Defaults to ``None``, meaning nothing is called.
+
+   *name* is the thread name.  By default, a unique name is constructed of the form
+   "Thread-*N*" where *N* is a small decimal number.
+
+   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+
+   *kwargs* is a dictionary of keyword arguments for the target invocation.
+   Defaults to ``{}``.
+
+   If the subclass overrides the constructor, it must make sure to invoke the base
+   class constructor (``Thread.__init__()``) before doing anything else to the
+   thread.
+
+
+.. method:: Thread.start()
+
+   Start the thread's activity.
+
+   It must be called at most once per thread object.  It arranges for the object's
+   :meth:`run` method to be invoked in a separate thread of control.
+
+   This method will raise a :exc:`RuntimeException` if called more than once on the
+   same thread object.
+
+
+.. method:: Thread.run()
+
+   Method representing the thread's activity.
+
+   You may override this method in a subclass.  The standard :meth:`run` method
+   invokes the callable object passed to the object's constructor as the *target*
+   argument, if any, with sequential and keyword arguments taken from the *args*
+   and *kwargs* arguments, respectively.
+
+
+.. method:: Thread.join([timeout])
+
+   Wait until the thread terminates. This blocks the calling thread until the
+   thread whose :meth:`join` method is called terminates -- either normally or
+   through an unhandled exception -- or until the optional timeout occurs.
+
+   When the *timeout* argument is present and not ``None``, it should be a floating
+   point number specifying a timeout for the operation in seconds (or fractions
+   thereof). As :meth:`join` always returns ``None``, you must call :meth:`isAlive`
+   after :meth:`join` to decide whether a timeout happened -- if the thread is
+   still alive, the :meth:`join` call timed out.
+
+   When the *timeout* argument is not present or ``None``, the operation will block
+   until the thread terminates.
+
+   A thread can be :meth:`join`\ ed many times.
+
+   :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
+   the current thread as that would cause a deadlock. It is also an error to
+   :meth:`join` a thread before it has been started and attempts to do so
+   raises the same exception.
+
+
+.. method:: Thread.getName()
+            Thread.setName()
+
+   Old API for :attr:`~Thread.name`.
+
+
+.. attribute:: Thread.name
+
+   A string used for identification purposes only. It has no semantics.
+   Multiple threads may be given the same name.  The initial name is set by the
+   constructor.
+
+
+.. attribute:: Thread.ident
+
+   The 'thread identifier' of this thread or ``None`` if the thread has not been
+   started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
+   function.  Thread identifiers may be recycled when a thread exits and another
+   thread is created.  The identifier is available even after the thread has
+   exited.
+
+   .. versionadded:: 2.6
+
+
+.. method:: Thread.is_alive()
+            Thread.isAlive()
+
+   Return whether the thread is alive.
+
+   Roughly, a thread is alive from the moment the :meth:`start` method returns
+   until its :meth:`run` method terminates. The module function :func:`enumerate`
+   returns a list of all alive threads.
+
+
+.. method:: Thread.isDaemon()
+            Thread.setDaemon()
+
+   Old API for :attr:`~Thread.daemon`.
+
+
+.. attribute:: Thread.daemon
+
+   The thread's daemon flag. This must be set before :meth:`start` is called,
+   otherwise :exc:`RuntimeError` is raised.
+
+   The initial value is inherited from the creating thread.
+
+   The entire Python program exits when no alive non-daemon threads are left.
+
+
 .. _lock-objects:
 
 Lock Objects
@@ -537,166 +697,6 @@ An event object manages an internal flag that can be set to true with the
    When the timeout argument is present and not ``None``, it should be a floating
    point number specifying a timeout for the operation in seconds (or fractions
    thereof).
-
-
-.. _thread-objects:
-
-Thread Objects
---------------
-
-This class represents an activity that is run in a separate thread of control.
-There are two ways to specify the activity: by passing a callable object to the
-constructor, or by overriding the :meth:`run` method in a subclass.  No other
-methods (except for the constructor) should be overridden in a subclass.  In
-other words,  *only*  override the :meth:`__init__` and :meth:`run` methods of
-this class.
-
-Once a thread object is created, its activity must be started by calling the
-thread's :meth:`start` method.  This invokes the :meth:`run` method in a
-separate thread of control.
-
-Once the thread's activity is started, the thread is considered 'alive'. It
-stops being alive when its :meth:`run` method terminates -- either normally, or
-by raising an unhandled exception.  The :meth:`is_alive` method tests whether the
-thread is alive.
-
-Other threads can call a thread's :meth:`join` method.  This blocks the calling
-thread until the thread whose :meth:`join` method is called is terminated.
-
-A thread has a name.  The name can be passed to the constructor, and read or
-changed through the :attr:`name` attribute.
-
-A thread can be flagged as a "daemon thread".  The significance of this flag is
-that the entire Python program exits when only daemon threads are left.  The
-initial value is inherited from the creating thread.  The flag can be set
-through the :attr:`daemon` attribute.
-
-There is a "main thread" object; this corresponds to the initial thread of
-control in the Python program.  It is not a daemon thread.
-
-There is the possibility that "dummy thread objects" are created. These are
-thread objects corresponding to "alien threads", which are threads of control
-started outside the threading module, such as directly from C code.  Dummy
-thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`join`\ ed.  They are never deleted, since it is
-impossible to detect the termination of alien threads.
-
-
-.. class:: Thread(group=None, target=None, name=None, args=(), kwargs={})
-
-   This constructor should always be called with keyword arguments.  Arguments are:
-
-   *group* should be ``None``; reserved for future extension when a
-   :class:`ThreadGroup` class is implemented.
-
-   *target* is the callable object to be invoked by the :meth:`run` method.
-   Defaults to ``None``, meaning nothing is called.
-
-   *name* is the thread name.  By default, a unique name is constructed of the form
-   "Thread-*N*" where *N* is a small decimal number.
-
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
-
-   *kwargs* is a dictionary of keyword arguments for the target invocation.
-   Defaults to ``{}``.
-
-   If the subclass overrides the constructor, it must make sure to invoke the base
-   class constructor (``Thread.__init__()``) before doing anything else to the
-   thread.
-
-
-.. method:: Thread.start()
-
-   Start the thread's activity.
-
-   It must be called at most once per thread object.  It arranges for the object's
-   :meth:`run` method to be invoked in a separate thread of control.
-
-   This method will raise a :exc:`RuntimeException` if called more than once on the
-   same thread object.
-
-
-.. method:: Thread.run()
-
-   Method representing the thread's activity.
-
-   You may override this method in a subclass.  The standard :meth:`run` method
-   invokes the callable object passed to the object's constructor as the *target*
-   argument, if any, with sequential and keyword arguments taken from the *args*
-   and *kwargs* arguments, respectively.
-
-
-.. method:: Thread.join([timeout])
-
-   Wait until the thread terminates. This blocks the calling thread until the
-   thread whose :meth:`join` method is called terminates -- either normally or
-   through an unhandled exception -- or until the optional timeout occurs.
-
-   When the *timeout* argument is present and not ``None``, it should be a floating
-   point number specifying a timeout for the operation in seconds (or fractions
-   thereof). As :meth:`join` always returns ``None``, you must call :meth:`isAlive`
-   after :meth:`join` to decide whether a timeout happened -- if the thread is
-   still alive, the :meth:`join` call timed out.
-
-   When the *timeout* argument is not present or ``None``, the operation will block
-   until the thread terminates.
-
-   A thread can be :meth:`join`\ ed many times.
-
-   :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
-   the current thread as that would cause a deadlock. It is also an error to
-   :meth:`join` a thread before it has been started and attempts to do so
-   raises the same exception.
-
-
-.. method:: Thread.getName()
-            Thread.setName()
-
-   Old API for :attr:`~Thread.name`.
-
-
-.. attribute:: Thread.name
-
-   A string used for identification purposes only. It has no semantics.
-   Multiple threads may be given the same name.  The initial name is set by the
-   constructor.
-
-
-.. attribute:: Thread.ident
-
-   The 'thread identifier' of this thread or ``None`` if the thread has not been
-   started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
-   function.  Thread identifiers may be recycled when a thread exits and another
-   thread is created.  The identifier is available even after the thread has
-   exited.
-
-   .. versionadded:: 2.6
-
-
-.. method:: Thread.is_alive()
-            Thread.isAlive()
-
-   Return whether the thread is alive.
-
-   Roughly, a thread is alive from the moment the :meth:`start` method returns
-   until its :meth:`run` method terminates. The module function :func:`enumerate`
-   returns a list of all alive threads.
-
-
-.. method:: Thread.isDaemon()
-            Thread.setDaemon()
-
-   Old API for :attr:`~Thread.daemon`.
-
-
-.. attribute:: Thread.daemon
-
-   The thread's daemon flag. This must be set before :meth:`start` is called,
-   otherwise :exc:`RuntimeError` is raised.
-
-   The initial value is inherited from the creating thread.
-
-   The entire Python program exits when no alive non-daemon threads are left.
 
 
 .. _timer-objects:

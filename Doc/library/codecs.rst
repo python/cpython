@@ -32,9 +32,9 @@ It defines the following functions:
 
    * ``name`` The name of the encoding;
 
-   * ``encoder`` The stateless encoding function;
+   * ``encode`` The stateless encoding function;
 
-   * ``decoder`` The stateless decoding function;
+   * ``decode`` The stateless decoding function;
 
    * ``incrementalencoder`` An incremental encoder class or factory function;
 
@@ -46,7 +46,7 @@ It defines the following functions:
 
    The various functions or classes take the following arguments:
 
-   *encoder* and *decoder*: These must be functions or methods which have the same
+   *encode* and *decode*: These must be functions or methods which have the same
    interface as the :meth:`encode`/:meth:`decode` methods of Codec instances (see
    Codec Interface). The functions/methods are expected to work in a stateless
    mode.

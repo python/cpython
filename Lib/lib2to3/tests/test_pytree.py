@@ -353,29 +353,29 @@ class TestPatterns(support.TestCase):
         # Build a pattern matching a leaf
         pl = pytree.LeafPattern(100, "foo", name="pl")
         r = {}
-        self.assertEqual(pl.match(root, results=r), False)
+        self.assertFalse(pl.match(root, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pl.match(n1, results=r), False)
+        self.assertFalse(pl.match(n1, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pl.match(n2, results=r), False)
+        self.assertFalse(pl.match(n2, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pl.match(l1, results=r), True)
+        self.assertTrue(pl.match(l1, results=r))
         self.assertEqual(r, {"pl": l1})
         r = {}
-        self.assertEqual(pl.match(l2, results=r), False)
+        self.assertFalse(pl.match(l2, results=r))
         self.assertEqual(r, {})
         # Build a pattern matching a node
         pn = pytree.NodePattern(1000, [pl], name="pn")
-        self.assertEqual(pn.match(root, results=r), False)
+        self.assertFalse(pn.match(root, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pn.match(n1, results=r), False)
+        self.assertFalse(pn.match(n1, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pn.match(n2, results=r), True)
+        self.assertTrue(pn.match(n2, results=r))
         self.assertEqual(r, {"pn": n2, "pl": l3})
         r = {}
-        self.assertEqual(pn.match(l1, results=r), False)
+        self.assertFalse(pn.match(l1, results=r))
         self.assertEqual(r, {})
-        self.assertEqual(pn.match(l2, results=r), False)
+        self.assertFalse(pn.match(l2, results=r))
         self.assertEqual(r, {})
 
     def testWildcardPatterns(self):
@@ -391,11 +391,11 @@ class TestPatterns(support.TestCase):
         pn = pytree.NodePattern(1000, [pl], name="pn")
         pw = pytree.WildcardPattern([[pn], [pl, pl]], name="pw")
         r = {}
-        self.assertEqual(pw.match_seq([root], r), False)
+        self.assertFalse(pw.match_seq([root], r))
         self.assertEqual(r, {})
-        self.assertEqual(pw.match_seq([n1], r), False)
+        self.assertFalse(pw.match_seq([n1], r))
         self.assertEqual(r, {})
-        self.assertEqual(pw.match_seq([n2], r), True)
+        self.assertTrue(pw.match_seq([n2], r))
         # These are easier to debug
         self.assertEqual(sorted(r.keys()), ["pl", "pn", "pw"])
         self.assertEqual(r["pl"], l1)
@@ -404,7 +404,7 @@ class TestPatterns(support.TestCase):
         # But this is equivalent
         self.assertEqual(r, {"pl": l1, "pn": n2, "pw": [n2]})
         r = {}
-        self.assertEqual(pw.match_seq([l1, l3], r), True)
+        self.assertTrue(pw.match_seq([l1, l3], r))
         self.assertEqual(r, {"pl": l3, "pw": [l1, l3]})
         self.assert_(r["pl"] is l3)
         r = {}

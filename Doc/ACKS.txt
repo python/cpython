@@ -16,6 +16,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * A. Amoroso
    * Pehr Anderson
    * Oliver Andrich
+   * Heidi Annexstad
    * Jesús Cea Avión
    * Daniel Barclay
    * Chris Barker
@@ -189,6 +190,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Reuben Sumner
    * Kalle Svensson
    * Jim Tittsler
+   * David Turner
    * Ville Vainio
    * Martijn Vries
    * Charles G. Waldman

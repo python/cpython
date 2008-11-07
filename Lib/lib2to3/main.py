@@ -15,9 +15,30 @@ class StdoutRefactoringTool(refactor.RefactoringTool):
     Prints output to stdout.
     """
 
+    def __init__(self, fixers, options, explicit, nobackups):
+        self.nobackups = nobackups
+        super(StdoutRefactoringTool, self).__init__(fixers, options, explicit)
+
     def log_error(self, msg, *args, **kwargs):
         self.errors.append((msg, args, kwargs))
         self.logger.error(msg, *args, **kwargs)
+
+    def write_file(self, new_text, filename, old_text):
+        if not self.nobackups:
+            # Make backup
+            backup = filename + ".bak"
+            if os.path.lexists(backup):
+                try:
+                    os.remove(backup)
+                except os.error, err:
+                    self.log_message("Can't remove backup %s", backup)
+            try:
+                os.rename(filename, backup)
+            except os.error, err:
+                self.log_message("Can't rename %s to %s", filename, backup)
+        # Actually write the new file
+        super(StdoutRefactoringTool, self).write_file(new_text,
+                                                      filename, old_text)
 
     def print_output(self, lines):
         for line in lines:
@@ -39,7 +60,9 @@ def main(fixer_pkg, args=None):
     parser.add_option("-d", "--doctests_only", action="store_true",
                       help="Fix up doctests only")
     parser.add_option("-f", "--fix", action="append", default=[],
-                      help="Each FIX specifies a transformation; default all")
+                      help="Each FIX specifies a transformation; default: all")
+    parser.add_option("-x", "--nofix", action="append", default=[],
+                      help="Prevent a fixer from being run.")
     parser.add_option("-l", "--list-fixes", action="store_true",
                       help="List available transformations (fixes/fix_*.py)")
     parser.add_option("-p", "--print-function", action="store_true",
@@ -48,10 +71,14 @@ def main(fixer_pkg, args=None):
                       help="More verbose logging")
     parser.add_option("-w", "--write", action="store_true",
                       help="Write back modified files")
+    parser.add_option("-n", "--nobackups", action="store_true", default=False,
+                      help="Don't write backups for modified files.")
 
     # Parse command line arguments
     refactor_stdin = False
     options, args = parser.parse_args(args)
+    if not options.write and options.nobackups:
+        parser.error("Can't use -n without -w")
     if options.list_fixes:
         print "Available transformations for the -f/--fix option:"
         for fixname in refactor.get_all_fix_names(fixer_pkg):
@@ -74,15 +101,22 @@ def main(fixer_pkg, args=None):
 
     # Initialize the refactoring tool
     rt_opts = {"print_function" : options.print_function}
-    avail_names = refactor.get_fixers_from_package(fixer_pkg)
-    explicit = []
+    avail_fixes = set(refactor.get_fixers_from_package(fixer_pkg))
+    unwanted_fixes = set(fixer_pkg + ".fix_" + fix for fix in options.nofix)
+    explicit = set()
     if options.fix:
-        explicit = [fixer_pkg + ".fix_" + fix
-                    for fix in options.fix if fix != "all"]
-        fixer_names = avail_names if "all" in options.fix else explicit
+        all_present = False
+        for fix in options.fix:
+            if fix == "all":
+                all_present = True
+            else:
+                explicit.add(fixer_pkg + ".fix_" + fix)
+        requested = avail_fixes.union(explicit) if all_present else explicit
     else:
-        fixer_names = avail_names
-    rt = StdoutRefactoringTool(fixer_names, rt_opts, explicit=explicit)
+        requested = avail_fixes.union(explicit)
+    fixer_names = requested.difference(unwanted_fixes)
+    rt = StdoutRefactoringTool(sorted(fixer_names), rt_opts, sorted(explicit),
+                               options.nobackups)
 
     # Refactor all files and directories passed as arguments
     if not rt.errors:

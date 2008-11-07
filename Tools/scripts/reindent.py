@@ -99,7 +99,8 @@ def check(file):
         for name in names:
             fullname = os.path.join(file, name)
             if ((recurse and os.path.isdir(fullname) and
-                 not os.path.islink(fullname))
+                 not os.path.islink(fullname) and
+                 not os.path.split(fullname)[1].startswith("."))
                 or name.lower().endswith(".py")):
                 check(fullname)
         return

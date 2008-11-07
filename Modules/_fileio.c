@@ -251,7 +251,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		self->closefd = 1;
 		if (!closefd) {
 			PyErr_SetString(PyExc_ValueError,
-                            "Cannot use closefd=True with file name");
+                            "Cannot use closefd=False with file name");
 			goto error;
 		}
 

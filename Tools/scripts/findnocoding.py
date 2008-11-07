@@ -12,7 +12,7 @@ import sys, os, re, getopt
 # our pysource module finds Python source files
 try:
     import pysource
-except:
+except ImportError:
     # emulate the module with a simple os.walk
     class pysource:
         has_python_ext = looks_like_python = can_be_compiled = None
