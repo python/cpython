@@ -57,6 +57,8 @@ Library
 Build
 -----
 
+- Issue #1656675: Register a drop handler for .py* files on Windows.
+
 - Issue #4120: Exclude manifest from extension modules in VS2008.
 
 - Issue #4091: Install pythonxy.dll in system32 again.
