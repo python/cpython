@@ -143,8 +143,7 @@ If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
 an empty string (``""``) and the current directory will be added to the
 start of :data:`sys.path`.
 
-   .. seealso:: 
-      :ref:`tut-invoking`
+.. seealso::  :ref:`tut-invoking`
 
 
 Generic options
