@@ -1181,6 +1181,7 @@ def add_registry(db):
     ewi = "Edit with IDLE"
     pat2 = r"Software\Classes\%sPython.%sFile\DefaultIcon"
     pat3 = r"Software\Classes\%sPython.%sFile"
+    pat4 = r"Software\Classes\%sPython.%sFile\shellex\DropHandler"
     tcl_verbs = []
     if have_tcl:
         tcl_verbs=[
@@ -1228,6 +1229,13 @@ def add_registry(db):
               "Python File (no console)", "REGISTRY.def"),
              ("pyc.txt", -1, pat3 % (testprefix, "Compiled"), "",
               "Compiled Python File", "REGISTRY.def"),
+             # Drop Handler
+             ("py.drop", -1, pat4 % (testprefix, ""), "",
+              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
+             ("pyw.drop", -1, pat4 % (testprefix, "NoCon"), "",
+              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
+             ("pyc.drop", -1, pat4 % (testprefix, "Compiled"), "",
+              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
             ])
 
     # Registry keys
