@@ -130,7 +130,9 @@ static int
 forbidden_check(struct compiling *c, const node *n, const char *x)
 {
     if (!strcmp(x, "None"))
-        return ast_error(n, "assignment to None");
+        return ast_error(n, "cannot assign to None");
+    if (!strcmp(x, "__debug__"))
+        return ast_error(n, "cannot assign to __debug__");
     if (Py_Py3kWarningFlag) {
         if (!(strcmp(x, "True") && strcmp(x, "False")) &&
             !ast_warn(c, n, "assignment to True or False is forbidden in 3.x"))
