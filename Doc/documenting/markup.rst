@@ -785,7 +785,7 @@ Substitutions
 -------------
 
 The documentation system provides three substitutions that are defined by default.
-They are set in the build configuration file, see :ref:`doc-build-config`.
+They are set in the build configuration file :file:`conf.py`.
 
 .. describe:: |release|
 
