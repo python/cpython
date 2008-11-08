@@ -239,7 +239,7 @@ available.  They are listed here in alphabetical order.
       ``'\n'``.
 
    .. versionchanged:: 2.3
-      The *flags* and *dont_inherit* arguments.
+      The *flags* and *dont_inherit* arguments were added.
 
    .. versionchanged:: 2.6
       Support for compiling AST objects.
