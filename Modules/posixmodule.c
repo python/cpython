@@ -2389,13 +2389,27 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po)) {
-			Py_UNICODE woutbuf[MAX_PATH*2];
+			Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
+			Py_UNICODE woutbuf[MAX_PATH*2], *woutbufp = woutbuf;
 			Py_UNICODE *wtemp;
-			if (!GetFullPathNameW(PyUnicode_AS_UNICODE(po),
-						sizeof(woutbuf)/sizeof(woutbuf[0]),
-						 woutbuf, &wtemp))
-				return win32_error("GetFullPathName", "");
-			return PyUnicode_FromUnicode(woutbuf, wcslen(woutbuf));
+			DWORD result;
+			PyObject *v;
+			result = GetFullPathNameW(wpath,
+						   sizeof(woutbuf)/sizeof(woutbuf[0]),
+						    woutbuf, &wtemp);
+			if (result > sizeof(woutbuf)/sizeof(woutbuf[0])) {
+				woutbufp = malloc(result * sizeof(Py_UNICODE));
+				if (!woutbufp)
+					return PyErr_NoMemory();
+				result = GetFullPathNameW(wpath, result, woutbufp, &wtemp);
+			}
+			if (result)
+				v = PyUnicode_FromUnicode(woutbufp, wcslen(woutbufp));
+			else
+				v = win32_error_unicode("GetFullPathNameW", wpath);
+			if (woutbufp != woutbuf)
+				free(woutbufp);
+			return v;
 		}
 		/* Drop the argument parsing error as narrow strings
 		   are also valid. */
