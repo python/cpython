@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4283: fix a left-over "iteritems" call in distutils.
+
 Build
 -----
 
