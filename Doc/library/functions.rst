@@ -212,15 +212,15 @@ available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something else than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* (which are new in Python 2.2)
-   control which future statements (see :pep:`236`) affect the compilation of
-   *source*.  If neither is present (or both are zero) the code is compiled with
-   those future statements that are in effect in the code that is calling compile.
-   If the *flags* argument is given and *dont_inherit* is not (or is zero) then the
+   The optional arguments *flags* and *dont_inherit* control which future
+   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   is present (or both are zero) the code is compiled with those future
+   statements that are in effect in the code that is calling compile.  If the
+   *flags* argument is given and *dont_inherit* is not (or is zero) then the
    future statements specified by the *flags* argument are used in addition to
    those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call to
-   compile are ignored.
+   the *flags* argument is it -- the future statements in effect around the call
+   to compile are ignored.
 
    Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
@@ -238,7 +238,10 @@ available.  They are listed here in alphabetical order.
       represented by ``'\r\n'``, use :meth:`str.replace` to change them into
       ``'\n'``.
 
-   .. versionadded:: 2.6
+   .. versionchanged:: 2.3
+      The *flags* and *dont_inherit* arguments.
+
+   .. versionchanged:: 2.6
       Support for compiling AST objects.
 
 
