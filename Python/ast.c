@@ -354,6 +354,7 @@ static const char* FORBIDDEN[] = {
     "None",
     "True",
     "False",
+    "__debug__",
     NULL,
 };
 
