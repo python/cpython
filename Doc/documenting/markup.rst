@@ -8,24 +8,11 @@ markup.  This section contains the reference material for these facilities.
 Documentation for "standard" reST constructs is not included here, though
 they are used in the Python documentation.
 
-File-wide metadata
-------------------
+.. note::
 
-reST has the concept of "field lists"; these are a sequence of fields marked up
-like this::
-
-   :Field name: Field content
-
-A field list at the very top of a file is parsed as the "docinfo", which in
-normal documents can be used to record the author, date of publication and
-other metadata.  In Sphinx, the docinfo is used as metadata, too, but not
-displayed in the output.
-
-At the moment, only one metadata field is recognized:
-
-``nocomments``
-   If set, the web application won't display a comment form for a page generated
-   from this source file.
+   This is just an overview of Sphinx' extended markup capabilities; full
+   coverage can be found in `its own documentation
+   <http://sphinx.pocoo.org/contents.html>`_.
 
 
 Meta-information markup
@@ -87,7 +74,6 @@ As you can see, the module-specific markup consists of two directives, the
    The ``moduleauthor`` directive, which can appear multiple times, names the
    authors of the module code, just like ``sectionauthor`` names the author(s)
    of a piece of documentation.  It too does not result in any output currently.
-
 
 .. note::
 
@@ -272,7 +258,7 @@ Syntax highlighting is handled in a smart way:
   This language is used until the next ``highlightlang`` directive is
   encountered.
 
-* The valid values for the highlighting language are:
+* The values normally used for the highlighting language are:
 
   * ``python`` (the default)
   * ``c``
