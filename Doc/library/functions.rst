@@ -199,11 +199,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: compile(source, filename, mode[, flags[, dont_inherit]])
 
-   Compile the *source* into a code object.  Code objects can be
+   Compile the *source* into a code object or AST object.  Code objects can be
    executed by a call to :func:`exec` or evaluated by a call to
-   :func:`eval`. *source* can either be a string or an AST object.
-   Refer to the :mod:`_ast` module documentation for information on
-   how to compile into and from AST objects.
+   :func:`eval`. *source* can either be a string or an AST object.  Refer to the
+   :mod:`_ast` module documentation for information on how to compile into and
+   from AST objects.
 
    The *filename* argument should give the file from
    which the code was read; pass some recognizable value if it wasn't
