@@ -199,7 +199,7 @@ The grammar for a replacement field is as follows:
       field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" element_index "]")*
       attribute_name: `identifier`
       element_index: `integer`
-      conversion: "r" | "s"
+      conversion: "r" | "s" | "a"
       format_spec: <described in the next section>
       
 In less formal terms, the replacement field starts with a *field_name*, which
