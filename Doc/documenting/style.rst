@@ -66,5 +66,5 @@ Unix
     1970s.
 
 
-.. _Apple Publications Style Guide: http://developer.apple.com/documentation/UserExperience/Conceptual/APStyleGuide/AppleStyleGuide2006.pdf
+.. _Apple Publications Style Guide: http://developer.apple.com/documentation/UserExperience/Conceptual/APStyleGuide/APSG_2008.pdf
 
