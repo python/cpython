@@ -66,9 +66,9 @@ def build_pattern(mapping=MAPPING):
     yield """import_name< 'import' ((%s)
                           | dotted_as_names< any* (%s) any* >) >
           """ % (mod_list, mod_list)
-    yield """import_from< 'from' (%s) 'import'
+    yield """import_from< 'from' (%s) 'import' ['(']
               ( any | import_as_name< any 'as' any > |
-                import_as_names< any* >) >
+                import_as_names< any* >)  [')'] >
           """ % mod_name_list
     yield """import_name< 'import'
                           dotted_as_name< (%s) 'as' any > >
