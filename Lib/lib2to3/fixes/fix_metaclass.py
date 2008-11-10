@@ -35,8 +35,9 @@ def has_metaclass(parent):
         elif node.type == syms.simple_stmt and node.children:
             expr_node = node.children[0]
             if expr_node.type == syms.expr_stmt and expr_node.children:
-                leaf_node = expr_node.children[0]
-                if leaf_node.value == '__metaclass__':
+                left_side = expr_node.children[0]
+                if isinstance(left_side, Leaf) and \
+                        left_side.value == '__metaclass__':
                     return True
     return False
 
@@ -165,12 +166,10 @@ class FixMetaclass(fixer_base.BaseFix):
             if node.children[3].type == syms.arglist:
                 arglist = node.children[3]
             # Node(classdef, ['class', 'name', '(', 'Parent', ')', ':', suite])
-            elif isinstance(node.children[3], Leaf):
+            else:
                 parent = node.children[3].clone()
                 arglist = Node(syms.arglist, [parent])
                 node.set_child(3, arglist)
-            else:
-                raise ValueError("Unexpected class inheritance arglist")
         elif len(node.children) == 6:
             # Node(classdef, ['class', 'name', '(',  ')', ':', suite])
             #                 0        1       2     3    4    5
