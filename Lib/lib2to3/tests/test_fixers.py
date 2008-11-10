@@ -1450,6 +1450,10 @@ class Test_imports(FixerTestCase):
             a = "from %s import foo, bar" % new
             self.check(b, a)
 
+            b = "from %s import (yes, no)" % old
+            a = "from %s import (yes, no)" % new
+            self.check(b, a)
+
     def test_import_module_as(self):
         for old, new in self.modules.items():
             b = "import %s as foo_bar" % old
@@ -3345,6 +3349,10 @@ class Test_import(FixerTestCase):
         a = "from .foo import bar"
         self.check_both(b, a)
 
+        b = "from foo import (bar, baz)"
+        a = "from .foo import (bar, baz)"
+        self.check_both(b, a)
+
     def test_dotted_from(self):
         b = "from green.eggs import ham"
         a = "from .green.eggs import ham"
@@ -3624,6 +3632,12 @@ class Test_metaclass(FixerTestCase):
         """
         self.unchanged(s)
 
+        s = """
+        class X:
+            a[23] = 74
+        """
+        self.unchanged(s)
+
     def test_comments(self):
         b = """
         class X:
@@ -3730,6 +3744,26 @@ class Test_metaclass(FixerTestCase):
         # keywords in the class statement
         b = """class m(a, arg=23): __metaclass__ = Meta"""
         a = """class m(a, arg=23, metaclass=Meta): pass"""
+        self.check(b, a)
+
+        b = """
+        class X(expression(2 + 4)):
+            __metaclass__ = Meta
+        """
+        a = """
+        class X(expression(2 + 4), metaclass=Meta):
+            pass
+        """
+        self.check(b, a)
+
+        b = """
+        class X(expression(2 + 4), x**4):
+            __metaclass__ = Meta
+        """
+        a = """
+        class X(expression(2 + 4), x**4, metaclass=Meta):
+            pass
+        """
         self.check(b, a)
 
 

@@ -363,10 +363,9 @@ class RefactoringTool(object):
             self.log_error("Can't create %s: %s", filename, err)
             return
         try:
-            try:
-                f.write(new_text)
-            except os.error as err:
-                self.log_error("Can't write %s: %s", filename, err)
+            f.write(new_text)
+        except os.error as err:
+            self.log_error("Can't write %s: %s", filename, err)
         finally:
             f.close()
         self.log_debug("Wrote changes to %s", filename)

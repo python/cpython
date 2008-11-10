@@ -18,7 +18,7 @@ from ..fixer_util import FromImport
 class FixImport(fixer_base.BaseFix):
 
     PATTERN = """
-    import_from< type='from' imp=any 'import' any >
+    import_from< type='from' imp=any 'import' ['('] any [')'] >
     |
     import_name< type='import' imp=any >
     """
