@@ -1032,6 +1032,11 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
+    def test_bad_input(self):
+        # Test issue4298
+        s = bytes([0x58, 0, 0, 0, 0x54])
+        self.assertRaises(EOFError, pickle.loads, s)
+
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 

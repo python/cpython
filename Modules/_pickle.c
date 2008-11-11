@@ -489,6 +489,11 @@ unpickler_read(UnpicklerObject *self, char **s, Py_ssize_t n)
         return -1;
     }
 
+    if (PyBytes_GET_SIZE(data) != n) {
+        PyErr_SetNone(PyExc_EOFError);
+        return -1;
+    }
+
     Py_XDECREF(self->last_string);
     self->last_string = data;
 
