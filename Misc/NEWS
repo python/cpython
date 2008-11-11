@@ -16,7 +16,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #4283: fix a left-over "iteritems" call in distutils.
+- Issue #4298: Fix a segfault when pickle.loads is passed a ill-formed input.
+
+- Issue #4283: Fix a left-over "iteritems" call in distutils.
 
 Build
 -----
