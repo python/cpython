@@ -517,10 +517,12 @@ test_u_code(PyObject *self)
 	PyObject *tuple, *obj;
 	Py_UNICODE *value;
 	Py_ssize_t len;
+	int x;
 
 	/* issue4122: Undefined reference to _Py_ascii_whitespace on Windows */
 	/* Just use the macro and check that it compiles */
-	int x = Py_UNICODE_ISSPACE(25);
+        x = Py_UNICODE_ISSPACE(25);
+        x = x;
 
         tuple = PyTuple_New(1);
         if (tuple == NULL)
