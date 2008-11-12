@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4307: The named tuple that ``inspect.getfullargspec()`` returns now
+  uses ``kwonlydefaults`` instead of ``kwdefaults``.
+
 - Issue #4298: Fix a segfault when pickle.loads is passed a ill-formed input.
 
 - Issue #4283: Fix a left-over "iteritems" call in distutils.
