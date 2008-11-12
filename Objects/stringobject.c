@@ -52,6 +52,13 @@ PyObject *
 PyString_FromStringAndSize(const char *str, int size)
 {
 	register PyStringObject *op;
+
+	if (size < 0) {
+		PyErr_SetString(PyExc_SystemError,
+		    "Negative size passed to PyString_FromStringAndSize");
+		return NULL;
+	}
+
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;

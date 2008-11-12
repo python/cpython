@@ -30,6 +30,11 @@ Core and builtins
 - Issues #2588, #2589: Fix potential integer underflow and overflow
   conditions in the PyOS_vsnprintf C API function. CVE-2008-3144.
 
+- Issue #2587: In the C API, PyString_FromStringAndSize() takes a signed size
+  parameter but was not verifying that it was greater than zero.  Values
+  less than zero will now raise a SystemError and return NULL to indicate a
+  bug in the calling C code. CVE-2008-1887.
+
 Extension Modules
 -----------------
 
