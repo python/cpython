@@ -21,6 +21,9 @@ Core and builtins
   would previously leak memory on the error path when such an allocation
   failed have been fixed.
 
+- Issue #1179: Fix CVE-2007-4965 and CVE-2008-1679, multiple integer
+  overflows in the imageop and rgbimgmodule modules.
+
 Extension Modules
 -----------------
 
