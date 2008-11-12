@@ -35,6 +35,9 @@ Core and builtins
   less than zero will now raise a SystemError and return NULL to indicate a
   bug in the calling C code. CVE-2008-1887.
 
+- Security Issue #2: imageop did not validate arguments correctly and could
+  segfault as a result. CVE-2008-4864.
+
 Extension Modules
 -----------------
 
