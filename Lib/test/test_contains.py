@@ -1,3 +1,4 @@
+from collections import deque
 from test.support import run_unittest
 import unittest
 
@@ -6,7 +7,7 @@ class base_set:
     def __init__(self, el):
         self.el = el
 
-class set(base_set):
+class myset(base_set):
     def __contains__(self, el):
         return self.el == el
 
@@ -17,7 +18,7 @@ class seq(base_set):
 class TestContains(unittest.TestCase):
     def test_common_tests(self):
         a = base_set(1)
-        b = set(1)
+        b = myset(1)
         c = seq(1)
         self.assert_(1 in b)
         self.assert_(0 not in b)
@@ -79,6 +80,25 @@ class TestContains(unittest.TestCase):
             self.assert_(Deviant2() not in a)
         except TypeError:
             pass
+
+    def test_nonreflexive(self):
+        # containment and equality tests involving elements that are
+        # not necessarily equal to themselves
+
+        class MyNonReflexive(object):
+            def __eq__(self, other):
+                return False
+            def __hash__(self):
+                return 28
+
+        values = float('nan'), 1, None, 'abc', MyNonReflexive()
+        constructors = list, tuple, dict.fromkeys, set, frozenset, deque
+        for constructor in constructors:
+            container = constructor(values)
+            for elem in container:
+                self.assert_(elem in container)
+            self.assert_(container == constructor(values))
+            self.assert_(container == container)
 
 
 def test_main():

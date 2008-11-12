@@ -117,6 +117,33 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(OverflowError, float('-inf').as_integer_ratio)
         self.assertRaises(ValueError, float('nan').as_integer_ratio)
 
+    def test_float_containment(self):
+        floats = (INF, -INF, 0.0, 1.0, NAN)
+        for f in floats:
+            self.assert_(f in [f], "'%r' not in []" % f)
+            self.assert_(f in (f,), "'%r' not in ()" % f)
+            self.assert_(f in {f}, "'%r' not in set()" % f)
+            self.assert_(f in {f: None}, "'%r' not in {}" % f)
+            self.assertEqual([f].count(f), 1, "[].count('%r') != 1" % f)
+            self.assert_(f in floats, "'%r' not in container" % f)
+
+        for f in floats:
+            # nonidentical containers, same type, same contents
+            self.assert_([f] == [f], "[%r] != [%r]" % (f, f))
+            self.assert_((f,) == (f,), "(%r,) != (%r,)" % (f, f))
+            self.assert_({f} == {f}, "{%r} != {%r}" % (f, f))
+            self.assert_({f : None} == {f: None}, "{%r : None} != "
+                                                   "{%r : None}" % (f, f))
+
+            # identical containers
+            l, t, s, d = [f], (f,), {f}, {f: None}
+            self.assert_(l == l, "[%r] not equal to itself" % f)
+            self.assert_(t == t, "(%r,) not equal to itself" % f)
+            self.assert_(s == s, "{%r} not equal to itself" % f)
+            self.assert_(d == d, "{%r : None} not equal to itself" % f)
+
+
+
 class FormatFunctionsTestCase(unittest.TestCase):
 
     def setUp(self):

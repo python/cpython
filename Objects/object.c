@@ -687,6 +687,15 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
 	PyObject *res;
 	int ok;
 
+	/* Quick result when objects are the same.
+	   Guarantees that identity implies equality. */
+	if (v == w) {
+		if (op == Py_EQ)
+			return 1;
+		else if (op == Py_NE)
+			return 0;
+	}
+
 	res = PyObject_RichCompare(v, w, op);
 	if (res == NULL)
 		return -1;
