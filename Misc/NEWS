@@ -27,6 +27,9 @@ Core and builtins
 - Issue #2586: Fix CVE-2008-1721, zlib crash from
   zlib.decompressobj().flush(val) when val is not positive.
 
+- Issues #2588, #2589: Fix potential integer underflow and overflow
+  conditions in the PyOS_vsnprintf C API function. CVE-2008-3144.
+
 Extension Modules
 -----------------
 
