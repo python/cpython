@@ -4,6 +4,35 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4.6c1?
+=============================
+
+*Release date: xx-XXX-2008*
+
+Core and builtins
+-----------------
+
+- Apply security patches from Apple. CVE-2008-2315.
+
+- Issue #2620: Overflow checking when allocating or reallocating memory
+  was not always being done properly in some python types and extension
+  modules.  PyMem_MALLOC, PyMem_REALLOC, PyMem_NEW and PyMem_RESIZE have
+  all been updated to perform better checks and places in the code that
+  would previously leak memory on the error path when such an allocation
+  failed have been fixed.
+
+Extension Modules
+-----------------
+
+Library
+-------
+
+Tests
+-----
+
+Build
+-----
+
 What's New in Python 2.4.5?
 =============================
 
@@ -17,15 +46,6 @@ What's New in Python 2.4.5c1?
 
 Core and builtins
 -----------------
-
-- Apply security patches from Apple.
-
-- Issue #2620: Overflow checking when allocating or reallocating memory
-  was not always being done properly in some python types and extension
-  modules.  PyMem_MALLOC, PyMem_REALLOC, PyMem_NEW and PyMem_RESIZE have
-  all been updated to perform better checks and places in the code that
-  would previously leak memory on the error path when such an allocation
-  failed have been fixed.
 
 - Added checks for integer overflows, contributed by Google. Some are
   only available if asserts are left in the code, in cases where they
