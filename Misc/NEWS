@@ -24,6 +24,9 @@ Core and builtins
 - Issue #1179: Fix CVE-2007-4965 and CVE-2008-1679, multiple integer
   overflows in the imageop and rgbimgmodule modules.
 
+- Issue #2586: Fix CVE-2008-1721, zlib crash from
+  zlib.decompressobj().flush(val) when val is not positive.
+
 Extension Modules
 -----------------
 
