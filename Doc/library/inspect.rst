@@ -394,7 +394,7 @@ Classes and functions
 
    .. deprecated:: 3.0
       Use :func:`getfullargspec` instead, which provides information about
-      keyword-only arguments.
+      keyword-only arguments and annotations.
 
 
 .. function:: getfullargspec(func)
