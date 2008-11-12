@@ -136,12 +136,11 @@ class CmdLineTest(unittest.TestCase):
             0)
 
         # Test handling of non-ascii data
-        if test.support.verbose:
-            print("FileSystemEncoding:", sys.getfilesystemencoding())
-        command = "assert(ord('\xe9') == 0xe9)"
-        self.assertEqual(
-            self.exit_code('-c', command),
-            0)
+        if sys.getfilesystemencoding() != 'ascii':
+            command = "assert(ord('\xe9') == 0xe9)"
+            self.assertEqual(
+                self.exit_code('-c', command),
+                0)
 
 
 def test_main():
