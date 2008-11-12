@@ -35,7 +35,7 @@ class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
         # Create test data.
         line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
-        self.data = '\n'.join(line_gen)
+        self.data = '\n'.join(line_gen).encode('ascii')
 
         # And write it to a file.
         fp = open(TESTFN, "wb")
@@ -100,21 +100,22 @@ class OtherTests(unittest.TestCase):
         # and that the resulting archive can be read properly by ZipFile
         zipf = zipfile.ZipFile(TESTFN, mode="w")
         zipf.debug = 100
-        numfiles = (1 << 16) * 3/2
-        for i in xrange(numfiles):
+        numfiles = (1 << 16) * 3//2
+        for i in range(numfiles):
             zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
         self.assertEqual(len(zipf.namelist()), numfiles)
         zipf.close()
 
         zipf2 = zipfile.ZipFile(TESTFN, mode="r")
         self.assertEqual(len(zipf2.namelist()), numfiles)
-        for i in xrange(numfiles):
-            self.assertEqual(zipf2.read("foo%08d" % i), "%d" % (i**3 % 57))
+        for i in range(numfiles):
+            content = zipf2.read("foo%08d" % i).decode('ascii')
+            self.assertEqual(content, "%d" % (i**3 % 57))
         zipf.close()
 
     def tearDown(self):
-        test_support.unlink(TESTFN)
-        test_support.unlink(TESTFN2)
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
 
 def test_main():
     run_unittest(TestsWithSourceFile, OtherTests)
