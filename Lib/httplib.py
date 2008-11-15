@@ -846,7 +846,7 @@ class HTTPConnection:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
 
-    def putheader(self, header, value):
+    def putheader(self, header, *values):
         """Send a request header line to the server.
 
         For example: h.putheader('Accept', 'text/html')
@@ -854,7 +854,7 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        str = '%s: %s' % (header, value)
+        str = '%s: %s' % (header, '\r\n\t'.join(values))
         self._output(str)
 
     def endheaders(self):
@@ -989,6 +989,7 @@ class HTTP:
         # set up delegation to flesh out interface
         self.send = conn.send
         self.putrequest = conn.putrequest
+        self.putheader = conn.putheader
         self.endheaders = conn.endheaders
         self.set_debuglevel = conn.set_debuglevel
 
@@ -1007,10 +1008,6 @@ class HTTP:
     def getfile(self):
         "Provide a getfile, since the superclass' does not use this concept."
         return self.file
-
-    def putheader(self, header, *values):
-        "The superclass allows only one value argument."
-        self._conn.putheader(header, '\r\n\t'.join(values))
 
     def getreply(self):
         """Compat definition since superclass does not define it.
