@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- httplib.HTTPConnection.putheader() now accepts an arbitrary number of values
+  for any header, matching what the documentation has claimed for a while.
+
 - Issue #3774: Fixed an error when create a Tkinter menu item without command
   and then remove it.
 
