@@ -492,7 +492,7 @@ descriptions are taken from the corresponding description in the GNU C library.
 Example::
 
    >>> import locale
-   >>> loc = locale.getlocale(locale.LC_ALL) # get current locale
+   >>> loc = locale.getlocale() # get current locale
    >>> locale.setlocale(locale.LC_ALL, 'de_DE') # use German locale; name might vary with platform
    >>> locale.strcoll('f\xe4n', 'foo') # compare a string containing an umlaut 
    >>> locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
