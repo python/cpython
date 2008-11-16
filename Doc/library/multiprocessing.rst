@@ -1780,7 +1780,7 @@ handler type) for messages from different processes to get mixed up.
 Below is an example session with logging turned on::
 
     >>> import multiprocessing, logging
-    >>> logger = multiprocessing.getLogger()
+    >>> logger = multiprocessing.get_logger()
     >>> logger.setLevel(logging.INFO)
     >>> logger.warning('doomed')
     [WARNING/MainProcess] doomed
