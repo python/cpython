@@ -131,7 +131,7 @@ latex_documents = [
 ]
 # Collect all HOWTOs individually
 latex_documents.extend(('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex',
-                        'HOWTO', _stdauthor, 'howto')
+                        '', _stdauthor, 'howto')
                        for fn in os.listdir('howto')
                        if fn.endswith('.rst') and fn != 'index.rst')
 

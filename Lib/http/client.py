@@ -812,7 +812,7 @@ class HTTPConnection:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
 
-    def putheader(self, header, value):
+    def putheader(self, header, *values):
         """Send a request header line to the server.
 
         For example: h.putheader('Accept', 'text/html')
@@ -822,8 +822,11 @@ class HTTPConnection:
 
         if hasattr(header, 'encode'):
             header = header.encode('ascii')
-        if hasattr(value, 'encode'):
-            value = value.encode('ascii')
+        values = list(values)
+        for i, one_value in enumerate(values):
+            if hasattr(one_value, 'encode'):
+                values[i] = one_value.encode('ascii')
+        value = b'\r\n\t'.join(values)
         header = header + b': ' + value
         self._output(header)
 
