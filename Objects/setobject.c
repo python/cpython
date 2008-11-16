@@ -1017,6 +1017,18 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	return (PyObject *)so;
 }
 
+static PyObject *
+make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
+{
+	if (type != &PySet_Type && type != &PyFrozenSet_Type) {
+		if (PyType_IsSubtype(type, &PySet_Type))
+			type = &PySet_Type;
+		else
+			type = &PyFrozenSet_Type;
+	}
+	return make_new_set(type, iterable);
+}
+
 /* The empty frozenset is a singleton */
 static PyObject *emptyfrozenset = NULL;
 
@@ -1129,7 +1141,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 static PyObject *
 set_copy(PySetObject *so)
 {
-	return make_new_set(Py_TYPE(so), (PyObject *)so);
+	return make_new_set_basetype(Py_TYPE(so), (PyObject *)so);
 }
 
 static PyObject *
@@ -1225,7 +1237,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	if ((PyObject *)so == other)
 		return set_copy(so);
 
-	result = (PySetObject *)make_new_set(Py_TYPE(so), NULL);
+	result = (PySetObject *)make_new_set_basetype(Py_TYPE(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1520,7 +1532,7 @@ set_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	
-	result = make_new_set(Py_TYPE(so), NULL);
+	result = make_new_set_basetype(Py_TYPE(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1641,7 +1653,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		Py_INCREF(other);
 		otherset = (PySetObject *)other;
 	} else {
-		otherset = (PySetObject *)make_new_set(Py_TYPE(so), other);
+		otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(so), other);
 		if (otherset == NULL)
 			return NULL;
 	}
@@ -1672,7 +1684,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 	PyObject *rv;
 	PySetObject *otherset;
 
-	otherset = (PySetObject *)make_new_set(Py_TYPE(so), other);
+	otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(so), other);
 	if (otherset == NULL)
 		return NULL;
 	rv = set_symmetric_difference_update(otherset, (PyObject *)so);

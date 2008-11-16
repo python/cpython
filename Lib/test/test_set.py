@@ -71,7 +71,7 @@ class TestJointOps(unittest.TestCase):
         for c in self.letters:
             self.assertEqual(c in u, c in self.d or c in self.otherword)
         self.assertEqual(self.s, self.thetype(self.word))
-        self.assertEqual(type(u), self.thetype)
+        self.assertEqual(type(u), self.basetype)
         self.assertRaises(PassThru, self.s.union, check_pass_thru())
         self.assertRaises(TypeError, self.s.union, [[]])
         for C in set, frozenset, dict.fromkeys, str, list, tuple:
@@ -97,7 +97,7 @@ class TestJointOps(unittest.TestCase):
         for c in self.letters:
             self.assertEqual(c in i, c in self.d and c in self.otherword)
         self.assertEqual(self.s, self.thetype(self.word))
-        self.assertEqual(type(i), self.thetype)
+        self.assertEqual(type(i), self.basetype)
         self.assertRaises(PassThru, self.s.intersection, check_pass_thru())
         for C in set, frozenset, dict.fromkeys, str, list, tuple:
             self.assertEqual(self.thetype('abcba').intersection(C('cdc')), set('cc'))
@@ -142,7 +142,7 @@ class TestJointOps(unittest.TestCase):
         for c in self.letters:
             self.assertEqual(c in i, c in self.d and c not in self.otherword)
         self.assertEqual(self.s, self.thetype(self.word))
-        self.assertEqual(type(i), self.thetype)
+        self.assertEqual(type(i), self.basetype)
         self.assertRaises(PassThru, self.s.difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference, [[]])
         for C in set, frozenset, dict.fromkeys, str, list, tuple:
@@ -169,7 +169,7 @@ class TestJointOps(unittest.TestCase):
         for c in self.letters:
             self.assertEqual(c in i, (c in self.d) ^ (c in self.otherword))
         self.assertEqual(self.s, self.thetype(self.word))
-        self.assertEqual(type(i), self.thetype)
+        self.assertEqual(type(i), self.basetype)
         self.assertRaises(PassThru, self.s.symmetric_difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference, [[]])
         for C in set, frozenset, dict.fromkeys, str, list, tuple:
@@ -325,6 +325,7 @@ class TestJointOps(unittest.TestCase):
 
 class TestSet(TestJointOps):
     thetype = set
+    basetype = set
 
     def test_init(self):
         s = self.thetype()
@@ -357,6 +358,7 @@ class TestSet(TestJointOps):
         dup = self.s.copy()
         self.assertEqual(self.s, dup)
         self.assertNotEqual(id(self.s), id(dup))
+        self.assertEqual(type(dup), self.basetype)
 
     def test_add(self):
         self.s.add('Q')
@@ -595,6 +597,7 @@ class SetSubclass(set):
 
 class TestSetSubclass(TestSet):
     thetype = SetSubclass
+    basetype = set
 
 class SetSubclassWithKeywordArgs(set):
     def __init__(self, iterable=[], newarg=None):
@@ -608,6 +611,7 @@ class TestSetSubclassWithKeywordArgs(TestSet):
 
 class TestFrozenSet(TestJointOps):
     thetype = frozenset
+    basetype = frozenset
 
     def test_init(self):
         s = self.thetype(self.word)
@@ -673,6 +677,7 @@ class FrozenSetSubclass(frozenset):
 
 class TestFrozenSetSubclass(TestFrozenSet):
     thetype = FrozenSetSubclass
+    basetype = frozenset
 
     def test_constructor_identity(self):
         s = self.thetype(range(3))
