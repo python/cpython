@@ -12,6 +12,8 @@ What's New in Python 2.6.1 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
+
 - Issue #4048: The parser module now correctly validates relative imports.
 
 - Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
