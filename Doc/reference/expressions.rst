@@ -1003,6 +1003,12 @@ Comparison of objects of the same type depends on the type:
 
 * Numbers are compared arithmetically.
 
+* The values :const:`float('NaN')` and :const:`Decimal('NaN')` are special.
+  The are identical to themselves, ``x is x`` but are not equal to themselves,
+  ``x != x``.  Additionally, comparing any value to a not-a-number value
+  will return ``False``.  For example, both ``3 < float('NaN')`` and
+  ``float('NaN') < 3`` will return ``False``.
+
 * Bytes objects are compared lexicographically using the numeric values of their
   elements.
 
@@ -1024,19 +1030,36 @@ Comparison of objects of the same type depends on the type:
   value)`` lists compare equal. [#]_ Outcomes other than equality are resolved
   consistently, but are not otherwise defined. [#]_
 
+* Sets and frozensets define comparison operators to mean subset and superset
+  tests.  Those relations do not define total orderings (the two sets ``{1,2}``
+  and {2,3} are not equal, nor subsets of one another, nor supersets of one
+  another).  Accordingly, sets are not appropriate arguments for functions
+  which depend on total ordering.  For example, :func:`min`, :func:`max`, and
+  :func:`sorted` produce undefined results given a list of sets as inputs.
+
 * Most other objects of builtin types compare unequal unless they are the same
   object; the choice whether one object is considered smaller or larger than
   another one is made arbitrarily but consistently within one execution of a
   program.
 
+Comparison of objects of the differing types depends on whether either
+of the types provide explicit support for the comparison.  Most numberic types
+can be compared with one another, but comparisons of :class:`float` and
+:class:`Decimal` are not supported to avoid the inevitable confusion arising            
+from representation issues such as ``float('1.1')`` being inexactly represented
+and therefore not exactly equal to ``Decimal('1.1')`` which is.  When
+cross-type comparison is not supported, the comparison method returns
+``NotImplemented``.  This can create the illusion of non-transitivity between
+supported cross-type comparisons and unsupported comparisons.  For example,
+``Decimal(2) == 2`` and `2 == float(2)`` but ``Decimal(2) != float(2)``.
+
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
 in s`` returns the negation of ``x in s``.  All built-in sequences and set types
 support this as well as dictionary, for which :keyword:`in` tests whether a the
-dictionary has a given key.
-
-For the list and tuple types, ``x in y`` is true if and only if there exists an
-index *i* such that ``x == y[i]`` is true.
+dictionary has a given key. For container types such as list, tuple, set,
+frozenset, dict, or collections.deque, the expression ``x in y`` equivalent to
+``any(x is e or x == e for val e in y)``.
 
 For the string and bytes types, ``x in y`` is true if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
