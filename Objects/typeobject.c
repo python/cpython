@@ -4594,6 +4594,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 		tp->tp_getattro = slot_tp_getattro;
 		return slot_tp_getattro(self, name);
 	}
+	Py_INCREF(getattr);
 	getattribute = _PyType_Lookup(tp, getattribute_str);
 	if (getattribute == NULL ||
 	    (getattribute->ob_type == &PyWrapperDescr_Type &&
@@ -4606,6 +4607,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 		PyErr_Clear();
 		res = PyObject_CallFunction(getattr, "OO", self, name);
 	}
+	Py_DECREF(getattr);
 	return res;
 }
 

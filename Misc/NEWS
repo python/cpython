@@ -12,6 +12,9 @@ What's New in Python 2.4.6c1?
 Core and builtins
 -----------------
 
+- Issue #4230: Fix a crash when a class has a custom __getattr__ and an
+  __getattribute__ method that deletes the __getattr__ attribute.
+
 - Apply security patches from Apple. CVE-2008-2315.
 
 - Issue #2620: Overflow checking when allocating or reallocating memory

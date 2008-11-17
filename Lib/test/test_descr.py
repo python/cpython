@@ -4087,6 +4087,24 @@ def notimplemented():
                 check(iexpr, c, N1)
                 check(iexpr, c, N2)
 
+def test_lost_getattr():
+    # issue 4230
+    import gc
+    class EvilGetattribute(object):
+        def __getattr__(self, name):
+            raise AttributeError(name)
+        def __getattribute__(self, name):
+            del EvilGetattribute.__getattr__
+            for i in range(5):
+                gc.collect()
+            raise AttributeError(name)
+
+    try:
+        # This used to segfault
+        EvilGetattribute().attr
+    except AttributeError:
+        pass
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     wrapper_segfault()
@@ -4183,6 +4201,7 @@ def test_main():
     vicious_descriptor_nonsense()
     test_init()
     notimplemented()
+    test_lost_getattr()
 
     if verbose: print "All OK"
 
