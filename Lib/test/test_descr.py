@@ -4001,6 +4001,46 @@ order (MRO) for bases """
         c[1:2] = 3
         self.assertEqual(c.value, 3)
 
+    def test_getattr_hooks(self):
+        # issue 4230
+
+        class Descriptor(object):
+            counter = 0
+            def __get__(self, obj, objtype=None):
+                def getter(name):
+                    self.counter += 1
+                    raise AttributeError(name)
+                return getter
+
+        descr = Descriptor()
+        class A(object):
+            __getattribute__ = descr
+        class B(object):
+            __getattr__ = descr
+        class C(object):
+            __getattribute__ = descr
+            __getattr__ = descr
+
+        self.assertRaises(AttributeError, getattr, A(), "attr")
+        self.assertEquals(descr.counter, 1)
+        self.assertRaises(AttributeError, getattr, B(), "attr")
+        self.assertEquals(descr.counter, 2)
+        self.assertRaises(AttributeError, getattr, C(), "attr")
+        self.assertEquals(descr.counter, 4)
+
+        import gc
+        class EvilGetattribute(object):
+            # This used to segfault
+            def __getattr__(self, name):
+                raise AttributeError(name)
+            def __getattribute__(self, name):
+                del EvilGetattribute.__getattr__
+                for i in range(5):
+                    gc.collect()
+                raise AttributeError(name)
+
+        self.assertRaises(AttributeError, getattr, EvilGetattribute(), "attr")
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
