@@ -1881,8 +1881,7 @@ Dictionary view objects
 The objects returned by :meth:`dict.keys`, :meth:`dict.values` and
 :meth:`dict.items` are *view objects*.  They provide a dynamic view on the
 dictionary's entries, which means that when the dictionary changes, the view
-reflects these changes.  The keys and items views have a set-like character
-since their entries
+reflects these changes.
 
 Dictionary views can be iterated over to yield their respective data, and
 support membership tests:
@@ -1910,8 +1909,11 @@ support membership tests:
    items (in the latter case, *x* should be a ``(key, value)`` tuple).
 
 
-The keys and items views also provide set-like operations ("other" here refers
-to another dictionary view or a set):
+Keys views are set-like since their entries are unique and hashable.  If all
+values are hashable, so that (key, value) pairs are unique and hashable, then
+the items view is also set-like.  (Values views are not treated as set-like
+since the entries are generally not unique.)  Then these set operations are
+available ("other" refers either to another view or a set):
 
 .. describe:: dictview & other
 
@@ -1930,11 +1932,6 @@ to another dictionary view or a set):
 
    Return the symmetric difference (all elements either in *dictview* or
    *other*, but not in both) of the dictview and the other object as a new set.
-
-.. warning::
-
-   Since a dictionary's values are not required to be hashable, any of these
-   four operations will fail if an involved dictionary contains such a value.
 
 
 An example of dictionary view usage::
