@@ -234,7 +234,7 @@ _PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 	if (!def)
 		return -1;
 	if (!state->modules_by_index) {
-		state->modules_by_index = PyList_New(20);
+		state->modules_by_index = PyList_New(0);
 		if (!state->modules_by_index)
 			return -1;
 	}

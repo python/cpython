@@ -13,6 +13,8 @@ What's New in Python 3.0 release candiate 3?
 Core and Builtins
 -----------------
 
+- Issue #3327: Don't overallocate in the modules_by_index list.
+
 - Issue #1721812:  Binary set operations and copy() returned the input type
   instead of the appropriate base type.  This was incorrect because set 
   subclasses would be created without their __init__() method being called.
