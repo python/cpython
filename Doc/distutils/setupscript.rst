@@ -588,8 +588,6 @@ Notes:
 'list of strings'
    See below.
 
-None of the string values may be Unicode.
-
 Encoding the version information is an art in itself. Python packages generally
 adhere to the version format *major.minor[.patch][sub]*. The major number is 0
 for initial, experimental releases of software. It is incremented for releases
