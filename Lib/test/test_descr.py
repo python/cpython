@@ -1073,20 +1073,21 @@ def consistency_with_epg():
           (EditableScrollablePane, ScrollablePane, EditablePane,
            Pane, ScrollingMixin, EditingMixin, object))
 
+def raises(exc, expected, callable, *args):
+    try:
+        callable(*args)
+    except exc, msg:
+        if not str(msg).startswith(expected):
+            raise TestFailed, "Message %r, expected %r" % (str(msg),
+                                                           expected)
+    else:
+        raise TestFailed, "Expected %s" % exc
+
 mro_err_msg = """Cannot create a consistent method resolution
 order (MRO) for bases """
 
 def mro_disagreement():
     if verbose: print "Testing error messages for MRO disagreement..."
-    def raises(exc, expected, callable, *args):
-        try:
-            callable(*args)
-        except exc, msg:
-            if not str(msg).startswith(expected):
-                raise TestFailed, "Message %r, expected %r" % (str(msg),
-                                                               expected)
-        else:
-            raise TestFailed, "Expected %s" % exc
     class A(object): pass
     class B(A): pass
     class C(object): pass
@@ -4171,6 +4172,45 @@ def methodwrapper():
     vereq(t.__add__, (7,).__add__)
     vereq(hash(t.__add__), hash((7,).__add__))
 
+def test_getattr_hooks():
+    # issue 4230
+    class Descriptor(object):
+        counter = 0
+        def __get__(self, obj, objtype=None):
+            def getter(name):
+                self.counter += 1
+                raise AttributeError(name)
+            return getter
+
+    descr = Descriptor()
+    class A(object):
+        __getattribute__ = descr
+    class B(object):
+        __getattr__ = descr
+    class C(object):
+        __getattribute__ = descr
+        __getattr__ = descr
+
+    raises(AttributeError, "attr", getattr, A(), "attr")
+    vereq(descr.counter, 1)
+    raises(AttributeError, "attr", getattr, B(), "attr")
+    vereq(descr.counter, 2)
+    raises(AttributeError, "attr", getattr, C(), "attr")
+    vereq(descr.counter, 4)
+
+    import gc
+    class EvilGetattribute(object):
+        # This used to segfault
+        def __getattr__(self, name):
+            raise AttributeError(name)
+        def __getattribute__(self, name):
+            del EvilGetattribute.__getattr__
+            for i in range(5):
+                gc.collect()
+            raise AttributeError(name)
+
+    raises(AttributeError, "attr", getattr, EvilGetattribute(), "attr")
+
 def notimplemented():
     # all binary methods should be able to return a NotImplemented
     if verbose:
@@ -4352,6 +4392,7 @@ def test_main():
     methodwrapper()
     notimplemented()
     test_assign_slice()
+    test_getattr_hooks()
 
     if verbose: print "All OK"
 

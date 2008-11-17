@@ -12,6 +12,8 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
+
 - Issue #4048: The parser module now correctly validates relative imports.
 
 - Issue #4176: Fixed a crash when pickling an object which ``__reduce__``

@@ -4738,6 +4738,24 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 }
 
 static PyObject *
+call_attribute(PyObject *self, PyObject *attr, PyObject *name)
+{
+	PyObject *res, *descr = NULL;
+	descrgetfunc f = attr->ob_type->tp_descr_get;
+
+	if (f != NULL) {
+		descr = f(attr, self, (PyObject *)(self->ob_type));
+		if (descr == NULL)
+			return NULL;
+		else
+			attr = descr;
+	}
+	res = PyObject_CallFunctionObjArgs(attr, name, NULL);
+	Py_XDECREF(descr);
+	return res;
+}
+
+static PyObject *
 slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
 	PyTypeObject *tp = self->ob_type;
@@ -4756,24 +4774,39 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 		if (getattribute_str == NULL)
 			return NULL;
 	}
+	/* speed hack: we could use lookup_maybe, but that would resolve the
+	   method fully for each attribute lookup for classes with
+	   __getattr__, even when the attribute is present. So we use
+	   _PyType_Lookup and create the method only when needed, with
+	   call_attribute. */
 	getattr = _PyType_Lookup(tp, getattr_str);
 	if (getattr == NULL) {
 		/* No __getattr__ hook: use a simpler dispatcher */
 		tp->tp_getattro = slot_tp_getattro;
 		return slot_tp_getattro(self, name);
 	}
+	Py_INCREF(getattr);
+	/* speed hack: we could use lookup_maybe, but that would resolve the
+	   method fully for each attribute lookup for classes with
+	   __getattr__, even when self has the default __getattribute__
+	   method. So we use _PyType_Lookup and create the method only when
+	   needed, with call_attribute. */
 	getattribute = _PyType_Lookup(tp, getattribute_str);
 	if (getattribute == NULL ||
 	    (getattribute->ob_type == &PyWrapperDescr_Type &&
 	     ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
 	     (void *)PyObject_GenericGetAttr))
 		res = PyObject_GenericGetAttr(self, name);
-	else
-		res = PyObject_CallFunctionObjArgs(getattribute, self, name, NULL);
+	else {
+		Py_INCREF(getattribute);
+		res = call_attribute(self, getattribute, name);
+		Py_DECREF(getattribute);
+	}
 	if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Clear();
-		res = PyObject_CallFunctionObjArgs(getattr, self, name, NULL);
+		res = call_attribute(self, getattr, name);
 	}
+	Py_DECREF(getattr);
 	return res;
 }
 
