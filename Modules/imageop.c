@@ -590,7 +590,7 @@ imageop_rgb2rgb8(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
-	if ( !check_multiply_size(len*4, x, "x", y, "y", 4) )
+	if ( !check_multiply_size(len, x, "x", y, "y", 4) )
 		return 0;
 	nlen = x*y;
 	if ( !check_multiply(nlen, x, y) )
