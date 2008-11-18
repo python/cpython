@@ -13,6 +13,9 @@ What's New in Python 3.0 release candiate 3?
 Core and Builtins
 -----------------
 
+- Issue #4349: sys.path included a non-existent platform directory because of a
+  faulty Makefile.
+
 - Issue #3327: Don't overallocate in the modules_by_index list.
 
 - Issue #1721812:  Binary set operations and copy() returned the input type
