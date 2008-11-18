@@ -430,6 +430,16 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				cumlc = 0;
 				break;
 
+				/* Replace POP_TOP JUMP_FORWARD 1 POP_TOP 
+				   with    NOP NOP NOP NOP POP_TOP.           */
+			case POP_TOP:
+				if (UNCONDITIONAL_JUMP(codestr[i+1]) &&
+					GETJUMPTGT(codestr, i+1) == i+5 &&
+					codestr[i+4] == POP_TOP &&
+					ISBASICBLOCK(blocks,i,4))
+						memset(codestr+i, NOP, 4);
+				break;
+
 				/* Try to fold tuples of constants (includes a case for lists
 				   which are only used for "in" and "not in" tests).
 				   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
