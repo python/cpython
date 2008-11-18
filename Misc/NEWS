@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
+
 - Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
 
 - Issue #4048: The parser module now correctly validates relative imports.
