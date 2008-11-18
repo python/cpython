@@ -15,6 +15,7 @@ SIZES = (1, 2, 3, 4)
 _VALUES = (1, 2, 2**10, 2**15-1, 2**15, 2**15+1, 2**31-2, 2**31-1)
 VALUES = tuple( -x for x in reversed(_VALUES) ) + (0,) + _VALUES
 AAAAA = "A" * 1024
+MAX_LEN = 2**20
 
 
 class InputValidationTests(unittest.TestCase):
@@ -26,7 +27,7 @@ class InputValidationTests(unittest.TestCase):
                 strlen = abs(width * height)
                 if size:
                     strlen *= size
-                if strlen < 1024:
+                if strlen < MAX_LEN:
                     data = "A" * strlen
                 else:
                     data = AAAAA
