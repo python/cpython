@@ -614,6 +614,6 @@ if os.name == 'posix':
             fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
         def set_file(self, fd):
-            self._fileno = fd
             self.socket = file_wrapper(fd)
+            self._fileno = self.socket.fileno()
             self.add_channel()
