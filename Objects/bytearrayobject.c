@@ -1351,7 +1351,7 @@ bytes_translate(PyByteArrayObject *self, PyObject *args)
 {
     register char *input, *output;
     register const char *table;
-    register Py_ssize_t i, c, changed = 0;
+    register Py_ssize_t i, c;
     PyObject *input_obj = (PyObject*)self;
     const char *output_start;
     Py_ssize_t inlen;
@@ -1397,14 +1397,8 @@ bytes_translate(PyByteArrayObject *self, PyObject *args)
         /* If no deletions are required, use faster code */
         for (i = inlen; --i >= 0; ) {
             c = Py_CHARMASK(*input++);
-            if (Py_CHARMASK((*output++ = table[c])) != c)
-                changed = 1;
+            *output++ = table[c];
         }
-        if (changed || !PyByteArray_CheckExact(input_obj))
-            goto done;
-        Py_DECREF(result);
-        Py_INCREF(input_obj);
-        result = input_obj;
         goto done;
     }
 
@@ -1419,13 +1413,6 @@ bytes_translate(PyByteArrayObject *self, PyObject *args)
         if (trans_table[c] != -1)
             if (Py_CHARMASK(*output++ = (char)trans_table[c]) == c)
                     continue;
-        changed = 1;
-    }
-    if (!changed && PyByteArray_CheckExact(input_obj)) {
-        Py_DECREF(result);
-        Py_INCREF(input_obj);
-        result = input_obj;
-        goto done;
     }
     /* Fix the size of the resulting string */
     if (inlen > 0)
@@ -1454,8 +1441,7 @@ done:
    !memcmp(target+offset+1, pattern+1, length-2) )
 
 
-/* Bytes ops must return a string.  */
-/* If the object is subclass of bytes, create a copy */
+/* Bytes ops must return a string, create a copy */
 Py_LOCAL(PyByteArrayObject *)
 return_self(PyByteArrayObject *self)
 {

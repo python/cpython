@@ -738,6 +738,16 @@ class ByteArrayTest(BaseBytesTest):
         b.insert(0, Indexable(ord('A')))
         self.assertEqual(b, b'A')
 
+    def test_copied(self):
+        # Issue 4348.  Make sure that operations that don't mutate the array
+        # copy the bytes.
+        b = bytearray(b'abc')
+        #self.assertFalse(b is b.replace(b'abc', b'cde', 0))
+
+        t = bytearray([i for i in range(256)])
+        x = bytearray(b'')
+        self.assertFalse(x is x.translate(t))
+
     def test_partition_bytearray_doesnt_share_nullstring(self):
         a, b, c = bytearray(b"x").partition(b"y")
         self.assertEqual(b, b"")
