@@ -357,7 +357,7 @@ class ScrolledCanvas(TK.Frame):
     def __init__(self, master, width=500, height=350,
                                           canvwidth=600, canvheight=500):
         TK.Frame.__init__(self, master, width=width, height=height)
-        self._root = self.winfo_toplevel()
+        self._rootwindow = self.winfo_toplevel()
         self.width, self.height = width, height
         self.canvwidth, self.canvheight = canvwidth, canvheight
         self.bg = "white"
@@ -377,7 +377,7 @@ class ScrolledCanvas(TK.Frame):
         self.hscroll.grid(padx=1, in_ = self, pady=1, row=1,
                 column=0, rowspan=1, columnspan=1, sticky='news')
         self.reset()
-        self._root.bind('<Configure>', self.onResize)
+        self._rootwindow.bind('<Configure>', self.onResize)
 
     def reset(self, canvwidth=None, canvheight=None, bg = None):
         """Ajust canvas and scrollbars according to given canvas size."""
