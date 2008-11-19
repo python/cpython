@@ -1202,20 +1202,22 @@ Basic customization
       object: dictionary
       builtin: hash
 
-   Called for the key object for dictionary operations, and by the built-in
-   function :func:`hash`.  Should return an integer usable as a hash value
-   for dictionary operations.  The only required property is that objects which
-   compare equal have the same hash value; it is advised to somehow mix together
-   (e.g., using exclusive or) the hash values for the components of the object that
-   also play a part in comparison of objects.
+   Called by built-in function :func:`hash` and for operations on members of
+   hashed collections including :class:`set`, :class:`frozenset`, and
+   :class:`dict`.  :meth:`__hash__` should return an integer.  The only required
+   property is that objects which compare equal have the same hash value; it is
+   advised to somehow mix together (e.g. using exclusive or) the hash values for
+   the components of the object that also play a part in comparison of objects.
 
    If a class does not define an :meth:`__eq__` method it should not define a
    :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
-   :meth:`__hash__`, its instances will not be usable as dictionary keys.  If a
-   class defines mutable objects and implements an :meth:`__eq__` method, it
-   should not implement :meth:`__hash__`, since the dictionary implementation
-   requires that a key's hash value is immutable (if the object's hash value
-   changes, it will be in the wrong hash bucket).
+   :meth:`__hash__`, its instances will not be usable as items in hashable
+   collections.  If a class defines mutable objects and implements an
+   :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
+   implementation of hashable collections requires that a key's hash value is
+   immutable (if the object's hash value changes, it will be in the wrong hash
+   bucket).
+
 
    User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
