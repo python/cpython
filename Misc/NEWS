@@ -45,6 +45,8 @@ Library
 Build
 -----
 
+- Issue #4289: Remove Cancel button from AdvancedDlg.
+
 - Issue #1656675: Register a drop handler for .py* files on Windows.
 
 Tools/Demos
