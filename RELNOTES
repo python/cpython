@@ -20,3 +20,10 @@ Additional notes for Python 3.0 final
   If you need bsddb3 support in Python 3.0, you can find it here:
 
   http://pypi.python.org/pypi/bsddb3
+
+* The email package needs quite a bit of work to make it consistent with
+  respect to bytes and strings.  There have been discussions on
+  email-sig@python.org about where to go with the email package for 3.0, but
+  this was not resolved in time for 3.0 final.  With enough care though, the
+  email package in Python 3.0 should be about as usable as it is with Python
+  2.
