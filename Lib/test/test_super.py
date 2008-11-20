@@ -70,6 +70,17 @@ class TestSuper(unittest.TestCase):
         e = E()
         self.assertEqual(e.cm(), (e, (E, (E, (E, 'A'), 'B'), 'C'), 'D'))
 
+    def testSuperWithClosure(self):
+        # Issue4360: super() did not work in a function that
+        # contains a closure
+        class E(A):
+            def f(self):
+                def nested():
+                    self
+                return super().f() + 'E'
+
+        self.assertEqual(E().f(), 'AE')
+
 
 def test_main():
     support.run_unittest(TestSuper)

@@ -6170,8 +6170,9 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 			assert(PyUnicode_Check(name));
                         if (!PyUnicode_CompareWithASCIIString(name,
                                                               "__class__")) {
-				PyObject *cell =
-					f->f_localsplus[co->co_nlocals + i];
+				Py_ssize_t index = co->co_nlocals + 
+					PyTuple_GET_SIZE(co->co_cellvars) + i;
+				PyObject *cell = f->f_localsplus[index];
 				if (cell == NULL || !PyCell_Check(cell)) {
 					PyErr_SetString(PyExc_SystemError,
 					  "super(): bad __class__ cell");
