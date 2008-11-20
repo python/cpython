@@ -239,8 +239,6 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
         raise ValueError("invalid buffering size")
     if buffering == 0:
         if binary:
-            raw._name = file
-            raw._mode = mode
             return raw
         raise ValueError("can't have unbuffered text I/O")
     if updating:
@@ -252,11 +250,8 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
     else:
         raise ValueError("unknown mode: %r" % mode)
     if binary:
-        buffer.name = file
-        buffer.mode = mode
         return buffer
     text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.name = file
     text.mode = mode
     return text
 
@@ -616,6 +611,10 @@ class FileIO(_fileio._FileIO, RawIOBase):
     # that _fileio._FileIO inherits from io.RawIOBase (which would be hard
     # to do since _fileio.c is written in C).
 
+    def __init__(self, name, mode="r", closefd=True):
+        _fileio._FileIO.__init__(self, name, mode, closefd)
+        self._name = name
+
     def close(self):
         _fileio._FileIO.close(self)
         RawIOBase.close(self)
@@ -623,11 +622,6 @@ class FileIO(_fileio._FileIO, RawIOBase):
     @property
     def name(self):
         return self._name
-
-    # XXX(gb): _FileIO already has a mode property
-    @property
-    def mode(self):
-        return self._mode
 
 
 class BufferedIOBase(IOBase):
@@ -761,6 +755,14 @@ class _BufferedIOMixin(BufferedIOBase):
     @property
     def closed(self):
         return self.raw.closed
+
+    @property
+    def name(self):
+        return self.raw.name
+
+    @property
+    def mode(self):
+        return self.raw.mode
 
     ### Lower-level APIs ###
 
@@ -1463,6 +1465,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def closed(self):
         return self.buffer.closed
+
+    @property
+    def name(self):
+        return self.buffer.name
 
     def fileno(self):
         return self.buffer.fileno()
