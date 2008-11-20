@@ -149,8 +149,6 @@ class socket(_socket.socket):
         if buffering == 0:
             if not binary:
                 raise ValueError("unbuffered streams must be binary")
-            raw.name = self.fileno()
-            raw.mode = mode
             return raw
         if reading and writing:
             buffer = io.BufferedRWPair(raw, raw, buffering)
@@ -160,11 +158,8 @@ class socket(_socket.socket):
             assert writing
             buffer = io.BufferedWriter(raw, buffering)
         if binary:
-            buffer.name = self.fileno()
-            buffer.mode = mode
             return buffer
         text = io.TextIOWrapper(buffer, encoding, newline)
-        text.name = self.fileno()
         text.mode = mode
         return text
 
@@ -229,6 +224,14 @@ class SocketIO(io.RawIOBase):
 
     def fileno(self):
         return self._sock.fileno()
+
+    @property
+    def name(self):
+        return self._sock.fileno()
+
+    @property
+    def mode(self):
+        return self._mode
 
     def close(self):
         if self.closed:
