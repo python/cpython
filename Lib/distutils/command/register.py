@@ -15,11 +15,6 @@ from distutils.core import PyPIRCCommand
 from distutils.errors import *
 from distutils import log
 
-def raw_input(prompt):
-    sys.stdout.write(prompt)
-    sys.stdout.flush()
-    return sys.stdin.readline()
-
 class register(PyPIRCCommand):
 
     description = ("register the distribution with the Python package index")
@@ -154,7 +149,7 @@ class register(PyPIRCCommand):
  3. have the server generate a new password for you (and email it to you), or
  4. quit
 Your selection [default 1]: ''', end=' ')
-            choice = raw_input()
+            choice = input()
             if not choice:
                 choice = '1'
             elif choice not in choices:
@@ -163,7 +158,7 @@ Your selection [default 1]: ''', end=' ')
         if choice == '1':
             # get the username and password
             while not username:
-                username = raw_input('Username: ')
+                username = input('Username: ')
             while not password:
                 password = getpass.getpass('Password: ')
 
@@ -182,7 +177,7 @@ Your selection [default 1]: ''', end=' ')
                 print('(the login will be stored in %s)' % self._get_rc_file())
                 choice = 'X'
                 while choice.lower() not in 'yn':
-                    choice = raw_input('Save your login (y/N)?')
+                    choice = input('Save your login (y/N)?')
                     if not choice:
                         choice = 'n'
                 if choice.lower() == 'y':
@@ -193,7 +188,7 @@ Your selection [default 1]: ''', end=' ')
             data['name'] = data['password'] = data['email'] = ''
             data['confirm'] = None
             while not data['name']:
-                data['name'] = raw_input('Username: ')
+                data['name'] = input('Username: ')
             while data['password'] != data['confirm']:
                 while not data['password']:
                     data['password'] = getpass.getpass('Password: ')
@@ -204,7 +199,7 @@ Your selection [default 1]: ''', end=' ')
                     data['confirm'] = None
                     print("Password and confirm don't match!")
             while not data['email']:
-                data['email'] = raw_input('   EMail: ')
+                data['email'] = input('   EMail: ')
             code, result = self.post_to_server(data)
             if code != 200:
                 print('Server response (%s): %s'%(code, result))
@@ -215,7 +210,7 @@ Your selection [default 1]: ''', end=' ')
             data = {':action': 'password_reset'}
             data['email'] = ''
             while not data['email']:
-                data['email'] = raw_input('Your email address: ')
+                data['email'] = input('Your email address: ')
             code, result = self.post_to_server(data)
             print('Server response (%s): %s'%(code, result))
 
@@ -262,7 +257,7 @@ Your selection [default 1]: ''', end=' ')
             if type(value) not in (type([]), type( () )):
                 value = [value]
             for value in value:
-                value = str(value).encode("utf-8")
+                value = str(value)
                 body.write(sep_boundary)
                 body.write('\nContent-Disposition: form-data; name="%s"'%key)
                 body.write("\n\n")
@@ -271,7 +266,7 @@ Your selection [default 1]: ''', end=' ')
                     body.write('\n')  # write an extra newline (lurve Macs)
         body.write(end_boundary)
         body.write("\n")
-        body = body.getvalue()
+        body = body.getvalue().encode("utf-8")
 
         # build the Request
         headers = {
