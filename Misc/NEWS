@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
+  method on file objects with closefd=False. The file descriptor is still
+  kept open but the file object behaves like a closed file. The ``FileIO``
+  object also got a new readonly attribute ``closefd``.
+
 - Issue #4348: Some bytearray methods returned that didn't cause any change to
   the bytearray, returned the same bytearray instead of a copy.
 

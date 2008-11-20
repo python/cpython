@@ -272,6 +272,30 @@ class IOTest(unittest.TestCase):
         self.assertRaises(ValueError, io.open, test_support.TESTFN, 'w',
                           closefd=False)
 
+    def testReadClosed(self):
+        with io.open(test_support.TESTFN, "w") as f:
+            f.write("egg\n")
+        with io.open(test_support.TESTFN, "r") as f:
+            file = io.open(f.fileno(), "r", closefd=False)
+            self.assertEqual(file.read(), "egg\n")
+            file.seek(0)
+            file.close()
+            self.assertRaises(ValueError, file.read)
+
+    def test_no_closefd_with_filename(self):
+        # can't use closefd in combination with a file name
+        self.assertRaises(ValueError,
+                          io.open, test_support.TESTFN, "r", closefd=False)
+
+    def test_closefd_attr(self):
+        with io.open(test_support.TESTFN, "wb") as f:
+            f.write(b"egg\n")
+        with io.open(test_support.TESTFN, "r") as f:
+            self.assertEqual(f.buffer.raw.closefd, True)
+            file = io.open(f.fileno(), "r", closefd=False)
+            self.assertEqual(file.buffer.raw.closefd, False)
+
+
 class MemorySeekTestMixin:
 
     def testInit(self):
