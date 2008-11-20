@@ -712,8 +712,7 @@ always available.
       single: debugger
 
    Set the system's trace function, which allows you to implement a Python
-   source code debugger in Python.  See section :ref:`debugger-hooks` in the
-   chapter on the Python debugger.  The function is thread-specific; for a
+   source code debugger in Python.  The function is thread-specific; for a
    debugger to support multiple threads, it must be registered using
    :func:`settrace` for each thread being debugged.
 
@@ -762,10 +761,10 @@ always available.
    ``'c_exception'``
       A C function has thrown an exception.  *arg* is ``None``.
 
-  Note that as an exception is propagated down the chain of callers, an
-  ``'exception'`` event is generated at each level.
+   Note that as an exception is propagated down the chain of callers, an
+   ``'exception'`` event is generated at each level.
 
-  For more information on code and frame objects, refer to :ref:`types`.
+   For more information on code and frame objects, refer to :ref:`types`.
 
    .. note::
 
