@@ -12,6 +12,9 @@ What's New in Python 2.6.1 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4367: Python would segfault during compiling when the unicodedata
+  module couldn't be imported and \N escapes were present.
+
 - Issue #4348: Some bytearray methods returned that didn't cause any change to
   the bytearray, returned the same bytearray instead of a copy.
 
