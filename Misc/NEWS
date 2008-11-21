@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4367: Python would segfault during compiling when the unicodedata
+  module couldn't be imported and \N escapes were present.
+
 - Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
   method on file objects with closefd=False. The file descriptor is still
   kept open but the file object behaves like a closed file. The ``FileIO``
