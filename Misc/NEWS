@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4363: The uuid.uuid1() and uuid.uuid4() functions now work even if
+  the ctypes module is not present.
+
 - Issue #4116: Resolve member name conflict in ScrolledCanvas.__init__.
 
 - httplib.HTTPConnection.putheader() now accepts an arbitrary number of values
