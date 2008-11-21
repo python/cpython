@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4383: When IDLE cannot make the connection to its subprocess, it would
+  fail to properly display the error message.
+
 
 What's New in Python 3.0 release candidate 3?
 =============================================
