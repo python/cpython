@@ -479,8 +479,8 @@ def uuid1(node=None, clock_seq=None):
 
     # When the system provides a version-1 UUID generator, use it (but don't
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
-    _buffer = ctypes.create_string_buffer(16)
     if _uuid_generate_time and node is clock_seq is None:
+        _buffer = ctypes.create_string_buffer(16)
         _uuid_generate_time(_buffer)
         return UUID(bytes=_buffer.raw)
 
@@ -516,8 +516,8 @@ def uuid4():
     """Generate a random UUID."""
 
     # When the system provides a version-4 UUID generator, use it.
-    _buffer = ctypes.create_string_buffer(16)
     if _uuid_generate_random:
+        _buffer = ctypes.create_string_buffer(16)
         _uuid_generate_random(_buffer)
         return UUID(bytes=_buffer.raw)
 
