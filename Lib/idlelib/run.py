@@ -119,10 +119,11 @@ def manage_socket(address):
         except socket.error as err:
             print("IDLE Subprocess: socket error: " + err.args[1] +
                   ", retrying....", file=sys.__stderr__)
+            socket_error = err
     else:
-        print("IDLE Subprocess: Connection to "\
-                               "IDLE GUI failed, exiting.", file=sys.__stderr__)
-        show_socket_error(err, address)
+        print("IDLE Subprocess: Connection to "
+              "IDLE GUI failed, exiting.", file=sys.__stderr__)
+        show_socket_error(socket_error, address)
         global exit_now
         exit_now = True
         return
