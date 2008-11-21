@@ -150,7 +150,7 @@ class TestGzip(unittest.TestCase):
     def test_mode(self):
         self.test_write()
         f = gzip.GzipFile(self.filename, 'r')
-        self.assertEqual(f.myfileobj.mode, 'rb')
+        self.assertTrue(f.myfileobj.mode.startswith('r'))
         f.close()
 
     def test_1647484(self):
