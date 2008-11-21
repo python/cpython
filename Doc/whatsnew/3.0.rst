@@ -2,10 +2,14 @@
   What's New in Python 3.0  
 ****************************
 
-:Author: Guido van Rossum
-:Release: 0.1
+.. XXX add trademark info for Apple, Microsoft, SourceForge.
 
-.. Rules for maintenance:
+:Author: Guido van Rossum
+:Release: |release|
+:Date: |today|
+
+.. $Id$
+   Rules for maintenance:
    
    * Anyone can add text to this document.  Do not spend very much time
    on the wording of your changes, because your text will probably
@@ -46,10 +50,10 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.0, comparing to 2.6
-(or in some cases 2.5, since 2.6 isn't released yet).
-
-The best estimate for a release date is August 2008.
+This article explains the new features in Python 3.0, comparing to 2.6.
+In some cases it will also summarize changes since 2.5, with a reference
+to "What's New in Python 2.6" for the details.  Python 2.6 was released
+on October 1 2008.  Python 3.0 will be released in December 2008.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -131,6 +135,17 @@ changes to rarely used features.)
   that if a file is opened using an incorrect mode or encoding, I/O
   will likely fail.
 
+* The ordering comparison operators (``<``, ``<=``, ``>=``, ``>``)
+  raise a TypeError exception when the operands don't have a
+  meaningful natural ordering.  Thus, expressions like ``1 < ''``, ``0
+  > None`` or ``len < len`` are no longer valid.  A corollary is that
+  sorting a heterogeneous list no longer makes sense -- all the
+  elements must be comparable to each other.  Note that this does not
+  apply to the ``==`` and ``!=`` operators: objects of different
+  uncomparable types always compare unequal to each other, and an
+  object always compares equal to itself (i.e., ``x is y`` implies ``x
+  = y``; this is true even for ``NaN``).
+
 * :func:`map` and :func:`filter` return iterators.  A quick fix is e.g.
   ``list(map(...))``, but a better fix is often to use a list
   comprehension (especially when the original code uses :keyword:`lambda`).
@@ -146,6 +161,8 @@ changes to rarely used features.)
   instead. N.B. the *key* and *reverse* arguments are now "keyword-only".
 
 * ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
+
+.. XXX move the next one to a later point, it's not a common stumbling block.
 
 * The :func:`repr` of a long integer doesn't include the trailing ``L``
   anymore, so code that unconditionally strips that character will
@@ -168,7 +185,7 @@ Strings and Bytes
   or :meth:`bytes.decode` (bytes -> str) methods.
 
 * All backslashes in raw strings are interpreted literally.  This means that
-  Unicode escapes are not treated specially.
+  ``'\U'`` and ``'\u'`` escapes in raw strings are not treated specially.
 
 .. XXX add bytearray
 
@@ -186,16 +203,17 @@ Strings and Bytes
 * The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead, import
   :class:`io.StringIO` or :class:`io.BytesIO`.
 
-* ``'\U'`` and ``'\u'`` escapes in raw strings are not treated specially.
 
 
 PEP 3101: A New Approach to String Formatting
 =============================================
 
-.. XXX expand this
+* A new system for  built-in string formatting operations replaces the
+  ``%`` string  formatting operator.   (However, the ``%``  operator is
+  still supported;  it will  be deprecated in  Python 3.1  and removed
+  from the language at some later time.)
 
-* A new system for built-in string formatting operations replaces the ``%``
-  string formatting operator.
+.. XXX expand this
 
 
 PEP 3106: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
@@ -207,7 +225,8 @@ PEP 3106: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.v
   methods have been removed.
 
 * :meth:`dict.keys`, :meth:`dict.values` and :meth:`dict.items` return objects
-  with set behavior that reference the underlying dict.
+  with set behavior that reference the underlying dict; these are often
+  referred to as *dictionary views*.
 
 
 PEP 3107: Function Annotations
