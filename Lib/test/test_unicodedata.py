@@ -4,9 +4,13 @@
 
     (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
-import unittest, test.test_support
+"""
+
+import sys
+import unittest
 import hashlib
+import subprocess
+import test.test_support
 
 encoding = 'utf-8'
 
@@ -195,6 +199,25 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(eaw(u'\U00020000'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
+
+    def test_failed_import_during_compiling(self):
+        # Issue 4367
+        # Decoding \N escapes requires the unicodedata module. If it can't be
+        # imported, we shouldn't segfault.
+
+        # This program should raise a SyntaxError in the eval.
+        code = "import sys;" \
+            "sys.modules['unicodedata'] = None;" \
+            """eval("u'\N{SOFT HYPHEN}'")"""
+        args = [sys.executable, "-c", code]
+        # We use a subprocess because the unicodedata module may already have
+        # been loaded in this process.
+        popen = subprocess.Popen(args, stderr=subprocess.PIPE)
+        popen.wait()
+        self.assertEqual(popen.returncode, 1)
+        error = "SyntaxError: (unicode error) \N escapes not supported " \
+            "(can't load unicodedata module)"
+        self.assertTrue(error in popen.stderr.read())
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,
