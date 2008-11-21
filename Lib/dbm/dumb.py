@@ -84,6 +84,7 @@ class _Database(collections.MutableMapping):
             for line in f:
                 line = line.rstrip()
                 key, pos_and_siz_pair = eval(line)
+                key = key.encode('Latin-1')
                 self._index[key] = pos_and_siz_pair
             f.close()
 
@@ -110,13 +111,16 @@ class _Database(collections.MutableMapping):
         f = self._io.open(self._dirfile, 'w')
         self._chmod(self._dirfile)
         for key, pos_and_siz_pair in self._index.items():
-            f.write("%r, %r\n" % (key, pos_and_siz_pair))
+            # Use Latin-1 since it has no qualms with any value in any
+            # position; UTF-8, though, does care sometimes.
+            f.write("%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair))
         f.close()
 
     sync = _commit
 
     def __getitem__(self, key):
-        key = key.decode("latin-1")
+        if isinstance(key, str):
+            key = key.encode('utf-8')
         pos, siz = self._index[key]     # may raise KeyError
         f = _io.open(self._datfile, 'rb')
         f.seek(pos)
@@ -161,11 +165,12 @@ class _Database(collections.MutableMapping):
         f.close()
 
     def __setitem__(self, key, val):
-        if not isinstance(key, bytes):
-            raise TypeError("keys must be bytes")
-        key = key.decode("latin-1") # hashable bytes
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        elif not isinstance(key, (bytes, bytearray)):
+            raise TypeError("keys must be bytes or strings")
         if not isinstance(val, (bytes, bytearray)):
-            raise TypeError("values must be byte strings")
+            raise TypeError("values must be bytes")
         if key not in self._index:
             self._addkey(key, self._addval(val))
         else:
@@ -191,7 +196,8 @@ class _Database(collections.MutableMapping):
             # (so that _commit() never gets called).
 
     def __delitem__(self, key):
-        key = key.decode("latin-1")
+        if isinstance(key, str):
+            key = key.encode('utf-8')
         # The blocks used by the associated value are lost.
         del self._index[key]
         # XXX It's unclear why we do a _commit() here (the code always
@@ -201,14 +207,14 @@ class _Database(collections.MutableMapping):
         self._commit()
 
     def keys(self):
-        return [key.encode("latin-1") for key in self._index.keys()]
+        return list(self._index.keys())
 
     def items(self):
-        return [(key.encode("latin-1"), self[key.encode("latin-1")])
-                for key in self._index.keys()]
+        return [(key, self[key]) for key in self._index.keys()]
 
     def __contains__(self, key):
-        key = key.decode("latin-1")
+        if isinstance(key, str):
+            key = key.encode('utf-8')
         return key in self._index
 
     def iterkeys(self):
