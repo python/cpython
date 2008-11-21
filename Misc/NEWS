@@ -19,7 +19,7 @@ Core and Builtins
 - Issue #3327: Don't overallocate in the modules_by_index list.
 
 - Issue #1721812:  Binary set operations and copy() returned the input type
-  instead of the appropriate base type.  This was incorrect because set 
+  instead of the appropriate base type.  This was incorrect because set
   subclasses would be created without their __init__() method being called.
   The corrected behavior brings sets into line with lists and dicts.
 
@@ -32,6 +32,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #3799: Fix dbm.dumb to accept strings as well as bytes for keys. String
+  keys are now written out in UTF-8.
 
 - Issue #4338: Fix distutils upload command.
 
