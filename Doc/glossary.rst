@@ -74,10 +74,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Coercion between two operands can be
-      performed with the ``coerce`` builtin function; thus, ``3+4.5`` is
-      equivalent to calling ``operator.add(*coerce(3, 4.5))`` and results in
-      ``operator.add(3.0, 4.5)``.  Without coercion, all arguments of even
+      will raise a ``TypeError``.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
     
@@ -180,6 +177,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the core and
       with user code.
 
+   floor division
+      Mathematical division discarding any remainder.  The floor division
+      operator is ``//``.  For example, the expression ``11//4`` evaluates to
+      ``2`` in contrast to the ``2.75`` returned by float true division.
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more arguments which may be used in the execution of
@@ -187,16 +189,11 @@ Glossary
 
    __future__
       A pseudo module which programmers can use to enable new language features
-      which are not compatible with the current interpreter.  For example, the
-      expression ``11/4`` currently evaluates to ``2``. If the module in which
-      it is executed had enabled *true division* by executing::
-    
-         from __future__ import division
-    
-      the expression ``11/4`` would evaluate to ``2.75``.  By importing the
-      :mod:`__future__` module and evaluating its variables, you can see when a
-      new feature was first added to the language and when it will become the
-      default::
+      which are not compatible with the current interpreter.
+
+      By importing the :mod:`__future__` module and evaluating its variables,
+      you can see when a new feature was first added to the language and when it
+      becomes the default::
     
          >>> import __future__
          >>> __future__.division
@@ -270,19 +267,7 @@ Glossary
       be created if a different value has to be stored.  They play an important
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.
-    
-   integer division
-      Mathematical division discarding any remainder.  For example, the
-      expression ``11/4`` currently evaluates to ``2`` in contrast to the
-      ``2.75`` returned by float division.  Also called *floor division*.  When
-      dividing two integers the outcome will always be another integer (having
-      the floor function applied to it). However, if the operands types are
-      different, one of them will be converted to the other's type.  For
-      example, an integer divided by a float will result in a float value,
-      possibly with a decimal fraction.  Integer division can be forced by using
-      the ``//`` operator instead of the ``/`` operator.  See also
-      :term:`__future__`.
-    
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
