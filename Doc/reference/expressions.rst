@@ -1043,7 +1043,7 @@ Comparison of objects of the same type depends on the type:
   program.
 
 Comparison of objects of the differing types depends on whether either
-of the types provide explicit support for the comparison.  Most numberic types
+of the types provide explicit support for the comparison.  Most numeric types
 can be compared with one another, but comparisons of :class:`float` and
 :class:`Decimal` are not supported to avoid the inevitable confusion arising            
 from representation issues such as ``float('1.1')`` being inexactly represented
@@ -1058,8 +1058,8 @@ s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
 in s`` returns the negation of ``x in s``.  All built-in sequences and set types
 support this as well as dictionary, for which :keyword:`in` tests whether a the
 dictionary has a given key. For container types such as list, tuple, set,
-frozenset, dict, or collections.deque, the expression ``x in y`` equivalent to
-``any(x is e or x == e for val e in y)``.
+frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
+to ``any(x is e or x == e for val e in y)``.
 
 For the string and bytes types, ``x in y`` is true if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
