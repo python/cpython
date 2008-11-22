@@ -160,6 +160,10 @@ changes to rarely used features.)
   argument providing a comparison function.  Use the *key* argument
   instead. N.B. the *key* and *reverse* arguments are now "keyword-only".
 
+* The :meth:`__cmp__` special method is no longer supported.  Use :meth:`__lt__`
+  for sorting, :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons
+  as needed.
+
 * ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
 
 .. XXX move the next one to a later point, it's not a common stumbling block.
