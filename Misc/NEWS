@@ -12,6 +12,10 @@ What's New in Python 2.6.1 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #3996: On Windows, the PyOS_CheckStack function would cause the
+  interpreter to abort ("Fatal Python error: Could not reset the stack!")
+  instead of throwing a MemoryError.
+
 - Issue #4367: Python would segfault during compiling when the unicodedata
   module couldn't be imported and \N escapes were present.
 
