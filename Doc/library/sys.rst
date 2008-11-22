@@ -623,10 +623,59 @@ always available.
       single: debugger
 
    Set the system's trace function, which allows you to implement a Python
-   source code debugger in Python.  See section :ref:`debugger-hooks` in the
-   chapter on the Python debugger.  The function is thread-specific; for a
+   source code debugger in Python.  The function is thread-specific; for a
    debugger to support multiple threads, it must be registered using
    :func:`settrace` for each thread being debugged.
+
+   Trace functions should have three arguments: *frame*, *event*, and
+   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
+   ``'c_exception'``. *arg* depends on the event type.
+
+   The trace function is invoked (with *event* set to ``'call'``) whenever a new
+   local scope is entered; it should return a reference to a local trace
+   function to be used that scope, or ``None`` if the scope shouldn't be traced.
+
+   The local trace function should return a reference to itself (or to another
+   function for further tracing in that scope), or ``None`` to turn off tracing
+   in that scope.
+
+   The events have the following meaning:
+
+   ``'call'`` 
+      A function is called (or some other code block entered).  The
+      global trace function is called; *arg* is ``None``; the return value
+      specifies the local trace function.
+
+   ``'line'``
+      The interpreter is about to execute a new line of code (sometimes multiple
+      line events on one line exist).  The local trace function is called; *arg*
+      is ``None``; the return value specifies the new local trace function.
+
+   ``'return'``
+      A function (or other code block) is about to return.  The local trace
+      function is called; *arg* is the value that will be returned.  The trace
+      function's return value is ignored.
+
+   ``'exception'``
+      An exception has occurred.  The local trace function is called; *arg* is a
+      tuple ``(exception, value, traceback)``; the return value specifies the
+      new local trace function.
+
+   ``'c_call'``
+      A C function is about to be called.  This may be an extension function or
+      a builtin.  *arg* is the C function object.
+
+   ``'c_return'``
+      A C function has returned. *arg* is ``None``.
+
+   ``'c_exception'``
+      A C function has thrown an exception.  *arg* is ``None``.
+
+   Note that as an exception is propagated down the chain of callers, an
+   ``'exception'`` event is generated at each level.
+
+   For more information on code and frame objects, refer to :ref:`types`.
 
    .. note::
 

@@ -742,7 +742,7 @@ class ByteArrayTest(BaseBytesTest):
         # Issue 4348.  Make sure that operations that don't mutate the array
         # copy the bytes.
         b = bytearray(b'abc')
-        #self.assertFalse(b is b.replace(b'abc', b'cde', 0))
+        self.assertFalse(b is b.replace(b'abc', b'cde', 0))
 
         t = bytearray([i for i in range(256)])
         x = bytearray(b'')

@@ -2039,7 +2039,7 @@ PyOS_CheckStack(void)
 			EXCEPTION_EXECUTE_HANDLER : 
 			EXCEPTION_CONTINUE_SEARCH) {
 		int errcode = _resetstkoflw();
-		if (errcode)
+		if (errcode == 0)
 		{
 			Py_FatalError("Could not reset the stack!");
 		}

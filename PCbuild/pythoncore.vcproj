@@ -1143,14 +1143,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\yuv.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\yuvconvert.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\zipimport.c"
 				>
 			</File>
