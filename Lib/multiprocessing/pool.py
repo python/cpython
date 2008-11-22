@@ -76,7 +76,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=()):
 
 class Pool(object):
     '''
-    Class which supports an async version of the `apply()` builtin
+    Class which supports an async version of applying functions to arguments.
     '''
     Process = Process
 
@@ -135,21 +135,22 @@ class Pool(object):
 
     def apply(self, func, args=(), kwds={}):
         '''
-        Equivalent of `apply()` builtin
+        Equivalent of `func(*args, **kwds)`.
         '''
         assert self._state == RUN
         return self.apply_async(func, args, kwds).get()
 
     def map(self, func, iterable, chunksize=None):
         '''
-        Equivalent of `map()` builtin
+        Apply `func` to each element in `iterable`, collecting the results
+        in a list that is returned.
         '''
         assert self._state == RUN
         return self.map_async(func, iterable, chunksize).get()
 
     def imap(self, func, iterable, chunksize=1):
         '''
-        Equivalent of `itertool.imap()` -- can be MUCH slower than `Pool.map()`
+        Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
         assert self._state == RUN
         if chunksize == 1:
@@ -167,7 +168,7 @@ class Pool(object):
 
     def imap_unordered(self, func, iterable, chunksize=1):
         '''
-        Like `imap()` method but ordering of results is arbitrary
+        Like `imap()` method but ordering of results is arbitrary.
         '''
         assert self._state == RUN
         if chunksize == 1:
@@ -185,7 +186,7 @@ class Pool(object):
 
     def apply_async(self, func, args=(), kwds={}, callback=None):
         '''
-        Asynchronous equivalent of `apply()` builtin
+        Asynchronous version of `apply()` method.
         '''
         assert self._state == RUN
         result = ApplyResult(self._cache, callback)
@@ -194,7 +195,7 @@ class Pool(object):
 
     def map_async(self, func, iterable, chunksize=None, callback=None):
         '''
-        Asynchronous equivalent of `map()` builtin
+        Asynchronous version of `map()` method.
         '''
         assert self._state == RUN
         if not hasattr(iterable, '__len__'):
