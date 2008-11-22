@@ -200,8 +200,7 @@ MODULES		=                              \
                   $(PATHOBJ)\StropModule.obj   \
                   $(PATHOBJ)\StructModule.obj  \
                   $(PATHOBJ)\TimeModule.obj    \
-                  $(PATHOBJ)\ThreadModule.obj  \
-                  $(PATHOBJ)\YUVConvert.obj
+                  $(PATHOBJ)\ThreadModule.obj
 
 # Standalone Parser Generator Program (Shares Some of Python's Modules)
 PGEN            =                              \
@@ -893,8 +892,6 @@ xxmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\class
 	 $(PY_INCLUDE)\python.h $(PY_INCLUDE)\pythonrun.h $(PY_INCLUDE)\rangeobject.h \
 	 $(PY_INCLUDE)\sliceobject.h $(PY_INCLUDE)\stringobject.h \
 	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
-
-yuvconvert.obj: $(PY_MODULES)\yuv.h
 
 zlibmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\classobject.h \
 	 $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h pyconfig.h \

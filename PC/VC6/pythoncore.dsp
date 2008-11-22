@@ -723,10 +723,6 @@ SOURCE=..\..\Modules\xxsubtype.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\yuvconvert.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\zipimport.c
 # End Source File
 # Begin Source File

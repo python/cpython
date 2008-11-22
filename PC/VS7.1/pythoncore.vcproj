@@ -804,9 +804,6 @@
 			RelativePath="..\..\Modules\xxsubtype.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\yuvconvert.c">
-		</File>
-		<File
 			RelativePath="..\..\Modules\zipimport.c">
 		</File>
 	</Files>

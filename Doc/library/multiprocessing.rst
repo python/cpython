@@ -872,7 +872,7 @@ inherited by child processes.
 
    Note that *lock* is a keyword only argument.
 
-   Note that an array of :data:`ctypes.c_char` has *value* and *rawvalue*
+   Note that an array of :data:`ctypes.c_char` has *value* and *raw*
    attributes which allow one to use it to store and retrieve strings.
 
 
@@ -921,7 +921,7 @@ processes.
    :func:`Value` instead to make sure that access is automatically synchronized
    using a lock.
 
-   Note that an array of :data:`ctypes.c_char` has ``value`` and ``rawvalue``
+   Note that an array of :data:`ctypes.c_char` has ``value`` and ``raw``
    attributes which allow one to use it to store and retrieve strings -- see
    documentation for :mod:`ctypes`.
 
