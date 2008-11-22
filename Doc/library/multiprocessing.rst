@@ -1447,8 +1447,8 @@ with the :class:`Pool` class.
 
    .. method:: map(func, iterable[, chunksize])
 
-      A parallel equivalent of the :func:`map` builtin function.  It blocks till
-      the result is ready.
+      A parallel equivalent of the :func:`map` builtin function, collecting the
+      result in a list.  It blocks till the whole result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -1465,7 +1465,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      An lazier version of :meth:`map`.
+      A lazier version of :meth:`map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
