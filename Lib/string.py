@@ -2,15 +2,15 @@
 
 Public module variables:
 
-whitespace -- a string containing all characters considered whitespace
-lowercase -- a string containing all characters considered lowercase letters
-uppercase -- a string containing all characters considered uppercase letters
-letters -- a string containing all characters considered letters
-digits -- a string containing all characters considered decimal digits
-hexdigits -- a string containing all characters considered hexadecimal digits
-octdigits -- a string containing all characters considered octal digits
-punctuation -- a string containing all characters considered punctuation
-printable -- a string containing all characters considered printable
+whitespace -- a string containing all ASCII whitespace
+ascii_lowercase -- a string containing all ASCII lowercase letters
+ascii_uppercase -- a string containing all ASCII uppercase letters
+ascii_letters -- a string containing all ASCII letters
+digits -- a string containing all ASCII decimal digits
+hexdigits -- a string containing all ASCII hexadecimal digits
+octdigits -- a string containing all ASCII octal digits
+punctuation -- a string containing all ASCII punctuation characters
+printable -- a string containing all ASCII characters considered printable
 
 """
 
