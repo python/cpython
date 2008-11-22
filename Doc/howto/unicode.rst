@@ -410,9 +410,9 @@ either the first or second line of the source file::
     
 The syntax is inspired by Emacs's notation for specifying variables local to a
 file.  Emacs supports many different variables, but Python only supports
-'coding'.  The ``-*-`` symbols indicate that the comment is special; within
-them, you must supply the name ``coding`` and the name of your chosen encoding,
-separated by ``':'``.
+'coding'.  The ``-*-`` symbols indicate to Emacs that the comment is special;
+they have no significance to Python but are a convention.  Python looks for
+``coding: name`` or ``coding=name`` in the comment.
 
 If you don't include such a comment, the default encoding used will be ASCII.
 Versions of Python before 2.4 were Euro-centric and assumed Latin-1 as a default
