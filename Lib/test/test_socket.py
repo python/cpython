@@ -849,11 +849,11 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.assert_(not self.cli_file.closed)
 
     def testAttributes(self):
-        self.assertEqual(self.serv_file.mode, 'r')
+        self.assertEqual(self.serv_file.mode, 'rb')
         self.assertEqual(self.serv_file.name, self.cli_conn.fileno())
 
     def _testAttributes(self):
-        self.assertEqual(self.cli_file.mode, 'w')
+        self.assertEqual(self.cli_file.mode, 'wb')
         self.assertEqual(self.cli_file.name, self.serv_conn.fileno())
 
 class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):

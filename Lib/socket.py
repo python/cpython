@@ -198,10 +198,12 @@ class SocketIO(io.RawIOBase):
     # XXX More docs
 
     def __init__(self, sock, mode):
-        if mode not in ("r", "w", "rw"):
+        if mode not in ("r", "w", "rw", "rb", "wb", "rwb"):
             raise ValueError("invalid mode: %r" % mode)
         io.RawIOBase.__init__(self)
         self._sock = sock
+        if "b" not in mode:
+            mode += "b"
         self._mode = mode
         self._reading = "r" in mode
         self._writing = "w" in mode
