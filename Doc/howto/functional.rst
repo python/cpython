@@ -659,54 +659,6 @@ This can also be written as a list comprehension:
     >>> list(x for x in range(10) if is_even(x))
     [0, 2, 4, 6, 8]
 
-``functools.reduce(func, iter, [initial_value])`` cumulatively performs an
-operation on all the iterable's elements and, therefore, can't be applied to
-infinite iterables.  (Note it is not in :mod:`builtins`, but in the
-:mod:`functools` module.)  ``func`` must be a function that takes two elements
-and returns a single value.  :func:`functools.reduce` takes the first two
-elements A and B returned by the iterator and calculates ``func(A, B)``.  It
-then requests the third element, C, calculates ``func(func(A, B), C)``, combines
-this result with the fourth element returned, and continues until the iterable
-is exhausted.  If the iterable returns no values at all, a :exc:`TypeError`
-exception is raised.  If the initial value is supplied, it's used as a starting
-point and ``func(initial_value, A)`` is the first calculation. ::
-
-    >>> import operator, functools
-    >>> functools.reduce(operator.concat, ['A', 'BB', 'C'])
-    'ABBC'
-    >>> functools.reduce(operator.concat, [])
-    Traceback (most recent call last):
-      ...
-    TypeError: reduce() of empty sequence with no initial value
-    >>> functools.reduce(operator.mul, [1,2,3], 1)
-    6
-    >>> functools.reduce(operator.mul, [], 1)
-    1
-
-If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all the
-elements of the iterable.  This case is so common that there's a special
-built-in called :func:`sum` to compute it:
-
-    >>> import functools
-    >>> functools.reduce(operator.add, [1,2,3,4], 0)
-    10
-    >>> sum([1,2,3,4])
-    10
-    >>> sum([])
-    0
-
-For many uses of :func:`functools.reduce`, though, it can be clearer to just write the
-obvious :keyword:`for` loop::
-
-   import functools
-   # Instead of:
-   product = functools.reduce(operator.mul, [1,2,3], 1)
-
-   # You can write:
-   product = 1
-   for i in [1,2,3]:
-       product *= i
-
 
 ``enumerate(iter)`` counts off the elements in the iterable, returning 2-tuples
 containing the count and each element. ::
@@ -744,6 +696,7 @@ the constructed list's ``.sort()`` method. ::
 (For a more detailed discussion of sorting, see the Sorting mini-HOWTO in the
 Python wiki at http://wiki.python.org/moin/HowTo/Sorting.)
 
+
 The ``any(iter)`` and ``all(iter)`` built-ins look at the truth values of an
 iterable's contents.  :func:`any` returns True if any element in the iterable is
 a true value, and :func:`all` returns True if all of the elements are true
@@ -763,90 +716,27 @@ values:
     True
 
 
-Small functions and the lambda expression
-=========================================
+``zip(iterA, iterB, ...)`` takes one element from each iterable and
+returns them in a tuple::
 
-When writing functional-style programs, you'll often need little functions that
-act as predicates or that combine elements in some way.
+    zip(['a', 'b', 'c'], (1, 2, 3)) =>
+      ('a', 1), ('b', 2), ('c', 3)
 
-If there's a Python built-in or a module function that's suitable, you don't
-need to define a new function at all::
+It doesn't construct an in-memory list and exhaust all the input iterators
+before returning; instead tuples are constructed and returned only if they're
+requested.  (The technical term for this behaviour is `lazy evaluation
+<http://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
 
-    stripped_lines = [line.strip() for line in lines]
-    existing_files = filter(os.path.exists, file_list)
+This iterator is intended to be used with iterables that are all of the same
+length.  If the iterables are of different lengths, the resulting stream will be
+the same length as the shortest iterable. ::
 
-If the function you need doesn't exist, you need to write it.  One way to write
-small functions is to use the ``lambda`` statement.  ``lambda`` takes a number
-of parameters and an expression combining these parameters, and creates a small
-function that returns the value of the expression::
+    zip(['a', 'b'], (1, 2, 3)) =>
+      ('a', 1), ('b', 2)
 
-    lowercase = lambda x: x.lower()
-
-    print_assign = lambda name, value: name + '=' + str(value)
-
-    adder = lambda x, y: x+y
-
-An alternative is to just use the ``def`` statement and define a function in the
-usual way::
-
-    def lowercase(x):
-        return x.lower()
-
-    def print_assign(name, value):
-        return name + '=' + str(value)
-
-    def adder(x,y):
-        return x + y
-
-Which alternative is preferable?  That's a style question; my usual course is to
-avoid using ``lambda``.
-
-One reason for my preference is that ``lambda`` is quite limited in the
-functions it can define.  The result has to be computable as a single
-expression, which means you can't have multiway ``if... elif... else``
-comparisons or ``try... except`` statements.  If you try to do too much in a
-``lambda`` statement, you'll end up with an overly complicated expression that's
-hard to read.  Quick, what's the following code doing?
-
-::
-
-    import functools
-    total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
-
-You can figure it out, but it takes time to disentangle the expression to figure
-out what's going on.  Using a short nested ``def`` statements makes things a
-little bit better::
-
-    import functools
-    def combine (a, b):
-        return 0, a[1] + b[1]
-
-    total = functools.reduce(combine, items)[1]
-
-But it would be best of all if I had simply used a ``for`` loop::
-
-     total = 0
-     for a, b in items:
-         total += b
-
-Or the :func:`sum` built-in and a generator expression::
-
-     total = sum(b for a,b in items)
-
-Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
-
-Fredrik Lundh once suggested the following set of rules for refactoring uses of
-``lambda``:
-
-1) Write a lambda function.
-2) Write a comment explaining what the heck that lambda does.
-3) Study the comment for a while, and think of a name that captures the essence
-   of the comment.
-4) Convert the lambda to a def statement, using that name.
-5) Remove the comment.
-
-I really like these rules, but you're free to disagree 
-about whether this lambda-free style is better.
+You should avoid doing this, though, because an element may be taken from the
+longer iterators and discarded.  This means you can't go on to use the iterators
+further because you risk skipping a discarded element.
 
 
 The itertools module
@@ -896,29 +786,6 @@ of the second, and so on, until all of the iterables have been exhausted. ::
     itertools.chain(['a', 'b', 'c'], (1, 2, 3)) =>
       a, b, c, 1, 2, 3
 
-``itertools.izip(iterA, iterB, ...)`` takes one element from each iterable and
-returns them in a tuple::
-
-    itertools.izip(['a', 'b', 'c'], (1, 2, 3)) =>
-      ('a', 1), ('b', 2), ('c', 3)
-
-It's similar to the built-in :func:`zip` function, but doesn't construct an
-in-memory list and exhaust all the input iterators before returning; instead
-tuples are constructed and returned only if they're requested.  (The technical
-term for this behaviour is `lazy evaluation
-<http://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
-
-This iterator is intended to be used with iterables that are all of the same
-length.  If the iterables are of different lengths, the resulting stream will be
-the same length as the shortest iterable. ::
-
-    itertools.izip(['a', 'b'], (1, 2, 3)) =>
-      ('a', 1), ('b', 2)
-
-You should avoid doing this, though, because an element may be taken from the
-longer iterators and discarded.  This means you can't go on to use the iterators
-further because you risk skipping a discarded element.
-
 ``itertools.islice(iter, [start], stop, [step])`` returns a stream that's a
 slice of the iterator.  With a single ``stop`` argument, it will return the
 first ``stop`` elements.  If you supply a starting index, you'll get
@@ -953,8 +820,6 @@ consumed more than the others. ::
 Calling functions on elements
 -----------------------------
 
-``itertools.imap(func, iter)`` is the same as built-in :func:`map`.
-
 The ``operator`` module contains a set of functions corresponding to Python's
 operators.  Some examples are ``operator.add(a, b)`` (adds two values),
 ``operator.ne(a, b)`` (same as ``a!=b``), and ``operator.attrgetter('id')``
@@ -976,12 +841,10 @@ Selecting elements
 Another group of functions chooses a subset of an iterator's elements based on a
 predicate.
 
-``itertools.ifilter(predicate, iter)`` is the same as built-in :func:`filter`.
-
-``itertools.ifilterfalse(predicate, iter)`` is the opposite, returning all
+``itertools.filterfalse(predicate, iter)`` is the opposite, returning all
 elements for which the predicate returns false::
 
-    itertools.ifilterfalse(is_even, itertools.count()) =>
+    itertools.filterfalse(is_even, itertools.count()) =>
       1, 3, 5, 7, 9, 11, 13, 15, ...
 
 ``itertools.takewhile(predicate, iter)`` returns elements for as long as the
@@ -1082,6 +945,54 @@ Here's a small but realistic example::
 
     server_log = functools.partial(log, subsystem='server')
     server_log('Unable to open socket')
+
+``functools.reduce(func, iter, [initial_value])`` cumulatively performs an
+operation on all the iterable's elements and, therefore, can't be applied to
+infinite iterables.  (Note it is not in :mod:`builtins`, but in the
+:mod:`functools` module.)  ``func`` must be a function that takes two elements
+and returns a single value.  :func:`functools.reduce` takes the first two
+elements A and B returned by the iterator and calculates ``func(A, B)``.  It
+then requests the third element, C, calculates ``func(func(A, B), C)``, combines
+this result with the fourth element returned, and continues until the iterable
+is exhausted.  If the iterable returns no values at all, a :exc:`TypeError`
+exception is raised.  If the initial value is supplied, it's used as a starting
+point and ``func(initial_value, A)`` is the first calculation. ::
+
+    >>> import operator, functools
+    >>> functools.reduce(operator.concat, ['A', 'BB', 'C'])
+    'ABBC'
+    >>> functools.reduce(operator.concat, [])
+    Traceback (most recent call last):
+      ...
+    TypeError: reduce() of empty sequence with no initial value
+    >>> functools.reduce(operator.mul, [1,2,3], 1)
+    6
+    >>> functools.reduce(operator.mul, [], 1)
+    1
+
+If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all the
+elements of the iterable.  This case is so common that there's a special
+built-in called :func:`sum` to compute it:
+
+    >>> import functools
+    >>> functools.reduce(operator.add, [1,2,3,4], 0)
+    10
+    >>> sum([1,2,3,4])
+    10
+    >>> sum([])
+    0
+
+For many uses of :func:`functools.reduce`, though, it can be clearer to just write the
+obvious :keyword:`for` loop::
+
+   import functools
+   # Instead of:
+   product = functools.reduce(operator.mul, [1,2,3], 1)
+
+   # You can write:
+   product = 1
+   for i in [1,2,3]:
+       product *= i
 
 
 The operator module
@@ -1230,6 +1141,92 @@ idiom::
     from functional import foldl, partial from operator import concat
 
     join = partial(foldl, concat, "")
+
+
+Small functions and the lambda expression
+=========================================
+
+When writing functional-style programs, you'll often need little functions that
+act as predicates or that combine elements in some way.
+
+If there's a Python built-in or a module function that's suitable, you don't
+need to define a new function at all::
+
+    stripped_lines = [line.strip() for line in lines]
+    existing_files = filter(os.path.exists, file_list)
+
+If the function you need doesn't exist, you need to write it.  One way to write
+small functions is to use the ``lambda`` statement.  ``lambda`` takes a number
+of parameters and an expression combining these parameters, and creates a small
+function that returns the value of the expression::
+
+    lowercase = lambda x: x.lower()
+
+    print_assign = lambda name, value: name + '=' + str(value)
+
+    adder = lambda x, y: x+y
+
+An alternative is to just use the ``def`` statement and define a function in the
+usual way::
+
+    def lowercase(x):
+        return x.lower()
+
+    def print_assign(name, value):
+        return name + '=' + str(value)
+
+    def adder(x,y):
+        return x + y
+
+Which alternative is preferable?  That's a style question; my usual course is to
+avoid using ``lambda``.
+
+One reason for my preference is that ``lambda`` is quite limited in the
+functions it can define.  The result has to be computable as a single
+expression, which means you can't have multiway ``if... elif... else``
+comparisons or ``try... except`` statements.  If you try to do too much in a
+``lambda`` statement, you'll end up with an overly complicated expression that's
+hard to read.  Quick, what's the following code doing?
+
+::
+
+    import functools
+    total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
+
+You can figure it out, but it takes time to disentangle the expression to figure
+out what's going on.  Using a short nested ``def`` statements makes things a
+little bit better::
+
+    import functools
+    def combine (a, b):
+        return 0, a[1] + b[1]
+
+    total = functools.reduce(combine, items)[1]
+
+But it would be best of all if I had simply used a ``for`` loop::
+
+     total = 0
+     for a, b in items:
+         total += b
+
+Or the :func:`sum` built-in and a generator expression::
+
+     total = sum(b for a,b in items)
+
+Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
+
+Fredrik Lundh once suggested the following set of rules for refactoring uses of
+``lambda``:
+
+1) Write a lambda function.
+2) Write a comment explaining what the heck that lambda does.
+3) Study the comment for a while, and think of a name that captures the essence
+   of the comment.
+4) Convert the lambda to a def statement, using that name.
+5) Remove the comment.
+
+I really like these rules, but you're free to disagree 
+about whether this lambda-free style is better.
 
 
 Revision History and Acknowledgements
