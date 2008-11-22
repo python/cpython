@@ -49,7 +49,7 @@ class AutoFileTests(unittest.TestCase):
         # verify expected attributes exist
         f = self.f
 
-        self.assertEquals(f.mode, "w")
+        self.assertEquals(f.mode, "wb")
         self.assertEquals(f.closed, False)
 
         # verify the attributes are readonly
@@ -159,7 +159,7 @@ class OtherFileTests(unittest.TestCase):
 
     def testModeStrings(self):
         # check invalid mode strings
-        for mode in ("", "aU", "wU+", "rb", "rt"):
+        for mode in ("", "aU", "wU+", "rw", "rt"):
             try:
                 f = _fileio._FileIO(TESTFN, mode)
             except ValueError:

@@ -208,6 +208,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 			flags |= O_CREAT;
 			append = 1;
 			break;
+		case 'b':
+			break;
 		case '+':
 			if (plus)
 				goto bad_mode;
@@ -682,12 +684,12 @@ mode_string(PyFileIOObject *self)
 {
 	if (self->readable) {
 		if (self->writable)
-			return "r+";
+			return "rb+";
 		else
-			return "r";
+			return "rb";
 	}
 	else
-		return "w";
+		return "wb";
 }
 
 static PyObject *

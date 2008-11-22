@@ -48,6 +48,8 @@ Core and Builtins
 Library
 -------
 
+- FileIO's mode attribute now always includes ``"b"``.
+
 - Issue #3799: Fix dbm.dumb to accept strings as well as bytes for keys. String
   keys are now written out in UTF-8.
 

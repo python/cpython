@@ -1875,6 +1875,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       view objects.
 
 
+.. _dict-views:
+
 Dictionary view objects
 -----------------------
 
