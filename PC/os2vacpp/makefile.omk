@@ -164,8 +164,7 @@ MODULES		=                   \
                   StropModule.obj   \
                   StructModule.obj  \
                   TimeModule.obj    \
-                  ThreadModule.obj  \
-                  YUVConvert.obj
+                  ThreadModule.obj
 
 # Omitted Modules (and Description/Reason):
   #
@@ -803,8 +802,7 @@ svmodule.obj: abstract.h c:\mptn\include\sys\time.h ceval.h classobject.h \
 	 intrcheck.h listobject.h longobject.h methodobject.h modsupport.h \
 	 moduleobject.h mymalloc.h myproto.h object.h objimpl.h pydebug.h \
 	 pyerrors.h pyfpe.h pystate.h python.h pythonrun.h rangeobject.h \
-	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h \
-	 yuv.h
+	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h
 
 syslogmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
@@ -853,8 +851,6 @@ xxmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
-
-yuvconvert.obj: yuv.h
 
 zlibmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
