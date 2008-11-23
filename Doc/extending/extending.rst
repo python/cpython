@@ -587,11 +587,16 @@ Note that any Python object references which are provided to the caller are
 
 Some example calls::
 
+   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #include <Python.h>
+
+::
+
    int ok;
    int i, j;
    long k, l;
    const char *s;
-   int size;
+   Py_ssize_t size;
 
    ok = PyArg_ParseTuple(args, ""); /* No arguments */
        /* Python call: f() */
