@@ -42,12 +42,18 @@ variable(s) whose address should be passed.
    responsible** for calling ``PyBuffer_Release`` with the structure after it
    has processed the data.
 
-``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int]
+``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int or :ctype:`Py_ssize_t`]
    This variant on ``s*`` stores into two C variables, the first one a pointer
    to a character string, the second one its length.  All other read-buffer
    compatible objects pass back a reference to the raw internal data
    representation.  Since this format doesn't allow writable buffer compatible
-   objects like byte arrays, ``s*`` is to be preferred.
+   objects like byte arrays, ``s*`` is to be preferred.  The type of
+   the length argument (int or :ctype:`Py_ssize_t`) is controlled by
+   defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before including
+   :file:`Python.h`.  If the macro was defined, length is a :ctype:`Py_ssize_t`
+   rather than an int.  This behavior will change in a future Python
+   version to only support :ctype:`Py_ssize_t` and drop int support.
+   It is best to always define :cmacro:`PY_SSIZE_T_CLEAN`.
 
 ``y`` (bytes object) [const char \*]
    This variant on ``s`` converts a Python bytes or bytearray object to a C
