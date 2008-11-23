@@ -164,6 +164,7 @@ _symtable symtablemodule.c
 #_collections _collectionsmodule.c # Container types
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
+#_functools functoolsmodule.c	# Tools for working with functions and callable objects
 
 #unicodedata unicodedata.c    # static Unicode character database
 
