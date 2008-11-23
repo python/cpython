@@ -1370,7 +1370,7 @@ function exported by these libraries, and reacquired afterwards.
 
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
-an already loaded shard library, it can be passed as the ``handle`` named
+an already loaded shared library, it can be passed as the ``handle`` named
 parameter, otherwise the underlying platforms ``dlopen`` or :meth:`LoadLibrary`
 function is used to load the library into the process, and to get a handle to
 it.
