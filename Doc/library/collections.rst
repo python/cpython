@@ -60,7 +60,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
                            :class:`Iterable`,     and ``__len__``         ``index``, and ``count``
                            :class:`Container`     
                                                   
-:class:`MutableSequnce`    :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
+:class:`MutableSequence`   :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
                                                   ``insert``,             ``remove``, and ``__iadd__``
                                                   and ``__len__``
