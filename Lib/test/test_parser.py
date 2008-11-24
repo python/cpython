@@ -196,6 +196,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_assert(self):
         self.check_suite("assert alo < ahi and blo < bhi\n")
 
+    def test_with(self):
+        self.check_suite("with open('x'): pass\n")
+        self.check_suite("with open('x') as f: pass\n")
+
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
