@@ -66,9 +66,9 @@ class _Database(collections.MutableMapping):
 
         # Mod by Jack: create data file if needed
         try:
-            f = _io.open(self._datfile, 'r')
+            f = _io.open(self._datfile, 'r', encoding="Latin-1")
         except IOError:
-            f = _io.open(self._datfile, 'w')
+            f = _io.open(self._datfile, 'w', encoding="Latin-1")
             self._chmod(self._datfile)
         f.close()
         self._update()
@@ -77,7 +77,7 @@ class _Database(collections.MutableMapping):
     def _update(self):
         self._index = {}
         try:
-            f = _io.open(self._dirfile, 'r')
+            f = _io.open(self._dirfile, 'r', encoding="Latin-1")
         except IOError:
             pass
         else:
@@ -108,7 +108,7 @@ class _Database(collections.MutableMapping):
         except self._os.error:
             pass
 
-        f = self._io.open(self._dirfile, 'w')
+        f = self._io.open(self._dirfile, 'w', encoding="Latin-1")
         self._chmod(self._dirfile)
         for key, pos_and_siz_pair in self._index.items():
             # Use Latin-1 since it has no qualms with any value in any
@@ -159,9 +159,9 @@ class _Database(collections.MutableMapping):
     # the in-memory index dict, and append one to the directory file.
     def _addkey(self, key, pos_and_siz_pair):
         self._index[key] = pos_and_siz_pair
-        f = _io.open(self._dirfile, 'a')
+        f = _io.open(self._dirfile, 'a', encoding="Latin-1")
         self._chmod(self._dirfile)
-        f.write("%r, %r\n" % (key, pos_and_siz_pair))
+        f.write("%r, %r\n" % (key.decode("Latin-1"), pos_and_siz_pair))
         f.close()
 
     def __setitem__(self, key, val):
@@ -169,8 +169,10 @@ class _Database(collections.MutableMapping):
             key = key.encode('utf-8')
         elif not isinstance(key, (bytes, bytearray)):
             raise TypeError("keys must be bytes or strings")
-        if not isinstance(val, (bytes, bytearray)):
-            raise TypeError("values must be bytes")
+        if isinstance(val, str):
+            val = val.encode('utf-8')
+        elif not isinstance(val, (bytes, bytearray)):
+            raise TypeError("values must be bytes or strings")
         if key not in self._index:
             self._addkey(key, self._addval(val))
         else:
