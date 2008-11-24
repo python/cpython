@@ -96,6 +96,11 @@ C-API
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
 
+Extension Modules
+-----------------
+
+- Issue #4396: The parser module now correctly validates the with statement.
+
 
 What's New in Python 2.6 final
 ==============================
