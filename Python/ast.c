@@ -47,7 +47,8 @@ static PyObject *parsestrplus(struct compiling *, const node *n);
 static identifier
 new_identifier(const char* n, PyArena *arena) {
     PyObject* id = PyString_InternFromString(n);
-    PyArena_AddPyObject(arena, id);
+    if (id != NULL)
+        PyArena_AddPyObject(arena, id);
     return id;
 }
 
@@ -604,6 +605,7 @@ compiler_complex_args(struct compiling *c, const node *n)
     */
     REQ(n, fplist);
     for (i = 0; i < len; i++) {
+        PyObject *arg_id;
         const node *fpdef_node = CHILD(n, 2*i);
         const node *child;
         expr_ty arg;
@@ -612,9 +614,12 @@ set_name:
         child = CHILD(fpdef_node, 0);
         if (TYPE(child) == NAME) {
             if (!forbidden_check(c, n, STR(child)))
-                return NULL;  
-            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
-                       child->n_col_offset, c->c_arena);
+                return NULL;
+            arg_id = NEW_IDENTIFIER(child);
+            if (!arg_id)
+                return NULL;
+            arg = Name(arg_id, Store, LINENO(child), child->n_col_offset,
+                       c->c_arena);
         }
         else {
             assert(TYPE(fpdef_node) == fpdef);
@@ -724,11 +729,14 @@ ast_for_arguments(struct compiling *c, const node *n)
                     }
                 }
                 if (TYPE(CHILD(ch, 0)) == NAME) {
+                    PyObject *id;
                     expr_ty name;
                     if (!forbidden_check(c, n, STR(CHILD(ch, 0))))
                         goto error;
-                    name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
-                                Param, LINENO(ch), ch->n_col_offset,
+                    id = NEW_IDENTIFIER(CHILD(ch, 0));
+                    if (!id)
+                        goto error;
+                    name = Name(id, Param, LINENO(ch), ch->n_col_offset,
                                 c->c_arena);
                     if (!name)
                         goto error;
@@ -741,12 +749,16 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
                     goto error;
                 vararg = NEW_IDENTIFIER(CHILD(n, i+1));
+                if (!vararg)
+                    goto error;
                 i += 3;
                 break;
             case DOUBLESTAR:
                 if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
                     goto error;
                 kwarg = NEW_IDENTIFIER(CHILD(n, i+1));
+                if (!kwarg)
+                    goto error;
                 i += 3;
                 break;
             default:
@@ -1282,11 +1294,14 @@ ast_for_atom(struct compiling *c, const node *n)
     node *ch = CHILD(n, 0);
     
     switch (TYPE(ch)) {
-    case NAME:
+    case NAME: {
         /* All names start in Load context, but may later be
            changed. */
-        return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), n->n_col_offset,
-                    c->c_arena);
+        PyObject *name = NEW_IDENTIFIER(ch);
+        if (!name)
+            return NULL;
+        return Name(name, Load, LINENO(n), n->n_col_offset, c->c_arena);
+    }
     case STRING: {
         PyObject *str = parsestrplus(c, n);
         if (!str) {
@@ -1544,7 +1559,10 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return ast_for_call(c, CHILD(n, 1), left_expr);
     }
     else if (TYPE(CHILD(n, 0)) == DOT ) {
-        return Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load,
+        PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!attr_id)
+            return NULL;
+        return Attribute(left_expr, attr_id, Load,
                          LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2318,7 +2336,7 @@ alias_for_import_name(struct compiling *c, const node *n)
       dotted_as_name: dotted_name ['as' NAME]
       dotted_name: NAME ('.' NAME)*
     */
-    PyObject *str;
+    PyObject *str, *name;
 
  loop:
     switch (TYPE(n)) {
@@ -2326,8 +2344,13 @@ alias_for_import_name(struct compiling *c, const node *n)
             str = NULL;
             if (NCH(n) == 3) {
                 str = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!str)
+                    return NULL;
             }
-            return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
+            name = NEW_IDENTIFIER(CHILD(n, 0));
+            if (!name)
+                return NULL;
+            return alias(name, str, c->c_arena);
         case dotted_as_name:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
@@ -2339,12 +2362,18 @@ alias_for_import_name(struct compiling *c, const node *n)
                     return NULL;
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!a->asname)
+                    return NULL;
                 return a;
             }
             break;
         case dotted_name:
-            if (NCH(n) == 1)
-                return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL, c->c_arena);
+            if (NCH(n) == 1) {
+                name = NEW_IDENTIFIER(CHILD(n, 0));
+                if (!name)
+                    return NULL;
+                return alias(name, NULL, c->c_arena);
+            }
             else {
                 /* Create a string of the form "a.b.c" */
                 int i;
@@ -3023,6 +3052,7 @@ static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
     /* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
+    PyObject *classname;
     asdl_seq *bases, *s;
     
     REQ(n, classdef);
@@ -3034,16 +3064,22 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+        return ClassDef(classname, NULL, s, decorator_seq, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
     /* check for empty base list */
     if (TYPE(CHILD(n,3)) == RPAR) {
         s = ast_for_suite(c, CHILD(n,5));
         if (!s)
-                return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+            return NULL;
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+        return ClassDef(classname, NULL, s, decorator_seq, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
 
     /* else handle the base class list */
@@ -3054,7 +3090,10 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, decorator_seq,
+    classname = NEW_IDENTIFIER(CHILD(n, 1));
+    if (!classname)
+        return NULL;
+    return ClassDef(classname, bases, s, decorator_seq,
                     LINENO(n), n->n_col_offset, c->c_arena);
 }
 
