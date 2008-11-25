@@ -13,7 +13,7 @@ Becomes:
 # Local imports
 from .. import fixer_base
 from os.path import dirname, join, exists, pathsep
-from ..fixer_util import FromImport
+from ..fixer_util import FromImport, syms
 
 class FixImport(fixer_base.BaseFix):
 
@@ -26,11 +26,14 @@ class FixImport(fixer_base.BaseFix):
     def transform(self, node, results):
         imp = results['imp']
 
-        if unicode(imp).startswith('.'):
+        mod_name = unicode(imp.children[0] if imp.type == syms.dotted_as_name \
+                               else imp)
+
+        if mod_name.startswith('.'):
             # Already a new-style import
             return
 
-        if not probably_a_local_import(unicode(imp), self.filename):
+        if not probably_a_local_import(mod_name, self.filename):
             # I guess this is a global import -- skip it!
             return
 

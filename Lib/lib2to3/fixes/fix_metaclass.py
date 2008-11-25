@@ -110,8 +110,11 @@ def find_metas(cls_node):
         if simple_node.type == syms.simple_stmt and simple_node.children:
             expr_node = simple_node.children[0]
             if expr_node.type == syms.expr_stmt and expr_node.children:
-                leaf_node = expr_node.children[0]
-                if leaf_node.value == '__metaclass__':
+                # Check if the expr_node is a simple assignment.
+                left_node = expr_node.children[0]
+                if isinstance(left_node, Leaf) and \
+                        left_node.value == '__metaclass__':
+                    # We found a assignment to __metaclass__.
                     fixup_simple_stmt(node, i, simple_node)
                     remove_trailing_newline(simple_node)
                     yield (node, i, simple_node)
