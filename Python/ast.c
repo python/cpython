@@ -51,9 +51,10 @@ static identifier
 new_identifier(const char* n, PyArena *arena)
 {
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    Py_UNICODE *u;
     if (!id)
         return NULL;
-    Py_UNICODE *u = PyUnicode_AS_UNICODE(id);
+    u = PyUnicode_AS_UNICODE(id);
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     for (; *u; u++) {
