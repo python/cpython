@@ -28,6 +28,12 @@ Library
 - Issue #4383: When IDLE cannot make the connection to its subprocess, it would
   fail to properly display the error message.
 
+Docs
+----
+
+- Issue #3799: Document that dbm.gnu and dbm.ndbm will accept string arguments
+  for keys and values which will be converted to bytes before committal.
+
 
 What's New in Python 3.0 release candidate 3?
 =============================================

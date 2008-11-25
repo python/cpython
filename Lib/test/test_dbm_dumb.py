@@ -115,11 +115,13 @@ class DumbDBMTestCase(unittest.TestCase):
         self.init_db()
         f = dumbdbm.open(_fname)
         f['\u00fc'] = b'!'
+        f['1'] = 'a'
         f.close()
         f = dumbdbm.open(_fname, 'r')
         self.assert_('\u00fc' in f)
         self.assertEqual(f['\u00fc'.encode('utf-8')],
                          self._dict['\u00fc'.encode('utf-8')])
+        self.assertEqual(f[b'1'], b'a')
 
     def test_line_endings(self):
         # test for bug #1172763: dumbdbm would die if the line endings

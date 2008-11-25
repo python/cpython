@@ -20,9 +20,11 @@ class DbmTestCase(unittest.TestCase):
         self.d = dbm.ndbm.open(self.filename, 'c')
         self.assert_(self.d.keys() == [])
         self.d['a'] = 'b'
+        self.d[b'bytes'] = b'data'
         self.d['12345678910'] = '019237410982340912840198242'
         self.d.keys()
         self.assert_(b'a' in self.d)
+        self.assertEqual(self.d[b'bytes'], b'data')
         self.d.close()
 
     def test_modes(self):
