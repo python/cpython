@@ -654,6 +654,7 @@ static int
 handle_keywordonly_args(struct compiling *c, const node *n, int start,
                         asdl_seq *kwonlyargs, asdl_seq *kwdefaults)
 {
+    PyObject *argname;
     node *ch;
     expr_ty expression, annotation;
     arg_ty arg;
@@ -690,11 +691,12 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     annotation = NULL;
                 }
                 ch = CHILD(ch, 0);
-                arg = arg(NEW_IDENTIFIER(ch), annotation, c->c_arena);
-                if (!arg) {
-                    ast_error(ch, "expecting name");
+                argname = NEW_IDENTIFIER(ch);
+                if (!argname)
                     goto error;
-                }
+                arg = arg(argname, annotation, c->c_arena);
+                if (!arg)
+                    goto error;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 2; /* the name and the comma */
                 break;
@@ -3000,7 +3002,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     /* classdef: 'class' NAME ['(' arglist ')'] ':' suite */
     PyObject *classname;
     asdl_seq *s;
-    expr_ty call, dummy;
+    expr_ty call;
 
     REQ(n, classdef);
 
@@ -3028,10 +3030,17 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 
     /* class NAME '(' arglist ')' ':' suite */
     /* build up a fake Call node so we can extract its pieces */
-    dummy = Name(NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n), n->n_col_offset, c->c_arena);
-    call = ast_for_call(c, CHILD(n, 3), dummy);
-    if (!call)
-        return NULL;
+    {
+        PyObject *dummy_name;
+        expr_ty dummy;
+        dummy_name = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!dummy_name)
+            return NULL;
+        dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, c->c_arena);
+        call = ast_for_call(c, CHILD(n, 3), dummy);
+        if (!call)
+            return NULL;
+    }
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
