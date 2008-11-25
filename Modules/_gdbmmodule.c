@@ -142,7 +142,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 
     if (!PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
         PyErr_SetString(PyExc_TypeError,
-                        "gdbm mappings have string indices only");
+                        "gdbm mappings have bytes or string indices only");
         return -1;
     }
     if (dp->di_dbm == NULL) {
@@ -160,7 +160,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     else {
         if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
             PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have byte string elements only");
+                            "gdbm mappings have byte or string elements only");
             return -1;
         }
         errno = 0;

@@ -20,9 +20,11 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(self.g.keys(), [])
         self.g['a'] = 'b'
         self.g['12345678910'] = '019237410982340912840198242'
+        self.g[b'bytes'] = b'data'
         key_set = set(self.g.keys())
         self.assertEqual(key_set, set([b'a', b'12345678910']))
         self.assert_(b'a' in self.g)
+        self.assertEqual(self.g[b'bytes'], b'data')
         key = self.g.firstkey()
         while key:
             self.assert_(key in key_set)
