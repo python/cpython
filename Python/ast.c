@@ -51,6 +51,8 @@ static identifier
 new_identifier(const char* n, PyArena *arena)
 {
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    if (!id)
+        return NULL;
     Py_UNICODE *u = PyUnicode_AS_UNICODE(id);
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
@@ -826,7 +828,6 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!arg)
                     goto error;
                 asdl_seq_SET(posargs, k++, arg);
-
                 i += 2; /* the name and the comma */
                 break;
             case STAR:
@@ -846,6 +847,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                 }
                 else {
                     vararg = NEW_IDENTIFIER(CHILD(ch, 0));
+                    if (!vararg)
+                        return NULL;
                     if (NCH(ch) > 1) {
                         /* there is an annotation on the vararg */
                         varargannotation = ast_for_expr(c, CHILD(ch, 2));
@@ -869,6 +872,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                     /* there is an annotation on the kwarg */
                     kwargannotation = ast_for_expr(c, CHILD(ch, 2));
                 }
+                if (!kwarg)
+                    goto error;
                 i += 3;
                 break;
             default:
@@ -1311,10 +1316,14 @@ ast_for_atom(struct compiling *c, const node *n)
     int bytesmode = 0;
     
     switch (TYPE(ch)) {
-    case NAME:
+    case NAME: {
         /* All names start in Load context, but may later be
            changed. */
-        return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), n->n_col_offset, c->c_arena);
+        PyObject *name = NEW_IDENTIFIER(ch);
+        if (!name)
+            return NULL;
+        return Name(name, Load, LINENO(n), n->n_col_offset, c->c_arena);
+    }
     case STRING: {
         PyObject *str = parsestrplus(c, n, &bytesmode);
         if (!str) {
@@ -1589,7 +1598,10 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return ast_for_call(c, CHILD(n, 1), left_expr);
     }
     else if (TYPE(CHILD(n, 0)) == DOT ) {
-        return Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load,
+        PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!attr_id)
+            return NULL;
+        return Attribute(left_expr, attr_id, Load,
                          LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2275,7 +2287,7 @@ alias_for_import_name(struct compiling *c, const node *n)
       dotted_as_name: dotted_name ['as' NAME]
       dotted_name: NAME ('.' NAME)*
     */
-    PyObject *str;
+    PyObject *str, *name;
 
  loop:
     switch (TYPE(n)) {
@@ -2283,8 +2295,13 @@ alias_for_import_name(struct compiling *c, const node *n)
             str = NULL;
             if (NCH(n) == 3) {
                 str = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!str)
+                    return NULL;
             }
-            return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
+            name = NEW_IDENTIFIER(CHILD(n, 0));
+            if (!name)
+                return NULL;
+            return alias(name, str, c->c_arena);
         case dotted_as_name:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
@@ -2296,12 +2313,18 @@ alias_for_import_name(struct compiling *c, const node *n)
                     return NULL;
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!a->asname)
+                    return NULL;
                 return a;
             }
             break;
         case dotted_name:
-            if (NCH(n) == 1)
-                return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL, c->c_arena);
+            if (NCH(n) == 1) {
+                name = NEW_IDENTIFIER(CHILD(n, 0));
+                if (!name)
+                    return NULL;
+                return alias(name, NULL, c->c_arena);
+            }
             else {
                 /* Create a string of the form "a.b.c" */
                 int i;
@@ -2974,6 +2997,7 @@ static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
     /* classdef: 'class' NAME ['(' arglist ')'] ':' suite */
+    PyObject *classname;
     asdl_seq *s;
     expr_ty call, dummy;
 
@@ -2983,16 +3007,22 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
-                        decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+        return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
+                        LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
         s = ast_for_suite(c, CHILD(n,5));
         if (!s)
-                return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
-                        decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
+            return NULL;
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+        return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
+                        LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -3004,9 +3034,11 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
+    classname = NEW_IDENTIFIER(CHILD(n, 1));
+    if (!classname)
+        return NULL;
 
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)),
-                    call->v.Call.args, call->v.Call.keywords,
+    return ClassDef(classname, call->v.Call.args, call->v.Call.keywords,
                     call->v.Call.starargs, call->v.Call.kwargs, s,
                     decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
 }
