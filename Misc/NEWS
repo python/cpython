@@ -22,7 +22,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #4373: Corrected a potential reference leak in the pickle module.
+- Issue #4373: Corrected a potential reference leak in the pickle module and
+  silenced a false positive ref leak in distutils.tests.test_build_ext.
 
 - Issue #4382: dbm.dumb did not specify the expected file encoding for opened
   files.
