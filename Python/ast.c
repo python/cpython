@@ -49,7 +49,8 @@ static PyObject *parsestrplus(struct compiling *, const node *n);
 static identifier
 new_identifier(const char* n, PyArena *arena) {
     PyObject* id = PyString_InternFromString(n);
-    PyArena_AddPyObject(arena, id);
+    if (id != NULL)
+        PyArena_AddPyObject(arena, id);
     return id;
 }
 
@@ -574,6 +575,7 @@ compiler_complex_args(struct compiling *c, const node *n)
     */
     REQ(n, fplist);
     for (i = 0; i < len; i++) {
+        PyObject *arg_id;
         const node *fpdef_node = CHILD(n, 2*i);
         const node *child;
         expr_ty arg;
@@ -581,13 +583,16 @@ set_name:
         /* fpdef_node is either a NAME or an fplist */
         child = CHILD(fpdef_node, 0);
         if (TYPE(child) == NAME) {
-    		if (!strcmp(STR(child), "None")) {
-	    		ast_error(child, "assignment to None");
-		    	return NULL;
-		    }   
-            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
-                       child->n_col_offset, c->c_arena);
-	    }
+            if (!strcmp(STR(child), "None")) {
+                    ast_error(child, "assignment to None");
+                    return NULL;
+            }   
+            arg_id = NEW_IDENTIFIER(child);
+            if (!arg_id)
+                return NULL;
+            arg = Name(arg_id, Store, LINENO(child), child->n_col_offset,
+                       c->c_arena);
+        }
         else {
             assert(TYPE(fpdef_node) == fpdef);
             /* fpdef_node[0] is not a name, so it must be a '(', get CHILD[1] */
@@ -693,13 +698,16 @@ ast_for_arguments(struct compiling *c, const node *n)
 		    }
                 }
                 if (TYPE(CHILD(ch, 0)) == NAME) {
+                    PyObject *id;
 		    expr_ty name;
 		    if (!strcmp(STR(CHILD(ch, 0)), "None")) {
 			    ast_error(CHILD(ch, 0), "assignment to None");
 			    goto error;
 		    }
-                    name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
-                                Param, LINENO(ch), ch->n_col_offset,
+                    id = NEW_IDENTIFIER(CHILD(ch, 0));
+                    if (!id)
+                        goto error;
+                    name = Name(id, Param, LINENO(ch), ch->n_col_offset,
                                 c->c_arena);
                     if (!name)
                         goto error;
@@ -714,6 +722,8 @@ ast_for_arguments(struct compiling *c, const node *n)
 			goto error;
 		}
                 vararg = NEW_IDENTIFIER(CHILD(n, i+1));
+                if (!vararg)
+                    goto error;
                 i += 3;
                 break;
             case DOUBLESTAR:
@@ -722,6 +732,8 @@ ast_for_arguments(struct compiling *c, const node *n)
 			goto error;
 		}
                 kwarg = NEW_IDENTIFIER(CHILD(n, i+1));
+                if (!kwarg)
+                    goto error;
                 i += 3;
                 break;
             default:
@@ -1235,10 +1247,14 @@ ast_for_atom(struct compiling *c, const node *n)
     node *ch = CHILD(n, 0);
     
     switch (TYPE(ch)) {
-    case NAME:
-	/* All names start in Load context, but may later be
-	   changed. */
-	return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), n->n_col_offset, c->c_arena);
+    case NAME: {
+        /* All names start in Load context, but may later be
+           changed. */
+        PyObject *id = NEW_IDENTIFIER(ch);
+        if (!id)
+            return NULL;
+        return Name(id, Load, LINENO(n), n->n_col_offset, c->c_arena);
+    }
     case STRING: {
 	PyObject *str = parsestrplus(c, n);
 	if (!str)
@@ -1472,7 +1488,10 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return ast_for_call(c, CHILD(n, 1), left_expr);
     }
     else if (TYPE(CHILD(n, 0)) == DOT ) {
-        return Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load,
+        PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!attr_id)
+            return NULL;
+        return Attribute(left_expr, attr_id, Load,
                          LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2226,7 +2245,7 @@ alias_for_import_name(struct compiling *c, const node *n)
       dotted_as_name: dotted_name ['as' NAME]
       dotted_name: NAME ('.' NAME)*
     */
-    PyObject *str;
+    PyObject *str, *name;
 
  loop:
     switch (TYPE(n)) {
@@ -2238,8 +2257,13 @@ alias_for_import_name(struct compiling *c, const node *n)
                     return NULL;
                 }
                 str = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!str)
+                    return NULL;
             }
-            return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
+            name = NEW_IDENTIFIER(CHILD(n, 0));
+            if (!name)
+                return NULL;
+            return alias(name, str, c->c_arena);
         case dotted_as_name:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
@@ -2255,12 +2279,18 @@ alias_for_import_name(struct compiling *c, const node *n)
                 }
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
+                if (!a->asname)
+                    return NULL;
                 return a;
             }
             break;
         case dotted_name:
-            if (NCH(n) == 1)
-                return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL, c->c_arena);
+            if (NCH(n) == 1) {
+                name = NEW_IDENTIFIER(CHILD(n, 0));
+                if (!name)
+                    return NULL;
+                return alias(name, NULL, c->c_arena);
+            }
             else {
                 /* Create a string of the form "a.b.c" */
                 int i;
@@ -2938,6 +2968,7 @@ static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n)
 {
     /* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
+    PyObject *classname;
     asdl_seq *bases, *s;
     
     REQ(n, classdef);
@@ -2951,15 +2982,21 @@ ast_for_classdef(struct compiling *c, const node *n)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+        return ClassDef(classname, NULL, s, LINENO(n),
                         n->n_col_offset, c->c_arena);
     }
     /* check for empty base list */
     if (TYPE(CHILD(n,3)) == RPAR) {
-	s = ast_for_suite(c, CHILD(n,5));
-	if (!s)
-		return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+        s = ast_for_suite(c, CHILD(n, 5));
+        if (!s)
+            return NULL;
+        classname = NEW_IDENTIFIER(CHILD(n, 1));
+        if (!classname)
+            return NULL;
+	return ClassDef(classname, NULL, s, LINENO(n),
                         n->n_col_offset, c->c_arena);
     }
 
@@ -2971,7 +3008,10 @@ ast_for_classdef(struct compiling *c, const node *n)
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n),
+    classname = NEW_IDENTIFIER(CHILD(n, 1));
+    if (!classname)
+        return NULL;
+    return ClassDef(classname, bases, s, LINENO(n),
                     n->n_col_offset, c->c_arena);
 }
 
