@@ -209,21 +209,21 @@ set_last_error(PyObject *self, PyObject *args)
 
 PyObject *ComError;
 
-static TCHAR *FormatError(DWORD code)
+static WCHAR *FormatError(DWORD code)
 {
-	TCHAR *lpMsgBuf;
+	WCHAR *lpMsgBuf;
 	DWORD n;
-	n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			  NULL,
-			  code,
-			  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-			  (LPTSTR) &lpMsgBuf,
-			  0,
-			  NULL);
+	n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			   NULL,
+			   code,
+			   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+			   (LPWSTR) &lpMsgBuf,
+			   0,
+			   NULL);
 	if (n) {
-		while (_istspace(lpMsgBuf[n-1]))
+		while (iswspace(lpMsgBuf[n-1]))
 			--n;
-		lpMsgBuf[n] = _T('\0'); /* rstrip() */
+		lpMsgBuf[n] = L'\0'; /* rstrip() */
 	}
 	return lpMsgBuf;
 }
@@ -231,7 +231,7 @@ static TCHAR *FormatError(DWORD code)
 #ifndef DONT_USE_SEH
 void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
-	TCHAR *lpMsgBuf;
+	WCHAR *lpMsgBuf;
 	lpMsgBuf = FormatError(code);
 	if(lpMsgBuf) {
 		PyErr_SetFromWindowsErr(code);
@@ -972,7 +972,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	DWORD helpcontext=0;
 	LPOLESTR progid;
 	PyObject *obj;
-	TCHAR *text;
+	LPOLESTR text;
 
 	/* We absolutely have to release the GIL during COM method calls,
 	   otherwise we may get a deadlock!
@@ -1012,11 +1012,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 
 	text = FormatError(errcode);
 	obj = Py_BuildValue(
-#ifdef _UNICODE
 		"iu(uuuiu)",
-#else
-		"is(uuuiu)",
-#endif
 		errcode,
 		text,
 		descr, source, helpfile, helpcontext,
@@ -1202,15 +1198,6 @@ _parse_voidp(PyObject *obj, void **address)
 
 #ifdef MS_WIN32
 
-#ifdef _UNICODE
-#  define PYBUILD_TSTR "u"
-#else
-#  define PYBUILD_TSTR "s"
-#  ifndef _T
-#    define _T(text) text
-#  endif
-#endif
-
 static char format_error_doc[] =
 "FormatError([integer]) -> string\n\
 \n\
@@ -1219,7 +1206,7 @@ given, the return value of a call to GetLastError() is used.\n";
 static PyObject *format_error(PyObject *self, PyObject *args)
 {
 	PyObject *result;
-	TCHAR *lpMsgBuf;
+	wchar_t *lpMsgBuf;
 	DWORD code = 0;
 	if (!PyArg_ParseTuple(args, "|i:FormatError", &code))
 		return NULL;
@@ -1227,10 +1214,10 @@ static PyObject *format_error(PyObject *self, PyObject *args)
 		code = GetLastError();
 	lpMsgBuf = FormatError(code);
 	if (lpMsgBuf) {
-		result = Py_BuildValue(PYBUILD_TSTR, lpMsgBuf);
+		result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
 		LocalFree(lpMsgBuf);
 	} else {
-		result = Py_BuildValue("s", "<no description>");
+		result = PyUnicode_FromString("<no description>");
 	}
 	return result;
 }
