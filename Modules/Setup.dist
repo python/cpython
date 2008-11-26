@@ -165,6 +165,8 @@ _symtable symtablemodule.c
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 #_functools _functoolsmodule.c	# Tools for working with functions and callable objects
+#_elementtreee _elementtree.c	# elementtree accelerator
+#_pickle _pickle.c	# pickle accelerator
 
 #unicodedata unicodedata.c    # static Unicode character database
 
