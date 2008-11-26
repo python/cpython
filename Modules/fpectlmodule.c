@@ -302,7 +302,7 @@ static struct PyModuleDef fpectlmodule = {
 PyMODINIT_FUNC PyInit_fpectl(void)
 {
     PyObject *m, *d;
-    m = PyModule_Create("fpectl", fpectl_methods);
+    m = PyModule_Create(&fpectlmodule);
     if (m == NULL)
     	return NULL;
     d = PyModule_GetDict(m);
