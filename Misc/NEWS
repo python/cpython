@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4433: Fixed an access violation when garbage collecting
+  _ctypes.COMError instances.
+
 - Issue #4429: Fixed UnicodeDecodeError in ctypes.
 
 - Issue #4373: Corrected a potential reference leak in the pickle module and
