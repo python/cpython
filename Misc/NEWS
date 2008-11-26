@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4429: Fixed UnicodeDecodeError in ctypes.
+
 - Issue #4373: Corrected a potential reference leak in the pickle module and
   silenced a false positive ref leak in distutils.tests.test_build_ext.
 
