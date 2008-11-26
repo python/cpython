@@ -1857,6 +1857,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
   int fd;
   FILE *fp;
   PyObject *data;
+  size_t datalen;
   WINDOW *win;
 
   PyCursesInitialised
@@ -1886,7 +1887,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     remove(fn);
     return NULL;
   }
-  fwrite(PyBytes_AS_STRING(data), 1, PyBytes_GET_SIZE(data), fp);
+  datalen = PyBytes_GET_SIZE(data);
+  if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
+    Py_DECREF(data);
+    fclose(fp);
+    remove(fn);
+    return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+  }
   Py_DECREF(data);
   fseek(fp, 0, 0);
   win = getwin(fp);
