@@ -19,6 +19,8 @@ Core and Builtins
 - Issue #4367: Python would segfault during compiling when the unicodedata
   module couldn't be imported and \N escapes were present.
 
+- Fix build failure of _cursesmodule.c building with -D_FORTIFY_SOURCE=2.
+
 Library
 -------
 
