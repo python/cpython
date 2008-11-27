@@ -168,6 +168,7 @@ _symtable symtablemodule.c
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #datetime datetimemodule.c	# date/time type
+#_bisect _bisectmodule.c	# Bisection algorithms
 
 #unicodedata unicodedata.c    # static Unicode character database
 
