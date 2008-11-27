@@ -380,9 +380,7 @@ _symtable symtablemodule.c
 #
 # More information on Expat can be found at www.libexpat.org.
 #
-#EXPAT_DIR=/usr/local/src/expat-1.95.2
-#pyexpat pyexpat.c -DHAVE_EXPAT_H -I$(EXPAT_DIR)/lib -L$(EXPAT_DIR) -lexpat
-
+#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI
 
 # Hye-Shik Chang's CJKCodecs
 
