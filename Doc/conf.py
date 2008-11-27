@@ -145,6 +145,8 @@ latex_preamble = r'''
 # Documents to append as an appendix to all manuals.
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
+latex_elements = {'inputenc': '\\usepackage[utf8x]{inputenc}'}
+
 # Options for the coverage checker
 # --------------------------------
 
