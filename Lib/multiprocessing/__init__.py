@@ -113,7 +113,7 @@ def cpu_count():
             num = int(os.environ['NUMBER_OF_PROCESSORS'])
         except (ValueError, KeyError):
             num = 0
-    elif sys.platform == 'darwin':
+    elif 'bsd' in sys.platform or sys.platform == 'darwin':
         try:
             num = int(os.popen('sysctl -n hw.ncpu').read())
         except ValueError:
