@@ -37,7 +37,6 @@ def get_logger():
 _logger = logging.getLogger('distributing')
 _logger.propogate = 0
 
-util.fix_up_logger(_logger)
 _formatter = logging.Formatter(util.DEFAULT_LOGGING_FORMAT)
 _handler = logging.StreamHandler()
 _handler.setFormatter(_formatter)
