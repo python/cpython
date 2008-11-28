@@ -153,30 +153,6 @@ def is_list(node):
             and node.children[0].value == "["
             and node.children[-1].value == "]")
 
-###########################################################
-### Common portability code. This allows fixers to do, eg,
-###  "from .util import set" and forget about it.
-###########################################################
-
-try:
-    any = any
-except NameError:
-    def any(l):
-        for o in l:
-            if o:
-                return True
-        return False
-
-try:
-    set = set
-except NameError:
-    from sets import Set as set
-
-try:
-    reversed = reversed
-except NameError:
-    def reversed(l):
-        return l[::-1]
 
 ###########################################################
 ### Misc

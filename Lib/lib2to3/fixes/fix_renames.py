@@ -8,7 +8,7 @@ Fixes:
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import Name, attr_chain, any, set
+from ..fixer_util import Name, attr_chain
 
 MAPPING = {"sys":  {"maxint" : "maxsize"},
           }
