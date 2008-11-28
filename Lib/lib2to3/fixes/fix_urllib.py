@@ -7,7 +7,7 @@
 # Local imports
 from .fix_imports import alternates, FixImports
 from .. import fixer_base
-from ..fixer_util import Name, Comma, FromImport, Newline, attr_chain, any, set
+from ..fixer_util import Name, Comma, FromImport, Newline, attr_chain
 
 MAPPING = {'urllib':  [
                 ('urllib.request',
@@ -65,7 +65,9 @@ def build_pattern():
 
 
 class FixUrllib(FixImports):
-    PATTERN = "|".join(build_pattern())
+
+    def build_pattern(self):
+        return "|".join(build_pattern())
 
     def transform_import(self, node, results):
         """Transform for the basic import case. Replaces the old

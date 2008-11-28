@@ -10,7 +10,6 @@ MAPPING = {
 
 
 class FixImports2(fix_imports.FixImports):
-    PATTERN = "|".join((fix_imports.build_pattern(MAPPING)))
 
     order = "post"
 

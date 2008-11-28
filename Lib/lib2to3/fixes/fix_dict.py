@@ -28,7 +28,7 @@ from .. import pytree
 from .. import patcomp
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Name, Call, LParen, RParen, ArgList, Dot, set
+from ..fixer_util import Name, Call, LParen, RParen, ArgList, Dot
 from .. import fixer_util
 
 
