@@ -316,7 +316,7 @@ class MSVCCompiler(CCompiler) :
         self.__version = VERSION
         self.__root = r"Software\Microsoft\VisualStudio"
         # self.__macros = MACROS
-        self.__path = []
+        self.__paths = []
         # target platform (.plat_name is consistent with 'bdist')
         self.plat_name = None
         self.__arch = None # deprecated name
