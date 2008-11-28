@@ -25,7 +25,7 @@ The following cases will be converted:
 from .. import pytree
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Assign, Attr, Name, is_tuple, is_list, reversed
+from ..fixer_util import Assign, Attr, Name, is_tuple, is_list
 
 def find_excepts(nodes):
     for i, n in enumerate(nodes):

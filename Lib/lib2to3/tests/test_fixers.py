@@ -15,10 +15,7 @@ from itertools import chain
 from operator import itemgetter
 
 # Local imports
-from .. import pygram
-from .. import pytree
-from .. import refactor
-from .. import fixer_util
+from lib2to3 import pygram, pytree, refactor, fixer_util
 
 
 class FixerTestCase(support.TestCase):
@@ -30,10 +27,9 @@ class FixerTestCase(support.TestCase):
         self.fixer_log = []
         self.filename = "<string>"
 
-        for order in (self.refactor.pre_order.values(),\
-                      self.refactor.post_order.values()):
-            for fixer in chain(*order):
-                fixer.log = self.fixer_log
+        for fixer in chain(self.refactor.pre_order,
+                           self.refactor.post_order):
+            fixer.log = self.fixer_log
 
     def _check(self, before, after):
         before = support.reformat(before)
@@ -1487,6 +1483,44 @@ class Test_imports(FixerTestCase):
                 foo(%s.bar)
                 """ % (new, new)
             self.check(b, a)
+
+            b = """
+                from %s import x
+                %s = 23
+                """ % (old, old)
+            a = """
+                from %s import x
+                %s = 23
+                """ % (new, old)
+            self.check(b, a)
+
+            s = """
+                def f():
+                    %s.method()
+                """ % (old,)
+            self.unchanged(s)
+
+            # test nested usage
+            b = """
+                import %s
+                %s.bar(%s.foo)
+                """ % (old, old, old)
+            a = """
+                import %s
+                %s.bar(%s.foo)
+                """ % (new, new, new)
+            self.check(b, a)
+
+            b = """
+                import %s
+                x.%s
+                """ % (old, old)
+            a = """
+                import %s
+                x.%s
+                """ % (new, old)
+            self.check(b, a)
+
 
 
 class Test_imports2(Test_imports):

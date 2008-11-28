@@ -161,7 +161,7 @@ class TestRefactoringTool(unittest.TestCase):
         self.assertEqual(len(rt.post_order), 0)
 
         rt = self.rt(explicit=["myfixes.fix_explicit"])
-        for fix in rt.post_order[None]:
+        for fix in rt.post_order:
             if isinstance(fix, FixExplicit):
                 break
         else:
