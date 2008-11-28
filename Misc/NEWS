@@ -44,6 +44,8 @@ Library
 Docs
 ----
 
+- Issue #4449: Fixed multiprocessing examples
+
 - Issue #3799: Document that dbm.gnu and dbm.ndbm will accept string arguments
   for keys and values which will be converted to bytes before committal.
 
