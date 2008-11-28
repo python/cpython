@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4455: IDLE failed to display the windows list when two windows have
+  the same title.
+
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
 
