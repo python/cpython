@@ -7,12 +7,6 @@
 import logging
 import itertools
 
-# Get a usable 'set' constructor
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 # Local imports
 from .patcomp import PatternCompiler
 from . import pygram
