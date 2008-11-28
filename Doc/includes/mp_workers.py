@@ -65,9 +65,9 @@ def test():
         Process(target=worker, args=(task_queue, done_queue)).start()
 
     # Get and print results
-    print 'Unordered results:'
+    print('Unordered results:')
     for i in range(len(TASKS1)):
-        print '\t', done_queue.get()
+        print('\t', done_queue.get())
 
     # Add more tasks using `put()`
     for task in TASKS2:
@@ -75,7 +75,7 @@ def test():
 
     # Get and print some more results
     for i in range(len(TASKS2)):
-        print '\t', done_queue.get()
+        print('\t', done_queue.get())
 
     # Tell child processes to stop
     for i in range(NUMBER_OF_PROCESSES):
