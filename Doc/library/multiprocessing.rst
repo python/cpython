@@ -24,6 +24,29 @@ Windows.
     import it will result in an :exc:`ImportError`. See 
     :issue:`3770` for additional information.
 
+.. note::
+
+    Functionality within this package requires that the ``__main__`` method be
+    importable by the children. This is covered in :ref:`multiprocessing-programming`
+    however it is worth pointing out here. This means that some examples, such
+    as the :class:`multiprocessing.Pool` examples will not work in the
+    interactive interpreter. For example::
+
+        >>> from multiprocessing import Pool
+        >>> p = Pool(5)
+        >>> def f(x):
+        ... 	return x*x
+        ... 
+        >>> p.map(f, [1,2,3])
+        Process PoolWorker-1:
+        Process PoolWorker-2:
+        Traceback (most recent call last):
+        Traceback (most recent call last):
+        AttributeError: 'module' object has no attribute 'f'
+        AttributeError: 'module' object has no attribute 'f'
+        AttributeError: 'module' object has no attribute 'f'
+
+
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -32,17 +55,36 @@ object and then calling its :meth:`~Process.start` method.  :class:`Process`
 follows the API of :class:`threading.Thread`.  A trivial example of a
 multiprocess program is ::
 
-   from multiprocessing import Process
+    from multiprocessing import Process
 
    def f(name):
        print('hello', name)
 
-   if __name__ == '__main__':
-       p = Process(target=f, args=('bob',))
-       p.start()
-       p.join()
+    if __name__ == '__main__':
+        p = Process(target=f, args=('bob',))
+        p.start()
+        p.join()
 
-Here the function ``f`` is run in a child process.
+To show the individual process IDs involved, here is an expanded example::
+
+    from multiprocessing import Process
+    import os
+
+    def info(title):
+        print title
+        print 'module name:', __name__
+        print 'parent process:', os.getppid()
+        print 'process id:', os.getpid()
+    
+    def f(name):
+        info('function f')
+        print 'hello', name
+    
+    if __name__ == '__main__':
+        info('main line')
+        p = Process(target=f, args=('bob',))
+        p.start()
+        p.join()
 
 For an explanation of why (on Windows) the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
@@ -231,10 +273,10 @@ For example::
        return x*x
 
    if __name__ == '__main__':
-       pool = Pool(processes=4)           # start 4 worker processes
-       result = pool.apply_async(f, [10]) # evaluate "f(10)" asynchronously
-       print(result.get(timeout=1))       # prints "100" unless your computer is *very* slow
-       print(pool.map(f, range(10)))      # prints "[0, 1, 4,..., 81]"
+       pool = Pool(processes=4)              # start 4 worker processes
+       result = pool.apply_async(f, [10])     # evaluate "f(10)" asynchronously
+       print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
+       print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
 
 
 Reference
@@ -305,7 +347,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       semantics.  Multiple processes may be given the same name.  The initial
       name is set by the constructor.
 
-   .. method:: is_alive()
+   .. method:: is_alive
 
       Return whether the process is alive.
 
@@ -814,6 +856,9 @@ object -- see :ref:`multiprocessing-managers`.
    acceptable.  If *block* is ``True`` and *timeout* is not ``None`` then it
    specifies a timeout in seconds.  If *block* is ``False`` then *timeout* is
    ignored.
+   
+   Note that on OS/X ``sem_timedwait`` is unsupported, so timeout arguments
+   for these will be ignored.
 
 .. note::
 
@@ -1087,6 +1132,27 @@ their parent process exits.  The manager classes are defined in the
       A class method which creates a manager object referring to a pre-existing
       server process which is using the given address and authentication key.
 
+   .. method:: get_server()
+      
+      Returns a :class:`Server` object which represents the actual server under
+      the control of the Manager. The :class:`Server` object supports the 
+      :meth:`serve_forever` method::
+      
+       >>> from multiprocessing.managers import BaseManager
+       >>> m = BaseManager(address=('', 50000), authkey='abc'))
+       >>> server = m.get_server()
+       >>> s.serve_forever()
+       
+       :class:`Server` additionally have an :attr:`address` attribute.
+
+   .. method:: connect()
+   
+      Connect a local manager object to a remote manager process::
+      
+      >>> from multiprocessing.managers import BaseManager
+      >>> m = BaseManager(address='127.0.0.1', authkey='abc))
+      >>> m.connect()
+
    .. method:: shutdown()
 
       Stop the process used by the manager.  This is only available if
@@ -1265,19 +1331,20 @@ remote clients can access::
    >>> queue = queue.Queue()
    >>> class QueueManager(BaseManager): pass
    ...
-   >>> QueueManager.register('getQueue', callable=lambda:queue)
+   >>> QueueManager.register('get_queue', callable=lambda:queue)
    >>> m = QueueManager(address=('', 50000), authkey='abracadabra')
-   >>> m.serveForever()
+   >>> s = m.get_server()
+   >>> s.serveForever()
 
 One client can access the server as follows::
 
    >>> from multiprocessing.managers import BaseManager
    >>> class QueueManager(BaseManager): pass
    ...
-   >>> QueueManager.register('getQueue')
-   >>> m = QueueManager.from_address(address=('foo.bar.org', 50000),
-   >>> authkey='abracadabra')
-   >>> queue = m.getQueue()
+   >>> QueueManager.register('get_queue')
+   >>> m = QueueManager(address=('foo.bar.org', 50000), authkey='abracadabra')
+   >>> m.connect()
+   >>> queue = m.get_queue()
    >>> queue.put('hello')
 
 Another client can also use it::
@@ -1291,6 +1358,27 @@ Another client can also use it::
    >>> queue.get()
    'hello'
 
+Local processes can also access that queue, using the code from above on the 
+client to access it remotely::
+
+    >>> from multiprocessing import Process, Queue
+    >>> from multiprocessing.managers import BaseManager
+    >>> class Worker(Process):
+    ...     def __init__(self, q):
+    ...         self.q = q
+    ...         super(Worker, self).__init__()
+    ...     def run(self):
+    ...         self.q.put('local hello')
+    ... 
+    >>> queue = Queue()
+    >>> w = Worker(queue)
+    >>> w.start()
+    >>> class QueueManager(BaseManager): pass
+    ... 
+    >>> QueueManager.register('get_queue', callable=lambda: queue)
+    >>> m = QueueManager(address=('', 50000), authkey='abracadabra')
+    >>> s = m.get_server()
+    >>> s.serve_forever()
 
 Proxy Objects
 ~~~~~~~~~~~~~
