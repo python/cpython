@@ -26,9 +26,9 @@ class WindowList:
                 title = window.get_title()
             except TclError:
                 continue
-            list.append((title, window))
+            list.append((title, key, window))
         list.sort()
-        for title, window in list:
+        for title, key, window in list:
             menu.add_command(label=title, command=window.wakeup)
 
     def register_callback(self, callback):
