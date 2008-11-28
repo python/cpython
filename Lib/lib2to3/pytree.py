@@ -11,6 +11,9 @@ There's also a pattern matching implementation here.
 
 __author__ = "Guido van Rossum <guido@python.org>"
 
+import sys
+from StringIO import StringIO
+
 
 HUGE = 0x7FFFFFFF  # maximum repeat count, default max
 
@@ -655,6 +658,11 @@ class WildcardPattern(BasePattern):
         elif self.name == "bare_name":
             yield self._bare_name_matches(nodes)
         else:
+            # The reason for this is that hitting the recursion limit usually
+            # results in some ugly messages about how RuntimeErrors are being
+            # ignored.
+            save_stderr = sys.stderr
+            sys.stderr = StringIO()
             try:
                 for count, r in self._recursive_matches(nodes, 0):
                     if self.name:
@@ -667,6 +675,8 @@ class WildcardPattern(BasePattern):
                     if self.name:
                         r[self.name] = nodes[:count]
                     yield count, r
+            finally:
+                sys.stderr = save_stderr
 
     def _iterative_matches(self, nodes):
         """Helper to iteratively yield the matches."""

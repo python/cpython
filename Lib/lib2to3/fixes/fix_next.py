@@ -9,7 +9,7 @@
 from ..pgen2 import token
 from ..pygram import python_symbols as syms
 from .. import fixer_base
-from ..fixer_util import Name, Call, find_binding, any
+from ..fixer_util import Name, Call, find_binding
 
 bind_warning = "Calls to builtin next() possibly shadowed by global binding"
 
