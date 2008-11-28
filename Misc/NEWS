@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
+  exception.
+
 - Issue #4433: Fixed an access violation when garbage collecting
   _ctypes.COMError instances.
 
