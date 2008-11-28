@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
+  exception.
+
 - Issue #4363: The uuid.uuid1() and uuid.uuid4() functions now work even if
   the ctypes module is not present.
 
