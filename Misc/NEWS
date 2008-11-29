@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- IDLE would print a "Unhandled server exception!" message when internal
+  debugging is enabled.
+
 - Issue #4455: IDLE failed to display the windows list when two windows have
   the same title.
 

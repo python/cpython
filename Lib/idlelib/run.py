@@ -230,7 +230,7 @@ class MyRPCServer(rpc.RPCServer):
             erf = sys.__stderr__
             print('\n' + '-'*40, file=erf)
             print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.current_thread().get_name(), file=erf)
+            print('Thread: %s' % threading.current_thread().name, file=erf)
             print('Client Address: ', client_address, file=erf)
             print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)
