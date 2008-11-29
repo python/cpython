@@ -326,6 +326,11 @@ class HTTPResponse:
     # See RFC 2616 sec 19.6 and RFC 1945 sec 6 for details.
 
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
+        # The buffer size is specified as zero, because the headers of
+        # the response are read with readline().  If the reads were
+        # buffered the readline() calls could consume some of the
+        # response, which make be read via a recv() on the underlying
+        # socket.
         self.fp = sock.makefile('rb', 0)
         self.debuglevel = debuglevel
         self.strict = strict
@@ -729,7 +734,7 @@ class HTTPConnection:
         """
         self._buffer.append(s)
 
-    def _send_output(self):
+    def _send_output(self, message_body=None):
         """Send the currently buffered request and clear the buffer.
 
         Appends an extra \\r\\n to the buffer.
@@ -737,6 +742,11 @@ class HTTPConnection:
         self._buffer.extend(("", ""))
         msg = "\r\n".join(self._buffer)
         del self._buffer[:]
+        # If msg and message_body are sent in a single send() call,
+        # it will avoid performance problems caused by the interaction
+        # between delayed ack and the Nagle algorithim.
+        if message_body is not None:
+            msg += message_body
         self.send(msg)
 
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
@@ -857,15 +867,20 @@ class HTTPConnection:
         str = '%s: %s' % (header, '\r\n\t'.join(values))
         self._output(str)
 
-    def endheaders(self):
-        """Indicate that the last header line has been sent to the server."""
+    def endheaders(self, message_body=None):
+        """Indicate that the last header line has been sent to the server.
 
+        This method sends the request to the server.  The optional
+        message_body argument can be used to pass message body
+        associated with the request.  The message body will be sent in
+        the same packet as the message headers if possible.  The
+        message_body should be a string.
+        """
         if self.__state == _CS_REQ_STARTED:
             self.__state = _CS_REQ_SENT
         else:
             raise CannotSendHeader()
-
-        self._send_output()
+        self._send_output(message_body)
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
@@ -879,6 +894,24 @@ class HTTPConnection:
             # try one more time
             self._send_request(method, url, body, headers)
 
+    def _set_content_length(self, body):
+        # Set the content-length based on the body.
+        thelen = None
+        try:
+            thelen = str(len(body))
+        except TypeError, te:
+            # If this is a file-like object, try to
+            # fstat its file descriptor
+            import os
+            try:
+                thelen = str(os.fstat(body.fileno()).st_size)
+            except (AttributeError, OSError):
+                # Don't send a length if this failed
+                if self.debuglevel > 0: print "Cannot stat!!"
+
+        if thelen is not None:
+            self.putheader('Content-Length', thelen)
+
     def _send_request(self, method, url, body, headers):
         # honour explicitly requested Host: and Accept-Encoding headers
         header_names = dict.fromkeys([k.lower() for k in headers])
@@ -891,27 +924,15 @@ class HTTPConnection:
         self.putrequest(method, url, **skips)
 
         if body and ('content-length' not in header_names):
-            thelen=None
-            try:
-                thelen=str(len(body))
-            except TypeError, te:
-                # If this is a file-like object, try to
-                # fstat its file descriptor
-                import os
-                try:
-                    thelen = str(os.fstat(body.fileno()).st_size)
-                except (AttributeError, OSError):
-                    # Don't send a length if this failed
-                    if self.debuglevel > 0: print "Cannot stat!!"
-
-            if thelen is not None:
-                self.putheader('Content-Length',thelen)
+            self._set_content_length(body)
         for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
-        self.endheaders()
-
-        if body:
-            self.send(body)
+        if isinstance(body, str):
+            self.endheaders(body)
+        else:
+            self.endheaders()
+            if body:  # when body is a file rather than a string
+                self.send(body)
 
     def getresponse(self):
         "Get the response from the server."
