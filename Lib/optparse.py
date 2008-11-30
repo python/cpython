@@ -797,7 +797,7 @@ class Option:
             parser.print_version()
             parser.exit()
         else:
-            raise RuntimeError("unknown action %r" % self.action)
+            raise ValueError("unknown action %r" % self.action)
 
         return 1
 

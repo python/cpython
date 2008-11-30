@@ -1438,7 +1438,7 @@ validate_small_stmt(node *tree)
 
 
 /*  compound_stmt:
- *      if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef | decorated
+ *      if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
  */
 static int
 validate_compound_stmt(node *tree)
@@ -1456,6 +1456,7 @@ validate_compound_stmt(node *tree)
           || (ntype == while_stmt)
           || (ntype == for_stmt)
           || (ntype == try_stmt)
+          || (ntype == with_stmt)
           || (ntype == funcdef)
           || (ntype == classdef)
           || (ntype == decorated))
@@ -2399,6 +2400,38 @@ validate_decorators(node *tree)
     return ok;
 }
 
+/*  with_var
+with_var: 'as' expr
+ */
+static int
+validate_with_var(node *tree)
+{
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, with_var)
+        && (nch == 2)
+        && validate_name(CHILD(tree, 0), "as")
+        && validate_expr(CHILD(tree, 1)));
+   return ok;
+}
+
+/*  with_stmt
+ *           0      1       2       -2   -1
+with_stmt: 'with' test [ with_var ] ':' suite
+ */
+static int
+validate_with_stmt(node *tree)
+{
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, with_stmt)
+        && ((nch == 4) || (nch == 5))
+        && validate_name(CHILD(tree, 0), "with")
+        && validate_test(CHILD(tree, 1))
+        && (nch == 4 || validate_with_var(CHILD(tree, 2))) 
+        && validate_colon(RCHILD(tree, -2))
+        && validate_suite(RCHILD(tree, -1)));
+   return ok;
+}
+
 /*  funcdef:
  *
  *     -5   -4         -3  -2    -1
@@ -2774,6 +2807,9 @@ validate_node(node *tree)
              */
           case funcdef:
             res = validate_funcdef(tree);
+            break;
+          case with_stmt:
+            res = validate_with_stmt(tree);
             break;
           case classdef:
             res = validate_class(tree);

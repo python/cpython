@@ -39,9 +39,9 @@ def propfiles(root, fn):
         format = int(open(os.path.join(root, ".svn", "format")).read().strip())
     except IOError:
         return []
-    if format == 8:
-        # In version 8, committed props are stored in prop-base,
-        # local modifications in props
+    if format in (8, 9):
+        # In version 8 and 9, committed props are stored in prop-base, local
+        # modifications in props
         return [os.path.join(root, ".svn", "prop-base", fn+".svn-base"),
                 os.path.join(root, ".svn", "props", fn+".svn-work")]
     raise ValueError, "Unknown repository format"

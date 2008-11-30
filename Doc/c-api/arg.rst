@@ -32,6 +32,11 @@ variable(s) whose address should be passed.
    converted to C strings using the default encoding.  If this conversion fails, a
    :exc:`UnicodeError` is raised.
 
+   Starting with Python 2.5 the type of the length argument can be
+   controlled by defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before
+   including :file:`Python.h`.  If the macro is defined, length is a
+   :ctype:`Py_ssize_t` rather than an int.
+
 ``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer \*]
    This is similar to ``s``, but the code fills a :ctype:`Py_buffer` structure
    provided by the caller.  In this case the Python string may contain embedded
@@ -43,17 +48,20 @@ variable(s) whose address should be passed.
    has processed the data.
 
 ``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int or :ctype:`Py_ssize_t`]
-   This variant on ``s*`` stores into two C variables, the first one a pointer
-   to a character string, the second one its length.  All other read-buffer
-   compatible objects pass back a reference to the raw internal data
-   representation.  Since this format doesn't allow writable buffer compatible
-   objects like byte arrays, ``s*`` is to be preferred.  The type of
-   the length argument (int or :ctype:`Py_ssize_t`) is controlled by
+   This variant on ``s`` stores into two C variables, the first one a pointer to
+   a character string, the second one its length.  In this case the Python
+   string may contain embedded null bytes.  Unicode objects pass back a pointer
+   to the default encoded string version of the object if such a conversion is
+   possible.  All other read-buffer compatible objects pass back a reference to
+   the raw internal data representation.  Since this format doesn't allow writable buffer compatible objects like byte
+   arrays, ``s*`` is to be preferred.
+
+   The type of the length argument (int or :ctype:`Py_ssize_t`) is controlled by
    defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before including
    :file:`Python.h`.  If the macro was defined, length is a :ctype:`Py_ssize_t`
-   rather than an int.  This behavior will change in a future Python
-   version to only support :ctype:`Py_ssize_t` and drop int support.
-   It is best to always define :cmacro:`PY_SSIZE_T_CLEAN`.
+   rather than an int.  This behavior will change in a future Python version to
+   only support :ctype:`Py_ssize_t` and drop int support.  It is best to always
+   define :cmacro:`PY_SSIZE_T_CLEAN`.
 
 ``y`` (bytes object) [const char \*]
    This variant on ``s`` converts a Python bytes or bytearray object to a C

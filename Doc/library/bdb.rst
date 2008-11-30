@@ -107,8 +107,9 @@ The :mod:`bdb` module also defines two classes:
 
       The *arg* parameter depends on the previous event.
 
-      For more information on trace functions, see :ref:`debugger-hooks`.  For
-      more information on code and frame objects, refer to :ref:`types`.
+      See the documentation for :func:`sys.settrace` for more information on the
+      trace function.  For more information on code and frame objects, refer to
+      :ref:`types`.
 
    .. method:: dispatch_line(frame)
 
