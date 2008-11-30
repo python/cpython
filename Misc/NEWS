@@ -47,6 +47,12 @@ Library
 - Issue #4383: When IDLE cannot make the connection to its subprocess, it would
   fail to properly display the error message.
 
+Build
+-----
+
+- Issue #4407: Fix source file that caused the compileall step in Windows installer
+  to fail.
+
 Docs
 ----
 
