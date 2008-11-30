@@ -55,6 +55,11 @@ Tests
 Build
 -----
 
+Tools/Demos
+-----------
+
+- Tools/faqwiz/move-faqwiz.sh: Fix unsecure use of temporary files.
+
 What's New in Python 2.4.5?
 =============================
 
