@@ -1,6 +1,9 @@
 #
 # A test file for the `multiprocessing` package
 #
+# Copyright (c) 2006-2008, R Oudkerk
+# All rights reserved.
+#
 
 import time, sys, random
 from queue import Empty

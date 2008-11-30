@@ -805,10 +805,10 @@ Files and Directories
 
 .. function:: listdir(path)
 
-   Return a list containing the names of the entries in the directory. The list
-   is in arbitrary order.  It does not include the special entries ``.`` and
-   ``..`` even if they are present in the directory. Availability: Unix,
-   Windows.
+   Return a list containing the names of the entries in the directory given by
+   *path*.  The list is in arbitrary order.  It does not include the special
+   entries ``'.'`` and ``'..'`` even if they are present in the directory.
+   Availability: Unix, Windows.
 
    This function can be called with a bytes or string argument.  In the bytes
    case, all filenames will be listed as returned by the underlying API.  In the

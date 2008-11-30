@@ -2,6 +2,9 @@
 # This module shows how to use arbitrary callables with a subclass of
 # `BaseManager`.
 #
+# Copyright (c) 2006-2008, R Oudkerk
+# All rights reserved.
+#
 
 from multiprocessing import freeze_support
 from multiprocessing.managers import BaseManager, BaseProxy

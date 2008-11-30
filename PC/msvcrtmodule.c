@@ -24,6 +24,12 @@
 #include <crtdbg.h>
 #include <windows.h>
 
+#ifdef _MSC_VER
+#if _MSC_VER >= 1500
+#include <crtassem.h>
+#endif
+#endif
+
 // Force the malloc heap to clean itself up, and free unused blocks
 // back to the OS.  (According to the docs, only works on NT.)
 static PyObject *
@@ -373,6 +379,7 @@ static struct PyModuleDef msvcrtmodule = {
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
+	int st;
 	PyObject *d;
 	PyObject *m = PyModule_Create(&msvcrtmodule);
 	if (m == NULL)
@@ -401,5 +408,23 @@ PyInit_msvcrt(void)
 	insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
 	insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
 #endif
-	return m;
+
+	/* constants for the crt versions */
+#ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
+	st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
+					_VC_ASSEMBLY_PUBLICKEYTOKEN);
+	if (st < 0) return NULL;
+#endif
+#ifdef _CRT_ASSEMBLY_VERSION
+	st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
+					_CRT_ASSEMBLY_VERSION);
+	if (st < 0) return NULL;
+#endif
+#ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
+	st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
+					__LIBRARIES_ASSEMBLY_NAME_PREFIX);
+	if (st < 0) return NULL;
+#endif
+
+        return m;
 }

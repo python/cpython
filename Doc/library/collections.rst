@@ -48,7 +48,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
                            :class:`Iterable`,     and ``__len__``         ``index``, and ``count``
                            :class:`Container`     
                                                   
-:class:`MutableSequnce`    :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
+:class:`MutableSequence`   :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
                                                   ``insert``,             ``remove``, and ``__iadd__``
                                                   and ``__len__``
@@ -466,16 +466,16 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, fieldnames, [verbose])
+.. function:: namedtuple(typename, field_names, [verbose])
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
    create tuple-like objects that have fields accessible by attribute lookup as
    well as being indexable and iterable.  Instances of the subclass also have a
-   helpful docstring (with typename and fieldnames) and a helpful :meth:`__repr__`
+   helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
 
-   The *fieldnames* are a single string with each fieldname separated by whitespace
-   and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *fieldnames*
+   The *field_names* are a single string with each fieldname separated by whitespace
+   and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *field_names*
    can be a sequence of strings such as ``['x', 'y']``.
 
    Any valid Python identifier may be used for a fieldname except for names
