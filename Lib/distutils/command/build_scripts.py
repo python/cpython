@@ -9,7 +9,7 @@ from stat import ST_MODE
 from distutils import sysconfig
 from distutils.core import Command
 from distutils.dep_util import newer
-from distutils.util import convert_path
+from distutils.util import convert_path, Mixin2to3
 from distutils import log
 
 # check if Python is called on the first line with this expression
@@ -59,6 +59,7 @@ class build_scripts(Command):
         """
         self.mkpath(self.build_dir)
         outfiles = []
+        updated_files = []
         for script in self.scripts:
             adjust = False
             script = convert_path(script)
@@ -92,6 +93,7 @@ class build_scripts(Command):
             if adjust:
                 log.info("copying and adjusting %s -> %s", script,
                          self.build_dir)
+                updated_files.append(outfile)
                 if not self.dry_run:
                     outf = open(outfile, "w")
                     if not sysconfig.python_build:
@@ -112,6 +114,7 @@ class build_scripts(Command):
             else:
                 if f:
                     f.close()
+                updated_files.append(outfile)
                 self.copy_file(script, outfile)
 
         if os.name == 'posix':
@@ -125,3 +128,13 @@ class build_scripts(Command):
                         log.info("changing mode of %s from %o to %o",
                                  file, oldmode, newmode)
                         os.chmod(file, newmode)
+        # XXX should we modify self.outfiles?
+        return outfiles, updated_files
+
+class build_scripts_2to3(build_scripts, Mixin2to3):
+
+    def copy_scripts(self):
+        outfiles, updated_files = build_scripts.copy_scripts(self)
+        if not self.dry_run:
+            self.run_2to3(updated_files)
+        return outfiles, updated_files
