@@ -46,7 +46,11 @@ from pprint import pformat
 from docutils.io import StringOutput
 from docutils.utils import new_document
 from sphinx.builder import Builder
-from sphinx.writers.text import TextWriter
+
+try:
+    from sphinx.writers.text import TextWriter
+except ImportError:
+    from sphinx.textwriter import TextWriter
 
 class PydocTopicsBuilder(Builder):
     name = 'pydoc-topics'
