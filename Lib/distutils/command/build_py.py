@@ -9,7 +9,7 @@ from glob import glob
 
 from distutils.core import Command
 from distutils.errors import *
-from distutils.util import convert_path
+from distutils.util import convert_path, Mixin2to3
 from distutils import log
 
 class build_py (Command):
@@ -384,19 +384,7 @@ class build_py (Command):
             byte_compile(files, optimize=self.optimize,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)
 
-from lib2to3.refactor import RefactoringTool, get_fixers_from_package
-class DistutilsRefactoringTool(RefactoringTool):
-    def log_error(self, msg, *args, **kw):
-        # XXX ignores kw
-        log.error(msg, *args)
-
-    def log_message(self, msg, *args):
-        log.info(msg, *args)
-
-    def log_debug(self, msg, *args):
-        log.debug(msg, *args)
-
-class build_py_2to3(build_py):
+class build_py_2to3(build_py, Mixin2to3):
     def run(self):
         self.updated_files = []
 
@@ -408,12 +396,7 @@ class build_py_2to3(build_py):
             self.build_package_data()
 
         # 2to3
-        fixers = get_fixers_from_package('lib2to3.fixes')
-        options = dict(fix=[], list_fixes=[],
-                       print_function=False, verbose=False,
-                       write=True)
-        r = DistutilsRefactoringTool(fixers, options)
-        r.refactor(self.updated_files, write=True)
+        self.run_2to3(self.updated_files)
 
         # Remaining base class code
         self.byte_compile(self.get_outputs(include_bytecode=0))

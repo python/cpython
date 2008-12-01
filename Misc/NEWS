@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4073: Add 2to3 support to build_scripts, refactor that support
+  in build_py.
+
 - IDLE would print a "Unhandled server exception!" message when internal
   debugging is enabled.
 

@@ -531,3 +531,51 @@ def rfc822_escape (header):
     lines = [x.strip() for x in header.split('\n')]
     sep = '\n' + 8*' '
     return sep.join(lines)
+
+# 2to3 support
+
+def run_2to3(files, fixer_names=None, options=None, explicit=None):
+    """Invoke 2to3 on a list of Python files.
+    The files should all come from the build area, as the
+    modification is done in-place. To reduce the build time,
+    only files modified since the last invocation of this
+    function should be passed in the files argument."""
+
+    if not files:
+        return
+
+    # Make this class local, to delay import of 2to3
+    from lib2to3.refactor import RefactoringTool, get_fixers_from_package
+    class DistutilsRefactoringTool(RefactoringTool):
+        def log_error(self, msg, *args, **kw):
+            log.error(msg, *args)
+
+        def log_message(self, msg, *args):
+            log.info(msg, *args)
+
+        def log_debug(self, msg, *args):
+            log.debug(msg, *args)
+
+    if fixer_names is None:
+        fixer_names = get_fixers_from_package('lib2to3.fixes')
+    r = DistutilsRefactoringTool(fixer_names, options=options)
+    r.refactor(files, write=True)
+
+class Mixin2to3:
+    '''Mixin class for commands that run 2to3.
+    To configure 2to3, setup scripts may either change
+    the class variables, or inherit from individual commands
+    to override how 2to3 is invoked.'''
+
+    # provide list of fixers to run;
+    # defaults to all from lib2to3.fixers
+    fixer_names = None
+
+    # options dictionary
+    options = None
+
+    # list of fixers to invoke even though they are marked as explicit
+    explicit = None
+
+    def run_2to3(self, files):
+        return run_2to3(files, self.fixer_names, self.options, self.explicit)
