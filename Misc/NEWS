@@ -104,6 +104,8 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4365: Add crtassem.h constants to the msvcrt module.
+
 - Issue #4396: The parser module now correctly validates the with statement.
 
 
