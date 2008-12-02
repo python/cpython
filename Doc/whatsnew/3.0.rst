@@ -276,7 +276,7 @@ Additions
   as ``set(stuff)`` but is more flexible.
 
 * New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
-  literals (``0720`` are gone.
+  literals (``0720``) are gone.
 
 * New binary literals, e.g. ``0b1010`` (already in 2.6).
 
