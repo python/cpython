@@ -1120,7 +1120,7 @@ Core and Builtins
 
 - intobject.h is no longer included by Python.h. The remains were
   moved to longobject.h. It still exists to define several aliases
-  from PyInt_ to PyLong_ functions.
+  from PyInt to PyLong functions.
 
 - Removed sys.maxint, use sys.maxsize instead.
 
@@ -1146,7 +1146,7 @@ Library
 
 
 What's New in Python 3.0a1?
-==========================
+===========================
 
 *Release date: 31-Aug-2007*
 
@@ -1269,13 +1269,14 @@ Core and Builtins
 
 - Integer division always returns a float.  The -Q option is no more.
   All the following are gone:
-   * PyNumber_Divide and PyNumber_InPlaceDivide
-   * __div__, __rdiv__, and __idiv__
-   * nb_divide, nb_inplace_divide
-   * operator.div, operator.idiv, operator.__div__, operator.__idiv__
-  (Only __truediv__ and __floordiv__ remain, not sure how to handle them
-   if we want to re-use __div__ and friends.  If we do, it will make
-   it harder to write code for both 2.x and 3.x.)
+
+  * PyNumber_Divide and PyNumber_InPlaceDivide
+  * __div__, __rdiv__, and __idiv__
+  * nb_divide, nb_inplace_divide
+  * operator.div, operator.idiv, operator.__div__, operator.__idiv__
+    (Only __truediv__ and __floordiv__ remain, not sure how to handle
+    them if we want to re-use __div__ and friends.  If we do, it will
+    make it harder to write code for both 2.x and 3.x.)
 
 - 'as' and 'with' are keywords.
 
