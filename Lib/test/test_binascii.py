@@ -121,7 +121,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
 
-        self.assertEqual(binascii.hexlify('a'), b'61')
+        self.assertEqual(binascii.hexlify(b'a'), b'61')
 
     def test_qp(self):
         # A test for SF bug 534347 (segfaults without the proper fix)
@@ -166,7 +166,15 @@ class BinASCIITest(unittest.TestCase):
                 f(b'')
             except SystemError as err:
                 self.fail("%s(b'') raises SystemError: %s" % (n, err))
-        binascii.crc_hqx('', 0)
+        binascii.crc_hqx(b'', 0)
+
+    def test_no_binary_strings(self):
+        # b2a_ must not accept strings
+        for f in (binascii.b2a_uu, binascii.b2a_base64,
+                  binascii.b2a_hqx, binascii.b2a_qp,
+                  binascii.hexlify, binascii.rlecode_hqx,
+                  binascii.crc_hqx, binascii.crc32):
+            self.assertRaises(TypeError, f, "test")
 
 def test_main():
     support.run_unittest(BinASCIITest)

@@ -3097,20 +3097,12 @@ order (MRO) for bases """
         import binascii
         # SF bug [#470040] ParseTuple t# vs subclasses.
 
-        class MyStr(str):
+        class MyBytes(bytes):
             pass
-        base = 'abc'
-        m = MyStr(base)
+        base = b'abc'
+        m = MyBytes(base)
         # b2a_hex uses the buffer interface to get its argument's value, via
         # PyArg_ParseTuple 't#' code.
-        self.assertEqual(binascii.b2a_hex(m), binascii.b2a_hex(base))
-
-        # It's not clear that unicode will continue to support the character
-        # buffer interface, and this test will fail if that's taken away.
-        class MyUni(str):
-            pass
-        base = 'abc'
-        m = MyUni(base)
         self.assertEqual(binascii.b2a_hex(m), binascii.b2a_hex(base))
 
         class MyInt(int):
@@ -3129,7 +3121,7 @@ order (MRO) for bases """
 
         class octetstring(str):
             def __str__(self):
-                return binascii.b2a_hex(self).decode("ascii")
+                return binascii.b2a_hex(self.encode('ascii')).decode("ascii")
             def __repr__(self):
                 return self + " repr"
 
