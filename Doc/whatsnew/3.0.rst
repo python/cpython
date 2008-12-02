@@ -1,8 +1,10 @@
 ****************************
-  What's New in Python 3.0  
+  What's New In Python 3.0  
 ****************************
 
 .. XXX add trademark info for Apple, Microsoft, SourceForge.
+
+.. XXX turn all PEP references into :pep:`NNN` markup.
 
 :Author: Guido van Rossum
 :Release: |release|
@@ -50,10 +52,12 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.0, comparing to 2.6.
-In some cases it will also summarize changes since 2.5, with a reference
-to "What's New in Python 2.6" for the details.  Python 2.6 was released
-on October 1 2008.  Python 3.0 will be released in December 2008.
+This article explains the new features in Python 3.0, compared to 2.6.
+Python 3.0 is the first ever *intentionally incompatible* release.
+There are more changes than in a typical release, and more that are
+important for all Python users.  Nevertheless, after digesting the
+changes, you'll find that Python really hasn't changed all that much
+-- by and large, we're merely fixing well-known annoyances and warts.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -75,76 +79,101 @@ rationale, refer to the PEP for a particular new feature.
 Common Stumbling Blocks
 =======================
 
-This section briefly lists the changes that are more likely to trip
-people up, without necessarily raising obvious errors.  These are all
-explained in more detail below.  (I'm not listing syntactic changes
-and removed or renamed features here, since those tend to produce hard
-and fast errors; it's the subtle behavioral changes in code that
-remains syntactically valid that trips people up.  I'm also omitting
-changes to rarely used features.)
+This section briefly lists a few changes that are more likely to trip
+people up, without necessarily raising obvious errors.  Most issues
+are explained in more detail in later sections.
 
-* The ``print`` statement has been replaced with a :func:`print` function,
-  with keyword arguments to replace most of the special syntax of the
-  old ``print`` statement (PEP 3105).  Examples::
+Print Is A Function
+-------------------
 
-    Old: print "The answer is", 2*2
-    New: print("The answer is", 2*2)
+The ``print`` statement has been replaced with a :func:`print` function,
+with keyword arguments to replace most of the special syntax of the
+old ``print`` statement (PEP 3105).  Examples::
 
-    Old: print x,           # Trailing comma suppresses newline
-    New: print(x, end=" ")  # Appends a space instead of a newline
+  Old: print "The answer is", 2*2
+  New: print("The answer is", 2*2)
 
-    Old: print              # Prints a newline
-    New: print()            # You must call the function!
+  Old: print x,           # Trailing comma suppresses newline
+  New: print(x, end=" ")  # Appends a space instead of a newline
 
-    Old: print >>sys.stderr, "fatal error"
-    New: print("fatal error", file=sys.stderr)
+  Old: print              # Prints a newline
+  New: print()            # You must call the function!
 
-    Old: print (x, y)       # prints repr((x, y))
-    New: print((x, y))      # Not the same as print(x, y)!
+  Old: print >>sys.stderr, "fatal error"
+  New: print("fatal error", file=sys.stderr)
 
-  You can also customize the separator between items, e.g.::
+  Old: print (x, y)       # prints repr((x, y))
+  New: print((x, y))      # Not the same as print(x, y)!
 
-    print("There are <", 2**32, "> possibilities!", sep="")
+You can also customize the separator between items, e.g.::
 
-  which produces::
+  print("There are <", 2**32, "> possibilities!", sep="")
 
-   There are <4294967296> possibilities!
+which produces::
 
-  Notes about the :func:`print` function:
+  There are <4294967296> possibilities!
 
-  * The :func:`print` function doesn't support the "softspace" feature of
-    the old ``print`` statement.  For example, in Python 2.x,
-    ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
-    ``print("A\n", "B")`` writes ``"A\n B\n"``.
+Note:
 
-  * Initially, you'll be finding yourself typing the old ``print x``
-    a lot in interactive mode.  Time to retrain your fingers to type
-    ``print(x)`` instead!
+* The :func:`print` function doesn't support the "softspace" feature of
+  the old ``print`` statement.  For example, in Python 2.x,
+  ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
+  ``print("A\n", "B")`` writes ``"A\n B\n"``.
 
-  * When using the ``2to3`` source-to-source conversion tool, all
-    ``print`` statements are automatically converted to :func:`print`
-    function calls, so this is mostly a non-issue for larger projects.
+* Initially, you'll be finding yourself typing the old ``print x``
+  a lot in interactive mode.  Time to retrain your fingers to type
+  ``print(x)`` instead!
 
-* Python 3.0 uses strings and bytes instead of the Unicode strings and
-  8-bit strings.  This means that pretty much all code that uses
-  Unicode, encodings or binary data in any way has to change.  The
-  change is for the better, as in the 2.x world there were numerous
-  bugs having to do with mixing encoded and unencoded text.
+* When using the ``2to3`` source-to-source conversion tool, all
+  ``print`` statements are automatically converted to :func:`print`
+  function calls, so this is mostly a non-issue for larger projects.
 
-* Text files enforce an encoding; binary files use bytes.  This means
-  that if a file is opened using an incorrect mode or encoding, I/O
-  will likely fail.
+Text Strings Vs. Bytes
+----------------------
 
-* The ordering comparison operators (``<``, ``<=``, ``>=``, ``>``)
-  raise a TypeError exception when the operands don't have a
-  meaningful natural ordering.  Thus, expressions like ``1 < ''``, ``0
-  > None`` or ``len < len`` are no longer valid.  A corollary is that
-  sorting a heterogeneous list no longer makes sense -- all the
-  elements must be comparable to each other.  Note that this does not
-  apply to the ``==`` and ``!=`` operators: objects of different
-  uncomparable types always compare unequal to each other, and an
-  object always compares equal to itself (i.e., ``x is y`` implies ``x
-  = y``; this is true even for ``NaN``).
+Everything you thought you knew about binary data and Unicode has
+changed:
+
+* Python 3.0 uses *strings* and *bytes* instead of *Unicode strings*
+  and *8-bit strings*.  The difference is that any attempt to mix
+  strings and bytes in Python 3.0 raises a TypeError exception,
+  whereas if you were to mix Unicode and 8-bit strings in Python 2.x,
+  you would only get an exception if the 8-bit string contained
+  non-ASCII values.  As a consequence, pretty much all code that
+  uses Unicode, encodings or binary data most likely has to change.
+  The change is for the better, as in the 2.x world there were
+  numerous bugs having to do with mixing encoded and unencoded text.
+
+* Files opened as text files (still the default mode for :func:`open`)
+  always use an encoding to map between strings (in memory) and bytes
+  (on disk).  Binary files (opened with a ``b`` in the mode argument)
+  always use bytes in memory.  This means that if a file is opened
+  using an incorrect mode or encoding, I/O will likely fail.  There is
+  a platform-dependent default encoding, which on Unixy platforms can
+  be set with the ``LANG`` environment variable (and sometimes also
+  with some other platform-specific locale-related environment
+  variables).  In many cases, but not all, the system default is
+  UTF-8; you should never could on this default.  Any application
+  reading or writing more than pure ASCII text should probably have a
+  way to override the encoding.
+
+* XXX More below?
+
+* See also the *Unicode HOWTO*.  (XXX How to make this a link?)
+  (XXX Move to longer section below?)
+
+Views And Interators Instead Of Lists
+-------------------------------------
+
+Some well-known APIs no longer return lists:
+
+* :class:`dict` methods :meth:`dict.keys`, :meth:`dict.items` and
+  :meth:`dict.values` return "views" instead of lists.  For example,
+  this no longer works: ``k = d.keys(); k.sort()``.  Use ``k =
+  sorted(d)`` instead.
+
+* Also, the :meth:`dict.iterkeys`, :meth:`dict.iteritems` and
+  :meth:`dict.itervalues` methods are no longer supported.
 
 * :func:`map` and :func:`filter` return iterators.  A quick fix is e.g.
   ``list(map(...))``, but a better fix is often to use a list
@@ -152,29 +181,167 @@ changes to rarely used features.)
   Particularly tricky is :func:`map` invoked for the side effects of the
   function; the correct transformation is to use a for-loop.
 
-* :class:`dict` methods :meth:`dict.keys`, :meth:`dict.items` and
-  :meth:`dict.values` return views instead of lists.  For example, this no
-  longer works: ``k = d.keys(); k.sort()``.  Use ``k = sorted(d)`` instead.
+* :func:`range` now behaves like :func:`xrange` used to behave.
+  The latter no longer exists.
+
+* :func:`zip` now returns an iterator.
+
+* XXX More below?
+
+Ordering Comparisons
+--------------------
+
+Python 3.0 has simplified the rules for ordering comparisons:
+
+* The ordering comparison operators (``<``, ``<=``, ``>=``, ``>``)
+  raise a TypeError exception when the operands don't have a
+  meaningful natural ordering.  Thus, expressions like ``1 < ''``, ``0
+  > None`` or ``len <= len`` are no longer valid.  A corollary is that
+  sorting a heterogeneous list no longer makes sense -- all the
+  elements must be comparable to each other.  Note that this does not
+  apply to the ``==`` and ``!=`` operators: objects of different
+  uncomparable types always compare unequal to each other, and an
+  object always compares equal to itself (i.e., ``x is y`` implies ``x
+  = y``; this is true even for ``NaN``).
 
 * :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the *cmp*
   argument providing a comparison function.  Use the *key* argument
   instead. N.B. the *key* and *reverse* arguments are now "keyword-only".
 
-* The :meth:`__cmp__` special method is no longer supported.  Use :meth:`__lt__`
-  for sorting, :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons
-  as needed.
+* The :func:`cmp` function is gone, and the :meth:`__cmp__` special
+  method is no longer supported.  Use :meth:`__lt__` for sorting,
+  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as
+  needed.  if you really need the :func:`cmp` functionality, the
+  expression ``(a > b) - (a < b)`` is equivalent to ``cmp(a, b)``.
+
+* XXX More below?
+
+Integers
+--------
+
+* We unified the :class:`int` and :class:`long` types.  All integers
+  are now of type :class:`int`.
 
 * ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
-
-.. XXX move the next one to a later point, it's not a common stumbling block.
+  (The latter syntax has existed for years, at least since Python 2.2.)
 
 * The :func:`repr` of a long integer doesn't include the trailing ``L``
   anymore, so code that unconditionally strips that character will
   chop off the last digit instead.
 
+* The :data:`sys.maxint` constant was removed, since there is no
+  longer a limit to the value of ints.  However, :data:`sys.maxsize`
+  can be used as an integer larger than any practical list or string
+  index.  It conforms to the implementation's "natural" integer size
+  and is typically the same as :data:`sys.maxint` in previous releases
+  on the same platform (assuming the same build options).
 
-Strings and Bytes
+* XXX More below?
+
+
+Overview Of Syntactic Changes
+=============================
+
+This section gives a brief overview of every *syntactic* change.
+Several of these are discussed at greater length later.
+
+XXX Did I get everything?
+
+Additions
+---------
+
+* Function argument and return value annotations (see below).  XXX
+
+* A lone ``*`` in a formal parameter list implies that any following
+  arguments *must* be specified in keyword form.  (XXX Didn't this make
+  it into 2.6 as well?)
+
+* Keyword arguments are allowed after the list of base classes in a
+  class definition.  This is used by the new convention for specifying
+  a metaclass, but can be used for other purposes as well, as long as
+  the metaclass supports it.
+
+* Tuple-unpacking assignment now has a *wildcard* syntax, e.g.::
+
+    (a, b, *rest) = range(5)
+
+  This sets *a* to 0, *b* to 1, and *rest to ``[2, 3, 4]``.
+
+* Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
+  same thing as ``dict(stuff)`` but is more flexible.
+
+* Set literals, e.g. ``{1, 2}``.  Note that ``{}`` is an empty
+  dictionary; use ``set()`` for an empty set.  Set comprehensions
+  are also supported; ``{x for x in stuff}`` means the same thing
+  as ``set(stuff)`` but is more flexible.
+
+* New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
+  literals (``0720`` are gone.
+
+* New binary literals, e.g. ``0b1010`` (already in 2.6).
+
+* Bytes literals are introduced with a leading ``b`` or ``B``.
+
+Changes
+-------
+
+* New :keyword:`raise` statement syntax: ``raise [expr [from expr]]``.
+
+* New keywords: :keyword:`as`, :keyword:`with` (already in 2.6),
+  :keyword:`None` (partially enforced in 2.6), :keyword:`True`,
+  :keyword:`False` (these were built-ins previously), and
+  :keyword:`nonlocal` (for the new ``nonlocal`` statement).
+
+* Change from ``except exc, var:`` to ``except exc as var:``.  XXX
+
+* *Very* subtle changes in the syntax for list comprehensions,
+  generator expressions, :keyword:`lambda expression and :keyword:`if`
+  expressions.  For example, this is valid in Python 2.6::
+
+     [ x for x in lambda: True, lambda: False if x() ]
+
+  In Python 3.0 you'll have to add parentheses, like this::
+
+     [ x for x in (lambda: True, lambda: False) if x() ]
+
+* The *ellipsis* (``...``) can be used as an atomic expression anywhere.
+  (Previously it was only allowed in slices.)
+
+Removals
+--------
+
+* Tuple parameter unpacking removed.  XXX
+
+* Removal of backticks.  XXX
+
+* Removal of ``<>``.  Use ``!=`` instead.  XXX
+
+* Removed keyword: :func:`exec` is no longer a keyword; it remains as
+  a function.  (Fortunately the function syntax was also accepted in
+  2.x.)
+
+* Integer literals no longer support a trailing ``l`` or ``L``.
+
+* String literals no longer support a leading ``u`` or ``U``.
+
+* The *ellipsis* must now be spelled as ``...``; previously it could
+  (by a mere accident of the grammar) also be spelled as ``. . .``.
+
+
+Changes Already Present In Python 2.6
+=====================================
+
+This section reminds the reader of new features that were originally
+designed for Python 3.0 but that were already introduced in Python
+2.6.  The descriptions in "What's New in Python 2.6" are hereby
+included by reference.
+
+* XXX List each of those briefly.
+
+Strings And Bytes
 =================
+
+This section discusses the many changes in string 
 
 * There is only one string type; its name is :class:`str` but its behavior and
   implementation are like :class:`unicode` in 2.x.
@@ -209,7 +376,7 @@ Strings and Bytes
 
 
 
-PEP 3101: A New Approach to String Formatting
+PEP 3101: A New Approach To String Formatting
 =============================================
 
 * A new system for  built-in string formatting operations replaces the
@@ -223,7 +390,8 @@ PEP 3101: A New Approach to String Formatting
 PEP 3106: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
 ======================================================================================
 
-.. XXX expand this
+.. XXX expand this (but note that the "pitfalls" section currently has
+.. XXX more detail :-)
 
 * The :meth:`dict.iterkeys`, :meth:`dict.itervalues` and :meth:`dict.iteritems`
   methods have been removed.
@@ -244,10 +412,15 @@ PEP 3107: Function Annotations
 Exception Stuff
 ===============
 
-* PEP 352: Exceptions must derive from :exc:`BaseException`.  This is the root
-  of the exception hierarchy.
+* PEP 352: All exceptions must be derived (directly or indirectly)
+  from :exc:`BaseException`.  This is the root of the exception
+  hierarchy.  Most exceptions should actually be derived from
+  :exc:`Exception`.  This is not a new recommendation, but the
+  *requirement* to inherit from :exc:`BaseException` is new.  (Python
+  2.6 still allowed classic classes to be raised, and placed no
+  restriction on what you can catch.)
 
-* :exc:`StandardError` was removed (already in 2.6).
+* :exc:`StandardError` was removed (in 2.6, actually).
 
 * Dropping sequence behavior (slicing!) and :attr:`message` attribute of
   exception instances.
@@ -258,15 +431,14 @@ Exception Stuff
 * PEP 3110: Catching exceptions.  You must now use ``except SomeException as
   identifier:`` instead of ``except Exception, identifier:``
 
-* PEP 3134: Exception chaining.  (The :attr:`__context__` feature from the PEP
-  hasn't been implemented yet in 3.0a2.)
+* PEP 3134: Exception chaining.
 
 * A few exception messages are improved when Windows fails to load an extension
   module.  For example, ``error code 193`` is now ``%1 is not a valid Win32
   application``.  Strings now deal with non-English locales.
 
 
-New Class and Metaclass Stuff
+New Class And Metaclass Stuff
 =============================
 
 * Classic classes are gone.
@@ -303,7 +475,8 @@ language and built-in functions.
   :class:`long` type, with the exception that the literal suffix ``L`` is
   neither supported by the parser nor produced by :func:`repr` anymore.
   :data:`sys.maxint` was also removed since the int type has no maximum value
-  anymore.
+  anymore.  Use :data:`sys.maxsize` instead.
+  XXX Is this a dupe from the intro section on integers?
 
 * PEP 238: int division returns a float.
 
@@ -374,8 +547,6 @@ language and built-in functions.
 * Renamed the boolean conversion C-level slot and method: ``nb_nonzero`` is now
   ``nb_bool`` and :meth:`__nonzero__` is now :meth:`__bool__`.
 
-* Removed :data:`sys.maxint`. Use :data:`sys.maxsize`.
-
 
 .. ======================================================================
 
@@ -385,15 +556,14 @@ Optimizations
 
 * Detailed changes are listed here.
 
-The net result of the 3.0 generalizations is that Python 3.0 runs the pystone
-benchmark around 33% slower than Python 2.5.  There's room for improvement; we
-expect to be optimizing string and integer operations significantly before the
-final 3.0 release!
+The net result of the 3.0 generalizations is that Python 3.0 runs the
+pystone benchmark around a third slower than Python 2.5.  There's room
+for improvement, but it will happen after 3.0 is released!
 
 .. ======================================================================
 
 
-New, Improved, and Deprecated Modules
+New, Improved, And Deprecated Modules
 =====================================
 
 As usual, Python's standard library received a number of enhancements and bug
@@ -431,7 +601,7 @@ details.
 .. ======================================================================
 
 
-Build and C API Changes
+Build And C API Changes
 =======================
 
 Changes to Python's build process and to the C API include:
@@ -465,7 +635,7 @@ Platform-specific changes go here.
 
 .. _30section-other:
 
-Other Changes and Fixes
+Other Changes And Fixes
 =======================
 
 As usual, there were a bunch of other improvements and bugfixes
@@ -480,7 +650,7 @@ Some of the more notable changes are:
 .. ======================================================================
 
 
-Porting to Python 3.0
+Porting To Python 3.0
 =====================
 
 This section lists previously described changes that may require
@@ -491,15 +661,8 @@ changes to your code:
 * Developers can include :file:`intobject.h` after :file:`Python.h` for
   some ``PyInt_`` aliases.
 
+* XXX Mention 2to3.
+
+* XXX Reference external doc about porting extensions?
+
 .. ======================================================================
-
-
-.. _acks:
-
-Acknowledgements
-================
-
-The author would like to thank the following people for offering
-suggestions, corrections and assistance with various drafts of this
-article: Georg Brandl.
-
