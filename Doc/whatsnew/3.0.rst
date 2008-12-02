@@ -2,9 +2,9 @@
   What's New In Python 3.0  
 ****************************
 
-.. XXX add trademark info for Apple, Microsoft, SourceForge.
+.. XXX Add trademark info for Apple, Microsoft.
 
-.. XXX turn all PEP references into :pep:`NNN` markup.
+.. XXX Remove duplicates; just put info in the most relevant section.
 
 :Author: Guido van Rossum
 :Release: |release|
@@ -53,11 +53,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.0, compared to 2.6.
-Python 3.0 is the first ever *intentionally incompatible* release.
-There are more changes than in a typical release, and more that are
-important for all Python users.  Nevertheless, after digesting the
-changes, you'll find that Python really hasn't changed all that much
--- by and large, we're merely fixing well-known annoyances and warts.
+Python 3.0, also known as "Python 3000" or "Py3k", is the first ever
+*intentionally incompatible* release.  There are more changes than in
+a typical release, and more that are important for all Python users.
+Nevertheless, after digesting the changes, you'll find that Python
+really hasn't changed all that much -- by and large, we're merely
+fixing well-known annoyances and warts.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -79,16 +80,15 @@ rationale, refer to the PEP for a particular new feature.
 Common Stumbling Blocks
 =======================
 
-This section briefly lists a few changes that are more likely to trip
-people up, without necessarily raising obvious errors.  Most issues
-are explained in more detail in later sections.
+This section lists those few changes that are most likely to trip you
+up if you're used to Python 2.5.
 
 Print Is A Function
 -------------------
 
-The ``print`` statement has been replaced with a :func:`print` function,
-with keyword arguments to replace most of the special syntax of the
-old ``print`` statement (PEP 3105).  Examples::
+The :keyword:`print` statement has been replaced with a :func:`print`
+function, with keyword arguments to replace most of the special syntax
+of the old :keyword:`print` statement (:pep:`3105`).  Examples::
 
   Old: print "The answer is", 2*2
   New: print("The answer is", 2*2)
@@ -116,7 +116,7 @@ which produces::
 Note:
 
 * The :func:`print` function doesn't support the "softspace" feature of
-  the old ``print`` statement.  For example, in Python 2.x,
+  the old :keyword:`print` statement.  For example, in Python 2.x,
   ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
   ``print("A\n", "B")`` writes ``"A\n B\n"``.
 
@@ -125,14 +125,16 @@ Note:
   ``print(x)`` instead!
 
 * When using the ``2to3`` source-to-source conversion tool, all
-  ``print`` statements are automatically converted to :func:`print`
-  function calls, so this is mostly a non-issue for larger projects.
+  :keyword:`print` statements are automatically converted to
+  :func:`print` function calls, so this is mostly a non-issue for
+  larger projects.
 
 Text Strings Vs. Bytes
 ----------------------
 
 Everything you thought you knew about binary data and Unicode has
-changed:
+changed.  There's a longer section below; here's a summary of the
+changes:
 
 * Python 3.0 uses *strings* and *bytes* instead of *Unicode strings*
   and *8-bit strings*.  The difference is that any attempt to mix
@@ -157,10 +159,12 @@ changed:
   reading or writing more than pure ASCII text should probably have a
   way to override the encoding.
 
-* XXX More below?
+* The builtin :class:`basestring` abstract type was removed.  Use
+  :class:`str` instead.  The :class:`str` and :class:`bytes` types
+  don't have functionality enough in common to warrant a shared base
+  class.
 
-* See also the *Unicode HOWTO*.  (XXX How to make this a link?)
-  (XXX Move to longer section below?)
+* See also the :ref:`unicode-howto`, which was updated for Python 3.0.
 
 Views And Interators Instead Of Lists
 -------------------------------------
@@ -219,15 +223,13 @@ Python 3.0 has simplified the rules for ordering comparisons:
 Integers
 --------
 
-* We unified the :class:`int` and :class:`long` types.  All integers
-  are now of type :class:`int`.
-
-* ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
-  (The latter syntax has existed for years, at least since Python 2.2.)
+* :pep:`0237`: :class:`long` renamed to :class:`int`.  That is, there
+  is only one built-in integral type, named :class:`int`; but it
+  behaves mostly like the old :class:`long` type.
 
 * The :func:`repr` of a long integer doesn't include the trailing ``L``
   anymore, so code that unconditionally strips that character will
-  chop off the last digit instead.
+  chop off the last digit instead.  (Use :func:`str` instead.)
 
 * The :data:`sys.maxint` constant was removed, since there is no
   longer a limit to the value of ints.  However, :data:`sys.maxsize`
@@ -236,7 +238,9 @@ Integers
   and is typically the same as :data:`sys.maxint` in previous releases
   on the same platform (assuming the same build options).
 
-* XXX More below?
+* ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
+  (The latter syntax has existed for years, at least since Python 2.2.)
+  See :pep:`0238`.
 
 
 Overview Of Syntactic Changes
@@ -245,35 +249,42 @@ Overview Of Syntactic Changes
 This section gives a brief overview of every *syntactic* change.
 Several of these are discussed at greater length later.
 
-XXX Did I get everything?
-
 Additions
 ---------
 
 * Function argument and return value annotations (see below).  XXX
 
-* A lone ``*`` in a formal parameter list implies that any following
-  arguments *must* be specified in keyword form.  (XXX Didn't this make
-  it into 2.6 as well?)
+* :pep:`3102`: Keyword-only arguments.  Named parameters occurring
+  after ``*args`` in the parameter list *must* be specified using
+  keyword syntax in the call.  You can also use a bare ``*`` in the
+  parameter list to indicate that you don't accept a variable-length
+  argument list, but you do have keyword-only arguments.
 
 * Keyword arguments are allowed after the list of base classes in a
   class definition.  This is used by the new convention for specifying
   a metaclass, but can be used for other purposes as well, as long as
   the metaclass supports it.
 
-* Tuple-unpacking assignment now has a *wildcard* syntax, e.g.::
+* :pep:`3104`: :keyword:`nonlocal` statement.  Using ``nonlocal x``
+  you can now assign directly to a variable in an outer (but
+  non-global) scope.  :keyword:`nonlocal` is a new reserved word.
 
-    (a, b, *rest) = range(5)
+* :pep:`3132`: Extended Iterable Unpacking.  You can now write things
+  like ``a, b, *rest = some_sequence``.  And even ``*rest, a =
+  stuff``.  The ``rest`` object is always a (possibly empty) list; the
+  right-hand side may be any iterable.  Example::
 
-  This sets *a* to 0, *b* to 1, and \*rest to ``[2, 3, 4]``.
+    (a, *rest, b) = range(5)
+
+  This sets *a* to ``0``, *b* to ``4``, and \*rest to ``[1, 2, 3]``.
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
   same thing as ``dict(stuff)`` but is more flexible.
 
 * Set literals, e.g. ``{1, 2}``.  Note that ``{}`` is an empty
-  dictionary; use ``set()`` for an empty set.  Set comprehensions
-  are also supported; ``{x for x in stuff}`` means the same thing
-  as ``set(stuff)`` but is more flexible.
+  dictionary; use ``set()`` for an empty set.  Set comprehensions are
+  also supported; ``{x for x in stuff}`` means the same thing as
+  ``set(stuff)`` but is more flexible.
 
 * New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
   literals (``0720``) are gone.
@@ -286,118 +297,169 @@ Changes
 -------
 
 * New :keyword:`raise` statement syntax: ``raise [expr [from expr]]``.
+  Also note that string exceptions are no longer legal (:pep:`0352`).
 
-* New keywords: :keyword:`as`, :keyword:`with` (already in 2.6),
-  :keyword:`None` (partially enforced in 2.6), :keyword:`True`,
-  :keyword:`False` (these were built-ins previously), and
-  :keyword:`nonlocal` (for the new ``nonlocal`` statement).
+* :keyword:`as` and :keyword:`with` are now reserved words.  (Since
+  2.6, actually.)
 
-* Change from ``except exc, var:`` to ``except exc as var:``.  XXX
+* :keyword:`True`, :keyword:`False`, and :keyword:`None` are reserved
+  words.  (2.6 partially enforced the restrictions on :keyword:`None`
+  already.)
 
-* *Very* subtle changes in the syntax for list comprehensions,
-  generator expressions, :keyword:`lambda expression and :keyword:`if`
-  expressions.  For example, this is valid in Python 2.6::
+* Change from :keyword:`except` *exc*, *var* to
+  :keyword:`except` *exc* :keyword:`as` *var*.  See :pep:`3110`.
 
-     [ x for x in lambda: True, lambda: False if x() ]
+* List comprehensions no longer support the syntactic form
+  ``[... for var in item1, item2, ...]``.  Use
+  ``[... for var in (item1, item2, ...)]`` instead.
+  Also note that list comprehensions have different semantics: they
+  are closer to syntactic sugar for a generator expression inside a
+  :func:`list` constructor, and in particular the loop control
+  variables are no longer leaked into the surrounding scope.
 
-  In Python 3.0 you'll have to add parentheses, like this::
-
-     [ x for x in (lambda: True, lambda: False) if x() ]
-
-* The *ellipsis* (``...``) can be used as an atomic expression anywhere.
-  (Previously it was only allowed in slices.)
+* The *ellipsis* (``...``) can be used as an atomic expression
+  anywhere.  (Previously it was only allowed in slices.)  Also, it
+  *must* now be spelled as ``...``.  (Previously it could also be
+  spelled as ``. . .``, by a mere accident of the grammar.)
 
 Removals
 --------
 
-* Tuple parameter unpacking removed.  XXX
+* :pep:`3113`: Tuple parameter unpacking removed.  You can no longer
+  write ``def foo(a, (b, c)): ...``.
+  Use ``def foo(a, b_c): b, c = b_c`` instead.
 
-* Removal of backticks.  XXX
+* Removed backticks (use :func:`repr` instead).
 
-* Removal of ``<>``.  Use ``!=`` instead.  XXX
+* Removed ``<>`` (use ``!=`` instead).
 
 * Removed keyword: :func:`exec` is no longer a keyword; it remains as
   a function.  (Fortunately the function syntax was also accepted in
-  2.x.)
+  2.x.)  Also note that :func:`exec` no longer takes a stream argument;
+  instead of ``exec(f)`` you can use ``exec(f.read())``.
 
 * Integer literals no longer support a trailing ``l`` or ``L``.
 
 * String literals no longer support a leading ``u`` or ``U``.
 
-* The *ellipsis* must now be spelled as ``...``; previously it could
-  (by a mere accident of the grammar) also be spelled as ``. . .``.
+* The :keyword:`from` *module* :keyword:`import` ``*`` syntax is only
+  allowed at the module level, no longer inside functions.
+
+* The only acceptable syntax for relative imports is :keyword:`from`
+  ``.``[*module*] :keyword:`import` *name*; :keyword:`import` forms
+  not starting with ``.`` are always interpreted as absolute imports.
+  (:pep:`0328`)
+
 
 
 Changes Already Present In Python 2.6
 =====================================
 
-This section reminds the reader of new features that were originally
-designed for Python 3.0 but that were already introduced in Python
-2.6.  The descriptions in "What's New in Python 2.6" should be
+Since many users presumably make the jump straight from Python 2.5 to
+Python 3.0, this section reminds the reader of new features that were
+originally designed for Python 3.0 but that were back-ported to Python
+2.6.  The corresponding sections in :ref:`whats-new-in-2.6` should be
 consulted for longer descriptions.
 
-XXX How to cross-link?
+* :ref:`pep-0343`.  The :keyword:`with` statement is now a standard
+  feature and no longer needs to be imported from the ``__future__``.
+  Also check out :ref:`new-26-context-managers` and
+  :ref:`new-module-contextlib`.
 
-* PEP 343: The :keyword:`with` statement is now a standard feature and
-  no longer needs to be imported from the ``__future__``.
+* :ref:`pep-0366`.  This enhances the usefulness of the :option:`-m`
+  option when the referenced module lives in a package.
 
-* PEP 366: Explicit relative imports from a main module inside a package.
-  This enhances the usefulness of the :option:`-m` option.
+* :ref:`pep-0370`.
 
-* PEP 370: Per-user ``site-packages`` directory.
+* :ref:`pep-0371`.
 
-* PEP 371: The ``multiprocessing`` package.  XXX Did anything change here?
+* :ref:`pep-3101`.  Note: the 2.6 description mentions the
+  :meth:`format` method for both 8-bit and Unicode strings.  In 3.0,
+  only the :class:`str` type (text strings with Unicode support)
+  supports this method; the :class:`bytes` type does not.  The plan is
+  to eventually make this the only API for string formatting, and to
+  start deprecating the ``%`` operator in Python 3.1.
 
-* PEP 3101: Advanced string formatting.  Note: the 2.6 description
-  mentions the :method:`format` method for both 8-bit and Unicode
-  strings.  In 3.0, only the :class:`str` type (text strings with
-  Unicode support) supports this method; the :class:`bytes` type does
-  not.
+* :ref:`pep-3105`.  This is now a standard feature and no longer needs
+  to be imported from :mod:`__future__`.
 
-* PEP 3105: Print as a function.  This is now a standard feature and
-  no longer needs to be imported from the ``__future__``.
+* :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`as` *var*
+  syntax is now standard and :keyword:`except` *exc*, *var* is no
+  longer supported.  (Of course, the :keyword:`as` *var* part is still
+  optional.)
 
-* PEP 3110: Exception-handling changes.  The ``except exc as var:``
-  syntax is now standard and ``except exc, var:`` is no longer supported.
-  (Of course, the ``as var`` part is still optional.)
+* :ref:`pep-3112`.  The ``b"..."`` string literal notation (and its
+  variants like ``b'...'``, ``b"""..."""``, and ``br"..."``) now
+  produces a literal of type :class:`bytes`.  More about
+  :class:`bytes` below.
 
-* PEP 3112: Byte literals.  The ``b"..."`` string literal notation
-  (and its variants like ``b'...'``, ``b"""...""", and ``br'...`'')
-  now produces a literal of type :class:`bytes`.  More about :class:`bytes`
-  below.
+* :ref:`pep-3116`.  The :mod:`io` module is now the standard way of
+  doing file I/O, and the initial values of :data:`sys.stdin`,
+  :data:`sys.stdout` and :data:`sys.stderr` are now instances of
+  :class:`io.TextIOBase`.  The builtin :func:`open` function is now an
+  alias for :func:`io.open` and has additional keyword arguments
+  *encoding*, *errors*, *newline* and *closefd*.  Also note that an
+  invalid *mode* argument now raises :exc:`ValueError`, not
+  :exc:`IOError`.
 
-* PEP 3116: New I/O library.  The :module:`io` module is now the
-  standard way of doing file I/O, and the initial values of
-  ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are now instances
-  of :class:`io.TextIOBase`.  The builtin :func:`open` function is
-  now an alias for ``io.open`` and has additional keyword arguments:
-  ``encoding``, ``errors``, ``newline`` and ``closefd``.
+* :ref:`pep-3118`.  The old builtin :func:`buffer` is now really gone;
+  the new builtin :func:`memoryview` provides (mostly) similar
+  functionality.
 
-* PEP 3118: Revised buffer protocol.  The old builtin
-  :function:`buffer` is no more; the new builtin
-  :function:`memoryview` provides (mostly) similar functionality.
+* :ref:`pep-3119`.  The :mod:`abc` module and the ABCs defined in the
+  :mod:`collections` module plays a slightly more prominent role in
+  the language now, and builtin collection types like :class:`dict`
+  and :class:`list` conform to the :class:`collections.MutableMapping`
+  and :class:`collections.MutableSequence` ABC, respectively.
 
-* PEP 3119: Abstract Base Classes (ABCs).  These play a slightly more
-  prominent role in the language now, and builtin collection types like
-  :class:`dict` and :class:`list` conform to the :class:`Mapping` and
-  :class:`Sequence` protocol, correspondingly.
+* :ref:`pep-3127`.  As mentioned above, the new octal literal
+  notation is the only one supported, and binary literals have been
+  added.
 
-* PEP 3127: Integer literal suport and syntax.  As mentioned above,
-  the new octal literal notation is the only one supported, and binary
-  literals have been added.
+* :ref:`pep-3129`.  This speaks for itself.
 
-* PEP 3129: Class decorators.  This speaks for itself.
-
-* PEP 3141: A type hierarchy for numbers.  This is another new use of
-  ABCs, defining Python's "numeric tower".
-
-* XXX More.
+* :ref:`pep-3141`.  The :mod:`numbers` module is another new use of
+  ABCs, defining Python's "numeric tower".  Also note the new
+  :mod:`fractions` module.
 
 
 Library Changes
 ===============
 
 XXX Brief overview of what's changed in the library.
+
+* :pep:`3108`: stdlib reorganization.
+
+* Killed :mod:`sets`.  Use the builtin :func:`set` function.
+
+* XXX macfs, new, reconvert, stringold, xmllib, pcre, pypcre, strop
+
+* XXX :pep:`4`
+
+* XXX lib-old: Para, addpack, cmp, cmpcache, codehack, dircmp, dump,
+  find, fmt, grep, lockfile, newdir, ni, packmail, poly, rand,
+  statcache, tb, tzparse, util, whatsound, whrandom, zmod
+
+* XXX Removed sys.exitfunc
+
+* XXX Removed sys.exc_clear
+
+* XXX Removed sys.exc_type, exc_value, exc_traceback.  (sys.last_type
+  etc. remain.)
+
+* XXX array.read, array.write
+
+* XXX operator.sequenceIncludes
+
+* XXX thread.acquire_lock and thread.release_lock
+
+* XXX UserXXX -> XXXMixin?
+
+* XXX removed random.jumpahead API
+
+* XXX cookie module revamps
+
+* XXX heapq revamp
 
 
 Strings And Bytes
@@ -411,25 +473,30 @@ This section discusses the many changes in string
 * The :class:`basestring` superclass has been removed. The ``2to3`` tool
   replaces every occurrence of :class:`basestring` with :class:`str`.
 
-* PEP 3137: There is a new type, :class:`bytes`, to represent binary data (and
-  encoded text, which is treated as binary data until you decide to decode it).
-  The :class:`str` and :class:`bytes` types cannot be mixed; you must always
-  explicitly convert between them, using the :meth:`str.encode` (str -> bytes)
-  or :meth:`bytes.decode` (bytes -> str) methods.
+* :pep:`3137`: There is a new type, :class:`bytes`, to represent
+  binary data (and encoded text, which is treated as binary data until
+  you decide to decode it).  The :class:`str` and :class:`bytes` types
+  cannot be mixed; you must always explicitly convert between them,
+  using the :meth:`str.encode` (str -> bytes) or :meth:`bytes.decode`
+  (bytes -> str) methods.
+
+.. XXX add bytearray
 
 * All backslashes in raw strings are interpreted literally.  This means that
   ``'\U'`` and ``'\u'`` escapes in raw strings are not treated specially.
 
-.. XXX add bytearray
+* :pep:`3138`: :func:`repr` of a string no longer escapes all
+  non-ASCII characters.  XXX
 
-* PEP 3112: Bytes literals, e.g. ``b"abc"``, create :class:`bytes` instances.
+* :pep:`3112`: Bytes literals, e.g. ``b"abc"``, create :class:`bytes`
+  instances.
 
-* PEP 3120: UTF-8 default source encoding.
+* :pep:`3120`: UTF-8 default source encoding.
 
-* PEP 3131: Non-ASCII identifiers.  (However, the standard library remains
+* :pep:`3131`: Non-ASCII identifiers.  (However, the standard library remains
   ASCII-only with the exception of contributor names in comments.)
 
-* PEP 3116: New I/O Implementation.  The API is nearly 100% backwards
+* :pep:`3116`: New I/O Implementation.  The API is nearly 100% backwards
   compatible, but completely reimplemented (currently mostly in Python).  Also,
   binary files use bytes instead of strings.
 
@@ -438,8 +505,8 @@ This section discusses the many changes in string
 
 
 
-PEP 3101: A New Approach To String Formatting
-=============================================
+:pep:`3101`: A New Approach To String Formatting
+================================================
 
 * A new system for  built-in string formatting operations replaces the
   ``%`` string  formatting operator.   (However, the ``%``  operator is
@@ -449,8 +516,8 @@ PEP 3101: A New Approach To String Formatting
 .. XXX expand this
 
 
-PEP 3106: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
-======================================================================================
+:pep:`3106`: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
+=========================================================================================
 
 .. XXX expand this (but note that the "pitfalls" section currently has
 .. XXX more detail :-)
@@ -463,8 +530,8 @@ PEP 3106: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.v
   referred to as *dictionary views*.
 
 
-PEP 3107: Function Annotations
-==============================
+:pep:`3107`: Function Annotations
+=================================
 
 .. XXX expand this
 
@@ -474,7 +541,7 @@ PEP 3107: Function Annotations
 Exception Stuff
 ===============
 
-* PEP 352: All exceptions must be derived (directly or indirectly)
+* :pep:`0352`: All exceptions must be derived (directly or indirectly)
   from :exc:`BaseException`.  This is the root of the exception
   hierarchy.  Most exceptions should actually be derived from
   :exc:`Exception`.  This is not a new recommendation, but the
@@ -487,13 +554,13 @@ Exception Stuff
 * Dropping sequence behavior (slicing!) and :attr:`message` attribute of
   exception instances.
 
-* PEP 3109: Raising exceptions.  You must now use ``raise Exception(args)``
+* :pep:`3109`: Raising exceptions.  You must now use ``raise Exception(args)``
   instead of ``raise Exception, args``.
 
-* PEP 3110: Catching exceptions.  You must now use ``except SomeException as
+* :pep:`3110`: Catching exceptions.  You must now use ``except SomeException as
   identifier:`` instead of ``except Exception, identifier:``
 
-* PEP 3134: Exception chaining.
+* :pep:`3134`: Exception chaining.  XXX
 
 * A few exception messages are improved when Windows fails to load an extension
   module.  For example, ``error code 193`` is now ``%1 is not a valid Win32
@@ -505,110 +572,105 @@ New Class And Metaclass Stuff
 
 * Classic classes are gone.
 
-* PEP 3115: New Metaclass Syntax.
+* :pep:`3115`: New Metaclass Syntax.
 
-* PEP 3119: Abstract Base Classes (ABCs); ``@abstractmethod`` and
+* :pep:`3119`: Abstract Base Classes (ABCs); ``@abstractmethod`` and
   ``@abstractproperty`` decorators; collection ABCs.
 
-* PEP 3129: Class decorators.
+* :pep:`3129`: Class decorators.
 
-* PEP 3141: Numeric ABCs.
+* :pep:`3141`: Numeric ABCs.
 
 
 Other Language Changes
 ======================
 
-Here are most of the changes that Python 3.0 makes to the core Python
-language and built-in functions.
-
-* Removed backticks (use :func:`repr` instead).
-
-* Removed ``<>`` (use ``!=`` instead).
+* Moved :func:`intern` to :func:`sys.intern`.
 
 * ``!=`` now returns the opposite of ``==``, unless ``==`` returns
   ``NotImplemented``.
 
-* :keyword:`as` and :keyword:`with` are keywords.
+* The concept of "unbound methods" was removed from the language.
+  When referencing a method as a class attribute, you now get a plain
+  function object.
 
-* ``True``, ``False``, and ``None`` are keywords.
+* :meth:`__getslice__`, :meth:`__setslice__` and :meth:`__delslice__`
+  were killed.  The syntax ``a[i:j]`` now translates to
+  ``a.__getitem__(slice(i, j))`` (or :meth:`__setitem__` or
+  :meth:`__delitem__`, when used as an assignment or deletion target,
+  respectively).
 
-* PEP 237: :class:`long` renamed to :class:`int`.  That is, there is only one
-  built-in integral type, named :class:`int`; but it behaves like the old
-  :class:`long` type, with the exception that the literal suffix ``L`` is
-  neither supported by the parser nor produced by :func:`repr` anymore.
-  :data:`sys.maxint` was also removed since the int type has no maximum value
-  anymore.  Use :data:`sys.maxsize` instead.
-  XXX Is this a dupe from the intro section on integers?
+* :pep:`3111`: :func:`raw_input` renamed to :func:`input`.  That is,
+  the new :func:`input` function reads a line from :data:`sys.stdin`
+  and returns it with the trailing newline stripped.  It raises
+  :exc:`EOFError` if the input is terminated prematurely.  To get the
+  old behavior of :func:`input`, use ``eval(input())``.
 
-* PEP 238: int division returns a float.
+* :func:`xrange` renamed to :func:`range`, so :func:`range` will no
+  longer produce a list but an iterable yielding integers when
+  iterated over.  XXX dupe
 
-* The ordering operators behave differently: for example, ``x < y`` where ``x``
-  and ``y`` have incompatible types raises :exc:`TypeError` instead of returning
-  a pseudo-random boolean.
+* :pep:`3114`: ``.next()`` renamed to :meth:`__next__`, new builtin
+  :func:`next` to call the :meth:`__next__` method on an object.
 
-* :meth:`__getslice__` and friends killed.  The syntax ``a[i:j]`` now translates
-  to ``a.__getitem__(slice(i, j))`` (or :meth:`__setitem__` or
-  :meth:`__delitem__`, depending on context).
-
-* PEP 3102: Keyword-only arguments.  Named parameters occurring after ``*args``
-  in the parameter list *must* be specified using keyword syntax in the call.
-  You can also use a bare ``*`` in the parameter list to indicate that you don't
-  accept a variable-length argument list, but you do have keyword-only
-  arguments.
-
-* PEP 3104: :keyword:`nonlocal` statement.  Using ``nonlocal x`` you can now
-  assign directly to a variable in an outer (but non-global) scope.
-
-* PEP 3111: :func:`raw_input` renamed to :func:`input`.  That is, the new
-  :func:`input` function reads a line from :data:`sys.stdin` and returns it with
-  the trailing newline stripped.  It raises :exc:`EOFError` if the input is
-  terminated prematurely.  To get the old behavior of :func:`input`, use
-  ``eval(input())``.
-
-* :func:`xrange` renamed to :func:`range`, so :func:`range` will no longer
-  produce a list but an iterable yielding integers when iterated over.
-
-* PEP 3113: Tuple parameter unpacking removed.  You can no longer write ``def
-  foo(a, (b, c)): ...``.  Use ``def foo(a, b_c): b, c = b_c`` instead.
-
-* PEP 3114: ``.next()`` renamed to :meth:`__next__`, new builtin :func:`next` to
-  call the :meth:`__next__` method on an object.
-
-* PEP 3127: New octal literals; binary literals and :func:`bin`.  Instead of
-  ``0666``, you write ``0o666``.  The :func:`oct` function is modified
-  accordingly.  Also, ``0b1010`` equals 10, and ``bin(10)`` returns
-  ``"0b1010"``.  ``0666`` is now a :exc:`SyntaxError`.
-
-* PEP 3132: Extended Iterable Unpacking.  You can now write things like ``a, b,
-  *rest = some_sequence``.  And even ``*rest, a = stuff``.  The ``rest`` object
-  is always a list; the right-hand side may be any iterable.
-
-* PEP 3135: New :func:`super`.  You can now invoke :func:`super` without
-  arguments and the right class and instance will automatically be chosen.  With
-  arguments, its behavior is unchanged.
+* :pep:`3135`: New :func:`super`.  You can now invoke :func:`super`
+  without arguments and the right class and instance will
+  automatically be chosen.  With arguments, its behavior is unchanged.
 
 * :func:`zip`, :func:`map` and :func:`filter` return iterators.
 
 * :data:`string.letters` and its friends (:data:`string.lowercase` and
-  :data:`string.uppercase`) are gone.  Use :data:`string.ascii_letters`
-  etc. instead.
+  :data:`string.uppercase`) are gone.  Use
+  :data:`string.ascii_letters` etc. instead.  (The reason for the
+  removal is that :data:string.letters` and friends had
+  locale-specific behavior, which is a bad idea for such
+  attractively-named global "constants".)
 
-* Removed: :func:`apply`, :func:`callable`, :func:`coerce`, :func:`execfile`,
-  :func:`file`, :func:`reduce`, :func:`reload`.
+* Removed: :func:`apply`.  Instead of ``apply(f, args)`` use
+  ``f(*args)``.
 
-* Removed: :meth:`dict.has_key` -- use the ``in`` operator instead.
+* Removed :func:`callable`.  Instead of ``callable(f)`` you can use
+  ``hasattr(f, '__call__')``.  The :func:`operator.isCallable` function
+  is also gone.
 
-* :func:`exec` is now a function.
+* Removed :func:`coerce`.  This function no longer serves a purpose
+  now that classic classes are gone.
 
-* The :meth:`__oct__` and :meth:`__hex__` special methods are removed --
-  :func:`oct` and :func:`hex` use :meth:`__index__` now to convert the argument
-  to an integer.
+* Removed :func:`execfile`.  Instead of ``execfile(fn)`` use
+  ``exec(open(fn).read())``.
 
-* Support is removed for :attr:`__members__` and :attr:`__methods__`.
+* Removed :class:`file`.  Use :func:`open`.
 
-* Renamed the boolean conversion C-level slot and method: ``nb_nonzero`` is now
-  ``nb_bool`` and :meth:`__nonzero__` is now :meth:`__bool__`.
+* Removed :func:`reduce`.  Use :func:`functools.reduce` if you really
+  need it; however, 99 percent of the time an explicit :keyword:`for`
+  loop is more readable.
 
+* Removed :func:`reload`.  Use :func:`imp.reload`.  
+
+* Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
+  instead.
+
+* The :meth:`__oct__` and :meth:`__hex__` special methods are removed
+  -- :func:`oct` and :func:`hex` use :meth:`__index__` now to convert
+  the argument to an integer.
+
+* Removed support for :attr:`__members__` and :attr:`__methods__`.
+
+* Renamed the boolean conversion C-level slot and method:
+  ``nb_nonzero`` is now ``nb_bool`` and :meth:`__nonzero__` is now
+  :meth:`__bool__`.
+
+* Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
+  underscores, adding an 's').  The :data:`__builtins__` variable
+  found in most global namespaces is unchanged.  To modify a builtin,
+  you should use :mod:`builtins`, not :data:`__builtins__`!
+
+* Renamed function attributes :attr:`func_whatever` to
+  :attr:`__whatever__`.  XXX list every single one.
+
+* Removed :exc:`StandardError`.
+
+* Removed METH_OLDARGS and WITH_CYCLE_GC.  XXX more.
 
 .. ======================================================================
 
@@ -616,11 +678,11 @@ language and built-in functions.
 Optimizations
 -------------
 
-* Detailed changes are listed here.
-
 The net result of the 3.0 generalizations is that Python 3.0 runs the
-pystone benchmark around a third slower than Python 2.5.  There's room
-for improvement, but it will happen after 3.0 is released!
+pystone benchmark around 10% slower than Python 2.5.  Most likely the
+biggest cause is the removal of special-casing for small integers.
+There's room for improvement, but it will happen after 3.0 is
+released!
 
 .. ======================================================================
 
@@ -668,11 +730,11 @@ Build And C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* PEP 3118: New Buffer API.
+* :pep:`3118`: New Buffer API. XXX
 
-* PEP 3121: Extension Module Initialization & Finalization.
+* :pep:`3121`: Extension Module Initialization & Finalization. XXX
 
-* PEP 3123: Making :cmacro:`PyObject_HEAD` conform to standard C.
+* :pep:`3123`: Making :cmacro:`PyObject_HEAD` conform to standard C. XXX
 
 * No more C API support for restricted execution.
 
@@ -689,8 +751,9 @@ Changes to Python's build process and to the C API include:
 Port-Specific Changes
 ---------------------
 
-Platform-specific changes go here.
+XXX Platform-specific changes go here.
 
+* XXX BeOS, RISCOS, Irix, Tru64 support
 
 .. ======================================================================
 
@@ -705,9 +768,9 @@ scattered throughout the source tree.  A search through the change
 logs finds there were XXX patches applied and YYY bugs fixed between
 Python 2.6 and 3.0.  Both figures are likely to be underestimates.
 
-Some of the more notable changes are:
+XXX Some of the more notable changes are:
 
-* Details go here.
+* XXX Details go here.
 
 .. ======================================================================
 

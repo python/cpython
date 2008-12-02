@@ -1,3 +1,5 @@
+.. _whats-new-in-2.6:
+
 ****************************
   What's New in Python 2.6
 ****************************
@@ -244,6 +246,8 @@ have adopted Sphinx as their documentation tool.
      The underlying reStructuredText parser and toolset.
 
 
+.. _pep-0343:
+
 PEP 343: The 'with' statement
 =============================
 
@@ -424,7 +428,7 @@ add a :keyword:`return` statement at the marked location. ::
                # return False
 
 
-.. _module-contextlib:
+.. _new-module-contextlib:
 
 The contextlib module
 ---------------------

@@ -1,3 +1,5 @@
+.. _unicode-howto:
+
 *****************
   Unicode HOWTO
 *****************
