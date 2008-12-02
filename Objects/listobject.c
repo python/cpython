@@ -2736,11 +2736,11 @@ static PyObject *list_reversed(PyListObject *, PyObject *);
 static void listreviter_dealloc(listreviterobject *);
 static int listreviter_traverse(listreviterobject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
-static Py_ssize_t listreviter_len(listreviterobject *);
+static PyObject *listreviter_len(listreviterobject *);
 
-static PySequenceMethods listreviter_as_sequence = {
-	(lenfunc)listreviter_len,	/* sq_length */
-	0,				/* sq_concat */
+static PyMethodDef listreviter_methods[] = {
+	{"__length_hint__", (PyCFunction)listreviter_len, METH_NOARGS, length_hint_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject PyListRevIter_Type = {
@@ -2756,7 +2756,7 @@ PyTypeObject PyListRevIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&listreviter_as_sequence,		/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2772,6 +2772,7 @@ PyTypeObject PyListRevIter_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)listreviter_next,		/* tp_iternext */
+	listreviter_methods,		/* tp_methods */
 	0,
 };
 
@@ -2827,12 +2828,12 @@ listreviter_next(listreviterobject *it)
 	return NULL;
 }
 
-static Py_ssize_t
+static PyObject *
 listreviter_len(listreviterobject *it)
 {
 	Py_ssize_t len = it->it_index + 1;
 	if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
-		return 0;
-	return len;
+		len = 0;
+	return PyLong_FromSsize_t(len);
 }
 

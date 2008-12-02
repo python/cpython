@@ -93,6 +93,8 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(StopIteration, next, r)
         self.assertEqual(list(reversed(self.type2test())),
                          self.type2test())
+        # Bug 3689: make sure list-reversed-iterator doesn't have __len__
+        self.assertRaises(TypeError, len, reversed([1,2,3]))
 
     def test_setitem(self):
         a = self.type2test([0, 1])
