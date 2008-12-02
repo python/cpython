@@ -265,7 +265,7 @@ Additions
 
     (a, b, *rest) = range(5)
 
-  This sets *a* to 0, *b* to 1, and *rest to ``[2, 3, 4]``.
+  This sets *a* to 0, *b* to 1, and \*rest to ``[2, 3, 4]``.
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
   same thing as ``dict(stuff)`` but is more flexible.
