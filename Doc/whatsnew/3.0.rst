@@ -426,6 +426,9 @@ consulted for longer descriptions.
 Library Changes
 ===============
 
+Due to time constraints, this document does not exhaustively cover
+the very extensive changes to the library.  
+
 XXX Brief overview of what's changed in the library.
 
 * :pep:`3108`: stdlib reorganization.
@@ -778,16 +781,35 @@ XXX Some of the more notable changes are:
 Porting To Python 3.0
 =====================
 
-This section lists previously described changes that may require
-changes to your code:
+For porting existing Python 2.5 or 2.6 source code to Python 3.0, the
+best strategy is the following:
 
-* Everything is all in the details!
+0. (Prerequisite:) Start with excellent test coverage.
 
-* Developers can include :file:`intobject.h` after :file:`Python.h` for
-  some ``PyInt_`` aliases.
+1. Port to Python 2.6.  This should be no more work than the average
+   port from Python 2.x to Python 2.(x+1).  Make sure all your tests
+   pass.
 
-* XXX Mention 2to3.
+2. (Still using 2.6:) Turn on the :option:`-3` command line switch.
+   This enables warnings about features that will be removed (or
+   change) in 3.0.  Run your test suite again, and fix code that you
+   get warnings about until there are no warnings left, and all your
+   tests still pass.
 
-* XXX Reference external doc about porting extensions?
+3. Run the ``2to3`` source-to-source translator over your source code
+   tree.  (See :ref:`2to3-reference` for more on this tool.)  Run the
+   result of the translation under Python 3.0.  Manually fix up any
+   remaining issues, fixing problems until all tests pass again.
+
+It is not recommended to try to write source code that runs unchanged
+under both Python 2.6 and 3.0; you'd have to use a very contorted
+coding style, e.g. avoiding :keyword:`print` statements, metaclasses,
+and much more.  If you are maintaining a library that needs to support
+both Python 2.6 and Python 3.0, the best approach is to modify step 3
+above by editing the 2.6 version of the source code and running the
+``2to3`` translator again, rather than editing the 3.0 version of the
+source code.
+
+For porting C extensions to Python 3.0, please see :ref:`cporting-howto`.
 
 .. ======================================================================
