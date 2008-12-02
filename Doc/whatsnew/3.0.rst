@@ -166,7 +166,7 @@ changes:
 
 * See also the :ref:`unicode-howto`, which was updated for Python 3.0.
 
-Views And Interators Instead Of Lists
+Views And Iterators Instead Of Lists
 -------------------------------------
 
 Some well-known APIs no longer return lists:
