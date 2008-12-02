@@ -153,7 +153,7 @@ changed:
   be set with the ``LANG`` environment variable (and sometimes also
   with some other platform-specific locale-related environment
   variables).  In many cases, but not all, the system default is
-  UTF-8; you should never could on this default.  Any application
+  UTF-8; you should never count on this default.  Any application
   reading or writing more than pure ASCII text should probably have a
   way to override the encoding.
 
