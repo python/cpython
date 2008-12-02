@@ -333,10 +333,72 @@ Changes Already Present In Python 2.6
 
 This section reminds the reader of new features that were originally
 designed for Python 3.0 but that were already introduced in Python
-2.6.  The descriptions in "What's New in Python 2.6" are hereby
-included by reference.
+2.6.  The descriptions in "What's New in Python 2.6" should be
+consulted for longer descriptions.
 
-* XXX List each of those briefly.
+XXX How to cross-link?
+
+* PEP 343: The :keyword:`with` statement is now a standard feature and
+  no longer needs to be imported from the ``__future__``.
+
+* PEP 366: Explicit relative imports from a main module inside a package.
+  This enhances the usefulness of the :option:`-m` option.
+
+* PEP 370: Per-user ``site-packages`` directory.
+
+* PEP 371: The ``multiprocessing`` package.  XXX Did anything change here?
+
+* PEP 3101: Advanced string formatting.  Note: the 2.6 description
+  mentions the :method:`format` method for both 8-bit and Unicode
+  strings.  In 3.0, only the :class:`str` type (text strings with
+  Unicode support) supports this method; the :class:`bytes` type does
+  not.
+
+* PEP 3105: Print as a function.  This is now a standard feature and
+  no longer needs to be imported from the ``__future__``.
+
+* PEP 3110: Exception-handling changes.  The ``except exc as var:``
+  syntax is now standard and ``except exc, var:`` is no longer supported.
+  (Of course, the ``as var`` part is still optional.)
+
+* PEP 3112: Byte literals.  The ``b"..."`` string literal notation
+  (and its variants like ``b'...'``, ``b"""...""", and ``br'...`'')
+  now produces a literal of type :class:`bytes`.  More about :class:`bytes`
+  below.
+
+* PEP 3116: New I/O library.  The :module:`io` module is now the
+  standard way of doing file I/O, and the initial values of
+  ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are now instances
+  of :class:`io.TextIOBase`.  The builtin :func:`open` function is
+  now an alias for ``io.open`` and has additional keyword arguments:
+  ``encoding``, ``errors``, ``newline`` and ``closefd``.
+
+* PEP 3118: Revised buffer protocol.  The old builtin
+  :function:`buffer` is no more; the new builtin
+  :function:`memoryview` provides (mostly) similar functionality.
+
+* PEP 3119: Abstract Base Classes (ABCs).  These play a slightly more
+  prominent role in the language now, and builtin collection types like
+  :class:`dict` and :class:`list` conform to the :class:`Mapping` and
+  :class:`Sequence` protocol, correspondingly.
+
+* PEP 3127: Integer literal suport and syntax.  As mentioned above,
+  the new octal literal notation is the only one supported, and binary
+  literals have been added.
+
+* PEP 3129: Class decorators.  This speaks for itself.
+
+* PEP 3141: A type hierarchy for numbers.  This is another new use of
+  ABCs, defining Python's "numeric tower".
+
+* XXX More.
+
+
+Library Changes
+===============
+
+XXX Brief overview of what's changed in the library.
+
 
 Strings And Bytes
 =================
