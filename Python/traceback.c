@@ -171,7 +171,7 @@ _Py_FindSourceFile(const char* filename, char* namebuf, size_t namelen, int open
 		if (!PyUnicode_Check(v))
 			continue;
 		path = _PyUnicode_AsStringAndSize(v, &len);
-		if (len + 1 + taillen >= (Py_ssize_t)namelen - 1)
+		if (len + 1 + (Py_ssize_t)taillen >= (Py_ssize_t)namelen - 1)
 			continue; /* Too long */
 		strcpy(namebuf, path);
 		if (strlen(namebuf) != len)
