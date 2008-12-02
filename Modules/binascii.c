@@ -282,7 +282,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 	PyObject *rv;
 	Py_ssize_t bin_len;
 
-	if ( !PyArg_ParseTuple(args, "s*:b2a_uu", &pbin) )
+	if ( !PyArg_ParseTuple(args, "y*:b2a_uu", &pbin) )
 		return NULL;
 	bin_data = pbin.buf;
 	bin_len = pbin.len;
@@ -478,7 +478,7 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 	PyObject *rv;
 	Py_ssize_t bin_len;
 
-	if ( !PyArg_ParseTuple(args, "s*:b2a_base64", &pbuf) )
+	if ( !PyArg_ParseTuple(args, "y*:b2a_base64", &pbuf) )
 		return NULL;
 	bin_data = pbuf.buf;
 	bin_len = pbuf.len;
@@ -618,7 +618,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 	unsigned char ch;
 	Py_ssize_t in, inend, len;
 
-	if ( !PyArg_ParseTuple(args, "s*:rlecode_hqx", &pbuf) )
+	if ( !PyArg_ParseTuple(args, "y*:rlecode_hqx", &pbuf) )
 		return NULL;
 	in_data = pbuf.buf;
 	len = pbuf.len;
@@ -684,7 +684,7 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 	PyObject *rv;
 	Py_ssize_t len;
 
-	if ( !PyArg_ParseTuple(args, "s*:b2a_hqx", &pbin) )
+	if ( !PyArg_ParseTuple(args, "y*:b2a_hqx", &pbin) )
 		return NULL;
 	bin_data = pbin.buf;
 	len = pbin.len;
@@ -856,7 +856,7 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 	unsigned int crc;
 	Py_ssize_t len;
 
-	if ( !PyArg_ParseTuple(args, "s*i:crc_hqx", &pin, &crc) )
+	if ( !PyArg_ParseTuple(args, "y*i:crc_hqx", &pin, &crc) )
 		return NULL;
 	bin_data = pin.buf;
 	len = pin.len;
@@ -883,7 +883,7 @@ binascii_crc32(PyObject *self, PyObject *args)
     Py_ssize_t len;
     int signed_val;
 
-    if (!PyArg_ParseTuple(args, "s*|I:crc32", &pbuf, &crc32val))
+    if (!PyArg_ParseTuple(args, "y*|I:crc32", &pbuf, &crc32val))
         return NULL;
     buf = (Byte*)pbuf.buf;
     len = pbuf.len;
@@ -1047,7 +1047,7 @@ binascii_hexlify(PyObject *self, PyObject *args)
 	char* retbuf;
 	Py_ssize_t i, j;
 
-	if (!PyArg_ParseTuple(args, "s*:b2a_hex", &parg))
+	if (!PyArg_ParseTuple(args, "y*:b2a_hex", &parg))
 		return NULL;
 	argbuf = parg.buf;
 	arglen = parg.len;
@@ -1300,7 +1300,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	int crlf = 0;
 	unsigned char *p;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|iii", kwlist, &pdata,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|iii", kwlist, &pdata,
 	      &quotetabs, &istext, &header))
 		return NULL;
 	data = pdata.buf;

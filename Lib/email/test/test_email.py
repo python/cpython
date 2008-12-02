@@ -2279,7 +2279,7 @@ Foo
         eq(charsets[0], 'utf-8')
         charset = Charset(charsets[0])
         eq(charset.get_body_encoding(), 'base64')
-        msg.set_payload('hello world', charset=charset)
+        msg.set_payload(b'hello world', charset=charset)
         eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=\n')
         eq(msg.get_payload(decode=True), b'hello world')
         eq(msg['content-transfer-encoding'], 'base64')
@@ -2539,7 +2539,7 @@ class TestBase64(unittest.TestCase):
     def test_len(self):
         eq = self.assertEqual
         eq(base64mime.header_length('hello'),
-           len(base64mime.body_encode('hello', eol='')))
+           len(base64mime.body_encode(b'hello', eol='')))
         for size in range(15):
             if   size == 0 : bsize = 0
             elif size <= 3 : bsize = 4
@@ -2556,19 +2556,19 @@ class TestBase64(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        eq(base64mime.body_encode(''), '')
-        eq(base64mime.body_encode('hello'), 'aGVsbG8=\n')
+        eq(base64mime.body_encode(b''), b'')
+        eq(base64mime.body_encode(b'hello'), 'aGVsbG8=\n')
         # Test the binary flag
-        eq(base64mime.body_encode('hello\n'), 'aGVsbG8K\n')
+        eq(base64mime.body_encode(b'hello\n'), 'aGVsbG8K\n')
         # Test the maxlinelen arg
-        eq(base64mime.body_encode('xxxx ' * 20, maxlinelen=40), """\
+        eq(base64mime.body_encode(b'xxxx ' * 20, maxlinelen=40), """\
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IA==
 """)
         # Test the eol argument
-        eq(base64mime.body_encode('xxxx ' * 20, maxlinelen=40, eol='\r\n'),
+        eq(base64mime.body_encode(b'xxxx ' * 20, maxlinelen=40, eol='\r\n'),
            """\
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
@@ -2734,7 +2734,7 @@ class TestCharset(unittest.TestCase):
         eq('hello w=F6rld', c.body_encode('hello w\xf6rld'))
         # Try a charset with Base64 body encoding
         c = Charset('utf-8')
-        eq('aGVsbG8gd29ybGQ=\n', c.body_encode('hello world'))
+        eq('aGVsbG8gd29ybGQ=\n', c.body_encode(b'hello world'))
         # Try a charset with None body encoding
         c = Charset('us-ascii')
         eq('hello world', c.body_encode('hello world'))
