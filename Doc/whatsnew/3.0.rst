@@ -53,7 +53,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.0, compared to 2.6.
-Python 3.0, also known as "Python 3000" or "Py3k", is the first ever
+Python 3.0, also known as "Python 3000" or "Py3K", is the first ever
 *intentionally incompatible* release.  There are more changes than in
 a typical release, and more that are important for all Python users.
 Nevertheless, after digesting the changes, you'll find that Python
@@ -247,7 +247,6 @@ Overview Of Syntactic Changes
 =============================
 
 This section gives a brief overview of every *syntactic* change.
-Several of these are discussed at greater length later.
 
 Additions
 ---------
@@ -426,49 +425,105 @@ consulted for longer descriptions.
 Library Changes
 ===============
 
-Due to time constraints, this document does not exhaustively cover
-the very extensive changes to the library.  
+Due to time constraints, this document does not exhaustively cover the
+very extensive changes to the standard library.  :pep:`3108` is the
+reference for the major changes to the library.  Here's a capsule
+review:
 
-XXX Brief overview of what's changed in the library.
+* Many old modules were removed.  Some, like :mod:`gopherlib` (no
+  longer used) and :mod:`md5` (replaced by :mod:`hashlib`), were
+  already deprecated by :pep:`0004`.  Others were removed as a result
+  of the removal of support for various platforms such as Irix, BeOS
+  and Mac OS 9 (see :pep:`0011`).  Some modules were also selected for
+  removal in Python 3.0 due to lack of use or because a better
+  replacement exists.  See :pep:`3108` for an exhaustive list.
 
-* :pep:`3108`: stdlib reorganization.
+* The :mod:`bsddb3` package was removed because its presence in the
+  core standard library has proved over time to be a particular burden
+  for the core developers due to testing instability and Berlekey DB's
+  release schedule.  However, the package is alive and well,
+  externally maintained at http://www.jcea.es/programacion/pybsddb.htm.
+
+* Some modules were renamed because their old name flaunted
+  :pep:`0008`, or for various other reasons:
+
+  =======================  =======================
+  Old Name                 New Name
+  =======================  =======================
+  _winreg                  winreg
+  ConfigParser             configparser
+  copy_reg                 copyreg
+  Queue                    queue
+  SocketServer             socketserver
+  markupbase               _markupbase
+  repr                     reprlib
+  test.test_support        test.support
+  =======================  =======================
+
+* A common pattern in Python 2.x is to have one version of a module
+  implemented in pure Python, with an optional accelerated version
+  implemented as a C extension; for example, :mod:`pickle` and
+  :mod:`cPickle`.  This places the burden of importing the accelerated
+  version and falling back on the pure Python version on each user of
+  these modules.  In Python 3.0, the accelerated versions are
+  considered implementation details of the pure Python versions.
+  Users should always import the standard version, which attempts to
+  import the accelerated version and falls back to the pure Python
+  version.  The :mod:`pickle` module received this treatment.  The
+  :mod:`profile` module is on the list for 3.1.  The :mod:`StringIO`
+  module has been turned into a class in the :mod:`io` module.
+
+* Some related modules have been grouped into packages, and usually
+  the submodule names have been simplified.  The resulting new
+  packages are:
+
+  * :mod:`dbm` (:mod:`anydbm`, :mod:`dbhash`, :mod:`dbm`,
+    :mod:`dumbdbm`, :mod:`gdbm`, :mod:`whichdb`).
+
+  * :mod:`html` (:mod:`HTMLParser`, :mod:`htmlentitydefs`).
+
+  * :mod:`http` (:mod:`httplib`, :mod:`BaseHTTPServer`,
+    :mod:`CGIHTTPServer`, :mod:`SimpleHTTPServer`, :mod:`Cookie`,
+    :mod:`cookielib`).
+
+  * :mod:`tkinter` (all :mod:`Tkinter`-related modules except
+    :mod:`turtle`).  The target audience of :mod:`turtle` doesn't
+    really care about :mod:`tkinter`.  Also note that as of Python
+    2.6, the functionality of :mod:`turtle` has been greatly enhanced.
+
+  * :mod:`urllib` (:mod:`urllib`, :mod:`urllib`2, :mod:`urlparse`,
+    :mod:`robotparse`).
+
+  * :mod:`xmlrpc` (:mod:`xmlrpclib`, :mod:`DocXMLRPCServer`,
+    :mod:`SimpleXMLRPCServer`).
+
+Some other library changes (not covered by :pep:`3108`):
 
 * Killed :mod:`sets`.  Use the builtin :func:`set` function.
 
-* XXX macfs, new, reconvert, stringold, xmllib, pcre, pypcre, strop
-
-* XXX :pep:`4`
-
-* XXX lib-old: Para, addpack, cmp, cmpcache, codehack, dircmp, dump,
-  find, fmt, grep, lockfile, newdir, ni, packmail, poly, rand,
-  statcache, tb, tzparse, util, whatsound, whrandom, zmod
-
-* XXX Removed sys.exitfunc
-
-* XXX Removed sys.exc_clear
-
-* XXX Removed sys.exc_type, exc_value, exc_traceback.  (sys.last_type
+* Cleanup of the :mod:`sys` module: removed :func:`sys.exitfunc`,
+  :func:`sys.exc_clear`, :data:`sys.exc_type`, :data:`sys.exc_value`,
+  :data:`sys.exc_traceback`.  (Note that :data:`sys.last_type`
   etc. remain.)
 
-* XXX array.read, array.write
+* Cleanup of the :class:`array.array` type: the :meth:`read` and
+  :meth:`write` methods are gone; use :meth:`fromfile` and
+  :meth:`tofile` instead.
 
-* XXX operator.sequenceIncludes
+* Cleanup of the :mod:`operator` module: removed
+  :func:`sequenceIncludes` and :func:`isCallable`.
 
-* XXX thread.acquire_lock and thread.release_lock
+* Cleanup of the :mod:`thread` module: :func:`acquire_lock` and
+  :func:`release_lock` are gone; use :func:`acquire` and
+  :func:`release` instead.
 
-* XXX UserXXX -> XXXMixin?
-
-* XXX removed random.jumpahead API
-
-* XXX cookie module revamps
-
-* XXX heapq revamp
+* Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
 
 Strings And Bytes
 =================
 
-This section discusses the many changes in string 
+This section discusses the many changes in string XXX
 
 * There is only one string type; its name is :class:`str` but its behavior and
   implementation are like :class:`unicode` in 2.x.
@@ -757,23 +812,6 @@ Port-Specific Changes
 XXX Platform-specific changes go here.
 
 * XXX BeOS, RISCOS, Irix, Tru64 support
-
-.. ======================================================================
-
-
-.. _30section-other:
-
-Other Changes And Fixes
-=======================
-
-As usual, there were a bunch of other improvements and bugfixes
-scattered throughout the source tree.  A search through the change
-logs finds there were XXX patches applied and YYY bugs fixed between
-Python 2.6 and 3.0.  Both figures are likely to be underestimates.
-
-XXX Some of the more notable changes are:
-
-* XXX Details go here.
 
 .. ======================================================================
 
