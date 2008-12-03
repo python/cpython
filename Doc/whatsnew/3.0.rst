@@ -182,8 +182,7 @@ Python 3.0 has simplified the rules for ordering comparisons:
   no longer makes sense -- all the elements must be comparable to each
   other.  Note that this does not apply to the ``==`` and ``!=``
   operators: objects of different incomparable types always compare
-  unequal to each other, and an object always compares equal to itself
-  (i.e., ``x is y`` implies ``x == y``; this is true even for *NaN*).
+  unequal to each other.
 
 * :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the
   *cmp* argument providing a comparison function.  Use the *key*
