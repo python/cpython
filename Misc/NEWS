@@ -22,7 +22,7 @@ Core and Builtins
 - Issue #4367: Python would segfault during compiling when the unicodedata
   module couldn't be imported and \N escapes were present.
 
-- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
+- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()``
   method on file objects with closefd=False. The file descriptor is still
   kept open but the file object behaves like a closed file. The ``FileIO``
   object also got a new readonly attribute ``closefd``.
@@ -59,6 +59,12 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #4384: Added integration with warnings module using captureWarnings().
+  This change includes a NullHandler which does nothing; it will be of use to
+  library developers who want to avoid the "No handlers could be found for
+  logger XXX" message which can appear if the library user doesn't configure
+  logging.
 
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
