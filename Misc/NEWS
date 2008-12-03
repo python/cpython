@@ -7,7 +7,7 @@ Python News
 What's New in Python 3.0 final
 ==============================
 
-*Release date: XX-XXX-2008*
+*Release date: 03-Dec-2008*
 
 Core and Builtins
 -----------------
@@ -58,8 +58,8 @@ Library
 Build
 -----
 
-- Issue #4407: Fix source file that caused the compileall step in Windows installer
-  to fail.
+- Issue #4407: Fix source file that caused the compileall step in Windows
+  installer to fail.
 
 Docs
 ----

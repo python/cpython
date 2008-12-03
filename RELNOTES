@@ -23,7 +23,7 @@ Additional notes for Python 3.0 final
 
 * The email package needs quite a bit of work to make it consistent with
   respect to bytes and strings.  There have been discussions on
-  email-sig@python.org about where to go with the email package for 3.0, but
-  this was not resolved in time for 3.0 final.  With enough care though, the
-  email package in Python 3.0 should be about as usable as it is with Python
-  2.
+  email-sig@python.org about where to go with the email package for Python
+  3.0, but this was not resolved in time for 3.0 final.  With enough care
+  though, the email package in Python 3.0 should be about as usable as it is
+  with Python 2.
