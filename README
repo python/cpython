@@ -1,17 +1,16 @@
-This is Python version 3.0 release candidate 3
-==============================================
+This is Python version 3.1 alpha 0
+==================================
 
 For notes specific to this release, see RELNOTES in this directory.
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
 Python Software Foundation.
 All rights reserved.
 
-Python 3000 (a.k.a. "Py3k", and released as Python 3.0) is a new
-version of the language, which is incompatible with the 2.x line of
-releases.  The language is mostly the same, but many details,
-especially how built-in objects like dictionaries and strings work,
-have changed considerably, and a lot of deprecated features have
-finally been removed.
+Python 3.x is a new version of the language, which is incompatible with the
+2.x line of releases.  The language is mostly the same, but many details,
+especially how built-in objects like dictionaries and strings work, have
+changed considerably, and a lot of deprecated features have finally been
+removed.
 
 This is an ongoing project; the cleanup isn't expected to be complete
 until some time in 2008.  In particular there are plans to reorganize
@@ -21,22 +20,15 @@ the standard library namespace.
 Release Schedule
 ----------------
 
-The release plan is to have a series of alpha releases in 2007 and 2008,
-beta releases in 2008, and a final release in October 2008.  The alpha
-releases are primarily aimed at developers who want a sneak peek at the
-new langauge, especially those folks who plan to port their code to
-Python 3000.  The hope is that by the time of the final release, many
-3rd party packages will already be available in a 3.0-compatible form.
-
-See PEP 361 for release details: http://www.python.org/dev/peps/pep-0361/
+See PEP XXX for release details: http://www.python.org/dev/peps/pep-XXX/
 
 
 Documentation
 -------------
 
-Documentation for Python 3000 is online, updated twice a day:
+Documentation for Python 3.1 is online, updated twice a day:
 
-    http://docs.python.org/dev/3.0/
+    http://docs.python.org/dev/3.1/
 
 All documentation is also available online at the Python web site
 (http://docs.python.org/, see below).  It is available online for
@@ -48,9 +40,9 @@ translators, and people with special formatting requirements.
 
 This is a work in progress; please help improve it!
 
-The design documents for Python 3000 are also online.  While the
-reference documentation is being updated, the PEPs are often the best
-source of information about new features.  Start by reading PEP 3000:
+The design documents for Python 3 are also online.  While the reference
+documentation is being updated, the PEPs are often the best source of
+information about new features.  Start by reading PEP 3000:
 
     http://python.org/dev/peps/pep-3000/
 
@@ -58,15 +50,15 @@ source of information about new features.  Start by reading PEP 3000:
 What's New
 ----------
 
-For an overview of what's new in Python 3000, see Guido van Rossum's
-blog at artima.com:
+For an overview of what's new in Python 3, see Guido van Rossum's blog at
+artima.com:
 
     http://www.artima.com/weblogs/index.jsp?blogger=guido
 
 We try to eventually have a comprehensive overview of the changes in
-the "What's New in Python 3.0" document, found at
+the "What's New in Python 3.1" document, found at
 
-    http://docs.python.org/dev/3.0/whatsnew/3.0
+    http://docs.python.org/dev/3.1/whatsnew/3.1
 
 Please help write it!
 
@@ -88,13 +80,12 @@ current PEPs, as well as guidelines for submitting a new PEP, are listed at
 http://www.python.org/dev/peps/.
 
 
-Converting From Python 2.x to 3.0
+Converting From Python 2.x to 3.x
 ---------------------------------
 
-Python 2.6 (to be released concurrent with Python 3.0) will contain features
-to help locating code that needs to be changed, such as optional warnings when
-deprecated features are used, and backported versions of certain key Python
-3000 features.
+Python starting with 2.6 will contain features to help locating code that
+needs to be changed, such as optional warnings when deprecated features are
+used, and backported versions of certain key Python 3.x features.
 
 
 Installing multiple versions

@@ -17,7 +17,7 @@ operating system::
    >>> os.system('time 0:02')
    0
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python30'
+   'C:\\Python31'
    >>> os.chdir('/server/accesslogs')
 
 Be sure to use the ``import os`` style instead of ``from os import *``.  This
