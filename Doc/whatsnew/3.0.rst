@@ -147,7 +147,7 @@ Some well-known APIs no longer return lists:
 * :class:`dict` methods :meth:`dict.keys`, :meth:`dict.items` and
   :meth:`dict.values` return "views" instead of lists.  For example,
   this no longer works: ``k = d.keys(); k.sort()``.  Use ``k =
-  sorted(d)`` instead (this works in Python 2.5 too, and is just
+  sorted(d)`` instead (this works in Python 2.5 too and is just
   as efficient).
 
 * Also, the :meth:`dict.iterkeys`, :meth:`dict.iteritems` and
@@ -386,7 +386,8 @@ New Syntax
 
 * New binary literals, e.g. ``0b1010`` (already in 2.6).
 
-* Bytes literals are introduced with a leading ``b`` or ``B``.
+* Bytes literals are introduced with a leading ``b`` or ``B``, and
+  there is a new corresponding builtin function, :func:`bin`.
 
 Changed Syntax
 --------------
@@ -524,7 +525,7 @@ consulted for longer descriptions.
   :mod:`collections` module plays a somewhat more prominent role in
   the language now, and builtin collection types like :class:`dict`
   and :class:`list` conform to the :class:`collections.MutableMapping`
-  and :class:`collections.MutableSequence` ABC, respectively.
+  and :class:`collections.MutableSequence` ABCs, respectively.
 
 * :ref:`pep-3127`.  As mentioned above, the new octal literal
   notation is the only one supported, and binary literals have been
