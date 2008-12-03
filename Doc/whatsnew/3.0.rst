@@ -474,7 +474,7 @@ originally designed for Python 3.0 but that were back-ported to Python
 consulted for longer descriptions.
 
 * :ref:`pep-0343`.  The :keyword:`with` statement is now a standard
-  feature and no longer needs to be imported from the ``__future__``.
+  feature and no longer needs to be imported from the :mod:`__future__`.
   Also check out :ref:`new-26-context-managers` and
   :ref:`new-module-contextlib`.
 
