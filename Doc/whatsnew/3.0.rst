@@ -55,17 +55,26 @@
 
 This article explains the new features in Python 3.0, compared to 2.6.
 Python 3.0, also known as "Python 3000" or "Py3K", is the first ever
-*intentionally incompatible* release.  There are more changes than in
-a typical release, and more that are important for all Python users.
-Nevertheless, after digesting the changes, you'll find that Python
-really hasn't changed all that much -- by and large, we're merely
-fixing well-known annoyances and warts.
+*intentionally backwards incompatible* Python release.  There are more
+changes than in a typical release, and more that are important for all
+Python users.  Nevertheless, after digesting the changes, you'll find
+that Python really hasn't changed all that much -- by and large, we're
+mostly fixing well-known annoyances and warts, and removing a lot of
+old cruft.
 
 This article doesn't attempt to provide a complete specification of
-the new features, but instead provides a convenient overview.  For
-full details, you should refer to the documentation for Python 3.0. If
-you want to understand the complete implementation and design
-rationale, refer to the PEP for a particular new feature.
+all new features, but instead tries to give a convenient overview.
+For full details, you should refer to the documentation for Python
+3.0, and/or the many PEPs referenced in the text. If you want to
+understand the complete implementation and design rationale for a
+particular feature, PEPs usually have more details than the regular
+documentation; but note that PEPs usually are not kept up-to-date once
+a feature has been fully implemented.
+
+Due to time constraints this document is not as complete as it should
+have been.  As always for a new release, the ``Misc/NEWS`` file in the
+source distribution contains a wealth of detailed information about
+every small thing that was changed.
 
 .. Compare with previous release in 2 - 3 sentences here.
 .. add hyperlink when the documentation becomes available online.
@@ -144,11 +153,14 @@ Some well-known APIs no longer return lists:
 * Also, the :meth:`dict.iterkeys`, :meth:`dict.iteritems` and
   :meth:`dict.itervalues` methods are no longer supported.
 
-* :func:`map` and :func:`filter` return iterators.  A quick fix is e.g.
-  ``list(map(...))``, but a better fix is often to use a list
-  comprehension (especially when the original code uses :keyword:`lambda`).
-  Particularly tricky is :func:`map` invoked for the side effects of the
-  function; the correct transformation is to use a for-loop.
+* :func:`map` and :func:`filter` return iterators.  If you really need
+  a list, a quick fix is e.g.  ``list(map(...))``, but a better fix is
+  often to use a list comprehension (especially when the original code
+  uses :keyword:`lambda`), or rewriting the code so it doesn't need a
+  list at all.  Particularly tricky is :func:`map` invoked for the
+  side effects of the function; the correct transformation is to use a
+  regular :keyword:`for` loop (since creating a list would just be
+  wasteful).
 
 * :func:`range` now behaves like :func:`xrange` used to behave, except
   it works with values of arbitrary size.  The latter no longer
@@ -164,13 +176,14 @@ Python 3.0 has simplified the rules for ordering comparisons:
 * The ordering comparison operators (``<``, ``<=``, ``>=``, ``>``)
   raise a TypeError exception when the operands don't have a
   meaningful natural ordering.  Thus, expressions like ``1 < ''``, ``0
-  > None`` or ``len <= len`` are no longer valid.  A corollary is that
-  sorting a heterogeneous list no longer makes sense -- all the
-  elements must be comparable to each other.  Note that this does not
-  apply to the ``==`` and ``!=`` operators: objects of different
-  uncomparable types always compare unequal to each other, and an
-  object always compares equal to itself (i.e., ``x is y`` implies
-  ``x == y``; this is true even for *NaN*).
+  > None`` or ``len <= len`` are no longer valid, and e.g. ``None <
+  None`` raises :exc:`TypeError` instead of returning
+  :keyword:`False`.  A corollary is that sorting a heterogeneous list
+  no longer makes sense -- all the elements must be comparable to each
+  other.  Note that this does not apply to the ``==`` and ``!=``
+  operators: objects of different incomparable types always compare
+  unequal to each other, and an object always compares equal to itself
+  (i.e., ``x is y`` implies ``x == y``; this is true even for *NaN*).
 
 * :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the
   *cmp* argument providing a comparison function.  Use the *key*
@@ -196,7 +209,7 @@ Integers
   existed for years, at least since Python 2.2.)
 
 * The :data:`sys.maxint` constant was removed, since there is no
-  longer a limit to the value of ints.  However, :data:`sys.maxsize`
+  longer a limit to the value of integers.  However, :data:`sys.maxsize`
   can be used as an integer larger than any practical list or string
   index.  It conforms to the implementation's "natural" integer size
   and is typically the same as :data:`sys.maxint` in previous releases
@@ -542,7 +555,7 @@ review:
 
 * The :mod:`bsddb3` package was removed because its presence in the
   core standard library has proved over time to be a particular burden
-  for the core developers due to testing instability and Berlekey DB's
+  for the core developers due to testing instability and Berkeley DB's
   release schedule.  However, the package is alive and well,
   externally maintained at http://www.jcea.es/programacion/pybsddb.htm.
 
@@ -599,8 +612,8 @@ review:
 
   * :mod:`xmlrpc` (:mod:`xmlrpclib`, :mod:`DocXMLRPCServer`,
     :mod:`SimpleXMLRPCServer`).
-
-Some other changes to standard library moduled, not covered by
+modules
+Some other changes to standard library modules, not covered by
 :pep:`3108`:
 
 * Killed :mod:`sets`.  Use the builtin :func:`set` function.
@@ -840,7 +853,7 @@ to the C API.
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed ``METH_OLDARGS`` and ``WITH_CYCLE_GC`` from the C API.
+* Removed :cmacro:`METH_OLDARGS` and :cmacro:`WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 
