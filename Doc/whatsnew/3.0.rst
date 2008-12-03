@@ -221,10 +221,10 @@ changed.
   hold text is :class:`str`, the type used to hold data is
   :class:`bytes`.  The biggest difference with the 2.x situation is
   that any attempt to mix text and data in Python 3.0 raises
-  :ext:`TypeError`, whereas if you were to mix Unicode and 8-bit
+  :exc:`TypeError`, whereas if you were to mix Unicode and 8-bit
   strings in Python 2.x, it would work if the 8-bit string happened to
   contain only 7-bit (ASCII) bytes, but you would get
-  :ext:`UnicodeDecodeError` if it contained non-ASCII values.  This
+  :exc:`UnicodeDecodeError` if it contained non-ASCII values.  This
   value-specific behavior has caused numerous sad faces over the
   years.
 
