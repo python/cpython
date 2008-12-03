@@ -221,7 +221,7 @@ static TCHAR *FormatError(DWORD code)
 	n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			  NULL,
 			  code,
-			  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+			  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
 			  (LPTSTR) &lpMsgBuf,
 			  0,
 			  NULL);
