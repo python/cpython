@@ -19,7 +19,8 @@
    
    * The maintainer will go through Misc/NEWS periodically and add
    changes; it's therefore more important to add your changes to
-   Misc/NEWS than to this file.
+   Misc/NEWS than to this file.  (Note: I didn't get to this for 3.0.
+   GvR.)
    
    * This is not a complete list of every single change; completeness
    is the purpose of Misc/NEWS.  Some changes I consider too small
@@ -40,7 +41,8 @@
    necessary (especially when a final release is some months away).
    
    * Credit the author of a patch or bugfix.   Just the name is
-   sufficient; the e-mail address isn't necessary.
+   sufficient; the e-mail address isn't necessary.  (Due to time
+   constraints I haven't managed to do this for 3.0.  GvR.)
    
    * It's helpful to add the bug/patch number as a comment:
    
@@ -50,7 +52,8 @@
    (Contributed by P.Y. Developer.)
    
    This saves the maintainer the effort of going through the SVN log
-   when researching a change.
+   when researching a change.  (Again, I didn't get to this for 3.0.
+   GvR.)
 
 This article explains the new features in Python 3.0, compared to 2.6.
 Python 3.0, also known as "Python 3000" or "Py3K", is the first ever
@@ -157,19 +160,37 @@ XXX HIRO
   always use an encoding to map between strings (in memory) and bytes
   (on disk).  Binary files (opened with a ``b`` in the mode argument)
   always use bytes in memory.  This means that if a file is opened
-  using an incorrect mode or encoding, I/O will likely fail.  There is
-  a platform-dependent default encoding, which on Unixy platforms can
-  be set with the ``LANG`` environment variable (and sometimes also
-  with some other platform-specific locale-related environment
-  variables).  In many cases, but not all, the system default is
-  UTF-8; you should never count on this default.  Any application
-  reading or writing more than pure ASCII text should probably have a
-  way to override the encoding.
+  using an incorrect mode or encoding, I/O will likely fail.  It also
+  means that even Unix users will have to specify the correct mode
+  (text or binary) when opening a file.  There is a platform-dependent
+  default encoding, which on Unixy platforms can be set with the
+  ``LANG`` environment variable (and sometimes also with some other
+  platform-specific locale-related environment variables).  In many
+  cases, but not all, the system default is UTF-8; you should never
+  count on this default.  Any application reading or writing more than
+  pure ASCII text should probably have a way to override the encoding.
 
 * The builtin :class:`basestring` abstract type was removed.  Use
   :class:`str` instead.  The :class:`str` and :class:`bytes` types
   don't have functionality enough in common to warrant a shared base
   class.
+
+* Filenames are passed to and returned from APIs as (Unicode) strings.
+  This can present platform-specific problems because on some
+  platforms filenames are arbitrary byte strings.  (On the other hand
+  on Windows, filenames are natively stored as Unicode.)  As a
+  work-around, most APIs (e.g. :func:`open` and many functions in the
+  :mod:`os` module) that take filenames accept :class:`bytes` objects
+  as well as strings, and a few APIs have a way to ask for a
+  :class:`bytes` return value: :func:`os.listdir` returns a
+  :class:`bytes` instance if the argument is a :class:`bytes`
+  instance, and :func:`os.getcwdu` returns the current working
+  directory as a :class:`bytes` instance.
+
+* Some system APIs like :data:`os.environ` and :data:`sys.argv` can
+  also present problems when the bytes made available by the system is
+  not interpretable using the default encoding.  Setting the ``LANG``
+  variable and rerunning the program is probably the best approach.
 
 * All backslashes in raw strings are interpreted literally.  This
   means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
@@ -439,7 +460,7 @@ consulted for longer descriptions.
   start deprecating the ``%`` operator in Python 3.1.
 
 * :ref:`pep-3105`.  This is now a standard feature and no longer needs
-  to be imported from :mod:`__future__`.
+  to be imported from :mod:`__future__`.  More details were given above.
 
 * :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`as` *var*
   syntax is now standard and :keyword:`except` *exc*, *var* is no
