@@ -18,7 +18,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -44,6 +44,7 @@ import threading
 import time
 import types
 import unittest
+import warnings
 import weakref
 
 
@@ -885,6 +886,32 @@ class EncodingTest(BaseTest):
             if os.path.isfile(fn):
                 os.remove(fn)
 
+class WarningsTest(BaseTest):
+    def test_warnings(self):
+        logging.captureWarnings(True)
+        warnings.filterwarnings("always", category=UserWarning)
+        try:
+            file = cStringIO.StringIO()
+            h = logging.StreamHandler(file)
+            logger = logging.getLogger("py.warnings")
+            logger.addHandler(h)
+            warnings.warn("I'm warning you...")
+            logger.removeHandler(h)
+            s = file.getvalue()
+            h.close()
+            self.assertTrue(s.find("UserWarning: I'm warning you...\n") > 0)
+
+            #See if an explicit file uses the original implementation
+            file = cStringIO.StringIO()
+            warnings.showwarning("Explicit", UserWarning, "dummy.py", 42, file,
+                                 "Dummy line")
+            s = file.getvalue()
+            file.close()
+            self.assertEqual(s, "dummy.py:42: UserWarning: Explicit\n  Dummy line\n")
+        finally:
+            warnings.resetwarnings()
+            logging.captureWarnings(False)
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -893,7 +920,7 @@ def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
                     CustomLevelsAndFiltersTest, MemoryHandlerTest,
                     ConfigFileTest, SocketHandlerTest, MemoryTest,
-                    EncodingTest)
+                    EncodingTest, WarningsTest)
 
 if __name__ == "__main__":
     test_main()
