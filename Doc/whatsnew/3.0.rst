@@ -4,8 +4,6 @@
 
 .. XXX Add trademark info for Apple, Microsoft.
 
-.. XXX Remove duplicates; just put info in the most relevant section.
-
 :Author: Guido van Rossum
 :Release: |release|
 :Date: |today|
@@ -132,112 +130,6 @@ Note:
   :func:`print` function calls, so this is mostly a non-issue for
   larger projects.
 
-Text Vs. Data Instead Of Unicode Vs. 8-bit
-------------------------------------------
-
-Everything you thought you knew about binary data and Unicode has
-changed:
-
-XXX HIRO
-
-* Python 3.0 uses the concepts of *text* and (binary) *data* instead
-  of Unicode strings and 8-bit strings.  All text is Unicode; however
-  *encoded* Unicode is represented as binary data.  The type used to
-  hold text is :class:`str`, the type used to hold data is
-  :class:`bytes`.  The difference is that any attempt to mix text and
-  data in Python 3.0 raises a TypeError exception, whereas if you were
-  to mix Unicode and 8-bit strings in Python 2.x, you would only get
-  an exception if the 8-bit string contained non-ASCII values.  As a
-  consequence, pretty much all code that uses Unicode, encodings or
-  binary data most likely has to change.  The change is for the
-  better, as in the 2.x world there were numerous bugs having to do
-  with mixing encoded and unencoded text.
-
-* You no longer use ``u"..."`` literals for Unicode text.  However,
-  you must use ``b"..."`` literals for binary data.
-
-* Files opened as text files (still the default mode for :func:`open`)
-  always use an encoding to map between strings (in memory) and bytes
-  (on disk).  Binary files (opened with a ``b`` in the mode argument)
-  always use bytes in memory.  This means that if a file is opened
-  using an incorrect mode or encoding, I/O will likely fail.  It also
-  means that even Unix users will have to specify the correct mode
-  (text or binary) when opening a file.  There is a platform-dependent
-  default encoding, which on Unixy platforms can be set with the
-  ``LANG`` environment variable (and sometimes also with some other
-  platform-specific locale-related environment variables).  In many
-  cases, but not all, the system default is UTF-8; you should never
-  count on this default.  Any application reading or writing more than
-  pure ASCII text should probably have a way to override the encoding.
-
-* The builtin :class:`basestring` abstract type was removed.  Use
-  :class:`str` instead.  The :class:`str` and :class:`bytes` types
-  don't have functionality enough in common to warrant a shared base
-  class.
-
-* Filenames are passed to and returned from APIs as (Unicode) strings.
-  This can present platform-specific problems because on some
-  platforms filenames are arbitrary byte strings.  (On the other hand
-  on Windows, filenames are natively stored as Unicode.)  As a
-  work-around, most APIs (e.g. :func:`open` and many functions in the
-  :mod:`os` module) that take filenames accept :class:`bytes` objects
-  as well as strings, and a few APIs have a way to ask for a
-  :class:`bytes` return value: :func:`os.listdir` returns a
-  :class:`bytes` instance if the argument is a :class:`bytes`
-  instance, and :func:`os.getcwdu` returns the current working
-  directory as a :class:`bytes` instance.
-
-* Some system APIs like :data:`os.environ` and :data:`sys.argv` can
-  also present problems when the bytes made available by the system is
-  not interpretable using the default encoding.  Setting the ``LANG``
-  variable and rerunning the program is probably the best approach.
-
-* All backslashes in raw strings are interpreted literally.  This
-  means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
-  treated specially.
-
-XXX Deal with dupes below
-
-* There is only one text string type; its name is :class:`str` but its
-  behavior and implementation are like :class:`unicode` in 2.x.
-
-* The :class:`basestring` superclass has been removed. The ``2to3``
-  tool (see below) replaces every occurrence of :class:`basestring`
-  with :class:`str`.
-
-* :pep:`3137`: There is a new type, :class:`bytes`, to represent
-  binary data (and encoded text, which is treated as binary data until
-  it is decoded).  The :class:`str` and :class:`bytes` types cannot be
-  mixed; you must always explicitly convert between them, using the
-  :meth:`str.encode` (str -> bytes) or :meth:`bytes.decode` (bytes ->
-  str) methods.
-
-* Like :class:`str`, the :class:`bytes` type is immutable.  There is a
-  separate *mutable* type to hold buffered binary data,
-  :class:`bytearray`.  Nearly all APIs that accept :class:`bytes` also
-  accept :class:`bytearray`.  The mutable API is based on
-  :class:`collections.MutableSequence`.
-
-* :pep:`3138`: The :func:`repr` of a string no longer escapes
-  non-ASCII characters.  It still escapes control characters and code
-  points with non-printable status in the Unicode standard, however.
-
-* :pep:`3120`: The default source encoding is now UTF-8.
-
-* :pep:`3131`: Non-ASCII letters are now allowed in identifiers.
-  (However, the standard library remains ASCII-only with the exception
-  of contributor names in comments.)
-
-* :pep:`3116`: New I/O implementation.  The API is nearly 100%
-  backwards compatible, but completely reimplemented (currently largely
-  in Python).  Also, binary files use bytes instead of strings.
-
-* The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead,
-  import :class:`io.StringIO` or :class:`io.BytesIO`, for text and
-  data respectively.
-
-* See also the :ref:`unicode-howto`, which was updated for Python 3.0.
-
 Views And Iterators Instead Of Lists
 -------------------------------------
 
@@ -277,12 +169,13 @@ Python 3.0 has simplified the rules for ordering comparisons:
   elements must be comparable to each other.  Note that this does not
   apply to the ``==`` and ``!=`` operators: objects of different
   uncomparable types always compare unequal to each other, and an
-  object always compares equal to itself (i.e., ``x is y`` implies ``x
-  = y``; this is true even for ``NaN``).
+  object always compares equal to itself (i.e., ``x is y`` implies
+  ``x == y``; this is true even for *NaN*).
 
-* :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the *cmp*
-  argument providing a comparison function.  Use the *key* argument
-  instead. N.B. the *key* and *reverse* arguments are now "keyword-only".
+* :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the
+  *cmp* argument providing a comparison function.  Use the *key*
+  argument instead. N.B. the *key* and *reverse* arguments are now
+  "keyword-only".
 
 * The :func:`cmp` function is gone, and the :meth:`__cmp__` special
   method is no longer supported.  Use :meth:`__lt__` for sorting,
@@ -316,6 +209,115 @@ Integers
 * Octal literals are no longer of the form ``0720``; use ``0o720``
   instead.
 
+Text Vs. Data Instead Of Unicode Vs. 8-bit
+------------------------------------------
+
+Everything you thought you knew about binary data and Unicode has
+changed.
+
+* Python 3.0 uses the concepts of *text* and (binary) *data* instead
+  of Unicode strings and 8-bit strings.  All text is Unicode; however
+  *encoded* Unicode is represented as binary data.  The type used to
+  hold text is :class:`str`, the type used to hold data is
+  :class:`bytes`.  The biggest difference with the 2.x situation is
+  that any attempt to mix text and data in Python 3.0 raises
+  :ext:`TypeError`, whereas if you were to mix Unicode and 8-bit
+  strings in Python 2.x, it would work if the 8-bit string happened to
+  contain only 7-bit (ASCII) bytes, but you would get
+  :ext:`UnicodeDecodeError` if it contained non-ASCII values.  This
+  value-specific behavior has caused numerous sad faces over the
+  years.
+
+* As a consequence of this change in philosophy, pretty much all code
+  that uses Unicode, encodings or binary data most likely has to
+  change.  The change is for the better, as in the 2.x world there
+  were numerous bugs having to do with mixing encoded and unencoded
+  text.  To be prepared in Python 2.x, start using :class:`unicode`
+  for all unencoded text, and :class:`str` for binary or encoded data
+  only.  Then the ``2to3`` tool will do most of the work for you.
+
+* You can no longer use ``u"..."`` literals for Unicode text.
+  However, you must use ``b"..."`` literals for binary data.
+
+* As the :class:`str` and :class:`bytes` types cannot be mixed, you
+  must always explicitly convert between them.  Use :meth:`str.encode`
+  to go from :class:`str` to :class:`bytes`, and :meth:`bytes.decode`
+  to go from :class:`bytes` to :class:`str`.  You can also use
+  ``bytes(s, encoding=...)`` and ``str(b, encoding=...)``,
+  respectively.
+
+* Like :class:`str`, the :class:`bytes` type is immutable.  There is a
+  separate *mutable* type to hold buffered binary data,
+  :class:`bytearray`.  Nearly all APIs that accept :class:`bytes` also
+  accept :class:`bytearray`.  The mutable API is based on
+  :class:`collections.MutableSequence`.
+
+* All backslashes in raw string literals are interpreted literally.
+  This means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
+  treated specially.  For example, ``r'\u20ac'`` is a string of 6
+  characters in Python 3.0, whereas in 2.6, ``ur'\u20ac'`` was the
+  single "euro" character.  (Of course, this change only affects raw
+  string literals; the euro character is ``'\u20ac'`` in Python 3.0.)
+
+* The builtin :class:`basestring` abstract type was removed.  Use
+  :class:`str` instead.  The :class:`str` and :class:`bytes` types
+  don't have functionality enough in common to warrant a shared base
+  class.  The ``2to3`` tool (see below) replaces every occurrence of
+  :class:`basestring` with :class:`str`.
+
+* Files opened as text files (still the default mode for :func:`open`)
+  always use an encoding to map between strings (in memory) and bytes
+  (on disk).  Binary files (opened with a ``b`` in the mode argument)
+  always use bytes in memory.  This means that if a file is opened
+  using an incorrect mode or encoding, I/O will likely fail loudly,
+  instead of silently producing incorrect data.  It also means that
+  even Unix users will have to specify the correct mode (text or
+  binary) when opening a file.  There is a platform-dependent default
+  encoding, which on Unixy platforms can be set with the ``LANG``
+  environment variable (and sometimes also with some other
+  platform-specific locale-related environment variables).  In many
+  cases, but not all, the system default is UTF-8; you should never
+  count on this default.  Any application reading or writing more than
+  pure ASCII text should probably have a way to override the encoding.
+  There is no longer any need for using the encoding-aware streams
+  in the :mod:`codecs` module.
+
+* Filenames are passed to and returned from APIs as (Unicode) strings.
+  This can present platform-specific problems because on some
+  platforms filenames are arbitrary byte strings.  (On the other hand,
+  on Windows filenames are natively stored as Unicode.)  As a
+  work-around, most APIs (e.g. :func:`open` and many functions in the
+  :mod:`os` module) that take filenames accept :class:`bytes` objects
+  as well as strings, and a few APIs have a way to ask for a
+  :class:`bytes` return value.  Thus, :func:`os.listdir` returns a
+  list of :class:`bytes` instances if the argument is a :class:`bytes`
+  instance, and :func:`os.getcwdu` returns the current working
+  directory as a :class:`bytes` instance.  Note that when
+  :func:`os.listdir` returns a list of strings, filenames that
+  cannot be decoded properly are omitted rather than raising
+  :exc:`UnicodeError`.
+
+* Some system APIs like :data:`os.environ` and :data:`sys.argv` can
+  also present problems when the bytes made available by the system is
+  not interpretable using the default encoding.  Setting the ``LANG``
+  variable and rerunning the program is probably the best approach.
+
+* :pep:`3138`: The :func:`repr` of a string no longer escapes
+  non-ASCII characters.  It still escapes control characters and code
+  points with non-printable status in the Unicode standard, however.
+
+* :pep:`3120`: The default source encoding is now UTF-8.
+
+* :pep:`3131`: Non-ASCII letters are now allowed in identifiers.
+  (However, the standard library remains ASCII-only with the exception
+  of contributor names in comments.)
+
+* The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead,
+  import the :mod:`io` module and use :class:`io.StringIO` or
+  :class:`io.BytesIO` for text and data respectively.
+
+* See also the :ref:`unicode-howto`, which was updated for Python 3.0.
+
 
 Overview Of Syntax Changes
 ==========================
@@ -341,8 +343,8 @@ New Syntax
 
 * Keyword arguments are allowed after the list of base classes in a
   class definition.  This is used by the new convention for specifying
-  a metaclass (see :pep:`3115`), but can be used for other purposes as
-  well, as long as the metaclass supports it.
+  a metaclass (see next section), but can be used for other purposes
+  as well, as long as the metaclass supports it.
 
 * :pep:`3104`: :keyword:`nonlocal` statement.  Using ``nonlocal x``
   you can now assign directly to a variable in an outer (but
@@ -376,8 +378,8 @@ New Syntax
 Changed Syntax
 --------------
 
-* New :keyword:`raise` statement syntax: ``raise [expr [from expr]]``.
-  Also note that string exceptions are no longer legal (:pep:`0352`).
+* :pep:`3109` and :pep:`3134`: new :keyword:`raise` statement syntax:
+  ``raise [expr [from expr]]``.  See below.
 
 * :keyword:`as` and :keyword:`with` are now reserved words.  (Since
   2.6, actually.)
@@ -388,6 +390,22 @@ Changed Syntax
 
 * Change from :keyword:`except` *exc*, *var* to
   :keyword:`except` *exc* :keyword:`as` *var*.  See :pep:`3110`.
+
+* :pep:`3115`: New Metaclass Syntax.  Instead of::
+
+    class C:
+        __metaclass__ = M
+        ...
+
+  you must now use::
+
+    class C(metaclass=M):
+        ...
+
+  The module-global :data:`__metaclass__` variable is no longer
+  supported.  (It was a crutch to make it easier to default to
+  new-style classes without deriving every class from
+  :class:`object`.)
 
 * List comprehensions no longer support the syntactic form
   ``[... for var in item1, item2, ...]``.  Use
@@ -429,6 +447,8 @@ Removed Syntax
   ``.``[*module*] :keyword:`import` *name*; :keyword:`import` forms
   not starting with ``.`` are always interpreted as absolute imports.
   (:pep:`0328`)
+
+* Classic classes are gone.
 
 
 Changes Already Present In Python 2.6
@@ -551,9 +571,10 @@ review:
   considered implementation details of the pure Python versions.
   Users should always import the standard version, which attempts to
   import the accelerated version and falls back to the pure Python
-  version.  The :mod:`pickle` module received this treatment.  The
-  :mod:`profile` module is on the list for 3.1.  The :mod:`StringIO`
-  module has been turned into a class in the :mod:`io` module.
+  version.  The :mod:`pickle` / :mod:`cPickle` pair received this
+  treatment.  The :mod:`profile` module is on the list for 3.1.  The
+  :mod:`StringIO` module has been turned into a class in the :mod:`io`
+  module.
 
 * Some related modules have been grouped into packages, and usually
   the submodule names have been simplified.  The resulting new
@@ -579,7 +600,8 @@ review:
   * :mod:`xmlrpc` (:mod:`xmlrpclib`, :mod:`DocXMLRPCServer`,
     :mod:`SimpleXMLRPCServer`).
 
-Some other library changes (not covered by :pep:`3108`):
+Some other changes to standard library moduled, not covered by
+:pep:`3108`:
 
 * Killed :mod:`sets`.  Use the builtin :func:`set` function.
 
@@ -601,6 +623,28 @@ Some other library changes (not covered by :pep:`3108`):
 
 * Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
+* The :mod:`new` module is gone.
+
+* The functions :func:`os.tmpnam`, :func:`os.tempnam` and
+  :func:`os.tmpfile` have been removed in favor of the :mod:`tempfile`
+  module.
+
+* The :mod:`tokenize` module has been changed to work with bytes.  The
+  main entry point is now :func:`tokenize.tokenize`, instead of
+  generate_tokens.
+
+* :data:`string.letters` and its friends (:data:`string.lowercase` and
+  :data:`string.uppercase`) are gone.  Use
+  :data:`string.ascii_letters` etc. instead.  (The reason for the
+  removal is that :data:string.letters` and friends had
+  locale-specific behavior, which is a bad idea for such
+  attractively-named global "constants".)
+
+* Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
+  underscores, adding an 's').  The :data:`__builtins__` variable
+  found in most global namespaces is unchanged.  To modify a builtin,
+  you should use :mod:`builtins`, not :data:`__builtins__`!
+
 
 :pep:`3101`: A New Approach To String Formatting
 ================================================
@@ -612,81 +656,86 @@ Some other library changes (not covered by :pep:`3108`):
   scoop.
 
 
-:pep:`3106`: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
-=========================================================================================
+Changes To Exceptions
+=====================
 
-.. XXX expand this (but note that the "pitfalls" section currently has
-.. XXX more detail :-)
-
-* The :meth:`dict.iterkeys`, :meth:`dict.itervalues` and :meth:`dict.iteritems`
-  methods have been removed.
-
-* :meth:`dict.keys`, :meth:`dict.values` and :meth:`dict.items` return objects
-  with set behavior that reference the underlying dict; these are often
-  referred to as *dictionary views*.
-
-
-Exception Stuff
-===============
+The APIs for raising and catching exception have been cleaned up and
+new powerful features added:
 
 * :pep:`0352`: All exceptions must be derived (directly or indirectly)
   from :exc:`BaseException`.  This is the root of the exception
-  hierarchy.  Most exceptions should actually be derived from
-  :exc:`Exception`.  This is not a new recommendation, but the
+  hierarchy.  This is not new as a recommendation, but the
   *requirement* to inherit from :exc:`BaseException` is new.  (Python
   2.6 still allowed classic classes to be raised, and placed no
-  restriction on what you can catch.)
+  restriction on what you can catch.)  As a consequence, string
+  exceptions are finally truly and utterly dead.
 
-* :exc:`StandardError` was removed (in 2.6, actually).
+* Almost all exceptions should actually derive from :exc:`Exception`;
+  :exc:`BaseException` should only be used as a base class for
+  exceptions that should only be handled at the top level, such as
+  :exc:`SystemExit` or :exc:`KeyboardInterrupt`.  The recommended
+  idiom for handling all exceptions except for this latter category is
+  to use :keyword:`except` :exc:`Exception`.
 
-* Dropping sequence behavior (slicing!) and :attr:`message` attribute of
-  exception instances.
+* :exc:`StandardError` was removed (in 2.6 already).
 
-* :pep:`3109`: Raising exceptions.  You must now use ``raise Exception(args)``
-  instead of ``raise Exception, args``.
+* Exceptions no longer behave as sequences.  Use the :attr:`args`
+  attribute instead.
 
-* :pep:`3110`: Catching exceptions.  You must now use ``except SomeException as
-  identifier:`` instead of ``except Exception, identifier:``
+* :pep:`3109`: Raising exceptions.  You must now use :keyword:`raise`
+  *Exception*(*args*) instead of :keyword:`raise` *Exception*, *args*.
+  Additionally, you can no longer explicitly specify a traceback;
+  instead, if you *have* to do this, you can assign directly to the
+  :attr:`__traceback__` attribute (see below).
 
-* :pep:`3134`: Exception chaining.  XXX
+* :pep:`3110`: Catching exceptions.  You must now use
+  *:keyword:`except` SomeException* :keyword:`as` *variable* instead
+  *of :keyword:`except` *SomeException*, variable*.  Moreover, the
+  *variable* is explicitly deleted when the :keyword:`except` block
+  is left.
 
-* A few exception messages are improved when Windows fails to load an extension
-  module.  For example, ``error code 193`` is now ``%1 is not a valid Win32
-  application``.  Strings now deal with non-English locales.
+* :pep:`3134`: Exception chaining.  There are two cases: implicit
+  chaining and explicit chaining.  Implicit chaining happens when an
+  exception is raised in an :keyword:`except` or :keyword:`finally`
+  handler block.  This usually happens due to a bug in the handler
+  block; we call this a *secondary* exception.  In this case, the
+  original exception (that was being handled) is saved as the
+  :attr:`__context__` attribute of the secondary exception.
+  Explicit chaining is invoked with this syntax::
+
+    raise SecondaryException() from primary_exception
+
+  (where *primary_exception* is any expression that produces an
+  exception object, probably an exception that was previously caught).
+  In this case, the primary exception is stored on the
+  :attr:`__cause__` attribute of the secondary exception.  The
+  traceback printed when an unhandled exception occurs walks the chain
+  of :attr:`__cause__` and :attr:`__context__` attributes and prints a
+  separate traceback for each component of the chain, with the primary
+  exception at the top.  (Java users may recognize this behavior. :-)
+
+* :pep:`3134`: Exception objects now store their traceback as the
+  :attr:`__traceback__` attribute.  This means that an exception
+  object now contains all the information pertaining to an exception,
+  and there are fewer reasons to use :func:`sys.exc_info` (though the
+  latter is not removed).
+
+* A few exception messages are improved when Windows fails to load an
+  extension module.  For example, ``error code 193`` is now ``%1 is
+  not a valid Win32 application``.  Strings now deal with non-English
+  locales.
 
 
-New Class And Metaclass Stuff
-=============================
+Miscellaneous Other Changes
+===========================
 
-XXX Move to new syntax section???
-
-* Classic classes are gone.
-
-* :pep:`3115`: New Metaclass Syntax.  Instead of::
-
-    class C:
-        __metaclass__ = M
-        ...
-
-  you now use::
-
-    class C(metaclass=M):
-        ...
-
-  The module-global :data:`__metaclass__` variable is no longer supported.
-  (It was a crutch to make it easier to default to new-style classes
-  without deriving every class from :class:`object`.)
-
-
-Other Language Changes
-======================
-
-* Moved :func:`intern` to :func:`sys.intern`.
+Operators And Special Methods
+-----------------------------
 
 * ``!=`` now returns the opposite of ``==``, unless ``==`` returns
-  ``NotImplemented``.
+  :data:`NotImplemented`.
 
-* The concept of "unbound methods" was removed from the language.
+* The concept of "unbound methods" has been removed from the language.
   When referencing a method as a class attribute, you now get a plain
   function object.
 
@@ -696,27 +745,46 @@ Other Language Changes
   :meth:`__delitem__`, when used as an assignment or deletion target,
   respectively).
 
-* :pep:`3111`: :func:`raw_input` renamed to :func:`input`.  That is,
-  the new :func:`input` function reads a line from :data:`sys.stdin`
-  and returns it with the trailing newline stripped.  It raises
-  :exc:`EOFError` if the input is terminated prematurely.  To get the
-  old behavior of :func:`input`, use ``eval(input())``.
+* :pep:`3114`: the standard :meth:`next` method has been renamed to
+  :meth:`__next__`.
 
-* :pep:`3114`: ``.next()`` renamed to :meth:`__next__`, new builtin
-  :func:`next` to call the :meth:`__next__` method on an object.
+* The :meth:`__oct__` and :meth:`__hex__` special methods are removed
+  -- :func:`oct` and :func:`hex` use :meth:`__index__` now to convert
+  the argument to an integer.
+
+* Removed support for :attr:`__members__` and :attr:`__methods__`.
+
+* The function attributes named :attr:`func_X` have been renamed to
+  use the :data:`__X__` form, freeing up these names in the function
+  attribute namespace for user-defined attributes.  To wit,
+  :attr:`func_closure`, :attr:`func_code`, :attr:`func_defaults`,
+  :attr:`func_dict`, :attr:`func_doc`, :attr:`func_globals`,
+  :attr:`func_name` were renamed to :attr:`__closure__`,
+  :attr:`__code__`, :attr:`__defaults__`, :attr:`__dict__`,
+  :attr:`__doc__`, :attr:`__globals__`, :attr:`__name__`,
+  respectively.
+
+* :meth:`__nonzero__` is now :meth:`__bool__`.
+
+Builtins
+--------
 
 * :pep:`3135`: New :func:`super`.  You can now invoke :func:`super`
-  without arguments and the right class and instance will
-  automatically be chosen.  With arguments, its behavior is unchanged.
+  without arguments and (assuming this is in a regular instance method
+  defined inside a :keyword:`class` statement) the right class and
+  instance will automatically be chosen.  With arguments, the behavior
+  of :func:`super` is unchanged.
 
-* :func:`zip`, :func:`map` and :func:`filter` return iterators.
+* :pep:`3111`: :func:`raw_input` was renamed to :func:`input`.  That
+  is, the new :func:`input` function reads a line from
+  :data:`sys.stdin` and returns it with the trailing newline stripped.
+  It raises :exc:`EOFError` if the input is terminated prematurely.
+  To get the old behavior of :func:`input`, use ``eval(input())``.
 
-* :data:`string.letters` and its friends (:data:`string.lowercase` and
-  :data:`string.uppercase`) are gone.  Use
-  :data:`string.ascii_letters` etc. instead.  (The reason for the
-  removal is that :data:string.letters` and friends had
-  locale-specific behavior, which is a bad idea for such
-  attractively-named global "constants".)
+* A new builtin :func:`next` was added to call the :meth:`__next__`
+  method on an object.
+
+* Moved :func:`intern` to :func:`sys.intern`.
 
 * Removed: :func:`apply`.  Instead of ``apply(f, args)`` use
   ``f(*args)``.
@@ -742,110 +810,49 @@ Other Language Changes
 * Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
   instead.
 
-* The :meth:`__oct__` and :meth:`__hex__` special methods are removed
-  -- :func:`oct` and :func:`hex` use :meth:`__index__` now to convert
-  the argument to an integer.
+.. ======================================================================
 
-* Removed support for :attr:`__members__` and :attr:`__methods__`.
+
+Build and C API Changes
+=======================
+
+Due to time constraints, here is a *very* incomplete list of changes
+to the C API.
+
+* Support for several platforms was dropped, including but not limited
+  to Mac OS 9, BeOS, RISCOS, Irix, and Tru64.
+
+* :pep:`3118`: New Buffer API.
+
+* :pep:`3121`: Extension Module Initialization & Finalization.
+
+* :pep:`3123`: Making :cmacro:`PyObject_HEAD` conform to standard C.
+
+* No more C API support for restricted execution.
+
+* :cfunc:`PyNumber_Coerce`, :cfunc:`PyNumber_CoerceEx`,
+  :cfunc:`PyMember_Get`, and :cfunc:`PyMember_Set` C APIs are removed.
+
+* New C API :cfunc:`PyImport_ImportModuleNoBlock`, works like
+  :cfunc:`PyImport_ImportModule` but won't block on the import lock
+  (returning an error instead).
 
 * Renamed the boolean conversion C-level slot and method:
-  ``nb_nonzero`` is now ``nb_bool`` and :meth:`__nonzero__` is now
-  :meth:`__bool__`.
+  ``nb_nonzero`` is now ``nb_bool``.
 
-* Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
-  underscores, adding an 's').  The :data:`__builtins__` variable
-  found in most global namespaces is unchanged.  To modify a builtin,
-  you should use :mod:`builtins`, not :data:`__builtins__`!
-
-* Renamed function attributes :attr:`func_whatever` to
-  :attr:`__whatever__`.  XXX list every single one.
-
-* Removed :exc:`StandardError`.
-
-* Removed METH_OLDARGS and WITH_CYCLE_GC.  XXX more.
+* Removed ``METH_OLDARGS`` and ``WITH_CYCLE_GC`` from the C API.
 
 .. ======================================================================
 
 
-Optimizations
--------------
+Performance
+===========
 
 The net result of the 3.0 generalizations is that Python 3.0 runs the
 pystone benchmark around 10% slower than Python 2.5.  Most likely the
 biggest cause is the removal of special-casing for small integers.
 There's room for improvement, but it will happen after 3.0 is
 released!
-
-.. ======================================================================
-
-
-New, Improved, And Deprecated Modules
-=====================================
-
-As usual, Python's standard library received a number of enhancements and bug
-fixes.  Here's a partial list of the most notable changes, sorted alphabetically
-by module name. Consult the :file:`Misc/NEWS` file in the source tree for a more
-complete list of changes, or look through the Subversion logs for all the
-details.
-
-* The :mod:`cPickle` module is gone.  Use :mod:`pickle` instead.  Eventually
-  we'll have a transparent accelerator module.
-
-* The :mod:`imageop` module is gone.
-
-* The :mod:`audiodev`, :mod:`Bastion`, :mod:`bsddb185`, :mod:`exceptions`,
-  :mod:`linuxaudiodev`, :mod:`md5`, :mod:`MimeWriter`, :mod:`mimify`,
-  :mod:`popen2`, :mod:`rexec`, :mod:`sets`, :mod:`sha`, :mod:`stringold`,
-  :mod:`strop`, :mod:`sunaudiodev`, :mod:`timing`, and :mod:`xmllib` modules are
-  gone.
-
-* The :mod:`bsddb` module is gone.  It is being maintained externally
-  with its own release schedule better mirroring that of BerkeleyDB.
-  See http://www.jcea.es/programacion/pybsddb.htm.
-
-* The :mod:`new` module is gone.
-
-* The functions :func:`os.tmpnam`, :func:`os.tempnam` and :func:`os.tmpfile`
-  have been removed in favor of the :mod:`tempfile` module.
-
-* The :mod:`tokenize` module has been changed to work with bytes.  The main
-  entry point is now :func:`tokenize.tokenize`, instead of generate_tokens.
-
-.. ======================================================================
-.. whole new modules get described in subsections here
-
-.. ======================================================================
-
-
-Build And C API Changes
-=======================
-
-Changes to Python's build process and to the C API include:
-
-* :pep:`3118`: New Buffer API. XXX
-
-* :pep:`3121`: Extension Module Initialization & Finalization. XXX
-
-* :pep:`3123`: Making :cmacro:`PyObject_HEAD` conform to standard C. XXX
-
-* No more C API support for restricted execution.
-
-* :cfunc:`PyNumber_Coerce`, :cfunc:`PyNumber_CoerceEx`, :cfunc:`PyMember_Get`,
-  and :cfunc:`PyMember_Set` C APIs are removed.
-
-* New C API :cfunc:`PyImport_ImportModuleNoBlock`, works like
-  :cfunc:`PyImport_ImportModule` but won't block on the import lock (returning
-  an error instead).
-
-.. ======================================================================
-
-
-Port-Specific Changes
----------------------
-
-XXX Platform-specific changes go here.
-
-* XXX BeOS, RISCOS, Irix, Tru64 support
 
 .. ======================================================================
 
