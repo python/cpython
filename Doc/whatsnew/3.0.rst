@@ -612,7 +612,7 @@ review:
 
   * :mod:`xmlrpc` (:mod:`xmlrpclib`, :mod:`DocXMLRPCServer`,
     :mod:`SimpleXMLRPCServer`).
-modules
+
 Some other changes to standard library modules, not covered by
 :pep:`3108`:
 
