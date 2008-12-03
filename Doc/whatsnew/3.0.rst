@@ -129,25 +129,29 @@ Note:
   :func:`print` function calls, so this is mostly a non-issue for
   larger projects.
 
-Text Strings Vs. Bytes
-----------------------
+Text Vs. Data Instead Of Unicode Vs. 8-bit
+------------------------------------------
 
 Everything you thought you knew about binary data and Unicode has
-changed.  There's a longer section below; here's a summary of the
-changes:
+changed:
 
-* Python 3.0 uses *strings* and *bytes* instead of *Unicode strings*
-  and *8-bit strings*.  The difference is that any attempt to mix
-  strings and bytes in Python 3.0 raises a TypeError exception,
-  whereas if you were to mix Unicode and 8-bit strings in Python 2.x,
-  you would only get an exception if the 8-bit string contained
-  non-ASCII values.  As a consequence, pretty much all code that
-  uses Unicode, encodings or binary data most likely has to change.
-  The change is for the better, as in the 2.x world there were
-  numerous bugs having to do with mixing encoded and unencoded text.
+XXX HIRO
 
-* You no longer need to use ``u"..."`` literals for Unicode text.
-  However, you must use ``b"..."`` literals for binary data.
+* Python 3.0 uses the concepts of *text* and (binary) *data* instead
+  of Unicode strings and 8-bit strings.  All text is Unicode; however
+  *encoded* Unicode is represented as binary data.  The type used to
+  hold text is :class:`str`, the type used to hold data is
+  :class:`bytes`.  The difference is that any attempt to mix text and
+  data in Python 3.0 raises a TypeError exception, whereas if you were
+  to mix Unicode and 8-bit strings in Python 2.x, you would only get
+  an exception if the 8-bit string contained non-ASCII values.  As a
+  consequence, pretty much all code that uses Unicode, encodings or
+  binary data most likely has to change.  The change is for the
+  better, as in the 2.x world there were numerous bugs having to do
+  with mixing encoded and unencoded text.
+
+* You no longer use ``u"..."`` literals for Unicode text.  However,
+  you must use ``b"..."`` literals for binary data.
 
 * Files opened as text files (still the default mode for :func:`open`)
   always use an encoding to map between strings (in memory) and bytes
@@ -166,6 +170,50 @@ changes:
   :class:`str` instead.  The :class:`str` and :class:`bytes` types
   don't have functionality enough in common to warrant a shared base
   class.
+
+* All backslashes in raw strings are interpreted literally.  This
+  means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
+  treated specially.
+
+XXX Deal with dupes below
+
+* There is only one text string type; its name is :class:`str` but its
+  behavior and implementation are like :class:`unicode` in 2.x.
+
+* The :class:`basestring` superclass has been removed. The ``2to3``
+  tool (see below) replaces every occurrence of :class:`basestring`
+  with :class:`str`.
+
+* :pep:`3137`: There is a new type, :class:`bytes`, to represent
+  binary data (and encoded text, which is treated as binary data until
+  it is decoded).  The :class:`str` and :class:`bytes` types cannot be
+  mixed; you must always explicitly convert between them, using the
+  :meth:`str.encode` (str -> bytes) or :meth:`bytes.decode` (bytes ->
+  str) methods.
+
+* Like :class:`str`, the :class:`bytes` type is immutable.  There is a
+  separate *mutable* type to hold buffered binary data,
+  :class:`bytearray`.  Nearly all APIs that accept :class:`bytes` also
+  accept :class:`bytearray`.  The mutable API is based on
+  :class:`collections.MutableSequence`.
+
+* :pep:`3138`: The :func:`repr` of a string no longer escapes
+  non-ASCII characters.  It still escapes control characters and code
+  points with non-printable status in the Unicode standard, however.
+
+* :pep:`3120`: The default source encoding is now UTF-8.
+
+* :pep:`3131`: Non-ASCII letters are now allowed in identifiers.
+  (However, the standard library remains ASCII-only with the exception
+  of contributor names in comments.)
+
+* :pep:`3116`: New I/O implementation.  The API is nearly 100%
+  backwards compatible, but completely reimplemented (currently largely
+  in Python).  Also, binary files use bytes instead of strings.
+
+* The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead,
+  import :class:`io.StringIO` or :class:`io.BytesIO`, for text and
+  data respectively.
 
 * See also the :ref:`unicode-howto`, which was updated for Python 3.0.
 
@@ -254,8 +302,8 @@ Overview Of Syntax Changes
 This section gives a brief overview of every *syntactic* change in
 Python 3.0.
 
-Additions
----------
+New Syntax
+----------
 
 * :pep:`3107`: Function argument and return value annotations.  This
   provides a standardized way of annotating a function's parameters
@@ -304,8 +352,8 @@ Additions
 
 * Bytes literals are introduced with a leading ``b`` or ``B``.
 
-Changes
--------
+Changed Syntax
+--------------
 
 * New :keyword:`raise` statement syntax: ``raise [expr [from expr]]``.
   Also note that string exceptions are no longer legal (:pep:`0352`).
@@ -333,8 +381,8 @@ Changes
   *must* now be spelled as ``...``.  (Previously it could also be
   spelled as ``. . .``, by a mere accident of the grammar.)
 
-Removals
---------
+Removed Syntax
+--------------
 
 * :pep:`3113`: Tuple parameter unpacking removed.  You can no longer
   write ``def foo(a, (b, c)): ...``.
@@ -360,7 +408,6 @@ Removals
   ``.``[*module*] :keyword:`import` *name*; :keyword:`import` forms
   not starting with ``.`` are always interpreted as absolute imports.
   (:pep:`0328`)
-
 
 
 Changes Already Present In Python 2.6
@@ -401,8 +448,7 @@ consulted for longer descriptions.
 
 * :ref:`pep-3112`.  The ``b"..."`` string literal notation (and its
   variants like ``b'...'``, ``b"""..."""``, and ``br"..."``) now
-  produces a literal of type :class:`bytes`.  More about
-  :class:`bytes` below.
+  produces a literal of type :class:`bytes`.
 
 * :ref:`pep-3116`.  The :mod:`io` module is now the standard way of
   doing file I/O, and the initial values of :data:`sys.stdin`,
@@ -411,14 +457,17 @@ consulted for longer descriptions.
   alias for :func:`io.open` and has additional keyword arguments
   *encoding*, *errors*, *newline* and *closefd*.  Also note that an
   invalid *mode* argument now raises :exc:`ValueError`, not
-  :exc:`IOError`.
+  :exc:`IOError`.  The binary file object underlying a text file
+  object can be accessed as :attr:`f.buffer` (but beware that the
+  text object maintains a buffer of itself in order to speed up
+  the encoding and decoding operations).
 
 * :ref:`pep-3118`.  The old builtin :func:`buffer` is now really gone;
   the new builtin :func:`memoryview` provides (mostly) similar
   functionality.
 
 * :ref:`pep-3119`.  The :mod:`abc` module and the ABCs defined in the
-  :mod:`collections` module plays a slightly more prominent role in
+  :mod:`collections` module plays a somewhat more prominent role in
   the language now, and builtin collection types like :class:`dict`
   and :class:`list` conform to the :class:`collections.MutableMapping`
   and :class:`collections.MutableSequence` ABC, respectively.
@@ -427,11 +476,11 @@ consulted for longer descriptions.
   notation is the only one supported, and binary literals have been
   added.
 
-* :ref:`pep-3129`.  This speaks for itself.
+* :ref:`pep-3129`.
 
 * :ref:`pep-3141`.  The :mod:`numbers` module is another new use of
   ABCs, defining Python's "numeric tower".  Also note the new
-  :mod:`fractions` module.
+  :mod:`fractions` module which implements :class:`numbers.Rational`.
 
 
 Library Changes
@@ -532,58 +581,14 @@ Some other library changes (not covered by :pep:`3108`):
 * Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
 
-Strings And Bytes
-=================
-
-This section discusses the many changes in string XXX
-
-* There is only one string type; its name is :class:`str` but its behavior and
-  implementation are like :class:`unicode` in 2.x.
-
-* The :class:`basestring` superclass has been removed. The ``2to3`` tool
-  replaces every occurrence of :class:`basestring` with :class:`str`.
-
-* :pep:`3137`: There is a new type, :class:`bytes`, to represent
-  binary data (and encoded text, which is treated as binary data until
-  you decide to decode it).  The :class:`str` and :class:`bytes` types
-  cannot be mixed; you must always explicitly convert between them,
-  using the :meth:`str.encode` (str -> bytes) or :meth:`bytes.decode`
-  (bytes -> str) methods.
-
-.. XXX add bytearray
-
-* All backslashes in raw strings are interpreted literally.  This means that
-  ``'\U'`` and ``'\u'`` escapes in raw strings are not treated specially.
-
-* :pep:`3138`: :func:`repr` of a string no longer escapes all
-  non-ASCII characters.  XXX
-
-* :pep:`3112`: Bytes literals, e.g. ``b"abc"``, create :class:`bytes`
-  instances.
-
-* :pep:`3120`: UTF-8 default source encoding.
-
-* :pep:`3131`: Non-ASCII identifiers.  (However, the standard library remains
-  ASCII-only with the exception of contributor names in comments.)
-
-* :pep:`3116`: New I/O Implementation.  The API is nearly 100% backwards
-  compatible, but completely reimplemented (currently mostly in Python).  Also,
-  binary files use bytes instead of strings.
-
-* The :mod:`StringIO` and :mod:`cStringIO` modules are gone.  Instead, import
-  :class:`io.StringIO` or :class:`io.BytesIO`.
-
-
-
 :pep:`3101`: A New Approach To String Formatting
 ================================================
 
 * A new system for  built-in string formatting operations replaces the
   ``%`` string  formatting operator.   (However, the ``%``  operator is
   still supported;  it will  be deprecated in  Python 3.1  and removed
-  from the language at some later time.)
-
-.. XXX expand this
+  from the language at some later time.)  Read :pep:`3101` for the full
+  scoop.
 
 
 :pep:`3106`: Revamping dict :meth:`dict.keys`, :meth:`dict.items` and :meth:`dict.values`
@@ -632,16 +637,24 @@ Exception Stuff
 New Class And Metaclass Stuff
 =============================
 
+XXX Move to new syntax section???
+
 * Classic classes are gone.
 
-* :pep:`3115`: New Metaclass Syntax.
+* :pep:`3115`: New Metaclass Syntax.  Instead of::
 
-* :pep:`3119`: Abstract Base Classes (ABCs); ``@abstractmethod`` and
-  ``@abstractproperty`` decorators; collection ABCs.
+    class C:
+        __metaclass__ = M
+        ...
 
-* :pep:`3129`: Class decorators.
+  you now use::
 
-* :pep:`3141`: Numeric ABCs.
+    class C(metaclass=M):
+        ...
+
+  The module-global :data:`__metaclass__` variable is no longer supported.
+  (It was a crutch to make it easier to default to new-style classes
+  without deriving every class from :class:`object`.)
 
 
 Other Language Changes
