@@ -146,6 +146,9 @@ changes:
   The change is for the better, as in the 2.x world there were
   numerous bugs having to do with mixing encoded and unencoded text.
 
+* You no longer need to use ``u"..."`` literals for Unicode text.
+  However, you must use ``b"..."`` literals for binary data.
+
 * Files opened as text files (still the default mode for :func:`open`)
   always use an encoding to map between strings (in memory) and bytes
   (on disk).  Binary files (opened with a ``b`` in the mode argument)
@@ -174,7 +177,8 @@ Some well-known APIs no longer return lists:
 * :class:`dict` methods :meth:`dict.keys`, :meth:`dict.items` and
   :meth:`dict.values` return "views" instead of lists.  For example,
   this no longer works: ``k = d.keys(); k.sort()``.  Use ``k =
-  sorted(d)`` instead.
+  sorted(d)`` instead (this works in Python 2.5 too, and is just
+  as efficient).
 
 * Also, the :meth:`dict.iterkeys`, :meth:`dict.iteritems` and
   :meth:`dict.itervalues` methods are no longer supported.
@@ -185,12 +189,11 @@ Some well-known APIs no longer return lists:
   Particularly tricky is :func:`map` invoked for the side effects of the
   function; the correct transformation is to use a for-loop.
 
-* :func:`range` now behaves like :func:`xrange` used to behave.
-  The latter no longer exists.
+* :func:`range` now behaves like :func:`xrange` used to behave, except
+  it works with values of arbitrary size.  The latter no longer
+  exists.
 
 * :func:`zip` now returns an iterator.
-
-* XXX More below?
 
 Ordering Comparisons
 --------------------
@@ -215,21 +218,20 @@ Python 3.0 has simplified the rules for ordering comparisons:
 * The :func:`cmp` function is gone, and the :meth:`__cmp__` special
   method is no longer supported.  Use :meth:`__lt__` for sorting,
   :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as
-  needed.  if you really need the :func:`cmp` functionality, the
-  expression ``(a > b) - (a < b)`` is equivalent to ``cmp(a, b)``.
-
-* XXX More below?
+  needed.  (If you really need the :func:`cmp` functionality, you
+  could use the expression ``(a > b) - (a < b)`` as the equivalent for
+  ``cmp(a, b)``.)
 
 Integers
 --------
 
-* :pep:`0237`: :class:`long` renamed to :class:`int`.  That is, there
-  is only one built-in integral type, named :class:`int`; but it
-  behaves mostly like the old :class:`long` type.
+* :pep:`0237`: Essentially, :class:`long` renamed to :class:`int`.
+  That is, there is only one built-in integral type, named
+  :class:`int`; but it behaves mostly like the old :class:`long` type.
 
-* The :func:`repr` of a long integer doesn't include the trailing ``L``
-  anymore, so code that unconditionally strips that character will
-  chop off the last digit instead.  (Use :func:`str` instead.)
+* :pep:`0238`: An expression like ``1/2`` returns a float.  Use
+  ``1//2`` to get the truncating behavior.  (The latter syntax has
+  existed for years, at least since Python 2.2.)
 
 * The :data:`sys.maxint` constant was removed, since there is no
   longer a limit to the value of ints.  However, :data:`sys.maxsize`
@@ -238,20 +240,29 @@ Integers
   and is typically the same as :data:`sys.maxint` in previous releases
   on the same platform (assuming the same build options).
 
-* ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
-  (The latter syntax has existed for years, at least since Python 2.2.)
-  See :pep:`0238`.
+* The :func:`repr` of a long integer doesn't include the trailing ``L``
+  anymore, so code that unconditionally strips that character will
+  chop off the last digit instead.  (Use :func:`str` instead.)
+
+* Octal literals are no longer of the form ``0720``; use ``0o720``
+  instead.
 
 
-Overview Of Syntactic Changes
-=============================
+Overview Of Syntax Changes
+==========================
 
-This section gives a brief overview of every *syntactic* change.
+This section gives a brief overview of every *syntactic* change in
+Python 3.0.
 
 Additions
 ---------
 
-* Function argument and return value annotations (see below).  XXX
+* :pep:`3107`: Function argument and return value annotations.  This
+  provides a standardized way of annotating a function's parameters
+  and return value.  There are no semantics attached to such
+  annotations except that they can be introspected at runtime using
+  the :attr:`__annotations__` attribute.  The intent is to encourage
+  experimentation through metaclasses, decorators or frameworks.
 
 * :pep:`3102`: Keyword-only arguments.  Named parameters occurring
   after ``*args`` in the parameter list *must* be specified using
@@ -261,8 +272,8 @@ Additions
 
 * Keyword arguments are allowed after the list of base classes in a
   class definition.  This is used by the new convention for specifying
-  a metaclass, but can be used for other purposes as well, as long as
-  the metaclass supports it.
+  a metaclass (see :pep:`3115`), but can be used for other purposes as
+  well, as long as the metaclass supports it.
 
 * :pep:`3104`: :keyword:`nonlocal` statement.  Using ``nonlocal x``
   you can now assign directly to a variable in an outer (but
@@ -278,11 +289,12 @@ Additions
   This sets *a* to ``0``, *b* to ``4``, and \*rest to ``[1, 2, 3]``.
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
-  same thing as ``dict(stuff)`` but is more flexible.
+  same thing as ``dict(stuff)`` but is more flexible.  (This is
+  :pep:`0274` vindicated. :-)
 
 * Set literals, e.g. ``{1, 2}``.  Note that ``{}`` is an empty
   dictionary; use ``set()`` for an empty set.  Set comprehensions are
-  also supported; ``{x for x in stuff}`` means the same thing as
+  also supported; e.g., ``{x for x in stuff}`` means the same thing as
   ``set(stuff)`` but is more flexible.
 
 * New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
@@ -588,14 +600,6 @@ This section discusses the many changes in string XXX
   referred to as *dictionary views*.
 
 
-:pep:`3107`: Function Annotations
-=================================
-
-.. XXX expand this
-
-* A standardized way of annotating a function's parameters and return values.
-
-
 Exception Stuff
 ===============
 
@@ -663,10 +667,6 @@ Other Language Changes
   and returns it with the trailing newline stripped.  It raises
   :exc:`EOFError` if the input is terminated prematurely.  To get the
   old behavior of :func:`input`, use ``eval(input())``.
-
-* :func:`xrange` renamed to :func:`range`, so :func:`range` will no
-  longer produce a list but an iterable yielding integers when
-  iterated over.  XXX dupe
 
 * :pep:`3114`: ``.next()`` renamed to :meth:`__next__`, new builtin
   :func:`next` to call the :meth:`__next__` method on an object.
