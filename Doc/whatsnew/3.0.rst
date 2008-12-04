@@ -456,10 +456,11 @@ Removed Syntax
 * The :keyword:`from` *module* :keyword:`import` ``*`` syntax is only
   allowed at the module level, no longer inside functions.
 
-* The only acceptable syntax for relative imports is :keyword:`from`
-  ``.``[*module*] :keyword:`import` *name*; :keyword:`import` forms
-  not starting with ``.`` are always interpreted as absolute imports.
-  (:pep:`0328`)
+* The only acceptable syntaxes for relative imports are :keyword:`from`
+  ``.`` :keyword:`import` *name* or 
+  :keyword:`from` ``.module`` :keyword:`import` *name*.   
+  :keyword:`import` forms not starting with ``.`` are always
+  interpreted as absolute imports.  (:pep:`0328`)
 
 * Classic classes are gone.
 
@@ -559,8 +560,8 @@ review:
   release schedule.  However, the package is alive and well,
   externally maintained at http://www.jcea.es/programacion/pybsddb.htm.
 
-* Some modules were renamed because their old name flaunted
-  :pep:`0008`, or for various other reasons:
+* Some modules were renamed because their old name disobeyed
+  :pep:`0008`, or for various other reasons.  Here's the list:
 
   =======================  =======================
   Old Name                 New Name
@@ -607,7 +608,7 @@ review:
     really care about :mod:`tkinter`.  Also note that as of Python
     2.6, the functionality of :mod:`turtle` has been greatly enhanced.
 
-  * :mod:`urllib` (:mod:`urllib`, :mod:`urllib`2, :mod:`urlparse`,
+  * :mod:`urllib` (:mod:`urllib`, :mod:`urllib2`, :mod:`urlparse`,
     :mod:`robotparse`).
 
   * :mod:`xmlrpc` (:mod:`xmlrpclib`, :mod:`DocXMLRPCServer`,
@@ -649,7 +650,7 @@ Some other changes to standard library modules, not covered by
 * :data:`string.letters` and its friends (:data:`string.lowercase` and
   :data:`string.uppercase`) are gone.  Use
   :data:`string.ascii_letters` etc. instead.  (The reason for the
-  removal is that :data:string.letters` and friends had
+  removal is that :data:`string.letters` and friends had
   locale-specific behavior, which is a bad idea for such
   attractively-named global "constants".)
 
@@ -702,8 +703,8 @@ new powerful features added:
   :attr:`__traceback__` attribute (see below).
 
 * :pep:`3110`: Catching exceptions.  You must now use
-  *:keyword:`except` SomeException* :keyword:`as` *variable* instead
-  *of :keyword:`except` *SomeException*, variable*.  Moreover, the
+  :keyword:`except` *SomeException* :keyword:`as` *variable* instead
+  of :keyword:`except` *SomeException*, variable*.  Moreover, the
   *variable* is explicitly deleted when the :keyword:`except` block
   is left.
 
