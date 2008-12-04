@@ -60,6 +60,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1055234: cgi.parse_header(): Fixed parsing of header parameters to
+  support unusual filenames (such as those containing semi-colons) in
+  Content-Disposition headers.
+
 - Issue #4384: Added integration with warnings module using captureWarnings().
   This change includes a NullHandler which does nothing; it will be of use to
   library developers who want to avoid the "No handlers could be found for
