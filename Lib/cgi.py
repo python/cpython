@@ -289,16 +289,28 @@ def parse_multipart(fp, pdict):
     return partdict
 
 
+def _parseparam(s):
+    while s[:1] == ';':
+        s = s[1:]
+        end = s.find(';')
+        while end > 0 and s.count('"', 0, end) % 2:
+            end = s.find(';', end + 1)
+        if end < 0:
+            end = len(s)
+        f = s[:end]
+        yield f.strip()
+        s = s[end:]
+
 def parse_header(line):
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
 
     """
-    plist = [x.strip() for x in line.split(';')]
-    key = plist.pop(0).lower()
+    parts = _parseparam(';' + line)
+    key = parts.next()
     pdict = {}
-    for p in plist:
+    for p in parts:
         i = p.find('=')
         if i >= 0:
             name = p[:i].strip().lower()
