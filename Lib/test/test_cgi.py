@@ -354,6 +354,32 @@ this is the content of the fake file
         self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
                          cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
+    def test_parse_header(self):
+        self.assertEqual(
+            cgi.parse_header("text/plain"),
+            ("text/plain", {}))
+        self.assertEqual(
+            cgi.parse_header("text/vnd.just.made.this.up ; "),
+            ("text/vnd.just.made.this.up", {}))
+        self.assertEqual(
+            cgi.parse_header("text/plain;charset=us-ascii"),
+            ("text/plain", {"charset": "us-ascii"}))
+        self.assertEqual(
+            cgi.parse_header('text/plain ; charset="us-ascii"'),
+            ("text/plain", {"charset": "us-ascii"}))
+        self.assertEqual(
+            cgi.parse_header('text/plain ; charset="us-ascii"; another=opt'),
+            ("text/plain", {"charset": "us-ascii", "another": "opt"}))
+        self.assertEqual(
+            cgi.parse_header('attachment; filename="silly.txt"'),
+            ("attachment", {"filename": "silly.txt"}))
+        self.assertEqual(
+            cgi.parse_header('attachment; filename="strange;name"'),
+            ("attachment", {"filename": "strange;name"}))
+        self.assertEqual(
+            cgi.parse_header('attachment; filename="strange;name";size=123;'),
+            ("attachment", {"filename": "strange;name", "size": "123"}))
+
 
 def test_main():
     run_unittest(CgiTests)

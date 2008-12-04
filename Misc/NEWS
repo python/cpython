@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1055234: cgi.parse_header(): Fixed parsing of header parameters to
+  support unusual filenames (such as those containing semi-colons) in
+  Content-Disposition headers.
+
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
 
