@@ -2178,9 +2178,7 @@ PyDoc_STRVAR(zip_doc,
 Return a zip object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the shortest iterable in the argument sequence\n\
-is exhausted and then it raises StopIteration.  Works like the zip()\n\
-function but consumes less memory by returning an iterator instead of\n\
-a list.");
+is exhausted and then it raises StopIteration.");
 
 PyTypeObject PyZip_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
