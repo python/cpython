@@ -303,7 +303,7 @@ changed.
   as well as strings, and a few APIs have a way to ask for a
   :class:`bytes` return value.  Thus, :func:`os.listdir` returns a
   list of :class:`bytes` instances if the argument is a :class:`bytes`
-  instance, and :func:`os.getcwdu` returns the current working
+  instance, and :func:`os.getcwdb` returns the current working
   directory as a :class:`bytes` instance.  Note that when
   :func:`os.listdir` returns a list of strings, filenames that
   cannot be decoded properly are omitted rather than raising
