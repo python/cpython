@@ -231,7 +231,7 @@ Instances of the :class:`Popen` class have the following methods:
    *input* argument should be a string to be sent to the child process, or
    ``None``, if no data should be sent to the child.
 
-   :meth:`communicate` returns a tuple ``(stdout, stderr)``.
+   :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
