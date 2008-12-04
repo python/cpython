@@ -25,7 +25,7 @@ another rational number, or from a string.
    :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and
    returns an :class:`Fraction` instance with the same value.  The
-   last version of the constructor expects a string or unicode
+   last version of the constructor expects a string
    instance in one of two possible forms.  The first form is::
 
       [sign] numerator ['/' denominator]
