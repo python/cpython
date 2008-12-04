@@ -67,11 +67,11 @@ Library
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
-- Issue #4384: Added integration with warnings module using captureWarnings().
-  This change includes a NullHandler which does nothing; it will be of use to
-  library developers who want to avoid the "No handlers could be found for
-  logger XXX" message which can appear if the library user doesn't configure
-  logging.
+- Issue #4384: Added logging integration with warnings module using
+  captureWarnings(). This change includes a NullHandler which does nothing;
+  it will be of use to library developers who want to avoid the "No handlers
+  could be found for logger XXX" message which can appear if the library user
+  doesn't configure logging.
 
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.

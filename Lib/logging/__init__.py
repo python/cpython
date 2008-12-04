@@ -31,7 +31,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'INFO', 'LogRecord', 'Logger', 'Manager', 'NOTSET', 'PlaceHolder',
            'RootLogger', 'StreamHandler', 'WARN', 'WARNING']
 
-import sys, os, types, time, string, cStringIO, traceback
+import sys, os, types, time, string, cStringIO, traceback, warnings
 
 try:
     import codecs
@@ -1520,7 +1520,6 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
         if _warnings_showwarning is not None:
             _warnings_showwarning(message, category, filename, lineno, file, line)
     else:
-        import warnings
         s = warnings.formatwarning(message, category, filename, lineno, line)
         logger = getLogger("py.warnings")
         if not logger.handlers:
@@ -1533,7 +1532,6 @@ def captureWarnings(capture):
     If capture is False, ensure that warnings are not redirected to logging
     but to their original destinations.
     """
-    import warnings
     global _warnings_showwarning
     if capture:
         if _warnings_showwarning is None:
