@@ -50,7 +50,7 @@ FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
-REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/3.0"
+REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/py3k"
 RESULT_FILE="$DIR/build/index.html"
 INSTALL_DIR="/tmp/python-test-3.0/local"
 RSYNC_OPTS="-aC -e ssh"
