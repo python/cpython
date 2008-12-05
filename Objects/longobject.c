@@ -44,7 +44,7 @@ get_small_int(int ival)
 }
 #define CHECK_SMALL_INT(ival) \
 	do if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) { \
-		return get_small_int(ival); \
+		return get_small_int((int)ival); \
 	} while(0)
 
 static PyLongObject * 
@@ -198,7 +198,7 @@ PyLong_FromLong(long ival)
 		v = _PyLong_New(1);
 		if (v) {
 			Py_SIZE(v) = sign;
-			v->ob_digit[0] = ival;
+			v->ob_digit[0] = (digit)ival;
 		}
 		return (PyObject*)v;
 	}
@@ -209,7 +209,7 @@ PyLong_FromLong(long ival)
 		if (v) {
 			Py_SIZE(v) = 2*sign;
 			v->ob_digit[0] = (digit)ival & PyLong_MASK;
-			v->ob_digit[1] = ival >> PyLong_SHIFT;
+			v->ob_digit[1] = (digit)(ival >> PyLong_SHIFT);
 		}
 		return (PyObject*)v;
 	}
@@ -1103,7 +1103,7 @@ PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
 	int ndigits = 0;
 
 	if (ival < PyLong_BASE)
-		return PyLong_FromLong(ival);
+		return PyLong_FromLong((long)ival);
 	/* Count the number of Python digits. */
 	t = (unsigned PY_LONG_LONG)ival;
 	while (t) {
