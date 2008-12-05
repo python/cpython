@@ -684,8 +684,8 @@ by file descriptors.
 The following constants are options for the *flags* parameter to the
 :func:`open` function.  They can be combined using the bitwise OR operator
 ``|``.  Some of them are not available on all platforms.  For descriptions of
-their availability and use, consult the :manpage:`open(2)` manual page or the
-respective documentation for your operating system.
+their availability and use, consult the :manpage:`open(2)` manual page on Unix
+or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>` on Windows.
 
 
 .. data:: O_RDONLY
