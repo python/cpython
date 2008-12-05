@@ -43,7 +43,8 @@ copying and removal. For operations on individual files, see also the
 
    Copy the contents (no metadata) of the file named *src* to a file named *dst*.
    *dst* must be the complete target file name; look at :func:`copy` for a copy that
-   accepts a target directory path.
+   accepts a target directory path.  If *src* and *dst* are the same files,
+   :exc:`Error` is raised.
    The destination location must be writable; otherwise,  an :exc:`IOError` exception
    will be raised. If *dst* already exists, it will be replaced.   Special files
    such as character or block devices and pipes cannot be copied with this
