@@ -369,7 +369,7 @@ New Syntax
 
     (a, *rest, b) = range(5)
 
-  This sets *a* to ``0``, *b* to ``4``, and \*rest to ``[1, 2, 3]``.
+  This sets *a* to ``0``, *b* to ``4``, and *rest* to ``[1, 2, 3]``.
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
   same thing as ``dict(stuff)`` but is more flexible.  (This is
@@ -393,7 +393,7 @@ Changed Syntax
 --------------
 
 * :pep:`3109` and :pep:`3134`: new :keyword:`raise` statement syntax:
-  ``raise [expr [from expr]]``.  See below.
+  :samp:`raise [{expr} [from {expr}]]`.  See below.
 
 * :keyword:`as` and :keyword:`with` are now reserved words.  (Since
   2.6, actually.)
@@ -422,8 +422,8 @@ Changed Syntax
   :class:`object`.)
 
 * List comprehensions no longer support the syntactic form
-  ``[... for var in item1, item2, ...]``.  Use
-  ``[... for var in (item1, item2, ...)]`` instead.
+  :samp:`[... for {var} in {item1}, {item2}, ...]`.  Use
+  :samp:`[... for {var} in ({item1}, {item2}, ...)]` instead.
   Also note that list comprehensions have different semantics: they
   are closer to syntactic sugar for a generator expression inside a
   :func:`list` constructor, and in particular the loop control
@@ -457,9 +457,8 @@ Removed Syntax
 * The :keyword:`from` *module* :keyword:`import` ``*`` syntax is only
   allowed at the module level, no longer inside functions.
 
-* The only acceptable syntax for relative imports is :keyword:`from`
-  ``.`` [*module*] :keyword:`import` *name*.
-  All :keyword:`import` forms not starting with ``.`` are
+* The only acceptable syntax for relative imports is :samp:`from .[{module}]
+  import {name}`.  All :keyword:`import` forms not starting with ``.`` are
   interpreted as absolute imports.  (:pep:`0328`)
 
 * Classic classes are gone.
