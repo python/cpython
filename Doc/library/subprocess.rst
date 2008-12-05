@@ -207,7 +207,7 @@ Instances of the :class:`Popen` class have the following methods:
    *input* argument should be a string to be sent to the child process, or
    ``None``, if no data should be sent to the child.
 
-   :meth:`communicate` returns a tuple ``(stdout, stderr)``.
+   :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
@@ -358,8 +358,8 @@ A more realistic example would look like this::
        print >>sys.stderr, "Execution failed:", e
 
 
-Replacing os.spawn\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing the os.spawn family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 P_NOWAIT example::
 
@@ -386,8 +386,8 @@ Environment example::
    Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing os.popen, os.popen2, os.popen3
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -430,8 +430,8 @@ Replacing os.popen\*
    (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
 
 
-Replacing popen2.\*
-^^^^^^^^^^^^^^^^^^^
+Replacing functions from the popen2 module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
