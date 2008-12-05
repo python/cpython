@@ -5,8 +5,8 @@
 .. XXX Add trademark info for Apple, Microsoft.
 
 :Author: No one so far
-.. :Release: |release|
-.. :Date: |today|
+:Release: |release|
+:Date: |today|
 
 .. $Id$
    Rules for maintenance:
