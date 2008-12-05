@@ -63,8 +63,8 @@ exception:
    non-option argument is encountered.
 
    If the first character of the option string is '+', or if the environment
-   variable POSIXLY_CORRECT is set, then option processing stops as soon as a
-   non-option argument is encountered.
+   variable :envvar:`POSIXLY_CORRECT` is set, then option processing stops as
+   soon as a non-option argument is encountered.
 
    .. versionadded:: 2.3
 
