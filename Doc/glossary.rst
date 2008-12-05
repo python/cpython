@@ -498,6 +498,12 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally (or in older
       versions, :meth:`__getslice__` and :meth:`__setslice__`).
 
+   special method
+      A method that is called implicitly by Python to execute a certain
+      operation on a type, such as addition.  Such methods have names starting
+      and ending with double underscores.  Special methods are documented in
+      :ref:`specialnames`.
+
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or a one of several constructs with a keyword, such
