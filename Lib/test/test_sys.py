@@ -631,8 +631,8 @@ class SizeofTest(unittest.TestCase):
         # slice
         check(slice(1), size(h + '3P'))
         # str
-        check('', size(vh + 'lic'))
-        check('abc', size(vh + 'lic') + 3*self.c)
+        check('', struct.calcsize(vh + 'li') + 1)
+        check('abc', struct.calcsize(vh + 'li') + 1 + 3*self.c)
         # super
         check(super(int), size(h + '3P'))
         # tuple
