@@ -3137,6 +3137,7 @@ parsenumber(struct compiling *c, const char *s)
     int imflag;
 #endif
 
+    assert(s != NULL);
     errno = 0;
     end = s + strlen(s) - 1;
 #ifndef WITHOUT_COMPLEX
