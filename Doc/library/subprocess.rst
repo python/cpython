@@ -382,8 +382,8 @@ A more realistic example would look like this::
        print >>sys.stderr, "Execution failed:", e
 
 
-Replacing os.spawn\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing the os.spawn family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 P_NOWAIT example::
 
@@ -410,8 +410,8 @@ Environment example::
    Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing os.popen, os.popen2, os.popen3
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -454,8 +454,8 @@ Replacing os.popen\*
    (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
 
 
-Replacing popen2.\*
-^^^^^^^^^^^^^^^^^^^
+Replacing functions from the popen2 module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
