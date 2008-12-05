@@ -1162,8 +1162,9 @@ of this is the :class:`NodeList` interface in the W3C's Document Object Model.)
 Basic customization
 -------------------
 
-
 .. method:: object.__new__(cls[, ...])
+
+   .. index:: pair: subclassing; immutable types
 
    Called to create a new instance of class *cls*.  :meth:`__new__` is a static
    method (special-cased so you need not declare it as such) that takes the class
