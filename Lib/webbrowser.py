@@ -223,7 +223,7 @@ class UnixBrowser(BaseBrowser):
         cmdline = [self.name] + raise_opt + args
 
         if remote or self.background:
-            inout = open(os.devnull, "r+")
+            inout = io.open(os.devnull, "r+")
         else:
             # for TTY browsers, we need stdin/out
             inout = None
