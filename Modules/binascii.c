@@ -1019,7 +1019,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 	Py_ssize_t len;
 	unsigned int result;
 
-	if ( !PyArg_ParseTuple(args, "s*|I:crc32", &pbin, &crc) )
+	if ( !PyArg_ParseTuple(args, "y*|I:crc32", &pbin, &crc) )
 		return NULL;
 	bin_data = pbin.buf;
 	len = pbin.len;
