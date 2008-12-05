@@ -532,9 +532,8 @@ except ImportError:
 # the Formatter class
 # see PEP 3101 for details and purpose of this class
 
-# The hard parts are reused from the C implementation.  They're
-# exposed here via the sys module.  sys was chosen because it's always
-# available and doesn't have to be dynamically loaded.
+# The hard parts are reused from the C implementation.  They're exposed as "_"
+# prefixed methods of str and unicode.
 
 # The overall parser is implemented in str._formatter_parser.
 # The field name parser is implemented in str._formatter_field_name_split

@@ -199,15 +199,8 @@ available.  They are listed here in alphabetical order.
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by an :keyword:`exec` statement or evaluated by a call to :func:`eval`.
-   *source* can either be a string or an AST object.  Refer to the :mod:`_ast`
-   module documentation for information on how to compile into and from AST
-   objects.
-
-   When compiling a string with multi-line statements, two caveats apply: line
-   endings must be represented by a single newline character (``'\n'``), and the
-   input must be terminated by at least one newline character.  If line endings
-   are represented by ``'\r\n'``, use the string :meth:`replace` method to
-   change them into ``'\n'``.
+   *source* can either be a string or an AST object.  Refer to the :mod:`ast`
+   module documentation for information on how to work with AST objects.
 
    The *filename* argument should give the file from which the code was read;
    pass some recognizable value if it wasn't read from a file (``'<string>'`` is
@@ -219,15 +212,15 @@ available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something else than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* (which are new in Python 2.2)
-   control which future statements (see :pep:`236`) affect the compilation of
-   *source*.  If neither is present (or both are zero) the code is compiled with
-   those future statements that are in effect in the code that is calling compile.
-   If the *flags* argument is given and *dont_inherit* is not (or is zero) then the
+   The optional arguments *flags* and *dont_inherit* control which future
+   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   is present (or both are zero) the code is compiled with those future
+   statements that are in effect in the code that is calling compile.  If the
+   *flags* argument is given and *dont_inherit* is not (or is zero) then the
    future statements specified by the *flags* argument are used in addition to
    those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call to
-   compile are ignored.
+   the *flags* argument is it -- the future statements in effect around the call
+   to compile are ignored.
 
    Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
@@ -237,7 +230,18 @@ available.  They are listed here in alphabetical order.
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
 
-   .. versionadded:: 2.6
+   .. note::
+
+      When compiling a string with multi-line statements, line endings must be
+      represented by a single newline character (``'\n'``), and the input must
+      be terminated by at least one newline character.  If line endings are
+      represented by ``'\r\n'``, use :meth:`str.replace` to change them into
+      ``'\n'``.
+
+   .. versionchanged:: 2.3
+      The *flags* and *dont_inherit* arguments were added.
+
+   .. versionchanged:: 2.6
       Support for compiling AST objects.
 
 
