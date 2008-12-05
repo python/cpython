@@ -750,6 +750,11 @@ attributes:
    were provided.
 
 
+.. attribute:: RegexObject.groups
+
+   The number of capturing groups in the pattern.
+
+
 .. attribute:: RegexObject.groupindex
 
    A dictionary mapping any symbolic group names defined by ``(?P<id>)`` to group

@@ -1266,7 +1266,7 @@ class MiscIOTest(unittest.TestCase):
 
     def test_attributes(self):
         f = io.open(test_support.TESTFN, "wb", buffering=0)
-        self.assertEquals(f.mode, "w")
+        self.assertEquals(f.mode, "wb")
         f.close()
 
         f = io.open(test_support.TESTFN, "U")
@@ -1274,18 +1274,18 @@ class MiscIOTest(unittest.TestCase):
         self.assertEquals(f.buffer.name,     test_support.TESTFN)
         self.assertEquals(f.buffer.raw.name, test_support.TESTFN)
         self.assertEquals(f.mode,            "U")
-        self.assertEquals(f.buffer.mode,     "r")
-        self.assertEquals(f.buffer.raw.mode, "r")
+        self.assertEquals(f.buffer.mode,     "rb")
+        self.assertEquals(f.buffer.raw.mode, "rb")
         f.close()
 
         f = io.open(test_support.TESTFN, "w+")
         self.assertEquals(f.mode,            "w+")
-        self.assertEquals(f.buffer.mode,     "r+") # Does it really matter?
-        self.assertEquals(f.buffer.raw.mode, "r+")
+        self.assertEquals(f.buffer.mode,     "rb+") # Does it really matter?
+        self.assertEquals(f.buffer.raw.mode, "rb+")
 
         g = io.open(f.fileno(), "wb", closefd=False)
-        self.assertEquals(g.mode,     "w")
-        self.assertEquals(g.raw.mode, "w")
+        self.assertEquals(g.mode,     "wb")
+        self.assertEquals(g.raw.mode, "wb")
         self.assertEquals(g.name,     f.fileno())
         self.assertEquals(g.raw.name, f.fileno())
         f.close()
