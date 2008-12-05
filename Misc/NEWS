@@ -60,7 +60,7 @@ Core and Builtins
 Library
 -------
 
-- Added the subprocess.check_call_output() convenience function to get output
+- Added the subprocess.check_output() convenience function to get output
   from a subprocess on success or raise an exception on error.
 
 - Issue #1055234: cgi.parse_header(): Fixed parsing of header parameters to

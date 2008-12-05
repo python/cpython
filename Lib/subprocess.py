@@ -127,7 +127,7 @@ check_call(*popenargs, **kwargs):
 
     check_call(["ls", "-l"])
 
-check_call_output(*popenargs, **kwargs):
+check_output(*popenargs, **kwargs):
    Run command with arguments and return its output as a byte string.
 
    If the exit code was non-zero it raises a CalledProcessError.  The
@@ -136,7 +136,7 @@ check_call_output(*popenargs, **kwargs):
 
    The arguments are the same as for the Popen constructor.  Example:
 
-      output = subprocess.check_call_output(["ls", "-l", "/dev/null"])
+      output = subprocess.check_output(["ls", "-l", "/dev/null"])
 
 Exceptions
 ----------
@@ -152,7 +152,7 @@ should prepare for OSErrors.
 
 A ValueError will be raised if Popen is called with invalid arguments.
 
-check_call() and check_call_output() will raise CalledProcessError, if the
+check_call() and check_output() will raise CalledProcessError, if the
 called process returns a non-zero return code.
 
 
@@ -373,9 +373,9 @@ import signal
 # Exception classes used by this module.
 class CalledProcessError(Exception):
     """This exception is raised when a process run by check_call() or
-    check_call_output() returns a non-zero exit status.
+    check_output() returns a non-zero exit status.
     The exit status will be stored in the returncode attribute;
-    check_call_output() will also store the output in the output attribute.
+    check_output() will also store the output in the output attribute.
     """
     def __init__(self, returncode, cmd, output=None):
         self.returncode = returncode
@@ -418,7 +418,7 @@ else:
     import pickle
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call",
-           "check_call_output", "CalledProcessError"]
+           "check_output", "CalledProcessError"]
 
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -478,7 +478,7 @@ def check_call(*popenargs, **kwargs):
     return 0
 
 
-def check_call_output(*popenargs, **kwargs):
+def check_output(*popenargs, **kwargs):
     """Run command with arguments and return its output as a byte string.
 
     If the exit code was non-zero it raises a CalledProcessError.  The
@@ -487,15 +487,15 @@ def check_call_output(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    >>> check_call_output(["ls", "-l", "/dev/null"])
+    >>> check_output(["ls", "-l", "/dev/null"])
     'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
     The stdout argument is not allowed as it is used internally.
     To capture standard error in the result, use stderr=subprocess.STDOUT.
 
-    >>> check_call_output(["/bin/sh", "-c",
-                           "ls -l non_existant_file ; exit 0"],
-                          stderr=subprocess.STDOUT)
+    >>> check_output(["/bin/sh", "-c",
+                      "ls -l non_existant_file ; exit 0"],
+                     stderr=subprocess.STDOUT)
     'ls: non_existant_file: No such file or directory\n'
     """
     if 'stdout' in kwargs:
