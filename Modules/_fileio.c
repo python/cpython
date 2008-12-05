@@ -27,6 +27,20 @@
 #include <windows.h>
 #endif
 
+#if BUFSIZ < (8*1024)
+#define SMALLCHUNK (8*1024)
+#elif (BUFSIZ >= (2 << 25))
+#error "unreasonable BUFSIZ > 64MB defined"
+#else
+#define SMALLCHUNK BUFSIZ
+#endif
+
+#if SIZEOF_INT < 4
+#define BIGCHUNK  (512 * 32)
+#else
+#define BIGCHUNK  (512 * 1024)
+#endif
+
 typedef struct {
 	PyObject_HEAD
 	int fd;
@@ -387,8 +401,6 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 	return PyLong_FromSsize_t(n);
 }
 
-#define DEFAULT_BUFFER_SIZE (8*1024)
-
 static PyObject *
 fileio_readall(PyFileIOObject *self)
 {
@@ -396,12 +408,23 @@ fileio_readall(PyFileIOObject *self)
 	Py_ssize_t total = 0;
 	int n;
 
-	result = PyBytes_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
+	result = PyBytes_FromStringAndSize(NULL, SMALLCHUNK);
 	if (result == NULL)
 		return NULL;
 
 	while (1) {
-		Py_ssize_t newsize = total + DEFAULT_BUFFER_SIZE;
+		Py_ssize_t newsize = (total < SMALLCHUNK) ? SMALLCHUNK : total;
+
+		/* Keep doubling until we reach BIGCHUNK;
+		   then keep adding BIGCHUNK. */
+		if (newsize <= BIGCHUNK) {
+			newsize += newsize;
+		}
+		else {
+			/* NOTE: overflow impossible due to limits on BUFSIZ */
+			newsize += BIGCHUNK;
+		}
+
 		if (PyBytes_GET_SIZE(result) < newsize) {
 			if (_PyBytes_Resize(&result, newsize) < 0) {
 				if (total == 0) {
