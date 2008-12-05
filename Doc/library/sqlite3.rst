@@ -223,8 +223,8 @@ Connection Objects
 
 .. attribute:: Connection.isolation_level
 
-   Get or set the current isolation level. :const:`None` for autocommit mode or one of
-   "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See section
+   Get or set the current isolation level. :const:`None` for autocommit mode or
+   one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
    :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
 
 

@@ -1,7 +1,7 @@
 dnl ***********************************************
 dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
-dnl NOTE: autoconf 2.64 doesn't seem to work (use 2.63).
+dnl NOTE: autoconf 2.64 doesn't seem to work (use 2.61).
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 2.6)
@@ -1844,7 +1844,7 @@ AC_MSG_RESULT($SHLIBS)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# only check for sem_ini if thread support is requested
+# only check for sem_init if thread support is requested
 if test "$with_threads" = "yes" -o -z "$with_threads"; then
     AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
 						# posix4 on Solaris 2.6

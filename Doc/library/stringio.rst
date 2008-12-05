@@ -37,7 +37,8 @@ The following methods of :class:`StringIO` objects require special mention:
 
 .. method:: StringIO.close()
 
-   Free the memory buffer.
+   Free the memory buffer.  Attempting to do further operations with a closed
+   :class:`StringIO` object will raise a :exc:`ValueError`.
 
 Example usage::
 
