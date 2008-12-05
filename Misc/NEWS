@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4529: fix the parser module's validation of try-except-finally
+  statements.
+
 - Issue #4458: getopt.gnu_getopt() now recognizes a single "-" as an argument,
   not a malformed option.
 
