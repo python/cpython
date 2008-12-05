@@ -7,6 +7,7 @@ This exports:
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
+  - os.extsep is the extension separator (always '.')
   - os.altsep is the alternate pathname separator (None or '/')
   - os.pathsep is the component separator used in $PATH etc
   - os.linesep is the line separator in text files ('\r' or '\n' or '\r\n')
@@ -102,7 +103,8 @@ else:
     raise ImportError('no os specific module found')
 
 sys.modules['os.path'] = path
-from os.path import curdir, pardir, sep, pathsep, defpath, altsep, devnull
+from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
+    devnull)
 
 del _names
 
