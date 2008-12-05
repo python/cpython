@@ -123,6 +123,9 @@ Glossary
          def f(...):
              ...
 
+      See :ref:`the documentation for function definition <function>` for more
+      about decorators.
+
    descriptor
       Any *new-style* object which defines the methods :meth:`__get__`,
       :meth:`__set__`, or :meth:`__delete__`.  When a class attribute is a
