@@ -457,10 +457,9 @@ Removed Syntax
 * The :keyword:`from` *module* :keyword:`import` ``*`` syntax is only
   allowed at the module level, no longer inside functions.
 
-* The only acceptable syntaxes for relative imports are :keyword:`from`
-  ``.`` :keyword:`import` *name* or 
-  :keyword:`from` ``.module`` :keyword:`import` *name*.   
-  :keyword:`import` forms not starting with ``.`` are always
+* The only acceptable syntax for relative imports is :keyword:`from`
+  ``.`` [*module*] :keyword:`import` *name*.
+  All :keyword:`import` forms not starting with ``.`` are
   interpreted as absolute imports.  (:pep:`0328`)
 
 * Classic classes are gone.
