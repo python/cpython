@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4542: On Windows, binascii.crc32 still accepted str as binary input;
+  the corresponding tests now pass.
+
 - Issue #4537: webbrowser.UnixBrowser would fail to open the browser because
   it was calling the wrong open() function.
 
