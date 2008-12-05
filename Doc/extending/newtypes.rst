@@ -73,26 +73,25 @@ Moving on, we come to the crunch --- the type object. ::
 
    static PyTypeObject noddy_NoddyType = {
        PyObject_HEAD_INIT(NULL)
-       0,                         /*ob_size*/
-       "noddy.Noddy",             /*tp_name*/
-       sizeof(noddy_NoddyObject), /*tp_basicsize*/
-       0,                         /*tp_itemsize*/
-       0,                         /*tp_dealloc*/
-       0,                         /*tp_print*/
-       0,                         /*tp_getattr*/
-       0,                         /*tp_setattr*/
-       0,                         /*tp_compare*/
-       0,                         /*tp_repr*/
-       0,                         /*tp_as_number*/
-       0,                         /*tp_as_sequence*/
-       0,                         /*tp_as_mapping*/
-       0,                         /*tp_hash */
-       0,                         /*tp_call*/
-       0,                         /*tp_str*/
-       0,                         /*tp_getattro*/
-       0,                         /*tp_setattro*/
-       0,                         /*tp_as_buffer*/
-       Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+       "noddy.Noddy",             /* tp_name */
+       sizeof(noddy_NoddyObject), /* tp_basicsize */
+       0,                         /* tp_itemsize */
+       0,                         /* tp_dealloc */
+       0,                         /* tp_print */
+       0,                         /* tp_getattr */
+       0,                         /* tp_setattr */
+       0,                         /* tp_compare */
+       0,                         /* tp_repr */
+       0,                         /* tp_as_number */
+       0,                         /* tp_as_sequence */
+       0,                         /* tp_as_mapping */
+       0,                         /* tp_hash  */
+       0,                         /* tp_call */
+       0,                         /* tp_str */
+       0,                         /* tp_getattro */
+       0,                         /* tp_setattro */
+       0,                         /* tp_as_buffer */
+       Py_TPFLAGS_DEFAULT,        /* tp_flags */
        "Noddy objects",           /* tp_doc */
    };
 
@@ -113,13 +112,6 @@ This line is a bit of a wart; what we'd like to write is::
 as the type of a type object is "type", but this isn't strictly conforming C and
 some compilers complain.  Fortunately, this member will be filled in for us by
 :cfunc:`PyType_Ready`. ::
-
-   0,                          /* ob_size */
-
-The :attr:`ob_size` field of the header is not used; its presence in the type
-structure is a historical artifact that is maintained for binary compatibility
-with extension modules compiled for older versions of Python.  Always set this
-field to zero. ::
 
    "noddy.Noddy",              /* tp_name */
 
@@ -162,7 +154,7 @@ for now.
 Skipping a number of type methods that we don't provide, we set the class flags
 to :const:`Py_TPFLAGS_DEFAULT`. ::
 
-   Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+   Py_TPFLAGS_DEFAULT,        /* tp_flags */
 
 All types should include this constant in their flags.  It enables all of the
 members defined by the current version of Python.
@@ -193,7 +185,7 @@ All the other type methods are *NULL*, so we'll go over them later --- that's
 for a later section!
 
 Everything else in the file should be familiar, except for some code in
-:cfunc:`initnoddy`::
+:cfunc:`PyInit_noddy`::
 
    if (PyType_Ready(&noddy_NoddyType) < 0)
        return;
@@ -523,8 +515,8 @@ object being created or used, so all we need to do is to add the
 
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
 
-We rename :cfunc:`initnoddy` to :cfunc:`initnoddy2` and update the module name
-passed to :cfunc:`Py_InitModule3`.
+We rename :cfunc:`PyInit_noddy` to :cfunc:`PyInit_noddy2` and update the module
+name in the :ctype:`PyModuleDef` struct.
 
 Finally, we update our :file:`setup.py` file to build the new module::
 
@@ -794,7 +786,7 @@ be simplified::
 
 Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
 
-   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 
 That's pretty much it.  If we had written custom :attr:`tp_alloc` or
 :attr:`tp_free` slots, we'd need to modify them for cyclic-garbage collection.
@@ -865,20 +857,20 @@ fill that field directly with the :cfunc:`PyList_Type`; it can be done later in
 the module's :cfunc:`init` function. ::
 
    PyMODINIT_FUNC
-   initshoddy(void)
+   PyInit_shoddy(void)
    {
-   	PyObject *m;
+        PyObject *m;
 
-   	ShoddyType.tp_base = &PyList_Type;
-   	if (PyType_Ready(&ShoddyType) < 0)
-   		return;
+        ShoddyType.tp_base = &PyList_Type;
+        if (PyType_Ready(&ShoddyType) < 0)
+            return NULL;
 
-   	m = Py_InitModule3("shoddy", NULL, "Shoddy module");
-   	if (m == NULL)
-   		return;
+        m = PyModule_Create(&shoddymodule);
+        if (m == NULL)
+            return NULL;
 
-   	Py_INCREF(&ShoddyType);
-   	PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+        Py_INCREF(&ShoddyType);
+        PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
    }
 
 Before calling :cfunc:`PyType_Ready`, the type structure must have the
@@ -1241,49 +1233,50 @@ example that simply raises an exception; if this were really all you wanted, the
        return -1;
    }
 
+.. XXX tp_compare is dead; need to rewrite for tp_richcompare!  
 
-Object Comparison
------------------
-
-::
-
-   cmpfunc tp_compare;
-
-The :attr:`tp_compare` handler is called when comparisons are needed and the
-object does not implement the specific rich comparison method which matches the
-requested comparison.  (It is always used if defined and the
-:cfunc:`PyObject_Compare` or :cfunc:`PyObject_Cmp` functions are used, or if
-:func:`cmp` is used from Python.) It is analogous to the :meth:`__cmp__` method.
-This function should return ``-1`` if *obj1* is less than *obj2*, ``0`` if they
-are equal, and ``1`` if *obj1* is greater than *obj2*. (It was previously
-allowed to return arbitrary negative or positive integers for less than and
-greater than, respectively; as of Python 2.2, this is no longer allowed.  In the
-future, other return values may be assigned a different meaning.)
-
-A :attr:`tp_compare` handler may raise an exception.  In this case it should
-return a negative value.  The caller has to test for the exception using
-:cfunc:`PyErr_Occurred`.
-
-Here is a sample implementation::
-
-   static int
-   newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
-   {
-       long result;
-
-       if (obj1->obj_UnderlyingDatatypePtr->size <
-           obj2->obj_UnderlyingDatatypePtr->size) {
-           result = -1;
-       }
-       else if (obj1->obj_UnderlyingDatatypePtr->size >
-                obj2->obj_UnderlyingDatatypePtr->size) {
-           result = 1;
-       }
-       else {
-           result = 0;
-       }
-       return result;
-   }
+   Object Comparison
+   -----------------
+    
+   ::
+    
+      cmpfunc tp_compare;
+    
+   The :attr:`tp_compare` handler is called when comparisons are needed and the
+   object does not implement the specific rich comparison method which matches the
+   requested comparison.  (It is always used if defined and the
+   :cfunc:`PyObject_Compare` or :cfunc:`PyObject_Cmp` functions are used, or if
+   :func:`cmp` is used from Python.) It is analogous to the :meth:`__cmp__` method.
+   This function should return ``-1`` if *obj1* is less than *obj2*, ``0`` if they
+   are equal, and ``1`` if *obj1* is greater than *obj2*. (It was previously
+   allowed to return arbitrary negative or positive integers for less than and
+   greater than, respectively; as of Python 2.2, this is no longer allowed.  In the
+   future, other return values may be assigned a different meaning.)
+    
+   A :attr:`tp_compare` handler may raise an exception.  In this case it should
+   return a negative value.  The caller has to test for the exception using
+   :cfunc:`PyErr_Occurred`.
+    
+   Here is a sample implementation::
+    
+      static int
+      newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
+      {
+          long result;
+    
+          if (obj1->obj_UnderlyingDatatypePtr->size <
+              obj2->obj_UnderlyingDatatypePtr->size) {
+              result = -1;
+          }
+          else if (obj1->obj_UnderlyingDatatypePtr->size >
+                   obj2->obj_UnderlyingDatatypePtr->size) {
+              result = 1;
+          }
+          else {
+              result = 0;
+          }
+          return result;
+      }
 
 
 Abstract Protocol Support
