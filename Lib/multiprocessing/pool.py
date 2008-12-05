@@ -149,7 +149,7 @@ class Pool(object):
 
     def imap(self, func, iterable, chunksize=1):
         '''
-        Equivalent of `itertool.imap()` -- can be MUCH slower than `Pool.map()`
+        Equivalent of `itertools.imap()` -- can be MUCH slower than `Pool.map()`
         '''
         assert self._state == RUN
         if chunksize == 1:

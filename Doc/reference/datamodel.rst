@@ -1365,21 +1365,21 @@ Basic customization
       object: dictionary
       builtin: hash
 
-   Called for the key object for dictionary operations, and by the built-in
-   function :func:`hash`.  Should return an integer usable as a hash value
-   for dictionary operations.  The only required property is that objects which
-   compare equal have the same hash value; it is advised to somehow mix together
-   (e.g., using exclusive or) the hash values for the components of the object that
-   also play a part in comparison of objects.
+   Called by built-in function :func:`hash` and for operations on members of
+   hashed collections including :class:`set`, :class:`frozenset`, and
+   :class:`dict`.  :meth:`__hash__` should return an integer.  The only required
+   property is that objects which compare equal have the same hash value; it is
+   advised to somehow mix together (e.g. using exclusive or) the hash values for
+   the components of the object that also play a part in comparison of objects.
 
    If a class does not define a :meth:`__cmp__` or :meth:`__eq__` method it
    should not define a :meth:`__hash__` operation either; if it defines
    :meth:`__cmp__` or :meth:`__eq__` but not :meth:`__hash__`, its instances
-   will not be usable as dictionary keys.  If a class defines mutable objects
+   will not be usable in hashed collections.  If a class defines mutable objects
    and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
-   implement :meth:`__hash__`, since the dictionary implementation requires that
-   a key's hash value is immutable (if the object's hash value changes, it will
-   be in the wrong hash bucket).
+   implement :meth:`__hash__`, since hashable collection implementations require
+   that a object's hash value is immutable (if the object's hash value changes,
+   it will be in the wrong hash bucket).
 
    User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
@@ -1389,13 +1389,13 @@ Basic customization
    change the meaning of :meth:`__cmp__` or :meth:`__eq__` such that the hash
    value returned is no longer appropriate (e.g. by switching to a value-based
    concept of equality instead of the default identity based equality) can
-   explicitly flag themselves as being unhashable by setting
-   ``__hash__ = None`` in the class definition. Doing so means that not only
-   will instances of the class raise an appropriate :exc:`TypeError` when
-   a program attempts to retrieve their hash value, but they will also be
-   correctly identified as unhashable when checking
-   ``isinstance(obj, collections.Hashable)`` (unlike classes which define
-   their own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
+   explicitly flag themselves as being unhashable by setting ``__hash__ = None``
+   in the class definition. Doing so means that not only will instances of the
+   class raise an appropriate :exc:`TypeError` when a program attempts to
+   retrieve their hash value, but they will also be correctly identified as
+   unhashable when checking ``isinstance(obj, collections.Hashable)`` (unlike
+   classes which define their own :meth:`__hash__` to explicitly raise
+   :exc:`TypeError`).
 
    .. versionchanged:: 2.5
       :meth:`__hash__` may now also return a long integer object; the 32-bit

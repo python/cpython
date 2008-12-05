@@ -933,10 +933,10 @@ Files and Directories
 
 .. function:: listdir(path)
 
-   Return a list containing the names of the entries in the directory. The list is
-   in arbitrary order.  It does not include the special entries ``'.'`` and
-   ``'..'`` even if they are present in the directory. Availability:
-   Unix, Windows.
+   Return a list containing the names of the entries in the directory given by
+   *path*.  The list is in arbitrary order.  It does not include the special
+   entries ``'.'`` and ``'..'`` even if they are present in the
+   directory.  Availability: Unix, Windows.
 
    .. versionchanged:: 2.3
       On Windows NT/2k/XP and Unix, if *path* is a Unicode object, the result will be

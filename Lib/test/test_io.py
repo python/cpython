@@ -272,6 +272,30 @@ class IOTest(unittest.TestCase):
         self.assertRaises(ValueError, io.open, test_support.TESTFN, 'w',
                           closefd=False)
 
+    def testReadClosed(self):
+        with io.open(test_support.TESTFN, "w") as f:
+            f.write("egg\n")
+        with io.open(test_support.TESTFN, "r") as f:
+            file = io.open(f.fileno(), "r", closefd=False)
+            self.assertEqual(file.read(), "egg\n")
+            file.seek(0)
+            file.close()
+            self.assertRaises(ValueError, file.read)
+
+    def test_no_closefd_with_filename(self):
+        # can't use closefd in combination with a file name
+        self.assertRaises(ValueError,
+                          io.open, test_support.TESTFN, "r", closefd=False)
+
+    def test_closefd_attr(self):
+        with io.open(test_support.TESTFN, "wb") as f:
+            f.write(b"egg\n")
+        with io.open(test_support.TESTFN, "r") as f:
+            self.assertEqual(f.buffer.raw.closefd, True)
+            file = io.open(f.fileno(), "r", closefd=False)
+            self.assertEqual(file.buffer.raw.closefd, False)
+
+
 class MemorySeekTestMixin:
 
     def testInit(self):
@@ -1225,6 +1249,9 @@ class TextIOWrapperTest(unittest.TestCase):
 
 class MiscIOTest(unittest.TestCase):
 
+    def tearDown(self):
+        test_support.unlink(test_support.TESTFN)
+
     def testImport__all__(self):
         for name in io.__all__:
             obj = getattr(io, name, None)
@@ -1235,6 +1262,34 @@ class MiscIOTest(unittest.TestCase):
                 self.assert_(issubclass(obj, Exception), name)
             else:
                 self.assert_(issubclass(obj, io.IOBase))
+
+
+    def test_attributes(self):
+        f = io.open(test_support.TESTFN, "wb", buffering=0)
+        self.assertEquals(f.mode, "w")
+        f.close()
+
+        f = io.open(test_support.TESTFN, "U")
+        self.assertEquals(f.name,            test_support.TESTFN)
+        self.assertEquals(f.buffer.name,     test_support.TESTFN)
+        self.assertEquals(f.buffer.raw.name, test_support.TESTFN)
+        self.assertEquals(f.mode,            "U")
+        self.assertEquals(f.buffer.mode,     "r")
+        self.assertEquals(f.buffer.raw.mode, "r")
+        f.close()
+
+        f = io.open(test_support.TESTFN, "w+")
+        self.assertEquals(f.mode,            "w+")
+        self.assertEquals(f.buffer.mode,     "r+") # Does it really matter?
+        self.assertEquals(f.buffer.raw.mode, "r+")
+
+        g = io.open(f.fileno(), "wb", closefd=False)
+        self.assertEquals(g.mode,     "w")
+        self.assertEquals(g.raw.mode, "w")
+        self.assertEquals(g.name,     f.fileno())
+        self.assertEquals(g.raw.name, f.fileno())
+        f.close()
+        g.close()
 
 
 def test_main():
