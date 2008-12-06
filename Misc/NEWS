@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat
+  libs.
+
 - Issue #4542: On Windows, binascii.crc32 still accepted str as binary input;
   the corresponding tests now pass.
 
