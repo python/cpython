@@ -625,7 +625,9 @@ Some other changes to standard library modules, not covered by
 
 * Cleanup of the :class:`array.array` type: the :meth:`read` and
   :meth:`write` methods are gone; use :meth:`fromfile` and
-  :meth:`tofile` instead.
+  :meth:`tofile` instead.  Also, the ``'c'`` typecode for array is
+  gone -- use either ``'b'`` for bytes or ``'u'`` for Unicode
+  characters.
 
 * Cleanup of the :mod:`operator` module: removed
   :func:`sequenceIncludes` and :func:`isCallable`.
