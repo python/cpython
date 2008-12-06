@@ -1161,9 +1161,9 @@ are always available.  They are listed here in alphabetical order.
       >>> x = [1, 2, 3]
       >>> y = [4, 5, 6]
       >>> zipped = zip(x, y)
-      >>> zipped
+      >>> list(zipped)
       [(1, 4), (2, 5), (3, 6)]
-      >>> x2, y2 = zip(*zipped)
+      >>> x2, y2 = zip(*zip(x, y))
       >>> x == x2, y == y2
       True
 
