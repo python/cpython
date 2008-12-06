@@ -1019,8 +1019,20 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        define_macros=[('HAVE_NDBM_H',None)],
                                        libraries = ndbm_libs ) )
-            elif (self.compiler.find_library_file(lib_dirs, 'gdbm')
-                  and find_file("gdbm/ndbm.h", inc_dirs, []) is not None):
+            elif self.compiler.find_library_file(lib_dirs, 'gdbm'):
+                gdbm_libs = ['gdbm']
+                if self.compiler.find_library_file(lib_dirs, 'gdbm_compat'):
+                    gdbm_libs.append('gdbm_compat')
+                if find_file("gdbm/ndbm.h", inc_dirs, []) is not None:
+                    exts.append( Extension(
+                        'dbm', ['dbmmodule.c'],
+                        define_macros=[('HAVE_GDBM_NDBM_H',None)],
+                        libraries = gdbm_libs ) )
+                elif find_file("gdbm-ndbm.h", inc_dirs, []) is not None:
+                    exts.append( Extension(
+                        'dbm', ['dbmmodule.c'],
+                        define_macros=[('HAVE_GDBM_DASH_NDBM_H',None)],
+                        libraries = gdbm_libs ) )
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        define_macros=[('HAVE_GDBM_NDBM_H',None)],
                                        libraries = ['gdbm'] ) )
