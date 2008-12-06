@@ -189,12 +189,11 @@ Python 3.0 has simplified the rules for ordering comparisons:
   argument instead. N.B. the *key* and *reverse* arguments are now
   "keyword-only".
 
-* The :func:`cmp` function is gone, and the :meth:`__cmp__` special
-  method is no longer supported.  Use :meth:`__lt__` for sorting,
-  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as
-  needed.  (If you really need the :func:`cmp` functionality, you
-  could use the expression ``(a > b) - (a < b)`` as the equivalent for
-  ``cmp(a, b)``.)
+* The :func:`cmp` function should be treated as gone, and the :meth:`__cmp__`
+  special method is no longer supported.  Use :meth:`__lt__` for sorting,
+  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as needed.
+  (If you really need the :func:`cmp` functionality, you could use the
+  expression ``(a > b) - (a < b)`` as the equivalent for ``cmp(a, b)``.)
 
 Integers
 --------
