@@ -18,8 +18,6 @@ defined:
 +-----------+----------------+-------------------+-----------------------+
 | Type code | C Type         | Python Type       | Minimum size in bytes |
 +===========+================+===================+=======================+
-| ``'c'``   | char           | character         | 1                     |
-+-----------+----------------+-------------------+-----------------------+
 | ``'b'``   | signed char    | int               | 1                     |
 +-----------+----------------+-------------------+-----------------------+
 | ``'B'``   | unsigned char  | int               | 1                     |
@@ -219,15 +217,14 @@ The following data items and methods are also supported:
 
 When an array object is printed or converted to a string, it is represented as
 ``array(typecode, initializer)``.  The *initializer* is omitted if the array is
-empty, otherwise it is a string if the *typecode* is ``'c'``, otherwise it is a
+empty, otherwise it is a string if the *typecode* is ``'u'``, otherwise it is a
 list of numbers.  The string is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
 :func:`array` function has been imported using ``from array import array``.
 Examples::
 
    array('l')
-   array('c', 'hello world')
-   array('u', u'hello \u2641')
+   array('u', 'hello \u2641')
    array('l', [1, 2, 3, 4, 5])
    array('d', [1.0, 2.0, 3.14])
 
