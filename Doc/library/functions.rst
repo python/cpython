@@ -1037,9 +1037,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: super([type[, object-or-type]])
 
-   .. XXX updated as per http://www.artima.com/weblogs/viewpost.jsp?thread=208549 but needs checking
-
-   Return a "super" object that acts like the superclass of *type*.
+   Return a *super* object that acts as a proxy to superclasses of *type*.
 
    If the second argument is omitted the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
@@ -1047,8 +1045,8 @@ are always available.  They are listed here in alphabetical order.
    Calling :func:`super` without arguments is equivalent to ``super(this_class,
    first_arg)``.
 
-   There are two typical use cases for "super".  In a class hierarchy with
-   single inheritance, "super" can be used to refer to parent classes without
+   There are two typical use cases for :func:`super`.  In a class hierarchy with
+   single inheritance, :func:`super` can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
    closely parallels the use of "super" in other programming languages.
    
@@ -1072,9 +1070,12 @@ are always available.  They are listed here in alphabetical order.
    It does so by implementing its own :meth:`__getattribute__` method for searching
    parent classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
-   operators such as ``super()[name]``. Also, :func:`super` is not
-   limited to use inside methods: under the hood it searches the stack
-   frame for the class (``__class__``) and the first argument.
+   operators such as ``super()[name]``.
+
+   Also note that :func:`super` is not limited to use inside methods.  The
+   two argument specifies the arguments exactly and makes the appropriate
+   references.  The zero argument form automatically searches the stack frame
+   for the class (``__class__``) and the first argument.
 
 
 .. function:: tuple([iterable])
