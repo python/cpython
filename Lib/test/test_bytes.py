@@ -752,6 +752,38 @@ class ByteArrayTest(BaseBytesTest):
         self.assertEqual(b, b"")
         self.assertEqual(c, b"")
 
+    # XXX memoryview not available
+    def XXXtest_resize_forbidden(self):
+        # #4509: can't resize a bytearray when there are buffer exports, even
+        # if it wouldn't reallocate the underlying buffer.
+        # Furthermore, no destructive changes to the buffer may be applied
+        # before raising the error.
+        b = bytearray(range(10))
+        v = memoryview(b)
+        def resize(n):
+            b[1:-1] = range(n + 1, 2*n - 1)
+        resize(10)
+        orig = b[:]
+        self.assertRaises(BufferError, resize, 11)
+        self.assertEquals(b, orig)
+        self.assertRaises(BufferError, resize, 9)
+        self.assertEquals(b, orig)
+        self.assertRaises(BufferError, resize, 0)
+        self.assertEquals(b, orig)
+        # Other operations implying resize
+        self.assertRaises(BufferError, b.pop, 0)
+        self.assertEquals(b, orig)
+        self.assertRaises(BufferError, b.remove, b[1])
+        self.assertEquals(b, orig)
+        def delitem():
+            del b[1]
+        self.assertRaises(BufferError, delitem)
+        self.assertEquals(b, orig)
+        # deleting a non-contiguous slice
+        def delslice():
+            b[1:-1:2] = b""
+        self.assertRaises(BufferError, delslice)
+        self.assertEquals(b, orig)
 
 class AssortedBytesTest(unittest.TestCase):
     #

@@ -62,6 +62,9 @@ Core and Builtins
   KeyError would always report the empty frozenset([]) as the missing key. Now
   it correctly refers to the initial element.
 
+- Issue #4509: Various issues surrounding resize of bytearray objects to
+  which there are buffer exports.
+
 Library
 -------
 
