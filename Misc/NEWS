@@ -12,6 +12,11 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4445: Replace "sizeof(PyBytesObject)" with
+  "offsetof(PyBytesObject, ob_sval) + 1" when allocating memory for
+  bytes instances.  On a typical machine this saves 3 bytes of memory
+  (on average) per allocation of a bytes instance.
+
 - Issue #4533: File read operation was dreadfully slow due to a slowly
   growing read buffer. Fixed by using the same growth rate algorithm as
   Python 2.x.
