@@ -156,6 +156,30 @@ This module also defines four shortcut functions:
       check_call(["ls", "-l"])
 
 
+.. function:: check_output(*popenargs, **kwargs)
+
+   Run command with arguments and return its output as a byte string.
+
+   If the exit code was non-zero it raises a CalledProcessError.  The
+   CalledProcessError object will have the return code in the returncode
+   attribute and output in the output attribute.
+
+   The arguments are the same as for the Popen constructor.  Example:
+
+      >>> subprocess.check_output(["ls", "-l", "/dev/null"])
+      'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+
+   The stdout argument is not allowed as it is used internally.
+   To capture standard error in the result, use stderr=subprocess.STDOUT.
+
+      >>> subprocess.check_output(
+              ["/bin/sh", "-c", "ls non_existant_file ; exit 0"],
+              stderr=subprocess.STDOUT)
+      'ls: non_existant_file: No such file or directory\n'
+
+   .. versionadded:: 3.1
+
+
 .. function:: getstatusoutput(cmd)
    Return ``(status, output)`` of executing *cmd* in a shell.
 
@@ -175,7 +199,7 @@ This module also defines four shortcut functions:
 
 
 .. function:: getoutput(cmd)
-   Return output ``(stdout or stderr)`` of executing *cmd* in a shell.
+   Return output (stdout and stderr) of executing *cmd* in a shell.
 
    Like :func:`getstatusoutput`, except the exit status is ignored and the return
    value is a string containing the command's output.  Example::

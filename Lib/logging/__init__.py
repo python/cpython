@@ -23,7 +23,8 @@ Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback
+import sys, os, time, io, traceback, warnings
+
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Filterer', 'Formatter', 'Handler',
            'INFO', 'LogRecord', 'Logger', 'Manager', 'NOTSET', 'PlaceHolder',
@@ -42,8 +43,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.5"
-__date__    = "24 January 2008"
+__version__ = "0.5.0.6"
+__date__    = "03 December 2008"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -1483,3 +1484,56 @@ except ImportError: # for Python versions < 2.0
             old_exit(status)
 
     sys.exit = exithook
+
+# Null handler
+
+class NullHandler(Handler):
+    """
+    This handler does nothing. It's intended to be used to avoid the
+    "No handlers could be found for logger XXX" one-off warning. This is
+    important for library code, which may contain code to log events. If a user
+    of the library does not configure logging, the one-off warning might be
+    produced; to avoid this, the library developer simply needs to instantiate
+    a NullHandler and add it to the top-level logger of the library module or
+    package.
+    """
+    def emit(self, record):
+        pass
+
+# Warnings integration
+
+_warnings_showwarning = None
+
+def _showwarning(message, category, filename, lineno, file=None, line=None):
+    """
+    Implementation of showwarnings which redirects to logging, which will first
+    check to see if the file parameter is None. If a file is specified, it will
+    delegate to the original warnings implementation of showwarning. Otherwise,
+    it will call warnings.formatwarning and will log the resulting string to a
+    warnings logger named "py.warnings" with level logging.WARNING.
+    """
+    if file is not None:
+        if _warnings_showwarning is not None:
+            _warnings_showwarning(message, category, filename, lineno, file, line)
+    else:
+        s = warnings.formatwarning(message, category, filename, lineno, line)
+        logger = getLogger("py.warnings")
+        if not logger.handlers:
+            logger.addHandler(NullHandler())
+        logger.warning("%s", s)
+
+def captureWarnings(capture):
+    """
+    If capture is true, redirect all warnings to the logging package.
+    If capture is False, ensure that warnings are not redirected to logging
+    but to their original destinations.
+    """
+    global _warnings_showwarning
+    if capture:
+        if _warnings_showwarning is None:
+            _warnings_showwarning = warnings.showwarning
+            warnings.showwarning = _showwarning
+    else:
+        if _warnings_showwarning is not None:
+            warnings.showwarning = _warnings_showwarning
+            _warnings_showwarning = None

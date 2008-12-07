@@ -73,6 +73,40 @@ class ProcessTestCase(unittest.TestCase):
         else:
             self.fail("Expected CalledProcessError")
 
+    def test_check_output(self):
+        # check_output() function with zero return code
+        output = subprocess.check_output(
+                [sys.executable, "-c", "print('BDFL')"])
+        self.assertTrue(b'BDFL' in output)
+
+    def test_check_output_nonzero(self):
+        # check_call() function with non-zero return code
+        try:
+            subprocess.check_output(
+                    [sys.executable, "-c", "import sys; sys.exit(5)"])
+        except subprocess.CalledProcessError as e:
+            self.assertEqual(e.returncode, 5)
+        else:
+            self.fail("Expected CalledProcessError")
+
+    def test_check_output_stderr(self):
+        # check_output() function stderr redirected to stdout
+        output = subprocess.check_output(
+                [sys.executable, "-c", "import sys; sys.stderr.write('BDFL')"],
+                stderr=subprocess.STDOUT)
+        self.assertTrue(b'BDFL' in output)
+
+    def test_check_output_stdout_arg(self):
+        # check_output() function stderr redirected to stdout
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c", "print('will not be run')"],
+                    stdout=sys.stdout)
+        except ValueError as e:
+            self.assertTrue('stdout' in e.args[0])
+        else:
+            self.fail("Expected ValueError when stdout arg supplied.")
+
     def test_call_kwargs(self):
         # call() function with keyword args
         newenv = os.environ.copy()

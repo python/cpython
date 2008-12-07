@@ -459,6 +459,12 @@ should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be "orgname.foo" rather than
 just "foo".
 
+.. versionadded:: 3.1
+
+The :class:`NullHandler` class was not present in previous versions, but is now
+included, so that it need not be defined in library code.
+
+
 
 Logging Levels
 --------------
@@ -550,6 +556,15 @@ provided:
 
 #. :class:`HTTPHandler` instances send error messages to an HTTP server using
    either ``GET`` or ``POST`` semantics.
+
+#. :class:`NullHandler` instances do nothing with error messages. They are used
+   by library developers who want to use logging, but want to avoid the "No
+   handlers could be found for logger XXX" message which can be displayed if
+   the library user has not configured logging.
+
+.. versionadded:: 3.1
+
+The :class:`NullHandler` class was not present in previous versions.
 
 The :class:`StreamHandler` and :class:`FileHandler` classes are defined in the
 core logging package. The other handlers are defined in a sub- module,

@@ -24,12 +24,32 @@ Core and Builtins
 - Issue #4509: Various issues surrounding resize of bytearray objects to
   which there are buffer exports (e.g. memoryview instances).
 
+- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()``
+  method on file objects with closefd=False. The file descriptor is still
+  kept open but the file object behaves like a closed file. The ``FileIO``
+  object also got a new readonly attribute ``closefd``.
 
 Library
 -------
 
 - Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat
   libs.
+
+- Added the subprocess.check_call_output() convenience function to get output
+  from a subprocess on success or raise an exception on error.
+
+- Issue #1055234: cgi.parse_header(): Fixed parsing of header parameters to
+  support unusual filenames (such as those containing semi-colons) in
+  Content-Disposition headers.
+
+- Issue #4384: Added logging integration with warnings module using
+  captureWarnings(). This change includes a NullHandler which does nothing;
+  it will be of use to library developers who want to avoid the "No handlers
+  could be found for logger XXX" message which can appear if the library user
+  doesn't configure logging.
+
+- Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
+  exception.
 
 - Issue #4529: fix the parser module's validation of try-except-finally
   statements.
