@@ -190,13 +190,6 @@ are always available.  They are listed here in alphabetical order.
    type hierarchy in :ref:`types`.
 
 
-.. function:: cmp(x, y)
-
-   Compare the two objects *x* and *y* and return an integer according to the
-   outcome.  The return value is negative if ``x < y``, zero if ``x == y`` and
-   strictly positive if ``x > y``.
-
-
 .. function:: compile(source, filename, mode[, flags[, dont_inherit]])
 
    Compile the *source* into a code or AST object.  Code objects can be executed
