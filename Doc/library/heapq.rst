@@ -86,6 +86,21 @@ Example of use:
    >>> data == ordered
    True
 
+Using a heap to insert items at the correct place in a priority queue:
+
+   >>> heap = []
+   >>> data = [(1, 'J'), (4, 'N'), (3, 'H'), (2, 'O')]
+   >>> for item in data:
+   ...     heappush(heap, item)
+   ...
+   >>> while heap:
+   ...     print(heappop(heap)[1])
+   J
+   O
+   H
+   N
+
+   
 The module also offers three general purpose functions based on heaps.
 
 
