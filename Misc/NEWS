@@ -29,6 +29,9 @@ Core and Builtins
   kept open but the file object behaves like a closed file. The ``FileIO``
   object also got a new readonly attribute ``closefd``.
 
+- Issue #4569: Interpreter crash when mutating a memoryview with an item size
+  larger than 1.
+
 Library
 -------
 
