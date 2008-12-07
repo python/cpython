@@ -207,6 +207,15 @@ class MemoryviewTest(unittest.TestCase, CommonMemoryTests):
         self.assertRaises(TypeError, memoryview, argument=ob)
         self.assertRaises(TypeError, memoryview, ob, argument=True)
 
+    def test_array_assign(self):
+        # Issue #4569: segfault when mutating a memoryview with itemsize != 1
+        from array import array
+        a = array('i', range(10))
+        m = memoryview(a)
+        new_a = array('i', range(9, -1, -1))
+        m[:] = new_a
+        self.assertEquals(a, new_a)
+
 
 class MemorySliceTest(unittest.TestCase, CommonMemoryTests):
     base_object = b"XabcdefY"

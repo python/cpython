@@ -13,6 +13,18 @@ dup_buffer(Py_buffer *dest, Py_buffer *src)
             dest->strides = &(dest->itemsize);
 }
 
+/* XXX The buffer API should mandate that the shape array be non-NULL, but
+   it would complicate some code since the (de)allocation semantics of shape
+   are not specified. */
+static Py_ssize_t
+get_shape0(Py_buffer *buf)
+{
+    if (buf->shape != NULL)
+        return buf->shape[0];
+    assert(buf->ndim == 1 && buf->itemsize > 0);
+    return buf->len / buf->itemsize;
+}
+
 static int
 memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
@@ -523,99 +535,99 @@ memory_length(PyMemoryViewObject *self)
 static PyObject *
 memory_subscript(PyMemoryViewObject *self, PyObject *key)
 {
-	Py_buffer *view;
-	view = &(self->view);
-
-	if (view->ndim == 0) {
-		if (key == Py_Ellipsis ||
+    Py_buffer *view;
+    view = &(self->view);
+    
+    if (view->ndim == 0) {
+	    if (key == Py_Ellipsis ||
 		    (PyTuple_Check(key) && PyTuple_GET_SIZE(key)==0)) {
-			Py_INCREF(self);
-			return (PyObject *)self;
-		}
-		else {
-			PyErr_SetString(PyExc_IndexError,
+		    Py_INCREF(self);
+		    return (PyObject *)self;
+	    }
+	    else {
+		    PyErr_SetString(PyExc_IndexError,
                                         "invalid indexing of 0-dim memory");
-			return NULL;
-		}
-	}
-	if (PyIndex_Check(key)) {
-		Py_ssize_t result;
-		result = PyNumber_AsSsize_t(key, NULL);
-		if (result == -1 && PyErr_Occurred())
-			return NULL;
-		if (view->ndim == 1) {
-			/* Return a bytes object */
-			char *ptr;
-			ptr = (char *)view->buf;
-			if (result < 0) {
-				result += view->shape[0];
-			}
-			if ((result < 0) || (result >= view->shape[0])) {
-				PyErr_SetString(PyExc_IndexError,
-						"index out of bounds");
-				return NULL;
-			}
-			if (view->strides == NULL)
-				ptr += view->itemsize * result;
-			else
-				ptr += view->strides[0] * result;
-			if (view->suboffsets != NULL &&
+		    return NULL;
+	    }
+    }
+    if (PyIndex_Check(key)) {
+	    Py_ssize_t result;
+	    result = PyNumber_AsSsize_t(key, NULL);
+	    if (result == -1 && PyErr_Occurred())
+		    return NULL;
+	    if (view->ndim == 1) {
+		    /* Return a bytes object */
+		    char *ptr;
+		    ptr = (char *)view->buf;
+		    if (result < 0) {
+                result += get_shape0(view);
+		    }
+            if ((result < 0) || (result >= get_shape0(view))) {
+			    PyErr_SetString(PyExc_IndexError,
+					    "index out of bounds");
+			    return NULL;
+		    }
+		    if (view->strides == NULL)
+			    ptr += view->itemsize * result;
+		    else
+			    ptr += view->strides[0] * result;
+		    if (view->suboffsets != NULL &&
                             view->suboffsets[0] >= 0)
                         {
-				ptr = *((char **)ptr) + view->suboffsets[0];
-			}
-			return PyBytes_FromStringAndSize(ptr, view->itemsize);
-		}
-		else {
-			/* Return a new memory-view object */
-			Py_buffer newview;
-			memset(&newview, 0, sizeof(newview));
-			/* XXX:  This needs to be fixed so it
+			    ptr = *((char **)ptr) + view->suboffsets[0];
+		    }
+		    return PyBytes_FromStringAndSize(ptr, view->itemsize);
+	    }
+	    else {
+		    /* Return a new memory-view object */
+		    Py_buffer newview;
+		    memset(&newview, 0, sizeof(newview));
+		    /* XXX:  This needs to be fixed so it
 			         actually returns a sub-view
-			*/
-			return PyMemoryView_FromBuffer(&newview);
-		}
-	}
-	else if (PySlice_Check(key)) {
-		Py_ssize_t start, stop, step, slicelength;
-
-		if (PySlice_GetIndicesEx((PySliceObject*)key, view->len,
-				 &start, &stop, &step, &slicelength) < 0) {
-			return NULL;
-		}
-
-		if (step == 1 && view->ndim == 1) {
-			Py_buffer newview;
-			void *newbuf = (char *) view->buf
-						+ start * view->itemsize;
-			int newflags = view->readonly
-				? PyBUF_CONTIG_RO : PyBUF_CONTIG;
-
-			/* XXX There should be an API to create a subbuffer */
-			if (view->obj != NULL) {
-				if (PyObject_GetBuffer(view->obj,
-						&newview, newflags) == -1)
-					return NULL;
-			}
-			else {
-				newview = *view;
-			}
-			newview.buf = newbuf;
-			newview.len = slicelength;
-			newview.format = view->format;
-			if (view->shape == &(view->len))
-				newview.shape = &(newview.len);
-			if (view->strides == &(view->itemsize))
-				newview.strides = &(newview.itemsize);
-			return PyMemoryView_FromBuffer(&newview);
-		}
-		PyErr_SetNone(PyExc_NotImplementedError);
-		return NULL;
-	}
-	PyErr_Format(PyExc_TypeError,
-		"cannot index memory using \"%.200s\"", 
-		key->ob_type->tp_name);
-	return NULL;
+		    */
+		    return PyMemoryView_FromBuffer(&newview);
+	    }
+    }
+    else if (PySlice_Check(key)) {
+	    Py_ssize_t start, stop, step, slicelength;
+    
+        if (PySlice_GetIndicesEx((PySliceObject*)key, get_shape0(view),
+			     &start, &stop, &step, &slicelength) < 0) {
+		    return NULL;
+	    }
+    
+	    if (step == 1 && view->ndim == 1) {
+		    Py_buffer newview;
+		    void *newbuf = (char *) view->buf
+					    + start * view->itemsize;
+		    int newflags = view->readonly
+			    ? PyBUF_CONTIG_RO : PyBUF_CONTIG;
+    
+		    /* XXX There should be an API to create a subbuffer */
+		    if (view->obj != NULL) {
+			    if (PyObject_GetBuffer(view->obj,
+					    &newview, newflags) == -1)
+				    return NULL;
+		    }
+		    else {
+			    newview = *view;
+		    }
+		    newview.buf = newbuf;
+		    newview.len = slicelength;
+		    newview.format = view->format;
+		    if (view->shape == &(view->len))
+			    newview.shape = &(newview.len);
+		    if (view->strides == &(view->itemsize))
+			    newview.strides = &(newview.itemsize);
+		    return PyMemoryView_FromBuffer(&newview);
+	    }
+	    PyErr_SetNone(PyExc_NotImplementedError);
+	    return NULL;
+    }
+    PyErr_Format(PyExc_TypeError,
+	    "cannot index memory using \"%.200s\"", 
+	    key->ob_type->tp_name);
+    return NULL;
 }
 
 
@@ -642,9 +654,9 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         if (start == -1 && PyErr_Occurred())
             return -1;
         if (start < 0) {
-            start += view->shape[0];
+            start += get_shape0(view);
         }
-        if ((start < 0) || (start >= view->shape[0])) {
+        if ((start < 0) || (start >= get_shape0(view))) {
             PyErr_SetString(PyExc_IndexError,
                             "index out of bounds");
             return -1;
@@ -654,7 +666,7 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
     else if (PySlice_Check(key)) {
         Py_ssize_t stop, step;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)key, view->len,
+        if (PySlice_GetIndicesEx((PySliceObject*)key, get_shape0(view),
                          &start, &stop, &step, &len) < 0) {
             return -1;
         }
@@ -681,7 +693,8 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
             view->obj->ob_type->tp_name, srcview.obj->ob_type->tp_name);
         goto _error;
     }
-    if (srcview.len != len) {
+    bytelen = len * view->itemsize;
+    if (bytelen != srcview.len) {
         PyErr_SetString(PyExc_ValueError,
             "cannot modify size of memoryview object");
         goto _error;
@@ -689,7 +702,6 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
     /* Do the actual copy */
     destbuf = (char *) view->buf + start * view->itemsize;
     srcbuf = (char *) srcview.buf;
-    bytelen = len * view->itemsize;
     if (destbuf + bytelen < srcbuf || srcbuf + bytelen < destbuf)
         /* No overlapping */
         memcpy(destbuf, srcbuf, bytelen);
