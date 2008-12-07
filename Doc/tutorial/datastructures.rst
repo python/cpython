@@ -376,7 +376,7 @@ Here is a brief demonstration::
 
    >>> basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
    >>> print(basket)
-   {'orange', 'bananna', 'pear', 'apple'}
+   {'orange', 'banana', 'pear', 'apple'}
    >>> fruit = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> fruit = set(basket)               # create a set without duplicates
    >>> fruit
