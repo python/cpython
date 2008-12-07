@@ -1033,9 +1033,8 @@ class PyBuildExt(build_ext):
                         'dbm', ['dbmmodule.c'],
                         define_macros=[('HAVE_GDBM_DASH_NDBM_H',None)],
                         libraries = gdbm_libs ) )
-                exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       define_macros=[('HAVE_GDBM_NDBM_H',None)],
-                                       libraries = ['gdbm'] ) )
+                else:
+                    missing.append('dbm')
             elif db_incs is not None:
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        library_dirs=dblib_dir,
