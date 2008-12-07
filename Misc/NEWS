@@ -16,6 +16,9 @@ Core and Builtins
   growing read buffer. Fixed by using the same growth rate algorithm as
   Python 2.x.
 
+- Issue #4509: Various issues surrounding resize of bytearray objects to
+  which there are buffer exports (e.g. memoryview instances).
+
 
 Library
 -------
