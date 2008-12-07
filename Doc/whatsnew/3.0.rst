@@ -383,10 +383,11 @@ New Syntax
 * New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
   literals (``0720``) are gone.
 
-* New binary literals, e.g. ``0b1010`` (already in 2.6).
+* New binary literals, e.g. ``0b1010`` (already in 2.6) and a new
+  corresponding builtin function, :func:`bin`.
 
 * Bytes literals are introduced with a leading ``b`` or ``B``, and
-  there is a new corresponding builtin function, :func:`bin`.
+  there is a new corresponding builtin function, :func:`bytes`.
 
 Changed Syntax
 --------------
