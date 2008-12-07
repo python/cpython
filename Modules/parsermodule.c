@@ -2057,6 +2057,7 @@ validate_for(node *tree)
 
 /*  try_stmt:
  *      'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
+                                                   ['finally' ':' suite]
  *    | 'try' ':' suite 'finally' ':' suite
  *
  */
@@ -2082,35 +2083,34 @@ validate_try(node *tree)
         PyErr_Format(parser_error,
                      "Illegal number of children for try/%s node.", name);
     }
-    /*  Skip past except_clause sections:  */
+    /* Handle try/finally statement */
+    if (res && (TYPE(CHILD(tree, pos)) == NAME) &&
+        (strcmp(STR(CHILD(tree, pos)), "finally") == 0)) {
+        res = (validate_numnodes(tree, 6, "try/finally")
+               && validate_colon(CHILD(tree, 4))
+               && validate_suite(CHILD(tree, 5)));
+        return (res);
+    }
+    /* try/except statement: skip past except_clause sections */
     while (res && (TYPE(CHILD(tree, pos)) == except_clause)) {
         res = (validate_except_clause(CHILD(tree, pos))
                && validate_colon(CHILD(tree, pos + 1))
                && validate_suite(CHILD(tree, pos + 2)));
         pos += 3;
     }
-    if (res && (pos < nch)) {
-        res = validate_ntype(CHILD(tree, pos), NAME);
-        if (res && (strcmp(STR(CHILD(tree, pos)), "finally") == 0))
-            res = (validate_numnodes(tree, 6, "try/finally")
-                   && validate_colon(CHILD(tree, 4))
-                   && validate_suite(CHILD(tree, 5)));
-        else if (res) {
-            if (nch == (pos + 3)) {
-                res = ((strcmp(STR(CHILD(tree, pos)), "except") == 0)
-                       || (strcmp(STR(CHILD(tree, pos)), "else") == 0));
-                if (!res)
-                    err_string("illegal trailing triple in try statement");
-            }
-            else if (nch == (pos + 6)) {
-                res = (validate_name(CHILD(tree, pos), "except")
-                       && validate_colon(CHILD(tree, pos + 1))
-                       && validate_suite(CHILD(tree, pos + 2))
-                       && validate_name(CHILD(tree, pos + 3), "else"));
-            }
-            else
-                res = validate_numnodes(tree, pos + 3, "try/except");
-        }
+    /* skip else clause */
+    if (res && (TYPE(CHILD(tree, pos)) == NAME) &&
+        (strcmp(STR(CHILD(tree, pos)), "else") == 0)) {
+        res = (validate_colon(CHILD(tree, pos + 1))
+               && validate_suite(CHILD(tree, pos + 2)));
+        pos += 3;
+    }
+    if (res && pos < nch) {
+        /* last clause must be a finally */
+        res = (validate_name(CHILD(tree, pos), "finally")
+               && validate_numnodes(tree, pos + 3, "try/except/finally")
+               && validate_colon(CHILD(tree, pos + 1))
+               && validate_suite(CHILD(tree, pos + 2)));
     }
     return (res);
 }
