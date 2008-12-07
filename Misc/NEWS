@@ -19,6 +19,8 @@ Core and Builtins
 - Issue #4509: Various issues surrounding resize of bytearray objects to
   which there are buffer exports (e.g. memoryview instances).
 
+- Issue #4569: Interpreter crash when mutating a memoryview with an item size
+  larger than 1.
 
 Library
 -------
