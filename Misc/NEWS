@@ -31,6 +31,15 @@ Library
 - Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat
   libs.
 
+- Issue #4529: fix the parser module's validation of try-except-finally
+  statements.
+
+- Issue #4458: getopt.gnu_getopt() now recognizes a single "-" as an argument,
+  not a malformed option.
+
+- Added the subprocess.check_output() convenience function to get output
+  from a subprocess on success or raise an exception on error.
+
 - Issue #4542: On Windows, binascii.crc32 still accepted str as binary input;
   the corresponding tests now pass.
 
