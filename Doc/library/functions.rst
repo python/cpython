@@ -1363,8 +1363,6 @@ available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: ihooks
-      module: rexec
       module: imp
 
    .. note::
@@ -1372,46 +1370,64 @@ available.  They are listed here in alphabetical order.
       This is an advanced function that is not needed in everyday Python
       programming.
 
-   The function is invoked by the :keyword:`import` statement.  It mainly exists
-   so that you can replace it with another function that has a compatible
-   interface, in order to change the semantics of the :keyword:`import` statement.
-   See the built-in module :mod:`imp`, which defines some useful operations out
-   of which you can build your own :func:`__import__` function.
+   This function is invoked by the :keyword:`import` statement.  It can be
+   replaced (by importing the :mod:`builtins` module and assigning to
+   ``builtins.__import__``) in order to change semantics of the
+   :keyword:`import` statement, but nowadays it is usually simpler to use import
+   hooks (see :pep:`302`).  Direct use of :func:`__import__` is rare, except in
+   cases where you want to import a module whose name is only known at runtime.
 
-   For example, the statement ``import spam`` results in the following call:
-   ``__import__('spam', globals(), locals(), [], -1)``; the statement
-   ``from spam.ham import eggs`` results in ``__import__('spam.ham', globals(),
-   locals(), ['eggs'], -1)``.  Note that even though ``locals()`` and ``['eggs']``
-   are passed in as arguments, the :func:`__import__` function does not set the
-   local variable named ``eggs``; this is done by subsequent code that is generated
-   for the import statement.  (In fact, the standard implementation does not use
-   its *locals* argument at all, and uses its *globals* only to determine the
-   package context of the :keyword:`import` statement.)
+   The function imports the module *name*, potentially using the given *globals*
+   and *locals* to determine how to interpret the name in a package context.
+   The *fromlist* gives the names of objects or submodules that should be
+   imported from the module given by *name*.  The standard implementation does
+   not use its *locals* argument at all, and uses its *globals* only to
+   determine the package context of the :keyword:`import` statement.
+
+   *level* specifies whether to use absolute or relative imports.  The default
+   is ``-1`` which indicates both absolute and relative imports will be
+   attempted.  ``0`` means only perform absolute imports.  Positive values for
+   *level* indicate the number of parent directories to search relative to the
+   directory of the module calling :func:`__import__`.
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the
    module named by *name*.  However, when a non-empty *fromlist* argument is
-   given, the module named by *name* is returned.  This is done for
-   compatibility with the :term:`bytecode` generated for the different kinds of import
-   statement; when using ``import spam.ham.eggs``, the top-level package
-   :mod:`spam` must be placed in the importing namespace, but when using ``from
-   spam.ham import eggs``, the ``spam.ham`` subpackage must be used to find the
-   ``eggs`` variable.  As a workaround for this behavior, use :func:`getattr` to
-   extract the desired components.  For example, you could define the following
-   helper::
+   given, the module named by *name* is returned.
 
-      def my_import(name):
-          mod = __import__(name)
-          components = name.split('.')
-          for comp in components[1:]:
-              mod = getattr(mod, comp)
-          return mod
+   For example, the statement ``import spam`` results in bytecode resembling the
+   following code::
+   
+      spam = __import__('spam', globals(), locals(), [], -1)
 
-   *level* specifies whether to use absolute or relative imports. The default is
-   ``-1`` which indicates both absolute and relative imports will be attempted.
-   ``0`` means only perform absolute imports. Positive values for *level* indicate
-   the number of parent directories to search relative to the directory of the
-   module calling :func:`__import__`.
+   The statement ``import spam.ham`` results in this call::
+
+      spam = __import__('spam.ham', globals(), locals(), [], -1)
+
+   Note how :func:`__import__` returns the toplevel module here because this is
+   the object that is bound to a name by the :keyword:`import` statement.
+
+   On the other hand, the statement ``from spam.ham import eggs, sausage as
+   saus`` results in ::
+
+      _temp = __import__('spam.ham', globals(), locals(), ['eggs', 'sausage'], -1)
+      eggs = _temp.eggs
+      saus = _temp.sausage
+
+   Here, the ``spam.ham`` module is returned from :func:`__import__`.  From this
+   object, the names to import are retrieved and assigned to their respective
+   names.
+
+   If you simply want to import a module (potentially within a package) by name,
+   you can get it from :data:`sys.modules`::
+
+      >>> import sys
+      >>> name = 'foo.bar.baz'
+      >>> __import__(name)
+      <module 'foo' from ...>
+      >>> baz = sys.modules[name]
+      >>> baz
+      <module 'foo.bar.baz' from ...>
 
    .. versionchanged:: 2.5
       The level parameter was added.
