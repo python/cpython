@@ -124,6 +124,11 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(opts, [('-a', ''), ('-b', '1'),
                                 ('--alpha', ''), ('--beta', '2')])
 
+        # recognize "-" as an argument
+        opts, args = getopt.gnu_getopt(['-a', '-', '-b', '-'], 'ab:', [])
+        self.assertEqual(args, ['-'])
+        self.assertEqual(opts, [('-a', ''), ('-b', '-')])
+
         # Posix style via +
         opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
