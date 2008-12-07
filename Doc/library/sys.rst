@@ -711,9 +711,9 @@ always available.
 
    .. note::
 
-      The standard streams are text in text mode by default.  To write or read
-      binary data to these, use the underlying binary buffer.  For example, to
-      write bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.
+      The standard streams are in text mode by default.  To write or read binary
+      data to these, use the underlying binary buffer.  For example, to write
+      bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.
 
 
 .. data:: __stdin__
