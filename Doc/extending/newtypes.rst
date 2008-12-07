@@ -265,7 +265,7 @@ allocation and deallocation.  At a minimum, we need a deallocation method::
    {
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
-       self->ob_type->tp_free((PyObject*)self);
+       Py_TYPE(self)->tp_free((PyObject*)self);
    }
 
 which is assigned to the :attr:`tp_dealloc` member::
@@ -759,7 +759,7 @@ to use it::
    Noddy_dealloc(Noddy* self)
    {
        Noddy_clear(self);
-       self->ob_type->tp_free((PyObject*)self);
+       Py_TYPE(self)->tp_free((PyObject*)self);
    }
 
 Notice the use of a temporary variable in :cfunc:`Noddy_clear`. We use the
@@ -952,7 +952,7 @@ needs to be freed here as well.  Here is an example of this function::
    newdatatype_dealloc(newdatatypeobject * obj)
    {
        free(obj->obj_UnderlyingDatatypePtr);
-       obj->ob_type->tp_free(obj);
+       Py_TYPE(obj)->tp_free(obj);
    }
 
 .. index::
@@ -995,7 +995,7 @@ done.  This can be done using the :cfunc:`PyErr_Fetch` and
 
            Py_DECREF(self->my_callback);
        }
-       obj->ob_type->tp_free((PyObject*)self);
+       Py_TYPE(obj)->tp_free((PyObject*)self);
    }
 
 
