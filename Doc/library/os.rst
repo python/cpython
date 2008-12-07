@@ -567,10 +567,11 @@ by file descriptors.
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its :meth:`write`
       method.
 
-The following data items are available for use in constructing the *flags*
-parameter to the :func:`open` function.  Some items will not be available on all
-platforms.  For descriptions of their availability and use, consult
-:manpage:`open(2)`.
+The following constants are options for the *flags* parameter to the
+:func:`open` function.  They can be combined using the bitwise OR operator
+``|``.  Some of them are not available on all platforms.  For descriptions of
+their availability and use, consult the :manpage:`open(2)` manual page on Unix
+or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>` on Windows.
 
 
 .. data:: O_RDONLY
@@ -581,8 +582,7 @@ platforms.  For descriptions of their availability and use, consult
           O_EXCL
           O_TRUNC
 
-   Options for the *flag* argument to the :func:`open` function. These can be
-   combined using the bitwise OR operator ``|``. Availability: Unix, Windows.
+   These constants are available on Unix and Windows.
 
 
 .. data:: O_DSYNC
@@ -594,8 +594,7 @@ platforms.  For descriptions of their availability and use, consult
           O_SHLOCK
           O_EXLOCK
 
-   More options for the *flag* argument to the :func:`open` function. Availability:
-   Unix.
+   These constants are only available on Unix.
 
 
 .. data:: O_BINARY
@@ -606,8 +605,7 @@ platforms.  For descriptions of their availability and use, consult
           O_SEQUENTIAL
           O_TEXT
 
-   Options for the *flag* argument to the :func:`open` function. These can be
-   combined using the bitwise OR operator ``|``. Availability: Windows.
+   These constants are only available on Windows.
 
 
 .. data:: O_ASYNC
@@ -616,8 +614,8 @@ platforms.  For descriptions of their availability and use, consult
           O_NOFOLLOW
           O_NOATIME
 
-   Options for the *flag* argument to the :func:`open` function. These are
-   GNU extensions and not present if they are not defined by the C library.
+   These constants are GNU extensions and not present if they are not defined by
+   the C library.
 
 
 .. data:: SEEK_SET

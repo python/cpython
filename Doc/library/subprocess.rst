@@ -68,13 +68,13 @@ This module defines one class called :class:`Popen`:
    specified by the :envvar:`COMSPEC` environment variable.
 
    *stdin*, *stdout* and *stderr* specify the executed programs' standard input,
-   standard output and standard error file handles, respectively.  Valid values are
-   ``PIPE``, an existing file descriptor (a positive integer), an existing file
-   object, and ``None``.  ``PIPE`` indicates that a new pipe to the child should be
-   created.  With ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be ``STDOUT``,
-   which indicates that the stderr data from the applications should be captured
-   into the same file handle as for stdout.
+   standard output and standard error file handles, respectively.  Valid values
+   are :data:`PIPE`, an existing file descriptor (a positive integer), an
+   existing file object, and ``None``.  :data:`PIPE` indicates that a new pipe
+   to the child should be created.  With ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.  Additionally,
+   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from the
+   applications should be captured into the same file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed. (Unix only)
@@ -113,6 +113,20 @@ This module defines one class called :class:`Popen`:
    underlying CreateProcess() function.  They can specify things such as appearance
    of the main window and priority for the new process.  (Windows only)
 
+
+.. data:: PIPE
+
+   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
+   to :class:`Popen` and indicates that a pipe to the standard stream should be
+   opened.
+
+
+.. data:: STDOUT
+
+   Special value that can be used as the *stderr* argument to :class:`Popen` and
+   indicates that standard error should go into the same handle as standard
+   output.
+   
 
 Convenience Functions
 ^^^^^^^^^^^^^^^^^^^^^
@@ -229,7 +243,7 @@ Instances of the :class:`Popen` class have the following methods:
    *input* argument should be a byte string to be sent to the child process, or
    ``None``, if no data should be sent to the child.
 
-   :meth:`communicate` returns a tuple ``(stdout, stderr)``.
+   :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
@@ -277,20 +291,21 @@ The following attributes are also available:
 
 .. attribute:: Popen.stdin
 
-   If the *stdin* argument is ``PIPE``, this attribute is a file object that
-   provides input to the child process.  Otherwise, it is ``None``.
+   If the *stdin* argument was :data:`PIPE`, this attribute is a file object
+   that provides input to the child process.  Otherwise, it is ``None``.
 
 
 .. attribute:: Popen.stdout
 
-   If the *stdout* argument is ``PIPE``, this attribute is a file object that
-   provides output from the child process.  Otherwise, it is ``None``.
+   If the *stdout* argument was :data:`PIPE`, this attribute is a file object
+   that provides output from the child process.  Otherwise, it is ``None``.
 
 
 .. attribute:: Popen.stderr
 
-   If the *stderr* argument is ``PIPE``, this attribute is file object that
-   provides error output from the child process.  Otherwise, it is ``None``.
+   If the *stderr* argument was :data:`PIPE`, this attribute is a file object
+   that provides error output from the child process.  Otherwise, it is
+   ``None``.
 
 
 .. attribute:: Popen.pid
@@ -374,8 +389,8 @@ A more realistic example would look like this::
        print("Execution failed:", e, file=sys.stderr)
 
 
-Replacing os.spawn\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing the os.spawn family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 P_NOWAIT example::
 
@@ -402,8 +417,8 @@ Environment example::
    Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen\*
-^^^^^^^^^^^^^^^^^^^^
+Replacing os.popen
+^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -416,4 +431,3 @@ Replacing os.popen\*
    pipe = os.popen(cmd, 'w', bufsize)
    ==>
    pipe = Popen(cmd, shell=True, bufsize=bufsize, stdin=PIPE).stdin
-

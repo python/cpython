@@ -116,7 +116,9 @@ Glossary
          def f(...):
              ...
 
-      The same concept exists for classes, but is less commonly used there.
+      The same concept exists for classes, but is less commonly used there.  See
+      the documentation for :ref:`function definitions <function>` and
+      :ref:`class definitions <class>` for more about decorators.
 
    descriptor
       Any object which defines the methods :meth:`__get__`, :meth:`__set__`, or
@@ -478,6 +480,12 @@ Glossary
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
+
+   special method
+      A method that is called implicitly by Python to execute a certain
+      operation on a type, such as addition.  Such methods have names starting
+      and ending with double underscores.  Special methods are documented in
+      :ref:`specialnames`.
 
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
