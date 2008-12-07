@@ -189,12 +189,11 @@ Python 3.0 has simplified the rules for ordering comparisons:
   argument instead. N.B. the *key* and *reverse* arguments are now
   "keyword-only".
 
-* The :func:`cmp` function is gone, and the :meth:`__cmp__` special
-  method is no longer supported.  Use :meth:`__lt__` for sorting,
-  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as
-  needed.  (If you really need the :func:`cmp` functionality, you
-  could use the expression ``(a > b) - (a < b)`` as the equivalent for
-  ``cmp(a, b)``.)
+* The :func:`cmp` function should be treated as gone, and the :meth:`__cmp__`
+  special method is no longer supported.  Use :meth:`__lt__` for sorting,
+  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as needed.
+  (If you really need the :func:`cmp` functionality, you could use the
+  expression ``(a > b) - (a < b)`` as the equivalent for ``cmp(a, b)``.)
 
 Integers
 --------
@@ -303,7 +302,7 @@ changed.
   as well as strings, and a few APIs have a way to ask for a
   :class:`bytes` return value.  Thus, :func:`os.listdir` returns a
   list of :class:`bytes` instances if the argument is a :class:`bytes`
-  instance, and :func:`os.getcwdu` returns the current working
+  instance, and :func:`os.getcwdb` returns the current working
   directory as a :class:`bytes` instance.  Note that when
   :func:`os.listdir` returns a list of strings, filenames that
   cannot be decoded properly are omitted rather than raising
@@ -369,7 +368,7 @@ New Syntax
 
     (a, *rest, b) = range(5)
 
-  This sets *a* to ``0``, *b* to ``4``, and \*rest to ``[1, 2, 3]``.
+  This sets *a* to ``0``, *b* to ``4``, and *rest* to ``[1, 2, 3]``.
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
   same thing as ``dict(stuff)`` but is more flexible.  (This is
@@ -383,8 +382,8 @@ New Syntax
 * New octal literals, e.g. ``0o720`` (already in 2.6).  The old octal
   literals (``0720``) are gone.
 
-* New binary literals, e.g. ``0b1010`` (already in 2.6) and a new
-  corresponding builtin function, :func:`bin`.
+* New binary literals, e.g. ``0b1010`` (already in 2.6), and
+  there is a new corresponding builtin function, :func:`bin`.
 
 * Bytes literals are introduced with a leading ``b`` or ``B``, and
   there is a new corresponding builtin function, :func:`bytes`.
@@ -393,7 +392,7 @@ Changed Syntax
 --------------
 
 * :pep:`3109` and :pep:`3134`: new :keyword:`raise` statement syntax:
-  ``raise [expr [from expr]]``.  See below.
+  :samp:`raise [{expr} [from {expr}]]`.  See below.
 
 * :keyword:`as` and :keyword:`with` are now reserved words.  (Since
   2.6, actually.)
@@ -422,8 +421,8 @@ Changed Syntax
   :class:`object`.)
 
 * List comprehensions no longer support the syntactic form
-  ``[... for var in item1, item2, ...]``.  Use
-  ``[... for var in (item1, item2, ...)]`` instead.
+  :samp:`[... for {var} in {item1}, {item2}, ...]`.  Use
+  :samp:`[... for {var} in ({item1}, {item2}, ...)]` instead.
   Also note that list comprehensions have different semantics: they
   are closer to syntactic sugar for a generator expression inside a
   :func:`list` constructor, and in particular the loop control
@@ -457,10 +456,8 @@ Removed Syntax
 * The :keyword:`from` *module* :keyword:`import` ``*`` syntax is only
   allowed at the module level, no longer inside functions.
 
-* The only acceptable syntaxes for relative imports are :keyword:`from`
-  ``.`` :keyword:`import` *name* or 
-  :keyword:`from` ``.module`` :keyword:`import` *name*.   
-  :keyword:`import` forms not starting with ``.`` are always
+* The only acceptable syntax for relative imports is :samp:`from .[{module}]
+  import {name}`.  All :keyword:`import` forms not starting with ``.`` are
   interpreted as absolute imports.  (:pep:`0328`)
 
 * Classic classes are gone.
@@ -627,7 +624,9 @@ Some other changes to standard library modules, not covered by
 
 * Cleanup of the :class:`array.array` type: the :meth:`read` and
   :meth:`write` methods are gone; use :meth:`fromfile` and
-  :meth:`tofile` instead.
+  :meth:`tofile` instead.  Also, the ``'c'`` typecode for array is
+  gone -- use either ``'b'`` for bytes or ``'u'`` for Unicode
+  characters.
 
 * Cleanup of the :mod:`operator` module: removed
   :func:`sequenceIncludes` and :func:`isCallable`.

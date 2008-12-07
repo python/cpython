@@ -119,12 +119,11 @@ contains the current module's global names; and the outermost scope (searched
 last) is the namespace containing built-in names.
 
 If a name is declared global, then all references and assignments go directly to
-the middle scope containing the module's global names. Otherwise, all variables
-found outside of the innermost scope are read-only (an attempt to write to such
-a variable will simply create a *new* local variable in the innermost scope,
-leaving the identically named outer variable unchanged).
-
-.. XXX mention nonlocal
+the middle scope containing the module's global names.  To rebind variables
+found outside of the innermost scope, the :keyword:`nonlocal` statement can be
+used; if not declared nonlocal, those variable are read-only (an attempt to
+write to such a variable will simply create a *new* local variable in the
+innermost scope, leaving the identically named outer variable unchanged).
 
 Usually, the local scope references the local names of the (textually) current
 function.  Outside functions, the local scope references the same namespace as

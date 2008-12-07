@@ -8,59 +8,6 @@ The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
 
-.. function:: __import__(name[, globals[, locals[, fromlist[, level]]]])
-
-   .. index::
-      statement: import
-      module: imp
-
-   .. note::
-
-      This is an advanced function that is not needed in everyday Python
-      programming.
-
-   The function is invoked by the :keyword:`import` statement.  It mainly exists
-   so that you can replace it with another function that has a compatible
-   interface, in order to change the semantics of the :keyword:`import`
-   statement.  See the built-in module :mod:`imp`, which defines some useful
-   operations out of which you can build your own :func:`__import__` function.
-
-   For example, the statement ``import spam`` results in the following call:
-   ``__import__('spam', globals(), locals(), [], -1)``; the statement
-   ``from spam.ham import eggs`` results in ``__import__('spam.ham', globals(),
-   locals(), ['eggs'], -1)``.  Note that even though ``locals()`` and ``['eggs']``
-   are passed in as arguments, the :func:`__import__` function does not set the
-   local variable named ``eggs``; this is done by subsequent code that is generated
-   for the import statement.  (In fact, the standard implementation does not use
-   its *locals* argument at all, and uses its *globals* only to determine the
-   package context of the :keyword:`import` statement.)
-
-   When the *name* variable is of the form ``package.module``, normally, the
-   top-level package (the name up till the first dot) is returned, *not* the
-   module named by *name*.  However, when a non-empty *fromlist* argument is
-   given, the module named by *name* is returned.  This is done for
-   compatibility with the :term:`bytecode` generated for the different kinds of import
-   statement; when using ``import spam.ham.eggs``, the top-level package
-   :mod:`spam` must be placed in the importing namespace, but when using ``from
-   spam.ham import eggs``, the ``spam.ham`` subpackage must be used to find the
-   ``eggs`` variable.  As a workaround for this behavior, use :func:`getattr` to
-   extract the desired components.  For example, you could define the following
-   helper::
-
-      def my_import(name):
-          mod = __import__(name)
-          components = name.split('.')
-          for comp in components[1:]:
-              mod = getattr(mod, comp)
-          return mod
-
-   *level* specifies whether to use absolute or relative imports. The default is
-   ``-1`` which indicates both absolute and relative imports will be attempted.
-   ``0`` means only perform absolute imports. Positive values for *level* indicate
-   the number of parent directories to search relative to the directory of the
-   module calling :func:`__import__`.
-
-
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
@@ -1207,11 +1154,64 @@ are always available.  They are listed here in alphabetical order.
       >>> x = [1, 2, 3]
       >>> y = [4, 5, 6]
       >>> zipped = zip(x, y)
-      >>> zipped
+      >>> list(zipped)
       [(1, 4), (2, 5), (3, 6)]
-      >>> x2, y2 = zip(*zipped)
+      >>> x2, y2 = zip(*zip(x, y))
       >>> x == x2, y == y2
       True
+
+
+.. function:: __import__(name[, globals[, locals[, fromlist[, level]]]])
+
+   .. index::
+      statement: import
+      module: imp
+
+   .. note::
+
+      This is an advanced function that is not needed in everyday Python
+      programming.
+
+   The function is invoked by the :keyword:`import` statement.  It mainly exists
+   so that you can replace it with another function that has a compatible
+   interface, in order to change the semantics of the :keyword:`import`
+   statement.  See the built-in module :mod:`imp`, which defines some useful
+   operations out of which you can build your own :func:`__import__` function.
+
+   For example, the statement ``import spam`` results in the following call:
+   ``__import__('spam', globals(), locals(), [], -1)``; the statement
+   ``from spam.ham import eggs`` results in ``__import__('spam.ham', globals(),
+   locals(), ['eggs'], -1)``.  Note that even though ``locals()`` and ``['eggs']``
+   are passed in as arguments, the :func:`__import__` function does not set the
+   local variable named ``eggs``; this is done by subsequent code that is generated
+   for the import statement.  (In fact, the standard implementation does not use
+   its *locals* argument at all, and uses its *globals* only to determine the
+   package context of the :keyword:`import` statement.)
+
+   When the *name* variable is of the form ``package.module``, normally, the
+   top-level package (the name up till the first dot) is returned, *not* the
+   module named by *name*.  However, when a non-empty *fromlist* argument is
+   given, the module named by *name* is returned.  This is done for
+   compatibility with the :term:`bytecode` generated for the different kinds of import
+   statement; when using ``import spam.ham.eggs``, the top-level package
+   :mod:`spam` must be placed in the importing namespace, but when using ``from
+   spam.ham import eggs``, the ``spam.ham`` subpackage must be used to find the
+   ``eggs`` variable.  As a workaround for this behavior, use :func:`getattr` to
+   extract the desired components.  For example, you could define the following
+   helper::
+
+      def my_import(name):
+          mod = __import__(name)
+          components = name.split('.')
+          for comp in components[1:]:
+              mod = getattr(mod, comp)
+          return mod
+
+   *level* specifies whether to use absolute or relative imports. The default is
+   ``-1`` which indicates both absolute and relative imports will be attempted.
+   ``0`` means only perform absolute imports. Positive values for *level* indicate
+   the number of parent directories to search relative to the directory of the
+   module calling :func:`__import__`.
 
 
 .. rubric:: Footnotes

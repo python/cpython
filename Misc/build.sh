@@ -46,7 +46,7 @@ DIR=`dirname $DIR`
 
 FAILURE_SUBJECT="Python Regression Test Failures"
 #FAILURE_MAILTO="YOUR_ACCOUNT@gmail.com"
-FAILURE_MAILTO="python-3000-checkins@python.org"
+FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"

@@ -32,7 +32,6 @@ Shoddy_init(Shoddy *self, PyObject *args, PyObject *kwds)
 
 static PyTypeObject ShoddyType = {
     PyObject_HEAD_INIT(NULL)
-    0,                       /* ob_size */
     "shoddy.Shoddy",         /* tp_name */
     sizeof(Shoddy),          /* tp_basicsize */
     0,                       /* tp_itemsize */
@@ -52,7 +51,7 @@ static PyTypeObject ShoddyType = {
     0,                       /* tp_setattro */
     0,                       /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-      Py_TPFLAGS_BASETYPE,   /* tp_flags */
+        Py_TPFLAGS_BASETYPE, /* tp_flags */
     0,                       /* tp_doc */
     0,                       /* tp_traverse */
     0,                       /* tp_clear */
@@ -73,18 +72,26 @@ static PyTypeObject ShoddyType = {
     0,                       /* tp_new */
 };
 
+static PyModuleDef shoddymodule = {
+    PyModuleDef_HEAD_INIT,
+    "shoddy",
+    "Shoddy module",
+    -1,
+    NULL, NULL, NULL, NULL, NULL
+};
+
 PyMODINIT_FUNC
-initshoddy(void)
+PyInit_shoddy(void)
 {
     PyObject *m;
 
     ShoddyType.tp_base = &PyList_Type;
     if (PyType_Ready(&ShoddyType) < 0)
-        return;
+        return NULL;
 
-    m = Py_InitModule3("shoddy", NULL, "Shoddy module");
+    m = PyModule_Create(&shoddymodule);
     if (m == NULL)
-        return;
+        return NULL;
 
     Py_INCREF(&ShoddyType);
     PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
