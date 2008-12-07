@@ -98,7 +98,7 @@ Source Code
 -----------
 
 Literal code blocks are introduced by ending a paragraph with the special marker
-``::``.  The literal block must be indented, to be able to include blank lines::
+``::``.  The literal block must be indented::
 
    This is a normal text paragraph. The next paragraph is a code sample::
 

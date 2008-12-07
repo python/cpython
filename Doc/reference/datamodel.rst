@@ -2370,7 +2370,7 @@ the instance when looking up special methods::
    True
 
 In addition to bypassing any instance attributes in the interest of
-correctness, implicit special method lookup may also bypass the
+correctness, implicit special method lookup generally also bypasses the
 :meth:`__getattribute__` method even of the object's metaclass::
 
    >>> class Meta(type):
