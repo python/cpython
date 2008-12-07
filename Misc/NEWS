@@ -20,6 +20,9 @@ Core and Builtins
 - Issue #3689: The list reversed iterator now supports __length_hint__
   instead of __len__.  Behavior now matches other reversed iterators.
 
+- Issue #4509: Various issues surrounding resize of bytearray objects to
+  which there are buffer exports.
+
 Library
 -------
 
