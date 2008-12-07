@@ -130,7 +130,7 @@ def gnu_getopt(args, shortopts, longopts = []):
 
         if args[0][:2] == '--':
             opts, args = do_longs(opts, args[0][2:], longopts, args[1:])
-        elif args[0][:1] == '-':
+        elif args[0][:1] == '-' and args[0] != '-':
             opts, args = do_shorts(opts, args[0][1:], shortopts, args[1:])
         else:
             if all_options_first:
