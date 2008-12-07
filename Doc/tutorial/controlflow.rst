@@ -113,8 +113,8 @@ increment (even negative; sometimes this is called the 'step')::
     range(-10, -100, -30) 
       -10, -40, -70
 
-To iterate over the indices of a sequence, combine :func:`range` and :func:`len`
-as follows::
+To iterate over the indices of a sequence, you can combine :func:`range` and
+:func:`len` as follows::
 
    >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
    >>> for i in range(len(a)):
@@ -125,6 +125,9 @@ as follows::
    2 a
    3 little
    4 lamb
+
+In most such cases, however, it is convenient to use the :func:`enumerate`
+function, see :ref:`tut-loopidioms`.
 
 A strange thing happens if you just print a range::
 
@@ -147,6 +150,7 @@ is another; it creates lists from iterables::
    [0, 1, 2, 3, 4]
 
 Later we will see more functions that return iterables and take iterables as argument.
+
 
 .. _tut-break:
 

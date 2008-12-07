@@ -9,7 +9,7 @@ __revision__ = "$Id$"
 
 import string, re
 
-__all__ = ['TextWrapper', 'wrap', 'fill']
+__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent']
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that in
