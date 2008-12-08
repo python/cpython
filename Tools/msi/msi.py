@@ -115,6 +115,8 @@ pythondll_uuid = {
 
 # Compute the name that Sphinx gives to the docfile
 docfile = ""
+if micro:
+    docfile = str(micro)
 if level < 0xf:
     docfile = '%x%s' % (level, serial)
 docfile = 'python%s%s%s.chm' % (major, minor, docfile)
