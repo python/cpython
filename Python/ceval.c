@@ -1049,6 +1049,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			Py_FatalError("invalid argument to DUP_TOPX"
 				      " (bytecode corruption?)");
+			/* Never returns, so don't bother to set why. */
 			break;
 
 		case UNARY_POSITIVE:
@@ -1642,9 +1643,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case PRINT_NEWLINE:
 			if (stream == NULL || stream == Py_None) {
 				w = PySys_GetObject("stdout");
-				if (w == NULL)
+				if (w == NULL) {
 					PyErr_SetString(PyExc_RuntimeError,
 							"lost sys.stdout");
+					why = WHY_EXCEPTION;
+				}
 			}
 			if (w != NULL) {
 				/* w.write() may replace sys.stdout, so we
@@ -1870,6 +1873,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when loading %s",
 					     PyObject_REPR(w));
+				why = WHY_EXCEPTION;
 				break;
 			}
 			if (PyDict_CheckExact(v)) {
@@ -2459,7 +2463,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(v);
 			if (x != NULL) {
 				v = POP();
-				err = PyFunction_SetClosure(x, v);
+				if (PyFunction_SetClosure(x, v) != 0) {
+					/* Can't happen unless bytecode is corrupt. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 			}
 			if (x != NULL && oparg > 0) {
@@ -2473,7 +2480,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					w = POP();
 					PyTuple_SET_ITEM(v, oparg, w);
 				}
-				err = PyFunction_SetDefaults(x, v);
+				if (PyFunction_SetDefaults(x, v) != 0) {
+					/* Can't happen unless
+                                           PyFunction_SetDefaults changes. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 			}
 			PUSH(x);
