@@ -587,7 +587,7 @@ def buildPythonDocs():
 
     novername = 'python-docs-html.tar.bz2'
     name = 'html-%s.tar.bz2'%(getFullVersion(),)
-    sourceArchive = os.path.join(DEPSRC, name)
+    sourceArchive = os.path.join(DEPSRC, novername)
     if os.path.exists(sourceArchive):
         print "Using local copy of %s"%(name,)
 
