@@ -223,11 +223,17 @@ Python extension.  For example::
        NULL, NULL, NULL, NULL
    };
 
+   static PyObject*
+   PyInit_emb(void)
+   {
+       return PyModule_Create(&EmbModule);
+   }
+
 Insert the above code just above the :cfunc:`main` function. Also, insert the
-following two statements directly after :cfunc:`Py_Initialize`::
+following two statements before the call to :cfunc:`Py_Initialize`::
 
    numargs = argc;
-   PyModule_Create(&EmbModule);
+   PyImport_AppendInittab("emb", &PyInit_emb);
 
 These two lines initialize the ``numargs`` variable, and make the
 :func:`emb.numargs` function accessible to the embedded Python interpreter.
