@@ -342,7 +342,7 @@ satisfactorily. The init function must return the module object to its caller,
 so that it then gets inserted into ``sys.modules``.
 
 When embedding Python, the :cfunc:`PyInit_spam` function is not called
-automatically unless there's an entry in the :cdata:`_PyImport_Inittab` table.
+automatically unless there's an entry in the :cdata:`PyImport_Inittab` table.
 To add the module to the initialization table, use :cfunc:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 
