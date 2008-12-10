@@ -341,6 +341,20 @@ class StdoutTests(unittest.TestCase):
         finally:
             sys.stdout = save_stdout
 
+    def test_del_stdout_before_print(self):
+        # Issue 4597: 'print' with no argument wasn't reporting when
+        # sys.stdout was deleted.
+        save_stdout = sys.stdout
+        del sys.stdout
+        try:
+            print
+        except RuntimeError, e:
+            self.assertEquals(str(e), "lost sys.stdout")
+        else:
+            self.fail("Expected RuntimeError")
+        finally:
+            sys.stdout = save_stdout
+
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.

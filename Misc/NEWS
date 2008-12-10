@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #4597: Fixed several opcodes that weren't always propagating
+  exceptions.
+
 - Issue #4589: Propagated an exception thrown by a context manager's
   __exit__ method's result while it's being converted to bool.
 
