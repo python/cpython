@@ -12,6 +12,9 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Issue #4597: Fixed exception handling when the __exit__ function of a
+  context manager returns a value that cannot be converted to a bool.
+
 - Issue #4533: File read operation was dreadfully slow due to a slowly
   growing read buffer. Fixed by using the same growth rate algorithm as
   Python 2.x.
