@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4597: Fixed several opcodes that weren't always propagating
+  exceptions.
+
 - Issue #4445: Replace "sizeof(PyStringObject)" with
   "offsetof(PyStringObject, ob_sval) + 1" when allocating memory for
   str instances.  On a typical machine this saves 3 bytes of memory
