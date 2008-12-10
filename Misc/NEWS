@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #4589: Propagated an exception thrown by a context manager's
+  __exit__ method's result while it's being converted to bool.
+
 - Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
 
 - Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
