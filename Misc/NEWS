@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4597: Fixed exception handling when the __exit__ function of a
+  context manager returns a value that cannot be converted to a bool.
+
 - Issue #4445: Replace "sizeof(PyBytesObject)" with
   "offsetof(PyBytesObject, ob_sval) + 1" when allocating memory for
   bytes instances.  On a typical machine this saves 3 bytes of memory

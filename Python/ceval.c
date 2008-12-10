@@ -2189,7 +2189,17 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(exit_func);
 			if (x == NULL)
 				break; /* Go to error exit */
-			if (u != Py_None && PyObject_IsTrue(x)) {
+
+			if (u != Py_None)
+				err = PyObject_IsTrue(x);
+			else
+				err = 0;
+			Py_DECREF(x);
+
+			if (err < 0)
+				break; /* Go to error exit */
+			else if (err > 0) {
+				err = 0;
 				/* There was an exception and a True return */
 				STACKADJ(-2);
 				SET_TOP(PyLong_FromLong((long) WHY_SILENCED));
@@ -2197,7 +2207,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				Py_DECREF(v);
 				Py_DECREF(w);
 			}
-			Py_DECREF(x);
 			PREDICT(END_FINALLY);
 			break;
 		}
