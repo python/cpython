@@ -104,6 +104,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1776581 and #4302. Minor corrections to smtplib.
+
 - Issue #3774: Fixed an error when create a Tkinter menu item without command
   and then remove it.
 
