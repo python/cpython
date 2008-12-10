@@ -503,6 +503,36 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
 
         self.assertRaises(GeneratorExit, shouldThrow)
 
+    def testErrorsInBool(self):
+        # issue4589: __exit__ return code may raise an exception
+        # when looking at its truth value.
+
+        class cm(object):
+            def __init__(self, bool_conversion):
+                class Bool:
+                    def __nonzero__(self):
+                        return bool_conversion()
+                self.exit_result = Bool()
+            def __enter__(self):
+                return 3
+            def __exit__(self, a, b, c):
+                return self.exit_result
+
+        def trueAsBool():
+            with cm(lambda: True):
+                self.fail("Should NOT see this")
+        trueAsBool()
+
+        def falseAsBool():
+            with cm(lambda: False):
+                self.fail("Should raise")
+        self.assertRaises(AssertionError, falseAsBool)
+
+        def failAsBool():
+            with cm(lambda: 1//0):
+                self.fail("Should NOT see this")
+        self.assertRaises(ZeroDivisionError, failAsBool)
+
 
 class NonLocalFlowControlTestCase(unittest.TestCase):
 
