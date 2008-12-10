@@ -2263,9 +2263,16 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			x = PyObject_CallFunctionObjArgs(x, u, v, w, NULL);
 			if (x == NULL)
 				break; /* Go to error exit */
-			if (u != Py_None && PyObject_IsTrue(x)) {
+			if (u != Py_None)
+				err = PyObject_IsTrue(x);
+			else
+				err = 0;
+			Py_DECREF(x);
+			if (err < 0)
+				break; /* Go to error exit */
+			else if (err > 0) {
+				err = 0;
 				/* There was an exception and a true return */
-				Py_DECREF(x);
 				x = TOP(); /* Again */
 				STACKADJ(-3);
 				Py_INCREF(Py_None);
@@ -2276,7 +2283,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				Py_DECREF(w);
 			} else {
 				/* Let END_FINALLY do its thing */
-				Py_DECREF(x);
 				x = POP();
 				Py_DECREF(x);
 			}
