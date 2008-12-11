@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #2173: When getting device encoding, check that return value of
+  nl_langinfo is not the empty string.  This was causing silent build
+  failures on OS X.
+
 - Issue #4597: Fixed several opcodes that weren't always propagating
   exceptions.
 
