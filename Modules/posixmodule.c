@@ -6724,7 +6724,7 @@ device_encoding(PyObject *self, PyObject *args)
 #elif defined(CODESET)
 	{
 		char *codeset = nl_langinfo(CODESET);
-		if (codeset)
+		if (codeset != NULL && codeset[0] != 0)
 			return PyUnicode_FromString(codeset);
 	}
 #endif
