@@ -154,6 +154,23 @@ extr1301 fma Inf 0 sNaN456 -> NaN Invalid_operation
 extr1302 fma 0E123 -Inf sNaN789 -> NaN Invalid_operation
 extr1302 fma -Inf 0E-456 sNaN148 -> NaN Invalid_operation
 
+-- max/min/max_mag/min_mag bug in 2.5.2/2.6/3.0: max(NaN, finite) gave
+-- incorrect answers when the finite number required rounding; similarly
+-- for the other thre functions
+maxexponent: 999
+minexponent: -999
+precision: 6
+rounding: half_even
+extr1400 max NaN 1234567 -> 1.23457E+6 Inexact Rounded
+extr1401 max 3141590E-123 NaN1729 -> 3.14159E-117 Rounded
+extr1402 max -7.654321 -NaN -> -7.65432 Inexact Rounded
+extr1410 min -NaN -765432.1 -> -765432 Inexact Rounded
+extr1411 min 3141592 NaN -> 3.14159E+6 Inexact Rounded
+extr1420 max_mag 0.1111111 -NaN123 -> 0.111111 Inexact Rounded
+extr1421 max_mag NaN999999999 0.001234567 -> 0.00123457 Inexact Rounded
+extr1430 min_mag 9181716151 -NaN -> 9.18172E+9 Inexact Rounded
+extr1431 min_mag NaN4 1.818180E100 -> 1.81818E+100 Rounded
+
 -- Tests for the is_* boolean operations
 precision: 9
 maxExponent: 999
