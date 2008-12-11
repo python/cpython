@@ -12,7 +12,10 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
-- Issue #4597: Fixed exception handling when the __exit__ function of a
+- Issue #4597: Fixed several opcodes that weren't always propagating
+  exceptions.
+
+- Issue #4589: Fixed exception handling when the __exit__ function of a
   context manager returns a value that cannot be converted to a bool.
 
 - Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
