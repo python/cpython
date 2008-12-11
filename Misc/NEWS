@@ -86,6 +86,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4084: Fix max, min, max_mag and min_mag Decimal methods to
+  give correct results in the case where one argument is a quiet NaN
+  and the other is a finite number that requires rounding.
+
 - Issue #4529: fix the parser module's validation of try-except-finally
   statements.
 
