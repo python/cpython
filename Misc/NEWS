@@ -87,6 +87,11 @@ Library
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
+Extension Modules
+-----------------
+
+- Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
+  OpenBSD.
 
 Build
 -----

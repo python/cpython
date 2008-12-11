@@ -137,6 +137,58 @@ m_atan2(double y, double x)
 }
 
 /*
+    Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
+    log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
+    special values directly, passing positive non-special values through to
+    the system log/log10.
+ */
+
+static double
+m_log(double x)
+{
+	if (Py_IS_FINITE(x)) {
+		if (x > 0.0)
+			return log(x);
+		errno = EDOM;
+		if (x == 0.0)
+			return -Py_HUGE_VAL; /* log(0) = -inf */
+		else
+			return Py_NAN; /* log(-ve) = nan */
+	}
+	else if (Py_IS_NAN(x))
+		return x; /* log(nan) = nan */
+	else if (x > 0.0)
+		return x; /* log(inf) = inf */
+	else {
+		errno = EDOM;
+		return Py_NAN; /* log(-inf) = nan */
+	}
+}
+
+static double
+m_log10(double x)
+{
+	if (Py_IS_FINITE(x)) {
+		if (x > 0.0)
+			return log10(x);
+		errno = EDOM;
+		if (x == 0.0)
+			return -Py_HUGE_VAL; /* log10(0) = -inf */
+		else
+			return Py_NAN; /* log10(-ve) = nan */
+	}
+	else if (Py_IS_NAN(x))
+		return x; /* log10(nan) = nan */
+	else if (x > 0.0)
+		return x; /* log10(inf) = inf */
+	else {
+		errno = EDOM;
+		return Py_NAN; /* log10(-inf) = nan */
+	}
+}
+
+
+/*
    math_1 is used to wrap a libm function f that takes a double
    arguments and returns a double.
 
@@ -831,11 +883,11 @@ math_log(PyObject *self, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "log", 1, 2, &arg, &base))
 		return NULL;
 
-	num = loghelper(arg, log, "log");
+	num = loghelper(arg, m_log, "log");
 	if (num == NULL || base == NULL)
 		return num;
 
-	den = loghelper(base, log, "log");
+	den = loghelper(base, m_log, "log");
 	if (den == NULL) {
 		Py_DECREF(num);
 		return NULL;
@@ -854,7 +906,7 @@ If the base not specified, returns the natural logarithm (base e) of x.");
 static PyObject *
 math_log10(PyObject *self, PyObject *arg)
 {
-	return loghelper(arg, log10, "log10");
+	return loghelper(arg, m_log10, "log10");
 }
 
 PyDoc_STRVAR(math_log10_doc,
