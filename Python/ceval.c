@@ -1112,6 +1112,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			Py_FatalError("invalid argument to DUP_TOPX"
 				      " (bytecode corruption?)");
+			/* Never returns, so don't bother to set why. */
 			break;
 
 		case UNARY_POSITIVE:
@@ -1728,6 +1729,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			if ((v = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when loading %R", w);
+				why = WHY_EXCEPTION;
 				break;
 			}
 			if (PyDict_CheckExact(v)) {
@@ -2279,7 +2281,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 			if (x != NULL && opcode == MAKE_CLOSURE) {
 				v = POP();
-				err = PyFunction_SetClosure(x, v);
+				if (PyFunction_SetClosure(x, v) != 0) {
+					/* Can't happen unless bytecode is corrupt. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 			}
 
@@ -2303,7 +2308,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					Py_DECREF(w);
 				}
 
-				err = PyFunction_SetAnnotations(x, v);
+				if (PyFunction_SetAnnotations(x, v) != 0) {
+					/* Can't happen unless
+					   PyFunction_SetAnnotations changes. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 				Py_DECREF(u);
 			}
@@ -2320,7 +2329,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					w = POP();
 					PyTuple_SET_ITEM(v, posdefaults, w);
 				}
-				err = PyFunction_SetDefaults(x, v);
+				if (PyFunction_SetDefaults(x, v) != 0) {
+					/* Can't happen unless
+                                           PyFunction_SetDefaults changes. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 			}
 			if (x != NULL && kwdefaults > 0) {
@@ -2338,7 +2351,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					Py_DECREF(w);
 					Py_DECREF(u);
 				}
-				err = PyFunction_SetKwDefaults(x, v);
+				if (PyFunction_SetKwDefaults(x, v) != 0) {
+					/* Can't happen unless
+                                           PyFunction_SetKwDefaults changes. */
+					why = WHY_EXCEPTION;
+				}
 				Py_DECREF(v);
 			}
 			PUSH(x);
