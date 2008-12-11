@@ -27,7 +27,7 @@ to a file named "<name>.html".
 
 Module docs for core modules are assumed to be in
 
-    http://www.python.org/doc/current/lib/
+    http://www.python.org/doc/<version>/lib/
 
 This can be overridden by setting the PYTHONDOCS environment variable
 to a different URL or to a local directory containing the Library
@@ -345,8 +345,9 @@ class Doc:
         except TypeError:
             file = '(built-in)'
 
+        version = '.'.join(str(v) for v in sys.version_info[:3])
         docloc = os.environ.get("PYTHONDOCS",
-                                "http://www.python.org/doc/current/lib")
+                                "http://www.python.org/doc/%s/lib" % version)
         basedir = os.path.join(sys.exec_prefix, "lib",
                                "python"+sys.version[0:3])
         if (isinstance(object, type(os)) and
