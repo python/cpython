@@ -2430,10 +2430,10 @@ class Decimal(object):
             sn = self._isnan()
             on = other._isnan()
             if sn or on:
-                if on == 1 and sn != 2:
-                    return self._fix_nan(context)
-                if sn == 1 and on != 2:
-                    return other._fix_nan(context)
+                if on == 1 and sn == 0:
+                    return self._fix(context)
+                if sn == 1 and on == 0:
+                    return other._fix(context)
                 return self._check_nans(other, context)
 
         c = self.__cmp__(other)
@@ -2472,10 +2472,10 @@ class Decimal(object):
             sn = self._isnan()
             on = other._isnan()
             if sn or on:
-                if on == 1 and sn != 2:
-                    return self._fix_nan(context)
-                if sn == 1 and on != 2:
-                    return other._fix_nan(context)
+                if on == 1 and sn == 0:
+                    return self._fix(context)
+                if sn == 1 and on == 0:
+                    return other._fix(context)
                 return self._check_nans(other, context)
 
         c = self.__cmp__(other)
@@ -3043,10 +3043,10 @@ class Decimal(object):
             sn = self._isnan()
             on = other._isnan()
             if sn or on:
-                if on == 1 and sn != 2:
-                    return self._fix_nan(context)
-                if sn == 1 and on != 2:
-                    return other._fix_nan(context)
+                if on == 1 and sn == 0:
+                    return self._fix(context)
+                if sn == 1 and on == 0:
+                    return other._fix(context)
                 return self._check_nans(other, context)
 
         c = self.copy_abs().__cmp__(other.copy_abs())
@@ -3073,10 +3073,10 @@ class Decimal(object):
             sn = self._isnan()
             on = other._isnan()
             if sn or on:
-                if on == 1 and sn != 2:
-                    return self._fix_nan(context)
-                if sn == 1 and on != 2:
-                    return other._fix_nan(context)
+                if on == 1 and sn == 0:
+                    return self._fix(context)
+                if sn == 1 and on == 0:
+                    return other._fix(context)
                 return self._check_nans(other, context)
 
         c = self.copy_abs().__cmp__(other.copy_abs())
