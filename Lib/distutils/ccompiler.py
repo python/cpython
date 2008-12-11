@@ -1041,7 +1041,7 @@ main (int argc, char **argv) {
         return move_file (src, dst, dry_run=self.dry_run)
 
     def mkpath (self, name, mode=0777):
-        mkpath (name, mode, self.dry_run)
+        mkpath (name, mode, dry_run=self.dry_run)
 
 
 # class CCompiler
