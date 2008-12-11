@@ -155,6 +155,9 @@ C-API
 Extension Modules
 -----------------
 
+- Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
+  OpenBSD.
+
 - Issue #4365: Add crtassem.h constants to the msvcrt module.
 
 - Issue #4396: The parser module now correctly validates the with statement.
