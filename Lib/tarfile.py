@@ -2265,10 +2265,6 @@ class TarFile(object):
         """
         if not hasattr(os, 'utime'):
             return
-        if sys.platform == "win32" and tarinfo.isdir():
-            # According to msdn.microsoft.com, it is an error (EACCES)
-            # to use utime() on directories.
-            return
         try:
             os.utime(targetpath, (tarinfo.mtime, tarinfo.mtime))
         except EnvironmentError as e:
