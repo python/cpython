@@ -256,17 +256,14 @@ class MiscReadTest(ReadTest):
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
-        if sys.platform == "win32":
-            # Win32 has no support for utime() on directories or
-            # fine grained permissions.
-            return
-
         tar = tarfile.open(tarname, encoding="iso8859-1")
         directories = [t for t in tar if t.isdir()]
         tar.extractall(TEMPDIR, directories)
         for tarinfo in directories:
             path = os.path.join(TEMPDIR, tarinfo.name)
-            self.assertEqual(tarinfo.mode & 0777, os.stat(path).st_mode & 0777)
+            if sys.platform != "win32":
+                # Win32 has no support for fine grained permissions.
+                self.assertEqual(tarinfo.mode & 0777, os.stat(path).st_mode & 0777)
             self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
         tar.close()
 
