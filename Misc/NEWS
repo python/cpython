@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4616: TarFile.utime(): Restore directory times on Windows.
+
 - Issue #4021: tokenize.detect_encoding() now raises a SyntaxError when the
   codec cannot be found.  This is for compatibility with the builtin behavior.
 
