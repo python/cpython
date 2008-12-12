@@ -795,6 +795,8 @@ class TestDetectEncoding(TestCase):
         self.assertEquals(encoding, 'utf-8')
         self.assertEquals(consumed_lines, [])
 
+        readline = self.get_readline((b'# coding: bad\n',))
+        self.assertRaises(SyntaxError, detect_encoding, readline)
 
 class TestTokenize(TestCase):
 
