@@ -109,6 +109,8 @@ Core and builtins
 Library
 -------
 
+- Issue #4342: Always convert Text.index result to string.
+
 - Issue 3248: Allow placing ScrolledText in a PanedWindow.
 
 - Issue #4084: Fix max, min, max_mag and min_mag Decimal methods to
