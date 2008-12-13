@@ -734,7 +734,7 @@ The formatting template uses curly brackets (`{`, `}`) as special characters::
 
 Curly brackets can be escaped by doubling them::
 
-     >>> format("Empty dict: {{}}")
+     >>> "Empty dict: {{}}".format()
      "Empty dict: {}"
 
 Field names can be integers indicating positional arguments, such as
