@@ -250,6 +250,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #3863: Disabled a unit test of fork being called from a thread
+  when running on platforms known to exhibit OS bugs when attempting that.
+
 - Issue #3261: test_cookielib had an improper file encoding specified.
 
 - Patch #2232: os.tmpfile might fail on Windows if the user has no
