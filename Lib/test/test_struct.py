@@ -3,6 +3,8 @@ import test.test_support
 import struct
 import array
 import warnings
+warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated",
+                        DeprecationWarning)
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
@@ -534,6 +536,17 @@ def test_1530559():
             check_float_coerce(endian + fmt, 1.5)
 
 test_1530559()
+
+## Issue 4228. Packing a negative unsigned long warns,
+# but then still should give a value with the
+# topmost bit set.
+
+def test_issue4228():
+    # Packing a long may yield either 32 or 64 bits
+    x = struct.pack('L', -1)[:4]
+    vereq(x, '\xff'*4)
+
+test_issue4228()
 
 ###########################################################################
 # Packing and unpacking to/from buffers.
