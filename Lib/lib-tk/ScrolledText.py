@@ -41,3 +41,6 @@ class ScrolledText(Text):
         for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.frame, m))
+
+    def __str__(self):
+        return str(self.frame)
