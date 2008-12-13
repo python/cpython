@@ -225,6 +225,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
+
 - Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
 
 - Security Issue #2: imageop did not validate arguments correctly and could
