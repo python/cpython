@@ -2,6 +2,7 @@
 /* Check for interrupts */
 
 #include "Python.h"
+#include "pythread.h"
 
 #ifdef QUICKWIN
 
@@ -172,5 +173,6 @@ PyOS_AfterFork(void)
 {
 #ifdef WITH_THREAD
 	PyEval_ReInitThreads();
+	PyThread_ReInitTLS();
 #endif
 }
