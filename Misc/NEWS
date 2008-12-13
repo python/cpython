@@ -109,6 +109,8 @@ Core and builtins
 Library
 -------
 
+- Issue #3767: Convert Tk object to string in tkColorChooser.
+
 - Issue #4342: Always convert Text.index result to string.
 
 - Issue 3248: Allow placing ScrolledText in a PanedWindow.
