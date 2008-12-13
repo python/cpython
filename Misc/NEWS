@@ -12,6 +12,9 @@ What's New in Python 2.5.3?
 Core and builtins
 -----------------
 
+- Issue #1706039: Support continued reading from a file even after 
+  EOF was hit.
+
 - Issue #1683: prevent forking from interfering in threading storage.
 
 - Issue #4597: Fixed several opcodes that weren't always propagating
