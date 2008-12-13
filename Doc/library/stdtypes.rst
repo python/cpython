@@ -1090,12 +1090,9 @@ functions based on regular expressions.
    ordinals, strings or ``None``.  Unmapped characters are left untouched.
    Characters mapped to ``None`` are deleted.
 
-   A *map* for :meth:`translate` is usually best created by
-   :meth:`str.maketrans`.
-
-   You can use the :func:`maketrans` helper function in the :mod:`string` module to
-   create a translation table. For string objects, set the *table* argument to
-   ``None`` for translations that only delete characters:
+   You can use :meth:`str.maketrans` to create a translation table.  For string
+   objects, set the *table* argument to ``None`` for translations that only
+   delete characters:
 
    .. note::
 
