@@ -2759,9 +2759,9 @@ If tabsize is not given, a tab size of 8 characters is assumed.");
 static PyObject*
 string_expandtabs(PyStringObject *self, PyObject *args)
 {
-    const char *e, *p;
+    const char *e, *p, *qe;
     char *q;
-    int i, j;
+    int i, j, incr;
     PyObject *u;
     int tabsize = 8;
 
@@ -2769,46 +2769,70 @@ string_expandtabs(PyStringObject *self, PyObject *args)
 	return NULL;
 
     /* First pass: determine size of output string */
-    i = j = 0;
-    e = PyString_AS_STRING(self) + PyString_GET_SIZE(self);
+    i = 0; /* chars up to and including most recent \n or \r */
+    j = 0; /* chars since most recent \n or \r (use in tab calculations) */
+    e = PyString_AS_STRING(self) + PyString_GET_SIZE(self); /* end of input */
     for (p = PyString_AS_STRING(self); p < e; p++)
         if (*p == '\t') {
-	    if (tabsize > 0)
-		j += tabsize - (j % tabsize);
+	    if (tabsize > 0) {
+		incr = tabsize - (j % tabsize);
+		if (j > INT_MAX - incr)
+		    goto overflow1;
+		j += incr;
+            }
 	}
         else {
+	    if (j > INT_MAX - 1)
+		goto overflow1;
             j++;
             if (*p == '\n' || *p == '\r') {
+		if (i > INT_MAX - j)
+		    goto overflow1;
                 i += j;
                 j = 0;
             }
         }
+
+    if (i > INT_MAX - j)
+	goto overflow1;
 
     /* Second pass: create output string and fill it */
     u = PyString_FromStringAndSize(NULL, i + j);
     if (!u)
         return NULL;
 
-    j = 0;
-    q = PyString_AS_STRING(u);
+    j = 0; /* same as in first pass */
+    q = PyString_AS_STRING(u); /* next output char */
+    qe = PyString_AS_STRING(u) + PyString_GET_SIZE(u); /* end of output */
 
     for (p = PyString_AS_STRING(self); p < e; p++)
         if (*p == '\t') {
 	    if (tabsize > 0) {
 		i = tabsize - (j % tabsize);
 		j += i;
-		while (i--)
+		while (i--) {
+		    if (q >= qe)
+			goto overflow2;
 		    *q++ = ' ';
+		}
 	    }
 	}
 	else {
-            j++;
+	    if (q >= qe)
+		goto overflow2;
 	    *q++ = *p;
+            j++;
             if (*p == '\n' || *p == '\r')
                 j = 0;
         }
 
     return u;
+
+  overflow2:
+    Py_DECREF(u);
+  overflow1:
+    PyErr_SetString(PyExc_OverflowError, "new string is too long");
+    return NULL;
 }
 
 static PyObject *

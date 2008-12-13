@@ -12,6 +12,10 @@ What's New in Python 2.4.6c1?
 Core and builtins
 -----------------
 
+- Issue #4469: Prevent expandtabs() on string and unicode 
+  objects from causing a segfault when a large width is passed 
+  on 32-bit platforms.
+
 - Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
 
 - Issue #4230: Fix a crash when a class has a custom __getattr__ and an

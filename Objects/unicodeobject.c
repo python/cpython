@@ -5207,7 +5207,8 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     Py_UNICODE *e;
     Py_UNICODE *p;
     Py_UNICODE *q;
-    int i, j;
+    Py_UNICODE *qe;
+    int i, j, incr;
     PyUnicodeObject *u;
     int tabsize = 8;
 
@@ -5215,46 +5216,70 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
 	return NULL;
 
     /* First pass: determine size of output string */
-    i = j = 0;
-    e = self->str + self->length;
+    i = 0; /* chars up to and including most recent \n or \r */
+    j = 0; /* chars since most recent \n or \r (use in tab calculations) */
+    e = self->str + self->length; /* end of input */
     for (p = self->str; p < e; p++)
         if (*p == '\t') {
-	    if (tabsize > 0)
-		j += tabsize - (j % tabsize);
+	    if (tabsize > 0) {
+		incr = tabsize - (j % tabsize); /* cannot overflow */
+		if (j > INT_MAX - incr)
+		    goto overflow1;
+		j += incr;
+            }
 	}
         else {
+	    if (j > INT_MAX - 1)
+		goto overflow1;
             j++;
             if (*p == '\n' || *p == '\r') {
+		if (i > INT_MAX - j)
+		    goto overflow1;
                 i += j;
                 j = 0;
             }
         }
+
+    if (i > INT_MAX - j)
+	goto overflow1;
 
     /* Second pass: create output string and fill it */
     u = _PyUnicode_New(i + j);
     if (!u)
         return NULL;
 
-    j = 0;
-    q = u->str;
+    j = 0; /* same as in first pass */
+    q = u->str; /* next output char */
+    qe = u->str + u->length; /* end of output */
 
     for (p = self->str; p < e; p++)
         if (*p == '\t') {
 	    if (tabsize > 0) {
 		i = tabsize - (j % tabsize);
 		j += i;
-		while (i--)
+		while (i--) {
+		    if (q >= qe)
+			goto overflow2;
 		    *q++ = ' ';
+                }
 	    }
 	}
 	else {
-            j++;
+	    if (q >= qe)
+		goto overflow2;
 	    *q++ = *p;
+            j++;
             if (*p == '\n' || *p == '\r')
                 j = 0;
         }
 
     return (PyObject*) u;
+
+  overflow2:
+    Py_DECREF(u);
+  overflow1:
+    PyErr_SetString(PyExc_OverflowError, "new string is too long");
+    return NULL;
 }
 
 PyDoc_STRVAR(find__doc__,
