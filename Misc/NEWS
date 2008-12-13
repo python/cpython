@@ -260,6 +260,8 @@ Documentation
 Build
 -----
 
+- Issue #4368: Don't define _XOPEN_SOURCE on FreeBSD 4.*.
+
 Windows
 -------
 
