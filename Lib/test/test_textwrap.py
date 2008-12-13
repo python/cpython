@@ -365,6 +365,14 @@ What a mess!
         self.assertRaises(ValueError, wrap, text, 0)
         self.assertRaises(ValueError, wrap, text, -1)
 
+    def test_no_split_at_umlaut(self):
+        text = "Die Empf\xe4nger-Auswahl"
+        self.check_wrap(text, 13, ["Die", "Empf\xe4nger-", "Auswahl"])
+
+    def test_umlaut_followed_by_dash(self):
+        text = "aa \xe4\xe4-\xe4\xe4"
+        self.check_wrap(text, 7, ["aa \xe4\xe4-", "\xe4\xe4"])
+
 
 class LongWordTestCase (BaseTestCase):
     def setUp(self):

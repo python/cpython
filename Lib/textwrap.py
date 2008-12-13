@@ -76,7 +76,7 @@ class TextWrapper:
     # (after stripping out empty strings).
     wordsep_re = re.compile(
         r'(\s+|'                                  # any whitespace
-        r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
+        r'[^\s\w]*\w+[^0-9\W]-(?=\w+[^0-9\W])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
 
     # This less funky little regex just split on recognized spaces. E.g.
