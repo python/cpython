@@ -440,7 +440,7 @@ pair with ``del``. If you store using a key that is already in use, the old
 value associated with that key is forgotten.  It is an error to extract a value
 using a non-existent key.
 
-The :meth:`keys` method of a dictionary object returns a list of all the keys
+Preforming ``list(d.keys())`` on a dictionary returns a list of all the keys
 used in the dictionary, in arbitrary order (if you want it sorted, just apply
 the :meth:`sort` method to the list of keys).  To check whether a single key is
 in the dictionary, use the :keyword:`in` keyword.
