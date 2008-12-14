@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4574: reading an UTF16-encoded text file crashes if \r on 64-char
+  boundary.
+
 - Issue #4223: inspect.getsource() will now correctly display source code
   for packages loaded via zipimport (or any other conformant PEP 302
   loader). Original patch by Alexander Belopolsky.
