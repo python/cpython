@@ -346,7 +346,7 @@ class Bdb:
             rv = frame.f_locals['__return__']
             s = s + '->'
             s = s + reprlib.repr(rv)
-        line = linecache.getline(filename, lineno)
+        line = linecache.getline(filename, lineno, frame.f_globals)
         if line: s = s + lprefix + line.strip()
         return s
 
@@ -588,7 +588,7 @@ class Tdb(Bdb):
         name = frame.f_code.co_name
         if not name: name = '???'
         fn = self.canonic(frame.f_code.co_filename)
-        line = linecache.getline(fn, frame.f_lineno)
+        line = linecache.getline(fn, frame.f_lineno, frame.f_globals)
         print('+++', fn, frame.f_lineno, name, ':', line.strip())
     def user_return(self, frame, retval):
         print('+++ return', retval)
