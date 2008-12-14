@@ -18,6 +18,9 @@ from test import inspect_fodder2 as mod2
 # getclasstree, getargspec, getargvalues, formatargspec, formatargvalues,
 # currentframe, stack, trace, isdatadescriptor
 
+# NOTE: There are some additional tests relating to interaction with
+#       zipimport in the test_zipimport_support test module.
+
 modfile = mod.__file__
 if modfile.endswith(('c', 'o')):
     modfile = modfile[:-1]

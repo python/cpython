@@ -75,22 +75,48 @@ def _compile_test_script(script_name):
         compiled_name = script_name + 'o'
     return compiled_name
 
-def _make_test_zip(zip_dir, zip_basename, script_name):
+def _make_test_zip(zip_dir, zip_basename, script_name, name_in_zip=None):
     zip_filename = zip_basename+os.path.extsep+"zip"
     zip_name = os.path.join(zip_dir, zip_filename)
     zip_file = zipfile.ZipFile(zip_name, 'w')
-    zip_file.write(script_name, os.path.basename(script_name))
+    if name_in_zip is None:
+        name_in_zip = os.path.basename(script_name)
+    zip_file.write(script_name, name_in_zip)
     zip_file.close()
-    # if verbose:
+    #if verbose:
     #    zip_file = zipfile.ZipFile(zip_name, 'r')
     #    print("Contents of %r:" % zip_name)
     #    zip_file.printdir()
     #    zip_file.close()
-    return zip_name
+    return zip_name, os.path.join(zip_name, name_in_zip)
 
 def _make_test_pkg(pkg_dir):
     os.mkdir(pkg_dir)
     _make_test_script(pkg_dir, '__init__', '')
+
+def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
+                       source=test_source, depth=1):
+    init_name = _make_test_script(zip_dir, '__init__', '')
+    init_basename = os.path.basename(init_name)
+    script_name = _make_test_script(zip_dir, script_basename, source)
+    pkg_names = [os.sep.join([pkg_name]*i) for i in range(1, depth+1)]
+    script_name_in_zip = os.path.join(pkg_names[-1], os.path.basename(script_name))
+    zip_filename = zip_basename+os.extsep+'zip'
+    zip_name = os.path.join(zip_dir, zip_filename)
+    zip_file = zipfile.ZipFile(zip_name, 'w')
+    for name in pkg_names:
+        init_name_in_zip = os.path.join(name, init_basename)
+        zip_file.write(init_name, init_name_in_zip)
+    zip_file.write(script_name, script_name_in_zip)
+    zip_file.close()
+    os.unlink(init_name)
+    os.unlink(script_name)
+    #if verbose:
+    #    zip_file = zipfile.ZipFile(zip_name, 'r')
+    #    print 'Contents of %r:' % zip_name
+    #    zip_file.printdir()
+    #    zip_file.close()
+    return zip_name, os.path.join(zip_name, script_name_in_zip)
 
 # There's no easy way to pass the script directory in to get
 # -m to work (avoiding that is the whole point of making
@@ -98,13 +124,17 @@ def _make_test_pkg(pkg_dir):
 # So we fake it for testing purposes with a custom launch script
 launch_source = """\
 import sys, os.path, runpy
-sys.path[0:0] = os.path.dirname(__file__)
+sys.path.insert(0, %s)
 runpy._run_module_as_main(%r)
 """
 
-def _make_launch_script(script_dir, script_basename, module_name):
-    return _make_test_script(script_dir, script_basename,
-                             launch_source % module_name)
+def _make_launch_script(script_dir, script_basename, module_name, path=None):
+    if path is None:
+        path = "os.path.dirname(__file__)"
+    else:
+        path = repr(path)
+    source = launch_source % (path, module_name)
+    return _make_test_script(script_dir, script_basename, source)
 
 class CmdLineTest(unittest.TestCase):
     def _check_script(self, script_name, expected_file,
@@ -155,15 +185,15 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            zip_name = _make_test_zip(script_dir, 'test_zip', script_name)
-            self._check_script(zip_name, None, zip_name, '')
+            zip_name, run_name = _make_test_zip(script_dir, 'test_zip', script_name)
+            self._check_script(zip_name, run_name, zip_name, '')
 
     def test_zipfile_compiled(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
             compiled_name = _compile_test_script(script_name)
-            zip_name = _make_test_zip(script_dir, 'test_zip', compiled_name)
-            self._check_script(zip_name, None, zip_name, '')
+            zip_name, run_name = _make_test_zip(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, '')
 
     def test_module_in_package(self):
         with temp_dir() as script_dir:
@@ -171,8 +201,19 @@ class CmdLineTest(unittest.TestCase):
             _make_test_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, 'script')
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.script')
-            self._check_script(launch_name, script_name,
-                               script_name, 'test_pkg')
+            self._check_script(launch_name, script_name, script_name, 'test_pkg')
+
+    def test_module_in_package_in_zipfile(self):
+        with temp_dir() as script_dir:
+            zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script')
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.script', zip_name)
+            self._check_script(launch_name, run_name, run_name, 'test_pkg')
+
+    def test_module_in_subpackage_in_zipfile(self):
+        with temp_dir() as script_dir:
+            zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script', depth=2)
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.test_pkg.script', zip_name)
+            self._check_script(launch_name, run_name, run_name, 'test_pkg.test_pkg')
 
 
 def test_main():
