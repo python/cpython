@@ -45,6 +45,25 @@ Core and Builtins
 Library
 -------
 
+- Issue #4223: inspect.getsource() will now correctly display source code
+  for packages loaded via zipimport (or any other conformant PEP 302
+  loader). Original patch by Alexander Belopolsky.
+
+- Issue #4201: pdb can now access and display source code loaded via
+  zipimport (or any other conformant PEP 302 loader). Original patch by
+  Alexander Belopolsky.
+
+- Issue #4197: doctests in modules loaded via zipimport (or any other PEP
+  302 conformant loader) will now work correctly in most cases (they
+  are still subject to the constraints that exist for all code running
+  from inside a module loaded via a PEP 302 loader and attempting to
+  perform IO operations based on __file__). Original patch by
+  Alexander Belopolsky.
+
+- Issues #4082 and #4512: Add runpy support to zipimport in a manner that
+  allows backporting to maintenance branches. Original patch by
+  Alexander Belopolsky.
+
 - Issue #4163: textwrap module: allow word splitting on a hyphen preceded by
   a non-ASCII letter.
 

@@ -354,6 +354,29 @@ error:
 	return NULL;
 }
 
+/* Return a string matching __file__ for the named module */
+static PyObject *
+zipimporter_get_filename(PyObject *obj, PyObject *args)
+{
+    ZipImporter *self = (ZipImporter *)obj;
+    PyObject *code;
+    char *fullname, *modpath;
+    int ispackage;
+
+    if (!PyArg_ParseTuple(args, "s:zipimporter._get_filename",
+                         &fullname))
+        return NULL;
+
+    /* Deciding the filename requires working out where the code
+       would come from if the module was actually loaded */
+    code = get_module_code(self, fullname, &ispackage, &modpath);
+    if (code == NULL)
+        return NULL;
+    Py_DECREF(code); /* Only need the path info */
+
+    return PyUnicode_FromString(modpath);
+}
+
 /* Return a bool signifying whether the module is a package or not. */
 static PyObject *
 zipimporter_is_package(PyObject *obj, PyObject *args)
@@ -518,6 +541,12 @@ Return the source code for the specified module. Raise ZipImportError\n\
 is the module couldn't be found, return None if the archive does\n\
 contain the module, but has no source for it.");
 
+
+PyDoc_STRVAR(doc_get_filename,
+"_get_filename(fullname) -> filename string.\n\
+\n\
+Return the filename for the specified module.");
+
 static PyMethodDef zipimporter_methods[] = {
 	{"find_module", zipimporter_find_module, METH_VARARGS,
 	 doc_find_module},
@@ -529,6 +558,8 @@ static PyMethodDef zipimporter_methods[] = {
 	 doc_get_code},
 	{"get_source", zipimporter_get_source, METH_VARARGS,
 	 doc_get_source},
+	{"_get_filename", zipimporter_get_filename, METH_VARARGS,
+	 doc_get_filename},
 	{"is_package", zipimporter_is_package, METH_VARARGS,
 	 doc_is_package},
 	{NULL,		NULL}	/* sentinel */
