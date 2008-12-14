@@ -440,7 +440,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Return `lineno` if it is, 0 if not (e.g. a docstring, comment, blank
         line or EOF). Warning: testing is not comprehensive.
         """
-        line = linecache.getline(filename, lineno)
+        line = linecache.getline(filename, lineno, self.curframe.f_globals)
         if not line:
             print >>self.stdout, 'End of file'
             return 0
@@ -768,7 +768,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             for lineno in range(first, last+1):
-                line = linecache.getline(filename, lineno)
+                line = linecache.getline(filename, lineno, self.curframe.f_globals)
                 if not line:
                     print >>self.stdout, '[EOF]'
                     break
