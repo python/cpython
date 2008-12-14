@@ -846,7 +846,7 @@ class PlaceHolder:
         Add the specified logger as a child of this placeholder.
         """
         #if alogger not in self.loggers:
-        if not self.loggerMap.has_key(alogger):
+        if alogger not in self.loggerMap:
             #self.loggers.append(alogger)
             self.loggerMap[alogger] = None
 
