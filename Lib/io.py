@@ -1292,25 +1292,23 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
     """
     def __init__(self, decoder, translate, errors='strict'):
         codecs.IncrementalDecoder.__init__(self, errors=errors)
-        self.buffer = b''
         self.translate = translate
         self.decoder = decoder
         self.seennl = 0
+        self.pendingcr = False
 
     def decode(self, input, final=False):
         # decode input (with the eventual \r from a previous pass)
-        if self.buffer:
-            input = self.buffer + input
-
         output = self.decoder.decode(input, final=final)
+        if self.pendingcr and (output or final):
+            output = "\r" + output
+            self.pendingcr = False
 
         # retain last \r even when not translating data:
         # then readline() is sure to get \r\n in one pass
         if output.endswith("\r") and not final:
             output = output[:-1]
-            self.buffer = b'\r'
-        else:
-            self.buffer = b''
+            self.pendingcr = True
 
         # Record which newlines are read
         crlf = output.count('\r\n')
@@ -1329,20 +1327,19 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
 
     def getstate(self):
         buf, flag = self.decoder.getstate()
-        return buf + self.buffer, flag
+        flag <<= 1
+        if self.pendingcr:
+            flag |= 1
+        return buf, flag
 
     def setstate(self, state):
         buf, flag = state
-        if buf.endswith(b'\r'):
-            self.buffer = b'\r'
-            buf = buf[:-1]
-        else:
-            self.buffer = b''
-        self.decoder.setstate((buf, flag))
+        self.pendingcr = bool(flag & 1)
+        self.decoder.setstate((buf, flag >> 1))
 
     def reset(self):
         self.seennl = 0
-        self.buffer = b''
+        self.pendingcr = False
         self.decoder.reset()
 
     _LF = 1
