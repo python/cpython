@@ -449,7 +449,7 @@ class TestUrlopen(unittest.TestCase):
                           # domain will be spared to serve its defined
                           # purpose.
                           urllib.request.urlopen,
-                          "http://www.python.invalid./")
+                          "http://sadflkjsasf.i.nvali.d/")
 
 def test_main():
     support.run_unittest(ProxyAuthTests)
