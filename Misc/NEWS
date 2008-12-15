@@ -74,6 +74,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3954: Fix a potential SystemError in _hotshot.logreader error
+  handling.
+
 - Issue #4574: fix a crash in io.IncrementalNewlineDecoder when a carriage
   return encodes to more than one byte in the source encoding (e.g. UTF-16)
   and gets split on a chunk boundary.
