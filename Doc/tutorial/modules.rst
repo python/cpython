@@ -112,7 +112,7 @@ you have already defined.
    For efficiency reasons, each module is only imported once per interpreter
    session.  Therefore, if you change your modules, you must restart the
    interpreter -- or, if it's just one module you want to test interactively,
-   use :func:`reload`, e.g. ``reload(modulename)``.
+   use :func:`imp.reload`, e.g. ``import imp; imp.reload(modulename)``.
 
 
 .. _tut-modulesasscripts:

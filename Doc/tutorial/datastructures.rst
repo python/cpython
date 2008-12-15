@@ -440,9 +440,9 @@ pair with ``del``. If you store using a key that is already in use, the old
 value associated with that key is forgotten.  It is an error to extract a value
 using a non-existent key.
 
-Preforming ``list(d.keys())`` on a dictionary returns a list of all the keys
+Performing ``list(d.keys())`` on a dictionary returns a list of all the keys
 used in the dictionary, in arbitrary order (if you want it sorted, just apply
-the :meth:`sort` method to the list of keys).  To check whether a single key is
+the :meth:`sorted` function instead).  To check whether a single key is
 in the dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
@@ -458,6 +458,8 @@ Here is a small example using a dictionary::
    >>> tel
    {'guido': 4127, 'irv': 4127, 'jack': 4098}
    >>> list(tel.keys())
+   ['irv', 'guido', 'jack']
+   >>> sorted(tel.keys())
    ['guido', 'irv', 'jack']
    >>> 'guido' in tel
    True
