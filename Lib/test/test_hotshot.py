@@ -3,6 +3,8 @@ import hotshot.log
 import os
 import pprint
 import unittest
+import _hotshot
+import gc
 
 from test import test_support
 
@@ -123,6 +125,10 @@ class HotShotTestCase(unittest.TestCase):
             sys.path = orig_path
             if os.path.exists(test_support.TESTFN):
                 os.remove(test_support.TESTFN)
+
+    def test_logreader_eof_error(self):
+        self.assertRaises((IOError, EOFError), _hotshot.logreader, ".")
+        gc.collect()
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)
