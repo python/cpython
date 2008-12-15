@@ -696,15 +696,15 @@ new powerful features added:
 * Exceptions no longer behave as sequences.  Use the :attr:`args`
   attribute instead.
 
-* :pep:`3109`: Raising exceptions.  You must now use :keyword:`raise`
-  *Exception*(*args*) instead of :keyword:`raise` *Exception*, *args*.
+* :pep:`3109`: Raising exceptions.  You must now use :samp:`raise
+  {Exception}({args})` instead of :samp:`raise {Exception}, {args}`.
   Additionally, you can no longer explicitly specify a traceback;
   instead, if you *have* to do this, you can assign directly to the
   :attr:`__traceback__` attribute (see below).
 
 * :pep:`3110`: Catching exceptions.  You must now use
-  :keyword:`except` *SomeException* :keyword:`as` *variable* instead
-  of :keyword:`except` *SomeException*, *variable*.  Moreover, the
+  :samp:`except {SomeException} as {variable}` instead
+  of :samp:`except {SomeException}, {variable}`.  Moreover, the
   *variable* is explicitly deleted when the :keyword:`except` block
   is left.
 
