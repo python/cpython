@@ -1630,35 +1630,32 @@ directly).
 Nevertheless, here's a stab at a callback for an option with variable
 arguments::
 
-   def vararg_callback(option, opt_str, value, parser):
-       assert value is None
-       done = 0
-       value = []
-       rargs = parser.rargs
-       while rargs:
-           arg = rargs[0]
+    def vararg_callback(option, opt_str, value, parser):
+        assert value is None
+        value = []
 
-           # Stop if we hit an arg like "--foo", "-a", "-fx", "--file=f",
-           # etc.  Note that this also stops on "-3" or "-3.0", so if
-           # your option takes numeric values, you will need to handle
-           # this.
-           if ((arg[:2] == "--" and len(arg) > 2) or
-               (arg[:1] == "-" and len(arg) > 1 and arg[1] != "-")):
-               break
-           else:
-               value.append(arg)
-               del rargs[0]
+        def floatable(str):
+            try:
+                float(str)
+                return True
+            except ValueError:
+                return False
 
-       setattr(parser.values, option.dest, value)
+        for arg in parser.rargs:
+            # stop on --foo like options
+            if arg[:2] == "--" and len(arg) > 2:
+                break
+            # stop on -a, but not on -3 or -3.0
+            if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
+                break
+            value.append(arg)
+
+        del parser.rargs[:len(value)]
+        setattr(parser.values, option.dest, value))
 
    [...]
    parser.add_option("-c", "--callback", dest="vararg_attr",
                      action="callback", callback=vararg_callback)
-
-The main weakness with this particular implementation is that negative numbers
-in the arguments following ``"-c"`` will be interpreted as further options
-(probably causing an error), rather than as arguments to ``"-c"``.  Fixing this
-is left as an exercise for the reader.
 
 
 .. _optparse-extending-optparse:
