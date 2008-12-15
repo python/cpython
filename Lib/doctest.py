@@ -813,7 +813,15 @@ class DocTestFinder:
         # given object's docstring.
         try:
             file = inspect.getsourcefile(obj) or inspect.getfile(obj)
-            source_lines = linecache.getlines(file)
+            if module is not None:
+                # Supply the module globals in case the module was
+                # originally loaded via a PEP 302 loader and
+                # file is not a valid filesystem path
+                source_lines = linecache.getlines(file, module.__dict__)
+            else:
+                # No access to a loader, so assume it's a normal
+                # filesystem path
+                source_lines = linecache.getlines(file)
             if not source_lines:
                 source_lines = None
         except TypeError:
@@ -1427,8 +1435,10 @@ class DocTestRunner:
         d = self._name2ft
         for name, (f, t) in other._name2ft.items():
             if name in d:
-                print("*** DocTestRunner.merge: '" + name + "' in both" \
-                    " testers; summing outcomes.")
+                # Don't print here by default, since doing
+                #     so breaks some of the buildbots
+                #print("*** DocTestRunner.merge: '" + name + "' in both" \
+                #    " testers; summing outcomes.")
                 f2, t2 = d[name]
                 f = f + f2
                 t = t + t2

@@ -169,6 +169,35 @@ class ZipSupportTests(ImportHooksBaseTestCase):
             for obj in known_good_tests:
                 _run_object_doctest(obj, test_zipped_doctest)
 
+    def test_doctest_main_issue4197(self):
+        test_src = textwrap.dedent("""\
+                    class Test:
+                        ">>> 'line 2'"
+                        pass
+
+                    import doctest
+                    doctest.testmod()
+                    """)
+        pattern = 'File "%s", line 2, in %s'
+        with temp_dir() as d:
+            script_name = _make_test_script(d, 'script', test_src)
+            exit_code, data = _run_python(script_name)
+            expected = pattern % (script_name, "__main__.Test")
+            if verbose:
+                print ("Expected line", expected)
+                print ("Got stdout:")
+                print (data)
+            self.assert_(expected in data)
+            zip_name, run_name = _make_test_zip(d, "test_zip",
+                                                script_name, '__main__.py')
+            exit_code, data = _run_python(zip_name)
+            expected = pattern % (run_name, "__main__.Test")
+            if verbose:
+                print ("Expected line", expected)
+                print ("Got stdout:")
+                print (data)
+            self.assert_(expected in data)
+
     def test_pdb_issue4201(self):
         test_src = textwrap.dedent("""\
                     def f():
