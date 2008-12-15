@@ -139,7 +139,7 @@ class urlopenNetworkTests(unittest.TestCase):
                           # purpose.
                           # urllib.urlopen, "http://www.sadflkjsasadf.com/")
                           urllib.request.urlopen,
-                          "http://www.python.invalid./")
+                          "http://sadflkjsasf.i.nvali.d/")
 
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.request.urlretrieve using the network."""
