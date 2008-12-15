@@ -174,13 +174,17 @@ Leading whitespace (spaces and tabs) at the beginning of a logical line is used
 to compute the indentation level of the line, which in turn is used to determine
 the grouping of statements.
 
-First, tabs are replaced (from left to right) by one to eight spaces such that
-the total number of characters up to and including the replacement is a multiple
-of eight (this is intended to be the same rule as used by Unix).  The total
-number of spaces preceding the first non-blank character then determines the
-line's indentation.  Indentation cannot be split over multiple physical lines
-using backslashes; the whitespace up to the first backslash determines the
+Tabs are replaced (from left to right) by one to eight spaces such that the
+total number of characters up to and including the replacement is a multiple of
+eight (this is intended to be the same rule as used by Unix).  The total number
+of spaces preceding the first non-blank character then determines the line's
+indentation.  Indentation cannot be split over multiple physical lines using
+backslashes; the whitespace up to the first backslash determines the
 indentation.
+
+Indentation is rejected as inconsistent if a source file mixes tabs and spaces
+in a way that makes the meaning dependent on the worth of a tab in spaces; a
+:exc:`TabError` is raised in that case.
 
 **Cross-platform compatibility note:** because of the nature of text editors on
 non-UNIX platforms, it is unwise to use a mixture of spaces and tabs for the
