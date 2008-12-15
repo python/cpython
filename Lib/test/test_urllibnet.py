@@ -137,7 +137,7 @@ class urlopenNetworkTests(unittest.TestCase):
                           # domain will be spared to serve its defined
                           # purpose.
                           # urllib.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib.urlopen, "http://www.python.invalid./")
+                          urllib.urlopen, "http://sadflkjsasf.i.nvali.d/")
 
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.urlretrieve using the network."""
