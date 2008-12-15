@@ -474,7 +474,7 @@ class TestUrlopen(unittest.TestCase):
                           # domain will be spared to serve its defined
                           # purpose.
                           # urllib2.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib2.urlopen, "http://www.python.invalid./")
+                          urllib2.urlopen, "http://sadflkjsasf.i.nvali.d/")
 
 
 def test_main():
