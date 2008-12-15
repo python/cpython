@@ -359,8 +359,8 @@ class HTTPResponse:
 
         if self.version == 9:
             self.length = None
-            self.chunked = 0
-            self.will_close = 1
+            self.chunked = False
+            self.will_close = True
             self.msg = email.message_from_string('')
             return
 
@@ -373,10 +373,10 @@ class HTTPResponse:
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.msg.get("transfer-encoding")
         if tr_enc and tr_enc.lower() == "chunked":
-            self.chunked = 1
+            self.chunked = True
             self.chunk_left = None
         else:
-            self.chunked = 0
+            self.chunked = False
 
         # will the connection close at the end of the response?
         self.will_close = self._check_close()
@@ -411,7 +411,7 @@ class HTTPResponse:
         if (not self.will_close and
             not self.chunked and
             self.length is None):
-            self.will_close = 1
+            self.will_close = True
 
     def _check_close(self):
         conn = self.msg.get("connection")
