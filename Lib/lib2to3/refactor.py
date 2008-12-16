@@ -123,8 +123,8 @@ class RefactoringTool(object):
                                     logger=self.logger)
         self.pre_order, self.post_order = self.get_fixers()
 
-        self.pre_order_mapping = get_headnode_dict(self.pre_order)
-        self.post_order_mapping = get_headnode_dict(self.post_order)
+        self.pre_order_heads = get_headnode_dict(self.pre_order)
+        self.post_order_heads = get_headnode_dict(self.post_order)
 
         self.files = []  # List of files that were or should be modified
 
@@ -294,8 +294,8 @@ class RefactoringTool(object):
         for fixer in all_fixers:
             fixer.start_tree(tree, name)
 
-        self.traverse_by(self.pre_order_mapping, tree.pre_order())
-        self.traverse_by(self.post_order_mapping, tree.post_order())
+        self.traverse_by(self.pre_order_heads, tree.pre_order())
+        self.traverse_by(self.post_order_heads, tree.post_order())
 
         for fixer in all_fixers:
             fixer.finish_tree(tree, name)

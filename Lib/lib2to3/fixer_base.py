@@ -94,10 +94,6 @@ class BaseFix(object):
         """
         raise NotImplementedError()
 
-    def parenthesize(self, node):
-        """Wrapper around pygram.parenthesize()."""
-        return pygram.parenthesize(node)
-
     def new_name(self, template="xxx_todo_changeme"):
         """Return a string suitable for use as an identifier
 
