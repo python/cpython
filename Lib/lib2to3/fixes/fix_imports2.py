@@ -11,6 +11,6 @@ MAPPING = {
 
 class FixImports2(fix_imports.FixImports):
 
-    order = "post"
+    run_order = 6
 
     mapping = MAPPING

@@ -12,7 +12,9 @@ from .. import patcomp
 class FixXrange(fixer_base.BaseFix):
 
     PATTERN = """
-              power< (name='range'|name='xrange') trailer< '(' [any] ')' > any* >
+              power<
+                 (name='range'|name='xrange') trailer< '(' args=any ')' >
+              rest=any* >
               """
 
     def transform(self, node, results):
@@ -30,11 +32,14 @@ class FixXrange(fixer_base.BaseFix):
 
     def transform_range(self, node, results):
         if not self.in_special_context(node):
-            arg = node.clone()
-            arg.set_prefix("")
-            call = Call(Name("list"), [arg])
-            call.set_prefix(node.get_prefix())
-            return call
+            range_call = Call(Name("range"), [results["args"].clone()])
+            # Encase the range call in list().
+            list_call = Call(Name("list"), [range_call],
+                             prefix=node.get_prefix())
+            # Put things that were after the range() call after the list call.
+            for n in results["rest"]:
+                list_call.append_child(n)
+            return list_call
         return node
 
     P1 = "power< func=NAME trailer< '(' node=any ')' > any* >"

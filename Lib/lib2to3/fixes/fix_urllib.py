@@ -29,7 +29,7 @@ MAPPING = {'urllib':  [
                      'AbstractBasicAuthHandler',
                      'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler',
                      'AbstractDigestAuthHandler',
-                     'HTTPDigestAuthHander', 'ProxyDigestAuthHandler',
+                     'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler',
                      'HTTPHandler', 'HTTPSHandler', 'FileHandler',
                      'FTPHandler', 'CacheFTPHandler',
                      'UnknownHandler']),
