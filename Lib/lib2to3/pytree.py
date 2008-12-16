@@ -279,18 +279,21 @@ class Node(Base):
         child.parent = self
         self.children[i].parent = None
         self.children[i] = child
+        self.changed()
 
     def insert_child(self, i, child):
         """Equivalent to 'node.children.insert(i, child)'. This method also
         sets the child's parent attribute appropriately."""
         child.parent = self
         self.children.insert(i, child)
+        self.changed()
 
     def append_child(self, child):
         """Equivalent to 'node.children.append(child)'. This method also
         sets the child's parent attribute appropriately."""
         child.parent = self
         self.children.append(child)
+        self.changed()
 
 
 class Leaf(Base):

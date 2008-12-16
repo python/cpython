@@ -33,7 +33,7 @@ CAVEATS:
 from .. import pytree
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Name
+from ..fixer_util import Name, parenthesize
 
 
 class FixHasKey(fixer_base.BaseFix):
@@ -86,7 +86,7 @@ class FixHasKey(fixer_base.BaseFix):
             after = [n.clone() for n in after]
         if arg.type in (syms.comparison, syms.not_test, syms.and_test,
                         syms.or_test, syms.test, syms.lambdef, syms.argument):
-            arg = self.parenthesize(arg)
+            arg = parenthesize(arg)
         if len(before) == 1:
             before = before[0]
         else:
@@ -98,12 +98,12 @@ class FixHasKey(fixer_base.BaseFix):
             n_op = pytree.Node(syms.comp_op, (n_not, n_op))
         new = pytree.Node(syms.comparison, (arg, n_op, before))
         if after:
-            new = self.parenthesize(new)
+            new = parenthesize(new)
             new = pytree.Node(syms.power, (new,) + tuple(after))
         if node.parent.type in (syms.comparison, syms.expr, syms.xor_expr,
                                 syms.and_expr, syms.shift_expr,
                                 syms.arith_expr, syms.term,
                                 syms.factor, syms.power):
-            new = self.parenthesize(new)
+            new = parenthesize(new)
         new.set_prefix(prefix)
         return new

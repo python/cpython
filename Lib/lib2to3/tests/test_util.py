@@ -526,6 +526,33 @@ class Test_find_binding(support.TestCase):
                     b = 7"""
         self.failIf(self.find_binding("a", s))
 
+class Test_touch_import(support.TestCase):
+
+    def test_after_docstring(self):
+        node = parse('"""foo"""\nbar()')
+        fixer_util.touch_import(None, "foo", node)
+        self.assertEqual(str(node), '"""foo"""\nimport foo\nbar()\n\n')
+
+    def test_after_imports(self):
+        node = parse('"""foo"""\nimport bar\nbar()')
+        fixer_util.touch_import(None, "foo", node)
+        self.assertEqual(str(node), '"""foo"""\nimport bar\nimport foo\nbar()\n\n')
+
+    def test_beginning(self):
+        node = parse('bar()')
+        fixer_util.touch_import(None, "foo", node)
+        self.assertEqual(str(node), 'import foo\nbar()\n\n')
+
+    def test_from_import(self):
+        node = parse('bar()')
+        fixer_util.touch_import("cgi", "escape", node)
+        self.assertEqual(str(node), 'from cgi import escape\nbar()\n\n')
+
+    def test_name_import(self):
+        node = parse('bar()')
+        fixer_util.touch_import(None, "cgi", node)
+        self.assertEqual(str(node), 'import cgi\nbar()\n\n')
+
 
 if __name__ == "__main__":
     import __main__
