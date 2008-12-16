@@ -42,6 +42,8 @@ MAPPING = {'StringIO':  'io',
            'DocXMLRPCServer': 'xmlrpc.server',
            'SimpleXMLRPCServer': 'xmlrpc.server',
            'httplib': 'http.client',
+           'htmlentitydefs' : 'html.entities',
+           'HTMLParser' : 'html.parser',
            'Cookie': 'http.cookies',
            'cookielib': 'http.cookiejar',
            'BaseHTTPServer': 'http.server',
@@ -64,16 +66,17 @@ def build_pattern(mapping=MAPPING):
     mod_list = ' | '.join(["module_name='%s'" % key for key in mapping])
     bare_names = alternates(mapping.keys())
 
-    yield """name_import=import_name< 'import' ((%s)
-                          | dotted_as_names< any* (%s) any* >) >
+    yield """name_import=import_name< 'import' ((%s) |
+               multiple_imports=dotted_as_names< any* (%s) any* >) >
           """ % (mod_list, mod_list)
     yield """import_from< 'from' (%s) 'import' ['(']
               ( any | import_as_name< any 'as' any > |
                 import_as_names< any* >)  [')'] >
           """ % mod_list
-    yield """import_name< 'import'
-                          dotted_as_name< (%s) 'as' any > >
-          """ % mod_list
+    yield """import_name< 'import' (dotted_as_name< (%s) 'as' any > |
+               multiple_imports=dotted_as_names<
+                 any* dotted_as_name< (%s) 'as' any > any* >) >
+          """ % (mod_list, mod_list)
 
     # Find usages of module members in code e.g. thread.foo(bar)
     yield "power< bare_with_attr=(%s) trailer<'.' any > any* >" % bare_names
@@ -100,8 +103,8 @@ class FixImports(fixer_base.BaseFix):
         match = super(FixImports, self).match
         results = match(node)
         if results:
-            # Module usage could be in the trailier of an attribute lookup, so
-            # we might have nested matches when "bare_with_attr" is present.
+            # Module usage could be in the trailer of an attribute lookup, so we
+            # might have nested matches when "bare_with_attr" is present.
             if "bare_with_attr" not in results and \
                     any([match(obj) for obj in attr_chain(node, "parent")]):
                 return False
@@ -116,11 +119,21 @@ class FixImports(fixer_base.BaseFix):
         import_mod = results.get("module_name")
         if import_mod:
             new_name = self.mapping[(import_mod or mod_name).value]
+            import_mod.replace(Name(new_name, prefix=import_mod.get_prefix()))
             if "name_import" in results:
                 # If it's not a "from x import x, y" or "import x as y" import,
                 # marked its usage to be replaced.
                 self.replace[import_mod.value] = new_name
-            import_mod.replace(Name(new_name, prefix=import_mod.get_prefix()))
+            if "multiple_imports" in results:
+                # This is a nasty hack to fix multiple imports on a
+                # line (e.g., "import StringIO, urlparse"). The problem is that I
+                # can't figure out an easy way to make a pattern recognize the
+                # keys of MAPPING randomly sprinkled in an import statement.
+                while True:
+                    results = self.match(node)
+                    if not results:
+                        break
+                    self.transform(node, results)
         else:
             # Replace usage of the module.
             bare_name = results["bare_with_attr"][0]

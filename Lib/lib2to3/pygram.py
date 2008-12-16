@@ -29,10 +29,3 @@ class Symbols(object):
 
 python_grammar = driver.load_grammar(_GRAMMAR_FILE)
 python_symbols = Symbols(python_grammar)
-
-
-def parenthesize(node):
-    return pytree.Node(python_symbols.atom,
-                       (pytree.Leaf(token.LPAR, "("),
-                        node,
-                        pytree.Leaf(token.RPAR, ")")))
