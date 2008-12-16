@@ -9,7 +9,7 @@ This converts apply(func, v, k) into (func)(*v, **k)."""
 from .. import pytree
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Call, Comma
+from ..fixer_util import Call, Comma, parenthesize
 
 class FixApply(fixer_base.BaseFix):
 
@@ -39,7 +39,7 @@ class FixApply(fixer_base.BaseFix):
             (func.type != syms.power or
              func.children[-2].type == token.DOUBLESTAR)):
             # Need to parenthesize
-            func = self.parenthesize(func)
+            func = parenthesize(func)
         func.set_prefix("")
         args = args.clone()
         args.set_prefix("")

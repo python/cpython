@@ -293,30 +293,30 @@ class Test_intern(FixerTestCase):
 
     def test_prefix_preservation(self):
         b = """x =   intern(  a  )"""
-        a = """x =   sys.intern(  a  )"""
+        a = """import sys\nx =   sys.intern(  a  )"""
         self.check(b, a)
 
         b = """y = intern("b" # test
               )"""
-        a = """y = sys.intern("b" # test
+        a = """import sys\ny = sys.intern("b" # test
               )"""
         self.check(b, a)
 
         b = """z = intern(a+b+c.d,   )"""
-        a = """z = sys.intern(a+b+c.d,   )"""
+        a = """import sys\nz = sys.intern(a+b+c.d,   )"""
         self.check(b, a)
 
     def test(self):
         b = """x = intern(a)"""
-        a = """x = sys.intern(a)"""
+        a = """import sys\nx = sys.intern(a)"""
         self.check(b, a)
 
         b = """z = intern(a+b+c.d,)"""
-        a = """z = sys.intern(a+b+c.d,)"""
+        a = """import sys\nz = sys.intern(a+b+c.d,)"""
         self.check(b, a)
 
         b = """intern("y%s" % 5).replace("y", "")"""
-        a = """sys.intern("y%s" % 5).replace("y", "")"""
+        a = """import sys\nsys.intern("y%s" % 5).replace("y", "")"""
         self.check(b, a)
 
     # These should not be refactored
@@ -335,6 +335,35 @@ class Test_intern(FixerTestCase):
         self.unchanged(s)
 
         s = """intern()"""
+        self.unchanged(s)
+
+class Test_reduce(FixerTestCase):
+    fixer = "reduce"
+
+    def test_simple_call(self):
+        b = "reduce(a, b, c)"
+        a = "from functools import reduce\nreduce(a, b, c)"
+        self.check(b, a)
+
+    def test_call_with_lambda(self):
+        b = "reduce(lambda x, y: x + y, seq)"
+        a = "from functools import reduce\nreduce(lambda x, y: x + y, seq)"
+        self.check(b, a)
+
+    def test_unchanged(self):
+        s = "reduce(a)"
+        self.unchanged(s)
+
+        s = "reduce(a, b=42)"
+        self.unchanged(s)
+
+        s = "reduce(a, b, c, d)"
+        self.unchanged(s)
+
+        s = "reduce(**c)"
+        self.unchanged(s)
+
+        s = "reduce()"
         self.unchanged(s)
 
 class Test_print(FixerTestCase):
@@ -1044,32 +1073,38 @@ class Test_long(FixerTestCase):
         a = """z = type(x) in (int, int)"""
         self.check(b, a)
 
-    def test_4(self):
-        b = """a = 12L"""
-        a = """a = 12"""
-        self.check(b, a)
-
-    def test_5(self):
-        b = """b = 0x12l"""
-        a = """b = 0x12"""
-        self.check(b, a)
-
-    def test_unchanged_1(self):
-        s = """a = 12"""
-        self.unchanged(s)
-
-    def test_unchanged_2(self):
-        s = """b = 0x12"""
-        self.unchanged(s)
-
-    def test_unchanged_3(self):
-        s = """c = 3.14"""
-        self.unchanged(s)
-
     def test_prefix_preservation(self):
         b = """x =   long(  x  )"""
         a = """x =   int(  x  )"""
         self.check(b, a)
+
+class Test_isinstance(FixerTestCase):
+    fixer = "isinstance"
+
+    def test_remove_multiple_items(self):
+        b = """isinstance(x, (int, int, int))"""
+        a = """isinstance(x, int)"""
+        self.check(b, a)
+
+        b = """isinstance(x, (int, float, int, int, float))"""
+        a = """isinstance(x, (int, float))"""
+        self.check(b, a)
+
+        b = """isinstance(x, (int, float, int, int, float, str))"""
+        a = """isinstance(x, (int, float, str))"""
+        self.check(b, a)
+
+        b = """isinstance(foo() + bar(), (x(), y(), x(), int, int))"""
+        a = """isinstance(foo() + bar(), (x(), y(), x(), int))"""
+        self.check(b, a)
+
+    def test_prefix_preservation(self):
+        b = """if    isinstance(  foo(), (  bar, bar, baz )) : pass"""
+        a = """if    isinstance(  foo(), (  bar, baz )) : pass"""
+        self.check(b, a)
+
+    def test_unchanged(self):
+        self.unchanged("isinstance(x, (str, int))")
 
 class Test_dict(FixerTestCase):
     fixer = "dict"
@@ -1287,6 +1322,14 @@ class Test_xrange(FixerTestCase):
         a = """x = list(range(10, 3, 9)) + [4]"""
         self.check(b, a)
 
+        b = """x = range(10)[::-1]"""
+        a = """x = list(range(10))[::-1]"""
+        self.check(b, a)
+
+        b = """x = range(10)  [3]"""
+        a = """x = list(range(10))  [3]"""
+        self.check(b, a)
+
     def test_xrange_in_for(self):
         b = """for i in xrange(10):\n    j=i"""
         a = """for i in range(10):\n    j=i"""
@@ -1422,9 +1465,8 @@ class Test_xreadlines(FixerTestCase):
         s = "foo(xreadlines)"
         self.unchanged(s)
 
-class Test_imports(FixerTestCase):
-    fixer = "imports"
-    from ..fixes.fix_imports import MAPPING as modules
+
+class ImportsFixerTests:
 
     def test_import_module(self):
         for old, new in self.modules.items():
@@ -1522,18 +1564,36 @@ class Test_imports(FixerTestCase):
             self.check(b, a)
 
 
+class Test_imports(FixerTestCase, ImportsFixerTests):
+    fixer = "imports"
+    from ..fixes.fix_imports import MAPPING as modules
 
-class Test_imports2(Test_imports):
+    def test_multiple_imports(self):
+        b = """import urlparse, cStringIO"""
+        a = """import urllib.parse, io"""
+        self.check(b, a)
+
+    def test_multiple_imports_as(self):
+        b = """
+            import copy_reg as bar, HTMLParser as foo, urlparse
+            s = urlparse.spam(bar.foo())
+            """
+        a = """
+            import copyreg as bar, html.parser as foo, urllib.parse
+            s = urllib.parse.spam(bar.foo())
+            """
+        self.check(b, a)
+
+
+class Test_imports2(FixerTestCase, ImportsFixerTests):
     fixer = "imports2"
     from ..fixes.fix_imports2 import MAPPING as modules
 
 
-class Test_imports_fixer_order(Test_imports):
-
-    fixer = None
+class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
 
     def setUp(self):
-        Test_imports.setUp(self, ['imports', 'imports2'])
+        super(Test_imports_fixer_order, self).setUp(['imports', 'imports2'])
         from ..fixes.fix_imports2 import MAPPING as mapping2
         self.modules = mapping2.copy()
         from ..fixes.fix_imports import MAPPING as mapping1

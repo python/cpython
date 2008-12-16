@@ -8,7 +8,7 @@ intern(s) -> sys.intern(s)"""
 # Local imports
 from .. import pytree
 from .. import fixer_base
-from ..fixer_util import Name, Attr
+from ..fixer_util import Name, Attr, touch_import
 
 
 class FixIntern(fixer_base.BaseFix):
@@ -40,4 +40,5 @@ class FixIntern(fixer_base.BaseFix):
                                         newarglist,
                                         results["rpar"].clone()])] + after)
         new.set_prefix(node.get_prefix())
+        touch_import(None, 'sys', node)
         return new
