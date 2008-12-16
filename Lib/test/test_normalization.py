@@ -9,7 +9,7 @@ TESTDATAFILE = "NormalizationTest.txt"
 TESTDATAURL = "http://www.unicode.org/Public/" + unidata_version + "/ucd/" + TESTDATAFILE
 
 if os.path.exists(TESTDATAFILE):
-    f = open(TESTDATAFILE)
+    f = open(TESTDATAFILE, encoding='utf-8')
     l = f.readline()
     f.close()
     if not unidata_version in l:
