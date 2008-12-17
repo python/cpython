@@ -463,9 +463,11 @@ Miscellaneous opcodes.
    address to jump to (which should be a ``FOR_ITER`` instruction).
 
 
-.. opcode:: LIST_APPEND ()
+.. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS1, TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+   While the appended value is popped off, the list object remains on the
+   stack so that it is available for further iterations of the loop.
 
 
 .. opcode:: LOAD_LOCALS ()

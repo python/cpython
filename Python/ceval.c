@@ -1294,9 +1294,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case LIST_APPEND:
 			w = POP();
-			v = POP();
+			v = stack_pointer[-oparg];
 			err = PyList_Append(v, w);
-			Py_DECREF(v);
 			Py_DECREF(w);
 			if (err == 0) {
 				PREDICT(JUMP_ABSOLUTE);

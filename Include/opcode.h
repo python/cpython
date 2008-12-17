@@ -22,7 +22,6 @@ extern "C" {
 
 #define UNARY_INVERT	15
 
-#define LIST_APPEND	18
 #define BINARY_POWER	19
 
 #define BINARY_MULTIPLY	20
@@ -89,6 +88,7 @@ extern "C" {
 #define DELETE_NAME	91	/* "" */
 #define UNPACK_SEQUENCE	92	/* Number of sequence items */
 #define FOR_ITER	93
+#define LIST_APPEND	94
 
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */
