@@ -693,7 +693,7 @@ opcode_stack_effect(int opcode, int oparg)
 			return 0;
 
 		case LIST_APPEND:
-			return -2;
+			return -1;
 
 		case BINARY_POWER:
 		case BINARY_MULTIPLY:
@@ -2599,9 +2599,8 @@ compiler_call(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
-			    asdl_seq *generators, int gen_index, 
-			    expr_ty elt)
+compiler_listcomp_generator(struct compiler *c, asdl_seq *generators,
+			    int gen_index, expr_ty elt)
 {
 	/* generate code for the iterator, then each of the ifs,
 	   and then write to the element */
@@ -2638,16 +2637,13 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 	} 
 
 	if (++gen_index < asdl_seq_LEN(generators))
-	    if (!compiler_listcomp_generator(c, tmpname, 
-					     generators, gen_index, elt))
+	    if (!compiler_listcomp_generator(c, generators, gen_index, elt))
 		return 0;
 
 	/* only append after the last for generator */
 	if (gen_index >= asdl_seq_LEN(generators)) {
-	    if (!compiler_nameop(c, tmpname, Load))
-		return 0;
 	    VISIT(c, expr, elt);
-	    ADDOP(c, LIST_APPEND);
+	    ADDOP_I(c, LIST_APPEND, gen_index+1);
 
 	    compiler_use_next_block(c, skip);
 	}
@@ -2659,10 +2655,6 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 	} 
 	ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 	compiler_use_next_block(c, anchor);
-	/* delete the temporary list name added to locals */
-	if (gen_index == 1)
-	    if (!compiler_nameop(c, tmpname, Del))
-		return 0;
 	
 	return 1;
 }
@@ -2670,21 +2662,10 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-	identifier tmp;
-	int rc = 0;
-	asdl_seq *generators = e->v.ListComp.generators;
-
 	assert(e->kind == ListComp_kind);
-	tmp = compiler_new_tmpname(c);
-	if (!tmp)
-		return 0;
 	ADDOP_I(c, BUILD_LIST, 0);
-	ADDOP(c, DUP_TOP);
-	if (compiler_nameop(c, tmp, Store))
-	    rc = compiler_listcomp_generator(c, tmp, generators, 0, 
-					     e->v.ListComp.elt);
-	Py_DECREF(tmp);
-	return rc;
+	return compiler_listcomp_generator(c, e->v.ListComp.generators, 0,
+					   e->v.ListComp.elt);
 }
 
 static int
