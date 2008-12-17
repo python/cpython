@@ -419,6 +419,40 @@ Notes:
    overflow check.
 
 
+Additional Methods on Integer Types
+-----------------------------------
+
+.. method:: int.bit_length()
+
+    For any integer ``x``, ``x.bit_length()`` returns the number of
+    bits necessary to represent ``x`` in binary, excluding the sign
+    and any leading zeros::
+
+        >>> n = 37
+        >>> bin(n)
+        '0b100101'
+        >>> n.bit_length()
+        6
+        >>> n = -0b00011010
+        >>> n.bit_length()
+        5
+
+    More precisely, if ``x`` is nonzero then ``x.bit_length()`` is the
+    unique positive integer ``k`` such that ``2**(k-1) <= abs(x) <
+    2**k``.  Equivalently, ``x.bit_length()`` is equal to ``1 +
+    floor(log(x, 2))`` [#]_ . If ``x`` is zero then ``x.bit_length()``
+    gives ``0``.
+
+    Equivalent to::
+
+        def bit_length(self):
+            'Number of bits necessary to represent self in binary.'
+            return len(bin(self).lstrip('-0b'))
+
+
+    .. versionadded:: 3.1
+
+
 Additional Methods on Float
 ---------------------------
 
@@ -2638,6 +2672,11 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [#] As a consequence, the list ``[1, 2]`` is considered equal to ``[1.0, 2.0]``, and
    similarly for tuples.
+
+.. [#] Beware of this formula!  It's mathematically valid, but as a
+   Python expression it will not give correct results for all ``x``,
+   as a consequence of the limited precision of floating-point
+   arithmetic.
 
 .. [#] They must have since the parser can't tell the type of the operands.
 
