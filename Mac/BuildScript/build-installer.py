@@ -134,9 +134,9 @@ LIBRARY_RECIPES=[
     ),
 
     dict(
-        name="SQLite 3.3.14",
-        url="http://www.sqlite.org/sqlite-3.3.14.tar.gz",
-        checksum='e1a4428a5cb17f28164731b72f06130a',
+        name="SQLite 3.6.7",
+        url="http://www.sqlite.org/sqlite-3.6.7.tar.gz",
+        checksum='5223d1f459b608ed8c2c54f8847f8e1a',
         configure_pre=[
             '--enable-threadsafe',
             '--enable-tempstore',
@@ -177,7 +177,7 @@ LIBRARY_RECIPES=[
     ),
     dict(
         name="Sleepycat DB 4.4",
-        url="http://downloads.sleepycat.com/db-4.4.20.tar.gz",
+        url="http://download.oracle.com/berkeley-db/db-4.4.20.tar.gz",
         checksum='d84dff288a19186b136b0daf7067ade3',
         #name="Sleepycat DB 4.3.29",
         #url="http://downloads.sleepycat.com/db-4.3.29.tar.gz",

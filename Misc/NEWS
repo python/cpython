@@ -10,6 +10,11 @@ What's New in Python 2.5.3?
 *Release date: 1X-Dec-2008*
 
 
+Build
+-----
+
+- In the OSX installer, update SQLite to 3.6.7, and change bsddb URL.
+
 What's New in Python 2.5.3c1?
 =============================
 
