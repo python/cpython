@@ -3,6 +3,7 @@ from test import support
 import sys
 
 import random
+import math
 
 # Used for lazy formatting of failure messages
 class Frm(object):
@@ -835,6 +836,41 @@ class LongTest(unittest.TestCase):
         i = 1 << 70
         self.assertTrue(i - i is 0)
         self.assertTrue(0 * i is 0)
+
+    def test_bit_length(self):
+        tiny = 1e-10
+        for x in range(-65000, 65000):
+            k = x.bit_length()
+            # Check equivalence with Python version
+            self.assertEqual(k, len(bin(x).lstrip('-0b')))
+            # Behaviour as specified in the docs
+            if x != 0:
+                self.assert_(2**(k-1) <= abs(x) < 2**k)
+            else:
+                self.assertEqual(k, 0)
+            # Alternative definition: x.bit_length() == 1 + floor(log_2(x))
+            if x != 0:
+                # When x is an exact power of 2, numeric errors can
+                # cause floor(log(x)/log(2)) to be one too small; for
+                # small x this can be fixed by adding a small quantity
+                # to the quotient before taking the floor.
+                self.assertEqual(k, 1 + math.floor(
+                        math.log(abs(x))/math.log(2) + tiny))
+
+        self.assertEqual((0).bit_length(), 0)
+        self.assertEqual((1).bit_length(), 1)
+        self.assertEqual((-1).bit_length(), 1)
+        self.assertEqual((2).bit_length(), 2)
+        self.assertEqual((-2).bit_length(), 2)
+        for i in [2, 3, 15, 16, 17, 31, 32, 33, 63, 64, 234]:
+            a = 2**i
+            self.assertEqual((a-1).bit_length(), i)
+            self.assertEqual((1-a).bit_length(), i)
+            self.assertEqual((a).bit_length(), i+1)
+            self.assertEqual((-a).bit_length(), i+1)
+            self.assertEqual((a+1).bit_length(), i+1)
+            self.assertEqual((-a-1).bit_length(), i+1)
+
 
 def test_main():
     support.run_unittest(LongTest)

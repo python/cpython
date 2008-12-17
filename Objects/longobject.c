@@ -3650,6 +3650,75 @@ long_sizeof(PyLongObject *v)
 	return PyLong_FromSsize_t(res);
 }
 
+static const unsigned char BitLengthTable[32] = {
+	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
+static PyObject *
+long_bit_length(PyLongObject *v)
+{
+	PyLongObject *result, *x, *y;
+	Py_ssize_t ndigits, msd_bits = 0;
+	digit msd;
+
+	assert(v != NULL);
+	assert(PyLong_Check(v));
+
+	ndigits = ABS(Py_SIZE(v));
+	if (ndigits == 0)
+		return PyLong_FromLong(0);
+
+	msd = v->ob_digit[ndigits-1];
+	while (msd >= 32) {
+		msd_bits += 6;
+		msd >>= 6;
+	}
+	msd_bits += (long)(BitLengthTable[msd]);
+
+	if (ndigits <= PY_SSIZE_T_MAX/PyLong_SHIFT)
+		return PyLong_FromSsize_t((ndigits-1)*PyLong_SHIFT + msd_bits);
+
+	/* expression above may overflow; use Python integers instead */
+	result = (PyLongObject *)PyLong_FromSsize_t(ndigits - 1);
+	if (result == NULL)
+		return NULL;
+	x = (PyLongObject *)PyLong_FromLong(PyLong_SHIFT);
+	if (x == NULL)
+		goto error;
+	y = (PyLongObject *)long_mul(result, x);
+	Py_DECREF(x);
+	if (y == NULL)
+		goto error;
+	Py_DECREF(result);
+	result = y;
+
+	x = (PyLongObject *)PyLong_FromLong(msd_bits);
+	if (x == NULL)
+		goto error;
+	y = (PyLongObject *)long_add(result, x);
+	Py_DECREF(x);
+	if (y == NULL)
+		goto error;
+	Py_DECREF(result);
+	result = y;
+
+	return (PyObject *)result;
+
+error:
+	Py_DECREF(result);
+	return NULL;
+}
+
+PyDoc_STRVAR(long_bit_length_doc,
+"int.bit_length() -> int\n\
+\n\
+Number of bits necessary to represent self in binary.\n\
+>>> bin(37)\n\
+'0b100101'\n\
+>>> (37).bit_length()\n\
+6");
+
 #if 0
 static PyObject *
 long_is_finite(PyObject *v)
@@ -3661,6 +3730,8 @@ long_is_finite(PyObject *v)
 static PyMethodDef long_methods[] = {
 	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
+	{"bit_length",	(PyCFunction)long_bit_length, METH_NOARGS,
+	 long_bit_length_doc},
 #if 0
 	{"is_finite",	(PyCFunction)long_is_finite,	METH_NOARGS,
 	 "Returns always True."},

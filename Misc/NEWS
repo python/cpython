@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #3439: Add a bit_length method to int.
+
 - Issue #2173: When getting device encoding, check that return value of
   nl_langinfo is not the empty string.  This was causing silent build
   failures on OS X.
