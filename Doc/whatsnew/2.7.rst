@@ -66,7 +66,23 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* List of changes to be written here.
+* The :func:`int` and :func:`long` types gained a ``bit_length``
+  method that returns the number of bits necessary to represent
+  its argument in binary::
+
+      >>> n = 37
+      >>> bin(37)
+      '0b100101'
+      >>> n.bit_length()
+      6
+      >>> n = 2**123-1
+      >>> n.bit_length()
+      123
+      >>> (n+1).bit_length()
+      124
+
+  (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
+
 
 .. ======================================================================
 

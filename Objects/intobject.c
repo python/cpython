@@ -1138,6 +1138,40 @@ int__format__(PyObject *self, PyObject *args)
 	return NULL;
 }
 
+static const unsigned char BitLengthTable[32] = {
+	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
+static PyObject *
+int_bit_length(PyIntObject *v)
+{
+	unsigned long n;
+	long r = 0;
+
+	if (v->ob_ival < 0)
+		/* avoid undefined behaviour when v->ob_ival == -LONG_MAX-1 */
+		n = 0U-(unsigned long)v->ob_ival;
+	else
+		n = (unsigned long)v->ob_ival;
+
+	while (n >= 32) {
+		r += 6;
+		n >>= 6;
+	}
+	r += (long)(BitLengthTable[n]);
+	return PyInt_FromLong(r);
+}
+
+PyDoc_STRVAR(int_bit_length_doc,
+"int.bit_length() -> int\n\
+\n\
+Number of bits necessary to represent self in binary.\n\
+>>> bin(37)\n\
+'0b100101'\n\
+>>> (37).bit_length()\n\
+6");
+
 #if 0
 static PyObject *
 int_is_finite(PyObject *v)
@@ -1149,6 +1183,8 @@ int_is_finite(PyObject *v)
 static PyMethodDef int_methods[] = {
 	{"conjugate",	(PyCFunction)int_int,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
+	{"bit_length", (PyCFunction)int_bit_length, METH_NOARGS,
+	 int_bit_length_doc},
 #if 0
 	{"is_finite",	(PyCFunction)int_is_finite,	METH_NOARGS,
 	 "Returns always True."},
