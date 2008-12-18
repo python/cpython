@@ -7,7 +7,7 @@ Python News
 What's New in Python 3.1 alpha 0
 ================================
 
-*Release date: XX-XXX-2008*
+*Release date: XX-XXX-200X*
 
 Core and Builtins
 -----------------
@@ -131,6 +131,10 @@ Extension Modules
 
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
   OpenBSD.
+
+- Issue #4583: array.array would not always prohibit resizing when a buffer
+  has been exported, resulting in an interpreter crash when accessing the
+  buffer.
 
 Build
 -----

@@ -8,6 +8,7 @@ from test import support
 from weakref import proxy
 import array, io, math
 from pickle import loads, dumps
+import operator
 
 class ArraySubclass(array.array):
     pass
@@ -709,8 +710,23 @@ class BaseTest(unittest.TestCase):
 
     def test_buffer(self):
         a = array.array(self.typecode, self.example)
-        b = bytes(memoryview(a))
+        m = memoryview(a)
+        b = bytes(m)
+        self.assertEqual(b, a.tostring())
         self.assertEqual(b[0], a.tostring()[0])
+        # Resizing is forbidden when there are buffer exports
+        self.assertRaises(BufferError, a.append, a[0])
+        self.assertRaises(BufferError, a.extend, a[0:1])
+        self.assertRaises(BufferError, a.remove, a[0])
+        self.assertRaises(BufferError, a.fromlist, a.tolist())
+        self.assertRaises(BufferError, a.fromstring, a.tostring())
+        if self.typecode == 'u':
+            self.assertRaises(BufferError, a.fromunicode, a.tounicode())
+        self.assertRaises(BufferError, operator.setitem, a, slice(0, 0), a)
+        self.assertRaises(BufferError, operator.delitem, a, 0)
+        self.assertRaises(BufferError, operator.delitem, a, slice(0, 1))
+        self.assertRaises(BufferError, operator.irepeat, a, 2)
+        self.assertRaises(BufferError, operator.irepeat, a, 0)
 
     def test_weakref(self):
         s = array.array(self.typecode, self.example)
