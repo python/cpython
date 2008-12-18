@@ -94,6 +94,10 @@ Extension Modules
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
   OpenBSD.
 
+- Issue #4583: array.array would not always prohibit resizing when a buffer
+  has been exported, resulting in an interpreter crash when accessing the
+  buffer.
+
 What's New in Python 3.0 final
 ==============================
 

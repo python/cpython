@@ -49,9 +49,15 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 	char *items;
 	size_t _new_size;
 
+	if (self->ob_exports > 0 && newsize != Py_SIZE(self)) {
+		PyErr_SetString(PyExc_BufferError, 
+			"cannot resize an array that is exporting buffers");
+		return -1;
+	}
+
 	/* Bypass realloc() when a previous overallocation is large enough
 	   to accommodate the newsize.  If the newsize is 16 smaller than the
-	   current size, then proceed with the realloc() to shrink the list.
+	   current size, then proceed with the realloc() to shrink the array.
 	*/
 
 	if (self->allocated >= newsize &&
@@ -61,11 +67,13 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 		return 0;
 	}
 
-        if (self->ob_exports > 0) {
-                PyErr_SetString(PyExc_BufferError, 
-                                "cannot resize an array that is exporting data");
-                return -1;
-        }
+	if (newsize == 0) {
+		PyMem_FREE(self->ob_item);
+		self->ob_item = NULL;
+		Py_SIZE(self) = 0;
+		self->allocated = 0;
+		return 0;
+	}
 
 	/* This over-allocates proportional to the array size, making room
 	 * for additional growth.  The over-allocation is mild, but is
@@ -731,25 +739,15 @@ array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 		memmove(item + (ihigh+d)*a->ob_descr->itemsize,
 			item + ihigh*a->ob_descr->itemsize,
 			(Py_SIZE(a)-ihigh)*a->ob_descr->itemsize);
-		Py_SIZE(a) += d;
-		PyMem_RESIZE(item, char, Py_SIZE(a)*a->ob_descr->itemsize);
-						/* Can't fail */
-		a->ob_item = item;
-		a->allocated = Py_SIZE(a);
+		if (array_resize(a, Py_SIZE(a) + d) == -1)
+		    return -1;
 	}
 	else if (d > 0) { /* Insert d items */
-		PyMem_RESIZE(item, char,
-			     (Py_SIZE(a) + d)*a->ob_descr->itemsize);
-		if (item == NULL) {
-			PyErr_NoMemory();
+		if (array_resize(a, Py_SIZE(a) + d))
 			return -1;
-		}
 		memmove(item + (ihigh+d)*a->ob_descr->itemsize,
 			item + ihigh*a->ob_descr->itemsize,
 			(Py_SIZE(a)-ihigh)*a->ob_descr->itemsize);
-		a->ob_item = item;
-		Py_SIZE(a) += d;
-		a->allocated = Py_SIZE(a);
 	}
 	if (n > 0)
 		memcpy(item + ilow*a->ob_descr->itemsize, b->ob_item,
@@ -804,8 +802,7 @@ array_iter_extend(arrayobject *self, PyObject *bb)
 static int
 array_do_extend(arrayobject *self, PyObject *bb)
 {
-	Py_ssize_t size;
-	char *old_item;
+	Py_ssize_t size, oldsize;
 
 	if (!array_Check(bb))
 		return array_iter_extend(self, bb);
@@ -820,18 +817,12 @@ array_do_extend(arrayobject *self, PyObject *bb)
 		PyErr_NoMemory();
 		return -1;
 	}
-	size = Py_SIZE(self) + Py_SIZE(b);
-	old_item = self->ob_item;
-        PyMem_RESIZE(self->ob_item, char, size*self->ob_descr->itemsize);
-        if (self->ob_item == NULL) {
-		self->ob_item = old_item;
-		PyErr_NoMemory();
+	oldsize = Py_SIZE(self);
+	size = oldsize + Py_SIZE(b);
+	if (array_resize(self, size) == -1)
 		return -1;
-        }
-	memcpy(self->ob_item + Py_SIZE(self)*self->ob_descr->itemsize,
-               b->ob_item, Py_SIZE(b)*b->ob_descr->itemsize);
-	Py_SIZE(self) = size;
-	self->allocated = size;
+	memcpy(self->ob_item + oldsize * self->ob_descr->itemsize,
+		b->ob_item, Py_SIZE(b) * b->ob_descr->itemsize);
 
 	return 0;
 #undef b
@@ -867,27 +858,15 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 			return PyErr_NoMemory();
 		}
 		size = Py_SIZE(self) * self->ob_descr->itemsize;
-		if (n == 0) {
-			PyMem_FREE(items);
-			self->ob_item = NULL;
-			Py_SIZE(self) = 0;
-			self->allocated = 0;
+		if (n > 0 && size > PY_SSIZE_T_MAX / n) {
+			return PyErr_NoMemory();
 		}
-		else {
-			if (size > PY_SSIZE_T_MAX / n) {
-				return PyErr_NoMemory();
-			}
-			PyMem_RESIZE(items, char, n * size);
-			if (items == NULL)
-				return PyErr_NoMemory();
-			p = items;
-			for (i = 1; i < n; i++) {
-				p += size;
-				memcpy(p, items, size);
-			}
-			self->ob_item = items;
-			Py_SIZE(self) *= n;
-			self->allocated = Py_SIZE(self);
+		if (array_resize(self, n * Py_SIZE(self)) == -1)
+			return NULL;
+		items = p = self->ob_item;
+		for (i = 1; i < n; i++) {
+			p += size;
+			memcpy(p, items, size);
 		}
 	}
 	Py_INCREF(self);
@@ -1312,7 +1291,6 @@ static PyObject *
 array_fromlist(arrayobject *self, PyObject *list)
 {
 	Py_ssize_t n;
-	Py_ssize_t itemsize = self->ob_descr->itemsize;
 
 	if (!PyList_Check(list)) {
 		PyErr_SetString(PyExc_TypeError, "arg must be list");
@@ -1320,28 +1298,15 @@ array_fromlist(arrayobject *self, PyObject *list)
 	}
 	n = PyList_Size(list);
 	if (n > 0) {
-		char *item = self->ob_item;
-		Py_ssize_t i;
-		PyMem_RESIZE(item, char, (Py_SIZE(self) + n) * itemsize);
-		if (item == NULL) {
-			PyErr_NoMemory();
+		Py_ssize_t i, old_size;
+		old_size = Py_SIZE(self);
+		if (array_resize(self, old_size + n) == -1)
 			return NULL;
-		}
-		self->ob_item = item;
-		Py_SIZE(self) += n;
-		self->allocated = Py_SIZE(self);
 		for (i = 0; i < n; i++) {
 			PyObject *v = PyList_GetItem(list, i);
 			if ((*self->ob_descr->setitem)(self,
 					Py_SIZE(self) - n + i, v) != 0) {
-				Py_SIZE(self) -= n;
-				if (itemsize && (Py_SIZE(self) > PY_SSIZE_T_MAX / itemsize)) {
-					return PyErr_NoMemory();
-				}
-				PyMem_RESIZE(item, char,
-					          Py_SIZE(self) * itemsize);
-				self->ob_item = item;
-				self->allocated = Py_SIZE(self);
+				array_resize(self, old_size);
 				return NULL;
 			}
 		}
@@ -1395,21 +1360,15 @@ array_fromstring(arrayobject *self, PyObject *args)
 	}
 	n = n / itemsize;
 	if (n > 0) {
-		char *item = self->ob_item;
-		if ((n > PY_SSIZE_T_MAX - Py_SIZE(self)) ||
-			((Py_SIZE(self) + n) > PY_SSIZE_T_MAX / itemsize)) {
+        Py_ssize_t old_size = Py_SIZE(self);
+		if ((n > PY_SSIZE_T_MAX - old_size) ||
+			((old_size + n) > PY_SSIZE_T_MAX / itemsize)) {
 				return PyErr_NoMemory();
 		}
-		PyMem_RESIZE(item, char, (Py_SIZE(self) + n) * itemsize);
-		if (item == NULL) {
-			PyErr_NoMemory();
+		if (array_resize(self, old_size + n) == -1)
 			return NULL;
-		}
-		self->ob_item = item;
-		Py_SIZE(self) += n;
-		self->allocated = Py_SIZE(self);
-		memcpy(item + (Py_SIZE(self) - n) * itemsize,
-		       str, itemsize*n);
+		memcpy(self->ob_item + old_size * itemsize,
+			str, n * itemsize);
 	}
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1458,19 +1417,10 @@ array_fromunicode(arrayobject *self, PyObject *args)
 		return NULL;
 	}
 	if (n > 0) {
-		Py_UNICODE *item = (Py_UNICODE *) self->ob_item;
-		if (Py_SIZE(self) > PY_SSIZE_T_MAX - n) {
-			return PyErr_NoMemory();
-		}
-		PyMem_RESIZE(item, Py_UNICODE, Py_SIZE(self) + n);
-		if (item == NULL) {
-			PyErr_NoMemory();
+		Py_ssize_t old_size = Py_SIZE(self);
+		if (array_resize(self, old_size + n) == -1)
 			return NULL;
-		}
-		self->ob_item = (char *) item;
-		Py_SIZE(self) += n;
-		self->allocated = Py_SIZE(self);
-		memcpy(item + Py_SIZE(self) - n,
+		memcpy(self->ob_item + old_size * sizeof(Py_UNICODE),
 		       ustr, n * sizeof(Py_UNICODE));
 	}
 
@@ -1740,12 +1690,12 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 				self->ob_item + stop * itemsize,
 				(Py_SIZE(self) - stop) * itemsize);
 			if (array_resize(self, Py_SIZE(self) +
-					 needed - slicelength) < 0)
+				needed - slicelength) < 0)
 				return -1;
 		}
 		else if (slicelength < needed) {
 			if (array_resize(self, Py_SIZE(self) +
-					 needed - slicelength) < 0)
+				needed - slicelength) < 0)
 				return -1;
 			memmove(self->ob_item + (start + needed) * itemsize,
 				self->ob_item + stop * itemsize,
