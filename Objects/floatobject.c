@@ -1238,7 +1238,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	 ********************/
 
 	/* leading whitespace and optional sign */
-	while (isspace(*s))
+	while (isspace(Py_CHARMASK(*s)))
 		s++;
 	if (*s == '-') {
 		s++;
@@ -1308,7 +1308,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		exp = 0;
 
 	/* optional trailing whitespace leading to the end of the string */
-	while (isspace(*s))
+	while (isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s != s_end)
 		goto parse_error;
