@@ -707,6 +707,8 @@ opcode_stack_effect(int opcode, int oparg)
 
 		case SET_ADD:
 		case LIST_APPEND:
+			return -1;
+		case MAP_ADD:
 			return -2;
 
 		case BINARY_POWER:
@@ -2823,7 +2825,7 @@ compiler_call_helper(struct compiler *c,
 */
 
 static int
-compiler_comprehension_generator(struct compiler *c, PyObject *tmpname,
+compiler_comprehension_generator(struct compiler *c, 
 				 asdl_seq *generators, int gen_index, 
 				 expr_ty elt, expr_ty val, int type)
 {
@@ -2871,7 +2873,7 @@ compiler_comprehension_generator(struct compiler *c, PyObject *tmpname,
 	} 
 
 	if (++gen_index < asdl_seq_LEN(generators))
-		if (!compiler_comprehension_generator(c, tmpname, 
+		if (!compiler_comprehension_generator(c, 
 						      generators, gen_index,
 						      elt, val, type))
 		return 0;
@@ -2886,27 +2888,19 @@ compiler_comprehension_generator(struct compiler *c, PyObject *tmpname,
 			ADDOP(c, POP_TOP);
 			break;
 		case COMP_LISTCOMP:
-			if (!compiler_nameop(c, tmpname, Load))
-				return 0;
 			VISIT(c, expr, elt);
-			ADDOP(c, LIST_APPEND);
+			ADDOP_I(c, LIST_APPEND, gen_index + 1);
 			break;
 		case COMP_SETCOMP:
-			if (!compiler_nameop(c, tmpname, Load))
-				return 0;
 			VISIT(c, expr, elt);
-			ADDOP(c, SET_ADD);
+			ADDOP_I(c, SET_ADD, gen_index + 1);
 			break;
 		case COMP_DICTCOMP:
-			if (!compiler_nameop(c, tmpname, Load))
-				return 0;
 			/* With 'd[k] = v', v is evaluated before k, so we do
-			   the same. STORE_SUBSCR requires (item, map, key),
-			   so we still end up ROTing once. */
+			   the same. */
 			VISIT(c, expr, val);
-			ADDOP(c, ROT_TWO);
 			VISIT(c, expr, elt);
-			ADDOP(c, STORE_SUBSCR);
+			ADDOP_I(c, MAP_ADD, gen_index + 1);
 			break;
 		default:
 			return 0;
@@ -2932,7 +2926,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 		       asdl_seq *generators, expr_ty elt, expr_ty val)
 {
 	PyCodeObject *co = NULL;
-	identifier tmp = NULL;
 	expr_ty outermost_iter;
 
 	outermost_iter = ((comprehension_ty)
@@ -2943,9 +2936,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 	
 	if (type != COMP_GENEXP) {
 		int op;
-		tmp = compiler_new_tmpname(c);
-		if (!tmp)
-			goto error_in_scope;
 		switch (type) {
 		case COMP_LISTCOMP:
 			op = BUILD_LIST;
@@ -2963,12 +2953,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 		}
 
 		ADDOP_I(c, op, 0);
-		ADDOP(c, DUP_TOP);
-		if (!compiler_nameop(c, tmp, Store))
-			goto error_in_scope;
 	}
 	
-	if (!compiler_comprehension_generator(c, tmp, generators, 0, elt,
+	if (!compiler_comprehension_generator(c, generators, 0, elt,
 					      val, type))
 		goto error_in_scope;
 	
@@ -2984,7 +2971,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 	if (!compiler_make_closure(c, co, 0))
 		goto error;
 	Py_DECREF(co);
-	Py_XDECREF(tmp);
 
 	VISIT(c, expr, outermost_iter);
 	ADDOP(c, GET_ITER);
@@ -2994,7 +2980,6 @@ error_in_scope:
 	compiler_exit_scope(c);
 error:
 	Py_XDECREF(co);
-	Py_XDECREF(tmp);
 	return 0;
 }
 

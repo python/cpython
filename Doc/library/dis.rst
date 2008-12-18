@@ -357,14 +357,25 @@ Miscellaneous opcodes.
    address to jump to (which should be a ``FOR_ITER`` instruction).
 
 
-.. opcode:: SET_ADD ()
+.. opcode:: SET_ADD (i)
 
-   Calls ``set.add(TOS1, TOS)``.  Used to implement set comprehensions.
+   Calls ``set.add(TOS1[-i], TOS)``.  Used to implement set comprehensions.
 
 
-.. opcode:: LIST_APPEND ()
+.. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS1, TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+
+
+.. opcode:: MAP_ADD (i)
+
+   Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
+   comprehensions.
+
+
+For all of the SET_ADD, LIST_APPEND and MAP_ADD instructions, while the
+added value or key/value pair is popped off, the container object remains on
+the stack so that it is available for further iterations of the loop.
 
 
 .. opcode:: LOAD_LOCALS ()

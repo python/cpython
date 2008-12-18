@@ -1306,9 +1306,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case LIST_APPEND:
 			w = POP();
-			v = POP();
+			v = stack_pointer[-oparg];
 			err = PyList_Append(v, w);
-			Py_DECREF(v);
 			Py_DECREF(w);
 			if (err == 0) {
 				PREDICT(JUMP_ABSOLUTE);
@@ -1318,9 +1317,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case SET_ADD:
 			w = POP();
-			v = POP();
+			v = stack_pointer[-oparg];
 			err = PySet_Add(v, w);
-			Py_DECREF(v);
 			Py_DECREF(w);
 			if (err == 0) {
 				PREDICT(JUMP_ABSOLUTE);
@@ -1933,6 +1931,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(u);
 			Py_DECREF(w);
 			if (err == 0) continue;
+			break;
+
+		case MAP_ADD:
+			w = TOP();     /* key */
+			u = SECOND();  /* value */
+			STACKADJ(-2);
+			v = stack_pointer[-oparg];  /* dict */
+			assert (PyDict_CheckExact(v));
+			err = PyDict_SetItem(v, w, u);  /* v[w] = u */
+			Py_DECREF(u);
+			Py_DECREF(w);
+			if (err == 0) {
+				PREDICT(JUMP_ABSOLUTE);
+				continue;
+			}
 			break;
 
 		case LOAD_ATTR:

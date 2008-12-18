@@ -21,8 +21,6 @@ extern "C" {
 
 #define UNARY_INVERT	15
 
-#define SET_ADD	17
-#define LIST_APPEND	18
 #define BINARY_POWER	19
 
 #define BINARY_MULTIPLY	20
@@ -132,6 +130,10 @@ extern "C" {
 
 /* Support for opargs more than 16 bits long */
 #define EXTENDED_ARG  143
+
+#define LIST_APPEND     145
+#define SET_ADD         146
+#define MAP_ADD         147
 
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
