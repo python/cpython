@@ -1068,7 +1068,7 @@ frameworkaltinstallunixtools4way:
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
-	cd Mac && Make installextras DESTDIR="$(DESTDIR)"
+	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
 
 # This installs a few of the useful scripts in Tools/scripts
 scriptsinstall:
