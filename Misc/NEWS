@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #2183: Simplify and optimize bytecode for list, dict and set
+  comprehensions. Original patch for list comprehensions by Neal Norwitz.
+
 - Issue #2467: gc.DEBUG_STATS reported invalid elapsed times. Also, always
   print elapsed times, not only when some objects are uncollectable /
   unreachable. Original patch by Neil Schemenauer.

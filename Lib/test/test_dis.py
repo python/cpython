@@ -55,29 +55,25 @@ def bug1333982(x=[]):
 
 dis_bug1333982 = """\
  %-4d         0 LOAD_CONST               1 (0)
-              3 JUMP_IF_TRUE            41 (to 47)
+              3 JUMP_IF_TRUE            33 (to 39)
               6 POP_TOP
               7 LOAD_GLOBAL              0 (AssertionError)
              10 BUILD_LIST               0
-             13 DUP_TOP
-             14 STORE_FAST               1 (_[1])
-             17 LOAD_FAST                0 (x)
-             20 GET_ITER
-        >>   21 FOR_ITER                13 (to 37)
-             24 STORE_FAST               2 (s)
-             27 LOAD_FAST                1 (_[1])
-             30 LOAD_FAST                2 (s)
-             33 LIST_APPEND
-             34 JUMP_ABSOLUTE           21
-        >>   37 DELETE_FAST              1 (_[1])
+             13 LOAD_FAST                0 (x)
+             16 GET_ITER
+        >>   17 FOR_ITER                12 (to 32)
+             20 STORE_FAST               1 (s)
+             23 LOAD_FAST                1 (s)
+             26 LIST_APPEND              2
+             29 JUMP_ABSOLUTE           17
 
- %-4d        40 LOAD_CONST               2 (1)
-             43 BINARY_ADD
-             44 RAISE_VARARGS            2
-        >>   47 POP_TOP
+ %-4d   >>   32 LOAD_CONST               2 (1)
+             35 BINARY_ADD
+             36 RAISE_VARARGS            2
+        >>   39 POP_TOP
 
- %-4d        48 LOAD_CONST               0 (None)
-             51 RETURN_VALUE
+ %-4d        40 LOAD_CONST               0 (None)
+             43 RETURN_VALUE
 """%(bug1333982.__code__.co_firstlineno + 1,
      bug1333982.__code__.co_firstlineno + 2,
      bug1333982.__code__.co_firstlineno + 3)
