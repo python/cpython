@@ -1438,13 +1438,13 @@ itself.  This means, for example, that one shared object can contain a second::
 
    Proxy objects are instances of subclasses of :class:`BaseProxy`.
 
-   .. method:: _call_method(methodname[, args[, kwds]])
+   .. method:: _callmethod(methodname[, args[, kwds]])
 
       Call and return the result of a method of the proxy's referent.
 
       If ``proxy`` is a proxy whose referent is ``obj`` then the expression ::
 
-         proxy._call_method(methodname, args, kwds)
+         proxy._callmethod(methodname, args, kwds)
 
       will evaluate the expression ::
 
@@ -1457,26 +1457,26 @@ itself.  This means, for example, that one shared object can contain a second::
       argument of :meth:`BaseManager.register`.
 
       If an exception is raised by the call, then then is re-raised by
-      :meth:`_call_method`.  If some other exception is raised in the manager's
+      :meth:`_callmethod`.  If some other exception is raised in the manager's
       process then this is converted into a :exc:`RemoteError` exception and is
-      raised by :meth:`_call_method`.
+      raised by :meth:`_callmethod`.
 
       Note in particular that an exception will be raised if *methodname* has
       not been *exposed*
 
-      An example of the usage of :meth:`_call_method`::
+      An example of the usage of :meth:`_callmethod`::
 
          >>> l = manager.list(range(10))
-         >>> l._call_method('__len__')
+         >>> l._callmethod('__len__')
          10
-         >>> l._call_method('__getslice__', (2, 7))   # equiv to `l[2:7]`
+         >>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`
          [2, 3, 4, 5, 6]
-         >>> l._call_method('__getitem__', (20,))     # equiv to `l[20]`
+         >>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`
          Traceback (most recent call last):
          ...
          IndexError: list index out of range
 
-   .. method:: _get_value()
+   .. method:: _getvalue()
 
       Return a copy of the referent.
 
