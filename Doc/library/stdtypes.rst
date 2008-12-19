@@ -453,31 +453,27 @@ Additional Methods on Integer Types
 .. method:: int.bit_length()
 .. method:: long.bit_length()
 
-    For any integer ``x``, ``x.bit_length()`` returns the number of
-    bits necessary to represent ``x`` in binary, excluding the sign
-    and any leading zeros::
+    Return the number of bits necessary to represent an integer in binary,
+    excluding the sign and leading zeros::
 
-        >>> n = 37
+        >>> n = -37
         >>> bin(n)
-        '0b100101'
+        '-0b100101'
         >>> n.bit_length()
         6
-        >>> n = -0b00011010
-        >>> n.bit_length()
-        5
 
-    More precisely, if ``x`` is nonzero then ``x.bit_length()`` is the
-    unique positive integer ``k`` such that ``2**(k-1) <= abs(x) <
-    2**k``.  Equivalently, ``x.bit_length()`` is equal to ``1 +
-    floor(log(x, 2))`` [#]_ . If ``x`` is zero then ``x.bit_length()``
-    gives ``0``.
+    More precisely, if ``x`` is nonzero, then ``x.bit_length()`` is the
+    unique positive integer ``k`` such that ``2**(k-1) <= abs(x) < 2**k``.
+    Equivalently, when ``abs(x)`` is small enough to have a correctly
+    rounded logarithm, then ``k = 1 + int(log(abs(x), 2))``.
+    If ``x`` is zero, then ``x.bit_length()`` returns ``0``.
 
     Equivalent to::
 
         def bit_length(self):
-            'Number of bits necessary to represent self in binary.'
-            return len(bin(self).lstrip('-0b'))
-
+            s = bin(x)          # binary representation:  bin(-37) --> '-0b100101'
+            s = s.lstrip('-0b') # remove leading zeros and minus sign
+            return len(s)       # len('100101') --> 6
 
     .. versionadded:: 2.7
 
@@ -2682,11 +2678,6 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [#] As a consequence, the list ``[1, 2]`` is considered equal to ``[1.0, 2.0]``, and
    similarly for tuples.
-
-.. [#] Beware of this formula!  It's mathematically valid, but as a
-   Python expression it will not give correct results for all ``x``,
-   as a consequence of the limited precision of floating-point
-   arithmetic.
 
 .. [#] They must have since the parser can't tell the type of the operands.
 
