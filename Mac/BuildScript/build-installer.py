@@ -334,13 +334,6 @@ def checkEnvironment():
     if os.path.exists('/opt/local'):
         fatal("Detected MacPorts, please remove before building Python")
 
-    if not os.path.exists('/Library/Frameworks/Tcl.framework') or \
-            not os.path.exists('/Library/Frameworks/Tk.framework'):
-
-        fatal("Please install a Universal Tcl/Tk framework in /Library from\n\thttp://tcltkaqua.sourceforge.net/")
-
-
-
 def parseOptions(args = None):
     """
     Parse arguments and update global settings.
