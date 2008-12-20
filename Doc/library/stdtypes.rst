@@ -338,15 +338,13 @@ Notes:
       module: math
       single: floor() (in module math)
       single: ceil() (in module math)
+      single: trunc() (in module math)      
       pair: numeric; conversions
-      pair: C; language
 
-   Conversion from floating point to (long or plain) integer may round or
-   truncate as in C; see functions :func:`math.floor` and :func:`math.ceil` for
-   well-defined conversions.
-
-   .. deprecated:: 2.6
-      Instead, convert floats to long explicitly with :func:`trunc`.
+   Conversion from floats using :func:`int` or :func:`long` truncates toward
+   zero like the related function, :func:`math.trunc`.  Use the function
+   :func:`math.floor` to round downward and :func:`math.ceil` to round
+   upward.
 
 (3)
    See :ref:`built-in-funcs` for a full description.
