@@ -630,7 +630,10 @@ error:
 	return NULL;
 }
 
-PyDoc_STRVAR(math_factorial_doc, "Return n!");
+PyDoc_STRVAR(math_factorial_doc,
+"factorial(x) -> Integral\n"
+"\n"
+"Find x!. Raise a ValueError if x is negative or non-integral.");
 
 static PyObject *
 math_trunc(PyObject *self, PyObject *number)
