@@ -6508,81 +6508,65 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
     return 0;
 }
 
+
+#define TEST_COND(cond) \
+	((cond) ? Py_True : Py_False)
+
 PyObject *PyUnicode_RichCompare(PyObject *left,
                                 PyObject *right,
                                 int op)
 {
     int result;
-
-    result = PyUnicode_Compare(left, right);
-    if (result == -1 && PyErr_Occurred())
-        goto onError;
-
-    /* Convert the return value to a Boolean */
-    switch (op) {
-    case Py_EQ:
-        result = (result == 0);
-        break;
-    case Py_NE:
-        result = (result != 0);
-        break;
-    case Py_LE:
-        result = (result <= 0);
-        break;
-    case Py_GE:
-        result = (result >= 0);
-        break;
-    case Py_LT:
-        result = (result == -1);
-        break;
-    case Py_GT:
-        result = (result == 1);
-        break;
+    
+    if (PyUnicode_Check(left) && PyUnicode_Check(right)) {
+        PyObject *v;
+        if (((PyUnicodeObject *) left)->length !=
+            ((PyUnicodeObject *) right)->length) {
+            if (op == Py_EQ) {
+                Py_INCREF(Py_False);
+                return Py_False;
+            }
+            if (op == Py_NE) {
+                Py_INCREF(Py_True);
+                return Py_True;
+            }
+        }
+        if (left == right)
+            result = 0;
+        else
+            result = unicode_compare((PyUnicodeObject *)left,
+                                     (PyUnicodeObject *)right);
+    
+        /* Convert the return value to a Boolean */
+        switch (op) {
+        case Py_EQ:
+            v = TEST_COND(result == 0);
+            break;
+        case Py_NE:
+            v = TEST_COND(result != 0);
+            break;
+        case Py_LE:
+            v = TEST_COND(result <= 0);
+            break;
+        case Py_GE:
+            v = TEST_COND(result >= 0);
+            break;
+        case Py_LT:
+            v = TEST_COND(result == -1);
+            break;
+        case Py_GT:
+            v = TEST_COND(result == 1);
+            break;
+        default:
+            PyErr_BadArgument();
+            return NULL;
+        }
+        Py_INCREF(v);
+        return v;
     }
-    return PyBool_FromLong(result);
-
- onError:
-
-    /* Standard case
-
-       Type errors mean that PyUnicode_FromObject() could not convert
-       one of the arguments (usually the right hand side) to Unicode,
-       ie. we can't handle the comparison request. However, it is
-       possible that the other object knows a comparison method, which
-       is why we return Py_NotImplemented to give the other object a
-       chance.
-
-    */
-    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        PyErr_Clear();
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-    if (op != Py_EQ && op != Py_NE)
-        return NULL;
-
-    /* Equality comparison.
-
-       This is a special case: we silence any PyExc_UnicodeDecodeError
-       and instead turn it into a PyErr_UnicodeWarning.
-
-    */
-    if (!PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))
-        return NULL;
-    PyErr_Clear();
-    if (PyErr_WarnEx(PyExc_UnicodeWarning, 
-                     (op == Py_EQ) ? 
-                     "equal comparison "
-                     "failed to convert both arguments to str - "
-                     "interpreting them as being unequal"
-                     :
-                     "Unicode unequal comparison "
-                     "failed to convert both arguments to str - "
-                     "interpreting them as being unequal",
-                     1) < 0)
-        return NULL;
-    result = (op == Py_NE);
-    return PyBool_FromLong(result);
+    
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 int PyUnicode_Contains(PyObject *container,
