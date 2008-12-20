@@ -9,8 +9,7 @@ bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
 
 Usage: see USAGE variable in the script.
 """
-import platform, os, sys, getopt, textwrap, shutil, stat, time, pwd
-import urllib.request
+import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
 import grp
 
 INCLUDE_TIMESTAMP = 1
@@ -55,7 +54,7 @@ def getFullVersion():
         if 'PY_VERSION' in ln:
             return ln.split()[-1][1:-1]
 
-    raise RuntimeError("Cannot find full version??")
+    raise RuntimeError, "Cannot find full version??"
 
 # The directory we'll use to create the build (will be erased and recreated)
 WORKDIR = "/tmp/_py"
@@ -292,7 +291,7 @@ def runCommand(commandline):
     xit = fd.close()
     if xit is not None:
         sys.stdout.write(data)
-        raise RuntimeError("command failed: %s"%(commandline,))
+        raise RuntimeError, "command failed: %s"%(commandline,)
 
     if VERBOSE:
         sys.stdout.write(data); sys.stdout.flush()
@@ -303,7 +302,7 @@ def captureCommand(commandline):
     xit = fd.close()
     if xit is not None:
         sys.stdout.write(data)
-        raise RuntimeError("command failed: %s"%(commandline,))
+        raise RuntimeError, "command failed: %s"%(commandline,)
 
     return data
 
@@ -336,17 +335,17 @@ def parseOptions(args=None):
     try:
         options, args = getopt.getopt(args, '?hb',
                 [ 'build-dir=', 'third-party=', 'sdk-path=' , 'src-dir='])
-    except getopt.error as msg:
-        print(msg)
+    except getopt.error, msg:
+        print msg
         sys.exit(1)
 
     if args:
-        print("Additional arguments")
+        print "Additional arguments"
         sys.exit(1)
 
     for k, v in options:
         if k in ('-h', '-?'):
-            print(USAGE)
+            print USAGE
             sys.exit(0)
 
         elif k in ('-d', '--build-dir'):
@@ -362,19 +361,19 @@ def parseOptions(args=None):
             SRCDIR=v
 
         else:
-            raise NotImplementedError(k)
+            raise NotImplementedError, k
 
     SRCDIR=os.path.abspath(SRCDIR)
     WORKDIR=os.path.abspath(WORKDIR)
     SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
-    print("Settings:")
-    print(" * Source directory:", SRCDIR)
-    print(" * Build directory: ", WORKDIR)
-    print(" * SDK location:    ", SDKPATH)
-    print(" * third-party source:", DEPSRC)
-    print("")
+    print "Settings:"
+    print " * Source directory:", SRCDIR
+    print " * Build directory: ", WORKDIR
+    print " * SDK location:    ", SDKPATH
+    print " * third-party source:", DEPSRC
+    print ""
 
 
 
@@ -419,7 +418,7 @@ def extractArchive(builddir, archiveName):
         xit = fp.close()
         if xit is not None:
             sys.stdout.write(data)
-            raise RuntimeError("Cannot extract %s"%(archiveName,))
+            raise RuntimeError, "Cannot extract %s"%(archiveName,)
 
         return os.path.join(builddir, retval)
 
@@ -441,9 +440,9 @@ def downloadURL(url, fname):
         pass
     else:
         if KNOWNSIZES.get(url) == size:
-            print("Using existing file for", url)
+            print "Using existing file for", url
             return
-    fpIn = urllib.request.urlopen(url)
+    fpIn = urllib2.urlopen(url)
     fpOut = open(fname, 'wb')
     block = fpIn.read(10240)
     try:
@@ -480,14 +479,14 @@ def buildRecipe(recipe, basedir, archList):
 
 
     if os.path.exists(sourceArchive):
-        print("Using local copy of %s"%(name,))
+        print "Using local copy of %s"%(name,)
 
     else:
-        print("Downloading %s"%(name,))
+        print "Downloading %s"%(name,)
         downloadURL(url, sourceArchive)
-        print("Archive for %s stored as %s"%(name, sourceArchive))
+        print "Archive for %s stored as %s"%(name, sourceArchive)
 
-    print("Extracting archive for %s"%(name,))
+    print "Extracting archive for %s"%(name,)
     buildDir=os.path.join(WORKDIR, '_bld')
     if not os.path.exists(buildDir):
         os.mkdir(buildDir)
@@ -550,14 +549,14 @@ def buildRecipe(recipe, basedir, archList):
         configure_args.insert(0, configure)
         configure_args = [ shellQuote(a) for a in configure_args ]
 
-        print("Running configure for %s"%(name,))
+        print "Running configure for %s"%(name,)
         runCommand(' '.join(configure_args) + ' 2>&1')
 
-    print("Running install for %s"%(name,))
+    print "Running install for %s"%(name,)
     runCommand('{ ' + install + ' ;} 2>&1')
 
-    print("Done %s"%(name,))
-    print("")
+    print "Done %s"%(name,)
+    print ""
 
     os.chdir(curdir)
 
@@ -565,9 +564,9 @@ def buildLibraries():
     """
     Build our dependencies into $WORKDIR/libraries/usr/local
     """
-    print("")
-    print("Building required libraries")
-    print("")
+    print ""
+    print "Building required libraries"
+    print ""
     universal = os.path.join(WORKDIR, 'libraries')
     os.mkdir(universal)
     os.makedirs(os.path.join(universal, 'usr', 'local', 'lib'))
@@ -581,7 +580,7 @@ def buildLibraries():
 def buildPythonDocs():
     # This stores the documentation as Resources/English.lproj/Docuentation
     # inside the framwork. pydoc and IDLE will pick it up there.
-    print("Install python documentation")
+    print "Install python documentation"
     rootDir = os.path.join(WORKDIR, '_root')
     version = getVersion()
     docdir = os.path.join(rootDir, 'pydocs')
@@ -590,13 +589,13 @@ def buildPythonDocs():
     name = 'html-%s.tar.bz2'%(getFullVersion(),)
     sourceArchive = os.path.join(DEPSRC, name)
     if os.path.exists(sourceArchive):
-        print("Using local copy of %s"%(name,))
+        print "Using local copy of %s"%(name,)
 
     else:
         print "Downloading %s"%(novername,)
         downloadURL('http://www.python.org/ftp/python/doc/%s/%s'%(
             getFullVersion(), novername), sourceArchive)
-        print("Archive for %s stored as %s"%(name, sourceArchive))
+        print "Archive for %s stored as %s"%(name, sourceArchive)
 
     extractArchive(os.path.dirname(docdir), sourceArchive)
 
@@ -607,7 +606,7 @@ def buildPythonDocs():
 
 
 def buildPython():
-    print("Building a universal python")
+    print "Building a universal python"
 
     buildDir = os.path.join(WORKDIR, '_bld', 'python')
     rootDir = os.path.join(WORKDIR, '_root')
@@ -630,24 +629,24 @@ def buildPython():
     # several paths.
     version = getVersion()
 
-    print("Running configure...")
+    print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s LDFLAGS='-g -L%s/libraries/usr/local/lib' OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
         shellQuote(SDKPATH), shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make")
+    print "Running make"
     runCommand("make")
 
-    print("Running make frameworkinstall")
+    print "Running make frameworkinstall"
     runCommand("make frameworkinstall DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print("Running make frameworkinstallextras")
+    print "Running make frameworkinstallextras"
     runCommand("make frameworkinstallextras DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print("Copying required shared libraries")
+    print "Copying required shared libraries"
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         runCommand("mv %s/* %s"%(
             shellQuote(os.path.join(
@@ -658,7 +657,7 @@ def buildPython():
                 'Python.framework', 'Versions', getVersion(),
                 'lib'))))
 
-    print("Fix file modes")
+    print "Fix file modes"
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     gid = grp.getgrnam('admin').gr_gid
 
@@ -747,7 +746,7 @@ def packageFromRecipe(targetDir, recipe):
         readme = textwrap.dedent(recipe['readme'])
         isRequired = recipe.get('required', True)
 
-        print("- building package %s"%(pkgname,))
+        print "- building package %s"%(pkgname,)
 
         # Substitute some variables
         textvars = dict(
@@ -1050,9 +1049,9 @@ def main():
     shutil.copy('../../LICENSE', os.path.join(WORKDIR, 'installer', 'License.txt'))
 
     fp = open(os.path.join(WORKDIR, 'installer', 'Build.txt'), 'w')
-    print("# BUILD INFO", file=fp)
-    print("# Date:", time.ctime(), file=fp)
-    print("# By:", pwd.getpwuid(os.getuid()).pw_gecos, file=fp)
+    print >> fp, "# BUILD INFO"
+    print >> fp, "# Date:", time.ctime()
+    print >> fp, "# By:", pwd.getpwuid(os.getuid()).pw_gecos
     fp.close()
 
     # Custom icon for the DMG, shown when the DMG is mounted.
