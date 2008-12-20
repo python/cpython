@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #3106: Speedup some comparisons (str/str and int/int).
+
 - Issue #2183: Simplify and optimize bytecode for list, dict and set
   comprehensions. Original patch for list comprehensions by Neal Norwitz.
 
