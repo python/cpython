@@ -169,17 +169,6 @@ LIBRARY_RECIPES = [
             getVersion(),
             ),
     ),
-    dict(
-        name="Sleepycat DB 4.7.25",
-        url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
-        #name="Sleepycat DB 4.3.29",
-        #url="http://downloads.sleepycat.com/db-4.3.29.tar.gz",
-        buildDir="build_unix",
-        configure="../dist/configure",
-        configure_pre=[
-            '--includedir=/usr/local/include/db4',
-        ]
-    ),
 ]
 
 
