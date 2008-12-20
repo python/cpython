@@ -47,7 +47,11 @@ from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
 from docutils.utils import new_document
-from sphinx.builder import Builder
+
+try:
+    from sphinx.builders import Builder
+except ImportError:
+    from sphinx.builder import Builder
 
 try:
     from sphinx.writers.text import TextWriter
