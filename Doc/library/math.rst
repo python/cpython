@@ -125,7 +125,7 @@ Number-theoretic and representation functions
 .. function:: modf(x)
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
-   of *x*, and both are floats.  The integer part is returned as a real.
+   of *x* and are floats.
 
 
 .. function:: trunc(x)

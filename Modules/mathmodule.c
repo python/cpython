@@ -767,7 +767,7 @@ PyDoc_STRVAR(math_modf_doc,
 "modf(x)\n"
 "\n"
 "Return the fractional and integer parts of x.  Both results carry the sign\n"
-"of x.  The integer part is returned as a real.");
+"of x and are floats.");
 
 /* A decent logarithm is easy to compute even for huge longs, but libm can't
    do that by itself -- loghelper can.  func is log or log10, and name is
