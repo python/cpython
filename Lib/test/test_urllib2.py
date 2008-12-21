@@ -1104,6 +1104,51 @@ class MiscTests(unittest.TestCase):
         else:
             self.assert_(False)
 
+class RequestTests(unittest.TestCase):
+
+    def setUp(self):
+        self.get = Request("http://www.python.org/~jeremy/")
+        self.post = Request("http://www.python.org/~jeremy/",
+                            "data",
+                            headers={"X-Test": "test"})
+
+    def test_method(self):
+        self.assertEqual("POST", self.post.get_method())
+        self.assertEqual("GET", self.get.get_method())
+
+    def test_add_data(self):
+        self.assert_(not self.get.has_data())
+        self.assertEqual("GET", self.get.get_method())
+        self.get.add_data("spam")
+        self.assert_(self.get.has_data())
+        self.assertEqual("POST", self.get.get_method())
+
+    def test_get_full_url(self):
+        self.assertEqual("http://www.python.org/~jeremy/",
+                         self.get.get_full_url())
+
+    def test_selector(self):
+        self.assertEqual("/~jeremy/", self.get.get_selector())
+        req = Request("http://www.python.org/")
+        self.assertEqual("/", req.get_selector())
+
+    def test_get_type(self):
+        self.assertEqual("http", self.get.get_type())
+
+    def test_get_host(self):
+        self.assertEqual("www.python.org", self.get.get_host())
+
+    def test_get_host_unquote(self):
+        req = Request("http://www.%70ython.org/")
+        self.assertEqual("www.python.org", req.get_host())
+
+    def test_proxy(self):
+        self.assert_(not self.get.has_proxy())
+        self.get.set_proxy("www.perl.org", "http")
+        self.assert_(self.get.has_proxy())
+        self.assertEqual("www.python.org", self.get.get_origin_req_host())
+        self.assertEqual("www.perl.org", self.get.get_host())
+
 
 def test_main(verbose=None):
     from test import test_urllib2
@@ -1112,7 +1157,8 @@ def test_main(verbose=None):
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,
-             MiscTests)
+             MiscTests,
+             RequestTests)
     support.run_unittest(*tests)
 
 if __name__ == "__main__":
