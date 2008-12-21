@@ -94,8 +94,8 @@ Then, make an output directory, e.g. under `build/`, and run ::
 
    python tools/sphinx-build.py -b<builder> . build/<outputdirectory>
 
-where `<builder>` is one of html, web or htmlhelp (for explanations see the make
-targets above).
+where `<builder>` is one of html, text, latex, or htmlhelp (for explanations see
+the make targets above).
 
 
 Contributing
