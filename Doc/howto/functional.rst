@@ -677,11 +677,10 @@ indexes at which certain conditions are met::
         if line.strip() == '':
             print('Blank line at line #%i' % i)
 
-
-``sorted(iterable, [cmp=None], [key=None], [reverse=False)`` collects all the
-elements of the iterable into a list, sorts the list, and returns the sorted
-result.  The ``cmp``, ``key``, and ``reverse`` arguments are passed through to
-the constructed list's ``.sort()`` method. ::
+``sorted(iterable, [key=None], [reverse=False])`` collects all the elements of
+the iterable into a list, sorts the list, and returns the sorted result.  The
+``key``, and ``reverse`` arguments are passed through to the constructed list's
+``.sort()`` method. ::
 
     >>> import random
     >>> # Generate 8 random numbers between [0, 10000)
