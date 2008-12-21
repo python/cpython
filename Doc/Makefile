@@ -9,7 +9,7 @@ SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =
 SOURCES      =
-DISTVERSION  =
+DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
@@ -111,33 +111,33 @@ dist:
 
 	# archive the HTML
 	make html
-	cp -pPR build/html dist/python$(DISTVERSION)-docs-html
-	tar -C dist -cf dist/python$(DISTVERSION)-docs-html.tar python$(DISTVERSION)-docs-html
-	bzip2 -9 -k dist/python$(DISTVERSION)-docs-html.tar
-	(cd dist; zip -q -r -9 python$(DISTVERSION)-docs-html.zip python$(DISTVERSION)-docs-html)
-	rm -r dist/python$(DISTVERSION)-docs-html
-	rm dist/python$(DISTVERSION)-docs-html.tar
+	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
+	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
+	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
+	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
+	rm -r dist/python-$(DISTVERSION)-docs-html
+	rm dist/python-$(DISTVERSION)-docs-html.tar
 
 	# archive the text build
 	make text
-	cp -pPR build/text dist/python$(DISTVERSION)-docs-text
-	tar -C dist -cf dist/python$(DISTVERSION)-docs-text.tar python$(DISTVERSION)-docs-text
-	bzip2 -9 -k dist/python$(DISTVERSION)-docs-text.tar
-	(cd dist; zip -q -r -9 python$(DISTVERSION)-docs-text.zip python$(DISTVERSION)-docs-text)
-	rm -r dist/python$(DISTVERSION)-docs-text
-	rm dist/python$(DISTVERSION)-docs-text.tar
+	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
+	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
+	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-text.tar
+	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
+	rm -r dist/python-$(DISTVERSION)-docs-text
+	rm dist/python-$(DISTVERSION)-docs-text.tar
 	
 	# archive the A4 latex
 	-rm -r build/latex
 	make latex PAPER=a4
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python$(DISTVERSION)-docs-pdf-a4.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python$(DISTVERSION)-docs-pdf-a4.tar.bz2
+	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
+	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 
 	# archive the letter latex
 	rm -r build/latex
 	make latex PAPER=letter
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python$(DISTVERSION)-docs-pdf-letter.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python$(DISTVERSION)-docs-pdf-letter.tar.bz2
+	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
+	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
