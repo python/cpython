@@ -26,7 +26,7 @@ complies with this agreement, provided that you do not:
 - alter any copyright, trademark or patent notice in Microsoft's
 Distributable Code;
 
-- use Microsoft’s trademarks in your programs’ names or in a way that
+- use Microsoft's trademarks in your programs' names or in a way that
 suggests your programs come from or are endorsed by Microsoft;
 
 - distribute Microsoft's Distributable Code to run on a platform other

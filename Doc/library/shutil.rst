@@ -156,7 +156,7 @@ copying and removal. For operations on individual files, see also the
    Recursively move a file or directory to another location.
 
    If the destination is on the current filesystem, then simply use rename.
-   Otherwise, copy src to the dst and then remove src.
+   Otherwise, copy src (with :func:`copy2`) to the dst and then remove src.
 
    .. versionadded:: 2.3
 

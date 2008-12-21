@@ -81,7 +81,7 @@ def extractLineNo(ast):
 
 def Node(*args):
     kind = args[0]
-    if nodes.has_key(kind):
+    if kind in nodes:
         try:
             return nodes[kind](*args[1:])
         except TypeError:
@@ -120,7 +120,7 @@ class Transformer:
     def transform(self, tree):
         """Transform an AST into a modified parse tree."""
         if not (isinstance(tree, tuple) or isinstance(tree, list)):
-            tree = parser.ast2tuple(tree, line_info=1)
+            tree = parser.st2tuple(tree, line_info=1)
         return self.compile_node(tree)
 
     def parsesuite(self, text):

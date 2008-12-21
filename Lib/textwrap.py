@@ -84,16 +84,16 @@ class TextWrapper:
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
-    wordsep_re = re.compile(
+    wordsep_re = (
         r'(\s+|'                                  # any whitespace
-        r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
+        r'[^\s\w]*\w+[^0-9\W]-(?=\w+[^0-9\W])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
 
     # This less funky little regex just split on recognized spaces. E.g.
     #   "Hello there -- you goof-ball, use the -b option!"
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
-    wordsep_simple_re = re.compile(r'(\s+)')
+    wordsep_simple_re = r'(\s+)'
 
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)
@@ -160,10 +160,12 @@ class TextWrapper:
           'use', ' ', 'the', ' ', '-b', ' ', option!'
         otherwise.
         """
-        if self.break_on_hyphens is True:
-            chunks = self.wordsep_re.split(text)
+        flags = re.UNICODE if isinstance(text, unicode) else 0
+        if self.break_on_hyphens:
+            pat = self.wordsep_re
         else:
-            chunks = self.wordsep_simple_re.split(text)
+            pat = self.wordsep_simple_re
+        chunks = re.compile(pat, flags).split(text)
         chunks = filter(None, chunks)  # remove empty chunks
         return chunks
 
