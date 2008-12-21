@@ -21,8 +21,9 @@ was generated in the first place.
 The following functions are provided by this module.  Except when explicitly
 noted otherwise, all return values are floats.
 
-Number-theoretic and representation functions:
 
+Number-theoretic and representation functions
+---------------------------------------------
 
 .. function:: ceil(x)
 
@@ -110,8 +111,8 @@ Number-theoretic and representation functions:
 
 .. function:: modf(x)
 
-   Return the fractional and integer parts of *x*.  Both results carry the sign of
-   *x*, and both are floats.
+   Return the fractional and integer parts of *x*.  Both results carry the sign
+   of *x* and are floats.
 
 
 .. function:: trunc(x)
@@ -131,7 +132,9 @@ Python floats typically carry no more than 53 bits of precision (the same as the
 platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
 necessarily has no fractional bits.
 
-Power and logarithmic functions:
+
+Power and logarithmic functions
+-------------------------------
 
 .. function:: exp(x)
 
@@ -169,7 +172,8 @@ Power and logarithmic functions:
 
    Return the square root of *x*.
 
-Trigonometric functions:
+Trigonometric functions
+-----------------------
 
 
 .. function:: acos(x)
@@ -217,7 +221,8 @@ Trigonometric functions:
 
    Return the tangent of *x* radians.
 
-Angular conversion:
+Angular conversion
+------------------
 
 
 .. function:: degrees(x)
@@ -229,7 +234,8 @@ Angular conversion:
 
    Converts angle *x* from degrees to radians.
 
-Hyperbolic functions:
+Hyperbolic functions
+--------------------
 
 
 .. function:: acosh(x)
@@ -262,9 +268,8 @@ Hyperbolic functions:
    Return the hyperbolic tangent of *x*.
 
 
-
-The module also defines two mathematical constants:
-
+Constants
+=========
 
 .. data:: pi
 

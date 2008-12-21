@@ -52,10 +52,10 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIG_DFL
 
-   This is one of two standard signal handling options; it will simply perform the
-   default function for the signal.  For example, on most systems the default
-   action for :const:`SIGQUIT` is to dump core and exit, while the default action
-   for :const:`SIGCLD` is to simply ignore it.
+   This is one of two standard signal handling options; it will simply perform
+   the default function for the signal.  For example, on most systems the
+   default action for :const:`SIGQUIT` is to dump core and exit, while the
+   default action for :const:`SIGCHLD` is to simply ignore it.
 
 
 .. data:: SIG_IGN
