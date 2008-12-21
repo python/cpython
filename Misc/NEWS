@@ -15,6 +15,10 @@ Core and Builtins
 - Issue #4597: Fixed several opcodes that weren't always propagating
   exceptions.
 
+- Issue #2467: gc.DEBUG_STATS reported invalid elapsed times. Also, always
+  print elapsed times, not only when some objects are uncollectable /
+  unreachable. Original patch by Neil Schemenauer.
+
 - Issue #4589: Fixed exception handling when the __exit__ function of a
   context manager returns a value that cannot be converted to a bool.
 
@@ -114,9 +118,20 @@ Core and Builtins
 Library
 -------
 
+- Issue #4163: Use unicode-friendly word splitting in the textwrap functions
+  when given an unicode string.
+
+- Issue #4616: TarFile.utime(): Restore directory times on Windows.
+
 - Issue #4084: Fix max, min, max_mag and min_mag Decimal methods to
   give correct results in the case where one argument is a quiet NaN
   and the other is a finite number that requires rounding.
+
+- Issue #1030250: Distutils created directories even when run with the
+  --dry-run option.
+
+- Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat
+  libs.
 
 - Issue #4529: fix the parser module's validation of try-except-finally
   statements.
@@ -176,6 +191,9 @@ Build
 
 C-API
 -----
+
+- Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
+  the GIL is released, or owned by another thread.
 
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
