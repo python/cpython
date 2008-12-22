@@ -126,6 +126,16 @@ class TestPy3KWarnings(unittest.TestCase):
             w.reset()
             self.assertWarning(meth >= func, w, expected)
 
+    def test_frame_attributes(self):
+        template = "%s has been removed in 3.x"
+        f = sys._getframe(0)
+        for attr in ("f_exc_traceback", "f_exc_value", "f_exc_type"):
+            expected = template % attr
+            with check_warnings() as w:
+                self.assertWarning(getattr(f, attr), w, expected)
+                w.reset()
+                self.assertWarning(setattr(f, attr, None), w, expected)
+
     def test_sort_cmp_arg(self):
         expected = "the cmp argument is not supported in 3.x"
         lst = range(5)

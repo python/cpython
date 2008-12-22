@@ -20,11 +20,37 @@ static PyMemberDef frame_memberlist[] = {
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
-	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
-	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
-	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},
 	{NULL}	/* Sentinel */
 };
+
+#define WARN_GET_SET(NAME) \
+static PyObject * frame_get_ ## NAME(PyFrameObject *f) { \
+	if (PyErr_WarnPy3k(#NAME " has been removed in 3.x", 2) < 0) \
+		return NULL; \
+	if (f->NAME) { \
+		Py_INCREF(f->NAME); \
+		return f->NAME; \
+	} \
+        Py_RETURN_NONE;	\
+} \
+static int frame_set_ ## NAME(PyFrameObject *f, PyObject *new) { \
+	if (PyErr_WarnPy3k(#NAME " has been removed in 3.x", 2) < 0) \
+		return -1; \
+	if (f->NAME) { \
+		Py_CLEAR(f->NAME); \
+	} \
+        if (new == Py_None) \
+            new = NULL; \
+	Py_XINCREF(new); \
+	f->NAME = new; \
+	return 0; \
+}
+
+
+WARN_GET_SET(f_exc_traceback)
+WARN_GET_SET(f_exc_type)
+WARN_GET_SET(f_exc_value)
+
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -352,6 +378,12 @@ static PyGetSetDef frame_getsetlist[] = {
 			(setter)frame_setlineno, NULL},
 	{"f_trace",	(getter)frame_gettrace, (setter)frame_settrace, NULL},
 	{"f_restricted",(getter)frame_getrestricted,NULL, NULL},
+	{"f_exc_traceback", (getter)frame_get_f_exc_traceback,
+	                (setter)frame_set_f_exc_traceback, NULL},
+        {"f_exc_type",  (getter)frame_get_f_exc_type,
+                        (setter)frame_set_f_exc_type, NULL},
+        {"f_exc_value", (getter)frame_get_f_exc_value,
+                        (setter)frame_set_f_exc_value, NULL},
 	{0}
 };
 
