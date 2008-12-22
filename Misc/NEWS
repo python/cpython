@@ -194,6 +194,8 @@ Build
 C-API
 -----
 
+- Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
+
 - Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
   the GIL is released, or owned by another thread.
 
