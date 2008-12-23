@@ -474,7 +474,7 @@ test_k_code(PyObject *self)
 
 #ifdef Py_USING_UNICODE
 
-volatile int x;
+static volatile int x;
 
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
