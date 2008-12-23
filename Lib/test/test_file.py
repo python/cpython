@@ -120,6 +120,8 @@ class AutoFileTests(unittest.TestCase):
         except:
             self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
 
+    def testReadWhenWriting(self):
+        self.assertRaises(IOError, self.f.read)
 
 class OtherFileTests(unittest.TestCase):
 
