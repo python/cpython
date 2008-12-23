@@ -9,6 +9,12 @@ What's New in Python 2.5.4?
 
 *Release date: XX-XXX-2009*
 
+Core and builtins
+-----------------
+
+- Added test case to ensure attempts to read from a file opened for writing
+  fail.
+
 
 What's New in Python 2.5.3?
 ===========================
