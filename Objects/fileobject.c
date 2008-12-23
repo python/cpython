@@ -861,16 +861,16 @@ file_read(PyFileObject *f, PyObject *args)
 			  buffersize - bytesread, f->f_fp, (PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (chunksize == 0) {
-			if (!PyErr_ExceptionMatches(PyExc_IOError))
+			if (!ferror(f->f_fp))
 				break;
+			clearerr(f->f_fp);
 			/* When in non-blocking mode, data shouldn't
 			 * be discarded if a blocking signal was
 			 * received. That will also happen if
 			 * chunksize != 0, but bytesread < buffersize. */
-			if (bytesread > 0 && BLOCKED_ERRNO(errno)) {
-				PyErr_Clear();
+			if (bytesread > 0 && BLOCKED_ERRNO(errno))
 				break;
-			}
+			PyErr_SetFromErrno(PyExc_IOError);
 			Py_DECREF(v);
 			return NULL;
 		}
@@ -917,8 +917,10 @@ file_readinto(PyFileObject *f, PyObject *args)
 						(PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (nnow == 0) {
-			if (!PyErr_ExceptionMatches(PyExc_IOError))
+			if (!ferror(f->f_fp))
 				break;
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
 			return NULL;
 		}
 		ndone += nnow;
@@ -1410,8 +1412,10 @@ file_readlines(PyFileObject *f, PyObject *args)
 		}
 		if (nread == 0) {
 			sizehint = 0;
-			if (!PyErr_ExceptionMatches(PyExc_IOError))
+			if (!ferror(f->f_fp))
 				break;
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
 		  error:
 			Py_DECREF(list);
 			list = NULL;
@@ -1859,7 +1863,9 @@ readahead(PyFileObject *f, int bufsize)
 		f->f_buf, bufsize, f->f_fp, (PyObject *)f);
 	Py_END_ALLOW_THREADS
 	if (chunksize == 0) {
-		if (PyErr_ExceptionMatches(PyExc_IOError)) {
+		if (ferror(f->f_fp)) {
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
 			drop_readahead(f);
 			return -1;
 		}
@@ -2410,7 +2416,6 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 	char *dst = buf;
 	PyFileObject *f = (PyFileObject *)fobj;
 	int newlinetypes, skipnextlf;
-	size_t nread;
 
 	assert(buf != NULL);
 	assert(stream != NULL);
@@ -2419,35 +2424,22 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 		errno = ENXIO;	/* What can you do... */
 		return 0;
 	}
-	if (!f->f_univ_newline) {
-		nread = fread(buf, 1, n, stream);
-		if (nread == 0) {
-			if (ferror(stream))
-				PyErr_SetFromErrno(PyExc_IOError);
-			clearerr(stream);
-		}
-		return nread;
-	}
+	if (!f->f_univ_newline)
+		return fread(buf, 1, n, stream);
 	newlinetypes = f->f_newlinetypes;
 	skipnextlf = f->f_skipnextlf;
 	/* Invariant:  n is the number of bytes remaining to be filled
 	 * in the buffer.
 	 */
 	while (n) {
+		size_t nread;
 		int shortread;
 		char *src = dst;
 
 		nread = fread(dst, 1, n, stream);
 		assert(nread <= n);
-		if (nread == 0) {
-			if (ferror(stream)) {
-				clearerr(stream);
-				PyErr_SetFromErrno(PyExc_IOError);
-				return 0;
-			}
-			clearerr(stream);
+		if (nread == 0)
 			break;
-		}
 
 		n -= nread; /* assuming 1 byte out for each in; will adjust */
 		shortread = n != 0;	/* true iff EOF or error */
