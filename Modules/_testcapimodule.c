@@ -474,6 +474,8 @@ test_k_code(PyObject *self)
 
 #ifdef Py_USING_UNICODE
 
+volatile int x;
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -486,8 +488,7 @@ test_u_code(PyObject *self)
 
 	/* issue4122: Undefined reference to _Py_ascii_whitespace on Windows */
 	/* Just use the macro and check that it compiles */
-	int x = Py_UNICODE_ISSPACE(25);
-	x = x;
+	x = Py_UNICODE_ISSPACE(25);
 
         tuple = PyTuple_New(1);
         if (tuple == NULL)
