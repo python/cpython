@@ -12,6 +12,9 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Added test case to ensure attempts to read from a file opened for writing
+  fail.
+
 - Issue #3106: Speedup some comparisons (str/str and int/int).
 
 - Issue #2173: When getting device encoding, check that return value of
