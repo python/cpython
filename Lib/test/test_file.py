@@ -357,48 +357,6 @@ class StdoutTests(unittest.TestCase):
         finally:
             sys.stdout = save_stdout
 
-    def testReadAfterEOF(self):
-        # Regression test for SF bug #1523853.
-        # Verify read works after hitting EOF
-
-        # Prepare the testfile
-        teststring = "spam"
-        bag = open(TESTFN, "w")
-        bag.write(teststring)
-        bag.close()
-
-        # And buf for readinto
-        buf = array("c", " "*len(teststring))
-
-        # Test for appropriate errors mixing read* and iteration
-        methods = [("readline", ()), ("read",()), ("readlines", ()),
-                   ("readinto", (buf,))]
-
-        for attr in 'r', 'rU':
-            for methodname, args in methods:
-                f = open(TESTFN, "rU")
-                f.seek(0, 2)
-                meth = getattr(f, methodname)
-                meth(*args) # hits EOF
-                try:
-                    # Writing the same file with another file descriptor
-                    append = open(TESTFN, "a+")
-                    append.write(teststring)
-                    append.flush()
-                    append.close()
-                    try:
-                        meth = getattr(f, methodname)
-                        if methodname == 'readlines':
-                            self.failUnlessEqual(meth(*args), [teststring])
-                        elif methodname == 'readinto':
-                            meth(*args)
-                            self.failUnlessEqual(buf.tostring(), teststring)
-                        else:
-                            self.failUnlessEqual(meth(*args), teststring)
-                    except ValueError:
-                        self.fail("read* failed after hitting EOF")
-                finally:
-                    f.close()
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
