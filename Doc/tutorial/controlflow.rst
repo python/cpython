@@ -169,41 +169,19 @@ required syntactically but the program requires no action. For example::
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
    ... 
 
-This is commonly used for creating minimal classes such as exceptions, or
-for ignoring unwanted exceptions::
+This is commonly used for creating minimal classes::
 
-   >>> class ParserError(Exception):
+   >>> class MyEmptyClass:
    ...     pass
-   ... 
-   >>> try:
-   ...     import audioop
-   ... except ImportError:
-   ...     pass
-   ... 
+   ...
 
 Another place :keyword:`pass` can be used is as a place-holder for a function or
-conditional body when you are working on new code, allowing you to keep
-thinking at a more abstract level.  However, as :keyword:`pass` is silently
-ignored, a better choice may be to raise a :exc:`NotImplementedError`
-exception::
+conditional body when you are working on new code, allowing you to keep thinking
+at a more abstract level.  The :keyword:`pass` is silently ignored::
 
    >>> def initlog(*args):
-   ...     raise NotImplementedError   # Open logfile if not already open
-   ...     if not logfp:
-   ...         raise NotImplementedError  # Set up dummy log back-end
-   ...     raise NotImplementedError('Call log initialization handler')
+   ...     pass   # Remember to implement this!
    ... 
-
-If :keyword:`pass` were used here and you later ran tests, they may fail
-without indicating why.  Using :exc:`NotImplementedError` causes this code
-to raise an exception, telling you exactly where the incomplete code 
-is.  Note the two calling styles of the exceptions above.
-The first style, with no message but with an accompanying comment, 
-lets you easily leave the comment when you remove the exception,
-which ideally would be a good description for
-the block of code the exception is a placeholder for.  However, the 
-third example, providing a message for the exception, will produce 
-a more useful traceback.
 
 .. _tut-functions:
 
