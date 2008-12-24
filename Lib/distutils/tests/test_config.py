@@ -5,6 +5,8 @@ import unittest
 
 from distutils.core import PyPIRCCommand
 from distutils.core import Distribution
+from distutils.log import set_threshold
+from distutils.log import WARN
 
 from distutils.tests import support
 
@@ -32,6 +34,17 @@ username:tarek
 password:secret
 """
 
+WANTED = """\
+[distutils]
+index-servers =
+    pypi
+
+[pypi]
+username:tarek
+password:xxx
+"""
+
+
 class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
 
     def setUp(self):
@@ -53,6 +66,7 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
             finalize_options = initialize_options
 
         self._cmd = command
+        self.old_threshold = set_threshold(WARN)
 
     def tearDown(self):
         """Removes the patch."""
@@ -62,6 +76,7 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
             os.environ['HOME'] = self._old_home
         if os.path.exists(self.rc):
             os.remove(self.rc)
+        set_threshold(self.old_threshold)
 
     def test_server_registration(self):
         # This test makes sure PyPIRCCommand knows how to:
@@ -97,6 +112,20 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
                   ('repository', 'http://pypi.python.org/pypi'),
                   ('server', 'server-login'), ('username', 'tarek')]
         self.assertEquals(config, waited)
+
+    def test_server_empty_registration(self):
+
+        cmd = self._cmd(self.dist)
+        rc = cmd._get_rc_file()
+        self.assert_(not os.path.exists(rc))
+
+        cmd._store_pypirc('tarek', 'xxx')
+
+        self.assert_(os.path.exists(rc))
+        content = open(rc).read()
+
+        self.assertEquals(content, WANTED)
+
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)
