@@ -326,8 +326,8 @@ only non-\ ``static`` item defined in the module file::
        return PyModule_Create(&spammodule);
    }
 
-Note that PyMODINIT_FUNC declares the function as ``void`` return type,
-declares any special linkage declarations required by the platform, and for  C++
+Note that PyMODINIT_FUNC declares the function as ``PyObject *`` return type,
+declares any special linkage declarations required by the platform, and for C++
 declares the function as ``extern "C"``.
 
 When the Python program imports module :mod:`spam` for the first time,

@@ -221,4 +221,5 @@ PyInit_noddy4(void)
 
     Py_INCREF(&NoddyType);
     PyModule_AddObject(m, "Noddy", (PyObject *)&NoddyType);
+    return m;
 }
