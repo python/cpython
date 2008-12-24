@@ -554,8 +554,9 @@ class BufferedRWPairTest(unittest.TestCase):
         r = MockRawIO(())
         w = MockRawIO()
         pair = io.BufferedRWPair(r, w)
+        self.assertFalse(pair.closed)
 
-        # XXX need implementation
+        # XXX More Tests
 
 
 class BufferedRandomTest(unittest.TestCase):
