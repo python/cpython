@@ -86,6 +86,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4400: .pypirc default generated file was broken in distutils.
+
 - Issue #4736: io.BufferedRWPair's closed property now functions properly.
 
 - Issue #3954: Fix a potential SystemError in _hotshot.logreader error

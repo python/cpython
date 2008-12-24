@@ -10,8 +10,8 @@ from ConfigParser import ConfigParser
 from distutils.cmd import Command
 
 DEFAULT_PYPIRC = """\
-[pypirc]
-servers =
+[distutils]
+index-servers =
     pypi
 
 [pypi]
