@@ -222,6 +222,11 @@ class _Pickler:
 
     def dump(self, obj):
         """Write a pickled representation of obj to the open file."""
+        # Check whether Pickler was initialized correctly. This is
+        # only needed to mimic the behavior of _pickle.Pickler.dump().
+        if not hasattr(self, "write"):
+            raise PicklingError("Pickler.__init__() was not called by "
+                                "%s.__init__()" % (self.__class__.__name__,))
         if self.proto >= 2:
             self.write(PROTO + bytes([self.proto]))
         self.save(obj)
@@ -789,6 +794,11 @@ class _Unpickler:
 
         Return the reconstituted object hierarchy specified in the file.
         """
+        # Check whether Unpickler was initialized correctly. This is
+        # only needed to mimic the behavior of _pickle.Unpickler.dump().
+        if not hasattr(self, "read"):
+            raise UnpicklingError("Unpickler.__init__() was not called by "
+                                  "%s.__init__()" % (self.__class__.__name__,))
         self.mark = object() # any new unique object
         self.stack = []
         self.append = self.stack.append
