@@ -140,8 +140,8 @@ Editors
 Vim and Emacs are excellent editors which support Python very well.  For more
 information on how to code in python in these editors, look at:
 
-http://www.vim.org/scripts/script.php?script_id=790
-http://sourceforge.net/projects/python-mode
+* http://www.vim.org/scripts/script.php?script_id=790
+* http://sourceforge.net/projects/python-mode
 
 Geany is an excellent IDE with support for a lot of languages. For more
 information, read: http://geany.uvena.de/

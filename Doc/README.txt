@@ -74,7 +74,7 @@ Without make
 
 You'll need to checkout the Sphinx package to the `tools/` directory::
 
-   http://svn.python.org/projects/doctools/trunk/sphinx tools/sphinx
+   svn co http://svn.python.org/projects/doctools/trunk/sphinx tools/sphinx
 
 Then, you need to install Docutils, either by checking it out via ::
 
