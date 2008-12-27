@@ -7,7 +7,7 @@ import unittest
 from test import support
 from weakref import proxy
 import array, io, math
-from pickle import loads, dumps
+from pickle import loads, dumps, HIGHEST_PROTOCOL
 import operator
 
 class ArraySubclass(array.array):
@@ -98,7 +98,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_pickle(self):
-        for protocol in (0, 1, 2):
+        for protocol in range(HIGHEST_PROTOCOL + 1):
             a = array.array(self.typecode, self.example)
             b = loads(dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
@@ -113,7 +113,7 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(type(a), type(b))
 
     def test_pickle_for_empty_array(self):
-        for protocol in (0, 1, 2):
+        for protocol in range(HIGHEST_PROTOCOL + 1):
             a = array.array(self.typecode)
             b = loads(dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
