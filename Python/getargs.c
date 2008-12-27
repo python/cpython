@@ -1392,7 +1392,7 @@ getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
 	Py_ssize_t count;
 	PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 	if (pb == NULL) {
-		*errmsg = "string or buffer";
+		*errmsg = "bytes or buffer";
 		return -1;
 	}
 	if (pb->bf_getbuffer) {
