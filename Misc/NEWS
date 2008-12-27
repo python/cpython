@@ -136,6 +136,11 @@ Library
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
+Tools/Demos
+-----------
+
+- Issue #4677: add two list comprehension tests to pybench.
+
 Extension Modules
 -----------------
 
