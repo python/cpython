@@ -56,6 +56,8 @@ Core and Builtins
 - Issue #4569: Interpreter crash when mutating a memoryview with an item size
   larger than 1.
 
+- Issue #4748: Lambda generators no longer return a value.
+
 Library
 -------
 

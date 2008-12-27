@@ -1704,7 +1704,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	c->u->u_argcount = asdl_seq_LEN(args->args);
 	c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
 	VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
-	ADDOP_IN_SCOPE(c, RETURN_VALUE);
+	if (c->u->u_ste->ste_generator) {
+		ADDOP_IN_SCOPE(c, POP_TOP);
+	}
+	else {
+		ADDOP_IN_SCOPE(c, RETURN_VALUE);
+	}
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
 	if (co == NULL)
