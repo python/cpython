@@ -136,8 +136,9 @@ variable(s) whose address should be passed.
    them. Instead, the implementation assumes that the string object uses the
    encoding passed in as parameter.
 
-``b`` (integer) [char]
-   Convert a Python integer to a tiny int, stored in a C :ctype:`char`.
+``b`` (integer) [unsigned char]
+   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
+   :ctype:`unsigned char`.
 
 ``B`` (integer) [unsigned char]
    Convert a Python integer to a tiny int without overflow checking, stored in a C
