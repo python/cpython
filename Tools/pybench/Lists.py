@@ -293,3 +293,58 @@ class SmallLists(Test):
 
         for i in range(self.rounds):
             pass
+
+class SimpleListComprehensions(Test):
+
+    version = 2.0
+    operations = 6
+    rounds = 20000
+
+    def test(self):
+
+        n = list(range(10)) * 10
+
+        for i in range(self.rounds):
+            l = [x for x in n]
+            l = [x for x in n if x]
+            l = [x for x in n if not x]
+
+            l = [x for x in n]
+            l = [x for x in n if x]
+            l = [x for x in n if not x]
+
+    def calibrate(self):
+
+        n = list(range(10)) * 10
+
+        for i in range(self.rounds):
+            pass
+
+class NestedListComprehensions(Test):
+
+    version = 2.0
+    operations = 6
+    rounds = 20000
+
+    def test(self):
+
+        m = list(range(10))
+        n = list(range(10))
+
+        for i in range(self.rounds):
+            l = [x for x in n for y in m]
+            l = [y for x in n for y in m]
+
+            l = [x for x in n for y in m if y]
+            l = [y for x in n for y in m if x]
+
+            l = [x for x in n for y in m if not y]
+            l = [y for x in n for y in m if not x]
+
+    def calibrate(self):
+
+        m = list(range(10))
+        n = list(range(10))
+
+        for i in range(self.rounds):
+            pass
