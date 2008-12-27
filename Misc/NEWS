@@ -86,6 +86,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
+  Gabriel Genellina.
+
 - Issue #4400: .pypirc default generated file was broken in distutils.
 
 - Issue #4736: io.BufferedRWPair's closed property now functions properly.
