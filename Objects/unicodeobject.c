@@ -3253,7 +3253,7 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
     return repr;
 }
 
-PyObject *PyUnicodeAsUnicodeEscapeString(PyObject *unicode)
+PyObject *PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 {
     PyObject *s;
     if (!PyUnicode_Check(unicode)) {
