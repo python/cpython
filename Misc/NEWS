@@ -173,6 +173,9 @@ Library
 - Issue #4014: Don't claim that Python has an Alpha release status, in addition
   to claiming it is Mature.
 
+- Issue #4730: Fixed the cPickle module to handle correctly astral characters
+  when protocol 0 is used.
+
 Build
 -----
 
