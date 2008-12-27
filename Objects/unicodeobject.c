@@ -4111,7 +4111,7 @@ static int encode_mbcs(PyObject **repr,
     else {
 	/* Extend string object */
 	n = PyBytes_Size(*repr);
-	if (_PyBytes_Resize(&repr, n + mbcssize) < 0)
+	if (_PyBytes_Resize(repr, n + mbcssize) < 0)
 	    return -1;
     }
 
