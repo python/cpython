@@ -484,12 +484,20 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertRaises(ValueError, self.loads, buf)
 
     def test_unicode(self):
-        endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',  '<\\>']
+        endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',  '<\\>',
+                    '<\\\U00012345>']
         for proto in protocols:
             for u in endcases:
                 p = self.dumps(u, proto)
                 u2 = self.loads(p)
                 self.assertEqual(u2, u)
+
+    def test_unicode_high_plane(self):
+        t = '\U00012345'
+        for proto in protocols:
+            p = self.dumps(t, proto)
+            t2 = self.loads(p)
+            self.assertEqual(t2, t)
 
     def test_bytes(self):
         for proto in protocols:
