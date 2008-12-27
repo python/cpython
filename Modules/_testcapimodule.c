@@ -474,6 +474,8 @@ test_k_code(PyObject *self)
 
 #ifdef Py_USING_UNICODE
 
+static volatile int x;
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -486,7 +488,7 @@ test_u_code(PyObject *self)
 
 	/* issue4122: Undefined reference to _Py_ascii_whitespace on Windows */
 	/* Just use the macro and check that it compiles */
-	int x = Py_UNICODE_ISSPACE(25);
+	x = Py_UNICODE_ISSPACE(25);
 
         tuple = PyTuple_New(1);
         if (tuple == NULL)
@@ -516,6 +518,32 @@ test_u_code(PyObject *self)
 	Py_DECREF(tuple);
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+static PyObject *
+test_empty_argparse(PyObject *self)
+{
+	/* Test that formats can begin with '|'. See issue #4720. */
+	PyObject *tuple, *dict = NULL;
+	static char *kwlist[] = {NULL};
+	int result;
+	tuple = PyTuple_New(0);
+	if (!tuple)
+		return NULL;
+	if ((result = PyArg_ParseTuple(tuple, "|:test_empty_argparse")) < 0)
+		goto done;
+	dict = PyDict_New();
+	if (!dict)
+		goto done;
+	result = PyArg_ParseTupleAndKeywords(tuple, dict, "|:test_empty_argparse", kwlist);
+  done:
+	Py_DECREF(tuple);
+	Py_XDECREF(dict);
+	if (result < 0)
+		return NULL;
+	else {
+		Py_RETURN_NONE;
+	}
 }
 
 static PyObject *
@@ -780,6 +808,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
+	{"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
 	{"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,

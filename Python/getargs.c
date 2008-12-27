@@ -1601,7 +1601,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 		}
 	}
 
-	if (!IS_END_OF_FORMAT(*format)) {
+	if (!IS_END_OF_FORMAT(*format) && *format != '|') {
 		PyErr_Format(PyExc_RuntimeError,
 			"more argument specifiers than keyword list entries "
 			"(remaining format:'%s')", format);

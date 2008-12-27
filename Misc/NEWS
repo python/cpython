@@ -123,6 +123,11 @@ Library
 
 - Issue #4400: .pypirc default generated file was broken in distutils.
 
+- Issue #4736: io.BufferedRWPair's closed property now functions properly.
+
+- Issue #3954: Fix a potential SystemError in _hotshot.logreader error
+  handling.
+
 - Issue #4163: Use unicode-friendly word splitting in the textwrap functions
   when given an unicode string.
 
@@ -199,6 +204,8 @@ Build
 
 C-API
 -----
+
+- Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
 
 - Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
   the GIL is released, or owned by another thread.

@@ -373,7 +373,7 @@ class TestBasic(unittest.TestCase):
 
     def test_pickle(self):
         d = deque(xrange(200))
-        for i in (0, 1, 2):
+        for i in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(d, i)
             e = pickle.loads(s)
             self.assertNotEqual(id(d), id(e))
@@ -382,7 +382,7 @@ class TestBasic(unittest.TestCase):
 ##    def test_pickle_recursive(self):
 ##        d = deque('abc')
 ##        d.append(d)
-##        for i in (0, 1, 2):
+##        for i in range(pickle.HIGHEST_PROTOCOL + 1):
 ##            e = pickle.loads(pickle.dumps(d, i))
 ##            self.assertNotEqual(id(d), id(e))
 ##            self.assertEqual(id(e), id(e[-1]))
