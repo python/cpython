@@ -121,6 +121,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4400: .pypirc default generated file was broken in distutils.
+
 - Issue #4163: Use unicode-friendly word splitting in the textwrap functions
   when given an unicode string.
 
