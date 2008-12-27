@@ -60,7 +60,7 @@ class registerTestCase(PyPIRCCommandTestCase):
         # Save your login (y/N)? : 'y'
         inputs = RawInputs('1', 'tarek', 'y')
         from distutils.command import register as register_module
-        register_module.raw_input = inputs.__call__
+        register_module.input = inputs.__call__
         def _getpass(prompt):
             return 'xxx'
         register_module.getpass.getpass = _getpass
@@ -71,8 +71,7 @@ class registerTestCase(PyPIRCCommandTestCase):
             def __call__(self, *args):
                 # we want to compare them, so let's store
                 # something comparable
-                els = args[0].items()
-                els.sort()
+                els = sorted(args[0].items())
                 self.calls.append(tuple(els))
                 return 200, 'OK'
 

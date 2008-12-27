@@ -150,7 +150,7 @@ We need to know who you are, so please choose either:
  3. have the server generate a new password for you (and email it to you), or
  4. quit
 Your selection [default 1]: ''', log.INFO)
-            choice = raw_input()
+            choice = input()
             if not choice:
                 choice = '1'
             elif choice not in choices:
