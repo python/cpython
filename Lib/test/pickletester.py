@@ -480,13 +480,20 @@ class AbstractPickleTests(unittest.TestCase):
 
     if have_unicode:
         def test_unicode(self):
-            endcases = [unicode(''), unicode('<\\u>'), unicode('<\\\u1234>'),
-                        unicode('<\n>'),  unicode('<\\>')]
+            endcases = [u'', u'<\\u>', u'<\\\\u1234>', u'<\n>',
+                        u'<\\>', u'<\\\\U00012345>']
             for proto in protocols:
                 for u in endcases:
                     p = self.dumps(u, proto)
                     u2 = self.loads(p)
                     self.assertEqual(u2, u)
+
+        def test_unicode_high_plane(self):
+            t = u'\U00012345'
+            for proto in protocols:
+                p = self.dumps(t, proto)
+                t2 = self.loads(p)
+                self.assertEqual(t2, t)
 
     def test_ints(self):
         import sys
