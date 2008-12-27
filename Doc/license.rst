@@ -31,6 +31,7 @@ All Python releases are Open Source (see http://www.opensource.org/ for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 
+<<<<<<< .working
 +----------------+--------------+------------+------------+-----------------+
 | Release        | Derived from | Year       | Owner      | GPL compatible? |
 +================+==============+============+============+=================+
@@ -90,8 +91,11 @@ been GPL-compatible; the table below summarizes the various releases.
 +----------------+--------------+------------+------------+-----------------+
 | 2.6            | 2.5          | 2008       | PSF        | yes             |
 +----------------+--------------+------------+------------+-----------------+
+| 2.6.1          | 2.6          | 2008       | PSF        | yes             |
++----------------+--------------+------------+------------+-----------------+
 | 3.0            | 2.6          | 2008       | PSF        | yes             |
 +----------------+--------------+------------+------------+-----------------+
+
 
 .. note::
 

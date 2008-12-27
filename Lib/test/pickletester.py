@@ -484,8 +484,8 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertRaises(ValueError, self.loads, buf)
 
     def test_unicode(self):
-        endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',  '<\\>',
-                    '<\\\U00012345>']
+        endcases = [u'', u'<\\u>', u'<\\\u1234>', u'<\n>',
+                    u'<\\>', u'<\\\U00012345>']
         for proto in protocols:
             for u in endcases:
                 p = self.dumps(u, proto)
