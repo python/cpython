@@ -3845,7 +3845,7 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
     /* Resize if we allocated to much */
     size = str - PyBytes_AS_STRING(res);
     if (size < ressize) { /* If this falls res will be NULL */
-        assert(size > 0);
+        assert(size >= 0);
         if (_PyBytes_Resize(&res, size) < 0)
             goto onError;
     }
