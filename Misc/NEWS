@@ -190,6 +190,11 @@ Library
 - Issue #4730: Fixed the cPickle module to handle correctly astral characters
   when protocol 0 is used.
 
+Tools/Demos
+-----------
+
+- Issue #4677: add two list comprehension tests to pybench.
+
 Build
 -----
 
