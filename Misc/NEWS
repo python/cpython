@@ -83,6 +83,8 @@ Core and Builtins
 - Issue #4509: Various issues surrounding resize of bytearray objects to
   which there are buffer exports.
 
+- Issue #4748: Lambda generators no longer return a value.
+
 Library
 -------
 
