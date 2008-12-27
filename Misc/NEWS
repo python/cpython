@@ -86,6 +86,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@')
+  works as expected in the interactive environment.
+
 - Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
   Gabriel Genellina.
 
