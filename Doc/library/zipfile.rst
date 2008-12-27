@@ -70,7 +70,7 @@ The module defines the following items:
    This module does not currently handle ZIP files which have appended comments.
 
    .. versionchanged:: 2.7
-   Support for file and file-like objects.
+      Support for file and file-like objects.
 
 .. data:: ZIP_STORED
 
