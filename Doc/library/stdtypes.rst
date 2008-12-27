@@ -1116,13 +1116,12 @@ functions based on regular expressions.
 .. method:: str.translate(map)
 
    Return a copy of the *s* where all characters have been mapped through the
-   *map* which must be a dictionary of Unicode ordinals(integers) to Unicode
+   *map* which must be a dictionary of Unicode ordinals (integers) to Unicode
    ordinals, strings or ``None``.  Unmapped characters are left untouched.
    Characters mapped to ``None`` are deleted.
 
-   You can use :meth:`str.maketrans` to create a translation table.  For string
-   objects, set the *table* argument to ``None`` for translations that only
-   delete characters:
+   You can use :meth:`str.maketrans` to create a translation map from
+   character-to-character mappings in different formats.
 
    .. note::
 
@@ -1525,23 +1524,23 @@ The bytes and bytearray types have an additional class method:
    >>> bytes.fromhex('f0 f1f2  ')
    b'\xf0\xf1\xf2'
 
-.. XXX verify/document translate() semantics!
+The translate method differs in semantics from the version available on strings:
+   
+.. method:: bytes.translate(table[, delete])
 
-   .. method:: bytes.translate(table[, delete])
+   Return a copy of the bytes or bytearray object where all bytes occurring in
+   the optional argument *delete* are removed, and the remaining bytes have been
+   mapped through the given translation table, which must be a bytes object of
+   length 256.
 
-   Return a copy of the bytes object where all bytes occurring in the optional
-   argument *delete* are removed, and the remaining bytes have been mapped
-   through the given translation table, which must be a bytes object of length
-   256.
+   You can use the :func:`string.maketrans` helper function to create a
+   translation table.
 
-   You can use the :func:`maketrans` helper function in the :mod:`string` module to
-   create a translation table.
+   Set the *table* argument to ``None`` for translations that only delete
+   characters::
 
-   .. XXX a None table doesn't seem to be supported
-      Set the *table* argument to ``None`` for translations that only delete characters::
-
-         >>> 'read this short text'.translate(None, 'aeiou')
-         'rd ths shrt txt'
+      >>> b'read this short text'.translate(None, b'aeiou')
+      b'rd ths shrt txt'
 
 
 .. _types-set:
