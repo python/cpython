@@ -219,7 +219,7 @@ class TestJointOps(unittest.TestCase):
         self.failIf(set('cbs').issuperset('a'))
 
     def test_pickling(self):
-        for i in (0, 1, 2):
+        for i in range(pickle.HIGHEST_PROTOCOL + 1):
             p = pickle.dumps(self.s, i)
             dup = pickle.loads(p)
             self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
