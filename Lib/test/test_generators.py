@@ -928,6 +928,16 @@ Test the __name__ attribute and the repr()
 'f'
 >>> repr(g)  # doctest: +ELLIPSIS
 '<generator object f at ...>'
+
+Lambdas shouldn't have their usual return behavior.
+
+>>> x = lambda: (yield 1)
+>>> list(x())
+[1]
+
+>>> x = lambda: ((yield 1), (yield 2))
+>>> list(x())
+[1, 2]
 """
 
 # conjoin is a simple backtracking generator, named in honor of Icon's
