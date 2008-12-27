@@ -64,9 +64,11 @@ The module defines the following items:
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
-   otherwise returns ``False``.  This module does not currently handle ZIP files
-   which have appended comments.
+   otherwise returns ``False``.  *filename* may be a file or file-like object too.
+   This module does not currently handle ZIP files which have appended comments.
 
+   .. versionchanged:: 2.7
+   Support for file and file-like objects.
 
 .. data:: ZIP_STORED
 

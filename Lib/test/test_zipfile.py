@@ -621,20 +621,49 @@ class OtherTests(unittest.TestCase):
     def testIsZipErroneousFile(self):
         # This test checks that the is_zipfile function correctly identifies
         # a file that is not a zip file
-        fp = open(TESTFN, "w")
-        fp.write("this is not a legal zip file\n")
-        fp.close()
+
+        # - passing a filename
+        with open(TESTFN, "w") as fp:
+            fp.write("this is not a legal zip file\n")
         chk = zipfile.is_zipfile(TESTFN)
-        self.assert_(chk is False)
+        self.assert_(not chk)
+        # - passing a file object
+        with open(TESTFN, "rb") as fp:
+            chk = zipfile.is_zipfile(fp)
+            self.assert_(not chk)
+        # - passing a file-like object
+        fp = io.BytesIO()
+        fp.write(b"this is not a legal zip file\n")
+        chk = zipfile.is_zipfile(fp)
+        self.assert_(not chk)
+        fp.seek(0,0)
+        chk = zipfile.is_zipfile(fp)
+        self.assert_(not chk)
 
     def testIsZipValidFile(self):
         # This test checks that the is_zipfile function correctly identifies
         # a file that is a zip file
+
+        # - passing a filename
         zipf = zipfile.ZipFile(TESTFN, mode="w")
         zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
         zipf.close()
         chk = zipfile.is_zipfile(TESTFN)
-        self.assert_(chk is True)
+        self.assert_(chk)
+        # - passing a file object
+        with open(TESTFN, "rb") as fp:
+            chk = zipfile.is_zipfile(fp)
+            self.assert_(chk)
+            fp.seek(0,0)
+            zip_contents = fp.read()
+        # - passing a file-like object
+        fp = io.BytesIO()
+        fp.write(zip_contents)
+        chk = zipfile.is_zipfile(fp)
+        self.assert_(chk)
+        fp.seek(0,0)
+        chk = zipfile.is_zipfile(fp)
+        self.assert_(chk)
 
     def testNonExistentFileRaisesIOError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
