@@ -609,8 +609,8 @@ failures.
    equal, the test will fail with the explanation given by *msg*, or :const:`None`.
 
 
-.. method:: TestCase.assertRaises(exception, callable, ...)
-            TestCase.failUnlessRaises(exception, callable, ...)
+.. method:: TestCase.assertRaises(exception[, callable, ...])
+            TestCase.failUnlessRaises(exception[, callable, ...])
 
    Test that an exception is raised when *callable* is called with any positional
    or keyword arguments that are also passed to :meth:`assertRaises`.  The test
@@ -618,6 +618,11 @@ failures.
    fails if no exception is raised.  To catch any of a group of exceptions, a tuple
    containing the exception classes may be passed as *exception*.
 
+   If *callable* is omitted or None, returns a context manager so that the code
+   under test can be written inline rather than as a function::
+
+        with self.failUnlessRaises(some_error_class):
+            do_something()
 
 .. method:: TestCase.failIf(expr[, msg])
             TestCase.assertFalse(expr[, msg])

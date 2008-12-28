@@ -149,6 +149,36 @@ class TestResult:
                (_strclass(self.__class__), self.testsRun, len(self.errors),
                 len(self.failures))
 
+class AssertRaisesContext:
+    def __init__(self, expected, test_case, callable_obj=None):
+        self.expected = expected
+        self.failureException = test_case.failureException
+        if callable_obj is not None:
+            try:
+                self.obj_name = callable_obj.__name__
+            except AttributeError:
+                self.obj_name = str(callable_obj)
+        else:
+            self.obj_name = None
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            try:
+                exc_name = self.expected.__name__
+            except AttributeError:
+                exc_name = str(self.expected)
+            if self.obj_name:
+                raise self.failureException("{0} not raised by {1}"
+                    .format(exc_name, self.obj_name))
+            else:
+                raise self.failureException("{0} not raised"
+                    .format(exc_name))
+        if issubclass(exc_type, self.expected):
+            return True
+        # Let unexpected exceptions skip through
+        return False
+
 class TestCase:
     """A class whose instances are single test cases.
 
@@ -299,23 +329,25 @@ class TestCase:
         """Fail the test unless the expression is true."""
         if not expr: raise self.failureException(msg)
 
-    def failUnlessRaises(self, excClass, callableObj, *args, **kwargs):
+    def failUnlessRaises(self, excClass, callableObj=None, *args, **kwargs):
         """Fail unless an exception of class excClass is thrown
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
            thrown, it will not be caught, and the test case will be
            deemed to have suffered an error, exactly as for an
            unexpected exception.
+
+           If called with callableObj omitted or None, will return a
+           context object used like this::
+
+                with self.failUnlessRaises(some_error_class):
+                    do_something()
         """
-        try:
+        context = AssertRaisesContext(excClass, self, callableObj)
+        if callableObj is None:
+            return context
+        with context:
             callableObj(*args, **kwargs)
-        except excClass:
-            return
-        else:
-            excName = str(getattr(excClass, '__name__', excClass))
-            objName = str(getattr(callableObj, '__name__', callableObj))
-            raise self.failureException("%s not raised by %s" % (excName,
-                                                                  objName))
 
     def failUnlessEqual(self, first, second, msg=None):
         """Fail if the two objects are unequal as determined by the '=='
