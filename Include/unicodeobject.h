@@ -296,7 +296,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS4_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS4_Fini
 # define _PyUnicode_Init _PyUnicodeUCS4_Init
-# define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
+# define PyUnicode_ClearFreeList PyUnicodeUCS4_ClearFreelist
 # define _PyUnicode_IsAlpha _PyUnicodeUCS4_IsAlpha
 # define _PyUnicode_IsDecimalDigit _PyUnicodeUCS4_IsDecimalDigit
 # define _PyUnicode_IsDigit _PyUnicodeUCS4_IsDigit
