@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4759: None is now allowed as the first argument of
+  bytearray.translate().  It was always allowed for bytes.translate().
+
 - Added test case to ensure attempts to read from a file opened for writing
   fail.
 
