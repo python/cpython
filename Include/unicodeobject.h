@@ -153,6 +153,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsUnicode PyUnicodeUCS2_AsUnicode
 # define PyUnicode_AsUnicodeEscapeString PyUnicodeUCS2_AsUnicodeEscapeString
 # define PyUnicode_AsWideChar PyUnicodeUCS2_AsWideChar
+# define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS2_Compare
 # define PyUnicode_Concat PyUnicodeUCS2_Concat
 # define PyUnicode_Contains PyUnicodeUCS2_Contains
@@ -182,13 +183,13 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Find PyUnicodeUCS2_Find
 # define PyUnicode_Format PyUnicodeUCS2_Format
 # define PyUnicode_FromEncodedObject PyUnicodeUCS2_FromEncodedObject
+# define PyUnicode_FromFormat PyUnicodeUCS2_FromFormat
+# define PyUnicode_FromFormatV PyUnicodeUCS2_FromFormatV
 # define PyUnicode_FromObject PyUnicodeUCS2_FromObject
 # define PyUnicode_FromOrdinal PyUnicodeUCS2_FromOrdinal
-# define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromString PyUnicodeUCS2_FromString
 # define PyUnicode_FromStringAndSize PyUnicodeUCS2_FromStringAndSize
-# define PyUnicode_FromFormatV PyUnicodeUCS2_FromFormatV
-# define PyUnicode_FromFormat PyUnicodeUCS2_FromFormat
+# define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
@@ -209,7 +210,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS2_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS2_Fini
 # define _PyUnicode_Init _PyUnicodeUCS2_Init
-# define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define _PyUnicode_IsAlpha _PyUnicodeUCS2_IsAlpha
 # define _PyUnicode_IsDecimalDigit _PyUnicodeUCS2_IsDecimalDigit
 # define _PyUnicode_IsDigit _PyUnicodeUCS2_IsDigit
@@ -240,6 +240,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsUnicode PyUnicodeUCS4_AsUnicode
 # define PyUnicode_AsUnicodeEscapeString PyUnicodeUCS4_AsUnicodeEscapeString
 # define PyUnicode_AsWideChar PyUnicodeUCS4_AsWideChar
+# define PyUnicode_ClearFreeList PyUnicodeUCS4_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS4_Compare
 # define PyUnicode_Concat PyUnicodeUCS4_Concat
 # define PyUnicode_Contains PyUnicodeUCS4_Contains
@@ -269,13 +270,13 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Find PyUnicodeUCS4_Find
 # define PyUnicode_Format PyUnicodeUCS4_Format
 # define PyUnicode_FromEncodedObject PyUnicodeUCS4_FromEncodedObject
+# define PyUnicode_FromFormat PyUnicodeUCS4_FromFormat
+# define PyUnicode_FromFormatV PyUnicodeUCS4_FromFormatV
 # define PyUnicode_FromObject PyUnicodeUCS4_FromObject
 # define PyUnicode_FromOrdinal PyUnicodeUCS4_FromOrdinal
-# define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromString PyUnicodeUCS4_FromString
 # define PyUnicode_FromStringAndSize PyUnicodeUCS4_FromStringAndSize
-# define PyUnicode_FromFormatV PyUnicodeUCS4_FromFormatV
-# define PyUnicode_FromFormat PyUnicodeUCS4_FromFormat
+# define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
@@ -296,7 +297,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS4_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS4_Fini
 # define _PyUnicode_Init _PyUnicodeUCS4_Init
-# define PyUnicode_ClearFreeList PyUnicodeUCS4_ClearFreelist
 # define _PyUnicode_IsAlpha _PyUnicodeUCS4_IsAlpha
 # define _PyUnicode_IsDecimalDigit _PyUnicodeUCS4_IsDecimalDigit
 # define _PyUnicode_IsDigit _PyUnicodeUCS4_IsDigit
