@@ -1107,6 +1107,7 @@ other utility module.
    For universal binary builds on MacOS X the architecture value reflects
    the univeral binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``, 
+   for 64-bit universal binaries the architecture is ``fat64``, and 
    for 4-way universal binaries the architecture is ``universal``. 
 
    Examples of returned values on MacOS X:
