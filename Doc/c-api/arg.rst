@@ -534,3 +534,8 @@ and the following format units are left untouched.
 
    If there is an error in the format string, the :exc:`SystemError` exception is
    set and *NULL* returned.
+
+.. cfunction:: PyObject* Py_VaBuildValue(const char *format, va_list vargs)
+
+   Identical to :cfunc:`Py_BuildValue`, except that it accepts a va_list
+   rather than a variable number of arguments.
