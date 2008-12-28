@@ -2284,6 +2284,43 @@ class Test_Assertions(TestCase):
         self.assertRaises(AssertionError,
                           self.failIfAlmostEqual, 0, .1+.1j, places=0)
 
+    def test_assertRaises(self):
+        def _raise(e):
+            raise e
+        self.assertRaises(KeyError, _raise, KeyError)
+        self.assertRaises(KeyError, _raise, KeyError("key"))
+        try:
+            self.assertRaises(KeyError, lambda: None)
+        except AssertionError as e:
+            self.assert_("KeyError not raised" in e, str(e))
+        else:
+            self.fail("assertRaises() didn't fail")
+        try:
+            self.assertRaises(KeyError, _raise, ValueError)
+        except ValueError:
+            pass
+        else:
+            self.fail("assertRaises() didn't let exception pass through")
+        with self.assertRaises(KeyError):
+            raise KeyError
+        with self.assertRaises(KeyError):
+            raise KeyError("key")
+        try:
+            with self.assertRaises(KeyError):
+                pass
+        except AssertionError as e:
+            self.assert_("KeyError not raised" in e, str(e))
+        else:
+            self.fail("assertRaises() didn't fail")
+        try:
+            with self.assertRaises(KeyError):
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            self.fail("assertRaises() didn't let exception pass through")
+
+
 ######################################################################
 ## Main
 ######################################################################
