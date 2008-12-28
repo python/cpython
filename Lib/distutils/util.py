@@ -140,9 +140,13 @@ def get_platform ():
                 # 'universal' instead of 'fat'.
 
                 machine = 'fat'
+                cflags = get_config_vars().get('CFLAGS')
 
-                if '-arch x86_64' in get_config_vars().get('CFLAGS'):
-                    machine = 'universal'
+                if '-arch x86_64' in cflags:
+                    if '-arch i386' in cflags:
+                        machine = 'universal'
+                    else:
+                        machine = 'fat64'
 
             elif machine in ('PowerPC', 'Power_Macintosh'):
                 # Pick a sane name for the PPC architecture.
