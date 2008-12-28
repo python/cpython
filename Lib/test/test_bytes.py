@@ -872,11 +872,19 @@ class AssortedBytesTest(unittest.TestCase):
 
     def test_translate(self):
         b = b'hello'
+        ba = bytearray(b)
         rosetta = bytearray(range(0, 256))
         rosetta[ord('o')] = ord('e')
         c = b.translate(rosetta, b'l')
         self.assertEqual(b, b'hello')
         self.assertEqual(c, b'hee')
+        c = ba.translate(rosetta, b'l')
+        self.assertEqual(ba, b'hello')
+        self.assertEqual(c, b'hee')
+        c = b.translate(None, b'e')
+        self.assertEqual(c, b'hllo')
+        self.assertRaises(TypeError, b.translate, b'a'*256, None)
+        self.assertRaises(TypeError, ba.translate, b'a'*256, None)
 
     def test_split_bytearray(self):
         self.assertEqual(b'a b'.split(memoryview(b' ')), [b'a', b'b'])

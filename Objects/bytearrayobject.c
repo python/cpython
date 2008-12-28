@@ -1465,6 +1465,7 @@ bytes_translate(PyByteArrayObject *self, PyObject *args)
     if (delobj != NULL) {
         if (_getbuffer(delobj, &vdel) < 0) {
             result = NULL;
+            delobj = NULL;  /* don't try to release vdel buffer on exit */
             goto done;
         }
     }
