@@ -12,6 +12,8 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #4759: fix a segfault for bytearray.translate(x, None).
+
 - Added test case to ensure attempts to read from a file opened for writing
   fail.
 
