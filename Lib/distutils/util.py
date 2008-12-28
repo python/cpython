@@ -100,7 +100,11 @@ def get_platform ():
         if not macver:
             macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
 
-        if not macver:
+        if 1:
+            # Always calculate the release of the running machine,
+            # needed to determine if we can build fat binaries or not.
+
+            macrelease = macver
             # Get the system version. Reading this plist is a documented
             # way to get the system version (see the documentation for
             # the Gestalt Manager)
@@ -116,16 +120,18 @@ def get_platform ():
                         r'<string>(.*?)</string>', f.read())
                 f.close()
                 if m is not None:
-                    macver = '.'.join(m.group(1).split('.')[:2])
+                    macrelease = '.'.join(m.group(1).split('.')[:2])
                 # else: fall back to the default behaviour
+
+        if not macver:
+            macver = macrelease
 
         if macver:
             from distutils.sysconfig import get_config_vars
             release = macver
             osname = "macosx"
 
-
-            if (release + '.') >= '10.4.' and \
+            if (macrelease + '.') >= '10.4.' and \
                     '-arch' in get_config_vars().get('CFLAGS', '').strip():
                 # The universal build will build fat binaries, but not on
                 # systems before 10.4
