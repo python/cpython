@@ -215,7 +215,8 @@ class PyBuildExt(build_ext):
 
         if missing:
             print
-            print "Failed to find the necessary bits to build these modules:"
+            print ("Python build finished, but the necessary bits to build "
+                   "these modules were not found:")
             print_three_column(missing)
             print ("To find the necessary bits, look in setup.py in"
                    " detect_modules() for the module's name.")
