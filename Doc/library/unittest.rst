@@ -622,7 +622,7 @@ failures.
    fails if no exception is raised.  To catch any of a group of exceptions, a tuple
    containing the exception classes may be passed as *exception*.
 
-   .. versionchanged:: 2.2
+   .. versionchanged:: 2.7
 
       If *callable* is omitted or None, returns a context manager so that the code
       under test can be written inline rather than as a function::
