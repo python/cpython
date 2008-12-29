@@ -64,52 +64,6 @@ encoding = locale_encoding  ### KBK 07Sep07  This is used all over IDLE, check!
 
 coding_re = re.compile("coding[:=]\s*([-\w_.]+)")
 
-class EncodingMessage(SimpleDialog):
-    "Inform user that an encoding declaration is needed."
-    def __init__(self, master, enc):
-        self.should_edit = False
-
-        self.root = top = Toplevel(master)
-        top.bind("<Return>", self.return_event)
-        top.bind("<Escape>", self.do_ok)
-        top.protocol("WM_DELETE_WINDOW", self.wm_delete_window)
-        top.wm_title("I/O Warning")
-        top.wm_iconname("I/O Warning")
-        self.top = top
-
-        l1 = Label(top,
-            text="Non-ASCII found, yet no encoding declared. Add a line like")
-        l1.pack(side=TOP, anchor=W)
-        l2 = Entry(top, font="courier")
-        l2.insert(0, "# -*- coding: %s -*-" % enc)
-        # For some reason, the text is not selectable anymore if the
-        # widget is disabled.
-        # l2['state'] = DISABLED
-        l2.pack(side=TOP, anchor = W, fill=X)
-        l3 = Label(top, text="to your file\n"
-                   "Choose OK to save this file as %s\n"
-                   "Edit your general options to silence this warning" % enc)
-        l3.pack(side=TOP, anchor = W)
-
-        buttons = Frame(top)
-        buttons.pack(side=TOP, fill=X)
-        # Both return and cancel mean the same thing: do nothing
-        self.default = self.cancel = 0
-        b1 = Button(buttons, text="Ok", default="active",
-                    command=self.do_ok)
-        b1.pack(side=LEFT, fill=BOTH, expand=1)
-        b2 = Button(buttons, text="Edit my file",
-                    command=self.do_edit)
-        b2.pack(side=LEFT, fill=BOTH, expand=1)
-
-        self._set_transient(master)
-
-    def do_ok(self):
-        self.done(0)
-
-    def do_edit(self):
-        self.done(1)
-
 def coding_spec(data):
     """Return the encoding declaration according to PEP 263.
 
@@ -409,6 +363,9 @@ class IOBinding:
             # This is either plain ASCII, or Tk was returning mixed-encoding
             # text to us. Don't try to guess further.
             return chars
+        # Preserve a BOM that might have been present on opening
+        if self.fileencoding == 'BOM':
+            return BOM_UTF8 + chars.encode("utf-8")
         # See whether there is anything non-ASCII in it.
         # If not, no need to figure out the encoding.
         try:
@@ -423,61 +380,22 @@ class IOBinding:
         except LookupError as msg:
             failed = msg
             enc = None
+        else:
+            if not enc:
+                # PEP 3120: default source encoding is UTF-8
+                enc = 'utf-8'
         if enc:
             try:
                 return chars.encode(enc)
             except UnicodeError:
                 failed = "Invalid encoding '%s'" % enc
-        if failed:
-            tkMessageBox.showerror(
-                "I/O Error",
-                "%s.\nSaving as UTF-8" % failed,
-                master = self.text)
-        # If there was a UTF-8 signature, use that. This should not fail
-        if self.fileencoding == 'BOM' or failed:
-            return BOM_UTF8 + chars.encode("utf-8")
-        # Try the original file encoding next, if any
-        if self.fileencoding:
-            try:
-                return chars.encode(self.fileencoding)
-            except UnicodeError:
-                tkMessageBox.showerror(
-                    "I/O Error",
-                    "Cannot save this as '%s' anymore. Saving as UTF-8" \
-                    % self.fileencoding,
-                    master = self.text)
-                return BOM_UTF8 + chars.encode("utf-8")
-        # Nothing was declared, and we had not determined an encoding
-        # on loading. Recommend an encoding line.
-        config_encoding = idleConf.GetOption("main","EditorWindow",
-                                             "encoding")
-        if config_encoding == 'utf-8':
-            # User has requested that we save files as UTF-8
-            return BOM_UTF8 + chars.encode("utf-8")
-        ask_user = True
-        try:
-            chars = chars.encode(encoding)
-            enc = encoding
-            if config_encoding == 'locale':
-                ask_user = False
-        except UnicodeError:
-            chars = BOM_UTF8 + chars.encode("utf-8")
-            enc = "utf-8"
-        if not ask_user:
-            return chars
-        dialog = EncodingMessage(self.editwin.top, enc)
-        dialog.go()
-        if dialog.num == 1:
-            # User asked us to edit the file
-            encline = "# -*- coding: %s -*-\n" % enc
-            firstline = self.text.get("1.0", "2.0")
-            if firstline.startswith("#!"):
-                # Insert encoding after #! line
-                self.text.insert("2.0", encline)
-            else:
-                self.text.insert("1.0", encline)
-            return self.encode(self.text.get("1.0", "end-1c"))
-        return chars
+        tkMessageBox.showerror(
+            "I/O Error",
+            "%s.\nSaving as UTF-8" % failed,
+            master = self.text)
+        # Fallback: save as UTF-8, with BOM - ignoring the incorrect
+        # declared encoding
+        return BOM_UTF8 + chars.encode("utf-8")
 
     def fixlastline(self):
         c = self.text.get("end-2c")
