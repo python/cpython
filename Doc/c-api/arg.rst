@@ -305,8 +305,8 @@ inside nested parentheses.  They are:
 
 ``;``
    The list of format units ends here; the string after the semicolon is used as
-   the error message *instead* of the default error message.  Clearly, ``:`` and
-   ``;`` mutually exclude each other.
+   the error message *instead* of the default error message.  ``:`` and ``;``
+   mutually exclude each other.
 
 Note that any Python object references which are provided to the caller are
 *borrowed* references; do not decrement their reference count!

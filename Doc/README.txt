@@ -81,8 +81,7 @@ You'll need to checkout the Sphinx package to the `tools/` directory::
 
    svn co http://svn.python.org/projects/doctools/trunk/sphinx tools/sphinx
 
-Then, you need to install Docutils 0.4 (the SVN snapshot won't work), either
-by checking it out via ::
+Then, you need to install Docutils, either by checking it out via ::
 
    svn co http://svn.python.org/projects/external/docutils-0.4/docutils tools/docutils
 
@@ -99,19 +98,18 @@ Then, make an output directory, e.g. under `build/`, and run ::
 
    python tools/sphinx-build.py -b<builder> . build/<outputdirectory>
 
-where `<builder>` is one of html, web or htmlhelp (for explanations see the make
-targets above).
+where `<builder>` is one of html, text, latex, or htmlhelp (for explanations see
+the make targets above).
 
 
 Contributing
 ============
 
-For bugs in the content, the online version at http://docs.python.org/ has a
-"suggest change" facility that can be used to correct errors in the source text
-and submit them as a patch to the maintainers.
+Bugs in the content should be reported to the Python bug tracker at
+http://bugs.python.org.
 
-Bugs in the toolset should be reported in the Python bug tracker at
-http://bugs.python.org/.
+Bugs in the toolset should be reported in the Sphinx bug tracker at
+http://www.bitbucket.org/birkenfeld/sphinx/issues/.
 
 You can also send a mail to the Python Documentation Team at docs@python.org,
 and we will process your request as soon as possible.
