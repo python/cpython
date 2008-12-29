@@ -4494,10 +4494,6 @@ posix_symlink(PyObject *self, PyObject *args)
 
 
 #ifdef HAVE_TIMES
-#ifndef HZ
-#define HZ 60 /* Universal constant :-) */
-#endif /* HZ */
-
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 static long
 system_uptime(void)
@@ -4523,6 +4519,8 @@ posix_times(PyObject *self, PyObject *noargs)
 			     (double)system_uptime() / 1000);
 }
 #else /* not OS2 */
+#define NEED_TICKS_PER_SECOND
+static long ticks_per_second = -1;
 static PyObject *
 posix_times(PyObject *self, PyObject *noargs)
 {
@@ -4533,11 +4531,11 @@ posix_times(PyObject *self, PyObject *noargs)
 	if (c == (clock_t) -1)
 		return posix_error();
 	return Py_BuildValue("ddddd",
-			     (double)t.tms_utime / HZ,
-			     (double)t.tms_stime / HZ,
-			     (double)t.tms_cutime / HZ,
-			     (double)t.tms_cstime / HZ,
-			     (double)c / HZ);
+			     (double)t.tms_utime / ticks_per_second,
+			     (double)t.tms_stime / ticks_per_second,
+			     (double)t.tms_cutime / ticks_per_second,
+			     (double)t.tms_cstime / ticks_per_second,
+			     (double)c / ticks_per_second);
 }
 #endif /* not OS2 */
 #endif /* HAVE_TIMES */
@@ -7409,6 +7407,15 @@ INITFUNC(void)
 
 		statvfs_result_desc.name = MODNAME ".statvfs_result";
 		PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
+#ifdef NEED_TICKS_PER_SECOND
+#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+		ticks_per_second = sysconf(_SC_CLK_TCK);
+#  elif defined(HZ)
+		ticks_per_second = HZ;
+#  else
+		ticks_per_second = 60; /* magic fallback value; may be bogus */
+#  endif
+#endif
 	}
 	Py_INCREF((PyObject*) &StatResultType);
 	PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
