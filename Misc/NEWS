@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4646: distutils was choking on empty options arg in the setup 
+  function. Original patch by Thomas Heller.
+
 - Issue #3767: Convert Tk object to string in tkColorChooser.
 
 - Issue #3248: Allow placing ScrolledText in a PanedWindow.
