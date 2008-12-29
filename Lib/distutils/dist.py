@@ -228,7 +228,7 @@ Common commands: (see '--help-commands' for more)
             # command options will override any supplied redundantly
             # through the general options dictionary.
             options = attrs.get('options')
-            if options:
+            if options is not None:
                 del attrs['options']
                 for (command, cmd_options) in options.items():
                     opt_dict = self.get_option_dict(command)

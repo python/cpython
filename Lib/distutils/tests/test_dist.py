@@ -6,6 +6,7 @@ import os
 import io
 import sys
 import unittest
+import warnings
 
 from test.support import TESTFN
 
@@ -95,6 +96,29 @@ class DistributionTestCase(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+
+    def test_empty_options(self):
+        # an empty options dictionary should not stay in the
+        # list of attributes
+        klass = distutils.dist.Distribution
+
+        # catching warnings
+        warns = []
+        def _warn(msg):
+            warns.append(msg)
+
+        old_warn = warnings.warn
+        warnings.warn = _warn
+        try:
+            dist = klass(attrs={'author': 'xxx',
+                                'name': 'xxx',
+                                'version': 'xxx',
+                                'url': 'xxxx',
+                                'options': {}})
+        finally:
+            warnings.warn = old_warn
+
+        self.assertEquals(len(warns), 0)
 
 class MetadataTestCase(unittest.TestCase):
 
