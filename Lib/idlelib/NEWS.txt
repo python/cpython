@@ -1,3 +1,14 @@
+What's New in IDLE 3.1a1?
+=========================
+
+*Release date: XX-XXX-XXXX*
+
+- Issue #4323: Always encode source as UTF-8 without asking
+  the user (unless a different encoding is declared); remove
+  user configuration of source encoding; all according to
+  PEP 3120.
+
+
 What's New in IDLE 3.0a3?
 =========================
 
