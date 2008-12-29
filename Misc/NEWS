@@ -154,6 +154,8 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
+
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
   OpenBSD.
 
