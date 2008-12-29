@@ -41,6 +41,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3767: Convert Tk object to string in tkColorChooser.
+
 - Issue #3248: Allow placing ScrolledText in a PanedWindow.
 
 - Issue #3954: Fix a potential SystemError in _hotshot.logreader error
