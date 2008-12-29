@@ -108,6 +108,7 @@ class AutoFileTests(unittest.TestCase):
             _fileio._FileIO('.', 'r')
         except IOError as e:
             self.assertNotEqual(e.errno, 0)
+            self.assertEqual(e.filename, ".")
         else:
             self.fail("Should have raised IOError")
 
