@@ -132,8 +132,8 @@ dircheck(PyFileObject* f)
 	if (fstat(fileno(f->f_fp), &buf) == 0 &&
 	    S_ISDIR(buf.st_mode)) {
 		char *msg = strerror(EISDIR);
-		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)",
-						      EISDIR, msg);
+		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
+						      EISDIR, msg, f->f_name);
 		PyErr_SetObject(PyExc_IOError, exc);
 		Py_XDECREF(exc);
 		return NULL;
