@@ -34,19 +34,22 @@ class Chooser(Dialog):
         try:
             # make sure initialcolor is a tk color string
             color = self.options["initialcolor"]
-            if type(color) == type(()):
+            if isinstance(color, tuple):
                 # assume an RGB triplet
                 self.options["initialcolor"] = "#%02x%02x%02x" % color
         except KeyError:
             pass
 
     def _fixresult(self, widget, result):
+        # result can be somethings: an empty tuple, an empty string or
+        # a Tcl_Obj, so this somewhat weird check handles that
+        if not result or not str(result):
+            return None, None # canceled
+
         # to simplify application code, the color chooser returns
         # an RGB tuple together with the Tk color string
-        if not result:
-            return None, None # canceled
         r, g, b = widget.winfo_rgb(result)
-        return (r/256, g/256, b/256), result
+        return (r/256, g/256, b/256), str(result)
 
 
 #
@@ -66,5 +69,4 @@ def askcolor(color = None, **options):
 # test stuff
 
 if __name__ == "__main__":
-
     print("color", askcolor())
