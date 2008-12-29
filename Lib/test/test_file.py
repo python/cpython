@@ -125,6 +125,19 @@ class AutoFileTests(unittest.TestCase):
 
 class OtherFileTests(unittest.TestCase):
 
+    def testOpenDir(self):
+        this_dir = os.path.dirname(__file__)
+        for mode in (None, "w"):
+            try:
+                if mode:
+                    f = open(this_dir, mode)
+                else:
+                    f = open(this_dir)
+            except IOError as e:
+                self.assertEqual(e.filename, this_dir)
+            else:
+                self.fail("opening a directory didn't raise an IOError")
+
     def testModeStrings(self):
         # check invalid mode strings
         for mode in ("", "aU", "wU+"):

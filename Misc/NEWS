@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4764: IOError.filename is set when trying to open a directory on POSIX
+  systems.
+
 - Issue #4759: None is now allowed as the first argument of
   bytearray.translate().  It was always allowed for bytes.translate().
 
