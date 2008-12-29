@@ -30,7 +30,7 @@ For a while people just wrote programs that didn't display accents.  I remember
 looking at Apple ][ BASIC programs, published in French-language publications in
 the mid-1980s, that had lines like these::
 
-	PRINT "FICHER EST COMPLETE."
+	PRINT "FICHIER EST COMPLETE."
 	PRINT "CARACTERE NON ACCEPTE."
 
 Those messages should contain accents, and they just look wrong to someone who
