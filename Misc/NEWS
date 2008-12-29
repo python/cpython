@@ -78,6 +78,11 @@ Library
 
 - FileIO's mode attribute now always includes ``"b"``.
 
+Extension Modules
+-----------------
+
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
+
 
 What's New in Python 2.6.1
 ==========================
