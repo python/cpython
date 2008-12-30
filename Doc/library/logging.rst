@@ -568,10 +568,10 @@ provided:
 
 The :class:`NullHandler` class was not present in previous versions.
 
-The :class:`StreamHandler` and :class:`FileHandler` classes are defined in the
-core logging package. The other handlers are defined in a sub- module,
-:mod:`logging.handlers`. (There is also another sub-module,
-:mod:`logging.config`, for configuration functionality.)
+The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
+classes are defined in the core logging package. The other handlers are
+defined in a sub- module, :mod:`logging.handlers`. (There is also another
+sub-module, :mod:`logging.config`, for configuration functionality.)
 
 Logged messages are formatted for presentation through instances of the
 :class:`Formatter` class. They are initialized with a format string suitable for
