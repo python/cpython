@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4701: PyObject_Hash now implicitly calls PyType_Ready on types
+  where the tp_hash and tp_dict slots are both NULL.
+
 - Issue #4764: With io.open, IOError.filename is set when trying to open a
   directory on POSIX systems.
 
