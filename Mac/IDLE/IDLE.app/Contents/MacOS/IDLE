@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.0/Resources/Python.app/Contents/MacOS/Python
+#!%prefix%/Resources/Python.app/Contents/MacOS/Python3
 
 import sys, os
 execdir = os.path.dirname(sys.argv[0])
