@@ -1100,6 +1100,17 @@ PyObject_Hash(PyObject *v)
 	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
+	/* To keep to the general practice that inheriting
+	 * solely from object in C code should work without
+	 * an explicit call to PyType_Ready, we implicitly call
+	 * PyType_Ready here and then check the tp_hash slot again
+	 */
+	if (tp->tp_dict == NULL) {
+		if (PyType_Ready(tp) < 0)
+			return -1;
+		if (tp->tp_hash != NULL)
+			return (*tp->tp_hash)(v);
+	}
 	if (tp->tp_compare == NULL && RICHCOMPARE(tp) == NULL) {
 		return _Py_HashPointer(v); /* Use address as hash value */
 	}

@@ -111,9 +111,32 @@ class HashInheritanceTestCase(unittest.TestCase):
             self.assertFalse(isinstance(obj, Hashable), repr(obj))
 
 
+# Issue #4701: Check that some builtin types are correctly hashable
+#  (This test only used to fail in Python 3.0, but has been included
+#   in 2.x along with the lazy call to PyType_Ready in PyObject_Hash)
+class DefaultIterSeq(object):
+    seq = range(10)
+    def __len__(self):
+        return len(self.seq)
+    def __getitem__(self, index):
+        return self.seq[index]
+
+class HashBuiltinsTestCase(unittest.TestCase):
+    hashes_to_check = [xrange(10),
+                       enumerate(xrange(10)),
+                       iter(DefaultIterSeq()),
+                       iter(lambda: 0, 0),
+                      ]
+
+    def test_hashes(self):
+        _default_hash = object.__hash__
+        for obj in self.hashes_to_check:
+            self.assertEqual(hash(obj), _default_hash(obj))
+
 def test_main():
     test_support.run_unittest(HashEqualityTestCase,
-                              HashInheritanceTestCase)
+                              HashInheritanceTestCase,
+                              HashBuiltinsTestCase)
 
 
 if __name__ == "__main__":
