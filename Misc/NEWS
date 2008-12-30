@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
+  no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
+
 - Issue #4646: distutils was choking on empty options arg in the setup 
   function. Original patch by Thomas Heller.
 
