@@ -103,9 +103,30 @@ class HashInheritanceTestCase(unittest.TestCase):
             self.assertFalse(isinstance(obj, Hashable), repr(obj))
 
 
+# Issue #4701: Check that some builtin types are correctly hashable
+class DefaultIterSeq(object):
+    seq = range(10)
+    def __len__(self):
+        return len(self.seq)
+    def __getitem__(self, index):
+        return self.seq[index]
+
+class HashBuiltinsTestCase(unittest.TestCase):
+    hashes_to_check = [range(10),
+                       enumerate(range(10)),
+                       iter(DefaultIterSeq()),
+                       iter(lambda: 0, 0),
+                      ]
+
+    def test_hashes(self):
+        _default_hash = object.__hash__
+        for obj in self.hashes_to_check:
+            self.assertEqual(hash(obj), _default_hash(obj))
+
 def test_main():
     support.run_unittest(HashEqualityTestCase,
-                         HashInheritanceTestCase)
+                              HashInheritanceTestCase,
+                              HashBuiltinsTestCase)
 
 
 if __name__ == "__main__":
