@@ -358,7 +358,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. attribute:: daemon
 
-      The process's daemon flag, a Boolean value.  This must be called before
+      The process's daemon flag, a Boolean value.  This must be set before
       :meth:`start` is called.
 
       The initial value is inherited from the creating process.
