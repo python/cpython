@@ -14,7 +14,7 @@ status also when nothing needs to be fixed.
 """
 import sys
 import os
-import gestalt as _gestalt
+import platform
 
 MAKEFILE='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/Makefile'
 CHANGES=((
@@ -99,11 +99,12 @@ def main():
         print("fixapplypython23: no fix is needed on MacOSX on Intel")
         sys.exit(0)
 
-    if gestalt.gestalt('sysv') < 0x1030:
+    osver =  platform.mac_ver()
+    if osver != '10.3' and os.ver < '10.3.':
         print('fixapplepython23: no fix needed on MacOSX < 10.3')
         sys.exit(0)
 
-    if gestalt.gestalt('sysv') >= 0x1040:
+    if osver >= '10.4':
         print('fixapplepython23: no fix needed on MacOSX >= 10.4')
         sys.exit(0)
 
