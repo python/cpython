@@ -1100,6 +1100,24 @@ other utility module.
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
+   For MacOS X systems the OS version reflects the minimal version on which
+   binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
+   during the build of Python), not the OS version of the current system. 
+
+   For universal binary builds on MacOS X the architecture value reflects
+   the univeral binary status instead of the architecture of the current
+   processor. For 32-bit universal binaries the architecture is ``fat``, 
+   for 64-bit universal binaries the architecture is ``fat64``, and 
+   for 4-way universal binaries the architecture is ``universal``. 
+
+   Examples of returned values on MacOS X:
+
+   * ``macosx-10.3-ppc``
+
+   * ``macosx-10.3-fat``
+
+   * ``macosx-10.5-universal``
+
    .. % XXX isn't this also provided by some other non-distutils module?
 
 
