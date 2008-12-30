@@ -196,6 +196,7 @@ PKG_RECIPES = [
             wrappers for lots of Mac OS X API's.
         """,
         postflight="scripts/postflight.framework",
+        selected='selected',
     ),
     dict(
         name="PythonApplications",
@@ -209,6 +210,7 @@ PKG_RECIPES = [
             It also installs a number of examples and demos.
             """,
         required=False,
+        selected='selected',
     ),
     dict(
         name="PythonUnixTools",
@@ -220,6 +222,7 @@ PKG_RECIPES = [
             is not necessary to use MacPython.
             """,
         required=False,
+        selected='unselected',
     ),
     dict(
         name="PythonDocumentation",
@@ -234,6 +237,7 @@ PKG_RECIPES = [
             """,
         postflight="scripts/postflight.documentation",
         required=False,
+        selected='selected',
     ),
     dict(
         name="PythonProfileChanges",
@@ -251,6 +255,7 @@ PKG_RECIPES = [
         topdir="/Library/Frameworks/Python.framework",
         source="/empty-dir",
         required=False,
+        selected='unselected',
     ),
     dict(
         name="PythonSystemFixes",
@@ -264,6 +269,7 @@ PKG_RECIPES = [
         topdir="/Library/Frameworks/Python.framework",
         source="/empty-dir",
         required=False,
+        selected='unselected',
     )
 ]
 
@@ -662,6 +668,8 @@ def buildPython():
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     gid = grp.getgrnam('admin').gr_gid
 
+
+
     for dirpath, dirnames, filenames in os.walk(frmDir):
         for dn in dirnames:
             os.chmod(os.path.join(dirpath, dn), 0775)
@@ -707,6 +715,11 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
+
+    # Remove the 'Current' link, that way we don't accidently mess with an already installed
+    # version of python
+    os.unlink(os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework', 'Versions', 'Current'))
+
 
 
 
@@ -842,7 +855,7 @@ def makeMpkgPlist(path):
             IFPkgFlagPackageList=[
                 dict(
                     IFPkgFlagPackageLocation='%s-%s.pkg'%(item['name'], getVersion()),
-                    IFPkgFlagPackageSelection='selected'
+                    IFPkgFlagPackageSelection=item['selected'],
                 )
                 for item in PKG_RECIPES
             ],
