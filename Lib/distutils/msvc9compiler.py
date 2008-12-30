@@ -247,7 +247,7 @@ def query_vcvarsall(version, arch="x86"):
     result = {}
 
     if vcvarsall is None:
-        raise IOError("Unable to find vcvarsall.bat")
+        raise DistutilsPlatformError("Unable to find vcvarsall.bat")
     log.debug("Calling 'vcvarsall.bat %s' (version=%s)", arch, version)
     popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
                              stdout=subprocess.PIPE,
@@ -255,7 +255,7 @@ def query_vcvarsall(version, arch="x86"):
 
     stdout, stderr = popen.communicate()
     if popen.wait() != 0:
-        raise IOError(stderr.decode("mbcs"))
+        raise DistutilsPlatformError(stderr.decode("mbcs"))
 
     stdout = stdout.decode("mbcs")
     for line in stdout.split("\n"):
