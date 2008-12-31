@@ -179,7 +179,7 @@ test_dict_iteration(PyObject* self)
  *   PyType_Ready if it hasn't already been called
  */
 static PyTypeObject _HashInheritanceTester_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"hashinheritancetester",	/* Name of this type */
 	sizeof(PyObject),	/* Basic object size */
 	0,			/* Item size for varobject */
@@ -1338,6 +1338,8 @@ PyInit__testcapi(void)
 	m = PyModule_Create(&_testcapimodule);
 	if (m == NULL)
 		return NULL;
+
+	Py_TYPE(&_HashInheritanceTester_Type)=&PyType_Type;
 
 	Py_TYPE(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
