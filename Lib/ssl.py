@@ -74,7 +74,7 @@ from _ssl import \
      SSL_ERROR_EOF, \
      SSL_ERROR_INVALID_ERROR_CODE
 
-from socket import socket, _fileobject
+from socket import socket, _fileobject, error as socket_error
 from socket import getnameinfo as _getnameinfo
 import base64        # for DER-to-PEM translation
 
@@ -103,7 +103,7 @@ class SSLSocket (socket):
         # see if it's connected
         try:
             socket.getpeername(self)
-        except socket.error:
+        except socket_error:
             # no, no connection yet
             self._sslobj = None
         else:
@@ -441,7 +441,7 @@ def sslwrap_simple (sock, keyfile=None, certfile=None):
                             PROTOCOL_SSLv23, None)
     try:
         sock.getpeername()
-    except socket.error:
+    except socket_error:
         # no, no connection yet
         pass
     else:
