@@ -350,7 +350,7 @@ class SaveAs(_Dialog):
 
 
 # the directory dialog has its own _fix routines.
-class Directory(Dialog):
+class Directory(commondialog.Dialog):
     "Ask for a directory"
 
     command = "tk_chooseDirectory"
