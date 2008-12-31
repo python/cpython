@@ -161,6 +161,7 @@ def isgeneratorfunction(object):
     if (isfunction(object) or ismethod(object)) and \
         object.func_code.co_flags & CO_GENERATOR:
         return True
+    return False
 
 def isgenerator(object):
     """Return true if the object is a generator.
