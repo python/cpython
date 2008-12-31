@@ -100,6 +100,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
+  the function is not a generator.
+
 - Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
   no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
 
