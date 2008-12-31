@@ -103,7 +103,7 @@ class SSLSocket (socket):
         # see if it's connected
         try:
             socket.getpeername(self)
-        except:
+        except socket.error:
             # no, no connection yet
             self._sslobj = None
         else:
@@ -441,7 +441,7 @@ def sslwrap_simple (sock, keyfile=None, certfile=None):
                             PROTOCOL_SSLv23, None)
     try:
         sock.getpeername()
-    except:
+    except socket.error:
         # no, no connection yet
         pass
     else:
