@@ -354,9 +354,12 @@ def nsmallest(n, iterable, key=None):
 
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
+    if key is None:
+        it = zip(iterable, count())                         # decorate
+        result = _nsmallest(n, it)
+        return list(map(itemgetter(0), result))             # undecorate
     in1, in2 = tee(iterable)
-    keys = in1 if key is None else map(key, in1)
-    it = zip(keys, count(), in2)                           # decorate
+    it = zip(map(key, in1), count(), in2)                   # decorate
     result = _nsmallest(n, it)
     return list(map(itemgetter(2), result))                 # undecorate
 
@@ -366,9 +369,12 @@ def nlargest(n, iterable, key=None):
 
     Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
     """
+    if key is None:
+        it = zip(iterable, map(neg, count()))               # decorate
+        result = _nlargest(n, it)
+        return list(map(itemgetter(0), result))             # undecorate
     in1, in2 = tee(iterable)
-    keys = in1 if key is None else map(key, in1)
-    it = zip(keys, map(neg, count()), in2)                 # decorate
+    it = zip(map(key, in1), map(neg, count()), in2)         # decorate
     result = _nlargest(n, it)
     return list(map(itemgetter(2), result))                 # undecorate
 
