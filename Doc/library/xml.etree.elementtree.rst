@@ -94,6 +94,16 @@ Functions
    *events* is a list of events to report back.  If omitted, only "end" events are
    reported. Returns an :term:`iterator` providing ``(event, elem)`` pairs.
 
+   .. note::
+
+      :func:`iterparse` only guarantees that it has seen the ">"
+      character of a starting tag when it emits a "start" event, so the
+      attributes are defined, but the contents of the text and tail attributes
+      are undefined at that point.  The same applies to the element children;
+      they may or may not be present.
+
+      If you need a fully populated element, look for "end" events instead.
+
 
 .. function:: parse(source[, parser])
 

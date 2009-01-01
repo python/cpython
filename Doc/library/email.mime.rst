@@ -19,6 +19,7 @@ things easier.
 
 Here are the classes:
 
+.. currentmodule:: email.mime.base
 
 .. class:: MIMEBase(_maintype, _subtype, **_params)
 
@@ -39,6 +40,8 @@ Here are the classes:
    :mailheader:`MIME-Version` header (always set to ``1.0``).
 
 
+.. currentmodule:: email.mime.nonmultipart
+
 .. class:: MIMENonMultipart()
 
    Module: :mod:`email.mime.nonmultipart`
@@ -49,6 +52,8 @@ Here are the classes:
    :mimetype:`multipart` messages.  If :meth:`attach` is called, a
    :exc:`MultipartConversionError` exception is raised.
 
+
+.. currentmodule:: email.mime.multipart
 
 .. class:: MIMEMultipart([subtype[, boundary[, _subparts[, _params]]]])
 
@@ -73,6 +78,8 @@ Here are the classes:
    dictionary.
 
 
+.. currentmodule:: email.mime.application
+
 .. class:: MIMEApplication(_data[, _subtype[, _encoder[, **_params]]])
 
    Module: :mod:`email.mime.application`
@@ -92,6 +99,8 @@ Here are the classes:
 
    *_params* are passed straight through to the base class constructor.
 
+
+.. currentmodule:: email.mime.audio
 
 .. class:: MIMEAudio(_audiodata[, _subtype[, _encoder[, **_params]]])
 
@@ -116,6 +125,8 @@ Here are the classes:
    *_params* are passed straight through to the base class constructor.
 
 
+.. currentmodule:: email.mime.image
+
 .. class:: MIMEImage(_imagedata[, _subtype[, _encoder[, **_params]]])
 
    Module: :mod:`email.mime.image`
@@ -139,6 +150,8 @@ Here are the classes:
    *_params* are passed straight through to the :class:`MIMEBase` constructor.
 
 
+.. currentmodule:: email.mime.message
+
 .. class:: MIMEMessage(_msg[, _subtype])
 
    Module: :mod:`email.mime.message`
@@ -151,6 +164,8 @@ Here are the classes:
    Optional *_subtype* sets the subtype of the message; it defaults to
    :mimetype:`rfc822`.
 
+
+.. currentmodule:: email.mime.text
 
 .. class:: MIMEText(_text[, _subtype[, _charset]])
 

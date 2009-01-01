@@ -64,10 +64,23 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. function:: disco(code[, lasti])
 
-   A synonym for disassemble.  It is more convenient to type, and kept for
-   compatibility with earlier Python releases.
+   A synonym for :func:`disassemble`.  It is more convenient to type, and kept
+   for compatibility with earlier Python releases.
 
 
+.. function:: findlinestarts(code)
+
+   This generator function uses the ``co_firstlineno`` and ``co_lnotab``
+   attributes of the code object *code* to find the offsets which are starts of
+   lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
+
+
+.. function:: findlabels(code)
+
+   Detect all offsets in the code object *code* which are jump targets, and
+   return a list of these offsets.
+   
+   
 .. data:: opname
 
    Sequence of operation names, indexable using the bytecode.
