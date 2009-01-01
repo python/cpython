@@ -547,7 +547,7 @@ can be combined.
 
 .. doctest::
 
-   # Show a dictionary sorted and grouped by value
+   >>> # Show a dictionary sorted and grouped by value
    >>> from operator import itemgetter
    >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
    >>> di = sorted(d.iteritems(), key=itemgetter(1))
@@ -558,9 +558,9 @@ can be combined.
    2 ['b', 'd', 'f']
    3 ['g']
 
-   # Find runs of consecutive numbers using groupby.  The key to the solution
-   # is differencing with a range so that consecutive numbers all appear in
-   # same group.
+   >>> # Find runs of consecutive numbers using groupby.  The key to the solution
+   >>> # is differencing with a range so that consecutive numbers all appear in
+   >>> # same group.
    >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
    >>> for k, g in groupby(enumerate(data), lambda (i,x):i-x):
    ...     print map(itemgetter(1), g)
