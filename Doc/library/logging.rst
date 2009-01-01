@@ -1559,6 +1559,8 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 StreamHandler
 ^^^^^^^^^^^^^
 
+.. module:: logging.handlers
+
 The :class:`StreamHandler` class, located in the core :mod:`logging` package,
 sends logging output to streams such as *sys.stdout*, *sys.stderr* or any
 file-like object (or, more precisely, any object which supports :meth:`write`
@@ -2064,6 +2066,8 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
 Formatter Objects
 -----------------
+
+.. currentmodule:: logging
 
 :class:`Formatter`\ s have the following attributes and methods. They are
 responsible for converting a :class:`LogRecord` to (usually) a string which can
