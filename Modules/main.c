@@ -600,18 +600,21 @@ Py_Main(int argc, wchar_t **argv)
 		}
 
 		if (sts==-1) {
-			char cfilename[PATH_MAX];
+			PyObject *filenameObj = NULL;
 			char *p_cfilename = "<stdin>";
 			if (filename) {
-				size_t r = wcstombs(cfilename, filename, PATH_MAX);
-				p_cfilename = cfilename;
-				if (r == (size_t)-1 || r >= PATH_MAX)
+				filenameObj = PyUnicode_FromWideChar(
+					filename, wcslen(filename));
+				if (filenameObj != NULL)
+					p_cfilename = _PyUnicode_AsString(filenameObj);
+				else
 					p_cfilename = "<decoding error>";
 			}
 			sts = PyRun_AnyFileExFlags(
 				fp,
 				p_cfilename,
 				filename != NULL, &cf) != 0;
+			Py_XDECREF(filenameObj);
 		}
 		
 	}
