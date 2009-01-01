@@ -358,7 +358,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. attribute:: daemon
 
-      The process's daemon flag, a Boolean value.  This must be called before
+      The process's daemon flag, a Boolean value.  This must be set before
       :meth:`start` is called.
 
       The initial value is inherited from the creating process.
@@ -1810,9 +1810,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-   ``r'\\\\.\\pipe\\PipeName'``.  To use :func:`Client` to connect to a named
+   :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
    pipe on a remote computer called ServerName* one should use an address of the
-   form ``r'\\\\ServerName\\pipe\\PipeName'`` instead.
+   form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'`` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.

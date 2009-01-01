@@ -553,10 +553,10 @@ provided:
 #. :class:`HTTPHandler` instances send error messages to an HTTP server using
    either ``GET`` or ``POST`` semantics.
 
-The :class:`StreamHandler` and :class:`FileHandler` classes are defined in the
-core logging package. The other handlers are defined in a sub- module,
-:mod:`logging.handlers`. (There is also another sub-module,
-:mod:`logging.config`, for configuration functionality.)
+The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
+classes are defined in the core logging package. The other handlers are
+defined in a sub- module, :mod:`logging.handlers`. (There is also another
+sub-module, :mod:`logging.config`, for configuration functionality.)
 
 Logged messages are formatted for presentation through instances of the
 :class:`Formatter` class. They are initialized with a format string suitable for
@@ -1544,6 +1544,8 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 StreamHandler
 ^^^^^^^^^^^^^
 
+.. module:: logging.handlers
+
 The :class:`StreamHandler` class, located in the core :mod:`logging` package,
 sends logging output to streams such as *sys.stdout*, *sys.stderr* or any
 file-like object (or, more precisely, any object which supports :meth:`write`
@@ -2049,6 +2051,8 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
 Formatter Objects
 -----------------
+
+.. currentmodule:: logging
 
 :class:`Formatter`\ s have the following attributes and methods. They are
 responsible for converting a :class:`LogRecord` to (usually) a string which can

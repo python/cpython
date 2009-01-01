@@ -958,7 +958,7 @@ deque_iter(dequeobject *deque)
 {
 	dequeiterobject *it;
 
-	it = PyObject_New(dequeiterobject, &dequeiter_type);
+	it = PyObject_GC_New(dequeiterobject, &dequeiter_type);
 	if (it == NULL)
 		return NULL;
 	it->b = deque->leftblock;
@@ -967,14 +967,22 @@ deque_iter(dequeobject *deque)
 	it->deque = deque;
 	it->state = deque->state;
 	it->counter = deque->len;
+	_PyObject_GC_TRACK(it);
 	return (PyObject *)it;
+}
+
+static int
+dequeiter_traverse(dequeiterobject *dio, visitproc visit, void *arg)
+{
+	Py_VISIT(dio->deque);
+	return 0;
 }
 
 static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
 	Py_XDECREF(dio->deque);
-	Py_TYPE(dio)->tp_free(dio);
+	PyObject_GC_Del(dio);
 }
 
 static PyObject *
@@ -1039,9 +1047,9 @@ static PyTypeObject dequeiter_type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	(traverseproc)dequeiter_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -1060,7 +1068,7 @@ deque_reviter(dequeobject *deque)
 {
 	dequeiterobject *it;
 
-	it = PyObject_New(dequeiterobject, &dequereviter_type);
+	it = PyObject_GC_New(dequeiterobject, &dequereviter_type);
 	if (it == NULL)
 		return NULL;
 	it->b = deque->rightblock;
@@ -1069,6 +1077,7 @@ deque_reviter(dequeobject *deque)
 	it->deque = deque;
 	it->state = deque->state;
 	it->counter = deque->len;
+	_PyObject_GC_TRACK(it);
 	return (PyObject *)it;
 }
 
@@ -1121,9 +1130,9 @@ static PyTypeObject dequereviter_type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	(traverseproc)dequeiter_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */

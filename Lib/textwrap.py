@@ -84,7 +84,7 @@ class TextWrapper:
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
-    wordsep_re = (
+    wordsep_re = re.compile(
         r'(\s+|'                                  # any whitespace
         r'[^\s\w]*\w+[^0-9\W]-(?=\w+[^0-9\W])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
@@ -93,7 +93,7 @@ class TextWrapper:
     #   "Hello there -- you goof-ball, use the -b option!"
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
-    wordsep_simple_re = r'(\s+)'
+    wordsep_simple_re = re.compile(r'(\s+)')
 
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)
@@ -123,6 +123,13 @@ class TextWrapper:
         self.break_long_words = break_long_words
         self.drop_whitespace = drop_whitespace
         self.break_on_hyphens = break_on_hyphens
+
+        # recompile the regexes for Unicode mode -- done in this clumsy way for
+        # backwards compatibility because it's rather common to monkey-patch
+        # the TextWrapper class' wordsep_re attribute.
+        self.wordsep_re_uni = re.compile(self.wordsep_re.pattern, re.U)
+        self.wordsep_simple_re_uni = re.compile(
+            self.wordsep_simple_re.pattern, re.U)
 
 
     # -- Private methods -----------------------------------------------
@@ -160,12 +167,17 @@ class TextWrapper:
           'use', ' ', 'the', ' ', '-b', ' ', option!'
         otherwise.
         """
-        flags = re.UNICODE if isinstance(text, unicode) else 0
-        if self.break_on_hyphens:
-            pat = self.wordsep_re
+        if isinstance(text, unicode):
+            if self.break_on_hyphens:
+                pat = self.wordsep_re_uni
+            else:
+                pat = self.wordsep_simple_re_uni
         else:
-            pat = self.wordsep_simple_re
-        chunks = re.compile(pat, flags).split(text)
+            if self.break_on_hyphens:
+                pat = self.wordsep_re
+            else:
+                pat = self.wordsep_simple_re
+        chunks = pat.split(text)
         chunks = filter(None, chunks)  # remove empty chunks
         return chunks
 

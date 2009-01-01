@@ -448,7 +448,7 @@ This is the server side::
 
    if __name__ == "__main__":
       HOST, PORT = "localhost", 9999
-      server = SocketServer.UDPServer((HOST, PORT), BaseUDPRequestHandler)
+      server = SocketServer.UDPServer((HOST, PORT), MyUDPHandler)
       server.serve_forever()
 
 This is the client side::
