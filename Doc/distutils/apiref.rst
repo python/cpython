@@ -88,9 +88,9 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    | *options*          | default options for the setup  | a string                                                    |
    |                    | script                         |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *license*          | The license for the package    |                                                             |
+   | *license*          | The license for the package    | a string                                                    |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *keywords*         | Descriptive meta-data. See     |                                                             |
+   | *keywords*         | Descriptive meta-data, see     |                                                             |
    |                    | :pep:`314`                     |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *platforms*        |                                |                                                             |
@@ -98,6 +98,13 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    | *cmdclass*         | A mapping of command names to  | a dictionary                                                |
    |                    | :class:`Command` subclasses    |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
+   | *data_files*       | A list of data files to        | a list                                                      |
+   |                    | install                        |                                                             |
+   +--------------------+--------------------------------+-------------------------------------------------------------+
+   | *package_dir*      | A mapping of package to        | a dictionary                                                |
+   |                    | directory names                |                                                             |
+   +--------------------+--------------------------------+-------------------------------------------------------------+
+   
 
 
 .. function:: run_setup(script_name[, script_args=None, stop_after='run'])

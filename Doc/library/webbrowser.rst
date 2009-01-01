@@ -167,7 +167,7 @@ Here are some simple examples::
 Browser Controller Objects
 --------------------------
 
-Browser controllers provide two methods which parallel two of the module-level
+Browser controllers provide these methods which parallel two of the module-level
 convenience functions:
 
 
