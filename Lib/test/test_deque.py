@@ -420,7 +420,7 @@ class TestBasic(unittest.TestCase):
             gc.collect()
 
     def test_container_iterator(self):
-        # Bug # XXX: tp_traverse was not implemented for deque iterator objects
+        # Bug #3680: tp_traverse was not implemented for deque iterator objects
         class C(object):
             pass
         for i in range(2):
