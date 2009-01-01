@@ -265,10 +265,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		Py_END_ALLOW_THREADS
 		if (self->fd < 0) {
 #ifdef MS_WINDOWS
-			PyErr_SetFromErrnoWithUnicodeFilename(PyExc_IOError, widename);
-#else
-			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+			if (widename != NULL)
+				PyErr_SetFromErrnoWithUnicodeFilename(PyExc_IOError, widename);
+			else
 #endif
+				PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 			goto error;
 		}
 		if(dircheck(self, name) < 0)
