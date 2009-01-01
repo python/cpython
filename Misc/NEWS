@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #3680: Reference cycles created through a dict, set or deque iterator
+  did not get collected.
+
 - Issue #4701: PyObject_Hash now implicitly calls PyType_Ready on types
   where the tp_hash and tp_dict slots are both NULL.
 

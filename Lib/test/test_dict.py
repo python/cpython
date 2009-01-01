@@ -2,6 +2,7 @@ import unittest
 from test import test_support
 
 import UserDict, random, string
+import gc, weakref
 
 
 class DictTest(unittest.TestCase):
@@ -554,6 +555,19 @@ class DictTest(unittest.TestCase):
             pass
         d = {}
 
+    def test_container_iterator(self):
+        # Bug # XXX: tp_traverse was not implemented for dictiter objects
+        class C(object):
+            pass
+        iterators = (dict.iteritems, dict.itervalues, dict.iterkeys)
+        for i in iterators:
+            obj = C()
+            ref = weakref.ref(obj)
+            container = {obj: 1}
+            obj.x = i(container)
+            del obj, container
+            gc.collect()
+            self.assert_(ref() is None, "Cycle was not collected")
 
 
 from test import mapping_tests
