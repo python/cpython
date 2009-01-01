@@ -12,8 +12,20 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #3680: Reference cycles created through a dict, set or deque iterator
+  did not get collected.
+
 - Issue #4701: PyObject_Hash now implicitly calls PyType_Ready on types
   where the tp_hash and tp_dict slots are both NULL.
+
+- Issue #4764: With io.open, IOError.filename is set when trying to open a
+  directory on POSIX systems.
+
+- Issue #4764: IOError.filename is set when trying to open a directory on POSIX
+  systems.
+
+- Issue #4759: None is now allowed as the first argument of
+  bytearray.translate().  It was always allowed for bytes.translate().
 
 - Issue #4759: fix a segfault for bytearray.translate(x, None).
 
@@ -138,8 +150,17 @@ Core and Builtins
 Library
 -------
 
+- Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
+  the function is not a generator.
+
 - Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
   no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
+
+  - Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@')
+  works as expected in the interactive environment.
+
+- Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
+  Gabriel Genellina.
 
 - Issue #4646: distutils was choking on empty options arg in the setup 
   function. Original patch by Thomas Heller.
@@ -206,8 +227,15 @@ Library
 - Issue #4730: Fixed the cPickle module to handle correctly astral characters
   when protocol 0 is used.
 
+Tools/Demos
+-----------
+
+- Issue #4677: add two list comprehension tests to pybench.
+
 Build
 -----
+
+- Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
 
 - Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
 
@@ -238,6 +266,10 @@ C-API
 
 Extension Modules
 -----------------
+
+- Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
+
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
 
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
   OpenBSD.

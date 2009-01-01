@@ -88,9 +88,9 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    | *options*          | default options for the setup  | a string                                                    |
    |                    | script                         |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *license*          | The license for the package    |                                                             |
+   | *license*          | The license for the package    | a string                                                    |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *keywords*         | Descriptive meta-data. See     |                                                             |
+   | *keywords*         | Descriptive meta-data, see     |                                                             |
    |                    | :pep:`314`                     |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *platforms*        |                                |                                                             |
@@ -98,6 +98,13 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    | *cmdclass*         | A mapping of command names to  | a dictionary                                                |
    |                    | :class:`Command` subclasses    |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
+   | *data_files*       | A list of data files to        | a list                                                      |
+   |                    | install                        |                                                             |
+   +--------------------+--------------------------------+-------------------------------------------------------------+
+   | *package_dir*      | A mapping of package to        | a dictionary                                                |
+   |                    | directory names                |                                                             |
+   +--------------------+--------------------------------+-------------------------------------------------------------+
+   
 
 
 .. function:: run_setup(script_name[, script_args=None, stop_after='run'])
@@ -1099,6 +1106,24 @@ other utility module.
    * ``irix64-6.2``
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
+
+   For MacOS X systems the OS version reflects the minimal version on which
+   binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
+   during the build of Python), not the OS version of the current system. 
+
+   For universal binary builds on MacOS X the architecture value reflects
+   the univeral binary status instead of the architecture of the current
+   processor. For 32-bit universal binaries the architecture is ``fat``, 
+   for 64-bit universal binaries the architecture is ``fat64``, and 
+   for 4-way universal binaries the architecture is ``universal``. 
+
+   Examples of returned values on MacOS X:
+
+   * ``macosx-10.3-ppc``
+
+   * ``macosx-10.3-fat``
+
+   * ``macosx-10.5-universal``
 
    .. % XXX isn't this also provided by some other non-distutils module?
 

@@ -810,7 +810,14 @@ static void
 setiter_dealloc(setiterobject *si)
 {
 	Py_XDECREF(si->si_set);
-	PyObject_Del(si);
+	PyObject_GC_Del(si);
+}
+
+static int
+setiter_traverse(setiterobject *si, visitproc visit, void *arg)
+{
+	Py_VISIT(si->si_set);
+	return 0;
 }
 
 static PyObject *
@@ -888,9 +895,9 @@ static PyTypeObject PySetIter_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)setiter_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -903,7 +910,7 @@ static PyTypeObject PySetIter_Type = {
 static PyObject *
 set_iter(PySetObject *so)
 {
-	setiterobject *si = PyObject_New(setiterobject, &PySetIter_Type);
+	setiterobject *si = PyObject_GC_New(setiterobject, &PySetIter_Type);
 	if (si == NULL)
 		return NULL;
 	Py_INCREF(so);
@@ -911,6 +918,7 @@ set_iter(PySetObject *so)
 	si->si_used = so->used;
 	si->si_pos = 0;
 	si->len = so->used;
+	_PyObject_GC_TRACK(si);
 	return (PyObject *)si;
 }
 
