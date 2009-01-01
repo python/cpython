@@ -13,7 +13,7 @@ Core and Builtins
 -----------------
 
 - Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
-  file with `str' filename on Windows.
+  file with `bytes' filename on Windows.
 
 - Issue #3680: Reference cycles created through a dict, set or deque iterator
   did not get collected.
