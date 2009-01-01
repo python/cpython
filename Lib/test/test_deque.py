@@ -1,7 +1,8 @@
 from collections import deque
 import unittest
 from test import test_support, seq_tests
-from weakref import proxy
+import gc
+import weakref
 import copy
 import cPickle as pickle
 import random
@@ -418,6 +419,22 @@ class TestBasic(unittest.TestCase):
             d.append(1)
             gc.collect()
 
+    def test_container_iterator(self):
+        # Bug # XXX: tp_traverse was not implemented for deque iterator objects
+        class C(object):
+            pass
+        for i in range(2):
+            obj = C()
+            ref = weakref.ref(obj)
+            if i == 0:
+                container = deque([obj, 1])
+            else:
+                container = reversed(deque([obj, 1]))
+            obj.x = iter(container)
+            del obj, container
+            gc.collect()
+            self.assert_(ref() is None, "Cycle was not collected")
+
 class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_constructor(self):
@@ -528,7 +545,7 @@ class TestSubclass(unittest.TestCase):
 
     def test_weakref(self):
         d = deque('gallahad')
-        p = proxy(d)
+        p = weakref.proxy(d)
         self.assertEqual(str(p), str(d))
         d = None
         self.assertRaises(ReferenceError, str, p)
