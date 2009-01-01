@@ -6,7 +6,8 @@ import types
 from opcode import *
 from opcode import __all__ as _opcodes_all
 
-__all__ = ["dis","disassemble","distb","disco"] + _opcodes_all
+__all__ = ["dis", "disassemble", "distb", "disco",
+           "findlinestarts", "findlabels"] + _opcodes_all
 del _opcodes_all
 
 def dis(x=None):
