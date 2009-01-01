@@ -34,6 +34,13 @@ it contains the path separator for your operating system, such as a slash in
 Unix), and refers to an existing Python source file, then documentation is
 produced for that file.
 
+.. note::
+
+   In order to find objects and their documentation, :mod:`pydoc` imports the
+   module(s) to be documented.  Therefore, any code on module level will be
+   executed on that occasion.  Use an ``if __name__ == '__main__':`` guard to
+   only execute code when a file is invoked as a script and not just imported.
+
 Specifying a :option:`-w` flag before the argument will cause HTML documentation
 to be written out to a file in the current directory, instead of displaying text
 on the console.
