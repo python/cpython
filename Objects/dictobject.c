@@ -2122,7 +2122,7 @@ static PyObject *
 dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 {
 	dictiterobject *di;
-	di = PyObject_New(dictiterobject, itertype);
+	di = PyObject_GC_New(dictiterobject, itertype);
 	if (di == NULL)
 		return NULL;
 	Py_INCREF(dict);
@@ -2139,6 +2139,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 	}
 	else
 		di->di_result = NULL;
+	_PyObject_GC_TRACK(di);
 	return (PyObject *)di;
 }
 
@@ -2147,7 +2148,15 @@ dictiter_dealloc(dictiterobject *di)
 {
 	Py_XDECREF(di->di_dict);
 	Py_XDECREF(di->di_result);
-	PyObject_Del(di);
+	PyObject_GC_Del(di);
+}
+
+static int
+dictiter_traverse(dictiterobject *di, visitproc visit, void *arg)
+{
+	Py_VISIT(di->di_dict);
+	Py_VISIT(di->di_result);
+	return 0;
 }
 
 static PyObject *
@@ -2228,9 +2237,9 @@ PyTypeObject PyDictIterKey_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictiter_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -2300,9 +2309,9 @@ PyTypeObject PyDictIterValue_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictiter_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -2386,9 +2395,9 @@ PyTypeObject PyDictIterItem_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictiter_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -2415,7 +2424,14 @@ static void
 dictview_dealloc(dictviewobject *dv)
 {
 	Py_XDECREF(dv->dv_dict);
-	PyObject_Del(dv);
+	PyObject_GC_Del(dv);
+}
+
+static int
+dictview_traverse(dictviewobject *dv, visitproc visit, void *arg)
+{
+	Py_VISIT(dv->dv_dict);
+	return 0;
 }
 
 static Py_ssize_t
@@ -2442,11 +2458,12 @@ dictview_new(PyObject *dict, PyTypeObject *type)
 			     type->tp_name, dict->ob_type->tp_name);
 		return NULL;
 	}
-	dv = PyObject_New(dictviewobject, type);
+	dv = PyObject_GC_New(dictviewobject, type);
 	if (dv == NULL)
 		return NULL;
 	Py_INCREF(dict);
 	dv->dv_dict = (PyDictObject *)dict;
+	_PyObject_GC_TRACK(dv);
 	return (PyObject *)dv;
 }
 
@@ -2693,9 +2710,9 @@ PyTypeObject PyDictKeys_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictview_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	dictview_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -2777,9 +2794,9 @@ PyTypeObject PyDictItems_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictview_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	dictview_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -2842,9 +2859,9 @@ PyTypeObject PyDictValues_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)dictview_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
