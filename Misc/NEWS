@@ -224,6 +224,9 @@ Library
 - Issue #4730: Fixed the cPickle module to handle correctly astral characters
   when protocol 0 is used.
 
+- Issue #1594: MacOS.GetCreatorAndType now always returns a big-endian result,
+  to be consistent with Apple tools.
+
 Tools/Demos
 -----------
 

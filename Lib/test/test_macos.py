@@ -3,10 +3,65 @@ import MacOS
 import Carbon.File
 from test import test_support
 import os
+import subprocess
 
 TESTFN2 = test_support.TESTFN + '2'
 
 class TestMacOS(unittest.TestCase):
+
+    def testGetCreatorAndType(self):
+        if not os.path.exists('/Developer/Tools/SetFile'):
+            return
+
+        try:
+            fp = open(test_support.TESTFN, 'w')
+            fp.write('\n')
+            fp.close()
+
+            subprocess.call(
+                    ['/Developer/Tools/SetFile', '-t', 'ABCD', '-c', 'EFGH',
+                        test_support.TESTFN])
+
+            cr, tp = MacOS.GetCreatorAndType(test_support.TESTFN)
+            self.assertEquals(tp, 'ABCD')
+            self.assertEquals(cr, 'EFGH')
+
+        finally:
+            os.unlink(test_support.TESTFN)
+
+    def testSetCreatorAndType(self):
+        if not os.path.exists('/Developer/Tools/GetFileInfo'):
+            return
+
+        try:
+            fp = open(test_support.TESTFN, 'w')
+            fp.write('\n')
+            fp.close()
+
+            MacOS.SetCreatorAndType(test_support.TESTFN,
+                    'ABCD', 'EFGH')
+
+            cr, tp = MacOS.GetCreatorAndType(test_support.TESTFN)
+            self.assertEquals(cr, 'ABCD')
+            self.assertEquals(tp, 'EFGH')
+
+            data = subprocess.Popen(["/Developer/Tools/GetFileInfo", test_support.TESTFN],
+                    stdout=subprocess.PIPE).communicate()[0]
+
+            tp = None
+            cr = None
+            for  ln in data.splitlines():
+                if ln.startswith('type:'):
+                    tp = ln.split()[-1][1:-1]
+                if ln.startswith('creator:'):
+                    cr = ln.split()[-1][1:-1]
+
+            self.assertEquals(cr, 'ABCD')
+            self.assertEquals(tp, 'EFGH')
+
+        finally:
+            os.unlink(test_support.TESTFN)
+
 
     def testOpenRF(self):
         try:
