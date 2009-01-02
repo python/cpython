@@ -238,12 +238,12 @@ class _Reader:
         width = self.videodescr['width']
         height = self.videodescr['height']
         start = 0
-        rv = ''
+        rv = []
         for i in range(height):
             nextline = Qdoffs.GetPixMapBytes(self.pixmap, start, width*4)
             start = start + rowbytes
-            rv = rv + nextline
-        return rv
+            rv.append(nextline)
+        return ''.join(rv)
 
 def reader(url):
     try:
@@ -255,9 +255,9 @@ def reader(url):
 def _test():
     import EasyDialogs
     try:
-        import img
+        from PIL import Image
     except ImportError:
-        img = None
+        Image = None
     import MacOS
     Qt.EnterMovies()
     path = EasyDialogs.AskFileForOpen(message='Video to convert')
@@ -277,13 +277,11 @@ def _test():
         fname = 'frame%04.4d.jpg'%num
         num = num+1
         pname = os.path.join(dstdir, fname)
-        if not img: print 'Not',
+        if not Image: print 'Not',
         print 'Writing %s, size %dx%d, %d bytes'%(fname, imgw, imgh, len(data))
-        if img:
-            wrt = img.writer(imgfmt, pname)
-            wrt.width = imgw
-            wrt.height = imgh
-            wrt.write(data)
+        if Image:
+            img = Image.fromstring("RGBA", (imgw, imgh), data)
+            img.save(pname, 'JPEG')
             timestamp, data = rdr.ReadVideo()
             MacOS.SetCreatorAndType(pname, 'ogle', 'JPEG')
             if num > 20:
