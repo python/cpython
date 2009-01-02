@@ -8,6 +8,11 @@ What's New in IDLE 3.1a1?
   user configuration of source encoding; all according to
   PEP 3120.
 
+- Issue #3549: On MacOS the preferences menu was not present
+
+- Issue #2665: On Windows, an IDLE installation upgraded from an old version
+  would not start if a custom theme was defined.
+
 
 What's New in IDLE 3.0a3?
 =========================
