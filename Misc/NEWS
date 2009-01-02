@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4812: add missing underscore prefix to some internal-use-only
+  constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
+
 - Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
   the function is not a generator.
 
