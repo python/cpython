@@ -230,6 +230,8 @@ Library
 - Issue #900949: plat-mac/videoreader.py no longer relies on a non-existing
   module. 
 
+- Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
+
 Tools/Demos
 -----------
 
