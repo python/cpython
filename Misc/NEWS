@@ -232,6 +232,9 @@ Library
 
 - Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
 
+- Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
+  module.
+
 Tools/Demos
 -----------
 
