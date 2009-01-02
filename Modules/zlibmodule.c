@@ -9,38 +9,15 @@
 #include "zlib.h"
 
 #ifdef WITH_THREAD
-#include "pythread.h"
-
-/* #defs ripped off from _tkinter.c, even though the situation here is much
-   simpler, because we don't have to worry about waiting for Tcl
-   events!  And, since zlib itself is threadsafe, we don't need to worry
-   about re-entering zlib functions.
-
-   N.B.
-
-   Since ENTER_ZLIB and LEAVE_ZLIB only need to be called on functions
-   that modify the components of preexisting de/compress objects, it
-   could prove to be a performance gain on multiprocessor machines if
-   there was an de/compress object-specific lock.  However, for the
-   moment the ENTER_ZLIB and LEAVE_ZLIB calls are global for ALL
-   de/compress objects.
- */
-
-static PyThread_type_lock zlib_lock = NULL; /* initialized on module load */
-
-#define ENTER_ZLIB \
-	Py_BEGIN_ALLOW_THREADS \
-	PyThread_acquire_lock(zlib_lock, 1); \
-	Py_END_ALLOW_THREADS
-
-#define LEAVE_ZLIB \
-	PyThread_release_lock(zlib_lock);
-
+    #include "pythread.h"
+    #define ENTER_ZLIB(obj) \
+        Py_BEGIN_ALLOW_THREADS; \
+        PyThread_acquire_lock((obj)->lock, 1); \
+        Py_END_ALLOW_THREADS;
+    #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 #else
-
-#define ENTER_ZLIB
-#define LEAVE_ZLIB
-
+    #define ENTER_ZLIB(obj)
+    #define LEAVE_ZLIB(obj)
 #endif
 
 /* The following parameters are copied from zutil.h, version 0.95 */
@@ -67,6 +44,9 @@ typedef struct
     PyObject *unused_data;
     PyObject *unconsumed_tail;
     int is_initialised;
+    #ifdef WITH_THREAD
+        PyThread_type_lock lock;
+    #endif
 } compobject;
 
 static void
@@ -106,6 +86,9 @@ newcompobject(PyTypeObject *type)
 	Py_DECREF(self);
 	return NULL;
     }
+#ifdef WITH_THREAD
+    self->lock = PyThread_allocate_lock();
+#endif
     return self;
 }
 
@@ -376,23 +359,30 @@ PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
 }
 
 static void
-Comp_dealloc(compobject *self)
+Dealloc(compobject *self)
 {
-    if (self->is_initialised)
-	deflateEnd(&self->zst);
+#ifdef WITH_THREAD
+    PyThread_free_lock(self->lock);
+#endif
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
 }
 
 static void
+Comp_dealloc(compobject *self)
+{
+    if (self->is_initialised)
+        deflateEnd(&self->zst);
+    Dealloc(self);
+}
+
+static void
 Decomp_dealloc(compobject *self)
 {
     if (self->is_initialised)
-	inflateEnd(&self->zst);
-    Py_XDECREF(self->unused_data);
-    Py_XDECREF(self->unconsumed_tail);
-    PyObject_Del(self);
+        inflateEnd(&self->zst);
+    Dealloc(self);
 }
 
 PyDoc_STRVAR(comp_compress__doc__,
@@ -422,7 +412,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 	return NULL;
     }
 
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
 
     start_total_out = self->zst.total_out;
     self->zst.avail_in = inplen;
@@ -468,7 +458,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     }
 
  error:
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     PyBuffer_Release(&pinput);
     return RetVal;
 }
@@ -514,7 +504,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	return NULL;
     }
 
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
 
     start_total_out = self->zst.total_out;
     self->zst.avail_in = inplen;
@@ -600,7 +590,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     }
 
  error:
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     PyBuffer_Release(&pinput);
     return RetVal;
 }
@@ -633,7 +623,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     if (!(RetVal = PyBytes_FromStringAndSize(NULL, length)))
 	return NULL;
 
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
 
     start_total_out = self->zst.total_out;
     self->zst.avail_in = 0;
@@ -693,7 +683,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     }
 
  error:
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
 
     return RetVal;
 }
@@ -714,7 +704,7 @@ PyZlib_copy(compobject *self)
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
     err = deflateCopy(&retval->zst, &self->zst);
     switch(err) {
     case(Z_OK):
@@ -730,7 +720,6 @@ PyZlib_copy(compobject *self)
         zlib_error(self->zst, err, "while copying compression object");
         goto error;
     }
-
     Py_INCREF(self->unused_data);
     Py_INCREF(self->unconsumed_tail);
     Py_XDECREF(retval->unused_data);
@@ -741,11 +730,11 @@ PyZlib_copy(compobject *self)
     /* Mark it as being initialized */
     retval->is_initialised = 1;
 
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     return (PyObject *)retval;
 
 error:
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     Py_XDECREF(retval);
     return NULL;
 }
@@ -765,7 +754,7 @@ PyZlib_uncopy(compobject *self)
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
     err = inflateCopy(&retval->zst, &self->zst);
     switch(err) {
     case(Z_OK):
@@ -792,11 +781,11 @@ PyZlib_uncopy(compobject *self)
     /* Mark it as being initialized */
     retval->is_initialised = 1;
 
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     return (PyObject *)retval;
 
 error:
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
     Py_XDECREF(retval);
     return NULL;
 }
@@ -826,7 +815,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
 	return NULL;
 
 
-    ENTER_ZLIB
+    ENTER_ZLIB(self);
 
     start_total_out = self->zst.total_out;
     self->zst.avail_out = length;
@@ -873,7 +862,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
 
 error:
 
-    LEAVE_ZLIB
+    LEAVE_ZLIB(self);
 
     return retval;
 }
@@ -921,12 +910,20 @@ static PyObject *
 PyZlib_adler32(PyObject *self, PyObject *args)
 {
     unsigned int adler32val = 1;  /* adler32(0L, Z_NULL, 0) */
-    Byte *buf;
-    int len;
+    Py_buffer pbuf;
 
-    if (!PyArg_ParseTuple(args, "s#|I:adler32", &buf, &len, &adler32val))
+    if (!PyArg_ParseTuple(args, "s*|I:adler32", &pbuf, &adler32val))
 	return NULL;
-    adler32val = adler32(adler32val, buf, len);
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (pbuf.len > 1024*5) {
+        Py_BEGIN_ALLOW_THREADS
+        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
+        Py_END_ALLOW_THREADS
+    } else {
+        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);    
+    }
+    PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(adler32val & 0xffffffffU);
 }
 
@@ -945,7 +942,15 @@ PyZlib_crc32(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s*|I:crc32", &pbuf, &crc32val))
 	return NULL;
-    signed_val = crc32(crc32val, pbuf.buf, pbuf.len);
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (pbuf.len > 1024*5) {
+        Py_BEGIN_ALLOW_THREADS
+        signed_val = crc32(crc32val, pbuf.buf, pbuf.len);
+        Py_END_ALLOW_THREADS
+    } else {
+        signed_val = crc32(crc32val, pbuf.buf, pbuf.len);    
+    }
     PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
@@ -1096,8 +1101,5 @@ PyInit_zlib(void)
 
     PyModule_AddStringConstant(m, "__version__", "1.0");
 
-#ifdef WITH_THREAD
-    zlib_lock = PyThread_allocate_lock();
-#endif /* WITH_THREAD */
     return m;
 }

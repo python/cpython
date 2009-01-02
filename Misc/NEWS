@@ -175,6 +175,10 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #4738: Each zlib object now has a separate lock, allowing to compress
+  or decompress several streams at once on multi-CPU systems. Also, the GIL
+  is now released when computing the CRC of a large buffer. Patch by ebfe.
+
 - Issue #1040026: Fix os.times result on systems where HZ is incorrect.
 
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
