@@ -404,7 +404,7 @@ These environment variables influence Python's behavior.
    compiled form). Extension modules cannot be imported from zipfiles.
    
    The default search path is installation dependent, but generally begins with
-   :file:`{prefix}/lib/python{version}`` (see :envvar:`PYTHONHOME` above).  It
+   :file:`{prefix}/lib/python{version}` (see :envvar:`PYTHONHOME` above).  It
    is *always* appended to :envvar:`PYTHONPATH`.
    
    An additional directory will be inserted in the search path in front of

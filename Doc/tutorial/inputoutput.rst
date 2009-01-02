@@ -148,7 +148,7 @@ Positional and keyword arguments can be arbitrarily combined::
    ...                                                    other='Georg')
    The story of Bill, Manfred, and Georg.
 
-An optional ``':``` and format specifier can follow the field name. This also
+An optional ``':'`` and format specifier can follow the field name. This also
 greater control over how the value is formatted.  The following example
 truncates the Pi to three places after the decimal.
 

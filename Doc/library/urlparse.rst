@@ -290,7 +290,7 @@ described in those functions, as well as provide an additional method:
 
    .. versionadded:: 2.5
 
-The following classes provide the implementations of the parse results::
+The following classes provide the implementations of the parse results:
 
 
 .. class:: BaseResult
