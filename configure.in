@@ -737,6 +737,12 @@ if test $enable_shared = "yes"; then
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
 	  RUNSHARED=DLL_PATH=`pwd`:${DLL_PATH:-/atheos/sys/libs:/atheos/autolnk/lib}
 	  ;;
+    Darwin*)
+    	LDLIBRARY='libpython$(VERSION).dylib'
+	BLDLIBRARY='-L. -lpython$(VERSION)'
+	RUNSHARED='DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}'
+	;;
+
   esac
 else # shared is disabled
   case $ac_sys_system in
@@ -1597,6 +1603,7 @@ else
 	sleep 10
 fi
 AC_MSG_RESULT($SO)
+
 AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
