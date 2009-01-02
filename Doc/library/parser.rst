@@ -641,7 +641,7 @@ on the same line as the definition of the code block, as in ::
 while the long form uses an indented block and allows nested definitions::
 
    def make_power(exp):
-       "Make a function that raises an argument to the exponent `exp'."
+       "Make a function that raises an argument to the exponent `exp`."
        def raiser(x, y=exp):
            return x ** y
        return raiser

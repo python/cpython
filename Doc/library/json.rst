@@ -152,7 +152,7 @@ Basic Usage
    *default(obj)* is a function that should return a serializable version of
    *obj* or raise :exc:`TypeError`.  The default simply raises :exc:`TypeError`.
 
-   To use a custom :class:`JSONEncoder`` subclass (e.g. one that overrides the
+   To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
    :meth:`default` method to serialize additional types), specify it with the
    *cls* kwarg.
 

@@ -7,7 +7,7 @@
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
-The data compression is provided by the :mod:``zlib`` module.
+The data compression is provided by the :mod:`zlib` module.
 
 The :mod:`gzip` module provides the :class:`GzipFile` class which is modeled
 after Python's File Object. The :class:`GzipFile` class reads and writes

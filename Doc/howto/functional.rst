@@ -585,7 +585,7 @@ And here's an example of changing the counter:
     9
     >>> print it.next()
     Traceback (most recent call last):
-      File ``t.py'', line 15, in ?
+      File "t.py", line 15, in ?
         print it.next()
     StopIteration
 
