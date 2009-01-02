@@ -227,6 +227,9 @@ Library
 - Issue #1594: MacOS.GetCreatorAndType now always returns a big-endian result,
   to be consistent with Apple tools.
 
+- Issue #900949: plat-mac/videoreader.py no longer relies on a non-existing
+  module. 
+
 Tools/Demos
 -----------
 
