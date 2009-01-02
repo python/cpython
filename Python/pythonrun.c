@@ -22,7 +22,9 @@
 #include <signal.h>
 #endif
 
+#ifdef MS_WINDOWS
 #include "malloc.h" /* for alloca */
+#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <locale.h>
