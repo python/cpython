@@ -278,17 +278,18 @@ impossible to detect the termination of alien threads.
    raises the same exception.
 
 
-.. method:: Thread.getName()
-            Thread.setName()
-
-   Old API for :attr:`~Thread.name`.
-
-
 .. attribute:: Thread.name
 
    A string used for identification purposes only. It has no semantics.
    Multiple threads may be given the same name.  The initial name is set by the
    constructor.
+
+
+.. method:: Thread.getName()
+            Thread.setName()
+
+   Old getter/setter API for :attr:`~Thread.name`; use it directly as a property
+   instead.
 
 
 .. attribute:: Thread.ident
@@ -309,12 +310,6 @@ impossible to detect the termination of alien threads.
    returns a list of all alive threads.
 
 
-.. method:: Thread.isDaemon()
-            Thread.setDaemon()
-
-   Old API for :attr:`~Thread.daemon`.
-
-
 .. attribute:: Thread.daemon
 
    The thread's daemon flag. This must be set before :meth:`start` is called,
@@ -323,6 +318,13 @@ impossible to detect the termination of alien threads.
    The initial value is inherited from the creating thread.
 
    The entire Python program exits when no alive non-daemon threads are left.
+
+
+.. method:: Thread.isDaemon()
+            Thread.setDaemon()
+
+   Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+   property instead.
 
 
 .. _lock-objects:
