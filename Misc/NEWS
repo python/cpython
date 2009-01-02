@@ -286,6 +286,8 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4051: Prevent conflict of UNICODE macros in cPickle.
+
 - Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
 
 - Issue #1040026: Fix os.times result on systems where HZ is incorrect.
