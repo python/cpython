@@ -89,7 +89,9 @@ def overrideRootMenu(root, flist):
 
     ###check if Tk version >= 8.4.14; if so, use hard-coded showprefs binding
     tkversion = root.tk.eval('info patchlevel')
-    if tkversion >= '8.4.14':
+    # Note: we cannot check if the string tkversion >= '8.4.14', because
+    # the string '8.4.7' is greater than the string '8.4.14'.
+    if tuple(map(int, tkversion.split('.'))) >= (8, 4, 14):
         Bindings.menudefs[0] =  ('application', [
                 ('About IDLE', '<<about-idle>>'),
                 None,
