@@ -235,6 +235,9 @@ Library
 - Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
   module.
 
+- Issue #1149804: macostools.mkdirs now even works when another process
+  creates one of the needed subdirectories.
+
 Tools/Demos
 -----------
 
