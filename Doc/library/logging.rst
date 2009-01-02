@@ -1559,8 +1559,6 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 StreamHandler
 ^^^^^^^^^^^^^
 
-.. module:: logging.handlers
-
 The :class:`StreamHandler` class, located in the core :mod:`logging` package,
 sends logging output to streams such as *sys.stdout*, *sys.stderr* or any
 file-like object (or, more precisely, any object which supports :meth:`write`
@@ -1616,10 +1614,31 @@ sends logging output to a disk file.  It inherits the output functionality from
       Outputs the record to the file.
 
 
+NullHandler
+^^^^^^^^^^^
+
+.. versionadded:: 2.7
+
+The :class:`NullHandler` class, located in the core :mod:`logging` package,
+does not do any formatting or output. It is essentially a "no-op" handler
+for use by library developers.
+
+
+.. class:: NullHandler()
+
+   Returns a new instance of the :class:`NullHandler` class.
+
+
+   .. method:: emit(record)
+
+      This method does nothing.
+
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 2.6
+
+.. module:: logging.handlers
 
 The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If
@@ -2304,12 +2323,12 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 .. function:: fileConfig(fname[, defaults])
 
-   Reads the logging configuration from a ConfigParser-format file named *fname*.
-   This function can be called several times from an application, allowing an end
-   user the ability to select from various pre-canned configurations (if the
-   developer provides a mechanism to present the choices and load the chosen
-   configuration). Defaults to be passed to ConfigParser can be specified in the
-   *defaults* argument.
+   Reads the logging configuration from a :mod:`ConfigParser`\-format file named
+   *fname*. This function can be called several times from an application,
+   allowing an end user the ability to select from various pre-canned
+   configurations (if the developer provides a mechanism to present the choices
+   and load the chosen configuration). Defaults to be passed to the ConfigParser
+   can be specified in the *defaults* argument.
 
 
 .. function:: listen([port])
@@ -2340,17 +2359,17 @@ Configuration file format
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The configuration file format understood by :func:`fileConfig` is based on
-ConfigParser functionality. The file must contain sections called ``[loggers]``,
-``[handlers]`` and ``[formatters]`` which identify by name the entities of each
-type which are defined in the file. For each such entity, there is a separate
-section which identified how that entity is configured. Thus, for a logger named
-``log01`` in the ``[loggers]`` section, the relevant configuration details are
-held in a section ``[logger_log01]``. Similarly, a handler called ``hand01`` in
-the ``[handlers]`` section will have its configuration held in a section called
-``[handler_hand01]``, while a formatter called ``form01`` in the
-``[formatters]`` section will have its configuration specified in a section
-called ``[formatter_form01]``. The root logger configuration must be specified
-in a section called ``[logger_root]``.
+:mod:`ConfigParser` functionality. The file must contain sections called
+``[loggers]``, ``[handlers]`` and ``[formatters]`` which identify by name the
+entities of each type which are defined in the file. For each such entity,
+there is a separate section which identifies how that entity is configured.
+Thus, for a logger named ``log01`` in the ``[loggers]`` section, the relevant
+configuration details are held in a section ``[logger_log01]``. Similarly, a
+handler called ``hand01`` in the ``[handlers]`` section will have its
+configuration held in a section called ``[handler_hand01]``, while a formatter
+called ``form01`` in the ``[formatters]`` section will have its configuration
+specified in a section called ``[formatter_form01]``. The root logger
+configuration must be specified in a section called ``[logger_root]``.
 
 Examples of these sections in the file are given below. ::
 
