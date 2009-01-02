@@ -90,7 +90,10 @@ Options Menu:
 	Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
                           keybindings, and color themes may be altered.
                           Startup Preferences may be set, and Additional Help
-                          Souces can be specified.
+                          Sources can be specified.
+			  
+			  On MacOS X this menu is not present, use
+			  menu 'IDLE -> Preferences...' instead.
 	---
 	Code Context --	  Open a pane at the top of the edit window which
 			  shows the block context of the section of code
