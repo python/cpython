@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4075: Use OutputDebugStringW in Py_FatalError.
+
 - Issue #4747: When the terminal does not use utf-8, executing a script with
   non-ascii characters in its name could fail with a "SyntaxError: None" error.
 
@@ -174,6 +176,8 @@ Tools/Demos
 
 Extension Modules
 -----------------
+
+- Issue #4051: Prevent conflict of UNICODE macros in cPickle.
 
 - Issue #4738: Each zlib object now has a separate lock, allowing to compress
   or decompress several streams at once on multi-CPU systems. Also, the GIL
