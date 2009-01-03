@@ -20,6 +20,8 @@ Core and Builtins
   print elapsed times, not only when some objects are uncollectable /
   unreachable. Original patch by Neil Schemenauer.
 
+- Issue #4075: Use OutputDebugStringW in Py_FatalError.
+
 - Issue #4747: When the terminal does not use utf-8, executing a script with
   non-ascii characters in its name could fail with a "SyntaxError: None" error.
 
