@@ -20,7 +20,7 @@ copying and removal. For operations on individual files, see also the
 
    Even the higher-level file copying functions (:func:`copy`, :func:`copy2`)
    can't copy all file metadata.
-   
+
    On POSIX platforms, this means that file owner and group are lost as well
    as ACLs.  On Mac OS, the resource fork and other metadata are not used.
    This means that resources will be lost and file type and creator codes will

@@ -43,7 +43,7 @@ To do just the former:
    other value will cause :exc:`ValueError` to  be raised.
 
    .. warning::
-      
+
       It is possible (but not likely) that the parser stops parsing with a
       successful outcome before reaching the end of the source; in this case,
       trailing symbols may be ignored instead of causing an error.  For example,

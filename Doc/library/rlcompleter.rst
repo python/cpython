@@ -61,6 +61,6 @@ Completer objects have the following method:
    If called for a dotted name, it will try to evaluate anything without obvious
    side-effects (functions will not be evaluated, but it can generate calls to
    :meth:`__getattr__`) up to the last part, and find matches for the rest via the
-   :func:`dir` function.  Any exception raised during the evaluation of the 
+   :func:`dir` function.  Any exception raised during the evaluation of the
    expression is caught, silenced and :const:`None` is returned.
 

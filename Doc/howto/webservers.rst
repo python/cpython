@@ -88,7 +88,7 @@ they can be run as CGI if no better option is available.
    <http://wiki.python.org/moin/CgiScripts>`_ with some additional information
    about CGI in Python.
 
-   
+
 Simple script for testing CGI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -387,7 +387,7 @@ compared with other web techniques.
 
    You might be interested in some WSGI-supporting modules already contained in
    the standard library, namely:
-    
+
    * :mod:`wsgiref` -- some tiny utilities and servers for WSGI
 
 
@@ -500,7 +500,7 @@ using these is a good idea.
    time in looking through the most popular ones.  Some frameworks have their
    own template engine or have a recommentation for one.  It's wise to use
    these.
-  
+
    Popular template engines include:
 
    * Mako
@@ -688,7 +688,7 @@ And that's still not everything.  The most up-to-date information can always be
 found in the Python wiki.
 
 .. seealso::
-    
+
    The Python wiki contains an extensive list of `web frameworks
    <http://wiki.python.org/moin/WebFrameworks>`_.
 

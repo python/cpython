@@ -31,7 +31,7 @@ returning data from the target object.
 
 .. index:: single: PyBufferProcs
 
-More information on the buffer interface is provided in the section 
+More information on the buffer interface is provided in the section
 :ref:`buffer-structs`, under the description for :ctype:`PyBufferProcs`.
 
 Buffer objects are useful as a way to expose the data from another object's
@@ -104,7 +104,7 @@ could be used to pass around structured data in its native, in-memory format.
                   pointer += strides[i] * indices[i];
                   if (suboffsets[i] >=0 ) {
                       pointer = *((char**)pointer) + suboffsets[i];
-                  }                     
+                  }
               }
               return (void*)pointer;
            }

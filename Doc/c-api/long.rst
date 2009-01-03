@@ -107,7 +107,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    retrieved from the resulting value using :cfunc:`PyLong_AsVoidPtr`.
 
 
-.. XXX alias PyLong_AS_LONG (for now) 
+.. XXX alias PyLong_AS_LONG (for now)
 .. cfunction:: long PyLong_AsLong(PyObject *pylong)
 
    .. index::
@@ -123,7 +123,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
    Return a C :ctype:`long` representation of the contents of *pylong*.  If
    *pylong* is greater than :const:`LONG_MAX`, return -1 and
-   set `*overflow` to 1 (for overflow) or -1 (for underflow). 
+   set `*overflow` to 1 (for overflow) or -1 (for underflow).
    If an exception is set because of type errors, also return -1.
 
 

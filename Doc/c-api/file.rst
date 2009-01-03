@@ -22,7 +22,7 @@ the :mod:`io` module.
 
    .. warning::
 
-     Take care when you are mixing streams and descriptors! For more 
+     Take care when you are mixing streams and descriptors! For more
      information, see `the GNU C Library docs
      <http://www.gnu.org/software/libc/manual/html_node/Stream_002fDescriptor-Precautions.html#Stream_002fDescriptor-Precautions>`_.
 

@@ -79,8 +79,8 @@ The :mod:`dis` module defines the following functions and constants:
 
    Detect all offsets in the code object *code* which are jump targets, and
    return a list of these offsets.
-   
-   
+
+
 .. data:: opname
 
    Sequence of operation names, indexable using the bytecode.
@@ -502,7 +502,7 @@ the more significant byte last.
    The low byte of *counts* is the number of values before the list value, the
    high byte of *counts* the number of values after it.  The resulting values
    are put onto the stack right-to-left.
-   
+
 
 .. opcode:: DUP_TOPX (count)
 
@@ -701,7 +701,7 @@ the more significant byte last.
    opcode finds the keyword parameters first.  For each keyword argument, the value
    is on top of the key.  Below the keyword parameters, the positional parameters
    are on the stack, with the right-most parameter on top.  Below the parameters,
-   the function object to call is on the stack.  Pops all function arguments, and 
+   the function object to call is on the stack.  Pops all function arguments, and
    the function itself off the stack, and pushes the return value.
 
 

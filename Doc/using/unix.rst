@@ -45,7 +45,7 @@ On FreeBSD and OpenBSD
 
 * OpenBSD users use::
 
-     pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz 
+     pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz
 	
   For example i386 users get the 2.5.1 version of Python using::
 
@@ -87,7 +87,7 @@ source tree.
 
 Python-related paths and files
 ==============================
- 
+
 These are subject to difference depending on local installation conventions;
 :envvar:`prefix` (``${prefix}``) and :envvar:`exec_prefix` (``${exec_prefix}``)
 are installation-dependent and should be interpreted as for GNU software; they
@@ -112,7 +112,7 @@ For example, on most Linux systems, the default for both is :file:`/usr`.
 |                                               | by the user module; not used by default  |
 |                                               | or by most applications.                 |
 +-----------------------------------------------+------------------------------------------+
- 
+
 
 Miscellaneous
 =============

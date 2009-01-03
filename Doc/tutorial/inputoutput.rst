@@ -90,7 +90,7 @@ Here are two ways to write a table of squares and cubes::
 
    >>> for x in range(1, 11):
    ...     print('{0:2d} {1:3d} {2:4d}'.format(x, x*x, x*x*x))
-   ... 
+   ...
     1   1    1
     2   4    8
     3   9   27
@@ -165,7 +165,7 @@ number of characters wide.  This is useful for making tables pretty.::
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 7678}
    >>> for name, phone in table.items():
    ...     print('{0:10} ==> {1:10d}'.format(name, phone))
-   ... 
+   ...
    Jack       ==>       4098
    Dcab       ==>       7678
    Sjoerd     ==>       4127
@@ -343,7 +343,7 @@ beginning of the file as the reference point. ::
    16
    >>> f.seek(5)     # Go to the 6th byte in the file
    5
-   >>> f.read(1)        
+   >>> f.read(1)
    b'5'
    >>> f.seek(-3, 2) # Go to the 3rd byte before the end
    13
@@ -353,7 +353,7 @@ beginning of the file as the reference point. ::
 In text files (those opened without a ``b`` in the mode string), only seeks
 relative to the beginning of the file are allowed (the exception being seeking
 to the very file end with ``seek(0, 2)``).
-   
+
 When you're done with a file, call ``f.close()`` to close it and free up any
 system resources taken up by the open file.  After calling ``f.close()``,
 attempts to use the file object will automatically fail. ::

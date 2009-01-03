@@ -87,7 +87,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    will be relative to the offset from the beginning of the file. *offset*
    defaults to 0.  *offset* must be a multiple of the PAGESIZE or
    ALLOCATIONGRANULARITY.
-   
+
    This example shows a simple way of using :class:`mmap`::
 
       import mmap

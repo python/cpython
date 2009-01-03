@@ -1152,7 +1152,7 @@ Basic customization
    implementing :meth:`__format__`, however most classes will either
    delegate formatting to one of the built-in types, or use a similar
    formatting option syntax.
-   
+
    See :ref:`formatspec` for a description of the standard formatting syntax.
 
    The return value must be a string object.

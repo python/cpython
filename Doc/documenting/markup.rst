@@ -508,7 +508,7 @@ in a different style:
    curly braces to indicate a "variable" part, as in ``:file:``.
 
    If you don't need the "variable part" indication, use the standard
-   ````code```` instead.   
+   ````code```` instead.
 
 .. describe:: var
 
@@ -767,7 +767,7 @@ the definition of the symbol.  There is this directive:
    don't have to escape ``*`` or ``|`` characters.
 
 
-.. XXX describe optional first parameter 
+.. XXX describe optional first parameter
 
 The following is an example taken from the Python Reference Manual::
 

@@ -168,7 +168,7 @@ also provides these miscellaneous utilities:
       filelike = StringIO("This is an example file-like object"*10)
       wrapper = FileWrapper(filelike, blksize=5)
 
-      for chunk in wrapper: 
+      for chunk in wrapper:
           print(chunk)
 
 
@@ -413,7 +413,7 @@ Paste" library.
       from wsgiref.validate import validator
       from wsgiref.simple_server import make_server
 
-      # Our callable object which is intentionally not compliant to the 
+      # Our callable object which is intentionally not compliant to the
       # standard, so the validator is going to break
       def simple_app(environ, start_response):
           status = b'200 OK' # HTTP Status

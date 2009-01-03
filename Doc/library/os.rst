@@ -1226,7 +1226,7 @@ to be ignored.
    These functions all execute a new program, replacing the current process; they
    do not return.  On Unix, the new executable is loaded into the current process,
    and will have the same process id as the caller.  Errors will be reported as
-   :exc:`OSError` exceptions.  
+   :exc:`OSError` exceptions.
 
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
@@ -1258,7 +1258,7 @@ to be ignored.
    used to define the environment variables for the new process (these are used
    instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
-   inherit the environment of the current process. 
+   inherit the environment of the current process.
 
    Availability: Unix, Windows.
 
@@ -1456,7 +1456,7 @@ written in Python, such as a mail server's external command delivery program.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
-   preferable to using these functions.  Check specially the *Replacing Older 
+   preferable to using these functions.  Check specially the *Replacing Older
    Functions with the subprocess Module* section in that documentation page.)
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new

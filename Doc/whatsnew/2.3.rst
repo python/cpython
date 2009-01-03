@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.3  
+  What's New in Python 2.3
 ****************************
 
 :Author: A.M. Kuchling
@@ -301,7 +301,7 @@ For example::
     --------                   -------
         8467                   1 file
    amk@nyman:~/src/python$ ./python
-   Python 2.3 (#1, Aug 1 2003, 19:54:32) 
+   Python 2.3 (#1, Aug 1 2003, 19:54:32)
    >>> import sys
    >>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
    >>> import jwzthreading
@@ -671,7 +671,7 @@ with older versions of the Distutils::
          # ...
          }
 
-   if (hasattr(core, 'setup_keywords') and 
+   if (hasattr(core, 'setup_keywords') and
        'classifiers' in core.setup_keywords):
        kw['classifiers'] = \
            ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
@@ -1027,7 +1027,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   creating small dictionaries::
 
      >>> dict(red=1, blue=2, green=3, black=4)
-     {'blue': 2, 'black': 4, 'green': 3, 'red': 1}    
+     {'blue': 2, 'black': 4, 'green': 3, 'red': 1}
 
   (Contributed by Just van Rossum.)
 
@@ -1622,7 +1622,7 @@ complete list of changes, or look through the CVS logs for all the details.
      ...         self.valuelist.pop(i)
      ...     def keys(self):
      ...         return list(self.keylist)
-     ... 
+     ...
      >>> s = SeqDict()
      >>> dir(s)      # See that other dictionary methods are implemented
      ['__cmp__', '__contains__', '__delitem__', '__doc__', '__getitem__',
@@ -1779,7 +1779,7 @@ The help message is automatically generated for you::
                            set input filename
      -lLENGTH, --length=LENGTH
                            set maximum length of output
-   $ 
+   $
 
 See the module's documentation for more details.
 

@@ -32,7 +32,7 @@ convert it from and to XML.
 A C implementation of this API is available as :mod:`xml.etree.cElementTree`.
 
 See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs. Fredrik Lundh's page is also the location of the development version of the 
+docs. Fredrik Lundh's page is also the location of the development version of the
 xml.etree.ElementTree.
 
 .. _elementtree-functions:
@@ -379,7 +379,7 @@ This is the XML file that is going to be manipulated::
             <title>Example page</title>
         </head>
         <body>
-            <p>Moved to <a href="http://example.org/">example.org</a> 
+            <p>Moved to <a href="http://example.org/">example.org</a>
             or <a href="http://example.com/">example.com</a>.</p>
         </body>
     </html>
@@ -486,9 +486,9 @@ XMLTreeBuilder Objects
 
 :meth:`XMLTreeBuilder.feed` calls *target*\'s :meth:`start` method
 for each opening tag, its :meth:`end` method for each closing tag,
-and data is processed by method :meth:`data`. :meth:`XMLTreeBuilder.close` 
-calls *target*\'s method :meth:`close`. 
-:class:`XMLTreeBuilder` can be used not only for building a tree structure. 
+and data is processed by method :meth:`data`. :meth:`XMLTreeBuilder.close`
+calls *target*\'s method :meth:`close`.
+:class:`XMLTreeBuilder` can be used not only for building a tree structure.
 This is an example of counting the maximum depth of an XML file::
 
     >>> from xml.etree.ElementTree import XMLTreeBuilder
@@ -496,16 +496,16 @@ This is an example of counting the maximum depth of an XML file::
     ...     maxDepth = 0
     ...     depth = 0
     ...     def start(self, tag, attrib):   # Called for each opening tag.
-    ...         self.depth += 1 
+    ...         self.depth += 1
     ...         if self.depth > self.maxDepth:
     ...             self.maxDepth = self.depth
     ...     def end(self, tag):             # Called for each closing tag.
     ...         self.depth -= 1
-    ...     def data(self, data):   
+    ...     def data(self, data):
     ...         pass            # We do not need to do anything with data.
     ...     def close(self):    # Called when all data has been parsed.
     ...         return self.maxDepth
-    ... 
+    ...
     >>> target = MaxDepth()
     >>> parser = XMLTreeBuilder(target=target)
     >>> exampleXml = """

@@ -323,7 +323,7 @@ Decimal objects
       infinity       ::=  'Infinity' | 'Inf'
       nan            ::=  'NaN' [digits] | 'sNaN' [digits]
       numeric-value  ::=  decimal-part [exponent-part] | infinity
-      numeric-string ::=  [sign] numeric-value | [sign] nan  
+      numeric-string ::=  [sign] numeric-value | [sign] nan
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (:const:`0` for positive or :const:`1` for negative), a :class:`tuple` of
@@ -875,7 +875,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    * :const:`ROUND_HALF_EVEN` (to nearest with ties going to nearest even integer),
    * :const:`ROUND_HALF_UP` (to nearest with ties going away from zero), or
    * :const:`ROUND_UP` (away from zero).
-   * :const:`ROUND_05UP` (away from zero if last digit after rounding towards zero 
+   * :const:`ROUND_05UP` (away from zero if last digit after rounding towards zero
      would have been 0 or 5; otherwise towards zero)
 
    The *traps* and *flags* fields list any signals to be set. Generally, new
@@ -1355,7 +1355,7 @@ condition.
       sqrt(-x) and x > 0
       0 ** 0
       x ** (non-integer)
-      x ** Infinity      
+      x ** Infinity
 
 
 .. class:: Overflow
@@ -1458,7 +1458,7 @@ expanding the precision sufficiently to avoid loss of significance:
    Decimal('9.51111111')
    >>> u + (v + w)
    Decimal('9.51111111')
-   >>> 
+   >>>
    >>> u, v, w = Decimal(20000), Decimal(-6), Decimal('6.0000003')
    >>> (u*v) + (u*w)
    Decimal('0.0060000')
@@ -1597,7 +1597,7 @@ to work with the :class:`Decimal` class::
 
        """
        q = Decimal(10) ** -places      # 2 places --> '0.01'
-       sign, digits, exp = value.quantize(q).as_tuple()  
+       sign, digits, exp = value.quantize(q).as_tuple()
        result = []
        digits = list(map(str, digits))
        build, next = result.append, digits.pop
@@ -1654,12 +1654,12 @@ to work with the :class:`Decimal` class::
        getcontext().prec += 2
        i, lasts, s, fact, num = 0, 0, 1, 1, 1
        while s != lasts:
-           lasts = s    
+           lasts = s
            i += 1
            fact *= i
-           num *= x     
-           s += num / fact   
-       getcontext().prec -= 2        
+           num *= x
+           s += num / fact
+       getcontext().prec -= 2
        return +s
 
    def cos(x):
@@ -1676,13 +1676,13 @@ to work with the :class:`Decimal` class::
        getcontext().prec += 2
        i, lasts, s, fact, num, sign = 0, 0, 1, 1, 1, 1
        while s != lasts:
-           lasts = s    
+           lasts = s
            i += 2
            fact *= i * (i-1)
            num *= x * x
            sign *= -1
-           s += num / fact * sign 
-       getcontext().prec -= 2        
+           s += num / fact * sign
+       getcontext().prec -= 2
        return +s
 
    def sin(x):
@@ -1699,13 +1699,13 @@ to work with the :class:`Decimal` class::
        getcontext().prec += 2
        i, lasts, s, fact, num, sign = 1, 0, x, 1, x, 1
        while s != lasts:
-           lasts = s    
+           lasts = s
            i += 2
            fact *= i * (i-1)
            num *= x * x
            sign *= -1
-           s += num / fact * sign 
-       getcontext().prec -= 2        
+           s += num / fact * sign
+       getcontext().prec -= 2
        return +s
 
 
@@ -1739,7 +1739,7 @@ the :const:`Inexact` trap is set, it is also useful for validation:
    >>> Decimal('3.214').quantize(TWOPLACES)
    Decimal('3.21')
 
-   >>> # Validate that a number does not exceed two places 
+   >>> # Validate that a number does not exceed two places
    >>> Decimal('3.21').quantize(TWOPLACES, context=Context(traps=[Inexact]))
    Decimal('3.21')
 

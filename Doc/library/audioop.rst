@@ -260,7 +260,7 @@ sample and subtract the whole output sample from the input sample::
        in_test = inputdata[pos*2:]
        ipos, factor = audioop.findfit(in_test, out_test)
        # Optional (for better cancellation):
-       # factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)], 
+       # factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],
        #              out_test)
        prefill = '\0'*(pos+ipos)*2
        postfill = '\0'*(len(inputdata)-len(prefill)-len(outputdata))

@@ -145,7 +145,7 @@ it is deleted when the output file is closed.  In-place filtering is disabled
 when standard input is read.
 
 .. warning::
-   
+
    The current implementation does not work for MS-DOS 8+3 filesystems.
 
 

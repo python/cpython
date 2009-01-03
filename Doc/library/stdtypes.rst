@@ -172,7 +172,7 @@ notion of comparison where any two objects of that type are unequal.  The ``<``,
 any operand is a complex number, the objects are of different types that cannot
 be compared, or other cases where there is no defined ordering.
 
-.. index:: 
+.. index::
    single: __eq__() (instance method)
    single: __ne__() (instance method)
    single: __lt__() (instance method)
@@ -330,14 +330,14 @@ Notes:
    for well-defined conversions.
 
 (4)
-   float also accepts the strings "nan" and "inf" with an optional prefix "+" 
+   float also accepts the strings "nan" and "inf" with an optional prefix "+"
    or "-" for Not a Number (NaN) and positive or negative infinity.
 
 (5)
    Python defines ``pow(0, 0)`` and ``0 ** 0`` to be ``1``, as is common for
    programming languages.
 
-   
+
 
 All :class:`numbers.Real` types (:class:`int` and
 :class:`float`) also include the following operations:
@@ -460,7 +460,7 @@ The float type has some additional methods.
     original float and with a positive denominator.  Raises
     :exc:`OverflowError` on infinities and a :exc:`ValueError` on
     NaNs.
-    
+
     .. versionadded:: 2.6
 
 Two methods support conversion to
@@ -875,7 +875,7 @@ functions based on regular expressions.
    otherwise. Decimal characters include digit characters, and all characters
    that that can be used to form decimal-radix numbers, e.g. U+0660,
    ARABIC-INDIC DIGIT ZERO.
-   
+
 
 .. method:: str.isdigit()
 
@@ -903,7 +903,7 @@ functions based on regular expressions.
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.
 
-   
+
 .. method:: str.isprintable()
 
    Return true if all characters in the string are printable or the string is
@@ -1474,7 +1474,7 @@ Notes:
    example, sort by department, then by salary grade).
 
    While a list is being sorted, the effect of attempting to mutate, or even
-   inspect, the list is undefined.  The C implementation 
+   inspect, the list is undefined.  The C implementation
    makes the list appear empty for the duration, and raises :exc:`ValueError` if it
    can detect that the list has been mutated during a sort.
 
@@ -1525,7 +1525,7 @@ The bytes and bytearray types have an additional class method:
    b'\xf0\xf1\xf2'
 
 The translate method differs in semantics from the version available on strings:
-   
+
 .. method:: bytes.translate(table[, delete])
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
@@ -1807,7 +1807,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key* is
       not in the map.
-      
+
       If a subclass of dict defines a method :meth:`__missing__`, if the key *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
@@ -2149,7 +2149,7 @@ Files have the following methods:
    positioning); other values are ``os.SEEK_CUR`` or ``1`` (seek relative to the
    current position) and ``os.SEEK_END`` or ``2``  (seek relative to the file's
    end).  There is no return value.
-   
+
    For example, ``f.seek(2, os.SEEK_CUR)`` advances the position by two and
    ``f.seek(-3, os.SEEK_END)`` sets the position to the third to last.
 

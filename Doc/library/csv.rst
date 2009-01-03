@@ -82,7 +82,7 @@ The :mod:`csv` module defines the following functions:
    be split into lines in a manner which preserves the newline characters.
 
    A short usage example::
- 
+
       >>> import csv
       >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
       >>> for row in spamReader:

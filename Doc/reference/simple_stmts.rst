@@ -507,7 +507,7 @@ instance, with its traceback set to its argument), like so::
 .. index:: pair: exception; chaining
            __cause__ (exception attribute)
            __context__ (exception attribute)
-   
+
 The ``from`` clause is used for exception chaining: if given, the second
 *expression* must be another exception class or instance, which will then be
 attached to the raised exception as the :attr:`__cause__` attribute (which is
@@ -729,7 +729,7 @@ up to the last dot is used to find a "package"; the final identifier is then
 searched inside the package.  A package is generally a subdirectory of a
 directory on ``sys.path`` that has a file :file:`__init__.py`.
 
-.. 
+..
    [XXX Can't be
    bothered to spell this out right now; see the URL
    http://www.python.org/doc/essays/packages.html for more details, also about how
@@ -874,9 +874,9 @@ The :keyword:`nonlocal` statement
                 : ["=" (`target_list` "=")+ `expression_list`]
                 : | "nonlocal" `identifier` `augop` `expression_list`
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to 
-previously bound variables in the nearest enclosing scope.  This is important 
-because the default behavior for binding is to search the local namespace 
+The :keyword:`nonlocal` statement causes the listed identifiers to refer to
+previously bound variables in the nearest enclosing scope.  This is important
+because the default behavior for binding is to search the local namespace
 first.  The statement allows encapsulated code to rebind variables outside of
 the local scope besides the global (module) scope.
 
@@ -889,7 +889,7 @@ Names listed in a :keyword:`nonlocal` statement, unlike to those listed in a
 enclosing scope (the scope in which a new binding should be created cannot
 be determined unambiguously).
 
-Names listed in a :keyword:`nonlocal` statement must not collide with 
+Names listed in a :keyword:`nonlocal` statement must not collide with
 pre-existing bindings in the local scope.
 
 .. seealso::

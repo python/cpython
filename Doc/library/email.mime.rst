@@ -2,7 +2,7 @@
 ----------------------------------------------------------
 
 .. module:: email.mime
-   :synopsis: Build MIME messages. 
+   :synopsis: Build MIME messages.
 
 
 Ordinarily, you get a message object structure by passing a file or some text to

@@ -128,7 +128,7 @@ It also provides the following decorators:
    A decorator indicating abstract methods.
 
    Using this decorator requires that the class's metaclass is :class:`ABCMeta` or
-   is derived from it. 
+   is derived from it.
    A class that has a metaclass derived from :class:`ABCMeta`
    cannot be instantiated unless all of its abstract methods and
    properties are overridden.
@@ -163,7 +163,7 @@ It also provides the following decorators:
    A subclass of the built-in :func:`property`, indicating an abstract property.
 
    Using this function requires that the class's metaclass is :class:`ABCMeta` or
-   is derived from it. 
+   is derived from it.
    A class that has a metaclass derived from :class:`ABCMeta` cannot be
    instantiated unless all of its abstract methods and properties are overridden.
    The abstract properties can be called using any of the normal

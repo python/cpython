@@ -68,9 +68,9 @@ Definition::
 
 .. function:: polar(x)
 
-   Convert a :class:`complex` from rectangular coordinates to polar 
+   Convert a :class:`complex` from rectangular coordinates to polar
    coordinates. The function returns a tuple with the two elements
-   *r* and *phi*. *r* is the distance from 0 and *phi* the phase 
+   *r* and *phi*. *r* is the distance from 0 and *phi* the phase
    angle.
 
 
