@@ -30,8 +30,8 @@ For a while people just wrote programs that didn't display accents.  I remember
 looking at Apple ][ BASIC programs, published in French-language publications in
 the mid-1980s, that had lines like these::
 
-	PRINT "FICHIER EST COMPLETE."
-	PRINT "CARACTERE NON ACCEPTE."
+   PRINT "FICHIER EST COMPLETE."
+   PRINT "CARACTERE NON ACCEPTE."
 
 Those messages should contain accents, and they just look wrong to someone who
 can read French.
@@ -89,11 +89,11 @@ standard, a code point is written using the notation U+12ca to mean the
 character with value 0x12ca (4810 decimal).  The Unicode standard contains a lot
 of tables listing characters and their corresponding code points::
 
-	0061    'a'; LATIN SMALL LETTER A
-	0062    'b'; LATIN SMALL LETTER B
-	0063    'c'; LATIN SMALL LETTER C
-        ...
-	007B	'{'; LEFT CURLY BRACKET
+   0061    'a'; LATIN SMALL LETTER A
+   0062    'b'; LATIN SMALL LETTER B
+   0063    'c'; LATIN SMALL LETTER C
+   ...
+   007B    '{'; LEFT CURLY BRACKET
 
 Strictly, these definitions imply that it's meaningless to say 'this is
 character U+12ca'.  U+12ca is a code point, which represents some particular
@@ -597,19 +597,19 @@ encoding and a list of Unicode strings will be returned, while passing an 8-bit
 path will return the 8-bit versions of the filenames.  For example, assuming the
 default filesystem encoding is UTF-8, running the following program::
 
-	fn = u'filename\u4500abc'
-	f = open(fn, 'w')
-	f.close()
+   fn = u'filename\u4500abc'
+   f = open(fn, 'w')
+   f.close()
 
-	import os
-	print os.listdir('.')
-	print os.listdir(u'.')
+   import os
+   print os.listdir('.')
+   print os.listdir(u'.')
 
 will produce the following output::
 
-	amk:~$ python t.py
-	['.svn', 'filename\xe4\x94\x80abc', ...]
-	[u'.svn', u'filename\u4500abc', ...]
+   amk:~$ python t.py
+   ['.svn', 'filename\xe4\x94\x80abc', ...]
+   [u'.svn', u'filename\u4500abc', ...]
 
 The first list contains UTF-8-encoded filenames, and the second list contains
 the Unicode versions.
@@ -703,26 +703,26 @@ Version 1.02: posted August 16 2005.  Corrects factual errors.
    - [ ] Unicode introduction
        - [ ] ASCII
        - [ ] Terms
-	   - [ ] Character
-	   - [ ] Code point
-	 - [ ] Encodings
-	    - [ ] Common encodings: ASCII, Latin-1, UTF-8
+           - [ ] Character
+           - [ ] Code point
+         - [ ] Encodings
+            - [ ] Common encodings: ASCII, Latin-1, UTF-8
        - [ ] Unicode Python type
-	   - [ ] Writing unicode literals
-	       - [ ] Obscurity: -U switch
-	   - [ ] Built-ins
-	       - [ ] unichr()
-	       - [ ] ord()
-	       - [ ] unicode() constructor
-	   - [ ] Unicode type
-	       - [ ] encode(), decode() methods
+           - [ ] Writing unicode literals
+               - [ ] Obscurity: -U switch
+           - [ ] Built-ins
+               - [ ] unichr()
+               - [ ] ord()
+               - [ ] unicode() constructor
+           - [ ] Unicode type
+               - [ ] encode(), decode() methods
        - [ ] Unicodedata module for character properties
        - [ ] I/O
-	   - [ ] Reading/writing Unicode data into files
-	       - [ ] Byte-order marks
-	   - [ ] Unicode filenames
+           - [ ] Reading/writing Unicode data into files
+               - [ ] Byte-order marks
+           - [ ] Unicode filenames
        - [ ] Writing Unicode programs
-	   - [ ] Do everything in Unicode
-	   - [ ] Declaring source code encodings (PEP 263)
+           - [ ] Do everything in Unicode
+           - [ ] Declaring source code encodings (PEP 263)
        - [ ] Other issues
-	   - [ ] Building Python (UCS2, UCS4)
+           - [ ] Building Python (UCS2, UCS4)

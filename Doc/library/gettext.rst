@@ -648,10 +648,9 @@ translation until later.  A classic example is::
 
    animals = ['mollusk',
               'albatross',
-   	   'rat',
-   	   'penguin',
-   	   'python',
-   	   ]
+              'rat',
+              'penguin',
+              'python', ]
    # ...
    for a in animals:
        print a
@@ -666,10 +665,9 @@ Here is one way you can handle this situation::
 
    animals = [_('mollusk'),
               _('albatross'),
-   	   _('rat'),
-   	   _('penguin'),
-   	   _('python'),
-   	   ]
+              _('rat'),
+              _('penguin'),
+              _('python'), ]
 
    del _
 
@@ -692,10 +690,9 @@ Another way to handle this is with the following example::
 
    animals = [N_('mollusk'),
               N_('albatross'),
-   	   N_('rat'),
-   	   N_('penguin'),
-   	   N_('python'),
-   	   ]
+              N_('rat'),
+              N_('penguin'),
+              N_('python'), ]
 
    # ...
    for a in animals:

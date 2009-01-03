@@ -560,8 +560,8 @@ transport.  The following example shows how:
            self.proxy = proxy
        def make_connection(self, host):
            self.realhost = host
-   	h = httplib.HTTP(self.proxy)
-   	return h
+           h = httplib.HTTP(self.proxy)
+           return h
        def send_request(self, connection, handler, request_body):
            connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
        def send_host(self, connection, host):

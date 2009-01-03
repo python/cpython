@@ -396,10 +396,10 @@ single class called :class:`Popen`  whose constructor supports a number of
 different keyword arguments. ::
 
    class Popen(args, bufsize=0, executable=None,
-   	    stdin=None, stdout=None, stderr=None,
-   	    preexec_fn=None, close_fds=False, shell=False,
-   	    cwd=None, env=None, universal_newlines=False,
-   	    startupinfo=None, creationflags=0):
+               stdin=None, stdout=None, stderr=None,
+               preexec_fn=None, close_fds=False, shell=False,
+               cwd=None, env=None, universal_newlines=False,
+               startupinfo=None, creationflags=0):
 
 *args* is commonly a sequence of strings that will be the arguments to the
 program executed as the subprocess.  (If the *shell* argument is true, *args*
