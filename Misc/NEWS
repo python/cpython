@@ -101,6 +101,9 @@ Library
 - Issue 4790: The nsmallest() and nlargest() functions in the heapq module
   did unnecessary work in the common case where no key function was specified.
 
+- Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
+  the function is not a generator.
+
 - Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
   no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
 
@@ -197,6 +200,43 @@ Tools/Demos
 
 - Issue #4677: add two list comprehension tests to pybench.
 
+
+Build
+-----
+
+- Issue #4472: "configure --enable-shared" now works on OSX
+
+- Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
+
+- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
+
+- Issue #4289: Remove Cancel button from AdvancedDlg.
+
+- Issue #1656675: Register a drop handler for .py* files on Windows.
+
+- Issue #4120: Exclude manifest from extension modules in VS2008.
+
+- Issue #4091: Install pythonxy.dll in system32 again.
+
+- Issue #4018: Disable "for me" installations on Vista.
+
+- Issue #3758: Add ``patchcheck`` build target to .PHONY.
+
+- Issue #4204: Fixed module build errors on FreeBSD 4.
+
+
+C-API
+-----
+
+- Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
+
+- Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
+  the GIL is released, or owned by another thread.
+
+- Issue #4122: On Windows, fix a compilation error when using the
+  Py_UNICODE_ISSPACE macro in an extension module.
+
+
 Extension Modules
 -----------------
 
@@ -206,6 +246,8 @@ Extension Modules
   or decompress several streams at once on multi-CPU systems. Also, the GIL
   is now released when computing the CRC of a large buffer. Patch by ebfe.
 
+- Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
+
 - Issue #1040026: Fix os.times result on systems where HZ is incorrect.
 
 - Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
@@ -214,9 +256,6 @@ Extension Modules
 - Issue #4583: array.array would not always prohibit resizing when a buffer
   has been exported, resulting in an interpreter crash when accessing the
   buffer.
-
-Build
------
 
 
 Docs
