@@ -60,6 +60,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Peter Funk
    * Lele Gaifax
    * Matthew Gallagher
+   * Gabriel Genellina
    * Ben Gertzfield
    * Nadim Ghaznavi
    * Jonathan Giddy

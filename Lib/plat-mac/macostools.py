@@ -62,7 +62,14 @@ def mkdirs(dst):
     if os.sep == ':' and not ':' in head:
         head = head + ':'
     mkdirs(head)
-    os.mkdir(dst, 0777)
+
+    try:
+        os.mkdir(dst, 0777)
+    except OSError, e:
+        # be happy if someone already created the path
+        if e.errno != errno.EEXIST:
+            raise
+
 
 def touched(dst):
     """Tell the finder a file has changed. No-op on MacOSX."""

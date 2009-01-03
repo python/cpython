@@ -6,7 +6,7 @@
    :platform: SunOS
    :synopsis: Access to Sun audio hardware.
    :deprecated:
-   
+
 .. deprecated:: 2.6
    The :mod:`sunaudiodev` module has been deprecated for removal in Python 3.0.
 
@@ -151,7 +151,7 @@ the SIGPOLL signal.  Here's an example of how you might enable this in Python::
    :platform: SunOS
    :synopsis: Constants for use with sunaudiodev.
    :deprecated:
-   
+
 .. deprecated:: 2.6
    The :mod:`SUNAUDIODEV` module has been deprecated for removal in Python 3.0.
 

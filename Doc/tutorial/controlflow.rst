@@ -62,7 +62,7 @@ they appear in the sequence.  For example (no pun intended):
    ... a = ['cat', 'window', 'defenestrate']
    >>> for x in a:
    ...     print x, len(x)
-   ... 
+   ...
    cat 3
    window 6
    defenestrate 12
@@ -75,7 +75,7 @@ convenient::
 
    >>> for x in a[:]: # make a slice copy of the entire list
    ...    if len(x) > 6: a.insert(0, x)
-   ... 
+   ...
    >>> a
    ['defenestrate', 'cat', 'window', 'defenestrate']
 
@@ -110,7 +110,7 @@ To iterate over the indices of a sequence, you can combine :func:`range` and
    >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
    >>> for i in range(len(a)):
    ...     print i, a[i]
-   ... 
+   ...
    0 Mary
    1 had
    2 a
@@ -146,7 +146,7 @@ following loop, which searches for prime numbers::
    ...     else:
    ...         # loop fell through without finding a factor
    ...         print n, 'is a prime number'
-   ... 
+   ...
    2 is a prime number
    3 is a prime number
    4 equals 2 * 2
@@ -167,7 +167,7 @@ required syntactically but the program requires no action. For example::
 
    >>> while True:
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
-   ... 
+   ...
 
 This is commonly used for creating minimal classes::
 
@@ -181,7 +181,7 @@ at a more abstract level.  The :keyword:`pass` is silently ignored::
 
    >>> def initlog(*args):
    ...     pass   # Remember to implement this!
-   ... 
+   ...
 
 .. _tut-functions:
 
@@ -197,7 +197,7 @@ boundary::
    ...     while b < n:
    ...         print b,
    ...         a, b = b, a+b
-   ... 
+   ...
    >>> # Now call the function we just defined:
    ... fib(2000)
    1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
@@ -268,7 +268,7 @@ Fibonacci series, instead of printing it::
    ...         result.append(b)    # see below
    ...         a, b = b, a+b
    ...     return result
-   ... 
+   ...
    >>> f100 = fib2(100)    # call it
    >>> f100                # write the result
    [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
@@ -403,7 +403,7 @@ calls. Here's an example that fails due to this restriction::
 
    >>> def function(a):
    ...     pass
-   ... 
+   ...
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
@@ -456,7 +456,7 @@ Arbitrary Argument Lists
 ------------------------
 
 .. index::
-  statement: *  
+  statement: *
 
 Finally, the least frequently used option is to specify that a function can be
 called with an arbitrary number of arguments.  These arguments will be wrapped
@@ -565,11 +565,11 @@ Here is an example of a multi-line docstring::
 
    >>> def my_function():
    ...     """Do nothing, but document it.
-   ... 
+   ...
    ...     No, really, it doesn't do anything.
    ...     """
    ...     pass
-   ... 
+   ...
    >>> print my_function.__doc__
    Do nothing, but document it.
 

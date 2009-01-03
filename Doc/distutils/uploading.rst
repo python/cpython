@@ -35,9 +35,9 @@ uploaded file using GPG (GNU Privacy Guard).  The  :program:`gpg` program must
 be available for execution on the system :envvar:`PATH`.  You can also specify
 which key to use for signing using the :option:`--identity=*name*` option.
 
-Other :command:`upload` options include  :option:`--repository=*url*` 
-or :option:`--repository=*section*` where `url` is the url of the server
-and `section` the name of the section in :file:`$HOME/.pypirc`, and
+Other :command:`upload` options include :option:`--repository=<url>` or
+:option:`--repository=<section>` where *url* is the url of the server and
+*section* the name of the section in :file:`$HOME/.pypirc`, and
 :option:`--show-response` (which displays the full response text from the PyPI
 server for help in debugging upload problems).
 

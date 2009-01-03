@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.4  
+  What's New in Python 2.4
 ****************************
 
 :Author: A.M. Kuchling
@@ -63,10 +63,10 @@ symmetric differences. ::
    >>> a.add('z')                          # add a new element
    >>> a.update('wxy')                     # add multiple new elements
    >>> a
-   set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'x', 'z'])       
+   set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'x', 'z'])
    >>> a.remove('x')                       # take one element out
    >>> a
-   set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'z'])       
+   set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'z'])
 
 The :func:`frozenset` type is an immutable version of :func:`set`. Since it is
 immutable and hashable, it may be used as a dictionary key or as a member of
@@ -351,7 +351,7 @@ iterator that loops over the elements of the sequence  in reverse order.   ::
 
    >>> for i in reversed(xrange(1,4)):
    ...    print i
-   ... 
+   ...
    3
    2
    1
@@ -366,7 +366,7 @@ you want to reverse an iterator, first convert it to  a list with :func:`list`.
    >>> input = open('/etc/passwd', 'r')
    >>> for line in reversed(list(input)):
    ...   print line
-   ... 
+   ...
    root:*:0:0:System Administrator:/var/root:/bin/tcsh
      ...
 
@@ -396,10 +396,10 @@ single class called :class:`Popen`  whose constructor supports a number of
 different keyword arguments. ::
 
    class Popen(args, bufsize=0, executable=None,
-   	    stdin=None, stdout=None, stderr=None,
-   	    preexec_fn=None, close_fds=False, shell=False,
-   	    cwd=None, env=None, universal_newlines=False,
-   	    startupinfo=None, creationflags=0):
+               stdin=None, stdout=None, stderr=None,
+               preexec_fn=None, close_fds=False, shell=False,
+               cwd=None, env=None, universal_newlines=False,
+               startupinfo=None, creationflags=0):
 
 *args* is commonly a sequence of strings that will be the arguments to the
 program executed as the subprocess.  (If the *shell* argument is true, *args*
@@ -650,7 +650,7 @@ the precision of the default context::
    28
    >>> decimal.Decimal(1) / decimal.Decimal(7)
    Decimal("0.1428571428571428571428571429")
-   >>> decimal.getcontext().prec = 9 
+   >>> decimal.getcontext().prec = 9
    >>> decimal.Decimal(1) / decimal.Decimal(7)
    Decimal("0.142857143")
 
@@ -665,7 +665,7 @@ raised::
    >>> decimal.getcontext().traps[decimal.DivisionByZero] = False
    >>> decimal.Decimal(1) / decimal.Decimal(0)
    Decimal("Infinity")
-   >>> 
+   >>>
 
 The :class:`Context` instance also has various methods for formatting  numbers
 such as :meth:`to_eng_string` and :meth:`to_sci_string`.
@@ -803,7 +803,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
      >>> 'www.python.org'.split('.', 1)
      ['www', 'python.org']
      'www.python.org'.rsplit('.', 1)
-     ['www.python', 'org']        
+     ['www.python', 'org']
 
 * Three keyword parameters, *cmp*, *key*, and *reverse*, were added to the
   :meth:`sort` method of lists. These parameters make some common usages of
@@ -1045,7 +1045,7 @@ complete list of changes, or look through the CVS logs for all the details.
      >>> list(d)                 # list the contents of the deque
      ['g', 'h', 'i']
      >>> 'h' in d                # search the deque
-     True  
+     True
 
   Several modules, such as the :mod:`Queue` and :mod:`threading` modules, now take
   advantage of :class:`collections.deque` for improved performance.  (Contributed
@@ -1106,13 +1106,13 @@ complete list of changes, or look through the CVS logs for all the details.
      >>> L = [2, 4, 6, 7, 8, 9, 11, 12, 14]
      >>> for key_val, it in itertools.groupby(L, lambda x: x % 2):
      ...    print key_val, list(it)
-     ... 
+     ...
      0 [2, 4, 6]
      1 [7]
      0 [8]
      1 [9, 11]
      0 [12, 14]
-     >>> 
+     >>>
 
   :func:`groupby` is typically used with sorted input.  The logic for
   :func:`groupby` is similar to the Unix ``uniq`` filter which makes it handy for
@@ -1120,21 +1120,21 @@ complete list of changes, or look through the CVS logs for all the details.
 
      >>> word = 'abracadabra'
      >>> letters = sorted(word)   # Turn string into a sorted list of letters
-     >>> letters 
+     >>> letters
      ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
      >>> for k, g in itertools.groupby(letters):
      ...    print k, list(g)
-     ... 
+     ...
      a ['a', 'a', 'a', 'a', 'a']
      b ['b', 'b']
      c ['c']
      d ['d']
      r ['r', 'r']
      >>> # List unique letters
-     >>> [k for k, g in groupby(letters)]                     
+     >>> [k for k, g in groupby(letters)]
      ['a', 'b', 'c', 'd', 'r']
      >>> # Count letter occurrences
-     >>> [(k, len(list(g))) for k, g in groupby(letters)]     
+     >>> [(k, len(list(g))) for k, g in groupby(letters)]
      [('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
 
   (Contributed by Hye-Shik Chang.)
@@ -1175,7 +1175,7 @@ complete list of changes, or look through the CVS logs for all the details.
      import logging
      logging.basicConfig(filename='/var/log/application.log',
          level=0,  # Log all messages
-         format='%(levelname):%(process):%(thread):%(message)')	            
+         format='%(levelname):%(process):%(thread):%(message)')
 
   Other additions to the :mod:`logging` package include a :meth:`log(level, msg)`
   convenience method, as well as a :class:`TimedRotatingFileHandler` class that
@@ -1428,7 +1428,7 @@ Running the above function's tests with :const:`doctest.REPORT_UDIFF` specified,
 you get the following output::
 
    **********************************************************************
-   File ``t.py'', line 15, in g
+   File "t.py", line 15, in g
    Failed example:
        g(4)
    Differences (unified diff with -expected +actual):

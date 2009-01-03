@@ -127,7 +127,7 @@ and classes for traversing abstract syntax trees:
    Parse an expression into an AST node.  Equivalent to ``compile(expr,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
-   
+
 .. function:: literal_eval(node_or_string)
 
    Safely evaluate an expression node or a string containing a Python
@@ -191,7 +191,7 @@ and classes for traversing abstract syntax trees:
 
    A node visitor base class that walks the abstract syntax tree and calls a
    visitor function for every node found.  This function may return a value
-   which is forwarded by the `visit` method.
+   which is forwarded by the :meth:`visit` method.
 
    This class is meant to be subclassed, with the subclass adding visitor
    methods.
@@ -205,7 +205,7 @@ and classes for traversing abstract syntax trees:
    .. method:: generic_visit(node)
 
       This visitor calls :meth:`visit` on all children of the node.
-      
+
       Note that child nodes of nodes that have a custom visitor method won't be
       visited unless the visitor calls :meth:`generic_visit` or visits them
       itself.
@@ -220,11 +220,11 @@ and classes for traversing abstract syntax trees:
    A :class:`NodeVisitor` subclass that walks the abstract syntax tree and
    allows modification of nodes.
 
-   The `NodeTransformer` will walk the AST and use the return value of the
-   visitor methods to replace or remove the old node.  If the return value of
-   the visitor method is ``None``, the node will be removed from its location,
-   otherwise it is replaced with the return value.  The return value may be the
-   original node in which case no replacement takes place.
+   The :class:`NodeTransformer` will walk the AST and use the return value of
+   the visitor methods to replace or remove the old node.  If the return value
+   of the visitor method is ``None``, the node will be removed from its
+   location, otherwise it is replaced with the return value.  The return value
+   may be the original node in which case no replacement takes place.
 
    Here is an example transformer that rewrites all occurrences of name lookups
    (``foo``) to ``data['foo']``::

@@ -63,7 +63,7 @@ universal :option:`--help` option, e.g. ::
      --include-dirs (-I)  list of directories to search for header files
      --define (-D)        C preprocessor macros to define
      --undef (-U)         C preprocessor macros to undefine
-     --swig-opts          list of SWIG command line options        
+     --swig-opts          list of SWIG command line options
    [...]
 
 Note that an option spelled :option:`--foo-bar` on the command-line  is spelled

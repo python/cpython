@@ -124,7 +124,7 @@ Terms and conditions for accessing or otherwise using Python
    analyze, test, perform and/or display publicly, prepare derivative works,
    distribute, and otherwise use Python |release| alone or in any derivative
    version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2008 Python Software Foundation; All Rights
+   copyright, i.e., "Copyright © 2001-2009 Python Software Foundation; All Rights
    Reserved" are retained in Python |release| alone or in any derivative version
    prepared by Licensee.
 
@@ -386,8 +386,8 @@ Floating point exception control
 
 The source for the :mod:`fpectl` module includes the following notice::
 
-     ---------------------------------------------------------------------  
-    /                       Copyright (c) 1996.                           \ 
+     ---------------------------------------------------------------------
+    /                       Copyright (c) 1996.                           \
    |          The Regents of the University of California.                 |
    |                        All rights reserved.                           |
    |                                                                       |
@@ -419,7 +419,7 @@ The source for the :mod:`fpectl` module includes the following notice::
    |   opinions  of authors expressed herein do not necessarily state or   |
    |   reflect those of the United States Government or  the  University   |
    |   of  California,  and shall not be used for advertising or product   |
-    \  endorsement purposes.                                              / 
+    \  endorsement purposes.                                              /
      ---------------------------------------------------------------------
 
 
@@ -453,7 +453,7 @@ The source code for the :mod:`md5` module contains the following notice::
 
      This code implements the MD5 Algorithm defined in RFC 1321, whose
      text is available at
-   	http://www.ietf.org/rfc/rfc1321.txt
+           http://www.ietf.org/rfc/rfc1321.txt
      The code is derived from the text of the RFC, including the test suite
      (section A.5) but excluding the rest of Appendix A.  It does not include
      any code or documentation that is identified in the RFC as being
@@ -464,12 +464,12 @@ The source code for the :mod:`md5` module contains the following notice::
      that follows (in reverse chronological order):
 
      2002-04-13 lpd Removed support for non-ANSI compilers; removed
-   	references to Ghostscript; clarified derivation from RFC 1321;
-   	now handles byte order either statically or dynamically.
+           references to Ghostscript; clarified derivation from RFC 1321;
+           now handles byte order either statically or dynamically.
      1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
      1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5);
-   	added conditionalization for C++ compilation from Martin
-   	Purschke <purschke@bnl.gov>.
+           added conditionalization for C++ compilation from Martin
+           Purschke <purschke@bnl.gov>.
      1999-05-03 lpd Original version.
 
 

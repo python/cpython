@@ -15,7 +15,7 @@ Reflection
 
    Return a dictionary of the local variables in the current execution frame,
    or *NULL* if no frame is currently executing.
-   
+
 
 .. cfunction:: PyObject* PyEval_GetGlobals()
 

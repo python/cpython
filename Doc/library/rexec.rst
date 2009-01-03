@@ -5,7 +5,7 @@
 .. module:: rexec
    :synopsis: Basic restricted execution framework.
    :deprecated:
-   
+
 .. deprecated:: 2.6
    The :mod:`rexec` module has been removed in Python 3.0.
 
@@ -272,7 +272,7 @@ Let us say that we want a slightly more relaxed policy than the standard
                pass
            elif mode in ('w', 'wb', 'a', 'ab'):
                # check filename : must begin with /tmp/
-               if file[:5]!='/tmp/': 
+               if file[:5]!='/tmp/':
                    raise IOError, "can't write outside /tmp"
                elif (string.find(file, '/../') >= 0 or
                     file[:3] == '../' or file[-3:] == '/..'):

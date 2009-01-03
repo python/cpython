@@ -9,7 +9,7 @@
 
 
 .. deprecated:: 2.6
-   This module is obsolete.  Use the :mod:`subprocess` module.  Check 
+   This module is obsolete.  Use the :mod:`subprocess` module.  Check
    especially the :ref:`subprocess-replacements` section.
 
 This module allows you to spawn processes and connect to their

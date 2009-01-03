@@ -39,7 +39,7 @@ Python file, which, in the most simple case, could look like this::
 
 With this :file:`setup.py`, and a file :file:`demo.c`, running ::
 
-   python setup.py build 
+   python setup.py build
 
 will compile :file:`demo.c`, and produce an extension module named ``demo`` in
 the :file:`build` directory. Depending on the system, the module file will end

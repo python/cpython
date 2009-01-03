@@ -967,7 +967,7 @@ deque_iter(dequeobject *deque)
 	it->deque = deque;
 	it->state = deque->state;
 	it->counter = deque->len;
-	_PyObject_GC_TRACK(it);
+	PyObject_GC_Track(it);
 	return (PyObject *)it;
 }
 
@@ -1077,7 +1077,7 @@ deque_reviter(dequeobject *deque)
 	it->deque = deque;
 	it->state = deque->state;
 	it->counter = deque->len;
-	_PyObject_GC_TRACK(it);
+	PyObject_GC_Track(it);
 	return (PyObject *)it;
 }
 

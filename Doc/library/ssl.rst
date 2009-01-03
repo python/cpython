@@ -48,7 +48,7 @@ Functions, Constants, and Exceptions
 
 .. exception:: SSLError
 
-   Raised to signal an error from the underlying SSL implementation.  This 
+   Raised to signal an error from the underlying SSL implementation.  This
    signifies some problem in the higher-level
    encryption and authentication layer that's superimposed on the underlying
    network connection.  This error is a subtype of :exc:`socket.error`, which
@@ -173,7 +173,7 @@ Functions, Constants, and Exceptions
      >>> import time
      >>> time.ctime(ssl.cert_time_to_seconds("May  9 00:00:00 2007 GMT"))
      'Wed May  9 00:00:00 2007'
-     >>> 
+     >>>
 
 .. function:: get_server_certificate (addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None)
 
@@ -385,7 +385,7 @@ should start with the specific certificate for the principal who "is"
 the client or server, and then the certificate for the issuer of that
 certificate, and then the certificate for the issuer of *that* certificate,
 and so on up the chain till you get to a certificate which is *self-signed*,
-that is, a certificate which has the same subject and issuer, 
+that is, a certificate which has the same subject and issuer,
 sometimes called a *root certificate*.  The certificates should just
 be concatenated together in the certificate file.  For example, suppose
 we had a three certificate chain, from our server certificate to the
@@ -422,13 +422,13 @@ SSL3 or TLS1, you don't need to put the full chain in your "CA certs" file;
 you only need the root certificates, and the remote peer is supposed to
 furnish the other certificates necessary to chain from its certificate to
 a root certificate.
-See :rfc:`4158` for more discussion of the way in which 
+See :rfc:`4158` for more discussion of the way in which
 certification chains can be built.
 
 If you are going to create a server that provides SSL-encrypted
 connection services, you will need to acquire a certificate for that
 service.  There are many ways of acquiring appropriate certificates,
-such as buying one from a certification authority.  Another common 
+such as buying one from a certification authority.  Another common
 practice is to generate a self-signed certificate.  The simplest
 way to do this is with the OpenSSL package, using something like
 the following::
@@ -570,7 +570,7 @@ Then you'd read data from the ``connstream`` and do something with it till you a
 
 And go back to listening for new client connections.
 
-           
+
 .. seealso::
 
    Class :class:`socket.socket`

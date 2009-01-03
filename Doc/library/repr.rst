@@ -125,15 +125,15 @@ The use of dynamic dispatching by :meth:`Repr.repr1` allows subclasses of
 the handling of types already supported. This example shows how special support
 for file objects could be added::
 
-   import repr
+   import repr as reprlib
    import sys
 
-   class MyRepr(repr.Repr):
+   class MyRepr(reprlib.Repr):
        def repr_file(self, obj, level):
            if obj.name in ['<stdin>', '<stdout>', '<stderr>']:
                return obj.name
            else:
-               return `obj`
+               return repr(obj)
 
    aRepr = MyRepr()
    print aRepr.repr(sys.stdin)          # prints '<stdin>'

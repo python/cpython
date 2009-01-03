@@ -37,7 +37,7 @@ of the debugger is::
    (Pdb) continue
    NameError: 'spam'
    > <string>(1)?()
-   (Pdb) 
+   (Pdb)
 
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
@@ -68,7 +68,7 @@ Typical usage to inspect a crashed program is::
    >>> pdb.pm()
    > ./mymodule.py(3)test2()
    -> print spam
-   (Pdb) 
+   (Pdb)
 
 The module defines the following functions; each enters the debugger in a
 slightly different way:
@@ -109,7 +109,7 @@ slightly different way:
 
 .. function:: post_mortem([traceback])
 
-   Enter post-mortem debugging of the given *traceback* object.  If no 
+   Enter post-mortem debugging of the given *traceback* object.  If no
    *traceback* is given, it uses the one of the exception that is currently
    being handled (an exception must be being handled if the default is to be
    used).

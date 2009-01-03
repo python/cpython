@@ -18,7 +18,7 @@ from Carbon import Qdoffs
 from Carbon import QDOffscreen
 from Carbon import Res
 try:
-    import MediaDescr
+    from Carbon import MediaDescr
 except ImportError:
     def _audiodescr(data):
         return None

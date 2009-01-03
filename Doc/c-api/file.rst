@@ -63,8 +63,8 @@ change in future releases of Python.
    Return the file object associated with *p* as a :ctype:`FILE\*`.
 
    If the caller will ever use the returned :ctype:`FILE\*` object while
-   the GIL is released it must also call the `PyFile_IncUseCount` and
-   `PyFile_DecUseCount` functions described below as appropriate.
+   the GIL is released it must also call the :cfunc:`PyFile_IncUseCount` and
+   :cfunc:`PyFile_DecUseCount` functions described below as appropriate.
 
 
 .. cfunction:: void PyFile_IncUseCount(PyFileObject \*p)
@@ -72,13 +72,13 @@ change in future releases of Python.
    Increments the PyFileObject's internal use count to indicate
    that the underlying :ctype:`FILE\*` is being used.
    This prevents Python from calling f_close() on it from another thread.
-   Callers of this must call `PyFile_DecUseCount` when they are
+   Callers of this must call :cfunc:`PyFile_DecUseCount` when they are
    finished with the :ctype:`FILE\*`.  Otherwise the file object will
    never be closed by Python.
 
    The GIL must be held while calling this function.
 
-   The suggested use is to call this after `PyFile_AsFile` just before
+   The suggested use is to call this after :cfunc:`PyFile_AsFile` just before
    you release the GIL.
 
    .. versionadded:: 2.6
@@ -88,7 +88,7 @@ change in future releases of Python.
 
    Decrements the PyFileObject's internal unlocked_count member to
    indicate that the caller is done with its own use of the :ctype:`FILE\*`.
-   This may only be called to undo a prior call to `PyFile_IncUseCount`.
+   This may only be called to undo a prior call to :cfunc:`PyFile_IncUseCount`.
 
    The GIL must be held while calling this function.
 

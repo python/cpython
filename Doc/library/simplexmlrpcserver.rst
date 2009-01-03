@@ -151,7 +151,7 @@ Server code::
                                requestHandler=RequestHandler)
    server.register_introspection_functions()
 
-   # Register pow() function; this will use the value of 
+   # Register pow() function; this will use the value of
    # pow.__name__ as the name, which is just 'pow'.
    server.register_function(pow)
 
@@ -160,10 +160,10 @@ Server code::
        return x + y
    server.register_function(adder_function, 'add')
 
-   # Register an instance; all the methods of the instance are 
+   # Register an instance; all the methods of the instance are
    # published as XML-RPC methods (in this case, just 'div').
    class MyFuncs:
-       def div(self, x, y): 
+       def div(self, x, y):
            return x // y
 
    server.register_instance(MyFuncs())

@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.2  
+  What's New in Python 2.2
 ****************************
 
 :Author: A.M. Kuchling
@@ -295,7 +295,7 @@ will be used in methods to call a method in the superclass; for example,
 
    class D (B,C):
        def save (self):
-   	# Call superclass .save()
+           # Call superclass .save()
            super(D, self).save()
            # Save D's private information here
            ...
@@ -473,7 +473,7 @@ there are no more values to be returned, calling :meth:`next` should raise the
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    StopIteration
-   >>>      
+   >>>
 
 In 2.2, Python's :keyword:`for` statement no longer expects a sequence; it
 expects something for which :func:`iter` will return an iterator. For backward
@@ -909,7 +909,7 @@ To make the preceding explanation a bit clearer, here's an example::
    x = 1
    def f():
        # The next line is a syntax error
-       exec 'x=2'  
+       exec 'x=2'
        def g():
            return x
 
@@ -952,8 +952,8 @@ New and Improved Modules
      items = s.meerkat.getItems( {'channel': 4} )
 
      # 'items' is another list of dictionaries, like this:
-     # [{'link': 'http://freshmeat.net/releases/52719/', 
-     #   'description': 'A utility which converts HTML to XSL FO.', 
+     # [{'link': 'http://freshmeat.net/releases/52719/',
+     #   'description': 'A utility which converts HTML to XSL FO.',
      #   'title': 'html2fo 0.3 (Default)'}, ... ]
 
   The :mod:`SimpleXMLRPCServer` module makes it easy to create straightforward

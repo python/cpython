@@ -274,7 +274,7 @@ Available Functions
 
 .. function:: warnpy3k(message[, category[, stacklevel]])
 
-   Issue a warning related to Python 3.x deprecation. Warnings are only shown 
+   Issue a warning related to Python 3.x deprecation. Warnings are only shown
    when Python is started with the -3 option. Like :func:`warn` *message* must
    be a string and *category* a subclass of :exc:`Warning`. :func:`warnpy3k`
    is using :exc:`DeprecationWarning` as default warning class.
@@ -288,7 +288,7 @@ Available Functions
    this function with an alternative implementation by assigning to
    ``warnings.showwarning``.
    *line* is a line of source code to be included in the warning
-   message; if *line* is not supplied, :func:`showwarning` will 
+   message; if *line* is not supplied, :func:`showwarning` will
    try to read the line specified by *filename* and *lineno*.
 
    .. versionchanged:: 2.6
@@ -299,8 +299,8 @@ Available Functions
 .. function:: formatwarning(message, category, filename, lineno[, line])
 
    Format a warning the standard way.  This returns a string  which may contain
-   embedded newlines and ends in a newline.  *line* is 
-   a line of source code to be included in the warning message; if *line* is not supplied, 
+   embedded newlines and ends in a newline.  *line* is
+   a line of source code to be included in the warning message; if *line* is not supplied,
    :func:`formatwarning` will try to read the line specified by *filename* and *lineno*.
 
    .. versionchanged:: 2.6

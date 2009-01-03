@@ -148,7 +148,7 @@ Here is an example that imports a module from a ZIP archive - note that the
     --------                   -------
         8467                   1 file
    $ ./python
-   Python 2.3 (#1, Aug 1 2003, 19:54:32) 
+   Python 2.3 (#1, Aug 1 2003, 19:54:32)
    >>> import sys
    >>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
    >>> import jwzthreading

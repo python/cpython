@@ -994,14 +994,14 @@ method of :class:`MatchObject` in the following manner:
 
    >>> pair.match("717ak").group(1)
    '7'
-   
+
    # Error because re.match() returns None, which doesn't have a group() method:
    >>> pair.match("718ak").group(1)
    Traceback (most recent call last):
      File "<pyshell#23>", line 1, in <module>
        re.match(r".*(.).*\1", "718ak").group(1)
    AttributeError: 'NoneType' object has no attribute 'group'
-   
+
    >>> pair.match("354aa").group(1)
    'a'
 
@@ -1110,7 +1110,7 @@ where the search is to start:
 Making a Phonebook
 ^^^^^^^^^^^^^^^^^^
 
-:func:`split` splits a string into a list delimited by the passed pattern.  The 
+:func:`split` splits a string into a list delimited by the passed pattern.  The
 method is invaluable for converting textual data into data structures that can be
 easily read and modified by Python as demonstrated in the following example that
 creates a phonebook.
@@ -1119,7 +1119,7 @@ First, here is the input.  Normally it may come from a file, here we are using
 triple-quoted string syntax:
 
    >>> input = """Ross McFluff: 834.345.1254 155 Elm Street
-   ... 
+   ...
    ... Ronald Heathmore: 892.345.3428 436 Finley Avenue
    ... Frank Burger: 925.541.7625 662 South Dogwood Way
    ...
