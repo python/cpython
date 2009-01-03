@@ -91,7 +91,6 @@ def check_suspicious_constructs(fn, lines):
 @checker('.py', '.rst')
 def check_whitespace(fn, lines):
     """Check for whitespace and line length issues."""
-    lasti = 0
     for lno, line in enumerate(lines):
         if '\r' in line:
             yield lno+1, '\\r in line'
@@ -99,7 +98,13 @@ def check_whitespace(fn, lines):
             yield lno+1, 'OMG TABS!!!1'
         if line[:-1].rstrip(' \t') != line[:-1]:
             yield lno+1, 'trailing whitespace'
-        if len(line) > 86:
+
+
+@checker('.rst', severity=0)
+def check_line_length(fn, lines):
+    """Check for line length; this checker is not run by default."""
+    for lno, line in enumerate(lines):
+        if len(line) > 81:
             # don't complain about tables, links and function signatures
             if line.lstrip()[0] not in '+|' and \
                'http://' not in line and \
