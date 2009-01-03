@@ -3,26 +3,31 @@
 
 #include "Python.h"
 
-static void
-dup_buffer(Py_buffer *dest, Py_buffer *src)
-{
-	*dest = *src;
-        if (src->shape == &(src->len))
-            dest->shape = &(dest->len);
-        if (src->strides == &(src->itemsize))
-            dest->strides = &(dest->itemsize);
-}
-
-/* XXX The buffer API should mandate that the shape array be non-NULL, but
-   it would complicate some code since the (de)allocation semantics of shape
-   are not specified. */
 static Py_ssize_t
 get_shape0(Py_buffer *buf)
 {
     if (buf->shape != NULL)
         return buf->shape[0];
-    assert(buf->ndim == 1 && buf->itemsize > 0);
-    return buf->len / buf->itemsize;
+    if (buf->ndim == 0)
+        return 1;
+    PyErr_SetString(PyExc_TypeError,
+        "exported buffer does not have any shape information associated "
+        "to it");
+    return -1;
+}
+
+static void
+dup_buffer(Py_buffer *dest, Py_buffer *src)
+{
+    *dest = *src;
+    if (src->ndim == 1 && src->shape != NULL) {
+        dest->shape = &(dest->smalltable[0]);
+        dest->shape[0] = get_shape0(src);
+    }
+    if (src->ndim == 1 && src->strides != NULL) {
+        dest->strides = &(dest->smalltable[1]);
+        dest->strides[0] = src->strides[0];
+    }
 }
 
 static int
@@ -449,8 +454,6 @@ memory_tolist(PyMemoryViewObject *mem, PyObject *noargs)
 	return res;
 }
 
-
-
 static PyMethodDef memory_methods[] = {
         {"tobytes", (PyCFunction)memory_tobytes, METH_NOARGS, NULL},
         {"tolist", (PyCFunction)memory_tolist, METH_NOARGS, NULL},
@@ -474,19 +477,19 @@ memory_dealloc(PyMemoryViewObject *self)
                 PyObject_CopyData(PyTuple_GET_ITEM(self->base,0),
                                   PyTuple_GET_ITEM(self->base,1));
 
-                /* The view member should have readonly == -1 in
-                   this instance indicating that the memory can
-                   be "locked" and was locked and will be unlocked
-                   again after this call.
-                */
-                PyBuffer_Release(&(self->view));
-            }
-            else {
-                PyBuffer_Release(&(self->view));
-            }
-            Py_CLEAR(self->base);
+            /* The view member should have readonly == -1 in
+               this instance indicating that the memory can
+               be "locked" and was locked and will be unlocked
+               again after this call.
+            */
+            PyBuffer_Release(&(self->view));
         }
-	PyObject_GC_Del(self);
+        else {
+            PyBuffer_Release(&(self->view));
+        }
+        Py_CLEAR(self->base);
+    }
+    PyObject_GC_Del(self);
 }
 
 static PyObject *
@@ -512,16 +515,10 @@ memory_str(PyMemoryViewObject *self)
 }
 
 /* Sequence methods */
-
 static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
 {
-        Py_buffer view;
-
-        if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
-                return -1;
-        PyBuffer_Release(&view);
-	return view.len;
+    return get_shape0(&self->view);
 }
 
 /*
@@ -589,40 +586,38 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 	    }
     }
     else if (PySlice_Check(key)) {
-	    Py_ssize_t start, stop, step, slicelength;
-    
+        Py_ssize_t start, stop, step, slicelength;
+
         if (PySlice_GetIndicesEx((PySliceObject*)key, get_shape0(view),
-			     &start, &stop, &step, &slicelength) < 0) {
-		    return NULL;
-	    }
+                                 &start, &stop, &step, &slicelength) < 0) {
+                return NULL;
+        }
     
-	    if (step == 1 && view->ndim == 1) {
-		    Py_buffer newview;
-		    void *newbuf = (char *) view->buf
-					    + start * view->itemsize;
-		    int newflags = view->readonly
-			    ? PyBUF_CONTIG_RO : PyBUF_CONTIG;
+        if (step == 1 && view->ndim == 1) {
+            Py_buffer newview;
+            void *newbuf = (char *) view->buf
+                                    + start * view->itemsize;
+            int newflags = view->readonly
+                    ? PyBUF_CONTIG_RO : PyBUF_CONTIG;
     
-		    /* XXX There should be an API to create a subbuffer */
-		    if (view->obj != NULL) {
-			    if (PyObject_GetBuffer(view->obj,
-					    &newview, newflags) == -1)
-				    return NULL;
-		    }
-		    else {
-			    newview = *view;
-		    }
-		    newview.buf = newbuf;
-		    newview.len = slicelength;
-		    newview.format = view->format;
-		    if (view->shape == &(view->len))
-			    newview.shape = &(newview.len);
-		    if (view->strides == &(view->itemsize))
-			    newview.strides = &(newview.itemsize);
-		    return PyMemoryView_FromBuffer(&newview);
-	    }
-	    PyErr_SetNone(PyExc_NotImplementedError);
-	    return NULL;
+            /* XXX There should be an API to create a subbuffer */
+            if (view->obj != NULL) {
+                if (PyObject_GetBuffer(view->obj, &newview, newflags) == -1)
+                    return NULL;
+            }
+            else {
+                newview = *view;
+            }
+            newview.buf = newbuf;
+            newview.len = slicelength * newview.itemsize;
+            newview.format = view->format;
+            newview.shape = &(newview.smalltable[0]);
+            newview.shape[0] = slicelength;
+            newview.strides = &(newview.itemsize);
+            return PyMemoryView_FromBuffer(&newview);
+        }
+        PyErr_SetNone(PyExc_NotImplementedError);
+        return NULL;
     }
     PyErr_Format(PyExc_TypeError,
 	    "cannot index memory using \"%.200s\"", 
@@ -747,7 +742,7 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
 	if (vv.itemsize != ww.itemsize || vv.len != ww.len)
 		goto _end;
 
-	equal = !memcmp(vv.buf, ww.buf, vv.len * vv.itemsize);
+	equal = !memcmp(vv.buf, ww.buf, vv.len);
 
 _end:
 	PyBuffer_Release(&vv);
