@@ -12,8 +12,6 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
-- Issue #4817: Remove unused function PyOS_GetLastModificationTime.
-
 - Issue #4075: Use OutputDebugStringW in Py_FatalError.
 
 - Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
@@ -109,6 +107,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #4796: Added Decimal.from_float() and Context.create_decimal_from_float()
+  to the decimal module.
 
 - Issue #4812: add missing underscore prefix to some internal-use-only
   constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
