@@ -157,19 +157,29 @@ class BaseHandler:
         elif self.headers is not None:
             raise AssertionError("Headers already set!")
 
-        assert type(status) is str,"Status must be a string"
+        status = self._convert_string_type(status, "Status")
         assert len(status)>=4,"Status must be at least 4 characters"
         assert int(status[:3]),"Status message must begin w/3-digit code"
         assert status[3]==" ", "Status message must have a space after code"
-        if __debug__:
-            for name,val in headers:
-                assert type(name) is str,"Header names must be strings"
-                assert type(val) is str,"Header values must be strings"
-                assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
+
+        str_headers = []
+        for name,val in headers:
+            name = self._convert_string_type(name, "Header name")
+            val = self._convert_string_type(val, "Header value")
+            str_headers.append((name, val))
+            assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
+
         self.status = status
-        self.headers = self.headers_class(headers)
+        self.headers = self.headers_class(str_headers)
         return self.write
 
+    def _convert_string_type(self, value, title):
+        """Convert/check value type."""
+        if isinstance(value, str):
+            return value
+        assert isinstance(value, bytes), \
+            "{0} must be a string or bytes object (not {1})".format(title, value)
+        return str(value, "iso-8859-1")
 
     def send_preamble(self):
         """Transmit version/status/date/server, via self._write()"""
@@ -188,7 +198,8 @@ class BaseHandler:
     def write(self, data):
         """'write()' callable as specified by PEP 333"""
 
-        assert type(data) is str,"write() argument must be string"
+        assert isinstance(data, (str, bytes)), \
+            "write() argument must be a string or bytes"
 
         if not self.status:
             raise AssertionError("write() before start_response()")
@@ -382,8 +393,13 @@ class SimpleHandler(BaseHandler):
         self.environ.update(self.base_env)
 
     def _write(self,data):
+        if isinstance(data, str):
+            try:
+                data = data.encode("iso-8859-1")
+            except UnicodeEncodeError:
+                raise ValueError("Unicode data must contain only code points"
+                    " representable in ISO-8859-1 encoding")
         self.stdout.write(data)
-        self._write = self.stdout.write
 
     def _flush(self):
         self.stdout.flush()

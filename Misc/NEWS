@@ -84,6 +84,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4718: Adapt the wsgiref package so that it actually works with 
+  Python 3.x, in accordance with the `official amendments of the spec 
+  <http://www.wsgi.org/wsgi/Amendments_1.0>`_.
+
 - Issue #4812: add missing underscore prefix to some internal-use-only
   constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
 
