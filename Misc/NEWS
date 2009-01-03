@@ -87,6 +87,9 @@ Library
 
 - Issue #3248: Allow placing ScrolledText in a PanedWindow.
 
+- Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@')
+  works as expected in the interactive environment.
+
 - Issue #4574: reading an UTF16-encoded text file crashes if \r on 64-char
   boundary.
 

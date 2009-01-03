@@ -1568,6 +1568,42 @@ class Helper:
         'with': ('with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
         'yield': ('yield', ''),
     }
+    # Either add symbols to this dictionary or to the symbols dictionary
+    # directly: Whichever is easier. They are merged later.
+    _symbols_inverse = {
+        'STRINGS' : ("'", "'''", "r'", "b'", '"""', '"', 'r"', 'b"'),
+        'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
+                       '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
+        'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
+        'UNARY' : ('-', '~'),
+        'AUGMENTEDASSIGNMENT' : ('+=', '-=', '*=', '/=', '%=', '&=', '|=',
+                                '^=', '<<=', '>>=', '**=', '//='),
+        'BITWISE' : ('<<', '>>', '&', '|', '^', '~'),
+        'COMPLEX' : ('j', 'J')
+    }
+    symbols = {
+        '%': 'OPERATORS FORMATTING',
+        '**': 'POWER',
+        ',': 'TUPLES LISTS FUNCTIONS',
+        '.': 'ATTRIBUTES FLOAT MODULES OBJECTS',
+        '...': 'ELLIPSIS',
+        ':': 'SLICINGS DICTIONARYLITERALS',
+        '@': 'def class',
+        '\\': 'STRINGS',
+        '_': 'PRIVATENAMES',
+        '__': 'PRIVATENAMES SPECIALMETHODS',
+        '`': 'BACKQUOTES',
+        '(': 'TUPLES FUNCTIONS CALLS',
+        ')': 'TUPLES FUNCTIONS CALLS',
+        '[': 'LISTS SUBSCRIPTS SLICINGS',
+        ']': 'LISTS SUBSCRIPTS SLICINGS'
+    }
+    for topic, symbols_ in _symbols_inverse.items():
+        for symbol in symbols_:
+            topics = symbols.get(symbol, topic)
+            if topic not in topics:
+                topics = topics + ' ' + topic
+            symbols[symbol] = topics
 
     topics = {
         'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '
@@ -1705,10 +1741,12 @@ has the same effect as typing a particular string at the help> prompt.
         if type(request) is type(''):
             if request == 'help': self.intro()
             elif request == 'keywords': self.listkeywords()
+            elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
                 self.listmodules(request.split()[1])
+            elif request in self.symbols: self.showsymbol(request)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:')
@@ -1753,6 +1791,14 @@ Here is a list of the Python keywords.  Enter any keyword to get more help.
 ''')
         self.list(self.keywords.keys())
 
+    def listsymbols(self):
+        self.output.write('''
+Here is a list of the punctuation symbols which Python assigns special meaning
+to. Enter any symbol to get more help.
+
+''')
+        self.list(self.symbols.keys())
+
     def listtopics(self):
         self.output.write('''
 Here is a list of available topics.  Enter any topic name to get more help.
@@ -1760,7 +1806,7 @@ Here is a list of available topics.  Enter any topic name to get more help.
 ''')
         self.list(self.topics.keys())
 
-    def showtopic(self, topic):
+    def showtopic(self, topic, more_xrefs=''):
         try:
             import pydoc_topics
         except ImportError:
@@ -1774,7 +1820,7 @@ module "pydoc_topics" could not be found.
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
         if type(target) is type(''):
-            return self.showtopic(target)
+            return self.showtopic(target, more_xrefs)
 
         label, xrefs = target
         try:
@@ -1783,12 +1829,19 @@ module "pydoc_topics" could not be found.
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
         pager(doc.strip() + '\n')
+        if more_xrefs:
+            xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
             import io, formatter
             buffer = io.StringIO()
             formatter.DumbWriter(buffer).send_flowing_data(
                 'Related help topics: ' + ', '.join(xrefs.split()) + '\n')
             self.output.write('\n%s\n' % buffer.getvalue())
+
+    def showsymbol(self, symbol):
+        target = self.symbols[symbol]
+        topic, _, xrefs = target.partition(' ')
+        self.showtopic(topic, xrefs)
 
     def listmodules(self, key=''):
         if key:
