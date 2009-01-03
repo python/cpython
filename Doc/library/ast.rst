@@ -127,7 +127,7 @@ and classes for traversing abstract syntax trees:
    Parse an expression into an AST node.  Equivalent to ``compile(expr,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
-   
+
 .. function:: literal_eval(node_or_string)
 
    Safely evaluate an expression node or a string containing a Python
@@ -205,7 +205,7 @@ and classes for traversing abstract syntax trees:
    .. method:: generic_visit(node)
 
       This visitor calls :meth:`visit` on all children of the node.
-      
+
       Note that child nodes of nodes that have a custom visitor method won't be
       visited unless the visitor calls :meth:`generic_visit` or visits them
       itself.

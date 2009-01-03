@@ -76,7 +76,7 @@ The :mod:`csv` module defines the following functions:
    performed.
 
    A short usage example::
- 
+
       >>> import csv
       >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
       >>> for row in spamReader:

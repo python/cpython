@@ -13,7 +13,7 @@
    single: World Wide Web
    single: URL
    single: robots.txt
-   
+
 .. note::
    The :mod:`robotparser` module has been renamed :mod:`urllib.robotparser` in
    Python 3.0.

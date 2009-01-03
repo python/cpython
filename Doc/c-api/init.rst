@@ -902,7 +902,7 @@ in previous versions.
 
    Return a tuple of function call counts.  There are constants defined for the
    positions within the tuple:
-   
+
    +-------------------------------+-------+
    | Name                          | Value |
    +===============================+=======+
@@ -928,7 +928,7 @@ in previous versions.
    +-------------------------------+-------+
    | :const:`PCALL_POP`            | 10    |
    +-------------------------------+-------+
-   
+
    :const:`PCALL_FAST_FUNCTION` means no argument tuple needs to be created.
    :const:`PCALL_FASTER_FUNCTION` means that the fast-path frame setup code is used.
 

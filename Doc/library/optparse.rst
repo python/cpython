@@ -799,7 +799,7 @@ And to define an option with only a long option string::
 The keyword arguments define attributes of the new Option object.  The most
 important option attribute is :attr:`action`, and it largely determines which
 other attributes are relevant or required.  If you pass irrelevant option
-attributes, or fail to pass required ones, :mod:`optparse` raises an 
+attributes, or fail to pass required ones, :mod:`optparse` raises an
 :exc:`OptionError` exception explaining your mistake.
 
 An option's *action* determines what :mod:`optparse` does when it encounters

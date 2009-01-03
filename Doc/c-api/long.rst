@@ -126,7 +126,7 @@ Long Integer Objects
 
    Return a C :ctype:`long` representation of the contents of *pylong*.  If
    *pylong* is greater than :const:`LONG_MAX`, an :exc:`OverflowError` is raised
-   and ``-1`` will be returned. 
+   and ``-1`` will be returned.
 
 
 .. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)

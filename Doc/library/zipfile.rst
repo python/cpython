@@ -202,7 +202,7 @@ ZipFile Objects
 
 .. method:: ZipFile.extractall([path[, members[, pwd]]])
 
-   Extract all members from the archive to the current working directory.  *path* 
+   Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files.
@@ -282,9 +282,9 @@ ZipFile Objects
 
    .. note::
 
-      When passing a :class:`ZipInfo` instance as the *zinfo_or_acrname* parameter, 
-      the compression method used will be that specified in the *compress_type* 
-      member of the given :class:`ZipInfo` instance.  By default, the 
+      When passing a :class:`ZipInfo` instance as the *zinfo_or_acrname* parameter,
+      the compression method used will be that specified in the *compress_type*
+      member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
 The following data attributes are also available:
@@ -298,9 +298,9 @@ The following data attributes are also available:
 
 .. attribute:: ZipFile.comment
 
-   The comment text associated with the ZIP file.  If assigning a comment to a 
-   :class:`ZipFile` instance created with mode 'a' or 'w', this should be a 
-   string no longer than 65535 bytes.  Comments longer than this will be 
+   The comment text associated with the ZIP file.  If assigning a comment to a
+   :class:`ZipFile` instance created with mode 'a' or 'w', this should be a
+   string no longer than 65535 bytes.  Comments longer than this will be
    truncated in the written archive when :meth:`ZipFile.close` is called.
 
 .. _pyzipfile-objects:
@@ -329,10 +329,10 @@ The :class:`PyZipFile` constructor takes the same parameters as the
    internal use only.  The :meth:`writepy` method makes archives with file names
    like this::
 
-      string.pyc                                # Top level name 
-      test/__init__.pyc                         # Package directory 
+      string.pyc                                # Top level name
+      test/__init__.pyc                         # Package directory
       test/test_support.pyc                          # Module test.test_support
-      test/bogus/__init__.pyc                   # Subpackage directory 
+      test/bogus/__init__.pyc                   # Subpackage directory
       test/bogus/myfile.pyc                     # Submodule test.bogus.myfile
 
 

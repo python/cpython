@@ -250,7 +250,7 @@ are passed on to :meth:`__init__`.  For example, ::
    ...     def __init__(self, realpart, imagpart):
    ...         self.r = realpart
    ...         self.i = imagpart
-   ... 
+   ...
    >>> x = Complex(3.0, -4.5)
    >>> x.r, x.i
    (3.0, -4.5)
@@ -481,7 +481,7 @@ Python has two builtin functions that work with inheritance:
   ``issubclass(unicode, str)`` is ``False`` since :class:`unicode` is not a
   subclass of :class:`str` (they only share a common ancestor,
   :class:`basestring`).
-  
+
 
 
 .. _tut-multiple:
@@ -743,7 +743,7 @@ easy to create::
    f
    l
    o
-   g	
+   g
 
 Anything that can be done with generators can also be done with class based
 iterators as described in the previous section.  What makes generators so

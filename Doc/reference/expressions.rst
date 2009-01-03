@@ -560,7 +560,7 @@ or list).  Slicings may be used as expressions or as targets in assignment or
 .. productionlist::
    slicing: `simple_slicing` | `extended_slicing`
    simple_slicing: `primary` "[" `short_slice` "]"
-   extended_slicing: `primary` "[" `slice_list` "]" 
+   extended_slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice` | `ellipsis`
    proper_slice: `short_slice` | `long_slice`
@@ -664,7 +664,7 @@ raised.  Otherwise, the list of filled slots is used as the argument list for
 the call.
 
 .. note::
-   
+
    An implementation may provide builtin functions whose positional parameters do
    not have names, even if they are 'named' for the purpose of documentation, and
    which therefore cannot be supplied by keyword.  In CPython, this is the case for
@@ -1321,7 +1321,7 @@ groups from right to left).
 .. rubric:: Footnotes
 
 .. [#] In Python 2.3 and later releases, a list comprehension "leaks" the control
-   variables of each ``for`` it contains into the containing scope.  However, this 
+   variables of each ``for`` it contains into the containing scope.  However, this
    behavior is deprecated, and relying on it will not work in Python 3.0
 
 .. [#] While ``abs(x%y) < abs(y)`` is true mathematically, for floats it may not be
@@ -1354,7 +1354,7 @@ groups from right to left).
    only, but this caused surprises because people expected to be able to test a
    dictionary for emptiness by comparing it to ``{}``.
 
-.. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of 
+.. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of
    descriptors, you may notice seemingly unusual behaviour in certain uses of
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.

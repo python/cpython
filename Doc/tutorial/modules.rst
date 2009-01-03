@@ -281,7 +281,7 @@ defines.  It returns a sorted list of strings::
    ['__name__', 'fib', 'fib2']
    >>> dir(sys)
    ['__displayhook__', '__doc__', '__excepthook__', '__name__', '__stderr__',
-    '__stdin__', '__stdout__', '_getframe', 'api_version', 'argv', 
+    '__stdin__', '__stdout__', '_getframe', 'api_version', 'argv',
     'builtin_module_names', 'byteorder', 'callstats', 'copyright',
     'displayhook', 'exc_clear', 'exc_info', 'exc_type', 'excepthook',
     'exec_prefix', 'executable', 'exit', 'getdefaultencoding', 'getdlopenflags',
@@ -314,7 +314,7 @@ want a list of those, they are defined in the standard module
     'FloatingPointError', 'FutureWarning', 'IOError', 'ImportError',
     'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
     'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
-    'NotImplementedError', 'OSError', 'OverflowError', 
+    'NotImplementedError', 'OSError', 'OverflowError',
     'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError',
     'RuntimeWarning', 'StandardError', 'StopIteration', 'SyntaxError',
     'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',

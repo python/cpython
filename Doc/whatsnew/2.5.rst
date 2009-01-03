@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.5  
+  What's New in Python 2.5
 ****************************
 
 :Author: A.M. Kuchling
@@ -220,7 +220,7 @@ in the package index, determine the dependencies for a package, and download the
 required packages. ::
 
    VERSION = '1.0'
-   setup(name='PyPackage', 
+   setup(name='PyPackage',
          version=VERSION,
          requires=['numarray', 'zlib (>=1.1.4)'],
          obsoletes=['OldPackage']
@@ -388,7 +388,7 @@ write::
    else:
        else-block
    finally:
-       final-block 
+       final-block
 
 The code in *block-1* is executed.  If the code raises an exception, the various
 :keyword:`except` blocks are tested: if the exception is of class
@@ -835,8 +835,8 @@ catch all exceptions, so you commonly need to list :exc:`KeyboardInterrupt` and
        ...
    except (KeyboardInterrupt, SystemExit):
        raise
-   except: 
-       # Log error...  
+   except:
+       # Log error...
        # Continue running program...
 
 In Python 2.5, you can now write ``except Exception`` to achieve the same
@@ -947,7 +947,7 @@ arguments and returns an integer giving the slice index to use.  For example::
 
    class C:
        def __index__ (self):
-           return self.value  
+           return self.value
 
 The return value must be either a Python integer or long integer. The
 interpreter will check that the type returned is correct, and raises a
@@ -1035,9 +1035,9 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
      L = ['medium', 'longest', 'short']
      # Prints 'longest'
-     print max(L, key=len)              
+     print max(L, key=len)
      # Prints 'short', because lexicographically 'short' has the largest value
-     print max(L)         
+     print max(L)
 
   (Contributed by Steven Bethard and Raymond Hettinger.)
 
@@ -1070,8 +1070,8 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
   using the default ASCII encoding.   The result of the comparison is false::
 
      >>> chr(128) == unichr(128)   # Can't convert chr(128) to Unicode
-     __main__:1: UnicodeWarning: Unicode equal comparison failed 
-       to convert both arguments to Unicode - interpreting them 
+     __main__:1: UnicodeWarning: Unicode equal comparison failed
+       to convert both arguments to Unicode - interpreting them
        as being unequal
      False
      >>> chr(127) == unichr(127)   # chr(127) can be converted
@@ -1259,10 +1259,10 @@ complete list of changes, or look through the SVN logs for all the details.
 
   Printing ``index`` results in the following output::
 
-     defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'], 
-             'd': ['del', 'di', 'diritta'], 'm': ['mezzo', 'mi'], 
-             'l': ['la'], 'o': ['oscura'], 'n': ['nel', 'nostra'], 
-             'p': ['per'], 's': ['selva', 'smarrita'], 
+     defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'],
+             'd': ['del', 'di', 'diritta'], 'm': ['mezzo', 'mi'],
+             'l': ['la'], 'o': ['oscura'], 'n': ['nel', 'nostra'],
+             'p': ['per'], 's': ['selva', 'smarrita'],
              'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
 
   (Contributed by Guido van Rossum.)
@@ -1884,17 +1884,17 @@ is that the constructor functions for creating new hashing objects are named
 differently. ::
 
    # Old versions
-   h = md5.md5()   
-   h = md5.new()   
+   h = md5.md5()
+   h = md5.new()
 
-   # New version 
+   # New version
    h = hashlib.md5()
 
    # Old versions
-   h = sha.sha()   
-   h = sha.new()   
+   h = sha.sha()
+   h = sha.new()
 
-   # New version 
+   # New version
    h = hashlib.sha1()
 
    # Hash that weren't previously available
@@ -2191,7 +2191,7 @@ Changes to Python's build process and to the C API include:
   case that your extensions were using it, you can replace it by something like
   the following::
 
-     range = PyObject_CallFunction((PyObject*) &PyRange_Type, "lll", 
+     range = PyObject_CallFunction((PyObject*) &PyRange_Type, "lll",
                                    start, stop, step);
 
 .. ======================================================================

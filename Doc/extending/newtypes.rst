@@ -1234,7 +1234,7 @@ As with the :attr:`tp_methods` table, a sentinel entry with a :attr:`name` value
 of *NULL* is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
-   
+
    Descriptor objects have two handler functions which correspond to the
    \member{tp_getattro} and \member{tp_setattro} handlers.  The
    \method{__get__()} handler is a function which is passed the descriptor,

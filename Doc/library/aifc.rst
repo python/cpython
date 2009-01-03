@@ -17,7 +17,7 @@ samples in a file.  AIFF-C is a newer version of the format that includes the
 ability to compress the audio data.
 
 .. warning::
-   
+
    Some operations may only work under IRIX; these will raise :exc:`ImportError`
    when attempting to import the :mod:`cl` module, which is only available on IRIX.
 

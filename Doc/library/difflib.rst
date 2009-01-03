@@ -428,7 +428,7 @@ The :class:`SequenceMatcher` class has this constructor:
 
       .. XXX Explain why a dummy is used!
 
-      .. versionchanged:: 2.5 
+      .. versionchanged:: 2.5
          The guarantee that adjacent triples always describe non-adjacent blocks
          was implemented.
 

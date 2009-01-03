@@ -172,7 +172,7 @@ Example::
    >>> import bsddb
    >>> db = bsddb.btopen('/tmp/spam.db', 'c')
    >>> for i in range(10): db['%d'%i] = '%d'% (i*i)
-   ... 
+   ...
    >>> db['3']
    '9'
    >>> db.keys()
@@ -185,7 +185,7 @@ Example::
    ('9', '81')
    >>> db.set_location('2')
    ('2', '4')
-   >>> db.previous() 
+   >>> db.previous()
    ('1', '1')
    >>> for k, v in db.iteritems():
    ...     print k, v

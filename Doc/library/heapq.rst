@@ -102,7 +102,7 @@ Using a heap to insert items at the correct place in a priority queue:
    H
    N
 
-   
+
 The module also offers three general purpose functions based on heaps.
 
 

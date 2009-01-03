@@ -21,7 +21,7 @@ Some of these are very old and/or not very robust; marked with "hmm."
 
 :mod:`ihooks`
    --- Import hook support (for :mod:`rexec`; may become obsolete).
-   
+
    .. warning:: The :mod:`ihooks` module has been removed in Python 3.0.
 
 
@@ -54,7 +54,7 @@ Multimedia
 :mod:`linuxaudiodev`
    --- Play audio data on the Linux audio device.  Replaced in Python 2.3 by the
    :mod:`ossaudiodev` module.
-   
+
    .. warning:: The :mod:`linuxaudiodev` module has been removed in Python 3.0.
 
 :mod:`sunaudio`
@@ -240,7 +240,7 @@ extensions.
 
 :mod:`timing`
    --- Measure time intervals to high resolution (use :func:`time.clock` instead).
-   
+
    .. warning:: The :mod:`timing` module has been removed in Python 3.0.
 
 
@@ -255,6 +255,6 @@ of reality.
 
 :mod:`sv`
    --- Interface to the "simple video" board on SGI Indigo (obsolete hardware).
-   
+
    .. warning:: The :mod:`sv` module has been removed in Python 3.0.
 
