@@ -930,9 +930,6 @@ EXPORTS
 ; From python26_s.lib(getcopyright)
   "Py_GetCopyright"
 
-; From python26_s.lib(getmtime)
-  "PyOS_GetLastModificationTime"
-
 ; From python26_s.lib(getplatform)
   "Py_GetPlatform"
 
