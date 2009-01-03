@@ -777,8 +777,8 @@ altbininstall:	$(BUILDPYTHON)
 	done
 	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE)
 	if test -f $(LDLIBRARY); then \
-		if test "$(SO)" = .dll; then \
-			$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(BINDIR); \
+		if test -n "$(DLLLIBRARY)" ; then \
+			$(INSTALL_SHARED) $(DLLLIBRARY) $(DESTDIR)$(BINDIR); \
 		else \
 			$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
 			if test $(LDLIBRARY) != $(INSTSONAME); then \

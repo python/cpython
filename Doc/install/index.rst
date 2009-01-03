@@ -584,7 +584,7 @@ value of ``sys.path``.   ::
    $ python
    Python 2.2 (#11, Oct  3 2002, 13:31:27)
    [GCC 2.96 20000731 (Red Hat Linux 7.3 2.96-112)] on linux2
-   Type ``help'', ``copyright'', ``credits'' or ``license'' for more information.
+   Type "help", "copyright", "credits" or "license" for more information.
    >>> import sys
    >>> sys.path
    ['', '/usr/local/lib/python2.3', '/usr/local/lib/python2.3/plat-linux2',

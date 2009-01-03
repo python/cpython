@@ -55,14 +55,14 @@ Here are the classes:
 
 .. currentmodule:: email.mime.multipart
 
-.. class:: MIMEMultipart([subtype[, boundary[, _subparts[, _params]]]])
+.. class:: MIMEMultipart([_subtype[, boundary[, _subparts[, _params]]]])
 
    Module: :mod:`email.mime.multipart`
 
    A subclass of :class:`MIMEBase`, this is an intermediate base class for MIME
    messages that are :mimetype:`multipart`.  Optional *_subtype* defaults to
    :mimetype:`mixed`, but can be used to specify the subtype of the message.  A
-   :mailheader:`Content-Type` header of :mimetype:`multipart/`*_subtype* will be
+   :mailheader:`Content-Type` header of :mimetype:`multipart/_subtype` will be
    added to the message object.  A :mailheader:`MIME-Version` header will also be
    added.
 

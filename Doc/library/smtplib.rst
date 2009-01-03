@@ -200,7 +200,7 @@ An :class:`SMTP` instance has the following methods:
    previous ``EHLO`` or ``HELO`` command this session.  It tries ESMTP ``EHLO``
    first.
 
-   :exc:SMTPHeloError
+   :exc:`SMTPHeloError`
      The server didn't reply properly to the ``HELO`` greeting.
 
 .. method:: SMTP.has_extn(name)

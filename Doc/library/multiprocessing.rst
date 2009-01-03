@@ -107,12 +107,12 @@ processes:
       def f(q):
           q.put([42, None, 'hello'])
 
-       if __name__ == '__main__':
-           q = Queue()
-           p = Process(target=f, args=(q,))
-           p.start()
-           print(q.get())    # prints "[42, None, 'hello']"
-           p.join()
+      if __name__ == '__main__':
+          q = Queue()
+          p = Process(target=f, args=(q,))
+          p.start()
+          print(q.get())    # prints "[42, None, 'hello']"
+          p.join()
 
    Queues are thread and process safe.
 
@@ -1136,18 +1136,18 @@ their parent process exits.  The manager classes are defined in the
 
       Returns a :class:`Server` object which represents the actual server under
       the control of the Manager. The :class:`Server` object supports the
-      :meth:`serve_forever` method::
+      :meth:`serve_forever` method:
 
-       >>> from multiprocessing.managers import BaseManager
-       >>> m = BaseManager(address=('', 50000), authkey='abc'))
-       >>> server = m.get_server()
-       >>> s.serve_forever()
+      >>> from multiprocessing.managers import BaseManager
+      >>> m = BaseManager(address=('', 50000), authkey='abc'))
+      >>> server = m.get_server()
+      >>> s.serve_forever()
 
-       :class:`Server` additionally have an :attr:`address` attribute.
+      :class:`Server` additionally have an :attr:`address` attribute.
 
    .. method:: connect()
 
-      Connect a local manager object to a remote manager process::
+      Connect a local manager object to a remote manager process:
 
       >>> from multiprocessing.managers import BaseManager
       >>> m = BaseManager(address='127.0.0.1', authkey='abc))
@@ -1293,7 +1293,7 @@ Customized managers
 >>>>>>>>>>>>>>>>>>>
 
 To create one's own manager, one creates a subclass of :class:`BaseManager` and
-use the :meth:`~BaseManager.resgister` classmethod to register new types or
+use the :meth:`~BaseManager.register` classmethod to register new types or
 callables with the manager class.  For example::
 
    from multiprocessing.managers import BaseManager
@@ -1809,7 +1809,7 @@ Address Formats
 
 * An ``'AF_PIPE'`` address is a string of the form
    :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
-   pipe on a remote computer called ServerName* one should use an address of the
+   pipe on a remote computer called *ServerName* one should use an address of the
    form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'`` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
