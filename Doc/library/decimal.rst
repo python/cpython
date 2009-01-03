@@ -1030,7 +1030,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       If the argument is a string, no leading or trailing whitespace is
       permitted.
 
-.. method:: create_decimal_from_float(f)
+   .. method:: create_decimal_from_float(f)
 
       Creates a new Decimal instance from a float *f* but rounding using *self*
       as the context.  Unlike the :method:`Decimal.from_float` class method,
@@ -1039,14 +1039,14 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       .. doctest::
 
-          >>> context = Context(prec=5, rounding=ROUND_DOWN)
-          >>> context.create_decimal_from_float(math.pi)
-          Decimal('3.1415')
-          >>> context = Context(prec=5, traps=[Inexact])
-          >>> context.create_decimal_from_float(math.pi)
-          Traceback (most recent call last):
-              ...
-          Inexact: None
+         >>> context = Context(prec=5, rounding=ROUND_DOWN)
+         >>> context.create_decimal_from_float(math.pi)
+         Decimal('3.1415')
+         >>> context = Context(prec=5, traps=[Inexact])
+         >>> context.create_decimal_from_float(math.pi)
+         Traceback (most recent call last):
+             ...
+         Inexact: None
 
       .. versionadded:: 2.7
 
