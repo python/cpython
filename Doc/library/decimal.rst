@@ -1884,6 +1884,7 @@ suggest, so we trap :const:`Inexact` to signal a need for more precision:
         ctx = Context(prec=60)
         result = ctx.divide(numerator, denominator)
         while ctx.flags[Inexact]:
+            ctx.flags[Inexact] = False
             ctx.prec *= 2
             result = ctx.divide(numerator, denominator)
         return result
