@@ -295,7 +295,7 @@ will be used in methods to call a method in the superclass; for example,
 
    class D (B,C):
        def save (self):
-   	# Call superclass .save()
+           # Call superclass .save()
            super(D, self).save()
            # Save D's private information here
            ...

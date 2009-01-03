@@ -823,8 +823,8 @@ As you can see, the source code closely resembles the :class:`Noddy` examples in
 previous sections. We will break down the main differences between them. ::
 
    typedef struct {
-   	PyListObject list;
-   	int state;
+       PyListObject list;
+       int state;
    } Shoddy;
 
 The primary difference for derived type objects is that the base type's object
@@ -837,10 +837,10 @@ be safely cast to both *PyListObject\** and *Shoddy\**. ::
    static int
    Shoddy_init(Shoddy *self, PyObject *args, PyObject *kwds)
    {
-   	if (PyList_Type.tp_init((PyObject *)self, args, kwds) < 0)
-   		return -1;
-   	self->state = 0;
-   	return 0;
+       if (PyList_Type.tp_init((PyObject *)self, args, kwds) < 0)
+          return -1;
+       self->state = 0;
+       return 0;
    }
 
 In the :attr:`__init__` method for our type, we can see how to call through to
@@ -859,18 +859,18 @@ the module's :cfunc:`init` function. ::
    PyMODINIT_FUNC
    PyInit_shoddy(void)
    {
-        PyObject *m;
+       PyObject *m;
 
-        ShoddyType.tp_base = &PyList_Type;
-        if (PyType_Ready(&ShoddyType) < 0)
-            return NULL;
+       ShoddyType.tp_base = &PyList_Type;
+       if (PyType_Ready(&ShoddyType) < 0)
+           return NULL;
 
-        m = PyModule_Create(&shoddymodule);
-        if (m == NULL)
-            return NULL;
+       m = PyModule_Create(&shoddymodule);
+       if (m == NULL)
+           return NULL;
 
-        Py_INCREF(&ShoddyType);
-        PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+       Py_INCREF(&ShoddyType);
+       PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
    }
 
 Before calling :cfunc:`PyType_Ready`, the type structure must have the
@@ -1113,7 +1113,7 @@ structure::
    typedef struct PyMethodDef {
        char        *ml_name;       /* method name */
        PyCFunction  ml_meth;       /* implementation function */
-       int	         ml_flags;      /* flags */
+       int          ml_flags;      /* flags */
        char        *ml_doc;        /* docstring */
    } PyMethodDef;
 

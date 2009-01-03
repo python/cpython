@@ -195,7 +195,7 @@ Using the :keyword:`if` clause we can filter the stream::
 
 Tuples can often be created without their parentheses, but not here::
 
-   >>> [x, x**2 for x in vec]	# error - parens required for tuples
+   >>> [x, x**2 for x in vec]  # error - parens required for tuples
      File "<stdin>", line 1, in ?
        [x, x**2 for x in vec]
                   ^

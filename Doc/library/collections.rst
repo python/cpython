@@ -41,7 +41,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
 :class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
-:class:`Sized`          			  ``__len__``
+:class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
 :class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``.
@@ -68,7 +68,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`MutableMapping`    :class:`Mapping`       ``__getitem__``         Inherited Mapping methods and
                                                   ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
                                                   ``__delitem__``,        and ``setdefault``
-						  ``__iter__``, and
+                                                  ``__iter__``, and
                                                   ``__len__``
 
 :class:`MappingView`       :class:`Sized`                                 ``__len__``
@@ -84,7 +84,7 @@ particular functionality, for example::
 
     size = None
     if isinstance(myvar, collections.Sized):
-	size = len(myvar)
+        size = len(myvar)
 
 Several of the ABCs are also useful as mixins that make it easier to develop
 classes supporting container APIs.  For example, to write a class supporting
