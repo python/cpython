@@ -1378,24 +1378,22 @@ it.
 The *mode* parameter can be used to specify how the library is loaded.  For
 details, consult the ``dlopen(3)`` manpage, on Windows, *mode* is ignored.
 
-The *use_errno* parameter, when set to True, enables a ctypes
-mechanism that allows to access the system `errno` error number in a
-safe way.  `ctypes` maintains a thread-local copy of the systems
-`errno` variable; if you call foreign functions created with
-`use_errno=True` then the `errno` value before the function call is
-swapped with the ctypes private copy, the same happens immediately
-after the function call.
+The *use_errno* parameter, when set to True, enables a ctypes mechanism that
+allows to access the system :data:`errno` error number in a safe way.
+:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+variable; if you call foreign functions created with ``use_errno=True`` then the
+:data:`errno` value before the function call is swapped with the ctypes private
+copy, the same happens immediately after the function call.
 
-The function `ctypes.get_errno()` returns the value of the ctypes
-private copy, and the function `ctypes.set_errno(value)` changes the
-ctypes private copy to `value` and returns the former value.
+The function :func:`ctypes.get_errno` returns the value of the ctypes private
+copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
+to a new value and returns the former value.
 
-The *use_last_error* parameter, when set to True, enables the same
-mechanism for the Windows error code which is managed by the
-:func:`GetLastError` and :func:`SetLastError` Windows API functions;
-`ctypes.get_last_error()` and `ctypes.set_last_error(value)` are used
-to request and change the ctypes private copy of the windows error
-code.
+The *use_last_error* parameter, when set to True, enables the same mechanism for
+the Windows error code which is managed by the :func:`GetLastError` and
+:func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
+:func:`ctypes.set_last_error` are used to request and change the ctypes private
+copy of the windows error code.
 
 .. versionadded:: 2.6
    The ``use_last_error`` and ``use_errno`` optional parameters
@@ -1602,22 +1600,23 @@ type and the argument types of the function.
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    The returned function prototype creates functions that use the standard C
-   calling convention.  The function will release the GIL during the call.
-   If `use_errno` is set to True, the ctypes private copy of the system `errno`
-   variable is exchanged with the real `errno` value bafore and after the call;
-   `use_last_error` does the same for the Windows error code.
+   calling convention.  The function will release the GIL during the call.  If
+   *use_errno* is set to True, the ctypes private copy of the system
+   :data:`errno` variable is exchanged with the real :data:`errno` value bafore
+   and after the call; *use_last_error* does the same for the Windows error
+   code.
 
    .. versionchanged:: 2.6
-      The optional `use_errno` and `use_last_error` parameters were
-      added.
+      The optional *use_errno* and *use_last_error* parameters were added.
 
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    Windows only: The returned function prototype creates functions that use the
-   ``stdcall`` calling convention, except on Windows CE where :func:`WINFUNCTYPE`
-   is the same as :func:`CFUNCTYPE`.  The function will release the GIL during the
-   call. `use_errno` and `use_last_error` have the same meaning as above.
+   ``stdcall`` calling convention, except on Windows CE where
+   :func:`WINFUNCTYPE` is the same as :func:`CFUNCTYPE`.  The function will
+   release the GIL during the call.  *use_errno* and *use_last_error* have the
+   same meaning as above.
 
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
@@ -1864,10 +1863,10 @@ Utility functions
 .. function:: find_library(name)
    :module: ctypes.util
 
-   Try to find a library and return a pathname.  `name` is the library name without
-   any prefix like `lib`, suffix like ``.so``, ``.dylib`` or version number (this
-   is the form used for the posix linker option :option:`-l`).  If no library can
-   be found, returns ``None``.
+   Try to find a library and return a pathname.  *name* is the library name
+   without any prefix like ``lib```, suffix like ``.so``, ``.dylib`` or version
+   number (this is the form used for the posix linker option :option:`-l`).  If
+   no library can be found, returns ``None``.
 
    The exact functionality is system dependent.
 
@@ -1905,14 +1904,14 @@ Utility functions
 .. function:: get_errno()
 
    Returns the current value of the ctypes-private copy of the system
-   `errno` variable in the calling thread.
+   :data:`errno` variable in the calling thread.
 
    .. versionadded:: 2.6
 
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
-   `LastError` variable in the calling thread.
+   :data:`LastError` variable in the calling thread.
 
    .. versionadded:: 2.6
 
@@ -1969,17 +1968,16 @@ Utility functions
 
 .. function:: set_errno(value)
 
-   Set the  current value of the ctypes-private copy of the system
-   `errno` variable in the calling thread to `value` and return the
-   previous value.
+   Set the current value of the ctypes-private copy of the system :data:`errno`
+   variable in the calling thread to *value* and return the previous value.
 
    .. versionadded:: 2.6
 
 .. function:: set_last_error(value)
 
-   Windows only: set the current value of the ctypes-private copy of
-   the system `LastError` variable in the calling thread to `value`
-   and return the previous value.
+   Windows only: set the current value of the ctypes-private copy of the system
+   :data:`LastError` variable in the calling thread to *value* and return the
+   previous value.
 
    .. versionadded:: 2.6
 

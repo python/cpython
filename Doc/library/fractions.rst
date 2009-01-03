@@ -101,11 +101,11 @@ another rational number, or from a string.
 
 .. function:: gcd(a, b)
 
-   Return the greatest common divisor of the integers `a` and `b`.  If
-   either `a` or `b` is nonzero, then the absolute value of `gcd(a,
-   b)` is the largest integer that divides both `a` and `b`.  `gcd(a,b)`
-   has the same sign as `b` if `b` is nonzero; otherwise it takes the sign
-   of `a`.  `gcd(0, 0)` returns `0`.
+   Return the greatest common divisor of the integers *a* and *b*.  If either
+   *a* or *b* is nonzero, then the absolute value of ``gcd(a, b)`` is the
+   largest integer that divides both *a* and *b*.  ``gcd(a,b)`` has the same
+   sign as *b* if *b* is nonzero; otherwise it takes the sign of *a*.  ``gcd(0,
+   0)`` returns ``0``.
 
 
 .. seealso::
