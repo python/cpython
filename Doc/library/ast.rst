@@ -178,7 +178,7 @@ and classes for traversing abstract syntax trees:
 
    A node visitor base class that walks the abstract syntax tree and calls a
    visitor function for every node found.  This function may return a value
-   which is forwarded by the `visit` method.
+   which is forwarded by the :meth:`visit` method.
 
    This class is meant to be subclassed, with the subclass adding visitor
    methods.
@@ -207,11 +207,11 @@ and classes for traversing abstract syntax trees:
    A :class:`NodeVisitor` subclass that walks the abstract syntax tree and
    allows modification of nodes.
 
-   The `NodeTransformer` will walk the AST and use the return value of the
-   visitor methods to replace or remove the old node.  If the return value of
-   the visitor method is ``None``, the node will be removed from its location,
-   otherwise it is replaced with the return value.  The return value may be the
-   original node in which case no replacement takes place.
+   The :class:`NodeTransformer` will walk the AST and use the return value of
+   the visitor methods to replace or remove the old node.  If the return value
+   of the visitor method is ``None``, the node will be removed from its
+   location, otherwise it is replaced with the return value.  The return value
+   may be the original node in which case no replacement takes place.
 
    Here is an example transformer that rewrites all occurrences of name lookups
    (``foo``) to ``data['foo']``::
