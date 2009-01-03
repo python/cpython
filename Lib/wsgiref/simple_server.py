@@ -111,8 +111,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         if length:
             env['CONTENT_LENGTH'] = length
 
-        for h in self.headers:
-            k,v = h.split(':',1)
+        for k, v in self.headers.items():
             k=k.replace('-','_').upper(); v=v.strip()
             if k in env:
                 continue                    # skip content length, type,etc.
@@ -168,11 +167,11 @@ def demo_app(environ,start_response):
     stdout = StringIO()
     print("Hello world!", file=stdout)
     print(file=stdout)
-    h = environ.items(); h.sort()
+    h = sorted(environ.items())
     for k,v in h:
         print(k,'=',repr(v), file=stdout)
-    start_response("200 OK", [('Content-Type','text/plain')])
-    return [stdout.getvalue()]
+    start_response(b"200 OK", [(b'Content-Type',b'text/plain; charset=utf-8')])
+    return [stdout.getvalue().encode("utf-8")]
 
 
 def make_server(
