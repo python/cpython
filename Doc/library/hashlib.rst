@@ -64,7 +64,7 @@ spammish repetition'``::
 More condensed:
 
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   b'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
 
 A generic :func:`new` constructor that takes the string name of the desired
 algorithm as its first parameter also exists to allow access to the above listed
@@ -76,7 +76,7 @@ Using :func:`new` with an algorithm provided by OpenSSL:
    >>> h = hashlib.new('ripemd160')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   b'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+   'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
 
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:

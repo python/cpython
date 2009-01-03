@@ -173,6 +173,8 @@ This module also defines four shortcut functions:
       >>> subprocess.getstatusoutput('/bin/junk')
       (256, 'sh: /bin/junk: not found')
 
+   Availability: UNIX.
+
 
 .. function:: getoutput(cmd)
    Return output ``(stdout or stderr)`` of executing *cmd* in a shell.
@@ -183,6 +185,8 @@ This module also defines four shortcut functions:
       >>> import subprocess
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
+
+   Availability: UNIX.
 
 
 Exceptions
