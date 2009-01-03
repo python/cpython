@@ -40,7 +40,7 @@ directives = [
 
 all_directives = '(' + '|'.join(directives) + ')'
 seems_directive_re = re.compile(r'\.\. %s([^a-z:]|:(?!:))' % all_directives)
-
+default_role_re = re.compile(r'(^| )`\w([^`]*?\w)?`($| )')
 leaked_markup_re = re.compile(r'[a-z]::[^=]|:[a-z]+:|`|\.\.\s*\w+:')
 
 
@@ -65,7 +65,8 @@ def check_syntax(fn, lines):
     try:
         code = ''.join(lines)
         if '\r' in code:
-            yield 0, '\\r in code file'
+            if os.name != 'nt':
+                yield 0, '\\r in code file'
             code = code.replace('\r', '')
         compile(code, fn, 'exec')
     except SyntaxError, err:
@@ -75,9 +76,16 @@ def check_syntax(fn, lines):
 @checker('.rst', severity=2)
 def check_suspicious_constructs(fn, lines):
     """Check for suspicious reST constructs."""
+    inprod = False
     for lno, line in enumerate(lines):
         if seems_directive_re.match(line):
             yield lno+1, 'comment seems to be intended as a directive'
+        if '.. productionlist::' in line:
+            inprod = True
+        elif not inprod and default_role_re.search(line):
+            yield lno+1, 'default role used'
+        elif inprod and not line.strip():
+            inprod = False
 
 
 @checker('.py', '.rst')
