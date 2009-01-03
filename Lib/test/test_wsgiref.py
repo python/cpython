@@ -182,9 +182,10 @@ class IntegrationTests(TestCase):
             return [b"data"]
         out, err = run_amock(validator(app))
         self.failUnless(err.endswith('"GET / HTTP/1.0" 200 4\n'))
+        ver = sys.version.split()[0].encode('ascii')
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.1 Python/3.1a0\r\n"
+                b"Server: WSGIServer/0.1 Python/" + ver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
