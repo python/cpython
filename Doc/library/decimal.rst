@@ -1033,7 +1033,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    .. method:: create_decimal_from_float(f)
 
       Creates a new Decimal instance from a float *f* but rounding using *self*
-      as the context.  Unlike the :method:`Decimal.from_float` class method,
+      as the context.  Unlike the :meth:`Decimal.from_float` class method,
       the context precision, rounding method, flags, and traps are applied to
       the conversion.
 
