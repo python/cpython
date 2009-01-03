@@ -4085,6 +4085,12 @@ _ACEOF
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
 	  RUNSHARED=DLL_PATH=`pwd`:${DLL_PATH:-/atheos/sys/libs:/atheos/autolnk/lib}
 	  ;;
+    Darwin*)
+    	LDLIBRARY='libpython$(VERSION).dylib'
+	BLDLIBRARY='-L. -lpython$(VERSION)'
+	RUNSHARED='DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}'
+	;;
+
   esac
 else # shared is disabled
   case $ac_sys_system in
@@ -12915,6 +12921,7 @@ fi
 { echo "$as_me:$LINENO: result: $SO" >&5
 echo "${ECHO_T}$SO" >&6; }
 
+
 cat >>confdefs.h <<_ACEOF
 #define SHLIB_EXT "$SO"
 _ACEOF
@@ -13311,7 +13318,7 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# only check for sem_ini if thread support is requested
+# only check for sem_init if thread support is requested
 if test "$with_threads" = "yes" -o -z "$with_threads"; then
     { echo "$as_me:$LINENO: checking for library containing sem_init" >&5
 echo $ECHO_N "checking for library containing sem_init... $ECHO_C" >&6; }
