@@ -281,7 +281,7 @@ write the following to do it::
    # containing the substring S.
    sublist = filter( lambda s, substring=S:
                         string.find(s, substring) != -1,
-   	          L)
+                     L)
 
 Because of Python's scoping rules, a default argument is used so that the
 anonymous function created by the :keyword:`lambda` statement knows what
@@ -293,7 +293,7 @@ List comprehensions have the form::
 
    [ expression for expr in sequence1
                 for expr2 in sequence2 ...
-   	     for exprN in sequenceN
+                for exprN in sequenceN
                 if condition ]
 
 The :keyword:`for`...\ :keyword:`in` clauses contain the sequences to be
@@ -368,7 +368,7 @@ instance with an incremented value.
        def __init__(self, value):
            self.value = value
        def __iadd__(self, increment):
-   	return Number( self.value + increment)
+           return Number( self.value + increment)
 
    n = Number(5)
    n += 3
@@ -852,13 +852,12 @@ the PyXML package::
    from distutils.core import setup, Extension
 
    expat_extension = Extension('xml.parsers.pyexpat',
-   	define_macros = [('XML_NS', None)],
-   	include_dirs = [ 'extensions/expat/xmltok',
-   	                 'extensions/expat/xmlparse' ],
-   	sources = [ 'extensions/pyexpat.c',
-   	            'extensions/expat/xmltok/xmltok.c',
-    		    'extensions/expat/xmltok/xmlrole.c',
-                     ]
+        define_macros = [('XML_NS', None)],
+        include_dirs = [ 'extensions/expat/xmltok',
+                         'extensions/expat/xmlparse' ],
+        sources = [ 'extensions/pyexpat.c',
+                    'extensions/expat/xmltok/xmltok.c',
+                    'extensions/expat/xmltok/xmlrole.c', ]
           )
    setup (name = "PyXML", version = "0.5.4",
           ext_modules =[ expat_extension ] )
