@@ -49,14 +49,14 @@ The numeric tower
    :func:`round`, :func:`math.floor`, :func:`math.ceil`, :func:`divmod`, ``//``,
    ``%``, ``<``, ``<=``, ``>``, and ``>=``.
 
-   Real also provides defaults for :func:`complex`, :attr:`Complex.real`,
-   :attr:`Complex.imag`, and :meth:`Complex.conjugate`.
+   Real also provides defaults for :func:`complex`, :attr:`~Complex.real`,
+   :attr:`~Complex.imag`, and :meth:`~Complex.conjugate`.
 
 
 .. class:: Rational
 
    Subtypes :class:`Real` and adds
-   :attr:`Rational.numerator` and :attr:`Rational.denominator` properties, which
+   :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
    should be in lowest terms. With these, it provides a default for
    :func:`float`.
 
@@ -72,8 +72,8 @@ The numeric tower
 .. class:: Integral
 
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.
-   Provides defaults for :func:`float`, :attr:`Rational.numerator`, and
-   :attr:`Rational.denominator`, and bit-string operations: ``<<``,
+   Provides defaults for :func:`float`, :attr:`~Rational.numerator`, and
+   :attr:`~Rational.denominator`, and bit-string operations: ``<<``,
    ``>>``, ``&``, ``^``, ``|``, ``~``.
 
 
@@ -169,7 +169,7 @@ Complex``. I'll consider ``a + b``:
        knowledge of ``A``, so it can handle those instances before
        delegating to :class:`Complex`.
 
-If ``A<:Complex`` and ``B<:Real`` without sharing any other knowledge,
+If ``A <: Complex`` and ``B <: Real`` without sharing any other knowledge,
 then the appropriate shared operation is the one involving the built
 in :class:`complex`, and both :meth:`__radd__` s land there, so ``a+b
 == b+a``.

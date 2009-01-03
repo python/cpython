@@ -53,8 +53,9 @@ variable(s) whose address should be passed.
    string may contain embedded null bytes.  Unicode objects pass back a pointer
    to the default encoded string version of the object if such a conversion is
    possible.  All other read-buffer compatible objects pass back a reference to
-   the raw internal data representation.  Since this format doesn't allow writable buffer compatible objects like byte
-   arrays, ``s*`` is to be preferred.
+   the raw internal data representation.  Since this format doesn't allow
+   writable buffer compatible objects like byte arrays, ``s*`` is to be
+   preferred.
 
    The type of the length argument (int or :ctype:`Py_ssize_t`) is controlled by
    defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before including
