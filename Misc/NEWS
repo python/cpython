@@ -82,6 +82,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3638: Remove functions from _tkinter module level that depend on
+  TkappObject to work with multiple threads.
+
 - Issue #4718: Adapt the wsgiref package so that it actually works with 
   Python 3.x, in accordance with the `official amendments of the spec 
   <http://www.wsgi.org/wsgi/Amendments_1.0>`_.
