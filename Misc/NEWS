@@ -127,6 +127,12 @@ Library
 - Issue #4646: distutils was choking on empty options arg in the setup 
   function. Original patch by Thomas Heller.
 
+- Fractions.from_float() no longer loses precision for integers too big to
+  cast as floats.
+
+- Issue 4790: The nsmallest() and nlargest() functions in the heapq module
+  did unnecessary work in the common case where no key function was specified.
+
 - Issue #3767: Convert Tk object to string in tkColorChooser.
 
 - Issue #3248: Allow placing ScrolledText in a PanedWindow.

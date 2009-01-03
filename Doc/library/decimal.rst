@@ -1923,13 +1923,14 @@ suggest, so we trap :const:`Inexact` to signal a need for more precision:
     def float_to_decimal(f):
         "Convert a floating point number to a Decimal with no loss of information"
         n, d = f.as_integer_ratio()
-        with localcontext() as ctx:
-            ctx.traps[Inexact] = True
-            while True:
-                try:
-                   return Decimal(n) / Decimal(d)
-                except Inexact:
-                    ctx.prec += 1
+        numerator, denominator = Decimal(n), Decimal(d)
+        ctx = Context(prec=60)
+        result = ctx.divide(numerator, denominator)
+        while ctx.flags[Inexact]:
+            ctx.flags[Inexact] = False
+            ctx.prec *= 2
+            result = ctx.divide(numerator, denominator)
+        return result
 
 .. doctest::
 
