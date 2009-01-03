@@ -1073,10 +1073,71 @@ class Test_long(FixerTestCase):
         a = """z = type(x) in (int, int)"""
         self.check(b, a)
 
+    def test_unchanged(self):
+        s = """long = True"""
+        self.unchanged(s)
+
+        s = """s.long = True"""
+        self.unchanged(s)
+
+        s = """def long(): pass"""
+        self.unchanged(s)
+
+        s = """class long(): pass"""
+        self.unchanged(s)
+
+        s = """def f(long): pass"""
+        self.unchanged(s)
+
+        s = """def f(g, long): pass"""
+        self.unchanged(s)
+
+        s = """def f(x, long=True): pass"""
+        self.unchanged(s)
+
     def test_prefix_preservation(self):
         b = """x =   long(  x  )"""
         a = """x =   int(  x  )"""
         self.check(b, a)
+
+
+class Test_execfile(FixerTestCase):
+    fixer = "execfile"
+
+    def test_conversion(self):
+        b = """execfile("fn")"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'))"""
+        self.check(b, a)
+
+        b = """execfile("fn", glob)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'), glob)"""
+        self.check(b, a)
+
+        b = """execfile("fn", glob, loc)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'), glob, loc)"""
+        self.check(b, a)
+
+        b = """execfile("fn", globals=glob)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'), globals=glob)"""
+        self.check(b, a)
+
+        b = """execfile("fn", locals=loc)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'), locals=loc)"""
+        self.check(b, a)
+
+        b = """execfile("fn", globals=glob, locals=loc)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'), globals=glob, locals=loc)"""
+        self.check(b, a)
+
+    def test_spacing(self):
+        b = """execfile( "fn" )"""
+        a = """exec(compile(open( "fn" ).read(), "fn", 'exec'))"""
+        self.check(b, a)
+
+        b = """execfile("fn",  globals = glob)"""
+        a = """exec(compile(open("fn").read(), "fn", 'exec'),  globals = glob)"""
+        self.check(b, a)
+
 
 class Test_isinstance(FixerTestCase):
     fixer = "isinstance"
@@ -3466,10 +3527,29 @@ class Test_import(FixerTestCase):
         a = "from . import foo, bar"
         self.check_both(b, a)
 
+        b = "import foo, bar, x"
+        a = "from . import foo, bar, x"
+        self.check_both(b, a)
+
+        b = "import x, y, z"
+        a = "from . import x, y, z"
+        self.check_both(b, a)
+
     def test_import_as(self):
         b = "import foo as x"
         a = "from . import foo as x"
         self.check_both(b, a)
+
+        b = "import a as b, b as c, c as d"
+        a = "from . import a as b, b as c, c as d"
+        self.check_both(b, a)
+
+    def test_local_and_absolute(self):
+        self.always_exists = False
+        self.present_files = set(["foo.py", "__init__.py"])
+
+        s = "import foo, bar"
+        self.warns_unchanged(s, "absolute and local imports together")
 
     def test_dotted_import(self):
         b = "import foo.bar"
