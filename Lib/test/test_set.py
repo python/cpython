@@ -324,7 +324,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(d3, dict.fromkeys(d, 123))
 
     def test_container_iterator(self):
-        # Bug # XXX: tp_traverse was not implemented for set iterator object
+        # Bug #3680: tp_traverse was not implemented for set iterator object
         class C(object):
             pass
         obj = C()

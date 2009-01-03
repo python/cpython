@@ -586,30 +586,30 @@ multiple of 4.
 
 
     def factorial(queue, N):
-	"Compute a factorial."
-	# If N is a multiple of 4, this function will take much longer.
-	if (N % 4) == 0:
-	    time.sleep(.05 * N/4)
+        "Compute a factorial."
+        # If N is a multiple of 4, this function will take much longer.
+        if (N % 4) == 0:
+            time.sleep(.05 * N/4)
 
-	# Calculate the result
-	fact = 1L
-	for i in range(1, N+1):
-	    fact = fact * i
+        # Calculate the result
+        fact = 1L
+        for i in range(1, N+1):
+            fact = fact * i
 
-	# Put the result on the queue
-	queue.put(fact)
+        # Put the result on the queue
+        queue.put(fact)
 
     if __name__ == '__main__':
-	queue = Queue()
+        queue = Queue()
 
-	N = 5
+        N = 5
 
-	p = Process(target=factorial, args=(queue, N))
-	p.start()
-	p.join()
+        p = Process(target=factorial, args=(queue, N))
+        p.start()
+        p.join()
 
-	result = queue.get()
-	print 'Factorial', N, '=', result
+        result = queue.get()
+        print 'Factorial', N, '=', result
 
 A :class:`Queue` is used to communicate the input parameter *N* and
 the result.  The :class:`Queue` object is stored in a global variable.
@@ -630,12 +630,12 @@ across 5 worker processes and retrieve a list of results::
     from multiprocessing import Pool
 
     def factorial(N, dictionary):
-	"Compute a factorial."
-	...
+        "Compute a factorial."
+        ...
     p = Pool(5)
     result = p.map(factorial, range(1, 1000, 10))
     for v in result:
-	print v
+        print v
 
 This produces the following output::
 
@@ -744,7 +744,7 @@ supply compound field names that read attributes or access dictionary keys::
     >>> import sys
     >>> print 'Platform: {0.platform}\nPython version: {0.version}'.format(sys)
     Platform: darwin
-    Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41) 
+    Python version: 2.6a1+ (trunk:61261M, Mar  5 2008, 20:29:41)
     [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
 
     >>> import mimetypes
@@ -958,8 +958,8 @@ representing ``ABC``; in 2.6, ``bytes([65, 66, 67])`` returns the
 The primary use of :class:`bytes` in 2.6 will be to write tests of
 object type such as ``isinstance(x, bytes)``.  This will help the 2to3
 converter, which can't tell whether 2.x code intends strings to
-contain either characters or 8-bit bytes; you can now 
-use either :class:`bytes` or :class:`str` to represent your intention 
+contain either characters or 8-bit bytes; you can now
+use either :class:`bytes` or :class:`str` to represent your intention
 exactly, and the resulting code will also be correct in Python 3.0.
 
 There's also a ``__future__`` import that causes all string literals
@@ -1834,9 +1834,9 @@ changes, or look through the Subversion logs for all the details.
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
 
-  The :func:`parse_qs` and :func:`parse_qsl` functions have been 
+  The :func:`parse_qs` and :func:`parse_qsl` functions have been
   relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
-  The versions still available in the :mod:`cgi` module will 
+  The versions still available in the :mod:`cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -1885,9 +1885,9 @@ changes, or look through the Subversion logs for all the details.
      ('id', 'name', 'type', 'size')
 
      >>> var = var_type(1, 'frequency', 'int', 4)
-     >>> print var[0], var.id		# Equivalent
+     >>> print var[0], var.id    # Equivalent
      1 1
-     >>> print var[2], var.type          # Equivalent
+     >>> print var[2], var.type  # Equivalent
      int int
      >>> var._asdict()
      {'size': 4, 'type': 'int', 'id': 1, 'name': 'frequency'}
@@ -1931,7 +1931,7 @@ changes, or look through the Subversion logs for all the details.
 * A new window method in the :mod:`curses` module,
   :meth:`chgat`, changes the display attributes for a certain number of
   characters on a single line.  (Contributed by Fabian Kreutz.)
-  
+
   ::
 
      # Boldface text starting at y=0,x=21
@@ -2046,8 +2046,8 @@ changes, or look through the Subversion logs for all the details.
 
      >>> list(itertools.product([1,2,3], [4,5,6]))
      [(1, 4), (1, 5), (1, 6),
-	  (2, 4), (2, 5), (2, 6),
-	  (3, 4), (3, 5), (3, 6)]
+      (2, 4), (2, 5), (2, 6),
+      (3, 4), (3, 5), (3, 6)]
 
   The optional *repeat* keyword argument is used for taking the
   product of an iterable or a set of iterables with themselves,
@@ -2428,9 +2428,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`742598`, :issue:`1193577`.)
 
 * The :mod:`sqlite3` module, maintained by Gerhard Haering,
-  has been updated from version 2.3.2 in Python 2.5 to 
+  has been updated from version 2.3.2 in Python 2.5 to
   version 2.4.1.
- 
+
 * The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
@@ -2525,9 +2525,9 @@ changes, or look through the Subversion logs for all the details.
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
   (Contributed by Alexander Belopolsky; :issue:`2021`.)
 
-* The :mod:`test.test_support` module gained a number 
-  of context managers useful for writing tests. 
-  :func:`EnvironmentVarGuard` is a 
+* The :mod:`test.test_support` module gained a number
+  of context managers useful for writing tests.
+  :func:`EnvironmentVarGuard` is a
   context manager that temporarily changes environment variables and
   automatically restores them to their old values.
 
@@ -2542,7 +2542,7 @@ changes, or look through the Subversion logs for all the details.
           f = urllib.urlopen('https://sf.net')
           ...
 
-  Finally, :func:`check_warnings` resets the :mod:`warning` module's 
+  Finally, :func:`check_warnings` resets the :mod:`warning` module's
   warning filters and returns an object that will record all warning
   messages triggered (:issue:`3781`)::
 
@@ -2582,7 +2582,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`activeCount` method is renamed to :meth:`active_count`.  Both
   the 2.6 and 3.0 versions of the module support the same properties
   and renamed methods, but don't remove the old methods.  No date has been set
-  for the deprecation of the old APIs in Python 3.x; the old APIs won't 
+  for the deprecation of the old APIs in Python 3.x; the old APIs won't
   be removed in any 2.x version.
   (Carried out by several people, most notably Benjamin Peterson.)
 
@@ -2639,7 +2639,7 @@ changes, or look through the Subversion logs for all the details.
   (Added by Facundo Batista.)
 
 * The Unicode database provided by the :mod:`unicodedata` module
-  has been updated to version 5.1.0.  (Updated by 
+  has been updated to version 5.1.0.  (Updated by
   Martin von Loewis; :issue:`3811`.)
 
 * The :mod:`warnings` module's :func:`formatwarning` and :func:`showwarning`
@@ -2650,7 +2650,7 @@ changes, or look through the Subversion logs for all the details.
   A new function, :func:`catch_warnings`, is a context manager
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
-  
+
 * The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
   their socket by passing True as the ``bind_and_activate``
@@ -3220,8 +3220,8 @@ that may require changes to your code:
 
 * :meth:`object.__init__` previously accepted arbitrary arguments and
   keyword arguments, ignoring them.  In Python 2.6, this is no longer
-  allowed and will result in a :exc:`TypeError`.  This will affect 
-  :meth:`__init__` methods that end up calling the corresponding 
+  allowed and will result in a :exc:`TypeError`.  This will affect
+  :meth:`__init__` methods that end up calling the corresponding
   method on :class:`object` (perhaps through using :func:`super`).
   See :issue:`1683368` for discussion.
 
@@ -3281,7 +3281,7 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Georg Brandl, Steve Brown, Nick Coghlan, Ralph Corderoy, 
-Jim Jewett, Kent Johnson, Chris Lambacher,  Martin Michlmayr, 
+article: Georg Brandl, Steve Brown, Nick Coghlan, Ralph Corderoy,
+Jim Jewett, Kent Johnson, Chris Lambacher,  Martin Michlmayr,
 Antoine Pitrou, Brian Warner.
 

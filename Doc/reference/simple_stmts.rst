@@ -745,7 +745,7 @@ up to the last dot is used to find a "package"; the final identifier is then
 searched inside the package.  A package is generally a subdirectory of a
 directory on ``sys.path`` that has a file :file:`__init__.py`.
 
-.. 
+..
    [XXX Can't be
    bothered to spell this out right now; see the URL
    http://www.python.org/doc/essays/packages.html for more details, also about how

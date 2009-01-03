@@ -573,7 +573,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
         del d
 
 def _process_Nav_args(dftflags, **args):
-    import aepack
+    import Carbon.AppleEvents
     import Carbon.AE
     import Carbon.File
     for k in args.keys():
@@ -585,11 +585,14 @@ def _process_Nav_args(dftflags, **args):
     if args.has_key('defaultLocation') and \
             not isinstance(args['defaultLocation'], Carbon.AE.AEDesc):
         defaultLocation = args['defaultLocation']
-        if isinstance(defaultLocation, (Carbon.File.FSSpec, Carbon.File.FSRef)):
-            args['defaultLocation'] = aepack.pack(defaultLocation)
+        if isinstance(defaultLocation, Carbon.File.FSSpec):
+            args['defaultLocation'] = Carbon.AE.AECreateDesc(
+                    Carbon.AppleEvents.typeFSS, defaultLocation.data)
         else:
-            defaultLocation = Carbon.File.FSRef(defaultLocation)
-            args['defaultLocation'] = aepack.pack(defaultLocation)
+            if not isinstance(defaultLocation, Carbon.File.FSRef):
+                defaultLocation = Carbon.File.FSRef(defaultLocation)
+            args['defaultLocation'] = Carbon.AE.AECreateDesc(
+                    Carbon.AppleEvents.typeFSRef, defaultLocation.data)
     if args.has_key('typeList') and not isinstance(args['typeList'], Carbon.Res.ResourceType):
         typeList = args['typeList'][:]
         # Workaround for OSX typeless files:

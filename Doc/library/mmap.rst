@@ -93,7 +93,7 @@ memory but does not update the underlying file.
    will be relative to the offset from the beginning of the file. *offset*
    defaults to 0.  *offset* must be a multiple of the PAGESIZE or
    ALLOCATIONGRANULARITY.
-   
+
    This example shows a simple way of using :class:`mmap`::
 
       import mmap

@@ -284,7 +284,7 @@ perform some *action*.  In C, you'd express this as someAction(fred,
 someOptions), in C++, you would express this as fred.someAction(someOptions),
 and in Tk, you say::
 
-   .fred someAction someOptions 
+   .fred someAction someOptions
 
 Note that the object name, ``.fred``, starts with a dot.
 
@@ -490,7 +490,7 @@ Packer Options
 For more extensive information on the packer and the options that it can take,
 see the man pages and page 183 of John Ousterhout's book.
 
-anchor 
+anchor
    Anchor type.  Denotes where the packer is to place each slave in its parcel.
 
 expand
@@ -720,7 +720,7 @@ event.  The following table lists the other event fields you can access, and how
 they are denoted in Tk, which can be useful when referring to the Tk man pages.
 ::
 
-   Tk      Tkinter Event Field             Tk      Tkinter Event Field 
+   Tk      Tkinter Event Field             Tk      Tkinter Event Field
    --      -------------------             --      -------------------
    %f      focus                           %A      char
    %h      height                          %E      send_event

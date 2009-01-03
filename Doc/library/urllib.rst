@@ -123,7 +123,7 @@ High-level interface
    .. versionchanged:: 2.6
       Added :meth:`getcode` to returned object and support for the
       :envvar:`no_proxy` environment variable.
-      
+
    .. deprecated:: 2.6
       The :func:`urlopen` function has been removed in Python 3.0 in favor
       of :func:`urllib2.urlopen`.

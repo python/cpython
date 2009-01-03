@@ -18,26 +18,26 @@ the standard audio interface for Linux and recent versions of FreeBSD.
    use ALSA, you'll have to make sure its OSS compatibility layer
    is active to use ossaudiodev, but you're gonna need it for the vast
    majority of Linux audio apps anyways.
-   
+
    Sounds like things are also complicated for other BSDs.  In response
    to my python-dev query, Thomas Wouters said:
-   
+
    > Likewise, googling shows OpenBSD also uses OSS/Free -- the commercial
    > OSS installation manual tells you to remove references to OSS/Free from the
    > kernel :)
-   
+
    but Aleksander Piotrowsk actually has an OpenBSD box, and he quotes
    from its <soundcard.h>:
    >  * WARNING!  WARNING!
    >  * This is an OSS (Linux) audio emulator.
    >  * Use the Native NetBSD API for developing new code, and this
    >  * only for compiling Linux programs.
-   
+
    There's also an ossaudio manpage on OpenBSD that explains things
    further.  Presumably NetBSD and OpenBSD have a different standard
    audio interface.  That's the great thing about standards, there are so
    many to choose from ... ;-)
-   
+
    This probably all warrants a footnote or two, but I don't understand
    things well enough right now to write it!   --GPW
 

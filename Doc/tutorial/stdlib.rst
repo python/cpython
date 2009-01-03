@@ -136,7 +136,7 @@ The :mod:`random` module provides tools for making random selections::
    >>> random.random()    # random float
    0.17970987693706186
    >>> random.randrange(6)    # random integer chosen from range(6)
-   4   
+   4
 
 
 .. _tut-internet-access:

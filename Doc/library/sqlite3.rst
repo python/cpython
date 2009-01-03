@@ -244,7 +244,7 @@ Connection Objects
 
 .. method:: Connection.rollback()
 
-   This method rolls back any changes to the database since the last call to 
+   This method rolls back any changes to the database since the last call to
    :meth:`commit`.
 
 .. method:: Connection.close()
@@ -487,29 +487,29 @@ Cursor Objects
    .. literalinclude:: ../includes/sqlite3/executescript.py
 
 
-.. method:: Cursor.fetchone() 
-          
+.. method:: Cursor.fetchone()
+
    Fetches the next row of a query result set, returning a single sequence,
    or :const:`None` when no more data is available.
 
 
 .. method:: Cursor.fetchmany([size=cursor.arraysize])
-          
+
    Fetches the next set of rows of a query result, returning a list.  An empty
    list is returned when no more rows are available.
-   
+
    The number of rows to fetch per call is specified by the *size* parameter.
    If it is not given, the cursor's arraysize determines the number of rows
    to be fetched. The method should try to fetch as many rows as indicated by
    the size parameter. If this is not possible due to the specified number of
    rows not being available, fewer rows may be returned.
-   
+
    Note there are performance considerations involved with the *size* parameter.
    For optimal performance, it is usually best to use the arraysize attribute.
    If the *size* parameter is used, then it is best for it to retain the same
    value from one :meth:`fetchmany` call to the next.
-            
-.. method:: Cursor.fetchall() 
+
+.. method:: Cursor.fetchall()
 
    Fetches all (remaining) rows of a query result, returning a list.  Note that
    the cursor's arraysize attribute can affect the performance of this operation.
@@ -546,8 +546,8 @@ Cursor Objects
 
    This read-only attribute provides the column names of the last query. To
    remain compatible with the Python DB API, it returns a 7-tuple for each
-   column where the last six items of each tuple are :const:`None`. 
-   
+   column where the last six items of each tuple are :const:`None`.
+
    It is set for ``SELECT`` statements without any matching rows as well.
 
 .. _sqlite3-row-objects:
@@ -558,7 +558,7 @@ Row Objects
 .. class:: Row
 
    A :class:`Row` instance serves as a highly optimized
-   :attr:`~Connection.row_factory` for :class:`Connection` objects. 
+   :attr:`~Connection.row_factory` for :class:`Connection` objects.
    It tries to mimic a tuple in most of its features.
 
    It supports mapping access by column name and index, iteration,
@@ -566,7 +566,7 @@ Row Objects
 
    If two :class:`Row` objects have exactly the same columns and their
    members are equal, they compare equal.
-   
+
    .. versionchanged:: 2.6
       Added iteration and equality (hashability).
 
@@ -793,7 +793,7 @@ Controlling Transactions
 ------------------------
 
 By default, the :mod:`sqlite3` module opens transactions implicitly before a
-Data Modification Language (DML)  statement (i.e. 
+Data Modification Language (DML)  statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``), and commits transactions
 implicitly before a non-DML, non-query statement (i. e.
 anything other than ``SELECT`` or the aforementioned).

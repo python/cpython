@@ -164,11 +164,11 @@ The module defines the following user-callable functions:
 
    .. warning::
 
-      Use of this function may introduce a security hole in your program.
-      By the time you get around to doing anything with the file name it
-      returns, someone else may have beaten you to the punch.
-      :func:`mktemp` usage can be replaced easily with
-      :func:`NamedTemporaryFile`, passing it the  `delete=False` parameter::
+      Use of this function may introduce a security hole in your program.  By
+      the time you get around to doing anything with the file name it returns,
+      someone else may have beaten you to the punch.  :func:`mktemp` usage can
+      be replaced easily with :func:`NamedTemporaryFile`, passing it the
+      ``delete=False`` parameter::
 
          >>> f = NamedTemporaryFile(delete=False)
          >>> f

@@ -402,7 +402,7 @@ always available.
 
    The *default* argument allows to define a value which will be returned
    if the object type does not provide means to retrieve the size and would
-   cause a `TypeError`. 
+   cause a `TypeError`.
 
    func:`getsizeof` calls the object's __sizeof__ method and adds an additional
    garbage collector overhead if the object is managed by the garbage collector.
@@ -731,7 +731,7 @@ always available.
 
    The events have the following meaning:
 
-   ``'call'`` 
+   ``'call'``
       A function is called (or some other code block entered).  The
       global trace function is called; *arg* is ``None``; the return value
       specifies the local trace function.
@@ -799,7 +799,7 @@ always available.
    prompts of :func:`input` and :func:`raw_input`. The interpreter's own prompts
    and (almost all of) its error messages go to ``stderr``.  ``stdout`` and
    ``stderr`` needn't be built-in file objects: any object is acceptable as long
-   as it has a :meth:`write` method that takes a string argument.  (Changing these 
+   as it has a :meth:`write` method that takes a string argument.  (Changing these
    objects doesn't affect the standard I/O streams of processes executed by
    :func:`os.popen`, :func:`os.system` or the :func:`exec\*` family of functions in
    the :mod:`os` module.)

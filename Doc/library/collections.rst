@@ -53,36 +53,36 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
 :class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
-:class:`Sized`          			  ``__len__``
+:class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
-                                                  
+
 :class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``.
                            :class:`Iterable`,     and ``__len__``         ``index``, and ``count``
-                           :class:`Container`     
-                                                  
+                           :class:`Container`
+
 :class:`MutableSequence`   :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
                                                   ``insert``,             ``remove``, and ``__iadd__``
                                                   and ``__len__``
-                                                  
+
 :class:`Set`               :class:`Sized`,        ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,     ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
                            :class:`Container`     ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
-                                                  
+
 :class:`MutableSet`        :class:`Set`           ``add`` and             Inherited Set methods and
                                                   ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
                                                                           ``__iand__``, ``__ixor__``, and ``__isub__``
-                                                  
+
 :class:`Mapping`           :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
                            :class:`Iterable`,     ``__len__``. and        ``get``, ``__eq__``, and ``__ne__``
                            :class:`Container`     ``__iter__``
-                                                  
+
 :class:`MutableMapping`    :class:`Mapping`       ``__getitem__``         Inherited Mapping methods and
                                                   ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
                                                   ``__delitem__``,        and ``setdefault``
-						  ``__iter__``, and
+                                                  ``__iter__``, and
                                                   ``__len__``
-                                                  
+
 :class:`MappingView`       :class:`Sized`                                 ``__len__``
 :class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
                            :class:`Set`                                   ``__iter__``
@@ -96,7 +96,7 @@ particular functionality, for example::
 
     size = None
     if isinstance(myvar, collections.Sized):
-	size = len(myvar)
+        size = len(myvar)
 
 Several of the ABCs are also useful as mixins that make it easier to develop
 classes supporting container APIs.  For example, to write a class supporting
@@ -549,8 +549,8 @@ Example:
                if kwds:
                    raise ValueError('Got unexpected field names: %r' % kwds.keys())
                return result
-   <BLANKLINE>            
-           def __getnewargs__(self): 
+   <BLANKLINE>
+           def __getnewargs__(self):
                return tuple(self)
    <BLANKLINE>
            x = property(itemgetter(0))

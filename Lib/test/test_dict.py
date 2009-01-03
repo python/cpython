@@ -556,7 +556,7 @@ class DictTest(unittest.TestCase):
         d = {}
 
     def test_container_iterator(self):
-        # Bug # XXX: tp_traverse was not implemented for dictiter objects
+        # Bug #3680: tp_traverse was not implemented for dictiter objects
         class C(object):
             pass
         iterators = (dict.iteritems, dict.itervalues, dict.iterkeys)

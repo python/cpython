@@ -559,24 +559,24 @@ to create an instance from a repr, you must import the class names from the
    >>> import compiler
    >>> mod = compiler.parseFile("/tmp/doublelib.py")
    >>> mod
-   Module('This is an example module.\n\nThis is the docstring.\n', 
+   Module('This is an example module.\n\nThis is the docstring.\n',
           Stmt([Function(None, 'double', ['x'], [], 0,
-                         'Return twice the argument', 
+                         'Return twice the argument',
                          Stmt([Return(Mul((Name('x'), Const(2))))]))]))
    >>> from compiler.ast import *
-   >>> Module('This is an example module.\n\nThis is the docstring.\n', 
+   >>> Module('This is an example module.\n\nThis is the docstring.\n',
    ...    Stmt([Function(None, 'double', ['x'], [], 0,
-   ...                   'Return twice the argument', 
+   ...                   'Return twice the argument',
    ...                   Stmt([Return(Mul((Name('x'), Const(2))))]))]))
-   Module('This is an example module.\n\nThis is the docstring.\n', 
+   Module('This is an example module.\n\nThis is the docstring.\n',
           Stmt([Function(None, 'double', ['x'], [], 0,
-                         'Return twice the argument', 
+                         'Return twice the argument',
                          Stmt([Return(Mul((Name('x'), Const(2))))]))]))
    >>> mod.doc
    'This is an example module.\n\nThis is the docstring.\n'
    >>> for node in mod.node.nodes:
    ...     print node
-   ... 
+   ...
    Function(None, 'double', ['x'], [], 0, 'Return twice the argument',
             Stmt([Return(Mul((Name('x'), Const(2))))]))
    >>> func = mod.node.nodes[0]

@@ -548,8 +548,8 @@ Continuing with the parser defined above, adding an
 :class:`OptionGroup` to a parser is easy::
 
     group = OptionGroup(parser, "Dangerous Options",
-			"Caution: use these options at your own risk.  "
-			"It is believed that some of them bite.")
+                        "Caution: use these options at your own risk.  "
+                        "It is believed that some of them bite.")
     group.add_option("-g", action="store_true", help="Group option.")
     parser.add_option_group(group)
 
@@ -563,12 +563,12 @@ This would result in the following help output::
       -q, --quiet          be vewwy quiet (I'm hunting wabbits)
       -fFILE, --file=FILE  write output to FILE
       -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
-			   [default], 'expert'
+                           [default], 'expert'
 
       Dangerous Options:
-	Caution: use of these options is at your own risk.  It is believed that
-	some of them bite.
-	-g                 Group option.
+      Caution: use of these options is at your own risk.  It is believed that
+      some of them bite.
+      -g                 Group option.
 
 .. _optparse-printing-version-string:
 
@@ -799,7 +799,7 @@ And to define an option with only a long option string::
 The keyword arguments define attributes of the new Option object.  The most
 important option attribute is :attr:`action`, and it largely determines which
 other attributes are relevant or required.  If you pass irrelevant option
-attributes, or fail to pass required ones, :mod:`optparse` raises an 
+attributes, or fail to pass required ones, :mod:`optparse` raises an
 :exc:`OptionError` exception explaining your mistake.
 
 An option's *action* determines what :mod:`optparse` does when it encounters

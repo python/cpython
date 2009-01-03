@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.1  
+  What's New in Python 2.1
 ****************************
 
 :Author: A.M. Kuchling
@@ -98,7 +98,7 @@ To make the preceding explanation a bit clearer, here's an example::
    x = 1
    def f():
        # The next line is a syntax error
-       exec 'x=2'  
+       exec 'x=2'
        def g():
            return x
 

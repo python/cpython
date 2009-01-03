@@ -205,6 +205,69 @@ definition with the same method name.
    .. versionadded:: 2.4
 
 
+.. ctype:: PyMemberDef
+
+   Structure which describes an attribute of a type which corresponds to a C
+   struct member.  It's fields are:
+
+   +------------------+-------------+-------------------------------+
+   | Field            | C Type      | Meaning                       |
+   +==================+=============+===============================+
+   | :attr:`name`     | char \*     | name of the member            |
+   +------------------+-------------+-------------------------------+
+   | :attr:`type`     | int         | the type of the member in the |
+   |                  |             | C struct                      |
+   +------------------+-------------+-------------------------------+
+   | :attr:`offset`   | Py_ssize_t  | the offset in bytes that the  |
+   |                  |             | member is located on the      |
+   |                  |             | type's object struct          |
+   +------------------+-------------+-------------------------------+
+   | :attr:`flags`    | int         | flag bits indicating if the   |
+   |                  |             | field should be read-only or  |
+   |                  |             | writable                      |
+   +------------------+-------------+-------------------------------+
+   | :attr:`doc`      | char \*     | points to the contents of the |
+   |                  |             | docstring                     |
+   +------------------+-------------+-------------------------------+
+
+   :attr:`type` can be one of many ``T_`` macros corresponding to various C
+   types.  When the member is accessed in Python, it will be converted to the
+   equivalent Python type.
+
+   =============== ==================
+   Macro name      C type
+   =============== ==================
+   T_SHORT         short
+   T_INT           int
+   T_LONG          long
+   T_FLOAT         float
+   T_DOUBLE        double
+   T_STRING        char \*
+   T_OBJECT        PyObject \*
+   T_OBJECT_EX     PyObject \*
+   T_CHAR          char
+   T_BYTE          char
+   T_UNBYTE        unsigned char
+   T_UINT          unsigned int
+   T_USHORT        unsigned short
+   T_ULONG         unsigned long
+   T_BOOL          char
+   T_LONGLONG      long long
+   T_ULONGLONG     unsigned long long
+   T_PYSSIZET      Py_ssize_t
+   =============== ==================
+
+   :cmacro:`T_OBJECT` and :cmacro:`T_OBJECT_EX` differ in that
+   :cmacro:`T_OBJECT` returns ``None`` if the member is *NULL* and
+   :cmacro:`T_OBJECT_EX` raises an :exc:`AttributeError`.
+
+   :attr:`flags` can be 0 for write and read access or :cmacro:`READONLY` for
+   read-only access.  Using :cmacro:`T_STRING` for :attr:`type` implies
+   :cmacro:`READONLY`.  Only :cmacro:`T_OBJECT` and :cmacro:`T_OBJECT_EX` can be
+   deleted.  (They are set to *NULL*).
+
+
+
 .. cfunction:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
 
    Return a bound method object for an extension type implemented in C.  This can

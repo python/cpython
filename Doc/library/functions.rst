@@ -888,7 +888,7 @@ available.  They are listed here in alphabetical order.
    .. versionchanged:: 2.5
       Use *fget*'s docstring if no *doc* given.
 
-   .. versionchanged:: 2.6 
+   .. versionchanged:: 2.6
       The ``getter``, ``setter``, and ``deleter`` attributes were added.
 
 
@@ -1178,10 +1178,10 @@ available.  They are listed here in alphabetical order.
    single inheritance, "super" can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
    closely parallels the use of "super" in other programming languages.
-   
+
    The second use case is to support cooperative multiple inheritence in a
-   dynamic execution environment.  This use case is unique to Python and is 
-   not found in statically compiled languages or languages that only support 
+   dynamic execution environment.  This use case is unique to Python and is
+   not found in statically compiled languages or languages that only support
    single inheritance.  This makes in possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
    that this method have the same calling signature in every case (because the
@@ -1242,7 +1242,7 @@ available.  They are listed here in alphabetical order.
 
       >>> class X(object):
       ...     a = 1
-      ...     
+      ...
       >>> X = type('X', (object,), dict(a=1))
 
    .. versionadded:: 2.2
@@ -1397,7 +1397,7 @@ available.  They are listed here in alphabetical order.
 
    For example, the statement ``import spam`` results in bytecode resembling the
    following code::
-   
+
       spam = __import__('spam', globals(), locals(), [], -1)
 
    The statement ``import spam.ham`` results in this call::

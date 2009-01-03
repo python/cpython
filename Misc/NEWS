@@ -12,6 +12,11 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #4075: Use OutputDebugStringW in Py_FatalError.
+
+- Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
+  file with `str' filename on Windows.
+
 - Issue #3680: Reference cycles created through a dict, set or deque iterator
   did not get collected.
 
@@ -233,6 +238,14 @@ Library
 - Issue #4730: Fixed the cPickle module to handle correctly astral characters
   when protocol 0 is used.
 
+- Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
+
+- Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
+  module.
+
+- Issue #1149804: macostools.mkdirs now even works when another process
+  creates one of the needed subdirectories.
+
 Tools/Demos
 -----------
 
@@ -240,6 +253,8 @@ Tools/Demos
 
 Build
 -----
+
+- Issue #4472: "configure --enable-shared" now works on OSX
 
 - Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
 
@@ -272,6 +287,8 @@ C-API
 
 Extension Modules
 -----------------
+
+- Issue #4051: Prevent conflict of UNICODE macros in cPickle.
 
 - Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
 

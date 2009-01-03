@@ -5,7 +5,7 @@
 .. module:: imageop
    :synopsis: Manipulate raw image data.
    :deprecated:
-   
+
 .. deprecated:: 2.6
     The :mod:`imageop` module has been removed in Python 3.0.
 

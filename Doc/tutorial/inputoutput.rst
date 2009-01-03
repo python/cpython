@@ -87,7 +87,7 @@ Here are two ways to write a table of squares and cubes::
 
    >>> for x in range(1,11):
    ...     print '{0:2d} {1:3d} {2:4d}'.format(x, x*x, x*x*x)
-   ... 
+   ...
     1   1    1
     2   4    8
     3   9   27
@@ -148,7 +148,7 @@ Positional and keyword arguments can be arbitrarily combined::
    ...                                                    other='Georg')
    The story of Bill, Manfred, and Georg.
 
-An optional ``':``` and format specifier can follow the field name. This also
+An optional ``':'`` and format specifier can follow the field name. This also
 greater control over how the value is formatted.  The following example
 truncates the Pi to three places after the decimal.
 
@@ -162,7 +162,7 @@ number of characters wide.  This is useful for making tables pretty.::
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 7678}
    >>> for name, phone in table.items():
    ...     print '{0:10} ==> {1:10d}'.format(name, phone)
-   ... 
+   ...
    Jack       ==>       4098
    Dcab       ==>       7678
    Sjoerd     ==>       4127
@@ -330,7 +330,7 @@ beginning of the file as the reference point. ::
    >>> f = open('/tmp/workfile', 'r+')
    >>> f.write('0123456789abcdef')
    >>> f.seek(5)     # Go to the 6th byte in the file
-   >>> f.read(1)        
+   >>> f.read(1)
    '5'
    >>> f.seek(-3, 2) # Go to the 3rd byte before the end
    >>> f.read(1)

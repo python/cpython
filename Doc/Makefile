@@ -14,7 +14,7 @@ DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help checkout update build html htmlhelp clean coverage dist
+.PHONY: help checkout update build html htmlhelp clean coverage dist check
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -141,3 +141,5 @@ dist:
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
+check:
+	$(PYTHON) tools/rstlint.py -i tools
