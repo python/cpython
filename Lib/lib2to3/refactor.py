@@ -287,17 +287,13 @@ class RefactoringTool(object):
         Returns:
             True if the tree was modified, False otherwise.
         """
-        # Two calls to chain are required because pre_order.values()
-        #   will be a list of lists of fixers:
-        #   [[<fixer ...>, <fixer ...>], [<fixer ...>]]
-        all_fixers = chain(self.pre_order, self.post_order)
-        for fixer in all_fixers:
+        for fixer in chain(self.pre_order, self.post_order):
             fixer.start_tree(tree, name)
 
         self.traverse_by(self.pre_order_heads, tree.pre_order())
         self.traverse_by(self.post_order_heads, tree.post_order())
 
-        for fixer in all_fixers:
+        for fixer in chain(self.pre_order, self.post_order):
             fixer.finish_tree(tree, name)
         return tree.was_changed
 
