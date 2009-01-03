@@ -251,7 +251,7 @@ would evaluate to a tuple, it must be parenthesized. ::
    []
    >>> [[x,x**2] for x in vec]
    [[2, 4], [4, 16], [6, 36]]
-   >>> [x, x**2 for x in vec]	# error - parens required for tuples
+   >>> [x, x**2 for x in vec]  # error - parens required for tuples
      File "<stdin>", line 1, in ?
        [x, x**2 for x in vec]
                   ^

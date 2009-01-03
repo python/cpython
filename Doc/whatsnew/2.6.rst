@@ -586,30 +586,30 @@ multiple of 4.
 
 
     def factorial(queue, N):
-	"Compute a factorial."
-	# If N is a multiple of 4, this function will take much longer.
-	if (N % 4) == 0:
-	    time.sleep(.05 * N/4)
+        "Compute a factorial."
+        # If N is a multiple of 4, this function will take much longer.
+        if (N % 4) == 0:
+            time.sleep(.05 * N/4)
 
-	# Calculate the result
-	fact = 1L
-	for i in range(1, N+1):
-	    fact = fact * i
+        # Calculate the result
+        fact = 1L
+        for i in range(1, N+1):
+            fact = fact * i
 
-	# Put the result on the queue
-	queue.put(fact)
+        # Put the result on the queue
+        queue.put(fact)
 
     if __name__ == '__main__':
-	queue = Queue()
+        queue = Queue()
 
-	N = 5
+        N = 5
 
-	p = Process(target=factorial, args=(queue, N))
-	p.start()
-	p.join()
+        p = Process(target=factorial, args=(queue, N))
+        p.start()
+        p.join()
 
-	result = queue.get()
-	print 'Factorial', N, '=', result
+        result = queue.get()
+        print 'Factorial', N, '=', result
 
 A :class:`Queue` is used to communicate the input parameter *N* and
 the result.  The :class:`Queue` object is stored in a global variable.
@@ -630,12 +630,12 @@ across 5 worker processes and retrieve a list of results::
     from multiprocessing import Pool
 
     def factorial(N, dictionary):
-	"Compute a factorial."
-	...
+        "Compute a factorial."
+        ...
     p = Pool(5)
     result = p.map(factorial, range(1, 1000, 10))
     for v in result:
-	print v
+        print v
 
 This produces the following output::
 
@@ -1885,9 +1885,9 @@ changes, or look through the Subversion logs for all the details.
      ('id', 'name', 'type', 'size')
 
      >>> var = var_type(1, 'frequency', 'int', 4)
-     >>> print var[0], var.id		# Equivalent
+     >>> print var[0], var.id    # Equivalent
      1 1
-     >>> print var[2], var.type          # Equivalent
+     >>> print var[2], var.type  # Equivalent
      int int
      >>> var._asdict()
      {'size': 4, 'type': 'int', 'id': 1, 'name': 'frequency'}
@@ -2046,8 +2046,8 @@ changes, or look through the Subversion logs for all the details.
 
      >>> list(itertools.product([1,2,3], [4,5,6]))
      [(1, 4), (1, 5), (1, 6),
-	  (2, 4), (2, 5), (2, 6),
-	  (3, 4), (3, 5), (3, 6)]
+      (2, 4), (2, 5), (2, 6),
+      (3, 4), (3, 5), (3, 6)]
 
   The optional *repeat* keyword argument is used for taking the
   product of an iterable or a set of iterables with themselves,

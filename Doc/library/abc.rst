@@ -43,15 +43,15 @@ This module provides the following class:
       Register *subclass* as a "virtual subclass" of this ABC. For
       example::
 
-	from abc import ABCMeta
+        from abc import ABCMeta
 
-	class MyABC:
-	    __metaclass__ = ABCMeta
+        class MyABC:
+            __metaclass__ = ABCMeta
 
-	MyABC.register(tuple)
+        MyABC.register(tuple)
 
-	assert issubclass(tuple, MyABC)
-	assert isinstance((), MyABC)
+        assert issubclass(tuple, MyABC)
+        assert isinstance((), MyABC)
 
    You can also override this method in an abstract base class:
 

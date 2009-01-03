@@ -190,33 +190,33 @@ length message::
        '''
 
        def __init__(self, sock=None):
-   	if sock is None:
-   	    self.sock = socket.socket(
-   		socket.AF_INET, socket.SOCK_STREAM)
-   	else:
-   	    self.sock = sock
+           if sock is None:
+               self.sock = socket.socket(
+                   socket.AF_INET, socket.SOCK_STREAM)
+           else:
+               self.sock = sock
 
        def connect(self, host, port):
-   	self.sock.connect((host, port))
+           self.sock.connect((host, port))
 
        def mysend(self, msg):
-   	totalsent = 0
-   	while totalsent < MSGLEN:
-   	    sent = self.sock.send(msg[totalsent:])
-   	    if sent == 0:
-   		raise RuntimeError, \
-   		    "socket connection broken"
-   	    totalsent = totalsent + sent
+           totalsent = 0
+           while totalsent < MSGLEN:
+               sent = self.sock.send(msg[totalsent:])
+               if sent == 0:
+                   raise RuntimeError, \
+                       "socket connection broken"
+               totalsent = totalsent + sent
 
        def myreceive(self):
-   	msg = ''
-   	while len(msg) < MSGLEN:
-   	    chunk = self.sock.recv(MSGLEN-len(msg))
-   	    if chunk == '':
-   		raise RuntimeError, \
-   		    "socket connection broken"
-   	    msg = msg + chunk
-   	return msg
+           msg = ''
+           while len(msg) < MSGLEN:
+               chunk = self.sock.recv(MSGLEN-len(msg))
+               if chunk == '':
+                   raise RuntimeError, \
+                       "socket connection broken"
+               msg = msg + chunk
+           return msg
 
 The sending code here is usable for almost any messaging scheme - in Python you
 send strings, and you can use ``len()`` to determine its length (even if it has
