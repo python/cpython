@@ -73,7 +73,7 @@ class Headers:
 
         Does *not* raise an exception if the header is missing.
         """
-        name = name.lower()
+        name = self._convert_string_type(name.lower())
         self._headers[:] = [kv for kv in self._headers if kv[0].lower() != name]
 
     def __getitem__(self,name):
@@ -104,13 +104,13 @@ class Headers:
         fields deleted and re-inserted are always appended to the header list.
         If no fields exist with the given name, returns an empty list.
         """
-        name = name.lower()
+        name = self._convert_string_type(name.lower())
         return [kv[1] for kv in self._headers if kv[0].lower()==name]
 
 
     def get(self,name,default=None):
         """Get the first header value for 'name', or return 'default'"""
-        name = name.lower()
+        name = self._convert_string_type(name.lower())
         for k,v in self._headers:
             if k.lower()==name:
                 return v
