@@ -474,7 +474,7 @@ Decimal objects
           >>> Decimal.from_float(float('-inf'))
           Decimal('-Infinity')
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
    .. method:: fma(other, third[, context])
 
@@ -933,25 +933,25 @@ In addition to the three supplied contexts, new contexts can be created with the
       If the argument is a string, no leading or trailing whitespace is
       permitted.
 
-.. method:: create_decimal_from_float(f)
+   .. method:: create_decimal_from_float(f)
 
       Creates a new Decimal instance from a float *f* but rounding using *self*
-      as the context.  Unlike the :method:`Decimal.from_float` class method,
+      as the context.  Unlike the :meth:`Decimal.from_float` class method,
       the context precision, rounding method, flags, and traps are applied to
       the conversion.
 
       .. doctest::
 
-          >>> context = Context(prec=5, rounding=ROUND_DOWN)
-          >>> context.create_decimal_from_float(math.pi)
-          Decimal('3.1415')
-          >>> context = Context(prec=5, traps=[Inexact])
-          >>> context.create_decimal_from_float(math.pi)
-          Traceback (most recent call last):
-              ...
-          decimal.Inexact: None
+         >>> context = Context(prec=5, rounding=ROUND_DOWN)
+         >>> context.create_decimal_from_float(math.pi)
+         Decimal('3.1415')
+         >>> context = Context(prec=5, traps=[Inexact])
+         >>> context.create_decimal_from_float(math.pi)
+         Traceback (most recent call last):
+             ...
+         decimal.Inexact: None
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
    .. method:: Etiny()
 
