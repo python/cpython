@@ -289,7 +289,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`enumerate` is useful for obtaining an indexed series: ``(0, seq[0])``,
    ``(1, seq[1])``, ``(2, seq[2])``, .... For example:
 
-      >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter')]:
+      >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter']):
       ...     print(i, season)
       0 Spring
       1 Summer

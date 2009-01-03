@@ -634,7 +634,7 @@ features of generator expressions:
     ...     return s.upper()
 
 
-    >>> map(upper, ['sentence', 'fragment'])
+    >>> list(map(upper, ['sentence', 'fragment']))
     ['SENTENCE', 'FRAGMENT']
     >>> [upper(s) for s in ['sentence', 'fragment']]
     ['SENTENCE', 'FRAGMENT']
@@ -650,7 +650,7 @@ value.
     >>> def is_even(x):
     ...     return (x % 2) == 0
 
-    >>> filter(is_even, range(10))
+    >>> list(filter(is_even, range(10)))
     [0, 2, 4, 6, 8]
 
 

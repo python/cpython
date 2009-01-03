@@ -55,20 +55,27 @@ PyTypeObject PyFileIO_Type;
 
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
-/* Returns 0 on success, errno (which is < 0) on failure. */
+/* Returns 0 on success, -1 with exception set on failure. */
 static int
 internal_close(PyFileIOObject *self)
 {
-	int save_errno = 0;
+	int err = 0;
+	int save_errno;
 	if (self->fd >= 0) {
 		int fd = self->fd;
 		self->fd = -1;
 		Py_BEGIN_ALLOW_THREADS
-		if (close(fd) < 0)
+		err = close(fd);
+		if (err < 0)
 			save_errno = errno;
 		Py_END_ALLOW_THREADS
 	}
-	return save_errno;
+	if (err < 0) {
+		errno = save_errno;
+		PyErr_SetFromErrno(PyExc_IOError);
+		return -1;
+	}
+	return 0;
 }
 
 static PyObject *
@@ -78,11 +85,8 @@ fileio_close(PyFileIOObject *self)
 		self->fd = -1;
 		Py_RETURN_NONE;
 	}
-	errno = internal_close(self);
-	if (errno < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
+	if (internal_close(self))
 		return NULL;
-	}
 
 	Py_RETURN_NONE;
 }
@@ -121,7 +125,8 @@ dircheck(PyFileIOObject* self)
 	if (fstat(self->fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
 		char *msg = strerror(EISDIR);
 		PyObject *exc;
-		internal_close(self);
+		if (internal_close(self))
+			return -1;
 
 		exc = PyObject_CallFunction(PyExc_IOError, "(is)",
 					    EISDIR, msg);
@@ -306,11 +311,8 @@ fileio_dealloc(PyFileIOObject *self)
 		PyObject_ClearWeakRefs((PyObject *) self);
 
 	if (self->fd >= 0 && self->closefd) {
-		errno = internal_close(self);
-		if (errno < 0) {
-			PySys_WriteStderr("close failed: [Errno %d] %s\n",
-                                          errno, strerror(errno));
-		}
+		if(internal_close(self))
+			PyErr_WriteUnraisable((PyObject*)self);
 	}
 
 	Py_TYPE(self)->tp_free((PyObject *)self);
