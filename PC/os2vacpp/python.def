@@ -284,7 +284,6 @@ EXPORTS
                PyNumber_Xor
                PyOS_AfterFork
                PyOS_FiniInterrupts
-               PyOS_GetLastModificationTime
                PyOS_InitInterrupts
                PyOS_InterruptOccurred
                PyOS_Readline

@@ -264,7 +264,6 @@ PYTHON_OBJS=	\
 		Python/getargs.o \
 		Python/getcompiler.o \
 		Python/getcopyright.o \
-		Python/getmtime.o \
 		Python/getplatform.o \
 		Python/getversion.o \
 		Python/graminit.o \

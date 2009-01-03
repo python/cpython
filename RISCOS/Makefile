@@ -135,7 +135,6 @@ OBJECTS_PYTHON =\
 OBJECTS_RISCOS = \
 	@.Python.o.dynload_riscos\
 	@.Python.o.getcwd_riscos\
-	@.Python.o.getmtime_riscos\
 	@.o.unixstuff
 
 
