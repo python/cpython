@@ -1205,7 +1205,7 @@ PyObject *PyUnicode_Decode(const char *s,
 
     /* Decode via the codec registry */
     buffer = NULL;
-    if (PyBuffer_FillInfo(&info, NULL, (void *)s, size, 1, PyBUF_SIMPLE) < 0)
+    if (PyBuffer_FillInfo(&info, NULL, (void *)s, size, 1, PyBUF_FULL_RO) < 0)
         goto onError;
     buffer = PyMemoryView_FromBuffer(&info);
     if (buffer == NULL)

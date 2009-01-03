@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4580: Fix slicing of memoryviews when the item size is greater than
+  one byte. Also fixes the meaning of len() so that it returns the number of
+  items, rather than the size in bytes.
+
 - Issue #4075: Use OutputDebugStringW in Py_FatalError.
 
 - Issue #4747: When the terminal does not use utf-8, executing a script with
