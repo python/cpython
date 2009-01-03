@@ -25,7 +25,10 @@ class Test(unittest.TestCase):
             v = memoryview(ob)
             try:
                 self.failUnlessEqual(normalize(v.format), normalize(fmt))
-                self.failUnlessEqual(len(v), sizeof(ob))
+                if shape is not None:
+                    self.failUnlessEqual(len(v), shape[0])
+                else:
+                    self.failUnlessEqual(len(v) * sizeof(itemtp), sizeof(ob))
                 self.failUnlessEqual(v.itemsize, sizeof(itemtp))
                 self.failUnlessEqual(v.shape, shape)
                 # ctypes object always have a non-strided memory block
@@ -37,7 +40,7 @@ class Test(unittest.TestCase):
                     n = 1
                     for dim in v.shape:
                         n = n * dim
-                    self.failUnlessEqual(v.itemsize * n, len(v))
+                    self.failUnlessEqual(n * v.itemsize, len(v.tobytes()))
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -49,7 +52,10 @@ class Test(unittest.TestCase):
             v = memoryview(ob)
             try:
                 self.failUnlessEqual(v.format, fmt)
-                self.failUnlessEqual(len(v), sizeof(ob))
+                if shape is not None:
+                    self.failUnlessEqual(len(v), shape[0])
+                else:
+                    self.failUnlessEqual(len(v) * sizeof(itemtp), sizeof(ob))
                 self.failUnlessEqual(v.itemsize, sizeof(itemtp))
                 self.failUnlessEqual(v.shape, shape)
                 # ctypes object always have a non-strided memory block
@@ -61,7 +67,7 @@ class Test(unittest.TestCase):
                     n = 1
                     for dim in v.shape:
                         n = n * dim
-                    self.failUnlessEqual(v.itemsize * n, len(v))
+                    self.failUnlessEqual(n, len(v))
             except:
                 # so that we can see the failing type
                 print(tp)

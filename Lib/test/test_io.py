@@ -260,7 +260,7 @@ class IOTest(unittest.TestCase):
 
     def test_array_writes(self):
         a = array.array('i', range(10))
-        n = len(memoryview(a))
+        n = len(a.tostring())
         f = io.open(support.TESTFN, "wb", 0)
         self.assertEqual(f.write(a), n)
         f.close()
