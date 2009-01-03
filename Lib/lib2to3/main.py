@@ -41,7 +41,7 @@ class StdoutRefactoringTool(refactor.RefactoringTool):
         super(StdoutRefactoringTool, self).write_file(new_text,
                                                       filename, old_text)
         if not self.nobackups:
-            shutil.copymode(filename, backup)
+            shutil.copymode(backup, filename)
 
     def print_output(self, lines):
         for line in lines:
