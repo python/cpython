@@ -611,7 +611,7 @@ of each one.
    is to read? ::
 
       charref = re.compile(r"""
-       &[#]		     # Start of a numeric entity reference
+       &[#]                # Start of a numeric entity reference
        (
            0[0-7]+         # Octal form
          | [0-9]+          # Decimal form
