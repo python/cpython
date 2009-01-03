@@ -1421,6 +1421,55 @@ class DecimalPythonAPItests(unittest.TestCase):
             r = d.to_integral(ROUND_DOWN)
             self.assertEqual(Decimal(math.trunc(d)), r)
 
+    def test_from_float(self):
+
+        class  MyDecimal(Decimal):
+            pass
+
+        r = MyDecimal.from_float(0.1)
+        self.assertEqual(type(r), MyDecimal)
+        self.assertEqual(str(r),
+                '0.1000000000000000055511151231257827021181583404541015625')
+        bigint = 12345678901234567890123456789
+        self.assertEqual(MyDecimal.from_float(bigint), MyDecimal(bigint))
+        self.assert_(MyDecimal.from_float(float('nan')).is_qnan())
+        self.assert_(MyDecimal.from_float(float('inf')).is_infinite())
+        self.assert_(MyDecimal.from_float(float('-inf')).is_infinite())
+        self.assertEqual(str(MyDecimal.from_float(float('nan'))),
+                         str(Decimal('NaN')))
+        self.assertEqual(str(MyDecimal.from_float(float('inf'))),
+                         str(Decimal('Infinity')))
+        self.assertEqual(str(MyDecimal.from_float(float('-inf'))),
+                         str(Decimal('-Infinity')))
+        self.assertRaises(TypeError, MyDecimal.from_float, 'abc')
+        for i in range(200):
+            x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
+            self.assertEqual(x, float(MyDecimal.from_float(x))) # roundtrip
+
+    def test_create_decimal_from_float(self):
+        context = Context(prec=5, rounding=ROUND_DOWN)
+        self.assertEqual(
+            context.create_decimal_from_float(math.pi),
+            Decimal('3.1415')
+        )
+        context = Context(prec=5, rounding=ROUND_UP)
+        self.assertEqual(
+            context.create_decimal_from_float(math.pi),
+            Decimal('3.1416')
+        )
+        context = Context(prec=5, traps=[Inexact])
+        self.assertRaises(
+            Inexact,
+            context.create_decimal_from_float,
+            math.pi
+        )
+        self.assertEqual(repr(context.create_decimal_from_float(-0.0)),
+                         "Decimal('-0')")
+        self.assertEqual(repr(context.create_decimal_from_float(1.0)),
+                         "Decimal('1')")
+        self.assertEqual(repr(context.create_decimal_from_float(10)),
+                         "Decimal('10')")
+
 class ContextAPItests(unittest.TestCase):
 
     def test_pickle(self):

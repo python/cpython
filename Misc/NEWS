@@ -12,8 +12,6 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
-- Issue #4817: Remove unused function PyOS_GetLastModificationTime.
-
 - Issue #4580: Fix slicing of memoryviews when the item size is greater than
   one byte. Also fixes the meaning of len() so that it returns the number of
   items, rather than the size in bytes.
@@ -87,6 +85,9 @@ Library
 - Issue #4718: Adapt the wsgiref package so that it actually works with 
   Python 3.x, in accordance with the `official amendments of the spec 
   <http://www.wsgi.org/wsgi/Amendments_1.0>`_.
+
+- Issue #4796: Added Decimal.from_float() and Context.create_decimal_from_float()
+  to the decimal module.
 
 - Issue #4812: add missing underscore prefix to some internal-use-only
   constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)

@@ -453,6 +453,29 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
+   .. method:: from_float(f)
+
+      Classmethod that converts a float to a decimal number, exactly.
+
+      Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
+      Since 0.1 is not exactly representable in binary floating point, the
+      value is stored as the nearest representable value which is
+      `0x1.999999999999ap-4`.  That equivalent value in decimal is
+      `0.1000000000000000055511151231257827021181583404541015625`.
+
+      .. doctest::
+
+          >>> Decimal.from_float(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_float(float('nan'))
+          Decimal('NaN')
+          >>> Decimal.from_float(float('inf'))
+          Decimal('Infinity')
+          >>> Decimal.from_float(float('-inf'))
+          Decimal('-Infinity')
+
+      .. versionadded:: 2.7
+
    .. method:: fma(other, third[, context])
 
       Fused multiply-add.  Return self*other+third with no rounding of the
@@ -909,6 +932,26 @@ In addition to the three supplied contexts, new contexts can be created with the
       This method implements the to-number operation of the IBM specification.
       If the argument is a string, no leading or trailing whitespace is
       permitted.
+
+.. method:: create_decimal_from_float(f)
+
+      Creates a new Decimal instance from a float *f* but rounding using *self*
+      as the context.  Unlike the :method:`Decimal.from_float` class method,
+      the context precision, rounding method, flags, and traps are applied to
+      the conversion.
+
+      .. doctest::
+
+          >>> context = Context(prec=5, rounding=ROUND_DOWN)
+          >>> context.create_decimal_from_float(math.pi)
+          Decimal('3.1415')
+          >>> context = Context(prec=5, traps=[Inexact])
+          >>> context.create_decimal_from_float(math.pi)
+          Traceback (most recent call last):
+              ...
+          decimal.Inexact: None
+
+      .. versionadded:: 2.7
 
    .. method:: Etiny()
 
