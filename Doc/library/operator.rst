@@ -7,7 +7,7 @@
 
 
 .. testsetup::
-   
+
    import operator
    from operator import itemgetter
 
@@ -209,7 +209,7 @@ Operations which work with sequences include:
 
    Remove the value of *a* at index *b*.
 
- 
+
 .. function:: getitem(a, b)
               __getitem__(a, b)
 
@@ -337,7 +337,7 @@ objects.
 
       >>> class C:
       ...     pass
-      ... 
+      ...
       >>> import operator
       >>> obj = C()
       >>> operator.isMappingType(obj)
@@ -427,9 +427,9 @@ expect a function argument.
                 def g(obj):
                     return tuple(obj[item] for item in items)
             return g
-   
-   The items can be any type accepted by the operand's :meth:`__getitem__` 
-   method.  Dictionaries accept any hashable value.  Lists, tuples, and 
+
+   The items can be any type accepted by the operand's :meth:`__getitem__`
+   method.  Dictionaries accept any hashable value.  Lists, tuples, and
    strings accept an index or a slice:
 
       >>> itemgetter(1)('ABCDEFG')

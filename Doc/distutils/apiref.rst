@@ -104,7 +104,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    | *package_dir*      | A mapping of package to        | a dictionary                                                |
    |                    | directory names                |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   
+
 
 
 .. function:: run_setup(script_name[, script_args=None, stop_after='run'])
@@ -754,7 +754,7 @@ This module provides the following functions.
       standard output, otherwise do nothing.
 
 .. % \subsection{Compiler-specific modules}
-.. % 
+.. %
 .. % The following modules implement concrete subclasses of the abstract
 .. % \class{CCompiler} class. They should not be instantiated directly, but should
 .. % be created using \function{distutils.ccompiler.new_compiler()} factory
@@ -858,7 +858,7 @@ Contains :class:`MWerksCompiler`, an implementation of the abstract
 Macintosh. Needs work to support CW on Windows or Mac OS X.
 
 .. % \subsection{Utility modules}
-.. % 
+.. %
 .. % The following modules all provide general utility functions. They haven't
 .. % all been documented yet.
 
@@ -1109,13 +1109,13 @@ other utility module.
 
    For MacOS X systems the OS version reflects the minimal version on which
    binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
-   during the build of Python), not the OS version of the current system. 
+   during the build of Python), not the OS version of the current system.
 
    For universal binary builds on MacOS X the architecture value reflects
    the univeral binary status instead of the architecture of the current
-   processor. For 32-bit universal binaries the architecture is ``fat``, 
-   for 64-bit universal binaries the architecture is ``fat64``, and 
-   for 4-way universal binaries the architecture is ``universal``. 
+   processor. For 32-bit universal binaries the architecture is ``fat``,
+   for 64-bit universal binaries the architecture is ``fat64``, and
+   for 4-way universal binaries the architecture is ``universal``.
 
    Examples of returned values on MacOS X:
 
@@ -1692,7 +1692,7 @@ lines, and joining lines with backslashes.
 
 .. % todo
 .. % \section{Distutils Commands}
-.. % 
+.. %
 .. % This part of Distutils implements the various Distutils commands, such
 .. % as \code{build}, \code{install} \&c. Each command is implemented as a
 .. % separate module, with the command name as the name of the module.

@@ -1,5 +1,5 @@
 ************************************
-  Idioms and Anti-Idioms in Python  
+  Idioms and Anti-Idioms in Python
 ************************************
 
 :Author: Moshe Zadka
@@ -94,7 +94,7 @@ Bad example::
    # bar.py
    from foo import a
    if something():
-       a = 2 # danger: foo.a != a 
+       a = 2 # danger: foo.a != a
 
 Good example::
 
@@ -271,6 +271,6 @@ It is usually much better to use the implicit continuation inside parenthesis:
 
 This version is bulletproof::
 
-   value = (foo.bar()['first'][0]*baz.quux(1, 2)[5:9] 
+   value = (foo.bar()['first'][0]*baz.quux(1, 2)[5:9]
            + calculate_number(10, 20)*forbulate(500, 360))
 

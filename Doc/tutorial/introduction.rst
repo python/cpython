@@ -58,7 +58,7 @@ operators ``+``, ``-``, ``*`` and ``/`` work just like in most other languages
    >>> 8/5 # Fractions aren't lost when dividing integers
    1.6000000000000001
 
-Note: You might not see exactly the same result; floating point results can 
+Note: You might not see exactly the same result; floating point results can
 differ from one machine to another.  We will say more later about controlling
 the appearance of floating point output; what we see here is the most
 informative display but not as easy to read as we would get with::
@@ -71,9 +71,9 @@ unless we are specifically discussing output formatting, and explain later
 why these two ways of displaying floating point data come to be different.
 See :ref:`tut-fp-issues` for a full discussion.
 
-To do integer division and get an integer result, 
+To do integer division and get an integer result,
 discarding any fractional result, there is another operator, ``//``::
-   
+
    >>> # Integer division returns the floor:
    ... 7//3
    2
@@ -103,7 +103,7 @@ error will occur::
 
    >>> # try to access an undefined variable
    ... n
-   Traceback (most recent call last):   
+   Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    NameError: name 'n' is not defined
 
@@ -245,14 +245,14 @@ Or, strings can be surrounded in a pair of matching triple-quotes: ``"""`` or
 they will be included in the string. ::
 
    print("""
-   Usage: thingy [OPTIONS] 
+   Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
    """)
 
 produces the following output::
 
-   Usage: thingy [OPTIONS] 
+   Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
 
@@ -371,10 +371,10 @@ One way to remember how slices work is to think of the indices as pointing
 Then the right edge of the last character of a string of *n* characters has
 index *n*, for example::
 
-    +---+---+---+---+---+ 
+    +---+---+---+---+---+
     | H | e | l | p | A |
-    +---+---+---+---+---+ 
-    0   1   2   3   4   5 
+    +---+---+---+---+---+
+    0   1   2   3   4   5
    -5  -4  -3  -2  -1
 
 The first row of numbers gives the position of the indices 0...5 in the string;
@@ -396,7 +396,7 @@ The built-in function :func:`len` returns the length of a string::
 .. seealso::
 
    :ref:`typesseq`
-      Strings are examples of *sequence types*, and support the common 
+      Strings are examples of *sequence types*, and support the common
       operations supported by such types.
 
    :ref:`string-methods`
@@ -565,7 +565,7 @@ series as follows::
    >>> while b < 10:
    ...     print(b)
    ...     a, b = b, a+b
-   ... 
+   ...
    1
    1
    2
@@ -601,8 +601,8 @@ This example introduces several new features.
 
 * The :func:`print` function writes the value of the expression(s) it is
   given.  It differs from just writing the expression you want to write (as we did
-  earlier in the calculator examples) in the way it handles multiple 
-  expressions, floating point quantities, 
+  earlier in the calculator examples) in the way it handles multiple
+  expressions, floating point quantities,
   and strings.  Strings are printed without quotes, and a space is inserted
   between items, so you can format things nicely, like this::
 
@@ -617,5 +617,5 @@ This example introduces several new features.
      >>> while b < 1000:
      ...     print(b, end=' ')
      ...     a, b = b, a+b
-     ... 
+     ...
      1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987

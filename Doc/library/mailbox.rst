@@ -1553,7 +1553,7 @@ due to malformed messages in the mailbox::
                # that's better than losing a message completely.
                box.lock()
                box.add(message)
-               box.flush()         
+               box.flush()
                box.unlock()
 
                # Remove original message

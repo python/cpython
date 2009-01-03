@@ -52,7 +52,7 @@ The module defines the following type:
 
    Return a new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a list, object
-   supporting the buffer interface, or iterable over elements of the 
+   supporting the buffer interface, or iterable over elements of the
    appropriate type.
 
    If given a list or string, the initializer is passed to the new array's

@@ -163,10 +163,10 @@ exception and traceback::
 
    def lumberjack():
        bright_side_of_death()
-   
+
    def bright_side_of_death():
        return tuple()[0]
-   
+
    try:
        lumberjack()
    except:
@@ -245,12 +245,12 @@ The following example shows the different ways to print and format the stack::
    >>> import traceback
    >>> def another_function():
    ...     lumberstack()
-   ... 
+   ...
    >>> def lumberstack():
    ...     traceback.print_stack()
    ...     print(repr(traceback.extract_stack()))
    ...     print(repr(traceback.format_stack()))
-   ... 
+   ...
    >>> another_function()
      File "<doctest>", line 10, in <module>
        another_function()

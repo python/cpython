@@ -95,7 +95,7 @@ are always available.  They are listed here in alphabetical order.
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
    :class:`bytearray` -- it has the same non-mutating methods and the same
    indexing and slicing behavior.
-   
+
    Accordingly, constructor arguments are interpreted as for :func:`buffer`.
 
    Bytes objects can also be created with literals, see :ref:`strings`.
@@ -271,7 +271,7 @@ are always available.  They are listed here in alphabetical order.
 
    Take two (non complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With mixed
-   operand types, the rules for binary arithmetic operators apply.  For integers, 
+   operand types, the rules for binary arithmetic operators apply.  For integers,
    the result is the same as ``(a // b, a % b)``. For floating point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a / b)``
    but may be 1 less than that.  In any case ``q * b + a % b`` is very close to
@@ -411,12 +411,12 @@ are always available.  They are listed here in alphabetical order.
    .. index::
       pair: str; format
       single: __format__
-   
+
    Convert a string or a number to a "formatted" representation, as controlled
    by *format_spec*.  The interpretation of *format_spec* will depend on the
    type of the *value* argument, however there is a standard formatting syntax
    that is used by most built-in types: :ref:`formatspec`.
-   
+
    .. note::
 
       ``format(value, format_spec)`` merely calls ``value.__format__(format_spec)``.
@@ -573,7 +573,7 @@ are always available.  They are listed here in alphabetical order.
    returns ``['a', 'b', 'c']`` and ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.  If
    no argument is given, returns a new empty list, ``[]``.
 
-   :class:`list` is a mutable sequence type, as documented in :ref:`typesseq`. 
+   :class:`list` is a mutable sequence type, as documented in :ref:`typesseq`.
 
 .. function:: locals()
 
@@ -654,7 +654,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: open(file[, mode='r'[, buffering=None[, encoding=None[, errors=None[, newline=None[, closefd=True]]]]]])
 
    Open a file.  If the file cannot be opened, :exc:`IOError` is raised.
-   
+
    *file* is either a string or bytes object giving the name (and the path if
    the file isn't in the current working directory) of the file to be opened or
    an integer file descriptor of the file to be wrapped.  (If a file descriptor
@@ -699,7 +699,7 @@ are always available.  They are listed here in alphabetical order.
    *buffering* is an optional integer used to set the buffering policy.  By
    default full buffering is on. Pass 0 to switch buffering off (only allowed in
    binary mode), 1 to set line buffering, and an integer > 1 for full buffering.
-    
+
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
    dependent, but any encoding supported by Python can be passed.  See the
@@ -991,7 +991,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: str([object[, encoding[, errors]]])
 
    Return a string version of an object, using one of the following modes:
-   
+
    If *encoding* and/or *errors* are given, :func:`str` will decode the
    *object* which can either be a byte string or a character buffer using
    the codec for *encoding*. The *encoding* parameter is a string giving
@@ -1002,7 +1002,7 @@ are always available.  They are listed here in alphabetical order.
    errors, while a value of ``'ignore'`` causes errors to be silently ignored,
    and a value of ``'replace'`` causes the official Unicode replacement character,
    U+FFFD, to be used to replace input characters which cannot be decoded.
-   See also the :mod:`codecs` module. 
+   See also the :mod:`codecs` module.
 
    When only *object* is given, this returns its nicely printable representation.
    For strings, this is the string itself.  The difference with ``repr(object)``
@@ -1042,10 +1042,10 @@ are always available.  They are listed here in alphabetical order.
    single inheritance, :func:`super` can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
    closely parallels the use of "super" in other programming languages.
-   
+
    The second use case is to support cooperative multiple inheritence in a
-   dynamic execution environment.  This use case is unique to Python and is 
-   not found in statically compiled languages or languages that only support 
+   dynamic execution environment.  This use case is unique to Python and is
+   not found in statically compiled languages or languages that only support
    single inheritance.  This makes in possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
    that this method have the same calling signature in every case (because the
@@ -1080,7 +1080,7 @@ are always available.  They are listed here in alphabetical order.
    3])`` returns ``(1, 2, 3)``.  If no argument is given, returns a new empty
    tuple, ``()``.
 
-   :class:`tuple` is an immutable sequence type, as documented in :ref:`typesseq`. 
+   :class:`tuple` is an immutable sequence type, as documented in :ref:`typesseq`.
 
 
 .. function:: type(object)
@@ -1110,7 +1110,7 @@ are always available.  They are listed here in alphabetical order.
 
       >>> class X(object):
       ...     a = 1
-      ...     
+      ...
       >>> X = type('X', (object,), dict(a=1))
 
 
@@ -1125,12 +1125,12 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: zip(*iterables)
 
-   Make an iterator that aggregates elements from each of the iterables. 
+   Make an iterator that aggregates elements from each of the iterables.
 
    Returns an iterator of tuples, where the *i*-th tuple contains
    the *i*-th element from each of the argument sequences or iterables.  The
    iterator stops when the shortest input iterable is exhausted. With a single
-   iterable argument, it returns an iterator of 1-tuples.  With no arguments, 
+   iterable argument, it returns an iterator of 1-tuples.  With no arguments,
    it returns an empty iterator.  Equivalent to::
 
       def zip(*iterables):
@@ -1199,7 +1199,7 @@ are always available.  They are listed here in alphabetical order.
 
    For example, the statement ``import spam`` results in bytecode resembling the
    following code::
-   
+
       spam = __import__('spam', globals(), locals(), [], -1)
 
    The statement ``import spam.ham`` results in this call::

@@ -478,7 +478,7 @@ As we shall see, pickle does not use directly the methods described above.  In
 fact, these methods are part of the copy protocol which implements the
 :meth:`__reduce__` special method.  The copy protocol provides a unified
 interface for retrieving the data necessary for pickling and copying
-objects. [#]_ 
+objects. [#]_
 
 Although powerful, implementing :meth:`__reduce__` directly in your classes is
 error prone.  For this reason, class designers should use the high-level
@@ -715,7 +715,7 @@ A sample usage of our unpickler working has intended::
 
 
 .. XXX Add note about how extension codes could evade our protection
-   mechanism (e.g. cached classes do not invokes find_class()). 
+   mechanism (e.g. cached classes do not invokes find_class()).
 
 As our examples shows, you have to be careful with what you allow to be
 unpickled.  Therefore if security is a concern, you may want to consider

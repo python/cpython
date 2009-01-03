@@ -8,8 +8,8 @@ Command line and environment
 The CPython interpreter scans the command line and the environment for various
 settings.
 
-.. note:: 
-   
+.. note::
+
    Other implementations' command line schemes may differ.  See
    :ref:`implementations` for further resources.
 
@@ -61,7 +61,7 @@ source.
    Execute the Python code in *command*.  *command* can be one ore more
    statements separated by newlines, with significant leading whitespace as in
    normal module code.
-   
+
    If this option is given, the first element of :data:`sys.argv` will be
    ``"-c"`` and the current directory will be added to the start of
    :data:`sys.path` (allowing modules in that directory to be imported as top
@@ -72,7 +72,7 @@ source.
 
    Search :data:`sys.path` for the named module and execute its contents as
    the :mod:`__main__` module.
-   
+
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The ``module-name`` should be a valid Python module name, but
    the implementation may not always enforce this (e.g. it may allow you to
@@ -84,18 +84,18 @@ source.
       written in C, since they do not have Python module files. However, it
       can still be used for precompiled modules, even if the original source
       file is not available.
-   
+
    If this option is given, the first element of :data:`sys.argv` will be the
    full path to the module file. As with the :option:`-c` option, the current
    directory will be added to the start of :data:`sys.path`.
-   
+
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
 
        python -mtimeit -s 'setup here' 'benchmarked code here'
        python -mtimeit -h # for details
 
-   .. seealso:: 
+   .. seealso::
       :func:`runpy.run_module`
          The actual implementation of this feature.
 
@@ -152,7 +152,7 @@ Generic options
                --version
 
    Print the Python version number and exit.  Example output could be::
-    
+
        Python 3.0
 
 
@@ -189,7 +189,7 @@ Miscellaneous options
    enter interactive mode after executing the script or the command, even when
    :data:`sys.stdin` does not appear to be a terminal.  The
    :envvar:`PYTHONSTARTUP` file is not read.
-   
+
    This can be useful to inspect global variables or a stack trace when a script
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
 
@@ -222,10 +222,10 @@ Miscellaneous options
 
 
 .. cmdoption:: -u
-   
+
    Force stdin, stdout and stderr to be totally unbuffered.  On systems where it
    matters, also put stdin, stdout and stderr in binary mode.
-   
+
    Note that there is internal buffering in :meth:`file.readlines` and
    :ref:`bltin-file-objects` (``for line in sys.stdin``) which is not influenced
    by this option.  To work around this, you will want to use
@@ -237,7 +237,7 @@ Miscellaneous options
 .. XXX should the -U option be documented?
 
 .. cmdoption:: -v
-   
+
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`-vv`), print a message for each file that is checked for when
@@ -246,13 +246,13 @@ Miscellaneous options
 
 
 .. cmdoption:: -W arg
-   
+
    Warning control.  Python's warning machinery by default prints warning
    messages to :data:`sys.stderr`.  A typical warning message has the following
    form::
 
        file:line: category: message
-       
+
    By default, each warning is printed once for each source line where it
    occurs.  This option controls how often warnings are printed.
 
@@ -260,13 +260,13 @@ Miscellaneous options
    one option, the action for the last matching option is performed.  Invalid
    :option:`-W` options are ignored (though, a warning message is printed about
    invalid options when the first warning is issued).
-   
+
    Warnings can also be controlled from within a Python program using the
    :mod:`warnings` module.
 
    The simplest form of argument is one of the following action strings (or a
    unique abbreviation):
-    
+
    ``ignore``
       Ignore all warnings.
    ``default``
@@ -282,9 +282,9 @@ Miscellaneous options
       Print each warning only the first time it occurs in the program.
    ``error``
       Raise an exception instead of printing a warning message.
-      
-   The full form of argument is:: 
-   
+
+   The full form of argument is::
+
        action:message:category:module:line
 
    Here, *action* is as explained above but only applies to messages that match
@@ -305,10 +305,10 @@ Miscellaneous options
 
 
 .. cmdoption:: -x
-   
+
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
-   
+
    .. warning:: The line numbers in error messages will be off by one!
 
 .. _using-on-envvars:
@@ -319,13 +319,13 @@ Environment variables
 These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONHOME
-   
+
    Change the location of the standard Python libraries.  By default, the
    libraries are searched in :file:`{prefix}/lib/python{version}` and
    :file:`{exec_prefix}/lib/python{version}`, where :file:`{prefix}` and
    :file:`{exec_prefix}` are installation-dependent directories, both defaulting
    to :file:`/usr/local`.
-   
+
    When :envvar:`PYTHONHOME` is set to a single directory, its value replaces
    both :file:`{prefix}` and :file:`{exec_prefix}`.  To specify different values
    for these, set :envvar:`PYTHONHOME` to :file:`{prefix}:{exec_prefix}`.
@@ -341,11 +341,11 @@ These environment variables influence Python's behavior.
    In addition to normal directories, individual :envvar:`PYTHONPATH` entries
    may refer to zipfiles containing pure Python modules (in either source or
    compiled form). Extension modules cannot be imported from zipfiles.
-   
+
    The default search path is installation dependent, but generally begins with
    :file:`{prefix}/lib/python{version}`` (see :envvar:`PYTHONHOME` above).  It
    is *always* appended to :envvar:`PYTHONPATH`.
-   
+
    An additional directory will be inserted in the search path in front of
    :envvar:`PYTHONPATH` as described above under
    :ref:`using-on-interface-options`. The search path can be manipulated from
@@ -353,7 +353,7 @@ These environment variables influence Python's behavior.
 
 
 .. envvar:: PYTHONSTARTUP
-   
+
    If this is the name of a readable file, the Python commands in that file are
    executed before the first prompt is displayed in interactive mode.  The file
    is executed in the same namespace where interactive commands are executed so
@@ -363,7 +363,7 @@ These environment variables influence Python's behavior.
 
 
 .. envvar:: PYTHONY2K
-   
+
    Set this to a non-empty string to cause the :mod:`time` module to require
    dates specified as strings to include 4-digit years, otherwise 2-digit years
    are converted based on rules described in the :mod:`time` module
@@ -371,21 +371,21 @@ These environment variables influence Python's behavior.
 
 
 .. envvar:: PYTHONOPTIMIZE
-   
+
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-O` option.  If set to an integer, it is equivalent to specifying
    :option:`-O` multiple times.
 
 
 .. envvar:: PYTHONDEBUG
-   
+
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
 
 
 .. envvar:: PYTHONINSPECT
-   
+
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-i` option.
 
@@ -394,20 +394,20 @@ These environment variables influence Python's behavior.
 
 
 .. envvar:: PYTHONUNBUFFERED
-   
+
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-u` option.
 
 
 .. envvar:: PYTHONVERBOSE
-   
+
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-v` option.  If set to an integer, it is equivalent to specifying
    :option:`-v` multiple times.
 
 
 .. envvar:: PYTHONCASEOK
-   
+
    If this is set, Python ignores case in :keyword:`import` statements.  This
    only works on Windows.
 

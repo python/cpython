@@ -386,8 +386,8 @@ Floating point exception control
 
 The source for the :mod:`fpectl` module includes the following notice::
 
-     ---------------------------------------------------------------------  
-    /                       Copyright (c) 1996.                           \ 
+     ---------------------------------------------------------------------
+    /                       Copyright (c) 1996.                           \
    |          The Regents of the University of California.                 |
    |                        All rights reserved.                           |
    |                                                                       |
@@ -419,7 +419,7 @@ The source for the :mod:`fpectl` module includes the following notice::
    |   opinions  of authors expressed herein do not necessarily state or   |
    |   reflect those of the United States Government or  the  University   |
    |   of  California,  and shall not be used for advertising or product   |
-    \  endorsement purposes.                                              / 
+    \  endorsement purposes.                                              /
      ---------------------------------------------------------------------
 
 

@@ -115,7 +115,7 @@ example, take a look at this :keyword:`if` statement::
    >>> the_world_is_flat = 1
    >>> if the_world_is_flat:
    ...     print("Be careful not to fall off!")
-   ... 
+   ...
    Be careful not to fall off!
 
 
@@ -191,7 +191,7 @@ It is also possible to specify a different encoding for source files.  In order
 to do this, put one more special comment line right after the ``#!`` line to
 define the source file encoding::
 
-   # -*- coding: encoding -*- 
+   # -*- coding: encoding -*-
 
 With that declaration, everything in the source file will be treated as having
 the encoding *encoding* instead of UTF-8.  The list of possible encodings can be

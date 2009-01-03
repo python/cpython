@@ -279,15 +279,15 @@ Available Functions
    this function with an alternative implementation by assigning to
    ``warnings.showwarning``.
    *line* is a line of source code to be included in the warning
-   message; if *line* is not supplied, :func:`showwarning` will 
+   message; if *line* is not supplied, :func:`showwarning` will
    try to read the line specified by *filename* and *lineno*.
 
 
 .. function:: formatwarning(message, category, filename, lineno[, line])
 
    Format a warning the standard way.  This returns a string  which may contain
-   embedded newlines and ends in a newline.  *line* is 
-   a line of source code to be included in the warning message; if *line* is not supplied, 
+   embedded newlines and ends in a newline.  *line* is
+   a line of source code to be included in the warning message; if *line* is not supplied,
    :func:`formatwarning` will try to read the line specified by *filename* and *lineno*.
 
 

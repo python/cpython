@@ -41,7 +41,7 @@ It is usually a shared library (or DLL), but might in some cases be statically
 linked with the Python interpreter.
 
 In addition to the Tk interface module, :mod:`tkinter` includes a number of
-Python modules, :mod:`tkinter.constants` being one of the most important. 
+Python modules, :mod:`tkinter.constants` being one of the most important.
 Importing :mod:`tkinter` will automatically import :mod:`tkinter.constants`,
 so, usually, to use Tkinter all you need is a simple import statement::
 
@@ -96,7 +96,7 @@ Other modules that provide Tk support include:
    Basic dialogs and convenience functions.
 
 :mod:`tkinter.dnd`
-   Drag-and-drop support for :mod:`tkinter`. This is experimental and should 
+   Drag-and-drop support for :mod:`tkinter`. This is experimental and should
    become deprecated when it is replaced  with the Tk DND.
 
 :mod:`turtle`
@@ -156,7 +156,7 @@ documentation that exists. Here are some hints:
   the novice.  The book is not exhaustive, and for many details it defers to the
   man pages.
 
-* :file:`tkinter/__init__.py` is a last resort for most, but can be a good 
+* :file:`tkinter/__init__.py` is a last resort for most, but can be a good
   place to go when nothing else makes sense.
 
 
@@ -271,7 +271,7 @@ perform some *action*.  In C, you'd express this as someAction(fred,
 someOptions), in C++, you would express this as fred.someAction(someOptions),
 and in Tk, you say::
 
-   .fred someAction someOptions 
+   .fred someAction someOptions
 
 Note that the object name, ``.fred``, starts with a dot.
 
@@ -320,7 +320,7 @@ To give a widget to the packer (geometry manager), you call pack with optional
 arguments.  In Tkinter, the Pack class holds all this functionality, and the
 various forms of the pack command are implemented as methods.  All widgets in
 :mod:`tkinter` are subclassed from the Packer, and so inherit all the packing
-methods. See the :mod:`tkinter.tix` module documentation for additional 
+methods. See the :mod:`tkinter.tix` module documentation for additional
 information on the Form geometry manager. ::
 
    pack .fred -side left       =====>  fred.pack(side = "left")
@@ -477,7 +477,7 @@ Packer Options
 For more extensive information on the packer and the options that it can take,
 see the man pages and page 183 of John Ousterhout's book.
 
-anchor 
+anchor
    Anchor type.  Denotes where the packer is to place each slave in its parcel.
 
 expand
@@ -707,7 +707,7 @@ event.  The following table lists the other event fields you can access, and how
 they are denoted in Tk, which can be useful when referring to the Tk man pages.
 ::
 
-   Tk      Tkinter Event Field             Tk      Tkinter Event Field 
+   Tk      Tkinter Event Field             Tk      Tkinter Event Field
    --      -------------------             --      -------------------
    %f      focus                           %A      char
    %h      height                          %E      send_event

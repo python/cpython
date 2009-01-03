@@ -91,7 +91,7 @@ is signalled by raising the :exc:`KeyboardInterrupt` exception. ::
    ...         break
    ...     except ValueError:
    ...         print("Oops!  That was no valid number.  Try again...")
-   ...     
+   ...
 
 The :keyword:`try` statement works as follows.
 
@@ -195,12 +195,12 @@ indirectly) in the try clause. For example::
 
    >>> def this_fails():
    ...     x = 1/0
-   ... 
+   ...
    >>> try:
    ...     this_fails()
    ... except ZeroDivisionError as err:
    ...     print('Handling run-time error:', err)
-   ... 
+   ...
    Handling run-time error: int division or modulo by zero
 
 
@@ -251,12 +251,12 @@ directly or indirectly.  For example::
    ...         self.value = value
    ...     def __str__(self):
    ...         return repr(self.value)
-   ... 
+   ...
    >>> try:
    ...     raise MyError(2*2)
    ... except MyError as e:
    ...     print('My exception occurred, value:', e.value)
-   ... 
+   ...
    My exception occurred, value: 4
    >>> raise MyError('oops!')
    Traceback (most recent call last):
@@ -326,7 +326,7 @@ example::
    ...     raise KeyboardInterrupt
    ... finally:
    ...     print('Goodbye, world!')
-   ... 
+   ...
    Goodbye, world!
    Traceback (most recent call last):
      File "<stdin>", line 2, in ?
@@ -389,9 +389,9 @@ and print its contents to the screen. ::
        print(line)
 
 The problem with this code is that it leaves the file open for an indeterminate
-amount of time after this part of the code has finished executing. 
-This is not an issue in simple scripts, but can be a problem for larger 
-applications. The :keyword:`with` statement allows objects like files to be 
+amount of time after this part of the code has finished executing.
+This is not an issue in simple scripts, but can be a problem for larger
+applications. The :keyword:`with` statement allows objects like files to be
 used in a way that ensures they are always cleaned up promptly and correctly. ::
 
    with open("myfile.txt") as f:

@@ -8,12 +8,12 @@
 
 .. index:: single: Tix
 
-The :mod:`tkinter.tix` (Tk Interface Extension) module provides an additional 
-rich set of widgets. Although the standard Tk library has many useful widgets, 
+The :mod:`tkinter.tix` (Tk Interface Extension) module provides an additional
+rich set of widgets. Although the standard Tk library has many useful widgets,
 they are far from complete. The :mod:`tkinter.tix` library provides most of the
-commonly needed widgets that are missing from standard Tk: :class:`HList`, 
-:class:`ComboBox`, :class:`Control` (a.k.a. SpinBox) and an assortment of 
-scrollable widgets. 
+commonly needed widgets that are missing from standard Tk: :class:`HList`,
+:class:`ComboBox`, :class:`Control` (a.k.a. SpinBox) and an assortment of
+scrollable widgets.
 :mod:`tkinter.tix` also includes many more widgets that are generally useful in
 a wide range of applications: :class:`NoteBook`, :class:`FileEntry`,
 :class:`PanedWindow`, etc; there are more than 40 of them.
@@ -50,10 +50,10 @@ Using Tix
    Toplevel widget of Tix which represents mostly the main window of an
    application. It has an associated Tcl interpreter.
 
-   Classes in the :mod:`tkinter.tix` module subclasses the classes in the 
-   :mod:`tkinter`. The former imports the latter, so to use :mod:`tkinter.tix` 
-   with Tkinter, all you need to do is to import one module. In general, you 
-   can just import :mod:`tkinter.tix`, and replace the toplevel call to 
+   Classes in the :mod:`tkinter.tix` module subclasses the classes in the
+   :mod:`tkinter`. The former imports the latter, so to use :mod:`tkinter.tix`
+   with Tkinter, all you need to do is to import one module. In general, you
+   can just import :mod:`tkinter.tix`, and replace the toplevel call to
    :class:`tkinter.Tk` with :class:`tix.Tk`::
 
       from tkinter import tix
@@ -437,7 +437,7 @@ Image Types
 The :mod:`tkinter.tix` module adds:
 
 * `pixmap <http://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm>`_
-  capabilities to all :mod:`tkinter.tix` and :mod:`tkinter` widgets to create 
+  capabilities to all :mod:`tkinter.tix` and :mod:`tkinter` widgets to create
   color images from XPM files.
 
   .. Python Demo of:
