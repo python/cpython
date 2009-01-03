@@ -16,6 +16,12 @@ Core and Builtins
   one byte. Also fixes the meaning of len() so that it returns the number of
   items, rather than the size in bytes.
 
+- Issue #2467: gc.DEBUG_STATS reported invalid elapsed times. Also, always
+  print elapsed times, not only when some objects are uncollectable /
+  unreachable. Original patch by Neil Schemenauer.
+
+- Issue #3439: Add a bit_length method to int.
+
 - Issue #4747: When the terminal does not use utf-8, executing a script with
   non-ascii characters in its name could fail with a "SyntaxError: None" error.
 

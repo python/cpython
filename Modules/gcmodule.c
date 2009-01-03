@@ -709,6 +709,24 @@ clear_freelists(void)
 	(void)PyFloat_ClearFreeList();
 }
 
+static double
+get_time(void)
+{
+	double result = 0;
+	if (tmod != NULL) {
+		PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+		if (f == NULL) {
+			PyErr_Clear();
+		}
+		else {
+			if (PyFloat_Check(f))
+				result = PyFloat_AsDouble(f);
+			Py_DECREF(f);
+		}
+	}
+	return result;
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -731,16 +749,7 @@ collect(int generation)
 	}
 
 	if (debug & DEBUG_STATS) {
-		if (tmod != NULL) {
-			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
-			if (f == NULL) {
-				PyErr_Clear();
-			}
-			else {
-				t1 = PyFloat_AsDouble(f);
-				Py_DECREF(f);
-			}
-		}
+		t1 = get_time();
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
@@ -813,17 +822,6 @@ collect(int generation)
 		if (debug & DEBUG_COLLECTABLE) {
 			debug_cycle("collectable", FROM_GC(gc));
 		}
-		if (tmod != NULL && (debug & DEBUG_STATS)) {
-			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
-			if (f == NULL) {
-				PyErr_Clear();
-			}
-			else {
-				t1 = PyFloat_AsDouble(f)-t1;
-				Py_DECREF(f);
-				PySys_WriteStderr("gc: %.4fs elapsed.\n", t1);
-			}
-		}
 	}
 
 	/* Clear weakrefs and invoke callbacks as necessary. */
@@ -845,14 +843,19 @@ collect(int generation)
 			debug_cycle("uncollectable", FROM_GC(gc));
 	}
 	if (debug & DEBUG_STATS) {
+		double t2 = get_time();
 		if (m == 0 && n == 0)
-			PySys_WriteStderr("gc: done.\n");
+			PySys_WriteStderr("gc: done");
 		else
 			PySys_WriteStderr(
 			    "gc: done, "
 			    "%" PY_FORMAT_SIZE_T "d unreachable, "
-			    "%" PY_FORMAT_SIZE_T "d uncollectable.\n",
+			    "%" PY_FORMAT_SIZE_T "d uncollectable",
 			    n+m, n);
+		if (t1 && t2) {
+			PySys_WriteStderr(", %.4fs elapsed", t2-t1);
+		}
+		PySys_WriteStderr(".\n");
 	}
 
 	/* Append instances in the uncollectable set to a Python
