@@ -1109,16 +1109,21 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
     static const char *hexdigits = "0123456789abcdef";
 
 #ifdef Py_UNICODE_WIDE
-    repr = PyBytes_FromStringAndSize(NULL, 10 * size);
+    const Py_ssize_t expandsize = 10;
 #else
-    repr = PyBytes_FromStringAndSize(NULL, 6 * size);
+    const Py_ssize_t expandsize = 6;
 #endif
+    
+    if (size > PY_SSIZE_T_MAX / expandsize)
+        return PyErr_NoMemory();
+    
+    repr = PyByteArray_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
         return NULL;
     if (size == 0)
         goto done;
 
-    p = q = PyBytes_AS_STRING(repr);
+    p = q = PyByteArray_AS_STRING(repr);
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
 #ifdef Py_UNICODE_WIDE
@@ -1136,6 +1141,32 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
             *p++ = hexdigits[ch & 15];
         }
         else
+#else
+            /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+            if (ch >= 0xD800 && ch < 0xDC00) {
+                Py_UNICODE ch2;
+                Py_UCS4 ucs;
+
+                ch2 = *s++;
+                size--;
+                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+                    ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+                    *p++ = '\\';
+                    *p++ = 'U';
+                    *p++ = hexdigits[(ucs >> 28) & 0xf];
+                    *p++ = hexdigits[(ucs >> 24) & 0xf];
+                    *p++ = hexdigits[(ucs >> 20) & 0xf];
+                    *p++ = hexdigits[(ucs >> 16) & 0xf];
+                    *p++ = hexdigits[(ucs >> 12) & 0xf];
+                    *p++ = hexdigits[(ucs >> 8) & 0xf];
+                    *p++ = hexdigits[(ucs >> 4) & 0xf];
+                    *p++ = hexdigits[ucs & 0xf];
+                    continue;
+                }
+                /* Fall through: isolated surrogates are copied as-is */
+                s--;
+                size++;
+            }
 #endif
         /* Map 16-bit characters to '\uxxxx' */
         if (ch >= 256 || ch == '\\' || ch == '\n') {
@@ -1146,14 +1177,14 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
             *p++ = hexdigits[(ch >> 4) & 0xf];
             *p++ = hexdigits[ch & 15];
         }
-	/* Copy everything else as-is */
+        /* Copy everything else as-is */
         else
             *p++ = (char) ch;
     }
     size = p - q;
 
   done:
-    result = PyBytes_FromStringAndSize(PyBytes_AS_STRING(repr), size);
+    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(repr), size);
     Py_DECREF(repr);
     return result;
 }

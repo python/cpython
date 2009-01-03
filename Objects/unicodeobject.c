@@ -3257,20 +3257,14 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
 
 PyObject *PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 {
-    PyObject *s, *result;
+    PyObject *s;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
     s = PyUnicode_EncodeUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
                                       PyUnicode_GET_SIZE(unicode));
-
-    if (!s)
-        return NULL;
-    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(s),
-                                        PyByteArray_GET_SIZE(s));
-    Py_DECREF(s);
-    return result;
+    return s;
 }
 
 /* --- Raw Unicode Escape Codec ------------------------------------------- */
@@ -3482,7 +3476,7 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 
 PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 {
-    PyObject *s, *result;
+    PyObject *s;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
@@ -3490,12 +3484,7 @@ PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
     s = PyUnicode_EncodeRawUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
                                          PyUnicode_GET_SIZE(unicode));
 
-    if (!s)
-        return NULL;
-    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(s),
-                                        PyByteArray_GET_SIZE(s));
-    Py_DECREF(s);
-    return result;
+    return s;
 }
 
 /* --- Unicode Internal Codec ------------------------------------------- */
