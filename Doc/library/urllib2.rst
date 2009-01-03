@@ -109,7 +109,7 @@ The following exceptions are raised as appropriate:
 
    .. attribute:: code
 
-      An HTTP status code as defined in `RFC 2616 <http://www.faqs.org/rfcs/rfc2616.html>`_. 
+      An HTTP status code as defined in `RFC 2616 <http://www.faqs.org/rfcs/rfc2616.html>`_.
       This numeric value corresponds to a value found in the dictionary of
       codes as found in :attr:`BaseHTTPServer.BaseHTTPRequestHandler.responses`.
 

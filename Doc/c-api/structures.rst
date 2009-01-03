@@ -265,7 +265,7 @@ definition with the same method name.
    read-only access.  Using :cmacro:`T_STRING` for :attr:`type` implies
    :cmacro:`READONLY`.  Only :cmacro:`T_OBJECT` and :cmacro:`T_OBJECT_EX` can be
    deleted.  (They are set to *NULL*).
-   
+
 
 
 .. cfunction:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)

@@ -91,7 +91,7 @@ is signalled by raising the :exc:`KeyboardInterrupt` exception. ::
    ...         break
    ...     except ValueError:
    ...         print "Oops!  That was no valid number.  Try again..."
-   ...     
+   ...
 
 The :keyword:`try` statement works as follows.
 
@@ -199,12 +199,12 @@ indirectly) in the try clause. For example::
 
    >>> def this_fails():
    ...     x = 1/0
-   ... 
+   ...
    >>> try:
    ...     this_fails()
    ... except ZeroDivisionError as detail:
    ...     print 'Handling run-time error:', detail
-   ... 
+   ...
    Handling run-time error: integer division or modulo by zero
 
 
@@ -256,12 +256,12 @@ directly or indirectly.  For example::
    ...         self.value = value
    ...     def __str__(self):
    ...         return repr(self.value)
-   ... 
+   ...
    >>> try:
    ...     raise MyError(2*2)
    ... except MyError as e:
    ...     print 'My exception occurred, value:', e.value
-   ... 
+   ...
    My exception occurred, value: 4
    >>> raise MyError, 'oops!'
    Traceback (most recent call last):
@@ -331,7 +331,7 @@ example::
    ...     raise KeyboardInterrupt
    ... finally:
    ...     print 'Goodbye, world!'
-   ... 
+   ...
    Goodbye, world!
    Traceback (most recent call last):
      File "<stdin>", line 2, in ?

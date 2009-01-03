@@ -19,7 +19,7 @@ Python comes preinstalled on most Linux distributions, and is available as a
 package on all others.  However there are certain features you might want to use
 that are not available on your distro's package.  You can easily compile the
 latest version of Python from source.
-	
+
 In the event that Python doesn't come preinstalled and isn't in the repositories as
 well, you can easily make packages for your own distro.  Have a look at the
 following links:
@@ -45,8 +45,8 @@ On FreeBSD and OpenBSD
 
 * OpenBSD users use::
 
-     pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz 
-	
+     pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz
+
   For example i386 users get the 2.5.1 version of Python using::
 
      pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/i386/python-2.5.1p2.tgz
@@ -87,7 +87,7 @@ source tree.
 
 Python-related paths and files
 ==============================
- 
+
 These are subject to difference depending on local installation conventions;
 :envvar:`prefix` (``${prefix}``) and :envvar:`exec_prefix` (``${exec_prefix}``)
 are installation-dependent and should be interpreted as for GNU software; they
@@ -112,7 +112,7 @@ For example, on most Linux systems, the default for both is :file:`/usr`.
 |                                               | by the user module; not used by default  |
 |                                               | or by most applications.                 |
 +-----------------------------------------------+------------------------------------------+
- 
+
 
 Miscellaneous
 =============

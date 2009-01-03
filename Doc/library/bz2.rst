@@ -93,7 +93,7 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
       performance optimizations previously implemented in the :mod:`xreadlines`
       module.
 
-      .. deprecated:: 2.3 
+      .. deprecated:: 2.3
          This exists only for compatibility with the method by this name on
          :class:`file` objects, which is deprecated.  Use ``for line in file``
          instead.

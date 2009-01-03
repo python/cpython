@@ -4,7 +4,7 @@
 .. module:: htmllib
    :synopsis: A parser for HTML documents.
    :deprecated:
-   
+
 .. deprecated:: 2.6
     The :mod:`htmllib` module has been removed in Python 3.0.
 

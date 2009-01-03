@@ -341,13 +341,13 @@ The following identifiers are used as reserved words, or *keywords* of the
 language, and cannot be used as ordinary identifiers.  They must be spelled
 exactly as written here::
 
-   and       del       from      not       while    
-   as        elif      global    or        with     
-   assert    else      if        pass      yield    
-   break     except    import    print              
-   class     exec      in        raise              
-   continue  finally   is        return             
-   def       for       lambda    try 
+   and       del       from      not       while
+   as        elif      global    or        with
+   assert    else      if        pass      yield
+   break     except    import    print
+   class     exec      in        raise
+   continue  finally   is        return
+   def       for       lambda    try
 
 .. versionchanged:: 2.4
    :const:`None` became a constant and is now recognized by the compiler as a name
@@ -654,7 +654,7 @@ Some examples of plain integer literals (first row) and long integer literals
 
    7     2147483647                        0177
    3L    79228162514264337593543950336L    0377L   0x100000000L
-         79228162514264337593543950336             0xdeadbeef						    
+         79228162514264337593543950336             0xdeadbeef
 
 
 .. _floating:
@@ -701,7 +701,7 @@ restrictions on their range.  To create a complex number with a nonzero real
 part, add a floating point number to it, e.g., ``(3+4j)``.  Some examples of
 imaginary literals::
 
-   3.14j   10.j    10j     .001j   1e100j  3.14e-10j 
+   3.14j   10.j    10j     .001j   1e100j  3.14e-10j
 
 
 .. _operators:

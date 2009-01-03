@@ -52,7 +52,7 @@ Example usage::
    # 'First line.\nSecond line.\n'
    contents = output.getvalue()
 
-   # Close object and discard memory buffer -- 
+   # Close object and discard memory buffer --
    # .getvalue() will now raise an exception.
    output.close()
 
@@ -81,7 +81,7 @@ encoded as plain ASCII strings.
 
 Calling :func:`StringIO` with a Unicode string parameter populates
 the object with the buffer representation of the Unicode string, instead of
-encoding the string. 
+encoding the string.
 
 Another difference from the :mod:`StringIO` module is that calling
 :func:`StringIO` with a string parameter creates a read-only object. Unlike an
@@ -118,7 +118,7 @@ Example usage::
    # 'First line.\nSecond line.\n'
    contents = output.getvalue()
 
-   # Close object and discard memory buffer -- 
+   # Close object and discard memory buffer --
    # .getvalue() will now raise an exception.
    output.close()
 

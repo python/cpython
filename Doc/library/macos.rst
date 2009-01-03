@@ -82,7 +82,7 @@ Note the capitalization of the module name; this is a historical artifact.
    parameter can be a pathname or an ``FSSpec`` or  ``FSRef`` object.
 
    .. note::
-      
+
       It is not possible to use an ``FSSpec`` in 64-bit mode.
 
 
@@ -93,7 +93,7 @@ Note the capitalization of the module name; this is a historical artifact.
    strings.
 
    .. note::
-      
+
       It is not possible to use an ``FSSpec`` in 64-bit mode.
 
 .. function:: openrf(name [, mode])

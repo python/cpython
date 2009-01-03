@@ -3,7 +3,7 @@
 .. _install-index:
 
 *****************************
-  Installing Python Modules  
+  Installing Python Modules
 *****************************
 
 :Author: Greg Ward
@@ -18,7 +18,7 @@
    Thus, I have to be sure to explain the basics at some point:
    sys.path and PYTHONPATH at least.  Should probably give pointers to
    other docs on "import site", PYTHONSTARTUP, PYTHONHOME, etc.
-   
+
    Finally, it might be useful to include all the material from my "Care
    and Feeding of a Python Installation" talk in here somewhere.  Yow!
 
@@ -268,7 +268,7 @@ at the prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
 :file:`{prefix}` and :file:`{exec-prefix}`::
 
-   Python 2.4 (#26, Aug  7 2004, 17:19:02) 
+   Python 2.4 (#26, Aug  7 2004, 17:19:02)
    Type "help", "copyright", "credits" or "license" for more information.
    >>> import sys
    >>> sys.prefix
@@ -590,8 +590,8 @@ value of ``sys.path``.   ::
    Type "help", "copyright", "credits" or "license" for more information.
    >>> import sys
    >>> sys.path
-   ['', '/usr/local/lib/python2.3', '/usr/local/lib/python2.3/plat-linux2', 
-    '/usr/local/lib/python2.3/lib-tk', '/usr/local/lib/python2.3/lib-dynload', 
+   ['', '/usr/local/lib/python2.3', '/usr/local/lib/python2.3/plat-linux2',
+    '/usr/local/lib/python2.3/lib-tk', '/usr/local/lib/python2.3/lib-dynload',
     '/usr/local/lib/python2.3/site-packages']
    >>>
 

@@ -126,7 +126,7 @@ string formatting behaviors using the same implementation as the built-in
       :meth:`format` is just a wrapper that calls :meth:`vformat`.
 
    .. method:: vformat(format_string, args, kwargs)
-   
+
       This function does the actual work of formatting.  It is exposed as a
       separate function for cases where you want to pass in a predefined
       dictionary of arguments, rather than unpacking and repacking the
@@ -139,12 +139,12 @@ string formatting behaviors using the same implementation as the built-in
    intended to be replaced by subclasses:
 
    .. method:: parse(format_string)
-   
+
       Loop over the format_string and return an iterable of tuples
       (*literal_text*, *field_name*, *format_spec*, *conversion*).  This is used
       by :meth:`vformat` to break the string in to either literal text, or
       replacement fields.
-      
+
       The values in the tuple conceptually represent a span of literal text
       followed by a single replacement field.  If there is no literal text
       (which can happen if two replacement fields occur consecutively), then
@@ -162,7 +162,7 @@ string formatting behaviors using the same implementation as the built-in
       *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
-   
+
       Retrieve a given field value.  The *key* argument will be either an
       integer or a string.  If it is an integer, it represents the index of the
       positional argument in *args*; if it is a string, then it represents a
@@ -200,7 +200,7 @@ string formatting behaviors using the same implementation as the built-in
       method is provided so that subclasses can override it.
 
    .. method:: convert_field(value, conversion)
-   
+
       Converts the value (returned by :meth:`get_field`) given a conversion type
       (as in the tuple returned by the :meth:`parse` method.)  The default
       version understands 'r' (repr) and 's' (str) conversion types.
@@ -229,7 +229,7 @@ The grammar for a replacement field is as follows:
       element_index: `integer`
       conversion: "r" | "s"
       format_spec: <described in the next section>
-      
+
 In less formal terms, the replacement field starts with a *field_name*, which
 can either be a number (for a positional argument), or an identifier (for
 keyword arguments).  Following this is an optional *conversion* field, which is
@@ -249,7 +249,7 @@ Some simple format string examples::
    "My quest is {name}"             # References keyword argument 'name'
    "Weight in tons {0.weight}"      # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"  # First element of keyword argument 'players'.
-   
+
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
@@ -292,11 +292,11 @@ effectively::
 Then the outer replacement field would be evaluated, producing::
 
    "noses     "
-   
+
 Which is substituted into the string, yielding::
-   
+
    "A man with two noses     "
-   
+
 (The extra space is because we specified a field width of 10, and because left
 alignment is the default for strings.)
 
@@ -328,7 +328,7 @@ The general form of a *standard format specifier* is:
    width: `integer`
    precision: `integer`
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "x" | "X" | "%"
-   
+
 The *fill* character can be any character other than '}' (which signifies the
 end of the field).  The presence of a fill character is signaled by the *next*
 character, which must be one of the alignment options. If the second character
@@ -421,9 +421,9 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
-                                                                         
+
 The available presentation types for floating point and decimal values are:
-                                                                         
+
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+

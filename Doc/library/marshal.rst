@@ -45,7 +45,7 @@ themselves supported; and recursive lists and dictionaries should not be written
 (they will cause infinite loops).
 
 .. warning::
-   
+
    On machines where C's ``long int`` type has more than 32 bits (such as the
    DEC Alpha), it is possible to create plain Python integers that are longer
    than 32 bits. If such an integer is marshaled and read back in on a machine

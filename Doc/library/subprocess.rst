@@ -131,7 +131,7 @@ This module defines one class called :class:`Popen`:
    Special value that can be used as the *stderr* argument to :class:`Popen` and
    indicates that standard error should go into the same handle as standard
    output.
-   
+
 
 Convenience Functions
 ^^^^^^^^^^^^^^^^^^^^^
@@ -326,7 +326,7 @@ The following attributes are also available:
    The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
    by :meth:`communicate`).  A ``None`` value indicates that the process
    hasn't terminated yet.
-   
+
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (Unix only).
 

@@ -1,7 +1,7 @@
 .. _tutorial-index:
 
 ######################
-  The Python Tutorial 
+  The Python Tutorial
 ######################
 
 :Release: |version|

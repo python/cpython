@@ -6,7 +6,7 @@
    :platform: IRIX
    :synopsis: Audio functions on the SGI.
    :deprecated:
-   
+
 .. deprecated:: 2.6
     The :mod:`al` module has been deprecated for removal in Python 3.0.
 

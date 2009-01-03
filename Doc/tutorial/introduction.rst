@@ -84,7 +84,7 @@ error will occur::
 
    >>> # try to access an undefined variable
    ... n
-   Traceback (most recent call last):   
+   Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    NameError: name 'n' is not defined
 
@@ -219,14 +219,14 @@ Or, strings can be surrounded in a pair of matching triple-quotes: ``"""`` or
 they will be included in the string. ::
 
    print """
-   Usage: thingy [OPTIONS] 
+   Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
    """
 
 produces the following output::
 
-   Usage: thingy [OPTIONS] 
+   Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
 
@@ -350,10 +350,10 @@ One way to remember how slices work is to think of the indices as pointing
 Then the right edge of the last character of a string of *n* characters has
 index *n*, for example::
 
-    +---+---+---+---+---+ 
+    +---+---+---+---+---+
     | H | e | l | p | A |
-    +---+---+---+---+---+ 
-    0   1   2   3   4   5 
+    +---+---+---+---+---+
+    0   1   2   3   4   5
    -5  -4  -3  -2  -1
 
 The first row of numbers gives the position of the indices 0...5 in the string;
@@ -595,7 +595,7 @@ series as follows::
    >>> while b < 10:
    ...     print b
    ...     a, b = b, a+b
-   ... 
+   ...
    1
    1
    2
@@ -645,7 +645,7 @@ This example introduces several new features.
      >>> while b < 1000:
      ...     print b,
      ...     a, b = b, a+b
-     ... 
+     ...
      1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
 
   Note that the interpreter inserts a newline before it prints the next prompt if

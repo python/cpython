@@ -88,9 +88,9 @@ Excursus: Setting environment variables
 ---------------------------------------
 
 Windows has a built-in dialog for changing environment variables (following
-guide applies to XP classical view): Right-click the icon for your machine 
-(usually located on your Desktop and called "My Computer") and choose 
-:menuselection:`Properties` there.  Then, open the :guilabel:`Advanced` tab 
+guide applies to XP classical view): Right-click the icon for your machine
+(usually located on your Desktop and called "My Computer") and choose
+:menuselection:`Properties` there.  Then, open the :guilabel:`Advanced` tab
 and click the :guilabel:`Environment Variables` button.
 
 In short, your path is:
@@ -193,11 +193,11 @@ administrative rights):
 
 #. Launch a command prompt.
 #. Associate the correct file group with ``.py`` scripts::
-   
+
       assoc .py=Python.File
 
 #. Redirect all Python files to the new executable::
-   
+
       ftype Python.File=C:\Path\to\pythonw.exe "%1" %*
 
 

@@ -24,16 +24,16 @@ about a newsgroup and print the subjects of the last 10 articles::
    Group comp.lang.python has 59 articles, range 3742 to 3803
    >>> resp, subs = s.xhdr('subject', first + '-' + last)
    >>> for id, sub in subs[-10:]: print id, sub
-   ... 
+   ...
    3792 Re: Removing elements from a list while iterating...
    3793 Re: Who likes Info files?
    3794 Emacs and doc strings
    3795 a few questions about the Mac implementation
    3796 Re: executable python scripts
    3797 Re: executable python scripts
-   3798 Re: a few questions about the Mac implementation 
+   3798 Re: a few questions about the Mac implementation
    3799 Re: PROPOSAL: A Generic Python Object Interface for Python C Modules
-   3802 Re: executable python scripts 
+   3802 Re: executable python scripts
    3803 Re: \POSIX{} wait and SIGCHLD
    >>> s.quit()
    '205 news.cwi.nl closing connection.  Goodbye.'

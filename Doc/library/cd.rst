@@ -6,8 +6,8 @@
    :platform: IRIX
    :synopsis: Interface to the CD-ROM on Silicon Graphics systems.
    :deprecated:
-   
-   
+
+
 .. deprecated:: 2.6
     The :mod:`cd` module has been deprecated for removal in Python 3.0.
 

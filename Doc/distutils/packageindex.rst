@@ -72,7 +72,7 @@ If you want to define another server a new section can be created::
    index-servers =
      pypi
      other
- 
+
    [pypi]
    repository: <repository-url>
    username: <username>
@@ -91,4 +91,4 @@ Or even with the section name::
 
    python setup.py register -r other
 
- 
+

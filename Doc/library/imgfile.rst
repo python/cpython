@@ -6,7 +6,7 @@
    :platform: IRIX
    :synopsis: Support for SGI imglib files.
    :deprecated:
-   
+
 .. deprecated:: 2.6
    The :mod:`imgfile` module has been deprecated for removal in Python 3.0.
 

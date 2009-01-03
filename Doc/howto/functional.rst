@@ -145,7 +145,7 @@ than a large function that performs a complicated transformation.  Small
 functions are also easier to read and to check for errors.
 
 
-Ease of debugging and testing 
+Ease of debugging and testing
 -----------------------------
 
 Testing and debugging a functional-style program is easier.
@@ -213,7 +213,7 @@ You can experiment with the iteration interface manually:
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
-    >>>      
+    >>>
 
 Python expects iterable objects in several different contexts, the most
 important being the ``for`` statement.  In the statement ``for X in Y``, Y must
@@ -362,7 +362,7 @@ Generator expressions are surrounded by parentheses ("()") and list
 comprehensions are surrounded by square brackets ("[]").  Generator expressions
 have the form::
 
-    ( expression for expr in sequence1 
+    ( expression for expr in sequence1
                  if condition1
                  for expr2 in sequence2
                  if condition2
@@ -404,7 +404,7 @@ equivalent to the following Python code::
                  if not (conditionN):
                      continue   # Skip this element
 
-                 # Output the value of 
+                 # Output the value of
                  # the expression.
 
 This means that when there are multiple ``for...in`` clauses but no ``if``
@@ -418,8 +418,8 @@ list is 9 elements long:
     >>> seq1 = 'abc'
     >>> seq2 = (1,2,3)
     >>> [(x,y) for x in seq1 for y in seq2]
-    [('a', 1), ('a', 2), ('a', 3), 
-     ('b', 1), ('b', 2), ('b', 3), 
+    [('a', 1), ('a', 2), ('a', 3),
+     ('b', 1), ('b', 2), ('b', 3),
      ('c', 1), ('c', 2), ('c', 3)]
 
 To avoid introducing an ambiguity into Python's grammar, if ``expression`` is
@@ -759,7 +759,7 @@ values:
     True
     >>> all([0,1,0])
     False
-    >>> all([0,0,0]) 
+    >>> all([0,0,0])
     False
     >>> all([1,1,1])
     True
@@ -845,7 +845,7 @@ Fredrik Lundh once suggested the following set of rules for refactoring uses of
 4) Convert the lambda to a def statement, using that name.
 5) Remove the comment.
 
-I really like these rules, but you're free to disagree 
+I really like these rules, but you're free to disagree
 about whether this lambda-free style is better.
 
 
@@ -970,7 +970,7 @@ operators.  Some examples are ``operator.add(a, b)`` (adds two values),
 ``itertools.starmap(func, iter)`` assumes that the iterable will return a stream
 of tuples, and calls ``f()`` using these tuples as the arguments::
 
-    itertools.starmap(os.path.join, 
+    itertools.starmap(os.path.join,
                       [('/usr', 'bin', 'java'), ('/bin', 'python'),
                        ('/usr', 'bin', 'perl'),('/usr', 'bin', 'ruby')])
     =>
@@ -1039,9 +1039,9 @@ value and an iterator for the elements with that key.
 
 ::
 
-    city_list = [('Decatur', 'AL'), ('Huntsville', 'AL'), ('Selma', 'AL'), 
+    city_list = [('Decatur', 'AL'), ('Huntsville', 'AL'), ('Selma', 'AL'),
                  ('Anchorage', 'AK'), ('Nome', 'AK'),
-                 ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ'), 
+                 ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ'),
                  ...
                 ]
 
@@ -1056,7 +1056,7 @@ value and an iterator for the elements with that key.
     where
     iterator-1 =>
       ('Decatur', 'AL'), ('Huntsville', 'AL'), ('Selma', 'AL')
-    iterator-2 => 
+    iterator-2 =>
       ('Anchorage', 'AK'), ('Nome', 'AK')
     iterator-3 =>
       ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ')
@@ -1150,7 +1150,7 @@ is equivalent to ::
 
     >>> double(add(5, 6))
     22
-                    
+
 The ``unpack`` keyword is provided to work around the fact that Python functions
 are not always `fully curried <http://en.wikipedia.org/wiki/Currying>`__.  By
 default, it is expected that the ``inner`` function will return a single object
@@ -1159,15 +1159,15 @@ and that the ``outer`` function will take a single argument. Setting the
 will be expanded before being passed to ``outer``. Put simply, ::
 
     compose(f, g)(5, 6)
-                    
+
 is equivalent to::
 
     f(g(5, 6))
-                    
+
 while ::
 
     compose(f, g, unpack=True)(5, 6)
-                    
+
 is equivalent to::
 
     f(*g(5, 6))
@@ -1178,20 +1178,20 @@ version that will compose any number of functions. We'll use ``reduce()``,
 ``functional`` and ``functools``). ::
 
     from functional import compose, partial
-        
+
     multi_compose = partial(reduce, compose)
-        
-    
+
+
 We can also use ``map()``, ``compose()`` and ``partial()`` to craft a version of
 ``"".join(...)`` that converts its arguments to string::
 
     from functional import compose, partial
-        
+
     join = compose("".join, partial(map, str))
 
 
 ``flip(func)``
-                    
+
 ``flip()`` wraps the callable in ``func`` and causes it to receive its
 non-keyword arguments in reverse order. ::
 
@@ -1206,7 +1206,7 @@ non-keyword arguments in reverse order. ::
     (7, 6, 5)
 
 ``foldl(func, start, iterable)``
-                    
+
 ``foldl()`` takes a binary function, a starting value (usually some kind of
 'zero'), and an iterable.  The function is applied to the starting value and the
 first element of the list, then the result of that and the second element of the
@@ -1220,7 +1220,7 @@ is equivalent to::
 
     f(f(f(0, 1), 2), 3)
 
-    
+
 ``foldl()`` is roughly equivalent to the following recursive function::
 
     def foldl(func, start, seq):
@@ -1298,7 +1298,7 @@ for text processing, in the section titled "Utilizing Higher-Order Functions in
 Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
-for IBM's DeveloperWorks site; see 
+for IBM's DeveloperWorks site; see
 `part 1 <http://www-128.ibm.com/developerworks/library/l-prog.html>`__,
 `part 2 <http://www-128.ibm.com/developerworks/library/l-prog2.html>`__, and
 `part 3 <http://www-128.ibm.com/developerworks/linux/library/l-prog3.html>`__,
