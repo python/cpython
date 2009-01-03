@@ -130,10 +130,14 @@ class ProxyTests(unittest.TestCase):
             os.environ[k] = v
 
     def test_getproxies_environment_keep_no_proxies(self):
-        os.environ['NO_PROXY'] = 'localhost'
-        proxies = urllib.request.getproxies_environment()
-        # getproxies_environment use lowered case truncated (no '_proxy') keys
-        self.assertEquals('localhost', proxies['no'])
+        try:
+            os.environ['NO_PROXY'] = 'localhost'
+            proxies = urllib.request.getproxies_environment()
+            # getproxies_environment use lowered case truncated (no '_proxy') keys
+            self.assertEquals('localhost', proxies['no'])
+        finally:
+            # The old value will be restored by tearDown, if applicable.
+            del os.environ['NO_PROXY']
 
 
 class urlopen_HttpTests(unittest.TestCase):
