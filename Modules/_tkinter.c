@@ -2255,6 +2255,12 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 	PyObject *file, *func;
 	int mask, tfile;
 
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.createfilehandler is gone in 3.x") < 0)
+			return NULL;
+	}
+
 	if (!PyArg_ParseTuple(args, "OiO:createfilehandler",
 			      &file, &mask, &func))
 		return NULL;
@@ -2298,6 +2304,12 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 {
 	PyObject *file;
 	int tfile;
+
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.deletefilehandler is gone in 3.x") < 0)
+			return NULL;
+	}
 
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
@@ -2472,6 +2484,12 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 	PyObject *func;
 	TkttObject *v;
 
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.createtimerhandler is gone in 3.x") < 0)
+			return NULL;
+	}
+
 	if (!PyArg_ParseTuple(args, "iO:createtimerhandler",
 			      &milliseconds, &func))
 		return NULL;
@@ -2514,6 +2532,12 @@ Tkapp_MainLoop(PyObject *selfptr, PyObject *args)
 #ifdef WITH_THREAD
 	PyThreadState *tstate = PyThreadState_Get();
 #endif
+
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.mainloop is gone in 3.x") < 0)
+			return NULL;
+	}
 
 	if (!PyArg_ParseTuple(args, "|i:mainloop", &threshold))
 		return NULL;
@@ -2590,6 +2614,12 @@ Tkapp_DoOneEvent(PyObject *self, PyObject *args)
 	int flags = 0;
 	int rv;
 
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.dooneevent is gone in 3.x") < 0)
+			return NULL;
+	}
+
 	if (!PyArg_ParseTuple(args, "|i:dooneevent", &flags))
 		return NULL;
 
@@ -2602,6 +2632,12 @@ Tkapp_DoOneEvent(PyObject *self, PyObject *args)
 static PyObject *
 Tkapp_Quit(PyObject *self, PyObject *args)
 {
+
+	if (!self && Py_Py3kWarningFlag) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"_tkinter.createfilehandler is gone in 3.x") < 0)
+			return NULL;
+	}
 
 	if (!PyArg_ParseTuple(args, ":quit"))
 		return NULL;
