@@ -426,14 +426,19 @@ class HeaderTests(TestCase):
 
         h[b"Foo"] = bytes(b"bar")
         self.assertEqual("bar", h.get("Foo"))
+        self.assertEqual("bar", h.get(b"Foo"))
 
         h.setdefault(b"Bar", b"foo")
         self.assertEqual("foo", h.get("Bar"))
+        self.assertEqual("foo", h.get(b"Bar"))
 
         h.add_header(b'content-disposition', b'attachment',
             filename=b'bud.gif')
         self.assertEqual('attachment; filename="bud.gif"',
             h.get("content-disposition"))
+
+        del h['content-disposition']
+        self.assert_(b'content-disposition' not in h)
 
 
 class ErrorHandler(BaseCGIHandler):
