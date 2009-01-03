@@ -931,9 +931,6 @@ EXPORTS
 ; From python27_s.lib(getcopyright)
   "Py_GetCopyright"
 
-; From python27_s.lib(getmtime)
-  "PyOS_GetLastModificationTime"
-
 ; From python27_s.lib(getplatform)
   "Py_GetPlatform"
 

@@ -351,7 +351,6 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/getargs.c \
 		Python/getcompiler.c \
 		Python/getcopyright.c \
-		Python/getmtime.c \
 		Python/getplatform.c \
 		Python/getversion.c \
 		Python/graminit.c \

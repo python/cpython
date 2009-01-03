@@ -15,13 +15,6 @@ Operating System Utilities
    one of the strings ``'<stdin>'`` or ``'???'``.
 
 
-.. cfunction:: long PyOS_GetLastModificationTime(char *filename)
-
-   Return the time of last modification of the file *filename*. The result is
-   encoded in the same way as the timestamp returned by the standard C library
-   function :cfunc:`time`.
-
-
 .. cfunction:: void PyOS_AfterFork()
 
    Function to update some internal state after a process fork; this should be

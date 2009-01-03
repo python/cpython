@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4817: Remove unused function PyOS_GetLastModificationTime.
+
 - Issue #4075: Use OutputDebugStringW in Py_FatalError.
 
 - Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open

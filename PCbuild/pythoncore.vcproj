@@ -1687,10 +1687,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Python\getmtime.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Python\getopt.c"
 				>
 			</File>
