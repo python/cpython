@@ -402,10 +402,6 @@ SOURCE=..\..\Python\getcopyright.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Python\getmtime.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\getopt.c
 # End Source File
 # Begin Source File
