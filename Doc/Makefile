@@ -142,4 +142,4 @@ dist:
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
 check:
-	$(PYTHON) tools/rstlint.py -i tools -s 2
+	$(PYTHON) tools/rstlint.py -i tools
