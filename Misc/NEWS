@@ -20,10 +20,11 @@ Core and Builtins
   print elapsed times, not only when some objects are uncollectable /
   unreachable. Original patch by Neil Schemenauer.
 
-- Issue #3439: Add a bit_length method to int.
-
 - Issue #4747: When the terminal does not use utf-8, executing a script with
   non-ascii characters in its name could fail with a "SyntaxError: None" error.
+
+- Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
+  file with `str' filename on Windows.
 
 - Issue #3680: Reference cycles created through a dict, set or deque iterator
   did not get collected.
