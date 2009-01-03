@@ -1211,7 +1211,7 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: logical_and(x, y)
 
-      Applies the logical operation `and` between each operand's digits.
+      Applies the logical operation *and* between each operand's digits.
 
 
    .. method:: logical_invert(x)
@@ -1221,12 +1221,12 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: logical_or(x, y)
 
-      Applies the logical operation `or` between each operand's digits.
+      Applies the logical operation *or* between each operand's digits.
 
 
    .. method:: logical_xor(x, y)
 
-      Applies the logical operation `xor` between each operand's digits.
+      Applies the logical operation *xor* between each operand's digits.
 
 
    .. method:: max(x, y)
@@ -1337,8 +1337,8 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: remainder_near(x, y)
 
-      Returns `x - y * n`, where *n* is the integer nearest the exact value
-      of `x / y` (if the result is `0` then its sign will be the sign of *x*).
+      Returns ``x - y * n``, where *n* is the integer nearest the exact value
+      of ``x / y`` (if the result is 0 then its sign will be the sign of *x*).
 
 
    .. method:: rotate(x, y)
