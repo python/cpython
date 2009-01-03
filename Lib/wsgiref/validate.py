@@ -127,6 +127,13 @@ def assert_(cond, *args):
     if not cond:
         raise AssertionError(*args)
 
+def check_string_type(value, title):
+    if isinstance(value, str):
+        return value
+    assert isinstance(value, bytes), \
+        "{0} must be a string or bytes object (not {1})".format(title, value)
+    return str(value, "iso-8859-1")
+
 def validator(application):
 
     """
@@ -188,14 +195,14 @@ class InputWrapper:
         self.input = wsgi_input
 
     def read(self, *args):
-        assert_(len(args) <= 1)
+        assert_(len(args) == 1)
         v = self.input.read(*args)
-        assert_(isinstance(v, str))
+        assert_(isinstance(v, bytes))
         return v
 
     def readline(self):
         v = self.input.readline()
-        assert_(isinstance(v, str))
+        assert_(isinstance(v, bytes))
         return v
 
     def readlines(self, *args):
@@ -203,7 +210,7 @@ class InputWrapper:
         lines = self.input.readlines(*args)
         assert_(isinstance(lines, list))
         for line in lines:
-            assert_(isinstance(line, str))
+            assert_(isinstance(line, bytes))
         return lines
 
     def __iter__(self):
@@ -241,7 +248,7 @@ class WriteWrapper:
         self.writer = wsgi_writer
 
     def __call__(self, s):
-        assert_(isinstance(s, str))
+        assert_(isinstance(s, (str, bytes)))
         self.writer(s)
 
 class PartialIteratorWrapper:
@@ -364,8 +371,7 @@ def check_errors(wsgi_errors):
             % (wsgi_errors, attr))
 
 def check_status(status):
-    assert_(isinstance(status, str),
-        "Status must be a string (not %r)" % status)
+    status = check_string_type(status, "Status")
     # Implicitly check that we can turn it into an integer:
     status_code = status.split(None, 1)[0]
     assert_(len(status_code) == 3,
@@ -389,6 +395,8 @@ def check_headers(headers):
             % (item, type(item)))
         assert_(len(item) == 2)
         name, value = item
+        name = check_string_type(name, "Header name")
+        value = check_string_type(value, "Header value")
         assert_(name.lower() != 'status',
             "The Status header cannot be used; it conflicts with CGI "
             "script, and HTTP status is not given through headers "
@@ -404,11 +412,13 @@ def check_headers(headers):
             % (value, bad_header_value_re.search(value).group(0)))
 
 def check_content_type(status, headers):
+    status = check_string_type(status, "Status")
     code = int(status.split(None, 1)[0])
     # @@: need one more person to verify this interpretation of RFC 2616
     #     http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     NO_MESSAGE_BODY = (204, 304)
     for name, value in headers:
+        name = check_string_type(name, "Header name")
         if name.lower() == 'content-type':
             if code not in NO_MESSAGE_BODY:
                 return
@@ -426,6 +436,6 @@ def check_iterator(iterator):
     # Technically a string is legal, which is why it's a really bad
     # idea, because it may cause the response to be returned
     # character-by-character
-    assert_(not isinstance(iterator, str),
+    assert_(not isinstance(iterator, (str, bytes)),
         "You should not return a string as your application iterator, "
         "instead return a single-item list containing that string.")

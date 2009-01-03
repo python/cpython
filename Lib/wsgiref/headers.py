@@ -44,7 +44,19 @@ class Headers:
     def __init__(self,headers):
         if not isinstance(headers, list):
             raise TypeError("Headers must be a list of name/value tuples")
-        self._headers = headers
+        self._headers = []
+        for k, v in headers:
+            k = self._convert_string_type(k)
+            v = self._convert_string_type(v)
+            self._headers.append((k, v))
+
+    def _convert_string_type(self, value):
+        """Convert/check value type."""
+        if isinstance(value, str):
+            return value
+        assert isinstance(value, bytes), ("Header names/values must be"
+            " a string or bytes object (not {0})".format(value))
+        return str(value, "iso-8859-1")
 
     def __len__(self):
         """Return the total number of headers, including duplicates."""
@@ -53,7 +65,8 @@ class Headers:
     def __setitem__(self, name, val):
         """Set the value of a header."""
         del self[name]
-        self._headers.append((name, val))
+        self._headers.append(
+            (self._convert_string_type(name), self._convert_string_type(val)))
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
@@ -152,7 +165,8 @@ class Headers:
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((name,value))
+            self._headers.append((self._convert_string_type(name),
+                self._convert_string_type(value)))
             return value
         else:
             return result
@@ -176,13 +190,16 @@ class Headers:
         """
         parts = []
         if _value is not None:
+            _value = self._convert_string_type(_value)
             parts.append(_value)
         for k, v in _params.items():
+            k = self._convert_string_type(k)
             if v is None:
                 parts.append(k.replace('_', '-'))
             else:
+                v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((_name, "; ".join(parts)))
+        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
 
 
 

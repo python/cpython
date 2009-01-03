@@ -122,13 +122,13 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
       def simple_app(environ, start_response):
           setup_testing_defaults(environ)
 
-          status = '200 OK'
-          headers = [('Content-type', 'text/plain')]
+          status = b'200 OK'
+          headers = [(b'Content-type', b'text/plain; charset=utf-8')]
 
           start_response(status, headers)
 
-          ret = ["%s: %s\n" % (key, value)
-                 for key, value in environ.iteritems()]
+          ret = [("%s: %s\n" % (key, value)).encode("utf-8")
+                 for key, value in environ.items()]
           return ret
 
       httpd = make_server('', 8000, simple_app)
@@ -161,7 +161,7 @@ also provides these miscellaneous utilities:
 
    Example usage::
 
-      from StringIO import StringIO
+      from io import StringIO
       from wsgiref.util import FileWrapper
 
       # We're using a StringIO-buffer for as the file-like object
@@ -416,13 +416,13 @@ Paste" library.
       # Our callable object which is intentionally not compliant to the 
       # standard, so the validator is going to break
       def simple_app(environ, start_response):
-          status = '200 OK' # HTTP Status
-          headers = [('Content-type', 'text/plain')] # HTTP Headers
+          status = b'200 OK' # HTTP Status
+          headers = [(b'Content-type', b'text/plain')] # HTTP Headers
           start_response(status, headers)
 
           # This is going to break because we need to return a list, and
           # the validator is going to inform us
-          return "Hello World"
+          return b"Hello World"
 
       # This is the application wrapped in a validator
       validator_app = validator(simple_app)
@@ -509,7 +509,7 @@ input, output, and error streams.
 
    .. method:: BaseHandler._write(data)
 
-      Buffer the string *data* for transmission to the client.  It's okay if this
+      Buffer the bytes *data* for transmission to the client.  It's okay if this
       method actually transmits the data; :class:`BaseHandler` just separates write
       and flush operations for greater efficiency when the underlying system actually
       has such a distinction.
@@ -712,12 +712,12 @@ This is a working "Hello World" WSGI application::
    # is a dictionary containing CGI-style envrironment variables and the
    # second variable is the callable object (see PEP333)
    def hello_world_app(environ, start_response):
-       status = '200 OK' # HTTP Status
-       headers = [('Content-type', 'text/plain')] # HTTP Headers
+       status = b'200 OK' # HTTP Status
+       headers = [(b'Content-type', b'text/plain; charset=utf-8')] # HTTP Headers
        start_response(status, headers)
 
        # The returned object is going to be printed
-       return ["Hello World"]
+       return [b"Hello World"]
 
    httpd = make_server('', 8000, hello_world_app)
    print("Serving on port 8000...")

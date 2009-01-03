@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4718: Adapt the wsgiref package so that it actually works with 
+  Python 3.x, in accordance with the `official amendments of the spec 
+  <http://www.wsgi.org/wsgi/Amendments_1.0>`_.
+
 - Fractions.from_float() no longer loses precision for integers too big to
   cast as floats.
 
