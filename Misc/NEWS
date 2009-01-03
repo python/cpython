@@ -56,7 +56,7 @@ Core and Builtins
 Library
 -------
 
-- Fractions.from_float() no longer loses precision for integers to big to
+- Fractions.from_float() no longer loses precision for integers too big to
   cast as floats.
 
 - Issue 4790: The nsmallest() and nlargest() functions in the heapq module
