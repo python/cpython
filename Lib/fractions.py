@@ -111,7 +111,7 @@ class Fraction(Rational):
 
         """
         if isinstance(f, numbers.Integral):
-            f = float(f)
+            return cls(f)
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
