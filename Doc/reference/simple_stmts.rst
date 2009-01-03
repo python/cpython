@@ -871,8 +871,8 @@ The :keyword:`nonlocal` statement
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
 .. XXX add when implemented
-                : ["=" (`target_list` "=")+ `expression_list`]
-                : | "nonlocal" `identifier` `augop` `expression_list`
+                : ["=" (`target_list` "=")+ expression_list]
+                : | "nonlocal" identifier augop expression_list
 
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
 previously bound variables in the nearest enclosing scope.  This is important

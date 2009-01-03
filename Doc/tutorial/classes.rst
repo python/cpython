@@ -789,7 +789,7 @@ easy to create::
    f
    l
    o
-   g	
+   g
 
 Anything that can be done with generators can also be done with class based
 iterators as described in the previous section.  What makes generators so

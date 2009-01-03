@@ -1216,7 +1216,7 @@ Here is an example::
 
        PyErr_Format(PyExc_AttributeError,
                     "'%.50s' object has no attribute '%.400s'",
-		    tp->tp_name, name);
+                    tp->tp_name, name);
        return NULL;
    }
 

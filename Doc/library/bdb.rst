@@ -335,7 +335,7 @@ Finally, the module defines the following functions:
 
    Determine if there is an effective (active) breakpoint at this line of code.
    Return breakpoint number or 0 if none.
-	
+
    Called only if we know there is a breakpoint at this location.  Returns the
    breakpoint that was triggered and a flag that indicates if it is ok to delete
    a temporary breakpoint.
