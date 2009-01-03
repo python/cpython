@@ -108,6 +108,10 @@ Core and Builtins
 Library
 -------
 
+- The _tkinter module functions "createfilehandler", "deletefilehandler",
+  "createtimerhandler", "mainloop", "dooneevent" and "quit" have been
+  deprecated for removal in 3.x
+
 - Issue #4796: Added Decimal.from_float() and Context.create_decimal_from_float()
   to the decimal module.
 
