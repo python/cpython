@@ -654,7 +654,8 @@ class Decimal(object):
 
         raise TypeError("Cannot convert %r to Decimal" % value)
 
-    @classmethod
+    # @classmethod, but @decorator is not valid Python 2.3 syntax, so
+    # don't use it (see notes on Py2.3 compatibility at top of file)
     def from_float(cls, f):
         """Converts a float to a decimal number, exactly.
 
@@ -680,11 +681,18 @@ class Decimal(object):
             return cls(f)
         if _math.isinf(f) or _math.isnan(f):  # raises TypeError if not a float
             return cls(repr(f))
-        sign = 0 if _math.copysign(1.0, f) == 1.0 else 1
+        if _math.copysign(1.0, f) == 1.0:
+            sign = 0
+        else:
+            sign = 1
         n, d = abs(f).as_integer_ratio()
         k = d.bit_length() - 1
         result = _dec_from_triple(sign, str(n*5**k), -k)
-        return result if cls is Decimal else cls(result)
+        if cls is Decimal:
+            return result
+        else:
+            return cls(result)
+    from_float = classmethod(from_float)
 
     def _isnan(self):
         """Returns whether the number is not actually one.
