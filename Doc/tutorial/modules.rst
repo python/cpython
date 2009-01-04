@@ -103,8 +103,8 @@ There is even a variant to import all names that a module defines::
    1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 This imports all names except those beginning with an underscore (``_``).
-In most cases Python programmers do not use this facility since it introduces 
-an unknown set of names into the interpreter, possibly hiding some things 
+In most cases Python programmers do not use this facility since it introduces
+an unknown set of names into the interpreter, possibly hiding some things
 you have already defined.
 
 .. note::
@@ -287,7 +287,7 @@ defines.  It returns a sorted list of strings::
    ['__name__', 'fib', 'fib2']
    >>> dir(sys)
    ['__displayhook__', '__doc__', '__excepthook__', '__name__', '__stderr__',
-    '__stdin__', '__stdout__', '_getframe', 'api_version', 'argv', 
+    '__stdin__', '__stdout__', '_getframe', 'api_version', 'argv',
     'builtin_module_names', 'byteorder', 'callstats', 'copyright',
     'displayhook', 'exc_info', 'excepthook',
     'exec_prefix', 'executable', 'exit', 'getdefaultencoding', 'getdlopenflags',
@@ -317,25 +317,25 @@ want a list of those, they are defined in the standard module
    >>> dir(builtins)
 
    ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'Buffer
-   Error', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Excep   
-   tion', 'False', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError   
-   ', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyError',   
-    'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError', 'None', 'NotImp   
-   lemented', 'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecatio   
-   nWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StopIteration',   
-   'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',   
-    'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', '   
-   UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueE   
-   rror', 'Warning', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__'   
-   , '__import__', '__name__', 'abs', 'all', 'any', 'basestring', 'bin', 'bool', 'b   
-   uffer', 'bytes', 'chr', 'chr8', 'classmethod', 'cmp', 'compile', 'complex', 'cop   
-   yright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'ex   
-   ec', 'exit', 'filter', 'float', 'frozenset', 'getattr', 'globals', 'hasattr', 'h   
-   ash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', '   
-   len', 'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'o   
-   bject', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr   
-   ', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'st   
-   r', 'str8', 'sum', 'super', 'trunc', 'tuple', 'type', 'vars', 'zip']   
+   Error', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Excep
+   tion', 'False', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError
+   ', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyError',
+    'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError', 'None', 'NotImp
+   lemented', 'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecatio
+   nWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StopIteration',
+   'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
+    'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', '
+   UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueE
+   rror', 'Warning', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__'
+   , '__import__', '__name__', 'abs', 'all', 'any', 'basestring', 'bin', 'bool', 'b
+   uffer', 'bytes', 'chr', 'chr8', 'classmethod', 'cmp', 'compile', 'complex', 'cop
+   yright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'ex
+   ec', 'exit', 'filter', 'float', 'frozenset', 'getattr', 'globals', 'hasattr', 'h
+   ash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', '
+   len', 'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'o
+   bject', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr
+   ', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'st
+   r', 'str8', 'sum', 'super', 'trunc', 'tuple', 'type', 'vars', 'zip']
 
 .. _tut-packages:
 

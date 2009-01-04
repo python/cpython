@@ -230,7 +230,7 @@ Python syntax colors:
    Keywords
       orange
 
-   Strings 
+   Strings
       green
 
    Comments

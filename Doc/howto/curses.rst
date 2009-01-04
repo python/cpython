@@ -399,8 +399,8 @@ string.  It can optionally be limited to a fixed number of characters. ::
 
    curses.echo()            # Enable echoing of characters
 
-   # Get a 15-character string, with the cursor on the top line 
-   s = stdscr.getstr(0,0, 15)  
+   # Get a 15-character string, with the cursor on the top line
+   s = stdscr.getstr(0,0, 15)
 
 The Python :mod:`curses.textpad` module supplies something better. With it, you
 can turn a window into a text box that supports an Emacs-like set of

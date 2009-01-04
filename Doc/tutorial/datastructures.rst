@@ -159,7 +159,7 @@ List Comprehensions
 
 List comprehensions provide a concise way to create lists from sequences.
 Common applications are to make lists where each element is the result of
-some operations applied to each member of the sequence, or to create a 
+some operations applied to each member of the sequence, or to create a
 subsequence of those elements that satisfy a certain condition.
 
 
@@ -167,7 +167,7 @@ Each list comprehension consists of an expression followed by a :keyword:`for`
 clause, then zero or more :keyword:`for` or :keyword:`if` clauses.  The result
 will be a list resulting from evaluating the expression in the context of the
 :keyword:`for` and :keyword:`if` clauses which follow it.  If the expression
-would evaluate to a tuple, it must be parenthesized. 
+would evaluate to a tuple, it must be parenthesized.
 
 Here we take a list of numbers and return a list of three times each number::
 
@@ -227,7 +227,7 @@ If you've got the stomach for it, list comprehensions can be nested. They are a
 powerful tool but -- like all powerful tools -- they need to be used carefully,
 if at all.
 
-Consider the following example of a 3x3 matrix held as a list containing three 
+Consider the following example of a 3x3 matrix held as a list containing three
 lists, one list per row::
 
     >>> mat = [
@@ -236,7 +236,7 @@ lists, one list per row::
     ...        [7, 8, 9],
     ...       ]
 
-Now, if you wanted to swap rows and columns, you could use a list 
+Now, if you wanted to swap rows and columns, you could use a list
 comprehension::
 
     >>> print([[row[i] for row in mat] for i in [0, 1, 2]])
@@ -254,7 +254,7 @@ A more verbose version of this snippet shows the flow explicitly::
             print(row[i], end="")
         print()
 
-In real world, you should prefer builtin functions to complex flow statements. 
+In real world, you should prefer builtin functions to complex flow statements.
 The :func:`zip` function would do a great job for this use case::
 
     >>> list(zip(*mat))

@@ -608,7 +608,7 @@ Some examples of integer literals::
 
    7     2147483647                        0o177    0b100110111
    3     79228162514264337593543950336     0o377    0x100000000
-         79228162514264337593543950336              0xdeadbeef						    
+         79228162514264337593543950336              0xdeadbeef						
 
 
 .. _floating:
@@ -654,7 +654,7 @@ restrictions on their range.  To create a complex number with a nonzero real
 part, add a floating point number to it, e.g., ``(3+4j)``.  Some examples of
 imaginary literals::
 
-   3.14j   10.j    10j     .001j   1e100j  3.14e-10j 
+   3.14j   10.j    10j     .001j   1e100j  3.14e-10j
 
 
 .. _operators:

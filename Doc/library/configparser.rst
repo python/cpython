@@ -344,7 +344,7 @@ An example of writing to a configuration file::
    import configparser
 
    config = configparser.RawConfigParser()
-   
+
    # When adding sections or items, add them in the reverse order of
    # how you want them to be displayed in the actual file.
    # In addition, please note that using RawConfigParser's and the raw
@@ -359,7 +359,7 @@ An example of writing to a configuration file::
    config.set('Section1', 'baz', 'fun')
    config.set('Section1', 'bar', 'Python')
    config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
-   
+
    # Writing our configuration file to 'example.cfg'
    with open('example.cfg', 'wb') as configfile:
        config.write(configfile)
@@ -399,7 +399,7 @@ To get interpolation, you will need to use a :class:`ConfigParser` or
    print(config.get('Section1', 'foo', 0, {'bar': 'Documentation',
                                            'baz': 'evil'}))
 
-Defaults are available in all three types of ConfigParsers. They are used in 
+Defaults are available in all three types of ConfigParsers. They are used in
 interpolation if an option used is not defined elsewhere. ::
 
    import configparser
@@ -407,7 +407,7 @@ interpolation if an option used is not defined elsewhere. ::
    # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
    config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
    config.read('example.cfg')
-   
+
    print(config.get('Section1', 'foo')) # -> "Python is fun!"
    config.remove_option('Section1', 'bar')
    config.remove_option('Section1', 'baz')

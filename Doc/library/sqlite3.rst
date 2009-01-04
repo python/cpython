@@ -541,8 +541,8 @@ Cursor Objects
 
    This read-only attribute provides the column names of the last query. To
    remain compatible with the Python DB API, it returns a 7-tuple for each
-   column where the last six items of each tuple are :const:`None`. 
-   
+   column where the last six items of each tuple are :const:`None`.
+
    It is set for ``SELECT`` statements without any matching rows as well.
 
 .. _sqlite3-row-objects:
@@ -553,7 +553,7 @@ Row Objects
 .. class:: Row
 
    A :class:`Row` instance serves as a highly optimized
-   :attr:`~Connection.row_factory` for :class:`Connection` objects. 
+   :attr:`~Connection.row_factory` for :class:`Connection` objects.
    It tries to mimic a tuple in most of its features.
 
    It supports mapping access by column name and index, iteration,
@@ -561,7 +561,7 @@ Row Objects
 
    If two :class:`Row` objects have exactly the same columns and their
    members are equal, they compare equal.
-   
+
    .. versionchanged:: 2.6
       Added iteration and equality (hashability).
 
@@ -780,7 +780,7 @@ Controlling Transactions
 ------------------------
 
 By default, the :mod:`sqlite3` module opens transactions implicitly before a
-Data Modification Language (DML)  statement (i.e. 
+Data Modification Language (DML)  statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``), and commits transactions
 implicitly before a non-DML, non-query statement (i. e.
 anything other than ``SELECT`` or the aforementioned).

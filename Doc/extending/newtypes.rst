@@ -1180,7 +1180,7 @@ As with the :attr:`tp_methods` table, a sentinel entry with a :attr:`name` value
 of *NULL* is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
-   
+
    Descriptor objects have two handler functions which correspond to the
    \member{tp_getattro} and \member{tp_setattro} handlers.  The
    \method{__get__()} handler is a function which is passed the descriptor,
@@ -1233,15 +1233,15 @@ example that simply raises an exception; if this were really all you wanted, the
        return -1;
    }
 
-.. XXX tp_compare is dead; need to rewrite for tp_richcompare!  
+.. XXX tp_compare is dead; need to rewrite for tp_richcompare!
 
    Object Comparison
    -----------------
-    
+
    ::
-    
+
       cmpfunc tp_compare;
-    
+
    The :attr:`tp_compare` handler is called when comparisons are needed and the
    object does not implement the specific rich comparison method which matches the
    requested comparison.  (It is always used if defined and the
@@ -1252,18 +1252,18 @@ example that simply raises an exception; if this were really all you wanted, the
    allowed to return arbitrary negative or positive integers for less than and
    greater than, respectively; as of Python 2.2, this is no longer allowed.  In the
    future, other return values may be assigned a different meaning.)
-    
+
    A :attr:`tp_compare` handler may raise an exception.  In this case it should
    return a negative value.  The caller has to test for the exception using
    :cfunc:`PyErr_Occurred`.
-    
+
    Here is a sample implementation::
-    
+
       static int
       newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
       {
           long result;
-    
+
           if (obj1->obj_UnderlyingDatatypePtr->size <
               obj2->obj_UnderlyingDatatypePtr->size) {
               result = -1;

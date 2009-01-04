@@ -156,7 +156,7 @@ Examples:
      File "<stdin>", line 1, in ?
    ValueError: not a decimal
    >>> unicodedata.category('A')  # 'L'etter, 'u'ppercase
-   'Lu'   
+   'Lu'
    >>> unicodedata.bidirectional('\u0660') # 'A'rabic, 'N'umber
    'AN'
 

@@ -14,13 +14,13 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: False
 
-   The false value of the :class:`bool` type. Assignments to ``False`` 
+   The false value of the :class:`bool` type. Assignments to ``False``
    are illegal and raise a :exc:`SyntaxError`.
 
 
 .. data:: True
 
-   The true value of the :class:`bool` type. Assignments to ``True`` 
+   The true value of the :class:`bool` type. Assignments to ``True``
    are illegal and raise a :exc:`SyntaxError`.
 
 

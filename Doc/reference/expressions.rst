@@ -552,7 +552,7 @@ or list).  Slicings may be used as expressions or as targets in assignment or
 :keyword:`del` statements.  The syntax for a slicing:
 
 .. productionlist::
-   slicing: `primary` "[" `slice_list` "]" 
+   slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
    proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
@@ -640,7 +640,7 @@ raised.  Otherwise, the list of filled slots is used as the argument list for
 the call.
 
 .. note::
-   
+
    An implementation may provide builtin functions whose positional parameters do
    not have names, even if they are 'named' for the purpose of documentation, and
    which therefore cannot be supplied by keyword.  In CPython, this is the case for
@@ -1045,7 +1045,7 @@ Comparison of objects of the same type depends on the type:
 Comparison of objects of the differing types depends on whether either
 of the types provide explicit support for the comparison.  Most numeric types
 can be compared with one another, but comparisons of :class:`float` and
-:class:`Decimal` are not supported to avoid the inevitable confusion arising            
+:class:`Decimal` are not supported to avoid the inevitable confusion arising
 from representation issues such as ``float('1.1')`` being inexactly represented
 and therefore not exactly equal to ``Decimal('1.1')`` which is.  When
 cross-type comparison is not supported, the comparison method returns
@@ -1323,7 +1323,7 @@ groups from right to left).
    identity only, but this caused surprises because people expected to be able
    to test a dictionary for emptiness by comparing it to ``{}``.
 
-.. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of 
+.. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of
    descriptors, you may notice seemingly unusual behaviour in certain uses of
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.

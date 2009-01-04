@@ -49,8 +49,8 @@ More Python resources:
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
 * http://scipy.org: The Scientific Python project includes modules for fast
-  array computations and manipulations plus a host of packages for such 
-  things as linear algebra, Fourier transforms, non-linear solvers, 
+  array computations and manipulations plus a host of packages for such
+  things as linear algebra, Fourier transforms, non-linear solvers,
   random number distributions, statistical analysis and the like.
 
 For Python-related questions and problem reports, you can post to the newsgroup
@@ -68,6 +68,6 @@ solution for your problem.
 
 .. Postings figure based on average of last six months activity as
    reported by www.egroups.com; Jan. 2000 - June 2000: 21272 msgs / 182
-   days = 116.9 msgs / day and steadily increasing. (XXX up to date figures?) 
+   days = 116.9 msgs / day and steadily increasing. (XXX up to date figures?)
 
 

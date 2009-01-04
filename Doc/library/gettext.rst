@@ -369,7 +369,7 @@ The following methods are overridden from the base class implementation:
    If the message id is not found in the catalog, and a fallback is specified, the
    request is forwarded to the fallback's :meth:`ngettext` method.  Otherwise, when
    *n* is 1 *singular* is returned, and *plural* is returned in all other cases.
-   
+
    Here is an example::
 
       n = len(os.listdir('.'))

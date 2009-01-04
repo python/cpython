@@ -43,34 +43,34 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
 :class:`Sized`          			  ``__len__``
 :class:`Callable`                                 ``__call__``
-                                                  
+
 :class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``.
                            :class:`Iterable`,     and ``__len__``         ``index``, and ``count``
-                           :class:`Container`     
-                                                  
+                           :class:`Container`
+
 :class:`MutableSequence`   :class:`Sequence`      ``__getitem__``         Inherited Sequence methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
                                                   ``insert``,             ``remove``, and ``__iadd__``
                                                   and ``__len__``
-                                                  
+
 :class:`Set`               :class:`Sized`,        ``__len__``,            ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,     ``__iter__``, and       ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
                            :class:`Container`     ``__contains__``        ``__sub__``, ``__xor__``, and ``isdisjoint``
-                                                  
+
 :class:`MutableSet`        :class:`Set`           ``add`` and             Inherited Set methods and
                                                   ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
                                                                           ``__iand__``, ``__ixor__``, and ``__isub__``
-                                                  
+
 :class:`Mapping`           :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
                            :class:`Iterable`,     ``__len__``. and        ``get``, ``__eq__``, and ``__ne__``
                            :class:`Container`     ``__iter__``
-                                                  
+
 :class:`MutableMapping`    :class:`Mapping`       ``__getitem__``         Inherited Mapping methods and
                                                   ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
                                                   ``__delitem__``,        and ``setdefault``
 						  ``__iter__``, and
                                                   ``__len__``
-                                                  
+
 :class:`MappingView`       :class:`Sized`                                 ``__len__``
 :class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
                            :class:`Set`                                   ``__iter__``
@@ -526,8 +526,8 @@ Example:
                if kwds:
                    raise ValueError('Got unexpected field names: %r' % kwds.keys())
                return result
-   <BLANKLINE>            
-           def __getnewargs__(self): 
+   <BLANKLINE>
+           def __getnewargs__(self):
                return tuple(self)
    <BLANKLINE>
            x = property(itemgetter(0))
@@ -674,8 +674,8 @@ and more efficient to use a simple class declaration:
 :class:`UserDict` objects
 -------------------------
 
-The class, :class:`UserDict` acts as a wrapper around dictionary objects.  
-The need for this class has been partially supplanted by the ability to 
+The class, :class:`UserDict` acts as a wrapper around dictionary objects.
+The need for this class has been partially supplanted by the ability to
 subclass directly from :class:`dict`; however, this class can be easier
 to work with because the underlying dictionary is accessible as an
 attribute.
@@ -688,7 +688,7 @@ attribute.
    initialized with its contents; note that a reference to *initialdata* will not
    be kept, allowing it be used for other purposes.
 
-In addition to supporting the methods and operations of mappings, 
+In addition to supporting the methods and operations of mappings,
 :class:`UserDict` instances provide the following attribute:
 
 .. attribute:: UserDict.data
@@ -701,11 +701,11 @@ In addition to supporting the methods and operations of mappings,
 -------------------------
 
 This class acts as a wrapper around list objects.  It is a useful base class
-for your own list-like classes which can inherit from them and override 
+for your own list-like classes which can inherit from them and override
 existing methods or add new ones.  In this way, one can add new behaviors to
 lists.
 
-The need for this class has been partially supplanted by the ability to 
+The need for this class has been partially supplanted by the ability to
 subclass directly from :class:`list`; however, this class can be easier
 to work with because the underlying list is accessible as an attribute.
 
@@ -717,12 +717,12 @@ to work with because the underlying list is accessible as an attribute.
    defaulting to the empty list ``[]``.  *list* can be any iterable, for
    example a real Python list or a :class:`UserList` object.
 
-In addition to supporting the methods and operations of mutable sequences, 
+In addition to supporting the methods and operations of mutable sequences,
 :class:`UserList` instances provide the following attribute:
 
 .. attribute:: UserList.data
 
-   A real :class:`list` object used to store the contents of the 
+   A real :class:`list` object used to store the contents of the
    :class:`UserList` class.
 
 **Subclassing requirements:** Subclasses of :class:`UserList` are expect to
@@ -740,8 +740,8 @@ in that case.
 :class:`UserString` objects
 ---------------------------
 
-The class, :class:`UserString` acts as a wrapper around string objects.  
-The need for this class has been partially supplanted by the ability to 
+The class, :class:`UserString` acts as a wrapper around string objects.
+The need for this class has been partially supplanted by the ability to
 subclass directly from :class:`str`; however, this class can be easier
 to work with because the underlying string is accessible as an
 attribute.
@@ -749,8 +749,8 @@ attribute.
 .. class:: UserString([sequence])
 
    Class that simulates a string or a Unicode string object.  The instance's
-   content is kept in a regular string object, which is accessible via the 
-   :attr:`data` attribute of :class:`UserString` instances.  The instance's 
+   content is kept in a regular string object, which is accessible via the
+   :attr:`data` attribute of :class:`UserString` instances.  The instance's
    contents are initially set to a copy of *sequence*.  The *sequence* can
    be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
    subclass) or an arbitrary sequence which can be converted into a string using

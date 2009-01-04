@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.0  
+  What's New in Python 2.0
 ****************************
 
 :Author: A.M. Kuchling and Moshe Zadka
@@ -277,9 +277,9 @@ additional information.  Take the first example in the previous paragraph,
 finding all the strings in the list containing a given substring.  You could
 write the following to do it::
 
-   # Given the list L, make a list of all strings 
+   # Given the list L, make a list of all strings
    # containing the substring S.
-   sublist = filter( lambda s, substring=S: 
+   sublist = filter( lambda s, substring=S:
                         string.find(s, substring) != -1,
    	          L)
 
@@ -291,7 +291,7 @@ substring is being searched for.  List comprehensions make this cleaner::
 
 List comprehensions have the form::
 
-   [ expression for expr in sequence1 
+   [ expression for expr in sequence1
                 for expr2 in sequence2 ...
    	     for exprN in sequenceN
                 if condition ]
@@ -312,8 +312,8 @@ following Python code::
        ...
            for exprN in sequenceN:
                 if (condition):
-                     # Append the value of 
-                     # the expression to the 
+                     # Append the value of
+                     # the expression to the
                      # resulting list.
 
 This means that when there are multiple :keyword:`for`...\ :keyword:`in`
@@ -590,7 +590,7 @@ raised should still work. ::
 
    def f():
        print "i=",i
-       i = i + 1 
+       i = i + 1
    f()
 
 Two new exceptions, :exc:`TabError` and :exc:`IndentationError`, have been
@@ -627,7 +627,7 @@ would do, and also inserts it into the dictionary as the value for *key*.  Thus,
 the following lines of code::
 
    if dict.has_key( key ): return dict[key]
-   else: 
+   else:
        dict[key] = []
        return dict[key]
 
@@ -836,14 +836,14 @@ the simple case, when the software contains only .py files, a minimal
 :file:`setup.py` can be just a few lines long::
 
    from distutils.core import setup
-   setup (name = "foo", version = "1.0", 
+   setup (name = "foo", version = "1.0",
           py_modules = ["module1", "module2"])
 
 The :file:`setup.py` file isn't much more complicated if the software consists
 of a few packages::
 
    from distutils.core import setup
-   setup (name = "foo", version = "1.0", 
+   setup (name = "foo", version = "1.0",
           packages = ["package", "package.subpackage"])
 
 A C extension can be the most complicated case; here's an example taken from
@@ -860,7 +860,7 @@ the PyXML package::
     		    'extensions/expat/xmltok/xmlrole.c',
                      ]
           )
-   setup (name = "PyXML", version = "0.5.4", 
+   setup (name = "PyXML", version = "0.5.4",
           ext_modules =[ expat_extension ] )
 
 The Distutils can also take care of creating source and binary distributions.

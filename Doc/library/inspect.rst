@@ -384,7 +384,7 @@ Classes and functions
 
 .. function:: getargspec(func)
 
-   Get the names and default values of a function's arguments. A 
+   Get the names and default values of a function's arguments. A
    :term:`named tuple` ``ArgSpec(args, varargs, keywords,
    defaults)`` is returned. *args* is a list of
    the argument names. *varargs* and *varkw* are the names of the ``*`` and
@@ -416,7 +416,7 @@ Classes and functions
 
 .. function:: getargvalues(frame)
 
-   Get information about arguments passed into a particular frame. A :term:`named tuple` 
+   Get information about arguments passed into a particular frame. A :term:`named tuple`
    ``ArgInfo(args, varargs, keywords, locals)`` is returned. *args* is a list of the
    argument names (it may contain nested lists). *varargs* and *varkw* are the
    names of the ``*`` and ``**`` arguments or ``None``. *locals* is the locals
@@ -484,7 +484,7 @@ line.
 
 .. function:: getframeinfo(frame[, context])
 
-   Get information about a frame or traceback object.  A :term:`named tuple` 
+   Get information about a frame or traceback object.  A :term:`named tuple`
    ``Traceback(filename, lineno, function, code_context, index)`` is returned.
 
 

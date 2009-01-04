@@ -268,13 +268,13 @@ file winds up deep in the "build tree," in a temporary directory created by
 .. % \longprogramopt{spec-file} option; used in conjunction with
 .. % \longprogramopt{spec-only}, this gives you an opportunity to customize
 .. % the \file{.spec} file manually:
-.. % 
+.. %
 .. % \ begin{verbatim}
 .. % > python setup.py bdist_rpm --spec-only
 .. % # ...edit dist/FooBar-1.0.spec
 .. % > python setup.py bdist_rpm --spec-file=dist/FooBar-1.0.spec
 .. % \ end{verbatim}
-.. % 
+.. %
 .. % (Although a better way to do this is probably to override the standard
 .. % \command{bdist\_rpm} command with one that writes whatever else you want
 .. % to the \file{.spec} file.)
@@ -334,31 +334,31 @@ The installer file will be written to the "distribution directory" --- normally
 Cross-compiling on Windows
 ==========================
 
-Starting with Python 2.6, distutils is capable of cross-compiling between 
-Windows platforms.  In practice, this means that with the correct tools 
+Starting with Python 2.6, distutils is capable of cross-compiling between
+Windows platforms.  In practice, this means that with the correct tools
 installed, you can use a 32bit version of Windows to create 64bit extensions
 and vice-versa.
 
-To build for an alternate platform, specify the :option:`--plat-name` option 
-to the build command.  Valid values are currently 'win32', 'win-amd64' and 
+To build for an alternate platform, specify the :option:`--plat-name` option
+to the build command.  Valid values are currently 'win32', 'win-amd64' and
 'win-ia64'.  For example, on a 32bit version of Windows, you could execute::
 
    python setup.py build --plat-name=win-amd64
 
-to build a 64bit version of your extension.  The Windows Installers also 
+to build a 64bit version of your extension.  The Windows Installers also
 support this option, so the command::
 
    python setup.py build --plat-name=win-amd64 bdist_wininst
 
 would create a 64bit installation executable on your 32bit version of Windows.
 
-To cross-compile, you must download the Python source code and cross-compile 
+To cross-compile, you must download the Python source code and cross-compile
 Python itself for the platform you are targetting - it is not possible from a
 binary installtion of Python (as the .lib etc file for other platforms are
-not included.)  In practice, this means the user of a 32 bit operating 
-system will need to use Visual Studio 2008 to open the 
-:file:`PCBuild/PCbuild.sln` solution in the Python source tree and build the 
-"x64" configuration of the 'pythoncore' project before cross-compiling 
+not included.)  In practice, this means the user of a 32 bit operating
+system will need to use Visual Studio 2008 to open the
+:file:`PCBuild/PCbuild.sln` solution in the Python source tree and build the
+"x64" configuration of the 'pythoncore' project before cross-compiling
 extensions is possible.
 
 Note that by default, Visual Studio 2008 does not install 64bit compilers or

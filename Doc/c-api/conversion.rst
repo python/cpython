@@ -80,7 +80,7 @@ The following functions provide locale-independent string to number conversions.
 
    See the Unix man page :manpage:`atof(2)` for details.
 
-   
+
 .. cfunction:: char * PyOS_stricmp(char *s1, char *s2)
 
    Case insensitive comparison of strings. The function works almost

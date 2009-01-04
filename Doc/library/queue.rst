@@ -68,7 +68,7 @@ Queue Objects
 -------------
 
 Queue objects (:class:`Queue`, :class:`LifoQueue`, or :class:`PriorityQueue`)
-provide the public methods described below.  
+provide the public methods described below.
 
 
 .. method:: Queue.qsize()
@@ -138,20 +138,20 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
-   def worker(): 
-       while True: 
-           item = q.get() 
-           do_work(item) 
-           q.task_done() 
+   def worker():
+       while True:
+           item = q.get()
+           do_work(item)
+           q.task_done()
 
-   q = Queue() 
-   for i in range(num_worker_threads): 
+   q = Queue()
+   for i in range(num_worker_threads):
         t = Thread(target=worker)
         t.set_daemon(True)
-        t.start() 
+        t.start()
 
    for item in source():
-       q.put(item) 
+       q.put(item)
 
    q.join()       # block until all tasks are done
 

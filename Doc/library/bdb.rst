@@ -325,7 +325,7 @@ Finally, the module defines the following functions:
 
    Check whether we should break here, depending on the way the breakpoint *b*
    was set.
-   
+
    If it was set via line number, it checks if ``b.line`` is the same as the one
    in the frame also passed as argument.  If the breakpoint was set via function
    name, we have to check we are in the right frame (the right function) and if
