@@ -1,9 +1,9 @@
 # Widget to display a man page
 
 import re
-from Tkinter import *
-from Tkinter import _tkinter
-from ScrolledText import ScrolledText
+from tkinter import *
+from tkinter import _tkinter
+from tkinter.scrolledtext import ScrolledText
 
 # XXX These fonts may have to be changed to match your system
 BOLDFONT = '*-Courier-Bold-R-Normal-*-120-*'

@@ -16,8 +16,8 @@
 # installation directory for an application.
 #
 
-import Tix, os, copy
-from Tkconstants import *
+import tkinter.tix, os, copy
+from tkinter.constants import *
 
 TCL_ALL_EVENTS          = 0
 
@@ -40,25 +40,25 @@ class DemoDirTree:
         # bg = root.tk.eval('tix option get bg')
         # adding bg=bg crashes Windows pythonw tk8.3.3 Python 2.1.0
 
-        top = Tix.Frame( w, relief=RAISED, bd=1)
+        top = tkinter.tix.Frame( w, relief=RAISED, bd=1)
 
         # Create the DirTree widget. By default it will show the current
         # directory
         #
         #
-        top.dir = Tix.DirTree(top)
+        top.dir = tkinter.tix.DirTree(top)
         top.dir.hlist['width'] = 40
 
         # When the user presses the ".." button, the selected directory
         # is "transferred" into the entry widget
         #
-        top.btn = Tix.Button(top, text = "  >>  ", pady = 0)
+        top.btn = tkinter.tix.Button(top, text = "  >>  ", pady = 0)
 
         # We use a LabelEntry to hold the installation directory. The user
         # can choose from the DirTree widget, or he can type in the directory
         # manually
         #
-        top.ent = Tix.LabelEntry(top, label="Installation Directory:",
+        top.ent = tkinter.tix.LabelEntry(top, label="Installation Directory:",
                                   labelside = 'top',
                                   options = '''
                                   entry.width 40
@@ -79,7 +79,7 @@ class DemoDirTree:
 
         # Use a ButtonBox to hold the buttons.
         #
-        box = Tix.ButtonBox (w, orientation='horizontal')
+        box = tkinter.tix.ButtonBox (w, orientation='horizontal')
         box.add ('ok', text='Ok', underline=0, width=6,
                      command = lambda self=self: self.okcmd () )
         box.add ('cancel', text='Cancel', underline=0, width=6,
@@ -113,5 +113,5 @@ class DemoDirTree:
 # outside of the main demo program "tixwidgets.py".
 #
 if __name__== '__main__' :
-    root=Tix.Tk()
+    root=tkinter.tix.Tk()
     RunSample(root)

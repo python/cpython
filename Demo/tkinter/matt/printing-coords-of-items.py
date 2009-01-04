@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # this file demonstrates the creation of widgets as part of a canvas object
 

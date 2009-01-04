@@ -1,5 +1,5 @@
-from Tkinter import *
-from Dialog import Dialog
+from tkinter import *
+from tkinter.dialog import Dialog
 
 # this shows how to create a new window with a button in it
 # that can create new windows

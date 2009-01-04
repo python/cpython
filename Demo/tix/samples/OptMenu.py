@@ -13,7 +13,7 @@
 # This file demonstrates the use of the tixOptionMenu widget -- you can
 # use it for the user to choose from a fixed set of options
 #
-import Tix
+import tkinter.tix
 
 options = {'text':'Plain Text', 'post':'PostScript', 'html':'HTML',
            'tex':'LaTeX', 'rtf':'Rich Text Format'}
@@ -21,16 +21,16 @@ options = {'text':'Plain Text', 'post':'PostScript', 'html':'HTML',
 def RunSample(w):
     global demo_opt_from, demo_opt_to
 
-    demo_opt_from = Tix.StringVar()
-    demo_opt_to = Tix.StringVar()
+    demo_opt_from = tkinter.tix.StringVar()
+    demo_opt_to = tkinter.tix.StringVar()
 
-    top = Tix.Frame(w, bd=1, relief=Tix.RAISED)
+    top = tkinter.tix.Frame(w, bd=1, relief=tkinter.tix.RAISED)
 
-    from_file = Tix.OptionMenu(top, label="From File Format : ",
+    from_file = tkinter.tix.OptionMenu(top, label="From File Format : ",
                                variable=demo_opt_from,
                                options = 'label.width  19 label.anchor e menubutton.width 15')
 
-    to_file = Tix.OptionMenu(top, label="To File Format : ",
+    to_file = tkinter.tix.OptionMenu(top, label="To File Format : ",
                              variable=demo_opt_to,
                              options='label.width  19 label.anchor e menubutton.width 15')
 
@@ -47,22 +47,22 @@ def RunSample(w):
     demo_opt_from.set('html')
     demo_opt_to.set('post')
 
-    from_file.pack(side=Tix.TOP, anchor=Tix.W, pady=3, padx=6)
-    to_file.pack(side=Tix.TOP, anchor=Tix.W, pady=3, padx=6)
+    from_file.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W, pady=3, padx=6)
+    to_file.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W, pady=3, padx=6)
 
-    box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+    box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
             command=lambda w=w: ok_command(w))
     box.add('cancel', text='Cancel', underline=0, width=6,
             command=lambda w=w: w.destroy())
-    box.pack(side=Tix.BOTTOM, fill=Tix.X)
-    top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+    top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
 def ok_command(w):
     # tixDemo:Status "Convert file from %s to %s" % ( demo_opt_from.get(), demo_opt_to.get())
     w.destroy()
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

@@ -18,7 +18,7 @@
 # integer values; one lets you select floating point values and the last
 # one lets you select a few names.
 
-import Tix
+import tkinter.tix
 
 TCL_ALL_EVENTS          = 0
 
@@ -34,14 +34,14 @@ class DemoControl:
 
         global demo_maker, demo_thrust, demo_num_engines
 
-        demo_maker = Tix.StringVar()
-        demo_thrust = Tix.DoubleVar()
-        demo_num_engines = Tix.IntVar()
+        demo_maker = tkinter.tix.StringVar()
+        demo_thrust = tkinter.tix.DoubleVar()
+        demo_num_engines = tkinter.tix.IntVar()
         demo_maker.set('P&W')
         demo_thrust.set(20000.0)
         demo_num_engines.set(2)
 
-        top = Tix.Frame(w, bd=1, relief=Tix.RAISED)
+        top = tkinter.tix.Frame(w, bd=1, relief=tkinter.tix.RAISED)
 
         # $w.top.a allows only integer values
         #
@@ -49,16 +49,16 @@ class DemoControl:
         # [Hint] We set the label.width subwidget option of the Controls to
         #        be 16 so that their labels appear to be aligned.
         #
-        a = Tix.Control(top, label='Number of Engines: ', integer=1,
+        a = tkinter.tix.Control(top, label='Number of Engines: ', integer=1,
                         variable=demo_num_engines, min=1, max=4,
                         options='entry.width 10 label.width 20 label.anchor e')
 
-        b = Tix.Control(top, label='Thrust: ', integer=0,
+        b = tkinter.tix.Control(top, label='Thrust: ', integer=0,
                         min='10000.0', max='60000.0', step=500,
                         variable=demo_thrust,
                         options='entry.width 10 label.width 20 label.anchor e')
 
-        c = Tix.Control(top, label='Engine Maker: ', value='P&W',
+        c = tkinter.tix.Control(top, label='Engine Maker: ', value='P&W',
                         variable=demo_maker,
                         options='entry.width 10 label.width 20 label.anchor e')
 
@@ -68,17 +68,17 @@ class DemoControl:
         c['decrcmd'] = lambda w=c: adjust_maker(w, -1)
         c['validatecmd'] = lambda w=c: validate_maker(w)
 
-        a.pack(side=Tix.TOP, anchor=Tix.W)
-        b.pack(side=Tix.TOP, anchor=Tix.W)
-        c.pack(side=Tix.TOP, anchor=Tix.W)
+        a.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W)
+        b.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W)
+        c.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W)
 
-        box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+        box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
         box.add('ok', text='Ok', underline=0, width=6,
                 command=self.okcmd)
         box.add('cancel', text='Cancel', underline=0, width=6,
                 command=self.quitcmd)
-        box.pack(side=Tix.BOTTOM, fill=Tix.X)
-        top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+        box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+        top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
     def okcmd (self):
         # tixDemo:Status "Selected %d of %s engines each of thrust %d", (demo_num_engines.get(), demo_maker.get(), demo_thrust.get())
@@ -118,5 +118,5 @@ def validate_maker(w):
     return maker_list[i]
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)

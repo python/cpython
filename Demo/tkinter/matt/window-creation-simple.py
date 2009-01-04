@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # this shows how to spawn off new windows at a button press
 

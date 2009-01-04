@@ -485,7 +485,7 @@ def colnum2name(n):
         s = chr(m+ord('A')) + s
     return s
 
-import Tkinter as Tk
+import tkinter as Tk
 
 class SheetGUI:
 

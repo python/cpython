@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # this file demonstrates a more sophisticated movement --
 # move dots or create new ones if you click outside the dots

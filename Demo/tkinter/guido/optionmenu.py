@@ -1,6 +1,6 @@
 # option menu sample (Fredrik Lundh, September 1997)
 
-from Tkinter import *
+from tkinter import *
 
 root = Tk()
 

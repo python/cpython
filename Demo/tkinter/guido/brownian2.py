@@ -1,7 +1,7 @@
 # Brownian motion -- an example of a NON multi-threaded Tkinter program ;)
 # By Michele Simoniato, inspired by brownian.py
 
-from Tkinter import *
+from tkinter import *
 import random
 import sys
 

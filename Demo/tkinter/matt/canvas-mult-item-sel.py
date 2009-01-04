@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # allows moving dots with multiple selection.
 

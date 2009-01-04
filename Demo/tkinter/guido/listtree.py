@@ -3,7 +3,7 @@
 import sys
 import string
 
-from Tkinter import *
+from tkinter import *
 
 def listtree(master, app):
     list = Listbox(master, name='list')

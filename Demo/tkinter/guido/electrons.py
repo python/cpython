@@ -11,7 +11,7 @@
 # /usr/include/X11/bitmaps for samples); it is displayed as the
 # background of the animation.  Default is no bitmap.
 
-from Tkinter import *
+from tkinter import *
 import random
 
 

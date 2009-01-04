@@ -15,7 +15,7 @@
 # buttons
 #
 
-import Tix
+import tkinter.tix
 
 network_pixmap = """/* XPM */
 static char * netw_xpm[] = {
@@ -144,15 +144,15 @@ static unsigned char drivea_bits[] = {
 """
 
 def RunSample(w):
-    w.img0 = Tix.Image('pixmap', data=network_pixmap)
+    w.img0 = tkinter.tix.Image('pixmap', data=network_pixmap)
     if not w.img0:
-        w.img0 = Tix.Image('bitmap', data=network_bitmap)
-    w.img1 = Tix.Image('pixmap', data=hard_disk_pixmap)
+        w.img0 = tkinter.tix.Image('bitmap', data=network_bitmap)
+    w.img1 = tkinter.tix.Image('pixmap', data=hard_disk_pixmap)
     if not w.img0:
-        w.img1 = Tix.Image('bitmap', data=hard_disk_bitmap)
+        w.img1 = tkinter.tix.Image('bitmap', data=hard_disk_bitmap)
 
-    hdd = Tix.Button(w, padx=4, pady=1, width=120)
-    net = Tix.Button(w, padx=4, pady=1, width=120)
+    hdd = tkinter.tix.Button(w, padx=4, pady=1, width=120)
+    net = tkinter.tix.Button(w, padx=4, pady=1, width=120)
 
     # Create the first image: we create a line, then put a string,
     # a space and a image into this line, from left to right.
@@ -160,7 +160,7 @@ def RunSample(w):
     # individual items
     #
     # The tk.calls should be methods in Tix ...
-    w.hdd_img = Tix.Image('compound', window=hdd)
+    w.hdd_img = tkinter.tix.Image('compound', window=hdd)
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'line')
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'text', '-text', 'Hard Disk',
                     '-underline', '0')
@@ -172,7 +172,7 @@ def RunSample(w):
     hdd['image'] = w.hdd_img
 
     # Next button
-    w.net_img = Tix.Image('compound', window=net)
+    w.net_img = tkinter.tix.Image('compound', window=net)
     w.net_img.tk.call(str(w.net_img), 'add', 'line')
     w.net_img.tk.call(str(w.net_img), 'add', 'text', '-text', 'Network',
                     '-underline', '0')
@@ -183,14 +183,14 @@ def RunSample(w):
     #
     net['image'] = w.net_img
 
-    close = Tix.Button(w, pady=1, text='Close',
+    close = tkinter.tix.Button(w, pady=1, text='Close',
                        command=lambda w=w: w.destroy())
 
-    hdd.pack(side=Tix.LEFT, padx=10, pady=10, fill=Tix.Y, expand=1)
-    net.pack(side=Tix.LEFT, padx=10, pady=10, fill=Tix.Y, expand=1)
-    close.pack(side=Tix.LEFT, padx=10, pady=10, fill=Tix.Y, expand=1)
+    hdd.pack(side=tkinter.tix.LEFT, padx=10, pady=10, fill=tkinter.tix.Y, expand=1)
+    net.pack(side=tkinter.tix.LEFT, padx=10, pady=10, fill=tkinter.tix.Y, expand=1)
+    close.pack(side=tkinter.tix.LEFT, padx=10, pady=10, fill=tkinter.tix.Y, expand=1)
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

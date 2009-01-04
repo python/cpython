@@ -4,7 +4,7 @@
 # optional bitmap, and any number of buttons.
 # Cf. Ousterhout, Tcl and the Tk Toolkit, Figs. 27.2-3, pp. 269-270.
 
-from Tkinter import *
+from tkinter import *
 import sys
 
 

@@ -1,7 +1,7 @@
 # Display hello, world in a button; clicking it quits the program
 
 import sys
-from Tkinter import *
+from tkinter import *
 
 def main():
     root = Tk()

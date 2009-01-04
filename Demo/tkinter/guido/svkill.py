@@ -2,7 +2,7 @@
 
 # Tkinter interface to SYSV `ps' and `kill' commands.
 
-from Tkinter import *
+from tkinter import *
 
 if TkVersion < 4.0:
     raise ImportError("This version of svkill requires Tk 4.0 or later")

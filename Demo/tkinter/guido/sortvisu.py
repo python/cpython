@@ -19,7 +19,7 @@ stand-alone application.
 """
 
 
-from Tkinter import *
+from tkinter import *
 from Canvas import Line, Rectangle
 import random
 

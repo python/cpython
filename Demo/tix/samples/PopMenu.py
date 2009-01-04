@@ -12,18 +12,18 @@
 
 # This file demonstrates the use of the tixPopupMenu widget.
 #
-import Tix
+import tkinter.tix
 
 def RunSample(w):
     # We create the frame and the button, then we'll bind the PopupMenu
     # to both widgets. The result is, when you press the right mouse
     # button over $w.top or $w.top.but, the PopupMenu will come up.
     #
-    top = Tix.Frame(w, relief=Tix.RAISED, bd=1)
-    but = Tix.Button(top, text='Press the right mouse button over this button or its surrounding area')
-    but.pack(expand=1, fill=Tix.BOTH, padx=50, pady=50)
+    top = tkinter.tix.Frame(w, relief=tkinter.tix.RAISED, bd=1)
+    but = tkinter.tix.Button(top, text='Press the right mouse button over this button or its surrounding area')
+    but.pack(expand=1, fill=tkinter.tix.BOTH, padx=50, pady=50)
 
-    p = Tix.PopupMenu(top, title='Popup Test')
+    p = tkinter.tix.PopupMenu(top, title='Popup Test')
     p.bind_widget(top)
     p.bind_widget(but)
 
@@ -37,21 +37,21 @@ def RunSample(w):
     p.menu.add_command(label='Find', underline=0)
     p.menu.add_command(label='System', underline=1)
     p.menu.add_command(label='Help', underline=0)
-    m1 = Tix.Menu(p.menu)
+    m1 = tkinter.tix.Menu(p.menu)
     m1.add_command(label='Hello')
     p.menu.add_cascade(label='More', menu=m1)
 
-    but.pack(side=Tix.TOP, padx=40, pady=50)
+    but.pack(side=tkinter.tix.TOP, padx=40, pady=50)
 
-    box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+    box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
             command=lambda w=w: w.destroy())
     box.add('cancel', text='Cancel', underline=0, width=6,
             command=lambda w=w: w.destroy())
-    box.pack(side=Tix.BOTTOM, fill=Tix.X)
-    top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+    top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

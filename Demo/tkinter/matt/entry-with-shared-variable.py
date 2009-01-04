@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 import string
 
 # This program  shows how to make a typein box shadow a program variable.

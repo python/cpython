@@ -25,7 +25,7 @@ know!
 import math
 import random
 
-from Tkinter import *
+from tkinter import *
 from Canvas import Rectangle, CanvasText, Group, Window
 
 
