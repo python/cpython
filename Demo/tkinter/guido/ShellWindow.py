@@ -1,9 +1,9 @@
 import os
 import sys
 import string
-from Tkinter import *
-from ScrolledText import ScrolledText
-from Dialog import Dialog
+from tkinter import *
+from tkinter.scrolledtext import ScrolledText
+from tkinter.dialog import Dialog
 import signal
 
 BUFSIZE = 512

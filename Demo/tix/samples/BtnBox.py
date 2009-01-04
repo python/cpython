@@ -15,13 +15,13 @@
 # for example.
 #
 
-import Tix
+import tkinter.tix
 
 def RunSample(w):
     # Create the label on the top of the dialog box
     #
-    top = Tix.Label(w, padx=20, pady=10, bd=1, relief=Tix.RAISED,
-                    anchor=Tix.CENTER, text='This dialog box is\n a demonstration of the\n tixButtonBox widget')
+    top = tkinter.tix.Label(w, padx=20, pady=10, bd=1, relief=tkinter.tix.RAISED,
+                    anchor=tkinter.tix.CENTER, text='This dialog box is\n a demonstration of the\n tixButtonBox widget')
 
     # Create the button box and add a few buttons in it. Set the
     # -width of all the buttons to the same value so that they
@@ -30,15 +30,15 @@ def RunSample(w):
     # Note that the -text, -underline, -command and -width options are all
     # standard options of the button widgets.
     #
-    box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+    box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
     box.add('ok', text='OK', underline=0, width=5,
             command=lambda w=w: w.destroy())
     box.add('close', text='Cancel', underline=0, width=5,
             command=lambda w=w: w.destroy())
-    box.pack(side=Tix.BOTTOM, fill=Tix.X)
-    top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+    top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

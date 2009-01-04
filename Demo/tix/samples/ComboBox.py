@@ -13,15 +13,15 @@
 # This file demonstrates the use of the tixComboBox widget, which is close
 # to the MS Window Combo Box control.
 #
-import Tix
+import tkinter.tix
 
 def RunSample(w):
     global demo_month, demo_year
 
-    top = Tix.Frame(w, bd=1, relief=Tix.RAISED)
+    top = tkinter.tix.Frame(w, bd=1, relief=tkinter.tix.RAISED)
 
-    demo_month = Tix.StringVar()
-    demo_year = Tix.StringVar()
+    demo_month = tkinter.tix.StringVar()
+    demo_year = tkinter.tix.StringVar()
 
     # $w.top.a is a drop-down combo box. It is not editable -- who wants
     # to invent new months?
@@ -30,7 +30,7 @@ def RunSample(w):
     # [Hint] We set the label.width subwidget option of both comboboxes to
     #        be 10 so that their labels appear to be aligned.
     #
-    a = Tix.ComboBox(top, label="Month: ", dropdown=1,
+    a = tkinter.tix.ComboBox(top, label="Month: ", dropdown=1,
         command=select_month, editable=0, variable=demo_month,
         options='listbox.height 6 label.width 10 label.anchor e')
 
@@ -43,31 +43,31 @@ def RunSample(w):
     # [Hint] Notice that you should use padY (the NAME of the option) and not
     #        pady (the SWITCH of the option).
     #
-    b = Tix.ComboBox(top, label="Year: ", dropdown=0,
+    b = tkinter.tix.ComboBox(top, label="Year: ", dropdown=0,
         command=select_year, editable=1, variable=demo_year,
         options='listbox.height 4 label.padY 5 label.width 10 label.anchor ne')
 
-    a.pack(side=Tix.TOP, anchor=Tix.W)
-    b.pack(side=Tix.TOP, anchor=Tix.W)
+    a.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W)
+    b.pack(side=tkinter.tix.TOP, anchor=tkinter.tix.W)
 
-    a.insert(Tix.END, 'January')
-    a.insert(Tix.END, 'February')
-    a.insert(Tix.END, 'March')
-    a.insert(Tix.END, 'April')
-    a.insert(Tix.END, 'May')
-    a.insert(Tix.END, 'June')
-    a.insert(Tix.END, 'July')
-    a.insert(Tix.END, 'August')
-    a.insert(Tix.END, 'September')
-    a.insert(Tix.END, 'October')
-    a.insert(Tix.END, 'November')
-    a.insert(Tix.END, 'December')
+    a.insert(tkinter.tix.END, 'January')
+    a.insert(tkinter.tix.END, 'February')
+    a.insert(tkinter.tix.END, 'March')
+    a.insert(tkinter.tix.END, 'April')
+    a.insert(tkinter.tix.END, 'May')
+    a.insert(tkinter.tix.END, 'June')
+    a.insert(tkinter.tix.END, 'July')
+    a.insert(tkinter.tix.END, 'August')
+    a.insert(tkinter.tix.END, 'September')
+    a.insert(tkinter.tix.END, 'October')
+    a.insert(tkinter.tix.END, 'November')
+    a.insert(tkinter.tix.END, 'December')
 
-    b.insert(Tix.END, '1992')
-    b.insert(Tix.END, '1993')
-    b.insert(Tix.END, '1994')
-    b.insert(Tix.END, '1995')
-    b.insert(Tix.END, '1996')
+    b.insert(tkinter.tix.END, '1992')
+    b.insert(tkinter.tix.END, '1993')
+    b.insert(tkinter.tix.END, '1994')
+    b.insert(tkinter.tix.END, '1995')
+    b.insert(tkinter.tix.END, '1996')
 
     # Use "tixSetSilent" to set the values of the combo box if you
     # don't want your -command procedures (cbx:select_month and
@@ -76,13 +76,13 @@ def RunSample(w):
     a.set_silent('January')
     b.set_silent('1995')
 
-    box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+    box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
             command=lambda w=w: ok_command(w))
     box.add('cancel', text='Cancel', underline=0, width=6,
             command=lambda w=w: w.destroy())
-    box.pack(side=Tix.BOTTOM, fill=Tix.X)
-    top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+    top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
 def select_month(event=None):
     # tixDemo:Status "Month = %s" % demo_month.get()
@@ -97,6 +97,6 @@ def ok_command(w):
     w.destroy()
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

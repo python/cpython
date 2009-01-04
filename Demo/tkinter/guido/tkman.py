@@ -6,7 +6,7 @@ import sys
 import os
 import string
 import re
-from Tkinter import *
+from tkinter import *
 from ManPage import ManPage
 
 MANNDIRLIST = ['/depot/sundry/man/mann','/usr/local/man/mann']

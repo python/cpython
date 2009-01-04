@@ -1,6 +1,6 @@
 # Show how to do switchable panels.
 
-from Tkinter import *
+from tkinter import *
 
 class App:
 

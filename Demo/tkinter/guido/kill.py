@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Tkinter interface to Linux `kill' command.
 
-from Tkinter import *
+from tkinter import *
 from string import splitfields
 from string import split
 import subprocess

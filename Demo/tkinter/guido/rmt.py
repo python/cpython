@@ -11,7 +11,7 @@
 
 # XXX This should be written in a more Python-like style!!!
 
-from Tkinter import *
+from tkinter import *
 import sys
 
 # 1. Create basic application structure: menu bar on top of

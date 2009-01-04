@@ -15,7 +15,7 @@
 # of artical names and the size of the text widget that shows the body
 # of the article.
 
-import Tix
+import tkinter.tix
 
 TCL_ALL_EVENTS          = 0
 
@@ -32,30 +32,30 @@ class DemoPanedwin:
         z = w.winfo_toplevel()
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
 
-        group = Tix.LabelEntry(w, label='Newsgroup:', options='entry.width 25')
+        group = tkinter.tix.LabelEntry(w, label='Newsgroup:', options='entry.width 25')
         group.entry.insert(0,'comp.lang.python')
-        pane = Tix.PanedWindow(w, orientation='vertical')
+        pane = tkinter.tix.PanedWindow(w, orientation='vertical')
 
         p1 = pane.add('list', min=70, size=100)
         p2 = pane.add('text', min=70)
-        list = Tix.ScrolledListBox(p1)
+        list = tkinter.tix.ScrolledListBox(p1)
         list.listbox['width'] = 80
         list.listbox['height'] = 5
-        text = Tix.ScrolledText(p2)
+        text = tkinter.tix.ScrolledText(p2)
         text.text['width'] = 80
         text.text['height'] = 20
 
-        list.listbox.insert(Tix.END, "  12324 Re: Tkinter is good for your health")
-        list.listbox.insert(Tix.END, "+ 12325 Re: Tkinter is good for your health")
-        list.listbox.insert(Tix.END, "+ 12326 Re: Tix is even better for your health (Was: Tkinter is good...)")
-        list.listbox.insert(Tix.END, "  12327 Re: Tix is even better for your health (Was: Tkinter is good...)")
-        list.listbox.insert(Tix.END, "+ 12328 Re: Tix is even better for your health (Was: Tkinter is good...)")
-        list.listbox.insert(Tix.END, "  12329 Re: Tix is even better for your health (Was: Tkinter is good...)")
-        list.listbox.insert(Tix.END, "+ 12330 Re: Tix is even better for your health (Was: Tkinter is good...)")
+        list.listbox.insert(tkinter.tix.END, "  12324 Re: Tkinter is good for your health")
+        list.listbox.insert(tkinter.tix.END, "+ 12325 Re: Tkinter is good for your health")
+        list.listbox.insert(tkinter.tix.END, "+ 12326 Re: Tix is even better for your health (Was: Tkinter is good...)")
+        list.listbox.insert(tkinter.tix.END, "  12327 Re: Tix is even better for your health (Was: Tkinter is good...)")
+        list.listbox.insert(tkinter.tix.END, "+ 12328 Re: Tix is even better for your health (Was: Tkinter is good...)")
+        list.listbox.insert(tkinter.tix.END, "  12329 Re: Tix is even better for your health (Was: Tkinter is good...)")
+        list.listbox.insert(tkinter.tix.END, "+ 12330 Re: Tix is even better for your health (Was: Tkinter is good...)")
 
         text.text['bg'] = list.listbox['bg']
         text.text['wrap'] = 'none'
-        text.text.insert(Tix.END, """
+        text.text.insert(tkinter.tix.END, """
     Mon, 19 Jun 1995 11:39:52        comp.lang.python              Thread   34 of  220
     Lines 353       A new way to put text and bitmaps together iNo responses
     ioi@blue.seas.upenn.edu                Ioi K. Lam at University of Pennsylvania
@@ -70,18 +70,18 @@ class DemoPanedwin:
     """)
         text.text['state'] = 'disabled'
 
-        list.pack(expand=1, fill=Tix.BOTH, padx=4, pady=6)
-        text.pack(expand=1, fill=Tix.BOTH, padx=4, pady=6)
+        list.pack(expand=1, fill=tkinter.tix.BOTH, padx=4, pady=6)
+        text.pack(expand=1, fill=tkinter.tix.BOTH, padx=4, pady=6)
 
-        group.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH)
-        pane.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH, expand=1)
+        group.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH)
+        pane.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH, expand=1)
 
-        box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+        box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
         box.add('ok', text='Ok', underline=0, width=6,
                 command=self.quitcmd)
         box.add('cancel', text='Cancel', underline=0, width=6,
                 command=self.quitcmd)
-        box.pack(side=Tix.BOTTOM, fill=Tix.X)
+        box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
 
     def quitcmd (self):
         self.exit = 0
@@ -94,5 +94,5 @@ class DemoPanedwin:
         self.root.destroy()
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)

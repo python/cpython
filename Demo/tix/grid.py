@@ -1,5 +1,5 @@
 ###
-import Tix as tk
+import tkinter.tix as tk
 from pprint import pprint
 
 r= tk.Tk()

@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # This file shows how to trap the killing of a window
 # when the user uses window manager menus (typ. upper left hand corner
