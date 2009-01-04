@@ -461,8 +461,6 @@ The float type has some additional methods.
     :exc:`OverflowError` on infinities and a :exc:`ValueError` on
     NaNs.
 
-    .. versionadded:: 2.6
-
 Two methods support conversion to
 and from hexadecimal strings.  Since Python's floats are stored
 internally as binary numbers, converting a float to or from a

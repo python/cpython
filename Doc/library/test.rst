@@ -353,5 +353,3 @@ The :mod:`test.support` module defines the following classes:
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
 
-   .. versionadded:: 2.6
-
