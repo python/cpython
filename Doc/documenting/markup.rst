@@ -598,7 +598,7 @@ units as well as normal text:
 
    Example::
 
-      .. versionadded:: 2.5
+      .. versionadded:: 3.1
          The *spam* parameter.
 
    Note that there must be no blank line between the directive head and the

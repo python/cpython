@@ -335,8 +335,3 @@ Available Context Managers
     module returned when you import :mod:`warnings` whose filter will be
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
-
-    .. versionchanged:: 3.0
-
-       Constructor arguments turned into keyword-only arguments.
-

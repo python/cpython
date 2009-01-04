@@ -67,8 +67,8 @@ The module defines the following items:
    otherwise returns ``False``.  *filename* may be a file or file-like object too.
    This module does not currently handle ZIP files which have appended comments.
 
-   .. versionchanged:: 2.7
-   Support for file and file-like objects.
+   .. versionchanged:: 3.1
+      Support for file and file-like objects.
 
 .. data:: ZIP_STORED
 

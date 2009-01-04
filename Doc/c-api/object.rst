@@ -262,8 +262,6 @@ is considered sufficient for this determination.
    allowing a type to explicitly indicate to the interpreter that it is not
    hashable.
 
-   .. versionadded:: 2.6
-
 
 .. cfunction:: int PyObject_IsTrue(PyObject *o)
 
