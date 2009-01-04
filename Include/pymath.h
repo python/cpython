@@ -87,7 +87,7 @@ extern double copysign(double, double);
  * Note: PC/pyconfig.h defines Py_IS_NAN as _isnan
  */
 #ifndef Py_IS_NAN
-#ifdef HAVE_ISNAN
+#ifdef HAVE_DECL_ISNAN
 #define Py_IS_NAN(X) isnan(X)
 #else
 #define Py_IS_NAN(X) ((X) != (X))
@@ -104,7 +104,7 @@ extern double copysign(double, double);
  * Note: PC/pyconfig.h defines Py_IS_INFINITY as _isinf
  */
 #ifndef Py_IS_INFINITY
-#ifdef HAVE_ISINF
+#ifdef HAVE_DECL_ISINF
 #define Py_IS_INFINITY(X) isinf(X)
 #else
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
