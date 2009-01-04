@@ -158,6 +158,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1702551: distutils sdist was not excluding VCS directories under 
+  Windows. Inital solution by Guy Dalberto.
+
 - Issue #4812: add missing underscore prefix to some internal-use-only
   constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
 

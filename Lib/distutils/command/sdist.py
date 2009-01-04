@@ -7,6 +7,7 @@ Implements the Distutils 'sdist' command (create a source distribution)."""
 __revision__ = "$Id$"
 
 import os, string
+import sys
 from types import *
 from glob import glob
 from distutils.core import Command
@@ -354,8 +355,13 @@ class sdist (Command):
 
         self.filelist.exclude_pattern(None, prefix=build.build_base)
         self.filelist.exclude_pattern(None, prefix=base_dir)
-        self.filelist.exclude_pattern(r'(^|/)(RCS|CVS|\.svn|\.hg|\.git|\.bzr|_darcs)/.*', is_regex=1)
 
+        # pruning out vcs directories
+        # both separators are used under win32
+        seps = sys.platform == 'win32' and r'/|\\' or '/'
+        vcs_dirs = ['RCS', 'CVS', '\.svn', '\.hg', '\.git', '\.bzr', '_darcs']
+        vcs_ptrn = r'(^|%s)(%s)(%s).*' % (seps, '|'.join(vcs_dirs), seps)
+        self.filelist.exclude_pattern(vcs_ptrn, is_regex=1)
 
     def write_manifest (self):
         """Write the file list in 'self.filelist' (presumably as filled in
