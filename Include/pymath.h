@@ -118,7 +118,9 @@ extern double copysign(double, double);
  * Note: PC/pyconfig.h defines Py_IS_FINITE as _finite
  */
 #ifndef Py_IS_FINITE
-#ifdef HAVE_FINITE
+#if defined HAVE_DECL_ISFINITE && HAVE_DECL_ISFINITE == 1
+#define Py_IS_FINITE(X) isfinite(X)
+#elif defined HAVE_FINITE
 #define Py_IS_FINITE(X) finite(X)
 #else
 #define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
