@@ -35,14 +35,14 @@ goto end
 :checkout
 svn co %SVNROOT%/doctools/trunk/sphinx tools/sphinx
 svn co %SVNROOT%/external/docutils-0.5/docutils tools/docutils
-svn co %SVNROOT%/external/Jinja-1.2/jinja tools/jinja
+svn co %SVNROOT%/external/Jinja-2.1.1/jinja2 tools/jinja2
 svn co %SVNROOT%/external/Pygments-0.11.1/pygments tools/pygments
 goto end
 
 :update
 svn update tools/sphinx
 svn update tools/docutils
-svn update tools/jinja
+svn update tools/jinja2
 svn update tools/pygments
 goto end
 
@@ -52,11 +52,6 @@ if not exist build\%1 mkdir build\%1
 if not exist build\doctrees mkdir build\doctrees
 cmd /C %PYTHON% tools\sphinx-build.py -b%1 -dbuild\doctrees . build\%*
 if "%1" EQU "htmlhelp" "%HTMLHELP%" build\htmlhelp\pydoc.hhp
-goto end
-
-:webrun
-set PYTHONPATH=tools
-%PYTHON% -m sphinx.web build\web
 goto end
 
 :end
