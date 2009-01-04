@@ -8,28 +8,35 @@ if "%HTMLHELP%" EQU "" set HTMLHELP=%ProgramFiles%\HTML Help Workshop\hhc.exe
 if "%1" EQU "" goto help
 if "%1" EQU "html" goto build
 if "%1" EQU "htmlhelp" goto build
-if "%1" EQU "web" goto build
-if "%1" EQU "webrun" goto webrun
+if "%1" EQU "latex" goto build
+if "%1" EQU "text" goto build
+if "%1" EQU "suspicious" goto build
+if "%1" EQU "linkcheck" goto build
+if "%1" EQU "changes" goto build
 if "%1" EQU "checkout" goto checkout
 if "%1" EQU "update" goto update
 
 :help
+set this=%~n0
 echo HELP
 echo.
-echo builddoc checkout
-echo builddoc update
-echo builddoc html
-echo builddoc htmlhelp
-echo builddoc web
-echo builddoc webrun
+echo %this% checkout
+echo %this% update
+echo %this% html
+echo %this% htmlhelp
+echo %this% latex
+echo %this% text
+echo %this% suspicious
+echo %this% linkcheck
+echo %this% changes
 echo.
 goto end
 
 :checkout
 svn co %SVNROOT%/doctools/trunk/sphinx tools/sphinx
-svn co %SVNROOT%/external/docutils-0.4/docutils tools/docutils
-svn co %SVNROOT%/external/Jinja-1.1/jinja tools/jinja
-svn co %SVNROOT%/external/Pygments-0.9/pygments tools/pygments
+svn co %SVNROOT%/external/docutils-0.5/docutils tools/docutils
+svn co %SVNROOT%/external/Jinja-1.2/jinja tools/jinja
+svn co %SVNROOT%/external/Pygments-0.11.1/pygments tools/pygments
 goto end
 
 :update
@@ -43,7 +50,7 @@ goto end
 if not exist build mkdir build
 if not exist build\%1 mkdir build\%1
 if not exist build\doctrees mkdir build\doctrees
-cmd /C %PYTHON% tools\sphinx-build.py -b%1 -dbuild\doctrees . build\%1
+cmd /C %PYTHON% tools\sphinx-build.py -b%1 -dbuild\doctrees . build\%*
 if "%1" EQU "htmlhelp" "%HTMLHELP%" build\htmlhelp\pydoc.hhp
 goto end
 
