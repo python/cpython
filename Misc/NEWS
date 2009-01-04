@@ -82,6 +82,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #4272: Add an optional argument to the GzipFile constructor to override
+  the timestamp in the gzip stream. The default value remains the current time.
+  The information can be used by e.g. gunzip when decompressing. Patch by
+  Jacques Frechet.
+
 - Restore Python 2.3 compatibility for decimal.py.
 
 - Issue #3638: Remove functions from _tkinter module level that depend on
