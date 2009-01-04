@@ -917,7 +917,7 @@ module::
 
    InternalDate = re.compile(r'INTERNALDATE "'
            r'(?P<day>[ 123][0-9])-(?P<mon>[A-Z][a-z][a-z])-'
-   	r'(?P<year>[0-9][0-9][0-9][0-9])'
+           r'(?P<year>[0-9][0-9][0-9][0-9])'
            r' (?P<hour>[0-9][0-9]):(?P<min>[0-9][0-9]):(?P<sec>[0-9][0-9])'
            r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
            r'"')

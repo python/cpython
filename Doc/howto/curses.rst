@@ -297,7 +297,7 @@ So, to display a reverse-video status line on the top line of the screen, you
 could code::
 
    stdscr.addstr(0, 0, "Current mode: Typing mode",
-   	      curses.A_REVERSE)
+                 curses.A_REVERSE)
    stdscr.refresh()
 
 The curses library also supports color on those terminals that provide it, The

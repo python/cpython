@@ -543,8 +543,8 @@ Continuing with the parser defined above, adding an
 :class:`OptionGroup` to a parser is easy::
 
     group = OptionGroup(parser, "Dangerous Options",
-			"Caution: use these options at your own risk.  "
-			"It is believed that some of them bite.")
+                        "Caution: use these options at your own risk.  "
+                        "It is believed that some of them bite.")
     group.add_option("-g", action="store_true", help="Group option.")
     parser.add_option_group(group)
 
@@ -558,12 +558,12 @@ This would result in the following help output::
       -q, --quiet          be vewwy quiet (I'm hunting wabbits)
       -fFILE, --file=FILE  write output to FILE
       -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
-			   [default], 'expert'
+                           [default], 'expert'
 
       Dangerous Options:
-	Caution: use of these options is at your own risk.  It is believed that
-	some of them bite.
-	-g                 Group option.
+      Caution: use of these options is at your own risk.  It is believed that
+      some of them bite.
+      -g                 Group option.
 
 .. _optparse-printing-version-string:
 
