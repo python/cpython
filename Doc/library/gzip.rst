@@ -24,7 +24,7 @@ For other archive formats, see the :mod:`bz2`, :mod:`zipfile`, and
 The module defines the following items:
 
 
-.. class:: GzipFile([filename[, mode[, compresslevel[, fileobj]]]])
+.. class:: GzipFile([filename[, mode[, compresslevel[, fileobj[, mtime]]]]])
 
    Constructor for the :class:`GzipFile` class, which simulates most of the methods
    of a file object, with the exception of the :meth:`readinto` and
@@ -51,6 +51,15 @@ The module defines the following items:
    The *compresslevel* argument is an integer from ``1`` to ``9`` controlling the
    level of compression; ``1`` is fastest and produces the least compression, and
    ``9`` is slowest and produces the most compression.  The default is ``9``.
+
+   The *mtime* argument is an optional numeric timestamp to be written to
+   the stream when compressing.  All :program:`gzip`compressed streams are
+   required to contain a timestamp.  If omitted or ``None``, the current
+   time is used.  This module ignores the timestamp when decompressing;
+   however, some programs, such as :program:`gunzip`\ , make use of it.
+   The format of the timestamp is the same as that of the return value of
+   ``time.time()`` and of the ``st_mtime`` member of the object returned
+   by ``os.stat()``.
 
    Calling a :class:`GzipFile` object's :meth:`close` method does not close
    *fileobj*, since you might wish to append more material after the compressed

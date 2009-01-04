@@ -6,6 +6,7 @@ import unittest
 from test import test_support
 import os
 import gzip
+import struct
 
 
 data1 = """  int length=DEFAULTALLOC, err = Z_OK;
@@ -159,6 +160,67 @@ class TestGzip(unittest.TestCase):
             self.assert_(hasattr(f, "name"))
             self.assertEqual(f.name, self.filename)
             f.close()
+
+    def test_mtime(self):
+        mtime = 123456789
+        fWrite = gzip.GzipFile(self.filename, 'w', mtime = mtime)
+        fWrite.write(data1)
+        fWrite.close()
+
+        fRead = gzip.GzipFile(self.filename)
+        dataRead = fRead.read()
+        self.assertEqual(dataRead, data1)
+        self.assert_(hasattr(fRead, 'mtime'))
+        self.assertEqual(fRead.mtime, mtime)
+        fRead.close()
+
+    def test_metadata(self):
+        mtime = 123456789
+
+        fWrite = gzip.GzipFile(self.filename, 'w', mtime = mtime)
+        fWrite.write(data1)
+        fWrite.close()
+
+        fRead = open(self.filename, 'rb')
+
+        # see RFC 1952: http://www.faqs.org/rfcs/rfc1952.html
+
+        idBytes = fRead.read(2)
+        self.assertEqual(idBytes, '\x1f\x8b') # gzip ID
+
+        cmByte = fRead.read(1)
+        self.assertEqual(cmByte, '\x08') # deflate
+
+        flagsByte = fRead.read(1)
+        self.assertEqual(flagsByte, '\x08') # only the FNAME flag is set
+
+        mtimeBytes = fRead.read(4)
+        self.assertEqual(mtimeBytes, struct.pack('<i', mtime)) # little-endian
+
+        xflByte = fRead.read(1)
+        self.assertEqual(xflByte, '\x02') # maximum compression
+
+        osByte = fRead.read(1)
+        self.assertEqual(osByte, '\xff') # OS "unknown" (OS-independent)
+
+        # Since the FNAME flag is set, the zero-terminated filename follows.
+        # RFC 1952 specifies that this is the name of the input file, if any.
+        # However, the gzip module defaults to storing the name of the output
+        # file in this field.
+        nameBytes = fRead.read(len(self.filename) + 1)
+        self.assertEqual(nameBytes, self.filename + '\x00')
+
+        # Since no other flags were set, the header ends here.
+        # Rather than process the compressed data, let's seek to the trailer.
+        fRead.seek(os.stat(self.filename).st_size - 8)
+
+        crc32Bytes = fRead.read(4) # CRC32 of uncompressed data [data1]
+        self.assertEqual(crc32Bytes, '\xaf\xd7d\x83')
+
+        isizeBytes = fRead.read(4)
+        self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
+
+        fRead.close()
 
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)

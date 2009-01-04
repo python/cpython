@@ -42,7 +42,7 @@ class GzipFile:
     max_read_chunk = 10 * 1024 * 1024   # 10Mb
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=9, fileobj=None):
+                 compresslevel=9, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -68,6 +68,15 @@ class GzipFile:
         The compresslevel argument is an integer from 1 to 9 controlling the
         level of compression; 1 is fastest and produces the least compression,
         and 9 is slowest and produces the most compression.  The default is 9.
+
+        The mtime argument is an optional numeric timestamp to be written
+        to the stream when compressing.  All gzip compressed streams
+        are required to contain a timestamp.  If omitted or None, the
+        current time is used.  This module ignores the timestamp when
+        decompressing; however, some programs, such as gunzip, make use
+        of it.  The format of the timestamp is the same as that of the
+        return value of time.time() and of the st_mtime member of the
+        object returned by os.stat().
 
         """
 
@@ -107,6 +116,7 @@ class GzipFile:
 
         self.fileobj = fileobj
         self.offset = 0
+        self.mtime = mtime
 
         if self.mode == WRITE:
             self._write_gzip_header()
@@ -140,7 +150,10 @@ class GzipFile:
         if fname:
             flags = FNAME
         self.fileobj.write(chr(flags))
-        write32u(self.fileobj, long(time.time()))
+        mtime = self.mtime
+        if mtime is None:
+            mtime = time.time()
+        write32u(self.fileobj, long(mtime))
         self.fileobj.write('\002')
         self.fileobj.write('\377')
         if fname:
@@ -158,10 +171,10 @@ class GzipFile:
         if method != 8:
             raise IOError, 'Unknown compression method'
         flag = ord( self.fileobj.read(1) )
-        # modtime = self.fileobj.read(4)
+        self.mtime = read32(self.fileobj)
         # extraflag = self.fileobj.read(1)
         # os = self.fileobj.read(1)
-        self.fileobj.read(6)
+        self.fileobj.read(2)
 
         if flag & FEXTRA:
             # Read & discard the extra field, if present
