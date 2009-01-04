@@ -820,8 +820,8 @@ builtin_exec(PyObject *self, PyObject *args)
 PyDoc_STRVAR(exec_doc,
 "exec(object[, globals[, locals]])\n\
 \n\
-Read and execute code from a object, which can be a string, a code\n\
-object or a file object.\n\
+Read and execute code from a object, which can be a string or a code\n\
+object.\n\
 The globals and locals are dictionaries, defaulting to the current\n\
 globals and locals.  If only globals is given, locals defaults to it.");
 
