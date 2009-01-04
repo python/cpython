@@ -599,7 +599,7 @@ units as well as normal text:
    Example::
 
       .. versionadded:: 2.5
-         The `spam` parameter.
+         The *spam* parameter.
 
    Note that there must be no blank line between the directive head and the
    explanation; this is to make these blocks visually continuous in the markup.
@@ -760,7 +760,7 @@ the definition of the symbol.  There is this directive:
    Blank lines are not allowed within ``productionlist`` directive arguments.
 
    The definition can contain token names which are marked as interpreted text
-   (e.g. ``sum ::= `integer` "+" `integer```) -- this generates cross-references
+   (e.g. ``unaryneg ::= "-" `integer```) -- this generates cross-references
    to the productions of these tokens.
 
    Note that no further reST parsing is done in the production, so that you
