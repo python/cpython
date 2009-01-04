@@ -1428,7 +1428,7 @@ Running the above function's tests with :const:`doctest.REPORT_UDIFF` specified,
 you get the following output::
 
    **********************************************************************
-   File ``t.py'', line 15, in g
+   File "t.py", line 15, in g
    Failed example:
        g(4)
    Differences (unified diff with -expected +actual):

@@ -475,7 +475,7 @@ than the URL you pass to .add_password() will also match. ::
     password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
 
     # Add the username and password.
-    # If we knew the realm, we could use it instead of ``None``.
+    # If we knew the realm, we could use it instead of None.
     top_level_url = "http://example.com/foo/"
     password_mgr.add_password(None, top_level_url, username, password)
 

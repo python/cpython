@@ -365,7 +365,7 @@ described in those functions, as well as provide an additional method:
       'http://www.Python.org/doc/'
 
 
-The following classes provide the implementations of the parse results::
+The following classes provide the implementations of the parse results:
 
 .. class:: BaseResult
 

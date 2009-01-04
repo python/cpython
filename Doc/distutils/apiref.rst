@@ -188,9 +188,10 @@ the full reference.
    |                        | for C/C++ header files (in     |                           |
    |                        | Unix form for portability)     |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *define_macros*        | list of macros to define; each | (string,string)  tuple or |
-   |                        | macro is defined using a       | (name,``None``)           |
-   |                        | 2-tuple, where 'value' is      |                           |
+   | *define_macros*        | list of macros to define; each | (string, string) tuple or |
+   |                        | macro is defined using a       | (name, ``None``)          |
+   |                        | 2-tuple ``(name, value)``,     |                           |
+   |                        | where *value* is               |                           |
    |                        | either the string to define it |                           |
    |                        | to or ``None`` to define it    |                           |
    |                        | without a particular value     |                           |
