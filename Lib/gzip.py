@@ -473,8 +473,8 @@ def _test():
     for arg in args:
         if decompress:
             if arg == "-":
-                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin)
-                g = sys.stdout
+                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
+                g = sys.stdout.buffer
             else:
                 if arg[-3:] != ".gz":
                     print("filename doesn't end in .gz:", repr(arg))
@@ -483,8 +483,8 @@ def _test():
                 g = builtins.open(arg[:-3], "wb")
         else:
             if arg == "-":
-                f = sys.stdin
-                g = GzipFile(filename="", mode="wb", fileobj=sys.stdout)
+                f = sys.stdin.buffer
+                g = GzipFile(filename="", mode="wb", fileobj=sys.stdout.buffer)
             else:
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
