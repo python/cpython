@@ -1,4 +1,3 @@
-
 :mod:`ftplib` --- FTP protocol client
 =====================================
 
