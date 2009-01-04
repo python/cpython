@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1702551: distutils sdist was not excluding VCS directories under 
+  Windows. Inital solution by Guy Dalberto.
+
 - The _tkinter module functions "createfilehandler", "deletefilehandler",
   "createtimerhandler", "mainloop", "dooneevent" and "quit" have been
   deprecated for removal in 3.x
