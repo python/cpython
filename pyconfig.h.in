@@ -983,6 +983,9 @@
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
 
+/* Define if arithmetic is subject to x87-style double rounding issue */
+#undef X87_DOUBLE_ROUNDING
+
 /* Define to 1 if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
