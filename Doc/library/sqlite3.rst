@@ -562,15 +562,10 @@ Row Objects
    If two :class:`Row` objects have exactly the same columns and their
    members are equal, they compare equal.
 
-   .. versionchanged:: 2.6
-      Added iteration and equality (hashability).
-
    .. method:: keys
 
       This method returns a tuple of column names. Immediately after a query,
       it is the first member of each tuple in :attr:`Cursor.description`.
-
-      .. versionadded:: 2.6
 
 Let's assume we initialize a table as in the example given above::
 

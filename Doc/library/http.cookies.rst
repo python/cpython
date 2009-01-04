@@ -131,9 +131,6 @@ Morsel Objects
 
    The keys are case-insensitive.
 
-   .. versionadded:: 2.6
-      The :attr:`httponly` attribute was added.
-
 
 .. attribute:: Morsel.value
 

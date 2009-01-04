@@ -107,10 +107,6 @@ described here are distributed with the Python sources in the
    to avoid confusion with a system library :file:`spam.dll` to which your module
    could be a Python interface.
 
-   .. versionchanged:: 2.5
-      Previously, file names like :file:`spam.dll` (in release mode) or
-      :file:`spam_d.dll` (in debug mode) were also recognized.
-
    Now your options are:
 
 #. Copy :file:`example.sln` and :file:`example.vcproj`, rename them to
