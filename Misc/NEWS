@@ -108,6 +108,8 @@ Core and Builtins
 Library
 -------
 
+- Restore Python 2.3 compatibility for decimal.py.
+
 - Issue #1702551: distutils sdist was not excluding VCS directories under 
   Windows. Inital solution by Guy Dalberto.
 
