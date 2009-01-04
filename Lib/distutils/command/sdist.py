@@ -358,8 +358,13 @@ class sdist (Command):
 
         # pruning out vcs directories
         # both separators are used under win32
-        seps = sys.platform == 'win32' and r'/|\\' or '/'
-        vcs_dirs = ['RCS', 'CVS', '\.svn', '\.hg', '\.git', '\.bzr', '_darcs']
+        if sys.platform == 'win32':
+            seps = r'/|\\'
+        else:
+            seps = '/'
+
+        vcs_dirs = ['RCS', 'CVS', r'\.svn', r'\.hg', r'\.git', r'\.bzr',
+                    '_darcs']
         vcs_ptrn = r'(^|%s)(%s)(%s).*' % (seps, '|'.join(vcs_dirs), seps)
         self.filelist.exclude_pattern(vcs_ptrn, is_regex=1)
 
