@@ -1175,7 +1175,7 @@ complete list of changes, or look through the CVS logs for all the details.
      import logging
      logging.basicConfig(filename='/var/log/application.log',
          level=0,  # Log all messages
-         format='%(levelname):%(process):%(thread):%(message)')	
+         format='%(levelname):%(process):%(thread):%(message)')
 
   Other additions to the :mod:`logging` package include a :meth:`log(level, msg)`
   convenience method, as well as a :class:`TimedRotatingFileHandler` class that

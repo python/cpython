@@ -519,7 +519,7 @@ with the :func:`zip` function. ::
    >>> answers = ['lancelot', 'the holy grail', 'blue']
    >>> for q, a in zip(questions, answers):
    ...     print('What is your {0}?  It is {1}.'.format(q, a))
-   ...	
+   ...
    What is your name?  It is lancelot.
    What is your quest?  It is the holy grail.
    What is your favorite color?  It is blue.
@@ -542,7 +542,7 @@ returns a new sorted list while leaving the source unaltered. ::
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
    ...     print(f)
-   ... 	
+   ...
    apple
    banana
    orange

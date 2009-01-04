@@ -49,8 +49,8 @@ The :mod:`urllib.request` module defines the following functions:
    The urlopen function from the previous version, Python 2.6 and earlier,  of
    the module  urllib has been discontinued as urlopen can return the
    file-object as the previous. The proxy handling, which in earlier was passed
-   as a dict parameter to urlopen can be availed by the use of `ProxyHandler`
-   objects.
+   as a dict parameter to urlopen can be availed by the use of
+   :class:`ProxyHandler` objects.
 
 
 .. function:: install_opener(opener)
