@@ -24,6 +24,7 @@ help:
 	@echo "  text      to make plain text files"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  coverage  to check documentation coverage for library and C API"
 	@echo "  dist      to create a \"dist\" directory with archived docs for download"
 
@@ -83,6 +84,11 @@ linkcheck: BUILDER = linkcheck
 linkcheck: build
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/$(BUILDER)/output.txt"
+
+suspicious: BUILDER = suspicious
+suspicious: build
+	@echo "Suspicious check complete; look for any errors in the above output " \
+	      "or in build/$(BUILDER)/suspicious.txt"
 
 coverage: BUILDER = coverage
 coverage: build
