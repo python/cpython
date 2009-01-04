@@ -5,8 +5,8 @@
 
 import string
 from types import *
-from Tkinter import *
-from ScrolledText import ScrolledText
+from tkinter import *
+from tkinter.scrolledtext import ScrolledText
 
 class MimeViewer:
     def __init__(self, parent, title, msg):

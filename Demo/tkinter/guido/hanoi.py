@@ -10,7 +10,7 @@
 # background of the animation.  Default is no bitmap.
 
 # This uses Steen Lumholt's Tk interface
-from Tkinter import *
+from tkinter import *
 
 
 # Basic Towers-of-Hanoi algorithm: move n pieces from a to b, using c

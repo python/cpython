@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # this file demonstrates the movement of a single canvas item under mouse control
 

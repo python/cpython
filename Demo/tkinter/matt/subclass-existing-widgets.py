@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # This is a program that makes a simple two button application
 

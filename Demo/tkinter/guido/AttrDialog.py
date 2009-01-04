@@ -12,7 +12,7 @@
 # -- totally static, though different between PackDialog and WidgetDialog
 #    (but even that could be unified)
 
-from Tkinter import *
+from tkinter import *
 
 class Option:
 

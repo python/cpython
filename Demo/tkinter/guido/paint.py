@@ -20,7 +20,7 @@ options like other shapes or colors...
                                                 davem@magnet.com
 """
 
-from Tkinter import *
+from tkinter import *
 
 """paint.py: not exactly a paint program.. just a smooth line drawing demo."""
 

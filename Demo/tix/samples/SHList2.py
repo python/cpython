@@ -16,7 +16,7 @@
 # In a tixHList widget, you can have one ore more columns.
 #
 
-import Tix
+import tkinter.tix
 
 TCL_ALL_EVENTS          = 0
 
@@ -36,13 +36,13 @@ class DemoSHList:
         # We create the frame and the ScrolledHList widget
         # at the top of the dialog box
         #
-        top = Tix.Frame( w, relief=Tix.RAISED, bd=1)
+        top = tkinter.tix.Frame( w, relief=tkinter.tix.RAISED, bd=1)
 
         # Put a simple hierachy into the HList (two levels). Use colors and
         # separator widgets (frames) to make the list look fancy
         #
-        top.a = Tix.ScrolledHList(top, options='hlist.columns 3 hlist.header 1' )
-        top.a.pack( expand=1, fill=Tix.BOTH, padx=10, pady=10, side=Tix.TOP)
+        top.a = tkinter.tix.ScrolledHList(top, options='hlist.columns 3 hlist.header 1' )
+        top.a.pack( expand=1, fill=tkinter.tix.BOTH, padx=10, pady=10, side=tkinter.tix.TOP)
 
         hlist=top.a.hlist
 
@@ -55,12 +55,12 @@ class DemoSHList:
 
         # First some styles for the headers
         style={}
-        style['header'] = Tix.DisplayStyle(Tix.TEXT, refwindow=hlist,
-            anchor=Tix.CENTER, padx=8, pady=2, font = boldfont )
+        style['header'] = tkinter.tix.DisplayStyle(tkinter.tix.TEXT, refwindow=hlist,
+            anchor=tkinter.tix.CENTER, padx=8, pady=2, font = boldfont )
 
-        hlist.header_create(0, itemtype=Tix.TEXT, text='Name',
+        hlist.header_create(0, itemtype=tkinter.tix.TEXT, text='Name',
             style=style['header'])
-        hlist.header_create(1, itemtype=Tix.TEXT, text='Position',
+        hlist.header_create(1, itemtype=tkinter.tix.TEXT, text='Position',
             style=style['header'])
 
         # Notice that we use 3 columns in the hlist widget. This way when the user
@@ -90,13 +90,13 @@ class DemoSHList:
             ('chuck', 'jeff',       'Chuck McLean',             'Cleaner')
         ]
 
-        style['mgr_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=hlist)
+        style['mgr_name'] = tkinter.tix.DisplayStyle(tkinter.tix.TEXT, refwindow=hlist)
 
-        style['mgr_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8, refwindow=hlist)
+        style['mgr_posn'] = tkinter.tix.DisplayStyle(tkinter.tix.TEXT, padx=8, refwindow=hlist)
 
-        style['empl_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=hlist)
+        style['empl_name'] = tkinter.tix.DisplayStyle(tkinter.tix.TEXT, refwindow=hlist)
 
-        style['empl_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8, refwindow=hlist)
+        style['empl_posn'] = tkinter.tix.DisplayStyle(tkinter.tix.TEXT, padx=8, refwindow=hlist)
 
         # Let configure the appearance of the HList subwidget
         #
@@ -105,9 +105,9 @@ class DemoSHList:
 
         # Create the boss
         #
-        hlist.add ('.',           itemtype=Tix.TEXT, text=boss[1],
+        hlist.add ('.',           itemtype=tkinter.tix.TEXT, text=boss[1],
             style=style['mgr_name'])
-        hlist.item_create('.', 1, itemtype=Tix.TEXT, text=boss[2],
+        hlist.item_create('.', 1, itemtype=tkinter.tix.TEXT, text=boss[2],
             style=style['mgr_posn'])
 
         # Create the managers
@@ -115,9 +115,9 @@ class DemoSHList:
 
         for key,name,posn in managers :
             e= '.'+ key
-            hlist.add(e, itemtype=Tix.TEXT, text=name,
+            hlist.add(e, itemtype=tkinter.tix.TEXT, text=name,
                 style=style['mgr_name'])
-            hlist.item_create(e, 1, itemtype=Tix.TEXT, text=posn,
+            hlist.item_create(e, 1, itemtype=tkinter.tix.TEXT, text=posn,
                 style=style['mgr_posn'])
 
 
@@ -130,21 +130,21 @@ class DemoSHList:
             #       parent entryPath / child's name
 
             hlist.add(entrypath, text=name, style=style['empl_name'])
-            hlist.item_create(entrypath, 1, itemtype=Tix.TEXT,
+            hlist.item_create(entrypath, 1, itemtype=tkinter.tix.TEXT,
                 text = posn, style = style['empl_posn'] )
 
 
         # Use a ButtonBox to hold the buttons.
         #
-        box= Tix.ButtonBox(top, orientation=Tix.HORIZONTAL )
+        box= tkinter.tix.ButtonBox(top, orientation=tkinter.tix.HORIZONTAL )
         box.add( 'ok',  text='Ok', underline=0,  width=6,
             command = self.okcmd )
 
         box.add( 'cancel', text='Cancel', underline=0, width=6,
             command = self.quitcmd )
 
-        box.pack( side=Tix.BOTTOM, fill=Tix.X)
-        top.pack( side=Tix.TOP,    fill=Tix.BOTH, expand=1 )
+        box.pack( side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+        top.pack( side=tkinter.tix.TOP,    fill=tkinter.tix.BOTH, expand=1 )
 
     def okcmd (self):
         self.quitcmd()
@@ -164,5 +164,5 @@ class DemoSHList:
 # outside of the main demo program "tixwidgets.py".
 #
 if __name__== '__main__' :
-    root=Tix.Tk()
+    root=tkinter.tix.Tk()
     RunSample(root)

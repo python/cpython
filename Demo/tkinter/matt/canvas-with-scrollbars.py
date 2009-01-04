@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # This example program creates a scroling canvas, and demonstrates
 # how to tie scrollbars and canvses together. The mechanism

@@ -1,6 +1,6 @@
 # Brownian motion -- an example of a multi-threaded Tkinter program.
 
-from Tkinter import *
+from tkinter import *
 import random
 import threading
 import time

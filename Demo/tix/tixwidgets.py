@@ -12,9 +12,9 @@
 #               % python tixwidgets.py
 #
 
-import os, os.path, sys, Tix
-from Tkconstants import *
-import traceback, tkMessageBox
+import os, os.path, sys, tkinter.tix
+from tkinter.constants import *
+import traceback, tkinter.messagebox
 
 TCL_DONT_WAIT           = 1<<1
 TCL_WINDOW_EVENTS       = 1<<2
@@ -30,7 +30,7 @@ class Demo:
 
         self.dir = None                         # script directory
         self.balloon = None                     # balloon widget
-        self.useBalloons = Tix.StringVar()
+        self.useBalloons = tkinter.tix.StringVar()
         self.useBalloons.set('0')
         self.statusbar = None                   # status bar widget
         self.welmsg = None                      # Msg widget
@@ -56,14 +56,14 @@ class Demo:
 
     def MkMainMenu(self):
         top = self.root
-        w = Tix.Frame(top, bd=2, relief=RAISED)
-        file = Tix.Menubutton(w, text='File', underline=0, takefocus=0)
-        help = Tix.Menubutton(w, text='Help', underline=0, takefocus=0)
+        w = tkinter.tix.Frame(top, bd=2, relief=RAISED)
+        file = tkinter.tix.Menubutton(w, text='File', underline=0, takefocus=0)
+        help = tkinter.tix.Menubutton(w, text='Help', underline=0, takefocus=0)
         file.pack(side=LEFT)
         help.pack(side=RIGHT)
-        fm = Tix.Menu(file, tearoff=0)
+        fm = tkinter.tix.Menu(file, tearoff=0)
         file['menu'] = fm
-        hm = Tix.Menu(help, tearoff=0)
+        hm = tkinter.tix.Menu(help, tearoff=0)
         help['menu'] = hm
 
         fm.add_command(label='Exit', underline=1,
@@ -77,7 +77,7 @@ class Demo:
 
     def MkMainNotebook(self):
         top = self.root
-        w = Tix.NoteBook(top, ipadx=5, ipady=5, options="""
+        w = tkinter.tix.NoteBook(top, ipadx=5, ipady=5, options="""
         tagPadX 6
         tagPadY 4
         borderWidth 2
@@ -103,8 +103,8 @@ class Demo:
         global demo
         top = self.root
 
-        w = Tix.Frame(top, relief=Tix.RAISED, bd=1)
-        demo.statusbar = Tix.Label(w, relief=Tix.SUNKEN, bd=1)
+        w = tkinter.tix.Frame(top, relief=tkinter.tix.RAISED, bd=1)
+        demo.statusbar = tkinter.tix.Label(w, relief=tkinter.tix.SUNKEN, bd=1)
         demo.statusbar.form(padx=3, pady=3, left=0, right='%70')
         return w
 
@@ -116,7 +116,7 @@ class Demo:
             z.geometry('790x590+10+10')
         else:
             z.geometry('890x640+10+10')
-        demo.balloon = Tix.Balloon(root)
+        demo.balloon = tkinter.tix.Balloon(root)
         frame1 = self.MkMainMenu()
         frame2 = self.MkMainNotebook()
         frame3 = self.MkMainStatus()
@@ -152,7 +152,7 @@ class Demo:
                 self.exit = 1
                 return
             except KeyboardInterrupt:
-                if tkMessageBox.askquestion ('Interrupt', 'Really Quit?') == 'yes':
+                if tkinter.messagebox.askquestion ('Interrupt', 'Really Quit?') == 'yes':
                     # self.tk.eval('exit')
                     self.exit = 1
                     return
@@ -163,7 +163,7 @@ class Demo:
                 text = ""
                 for line in traceback.format_exception(t,v,tb):
                     text += line + '\n'
-                try: tkMessageBox.showerror ('Error', text)
+                try: tkinter.messagebox.showerror ('Error', text)
                 except: pass
                 self.exit = 1
                 raise SystemExit(1)
@@ -191,9 +191,9 @@ def MkWelcome(nb, name):
 def MkWelcomeBar(top):
     global demo
 
-    w = Tix.Frame(top, bd=2, relief=Tix.GROOVE)
-    b1 = Tix.ComboBox(w, command=lambda w=top: MainTextFont(w))
-    b2 = Tix.ComboBox(w, command=lambda w=top: MainTextFont(w))
+    w = tkinter.tix.Frame(top, bd=2, relief=tkinter.tix.GROOVE)
+    b1 = tkinter.tix.ComboBox(w, command=lambda w=top: MainTextFont(w))
+    b2 = tkinter.tix.ComboBox(w, command=lambda w=top: MainTextFont(w))
     b1.entry['width'] = 15
     b1.slistbox.listbox['height'] = 3
     b2.entry['width'] = 4
@@ -202,22 +202,22 @@ def MkWelcomeBar(top):
     demo.welfont = b1
     demo.welsize = b2
 
-    b1.insert(Tix.END, 'Courier')
-    b1.insert(Tix.END, 'Helvetica')
-    b1.insert(Tix.END, 'Lucida')
-    b1.insert(Tix.END, 'Times Roman')
+    b1.insert(tkinter.tix.END, 'Courier')
+    b1.insert(tkinter.tix.END, 'Helvetica')
+    b1.insert(tkinter.tix.END, 'Lucida')
+    b1.insert(tkinter.tix.END, 'Times Roman')
 
-    b2.insert(Tix.END, '8')
-    b2.insert(Tix.END, '10')
-    b2.insert(Tix.END, '12')
-    b2.insert(Tix.END, '14')
-    b2.insert(Tix.END, '18')
+    b2.insert(tkinter.tix.END, '8')
+    b2.insert(tkinter.tix.END, '10')
+    b2.insert(tkinter.tix.END, '12')
+    b2.insert(tkinter.tix.END, '14')
+    b2.insert(tkinter.tix.END, '18')
 
     b1.pick(1)
     b2.pick(3)
 
-    b1.pack(side=Tix.LEFT, padx=4, pady=4)
-    b2.pack(side=Tix.LEFT, padx=4, pady=4)
+    b1.pack(side=tkinter.tix.LEFT, padx=4, pady=4)
+    b2.pack(side=tkinter.tix.LEFT, padx=4, pady=4)
 
     demo.balloon.bind_widget(b1, msg='Choose\na font',
                              statusmsg='Choose a font for this page')
@@ -228,20 +228,20 @@ def MkWelcomeBar(top):
 def MkWelcomeText(top):
     global demo
 
-    w = Tix.ScrolledWindow(top, scrollbar='auto')
+    w = tkinter.tix.ScrolledWindow(top, scrollbar='auto')
     win = w.window
     text = 'Welcome to TIX in Python'
-    title = Tix.Label(win,
-                      bd=0, width=30, anchor=Tix.N, text=text)
-    msg = Tix.Message(win,
-                      bd=0, width=400, anchor=Tix.N,
+    title = tkinter.tix.Label(win,
+                      bd=0, width=30, anchor=tkinter.tix.N, text=text)
+    msg = tkinter.tix.Message(win,
+                      bd=0, width=400, anchor=tkinter.tix.N,
                       text='Tix is a set of mega-widgets based on TK. This program \
 demonstrates the widgets in the Tix widget set. You can choose the pages \
 in this window to look at the corresponding widgets. \n\n\
 To quit this program, choose the "File | Exit" command.\n\n\
 For more information, see http://tix.sourceforge.net.')
-    title.pack(expand=1, fill=Tix.BOTH, padx=10, pady=10)
-    msg.pack(expand=1, fill=Tix.BOTH, padx=10, pady=10)
+    title.pack(expand=1, fill=tkinter.tix.BOTH, padx=10, pady=10)
+    msg.pack(expand=1, fill=tkinter.tix.BOTH, padx=10, pady=10)
     demo.welmsg = msg
     return w
 
@@ -267,14 +267,14 @@ def MkChoosers(nb, name):
     w = nb.page(name)
     options = "label.padX 4"
 
-    til = Tix.LabelFrame(w, label='Chooser Widgets', options=options)
-    cbx = Tix.LabelFrame(w, label='tixComboBox', options=options)
-    ctl = Tix.LabelFrame(w, label='tixControl', options=options)
-    sel = Tix.LabelFrame(w, label='tixSelect', options=options)
-    opt = Tix.LabelFrame(w, label='tixOptionMenu', options=options)
-    fil = Tix.LabelFrame(w, label='tixFileEntry', options=options)
-    fbx = Tix.LabelFrame(w, label='tixFileSelectBox', options=options)
-    tbr = Tix.LabelFrame(w, label='Tool Bar', options=options)
+    til = tkinter.tix.LabelFrame(w, label='Chooser Widgets', options=options)
+    cbx = tkinter.tix.LabelFrame(w, label='tixComboBox', options=options)
+    ctl = tkinter.tix.LabelFrame(w, label='tixControl', options=options)
+    sel = tkinter.tix.LabelFrame(w, label='tixSelect', options=options)
+    opt = tkinter.tix.LabelFrame(w, label='tixOptionMenu', options=options)
+    fil = tkinter.tix.LabelFrame(w, label='tixFileEntry', options=options)
+    fbx = tkinter.tix.LabelFrame(w, label='tixFileSelectBox', options=options)
+    tbr = tkinter.tix.LabelFrame(w, label='Tool Bar', options=options)
 
     MkTitle(til.frame)
     MkCombo(cbx.frame)
@@ -301,38 +301,38 @@ def MkChoosers(nb, name):
     fbx.form(right=-1, top=0, left='%66')
 
 def MkCombo(w):
-    options="label.width %d label.anchor %s entry.width %d" % (10, Tix.E, 14)
+    options="label.width %d label.anchor %s entry.width %d" % (10, tkinter.tix.E, 14)
 
-    static = Tix.ComboBox(w, label='Static', editable=0, options=options)
-    editable = Tix.ComboBox(w, label='Editable', editable=1, options=options)
-    history = Tix.ComboBox(w, label='History', editable=1, history=1,
-                           anchor=Tix.E, options=options)
-    static.insert(Tix.END, 'January')
-    static.insert(Tix.END, 'February')
-    static.insert(Tix.END, 'March')
-    static.insert(Tix.END, 'April')
-    static.insert(Tix.END, 'May')
-    static.insert(Tix.END, 'June')
-    static.insert(Tix.END, 'July')
-    static.insert(Tix.END, 'August')
-    static.insert(Tix.END, 'September')
-    static.insert(Tix.END, 'October')
-    static.insert(Tix.END, 'November')
-    static.insert(Tix.END, 'December')
+    static = tkinter.tix.ComboBox(w, label='Static', editable=0, options=options)
+    editable = tkinter.tix.ComboBox(w, label='Editable', editable=1, options=options)
+    history = tkinter.tix.ComboBox(w, label='History', editable=1, history=1,
+                           anchor=tkinter.tix.E, options=options)
+    static.insert(tkinter.tix.END, 'January')
+    static.insert(tkinter.tix.END, 'February')
+    static.insert(tkinter.tix.END, 'March')
+    static.insert(tkinter.tix.END, 'April')
+    static.insert(tkinter.tix.END, 'May')
+    static.insert(tkinter.tix.END, 'June')
+    static.insert(tkinter.tix.END, 'July')
+    static.insert(tkinter.tix.END, 'August')
+    static.insert(tkinter.tix.END, 'September')
+    static.insert(tkinter.tix.END, 'October')
+    static.insert(tkinter.tix.END, 'November')
+    static.insert(tkinter.tix.END, 'December')
 
-    editable.insert(Tix.END, 'Angola')
-    editable.insert(Tix.END, 'Bangladesh')
-    editable.insert(Tix.END, 'China')
-    editable.insert(Tix.END, 'Denmark')
-    editable.insert(Tix.END, 'Ecuador')
+    editable.insert(tkinter.tix.END, 'Angola')
+    editable.insert(tkinter.tix.END, 'Bangladesh')
+    editable.insert(tkinter.tix.END, 'China')
+    editable.insert(tkinter.tix.END, 'Denmark')
+    editable.insert(tkinter.tix.END, 'Ecuador')
 
-    history.insert(Tix.END, '/usr/bin/ksh')
-    history.insert(Tix.END, '/usr/local/lib/python')
-    history.insert(Tix.END, '/var/adm')
+    history.insert(tkinter.tix.END, '/usr/bin/ksh')
+    history.insert(tkinter.tix.END, '/usr/local/lib/python')
+    history.insert(tkinter.tix.END, '/var/adm')
 
-    static.pack(side=Tix.TOP, padx=5, pady=3)
-    editable.pack(side=Tix.TOP, padx=5, pady=3)
-    history.pack(side=Tix.TOP, padx=5, pady=3)
+    static.pack(side=tkinter.tix.TOP, padx=5, pady=3)
+    editable.pack(side=tkinter.tix.TOP, padx=5, pady=3)
+    history.pack(side=tkinter.tix.TOP, padx=5, pady=3)
 
 states = ['Bengal', 'Delhi', 'Karnataka', 'Tamil Nadu']
 
@@ -359,30 +359,30 @@ def spin_validate(w):
 def MkControl(w):
     global demo_spintxt
 
-    options="label.width %d label.anchor %s entry.width %d" % (10, Tix.E, 13)
+    options="label.width %d label.anchor %s entry.width %d" % (10, tkinter.tix.E, 13)
 
-    demo_spintxt = Tix.StringVar()
+    demo_spintxt = tkinter.tix.StringVar()
     demo_spintxt.set(states[0])
-    simple = Tix.Control(w, label='Numbers', options=options)
-    spintxt = Tix.Control(w, label='States', variable=demo_spintxt,
+    simple = tkinter.tix.Control(w, label='Numbers', options=options)
+    spintxt = tkinter.tix.Control(w, label='States', variable=demo_spintxt,
                           options=options)
     spintxt['incrcmd'] = lambda w=spintxt: spin_cmd(w, 1)
     spintxt['decrcmd'] = lambda w=spintxt: spin_cmd(w, -1)
     spintxt['validatecmd'] = lambda w=spintxt: spin_validate(w)
 
-    simple.pack(side=Tix.TOP, padx=5, pady=3)
-    spintxt.pack(side=Tix.TOP, padx=5, pady=3)
+    simple.pack(side=tkinter.tix.TOP, padx=5, pady=3)
+    spintxt.pack(side=tkinter.tix.TOP, padx=5, pady=3)
 
 def MkSelect(w):
-    options = "label.anchor %s" % Tix.CENTER
+    options = "label.anchor %s" % tkinter.tix.CENTER
 
-    sel1 = Tix.Select(w, label='Mere Mortals', allowzero=1, radio=1,
-                      orientation=Tix.VERTICAL,
-                      labelside=Tix.TOP,
+    sel1 = tkinter.tix.Select(w, label='Mere Mortals', allowzero=1, radio=1,
+                      orientation=tkinter.tix.VERTICAL,
+                      labelside=tkinter.tix.TOP,
                       options=options)
-    sel2 = Tix.Select(w, label='Geeks', allowzero=1, radio=0,
-                      orientation=Tix.VERTICAL,
-                      labelside= Tix.TOP,
+    sel2 = tkinter.tix.Select(w, label='Geeks', allowzero=1, radio=0,
+                      orientation=tkinter.tix.VERTICAL,
+                      labelside= tkinter.tix.TOP,
                       options=options)
 
     sel1.add('eat', text='Eat')
@@ -397,13 +397,13 @@ def MkSelect(w):
     sel2.add('prog3', text='Program')
     sel2.add('sleep', text='Sleep')
 
-    sel1.pack(side=Tix.LEFT, padx=5, pady=3, fill=Tix.X)
-    sel2.pack(side=Tix.LEFT, padx=5, pady=3, fill=Tix.X)
+    sel1.pack(side=tkinter.tix.LEFT, padx=5, pady=3, fill=tkinter.tix.X)
+    sel2.pack(side=tkinter.tix.LEFT, padx=5, pady=3, fill=tkinter.tix.X)
 
 def MkOptMenu(w):
-    options='menubutton.width 15 label.anchor %s' % Tix.E
+    options='menubutton.width 15 label.anchor %s' % tkinter.tix.E
 
-    m = Tix.OptionMenu(w, label='File Format : ', options=options)
+    m = tkinter.tix.OptionMenu(w, label='File Format : ', options=options)
     m.add_command('text', label='Plain Text')
     m.add_command('post', label='PostScript')
     m.add_command('format', label='Formatted Text')
@@ -412,27 +412,27 @@ def MkOptMenu(w):
     m.add_command('tex', label='LaTeX')
     m.add_command('rtf', label='Rich Text Format')
 
-    m.pack(fill=Tix.X, padx=5, pady=3)
+    m.pack(fill=tkinter.tix.X, padx=5, pady=3)
 
 def MkFileEnt(w):
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='Press the "open file" icon button and a TixFileSelectDialog will popup.')
-    ent = Tix.FileEntry(w, label='Select a file : ')
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
-    ent.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
+    ent = tkinter.tix.FileEntry(w, label='Select a file : ')
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
+    ent.pack(side=tkinter.tix.TOP, fill=tkinter.tix.X, padx=3, pady=3)
 
 def MkFileBox(w):
     """The FileSelectBox is a Motif-style box with various enhancements.
     For example, you can adjust the size of the two listboxes
     and your past selections are recorded.
     """
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The Tix FileSelectBox is a Motif-style box with various enhancements. For example, you can adjust the size of the two listboxes and your past selections are recorded.')
-    box = Tix.FileSelectBox(w)
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
-    box.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
+    box = tkinter.tix.FileSelectBox(w)
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
+    box.pack(side=tkinter.tix.TOP, fill=tkinter.tix.X, padx=3, pady=3)
 
 def MkToolBar(w):
     """The Select widget is also good for arranging buttons in a tool bar.
@@ -441,12 +441,12 @@ def MkToolBar(w):
 
     options='frame.borderWidth 1'
 
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The Select widget is also good for arranging buttons in a tool bar.')
-    bar = Tix.Frame(w, bd=2, relief=Tix.RAISED)
-    font = Tix.Select(w, allowzero=1, radio=0, label='', options=options)
-    para = Tix.Select(w, allowzero=0, radio=1, label='', options=options)
+    bar = tkinter.tix.Frame(w, bd=2, relief=tkinter.tix.RAISED)
+    font = tkinter.tix.Select(w, allowzero=1, radio=0, label='', options=options)
+    para = tkinter.tix.Select(w, allowzero=0, radio=1, label='', options=options)
 
     font.add('bold', bitmap='@' + demo.dir + '/bitmaps/bold.xbm')
     font.add('italic', bitmap='@' + demo.dir + '/bitmaps/italic.xbm')
@@ -458,24 +458,24 @@ def MkToolBar(w):
     para.add('center', bitmap='@' + demo.dir + '/bitmaps/centerj.xbm')
     para.add('justify', bitmap='@' + demo.dir + '/bitmaps/justify.xbm')
 
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
-    bar.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
-    font.pack({'in':bar}, side=Tix.LEFT, padx=3, pady=3)
-    para.pack({'in':bar}, side=Tix.LEFT, padx=3, pady=3)
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
+    bar.pack(side=tkinter.tix.TOP, fill=tkinter.tix.X, padx=3, pady=3)
+    font.pack({'in':bar}, side=tkinter.tix.LEFT, padx=3, pady=3)
+    para.pack({'in':bar}, side=tkinter.tix.LEFT, padx=3, pady=3)
 
 def MkTitle(w):
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='There are many types of "chooser" widgets that allow the user to input different types of information')
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
 
 def MkScroll(nb, name):
     w = nb.page(name)
     options='label.padX 4'
 
-    sls = Tix.LabelFrame(w, label='Tix.ScrolledListBox', options=options)
-    swn = Tix.LabelFrame(w, label='Tix.ScrolledWindow', options=options)
-    stx = Tix.LabelFrame(w, label='Tix.ScrolledText', options=options)
+    sls = tkinter.tix.LabelFrame(w, label='Tix.ScrolledListBox', options=options)
+    swn = tkinter.tix.LabelFrame(w, label='Tix.ScrolledWindow', options=options)
+    stx = tkinter.tix.LabelFrame(w, label='Tix.ScrolledText', options=options)
 
     MkSList(sls.frame)
     MkSWindow(swn.frame)
@@ -490,31 +490,31 @@ def MkSList(w):
     """This TixScrolledListBox is configured so that it uses scrollbars
     only when it is necessary. Use the handles to resize the listbox and
     watch the scrollbars automatically appear and disappear.  """
-    top = Tix.Frame(w, width=300, height=330)
-    bot = Tix.Frame(w)
-    msg = Tix.Message(top,
-                      relief=Tix.FLAT, width=200, anchor=Tix.N,
+    top = tkinter.tix.Frame(w, width=300, height=330)
+    bot = tkinter.tix.Frame(w)
+    msg = tkinter.tix.Message(top,
+                      relief=tkinter.tix.FLAT, width=200, anchor=tkinter.tix.N,
                       text='This TixScrolledListBox is configured so that it uses scrollbars only when it is necessary. Use the handles to resize the listbox and watch the scrollbars automatically appear and disappear.')
 
-    list = Tix.ScrolledListBox(top, scrollbar='auto')
+    list = tkinter.tix.ScrolledListBox(top, scrollbar='auto')
     list.place(x=50, y=150, width=120, height=80)
-    list.listbox.insert(Tix.END, 'Alabama')
-    list.listbox.insert(Tix.END, 'California')
-    list.listbox.insert(Tix.END, 'Montana')
-    list.listbox.insert(Tix.END, 'New Jersey')
-    list.listbox.insert(Tix.END, 'New York')
-    list.listbox.insert(Tix.END, 'Pennsylvania')
-    list.listbox.insert(Tix.END, 'Washington')
+    list.listbox.insert(tkinter.tix.END, 'Alabama')
+    list.listbox.insert(tkinter.tix.END, 'California')
+    list.listbox.insert(tkinter.tix.END, 'Montana')
+    list.listbox.insert(tkinter.tix.END, 'New Jersey')
+    list.listbox.insert(tkinter.tix.END, 'New York')
+    list.listbox.insert(tkinter.tix.END, 'Pennsylvania')
+    list.listbox.insert(tkinter.tix.END, 'Washington')
 
-    rh = Tix.ResizeHandle(top, bg='black',
-                          relief=Tix.RAISED,
+    rh = tkinter.tix.ResizeHandle(top, bg='black',
+                          relief=tkinter.tix.RAISED,
                           handlesize=8, gridded=1, minwidth=50, minheight=30)
-    btn = Tix.Button(bot, text='Reset', command=lambda w=rh, x=list: SList_reset(w,x))
+    btn = tkinter.tix.Button(bot, text='Reset', command=lambda w=rh, x=list: SList_reset(w,x))
     top.propagate(0)
-    msg.pack(fill=Tix.X)
-    btn.pack(anchor=Tix.CENTER)
-    top.pack(expand=1, fill=Tix.BOTH)
-    bot.pack(fill=Tix.BOTH)
+    msg.pack(fill=tkinter.tix.X)
+    btn.pack(anchor=tkinter.tix.CENTER)
+    top.pack(expand=1, fill=tkinter.tix.BOTH)
+    bot.pack(fill=tkinter.tix.BOTH)
     list.bind('<Map>', func=lambda arg=0, rh=rh, list=list:
               list.tk.call('tixDoWhenIdle', str(rh), 'attachwidget', str(list)))
 
@@ -535,29 +535,29 @@ def MkSWindow(w):
     if not os.path.isfile(file):
         text += ' (Image missing)'
 
-    top = Tix.Frame(w, width=330, height=330)
-    bot = Tix.Frame(w)
-    msg = Tix.Message(top,
-                      relief=Tix.FLAT, width=200, anchor=Tix.N,
+    top = tkinter.tix.Frame(w, width=330, height=330)
+    bot = tkinter.tix.Frame(w)
+    msg = tkinter.tix.Message(top,
+                      relief=tkinter.tix.FLAT, width=200, anchor=tkinter.tix.N,
                       text=text)
 
-    win = Tix.ScrolledWindow(top, scrollbar='auto')
+    win = tkinter.tix.ScrolledWindow(top, scrollbar='auto')
 
     image1 = win.window.image_create('photo', file=file)
-    lbl = Tix.Label(win.window, image=image1)
-    lbl.pack(expand=1, fill=Tix.BOTH)
+    lbl = tkinter.tix.Label(win.window, image=image1)
+    lbl.pack(expand=1, fill=tkinter.tix.BOTH)
 
     win.place(x=30, y=150, width=190, height=120)
 
-    rh = Tix.ResizeHandle(top, bg='black',
-                          relief=Tix.RAISED,
+    rh = tkinter.tix.ResizeHandle(top, bg='black',
+                          relief=tkinter.tix.RAISED,
                           handlesize=8, gridded=1, minwidth=50, minheight=30)
-    btn = Tix.Button(bot, text='Reset', command=lambda w=rh, x=win: SWindow_reset(w,x))
+    btn = tkinter.tix.Button(bot, text='Reset', command=lambda w=rh, x=win: SWindow_reset(w,x))
     top.propagate(0)
-    msg.pack(fill=Tix.X)
-    btn.pack(anchor=Tix.CENTER)
-    top.pack(expand=1, fill=Tix.BOTH)
-    bot.pack(fill=Tix.BOTH)
+    msg.pack(fill=tkinter.tix.X)
+    btn.pack(anchor=tkinter.tix.CENTER)
+    top.pack(expand=1, fill=tkinter.tix.BOTH)
+    bot.pack(fill=tkinter.tix.BOTH)
 
     win.bind('<Map>', func=lambda arg=0, rh=rh, win=win:
              win.tk.call('tixDoWhenIdle', str(rh), 'attachwidget', str(win)))
@@ -570,15 +570,15 @@ def SWindow_reset(rh, win):
 def MkSText(w):
     """The TixScrolledWindow widget allows you to scroll any kind of Tk
     widget. It is more versatile than a scrolled canvas widget."""
-    top = Tix.Frame(w, width=330, height=330)
-    bot = Tix.Frame(w)
-    msg = Tix.Message(top,
-                      relief=Tix.FLAT, width=200, anchor=Tix.N,
+    top = tkinter.tix.Frame(w, width=330, height=330)
+    bot = tkinter.tix.Frame(w)
+    msg = tkinter.tix.Message(top,
+                      relief=tkinter.tix.FLAT, width=200, anchor=tkinter.tix.N,
                       text='The Tix ScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
 
-    win = Tix.ScrolledText(top, scrollbar='auto')
+    win = tkinter.tix.ScrolledText(top, scrollbar='auto')
     win.text['wrap'] = 'none'
-    win.text.insert(Tix.END, '''When -scrollbar is set to "auto", the
+    win.text.insert(tkinter.tix.END, '''When -scrollbar is set to "auto", the
 scrollbars are shown only when needed.
 Additional modifiers can be used to force a
 scrollbar to be shown or hidden. For example,
@@ -591,15 +591,15 @@ scrollbar should always be shown, and so on.'''
 )
     win.place(x=30, y=150, width=190, height=100)
 
-    rh = Tix.ResizeHandle(top, bg='black',
-                          relief=Tix.RAISED,
+    rh = tkinter.tix.ResizeHandle(top, bg='black',
+                          relief=tkinter.tix.RAISED,
                           handlesize=8, gridded=1, minwidth=50, minheight=30)
-    btn = Tix.Button(bot, text='Reset', command=lambda w=rh, x=win: SText_reset(w,x))
+    btn = tkinter.tix.Button(bot, text='Reset', command=lambda w=rh, x=win: SText_reset(w,x))
     top.propagate(0)
-    msg.pack(fill=Tix.X)
-    btn.pack(anchor=Tix.CENTER)
-    top.pack(expand=1, fill=Tix.BOTH)
-    bot.pack(fill=Tix.BOTH)
+    msg.pack(fill=tkinter.tix.X)
+    btn.pack(anchor=tkinter.tix.CENTER)
+    top.pack(expand=1, fill=tkinter.tix.BOTH)
+    bot.pack(fill=tkinter.tix.BOTH)
     win.bind('<Map>', func=lambda arg=0, rh=rh, win=win:
              win.tk.call('tixDoWhenIdle', str(rh), 'attachwidget', str(win)))
 
@@ -612,8 +612,8 @@ def MkManager(nb, name):
     w = nb.page(name)
     options='label.padX 4'
 
-    pane = Tix.LabelFrame(w, label='Tix.PanedWindow', options=options)
-    note = Tix.LabelFrame(w, label='Tix.NoteBook', options=options)
+    pane = tkinter.tix.LabelFrame(w, label='Tix.PanedWindow', options=options)
+    note = tkinter.tix.LabelFrame(w, label='Tix.NoteBook', options=options)
 
     MkPanedWindow(pane.frame)
     MkNoteBook(note.frame)
@@ -626,29 +626,29 @@ def MkPanedWindow(w):
     the sizes of several panes. The panes can be arranged either vertically
     or horizontally.
     """
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The PanedWindow widget allows the user to interactively manipulate the sizes of several panes. The panes can be arranged either vertically or horizontally.')
-    group = Tix.LabelEntry(w, label='Newsgroup:', options='entry.width 25')
+    group = tkinter.tix.LabelEntry(w, label='Newsgroup:', options='entry.width 25')
     group.entry.insert(0,'comp.lang.python')
-    pane = Tix.PanedWindow(w, orientation='vertical')
+    pane = tkinter.tix.PanedWindow(w, orientation='vertical')
 
     p1 = pane.add('list', min=70, size=100)
     p2 = pane.add('text', min=70)
-    list = Tix.ScrolledListBox(p1)
-    text = Tix.ScrolledText(p2)
+    list = tkinter.tix.ScrolledListBox(p1)
+    text = tkinter.tix.ScrolledText(p2)
 
-    list.listbox.insert(Tix.END, "  12324 Re: Tkinter is good for your health")
-    list.listbox.insert(Tix.END, "+ 12325 Re: Tkinter is good for your health")
-    list.listbox.insert(Tix.END, "+ 12326 Re: Tix is even better for your health (Was: Tkinter is good...)")
-    list.listbox.insert(Tix.END, "  12327 Re: Tix is even better for your health (Was: Tkinter is good...)")
-    list.listbox.insert(Tix.END, "+ 12328 Re: Tix is even better for your health (Was: Tkinter is good...)")
-    list.listbox.insert(Tix.END, "  12329 Re: Tix is even better for your health (Was: Tkinter is good...)")
-    list.listbox.insert(Tix.END, "+ 12330 Re: Tix is even better for your health (Was: Tkinter is good...)")
+    list.listbox.insert(tkinter.tix.END, "  12324 Re: Tkinter is good for your health")
+    list.listbox.insert(tkinter.tix.END, "+ 12325 Re: Tkinter is good for your health")
+    list.listbox.insert(tkinter.tix.END, "+ 12326 Re: Tix is even better for your health (Was: Tkinter is good...)")
+    list.listbox.insert(tkinter.tix.END, "  12327 Re: Tix is even better for your health (Was: Tkinter is good...)")
+    list.listbox.insert(tkinter.tix.END, "+ 12328 Re: Tix is even better for your health (Was: Tkinter is good...)")
+    list.listbox.insert(tkinter.tix.END, "  12329 Re: Tix is even better for your health (Was: Tkinter is good...)")
+    list.listbox.insert(tkinter.tix.END, "+ 12330 Re: Tix is even better for your health (Was: Tkinter is good...)")
 
     text.text['bg'] = list.listbox['bg']
     text.text['wrap'] = 'none'
-    text.text.insert(Tix.END, """
+    text.text.insert(tkinter.tix.END, """
 Mon, 19 Jun 1995 11:39:52        comp.lang.python              Thread   34 of  220
 Lines 353       A new way to put text and bitmaps together iNo responses
 ioi@blue.seas.upenn.edu                Ioi K. Lam at University of Pennsylvania
@@ -661,71 +661,71 @@ to form a bigger image. Then you can use this image with widgets that
 support the -image option. For example, you can display a text string string
 together with a bitmap, at the same time, inside a TK button widget.
 """)
-    list.pack(expand=1, fill=Tix.BOTH, padx=4, pady=6)
-    text.pack(expand=1, fill=Tix.BOTH, padx=4, pady=6)
+    list.pack(expand=1, fill=tkinter.tix.BOTH, padx=4, pady=6)
+    text.pack(expand=1, fill=tkinter.tix.BOTH, padx=4, pady=6)
 
-    msg.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH)
-    group.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH)
-    pane.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH, expand=1)
+    msg.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH)
+    group.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH)
+    pane.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH, expand=1)
 
 def MkNoteBook(w):
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The NoteBook widget allows you to layout a complex interface into individual pages.')
     # prefix = Tix.OptionName(w)
     # if not prefix: prefix = ''
     # w.option_add('*' + prefix + '*TixNoteBook*tagPadX', 8)
-    options = "entry.width %d label.width %d label.anchor %s" % (10, 18, Tix.E)
+    options = "entry.width %d label.width %d label.anchor %s" % (10, 18, tkinter.tix.E)
 
-    nb = Tix.NoteBook(w, ipadx=6, ipady=6, options=options)
+    nb = tkinter.tix.NoteBook(w, ipadx=6, ipady=6, options=options)
     nb.add('hard_disk', label="Hard Disk", underline=0)
     nb.add('network', label="Network", underline=0)
 
     # Frame for the buttons that are present on all pages
-    common = Tix.Frame(nb.hard_disk)
-    common.pack(side=Tix.RIGHT, padx=2, pady=2, fill=Tix.Y)
+    common = tkinter.tix.Frame(nb.hard_disk)
+    common.pack(side=tkinter.tix.RIGHT, padx=2, pady=2, fill=tkinter.tix.Y)
     CreateCommonButtons(common)
 
     # Widgets belonging only to this page
-    a = Tix.Control(nb.hard_disk, value=12, label='Access Time: ')
-    w = Tix.Control(nb.hard_disk, value=400, label='Write Throughput: ')
-    r = Tix.Control(nb.hard_disk, value=400, label='Read Throughput: ')
-    c = Tix.Control(nb.hard_disk, value=1021, label='Capacity: ')
-    a.pack(side=Tix.TOP, padx=20, pady=2)
-    w.pack(side=Tix.TOP, padx=20, pady=2)
-    r.pack(side=Tix.TOP, padx=20, pady=2)
-    c.pack(side=Tix.TOP, padx=20, pady=2)
+    a = tkinter.tix.Control(nb.hard_disk, value=12, label='Access Time: ')
+    w = tkinter.tix.Control(nb.hard_disk, value=400, label='Write Throughput: ')
+    r = tkinter.tix.Control(nb.hard_disk, value=400, label='Read Throughput: ')
+    c = tkinter.tix.Control(nb.hard_disk, value=1021, label='Capacity: ')
+    a.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    w.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    r.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    c.pack(side=tkinter.tix.TOP, padx=20, pady=2)
 
-    common = Tix.Frame(nb.network)
-    common.pack(side=Tix.RIGHT, padx=2, pady=2, fill=Tix.Y)
+    common = tkinter.tix.Frame(nb.network)
+    common.pack(side=tkinter.tix.RIGHT, padx=2, pady=2, fill=tkinter.tix.Y)
     CreateCommonButtons(common)
 
-    a = Tix.Control(nb.network, value=12, label='Access Time: ')
-    w = Tix.Control(nb.network, value=400, label='Write Throughput: ')
-    r = Tix.Control(nb.network, value=400, label='Read Throughput: ')
-    c = Tix.Control(nb.network, value=1021, label='Capacity: ')
-    u = Tix.Control(nb.network, value=10, label='Users: ')
-    a.pack(side=Tix.TOP, padx=20, pady=2)
-    w.pack(side=Tix.TOP, padx=20, pady=2)
-    r.pack(side=Tix.TOP, padx=20, pady=2)
-    c.pack(side=Tix.TOP, padx=20, pady=2)
-    u.pack(side=Tix.TOP, padx=20, pady=2)
+    a = tkinter.tix.Control(nb.network, value=12, label='Access Time: ')
+    w = tkinter.tix.Control(nb.network, value=400, label='Write Throughput: ')
+    r = tkinter.tix.Control(nb.network, value=400, label='Read Throughput: ')
+    c = tkinter.tix.Control(nb.network, value=1021, label='Capacity: ')
+    u = tkinter.tix.Control(nb.network, value=10, label='Users: ')
+    a.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    w.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    r.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    c.pack(side=tkinter.tix.TOP, padx=20, pady=2)
+    u.pack(side=tkinter.tix.TOP, padx=20, pady=2)
 
-    msg.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH)
-    nb.pack(side=Tix.TOP, padx=5, pady=5, fill=Tix.BOTH, expand=1)
+    msg.pack(side=tkinter.tix.TOP, padx=3, pady=3, fill=tkinter.tix.BOTH)
+    nb.pack(side=tkinter.tix.TOP, padx=5, pady=5, fill=tkinter.tix.BOTH, expand=1)
 
 def CreateCommonButtons(f):
-    ok = Tix.Button(f, text='OK', width = 6)
-    cancel = Tix.Button(f, text='Cancel', width = 6)
-    ok.pack(side=Tix.TOP, padx=2, pady=2)
-    cancel.pack(side=Tix.TOP, padx=2, pady=2)
+    ok = tkinter.tix.Button(f, text='OK', width = 6)
+    cancel = tkinter.tix.Button(f, text='Cancel', width = 6)
+    ok.pack(side=tkinter.tix.TOP, padx=2, pady=2)
+    cancel.pack(side=tkinter.tix.TOP, padx=2, pady=2)
 
 def MkDirList(nb, name):
     w = nb.page(name)
     options = "label.padX 4"
 
-    dir = Tix.LabelFrame(w, label='Tix.DirList', options=options)
-    fsbox = Tix.LabelFrame(w, label='Tix.ExFileSelectBox', options=options)
+    dir = tkinter.tix.LabelFrame(w, label='Tix.DirList', options=options)
+    fsbox = tkinter.tix.LabelFrame(w, label='Tix.ExFileSelectBox', options=options)
     MkDirListWidget(dir.frame)
     MkExFileWidget(fsbox.frame)
     dir.form(top=0, left=0, right='%40', bottom=-1)
@@ -736,23 +736,23 @@ def MkDirListWidget(w):
     system directory and makes it easy for the user to choose and access
     directories.
     """
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The Tix DirList widget gives a graphical representation of the file system directory and makes it easy for the user to choose and access directories.')
-    dirlist = Tix.DirList(w, options='hlist.padY 1 hlist.width 25 hlist.height 16')
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
-    dirlist.pack(side=Tix.TOP, padx=3, pady=3)
+    dirlist = tkinter.tix.DirList(w, options='hlist.padY 1 hlist.width 25 hlist.height 16')
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
+    dirlist.pack(side=tkinter.tix.TOP, padx=3, pady=3)
 
 def MkExFileWidget(w):
     """The TixExFileSelectBox widget is more user friendly than the Motif
     style FileSelectBox.  """
-    msg = Tix.Message(w,
-                      relief=Tix.FLAT, width=240, anchor=Tix.N,
+    msg = tkinter.tix.Message(w,
+                      relief=tkinter.tix.FLAT, width=240, anchor=tkinter.tix.N,
                       text='The Tix ExFileSelectBox widget is more user friendly than the Motif style FileSelectBox.')
     # There's a bug in the ComboBoxes - the scrolledlistbox is destroyed
-    box = Tix.ExFileSelectBox(w, bd=2, relief=Tix.RAISED)
-    msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
-    box.pack(side=Tix.TOP, padx=3, pady=3)
+    box = tkinter.tix.ExFileSelectBox(w, bd=2, relief=tkinter.tix.RAISED)
+    msg.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=3, pady=3)
+    box.pack(side=tkinter.tix.TOP, padx=3, pady=3)
 
 ###
 ### List of all the demos we want to show off
@@ -875,39 +875,39 @@ def MkSample(nb, name):
     w = nb.page(name)
     options = "label.padX 4"
 
-    pane = Tix.PanedWindow(w, orientation='horizontal')
-    pane.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH)
+    pane = tkinter.tix.PanedWindow(w, orientation='horizontal')
+    pane.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH)
     f1 = pane.add('list', expand='1')
     f2 = pane.add('text', expand='5')
     f1['relief'] = 'flat'
     f2['relief'] = 'flat'
 
-    lab = Tix.LabelFrame(f1, label='Select a sample program:')
-    lab.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5, pady=5)
-    lab1 = Tix.LabelFrame(f2, label='Source:')
-    lab1.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5, pady=5)
+    lab = tkinter.tix.LabelFrame(f1, label='Select a sample program:')
+    lab.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=5, pady=5)
+    lab1 = tkinter.tix.LabelFrame(f2, label='Source:')
+    lab1.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=5, pady=5)
 
-    slb = Tix.Tree(lab.frame, options='hlist.width 20')
-    slb.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=5)
+    slb = tkinter.tix.Tree(lab.frame, options='hlist.width 20')
+    slb.pack(side=tkinter.tix.TOP, expand=1, fill=tkinter.tix.BOTH, padx=5)
 
-    stext = Tix.ScrolledText(lab1.frame, name='stext')
+    stext = tkinter.tix.ScrolledText(lab1.frame, name='stext')
     font = root.tk.eval('tix option get fixed_font')
     stext.text.config(font=font)
 
-    frame = Tix.Frame(lab1.frame, name='frame')
+    frame = tkinter.tix.Frame(lab1.frame, name='frame')
 
-    run = Tix.Button(frame, text='Run ...', name='run')
-    view = Tix.Button(frame, text='View Source ...', name='view')
-    run.pack(side=Tix.LEFT, expand=0, fill=Tix.NONE)
-    view.pack(side=Tix.LEFT, expand=0, fill=Tix.NONE)
+    run = tkinter.tix.Button(frame, text='Run ...', name='run')
+    view = tkinter.tix.Button(frame, text='View Source ...', name='view')
+    run.pack(side=tkinter.tix.LEFT, expand=0, fill=tkinter.tix.NONE)
+    view.pack(side=tkinter.tix.LEFT, expand=0, fill=tkinter.tix.NONE)
 
     stext.text['bg'] = slb.hlist['bg']
     stext.text['state'] = 'disabled'
     stext.text['wrap'] = 'none'
     stext.text['width'] = 80
 
-    frame.pack(side=Tix.BOTTOM, expand=0, fill=Tix.X, padx=7)
-    stext.pack(side=Tix.TOP, expand=0, fill=Tix.BOTH, padx=7)
+    frame.pack(side=tkinter.tix.BOTTOM, expand=0, fill=tkinter.tix.X, padx=7)
+    stext.pack(side=tkinter.tix.TOP, expand=0, fill=tkinter.tix.BOTH, padx=7)
 
     slb.hlist['separator'] = '.'
     slb.hlist['width'] = 25
@@ -922,13 +922,13 @@ def MkSample(nb, name):
 
     for type in ['widget', 'image']:
         if type != 'widget':
-            x = Tix.Frame(slb.hlist, bd=2, height=2, width=150,
-                          relief=Tix.SUNKEN, bg=slb.hlist['bg'])
-            slb.hlist.add_child(itemtype=Tix.WINDOW, window=x, state='disabled')
-        x = slb.hlist.add_child(itemtype=Tix.TEXT, state='disabled',
+            x = tkinter.tix.Frame(slb.hlist, bd=2, height=2, width=150,
+                          relief=tkinter.tix.SUNKEN, bg=slb.hlist['bg'])
+            slb.hlist.add_child(itemtype=tkinter.tix.WINDOW, window=x, state='disabled')
+        x = slb.hlist.add_child(itemtype=tkinter.tix.TEXT, state='disabled',
                                 text=comments[type])
         for key in stypes[type]:
-            slb.hlist.add_child(x, itemtype=Tix.TEXT, data=key,
+            slb.hlist.add_child(x, itemtype=tkinter.tix.TEXT, data=key,
                                 text=key)
     slb.hlist.selection_clear()
 
@@ -955,12 +955,12 @@ def Sample_Action(w, slb, stext, run, view, action):
 
     if action == 'run':
         exec('import ' + prog)
-        w = Tix.Toplevel()
+        w = tkinter.tix.Toplevel()
         w.title(title)
         rtn = eval(prog + '.RunSample')
         rtn(w)
     elif action == 'view':
-        w = Tix.Toplevel()
+        w = tkinter.tix.Toplevel()
         w.title('Source view: ' + title)
         LoadFile(w, demo.dir + '/samples/' + prog + '.py')
     elif action == 'browse':
@@ -968,8 +968,8 @@ def Sample_Action(w, slb, stext, run, view, action):
 
 def LoadFile(w, fname):
     global root
-    b = Tix.Button(w, text='Close', command=w.destroy)
-    t = Tix.ScrolledText(w)
+    b = tkinter.tix.Button(w, text='Close', command=w.destroy)
+    t = tkinter.tix.ScrolledText(w)
     #    b.form(left=0, bottom=0, padx=4, pady=4)
     #    t.form(left=0, bottom=b, right='-0', top=0)
     t.pack()
@@ -985,18 +985,18 @@ def LoadFile(w, fname):
 def ReadFile(w, fname):
     old_state = w['state']
     w['state'] = 'normal'
-    w.delete('0.0', Tix.END)
+    w.delete('0.0', tkinter.tix.END)
 
     try:
         f = open(fname)
         lines = f.readlines()
         for s in lines:
-            w.insert(Tix.END, s)
+            w.insert(tkinter.tix.END, s)
         f.close()
     finally:
 #       w.see('1.0')
         w['state'] = old_state
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunMain(root)

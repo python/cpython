@@ -14,30 +14,30 @@
 # dynamic hierachical data (the files in the Unix file system)
 #
 
-import Tix, os
+import tkinter.tix, os
 
 def RunSample(w):
-    top = Tix.Frame(w, relief=Tix.RAISED, bd=1)
-    tree = Tix.Tree(top, options='separator "/"')
-    tree.pack(expand=1, fill=Tix.BOTH, padx=10, pady=10, side=Tix.LEFT)
+    top = tkinter.tix.Frame(w, relief=tkinter.tix.RAISED, bd=1)
+    tree = tkinter.tix.Tree(top, options='separator "/"')
+    tree.pack(expand=1, fill=tkinter.tix.BOTH, padx=10, pady=10, side=tkinter.tix.LEFT)
     tree['opencmd'] = lambda dir=None, w=tree: opendir(w, dir)
 
     # The / directory is added in the "open" mode. The user can open it
     # and then browse its subdirectories ...
     adddir(tree, "/")
 
-    box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
+    box = tkinter.tix.ButtonBox(w, orientation=tkinter.tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, command=w.destroy, width=6)
     box.add('cancel', text='Cancel', underline=0, command=w.destroy, width=6)
-    box.pack(side=Tix.BOTTOM, fill=Tix.X)
-    top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    box.pack(side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+    top.pack(side=tkinter.tix.TOP, fill=tkinter.tix.BOTH, expand=1)
 
 def adddir(tree, dir):
     if dir == '/':
         text = '/'
     else:
         text = os.path.basename(dir)
-    tree.hlist.add(dir, itemtype=Tix.IMAGETEXT, text=text,
+    tree.hlist.add(dir, itemtype=tkinter.tix.IMAGETEXT, text=text,
                    image=tree.tk.call('tix', 'getimage', 'folder'))
     try:
         os.listdir(dir)
@@ -71,10 +71,10 @@ def opendir(tree, dir):
         if os.path.isdir(dir + '/' + file):
             adddir(tree, dir + '/' + file)
         else:
-            tree.hlist.add(dir + '/' + file, itemtype=Tix.IMAGETEXT, text=file,
+            tree.hlist.add(dir + '/' + file, itemtype=tkinter.tix.IMAGETEXT, text=file,
                            image=tree.tk.call('tix', 'getimage', 'file'))
 
 if __name__ == '__main__':
-    root = Tix.Tk()
+    root = tkinter.tix.Tk()
     RunSample(root)
     root.mainloop()

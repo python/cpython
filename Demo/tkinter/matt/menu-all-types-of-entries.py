@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # some vocabulary to keep from getting confused. This terminology
 # is something I cooked up for this file, but follows the man pages

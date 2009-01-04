@@ -9,7 +9,7 @@ import getopt
 import string
 import mhlib
 
-from Tkinter import *
+from tkinter import *
 
 from dialog import dialog
 

@@ -13,7 +13,7 @@
 # This file demonstrates the use of the tixScrolledHList widget.
 #
 
-import Tix
+import tkinter.tix
 
 TCL_ALL_EVENTS          = 0
 
@@ -33,13 +33,13 @@ class DemoSHList:
         # We create the frame and the ScrolledHList widget
         # at the top of the dialog box
         #
-        top = Tix.Frame( w, relief=Tix.RAISED, bd=1)
+        top = tkinter.tix.Frame( w, relief=tkinter.tix.RAISED, bd=1)
 
         # Put a simple hierachy into the HList (two levels). Use colors and
         # separator widgets (frames) to make the list look fancy
         #
-        top.a = Tix.ScrolledHList(top)
-        top.a.pack( expand=1, fill=Tix.BOTH, padx=10, pady=10, side=Tix.TOP)
+        top.a = tkinter.tix.ScrolledHList(top)
+        top.a.pack( expand=1, fill=tkinter.tix.BOTH, padx=10, pady=10, side=tkinter.tix.TOP)
 
         # This is our little relational database
         #
@@ -68,13 +68,13 @@ class DemoSHList:
         count=0
         for boss,name in bosses :
             if count :
-                f=Tix.Frame(hlist, name='sep%d' % count, height=2, width=150,
-                    bd=2, relief=Tix.SUNKEN )
+                f=tkinter.tix.Frame(hlist, name='sep%d' % count, height=2, width=150,
+                    bd=2, relief=tkinter.tix.SUNKEN )
 
-                hlist.add_child( itemtype=Tix.WINDOW,
-                    window=f, state=Tix.DISABLED )
+                hlist.add_child( itemtype=tkinter.tix.WINDOW,
+                    window=f, state=tkinter.tix.DISABLED )
 
-            hlist.add(boss, itemtype=Tix.TEXT, text=name)
+            hlist.add(boss, itemtype=tkinter.tix.TEXT, text=name)
             count = count+1
 
 
@@ -99,15 +99,15 @@ class DemoSHList:
 
         # Use a ButtonBox to hold the buttons.
         #
-        box= Tix.ButtonBox(top, orientation=Tix.HORIZONTAL )
+        box= tkinter.tix.ButtonBox(top, orientation=tkinter.tix.HORIZONTAL )
         box.add( 'ok',  text='Ok', underline=0,  width=6,
             command = self.okcmd)
 
         box.add( 'cancel', text='Cancel', underline=0, width=6,
             command = self.quitcmd)
 
-        box.pack( side=Tix.BOTTOM, fill=Tix.X)
-        top.pack( side=Tix.TOP,    fill=Tix.BOTH, expand=1 )
+        box.pack( side=tkinter.tix.BOTTOM, fill=tkinter.tix.X)
+        top.pack( side=tkinter.tix.TOP,    fill=tkinter.tix.BOTH, expand=1 )
 
     def okcmd (self):
         self.quitcmd()
@@ -127,5 +127,5 @@ class DemoSHList:
 # outside of the main demo program "tixwidgets.py".
 #
 if __name__== '__main__' :
-    root=Tix.Tk()
+    root=tkinter.tix.Tk()
     RunSample(root)

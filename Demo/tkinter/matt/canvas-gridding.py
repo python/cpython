@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 # this is the same as simple-demo-1.py, but uses
 # subclassing.

@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 
 import sys
 ##sys.path.append("/users/mjc4y/projects/python/tkinter/utils")
