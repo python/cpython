@@ -3209,7 +3209,8 @@ fi
 
 AC_REPLACE_FUNCS(hypot)
 
-AC_CHECK_FUNCS(acosh asinh atanh copysign expm1 finite isinf isnan log1p)
+AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite log1p])
+AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 LIBS=$LIBS_SAVE
 
