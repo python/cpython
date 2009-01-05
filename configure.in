@@ -3120,9 +3120,7 @@ then
   [Define if tanh(-0.) is -0., or if platform doesn't have signed zeros])
 fi
 
-AC_REPLACE_FUNCS(hypot)
-
-AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite log1p])
+AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite hypot log1p])
 AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 LIBS=$LIBS_SAVE
