@@ -263,7 +263,7 @@ if [ $conflict_count != 0 ]; then
     echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
     err=1
 else
-    make update html >& ../build/$F
+    make checkout update html >& ../build/$F
     err=$?
 fi
 update_status "Making doc" "$F" $start
