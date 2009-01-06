@@ -959,6 +959,49 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 		PySys_WriteStderr("# wrote %s\n", cpathname);
 }
 
+static void
+update_code_filenames(PyCodeObject *co, PyObject *oldname, PyObject *newname)
+{
+	PyObject *constants, *tmp;
+	Py_ssize_t i, n;
+
+	if (PyUnicode_Compare(co->co_filename, oldname))
+		return;
+
+	tmp = co->co_filename;
+	co->co_filename = newname;
+	Py_INCREF(co->co_filename);
+	Py_DECREF(tmp);
+
+	constants = co->co_consts;
+	n = PyTuple_GET_SIZE(constants);
+	for (i = 0; i < n; i++) {
+		tmp = PyTuple_GET_ITEM(constants, i);
+		if (PyCode_Check(tmp))
+			update_code_filenames((PyCodeObject *)tmp,
+					      oldname, newname);
+	}
+}
+
+static int
+update_compiled_module(PyCodeObject *co, char *pathname)
+{
+	PyObject *oldname, *newname;
+
+	if (!PyUnicode_CompareWithASCIIString(co->co_filename, pathname))
+		return 0;
+
+	newname = PyUnicode_FromString(pathname);
+	if (newname == NULL)
+		return -1;
+
+	oldname = co->co_filename;
+	Py_INCREF(oldname);
+	update_code_filenames(co, oldname, newname);
+	Py_DECREF(oldname);
+	Py_DECREF(newname);
+	return 1;
+}
 
 /* Load a source module from a given file and return its module
    object WITH INCREMENTED REFERENCE COUNT.  If there's a matching
@@ -998,6 +1041,8 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		co = read_compiled_module(cpathname, fpc);
 		fclose(fpc);
 		if (co == NULL)
+			return NULL;
+		if (update_compiled_module(co, pathname) < 0)
 			return NULL;
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("import %s # precompiled from %s\n",
