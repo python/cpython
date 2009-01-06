@@ -112,7 +112,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 		ns = PyDict_New();
 	}
 	else {
-		PyObject *pargs = Py_BuildValue("OO", name, bases);
+		PyObject *pargs = PyTuple_Pack(2, name, bases);
 		if (pargs == NULL) {
 			Py_DECREF(prep);
 			Py_DECREF(meta);
@@ -133,7 +133,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 	cell = PyObject_CallFunctionObjArgs(func, ns, NULL);
 	if (cell != NULL) {
 		PyObject *margs;
-		margs = Py_BuildValue("OOO", name, bases, ns);
+		margs = PyTuple_Pack(3, name, bases, ns);
 		if (margs != NULL) {
 			cls = PyEval_CallObjectWithKeywords(meta, margs, mkw);
 			Py_DECREF(margs);
@@ -754,7 +754,7 @@ builtin_exec(PyObject *self, PyObject *args)
 	PyObject *prog, *globals = Py_None, *locals = Py_None;
 	int plain = 0;
 
-	if (!PyArg_ParseTuple(args, "O|OO:exec", &prog, &globals, &locals))
+	if (!PyArg_UnpackTuple(args, "exec", 1, 3, &prog, &globals, &locals))
 		return NULL;
 	
 	if (globals == Py_None) {
