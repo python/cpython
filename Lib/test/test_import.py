@@ -269,7 +269,7 @@ func_filename = func.func_code.co_filename
             if os.path.exists(file_name):
                 os.remove(file_name)
         if os.path.exists(self.dir_name):
-            os.rmdir(self.dir_name)
+            shutil.rmtree(self.dir_name)
 
     def import_module(self):
         ns = globals()
