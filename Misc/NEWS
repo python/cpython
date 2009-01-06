@@ -12,6 +12,12 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #1180193: When importing a module from a .pyc (or .pyo) file with
+  an existing .py counterpart, override the co_filename attributes of all
+  code objects if the original filename is obsolete (which can happen if the
+  file has been renamed, moved, or if it is accessed through different paths).
+  Patch by Ziga Seilnacht and Jean-Paul Calderone.
+
 - Issue #4075: Use OutputDebugStringW in Py_FatalError.
 
 - Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
