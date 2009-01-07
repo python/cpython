@@ -413,9 +413,11 @@ class Random(_random.Random):
     def expovariate(self, lambd):
         """Exponential distribution.
 
-        lambd is 1.0 divided by the desired mean.  (The parameter would be
-        called "lambda", but that is a reserved word in Python.)  Returned
-        values range from 0 to positive infinity.
+        lambd is 1.0 divided by the desired mean.  It should be
+        nonzero.  (The parameter would be called "lambda", but that is
+        a reserved word in Python.)  Returned values range from 0 to
+        positive infinity if lambd is positive, and from negative
+        infinity to 0 if lambd is negative.
 
         """
         # lambd: rate lambd = 1/mean
