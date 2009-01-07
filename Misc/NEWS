@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4850: Change COUNT_ALLOCS variables to Py_ssize_t.
+
 - Issue #1180193: When importing a module from a .pyc (or .pyo) file with
   an existing .py counterpart, override the co_filename attributes of all
   code objects if the original filename is obsolete (which can happen if the

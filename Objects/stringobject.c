@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 #ifdef COUNT_ALLOCS
-int null_strings, one_strings;
+Py_ssize_t null_strings, one_strings;
 #endif
 
 static PyStringObject *characters[UCHAR_MAX + 1];

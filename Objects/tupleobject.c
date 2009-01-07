@@ -19,8 +19,8 @@ static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
 static int numfree[PyTuple_MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
-int fast_tuple_allocs;
-int tuple_zero_allocs;
+Py_ssize_t fast_tuple_allocs;
+Py_ssize_t tuple_zero_allocs;
 #endif
 
 PyObject *

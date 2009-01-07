@@ -78,7 +78,8 @@ fill_free_list(void)
 static PyIntObject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #endif
 #ifdef COUNT_ALLOCS
-int quick_int_allocs, quick_neg_int_allocs;
+Py_ssize_t quick_int_allocs;
+Py_ssize_t quick_neg_int_allocs;
 #endif
 
 PyObject *
