@@ -169,9 +169,11 @@ be found in any statistics text.
 
 .. function:: expovariate(lambd)
 
-   Exponential distribution.  *lambd* is 1.0 divided by the desired mean.  (The
-   parameter would be called "lambda", but that is a reserved word in Python.)
-   Returned values range from 0 to positive infinity.
+   Exponential distribution.  *lambd* is 1.0 divided by the desired
+   mean.  It should be nonzero.  (The parameter would be called
+   "lambda", but that is a reserved word in Python.)  Returned values
+   range from 0 to positive infinity if *lambd* is positive, and from
+   negative infinity to 0 if *lambd* is negative.
 
 
 .. function:: gammavariate(alpha, beta)
