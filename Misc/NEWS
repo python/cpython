@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4867: Fixed a crash in ctypes when passing a string to a
+  function without defining argtypes.
+
 - Issue #4272: Add an optional argument to the GzipFile constructor to override
   the timestamp in the gzip stream. The default value remains the current time.
   The information can be used by e.g. gunzip when decompressing. Patch by
