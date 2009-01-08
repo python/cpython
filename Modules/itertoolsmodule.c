@@ -2059,10 +2059,6 @@ combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyErr_SetString(PyExc_ValueError, "r must be non-negative");
 		goto error;
 	}
-	if (r > n) {
-		PyErr_SetString(PyExc_ValueError, "r cannot be bigger than the iterable");
-		goto error;
-	}
 
 	indices = PyMem_Malloc(r * sizeof(Py_ssize_t));
 	if (indices == NULL) {
@@ -2082,7 +2078,7 @@ combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	co->indices = indices;
 	co->result = NULL;
 	co->r = r;
-	co->stopped = 0;
+	co->stopped = r > n ? 1 : 0;
 
 	return (PyObject *)co;
 
@@ -2318,10 +2314,6 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyErr_SetString(PyExc_ValueError, "r must be non-negative");
 		goto error;
 	}
-	if (r > n) {
-		PyErr_SetString(PyExc_ValueError, "r cannot be bigger than the iterable");
-		goto error;
-	}
 
 	indices = PyMem_Malloc(n * sizeof(Py_ssize_t));
 	cycles = PyMem_Malloc(r * sizeof(Py_ssize_t));
@@ -2345,7 +2337,7 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	po->cycles = cycles;
 	po->result = NULL;
 	po->r = r;
-	po->stopped = 0;
+	po->stopped = r > n ? 1 : 0;
 
 	return (PyObject *)po;
 
