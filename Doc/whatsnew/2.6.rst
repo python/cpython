@@ -3213,6 +3213,9 @@ that may require changes to your code:
   set ``__hash__ = None`` in their definitions to indicate
   the fact.
 
+* String exceptions have been removed.  Attempting to use them raises a
+  :exc:`TypeError`.
+
 * The :meth:`__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
