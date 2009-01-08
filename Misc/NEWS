@@ -67,6 +67,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 4816: itertools.combinations() and itertools.product were raising
+  a ValueError for values of *r* larger than the input iterable.  They now
+  correctly return an empty iterator.
+
 - Fractions.from_float() no longer loses precision for integers too big to
   cast as floats.
 
