@@ -45,7 +45,7 @@ import os, sys
 import csv
 import re
 from docutils import nodes
-from sphinx.builder import Builder
+from sphinx.builders import Builder
 
 detect_all = re.compile(ur'''
     ::(?=[^=])|            # two :: (but NOT ::=)
