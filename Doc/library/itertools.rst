@@ -108,6 +108,8 @@ loops that truncate the stream.
             # combinations(range(4), 3) --> 012 013 023 123
             pool = tuple(iterable)
             n = len(pool)
+            if r > n:
+                return
             indices = range(r)
             yield tuple(pool[i] for i in indices)
             while 1:
@@ -131,6 +133,9 @@ loops that truncate the stream.
             for indices in permutations(range(n), r):
                 if sorted(indices) == list(indices):
                     yield tuple(pool[i] for i in indices)
+
+   The number of items returned is ``n! / r! / (n-r)!`` when ``0 <= r <= n``
+   or zero when ``r > n``.
 
    .. versionadded:: 2.6
 
@@ -399,6 +404,8 @@ loops that truncate the stream.
             pool = tuple(iterable)
             n = len(pool)
             r = n if r is None else r
+            if r > n:
+                return
             indices = range(n)
             cycles = range(n, n-r, -1)
             yield tuple(pool[i] for i in indices[:r])
@@ -427,6 +434,9 @@ loops that truncate the stream.
             for indices in product(range(n), repeat=r):
                 if len(set(indices)) == r:
                     yield tuple(pool[i] for i in indices)
+
+   The number of items returned is ``n! / (n-r)!`` when ``0 <= r <= n``
+   or zero when ``r > n``.
 
    .. versionadded:: 2.6
 
@@ -674,7 +684,8 @@ which incur interpreter overhead.
        return (d for d, s in izip(data, selectors) if s)
 
    def combinations_with_replacement(iterable, r):
-       "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
+       "combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
+       # number items returned:  (n+r-1)! / r! / (n-1)!
        pool = tuple(iterable)
        n = len(pool)
        indices = [0] * r
