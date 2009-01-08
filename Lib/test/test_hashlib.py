@@ -198,6 +198,19 @@ class HashLibTestCase(unittest.TestCase):
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
 
+    def test_gil(self):
+        # Check things work fine with an input larger than the size required
+        # for multithreaded operation (which is hardwired to 2048).
+        gil_minsize = 2048
+
+        m = hashlib.md5()
+        m.update(b'1')
+        m.update(b'#' * gil_minsize)
+        m.update(b'1')
+        self.assertEquals(m.hexdigest(), 'cb1e1a2cbc80be75e19935d621fb9b21')
+
+        m = hashlib.md5(b'x' * gil_minsize)
+        self.assertEquals(m.hexdigest(), 'cfb767f225d58469c5de3632a8803958')
 
 def test_main():
     support.run_unittest(HashLibTestCase)

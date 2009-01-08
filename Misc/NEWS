@@ -256,6 +256,10 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4751: hashlib now releases the GIL when hashing large buffers
+  (with a hardwired threshold of 2048 bytes), allowing better parallelization
+  on multi-CPU systems. Contributed by Lukas Lueg (ebfe) and Victor Stinner.
+
 - Issue #4051: Prevent conflict of UNICODE macros in cPickle.
 
 - Issue #4738: Each zlib object now has a separate lock, allowing to compress
