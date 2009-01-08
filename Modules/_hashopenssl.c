@@ -26,15 +26,35 @@
 #define HASH_OBJ_CONSTRUCTOR 0
 #endif
 
+#define HASHLIB_GIL_MINSIZE 2048
+
+#ifdef WITH_THREAD
+    #include "pythread.h"
+
+    #define ENTER_HASHLIB(obj) \
+        if ((obj)->lock) { \
+            if (!PyThread_acquire_lock((obj)->lock, 0)) { \
+                Py_BEGIN_ALLOW_THREADS \
+                PyThread_acquire_lock((obj)->lock, 1); \
+                Py_END_ALLOW_THREADS \
+            } \
+        }
+    #define LEAVE_HASHLIB(obj) \
+        if ((obj)->lock) { \
+            PyThread_release_lock((obj)->lock); \
+        }
+#else
+    #define ENTER_HASHLIB(obj)
+    #define LEAVE_HASHLIB(obj)
+#endif
+
 typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
-    EVP_MD_CTX          ctx;    /* OpenSSL message digest context */
-    /*
-     * TODO investigate performance impact of including a lock for this object
-     * here and releasing the Python GIL while hash updates are in progress.
-     * (perhaps only release GIL if input length will take long to process?)
-     */
+    EVP_MD_CTX           ctx;   /* OpenSSL message digest context */
+#ifdef WITH_THREAD
+    PyThread_type_lock   lock;  /* OpenSSL context lock */
+#endif
 } EVPobject;
 
 
@@ -63,19 +83,42 @@ newEVPobject(PyObject *name)
     if (retval != NULL) {
         Py_INCREF(name);
         retval->name = name;
+#ifdef WITH_THREAD
+        retval->lock = NULL;
+#endif
     }
 
     return retval;
 }
 
+static void
+EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
+{
+    unsigned int process;
+    const unsigned char *cp = (const unsigned char *)vp;
+    while (0 < len) {
+        if (len > (Py_ssize_t)MUNCH_SIZE)
+            process = MUNCH_SIZE;
+        else
+            process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
+        EVP_DigestUpdate(&self->ctx, (const void*)cp, process);
+        len -= process;
+        cp += process;
+    }
+}
+
 /* Internal methods for a hash object */
 
 static void
-EVP_dealloc(PyObject *ptr)
+EVP_dealloc(EVPobject *self)
 {
-    EVP_MD_CTX_cleanup(&((EVPobject *)ptr)->ctx);
-    Py_XDECREF(((EVPobject *)ptr)->name);
-    PyObject_Del(ptr);
+#ifdef WITH_THREAD
+    if (self->lock != NULL)
+        PyThread_free_lock(self->lock);
+#endif
+    EVP_MD_CTX_cleanup(&self->ctx);
+    Py_XDECREF(self->name);
+    PyObject_Del(self);
 }
 
 
@@ -91,7 +134,9 @@ EVP_copy(EVPobject *self, PyObject *unused)
     if ( (newobj = newEVPobject(self->name))==NULL)
         return NULL;
 
+    ENTER_HASHLIB(self);
     EVP_MD_CTX_copy(&newobj->ctx, &self->ctx);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -106,7 +151,9 @@ EVP_digest(EVPobject *self, PyObject *unused)
     PyObject *retval;
     unsigned int digest_size;
 
+    ENTER_HASHLIB(self);
     EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
+    LEAVE_HASHLIB(self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -128,7 +175,9 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     unsigned int i, j, digest_size;
 
     /* Get the raw (binary) digest value */
+    ENTER_HASHLIB(self);
     EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
+    LEAVE_HASHLIB(self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -137,16 +186,16 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     /* Allocate a new buffer */
     hex_digest = PyMem_Malloc(digest_size * 2 + 1);
     if (!hex_digest)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     /* Make hex version of the digest */
     for(i=j=0; i<digest_size; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     retval = PyUnicode_FromStringAndSize(hex_digest, digest_size * 2);
@@ -155,21 +204,26 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 }
 
 #define MY_GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) do { \
-                if (PyUnicode_Check(obj) || !PyObject_CheckBuffer((obj))) { \
-                    PyErr_SetString(PyExc_TypeError, \
-                                    "object supporting the buffer API required"); \
-                    return NULL; \
-                } \
-                if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
-                    return NULL; \
-                } \
-                if ((viewp)->ndim > 1) { \
-                    PyErr_SetString(PyExc_BufferError, \
-                                    "Buffer must be single dimension"); \
-                    PyBuffer_Release((viewp)); \
-                    return NULL; \
-                } \
-            } while(0);
+        if (PyUnicode_Check((obj))) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            "Unicode-objects must be encoded before hashing");\
+            return NULL; \
+        } \
+        if (!PyObject_CheckBuffer((obj))) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            "object supporting the buffer API required"); \
+            return NULL; \
+        } \
+        if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
+            return NULL; \
+        } \
+        if ((viewp)->ndim > 1) { \
+            PyErr_SetString(PyExc_BufferError, \
+                            "Buffer must be single dimension"); \
+            PyBuffer_Release((viewp)); \
+            return NULL; \
+        } \
+    } while(0);
 
 PyDoc_STRVAR(EVP_update__doc__,
 "Update this hash object's state with the provided string.");
@@ -184,41 +238,60 @@ EVP_update(EVPobject *self, PyObject *args)
         return NULL;
 
     MY_GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
-    if (view.len > 0 && view.len <= MUNCH_SIZE) {
-        EVP_DigestUpdate(&self->ctx, view.buf, view.len);
-    } else {
-        Py_ssize_t offset = 0, len = view.len;
-        while (len) {
-            unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-            EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf + offset, process);
-            len -= process;
-            offset += process;
+
+#ifdef WITH_THREAD
+    if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
+        self->lock = PyThread_allocate_lock();
+        if (self->lock == NULL) {
+            PyBuffer_Release(&view);
+            PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
+            return NULL;
         }
     }
-    PyBuffer_Release(&view);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    if (self->lock != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        EVP_hash(self, view.buf, view.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        EVP_hash(self, view.buf, view.len);
+    }
+#else
+    EVP_hash(self, view.buf, view.len);
+#endif
+
+    PyBuffer_Release(&view);
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef EVP_methods[] = {
-    {"update",	  (PyCFunction)EVP_update,    METH_VARARGS, EVP_update__doc__},
-    {"digest",	  (PyCFunction)EVP_digest,    METH_NOARGS,  EVP_digest__doc__},
+    {"update",    (PyCFunction)EVP_update,    METH_VARARGS, EVP_update__doc__},
+    {"digest",    (PyCFunction)EVP_digest,    METH_NOARGS,  EVP_digest__doc__},
     {"hexdigest", (PyCFunction)EVP_hexdigest, METH_NOARGS,  EVP_hexdigest__doc__},
-    {"copy",	  (PyCFunction)EVP_copy,      METH_NOARGS,  EVP_copy__doc__},
-    {NULL,	  NULL}		/* sentinel */
+    {"copy",      (PyCFunction)EVP_copy,      METH_NOARGS,  EVP_copy__doc__},
+    {NULL, NULL}  /* sentinel */
 };
 
 static PyObject *
 EVP_get_block_size(EVPobject *self, void *closure)
 {
-    return PyLong_FromLong(EVP_MD_CTX_block_size(&((EVPobject *)self)->ctx));
+    long block_size;
+    ENTER_HASHLIB(self);
+    block_size = EVP_MD_CTX_block_size(&self->ctx);
+    LEAVE_HASHLIB(self);
+    return PyLong_FromLong(block_size);
 }
 
 static PyObject *
 EVP_get_digest_size(EVPobject *self, void *closure)
 {
-    return PyLong_FromLong(EVP_MD_CTX_size(&((EVPobject *)self)->ctx));
+    long size;
+    ENTER_HASHLIB(self);
+    size = EVP_MD_CTX_size(&self->ctx);
+    LEAVE_HASHLIB(self);
+    return PyLong_FromLong(size);
 }
 
 static PyMemberDef EVP_members[] = {
@@ -246,11 +319,11 @@ static PyGetSetDef EVP_getseters[] = {
 
 
 static PyObject *
-EVP_repr(PyObject *self)
+EVP_repr(EVPobject *self)
 {
     char buf[100];
     PyOS_snprintf(buf, sizeof(buf), "<%s HASH object @ %p>",
-            _PyUnicode_AsString(((EVPobject *)self)->name), self);
+            _PyUnicode_AsString(self->name), self);
     return PyUnicode_FromString(buf);
 }
 
@@ -293,21 +366,16 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (data_obj) {
-        if (len > 0 && len <= MUNCH_SIZE) {
-        EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                          unsigned int));
+        if (view.len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            EVP_hash(self, view.buf, view.len);
+            Py_END_ALLOW_THREADS
         } else {
-            Py_ssize_t offset = 0, len = view.len;
-            while (len) {
-                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-                EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf + offset, process);
-                len -= process;
-                offset += process;
-            }
+            EVP_hash(self, view.buf, view.len);
         }
         PyBuffer_Release(&view);
     }
-    
+
     return 0;
 }
 #endif
@@ -332,15 +400,15 @@ digest_size -- number of bytes in this hashes output\n");
 static PyTypeObject EVPtype = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_hashlib.HASH",    /*tp_name*/
-    sizeof(EVPobject),	/*tp_basicsize*/
-    0,			/*tp_itemsize*/
+    sizeof(EVPobject),  /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    EVP_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
+    (destructor)EVP_dealloc, /*tp_dealloc*/
+    0,                  /*tp_print*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_compare*/
-    EVP_repr,           /*tp_repr*/
+    (reprfunc)EVP_repr, /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
@@ -353,13 +421,13 @@ static PyTypeObject EVPtype = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     hashtype_doc,       /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    EVP_methods,	/* tp_methods */
-    EVP_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    EVP_methods,        /* tp_methods */
+    EVP_members,        /* tp_members */
     EVP_getseters,      /* tp_getset */
 #if 1
     0,                  /* tp_base */
@@ -395,17 +463,12 @@ EVPnew(PyObject *name_obj,
     }
 
     if (cp && len) {
-        if (len > 0 && len <= MUNCH_SIZE) {
-            EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                              unsigned int));
+        if (len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            EVP_hash(self, cp, len);
+            Py_END_ALLOW_THREADS
         } else {
-            Py_ssize_t offset = 0;
-            while (len) {
-                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-                EVP_DigestUpdate(&self->ctx, cp + offset, process);
-                len -= process;
-                offset += process;
-            }
+            EVP_hash(self, cp, len);
         }
     }
 
@@ -522,7 +585,7 @@ static struct PyMethodDef EVP_functions[] = {
     CONSTRUCTOR_METH_DEF(sha256),
     CONSTRUCTOR_METH_DEF(sha384),
     CONSTRUCTOR_METH_DEF(sha512),
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL, NULL}   /* Sentinel */
 };
 
 
@@ -530,15 +593,15 @@ static struct PyMethodDef EVP_functions[] = {
 
 
 static struct PyModuleDef _hashlibmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_hashlib",
-	NULL,
-	-1,
-	EVP_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "_hashlib",
+    NULL,
+    -1,
+    EVP_functions,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
