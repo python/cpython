@@ -645,8 +645,8 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 
 #ifdef CTYPES_UNICODE
 	if (PyUnicode_Check(obj)) {
-#ifdef HAVE_USABLE_WCHAR_T
 		pa->ffi_type = &ffi_type_pointer;
+#ifdef HAVE_USABLE_WCHAR_T
 		pa->value.p = PyUnicode_AS_UNICODE(obj);
 		Py_INCREF(obj);
 		pa->keep = obj;
