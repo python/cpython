@@ -110,18 +110,18 @@ _tkinter
 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
-        http://sources.redhat.com/bzip2/
+        http://www.bzip.org/
     Download the source from the python.org copy into the dist
     directory:
 
-    svn export http://svn.python.org/projects/external/bzip2-1.0.3
+    svn export http://svn.python.org/projects/external/bzip2-1.0.5
 
     And requires building bz2 first.
 
-    cd dist\bzip2-1.0.3
+    cd dist\bzip2-1.0.5
     nmake -f makefile.msc
 
-    All of this managed to build bzip2-1.0.3\libbz2.lib, which the Python
+    All of this managed to build bzip2-1.0.5\libbz2.lib, which the Python
     project links in.
 
 
