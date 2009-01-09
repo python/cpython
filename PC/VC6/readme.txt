@@ -128,23 +128,23 @@ _bsddb
     To use the version of bsddb that Python is built with by default, invoke
     (in the dist directory)
 
-     svn export http://svn.python.org/projects/external/db-4.4.20
+     svn export http://svn.python.org/projects/external/db-4.7.25.0 db-4.7.25
 
-    Then open db-4.4.20\build_win32\Berkeley_DB.dsw and build the "db_static"
-    project for "Release" mode.
+    Then open db-4.7.25\build_windows\Berkeley_DB.dsw and build the
+    "db_static" project for "Release" mode.
 
     Alternatively, if you want to start with the original sources,
-    go to Sleepycat's download page:
-        http://www.sleepycat.com/downloads/releasehistorybdb.html
+    go to Oracle's download page:
+        http://www.oracle.com/technology/software/products/berkeley-db/db/
 
-    and download version 4.4.20.
+    and download version 4.7.25.
 
     With or without strong cryptography? You can choose either with or
     without strong cryptography, as per the instructions below.  By
     default, Python is built and distributed WITHOUT strong crypto.
 
     Unpack the sources; if you downloaded the non-crypto version, rename
-    the directory from db-4.4.20.NC to db-4.4.20.
+    the directory from db-4.7.25.NC to db-4.7.25.
 
     Now apply any patches that apply to your version.
 
