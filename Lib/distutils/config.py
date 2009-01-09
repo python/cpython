@@ -82,12 +82,12 @@ class PyPIRCCommand(Command):
                 for server in _servers:
                     current = {'server': server}
                     current['username'] = config.get(server, 'username')
-                    current['password'] = config.get(server, 'password')
 
                     # optional params
                     for key, default in (('repository',
                                           self.DEFAULT_REPOSITORY),
-                                         ('realm', self.DEFAULT_REALM)):
+                                         ('realm', self.DEFAULT_REALM),
+                                         ('password', None)):
                         if config.has_option(server, key):
                             current[key] = config.get(server, key)
                         else:

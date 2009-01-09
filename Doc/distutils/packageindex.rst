@@ -8,17 +8,17 @@ The Python Package Index (PyPI) holds meta-data describing distributions
 packaged with distutils. The distutils command :command:`register` is used to
 submit your distribution's meta-data to the index. It is invoked as follows::
 
-   python setup.py register
+    python setup.py register
 
 Distutils will respond with the following prompt::
 
-   running register
-   We need to know who you are, so please choose either:
-    1. use your existing login,
-    2. register as a new user,
-    3. have the server generate a new password for you (and email it to you), or
-    4. quit
-   Your selection [default 1]:
+    running register
+    We need to know who you are, so please choose either:
+        1. use your existing login,
+        2. register as a new user,
+        3. have the server generate a new password for you (and email it to you), or
+        4. quit
+    Your selection [default 1]:
 
 Note: if your username and password are saved locally, you will not see this
 menu.
@@ -55,40 +55,50 @@ The .pypirc file
 
 The format of the :file:`.pypirc` file is as follows::
 
-   [distutils]
-   index-servers =
-     pypi
+    [distutils]
+    index-servers =
+        pypi
 
-   [pypi]
-   repository: <repository-url>
-   username: <username>
-   password: <password>
+    [pypi]
+    repository: <repository-url>
+    username: <username>
+    password: <password>
 
-*repository* can be omitted and defaults to ``http://www.python.org/pypi``.
+The *distutils* section defines a *index-servers* variable that lists the
+name of all sections describing a repository.
 
-If you want to define another server a new section can be created::
+Each section describing a repository defines three variables:
 
-   [distutils]
-   index-servers =
-     pypi
-     other
+- *repository*, that defines the url of the PyPI server. Defaults to
+    ``http://www.python.org/pypi``.
+- *username*, which is the registered username on the PyPI server.
+- *password*, that will be used to authenticate. If omitted the user
+    will be prompt to type it when needed.
 
-   [pypi]
-   repository: <repository-url>
-   username: <username>
-   password: <password>
+If you want to define another server a new section can be created and
+listed in the *index-servers* variable::
 
-   [other]
-   repository: http://example.com/pypi
-   username: <username>
-   password: <password>
+    [distutils]
+    index-servers =
+        pypi
+        other
 
-The command can then be called with the -r option::
+    [pypi]
+    repository: <repository-url>
+    username: <username>
+    password: <password>
 
-   python setup.py register -r http://example.com/pypi
+    [other]
+    repository: http://example.com/pypi
+    username: <username>
+    password: <password>
 
-Or even with the section name::
+:command:`register` can then be called with the -r option to point the
+repository to work with::
 
-   python setup.py register -r other
+    python setup.py register -r http://example.com/pypi
 
+The name of the section that describes the repository may also be used
+for conveniency::
 
+    python setup.py register -r other
