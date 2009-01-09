@@ -322,6 +322,7 @@ Notes:
       module: math
       single: floor() (in module math)
       single: ceil() (in module math)
+      single: trunc() (in module math)
       pair: numeric; conversions
       pair: C; language
 
