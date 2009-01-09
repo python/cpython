@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4604: Some objects of the I/O library could still be used after 
+  having been closed (for instance, a read() call could return some
+  previously buffered data). Patch by Dmitry Vasiliev.
+
 - Issue #4705: Fix the -u ("unbuffered binary stdout and stderr") command-line
   flag to work properly. Furthermore, when specifying -u, the text stdout
   and stderr streams have line-by-line buffering enabled (the default being

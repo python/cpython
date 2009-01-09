@@ -340,6 +340,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def tell(self) -> int:
         """Return current stream position."""
+        self._checkClosed()
         return self.seek(0, 1)
 
     def truncate(self, pos: int = None) -> int:
@@ -358,6 +359,8 @@ class IOBase(metaclass=abc.ABCMeta):
         This is not implemented for read-only and non-blocking streams.
         """
         # XXX Should this return the number of bytes written???
+        if self.__closed:
+            raise ValueError("I/O operation on closed file.")
 
     __closed = False
 
@@ -530,6 +533,7 @@ class IOBase(metaclass=abc.ABCMeta):
         lines will be read if the total size (in bytes/characters) of all
         lines so far exceeds hint.
         """
+        self._checkClosed()
         if hint is None or hint <= 0:
             return list(self)
         n = 0
@@ -567,6 +571,7 @@ class RawIOBase(IOBase):
         Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
         """
+        self._checkClosed()
         if n is None:
             n = -1
         if n < 0:
@@ -578,6 +583,7 @@ class RawIOBase(IOBase):
 
     def readall(self):
         """Read until EOF, using multiple read() call."""
+        self._checkClosed()
         res = bytearray()
         while True:
             data = self.read(DEFAULT_BUFFER_SIZE)
@@ -673,6 +679,7 @@ class BufferedIOBase(IOBase):
         data at the moment.
         """
         # XXX This ought to work with anything that supports the buffer API
+        self._checkClosed()
         data = self.read(len(b))
         n = len(data)
         try:
@@ -787,13 +794,11 @@ class _BytesIO(BufferedIOBase):
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
         """
-        if self.closed:
-            raise ValueError("getvalue on closed file")
+        self._checkClosed()
         return bytes(self._buffer)
 
     def read(self, n=None):
-        if self.closed:
-            raise ValueError("read from closed file")
+        self._checkClosed()
         if n is None:
             n = -1
         if n < 0:
@@ -811,8 +816,7 @@ class _BytesIO(BufferedIOBase):
         return self.read(n)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
+        self._checkClosed()
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         n = len(b)
@@ -829,8 +833,7 @@ class _BytesIO(BufferedIOBase):
         return n
 
     def seek(self, pos, whence=0):
-        if self.closed:
-            raise ValueError("seek on closed file")
+        self._checkClosed()
         try:
             pos = pos.__index__()
         except AttributeError as err:
@@ -848,13 +851,11 @@ class _BytesIO(BufferedIOBase):
         return self._pos
 
     def tell(self):
-        if self.closed:
-            raise ValueError("tell on closed file")
+        self._checkClosed()
         return self._pos
 
     def truncate(self, pos=None):
-        if self.closed:
-            raise ValueError("truncate on closed file")
+        self._checkClosed()
         if pos is None:
             pos = self._pos
         elif pos < 0:
@@ -914,6 +915,7 @@ class BufferedReader(_BufferedIOMixin):
         mode. If n is negative, read until EOF or until read() would
         block.
         """
+        self._checkClosed()
         with self._read_lock:
             return self._read_unlocked(n)
 
@@ -970,6 +972,7 @@ class BufferedReader(_BufferedIOMixin):
         do at most one raw read to satisfy it.  We never return more
         than self.buffer_size.
         """
+        self._checkClosed()
         with self._read_lock:
             return self._peek_unlocked(n)
 
@@ -988,6 +991,7 @@ class BufferedReader(_BufferedIOMixin):
         """Reads up to n bytes, with at most one read() system call."""
         # Returns up to n bytes.  If at least one byte is buffered, we
         # only return buffered bytes.  Otherwise, we do one raw read.
+        self._checkClosed()
         if n <= 0:
             return b""
         with self._read_lock:
@@ -996,9 +1000,11 @@ class BufferedReader(_BufferedIOMixin):
                 min(n, len(self._read_buf) - self._read_pos))
 
     def tell(self):
+        self._checkClosed()
         return self.raw.tell() - len(self._read_buf) + self._read_pos
 
     def seek(self, pos, whence=0):
+        self._checkClosed()
         with self._read_lock:
             if whence == 1:
                 pos -= len(self._read_buf) - self._read_pos
@@ -1029,8 +1035,7 @@ class BufferedWriter(_BufferedIOMixin):
         self._write_lock = Lock()
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
+        self._checkClosed()
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with self._write_lock:
@@ -1060,6 +1065,7 @@ class BufferedWriter(_BufferedIOMixin):
             return written
 
     def truncate(self, pos=None):
+        self._checkClosed()
         with self._write_lock:
             self._flush_unlocked()
             if pos is None:
@@ -1067,12 +1073,11 @@ class BufferedWriter(_BufferedIOMixin):
             return self.raw.truncate(pos)
 
     def flush(self):
+        self._checkClosed()
         with self._write_lock:
             self._flush_unlocked()
 
     def _flush_unlocked(self):
-        if self.closed:
-            raise ValueError("flush of closed file")
         written = 0
         try:
             while self._write_buf:
@@ -1086,9 +1091,11 @@ class BufferedWriter(_BufferedIOMixin):
             raise BlockingIOError(e.errno, e.strerror, written)
 
     def tell(self):
+        self._checkClosed()
         return self.raw.tell() + len(self._write_buf)
 
     def seek(self, pos, whence=0):
+        self._checkClosed()
         with self._write_lock:
             self._flush_unlocked()
             return self.raw.seek(pos, whence)
@@ -1186,6 +1193,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return pos
 
     def tell(self):
+        self._checkClosed()
         if self._write_buf:
             return self.raw.tell() + len(self._write_buf)
         else:
@@ -1217,6 +1225,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedReader.read1(self, n)
 
     def write(self, b):
+        self._checkClosed()
         if self._read_buf:
             # Undo readahead
             with self._read_lock:
@@ -1474,8 +1483,7 @@ class TextIOWrapper(TextIOBase):
         return self.buffer.isatty()
 
     def write(self, s: str):
-        if self.closed:
-            raise ValueError("write to closed file")
+        self._checkClosed()
         if not isinstance(s, str):
             raise TypeError("can't write %s to text stream" %
                             s.__class__.__name__)
@@ -1583,6 +1591,7 @@ class TextIOWrapper(TextIOBase):
         return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
 
     def tell(self):
+        self._checkClosed()
         if not self._seekable:
             raise IOError("underlying stream is not seekable")
         if not self._telling:
@@ -1653,8 +1662,7 @@ class TextIOWrapper(TextIOBase):
         return self.buffer.truncate()
 
     def seek(self, cookie, whence=0):
-        if self.closed:
-            raise ValueError("tell on closed file")
+        self._checkClosed()
         if not self._seekable:
             raise IOError("underlying stream is not seekable")
         if whence == 1: # seek relative to current position
@@ -1712,6 +1720,7 @@ class TextIOWrapper(TextIOBase):
         return cookie
 
     def read(self, n=None):
+        self._checkClosed()
         if n is None:
             n = -1
         decoder = self._decoder or self._get_decoder()
@@ -1732,6 +1741,7 @@ class TextIOWrapper(TextIOBase):
             return result
 
     def __next__(self):
+        self._checkClosed()
         self._telling = False
         line = self.readline()
         if not line:
@@ -1741,8 +1751,7 @@ class TextIOWrapper(TextIOBase):
         return line
 
     def readline(self, limit=None):
-        if self.closed:
-            raise ValueError("read from closed file")
+        self._checkClosed()
         if limit is None:
             limit = -1
 
@@ -1963,8 +1972,7 @@ try:
 
         def getvalue(self) -> str:
             """Retrieve the entire contents of the object."""
-            if self.closed:
-                raise ValueError("read on closed file")
+            self._checkClosed()
             return self._getvalue()
 
         def write(self, s: str) -> int:
@@ -1972,8 +1980,7 @@ try:
 
             Returns the number of characters written.
             """
-            if self.closed:
-                raise ValueError("write to closed file")
+            self._checkClosed()
             if not isinstance(s, str):
                 raise TypeError("can't write %s to text stream" %
                                 s.__class__.__name__)
@@ -1990,8 +1997,7 @@ try:
             If the argument is negative or omitted, read until EOF
             is reached. Return an empty string at EOF.
             """
-            if self.closed:
-                raise ValueError("read to closed file")
+            self._checkClosed()
             if n is None:
                 n = -1
             res = self._pending
@@ -2006,8 +2012,7 @@ try:
 
         def tell(self) -> int:
             """Tell the current file position."""
-            if self.closed:
-                raise ValueError("tell from closed file")
+            self._checkClosed()
             if self._pending:
                 return self._tell() - len(self._pending)
             else:
@@ -2022,8 +2027,7 @@ try:
                 2  End of stream - pos must be 0.
             Returns the new absolute position.
             """
-            if self.closed:
-                raise ValueError("seek from closed file")
+            self._checkClosed()
             self._pending = ""
             return self._seek(pos, whence)
 
@@ -2034,14 +2038,12 @@ try:
             returned by tell().  Imply an absolute seek to pos.
             Returns the new absolute position.
             """
-            if self.closed:
-                raise ValueError("truncate from closed file")
+            self._checkClosed()
             self._pending = ""
             return self._truncate(pos)
 
         def readline(self, limit: int = None) -> str:
-            if self.closed:
-                raise ValueError("read from closed file")
+            self._checkClosed()
             if limit is None:
                 limit = -1
             if limit >= 0:
