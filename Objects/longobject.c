@@ -1646,7 +1646,7 @@ _PyLong_Format(PyObject *aa, int base)
  * Note that when converting a base B string, a char c is a legitimate
  * base B digit iff _PyLong_DigitValue[Py_CHARPyLong_MASK(c)] < B.
  */
-int _PyLong_DigitValue[256] = {
+unsigned char _PyLong_DigitValue[256] = {
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
@@ -1710,7 +1710,7 @@ long_from_binary_base(char **str, int base)
 	bits_in_accum = 0;
 	pdigit = z->ob_digit;
 	while (--p >= start) {
-		int k = _PyLong_DigitValue[Py_CHARMASK(*p)];
+		int k = (int)_PyLong_DigitValue[Py_CHARMASK(*p)];
 		assert(k >= 0 && k < base);
 		accum |= (twodigits)(k << bits_in_accum);
 		bits_in_accum += bits_per_char;
@@ -1926,7 +1926,7 @@ digit beyond the first.
 			c = (digit)_PyLong_DigitValue[Py_CHARMASK(*str++)];
 			for (i = 1; i < convwidth && str != scan; ++i, ++str) {
 				c = (twodigits)(c *  base +
-					_PyLong_DigitValue[Py_CHARMASK(*str)]);
+					(int)_PyLong_DigitValue[Py_CHARMASK(*str)]);
 				assert(c < PyLong_BASE);
 			}
 

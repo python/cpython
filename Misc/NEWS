@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- The internal table, _PyLong_DigitValue, is now an array of unsigned chars
+  instead of ints (reducing its size from 4 to 8 times thereby reducing
+  Python's overall memory).
+
 - Issue #1180193: When importing a module from a .pyc (or .pyo) file with
   an existing .py counterpart, override the co_filename attributes of all
   code objects if the original filename is obsolete (which can happen if the
