@@ -12,6 +12,12 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4074: Change the criteria for doing a full garbage collection (i.e.
+  collecting the oldest generation) so that allocating lots of objects without
+  destroying them does not show quadratic performance. Based on a proposal by
+  Martin von Löwis at
+  http://mail.python.org/pipermail/python-dev/2008-June/080579.html.
+
 - Issue #4604: Some objects of the I/O library could still be used after 
   having been closed (for instance, a read() call could return some
   previously buffered data). Patch by Dmitry Vasiliev.
