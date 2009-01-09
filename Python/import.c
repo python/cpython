@@ -3198,24 +3198,11 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 		return -1;
 	} else {
 #ifndef RISCOS
+#ifndef MS_WINDOWS
 		struct stat statbuf;
 		int rv;
 
 		rv = stat(path, &statbuf);
-#ifdef MS_WINDOWS
-		/* MS Windows stat() chokes on paths like C:\path\. Try to
-		 * recover *one* time by stripping off a trailing slash or
-		 * backslash. http://bugs.python.org/issue1293
- 		 */
-		if (rv != 0 && pathlen <= MAXPATHLEN &&
-		    (path[pathlen-1] == '/' || path[pathlen-1] == '\\')) {
-			char mangled[MAXPATHLEN+1];
-
-			strcpy(mangled, path);
-			mangled[pathlen-1] = '\0';
-			rv = stat(mangled, &statbuf);
-		}
-#endif
 		if (rv == 0) {
 			/* it exists */
 			if (S_ISDIR(statbuf.st_mode)) {
@@ -3225,7 +3212,24 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 				return -1;
 			}
 		}
-#else
+#else /* MS_WINDOWS */
+		DWORD rv;
+		/* see issue1293 and issue3677:
+		 * stat() on Windows doesn't recognise paths like
+		 * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
+		 */
+		rv = GetFileAttributesA(path);
+		if (rv != INVALID_FILE_ATTRIBUTES) {
+			/* it exists */
+			if (rv & FILE_ATTRIBUTE_DIRECTORY) {
+				/* it's a directory */
+				PyErr_SetString(PyExc_ImportError,
+						"existing directory");
+				return -1;
+			}
+		}
+#endif
+#else /* RISCOS */
 		if (object_exists(path)) {
 			/* it exists */
 			if (isdir(path)) {
