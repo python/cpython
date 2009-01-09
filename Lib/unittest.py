@@ -73,7 +73,7 @@ def _strclass(cls):
 
 __unittest = 1
 
-class TestResult:
+class TestResult(object):
     """Holder for test result information.
 
     Test results are automatically managed by the TestCase and TestSuite
@@ -149,7 +149,7 @@ class TestResult:
                (_strclass(self.__class__), self.testsRun, len(self.errors),
                 len(self.failures))
 
-class AssertRaisesContext:
+class AssertRaisesContext(object):
     def __init__(self, expected, test_case, callable_obj=None):
         self.expected = expected
         self.failureException = test_case.failureException
@@ -179,7 +179,7 @@ class AssertRaisesContext:
         # Let unexpected exceptions skip through
         return False
 
-class TestCase:
+class TestCase(object):
     """A class whose instances are single test cases.
 
     By default, the test code itself should be placed in a method named
@@ -217,8 +217,8 @@ class TestCase:
             testMethod = getattr(self, methodName)
             self._testMethodDoc = testMethod.__doc__
         except AttributeError:
-            raise ValueError("no such test method in %s: %s"
-                             % (self.__class__, methodName))
+            raise ValueError("no such test method in %s: %s" % \
+                  (self.__class__, methodName))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -273,9 +273,7 @@ class TestCase:
         try:
             try:
                 self.setUp()
-            except KeyboardInterrupt:
-                raise
-            except:
+            except Exception:
                 result.addError(self, self._exc_info())
                 return
 
@@ -285,16 +283,12 @@ class TestCase:
                 ok = True
             except self.failureException:
                 result.addFailure(self, self._exc_info())
-            except KeyboardInterrupt:
-                raise
-            except:
+            except Exception:
                 result.addError(self, self._exc_info())
 
             try:
                 self.tearDown()
-            except KeyboardInterrupt:
-                raise
-            except:
+            except Exception:
                 result.addError(self, self._exc_info())
                 ok = False
             if ok: result.addSuccess(self)
@@ -372,8 +366,8 @@ class TestCase:
            as significant digits (measured from the most signficant digit).
         """
         if round(abs(second-first), places) != 0:
-            raise self.failureException(msg or '%r != %r within %r places'
-                                               % (first, second, places))
+            raise self.failureException(
+                  msg or '%r != %r within %r places' % (first, second, places))
 
     def failIfAlmostEqual(self, first, second, *, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
@@ -384,8 +378,8 @@ class TestCase:
            as significant digits (measured from the most signficant digit).
         """
         if round(abs(second-first), places) == 0:
-            raise self.failureException(msg or '%r == %r within %r places'
-                                               % (first, second, places))
+            raise self.failureException(
+                  msg or '%r == %r within %r places' % (first, second, places))
 
     # Synonyms for assertion methods
 
@@ -405,7 +399,7 @@ class TestCase:
 
 
 
-class TestSuite:
+class TestSuite(object):
     """A test suite is a composite test consisting of a number of TestCases.
 
     For use, create an instance of TestSuite, then add test case instances.
@@ -545,7 +539,7 @@ def CmpToKey(mycmp):
             return mycmp(self.obj, other.obj) == -1
     return K
 
-class TestLoader:
+class TestLoader(object):
     """This class is responsible for loading tests according to various
     criteria and returning them wrapped in a TestSuite
     """
@@ -596,7 +590,7 @@ class TestLoader:
         for part in parts:
             parent, obj = obj, getattr(obj, part)
 
-        if type(obj) == types.ModuleType:
+        if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
         elif isinstance(obj, type) and issubclass(obj, TestCase):
             return self.loadTestsFromTestCase(obj)
@@ -672,7 +666,7 @@ def findTestCases(module, prefix='test', sortUsing=cmp, suiteClass=TestSuite):
 # Text UI
 ##############################################################################
 
-class _WritelnDecorator:
+class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""
     def __init__(self,stream):
         self.stream = stream
@@ -751,7 +745,7 @@ class _TextTestResult(TestResult):
             self.stream.writeln("%s" % err)
 
 
-class TextTestRunner:
+class TextTestRunner(object):
     """A test runner class that displays results in textual form.
 
     It prints out the names of tests as they are run, errors as they
@@ -797,7 +791,7 @@ class TextTestRunner:
 # Facilities for running tests from the command line
 ##############################################################################
 
-class TestProgram:
+class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.
     """
@@ -819,7 +813,7 @@ Examples:
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=TextTestRunner,
                  testLoader=defaultTestLoader):
-        if type(module) == type(''):
+        if isinstance(module, basestring):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
                 self.module = getattr(self.module, part)
