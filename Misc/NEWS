@@ -12,6 +12,11 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4705: Fix the -u ("unbuffered binary stdout and stderr") command-line
+  flag to work properly. Furthermore, when specifying -u, the text stdout
+  and stderr streams have line-by-line buffering enabled (the default being
+  to buffer arbitrary chunks of data).
+
 - The internal table, _PyLong_DigitValue, is now an array of unsigned chars
   instead of ints (reducing its size from 4 to 8 times thereby reducing
   Python's overall memory).

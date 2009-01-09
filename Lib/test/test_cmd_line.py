@@ -142,6 +142,23 @@ class CmdLineTest(unittest.TestCase):
                 self.exit_code('-c', command),
                 0)
 
+    def test_unbuffered_output(self):
+        # Test expected operation of the '-u' switch
+        for stream in ('stdout', 'stderr'):
+            # Binary is unbuffered
+            code = ("import os, sys; sys.%s.buffer.write(b'x'); os._exit(0)"
+                % stream)
+            data, rc = self.start_python_and_exit_code('-u', '-c', code)
+            self.assertEqual(rc, 0)
+            self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
+            # Text is line-buffered
+            code = ("import os, sys; sys.%s.write('x\\n'); os._exit(0)"
+                % stream)
+            data, rc = self.start_python_and_exit_code('-u', '-c', code)
+            self.assertEqual(rc, 0)
+            self.assertEqual(data.strip(), b'x',
+                "text %s not line-buffered" % stream)
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
