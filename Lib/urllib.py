@@ -335,9 +335,7 @@ class URLopener:
         if auth: h.putheader('Authorization', 'Basic %s' % auth)
         if realhost: h.putheader('Host', realhost)
         for args in self.addheaders: h.putheader(*args)
-        h.endheaders()
-        if data is not None:
-            h.send(data)
+        h.endheaders(data)
         errcode, errmsg, headers = h.getreply()
         fp = h.getfile()
         if errcode == -1:
@@ -430,9 +428,7 @@ class URLopener:
             if auth: h.putheader('Authorization', 'Basic %s' % auth)
             if realhost: h.putheader('Host', realhost)
             for args in self.addheaders: h.putheader(*args)
-            h.endheaders()
-            if data is not None:
-                h.send(data)
+            h.endheaders(data)
             errcode, errmsg, headers = h.getreply()
             fp = h.getfile()
             if errcode == -1:
