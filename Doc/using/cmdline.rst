@@ -356,7 +356,7 @@ Miscellaneous options
 
 .. cmdoption:: -3
 
-   Warn about Python 3.x incompatibilities which cannot be fixed trivally by
+   Warn about Python 3.x incompatibilities which cannot be fixed trivially by
    :ref:`2to3 <2to3-reference>`. Among these are:
 
    * :meth:`dict.has_key`
