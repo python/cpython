@@ -1,0 +1,164 @@
+c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
+c-api/list,,:high,list[low:high]
+c-api/list,,:high,list[low:high] = itemlist
+c-api/sequence,,:i2,o[i1:i2]
+c-api/sequence,,:i2,o[i1:i2] = v
+c-api/sequence,,:i2,del o[i1:i2]
+c-api/unicode,,:end,str[start:end]
+distutils/apiref,,:action,http://pypi.python.org/pypi?:action=list_classifiers
+distutils/setupscript,,::,
+extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
+extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)) {"
+extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
+extending/newtypes,,:call,"if (!PyArg_ParseTuple(args, ""sss:call"", &arg1, &arg2, &arg3)) {"
+extending/windows,,:initspam,/export:initspam
+howto/cporting,,:add,"if (!PyArg_ParseTuple(args, ""ii:add_ints"", &one, &two))"
+howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
+howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
+howto/curses,,:black,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:blue,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:cyan,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:green,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:magenta,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:red,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:white,"7:white."
+howto/curses,,:yellow,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/regex,,::,
+howto/regex,,:foo,(?:foo)
+howto/urllib2,,:example,"for example ""joe@password:example.com"""
+howto/webservers,,.. image:,.. image:: http.png
+library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
+library/datetime,,:MM,
+library/datetime,,:SS,
+library/decimal,,:optional,"trailneg:optional trailing minus indicator"
+library/difflib,,:ahi,a[alo:ahi]
+library/difflib,,:bhi,b[blo:bhi]
+library/difflib,,:i2,
+library/difflib,,:j2,
+library/difflib,,:i1,
+library/dis,,:TOS,
+library/dis,,`,TOS = `TOS`
+library/doctest,,`,``factorial`` from the ``example`` module:
+library/doctest,,`,The ``example`` module
+library/doctest,,`,Using ``factorial``
+library/functions,,:step,a[start:stop:step]
+library/functions,,:stop,"a[start:stop, i]"
+library/functions,,:stop,a[start:stop:step]
+library/hotshot,,:lineno,"ncalls  tottime  percall  cumtime  percall filename:lineno(function)"
+library/httplib,,:port,host:port
+library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
+library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
+library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
+library/logging,,:And,
+library/logging,,:package1,
+library/logging,,:package2,
+library/logging,,:root,
+library/logging,,:This,
+library/logging,,:port,host:port
+library/mmap,,:i2,obj[i1:i2]
+library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
+library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
+library/multiprocessing,,`,">>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`"
+library/multiprocessing,,`,# `BaseManager`.
+library/multiprocessing,,`,# `Pool.imap()` (which will save on the amount of code needed anyway).
+library/multiprocessing,,`,# A test file for the `multiprocessing` package
+library/multiprocessing,,`,# A test of `multiprocessing.Pool` class
+library/multiprocessing,,`,# Add more tasks using `put()`
+library/multiprocessing,,`,# create server for a `HostManager` object
+library/multiprocessing,,`,# Depends on `multiprocessing` package -- tested with `processing-0.60`
+library/multiprocessing,,`,# in the original order then consider using `Pool.map()` or
+library/multiprocessing,,`,# Not sure if we should synchronize access to `socket.accept()` method by
+library/multiprocessing,,`,# object.  (We import `multiprocessing.reduction` to enable this pickling.)
+library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
+library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
+library/multiprocessing,,`,# register the generator function baz; use `GeneratorProxy` to make proxies
+library/multiprocessing,,`,`Cluster` is a subclass of `SyncManager` so it allows creation of
+library/multiprocessing,,`,`hostname` gives the name of the host.  If hostname is not
+library/multiprocessing,,`,`slots` is used to specify the number of slots for processes on
+library/optparse,,:len,"del parser.rargs[:len(value)]"
+library/os.path,,:foo,c:foo
+library/parser,,`,"""Make a function that raises an argument to the exponent `exp`."""
+library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
+library/profile,,:lineno,ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+library/profile,,:lineno,filename:lineno(function)
+library/pyexpat,,:elem1,<py:elem1 />
+library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
+library/repr,,`,"return `obj`"
+library/smtplib,,:port,"as well as a regular host:port server."
+library/socket,,::,'5aef:2b::8'
+library/sqlite3,,:memory,
+library/sqlite3,,:age,"select name_last, age from people where name_last=:who and age=:age"
+library/sqlite3,,:who,"select name_last, age from people where name_last=:who and age=:age"
+library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
+library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
+library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"
+library/ssl,,:MyState,State or Province Name (full name) [Some-State]:MyState
+library/ssl,,:ops,Email Address []:ops@myserver.mygroup.myorganization.com
+library/ssl,,:Some,"Locality Name (eg, city) []:Some City"
+library/ssl,,:US,Country Name (2 letter code) [AU]:US
+library/stdtypes,,:len,s[len(s):len(s)]
+library/stdtypes,,:len,s[len(s):len(s)]
+library/string,,:end,s[start:end]
+library/string,,:end,s[start:end]
+library/subprocess,,`,"output=`mycmd myarg`"
+library/subprocess,,`,"output=`dmesg | grep hda`"
+library/tarfile,,:compression,filemode[:compression]
+library/tarfile,,:gz,
+library/tarfile,,:bz2,
+library/time,,:mm,
+library/time,,:ss,
+library/turtle,,::,Example::
+library/urllib,,:port,:port
+library/urllib2,,:password,"""joe:password@python.org"""
+library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
+library/xmlrpclib,,:pass,http://user:pass@host:port/path
+library/xmlrpclib,,:pass,user:pass
+library/xmlrpclib,,:port,http://user:pass@host:port/path
+license,,`,THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+license,,:zooko,mailto:zooko@zooko.com
+license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+reference/datamodel,,:step,a[i:j:step]
+reference/datamodel,,:max,
+reference/expressions,,:index,x[index:index]
+reference/expressions,,:datum,{key:datum...}
+reference/expressions,,`,`expressions...`
+reference/grammar,,:output,#diagram:output
+reference/grammar,,:rules,#diagram:rules
+reference/grammar,,:token,#diagram:token
+reference/grammar,,`,'`' testlist1 '`'
+reference/lexical_analysis,,:fileencoding,# vim:fileencoding=<encoding-name>
+reference/lexical_analysis,,`,",       :       .       `       =       ;"
+tutorial/datastructures,,:value,key:value pairs within the braces adds initial key:value pairs
+tutorial/datastructures,,:value,It is also possible to delete a key:value
+tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])"
+tutorial/stdlib2,,:start,extra = data[start:start+extra_size]
+tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
+tutorial/stdlib2,,:config,"logging.warning('Warning:config file %s not found', 'server.conf')"
+tutorial/stdlib2,,:config,WARNING:root:Warning:config file server.conf not found
+tutorial/stdlib2,,:Critical,CRITICAL:root:Critical error -- shutting down
+tutorial/stdlib2,,:Error,ERROR:root:Error occurred
+tutorial/stdlib2,,:root,CRITICAL:root:Critical error -- shutting down
+tutorial/stdlib2,,:root,ERROR:root:Error occurred
+tutorial/stdlib2,,:root,WARNING:root:Warning:config file server.conf not found
+tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
+using/cmdline,,:line,file:line: category: message
+using/cmdline,,:category,action:message:category:module:line
+using/cmdline,,:line,action:message:category:module:line
+using/cmdline,,:message,action:message:category:module:line
+using/cmdline,,:module,action:message:category:module:line
+using/cmdline,,:errorhandler,:errorhandler
+using/windows,162,`,`` this fixes syntax highlighting errors in some editors due to the \\\\ hackery
+using/windows,170,`,``
+whatsnew/2.0,418,:len,
+whatsnew/2.3,,::,
+whatsnew/2.3,,:config,
+whatsnew/2.3,,:Critical,
+whatsnew/2.3,,:Error,
+whatsnew/2.3,,:Problem,
+whatsnew/2.3,,:root,
+whatsnew/2.3,,:Warning,
+whatsnew/2.4,,::,
+whatsnew/2.4,,:System,
+whatsnew/2.5,,:memory,:memory:
+whatsnew/2.5,,:step,[start:stop:step]
+whatsnew/2.5,,:stop,[start:stop:step]

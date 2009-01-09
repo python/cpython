@@ -24,6 +24,7 @@ help:
 	@echo "  text      to make plain text files"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  coverage  to check documentation coverage for library and C API"
 	@echo "  dist      to create a \"dist\" directory with archived docs for download"
 
@@ -36,9 +37,9 @@ checkout:
 	  echo "Checking out Docutils..."; \
 	  svn checkout $(SVNROOT)/external/docutils-0.5/docutils tools/docutils; \
 	fi
-	@if [ ! -d tools/jinja ]; then \
+	@if [ ! -d tools/jinja2 ]; then \
 	  echo "Checking out Jinja..."; \
-	  svn checkout $(SVNROOT)/external/Jinja-1.2/jinja tools/jinja; \
+	  svn checkout $(SVNROOT)/external/Jinja-2.1.1/jinja2 tools/jinja2; \
 	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
@@ -48,7 +49,7 @@ checkout:
 update: checkout
 	svn update tools/sphinx
 	svn update tools/docutils
-	svn update tools/jinja
+	svn update tools/jinja2
 	svn update tools/pygments
 
 build: checkout
@@ -83,6 +84,11 @@ linkcheck: BUILDER = linkcheck
 linkcheck: build
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/$(BUILDER)/output.txt"
+
+suspicious: BUILDER = suspicious
+suspicious: build
+	@echo "Suspicious check complete; look for any errors in the above output " \
+	      "or in build/$(BUILDER)/suspicious.txt"
 
 coverage: BUILDER = coverage
 coverage: build
