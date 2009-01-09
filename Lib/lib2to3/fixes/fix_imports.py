@@ -25,7 +25,6 @@ MAPPING = {'StringIO':  'io',
            'tkFont': 'tkinter.font',
            'tkMessageBox': 'tkinter.messagebox',
            'ScrolledText': 'tkinter.scrolledtext',
-           'turtle': 'tkinter.turtle',
            'Tkconstants': 'tkinter.constants',
            'Tix': 'tkinter.tix',
            'Tkinter': 'tkinter',
@@ -88,6 +87,10 @@ class FixImports(fixer_base.BaseFix):
 
     # This is overridden in fix_imports2.
     mapping = MAPPING
+
+    # We want to run this fixer late, so fix_import doesn't try to make stdlib
+    # renames into relative imports.
+    run_order = 6
 
     def build_pattern(self):
         return "|".join(build_pattern(self.mapping))
