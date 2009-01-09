@@ -63,6 +63,55 @@ static PyObject *gc_str = NULL;
 /* Python string used to look for __del__ attribute. */
 static PyObject *delstr = NULL;
 
+/* This is the number of objects who survived the last full collection. It
+   approximates the number of long lived objects tracked by the GC.
+
+   (by "full collection", we mean a collection of the oldest generation).
+*/
+static Py_ssize_t long_lived_total = 0;
+
+/* This is the number of objects who survived all "non-full" collections,
+   and are awaiting to undergo a full collection for the first time.
+
+*/
+static Py_ssize_t long_lived_pending = 0;
+
+/*
+   NOTE: about the counting of long-lived objects.
+
+   To limit the cost of garbage collection, there are two strategies;
+     - make each collection faster, e.g. by scanning fewer objects
+     - do less collections
+   This heuristic is about the latter strategy.
+
+   In addition to the various configurable thresholds, we only trigger a
+   full collection if the ratio
+	long_lived_pending / long_lived_total
+   is above a given value (hardwired to 25%).
+
+   The reason is that, while "non-full" collections (i.e., collections of
+   the young and middle generations) will always examine roughly the same
+   number of objects -- determined by the aforementioned thresholds --,
+   the cost of a full collection is proportional to the total number of
+   long-lived objects, which is virtually unbounded.
+
+   Indeed, it has been remarked that doing a full collection every
+   <constant number> of object creations entails a dramatic performance
+   degradation in workloads which consist in creating and storing lots of
+   long-lived objects (e.g. building a large list of GC-tracked objects would
+   show quadratic performance, instead of linear as expected: see issue #4074).
+
+   Using the above ratio, instead, yields amortized linear performance in
+   the total number of objects (the effect of which can be summarized
+   thusly: "each full garbage collection is more and more costly as the
+   number of objects grows, but we do fewer and fewer of them").
+
+   This heuristic was suggested by Martin von Löwis on python-dev in
+   June 2008. His original analysis and proposal can be found at:
+	http://mail.python.org/pipermail/python-dev/2008-June/080579.html
+*/
+
+
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
@@ -826,8 +875,16 @@ collect(int generation)
 	move_unreachable(young, &unreachable);
 
 	/* Move reachable objects to next generation. */
-	if (young != old)
+	if (young != old) {
+		if (generation == NUM_GENERATIONS - 2) {
+			long_lived_pending += gc_list_size(young);
+		}
 		gc_list_merge(young, old);
+	}
+	else {
+		long_lived_pending = 0;
+		long_lived_total = gc_list_size(young);
+	}
 
 	/* All objects in unreachable are trash, but objects reachable from
 	 * finalizers can't safely be deleted.  Python programmers should take
@@ -921,6 +978,13 @@ collect_generations(void)
 	 * generations younger than it will be collected. */
 	for (i = NUM_GENERATIONS-1; i >= 0; i--) {
 		if (generations[i].count > generations[i].threshold) {
+			/* Avoid quadratic performance degradation in number
+			   of tracked objects. See comments at the beginning
+			   of this file, and issue #4074.
+			*/
+			if (i == NUM_GENERATIONS - 1
+			    && long_lived_pending < long_lived_total / 4)
+				continue;
 			n = collect(i);
 			break;
 		}
