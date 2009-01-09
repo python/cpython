@@ -338,7 +338,7 @@ Notes:
       module: math
       single: floor() (in module math)
       single: ceil() (in module math)
-      single: trunc() (in module math)      
+      single: trunc() (in module math)
       pair: numeric; conversions
 
    Conversion from floats using :func:`int` or :func:`long` truncates toward

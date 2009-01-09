@@ -62,12 +62,12 @@ def checker(*suffixes, **kwds):
 @checker('.py', severity=4)
 def check_syntax(fn, lines):
     """Check Python examples for valid syntax."""
+    code = ''.join(lines)
+    if '\r' in code:
+        if os.name != 'nt':
+            yield 0, '\\r in code file'
+        code = code.replace('\r', '')
     try:
-        code = ''.join(lines)
-        if '\r' in code:
-            if os.name != 'nt':
-                yield 0, '\\r in code file'
-            code = code.replace('\r', '')
         compile(code, fn, 'exec')
     except SyntaxError, err:
         yield err.lineno, 'not compilable: %s' % err
