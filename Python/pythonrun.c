@@ -734,10 +734,10 @@ create_stdio(PyObject* io,
 	int fd, int write_mode, char* name,
 	char* encoding, char* errors)
 {
-	PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL;
+	PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
 	const char* mode;
-	const PyObject *line_buffering;
-	int buffering;
+	PyObject *line_buffering;
+	int buffering, isatty;
 
 	if (Py_UnbufferedStdioFlag)
 		buffering = 0;
@@ -766,13 +766,21 @@ create_stdio(PyObject* io,
 	text = PyUnicode_FromString(name);
 	if (text == NULL || PyObject_SetAttrString(raw, "_name", text) < 0)
 		goto error;
-	Py_CLEAR(raw);
-	Py_CLEAR(text);
-
-	if (Py_UnbufferedStdioFlag)
+	res = PyObject_CallMethod(raw, "isatty", "");
+	if (res == NULL)
+		goto error;
+	isatty = PyObject_IsTrue(res);
+	Py_DECREF(res);
+	if (isatty == -1)
+		goto error;
+	if (isatty || Py_UnbufferedStdioFlag)
 		line_buffering = Py_True;
 	else
 		line_buffering = Py_False;
+
+	Py_CLEAR(raw);
+	Py_CLEAR(text);
+
 	stream = PyObject_CallMethod(io, "TextIOWrapper", "OsssO",
 				     buf, encoding, errors,
 				     "\n", line_buffering);
