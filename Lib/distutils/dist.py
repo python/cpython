@@ -199,6 +199,7 @@ Common commands: (see '--help-commands' for more)
         self.extra_path = None
         self.scripts = None
         self.data_files = None
+        self.password = ''
 
         # And now initialize bookkeeping stuff that can't be supplied by
         # the caller at all.  'command_obj' maps command names to

@@ -2,6 +2,7 @@
 import sys
 import os
 import unittest
+import getpass
 
 from distutils.command.register import register
 from distutils.core import Distribution
@@ -9,7 +10,27 @@ from distutils.core import Distribution
 from distutils.tests import support
 from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
 
-class RawInputs(object):
+PYPIRC_NOPASSWORD = """\
+[distutils]
+
+index-servers =
+    server1
+
+[server1]
+username:me
+"""
+
+WANTED_PYPIRC = """\
+[distutils]
+index-servers =
+    pypi
+
+[pypi]
+username:tarek
+password:password
+"""
+
+class Inputs(object):
     """Fakes user inputs."""
     def __init__(self, *answers):
         self.answers = answers
@@ -21,17 +42,32 @@ class RawInputs(object):
         finally:
             self.index += 1
 
-WANTED_PYPIRC = """\
-[distutils]
-index-servers =
-    pypi
+class FakeServer(object):
+    """Fakes a PyPI server"""
+    def __init__(self):
+        self.calls = []
 
-[pypi]
-username:tarek
-password:xxx
-"""
+    def __call__(self, *args):
+        # we want to compare them, so let's store
+        # something comparable
+        els = list(args[0].items())
+        els.sort()
+        self.calls.append(tuple(els))
+        return 200, 'OK'
 
 class registerTestCase(PyPIRCCommandTestCase):
+
+    def setUp(self):
+        PyPIRCCommandTestCase.setUp(self)
+        # patching the password prompt
+        self._old_getpass = getpass.getpass
+        def _getpass(prompt):
+            return 'password'
+        getpass.getpass = _getpass
+
+    def tearDown(self):
+        getpass.getpass = self._old_getpass
+        PyPIRCCommandTestCase.tearDown(self)
 
     def test_create_pypirc(self):
         # this test makes sure a .pypirc file
@@ -50,30 +86,17 @@ class registerTestCase(PyPIRCCommandTestCase):
         # we shouldn't have a .pypirc file yet
         self.assert_(not os.path.exists(self.rc))
 
-        # patching raw_input and getpass.getpass
+        # patching input and getpass.getpass
         # so register gets happy
         #
         # Here's what we are faking :
         # use your existing login (choice 1.)
         # Username : 'tarek'
-        # Password : 'xxx'
+        # Password : 'password'
         # Save your login (y/N)? : 'y'
-        inputs = RawInputs('1', 'tarek', 'y')
+        inputs = Inputs('1', 'tarek', 'y')
         from distutils.command import register as register_module
         register_module.input = inputs.__call__
-        def _getpass(prompt):
-            return 'xxx'
-        register_module.getpass.getpass = _getpass
-        class FakeServer(object):
-            def __init__(self):
-                self.calls = []
-
-            def __call__(self, *args):
-                # we want to compare them, so let's store
-                # something comparable
-                els = sorted(args[0].items())
-                self.calls.append(tuple(els))
-                return 200, 'OK'
 
         cmd.post_to_server = pypi_server = FakeServer()
 
@@ -100,6 +123,24 @@ class registerTestCase(PyPIRCCommandTestCase):
         # have 2 similar requests
         self.assert_(len(pypi_server.calls), 2)
         self.assert_(pypi_server.calls[0], pypi_server.calls[1])
+
+    def test_password_not_in_file(self):
+
+        f = open(self.rc, 'w')
+        f.write(PYPIRC_NOPASSWORD)
+        f.close()
+
+        dist = Distribution()
+        cmd = register(dist)
+        cmd.post_to_server = FakeServer()
+
+        cmd._set_config()
+        cmd.finalize_options()
+        cmd.send_metadata()
+
+        # dist.password should be set
+        # therefore used afterwards by other commands
+        self.assertEquals(dist.password, 'password')
 
 def test_suite():
     return unittest.makeSuite(registerTestCase)

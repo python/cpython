@@ -48,6 +48,11 @@ class upload(PyPIRCCommand):
             self.repository = config['repository']
             self.realm = config['realm']
 
+        # getting the password from the distribution
+        # if previously set by the register command
+        if not self.password and self.distribution.password:
+            self.password = self.distribution.password
+
     def run(self):
         if not self.distribution.dist_files:
             raise DistutilsOptionError("No dist file created in earlier command")

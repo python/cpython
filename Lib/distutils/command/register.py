@@ -174,19 +174,23 @@ Your selection [default 1]: ''', log.INFO)
                           log.INFO)
 
             # possibly save the login
-            if not self.has_config and code == 200:
-                self.announce(('I can store your PyPI login so future '
-                               'submissions will be faster.'), log.INFO)
-                self.announce('(the login will be stored in %s)' % \
-                              self._get_rc_file(), log.INFO)
-
-                choice = 'X'
-                while choice.lower() not in 'yn':
-                    choice = input('Save your login (y/N)?')
-                    if not choice:
-                        choice = 'n'
-                if choice.lower() == 'y':
-                    self._store_pypirc(username, password)
+            if code == 200:
+                if self.has_config:
+                    # sharing the password in the distribution instance
+                    # so the upload command can reuse it
+                    self.distribution.password = password
+                else:
+                    self.announce(('I can store your PyPI login so future '
+                                   'submissions will be faster.'), log.INFO)
+                    self.announce('(the login will be stored in %s)' % \
+                                  self._get_rc_file(), log.INFO)
+                    choice = 'X'
+                    while choice.lower() not in 'yn':
+                        choice = input('Save your login (y/N)?')
+                        if not choice:
+                            choice = 'n'
+                    if choice.lower() == 'y':
+                        self._store_pypirc(username, password)
 
         elif choice == '2':
             data = {':action': 'user'}
