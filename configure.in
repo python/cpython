@@ -387,7 +387,7 @@ AC_ARG_WITH(gcc,
             AC_HELP_STRING(--without-gcc,never use gcc),
 [
 	case $withval in
-	no)	CC=cc
+	no)	CC=${CC:-cc}
 		without_gcc=yes;;
 	yes)	CC=gcc
 		without_gcc=no;;

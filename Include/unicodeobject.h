@@ -126,6 +126,10 @@ typedef unsigned int Py_UCS4;
 typedef unsigned long Py_UCS4; 
 #endif
 
+/* Py_UNICODE is the native Unicode storage format (code unit) used by
+   Python and represents a single Unicode element in the Unicode
+   type. */
+
 typedef PY_UNICODE_TYPE Py_UNICODE;
 
 /* --- UCS-2/UCS-4 Name Mangling ------------------------------------------ */
@@ -369,12 +373,12 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 #else
 
-/* Since splitting on whitespace is an important use case, and whitespace
-   in most situations is solely ASCII whitespace, we optimize for the common
-   case by using a quick look-up table with an inlined check.
- */
-PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
+/* Since splitting on whitespace is an important use case, and
+   whitespace in most situations is solely ASCII whitespace, we
+   optimize for the common case by using a quick look-up table
+   _Py_ascii_whitespace (see below) with an inlined check.
 
+ */
 #define Py_UNICODE_ISSPACE(ch) \
 	((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
 
@@ -409,13 +413,14 @@ PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
 #define Py_UNICODE_COPY(target, source, length)				\
 	Py_MEMCPY((target), (source), (length)*sizeof(Py_UNICODE))
 
-#define Py_UNICODE_FILL(target, value, length) do\
-    {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
+#define Py_UNICODE_FILL(target, value, length) \
+    do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
         for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
-/* check if substring matches at given offset.  the offset must be
+/* Check if substring matches at given offset.  the offset must be
    valid, and the substring must not be empty */
+
 #define Py_UNICODE_MATCH(string, offset, substring) \
     ((*((string)->str + (offset)) == *((substring)->str)) && \
     ((*((string)->str + (offset) + (substring)->length-1) == *((substring)->str + (substring)->length-1))) && \
@@ -424,8 +429,6 @@ PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
 /* --- Unicode Type ------------------------------------------------------- */
 
@@ -640,6 +643,17 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
+
+/* --- Free-list management ----------------------------------------------- */
+
+/* Clear the free list used by the Unicode implementation.
+
+   This can be used to release memory used for objects on the free
+   list back to the Python memory allocator.
+
+*/
+
+PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
 /* === Builtin Codecs ===================================================== 
 
@@ -1476,6 +1490,10 @@ PyAPI_FUNC(int) _PyUnicode_InsertThousandsGrouping(Py_UNICODE *buffer,
 						  int append_zero_char);
 
 /* === Characters Type APIs =============================================== */
+
+/* Helper array used by Py_UNICODE_ISSPACE(). */
+
+PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
 
 /* These should not be used directly. Use the Py_UNICODE_IS* and
    Py_UNICODE_TO* macros instead. 
