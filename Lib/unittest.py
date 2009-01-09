@@ -813,7 +813,7 @@ Examples:
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=TextTestRunner,
                  testLoader=defaultTestLoader):
-        if isinstance(module, basestring):
+        if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
                 self.module = getattr(self.module, part)
