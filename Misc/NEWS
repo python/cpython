@@ -12,6 +12,11 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Issue #4705: Fix the -u ("unbuffered binary stdout and stderr") command-line
+  flag to work properly. Furthermore, when specifying -u, the text stdout
+  and stderr streams have line-by-line buffering enabled (the default being
+  to buffer arbitrary chunks of data).
+
 - Issue #1180193: When importing a module from a .pyc (or .pyo) file with
   an existing .py counterpart, override the co_filename attributes of all
   code objects if the original filename is obsolete (which can happen if the
