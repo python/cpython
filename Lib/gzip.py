@@ -454,6 +454,14 @@ class GzipFile:
         else:
             raise StopIteration
 
+    def __enter__(self):
+        if self.fileobj is None:
+            raise ValueError("I/O operation on closed GzipFile object")
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
 
 def _test():
     # Act like gzip; with -d, act like gunzip.
