@@ -2001,6 +2001,19 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
     return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
 }
 
+/* Mask to check or force alignment of a pointer to C 'long' boundaries */
+#define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
+
+/* Mask to quickly check whether a C 'long' contains a
+   non-ASCII, UTF8-encoded char. */
+#if (SIZEOF_LONG == 8)
+# define ASCII_CHAR_MASK 0x8080808080808080L
+#elif (SIZEOF_LONG == 4)
+# define ASCII_CHAR_MASK 0x80808080L
+#else
+# error C 'long' size should be either 4 or 8!
+#endif
+
 PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
 			                Py_ssize_t size,
 			                const char *errors,
@@ -2011,7 +2024,7 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
-    const char *e;
+    const char *e, *aligned_end;
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
     const char *errmsg = "";
@@ -2032,9 +2045,50 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
     /* Unpack UTF-8 encoded data */
     p = unicode->str;
     e = s + size;
+    aligned_end = (const char *) ((size_t) e & ~LONG_PTR_MASK);
 
     while (s < e) {
         Py_UCS4 ch = (unsigned char)*s;
+
+        if (ch < 0x80) {
+            /* Fast path for runs of ASCII characters. Given that common UTF-8
+               input will consist of an overwhelming majority of ASCII
+               characters, we try to optimize for this case by checking
+               as many characters as a C 'long' can contain.
+               First, check if we can do an aligned read, as most CPUs have
+               a penalty for unaligned reads.
+            */
+            if (!((size_t) s & LONG_PTR_MASK)) {
+                /* Help register allocation */
+                register const char *_s = s;
+                register Py_UNICODE *_p = p;
+                while (_s < aligned_end) {
+                    /* Read a whole long at a time (either 4 or 8 bytes),
+                       and do a fast unrolled copy if it only contains ASCII
+                       characters. */
+                    unsigned long data = *(unsigned long *) _s;
+                    if (data & ASCII_CHAR_MASK)
+                        break;
+                    _p[0] = (unsigned char) _s[0];
+                    _p[1] = (unsigned char) _s[1];
+                    _p[2] = (unsigned char) _s[2];
+                    _p[3] = (unsigned char) _s[3];
+#if (SIZEOF_LONG == 8)
+                    _p[4] = (unsigned char) _s[4];
+                    _p[5] = (unsigned char) _s[5];
+                    _p[6] = (unsigned char) _s[6];
+                    _p[7] = (unsigned char) _s[7];
+#endif
+                    _s += SIZEOF_LONG;
+                    _p += SIZEOF_LONG;
+                }
+                s = _s;
+                p = _p;
+                if (s == e)
+                    break;
+                ch = (unsigned char)*s;
+            }
+        }
 
         if (ch < 0x80) {
             *p++ = (Py_UNICODE)ch;
@@ -2169,6 +2223,7 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
 	     &starts, &e, &startinpos, &endinpos, &exc, &s,
 	     &unicode, &outpos, &p))
 	goto onError;
+	aligned_end = (const char *) ((size_t) e & ~LONG_PTR_MASK);
     }
     if (consumed)
 	*consumed = s-starts;
@@ -2187,6 +2242,9 @@ onError:
     Py_DECREF(unicode);
     return NULL;
 }
+
+#undef ASCII_CHAR_MASK
+
 
 /* Allocation strategy:  if the string is short, convert into a stack buffer
    and allocate exactly as much space needed at the end.  Else allocate the
@@ -2582,6 +2640,23 @@ PyUnicode_DecodeUTF16(const char *s,
     return PyUnicode_DecodeUTF16Stateful(s, size, errors, byteorder, NULL);
 }
 
+/* Two masks for fast checking of whether a C 'long' may contain
+   UTF16-encoded surrogate characters. This is an efficient heuristic,
+   assuming that non-surrogate characters with a code point >= 0x8000 are
+   rare in most input.
+   FAST_CHAR_MASK is used when the input is in native byte ordering,
+   SWAPPED_FAST_CHAR_MASK when the input is in byteswapped ordering.
+   */
+#if (SIZEOF_LONG == 8)
+# define FAST_CHAR_MASK         0x8000800080008000L
+# define SWAPPED_FAST_CHAR_MASK 0x0080008000800080L
+#elif (SIZEOF_LONG == 4)
+# define FAST_CHAR_MASK         0x80008000L
+# define SWAPPED_FAST_CHAR_MASK 0x00800080L
+#else
+# error C 'long' size should be either 4 or 8!
+#endif
+
 PyObject *
 PyUnicode_DecodeUTF16Stateful(const char *s,
 			      Py_ssize_t size,
@@ -2595,8 +2670,9 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     Py_ssize_t outpos;
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
-    const unsigned char *q, *e;
+    const unsigned char *q, *e, *aligned_end;
     int bo = 0;       /* assume native ordering by default */
+    int native_ordering = 0;
     const char *errmsg = "";
     /* Offsets from q for retrieving byte pairs in the right order. */
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
@@ -2618,7 +2694,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     /* Unpack UTF-16 encoded data */
     p = unicode->str;
     q = (unsigned char *)s;
-    e = q + size;
+    e = q + size - 1;
 
     if (byteorder)
         bo = *byteorder;
@@ -2662,20 +2738,78 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
         ihi = 0;
         ilo = 1;
     }
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+    native_ordering = ilo < ihi;
+#else
+    native_ordering = ilo > ihi;
+#endif
 
+    aligned_end = (const unsigned char *) ((size_t) e & ~LONG_PTR_MASK);
     while (q < e) {
 	Py_UNICODE ch;
-	/* remaining bytes at the end? (size should be even) */
-	if (e-q<2) {
-	    if (consumed)
-		break;
-	    errmsg = "truncated data";
-	    startinpos = ((const char *)q)-starts;
-	    endinpos = ((const char *)e)-starts;
-	    goto utf16Error;
-	    /* The remaining input chars are ignored if the callback
-	       chooses to skip the input */
-	}
+        /* First check for possible aligned read of a C 'long'. Unaligned
+           reads are more expensive, better to defer to another iteration. */
+        if (!((size_t) q & LONG_PTR_MASK)) {
+            /* Fast path for runs of non-surrogate chars. */
+            register const unsigned char *_q = q;
+            Py_UNICODE *_p = p;
+            if (native_ordering) {
+                /* Native ordering is simple: as long as the input cannot
+                   possibly contain a surrogate char, do an unrolled copy
+                   of several 16-bit code points to the target object.
+                   The non-surrogate check is done on several input bytes
+                   at a time (as many as a C 'long' can contain). */
+                while (_q < aligned_end) {
+                    unsigned long data = * (unsigned long *) _q;
+                    if (data & FAST_CHAR_MASK)
+                        break;
+                    _p[0] = ((unsigned short *) _q)[0];
+                    _p[1] = ((unsigned short *) _q)[1];
+#if (SIZEOF_LONG == 8)
+                    _p[2] = ((unsigned short *) _q)[2];
+                    _p[3] = ((unsigned short *) _q)[3];
+#endif
+                    _q += SIZEOF_LONG;
+                    _p += SIZEOF_LONG / 2;
+                }
+            }
+            else {
+                /* Byteswapped ordering is similar, but we must decompose
+                   the copy bytewise, and take care of zero'ing out the
+                   upper bytes if the target object is in 32-bit units
+                   (that is, in UCS-4 builds). */
+                while (_q < aligned_end) {
+                    unsigned long data = * (unsigned long *) _q;
+                    if (data & SWAPPED_FAST_CHAR_MASK)
+                        break;
+                    /* Zero upper bytes in UCS-4 builds */
+#if (Py_UNICODE_SIZE > 2)
+                    _p[0] = 0;
+                    _p[1] = 0;
+#if (SIZEOF_LONG == 8)
+                    _p[2] = 0;
+                    _p[3] = 0;
+#endif
+#endif
+                    ((unsigned char *) _p)[1] = _q[0];
+                    ((unsigned char *) _p)[0] = _q[1];
+                    ((unsigned char *) _p)[1 + Py_UNICODE_SIZE] = _q[2];
+                    ((unsigned char *) _p)[0 + Py_UNICODE_SIZE] = _q[3];
+#if (SIZEOF_LONG == 8)
+                    ((unsigned char *) _p)[1 + 2 * Py_UNICODE_SIZE] = _q[4];
+                    ((unsigned char *) _p)[0 + 2 * Py_UNICODE_SIZE] = _q[5];
+                    ((unsigned char *) _p)[1 + 3 * Py_UNICODE_SIZE] = _q[6];
+                    ((unsigned char *) _p)[0 + 3 * Py_UNICODE_SIZE] = _q[7];
+#endif
+                    _q += SIZEOF_LONG;
+                    _p += SIZEOF_LONG / 2;
+                }
+            }
+            p = _p;
+            q = _q;
+            if (q >= e)
+                break;
+        }
 	ch = (q[ihi] << 8) | q[ilo];
 
 	q += 2;
@@ -2686,10 +2820,10 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 	}
 
 	/* UTF-16 code pair: */
-	if (q >= e) {
+	if (q > e) {
 	    errmsg = "unexpected end of data";
-	    startinpos = (((const char *)q)-2)-starts;
-	    endinpos = ((const char *)e)-starts;
+	    startinpos = (((const char *)q) - 2) - starts;
+	    endinpos = ((const char *)e) + 1 - starts;
 	    goto utf16Error;
 	}
 	if (0xD800 <= ch && ch <= 0xDBFF) {
@@ -2718,13 +2852,46 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 	/* Fall through to report the error */
 
     utf16Error:
-	outpos = p-PyUnicode_AS_UNICODE(unicode);
+	outpos = p - PyUnicode_AS_UNICODE(unicode);
 	if (unicode_decode_call_errorhandler(
-	         errors, &errorHandler,
-	         "utf16", errmsg,
-	         &starts, (const char **)&e, &startinpos, &endinpos, &exc, (const char **)&q,
-	         &unicode, &outpos, &p))
+                errors,
+                &errorHandler,
+                "utf16", errmsg,
+                &starts,
+                (const char **)&e,
+                &startinpos,
+                &endinpos,
+                &exc,
+                (const char **)&q,
+                &unicode,
+                &outpos,
+                &p))
 	    goto onError;
+    }
+    /* remaining byte at the end? (size should be even) */
+    if (e == q) {
+        if (!consumed) {
+            errmsg = "truncated data";
+            startinpos = ((const char *)q) - starts;
+            endinpos = ((const char *)e) + 1 - starts;
+            outpos = p - PyUnicode_AS_UNICODE(unicode);
+            if (unicode_decode_call_errorhandler(
+                    errors,
+                    &errorHandler,
+                    "utf16", errmsg,
+                    &starts,
+                    (const char **)&e,
+                    &startinpos,
+                    &endinpos,
+                    &exc,
+                    (const char **)&q,
+                    &unicode,
+                    &outpos,
+                    &p))
+                goto onError;
+            /* The remaining input chars are ignored if the callback
+               chooses to skip the input */
+        }
     }
 
     if (byteorder)
@@ -2747,6 +2914,9 @@ onError:
     Py_XDECREF(exc);
     return NULL;
 }
+
+#undef FAST_CHAR_MASK
+#undef SWAPPED_FAST_CHAR_MASK
 
 PyObject *
 PyUnicode_EncodeUTF16(const Py_UNICODE *s,
@@ -3571,6 +3741,7 @@ PyObject *PyUnicode_DecodeLatin1(const char *s,
 {
     PyUnicodeObject *v;
     Py_UNICODE *p;
+    const char *e, *unrolled_end;
 
     /* Latin-1 is equivalent to the first 256 ordinals in Unicode. */
     if (size == 1) {
@@ -3584,8 +3755,20 @@ PyObject *PyUnicode_DecodeLatin1(const char *s,
     if (size == 0)
 	return (PyObject *)v;
     p = PyUnicode_AS_UNICODE(v);
-    while (size-- > 0)
-	*p++ = (unsigned char)*s++;
+    e = s + size;
+    /* Unrolling the copy makes it much faster by reducing the looping
+       overhead. This is similar to what many memcpy() implementations do. */
+    unrolled_end = e - 4;
+    while (s < unrolled_end) {
+        p[0] = (unsigned char) s[0];
+        p[1] = (unsigned char) s[1];
+        p[2] = (unsigned char) s[2];
+        p[3] = (unsigned char) s[3];
+        s += 4;
+        p += 4;
+    }
+    while (s < e)
+        *p++ = (unsigned char) *s++;
     return (PyObject *)v;
 
  onError:
