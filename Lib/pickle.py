@@ -830,7 +830,7 @@ class _Unpickler:
         return k
 
     def persistent_load(self, pid):
-        raise UnpickingError("unsupported persistent id encountered")
+        raise UnpicklingError("unsupported persistent id encountered")
 
     dispatch = {}
 
