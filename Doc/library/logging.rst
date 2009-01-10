@@ -422,6 +422,8 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+.. _library-config:
+
 Configuring Logging for a Library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -465,6 +467,7 @@ just "foo".
 
 The :class:`NullHandler` class was not present in previous versions, but is now
 included, so that it need not be defined in library code.
+See :ref:`library-config` for more information.
 
 
 
@@ -562,7 +565,8 @@ provided:
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the "No
    handlers could be found for logger XXX" message which can be displayed if
-   the library user has not configured logging.
+   the library user has not configured logging. See :ref:`library-config` for
+   more information.
 
 .. versionadded:: 2.7
 
@@ -1632,6 +1636,9 @@ for use by library developers.
    .. method:: emit(record)
 
       This method does nothing.
+
+See :ref:`library-config` for more information on how to use
+:class:`NullHandler`.
 
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
