@@ -168,7 +168,6 @@ def outside_decNumber_bounds(v, context):
         -context.Emin > DEC_MAX_MATH):
         return True
     if not v._is_special and v and (
-        len(v._int) > DEC_MAX_MATH or
         v.adjusted() > DEC_MAX_MATH or
         v.adjusted() < 1-2*DEC_MAX_MATH):
         return True
