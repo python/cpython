@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4868: utf-8, utf-16 and latin1 decoding are now 2x to 4x faster. The
+  common cases are optimized thanks to a dedicated fast path and a moderate
+  amount of loop unrolling.
+
 - Issue #4074: Change the criteria for doing a full garbage collection (i.e.
   collecting the oldest generation) so that allocating lots of objects without
   destroying them does not show quadratic performance. Based on a proposal by
