@@ -5444,7 +5444,7 @@ static slotdef slotdefs[] = {
 	UNSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc,
 	       "int(x)"),
 	UNSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc,
-	       "long(x)"),
+	       "int(x)"),
 	UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
 	       "float(x)"),
 	NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc, 
