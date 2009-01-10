@@ -258,6 +258,28 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
         self.assertEqual(xlines, [b'Test'])
 
+    def testContextProtocol(self):
+        # BZ2File supports the context management protocol
+        f = None
+        with BZ2File(self.filename, "wb") as f:
+            f.write(b"xxx")
+        f = BZ2File(self.filename, "rb")
+        f.close()
+        try:
+            with f:
+                pass
+        except ValueError:
+            pass
+        else:
+            self.fail("__enter__ on a closed file didn't raise an exception")
+        try:
+            with BZ2File(self.filename, "wb") as f:
+                1/0
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("1/0 didn't raise an exception")
+
 
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
