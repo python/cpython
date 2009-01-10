@@ -72,6 +72,10 @@ _tkinter
     svn export http://svn.python.org/projects/external/tk-8.5.2.0 tk8.5.2
     svn export http://svn.python.org/projects/external/tix-8.4.3.1 tix8.4.3
 
+    Debug Build
+    -----------
+    To build debug version, add DEBUG=1 to all nmake call bellow.
+
     Build Tcl first (done here w/ MSVC 6 on Win2K)
     ---------------
     If your environment doesn't have struct _stat64, you need to apply
