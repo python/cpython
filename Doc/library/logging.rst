@@ -1581,8 +1581,6 @@ sends logging output to a disk file.  It inherits the output functionality from
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
 
-.. module:: logging.handlers
-
 The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If
 the file changes, it is closed and reopened using the file name.
