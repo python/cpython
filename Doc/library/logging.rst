@@ -467,7 +467,6 @@ just "foo".
 
 The :class:`NullHandler` class was not present in previous versions, but is now
 included, so that it need not be defined in library code.
-See :ref:`library-config` for more information.
 
 
 
