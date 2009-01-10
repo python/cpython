@@ -1,0 +1,22 @@
+--- tcl8.5.2\generic\tcl.h	Fri Jun 13 03:35:39 2008
++++ tcl8.5.2\generic\tcl.h	Sun Jan  4 16:52:30 2009
+@@ -367,7 +367,7 @@
+ typedef struct stati64 Tcl_StatBuf;
+ #         define TCL_LL_MODIFIER	"L"
+ #      else /* __BORLANDC__ */
+-#         if _MSC_VER < 1400 && !defined(_M_IX86)
++#         if _MSC_VER < 1400 /*&& !defined(_M_IX86)*/
+ typedef struct _stati64	Tcl_StatBuf;
+ #         else
+ typedef struct _stat64	Tcl_StatBuf;
+--- tcl8.5.2\generic\tcl.h	Fri Jun 13 03:35:39 2008
++++ tcl8.5.2\generic\tcl.h	Sun Jan  4 16:52:30 2009
+@@ -367,7 +367,7 @@
+ typedef struct stati64 Tcl_StatBuf;
+ #         define TCL_LL_MODIFIER	"L"
+ #      else /* __BORLANDC__ */
+-#         if _MSC_VER < 1400 && !defined(_M_IX86)
++#         if _MSC_VER < 1400 /*&& !defined(_M_IX86)*/
+ typedef struct _stati64	Tcl_StatBuf;
+ #         else
+ typedef struct _stat64	Tcl_StatBuf;
