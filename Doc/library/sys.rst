@@ -503,7 +503,6 @@ always available.
    Mac OS 9         ``'mac'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
-   RiscOS           ``'riscos'``
    AtheOS           ``'atheos'``
    ================ ===========================
 
