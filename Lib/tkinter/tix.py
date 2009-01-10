@@ -293,7 +293,7 @@ class TixWidget(tkinter.Widget):
         else:
             static_options = ['options']
 
-        for k,v in list(cnf.items()):
+        for k,v in cnf.items()[:]:
             if k in static_options:
                 extra = extra + ('-' + k, v)
                 del cnf[k]
@@ -448,7 +448,7 @@ class TixSubWidget(TixWidget):
         # we must be careful not to destroy the frame widget since this
         # also destroys the parent NoteBook thus leading to an exception
         # in Tkinter when it finally calls Tcl to destroy the NoteBook
-        for c in list(self.children.values()): c.destroy()
+        for c in self.children.values(): c.destroy()
         if self._name in self.master.children:
             del self.master.children[self._name]
         if self._name in self.master.subwidget_list:
