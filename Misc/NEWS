@@ -122,6 +122,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3860: GzipFile and BZ2File now support the context manager protocol.
+
 - Issue #4272: Add an optional argument to the GzipFile constructor to override
   the timestamp in the gzip stream. The default value remains the current time.
   The information can be used by e.g. gunzip when decompressing. Patch by
