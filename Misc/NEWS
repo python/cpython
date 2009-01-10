@@ -111,6 +111,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3860: GzipFile and BZ2File now support the context manager protocol.
+
 - Issue #4867: Fixed a crash in ctypes when passing a string to a
   function without defining argtypes.
 

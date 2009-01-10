@@ -166,7 +166,6 @@ class TestGzip(unittest.TestCase):
         fWrite = gzip.GzipFile(self.filename, 'w', mtime = mtime)
         fWrite.write(data1)
         fWrite.close()
-
         fRead = gzip.GzipFile(self.filename)
         dataRead = fRead.read()
         self.assertEqual(dataRead, data1)
@@ -222,6 +221,27 @@ class TestGzip(unittest.TestCase):
         self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
 
         fRead.close()
+
+    def test_with_open(self):
+        # GzipFile supports the context management protocol
+        with gzip.GzipFile(self.filename, "wb") as f:
+            f.write(b"xxx")
+        f = gzip.GzipFile(self.filename, "rb")
+        f.close()
+        try:
+            with f:
+                pass
+        except ValueError:
+            pass
+        else:
+            self.fail("__enter__ on a closed file didn't raise an exception")
+        try:
+            with gzip.GzipFile(self.filename, "wb") as f:
+                1/0
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("1/0 didn't raise an exception")
 
 def test_main(verbose=None):
     support.run_unittest(TestGzip)
