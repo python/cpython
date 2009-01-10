@@ -286,6 +286,9 @@ Library
 
 - Issue #841800: bundlebuilder now works with 'python -O'
 
+- Issue #4861: ctypes.util.find_library(): Robustify. Fix library detection on
+  biarch systems. Try to rely on ldconfig only, without using objdump and gcc.
+
 Tools/Demos
 -----------
 
