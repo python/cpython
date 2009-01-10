@@ -60,7 +60,7 @@ No release schedule has been decided yet for 2.7.
 .. ========================================================================
 
 
-Kristj·n Valur JÛnsson, issue 4293
+Kristj√°n Valur J√≥nsson, issue 4293
 Py_AddPendingCall is now thread safe.  This allows any worker thread
 to submit notifications to the python main thread.  This is particularly
 useful for asynchronous IO operations.
