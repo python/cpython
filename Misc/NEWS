@@ -236,6 +236,9 @@ Library
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
+- Issue #4861: ctypes.util.find_library(): Robustify. Fix library detection on
+  biarch systems. Try to rely on ldconfig only, without using objdump and gcc.
+
 Tools/Demos
 -----------
 
