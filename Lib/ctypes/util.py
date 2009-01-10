@@ -104,7 +104,7 @@ elif os.name == "posix":
                 if e.errno != errno.ENOENT:
                     raise
         if rv == 10:
-            raise OSError, 'gcc or cc command not found'
+            raise OSError('gcc or cc command not found')
         res = re.search(expr, trace)
         if not res:
             return None
@@ -137,7 +137,7 @@ elif os.name == "posix":
             dump = f.read()
             rv = f.close()
             if rv == 10:
-                raise OSError, 'objdump command not found'
+                raise OSError('objdump command not found')
             f = os.popen(cmd)
             try:
                 data = f.read()
