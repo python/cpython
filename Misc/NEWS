@@ -284,6 +284,8 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4279: Fix build of parsermodule under Cygwin.
+
 - Issue #4751: hashlib now releases the GIL when hashing large buffers
   (with a hardwired threshold of 2048 bytes), allowing better parallelization
   on multi-CPU systems. Contributed by Lukas Lueg (ebfe) and Victor Stinner.
