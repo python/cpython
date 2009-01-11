@@ -315,9 +315,6 @@ class BitVec:
     def __int__(self):
         return int(self._data)
 
-    def __long__(self):
-        return int(self._data)
-
     def __float__(self):
         return float(self._data)
 

@@ -39,7 +39,6 @@
 #
 # These conversions accept complex arguments only if their imaginary part is zero:
 # int(z)
-# long(z)
 # float(z)
 #
 # The following operators accept two complex numbers, or one complex number
@@ -145,11 +144,6 @@ class Complex:
     def __int__(self):
         if self.im:
             raise ValueError("can't convert Complex with nonzero im to int")
-        return int(self.re)
-
-    def __long__(self):
-        if self.im:
-            raise ValueError("can't convert Complex with nonzero im to long")
         return int(self.re)
 
     def __float__(self):
