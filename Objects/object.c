@@ -81,24 +81,29 @@ static PyTypeObject *type_list;
    garbage itself. If unlist_types_without_objects
    is set, they will be removed from the type_list
    once the last object is deallocated. */
-int unlist_types_without_objects;
-extern int tuple_zero_allocs, fast_tuple_allocs;
-extern int quick_int_allocs, quick_neg_int_allocs;
-extern int null_strings, one_strings;
+static int unlist_types_without_objects;
+extern Py_ssize_t tuple_zero_allocs, fast_tuple_allocs;
+extern Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
+extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
 	PyTypeObject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
-		fprintf(f, "%s alloc'd: %d, freed: %d, max in use: %d\n",
+		fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
+			"freed: %" PY_FORMAT_SIZE_T "d, "
+			"max in use: %" PY_FORMAT_SIZE_T "d\n",
 			tp->tp_name, tp->tp_allocs, tp->tp_frees,
 			tp->tp_maxalloc);
-	fprintf(f, "fast tuple allocs: %d, empty: %d\n",
+	fprintf(f, "fast tuple allocs: %" PY_FORMAT_SIZE_T "d, "
+		"empty: %" PY_FORMAT_SIZE_T "d\n",
 		fast_tuple_allocs, tuple_zero_allocs);
-	fprintf(f, "fast int allocs: pos: %d, neg: %d\n",
+	fprintf(f, "fast int allocs: pos: %" PY_FORMAT_SIZE_T "d, "
+		"neg: %" PY_FORMAT_SIZE_T "d\n",
 		quick_int_allocs, quick_neg_int_allocs);
-	fprintf(f, "null strings: %d, 1-strings: %d\n",
+	fprintf(f, "null strings: %" PY_FORMAT_SIZE_T "d, "
+		"1-strings: %" PY_FORMAT_SIZE_T "d\n",
 		null_strings, one_strings);
 }
 

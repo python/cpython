@@ -26,7 +26,7 @@ _getbuffer(PyObject *obj, Py_buffer *view)
 }
 
 #ifdef COUNT_ALLOCS
-int null_strings, one_strings;
+Py_ssize_t null_strings, one_strings;
 #endif
 
 static PyBytesObject *characters[UCHAR_MAX + 1];
