@@ -4,8 +4,8 @@
 
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
-.. moduleauthor:: Gregory P. Smith <greg@users.sourceforge.net>
-.. sectionauthor:: Gregory P. Smith <greg@users.sourceforge.net>
+.. moduleauthor:: Gregory P. Smith <greg@krypto.org>
+.. sectionauthor:: Gregory P. Smith <greg@krypto.org>
 
 
 .. versionadded:: 2.5
