@@ -1100,7 +1100,10 @@ class AbstractHTTPHandler(BaseHandler):
             (name.title(), val) for name, val in headers.items())
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
-            r = h.getresponse()
+            try:
+                r = h.getresponse(buffering=True)
+            except TypeError: #buffering kw not supported
+                r = h.getresponse()
         except socket.error, err: # XXX what error?
             raise URLError(err)
 

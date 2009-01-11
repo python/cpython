@@ -1234,7 +1234,7 @@ class Transport:
         self.send_user_agent(h)
         self.send_content(h, request_body)
 
-        errcode, errmsg, headers = h.getreply()
+        errcode, errmsg, headers = h.getreply(buffering=True)
 
         if errcode != 200:
             raise ProtocolError(
@@ -1245,12 +1245,7 @@ class Transport:
 
         self.verbose = verbose
 
-        try:
-            sock = h._conn.sock
-        except AttributeError:
-            sock = None
-
-        return self._parse_response(h.getfile(), sock)
+        return self._parse_response(h.getfile())
 
     ##
     # Create parser.
@@ -1355,29 +1350,12 @@ class Transport:
     # @return Response tuple and target method.
 
     def parse_response(self, file):
-        # compatibility interface
-        return self._parse_response(file, None)
-
-    ##
-    # Parse response (alternate interface).  This is similar to the
-    # parse_response method, but also provides direct access to the
-    # underlying socket object (where available).
-    #
-    # @param file Stream.
-    # @param sock Socket handle (or None, if the socket object
-    #    could not be accessed).
-    # @return Response tuple and target method.
-
-    def _parse_response(self, file, sock):
         # read response from input file/socket, and parse it
 
         p, u = self.getparser()
 
         while 1:
-            if sock:
-                response = sock.recv(1024)
-            else:
-                response = file.read(1024)
+            response = file.read(1024)
             if not response:
                 break
             if self.verbose:
