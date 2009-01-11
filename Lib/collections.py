@@ -255,7 +255,6 @@ class UserString(Sequence):
     def __str__(self): return str(self.data)
     def __repr__(self): return repr(self.data)
     def __int__(self): return int(self.data)
-    def __long__(self): return int(self.data)
     def __float__(self): return float(self.data)
     def __complex__(self): return complex(self.data)
     def __hash__(self): return hash(self.data)
