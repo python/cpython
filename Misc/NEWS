@@ -297,6 +297,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #4895: Use _strdup on Windows CE.
+
 - Issue #4472: "configure --enable-shared" now works on OSX
 
 - Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
