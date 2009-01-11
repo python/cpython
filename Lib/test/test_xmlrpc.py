@@ -655,7 +655,7 @@ class FakeSocket:
     def getvalue(self):
         return self.data.getvalue()
 
-    def makefile(self, x, y):
+    def makefile(self, x='r', y=-1):
         raise RuntimeError
 
 class FakeTransport(xmlrpclib.Transport):
