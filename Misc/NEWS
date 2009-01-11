@@ -331,6 +331,8 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4279: Fix build of parsermodule under Cygwin.
+
 - Issue #4051: Prevent conflict of UNICODE macros in cPickle.
 
 - Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
