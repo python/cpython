@@ -2791,16 +2791,24 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                     _p[3] = 0;
 #endif
 #endif
-                    ((unsigned char *) _p)[1] = _q[0];
-                    ((unsigned char *) _p)[0] = _q[1];
-                    ((unsigned char *) _p)[1 + Py_UNICODE_SIZE] = _q[2];
-                    ((unsigned char *) _p)[0 + Py_UNICODE_SIZE] = _q[3];
-#if (SIZEOF_LONG == 8)
-                    ((unsigned char *) _p)[1 + 2 * Py_UNICODE_SIZE] = _q[4];
-                    ((unsigned char *) _p)[0 + 2 * Py_UNICODE_SIZE] = _q[5];
-                    ((unsigned char *) _p)[1 + 3 * Py_UNICODE_SIZE] = _q[6];
-                    ((unsigned char *) _p)[0 + 3 * Py_UNICODE_SIZE] = _q[7];
+                    /* Issue #4916; UCS-4 builds on big endian machines must
+                       fill the two last bytes of each 4-byte unit. */
+#if (!defined(BYTEORDER_IS_LITTLE_ENDIAN) && Py_UNICODE_SIZE > 2)
+# define OFF 2
+#else
+# define OFF 0
 #endif
+                    ((unsigned char *) _p)[OFF + 1] = _q[0];
+                    ((unsigned char *) _p)[OFF + 0] = _q[1];
+                    ((unsigned char *) _p)[OFF + 1 + Py_UNICODE_SIZE] = _q[2];
+                    ((unsigned char *) _p)[OFF + 0 + Py_UNICODE_SIZE] = _q[3];
+#if (SIZEOF_LONG == 8)
+                    ((unsigned char *) _p)[OFF + 1 + 2 * Py_UNICODE_SIZE] = _q[4];
+                    ((unsigned char *) _p)[OFF + 0 + 2 * Py_UNICODE_SIZE] = _q[5];
+                    ((unsigned char *) _p)[OFF + 1 + 3 * Py_UNICODE_SIZE] = _q[6];
+                    ((unsigned char *) _p)[OFF + 0 + 3 * Py_UNICODE_SIZE] = _q[7];
+#endif
+#undef OFF
                     _q += SIZEOF_LONG;
                     _p += SIZEOF_LONG / 2;
                 }
