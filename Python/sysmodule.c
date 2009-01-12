@@ -1257,8 +1257,13 @@ _PySys_Init(void)
 		PyDict_SetItemString(sysdict, key, v);	\
 	Py_XDECREF(v)
 
+	/* Check that stdin is not a directory
+	Using shell redirection, you can redirect stdin to a directory,
+	crashing the Python interpreter. Catch this common mistake here
+	and output a useful error message. Note that under MS Windows,
+	the shell already prevents that. */
+#if !defined(MS_WINDOWS)
 	{
-		/* XXX: does this work on Win/Win64? (see posix_fstat) */
 		struct stat sb;
 		if (fstat(fileno(stdin), &sb) == 0 &&
 		    S_ISDIR(sb.st_mode)) {
@@ -1268,6 +1273,7 @@ _PySys_Init(void)
 			exit(EXIT_FAILURE);
 		}
 	}
+#endif
 
         /* stdin/stdout/stderr are now set by pythonrun.c */
 
@@ -1483,7 +1489,7 @@ PySys_SetArgv(int argc, wchar_t **argv)
 {
 #if defined(HAVE_REALPATH)
 	wchar_t fullpath[MAXPATHLEN];
-#elif defined(MS_WINDOWS)
+#elif defined(MS_WINDOWS) && !defined(MS_WINCE)
 	wchar_t fullpath[MAX_PATH];
 #endif
 	PyObject *av = makeargvobject(argc, argv);
@@ -1529,7 +1535,10 @@ PySys_SetArgv(int argc, wchar_t **argv)
 #if SEP == '\\' /* Special case for MS filename syntax */
 		if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0) {
 			wchar_t *q;
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINCE)
+			/* This code here replaces the first element in argv with the full
+			path that it represents. Under CE, there are no relative paths so
+			the argument must be the full path anyway. */
 			wchar_t *ptemp;
 			if (GetFullPathNameW(argv0,
 					   sizeof(fullpath)/sizeof(fullpath[0]),
