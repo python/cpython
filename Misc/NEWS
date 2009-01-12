@@ -123,6 +123,8 @@ Core and Builtins
 
 - Issue #4748: Lambda generators no longer return a value.
 
+- Issue #3582: Use native TLS functions on Windows
+
 Library
 -------
 
