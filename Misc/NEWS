@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #3720: Fix a crash when an iterator modifies its class and removes its
+  __next__ method.
+
 - Issue #4910: Builtin int() function and PyNumber_Long/PyNumber_Int API
   function no longer attempt to call the __long__ slot to convert an object
   to an integer.  Only the __int__ and __trunc__ slots are examined.

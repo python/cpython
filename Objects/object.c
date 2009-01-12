@@ -1020,6 +1020,20 @@ PyObject_SelfIter(PyObject *obj)
 	return obj;
 }
 
+/* Helper used when the __next__ method is removed from a type:
+   tp_iternext is never NULL and can be safely called without checking
+   on every iteration.
+ */
+
+PyObject *
+_PyObject_NextNotImplemented(PyObject *self)
+{
+	PyErr_Format(PyExc_TypeError,
+		     "'%.200s' object is not iterable",
+		     Py_TYPE(self)->tp_name);
+	return NULL;
+}
+
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
 
 PyObject *

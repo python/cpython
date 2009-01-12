@@ -375,7 +375,6 @@ filter_next(filterobject *lz)
 	long ok;
 	PyObject *(*iternext)(PyObject *);
 
-	assert(PyIter_Check(it));
 	iternext = *Py_TYPE(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
@@ -2144,7 +2143,6 @@ zip_next(zipobject *lz)
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			assert(PyIter_Check(it));
 			item = (*Py_TYPE(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
@@ -2160,7 +2158,6 @@ zip_next(zipobject *lz)
 			return NULL;
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			assert(PyIter_Check(it));
 			item = (*Py_TYPE(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
