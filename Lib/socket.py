@@ -225,11 +225,12 @@ class SocketIO(io.RawIOBase):
         return self._writing and not self.closed
 
     def fileno(self):
+        self._checkClosed()
         return self._sock.fileno()
 
     @property
     def name(self):
-        return self._sock.fileno()
+        return self.fileno()
 
     @property
     def mode(self):
@@ -239,9 +240,12 @@ class SocketIO(io.RawIOBase):
         if self.closed:
             return
         io.RawIOBase.close(self)
+        self._sock._decref_socketios()
+        self._sock = None
 
     def __del__(self):
-        self._sock._decref_socketios()
+        if not self.closed:
+            self._sock._decref_socketios()
 
 
 def getfqdn(name=''):

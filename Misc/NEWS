@@ -111,6 +111,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3826 and #4791: The socket module now closes the underlying socket
+  appropriately when it is being used via socket.makefile() objects
+  rather than delaying the close by waiting for garbage collection to do it.
+
 - Issue #3860: GzipFile and BZ2File now support the context manager protocol.
 
 - Issue #4867: Fixed a crash in ctypes when passing a string to a
