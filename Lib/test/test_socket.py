@@ -856,6 +856,16 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.assertEqual(self.cli_file.mode, 'wb')
         self.assertEqual(self.cli_file.name, self.serv_conn.fileno())
 
+    def testRealClose(self):
+        self.serv_file.close()
+        self.assertRaises(ValueError, self.serv_file.fileno)
+        self.cli_conn.close()
+        self.assertRaises(socket.error, self.cli_conn.getsockname)
+
+    def _testRealClose(self):
+        pass
+
+
 class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     """Repeat the tests from FileObjectClassTestCase with bufsize==0.
@@ -880,6 +890,29 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.cli_file.write(b"A. " + MSG)
         self.cli_file.write(b"B. " + MSG)
         self.cli_file.flush()
+
+    def testMakefileClose(self):
+        # The file returned by makefile should keep the socket open...
+        self.cli_conn.close()
+        msg = self.cli_conn.recv(1024)
+        self.assertEqual(msg, MSG)
+        # ...until the file is itself closed
+        self.serv_file.close()
+        self.assertRaises(socket.error, self.cli_conn.recv, 1024)
+
+    def _testMakefileClose(self):
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+
+    def testMakefileCloseSocketDestroy(self):
+        refcount_before = sys.getrefcount(self.cli_conn)
+        self.serv_file.close()
+        refcount_after = sys.getrefcount(self.cli_conn)
+        self.assertEqual(refcount_before - 1, refcount_after)
+
+    def _testMakefileCloseSocketDestroy(self):
+        pass
+
 
 class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
