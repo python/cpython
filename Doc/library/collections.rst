@@ -152,6 +152,134 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
 
 
+.. _counter-objects:
+
+:class:`Counter` objects
+------------------------
+
+A counter tool is provided to support convenient and rapid tallies.
+For example::
+
+    # Tally repeated words in a list
+    >>> words = ['red', 'blue', 'red', 'green', 'blue', blue']
+    >>> cnt = Counter()
+    >>> for word in words:
+    ...     cnt[word] += 1
+    >>> cnt
+    Counter(items=[('blue', 3), ('red', 2), ('green', 1)])
+
+    # Find the ten most common words in Hamlet
+    >>> import re
+    >>> words = re.findall('\w+', open('hamlet.txt').read().lower())
+    >>> Counter(hamlet_words).most_common(10)
+    [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
+     ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
+
+.. class:: Counter([iterable[, items]])
+
+   A :class:`Counter` is a :class:`dict` subclass for counting hashable items.
+   Elements are stored as dictionary keys and their counts are stored as
+   dictionary values.  Counts are allowed to be any integer value including
+   zero or negative counts.  The :class:`Counter` class is similar to bags
+   or multisets in other languages.
+
+   Elements are counted from the *iterable* if given.  Also, the counts
+   can be initialized from an *items* list of *(element, count)* pairs.
+   If provided, *items* must be a keyword argument::
+
+       >>> c = Counter()                            # a new, empty counter
+       >>> c = Counter('gallahad')                  # a new counter from an iterable
+       >>> c = Counter(items=[('a', 4), ('b', 2)])  # a new counter from an items list
+
+   The returned object has a dictionary style interface except that it returns
+   a zero count for missing items (instead of raising a :exc:`KeyError` like a
+   dictionary would)::
+
+        >>> c = Counter(['if', 'your', 'peril', 'be'])
+        >>> c['questions']                          # count of a missing element is zero
+        0
+
+   Assigning a count of zero or reducing the count to zero leaves the
+   element in the dictionary.  Use ``del`` to remove the entry entirely:
+
+        >>> c = Counter(['arthur', 'gwain'])
+        >>> c['arthur'] = 0                         # set the count of "arthur" to zero
+        >>> 'arthur' in c                           # but "arthur" is still in the counter
+        True
+        >>> del c['arthur']                         # del will completely remove the entry
+        >>> 'arthur' in c
+        False
+
+   .. versionadded:: 2.7
+
+
+   Counter objects support two methods beyond those available for all
+   dictionaries:
+
+   .. method:: elements()
+
+      Return an iterator over elements repeating each as many times as its count.
+      Elements are returned in arbitrary order.  If an element's count has been
+      set to zero or a negative number, :meth:`elements` will ignore it.
+
+            >>> c = Counter(items=[('a', 4), ('b', 2), ('d', 0), ('e', -2)])
+            >>> list(c.elements())
+            ['a', 'a', 'a', 'a', 'b', 'b']
+
+   .. method:: most_common([n])
+
+      Return a list of the *n* most common elements and their counts from
+      the most common to the least.  If *n* is not specified or is ``None``,
+      return a list of all element counts in decreasing order of frequency.
+      Elements with equal counts are ordered arbitrarily::
+
+            >>> Counter('abracadabra').most_common(3)
+            [('a', 5), ('r', 2), ('b', 2)]
+
+   The usual dictionary methods are available for :class:`Counter` objects.
+   All of those work the same as they do for dictionaries except for two
+   which work differently for counters.
+
+   .. method:: fromkeys(iterable)
+
+       There is no equivalent class method for :class:`Counter` objects.
+       Raises a :exc:`NotImplementedError` when called.
+
+   .. method:: update(mapping)
+
+       Like :meth:`dict.update` but adds-in counts instead of replacing them.
+       Used for combining two independent counts.  Accepts a *mapping* object
+       which can be another counter or can be a :class:`dict` that maps
+       elements to element counts::
+
+            >>> c = Counter('which')        # count letters in a word
+            >>> d = Counter('witch')        # count letters in another word
+            >>> c.update(d)                 # add counts from d to those in c
+            >>> c['h']                      # count of 'h' is now three
+            3
+            >>> c.update(Counter('watch'))  # add in letters from another word
+            >>> c['h']                      # count of 'h' is now four
+            4
+
+
+.. seealso::
+
+   `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
+       in the Wikipedia
+
+   `Bag <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
+       a Smalltalk class
+
+   `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+       a tutorial with standalone examples
+
+   `Bag class <http://code.activestate.com/recipes/259174/>`_
+       an early Python recipe
+
+   Use cases for multisets and mathematical operations on multisets.
+       Knuth, Donald. The Art of Computer Programming Volume II,
+       Section 4.6.3, Exercise 19.
+
 
 .. _deque-objects:
 
