@@ -3067,7 +3067,6 @@ PyObject *
 PyIter_Next(PyObject *iter)
 {
 	PyObject *result;
-	assert(PyIter_Check(iter));
 	result = (*iter->ob_type->tp_iternext)(iter);
 	if (result == NULL &&
 	    PyErr_Occurred() &&
