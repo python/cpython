@@ -335,6 +335,9 @@ C-API
 
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
+  
+- Issue #4293: Py_AddPendingCall is now thread safe and can be used for
+  asynchronous notifications to python from any thread.  Documentation added.
 
 Extension Modules
 -----------------
