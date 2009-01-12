@@ -104,20 +104,21 @@ PyThread__init_thread(void)
 typedef struct {
 	void (*func)(void*);
 	void *arg;
-	long id;
-	HANDLE done;
 } callobj;
 
-static int
+/* thunker to call adapt between the function type used by the system's
+thread start function and the internally used one. */
+#if defined(MS_WINCE)
+static DWORD WINAPI
+#else
+static unsigned __stdcall
+#endif
 bootstrap(void *call)
 {
 	callobj *obj = (callobj*)call;
-	/* copy callobj since other thread might free it before we're done */
 	void (*func)(void*) = obj->func;
 	void *arg = obj->arg;
-
-	obj->id = PyThread_get_thread_ident();
-	ReleaseSemaphore(obj->done, 1, NULL);
+	HeapFree(GetProcessHeap(), 0, obj);
 	func(arg);
 	return 0;
 }
@@ -125,42 +126,55 @@ bootstrap(void *call)
 long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
-	Py_uintptr_t rv;
-	callobj obj;
-
+	HANDLE hThread;
+	unsigned threadID;
+	callobj *obj;
+	
 	dprintf(("%ld: PyThread_start_new_thread called\n",
 		 PyThread_get_thread_ident()));
 	if (!initialized)
 		PyThread_init_thread();
 
-	obj.id = -1;	/* guilty until proved innocent */
-	obj.func = func;
-	obj.arg = arg;
-	obj.done = CreateSemaphore(NULL, 0, 1, NULL);
-	if (obj.done == NULL)
+	obj = (callobj*)HeapAlloc(GetProcessHeap(), 0, sizeof(*obj));
+	if (!obj)
 		return -1;
-
-	rv = _beginthread(bootstrap,
+	obj->func = func;
+	obj->arg = arg;
+#if defined(MS_WINCE)
+	hThread = CreateThread(NULL,
+	                       Py_SAFE_DOWNCAST(_pythread_stacksize, Py_ssize_t, SIZE_T),
+	                       bootstrap, obj, 0, &threadID);
+#else
+	hThread = (HANDLE)_beginthreadex(0,
 			  Py_SAFE_DOWNCAST(_pythread_stacksize,
-					   Py_ssize_t, int),
-			  &obj);
-	if (rv == (Py_uintptr_t)-1) {
+					   Py_ssize_t, unsigned int),
+			  bootstrap, obj,
+			  0, &threadID);
+#endif
+	if (hThread == 0) {
+#if defined(MS_WINCE)
+		/* Save error in variable, to prevent PyThread_get_thread_ident
+		   from clobbering it. */
+		unsigned e = GetLastError();
+		dprintf(("%ld: PyThread_start_new_thread failed, win32 error code %u\n",
+		         PyThread_get_thread_ident(), e));
+#else
 		/* I've seen errno == EAGAIN here, which means "there are
 		 * too many threads".
 		 */
-		dprintf(("%ld: PyThread_start_new_thread failed: %p errno %d\n",
-		         PyThread_get_thread_ident(), (void*)rv, errno));
-		obj.id = -1;
+		int e = errno;
+		dprintf(("%ld: PyThread_start_new_thread failed, errno %d\n",
+		         PyThread_get_thread_ident(), e));
+#endif
+		threadID = (unsigned)-1;
+		HeapFree(GetProcessHeap(), 0, obj);
 	}
 	else {
 		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n",
-		         PyThread_get_thread_ident(), (void*)rv));
-		/* wait for thread to initialize, so we can get its id */
-		WaitForSingleObject(obj.done, INFINITE);
-		assert(obj.id != -1);
+		         PyThread_get_thread_ident(), (void*)hThread));
+		CloseHandle(hThread);
 	}
-	CloseHandle((HANDLE)obj.done);
-	return obj.id;
+	return (long) threadID;
 }
 
 /*
@@ -176,52 +190,26 @@ PyThread_get_thread_ident(void)
 	return GetCurrentThreadId();
 }
 
-static void
-do_PyThread_exit_thread(int no_cleanup)
-{
-	dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
-	if (!initialized)
-		if (no_cleanup)
-			_exit(0);
-		else
-			exit(0);
-	_endthread();
-}
-
 void
 PyThread_exit_thread(void)
 {
-	do_PyThread_exit_thread(0);
-}
-
-void
-PyThread__exit_thread(void)
-{
-	do_PyThread_exit_thread(1);
+	dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
+	if (!initialized)
+		exit(0);
+#if defined(MS_WINCE)
+	ExitThread(0);
+#else
+	_endthreadex(0);
+#endif
 }
 
 #ifndef NO_EXIT_PROG
-static void
-do_PyThread_exit_prog(int status, int no_cleanup)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
-	if (!initialized)
-		if (no_cleanup)
-			_exit(status);
-		else
-			exit(status);
-}
-
 void
 PyThread_exit_prog(int status)
 {
-	do_PyThread_exit_prog(status, 0);
-}
-
-void
-PyThread__exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 1);
+	dprintf(("PyThread_exit_prog(%d) called\n", status));
+	if (!initialized)
+		exit(status);
 }
 #endif /* NO_EXIT_PROG */
 
@@ -309,3 +297,73 @@ _pythread_nt_set_stacksize(size_t size)
 }
 
 #define THREAD_SET_STACKSIZE(x)	_pythread_nt_set_stacksize(x)
+
+
+/* use native Windows TLS functions */
+#define Py_HAVE_NATIVE_TLS
+
+#ifdef Py_HAVE_NATIVE_TLS
+int
+PyThread_create_key(void)
+{
+	return (int) TlsAlloc();
+}
+
+void
+PyThread_delete_key(int key)
+{
+	TlsFree(key);
+}
+
+/* We must be careful to emulate the strange semantics implemented in thread.c,
+ * where the value is only set if it hasn't been set before.
+ */
+int
+PyThread_set_key_value(int key, void *value)
+{
+	BOOL ok;
+	void *oldvalue;
+
+	assert(value != NULL);
+	oldvalue = TlsGetValue(key);
+	if (oldvalue != NULL)
+		/* ignore value if already set */
+		return 0;
+	ok = TlsSetValue(key, value);
+	if (!ok)
+		return -1;
+	return 0;
+}
+
+void *
+PyThread_get_key_value(int key)
+{
+	/* because TLS is used in the Py_END_ALLOW_THREAD macro,
+	 * it is necessary to preserve the windows error state, because
+	 * it is assumed to be preserved across the call to the macro.
+	 * Ideally, the macro should be fixed, but it is simpler to
+	 * do it here.
+	 */
+	DWORD error = GetLastError();
+	void *result = TlsGetValue(key);
+	SetLastError(error);
+	return result;
+}
+
+void
+PyThread_delete_key_value(int key)
+{
+	/* NULL is used as "key missing", and it is also the default
+	 * given by TlsGetValue() if nothing has been set yet.
+	 */
+	TlsSetValue(key, NULL);
+}
+
+/* reinitialization of TLS is not necessary after fork when using
+ * the native TLS functions.  And forking isn't supported on Windows either.
+ */
+void
+PyThread_ReInitTLS(void)
+{}
+
+#endif
