@@ -137,10 +137,6 @@ static size_t _pythread_stacksize = 0;
 #include "thread_beos.h"
 #endif
 
-#ifdef WINCE_THREADS
-#include "thread_wince.h"
-#endif
-
 #ifdef PLAN9_THREADS
 #include "thread_plan9.h"
 #endif

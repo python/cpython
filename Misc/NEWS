@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4893: Use NT threading on CE.
+
 - Issue #4915: Port sysmodule to Windows CE.
 
 - Issue #4074: Change the criteria for doing a full garbage collection (i.e.
