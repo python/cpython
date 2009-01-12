@@ -438,6 +438,7 @@ PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
+PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *,
 					      PyObject *, PyObject *);

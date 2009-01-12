@@ -612,7 +612,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	is an iterator, this returns itself. */
 
 #define PyIter_Check(obj) \
-    ((obj)->ob_type->tp_iternext != NULL)
+    ((obj)->ob_type->tp_iternext != NULL && \
+     (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
 
      PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
      /* Takes an iterator object and calls its tp_iternext slot,

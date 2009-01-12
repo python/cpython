@@ -120,6 +120,13 @@ class TestCase(unittest.TestCase):
     def test_seq_class_iter(self):
         self.check_iterator(iter(SequenceClass(10)), list(range(10)))
 
+    # Test a new_style class with __iter__ but no next() method
+    def test_new_style_iter_class(self):
+        class IterClass(object):
+            def __iter__(self):
+                return self
+        self.assertRaises(TypeError, iter, IterClass())
+
     # Test two-argument iter() with callable instance
     def test_iter_callable(self):
         class C:
@@ -852,6 +859,21 @@ class TestCase(unittest.TestCase):
         b = iter(e)
         self.assertEqual(list(b), list(zip(range(5), range(5))))
         self.assertEqual(list(b), [])
+
+    def test_3720(self):
+        # Avoid a crash, when an iterator deletes its next() method.
+        class BadIterator(object):
+            def __iter__(self):
+                return self
+            def __next__(self):
+                del BadIterator.__next__
+                return 1
+
+        try:
+            for i in BadIterator() :
+                pass
+        except TypeError:
+            pass
 
 
 def test_main():
