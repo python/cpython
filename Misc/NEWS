@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4915: Port sysmodule to Windows CE.
+
 - Issue #4868: utf-8, utf-16 and latin1 decoding are now 2x to 4x faster. The
   common cases are optimized thanks to a dedicated fast path and a moderate
   amount of loop unrolling.
