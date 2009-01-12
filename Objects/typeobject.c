@@ -6090,8 +6090,12 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 	}
 	do {
 		descr = _PyType_Lookup(type, p->name_strobj);
-		if (descr == NULL)
+		if (descr == NULL) {
+			if (ptr == (void**)&type->tp_iternext) {
+				specific = _PyObject_NextNotImplemented;
+			}
 			continue;
+		}
 		if (Py_TYPE(descr) == &PyWrapperDescr_Type) {
 			void **tptr = resolve_slotdups(type, p->name_strobj);
 			if (tptr == NULL || tptr == ptr)
