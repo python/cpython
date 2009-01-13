@@ -564,6 +564,9 @@ STRINGLIB_HEADERS= \
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(STRINGLIB_HEADERS)
 
+Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c \
+                                $(STRINGLIB_HEADERS)
+
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c \
 				$(STRINGLIB_HEADERS)
 
