@@ -64,6 +64,18 @@ def literal_eval(node_or_string):
         elif isinstance(node, Name):
             if node.id in _safe_names:
                 return _safe_names[node.id]
+        elif isinstance(node, BinOp) and \
+             isinstance(node.op, (Add, Sub)) and \
+             isinstance(node.right, Num) and \
+             isinstance(node.right.n, complex) and \
+             isinstance(node.left, Num) and \
+             isinstance(node.left.n, (int, long, float)):
+            left = node.left.n
+            right = node.right.n
+            if isinstance(node.op, Add):
+                return left + right
+            else:
+                return left - right
         raise ValueError('malformed string')
     return _convert(node_or_string)
 
