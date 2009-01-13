@@ -275,12 +275,7 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('2j'), 2j)
         self.assertEqual(ast.literal_eval('10 + 2j'), 10 + 2j)
         self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
-        try:
-            ast.literal_eval('2 + (3 + 4j)')
-        except ValueError:
-            pass
-        else:
-            self.fail('expected value error')
+        self.assertRaises(ValueError, ast.literal_eval, '2 + (3 + 4j)')
 
 
 def test_main():
