@@ -22,76 +22,69 @@ stringlib_expandtabs(PyObject *self, PyObject *args)
 {
     const char *e, *p;
     char *q;
-    Py_ssize_t i, j, old_j;
+    size_t i, j;
     PyObject *u;
     int tabsize = 8;
-
+    
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
-	return NULL;
-
+        return NULL;
+    
     /* First pass: determine size of output string */
-    i = j = old_j = 0;
+    i = j = 0;
     e = STRINGLIB_STR(self) + STRINGLIB_LEN(self);
     for (p = STRINGLIB_STR(self); p < e; p++)
         if (*p == '\t') {
-	    if (tabsize > 0) {
-		j += tabsize - (j % tabsize);
-                /* XXX: this depends on a signed integer overflow to < 0 */
-                /* C compilers, including gcc, do -NOT- guarantee this. */
-		if (old_j > j) {
-		    PyErr_SetString(PyExc_OverflowError,
-				    "result is too long");
-		    return NULL;
-		}
-		old_j = j;
-            }
-	}
-        else {
-            j++;
-            if (*p == '\n' || *p == '\r') {
-                i += j;
-                old_j = j = 0;
-                /* XXX: this depends on a signed integer overflow to < 0 */
-                /* C compilers, including gcc, do -NOT- guarantee this. */
-                if (i < 0) {
+            if (tabsize > 0) {
+                j += tabsize - (j % tabsize);
+                if (j > PY_SSIZE_T_MAX) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "result is too long");
                     return NULL;
                 }
             }
         }
-
-    if ((i + j) < 0) {
-        /* XXX: this depends on a signed integer overflow to < 0 */
-        /* C compilers, including gcc, do -NOT- guarantee this. */
+        else {
+            j++;
+            if (*p == '\n' || *p == '\r') {
+                i += j;
+                j = 0;
+                if (i > PY_SSIZE_T_MAX) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "result is too long");
+                    return NULL;
+                }
+            }
+        }
+    
+    if ((i + j) > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError, "result is too long");
         return NULL;
     }
-
+    
     /* Second pass: create output string and fill it */
     u = STRINGLIB_NEW(NULL, i + j);
     if (!u)
         return NULL;
-
+    
     j = 0;
     q = STRINGLIB_STR(u);
-
+    
     for (p = STRINGLIB_STR(self); p < e; p++)
         if (*p == '\t') {
-	    if (tabsize > 0) {
-		i = tabsize - (j % tabsize);
-		j += i;
-		while (i--)
-		    *q++ = ' ';
-	    }
-	}
-	else {
+            if (tabsize > 0) {
+                i = tabsize - (j % tabsize);
+                j += i;
+                while (i--)
+                    *q++ = ' ';
+            }
+        }
+        else {
             j++;
-	    *q++ = *p;
+            *q++ = *p;
             if (*p == '\n' || *p == '\r')
                 j = 0;
         }
-
+    
     return u;
 }
 
