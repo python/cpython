@@ -167,21 +167,17 @@ class Counter(dict):
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
-    def __init__(self, iterable=None, items=None):
+    def __init__(self, iterable=None):
         '''Create a new, empty Counter object.  And if given, count elements
-        from an input iterable.  Or, initialize the count from an items list
-        of (element, count) pairs.
+        from an input iterable.  Or, initialize the count from another mapping
+        of elements to their counts.
 
-        >>> c = Counter('hocus pocus')              # count elements in an iterable
-        >>> c = Counter(items=[('a', 4), ('b', 2)]) # take counts from an items list
+        >>> c = Counter()                           # a new, empty counter
+        >>> c = Counter('hocus pocus')              # a new counter from an iterable
+        >>> c = Counter({'a': 4, 'b': 2})           # a new counter from a mapping
 
         '''
-        if iterable is not None:
-            for elem in iterable:
-                self[elem] += 1
-        if items is not None:
-            for elem, count in items:
-                self[elem] += count
+        self.update(iterable)
 
     def __missing__(self, key):
         'The count of elements not in the Counter is zero.'
@@ -210,7 +206,7 @@ class Counter(dict):
 
         # Knuth's example of prime factors of 1836:  2**2 * 3**3 * 17**1
         >>> import operator
-        >>> prime_factors = Counter(items=[(2,2), (3,3), (17,1)])
+        >>> prime_factors = Counter(dict([(2,2), (3,3), (17,1)]))
         >>> sorted(prime_factors.elements())         # list individual factors
         [2, 2, 3, 3, 3, 17]
         >>> reduce(operator.mul, prime_factors.elements(), 1)  # multiply them
@@ -234,16 +230,19 @@ class Counter(dict):
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
-    def update(self, mapping):
+    def update(self, iterable=None):
         '''Like dict.update() but add counts instead of replacing them.
 
-        Source can be another dictionary or a Counter.instance().
+        Source can be an iterable, a dictionary, or another Counter.instance().
 
         >>> c = Counter('which')
         >>> d = Counter('witch')
-        >>> c.update(d)                 # Add counts from d to those in c
-        >>> c['h']                      # Count of 'h' is now three
+        >>> c.update(d)                 # add counts from d to those in c
+        >>> c['h']                      # count of 'h' is now three
         3
+        >>> c.update('watch')
+        >>> c['h']
+        4
 
         '''
         # The regular dict.update() operation makes no sense here because the
@@ -254,19 +253,24 @@ class Counter(dict):
         # multisets and implement the union-add operation discussed in
         # TAOCP Volume II section 4.6.3 exercise 19.  The Wikipedia entry for
         # multisets calls that operation a sum or join.
-        for elem, count in mapping.iteritems():
-            self[elem] += count
+
+        if iterable is not None:
+            if isinstance(iterable, Mapping):
+                for elem, count in iterable.iteritems():
+                    self[elem] += count
+            else:
+                for elem in iterable:
+                    self[elem] += 1
 
     def copy(self):
         'Like dict.copy() but returns a Counter instance instead of a dict.'
-        c = Counter()
-        c.update(self)
-        return c
+        return Counter(self)
 
     def __repr__(self):
         if not self:
             return '%s()' % self.__class__.__name__
-        return '%s(items=%r)' % (self.__class__.__name__, self.most_common())
+        items = ', '.join('%r: %r' % item for item in self.most_common())
+        return '%s({%s})' % (self.__class__.__name__, items)
 
 
 

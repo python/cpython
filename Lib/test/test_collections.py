@@ -370,8 +370,7 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c.get('b', 10), 2)
         self.assertEqual(c.get('z', 10), 10)
         self.assertEqual(c, dict(a=3, b=2, c=1))
-        self.assertEqual(repr(c),
-                         "Counter(items=[('a', 3), ('b', 2), ('c', 1)])")
+        self.assertEqual(repr(c), "Counter({'a': 3, 'b': 2, 'c': 1})")
         self.assertEqual(c.most_common(), [('a', 3), ('b', 2), ('c', 1)])
         for i in range(5):
             self.assertEqual(c.most_common(i),
@@ -396,8 +395,8 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(NotImplementedError, Counter.fromkeys, 'abc')
         self.assertRaises(TypeError, hash, c)
         c.update(dict(a=5, b=3, c=1))
-        c.update(Counter(items=[('a', 50), ('b', 30)]))
-        c.__init__(items=[('a', 500), ('b', 300)])
+        c.update(Counter('a' * 50 + 'b' * 30))
+        c.__init__('a' * 500 + 'b' * 300)
         c.__init__('cdc')
         self.assertEqual(c, dict(a=555, b=333, c=3, d=1))
         self.assertEqual(c.setdefault('d', 5), 1)
@@ -425,6 +424,7 @@ class TestCounter(unittest.TestCase):
                     cPickle.loads(cPickle.dumps(words, -1)),
                     eval(repr(words)),
                     update_test,
+                    Counter(words),
                     ]):
             msg = (i, dup, words)
             self.assert_(dup is not words)

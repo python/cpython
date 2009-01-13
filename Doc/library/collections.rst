@@ -161,12 +161,12 @@ A counter tool is provided to support convenient and rapid tallies.
 For example::
 
     # Tally repeated words in a list
-    >>> words = ['red', 'blue', 'red', 'green', 'blue', blue']
+    >>> words = ['red', 'blue', 'red', 'green', 'blue', 'blue']
     >>> cnt = Counter()
     >>> for word in words:
     ...     cnt[word] += 1
     >>> cnt
-    Counter(items=[('blue', 3), ('red', 2), ('green', 1)])
+    Counter({'blue': 3, 'red': 2, 'green': 1})
 
     # Find the ten most common words in Hamlet
     >>> import re
@@ -175,21 +175,20 @@ For example::
     [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
      ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
 
-.. class:: Counter([iterable[, items]])
+.. class:: Counter([iterable])
 
    A :class:`Counter` is a :class:`dict` subclass for counting hashable items.
-   Elements are stored as dictionary keys and their counts are stored as
-   dictionary values.  Counts are allowed to be any integer value including
-   zero or negative counts.  The :class:`Counter` class is similar to bags
-   or multisets in other languages.
+   It is an unordered collection where elements are stored as dictionary keys
+   and their counts are stored as dictionary values.  Counts are allowed to be
+   any integer value including zero or negative counts.  The :class:`Counter`
+   class is similar to bags or multisets in other languages.
 
    Elements are counted from the *iterable* if given.  Also, the counts
-   can be initialized from an *items* list of *(element, count)* pairs.
-   If provided, *items* must be a keyword argument::
+   can be initialized from another mapping of elements to their counts::
 
        >>> c = Counter()                            # a new, empty counter
        >>> c = Counter('gallahad')                  # a new counter from an iterable
-       >>> c = Counter(items=[('a', 4), ('b', 2)])  # a new counter from an items list
+       >>> c = Counter({'a': 4, 'b': 2})            # a new counter from a mapping
 
    The returned object has a dictionary style interface except that it returns
    a zero count for missing items (instead of raising a :exc:`KeyError` like a
@@ -222,7 +221,7 @@ For example::
       Elements are returned in arbitrary order.  If an element's count has been
       set to zero or a negative number, :meth:`elements` will ignore it.
 
-            >>> c = Counter(items=[('a', 4), ('b', 2), ('d', 0), ('e', -2)])
+            >>> c = Counter({'a': 4, 'b': 2, 'd': 0, 'e': -2})
             >>> list(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
@@ -245,19 +244,20 @@ For example::
        There is no equivalent class method for :class:`Counter` objects.
        Raises a :exc:`NotImplementedError` when called.
 
-   .. method:: update(mapping)
+   .. method:: update(iterable)
 
        Like :meth:`dict.update` but adds-in counts instead of replacing them.
-       Used for combining two independent counts.  Accepts a *mapping* object
-       which can be another counter or can be a :class:`dict` that maps
-       elements to element counts::
+
+       Elements are counted from the *iterable* if given.  Also, the counts
+       can be taken from another counter or mapping of elements to their
+       counts::
 
             >>> c = Counter('which')        # count letters in a word
             >>> d = Counter('witch')        # count letters in another word
             >>> c.update(d)                 # add counts from d to those in c
             >>> c['h']                      # count of 'h' is now three
             3
-            >>> c.update(Counter('watch'))  # add in letters from another word
+            >>> c.update('watch')           # add in letters from another word
             >>> c['h']                      # count of 'h' is now four
             4
 
