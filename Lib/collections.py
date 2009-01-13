@@ -10,7 +10,7 @@ from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-import itertools as _itertools
+from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 
 ########################################################################
 ###  namedtuple  #######################################################
@@ -217,9 +217,7 @@ class Counter(dict):
 
         '''
         # Emulate Bag.do from Smalltalk and Multiset.begin from C++.
-        return _itertools.chain.from_iterable(
-                                    _itertools.starmap(_itertools.repeat,
-                                                       self.iteritems()))
+        return _chain.from_iterable(_starmap(_repeat, self.iteritems()))
 
     # Override dict methods where necessary
 
@@ -267,7 +265,7 @@ class Counter(dict):
     def __repr__(self):
         if not self:
             return '%s()' % self.__class__.__name__
-        items = ', '.join('%r: %r' % item for item in self.most_common())
+        items = ', '.join(map('%r: %r'.__mod__, self.most_common()))
         return '%s({%s})' % (self.__class__.__name__, items)
 
 
@@ -302,49 +300,6 @@ if __name__ == '__main__':
 
     Point3D = namedtuple('Point3D', Point._fields + ('z',))
     print Point3D.__doc__
-
-    # Check that counters are copyable, deepcopyable, picklable, and have a
-    # repr/eval round-trip
-    import copy
-    words = Counter('which witch had which witches wrist watch'.split())
-    update_test = Counter()
-    update_test.update(words)
-    for i, dup in enumerate([
-                words.copy(),
-                copy.copy(words),
-                copy.deepcopy(words),
-                loads(dumps(words, 0)),
-                loads(dumps(words, 1)),
-                loads(dumps(words, 2)),
-                loads(dumps(words, -1)),
-                eval(repr(words)),
-                update_test,
-                ]):
-        msg = (i, dup, words)
-        assert dup is not words, msg
-        assert dup == words, msg
-        assert len(dup) == len(words), msg
-        assert type(dup) == type(words), msg
-
-    # Verify that counters are unhashable
-    try:
-        hash(words)
-    except TypeError:
-        pass
-    else:
-        print 'Failed hashing test'
-
-    # Verify that Counter.fromkeys() is disabled
-    try:
-        Counter.fromkeys('razmataz')
-    except NotImplementedError:
-        pass
-    else:
-        print 'Failed fromkeys() test'
-
-    # Check ABCs
-    assert issubclass(Counter, Mapping)
-    assert isinstance(Counter('asdfasdf'), Mapping)
 
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')
