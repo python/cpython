@@ -175,7 +175,7 @@ For example::
     [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
      ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
 
-.. class:: Counter([iterable])
+.. class:: Counter([iterable-or-mapping])
 
    A :class:`Counter` is a :class:`dict` subclass for counting hashable items.
    It is an unordered collection where elements are stored as dictionary keys
@@ -183,8 +183,8 @@ For example::
    any integer value including zero or negative counts.  The :class:`Counter`
    class is similar to bags or multisets in other languages.
 
-   Elements are counted from the *iterable* if given.  Also, the counts
-   can be initialized from another mapping of elements to their counts::
+   Elements are counted from an *iterable* or initialized from another
+   *mapping* (or counter)::
 
        >>> c = Counter()                            # a new, empty counter
        >>> c = Counter('gallahad')                  # a new counter from an iterable
@@ -244,21 +244,18 @@ For example::
        There is no equivalent class method for :class:`Counter` objects.
        Raises a :exc:`NotImplementedError` when called.
 
-   .. method:: update(iterable)
+   .. method:: update([iterable-or-mapping])
 
        Like :meth:`dict.update` but adds-in counts instead of replacing them.
 
-       Elements are counted from the *iterable* if given.  Also, the counts
-       can be taken from another counter or mapping of elements to their
-       counts::
+       Elements are counted from an *iterable* or added-in from another
+       *mapping* (or counter)::
 
-            >>> c = Counter('which')        # count letters in a word
-            >>> d = Counter('witch')        # count letters in another word
-            >>> c.update(d)                 # add counts from d to those in c
-            >>> c['h']                      # count of 'h' is now three
-            3
-            >>> c.update('watch')           # add in letters from another word
-            >>> c['h']                      # count of 'h' is now four
+            >>> c = Counter('which')
+            >>> c.update('witch')           # add elements from another iterable
+            >>> d = Counter('watch')
+            >>> c.update(d)                 # add elements from another counter
+            >>> c['h']                      # four 'h' in which, witch, and watch
             4
 
 
