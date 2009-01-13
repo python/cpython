@@ -173,7 +173,7 @@ class Counter(dict):
         of elements to their counts.
 
         >>> c = Counter()                           # a new, empty counter
-        >>> c = Counter('hocus pocus')              # a new counter from an iterable
+        >>> c = Counter('gallahad')                 # a new counter from an iterable
         >>> c = Counter({'a': 4, 'b': 2})           # a new counter from a mapping
 
         '''
@@ -204,16 +204,16 @@ class Counter(dict):
         >>> sorted(c.elements())
         ['A', 'A', 'B', 'B', 'C', 'C']
 
-        # Knuth's example of prime factors of 1836:  2**2 * 3**3 * 17**1
-        >>> import operator
-        >>> prime_factors = Counter(dict([(2,2), (3,3), (17,1)]))
-        >>> sorted(prime_factors.elements())         # list individual factors
-        [2, 2, 3, 3, 3, 17]
-        >>> reduce(operator.mul, prime_factors.elements(), 1)  # multiply them
+        # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
+        >>> product = 1
+        >>> for factor in prime_factors.elements():     # loop over factors
+        ...     product *= factor                       # and multiply them
+        >>> product
         1836
 
-        Note, if an element's count has been set to zero or a negative number,
-        elements() will ignore it.
+        Note, if an element's count has been set to zero or is a negative
+        number, elements() will ignore it.
 
         '''
         # Emulate Bag.do from Smalltalk and Multiset.begin from C++.
@@ -233,15 +233,13 @@ class Counter(dict):
     def update(self, iterable=None):
         '''Like dict.update() but add counts instead of replacing them.
 
-        Source can be an iterable, a dictionary, or another Counter.instance().
+        Source can be an iterable, a dictionary, or another Counter instance.
 
         >>> c = Counter('which')
-        >>> d = Counter('witch')
-        >>> c.update(d)                 # add counts from d to those in c
-        >>> c['h']                      # count of 'h' is now three
-        3
-        >>> c.update('watch')
-        >>> c['h']
+        >>> c.update('witch')           # add elements from another iterable
+        >>> d = Counter('watch')
+        >>> c.update(d)                 # add elements from another counter
+        >>> c['h']                      # four 'h' in which, witch, and watch
         4
 
         '''
