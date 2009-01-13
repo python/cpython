@@ -765,6 +765,50 @@ created.
    :cfunc:`PyGILState_Release` on the same thread.
 
 
+
+Asynchronous Notifications
+==========================
+
+A mechanism is provided to make asynchronous notifications to the the main
+interpreter thread.  These notifications take the form of a function
+pointer and a void argument.
+
+.. index:: single: setcheckinterval() (in module sys)
+
+Every check interval, when the interpreter lock is released and reacquired,
+python will also call any such provided functions.  This can be used for
+example by asynchronous IO handlers.  The notification can be scheduled
+from a worker thread and the actual call than made at the earliest
+convenience by the main thread where it has possession of the global
+interpreter lock and can perform any Python API calls.
+
+.. cfunction:: void Py_AddPendingCall( int (*func)(void *), void *arg) )
+
+   .. index:: single: Py_AddPendingCall()
+
+   Post a notification to the Python main thread.  If successful,
+   \*:attr`func` will be called with the argument :attr:`arg` at the earliest
+   convenience.  \*:attr:`func` will be called having the global interpreter
+   lock held and can thus use the full Python API and can take any
+   action such as setting object attributes to signal IO completion.
+   It must return 0 on success, or -1 signalling an exception.
+   The notification function won't be interrupted to perform another
+   asynchronous notification recursively,
+   but it can still be interrupted to switch threads if the interpreter
+   lock is released, for example, if it calls back into python code.
+
+   This function returns 0 on success in which case the notification has been
+   scheduled.  Otherwise, for example if the notification buffer is full,
+   it returns -1 without setting any exception.
+
+   This function can be called on any thread, be it a Python thread or
+   some other system thread.  If it is a Python thread, it doesen't matter if
+   it holds the global interpreter lock or not.
+
+   .. versionadded:: 2.7
+
+
+
 .. _profiling:
 
 Profiling and Tracing
