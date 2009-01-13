@@ -12,6 +12,10 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #4935: The overflow checking code in the expandtabs() method common
+  to str, bytes and bytearray could be optimized away by the compiler, letting
+  the interpreter segfault instead of raising an error.
+
 - Issue #1180193: When importing a module from a .pyc (or .pyo) file with
   an existing .py counterpart, override the co_filename attributes of all
   code objects if the original filename is obsolete (which can happen if the
