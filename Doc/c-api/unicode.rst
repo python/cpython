@@ -409,19 +409,19 @@ These are the generic codec APIs:
 .. cfunction:: PyObject* PyUnicode_Encode(const Py_UNICODE *s, Py_ssize_t size, const char *encoding, const char *errors)
 
    Encode the :ctype:`Py_UNICODE` buffer of the given size and return a Python
-   string object.  *encoding* and *errors* have the same meaning as the parameters
-   of the same name in the Unicode :meth:`encode` method.  The codec to be used is
-   looked up using the Python codec registry.  Return *NULL* if an exception was
-   raised by the codec.
+   bytes object.  *encoding* and *errors* have the same meaning as the
+   parameters of the same name in the Unicode :meth:`encode` method.  The codec
+   to be used is looked up using the Python codec registry.  Return *NULL* if an
+   exception was raised by the codec.
 
 
 .. cfunction:: PyObject* PyUnicode_AsEncodedString(PyObject *unicode, const char *encoding, const char *errors)
 
-   Encode a Unicode object and return the result as Python string object.
-   *encoding* and *errors* have the same meaning as the parameters of the same name
-   in the Unicode :meth:`encode` method. The codec to be used is looked up using
-   the Python codec registry. Return *NULL* if an exception was raised by the
-   codec.
+   Encode a Unicode object and return the result as Python bytes object.
+   *encoding* and *errors* have the same meaning as the parameters of the same
+   name in the Unicode :meth:`encode` method. The codec to be used is looked up
+   using the Python codec registry. Return *NULL* if an exception was raised by
+   the codec.
 
 These are the UTF-8 codec APIs:
 
@@ -444,15 +444,16 @@ These are the UTF-8 codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_EncodeUTF8(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
 
-   Encode the :ctype:`Py_UNICODE` buffer of the given size using UTF-8 and return a
-   Python string object.  Return *NULL* if an exception was raised by the codec.
+   Encode the :ctype:`Py_UNICODE` buffer of the given size using UTF-8 and
+   return a Python bytes object.  Return *NULL* if an exception was raised by
+   the codec.
 
 
 .. cfunction:: PyObject* PyUnicode_AsUTF8String(PyObject *unicode)
 
-   Encode a Unicode object using UTF-8 and return the result as Python string
-   object.  Error handling is "strict".  Return *NULL* if an exception was raised
-   by the codec.
+   Encode a Unicode object using UTF-8 and return the result as Python bytes
+   object.  Error handling is "strict".  Return *NULL* if an exception was
+   raised by the codec.
 
 These are the UTF-32 codec APIs:
 
@@ -514,9 +515,9 @@ These are the UTF-32 codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_AsUTF32String(PyObject *unicode)
 
-   Return a Python string using the UTF-32 encoding in native byte order. The
-   string always starts with a BOM mark.  Error handling is "strict".  Return
-   *NULL* if an exception was raised by the codec.
+   Return a Python byte string using the UTF-32 encoding in native byte
+   order. The string always starts with a BOM mark.  Error handling is "strict".
+   Return *NULL* if an exception was raised by the codec.
 
 
 These are the UTF-16 codec APIs:
@@ -558,7 +559,7 @@ These are the UTF-16 codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_EncodeUTF16(const Py_UNICODE *s, Py_ssize_t size, const char *errors, int byteorder)
 
-   Return a Python string object holding the UTF-16 encoded value of the Unicode
+   Return a Python bytes object holding the UTF-16 encoded value of the Unicode
    data in *s*.  If *byteorder* is not ``0``, output is written according to the
    following byte order::
 
@@ -578,9 +579,9 @@ These are the UTF-16 codec APIs:
 
 .. cfunction:: PyObject* PyUnicode_AsUTF16String(PyObject *unicode)
 
-   Return a Python string using the UTF-16 encoding in native byte order. The
-   string always starts with a BOM mark.  Error handling is "strict".  Return
-   *NULL* if an exception was raised by the codec.
+   Return a Python byte string using the UTF-16 encoding in native byte
+   order. The string always starts with a BOM mark.  Error handling is "strict".
+   Return *NULL* if an exception was raised by the codec.
 
 These are the "Unicode Escape" codec APIs:
 
@@ -644,15 +645,16 @@ ordinals and only these are accepted by the codecs during encoding.
 
 .. cfunction:: PyObject* PyUnicode_EncodeLatin1(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
 
-   Encode the :ctype:`Py_UNICODE` buffer of the given size using Latin-1 and return
-   a Python string object.  Return *NULL* if an exception was raised by the codec.
+   Encode the :ctype:`Py_UNICODE` buffer of the given size using Latin-1 and
+   return a Python bytes object.  Return *NULL* if an exception was raised by
+   the codec.
 
 
 .. cfunction:: PyObject* PyUnicode_AsLatin1String(PyObject *unicode)
 
-   Encode a Unicode object using Latin-1 and return the result as Python string
-   object.  Error handling is "strict".  Return *NULL* if an exception was raised
-   by the codec.
+   Encode a Unicode object using Latin-1 and return the result as Python bytes
+   object.  Error handling is "strict".  Return *NULL* if an exception was
+   raised by the codec.
 
 These are the ASCII codec APIs.  Only 7-bit ASCII data is accepted. All other
 codes generate errors.
@@ -668,15 +670,16 @@ codes generate errors.
 
 .. cfunction:: PyObject* PyUnicode_EncodeASCII(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
 
-   Encode the :ctype:`Py_UNICODE` buffer of the given size using ASCII and return a
-   Python string object.  Return *NULL* if an exception was raised by the codec.
+   Encode the :ctype:`Py_UNICODE` buffer of the given size using ASCII and
+   return a Python bytes object.  Return *NULL* if an exception was raised by
+   the codec.
 
 
 .. cfunction:: PyObject* PyUnicode_AsASCIIString(PyObject *unicode)
 
-   Encode a Unicode object using ASCII and return the result as Python string
-   object.  Error handling is "strict".  Return *NULL* if an exception was raised
-   by the codec.
+   Encode a Unicode object using ASCII and return the result as Python bytes
+   object.  Error handling is "strict".  Return *NULL* if an exception was
+   raised by the codec.
 
 These are the mapping codec APIs:
 
@@ -767,15 +770,16 @@ the user settings on the machine running the codec.
 
 .. cfunction:: PyObject* PyUnicode_EncodeMBCS(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
 
-   Encode the :ctype:`Py_UNICODE` buffer of the given size using MBCS and return a
-   Python string object.  Return *NULL* if an exception was raised by the codec.
+   Encode the :ctype:`Py_UNICODE` buffer of the given size using MBCS and return
+   a Python bytes object.  Return *NULL* if an exception was raised by the
+   codec.
 
 
 .. cfunction:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)
 
-   Encode a Unicode object using MBCS and return the result as Python string
-   object.  Error handling is "strict".  Return *NULL* if an exception was raised
-   by the codec.
+   Encode a Unicode object using MBCS and return the result as Python bytes
+   object.  Error handling is "strict".  Return *NULL* if an exception was
+   raised by the codec.
 
 .. % --- Methods & Slots ----------------------------------------------------
 
