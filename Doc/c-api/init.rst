@@ -797,13 +797,13 @@ from a worker thread and the actual call than made at the earliest
 convenience by the main thread where it has possession of the global
 interpreter lock and can perform any Python API calls.
 
-.. cfunction:: void Py_AddPendingCall( int (*func)(void *), void *arg) )
+.. cfunction:: void Py_AddPendingCall( int (*func)(void *, void *arg) )
 
    .. index:: single: Py_AddPendingCall()
 
    Post a notification to the Python main thread.  If successful,
-   \*:attr`func` will be called with the argument :attr:`arg` at the earliest
-   convenience.  \*:attr:`func` will be called having the global interpreter
+   *func* will be called with the argument *arg* at the earliest
+   convenience.  *func* will be called having the global interpreter
    lock held and can thus use the full Python API and can take any
    action such as setting object attributes to signal IO completion.
    It must return 0 on success, or -1 signalling an exception.
