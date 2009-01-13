@@ -919,6 +919,43 @@ test_thread_state(PyObject *self, PyObject *args)
 		return NULL;
 	Py_RETURN_NONE;
 }
+
+/* test Py_AddPendingCalls using threads */
+static int _pending_callback(void *arg)
+{
+	/* we assume the argument is callable object to which we own a reference */
+	PyObject *callable = (PyObject *)arg;
+	PyObject *r = PyObject_CallObject(callable, NULL);
+	Py_DECREF(callable);
+	Py_XDECREF(r);
+	return r != NULL ? 0 : -1;
+}
+
+/* The following requests n callbacks to _pending_callback.  It can be
+ * run from any python thread.
+ */
+PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
+{
+	PyObject *callable;
+	int r;
+	if (PyArg_ParseTuple(arg, "O", &callable) == 0)
+		return NULL;
+
+	/* create the reference for the callbackwhile we hold the lock */
+	Py_INCREF(callable);
+
+	Py_BEGIN_ALLOW_THREADS
+	r = Py_AddPendingCall(&_pending_callback, callable);
+	Py_END_ALLOW_THREADS
+
+	if (r<0) {
+		Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
+		Py_INCREF(Py_False);
+		return Py_False;
+	}
+	Py_INCREF(Py_True);
+	return Py_True;
+}
 #endif
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
@@ -1171,6 +1208,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_Z_code",		(PyCFunction)test_Z_code,	 METH_NOARGS},
 #ifdef WITH_THREAD
 	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
+	{"_pending_threadfunc",	pending_threadfunc,		 METH_VARARGS},
 #endif
 #ifdef HAVE_GETTIMEOFDAY
 	{"profile_int",		profile_int,			METH_NOARGS},

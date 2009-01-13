@@ -60,6 +60,11 @@ No release schedule has been decided yet for 2.7.
 .. ========================================================================
 
 
+Kristján Valur Jónsson, issue 4293
+Py_AddPendingCall is now thread safe.  This allows any worker thread
+to submit notifications to the python main thread.  This is particularly
+useful for asynchronous IO operations.
+
 
 Other Language Changes
 ======================
@@ -121,11 +126,10 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Gregory P. Smith.)
 
 * It is not mandatory anymore to store clear text passwords in the
-  :file:`.pypirc` file when registering and uploading packages to PyPI. As
-  long as the username is present in that file, the :mod:`distutils` package
-  will prompt for the password if not present.
-  (Added by tarek, with the initial contribution of Nathan Van Gheem;
-   :issue:`4394`.)
+  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
+  as the username is present in that file, the :mod:`distutils` package will
+  prompt for the password if not present.  (Added by tarek, with the initial
+  contribution of Nathan Van Gheem; :issue:`4394`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
