@@ -1245,7 +1245,7 @@ class Transport:
 
         self.verbose = verbose
 
-        return self._parse_response(h.getfile())
+        return self.parse_response(h.getfile())
 
     ##
     # Create parser.
