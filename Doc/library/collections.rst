@@ -258,24 +258,34 @@ For example::
             >>> c['h']                      # four 'h' in which, witch, and watch
             4
 
+Common patterns for working with :class:`Counter` objects::
 
-.. seealso::
+    sum(c.values())               # total of all counts
+    c.clear()                     # reset all counts
+    list(c)                       # list unique elements
+    set(c)                        # convert to a set
+    dict(c)                       # convert to a regular dictionary
+    c.items()                     # convert to a list of (elem, cnt) pairs
+    Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
+    c.most_common()[-n:]          # n least common elements
 
-   `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
-       in the Wikipedia
+**References**:
 
-   `Bag <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
-       a Smalltalk class
+   * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
 
-   `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-       a tutorial with standalone examples
+   * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
+     in Smalltalk
 
-   `Bag class <http://code.activestate.com/recipes/259174/>`_
-       an early Python recipe
+   * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+     tutorial with standalone examples
 
-   Use cases for multisets and mathematical operations on multisets.
+   * An early Python `Bag <http://code.activestate.com/recipes/259174/>`_ recipe
+     for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
+     comformant recipe for Python 2.5 and later
+
+   * Use cases for multisets and mathematical operations on multisets.
        Knuth, Donald. The Art of Computer Programming Volume II,
-       Section 4.6.3, Exercise 19.
+       Section 4.6.3, Exercise 19
 
 
 .. _deque-objects:
