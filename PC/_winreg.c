@@ -410,21 +410,17 @@ PyHKEY_intFunc(PyObject *ob)
 static int
 PyHKEY_printFunc(PyObject *ob, FILE *fp, int flags)
 {
-	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	char resBuf[160];
-	wsprintf(resBuf, "<PyHKEY at %p (%p)>",
-		 ob, pyhkey->hkey);
-	fputs(resBuf, fp);
-	return 0;
+    PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
+    fprintf(fp, "<PyHKEY at %p (%p)>",
+            ob, pyhkey->hkey);
+    return 0;
 }
 
 static PyObject *
 PyHKEY_strFunc(PyObject *ob)
 {
-	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	char resBuf[160];
-	wsprintf(resBuf, "<PyHKEY:%p>", pyhkey->hkey);
-	return PyString_FromString(resBuf);
+    PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
+    return PyString_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
 static int
