@@ -743,7 +743,7 @@ set.
    :attr:`__weakref__`, the type inherits its :attr:`tp_weaklistoffset` from its
    base type.
 
-The next two fields only exist if the :const:`Py_TPFLAGS_HAVE_CLASS` flag bit is
+The next two fields only exist if the :const:`Py_TPFLAGS_HAVE_ITER` flag bit is
 set.
 
 
