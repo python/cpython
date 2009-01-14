@@ -565,6 +565,9 @@ STRINGLIB_HEADERS= \
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(STRINGLIB_HEADERS)
 
+Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c \
+				$(STRINGLIB_HEADERS)
+
 Objects/stringobject.o: $(srcdir)/Objects/stringobject.c \
 				$(STRINGLIB_HEADERS)
 
@@ -585,6 +588,7 @@ PYTHON_HEADERS= \
 		Include/ast.h \
 		Include/bitset.h \
 		Include/boolobject.h \
+		Include/bytearrayobject.h \
 		Include/bytes_methods.h \
 		Include/bytesobject.h \
 		Include/bufferobject.h \

@@ -88,6 +88,12 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
+/* CE6 doesn't have strdup() but _strdup(). Assume the same for earlier versions. */
+#if defined(MS_WINCE)
+#  include <stdlib.h>
+#  define strdup _strdup
+#endif
+
 #ifdef MS_WINCE
 /* Python uses GetVersion() to distinguish between
  * Windows NT and 9x/ME where OS Unicode support is concerned.

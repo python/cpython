@@ -526,38 +526,37 @@ provided:
 
 #. :class:`FileHandler` instances send error messages to disk files.
 
-.. currentmodule:: logging.handlers
+#. :class:`handlers.BaseRotatingHandler` is the base class for handlers that
+   rotate log files at a certain point. It is not meant to be  instantiated
+   directly. Instead, use :class:`RotatingFileHandler` or
+   :class:`TimedRotatingFileHandler`.
 
-#. :class:`BaseRotatingHandler` is the base class for handlers that rotate log
-   files at a certain point. It is not meant to be  instantiated directly. Instead,
-   use :class:`RotatingFileHandler` or :class:`TimedRotatingFileHandler`.
-
-#. :class:`RotatingFileHandler` instances send error messages to disk files,
+#. :class:`handlers.RotatingFileHandler` instances send error messages to disk files,
    with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send error messages to disk files
+#. :class:`handlers.TimedRotatingFileHandler` instances send error messages to disk files
    rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send error messages to TCP/IP sockets.
+#. :class:`handlers.SocketHandler` instances send error messages to TCP/IP sockets.
 
-#. :class:`DatagramHandler` instances send error messages to UDP sockets.
+#. :class:`handlers.DatagramHandler` instances send error messages to UDP sockets.
 
-#. :class:`SMTPHandler` instances send error messages to a designated email
+#. :class:`handlers.SMTPHandler` instances send error messages to a designated email
    address.
 
-#. :class:`SysLogHandler` instances send error messages to a Unix syslog daemon,
+#. :class:`handlers.SysLogHandler` instances send error messages to a Unix syslog daemon,
    possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send error messages to a Windows
+#. :class:`handlers.NTEventLogHandler` instances send error messages to a Windows
    NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send error messages to a buffer in memory,
+#. :class:`handlers.MemoryHandler` instances send error messages to a buffer in memory,
    which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send error messages to an HTTP server using
+#. :class:`handlers.HTTPHandler` instances send error messages to an HTTP server using
    either ``GET`` or ``POST`` semantics.
 
-#. :class:`WatchedFileHandler` instances watch the file they are logging to. If
+#. :class:`handlers.WatchedFileHandler` instances watch the file they are logging to. If
 the file changes, it is closed and reopened using the file name. This handler
 is only useful on Unix-like systems; Windows does not support the underlying
 mechanism used.
