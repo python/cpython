@@ -396,8 +396,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, hash, c)
         c.update(dict(a=5, b=3, c=1))
         c.update(Counter('a' * 50 + 'b' * 30))
+        c.update()          # test case with no args
         c.__init__('a' * 500 + 'b' * 300)
         c.__init__('cdc')
+        c.__init__()
         self.assertEqual(c, dict(a=555, b=333, c=3, d=1))
         self.assertEqual(c.setdefault('d', 5), 1)
         self.assertEqual(c['d'], 1)
