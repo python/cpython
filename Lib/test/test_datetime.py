@@ -856,6 +856,14 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # A naive object replaces %z and %Z w/ empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
 
+        #make sure that invalid format specifiers are handled correctly
+        self.assertRaises(ValueError, t.strftime, "%e")
+        self.assertRaises(ValueError, t.strftime, "%")
+        self.assertRaises(ValueError, t.strftime, "%#")
+
+        #check that this standard extension works
+        t.strftime("%f")
+
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)

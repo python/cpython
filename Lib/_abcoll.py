@@ -249,12 +249,12 @@ class MutableSet(Set):
 
     @abstractmethod
     def add(self, value):
-        """Return True if it was added, False if already there."""
+        """Add an element."""
         raise NotImplementedError
 
     @abstractmethod
     def discard(self, value):
-        """Return True if it was deleted, False if not there."""
+        """Remove an element.  Do not raise an exception if absent."""
         raise NotImplementedError
 
     def remove(self, value):
