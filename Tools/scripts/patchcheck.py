@@ -62,12 +62,12 @@ def docs_modified(file_paths):
 @status("Misc/ACKS updated", modal=True)
 def credit_given(file_paths):
     """Check if Misc/ACKS has been changed."""
-    return True if 'Misc/ACKS' in file_paths else False
+    return 'Misc/ACKS' in file_paths
 
 @status("Misc/NEWS updated", modal=True)
 def reported_news(file_paths):
     """Check if Misc/NEWS has been changed."""
-    return True if 'Misc/NEWS' in file_paths else False
+    return 'Misc/NEWS' in file_paths
 
 
 def main():

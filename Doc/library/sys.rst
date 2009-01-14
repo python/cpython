@@ -566,6 +566,10 @@ always available.
    .. versionchanged:: 2.3
       Unicode strings are no longer ignored.
 
+   .. seealso::
+      Module :mod:`site` This describes how to use .pth files to extend
+      :data:`sys.path`.
+
 
 .. data:: platform
 
@@ -583,7 +587,6 @@ always available.
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    Mac OS X         ``'darwin'``
-   Mac OS 9         ``'mac'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
    RiscOS           ``'riscos'``
@@ -869,10 +872,3 @@ always available.
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
-
-
-.. seealso::
-
-   Module :mod:`site`
-      This describes how to use .pth files to extend ``sys.path``.
-

@@ -121,7 +121,7 @@ Another useful feature of the logging API is the ability to produce different
 messages at different log levels.  This allows you to instrument your code with
 debug messages, for example, but turning the log level down so that those debug
 messages are not written for your production system.  The default levels are
-``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG`` and ``UNSET``.
+``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG`` and ``NOTSET``.
 
 The logger, handler, and log message call each specify a level.  The log message
 is only emitted if the handler and logger are configured to emit messages of
@@ -422,6 +422,8 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+.. _library-config:
+
 Configuring Logging for a Library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -524,6 +526,8 @@ provided:
 
 #. :class:`FileHandler` instances send error messages to disk files.
 
+.. currentmodule:: logging.handlers
+
 #. :class:`BaseRotatingHandler` is the base class for handlers that rotate log
    files at a certain point. It is not meant to be  instantiated directly. Instead,
    use :class:`RotatingFileHandler` or :class:`TimedRotatingFileHandler`.
@@ -553,7 +557,12 @@ provided:
 #. :class:`HTTPHandler` instances send error messages to an HTTP server using
    either ``GET`` or ``POST`` semantics.
 
-The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
+#. :class:`WatchedFileHandler` instances watch the file they are logging to. If
+the file changes, it is closed and reopened using the file name. This handler
+is only useful on Unix-like systems; Windows does not support the underlying
+mechanism used.
+
+The :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
 defined in a sub- module, :mod:`logging.handlers`. (There is also another
 sub-module, :mod:`logging.config`, for configuration functionality.)
@@ -1600,6 +1609,9 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+
+See :ref:`library-config` for more information on how to use
+:class:`NullHandler`.
 
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
