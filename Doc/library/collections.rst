@@ -188,26 +188,24 @@ For example::
 
        >>> c = Counter()                            # a new, empty counter
        >>> c = Counter('gallahad')                  # a new counter from an iterable
-       >>> c = Counter({'a': 4, 'b': 2})            # a new counter from a mapping
+       >>> c = Counter({'red': 4, 'blue': 2})       # a new counter from a mapping
 
    The returned object has a dictionary style interface except that it returns
    a zero count for missing items (instead of raising a :exc:`KeyError` like a
    dictionary would)::
 
-        >>> c = Counter(['if', 'your', 'peril', 'be'])
-        >>> c['questions']                          # count of a missing element is zero
+        >>> c = Counter(['egg', 'ham'])
+        >>> c['bacon']                              # count of a missing element is zero
         0
 
    Assigning a count of zero or reducing the count to zero leaves the
    element in the dictionary.  Use ``del`` to remove the entry entirely:
 
         >>> c = Counter(['arthur', 'gwain'])
-        >>> c['arthur'] = 0                         # set the count of "arthur" to zero
-        >>> 'arthur' in c                           # but "arthur" is still in the counter
+        >>> c['arthur'] = 0                         # set the count of 'arthur' to zero
+        >>> 'arthur' in c                           # but 'arthur' is still in the counter
         True
         >>> del c['arthur']                         # del will completely remove the entry
-        >>> 'arthur' in c
-        False
 
    .. versionadded:: 2.7
 
@@ -267,25 +265,25 @@ Common patterns for working with :class:`Counter` objects::
     dict(c)                       # convert to a regular dictionary
     c.items()                     # convert to a list of (elem, cnt) pairs
     Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
-    c.most_common()[-n:]          # n least common elements
+    c.most_common()[:-n:-1]       # n least common elements
 
 **References**:
 
-   * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
+* Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
 
-   * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
-     in Smalltalk
+* `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
+  in Smalltalk
+* `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+  tutorial with standalone examples
 
-   * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-     tutorial with standalone examples
+* An early Python `Bag <http://code.activestate.com/recipes/259174/>`_ recipe
+  for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
+  comformant recipe for Python 2.5 and later
 
-   * An early Python `Bag <http://code.activestate.com/recipes/259174/>`_ recipe
-     for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
-     comformant recipe for Python 2.5 and later
+* Use cases for multisets and mathematical operations on multisets.
+   Knuth, Donald. The Art of Computer Programming Volume II,
+   Section 4.6.3, Exercise 19
 
-   * Use cases for multisets and mathematical operations on multisets.
-       Knuth, Donald. The Art of Computer Programming Volume II,
-       Section 4.6.3, Exercise 19
 
 
 .. _deque-objects:
