@@ -724,7 +724,7 @@ field names, the method and attribute names start with an underscore.
 
    Class method that makes a new instance from an existing sequence or iterable.
 
-.. doctest::
+   .. doctest::
 
       >>> t = [11, 22]
       >>> Point._make(t)
@@ -740,9 +740,7 @@ field names, the method and attribute names start with an underscore.
 .. method:: somenamedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new
-   values:
-
-::
+   values::
 
       >>> p = Point(x=11, y=22)
       >>> p._replace(x=33)
@@ -756,7 +754,7 @@ field names, the method and attribute names start with an underscore.
    Tuple of strings listing the field names.  Useful for introspection
    and for creating new named tuple types from existing named tuples.
 
-.. doctest::
+   .. doctest::
 
       >>> p._fields            # view the field names
       ('x', 'y')
