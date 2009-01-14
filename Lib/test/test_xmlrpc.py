@@ -267,7 +267,7 @@ class BinaryTestCase(unittest.TestCase):
         self.assertEqual(str(t2), d)
 
 
-PORT = None
+ADDR = PORT = URL = None
 
 # The evt is set twice.  First when the server is ready to serve.
 # Second when the server has been shutdown.  The user must clear
@@ -293,13 +293,18 @@ def http_server(evt, numrequests):
             s.setblocking(True)
             return s, port
 
+    serv = MyXMLRPCServer(("localhost", 0),
+                          logRequests=False, bind_and_activate=False)
     try:
-        serv = MyXMLRPCServer(("localhost", 0),
-                              logRequests=False, bind_and_activate=False)
         serv.socket.settimeout(3)
         serv.server_bind()
-        global PORT
-        PORT = serv.socket.getsockname()[1]
+        global ADDR, PORT, URL
+        ADDR, PORT = serv.socket.getsockname()
+        #connect to IP address directly.  This avoids socket.create_connection()
+        #trying to connect to to "localhost" using all address families, which
+        #causes slowdown e.g. on vista which supports AF_INET6.  The server listens
+        #on AF_INET only.
+        URL = "http://%s:%d"%(ADDR, PORT)
         serv.server_activate()
         serv.register_introspection_functions()
         serv.register_multicall_functions()
@@ -372,7 +377,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def test_simple1(self):
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             self.assertEqual(p.pow(6,8), 6**8)
         except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -384,7 +389,7 @@ class SimpleServerTestCase(unittest.TestCase):
     def XXXtest_404(self):
         # send POST with httplib, it should return 404 header and
         # 'Not Found' message.
-        conn = httplib.HTTPConnection('localhost', PORT)
+        conn = httplib.HTTPConnection(ADDR, PORT)
         conn.request('POST', '/this-is-not-valid')
         response = conn.getresponse()
         conn.close()
@@ -394,7 +399,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def test_introspection1(self):
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             meth = p.system.listMethods()
             expected_methods = set(['pow', 'div', 'my_function', 'add',
                                     'system.listMethods', 'system.methodHelp',
@@ -409,7 +414,7 @@ class SimpleServerTestCase(unittest.TestCase):
     def test_introspection2(self):
         try:
             # test _methodHelp()
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             divhelp = p.system.methodHelp('div')
             self.assertEqual(divhelp, 'This is the div function')
         except (xmlrpclib.ProtocolError, socket.error), e:
@@ -421,7 +426,7 @@ class SimpleServerTestCase(unittest.TestCase):
     def test_introspection3(self):
         try:
             # test native doc
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             myfunction = p.system.methodHelp('my_function')
             self.assertEqual(myfunction, 'This is my function')
         except (xmlrpclib.ProtocolError, socket.error), e:
@@ -434,7 +439,7 @@ class SimpleServerTestCase(unittest.TestCase):
         # the SimpleXMLRPCServer doesn't support signatures, but
         # at least check that we can try making the call
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             divsig = p.system.methodSignature('div')
             self.assertEqual(divsig, 'signatures not supported')
         except (xmlrpclib.ProtocolError, socket.error), e:
@@ -445,7 +450,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def test_multicall(self):
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             multicall = xmlrpclib.MultiCall(p)
             multicall.add(2,3)
             multicall.pow(6,8)
@@ -462,7 +467,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def test_non_existing_multicall(self):
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             multicall = xmlrpclib.MultiCall(p)
             multicall.this_is_not_exists()
             result = multicall()
@@ -530,7 +535,7 @@ class FailingServerTestCase(unittest.TestCase):
 
         # test a call that shouldn't fail just as a smoke test
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             self.assertEqual(p.pow(6,8), 6**8)
         except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -543,7 +548,7 @@ class FailingServerTestCase(unittest.TestCase):
         SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
 
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             p.pow(6,8)
         except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -563,7 +568,7 @@ class FailingServerTestCase(unittest.TestCase):
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
 
         try:
-            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p = xmlrpclib.ServerProxy(URL)
             p.pow(6,8)
         except (xmlrpclib.ProtocolError, socket.error), e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -727,15 +732,9 @@ class TransportSubclassTestCase(unittest.TestCase):
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase, TransportSubclassTestCase]
-
-    # The test cases against a SimpleXMLRPCServer raise a socket error
-    # 10035 (WSAEWOULDBLOCK) in the server thread handle_request call when
-    # run on Windows. This only happens on the first test to run, but it
-    # fails every time and so these tests are skipped on win32 platforms.
-    if sys.platform != 'win32':
-        xmlrpc_tests.append(SimpleServerTestCase)
-        xmlrpc_tests.append(FailingServerTestCase)
-        xmlrpc_tests.append(CGIHandlerTestCase)
+    xmlrpc_tests.append(SimpleServerTestCase)
+    xmlrpc_tests.append(FailingServerTestCase)
+    xmlrpc_tests.append(CGIHandlerTestCase)
 
     test_support.run_unittest(*xmlrpc_tests)
 
