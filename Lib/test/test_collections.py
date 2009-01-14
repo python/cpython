@@ -2,7 +2,7 @@
 
 import unittest, doctest
 from test import support
-from collections import namedtuple
+from collections import namedtuple, Counter, Mapping
 import pickle, copy
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
@@ -357,11 +357,104 @@ class TestCollectionABCs(unittest.TestCase):
             self.failUnless(issubclass(sample, MutableSequence))
         self.failIf(issubclass(str, MutableSequence))
 
+class TestCounter(unittest.TestCase):
+
+    def test_basics(self):
+        c = Counter('abcaba')
+        self.assert_(isinstance(c, dict))
+        self.assert_(isinstance(c, Mapping))
+        self.assert_(issubclass(Counter, dict))
+        self.assert_(issubclass(Counter, Mapping))
+        self.assertEqual(len(c), 3)
+        self.assertEqual(sum(c.values()), 6)
+        self.assertEqual(sorted(c.values()), [1, 2, 3])
+        self.assertEqual(sorted(c.keys()), ['a', 'b', 'c'])
+        self.assertEqual(sorted(c), ['a', 'b', 'c'])
+        self.assertEqual(sorted(c.items()),
+                         [('a', 3), ('b', 2), ('c', 1)])
+        self.assertEqual(c['b'], 2)
+        self.assertEqual(c['z'], 0)
+        self.assertEqual(c.__contains__('c'), True)
+        self.assertEqual(c.__contains__('z'), False)
+        self.assertEqual(c.get('b', 10), 2)
+        self.assertEqual(c.get('z', 10), 10)
+        self.assertEqual(c, dict(a=3, b=2, c=1))
+        self.assertEqual(repr(c), "Counter({'a': 3, 'b': 2, 'c': 1})")
+        self.assertEqual(c.most_common(), [('a', 3), ('b', 2), ('c', 1)])
+        for i in range(5):
+            self.assertEqual(c.most_common(i),
+                             [('a', 3), ('b', 2), ('c', 1)][:i])
+        self.assertEqual(''.join(sorted(c.elements())), 'aaabbc')
+        c['a'] += 1         # increment an existing value
+        c['b'] -= 2         # sub existing value to zero
+        del c['c']          # remove an entry
+        c['d'] -= 2         # sub from a missing value
+        c['e'] = -5         # directly assign a missing value
+        c['f'] += 4         # add to a missing value
+        self.assertEqual(c, dict(a=4, b=0, d=-2, e=-5, f=4))
+        self.assertEqual(''.join(sorted(c.elements())), 'aaaaffff')
+        self.assertEqual(c.pop('f'), 4)
+        self.assertEqual('f' in c, False)
+        for i in range(3):
+            elem, cnt = c.popitem()
+            self.assertEqual(elem in c, False)
+        c.clear()
+        self.assertEqual(c, {})
+        self.assertEqual(repr(c), 'Counter()')
+        self.assertRaises(NotImplementedError, Counter.fromkeys, 'abc')
+        self.assertRaises(TypeError, hash, c)
+        c.update(dict(a=5, b=3, c=1))
+        c.update(Counter('a' * 50 + 'b' * 30))
+        c.update()          # test case with no args
+        c.__init__('a' * 500 + 'b' * 300)
+        c.__init__('cdc')
+        c.__init__()
+        self.assertEqual(c, dict(a=555, b=333, c=3, d=1))
+        self.assertEqual(c.setdefault('d', 5), 1)
+        self.assertEqual(c['d'], 1)
+        self.assertEqual(c.setdefault('e', 5), 5)
+        self.assertEqual(c['e'], 5)
+
+    def test_copying(self):
+        # Check that counters are copyable, deepcopyable, picklable, and
+        #have a repr/eval round-trip
+        words = Counter('which witch had which witches wrist watch'.split())
+        update_test = Counter()
+        update_test.update(words)
+        for i, dup in enumerate([
+                    words.copy(),
+                    copy.copy(words),
+                    copy.deepcopy(words),
+                    pickle.loads(pickle.dumps(words, 0)),
+                    pickle.loads(pickle.dumps(words, 1)),
+                    pickle.loads(pickle.dumps(words, 2)),
+                    pickle.loads(pickle.dumps(words, -1)),
+                    eval(repr(words)),
+                    update_test,
+                    Counter(words),
+                    ]):
+            msg = (i, dup, words)
+            self.assert_(dup is not words)
+            self.assertEquals(dup, words)
+            self.assertEquals(len(dup), len(words))
+            self.assertEquals(type(dup), type(words))
+
+    def test_conversions(self):
+        # Convert to: set, list, dict
+        s = 'she sells sea shells by the sea shore'
+        self.assertEqual(sorted(Counter(s).elements()), sorted(s))
+        self.assertEqual(sorted(Counter(s)), sorted(set(s)))
+        self.assertEqual(dict(Counter(s)), dict(Counter(s).items()))
+        self.assertEqual(set(Counter(s)), set(s))
+
+
+
 import doctest, collections
 
 def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
-    test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs, TestCollectionABCs]
+    test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
+                    TestCollectionABCs, TestCounter]
     support.run_unittest(*test_classes)
     support.run_doctest(collections, verbose)
 

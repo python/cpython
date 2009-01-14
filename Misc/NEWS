@@ -130,6 +130,9 @@ Library
   appropriately when it is being used via socket.makefile() objects
   rather than delaying the close by waiting for garbage collection to do it.
 
+- Issue #1696199:  Add collections.Counter() for rapid and convenient
+  counting.
+
 - Issue #3860: GzipFile and BZ2File now support the context manager protocol.
 
 - Issue #4867: Fixed a crash in ctypes when passing a string to a
