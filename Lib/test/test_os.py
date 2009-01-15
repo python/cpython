@@ -559,11 +559,11 @@ class TestInvalidFD(unittest.TestCase):
 
     def test_fchown(self):
         if hasattr(os, "fchown"):
-            self.assertRaises(OSError, os.fchmod, 10, -1, -1)
+            self.assertRaises(OSError, os.fchown, 10, -1, -1)
 
     def test_fpathconf(self):
         if hasattr(os, "fpathconf"):
-            self.assertRaises(OSError, os.fpathconf, 10, "foo")
+            self.assertRaises(OSError, os.fpathconf, 10, "PC_FILESIZEBITS")
 
     def test_ftruncate(self):
         if hasattr(os, "ftruncate"):
