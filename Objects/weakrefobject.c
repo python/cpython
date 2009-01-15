@@ -489,7 +489,6 @@ WRAP_BINARY(proxy_and, PyNumber_And)
 WRAP_BINARY(proxy_xor, PyNumber_Xor)
 WRAP_BINARY(proxy_or, PyNumber_Or)
 WRAP_UNARY(proxy_int, PyNumber_Int)
-WRAP_UNARY(proxy_long, PyNumber_Long)
 WRAP_UNARY(proxy_float, PyNumber_Float)
 WRAP_BINARY(proxy_iadd, PyNumber_InPlaceAdd)
 WRAP_BINARY(proxy_isub, PyNumber_InPlaceSubtract)
@@ -595,7 +594,7 @@ static PyNumberMethods proxy_as_number = {
     proxy_xor,              /*nb_xor*/
     proxy_or,               /*nb_or*/
     proxy_int,              /*nb_int*/
-    proxy_long,             /*nb_long*/
+    0,                      /*nb_long*/
     proxy_float,            /*nb_float*/
     proxy_iadd,             /*nb_inplace_add*/
     proxy_isub,             /*nb_inplace_subtract*/

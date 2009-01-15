@@ -182,11 +182,9 @@ class CMathTests(unittest.TestCase):
             pass
         class MyInt(object):
             def __int__(self): return 2
-            def __long__(self): return 2
             def __index__(self): return 2
         class MyIntOS:
             def __int__(self): return 2
-            def __long__(self): return 2
             def __index__(self): return 2
 
         # other possible combinations of __float__ and __complex__
@@ -219,7 +217,7 @@ class CMathTests(unittest.TestCase):
             self.assertEqual(f(JustFloatOS()), f(flt_arg))
             # TypeError should be raised for classes not providing
             # either __complex__ or __float__, even if they provide
-            # __int__, __long__ or __index__.  An old-style class
+            # __int__ or __index__.  An old-style class
             # currently raises AttributeError instead of a TypeError;
             # this could be considered a bug.
             self.assertRaises(TypeError, f, NeitherComplexNorFloat())

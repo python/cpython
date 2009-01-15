@@ -77,12 +77,6 @@ class Rat(object):
                                       repr(self))
         raise ValueError("can't convert %s to int" % repr(self))
 
-    def __long__(self):
-        """Convert a Rat to an long; self.den must be 1."""
-        if self.__den == 1:
-            return int(self.__num)
-        raise ValueError("can't convert %s to long" % repr(self))
-
     def __add__(self, other):
         """Add two Rats, or a Rat and a number."""
         if isint(other):
