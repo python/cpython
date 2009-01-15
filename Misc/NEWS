@@ -357,7 +357,7 @@ C-API
 Extension Modules
 -----------------
 
-- Issue #4937: Fix occasional test_socket failure on OS X.
+- Issue #4397: Fix occasional test_socket failure on OS X.
 
 - Issue #4279: Fix build of parsermodule under Cygwin.
 
