@@ -334,7 +334,10 @@ class SMTP:
         if self.file is None:
             self.file = self.sock.makefile('rb')
         while 1:
-            line = self.file.readline()
+            try:
+                line = self.file.readline()
+            except socket.error:
+                line = ''
             if line == '':
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
