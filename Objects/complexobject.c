@@ -661,14 +661,6 @@ complex_int(PyObject *v)
 }
 
 static PyObject *
-complex_long(PyObject *v)
-{
-	PyErr_SetString(PyExc_TypeError,
-		   "can't convert complex to long; use long(abs(z))");
-	return NULL;
-}
-
-static PyObject *
 complex_float(PyObject *v)
 {
 	PyErr_SetString(PyExc_TypeError,
@@ -1068,7 +1060,7 @@ static PyNumberMethods complex_as_number = {
 	0,					/* nb_xor */
 	0,					/* nb_or */
 	complex_int,				/* nb_int */
-	complex_long,				/* nb_long */
+	0,					/* nb_long */
 	complex_float,				/* nb_float */
 	0,					/* nb_inplace_add */
 	0,					/* nb_inplace_subtract */
