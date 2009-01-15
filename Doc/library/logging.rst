@@ -535,6 +535,8 @@ provided:
 
 #. :class:`FileHandler` instances send error messages to disk files.
 
+.. module:: logging.handlers
+
 #. :class:`BaseRotatingHandler` is the base class for handlers that
    rotate log files at a certain point. It is not meant to be  instantiated
    directly. Instead, use :class:`RotatingFileHandler` or
@@ -571,6 +573,8 @@ provided:
    logging to. If the file changes, it is closed and reopened using the file
    name. This handler is only useful on Unix-like systems; Windows does not
    support the underlying mechanism used.
+
+.. currentmodule:: logging
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the "No
@@ -1658,7 +1662,7 @@ WatchedFileHandler
 
 .. versionadded:: 2.6
 
-.. module:: logging.handlers
+.. currentmodule:: logging.handlers
 
 The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If
