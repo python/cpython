@@ -584,6 +584,10 @@ class BasicTCPTest(SocketConnectedTest):
         # Testing shutdown()
         msg = self.cli_conn.recv(1024)
         self.assertEqual(msg, MSG)
+        # wait for _testShutdown to finish: on OS X, when the server
+        # closes the connection the client also becomes disconnected,
+        # and the client's shutdown call will fail. (Issue #4397.)
+        self.done.wait()
 
     def _testShutdown(self):
         self.serv_conn.send(MSG)
