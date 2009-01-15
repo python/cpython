@@ -127,8 +127,8 @@ get_pylong(PyObject *v)
 		return v;
 	}
 	m = Py_TYPE(v)->tp_as_number;
-	if (m != NULL && m->nb_long != NULL) {
-		v = m->nb_long(v);
+	if (m != NULL && m->nb_int != NULL) {
+		v = m->nb_int(v);
 		if (v == NULL)
 			return NULL;
 		if (PyLong_Check(v))
