@@ -484,6 +484,11 @@ always available.
    A program is free to modify this list for its own purposes.
 
 
+   .. seealso::
+      Module :mod:`site` This describes how to use .pth files to extend
+      :data:`sys.path`.
+
+
 .. data:: platform
 
    This string contains a platform identifier that can be used to append
@@ -500,7 +505,6 @@ always available.
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    Mac OS X         ``'darwin'``
-   Mac OS 9         ``'mac'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
    AtheOS           ``'atheos'``
@@ -782,11 +786,3 @@ always available.
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
-
-
-.. seealso::
-
-   Module :mod:`site`
-      This describes how to use .pth files to extend ``sys.path``.
-
-

@@ -3,7 +3,7 @@
 2to3 - Automated Python 2 to 3 code translation
 ===============================================
 
-.. sectionauthor:: Benjamin Peterson
+.. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
 2to3 is a Python program that reads Python 2.x source code and applies a series
 of *fixers* to transform it into valid Python 3.x code.  The standard library

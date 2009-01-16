@@ -522,6 +522,9 @@ decides to actually dispatch an event, the :meth:`emit` method is used to send
 the message to its destination. Most user-defined subclasses of :class:`Handler`
 will need to override this :meth:`emit`.
 
+Useful Handlers
+---------------
+
 In addition to the base :class:`Handler` class, many useful subclasses are
 provided:
 
@@ -530,41 +533,44 @@ provided:
 
 #. :class:`FileHandler` instances send error messages to disk files.
 
-.. currentmodule:: logging.handlers
+.. module:: logging.handlers
 
-#. :class:`BaseRotatingHandler` is the base class for handlers that rotate log
-   files at a certain point. It is not meant to be  instantiated directly. Instead,
-   use :class:`RotatingFileHandler` or :class:`TimedRotatingFileHandler`.
+#. :class:`BaseRotatingHandler` is the base class for handlers that
+   rotate log files at a certain point. It is not meant to be  instantiated
+   directly. Instead, use :class:`RotatingFileHandler` or
+   :class:`TimedRotatingFileHandler`.
 
-#. :class:`RotatingFileHandler` instances send error messages to disk files,
-   with support for maximum log file sizes and log file rotation.
+#. :class:`RotatingFileHandler` instances send error messages to disk
+   files, with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send error messages to disk files
-   rotating the log file at certain timed intervals.
+#. :class:`TimedRotatingFileHandler` instances send error messages to
+   disk files, rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send error messages to TCP/IP sockets.
+#. :class:`SocketHandler` instances send error messages to TCP/IP
+   sockets.
 
-#. :class:`DatagramHandler` instances send error messages to UDP sockets.
+#. :class:`DatagramHandler` instances send error messages to UDP
+   sockets.
 
-#. :class:`SMTPHandler` instances send error messages to a designated email
-   address.
+#. :class:`SMTPHandler` instances send error messages to a designated
+   email address.
 
-#. :class:`SysLogHandler` instances send error messages to a Unix syslog daemon,
-   possibly on a remote machine.
+#. :class:`SysLogHandler` instances send error messages to a Unix
+   syslog daemon, possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send error messages to a Windows
-   NT/2000/XP event log.
+#. :class:`NTEventLogHandler` instances send error messages to a
+   Windows NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send error messages to a buffer in memory,
-   which is flushed whenever specific criteria are met.
+#. :class:`MemoryHandler` instances send error messages to a buffer
+   in memory, which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send error messages to an HTTP server using
-   either ``GET`` or ``POST`` semantics.
+#. :class:`HTTPHandler` instances send error messages to an HTTP
+   server using either ``GET`` or ``POST`` semantics.
 
-#. :class:`WatchedFileHandler` instances watch the file they are logging to. If
-the file changes, it is closed and reopened using the file name. This handler
-is only useful on Unix-like systems; Windows does not support the underlying
-mechanism used.
+#. :class:`WatchedFileHandler` instances watch the file they are
+   logging to. If the file changes, it is closed and reopened using the file
+   name. This handler is only useful on Unix-like systems; Windows does not
+   support the underlying mechanism used.
 
 .. currentmodule:: logging
 
@@ -602,6 +608,9 @@ is not processed further.
 The basic :class:`Filter` functionality allows filtering by specific logger
 name. If this feature is used, messages sent to the named logger and its
 children are allowed through the filter, and all others dropped.
+
+Module-Level Functions
+----------------------
 
 In addition to the classes described above, there are a number of module- level
 functions.
@@ -1626,7 +1635,7 @@ See :ref:`library-config` for more information on how to use
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
 
-.. module:: logging.handlers
+.. currentmodule:: logging.handlers
 
 The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If

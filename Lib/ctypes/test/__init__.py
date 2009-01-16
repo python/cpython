@@ -67,9 +67,6 @@ def get_tests(package, mask, verbosity, exclude=()):
             if verbosity > 1:
                 print("Skipped %s: %s" % (modname, detail), file=sys.stderr)
             continue
-        except Exception as detail:
-            print("Warning: could not import %s: %s" % (modname, detail), file=sys.stderr)
-            continue
         for name in dir(mod):
             if name.startswith("_"):
                 continue
