@@ -249,7 +249,10 @@ def getmembers(object, predicate=None):
     Optionally, only return members that satisfy a given predicate."""
     results = []
     for key in dir(object):
-        value = getattr(object, key)
+        try:
+            value = getattr(object, key)
+        except AttributeError:
+            continue
         if not predicate or predicate(value):
             results.append((key, value))
     results.sort()

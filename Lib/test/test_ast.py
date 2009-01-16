@@ -265,6 +265,12 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('(True, False, None)'), (True, False, None))
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
 
+    def test_literal_eval_issue4907(self):
+        self.assertEqual(ast.literal_eval('2j'), 2j)
+        self.assertEqual(ast.literal_eval('10 + 2j'), 10 + 2j)
+        self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
+        self.assertRaises(ValueError, ast.literal_eval, '2 + (3 + 4j)')
+
 
 def test_main():
     support.run_unittest(AST_Tests, ASTHelpers_Test)

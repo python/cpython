@@ -616,6 +616,15 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define Py_FORMAT_PARSETUPLE(func,p1,p2)
 #endif
 
+/*
+ * Specify alignment on compilers that support it.
+ */
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define Py_ALIGNED(x) __attribute__((aligned(x)))
+#else
+#define Py_ALIGNED(x)
+#endif
+
 /* Eliminate end-of-loop code not reached warnings from SunPro C
  * when using do{...}while(0) macros
  */
