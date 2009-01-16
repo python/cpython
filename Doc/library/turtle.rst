@@ -322,8 +322,7 @@ Turtle motion
 
    :param y: a number (integer or float)
 
-   Set the turtle's first coordinate to *y*, leave second coordinate
-   unchanged.
+   Set the turtle's second coordinate to *y*, leave first coordinate unchanged.
 
    >>> turtle.position()
    (0.00, 40.00)

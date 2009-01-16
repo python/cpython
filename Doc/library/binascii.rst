@@ -113,8 +113,19 @@ The :mod:`binascii` module defines the following functions:
       print(binascii.crc32("hello world"))
       # Or, in two pieces:
       crc = binascii.crc32("hello")
-      crc = binascii.crc32(" world", crc)
-      print(crc)
+      crc = binascii.crc32(" world", crc) & 0xffffffff
+      print('crc32 = 0x%08x' % crc)
+
+.. note::
+   To generate the same numeric value across all Python versions and
+   platforms use crc32(data) & 0xffffffff.  If you are only using
+   the checksum in packed binary format this is not necessary as the
+   return value will have the correct 32bit binary representation
+   regardless of sign.
+
+.. versionchanged:: 3.0
+   The return value will always be unsigned and in the range [0, 2**32-1]
+   regardless of platform.
 
 
 .. function:: b2a_hex(data)

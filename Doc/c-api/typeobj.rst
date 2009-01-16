@@ -652,7 +652,6 @@ type objects) *must* have the :attr:`ob_size` field.
    :attr:`__weakref__`, the type inherits its :attr:`tp_weaklistoffset` from its
    base type.
 
-
 .. cmember:: getiterfunc PyTypeObject.tp_iter
 
    An optional pointer to a function that returns an iterator for the object.  Its

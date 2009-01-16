@@ -99,6 +99,17 @@ class TestPredicates(IsTestBase):
         self.assert_(inspect.isroutine(mod.spam))
         self.assert_(inspect.isroutine([].count))
 
+    def test_get_slot_members(self):
+        class C(object):
+            __slots__ = ("a", "b")
+
+        x = C()
+        x.a = 42
+        members = dict(inspect.getmembers(x))
+        self.assert_('a' in members)
+        self.assert_('b' not in members)
+
+
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
