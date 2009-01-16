@@ -2441,10 +2441,10 @@ other data types containing pointer type fields.
                          ("hreftype", HREFTYPE)]
 
          class TYPEDESC(Structure):
+             _anonymous_ = ("u",)
              _fields_ = [("u", _U),
                          ("vt", VARTYPE)]
 
-             _anonymous_ = ("u",)
 
       The ``TYPEDESC`` structure describes a COM data type, the ``vt`` field
       specifies which one of the union fields is valid.  Since the ``u`` field
