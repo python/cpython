@@ -118,7 +118,7 @@ Number-theoretic and representation functions
 .. function:: trunc(x)
 
    Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
-   a long integer). Delegates to ``x.__trunc__()``.
+   an integer). Delegates to ``x.__trunc__()``.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
