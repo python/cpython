@@ -1060,7 +1060,7 @@ static PyNumberMethods complex_as_number = {
 	0,					/* nb_xor */
 	0,					/* nb_or */
 	complex_int,				/* nb_int */
-	0,					/* nb_long */
+	0,					/* nb_reserved */
 	complex_float,				/* nb_float */
 	0,					/* nb_inplace_add */
 	0,					/* nb_inplace_subtract */

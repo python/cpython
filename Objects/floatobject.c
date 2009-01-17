@@ -1798,7 +1798,7 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
 	float_trunc,	/*nb_int*/
-	0,		/*nb_long*/
+	0,		/*nb_reserved*/
 	float_float,	/*nb_float*/
 	0,		/* nb_inplace_add */
 	0,		/* nb_inplace_subtract */
