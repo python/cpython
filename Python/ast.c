@@ -197,7 +197,7 @@ num_stmts(const node *n)
         default: {
             char buf[128];
 
-            sprintf(buf, "Non-statement found: %d %d\n",
+            sprintf(buf, "Non-statement found: %d %d",
                     TYPE(n), NCH(n));
             Py_FatalError(buf);
         }

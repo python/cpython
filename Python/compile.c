@@ -1254,7 +1254,7 @@ get_ref_type(struct compiler *c, PyObject *name)
 	    char buf[350];
 	    PyOS_snprintf(buf, sizeof(buf),
 			  "unknown scope for %.100s in %.100s(%s) in %s\n"
-			  "symbols: %s\nlocals: %s\nglobals: %s\n",
+			  "symbols: %s\nlocals: %s\nglobals: %s",
 			  PyString_AS_STRING(name), 
 			  PyString_AS_STRING(c->u->u_name), 
 			  PyObject_REPR(c->u->u_ste->ste_id),
