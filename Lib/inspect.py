@@ -851,8 +851,8 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     specs = []
     if defaults:
         firstdefault = len(args) - len(defaults)
-    for i in range(len(args)):
-        spec = strseq(args[i], formatarg, join)
+    for i, arg in enumerate(args):
+        spec = strseq(arg, formatarg, join)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
