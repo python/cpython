@@ -315,6 +315,8 @@ module_dealloc(PyModuleObject *m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
+	if (m->md_state != NULL)
+		PyMem_FREE(m->md_state);
 	Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
