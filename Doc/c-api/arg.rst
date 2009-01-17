@@ -489,11 +489,11 @@ and the following format units are left untouched.
    ``H`` (integer) [unsigned short int]
       Convert a C :ctype:`unsigned short int` to a Python integer object.
 
-   ``I`` (integer/long) [unsigned int]
-      Convert a C :ctype:`unsigned int` to a Python long integer object.
+   ``I`` (integer) [unsigned int]
+      Convert a C :ctype:`unsigned int` to a Python integer object.
 
-   ``k`` (integer/long) [unsigned long]
-      Convert a C :ctype:`unsigned long` to a Python long integer object.
+   ``k`` (integer) [unsigned long]
+      Convert a C :ctype:`unsigned long` to a Python integer object.
 
    ``L`` (long) [PY_LONG_LONG]
       Convert a C :ctype:`long long` to a Python integer object. Only available

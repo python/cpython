@@ -135,7 +135,7 @@ type objects) *must* have the :attr:`ob_size` field.
    :attr:`ob_size` field, and the instance size is :attr:`tp_basicsize` plus N
    times :attr:`tp_itemsize`, where N is the "length" of the object.  The value of
    N is typically stored in the instance's :attr:`ob_size` field.  There are
-   exceptions:  for example, long ints use a negative :attr:`ob_size` to indicate a
+   exceptions:  for example, ints use a negative :attr:`ob_size` to indicate a
    negative number, and N is ``abs(ob_size)`` there.  Also, the presence of an
    :attr:`ob_size` field in the instance layout doesn't mean that the instance
    structure is variable-length (for example, the structure for the list type has
@@ -812,7 +812,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    where :attr:`tp_basicsize`, :attr:`tp_itemsize` and :attr:`tp_dictoffset` are
    taken from the type object, and :attr:`ob_size` is taken from the instance.  The
-   absolute value is taken because long ints use the sign of :attr:`ob_size` to
+   absolute value is taken because ints use the sign of :attr:`ob_size` to
    store the sign of the number.  (There's never a need to do this calculation
    yourself; it is done for you by :cfunc:`_PyObject_GetDictPtr`.)
 
