@@ -1021,6 +1021,10 @@ class TextIOWrapperTest(unittest.TestCase):
 
     def testSeekAndTell(self):
         """Test seek/tell using the StatefulIncrementalDecoder."""
+        # Make this test faster by forcing a smaller (but large enough)
+        # chunk size. The bigger the chunker size, the slower seek() is,
+        # as it tries to replay character decoding one byte at a time.
+        CHUNK_SIZE = 256
 
         def testSeekAndTellWithData(data, min_pos=0):
             """Tell/seek to various points within a data stream and ensure
@@ -1035,6 +1039,7 @@ class TextIOWrapperTest(unittest.TestCase):
             for i in range(min_pos, len(decoded) + 1): # seek positions
                 for j in [1, 5, len(decoded) - i]: # read lengths
                     f = io.open(support.TESTFN, encoding='test_decoder')
+                    f._CHUNK_SIZE = CHUNK_SIZE
                     self.assertEquals(f.read(i), decoded[:i])
                     cookie = f.tell()
                     self.assertEquals(f.read(j), decoded[i:i + j])
@@ -1052,7 +1057,6 @@ class TextIOWrapperTest(unittest.TestCase):
                 testSeekAndTellWithData(input)
 
             # Position each test case so that it crosses a chunk boundary.
-            CHUNK_SIZE = io.TextIOWrapper._CHUNK_SIZE
             for input, _, _ in StatefulIncrementalDecoderTest.test_cases:
                 offset = CHUNK_SIZE - len(input)//2
                 prefix = b'.'*offset
