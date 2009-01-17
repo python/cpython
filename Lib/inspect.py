@@ -63,7 +63,7 @@ def isclass(object):
     Class objects provide these attributes:
         __doc__         documentation string
         __module__      name of module in which this class was defined"""
-    return isinstance(object, type) or hasattr(object, '__bases__')
+    return isinstance(object, type)
 
 def ismethod(object):
     """Return true if the object is an instance method.
