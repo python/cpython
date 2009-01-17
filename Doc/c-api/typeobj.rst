@@ -1057,7 +1057,7 @@ Number Object Structures
             binaryfunc nb_xor;
             binaryfunc nb_or;
             unaryfunc nb_int;
-            unaryfunc nb_long;
+            void *nb_reserved;
             unaryfunc nb_float;
 
             binaryfunc nb_inplace_add;
@@ -1087,6 +1087,12 @@ Number Object Structures
       given operands, binary and ternary functions must return
       ``Py_NotImplemented``, if another error occurred they must return ``NULL``
       and set an exception.
+
+   .. note::
+
+      The :cdata:`nb_reserved` field should always be ``NULL``.  It
+      was previously called :cdata:`nb_long`, and was renamed in
+      Python 3.0.1.
 
 
 .. _mapping-structs:

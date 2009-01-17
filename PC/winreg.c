@@ -451,7 +451,7 @@ static PyNumberMethods PyHKEY_NumberMethods =
 	PyHKEY_binaryFailureFunc,	/* nb_xor */
 	PyHKEY_binaryFailureFunc,	/* nb_or */
 	PyHKEY_intFunc,			/* nb_int */
-	0,				/* nb_long */
+	0,				/* nb_reserved */
 	PyHKEY_unaryFailureFunc,	/* nb_float */
 };
 

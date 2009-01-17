@@ -219,7 +219,7 @@ typedef struct {
 	binaryfunc nb_xor;
 	binaryfunc nb_or;
 	unaryfunc nb_int;
-	unaryfunc nb_long;
+	void *nb_reserved;  /* the slot formerly known as nb_long */
 	unaryfunc nb_float;
 
 	binaryfunc nb_inplace_add;

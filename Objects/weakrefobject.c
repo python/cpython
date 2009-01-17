@@ -594,7 +594,7 @@ static PyNumberMethods proxy_as_number = {
     proxy_xor,              /*nb_xor*/
     proxy_or,               /*nb_or*/
     proxy_int,              /*nb_int*/
-    0,                      /*nb_long*/
+    0,                      /*nb_reserved*/
     proxy_float,            /*nb_float*/
     proxy_iadd,             /*nb_inplace_add*/
     proxy_isub,             /*nb_inplace_subtract*/
