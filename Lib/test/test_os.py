@@ -568,7 +568,7 @@ class TestInvalidFD(unittest.TestCase):
 
     def test_fpathconf(self):
         if hasattr(os, "fpathconf"):
-            self.assertRaises(OSError, os.fpathconf, 10, "PC_FILESIZEBITS")
+            self.assertRaises(OSError, os.fpathconf, 10, "PC_NAME_MAX")
 
     #this is a weird one, it raises IOError unlike the others
     def test_ftruncate(self):
