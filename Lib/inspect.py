@@ -894,7 +894,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     if kwonlyargs:
         for kwonlyarg in kwonlyargs:
             spec = formatargandannotation(kwonlyarg)
-            if kwonlyarg in kwonlydefaults:
+            if kwonlydefaults and kwonlyarg in kwonlydefaults:
                 spec += formatvalue(kwonlydefaults[kwonlyarg])
             specs.append(spec)
     if varkw is not None:

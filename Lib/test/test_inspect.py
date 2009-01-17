@@ -386,6 +386,9 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         self.assertRaises(ValueError, self.assertArgSpecEquals,
                           mod2.annotated, [])
+        self.assertRaises(ValueError, self.assertArgSpecEquals,
+                          mod2.keyword_only_arg, [])
+
 
     def test_getfullargspec(self):
         self.assertFullArgSpecEquals(mod2.keyworded, [], varargs_e='arg1',
@@ -396,6 +399,10 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
                                      ann_e={'arg1' : list},
                                      formatted='(arg1: list)')
+        self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
+                                     kwonlyargs_e=['arg'],
+                                     formatted='(*, arg)')
+
 
     def test_getargspec_method(self):
         class A(object):

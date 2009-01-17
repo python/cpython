@@ -126,6 +126,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4959: inspect.formatargspec now works for keyword only arguments
+  without defaults.
+
 - Issue #3826 and #4791: The socket module now closes the underlying socket
   appropriately when it is being used via socket.makefile() objects
   rather than delaying the close by waiting for garbage collection to do it.
