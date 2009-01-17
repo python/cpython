@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3997: zipfiles generated with more than 65536 files could not be
+  opened with other applications.
+
 - Issue 4816: itertools.combinations() and itertools.product were raising
   a ValueError for values of *r* larger than the input iterable.  They now
   correctly return an empty iterator.
