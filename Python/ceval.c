@@ -441,7 +441,7 @@ Py_MakePendingCalls(void)
 	for (i=0; i<NPENDINGCALLS; i++) {
 		int j;  
 		int (*func)(void *);
-		void *arg;
+		void *arg = NULL;
 		
 		/* pop one item off the queue while holding the lock */
 		PyThread_acquire_lock(pending_lock, WAIT_LOCK);
