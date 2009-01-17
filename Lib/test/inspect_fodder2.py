@@ -105,3 +105,7 @@ def keyworded(*arg1, arg2=1):
 #line 105
 def annotated(arg1: list):
     pass
+
+#line 109
+def keyword_only_arg(*, arg):
+    pass
