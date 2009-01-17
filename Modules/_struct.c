@@ -155,7 +155,7 @@ get_long(PyObject *v, long *p)
 			PyErr_Clear();
 			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
 				return -1;
-			o = PyNumber_Int(v);
+			o = PyNumber_Long(v);
 			if (o == NULL)
 				return -1;
 			res = get_long(o, p);
@@ -260,7 +260,7 @@ get_wrapped_long(PyObject *v, long *p)
 				PyErr_Clear();
 				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
 					return -1;
-				o = PyNumber_Int(v);
+				o = PyNumber_Long(v);
 				if (o == NULL)
 					return -1;
 				res = get_wrapped_long(o, p);
@@ -299,7 +299,7 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 			PyErr_Clear();
 			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
 				return -1;
-			o = PyNumber_Int(v);
+			o = PyNumber_Long(v);
 			if (o == NULL)
 				return -1;
 			res = get_wrapped_ulong(o, p);
