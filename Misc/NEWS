@@ -137,6 +137,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1225107: inspect.isclass() returned True for instances with a custom
+  __getattr__.
+
 - Issue #3997: zipfiles generated with more than 65536 files could not be
   opened with other applications.
 
