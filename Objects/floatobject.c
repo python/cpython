@@ -1495,12 +1495,6 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 		py_exponent = NULL;
 	}
 
-	/* Returns ints instead of longs where possible */
-	INPLACE_UPDATE(numerator, PyNumber_Int(numerator));
-	if (numerator == NULL) goto error;
-	INPLACE_UPDATE(denominator, PyNumber_Int(denominator));
-	if (denominator == NULL) goto error;
-
 	result_pair = PyTuple_Pack(2, numerator, denominator);
 
 #undef INPLACE_UPDATE
@@ -1798,7 +1792,7 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
 	float_trunc,	/*nb_int*/
-	0,		/*nb_long*/
+	0,		/*nb_reserved*/
 	float_float,	/*nb_float*/
 	0,		/* nb_inplace_add */
 	0,		/* nb_inplace_subtract */

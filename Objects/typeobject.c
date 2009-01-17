@@ -3602,7 +3602,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_xor);
 		COPYNUM(nb_or);
 		COPYNUM(nb_int);
-		COPYNUM(nb_long);
 		COPYNUM(nb_float);
 		COPYNUM(nb_inplace_add);
 		COPYNUM(nb_inplace_subtract);
@@ -4827,7 +4826,6 @@ SLOT1BIN(slot_nb_xor, nb_xor, "__xor__", "__rxor__")
 SLOT1BIN(slot_nb_or, nb_or, "__or__", "__ror__")
 
 SLOT0(slot_nb_int, "__int__")
-SLOT0(slot_nb_long, "__long__")
 SLOT0(slot_nb_float, "__float__")
 SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
 SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *, "O")
@@ -5442,8 +5440,6 @@ static slotdef slotdefs[] = {
 	BINSLOT("__or__", nb_or, slot_nb_or, "|"),
 	RBINSLOT("__ror__", nb_or, slot_nb_or, "|"),
 	UNSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc,
-	       "int(x)"),
-	UNSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc,
 	       "int(x)"),
 	UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
 	       "float(x)"),

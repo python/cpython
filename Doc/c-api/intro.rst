@@ -607,7 +607,7 @@ extra checks are performed:
 
 * Sanity checks of the input arguments are added to frame creation.
 
-* The storage for long ints is initialized with a known invalid pattern to catch
+* The storage for ints is initialized with a known invalid pattern to catch
   reference to uninitialized digits.
 
 * Low-level tracing and extra exception checking are added to the runtime
