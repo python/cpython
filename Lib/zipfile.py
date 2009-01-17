@@ -26,7 +26,7 @@ class LargeZipFile(Exception):
 
 error = BadZipfile      # The exception raised by this module
 
-ZIP64_LIMIT= (1 << 31) - 1
+ZIP64_LIMIT = (1 << 31) - 1
 ZIP_FILECOUNT_LIMIT = 1 << 16
 ZIP_MAX_COMMENT = (1 << 16) - 1
 
@@ -1175,19 +1175,26 @@ class ZipFile:
 
             pos2 = self.fp.tell()
             # Write end-of-zip-archive record
+            centDirCount = count
+            centDirSize = pos2 - pos1
             centDirOffset = pos1
-            if pos1 > ZIP64_LIMIT:
+            if (centDirCount >= ZIP_FILECOUNT_LIMIT or
+                centDirOffset > ZIP64_LIMIT or
+                centDirSize > ZIP64_LIMIT):
                 # Need to write the ZIP64 end-of-archive records
                 zip64endrec = struct.pack(
                         structEndArchive64, stringEndArchive64,
-                        44, 45, 45, 0, 0, count, count, pos2 - pos1, pos1)
+                        44, 45, 45, 0, 0, centDirCount, centDirCount,
+                        centDirSize, centDirOffset)
                 self.fp.write(zip64endrec)
 
                 zip64locrec = struct.pack(
                         structEndArchive64Locator,
                         stringEndArchive64Locator, 0, pos2, 1)
                 self.fp.write(zip64locrec)
-                centDirOffset = 0xFFFFFFFF
+                centDirCount = min(centDirCount, 0xFFFF)
+                centDirSize = min(centDirSize, 0xFFFFFFFF)
+                centDirOffset = min(centDirOffset, 0xFFFFFFFF)
 
             # check for valid comment length
             if len(self.comment) >= ZIP_MAX_COMMENT:
@@ -1197,9 +1204,8 @@ class ZipFile:
                 self.comment = self.comment[:ZIP_MAX_COMMENT]
 
             endrec = struct.pack(structEndArchive, stringEndArchive,
-                                 0, 0, count % ZIP_FILECOUNT_LIMIT,
-                                 count % ZIP_FILECOUNT_LIMIT, pos2 - pos1,
-                                 centDirOffset, len(self.comment))
+                                 0, 0, centDirCount, centDirCount,
+                                 centDirSize, centDirOffset, len(self.comment))
             self.fp.write(endrec)
             self.fp.write(self.comment)
             self.fp.flush()
