@@ -359,7 +359,7 @@ Sequences
       slicing notations can be used as the target of assignment and :keyword:`del`
       (delete) statements.
 
-      There is currently a single intrinsic mutable sequence type:
+      There are currently two intrinsic mutable sequence types:
 
       Lists
          .. index:: object: list
