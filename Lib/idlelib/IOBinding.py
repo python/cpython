@@ -74,10 +74,11 @@ def coding_spec(data):
     Raise a LookupError if the encoding is declared but unknown.
     """
     if isinstance(data, bytes):
-        try:
-            lines = data.decode('utf-8')
-        except UnicodeDecodeError:
-            return None
+        # This encoding might be wrong. However, the coding
+        # spec must be ASCII-only, so any non-ASCII characters
+        # around here will be ignored. Decoding to Latin-1 should
+        # never fail (except for memory outage)
+        lines = data.decode('iso-8859-1')
     else:
         lines = data
     # consider only the first two lines
