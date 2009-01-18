@@ -1,0 +1,78 @@
+to do
+/////
+
+* Write importlib.__import__
+
+* Document
+    + Package.
+    + import_module
+    + __import__
+
+* Create reasonable base tests that all finders and loaders must pass so
+  that various implementations can just subclass as needed.
+
+* Expose built-in and frozen importers.
+    + Make staticmethods so that class can be used directly.
+
+* Reorganize support code.
+    + Separate general support code and importer-specific (e.g. source) support
+      code.
+        - Create support modules for each subdirectory (as needed).
+    + Add a file loader mock that returns monotonically increasing mtime.
+        - Use in source/test_reload.
+        - Use in source/test_load_module_mixed.
+
+* API simplification?
+    + read_source -> get_data/source_path
+    + read_bytecode -> get_data/bytecode_path
+    + write_bytecode -> complete set of bytes for bytecode instead of
+      individual arguments.
+
+* Implement PEP 302 protocol for loaders (should just be a matter of testing).
+    + Built-in.
+    + Frozen.
+    + Extension.
+    + Source/bytecode.
+
+* Create meta_path importer for sys.path.
+
+* OPTIMIZE!
+  + Write benchmark suite.
+  + Fast path common cases.
+    - Absolute name from sys.path.
+    - Relative name from sys.path.
+
+* Public API (w/ docs!)
+  + abc
+      - Finder
+        * find_module
+      - Loader
+        * load_module
+      - ResourceLoader(Loader)
+        * get_data
+      - InspectLoader(Loader)
+        * is_package
+        * get_code
+        * get_source
+      - (?) SourceLoader(ResourceLoader)
+        * source_path
+        * bytecode_path
+        * write_bytecode
+  + util
+      - get_module decorator (new name)
+      - check_name decorator (new name)
+  + hooks (?)
+      - (?) Chained path hook/finder
+      - BuiltinImporter
+      - FrozenImporter
+      - (?) FileFinder
+      - Extensions importers
+          * ExtensionFinder
+          * (?) Loader
+      - Source/bytecode importers
+          * SourceFinder
+          * (?) Loader
+  + __init__
+      - __import__
+      - import_module (backport to 2.7)
+      - resolve_name (backport to 2.7)
