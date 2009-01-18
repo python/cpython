@@ -1497,11 +1497,10 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
-:class:`time` and :class:`datetime` objects support a ``%f`` format code
-which expands to the number of microseconds in the object, zero-padded on
-the left to six places.
-
 .. versionadded:: 2.6
+   :class:`time` and :class:`datetime` objects support a ``%f`` format code
+   which expands to the number of microseconds in the object, zero-padded on
+   the left to six places.
 
 For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
 strings.
@@ -1621,7 +1620,9 @@ Notes:
 (1)
    When used with the :func:`strptime` function, the ``%f`` directive
    accepts from one to six digits and zero pads on the right.  ``%f`` is
-   an extension to the set of format characters in the C standard.
+   an extension to the set of format characters in the C standard (but
+   implemented separately in datetime objects, and therefore always
+   available).
 
 (2)
    When used with the :func:`strptime` function, the ``%p`` directive only affects
