@@ -132,6 +132,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4301: Patch the logging module to add processName support, remove
+  _check_logger_class from multiprocessing.
+
 - Issue #3325: Remove python2.x try: except: imports for old cPickle from
   multiprocessing. 
 
