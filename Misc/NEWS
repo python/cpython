@@ -132,7 +132,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #10867: Remove python2.x try: except: imports for old cPickle from
+- Issue #3325: Remove python2.x try: except: imports for old cPickle from
   multiprocessing. 
 
 - Issue #4959: inspect.formatargspec now works for keyword only arguments
