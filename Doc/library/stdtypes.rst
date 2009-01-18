@@ -1679,7 +1679,7 @@ The constructors for both classes work the same:
    .. method:: union(other, ...)
                set | other | ...
 
-      Return a new set with elements from both sets.
+      Return a new set with elements from the set and all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
@@ -1687,7 +1687,7 @@ The constructors for both classes work the same:
    .. method:: intersection(other, ...)
                set & other & ...
 
-      Return a new set with elements common to both sets.
+      Return a new set with elements common to the set and all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
