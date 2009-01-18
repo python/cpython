@@ -69,9 +69,12 @@ def Value(typecode_or_type, *args, **kwds):
     if kwds:
         raise ValueError('unrecognized keyword argument(s): %s' % kwds.keys())
     obj = RawValue(typecode_or_type, *args)
-    if lock is None:
+    if lock is False:
+        return obj
+    if lock in (True, None):
         lock = RLock()
-    assert hasattr(lock, 'acquire')
+    if not hasattr(lock, 'acquire'):
+        raise AttributeError("'%r' has no method 'acquire'" % lock)
     return synchronized(obj, lock)
 
 def Array(typecode_or_type, size_or_initializer, **kwds):
@@ -82,9 +85,12 @@ def Array(typecode_or_type, size_or_initializer, **kwds):
     if kwds:
         raise ValueError('unrecognized keyword argument(s): %s' % kwds.keys())
     obj = RawArray(typecode_or_type, size_or_initializer)
-    if lock is None:
+    if lock is False:
+        return obj
+    if lock in (True, None):
         lock = RLock()
-    assert hasattr(lock, 'acquire')
+    if not hasattr(lock, 'acquire'):
+        raise AttributeError("'%r' has no method 'acquire'" % lock)
     return synchronized(obj, lock)
 
 def copy(obj):
