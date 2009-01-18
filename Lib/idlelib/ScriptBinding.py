@@ -24,7 +24,7 @@ import tabnanny
 import tokenize
 import tkinter.messagebox as tkMessageBox
 from idlelib.EditorWindow import EditorWindow
-from idlelib import PyShell
+from idlelib import PyShell, IOBinding
 
 from idlelib.configHandler import idleConf
 
@@ -62,7 +62,13 @@ class ScriptBinding:
             return 'break'
 
     def tabnanny(self, filename):
-        f = open(filename, 'r')
+        # XXX: tabnanny should work on binary files as well
+        with open(filename, 'r', encoding='iso-8859-1') as f:
+            two_lines = f.readline() + f.readline()
+        encoding = IOBinding.coding_spec(two_lines)
+        if not encoding:
+            encoding = 'utf-8'
+        f = open(filename, 'r', encoding=encoding)
         try:
             tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
         except tokenize.TokenError as msg:
@@ -82,14 +88,14 @@ class ScriptBinding:
         self.shell = shell = self.flist.open_shell()
         saved_stream = shell.get_warning_stream()
         shell.set_warning_stream(shell.stderr)
-        f = open(filename, 'r')
+        f = open(filename, 'rb')
         source = f.read()
         f.close()
-        if '\r' in source:
-            source = re.sub(r"\r\n", "\n", source)
-            source = re.sub(r"\r", "\n", source)
-        if source and source[-1] != '\n':
-            source = source + '\n'
+        if b'\r' in source:
+            source = source.replace(b'\r\n', b'\n')
+            source = source.replace(b'\r', b'\n')
+        if source and source[-1] != ord(b'\n'):
+            source = source + b'\n'
         editwin = self.editwin
         text = editwin.text
         text.tag_remove("ERROR", "1.0", "end")
