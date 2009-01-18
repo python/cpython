@@ -151,13 +151,9 @@ else:
     import _subprocess
     import time
 
+    from pickle import dump, load, HIGHEST_PROTOCOL
     from ._multiprocessing import win32, Connection, PipeConnection
     from .util import Finalize
-
-    #try:
-    #    from cPickle import dump, load, HIGHEST_PROTOCOL
-    #except ImportError:
-    from pickle import load, HIGHEST_PROTOCOL
 
     def dump(obj, file, protocol=None):
         ForkingPickler(file, protocol).dump(obj)
