@@ -594,7 +594,7 @@ generator object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 Sequence Types --- :class:`str`, :class:`bytes`, :class:`bytearray`, :class:`list`, :class:`tuple`, :class:`range`
 ==================================================================================================================
 
-There are five sequence types: strings, byte sequences, byte arrays, lists,
+There are six sequence types: strings, byte sequences, byte arrays, lists,
 tuples, and range objects.  (For other containers see the built-in
 :class:`dict`, :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
