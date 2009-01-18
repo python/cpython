@@ -375,7 +375,7 @@ All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 +--------------------+------------------------------------+--------+
 | Operation          | Result                             | Notes  |
 +====================+====================================+========+
-| ``trunc(x)``       | *x* truncated to Integral          |        |
+| ``math.trunc(x)``  | *x* truncated to Integral          |        |
 +--------------------+------------------------------------+--------+
 | ``round(x[, n])``  | *x* rounded to n digits,           |        |
 |                    | rounding half to even. If n is     |        |
