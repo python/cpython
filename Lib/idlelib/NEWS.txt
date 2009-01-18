@@ -3,6 +3,9 @@ What's New in IDLE 3.1a1?
 
 *Release date: XX-XXX-XXXX*
 
+- Issue #4815: Offer conversion to UTF-8 if source files have
+  no encoding declaration and are not encoded in UTF-8.
+
 - Issue #4008: Fix problems with non-ASCII source files.
 
 - Issue #4323: Always encode source as UTF-8 without asking
