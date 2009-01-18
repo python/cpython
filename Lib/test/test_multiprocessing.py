@@ -830,9 +830,15 @@ class _TestValue(BaseTestCase):
         obj3 = val3.get_obj()
         self.assertEqual(lock, lock3)
 
-        arr4 = self.RawValue('i', 5)
+        arr4 = self.Value('i', 5, lock=False)
         self.assertFalse(hasattr(arr4, 'get_lock'))
         self.assertFalse(hasattr(arr4, 'get_obj'))
+
+        self.assertRaises(AttributeError, self.Value, 'i', 5, lock='navalue')
+
+        arr5 = self.RawValue('i', 5)
+        self.assertFalse(hasattr(arr5, 'get_lock'))
+        self.assertFalse(hasattr(arr5, 'get_obj'))
 
 
 class _TestArray(BaseTestCase):
@@ -888,9 +894,15 @@ class _TestArray(BaseTestCase):
         obj3 = arr3.get_obj()
         self.assertEqual(lock, lock3)
 
-        arr4 = self.RawArray('i', list(range(10)))
+        arr4 = self.Array('i', range(10), lock=False)
         self.assertFalse(hasattr(arr4, 'get_lock'))
         self.assertFalse(hasattr(arr4, 'get_obj'))
+        self.assertRaises(AttributeError,
+                          self.Array, 'i', range(10), lock='notalock')
+
+        arr5 = self.RawArray('i', range(10))
+        self.assertFalse(hasattr(arr5, 'get_lock'))
+        self.assertFalse(hasattr(arr5, 'get_obj'))
 
 #
 #
