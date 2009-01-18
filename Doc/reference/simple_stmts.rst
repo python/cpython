@@ -246,7 +246,8 @@ Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
 
 .. productionlist::
-   augmented_assignment_stmt: `target` `augop` (`expression_list` | `yield_expression`)
+   augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
+   augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
    augop: "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 

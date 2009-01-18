@@ -343,19 +343,19 @@ Notes:
 All :class:`numbers.Real` types (:class:`int` and
 :class:`float`) also include the following operations:
 
-+--------------------+--------------------------------+--------+
-| Operation          | Result                         | Notes  |
-+====================+================================+========+
-| ``trunc(x)``       | *x* truncated to Integral      |        |
-+--------------------+--------------------------------+--------+
-| ``round(x[, n])``  | *x* rounded to n digits,       |        |
-|                    | rounding half to even. If n is |        |
-|                    | omitted, it defaults to 0.     |        |
-+--------------------+--------------------------------+--------+
-| ``math.floor(x)``  | the greatest Integral <= *x*   |        |
-+--------------------+--------------------------------+--------+
-| ``math.ceil(x)``   | the least Integral >= *x*      |        |
-+--------------------+--------------------------------+--------+
++--------------------+------------------------------------+--------+
+| Operation          | Result                             | Notes  |
++====================+====================================+========+
+| ``math.trunc(x)``  | *x* truncated to Integral          |        |
++--------------------+------------------------------------+--------+
+| ``round(x[, n])``  | *x* rounded to n digits,           |        |
+|                    | rounding half to even. If n is     |        |
+|                    | omitted, it defaults to 0.         |        |
++--------------------+------------------------------------+--------+
+| ``math.floor(x)``  | the greatest integral float <= *x* |        |
++--------------------+------------------------------------+--------+
+| ``math.ceil(x)``   | the least integral float >= *x*    |        |
++--------------------+------------------------------------+--------+
 
 For additional numeric operations see the :mod:`math` and :mod:`cmath`
 modules.
@@ -595,10 +595,10 @@ Sequence Types --- :class:`str`, :class:`bytes`, :class:`bytearray`, :class:`lis
 ==================================================================================================================
 
 There are six sequence types: strings, byte sequences (:class:`bytes` objects),
-byte arrays (:class:`bytearray` objects), lists, tuples, and range objects.
+byte arrays (:class:`bytearray` objects), lists, tuples, and range objects.  For
+other containers see the built in :class:`dict` and :class:`set` classes, and
+the :mod:`collections` module.
 
-For other containers see the built-in :class:`dict`, :class:`list`,
-:class:`set`, and :class:`tuple` classes, and the :mod:`collections` module.
 
 .. index::
    object: sequence
@@ -1623,12 +1623,12 @@ The constructors for both classes work the same:
    .. method:: union(other, ...)
                set | other | ...
 
-      Return a new set with elements from both sets.
+      Return a new set with elements from the set and all others.
 
    .. method:: intersection(other, ...)
                set & other & ...
 
-      Return a new set with elements common to both sets.
+      Return a new set with elements common to the set and all others.
 
    .. method:: difference(other, ...)
                set - other - ...
