@@ -2,9 +2,11 @@ import sys
 from test import support as test_support
 import unittest
 import importlib
+from .. import support
 from . import test_path_hook
 
 
+@support.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
     def find_module(self):
@@ -30,8 +32,6 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
 
 def test_main():
-    if sys.platform not in ('win32', 'darwin', 'cygwin'):
-        return
     test_support.run_unittest(ExtensionModuleCaseSensitivityTest)
 
 
