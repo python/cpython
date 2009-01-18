@@ -632,9 +632,9 @@ Sequence Types --- :class:`str`, :class:`unicode`, :class:`list`, :class:`tuple`
 
 There are six sequence types: strings, Unicode strings, lists, tuples, buffers,
 and xrange objects.
-(For other containers see the built in :class:`dict`, :class:`list`,
-:class:`set`, and :class:`tuple` classes, and the :mod:`collections`
-module.)
+
+For other containers see the built in :class:`dict` and :class:`set` classes,
+and the :mod:`collections` module.
 
 
 .. index::
