@@ -90,7 +90,7 @@ grp_getgrgid(PyObject *self, PyObject *pyo_id)
     unsigned int gid;
     struct group *p;
 
-    py_int_id = PyNumber_Int(pyo_id);
+    py_int_id = PyNumber_Long(pyo_id);
     if (!py_int_id)
 	    return NULL;
     gid = PyLong_AS_LONG(py_int_id);
