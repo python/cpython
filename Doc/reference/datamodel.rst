@@ -368,12 +368,20 @@ Sequences
          comma-separated list of expressions in square brackets. (Note that there are no
          special cases needed to form lists of length 0 or 1.)
 
+      Byte Arrays
+         .. index:: bytearray
+
+         A bytearray object is a mutable array. They are created by the built-in
+         :func:`bytearray` constructor.  Aside from being mutable (and hence
+         unhashable), byte arrays otherwise provide the same interface and
+         functionality as immutable bytes objects.
+
       .. index:: module: array
 
       The extension module :mod:`array` provides an additional example of a mutable
       sequence type.
 
-Set types
+Set types../
    .. index::
       builtin: len
       object: set type
