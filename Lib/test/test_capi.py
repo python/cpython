@@ -1,6 +1,7 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
+from __future__ import with_statement
 import sys
 import time
 import random
@@ -26,7 +27,7 @@ class TestPendingCalls(unittest.TestCase):
                 if _testcapi._pending_threadfunc(callback):
                     break;
 
-    def pendingcalls_wait(self, l, n):
+    def pendingcalls_wait(self, l, n, context = None):
         #now, stick around until l[0] has grown to 10
         count = 0;
         while len(l) != n:
@@ -37,6 +38,8 @@ class TestPendingCalls(unittest.TestCase):
                 print "(%i)"%(len(l),),
             for i in xrange(1000):
                 a = i*i
+            if context and not context.event.is_set():
+                continue
             count += 1
             self.failUnless(count < 10000,
                 "timeout waiting for %i callbacks, got %i"%(n, len(l)))
@@ -44,20 +47,40 @@ class TestPendingCalls(unittest.TestCase):
             print "(%i)"%(len(l),)
 
     def test_pendingcalls_threaded(self):
-        l = []
 
         #do every callback on a separate thread
-        n = 32
+        n = 32 #total callbacks
         threads = []
-        for i in range(n):
-            t = threading.Thread(target=self.pendingcalls_submit, args = (l, 1))
+        class foo(object):pass
+        context = foo()
+        context.l = []
+        context.n = 2 #submits per thread
+        context.nThreads = n / context.n
+        context.nFinished = 0
+        context.lock = threading.Lock()
+        context.event = threading.Event()
+
+        for i in range(context.nThreads):
+            t = threading.Thread(target=self.pendingcalls_thread, args = (context,))
             t.start()
             threads.append(t)
 
-        self.pendingcalls_wait(l, n)
+        self.pendingcalls_wait(context.l, n, context)
 
         for t in threads:
             t.join()
+
+    def pendingcalls_thread(self, context):
+        try:
+            self.pendingcalls_submit(context.l, context.n)
+        finally:
+            with context.lock:
+                context.nFinished += 1
+                nFinished = context.nFinished
+                if False and test_support.verbose:
+                    print "finished threads: ", nFinished
+            if nFinished == context.nThreads:
+                context.event.set()
 
     def test_pendingcalls_non_threaded(self):
         #again, just using the main thread, likely they will all be dispathced at
