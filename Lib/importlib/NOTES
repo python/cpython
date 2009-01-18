@@ -76,3 +76,5 @@ to do
       - __import__
       - import_module (backport to 2.7)
       - resolve_name (backport to 2.7)
+
+* Bootstrap importlib as implementation of builtins.__import__
