@@ -5650,7 +5650,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 		else if (Py_TYPE(descr) == &PyCFunction_Type &&
 			 PyCFunction_GET_FUNCTION(descr) ==
 			 (PyCFunction)tp_new_wrapper &&
-			 strcmp(p->name, "__new__") == 0)
+			 ptr == (void**)&type->tp_new)
 		{
 			/* The __new__ wrapper is not a wrapper descriptor,
 			   so must be special-cased differently.
@@ -5670,7 +5670,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 			   point out a bug in this reasoning a beer. */
 		}
 		else if (descr == Py_None &&
-			 strcmp(p->name, "__hash__") == 0) {
+			 ptr == (void**)&type->tp_hash) {
 			/* We specifically allow __hash__ to be set to None
 			   to prevent inheritance of the default
 			   implementation from object.__hash__ */
