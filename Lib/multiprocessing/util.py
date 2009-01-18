@@ -69,33 +69,9 @@ def get_logger():
             atexit._exithandlers.remove((_exit_function, (), {}))
             atexit._exithandlers.append((_exit_function, (), {}))
 
-        _check_logger_class()
         _logger = logging.getLogger(LOGGER_NAME)
 
     return _logger
-
-def _check_logger_class():
-    '''
-    Make sure process name is recorded when loggers are used
-    '''
-    # XXX This function is unnecessary once logging is patched
-    import logging
-    if hasattr(logging, 'multiprocessing'):
-        return
-
-    logging._acquireLock()
-    try:
-        OldLoggerClass = logging.getLoggerClass()
-        if not getattr(OldLoggerClass, '_process_aware', False):
-            class ProcessAwareLogger(OldLoggerClass):
-                _process_aware = True
-                def makeRecord(self, *args, **kwds):
-                    record = OldLoggerClass.makeRecord(self, *args, **kwds)
-                    record.processName = current_process()._name
-                    return record
-            logging.setLoggerClass(ProcessAwareLogger)
-    finally:
-        logging._releaseLock()
 
 def log_to_stderr(level=None):
     '''
