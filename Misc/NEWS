@@ -135,6 +135,12 @@ Library
 - Issue #4959: inspect.formatargspec now works for keyword only arguments
   without defaults.
 
+- Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying issue
+  in sharedctypes.py.
+
+- Issue #1225107: inspect.isclass() returned True for instances with a custom
+  __getattr__.
+
 - Issue #3826 and #4791: The socket module now closes the underlying socket
   appropriately when it is being used via socket.makefile() objects
   rather than delaying the close by waiting for garbage collection to do it.
