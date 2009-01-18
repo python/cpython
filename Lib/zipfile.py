@@ -210,13 +210,9 @@ def _EndRecData(fpin):
         # Append a blank comment and record start offset
         endrec.append(b"")
         endrec.append(filesize - sizeEndCentDir)
-        if endrec[_ECD_OFFSET] == 0xffffffff:
-            # the value for the "offset of the start of the central directory"
-            # indicates that there is a "Zip64 end of central directory"
-            # structure present, so go look for it
-            return _EndRecData64(fpin, -sizeEndCentDir, endrec)
 
-        return endrec
+        # Try to read the "Zip64 end of central directory" structure
+        return _EndRecData64(fpin, -sizeEndCentDir, endrec)
 
     # Either this is not a ZIP file, or it is a ZIP file with an archive
     # comment.  Search the end of the file for the "end of central directory"
@@ -237,11 +233,10 @@ def _EndRecData(fpin):
             # Append the archive comment and start offset
             endrec.append(comment)
             endrec.append(maxCommentStart + start)
-            if endrec[_ECD_OFFSET] == 0xffffffff:
-                # There is apparently a "Zip64 end of central directory"
-                # structure present, so go look for it
-                return _EndRecData64(fpin, start - filesize, endrec)
-            return endrec
+
+            # Try to read the "Zip64 end of central directory" structure
+            return _EndRecData64(fpin, maxCommentStart + start - filesize,
+                                 endrec)
 
     # Unable to find a valid end of central directory structure
     return
