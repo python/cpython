@@ -343,19 +343,19 @@ Notes:
 All :class:`numbers.Real` types (:class:`int` and
 :class:`float`) also include the following operations:
 
-+--------------------+--------------------------------+--------+
-| Operation          | Result                         | Notes  |
-+====================+================================+========+
-| ``trunc(x)``       | *x* truncated to Integral      |        |
-+--------------------+--------------------------------+--------+
-| ``round(x[, n])``  | *x* rounded to n digits,       |        |
-|                    | rounding half to even. If n is |        |
-|                    | omitted, it defaults to 0.     |        |
-+--------------------+--------------------------------+--------+
-| ``math.floor(x)``  | the greatest Integral <= *x*   |        |
-+--------------------+--------------------------------+--------+
-| ``math.ceil(x)``   | the least Integral >= *x*      |        |
-+--------------------+--------------------------------+--------+
++--------------------+------------------------------------+--------+
+| Operation          | Result                             | Notes  |
++====================+====================================+========+
+| ``math.trunc(x)``  | *x* truncated to Integral          |        |
++--------------------+------------------------------------+--------+
+| ``round(x[, n])``  | *x* rounded to n digits,           |        |
+|                    | rounding half to even. If n is     |        |
+|                    | omitted, it defaults to 0.         |        |
++--------------------+------------------------------------+--------+
+| ``math.floor(x)``  | the greatest integral float <= *x* |        |
++--------------------+------------------------------------+--------+
+| ``math.ceil(x)``   | the least integral float >= *x*    |        |
++--------------------+------------------------------------+--------+
 
 For additional numeric operations see the :mod:`math` and :mod:`cmath`
 modules.
@@ -418,6 +418,36 @@ Notes:
 (3)
    A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
    overflow check.
+
+
+Additional Methods on Integer Types
+-----------------------------------
+
+.. method:: int.bit_length()
+
+    Return the number of bits necessary to represent an integer in binary,
+    excluding the sign and leading zeros::
+
+        >>> n = -37
+        >>> bin(n)
+        '-0b100101'
+        >>> n.bit_length()
+        6
+
+    More precisely, if ``x`` is nonzero, then ``x.bit_length()`` is the
+    unique positive integer ``k`` such that ``2**(k-1) <= abs(x) < 2**k``.
+    Equivalently, when ``abs(x)`` is small enough to have a correctly
+    rounded logarithm, then ``k = 1 + int(log(abs(x), 2))``.
+    If ``x`` is zero, then ``x.bit_length()`` returns ``0``.
+
+    Equivalent to::
+
+        def bit_length(self):
+            s = bin(x)          # binary representation:  bin(-37) --> '-0b100101'
+            s = s.lstrip('-0b') # remove leading zeros and minus sign
+            return len(s)       # len('100101') --> 6
+
+    .. versionadded:: 3.1
 
 
 Additional Methods on Float
@@ -564,16 +594,17 @@ generator object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 Sequence Types --- :class:`str`, :class:`bytes`, :class:`bytearray`, :class:`list`, :class:`tuple`, :class:`range`
 ==================================================================================================================
 
-There are five sequence types: strings, byte sequences, byte arrays, lists,
-tuples, and range objects.  (For other containers see the built-in
-:class:`dict`, :class:`list`, :class:`set`, and :class:`tuple` classes, and the
-:mod:`collections` module.)
+There are six sequence types: strings, byte sequences (:class:`bytes` objects),
+byte arrays (:class:`bytearray` objects), lists, tuples, and range objects.  For
+other containers see the built in :class:`dict` and :class:`set` classes, and
+the :mod:`collections` module.
+
 
 .. index::
    object: sequence
    object: string
    object: bytes
-   object: buffer
+   object: bytearray
    object: tuple
    object: list
    object: range
@@ -1592,12 +1623,12 @@ The constructors for both classes work the same:
    .. method:: union(other, ...)
                set | other | ...
 
-      Return a new set with elements from both sets.
+      Return a new set with elements from the set and all others.
 
    .. method:: intersection(other, ...)
                set & other & ...
 
-      Return a new set with elements common to both sets.
+      Return a new set with elements common to the set and all others.
 
    .. method:: difference(other, ...)
                set - other - ...
