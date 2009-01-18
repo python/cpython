@@ -7,6 +7,7 @@ from test import support as test_support
 import unittest
 
 
+@support.case_insensitive_tests
 class CaseSensitivityTest(unittest.TestCase):
 
     """PEP 235 dictates that on case-preserving, case-insensitive file systems
@@ -48,8 +49,6 @@ class CaseSensitivityTest(unittest.TestCase):
 
 
 def test_main():
-    if sys.platform not in ('win32', 'darwin', 'cygwin'):
-        return
     test_support.run_unittest(CaseSensitivityTest)
 
 

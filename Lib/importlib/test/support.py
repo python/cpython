@@ -36,6 +36,16 @@ def writes_bytecode(fxn):
     else:
         return fxn
 
+
+def case_insensitive_tests(class_):
+    """Class decorator that nullifies tests that require a case-insensitive
+    file system."""
+    if sys.platform not in ('win32', 'darwin', 'cygwin'):
+        return object()
+    else:
+        return class_
+
+
 @contextmanager
 def uncache(*names):
     """Uncache a module from sys.modules.
