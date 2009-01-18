@@ -7,7 +7,7 @@ import tkinter.filedialog as tkFileDialog
 import tkinter.messagebox as tkMessageBox
 import re
 from tkinter import *
-from tkinter.simpledialog import SimpleDialog
+from tkinter.simpledialog import askstring
 
 from idlelib.configHandler import idleConf
 
@@ -211,7 +211,7 @@ class IOBinding:
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
-        chars = self._decode(two_lines, bytes)
+        chars, converted = self._decode(two_lines, bytes)
         if chars is None:
             tkMessageBox.showerror("Decoding Error",
                                    "File %s\nFailed to Decode" % filename,
@@ -227,6 +227,10 @@ class IOBinding:
         self.text.insert("1.0", chars)
         self.reset_undo()
         self.set_filename(filename)
+        if converted:
+            # We need to save the conversion results first
+            # before being able to execute the code
+            self.set_saved(False)
         self.text.mark_set("insert", "1.0")
         self.text.see("insert")
         self.updaterecentfileslist(filename)
@@ -241,11 +245,11 @@ class IOBinding:
                 chars = bytes[3:].decode("utf-8")
             except UnicodeDecodeError:
                 # has UTF-8 signature, but fails to decode...
-                return None
+                return None, False
             else:
                 # Indicates that this file originally had a BOM
                 self.fileencoding = 'BOM'
-                return chars
+                return chars, False
         # Next look for coding specification
         try:
             enc = coding_spec(two_lines)
@@ -257,36 +261,48 @@ class IOBinding:
                 master = self.text)
             enc = None
         except UnicodeDecodeError:
-            return None
+            return None, False
         if enc:
             try:
                 chars = str(bytes, enc)
                 self.fileencoding = enc
-                return chars
+                return chars, False
             except UnicodeDecodeError:
                 pass
         # Try ascii:
         try:
             chars = str(bytes, 'ascii')
             self.fileencoding = None
-            return chars
+            return chars, False
         except UnicodeDecodeError:
             pass
         # Try utf-8:
         try:
             chars = str(bytes, 'utf-8')
             self.fileencoding = 'utf-8'
-            return chars
+            return chars, False
         except UnicodeDecodeError:
             pass
         # Finally, try the locale's encoding. This is deprecated;
         # the user should declare a non-ASCII encoding
         try:
-            chars = str(bytes, locale_encoding)
-            self.fileencoding = locale_encoding
-        except UnicodeDecodeError:
+            # Wait for the editor window to appear
+            self.editwin.text.update()
+            enc = askstring(
+                "Specify file encoding",
+                "The file's encoding is invalid for Python 3.x.\n"
+                "IDLE will convert it to UTF-8.\n"
+                "What is the current encoding of the file?",
+                initialvalue = locale_encoding,
+                parent = self.editwin.text)
+
+            if enc:
+                chars = str(bytes, enc)
+                self.fileencoding = None
+            return chars, True
+        except (UnicodeDecodeError, LookupError):
             pass
-        return chars  # None on failure
+        return None, False  # None on failure
 
     def maybesave(self):
         if self.get_saved():
