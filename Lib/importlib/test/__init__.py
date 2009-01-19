@@ -17,7 +17,6 @@ def test_suite(package=__package__, directory=os.path.dirname(__file__)):
             suite.addTest(module_tests)
         elif os.path.isdir(path):
             package_name = "{0}.{1}".format(package, name)
-            print(package_name)
             __import__(package_name, level=0)
             package_tests = getattr(sys.modules[package_name], 'test_suite')()
             suite.addTest(package_tests)
