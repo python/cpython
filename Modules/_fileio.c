@@ -60,7 +60,7 @@ static int
 internal_close(PyFileIOObject *self)
 {
 	int err = 0;
-	int save_errno;
+	int save_errno = 0;
 	if (self->fd >= 0) {
 		int fd = self->fd;
 		self->fd = -1;
