@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- os.ftruncate raises OSErrors instead of IOErrors for consistency with other os
+  functions.
+
 - Issue #4991: Passing invalid file descriptors to io.FileIO now raises an
   OSError.
 
