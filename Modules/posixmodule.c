@@ -6633,7 +6633,7 @@ posix_ftruncate(PyObject *self, PyObject *args)
 	res = ftruncate(fd, length);
 	Py_END_ALLOW_THREADS
 	if (res < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
+		posix_error();
 		return NULL;
 	}
 	Py_INCREF(Py_None);
