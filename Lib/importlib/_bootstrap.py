@@ -431,7 +431,7 @@ class _PyFileLoader(object):
         if source_path is None:
             return None
         import tokenize
-        with closing(_fileio_FileIO(source_path, 'r')) as file:
+        with closing(_fileio._FileIO(source_path, 'r')) as file:
             encoding, lines = tokenize.detect_encoding(file.readline)
         # XXX Will fail when passed to compile() if the encoding is
         # anything other than UTF-8.
