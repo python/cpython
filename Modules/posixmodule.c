@@ -5114,10 +5114,8 @@ posix_ftruncate(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = ftruncate(fd, length);
 	Py_END_ALLOW_THREADS
-	if (res < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
+	if (res < 0)
+		return posix_error();
 	Py_INCREF(Py_None);
 	return Py_None;
 }

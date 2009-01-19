@@ -624,10 +624,9 @@ class TestInvalidFD(unittest.TestCase):
         if hasattr(os, "fpathconf"):
             self.assertRaises(OSError, os.fpathconf, 10, "PC_NAME_MAX")
 
-    #this is a weird one, it raises IOError unlike the others
     def test_ftruncate(self):
         if hasattr(os, "ftruncate"):
-            self.assertRaises(IOError, os.ftruncate, 10, 0)
+            self.assertRaises(OSError, os.ftruncate, 10, 0)
 
     def test_lseek(self):
         if hasattr(os, "lseek"):
