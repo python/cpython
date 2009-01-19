@@ -534,8 +534,10 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
 
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "fdopen", "close", "dup", "fdatasync", "fstat",
+    singles = ["fchdir", "fdopen", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
+    #singles.append("close")
+    #We omit close because it doesn'r raise an exception on some platforms
     def get_single(f):
         def helper(self):
             if  getattr(os, f, None):
@@ -545,13 +547,16 @@ class TestInvalidFD(unittest.TestCase):
         locals()["test_"+f] = get_single(f)
 
     def test_isatty(self):
-        self.assertEqual(os.isatty(10), False)
+        if hasattr(os, "isatty"):
+            self.assertEqual(os.isatty(10), False)
 
     def test_closerange(self):
-        self.assertEqual(os.closerange(10, 20), None)
+        if hasattr(os, "closerange"):
+            self.assertEqual(os.closerange(10, 20), None)
 
     def test_dup2(self):
-        self.assertRaises(OSError, os.dup2, 10, 20)
+        if hasattr(os, "dup2"):
+            self.assertRaises(OSError, os.dup2, 10, 20)
 
     def test_fchmod(self):
         if hasattr(os, "fchmod"):
@@ -559,28 +564,32 @@ class TestInvalidFD(unittest.TestCase):
 
     def test_fchown(self):
         if hasattr(os, "fchown"):
-            self.assertRaises(OSError, os.fchmod, 10, -1, -1)
+            self.assertRaises(OSError, os.fchown, 10, -1, -1)
 
     def test_fpathconf(self):
         if hasattr(os, "fpathconf"):
-            self.assertRaises(OSError, os.fpathconf, 10, "foo")
+            self.assertRaises(OSError, os.fpathconf, 10, "PC_NAME_MAX")
 
+    #this is a weird one, it raises IOError unlike the others
     def test_ftruncate(self):
         if hasattr(os, "ftruncate"):
-            self.assertRaises(OSError, os.ftruncate, 10, 0)
+            self.assertRaises(IOError, os.ftruncate, 10, 0)
 
     def test_lseek(self):
-        self.assertRaises(OSError, os.lseek, 10, 0, 0)
+        if hasattr(os, "lseek"):
+            self.assertRaises(OSError, os.lseek, 10, 0, 0)
 
     def test_read(self):
-        self.assertRaises(OSError, os.read, 10, 1)
+        if hasattr(os, "read"):
+            self.assertRaises(OSError, os.read, 10, 1)
 
     def test_tcsetpgrpt(self):
         if hasattr(os, "tcsetpgrp"):
             self.assertRaises(OSError, os.tcsetpgrp, 10, 0)
 
     def test_write(self):
-        self.assertRaises(OSError, os.write, 10, " ")
+        if hasattr(os, "write"):
+            self.assertRaises(OSError, os.write, 10, " ")
 
 if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
