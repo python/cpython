@@ -588,7 +588,7 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(WindowsError, os.utime, support.TESTFN, 0)
 
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdatasync", "fstat",
+    singles = ["fchdir", "dup", "fdopen", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
     #singles.append("close")
     #We omit close because it doesn'r raise an exception on some platforms
