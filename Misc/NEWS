@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4991: Passing invalid file descriptors to io.FileIO now raises an
+  OSError.
+
 - Issue #4807: Port the _winreg module to Windows CE.
 
 - Issue #4935: The overflow checking code in the expandtabs() method common

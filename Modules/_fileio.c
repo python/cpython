@@ -119,6 +119,24 @@ dircheck(PyFileIOObject* self, char *name)
 	return 0;
 }
 
+static int
+check_fd(int fd)
+{
+#if defined(HAVE_FSTAT)
+	struct stat buf;
+	if (fstat(fd, &buf) < 0 && errno == EBADF) {
+		PyObject *exc;
+		char *msg = strerror(EBADF);
+		exc = PyObject_CallFunction(PyExc_OSError, "(is)",
+					    EBADF, msg);
+		PyErr_SetObject(PyExc_OSError, exc);
+		Py_XDECREF(exc);
+		return -1;
+	}
+#endif
+	return 0;
+}
+
 
 static int
 fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
@@ -151,6 +169,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 					"Negative filedescriptor");
 			return -1;
 		}
+		if (check_fd(fd))
+			return -1;
 	}
 	else {
 		PyErr_Clear();

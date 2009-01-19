@@ -176,6 +176,10 @@ class OtherFileTests(unittest.TestCase):
         f.close()
         os.unlink(TESTFN)
 
+    def testInvalidFd(self):
+        self.assertRaises(ValueError, _fileio._FileIO, -10)
+        self.assertRaises(OSError, _fileio._FileIO, 10)
+
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
