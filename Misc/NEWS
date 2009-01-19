@@ -140,6 +140,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3321: _multiprocessing.Connection() doesn't check handle; added checks
+  for *nix machines for negative handles and large int handles. Without this check
+  it is possible to segfault the interpreter.
+
 - Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying issue
   in sharedctypes.py.
 

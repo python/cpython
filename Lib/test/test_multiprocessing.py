@@ -61,6 +61,8 @@ else:
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
+WIN32 = (sys.platform == "win32")
+
 #
 # Creates a wrapper for a function which records the time it takes to finish
 #
@@ -1682,6 +1684,18 @@ class _TestLogging(BaseTestCase):
         logger.setLevel(level=LOG_LEVEL)
 
 #
+# Test to verify handle verification, see issue 3321
+#
+
+class TestInvalidHandle(unittest.TestCase):
+
+    def test_invalid_handles(self):
+        if WIN32:
+            return
+        conn = _multiprocessing.Connection(44977608)
+        self.assertRaises(IOError, conn.poll)
+        self.assertRaises(IOError, _multiprocessing.Connection, -1)
+#
 # Functions used to create test cases from the base ones in this module
 #
 
@@ -1785,7 +1799,7 @@ class OtherTest(unittest.TestCase):
                           multiprocessing.connection.answer_challenge,
                           _FakeConnection(), b'abc')
 
-testcases_other = [OtherTest]
+testcases_other = [OtherTest, TestInvalidHandle]
 
 #
 #
