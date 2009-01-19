@@ -357,6 +357,18 @@ def sortdict(dict):
     withcommas = ", ".join(reprpairs)
     return "{%s}" % withcommas
 
+def make_bad_fd():
+    """
+    Create an invalid file descriptor by opening and closing a file and return
+    its fd.
+    """
+    file = open(TESTFN, "wb")
+    try:
+        return file.fileno()
+    finally:
+        file.close()
+        unlink(TESTFN)
+
 def check_syntax_error(testcase, statement):
     try:
         compile(statement, '<test string>', 'exec')
