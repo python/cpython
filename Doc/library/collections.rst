@@ -189,6 +189,7 @@ For example::
        >>> c = Counter()                            # a new, empty counter
        >>> c = Counter('gallahad')                  # a new counter from an iterable
        >>> c = Counter({'red': 4, 'blue': 2})       # a new counter from a mapping
+       >>> c = Counter(spam=8, eggs=1)              # a new counter from keyword args
 
    The returned object has a dictionary style interface except that it returns
    a zero count for missing items (instead of raising a :exc:`KeyError` like a
@@ -219,7 +220,7 @@ For example::
       Elements are returned in arbitrary order.  If an element's count has been
       set to zero or a negative number, :meth:`elements` will ignore it.
 
-            >>> c = Counter({'a': 4, 'b': 2, 'd': 0, 'e': -2})
+            >>> c =  Counter(a=4, b=2, c=0, d=-2)
             >>> list(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
@@ -244,10 +245,10 @@ For example::
 
    .. method:: update([iterable-or-mapping])
 
-       Like :meth:`dict.update` but adds-in counts instead of replacing them.
-
        Elements are counted from an *iterable* or added-in from another
-       *mapping* (or counter)::
+       *mapping* (or counter).  Like :meth:`dict.update` but adds-in counts
+       instead of replacing them, and the *iterable* is expected to be a
+       sequence of elements, not a sequence of ``(key, value)`` pairs::
 
             >>> c = Counter('which')
             >>> c.update('witch')           # add elements from another iterable
@@ -266,6 +267,34 @@ Common patterns for working with :class:`Counter` objects::
     c.items()                     # convert to a list of (elem, cnt) pairs
     Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
     c.most_common()[:-n:-1]       # n least common elements
+
+Several multiset mathematical operations are provided for combining
+:class:`Counter` objects.  Multisets are like regular sets but allowed to
+contain repeated elements (with counts of one or more).  Addition and
+subtraction combine counters by adding or subtracting the counts of
+corresponding elements.  Intersection and union return the minimum and maximum
+of corresponding counts::
+
+    >>> c = Counter('a': 3, 'b': 1})
+    >>> d = Counter({'a': 1, 'b': 2})
+    >>> c + d                           # add two counters together:  c[x] + d[x]
+    Counter({'a': 4, 'b': 3})
+    >>> c - d                           # subtract (keeping only positive counts)
+    Counter({'a': 2})
+    >>> c & d                           # interection:  min(c[x], d[x])
+    Counter({'a': 1, 'b': 1})
+    >>> c | d                           # union:  max(c[x], d[x])
+    Counter({'a': 3, 'b': 2})
+
+All four multiset operations produce only positive counts (negative and zero
+results are skipped). If inputs include negative counts, addition will sum
+both counts and then exclude non-positive results.  The other three operations
+are undefined for negative inputs::
+
+    >>> e = Counter(a=8, b=-2, c=0)
+    >>> e += Counter()                  # remove zero and negative counts
+    >>> e
+    Counter({'a': 8})
 
 **References**:
 
