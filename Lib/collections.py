@@ -12,8 +12,9 @@ import sys as _sys
 import heapq as _heapq
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, ifilter as _ifilter
 
-########################################################################
-###  namedtuple  #######################################################
+################################################################################
+### namedtuple
+################################################################################
 
 def namedtuple(typename, field_names, verbose=False):
     """Returns a new subclass of tuple with named fields.
@@ -114,7 +115,8 @@ def namedtuple(typename, field_names, verbose=False):
 
 
 ########################################################################
-###  Counter  ##########################################################
+###  Counter
+########################################################################
 
 class Counter(dict):
     '''Dict subclass for counting hashable items.  Sometimes called a bag
