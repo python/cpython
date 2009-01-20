@@ -140,8 +140,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 (For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
 
 
-.. _counter-objects:
-
 :class:`Counter` objects
 ------------------------
 
@@ -269,7 +267,7 @@ of corresponding counts::
     Counter({'a': 4, 'b': 3})
     >>> c - d                           # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                           # interection:  min(c[x], d[x])
+    >>> c & d                           # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
     >>> c | d                           # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
@@ -302,12 +300,8 @@ are undefined for negative inputs::
    Section 4.6.3, Exercise 19
 
 
-
-.. _deque-objects:
-
 :class:`deque` objects
 ----------------------
-
 
 .. class:: deque([iterable[, maxlen]])
 
@@ -451,8 +445,6 @@ Example:
    deque(['c', 'b', 'a'])
 
 
-.. _deque-recipes:
-
 :class:`deque` Recipes
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -500,11 +492,9 @@ in Unix::
        'Return the last n lines of a file'
        return deque(open(filename), n)
 
-.. _defaultdict-objects:
 
 :class:`defaultdict` objects
 ----------------------------
-
 
 .. class:: defaultdict([default_factory[, ...]])
 
@@ -548,8 +538,6 @@ in Unix::
       initialized from the first argument to the constructor, if present, or to
       ``None``, if absent.
 
-
-.. _defaultdict-examples:
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -619,8 +607,6 @@ Setting the :attr:`default_factory` to :class:`set` makes the
    >>> d.items()
    [('blue', set([2, 4])), ('red', set([1, 3]))]
 
-
-.. _named-tuple-factory:
 
 :func:`namedtuple` Factory Function for Tuples with Named Fields
 ----------------------------------------------------------------
