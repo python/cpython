@@ -1,4 +1,4 @@
-__all__ = ['deque', 'defaultdict', 'namedtuple']
+__all__ = ['Counter', 'deque', 'defaultdict', 'namedtuple']
 # For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
 # They should however be considered an integral part of collections.py.
 from _abcoll import *
