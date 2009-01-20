@@ -1990,8 +1990,6 @@ digit beyond the first.
 		goto onError;
 	if (sign < 0)
 		Py_SIZE(z) = -(Py_SIZE(z));
-	if (*str == 'L' || *str == 'l')
-		str++;
 	while (*str && isspace(Py_CHARMASK(*str)))
 		str++;
 	if (*str != '\0')

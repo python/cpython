@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4842: Don't allow trailing 'L' when constructing an integer
+  from a string.
+
 - Issue #4991: os.fdopen now raises an OSError for invalid file descriptors.
 
 - Issue #4838: When a module is deallocated, free the memory backing the
