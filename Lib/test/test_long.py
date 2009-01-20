@@ -284,6 +284,16 @@ class LongTest(unittest.TestCase):
 
         self.assertRaises(ValueError, int, '123\0')
         self.assertRaises(ValueError, int, '53', 40)
+        # trailing L should no longer be accepted...
+        self.assertRaises(ValueError, int, '123L')
+        self.assertRaises(ValueError, int, '123l')
+        self.assertRaises(ValueError, int, '0L')
+        self.assertRaises(ValueError, int, '-37L')
+        self.assertRaises(ValueError, int, '0x32L', 16)
+        self.assertRaises(ValueError, int, '1L', 21)
+        # ... but it's just a normal digit if base >= 22
+        self.assertEqual(int('1L', 22), 43)
+
         self.assertRaises(TypeError, int, 1, 12)
 
         # SF patch #1638879: embedded NULs were not detected with
