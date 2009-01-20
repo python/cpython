@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5013: Fixed a bug in FileHandler which occurred when the delay
+  parameter was set.
+
 - Issue #4998: The memory saving effect of __slots__ had been lost on Fractions
   which inherited from numbers.py which did not have __slots__ defined.  The
   numbers heirarchy now has its own __slots__ declarations.
@@ -177,7 +180,7 @@ Library
 
 - Restore Python 2.3 compatibility for decimal.py.
 
-- Issue #1702551: distutils sdist was not excluding VCS directories under 
+- Issue #1702551: distutils sdist was not excluding VCS directories under
   Windows. Inital solution by Guy Dalberto.
 
 - The _tkinter module functions "createfilehandler", "deletefilehandler",
@@ -193,10 +196,10 @@ Library
 - Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
   the function is not a generator.
 
-- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
-  no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
+- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case
+  no MSVC compiler is found under Windows. Original patch by Philip Jenvey.
 
-- Issue #4646: distutils was choking on empty options arg in the setup 
+- Issue #4646: distutils was choking on empty options arg in the setup
   function. Original patch by Thomas Heller.
 
 - Fractions.from_float() no longer loses precision for integers too big to
@@ -318,7 +321,7 @@ Library
   to be consistent with Apple tools.
 
 - Issue #900949: plat-mac/videoreader.py no longer relies on a non-existing
-  module. 
+  module.
 
 - Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
 
@@ -375,7 +378,7 @@ C-API
 
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
-  
+
 - Issue #4293: Py_AddPendingCall is now thread safe and can be used for
   asynchronous notifications to python from any thread.  Documentation added.
 
