@@ -134,7 +134,6 @@ __all__ = [
     'setcontext', 'getcontext', 'localcontext'
 ]
 
-import numbers as _numbers
 import copy as _copy
 import math as _math
 
@@ -501,7 +500,11 @@ def localcontext(ctx=None):
 
 ##### Decimal class #######################################################
 
-class Decimal(_numbers.Real):
+# Do not subclass Decimal from numbers.Real and do not register it as such
+# (because Decimals are not interoperable with floats).  See the notes in
+# numbers.py for more detail.
+
+class Decimal(object):
     """Floating point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
@@ -1757,13 +1760,9 @@ class Decimal(_numbers.Real):
         >>> round(Decimal('Inf'))
         Traceback (most recent call last):
           ...
-          ...
-          ...
         OverflowError: cannot round an infinity
         >>> round(Decimal('NaN'))
         Traceback (most recent call last):
-          ...
-          ...
           ...
         ValueError: cannot round a NaN
 
