@@ -53,9 +53,9 @@ As you can see, the module-specific markup consists of two directives, the
 
 .. describe:: module
 
-   This directive marks the beginning of the description of a module (or package
-   submodule, in which case the name should be fully qualified, including the
-   package name).
+   This directive marks the beginning of the description of a module, package,
+   or submodule. The name should be fully qualified (i.e. including the
+   package name for submodules).
 
    The ``platform`` option, if present, is a comma-separated list of the
    platforms on which the module is available (if it is available on all
