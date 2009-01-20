@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4978: Passing keyword arguments as unicode strings is now allowed.
+
 - os.ftruncate raises OSErrors instead of IOErrors for consistency with other os
   functions.
 
