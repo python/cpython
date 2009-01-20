@@ -12,6 +12,9 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Issue #4842: Don't allow trailing 'L' when constructing an integer
+  from a string.
+
 - Issue #4991: os.fdopen now raises an OSError for invalid file descriptors.
 
 - Issue #4838: When a module is deallocated, free the memory backing the
@@ -94,6 +97,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #4842: Always append a trailing 'L' when pickling longs using
+  pickle protocol 0.  When reading, the 'L' is optional.
 
 - Issue #3826 and #4791: The socket module now closes the underlying socket
   appropriately when it is being used via socket.makefile() objects

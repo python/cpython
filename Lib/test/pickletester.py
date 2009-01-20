@@ -90,21 +90,21 @@ class use_metaclass(object, metaclass=metaclass):
 # the object returned by create_data().
 
 DATA0 = (
-    b'(lp0\nL0\naL1\naF2.0\nac'
+    b'(lp0\nL0L\naL1L\naF2.0\nac'
     b'builtins\ncomplex\n'
     b'p1\n(F3.0\nF0.0\ntp2\nRp'
-    b'3\naL1\naL-1\naL255\naL-'
-    b'255\naL-256\naL65535\na'
-    b'L-65535\naL-65536\naL2'
-    b'147483647\naL-2147483'
-    b'647\naL-2147483648\na('
+    b'3\naL1L\naL-1L\naL255L\naL-'
+    b'255L\naL-256L\naL65535L\na'
+    b'L-65535L\naL-65536L\naL2'
+    b'147483647L\naL-2147483'
+    b'647L\naL-2147483648L\na('
     b'Vabc\np4\ng4\nccopyreg'
     b'\n_reconstructor\np5\n('
     b'c__main__\nC\np6\ncbu'
     b'iltins\nobject\np7\nNt'
     b'p8\nRp9\n(dp10\nVfoo\np1'
-    b'1\nL1\nsVbar\np12\nL2\nsb'
-    b'g9\ntp13\nag13\naL5\na.'
+    b'1\nL1L\nsVbar\np12\nL2L\nsb'
+    b'g9\ntp13\nag13\naL5L\na.'
 )
 
 # Disassembly of DATA0
@@ -113,80 +113,80 @@ DATA0_DIS = """\
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
     5: L    LONG       0
-    8: a    APPEND
-    9: L    LONG       1
-   12: a    APPEND
-   13: F    FLOAT      2.0
-   18: a    APPEND
-   19: c    GLOBAL     'builtins complex'
-   37: p    PUT        1
-   40: (    MARK
-   41: F        FLOAT      3.0
-   46: F        FLOAT      0.0
-   51: t        TUPLE      (MARK at 40)
-   52: p    PUT        2
-   55: R    REDUCE
-   56: p    PUT        3
-   59: a    APPEND
-   60: L    LONG       1
-   63: a    APPEND
-   64: L    LONG       -1
-   68: a    APPEND
-   69: L    LONG       255
-   74: a    APPEND
-   75: L    LONG       -255
-   81: a    APPEND
-   82: L    LONG       -256
-   88: a    APPEND
-   89: L    LONG       65535
-   96: a    APPEND
-   97: L    LONG       -65535
-  105: a    APPEND
-  106: L    LONG       -65536
+    9: a    APPEND
+   10: L    LONG       1
+   14: a    APPEND
+   15: F    FLOAT      2.0
+   20: a    APPEND
+   21: c    GLOBAL     'builtins complex'
+   39: p    PUT        1
+   42: (    MARK
+   43: F        FLOAT      3.0
+   48: F        FLOAT      0.0
+   53: t        TUPLE      (MARK at 42)
+   54: p    PUT        2
+   57: R    REDUCE
+   58: p    PUT        3
+   61: a    APPEND
+   62: L    LONG       1
+   66: a    APPEND
+   67: L    LONG       -1
+   72: a    APPEND
+   73: L    LONG       255
+   79: a    APPEND
+   80: L    LONG       -255
+   87: a    APPEND
+   88: L    LONG       -256
+   95: a    APPEND
+   96: L    LONG       65535
+  104: a    APPEND
+  105: L    LONG       -65535
   114: a    APPEND
-  115: L    LONG       2147483647
-  127: a    APPEND
-  128: L    LONG       -2147483647
-  141: a    APPEND
-  142: L    LONG       -2147483648
-  155: a    APPEND
-  156: (    MARK
-  157: V        UNICODE    'abc'
-  162: p        PUT        4
-  165: g        GET        4
-  168: c        GLOBAL     'copyreg _reconstructor'
-  192: p        PUT        5
-  195: (        MARK
-  196: c            GLOBAL     '__main__ C'
-  208: p            PUT        6
-  211: c            GLOBAL     'builtins object'
-  228: p            PUT        7
-  231: N            NONE
-  232: t            TUPLE      (MARK at 195)
-  233: p        PUT        8
-  236: R        REDUCE
-  237: p        PUT        9
-  240: (        MARK
-  241: d            DICT       (MARK at 240)
-  242: p        PUT        10
-  246: V        UNICODE    'foo'
-  251: p        PUT        11
-  255: L        LONG       1
-  258: s        SETITEM
-  259: V        UNICODE    'bar'
-  264: p        PUT        12
-  268: L        LONG       2
-  271: s        SETITEM
-  272: b        BUILD
-  273: g        GET        9
-  276: t        TUPLE      (MARK at 156)
-  277: p    PUT        13
-  281: a    APPEND
-  282: g    GET        13
-  286: a    APPEND
-  287: L    LONG       5
-  290: a    APPEND
-  291: .    STOP
+  115: L    LONG       -65536
+  124: a    APPEND
+  125: L    LONG       2147483647
+  138: a    APPEND
+  139: L    LONG       -2147483647
+  153: a    APPEND
+  154: L    LONG       -2147483648
+  168: a    APPEND
+  169: (    MARK
+  170: V        UNICODE    'abc'
+  175: p        PUT        4
+  178: g        GET        4
+  181: c        GLOBAL     'copyreg _reconstructor'
+  205: p        PUT        5
+  208: (        MARK
+  209: c            GLOBAL     '__main__ C'
+  221: p            PUT        6
+  224: c            GLOBAL     'builtins object'
+  241: p            PUT        7
+  244: N            NONE
+  245: t            TUPLE      (MARK at 208)
+  246: p        PUT        8
+  249: R        REDUCE
+  250: p        PUT        9
+  253: (        MARK
+  254: d            DICT       (MARK at 253)
+  255: p        PUT        10
+  259: V        UNICODE    'foo'
+  264: p        PUT        11
+  268: L        LONG       1
+  272: s        SETITEM
+  273: V        UNICODE    'bar'
+  278: p        PUT        12
+  282: L        LONG       2
+  286: s        SETITEM
+  287: b        BUILD
+  288: g        GET        9
+  291: t        TUPLE      (MARK at 169)
+  292: p    PUT        13
+  296: a    APPEND
+  297: g    GET        13
+  301: a    APPEND
+  302: L    LONG       5
+  306: a    APPEND
+  307: .    STOP
 highest protocol among opcodes = 0
 """
 

@@ -470,7 +470,7 @@ class _Pickler:
             else:
                 self.write(LONG4 + pack("<i", n) + encoded)
             return
-        self.write(LONG + repr(obj).encode("ascii") + b'\n')
+        self.write(LONG + repr(obj).encode("ascii") + b'L\n')
     dispatch[int] = save_long
 
     def save_float(self, obj, pack=struct.pack):
@@ -890,6 +890,8 @@ class _Unpickler:
 
     def load_long(self):
         val = self.readline()[:-1].decode("ascii")
+        if val and val[-1] == 'L':
+            val = val[:-1]
         self.append(int(val, 0))
     dispatch[LONG[0]] = load_long
 
