@@ -157,7 +157,7 @@ For example::
     # Find the ten most common words in Hamlet
     >>> import re
     >>> words = re.findall('\w+', open('hamlet.txt').read().lower())
-    >>> Counter(hamlet_words).most_common(10)
+    >>> Counter(words).most_common(10)
     [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
      ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
 
@@ -206,7 +206,7 @@ For example::
       Elements are returned in arbitrary order.  If an element's count has been
       set to zero or a negative number, :meth:`elements` will ignore it.
 
-            >>> c =  Counter(a=4, b=2, c=0, d=-2)
+            >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> list(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
@@ -261,7 +261,7 @@ subtraction combine counters by adding or subtracting the counts of
 corresponding elements.  Intersection and union return the minimum and maximum
 of corresponding counts::
 
-    >>> c = Counter('a': 3, 'b': 1})
+    >>> c = Counter({'a': 3, 'b': 1})
     >>> d = Counter({'a': 1, 'b': 2})
     >>> c + d                           # add two counters together:  c[x] + d[x]
     Counter({'a': 4, 'b': 3})
