@@ -846,8 +846,8 @@ save_int(PicklerObject *self, long x)
         /* Text-mode pickle, or long too big to fit in the 4-byte
          * signed BININT format:  store as a string.
          */
-        pdata[0] = LONG;        /* use LONG for consistence with pickle.py */
-        PyOS_snprintf(pdata + 1, sizeof(pdata) - 1, "%ld\n", x);
+        pdata[0] = LONG;        /* use LONG for consistency with pickle.py */
+        PyOS_snprintf(pdata + 1, sizeof(pdata) - 1, "%ldL\n", x);
         if (pickler_write(self, pdata, strlen(pdata)) < 0)
             return -1;
     }
@@ -977,8 +977,9 @@ save_long(PicklerObject *self, PyObject *obj)
     else {
         char *string;
 
-        /* proto < 2:  write the repr and newline.  This is quadratic-time
-           (in the number of digits), in both directions. */
+        /* proto < 2: write the repr and newline.  This is quadratic-time (in
+           the number of digits), in both directions.  We add a trailing 'L'
+           to the repr, for compatibility with Python 2.x. */
 
         repr = PyObject_Repr(obj);
         if (repr == NULL)
@@ -990,7 +991,7 @@ save_long(PicklerObject *self, PyObject *obj)
 
         if (pickler_write(self, &long_op, 1) < 0 ||
             pickler_write(self, string, size) < 0 ||
-            pickler_write(self, "\n", 1) < 0)
+            pickler_write(self, "L\n", 2) < 0)
             goto error;
     }
 
@@ -2880,7 +2881,7 @@ static int
 load_long(UnpicklerObject *self)
 {
     PyObject *value;
-    char *s;
+    char *s, *ss;
     Py_ssize_t len;
 
     if ((len = unpickler_readline(self, &s)) < 0)
@@ -2888,8 +2889,27 @@ load_long(UnpicklerObject *self)
     if (len < 2)
         return bad_readline();
 
-    /* XXX: Should the base argument explicitly set to 10? */
-    if ((value = PyLong_FromString(s, NULL, 0)) == NULL)
+    /* s[len-2] will usually be 'L' (and s[len-1] is '\n'); we need to remove
+       the 'L' before calling PyLong_FromString.  In order to maintain
+       compatibility with Python 3.0.0, we don't actually *require*
+       the 'L' to be present. */
+    if (s[len-2] == 'L') {
+        ss = (char *)PyMem_Malloc(len-1);
+        if (ss == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        strncpy(ss, s, len-2);
+        ss[len-2] = '\0';
+
+        /* XXX: Should the base argument explicitly set to 10? */
+        value = PyLong_FromString(ss, NULL, 0);
+        PyMem_Free(ss);
+    }
+    else {
+        value = PyLong_FromString(s, NULL, 0);
+    }
+    if (value == NULL)
         return -1;
 
     PDATA_PUSH(self->stack, value, -1);

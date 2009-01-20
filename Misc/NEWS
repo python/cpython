@@ -134,6 +134,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4842: Always append a trailing 'L' when pickling longs using
+  pickle protocol 0.  When reading, the 'L' is optional.
+
 - Add the importlib package.
 
 - Issue #4301: Patch the logging module to add processName support, remove
