@@ -79,27 +79,6 @@ def _r_long(int_bytes):
     return x
 
 
-def import_module(name, package=None):
-    """Import a module.
-
-    The 'package' argument is used to resolve relative import names. Typically
-    this is the __package__ attribute of the module making the function call.
-
-    """
-    if name.startswith('.'):
-        if not package:
-            raise TypeError("relative imports require the 'package' argument")
-        level = 0
-        for character in name:
-            if character != '.':
-                break
-            level += 1
-        name = Import._resolve_name(name[level:], package, level)
-    __import__(name)
-    return sys.modules[name]
-
-
-
 # Required built-in modules.
 try:
     import posix as _os
@@ -129,5 +108,31 @@ _bootstrap.path_sep = sep
 _bootstrap._case_ok = _case_ok
 marshal._w_long = _w_long
 marshal._r_long = _r_long
+
+
+__import__ = _bootstrap.Import().__call__
+
+
+def import_module(name, package=None):
+    """Import a module.
+
+    The 'package' argument is required when performing a relative import. It
+    specifies the package to use as the anchor point from which to resolve the
+    relative import to an absolute import.
+
+    """
+    if name.startswith('.'):
+        if not package:
+            raise TypeError("relative imports require the 'package' argument")
+        level = 0
+        for character in name:
+            if character != '.':
+                break
+            level += 1
+        name = Import._resolve_name(name[level:], package, level)
+    __import__(name)
+    return sys.modules[name]
+
+
 
 from ._bootstrap import *

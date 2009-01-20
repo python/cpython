@@ -134,6 +134,8 @@ Core and Builtins
 Library
 -------
 
+- Add the importlib package.
+
 - Issue #4301: Patch the logging module to add processName support, remove
   _check_logger_class from multiprocessing.
 
