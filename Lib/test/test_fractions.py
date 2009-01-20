@@ -394,6 +394,11 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(id(r), id(copy(r)))
         self.assertEqual(id(r), id(deepcopy(r)))
 
+    def test_slots(self):
+        # Issue 4998
+        r = F(13, 7)
+        self.assertRaises(AttributeError, setattr, r, 'a', 10)
+
 def test_main():
     run_unittest(FractionTest, GcdTest)
 
