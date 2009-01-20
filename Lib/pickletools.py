@@ -527,6 +527,8 @@ def read_decimalnl_long(f):
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
+    if s[-1:] == b'L':
+        s = s[:-1]
     return int(s)
 
 
@@ -2052,39 +2054,39 @@ _dis_test = r"""
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
     5: L    LONG       1
-    8: a    APPEND
-    9: L    LONG       2
-   12: a    APPEND
-   13: (    MARK
-   14: L        LONG       3
-   17: L        LONG       4
-   20: t        TUPLE      (MARK at 13)
-   21: p    PUT        1
-   24: a    APPEND
-   25: (    MARK
-   26: d        DICT       (MARK at 25)
-   27: p    PUT        2
-   30: c    GLOBAL     'builtins bytes'
-   46: p    PUT        3
-   49: (    MARK
-   50: (        MARK
-   51: l            LIST       (MARK at 50)
-   52: p        PUT        4
-   55: L        LONG       97
-   59: a        APPEND
-   60: L        LONG       98
+    9: a    APPEND
+   10: L    LONG       2
+   14: a    APPEND
+   15: (    MARK
+   16: L        LONG       3
+   20: L        LONG       4
+   24: t        TUPLE      (MARK at 15)
+   25: p    PUT        1
+   28: a    APPEND
+   29: (    MARK
+   30: d        DICT       (MARK at 29)
+   31: p    PUT        2
+   34: c    GLOBAL     'builtins bytes'
+   50: p    PUT        3
+   53: (    MARK
+   54: (        MARK
+   55: l            LIST       (MARK at 54)
+   56: p        PUT        4
+   59: L        LONG       97
    64: a        APPEND
-   65: L        LONG       99
-   69: a        APPEND
-   70: t        TUPLE      (MARK at 49)
-   71: p    PUT        5
-   74: R    REDUCE
-   75: p    PUT        6
-   78: V    UNICODE    'def'
-   83: p    PUT        7
-   86: s    SETITEM
-   87: a    APPEND
-   88: .    STOP
+   65: L        LONG       98
+   70: a        APPEND
+   71: L        LONG       99
+   76: a        APPEND
+   77: t        TUPLE      (MARK at 53)
+   78: p    PUT        5
+   81: R    REDUCE
+   82: p    PUT        6
+   85: V    UNICODE    'def'
+   90: p    PUT        7
+   93: s    SETITEM
+   94: a    APPEND
+   95: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2157,12 +2159,12 @@ highest protocol among opcodes = 0
    92: V    UNICODE    'value'
    99: p    PUT        7
   102: L    LONG       42
-  106: s    SETITEM
-  107: b    BUILD
-  108: a    APPEND
-  109: g    GET        5
-  112: a    APPEND
-  113: .    STOP
+  107: s    SETITEM
+  108: b    BUILD
+  109: a    APPEND
+  110: g    GET        5
+  113: a    APPEND
+  114: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
