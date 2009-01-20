@@ -83,10 +83,8 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
  * Check whether any data is available for reading
  */
 
-#define conn_poll(conn, timeout) conn_poll_save(conn, timeout, _save)
-
 static int
-conn_poll_save(ConnectionObject *conn, double timeout, PyThreadState *_save)
+conn_poll(ConnectionObject *conn, double timeout, PyThreadState *_save)
 {
 	DWORD bytes, deadline, delay;
 	int difference, res;
