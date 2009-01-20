@@ -1,5 +1,5 @@
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
-            'UserString']
+            'UserString', 'Counter']
 # For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
 # They should however be considered an integral part of collections.py.
 from _abcoll import *
@@ -171,7 +171,7 @@ class Counter(dict):
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, **kwds):
         '''Create a new, empty Counter object.  And if given, count elements
         from an input iterable.  Or, initialize the count from another mapping
         of elements to their counts.
@@ -179,9 +179,10 @@ class Counter(dict):
         >>> c = Counter()                           # a new, empty counter
         >>> c = Counter('gallahad')                 # a new counter from an iterable
         >>> c = Counter({'a': 4, 'b': 2})           # a new counter from a mapping
+        >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
         '''
-        self.update(iterable)
+        self.update(iterable, **kwds)
 
     def __missing__(self, key):
         'The count of elements not in the Counter is zero.'
@@ -232,7 +233,7 @@ class Counter(dict):
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
-    def update(self, iterable=None):
+    def update(self, iterable=None, **kwds):
         '''Like dict.update() but add counts instead of replacing them.
 
         Source can be an iterable, a dictionary, or another Counter instance.
@@ -249,10 +250,8 @@ class Counter(dict):
         # replace behavior results in the some of original untouched counts
         # being mixed-in with all of the other counts for a mismash that
         # doesn't have a straight-forward interpretation in most counting
-        # contexts.  Instead, we look to Knuth for suggested operations on
-        # multisets and implement the union-add operation discussed in
-        # TAOCP Volume II section 4.6.3 exercise 19.  The Wikipedia entry for
-        # multisets calls that operation a sum or join.
+        # contexts.  Instead, we implement straight-addition.  Both the inputs
+        # and outputs are allowed to contain zero and negative counts.
 
         if iterable is not None:
             if isinstance(iterable, Mapping):
@@ -261,16 +260,101 @@ class Counter(dict):
             else:
                 for elem in iterable:
                     self[elem] += 1
+        if kwds:
+            self.update(kwds)
 
     def copy(self):
         'Like dict.copy() but returns a Counter instance instead of a dict.'
         return Counter(self)
+
+    def __delitem__(self, elem):
+        'Like dict.__delitem__() but does not raise KeyError for missing values.'
+        if elem in self:
+            dict.__delitem__(self, elem)
 
     def __repr__(self):
         if not self:
             return '%s()' % self.__class__.__name__
         items = ', '.join(map('%r: %r'.__mod__, self.most_common()))
         return '%s({%s})' % (self.__class__.__name__, items)
+
+    # Multiset-style mathematical operations discussed in:
+    #       Knuth TAOCP Volume II section 4.6.3 exercise 19
+    #       and at http://en.wikipedia.org/wiki/Multiset
+    #
+    # Results are undefined when inputs contain negative counts.
+    # Outputs guaranteed to only include positive counts.
+    #
+    # To strip negative and zero counts, add-in an empty counter:
+    #       c += Counter()
+
+    def __add__(self, other):
+        '''Add counts from two counters.
+
+        >>> Counter('abbb') + Counter('bcc')
+        Counter({'b': 4, 'c': 2, 'a': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        result = Counter()
+        for elem in set(self) | set(other):
+            newcount = self[elem] + other[elem]
+            if newcount > 0:
+                result[elem] = newcount
+        return result
+
+    def __sub__(self, other):
+        ''' Subtract count, but keep only results with positive counts.
+
+        >>> Counter('abbbc') - Counter('bccd')
+        Counter({'b': 2, 'a': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        result = Counter()
+        for elem, count in self.items():
+            newcount = count - other[elem]
+            if newcount > 0:
+                result[elem] = newcount
+        return result
+
+    def __or__(self, other):
+        '''Union is the maximum of value in either of the input counters.
+
+        >>> Counter('abbb') | Counter('bcc')
+        Counter({'b': 3, 'c': 2, 'a': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        _max = max
+        result = Counter()
+        for elem in set(self) | set(other):
+            newcount = _max(self[elem], other[elem])
+            if newcount > 0:
+                result[elem] = newcount
+        return result
+
+    def __and__(self, other):
+        ''' Intersection is the minimum of corresponding counts.
+
+        >>> Counter('abbb') & Counter('bcc')
+        Counter({'b': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        _min = min
+        result = Counter()
+        if len(self) < len(other):
+            self, other = other, self
+        for elem in filter(self.__contains__, other):
+            newcount = _min(self[elem], other[elem])
+            if newcount > 0:
+                result[elem] = newcount
+        return result
 
 
 ################################################################################
