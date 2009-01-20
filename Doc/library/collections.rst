@@ -294,22 +294,29 @@ are undefined for negative inputs::
     >>> e
     Counter({'a': 8})
 
-**References**:
+.. seealso::
 
-* Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_
+    * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
+      in Smalltalk.
 
-* `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
-  in Smalltalk
-* `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-  tutorial with standalone examples
+    * An early Python `Bag recipe <http://code.activestate.com/recipes/259174/>`_
+      for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
+      comformant recipe for Python 2.5 and later.
 
-* An early Python `Bag <http://code.activestate.com/recipes/259174/>`_ recipe
-  for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
-  comformant recipe for Python 2.5 and later
+    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
 
-* Use cases for multisets and mathematical operations on multisets.
-   Knuth, Donald. The Art of Computer Programming Volume II,
-   Section 4.6.3, Exercise 19
+    * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+      tutorial with standalone examples.
+
+    * For use cases for multisets and mathematical operations on multisets, see
+      *Knuth, Donald. The Art of Computer Programming Volume II,
+      Section 4.6.3, Exercise 19*\.
+
+    * To enumerate all possible distinct multisets of a given size over a given
+      set of inputs, see the :func:`combinations_with_replacement` function in
+      the :ref:`itertools-recipes` for itertools::
+
+          map(Counter, combinations_with_replacement('abc', 2)) --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
