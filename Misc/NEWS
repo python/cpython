@@ -12,6 +12,9 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #5013: Fixed a bug in FileHandler which occurred when the delay
+  parameter was set.
+
 - Issue #4935: The overflow checking code in the expandtabs() method common
   to str, bytes and bytearray could be optimized away by the compiler, letting
   the interpreter segfault instead of raising an error.
@@ -59,7 +62,7 @@ Core and Builtins
 - Issue #4589: Fixed exception handling when the __exit__ function of a
   context manager returns a value that cannot be converted to a bool.
 
-- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` 
+- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()``
   method on file objects with closefd=False. The file descriptor is still
   kept open but the file object behaves like a closed file. The ``FileIO``
   object also got a new readonly attribute ``closefd``.
@@ -182,7 +185,7 @@ Library
 
 - Restore Python 2.3 compatibility for decimal.py.
 
-- Issue #1702551: distutils sdist was not excluding VCS directories under 
+- Issue #1702551: distutils sdist was not excluding VCS directories under
   Windows. Inital solution by Guy Dalberto.
 
 - Issue #4812: add missing underscore prefix to some internal-use-only
@@ -191,8 +194,8 @@ Library
 - Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
   the function is not a generator.
 
-- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
-  no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
+- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case
+  no MSVC compiler is found under Windows. Original patch by Philip Jenvey.
 
   - Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@')
   works as expected in the interactive environment.
@@ -200,7 +203,7 @@ Library
 - Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
   Gabriel Genellina.
 
-- Issue #4646: distutils was choking on empty options arg in the setup 
+- Issue #4646: distutils was choking on empty options arg in the setup
   function. Original patch by Thomas Heller.
 
 - Issue #4400: .pypirc default generated file was broken in distutils.

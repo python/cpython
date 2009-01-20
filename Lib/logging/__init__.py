@@ -21,7 +21,7 @@ comp.lang.python, and influenced by Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2008 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2009 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -47,7 +47,7 @@ except ImportError:
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
 __version__ = "0.5.0.5"
-__date__    = "24 January 2008"
+__date__    = "20 January 2009"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -730,7 +730,6 @@ class StreamHandler(Handler):
         if strm is None:
             strm = sys.stderr
         self.stream = strm
-        self.formatter = None
 
     def flush(self):
         """
@@ -785,10 +784,12 @@ class FileHandler(StreamHandler):
         self.mode = mode
         self.encoding = encoding
         if delay:
+            #We don't open the stream, but we still need to call the
+            #Handler constructor to set level, formatter, lock etc.
+            Handler.__init__(self)
             self.stream = None
         else:
-            stream = self._open()
-            StreamHandler.__init__(self, stream)
+            StreamHandler.__init__(self, self._open())
 
     def close(self):
         """
@@ -820,8 +821,7 @@ class FileHandler(StreamHandler):
         constructor, open it before calling the superclass's emit.
         """
         if self.stream is None:
-            stream = self._open()
-            StreamHandler.__init__(self, stream)
+            self.stream = self._open()
         StreamHandler.emit(self, record)
 
 #---------------------------------------------------------------------------
