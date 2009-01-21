@@ -48,7 +48,7 @@ Core and Builtins
   Martin von Löwis at
   http://mail.python.org/pipermail/python-dev/2008-June/080579.html.
 
-- Issue #4604: Some objects of the I/O library could still be used after 
+- Issue #4604: Some objects of the I/O library could still be used after
   having been closed (for instance, a read() call could return some
   previously buffered data). Patch by Dmitry Vasiliev.
 
@@ -137,6 +137,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5013: Fixed a bug in FileHandler which occurred when the delay
+  parameter was set.
+
 - Issue #4842: Always append a trailing 'L' when pickling longs using
   pickle protocol 0.  When reading, the 'L' is optional.
 
@@ -146,7 +149,7 @@ Library
   _check_logger_class from multiprocessing.
 
 - Issue #3325: Remove python2.x try: except: imports for old cPickle from
-  multiprocessing. 
+  multiprocessing.
 
 - Issue #4959: inspect.formatargspec now works for keyword only arguments
   without defaults.
@@ -183,8 +186,8 @@ Library
 - Issue #3638: Remove functions from _tkinter module level that depend on
   TkappObject to work with multiple threads.
 
-- Issue #4718: Adapt the wsgiref package so that it actually works with 
-  Python 3.x, in accordance with the `official amendments of the spec 
+- Issue #4718: Adapt the wsgiref package so that it actually works with
+  Python 3.x, in accordance with the `official amendments of the spec
   <http://www.wsgi.org/wsgi/Amendments_1.0>`_.
 
 - Issue #4796: Added Decimal.from_float() and Context.create_decimal_from_float()
@@ -202,10 +205,10 @@ Library
 - Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
   the function is not a generator.
 
-- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case 
-  no MSVC compiler is found under Windows. Original patch by Philip Jenvey. 
+- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case
+  no MSVC compiler is found under Windows. Original patch by Philip Jenvey.
 
-- Issue #4646: distutils was choking on empty options arg in the setup 
+- Issue #4646: distutils was choking on empty options arg in the setup
   function. Original patch by Thomas Heller.
 
 - Issue #3767: Convert Tk object to string in tkColorChooser.
