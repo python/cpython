@@ -232,6 +232,17 @@ class IOTest(unittest.TestCase):
             else:
                 self.fail("1/0 didn't raise an exception")
 
+    # issue 5008
+    def test_append_mode_tell(self):
+        with io.open(test_support.TESTFN, "wb") as f:
+            f.write(b"xxx")
+        with io.open(test_support.TESTFN, "ab", buffering=0) as f:
+            self.assertEqual(f.tell(), 3)
+        with io.open(test_support.TESTFN, "ab") as f:
+            self.assertEqual(f.tell(), 3)
+        with io.open(test_support.TESTFN, "a") as f:
+            self.assert_(f.tell() > 0)
+
     def test_destructor(self):
         record = []
         class MyFileIO(io.FileIO):
