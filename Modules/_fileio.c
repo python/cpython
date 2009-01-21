@@ -55,6 +55,9 @@ PyTypeObject PyFileIO_Type;
 
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
+static PyObject *
+portable_lseek(int fd, PyObject *posobj, int whence);
+
 /* Returns 0 on success, -1 with exception set on failure. */
 static int
 internal_close(PyFileIOObject *self)
@@ -313,6 +316,16 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		}
 		if(dircheck(self, name) < 0)
 			goto error;
+	}
+
+	if (append) {
+		/* For consistent behaviour, we explicitly seek to the
+		   end of file (otherwise, it might be done only on the
+		   first write()). */
+		PyObject *pos = portable_lseek(self->fd, NULL, 2);
+		if (pos == NULL)
+			goto error;
+		Py_DECREF(pos);
 	}
 
 	goto done;
