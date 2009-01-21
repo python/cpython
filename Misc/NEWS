@@ -137,6 +137,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5008: When a file is opened in append mode with the new IO library,
+  do an explicit seek to the end of file (so that e.g. tell() returns the
+  file size rather than 0). This is consistent with the behaviour of the
+  traditional 2.x file object.
+
 - Issue #5013: Fixed a bug in FileHandler which occurred when the delay
   parameter was set.
 
