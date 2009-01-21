@@ -167,11 +167,12 @@ This module also defines two shortcut functions:
 
    Run command with arguments and return its output as a byte string.
 
-   If the exit code was non-zero it raises a CalledProcessError.  The
-   CalledProcessError object will have the return code in the returncode
-   attribute and output in the output attribute.
+   If the exit code was non-zero it raises a :exc:`CalledProcessError`.  The
+   :exc:`CalledProcessError` object will have the return code in the
+   :attr:`returncode`
+   attribute and output in the :attr:`output` attribute.
 
-   The arguments are the same as for the Popen constructor.  Example:
+   The arguments are the same as for the :class:`Popen` constructor.  Example:
 
       >>> subprocess.check_output(["ls", "-l", "/dev/null"])
       'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
