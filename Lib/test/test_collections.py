@@ -462,18 +462,19 @@ class TestCounter(unittest.TestCase):
         for i in range(1000):
             # test random pairs of multisets
             p = Counter(dict((elem, randrange(-2,4)) for elem in elements))
+            p.update(e=1, f=-1, g=0)
             q = Counter(dict((elem, randrange(-2,4)) for elem in elements))
-            for counterop, numberop, defneg in [
-                (Counter.__add__, lambda x, y: x+y if x+y>0 else 0, True),
-                (Counter.__sub__, lambda x, y: x-y if x-y>0 else 0, False),
-                (Counter.__or__, max, False),
-                (Counter.__and__, min, False),
+            q.update(h=1, i=-1, j=0)
+            for counterop, numberop in [
+                (Counter.__add__, lambda x, y: max(0, x+y)),
+                (Counter.__sub__, lambda x, y: max(0, x-y)),
+                (Counter.__or__, lambda x, y: max(0,x,y)),
+                (Counter.__and__, lambda x, y: max(0, min(x,y))),
             ]:
                 result = counterop(p, q)
                 for x in elements:
-                    # all except __add__ are undefined for negative inputs
-                    if defneg or (p[x] >= 0 and q[x] >= 0):
-                        self.assertEqual(numberop(p[x], q[x]), result[x])
+                    self.assertEqual(numberop(p[x], q[x]), result[x],
+                                     (counterop, x, p, q))
                 # verify that results exclude non-positive counts
                 self.assert_(x>0 for x in result.values())
 

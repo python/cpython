@@ -314,8 +314,8 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         result = Counter()
-        for elem, count in self.items():
-            newcount = count - other[elem]
+        for elem in set(self) | set(other):
+            newcount = self[elem] - other[elem]
             if newcount > 0:
                 result[elem] = newcount
         return result
