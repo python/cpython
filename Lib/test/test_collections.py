@@ -448,6 +448,11 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(dict(Counter(s)), dict(Counter(s).items()))
         self.assertEqual(set(Counter(s)), set(s))
 
+    def test_invariant_for_the_in_operator(self):
+        c = Counter(a=10, b=-2, c=0)
+        for elem in c:
+            self.assert_(elem in c)
+
     def test_multiset_operations(self):
         # Verify that adding a zero counter will strip zeros and negatives
         c = Counter(a=10, b=-2, c=0) + Counter()
