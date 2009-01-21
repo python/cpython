@@ -1057,8 +1057,10 @@ class _TestZZZNumberOfObjects(BaseTestCase):
         multiprocessing.active_children()  # discard dead process objs
         gc.collect()                       # do garbage collection
         refs = self.manager._number_of_objects()
+        debug_info = self.manager._debug_info()
         if refs != EXPECTED_NUMBER:
             print self.manager._debug_info()
+            print debug_info
 
         self.assertEqual(refs, EXPECTED_NUMBER)
 

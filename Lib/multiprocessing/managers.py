@@ -136,7 +136,7 @@ class Server(object):
         self.listener = Listener(address=address, backlog=5)
         self.address = self.listener.address
 
-        self.id_to_obj = {0: (None, ())}
+        self.id_to_obj = {'0': (None, ())}
         self.id_to_refcount = {}
         self.mutex = threading.RLock()
         self.stop = 0
@@ -298,7 +298,7 @@ class Server(object):
             keys = self.id_to_obj.keys()
             keys.sort()
             for ident in keys:
-                if ident != 0:
+                if ident != '0':
                     result.append('  %s:       refcount=%s\n    %s' %
                                   (ident, self.id_to_refcount[ident],
                                    str(self.id_to_obj[ident][0])[:75]))
@@ -310,7 +310,7 @@ class Server(object):
         '''
         Number of shared objects
         '''
-        return len(self.id_to_obj) - 1      # don't count ident=0
+        return len(self.id_to_obj) - 1      # don't count ident='0'
 
     def shutdown(self, c):
         '''
