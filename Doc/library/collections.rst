@@ -146,10 +146,9 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 A counter tool is provided to support convenient and rapid tallies.
 For example::
 
-    # Tally repeated words in a list
-    >>> words = ['red', 'blue', 'red', 'green', 'blue', 'blue']
+    # Tally occurrences of words in a list
     >>> cnt = Counter()
-    >>> for word in words:
+    >>> for word in ['red', 'blue', 'red', 'green', 'blue', 'blue']:
     ...     cnt[word] += 1
     >>> cnt
     Counter({'blue': 3, 'red': 2, 'green': 1})
@@ -163,7 +162,7 @@ For example::
 
 .. class:: Counter([iterable-or-mapping])
 
-   A :class:`Counter` is a :class:`dict` subclass for counting hashable items.
+   A :class:`Counter` is a :class:`dict` subclass for counting hashable objects.
    It is an unordered collection where elements are stored as dictionary keys
    and their counts are stored as dictionary values.  Counts are allowed to be
    any integer value including zero or negative counts.  The :class:`Counter`
@@ -177,16 +176,15 @@ For example::
        >>> c = Counter({'red': 4, 'blue': 2})       # a new counter from a mapping
        >>> c = Counter(spam=8, eggs=1)              # a new counter from keyword args
 
-   The returned object has a dictionary style interface except that it returns
-   a zero count for missing items (instead of raising a :exc:`KeyError` like a
-   dictionary would)::
+   Counter objects have a dictionary interface except that they return a zero
+   count for missing items instead of raising a :exc:`KeyError`::
 
         >>> c = Counter(['egg', 'ham'])
         >>> c['bacon']                              # count of a missing element is zero
         0
 
-   Assigning a count of zero or reducing the count to zero leaves the
-   element in the dictionary.  Use ``del`` to remove the entry entirely:
+   Setting a count to zero still leaves an element in the dictionary.  Use
+   ``del`` to remove it entirely:
 
         >>> c = Counter(['arthur', 'gwain'])
         >>> c['arthur'] = 0                         # set the count of 'arthur' to zero
@@ -202,9 +200,9 @@ For example::
 
    .. method:: elements()
 
-      Return an iterator over elements repeating each as many times as its count.
-      Elements are returned in arbitrary order.  If an element's count has been
-      set to zero or a negative number, :meth:`elements` will ignore it.
+      Return an iterator over elements repeating each as many times as its
+      count.  Elements are returned in arbitrary order.  If an element's count
+      is less than one, :meth:`elements` will ignore it.
 
             >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> list(c.elements())
@@ -220,20 +218,18 @@ For example::
             >>> Counter('abracadabra').most_common(3)
             [('a', 5), ('r', 2), ('b', 2)]
 
-   The usual dictionary methods are available for :class:`Counter` objects.
-   All of those work the same as they do for dictionaries except for two
-   which work differently for counters.
+   The usual dictionary methods are available for :class:`Counter` objects
+   except for two which work differently for counters.
 
    .. method:: fromkeys(iterable)
 
-       There is no equivalent class method for :class:`Counter` objects.
-       Raises a :exc:`NotImplementedError` when called.
+       This class method is not implemented for :class:`Counter` objects.
 
    .. method:: update([iterable-or-mapping])
 
        Elements are counted from an *iterable* or added-in from another
        *mapping* (or counter).  Like :meth:`dict.update` but adds-in counts
-       instead of replacing them, and the *iterable* is expected to be a
+       instead of replacing them.  Also, the *iterable* is expected to be a
        sequence of elements, not a sequence of ``(key, value)`` pairs::
 
             >>> c = Counter('which')
@@ -261,7 +257,7 @@ contain repeated elements (with counts of one or more).  Addition and
 subtraction combine counters by adding or subtracting the counts of
 corresponding elements.  Intersection and union return the minimum and maximum
 of corresponding counts.  All four multiset operations exclude results with
-zero or negative counts::
+counts less than one::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
@@ -279,9 +275,9 @@ zero or negative counts::
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
-    * An early Python `Bag recipe <http://code.activestate.com/recipes/259174/>`_
-      for Python 2.4 and a `Counter <http://code.activestate.com/recipes/576611/>`_
-      comformant recipe for Python 2.5 and later.
+    * A `Counter <http://code.activestate.com/recipes/576611/>`_ conformant
+      recipe for Python 2.5 and an early Python `Bag recipe
+      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
     * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
 
@@ -292,9 +288,9 @@ zero or negative counts::
       *Knuth, Donald. The Art of Computer Programming Volume II,
       Section 4.6.3, Exercise 19*\.
 
-    * To enumerate all possible distinct multisets of a given size over a given
-      set of inputs, see the :func:`combinations_with_replacement` function in
-      the :ref:`itertools-recipes` for itertools::
+    * To enumerate all distinct multisets of a given size over a given set of
+      elements, see the :func:`combinations_with_replacement` function in the
+      :ref:`itertools-recipes` for itertools::
 
           map(Counter, combinations_with_replacement('abc', 2)) --> AA AB AC BB BC CC
 
