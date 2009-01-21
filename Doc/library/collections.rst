@@ -253,16 +253,18 @@ Common patterns for working with :class:`Counter` objects::
     c.items()                     # convert to a list of (elem, cnt) pairs
     Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
     c.most_common()[:-n:-1]       # n least common elements
+    c += Counter()                # remove zero and negative counts
 
 Several multiset mathematical operations are provided for combining
-:class:`Counter` objects.  Multisets are like regular sets but allowed to
+:class:`Counter` objects.  Multisets are like regular sets but are allowed to
 contain repeated elements (with counts of one or more).  Addition and
 subtraction combine counters by adding or subtracting the counts of
 corresponding elements.  Intersection and union return the minimum and maximum
-of corresponding counts::
+of corresponding counts.  All four multiset operations exclude results with
+zero or negative counts::
 
-    >>> c = Counter({'a': 3, 'b': 1})
-    >>> d = Counter({'a': 1, 'b': 2})
+    >>> c = Counter(a=3, b=1)
+    >>> d = Counter(a=1, b=2)
     >>> c + d                           # add two counters together:  c[x] + d[x]
     Counter({'a': 4, 'b': 3})
     >>> c - d                           # subtract (keeping only positive counts)
@@ -271,16 +273,6 @@ of corresponding counts::
     Counter({'a': 1, 'b': 1})
     >>> c | d                           # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
-
-All four multiset operations produce only positive counts (negative and zero
-results are skipped). If inputs include negative counts, addition will sum
-both counts and then exclude non-positive results.  The other three operations
-are undefined for negative inputs::
-
-    >>> e = Counter(a=8, b=-2, c=0)
-    >>> e += Counter()                  # remove zero and negative counts
-    >>> e
-    Counter({'a': 8})
 
 .. seealso::
 
