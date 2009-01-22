@@ -258,7 +258,7 @@ utf_7_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_7_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_7_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len;
@@ -281,7 +281,7 @@ utf_8_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_8_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_8_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len;
@@ -305,7 +305,7 @@ utf_16_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_16_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -328,7 +328,7 @@ utf_16_le_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_16_le_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_le_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
 
@@ -352,7 +352,7 @@ utf_16_be_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_16_be_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_be_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
 
@@ -384,7 +384,7 @@ utf_16_ex_decode(PyObject *self,
     int final = 0;
     Py_ssize_t consumed;
 
-    if (!PyArg_ParseTuple(args, "s*|zii:utf_16_ex_decode",
+    if (!PyArg_ParseTuple(args, "y*|zii:utf_16_ex_decode",
 			  &pbuf, &errors, &byteorder, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -409,7 +409,7 @@ utf_32_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_32_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -432,7 +432,7 @@ utf_32_le_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_32_le_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_le_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -455,7 +455,7 @@ utf_32_be_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:utf_32_be_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_be_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -486,7 +486,7 @@ utf_32_ex_decode(PyObject *self,
     int final = 0;
     Py_ssize_t consumed;
 
-    if (!PyArg_ParseTuple(args, "s*|zii:utf_32_ex_decode",
+    if (!PyArg_ParseTuple(args, "y*|zii:utf_32_ex_decode",
 			  &pbuf, &errors, &byteorder, &final))
 	return NULL;
     consumed = pbuf.len; /* This is overwritten unless final is true. */
@@ -542,7 +542,7 @@ latin_1_decode(PyObject *self,
 	PyObject *unicode;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:latin_1_decode",
+    if (!PyArg_ParseTuple(args, "y*|z:latin_1_decode",
 			  &pbuf, &errors))
 	return NULL;
 
@@ -559,7 +559,7 @@ ascii_decode(PyObject *self,
 	PyObject *unicode;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:ascii_decode",
+    if (!PyArg_ParseTuple(args, "y*|z:ascii_decode",
 			  &pbuf, &errors))
 	return NULL;
 
@@ -577,7 +577,7 @@ charmap_decode(PyObject *self,
     const char *errors = NULL;
     PyObject *mapping = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zO:charmap_decode",
+    if (!PyArg_ParseTuple(args, "y*|zO:charmap_decode",
 			  &pbuf, &errors, &mapping))
 	return NULL;
     if (mapping == Py_None)
@@ -600,7 +600,7 @@ mbcs_decode(PyObject *self,
     Py_ssize_t consumed;
     PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|zi:mbcs_decode",
+    if (!PyArg_ParseTuple(args, "y*|zi:mbcs_decode",
 			  &pbuf, &errors, &final))
 	return NULL;
     consumed = pbuf.len;
