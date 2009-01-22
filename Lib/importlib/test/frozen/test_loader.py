@@ -1,4 +1,4 @@
-import importlib
+from importlib import machinery
 from ..builtin import test_loader
 
 
@@ -6,7 +6,7 @@ class LoaderTests(test_loader.LoaderTests):
 
     name = '__phello__'
     load_module = staticmethod(lambda name:
-                                importlib.FrozenImporter().load_module(name))
+                                machinery.FrozenImporter.load_module(name))
     verification = {'__name__': '__phello__', '__file__': '<frozen>',
                     '__package__': None, '__path__': ['__phello__']}
 

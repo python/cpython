@@ -90,60 +90,17 @@ class closing:
         self.obj.close()
 
 
-class _BuiltinFrozenBaseLoader(object):
+class BuiltinImporter:
 
-    """Base class for meta_path loaders for built-in and frozen modules.
+    """Meta path loader for built-in modules.
 
-    Subclasses must implement:
-
-        * _find(fullname:str) -> bool
-            Finder which returns whether the class can handle the module.
-
-        * _load(fullname:str) -> module
-            Loader which returns the loaded module. The check for sys.modules
-            does not need to be handled by this method.
-
-        * type_:str
-            Name of the type of module being handled. Used in error messages.
+    All methods are either class or static methods, allowing direct use of the
+    class.
 
     """
 
-    def find_module(self, fullname, path=None):
-        """Find a module."""
-        if not self._find(fullname):
-            return None
-        return self
-
-    def load_module(self, fullname):
-        """Load a module."""
-        try:
-            return sys.modules[fullname]
-        except KeyError:
-            pass
-        mod = self._load(fullname)
-        if not mod:
-            raise ImportError("expected {0} module not "
-                                "loaded".format(self.type_))
-        return mod
-
-
-class BuiltinImporter(_BuiltinFrozenBaseLoader):
-
-    """Meta path loader for built-in modules."""
-
-    type_ = "built-in"
-
-    def __init__(self):
-        """Set the methods needed by the class.
-
-        Cannot be set at the class level because the imp module is not
-        necessarily injected until after the class is created.
-
-        """
-        self._find = imp.is_builtin
-        self._load = imp.init_builtin
-
-    def find_module(self, fullname, path=None):
+    @classmethod
+    def find_module(cls, fullname, path=None):
         """Try to find the built-in module.
 
         If 'path' is ever specified then the search is considered a failure.
@@ -151,36 +108,36 @@ class BuiltinImporter(_BuiltinFrozenBaseLoader):
         """
         if path is not None:
             return None
-        return super().find_module(fullname, path)
+        return cls if imp.is_builtin(fullname) else None
 
-    def load_module(self, fullname):
+    @staticmethod
+    def load_module(fullname):
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
-        return super().load_module(fullname)
+        return imp.init_builtin(fullname)
 
 
-class FrozenImporter(_BuiltinFrozenBaseLoader):
+class FrozenImporter:
 
-    """Meta path class for importing frozen modules."""
+    """Meta path class for importing frozen modules.
 
-    type_ = 'frozen'
+    All methods are either class or static method to allow direct use of the
+    class.
 
-    def __init__(self):
-        """Specify the methods needed by the superclass.
+    """
 
-        Because imp may not be injected until after class creation these
-        methods cannot be set at the class level.
+    @classmethod
+    def find_module(cls, fullname, path=None):
+        """Find a frozen module."""
+        return cls if imp.is_frozen(fullname) else None
 
-        """
-        self._find = imp.is_frozen
-        self._load = imp.init_frozen
-
-    def load_module(self, fullname):
+    @classmethod
+    def load_module(cls, fullname):
         """Load a frozen module."""
-        if not self.find_module(fullname):
+        if cls.find_module(fullname) is None:
             raise ImportError("{0} is not a frozen module".format(fullname))
-        return super().load_module(fullname)
+        return imp.init_frozen(fullname)
 
 
 class ChainedImporter(object):
@@ -707,7 +664,7 @@ class Import(object):
         """Store a default path hook entry and a sequence to internally extend
         sys.meta_path by (passing in None uses default importers)."""
         if extended_meta_path is None:
-            self.extended_meta_path = BuiltinImporter(), FrozenImporter()
+            self.extended_meta_path = BuiltinImporter, FrozenImporter
         else:
             self.extended_meta_path = extended_meta_path
         self.default_path_hook = default_path_hook

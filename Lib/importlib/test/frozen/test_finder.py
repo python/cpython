@@ -1,4 +1,4 @@
-import importlib
+from importlib import machinery
 from ..builtin import test_finder
 from .. import support
 
@@ -10,7 +10,7 @@ class FinderTests(test_finder.FinderTests):
     """Test finding frozen modules."""
 
     def find(self, name, path=None):
-        finder = importlib.FrozenImporter()
+        finder = machinery.FrozenImporter
         return finder.find_module(name, path)
 
 
