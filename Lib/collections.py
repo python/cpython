@@ -253,8 +253,11 @@ class Counter(dict):
 
         if iterable is not None:
             if isinstance(iterable, Mapping):
-                for elem, count in iterable.iteritems():
-                    self[elem] += count
+                if self:
+                    for elem, count in iterable.iteritems():
+                        self[elem] += count
+                else:
+                    dict.update(self, iterable) # fast path when counter is empty
             else:
                 for elem in iterable:
                     self[elem] += 1
@@ -280,7 +283,6 @@ class Counter(dict):
     #       Knuth TAOCP Volume II section 4.6.3 exercise 19
     #       and at http://en.wikipedia.org/wiki/Multiset
     #
-    # Results are undefined when inputs contain negative counts.
     # Outputs guaranteed to only include positive counts.
     #
     # To strip negative and zero counts, add-in an empty counter:
