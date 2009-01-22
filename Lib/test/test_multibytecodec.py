@@ -44,7 +44,7 @@ class Test_MultibyteCodec(unittest.TestCase):
         myreplace  = lambda exc: ('', sys.maxsize+1)
         codecs.register_error('test.cjktest', myreplace)
         self.assertRaises(IndexError, dec,
-                          'apple\x92ham\x93spam', 'test.cjktest')
+                          b'apple\x92ham\x93spam', 'test.cjktest')
 
     def test_codingspec(self):
         try:
@@ -61,6 +61,10 @@ class Test_MultibyteCodec(unittest.TestCase):
         self.assertRaises(AttributeError,
                           _multibytecodec.MultibyteStreamWriter, None)
 
+    def test_decode_unicode(self):
+        # Trying to decode an unicode string should raise a TypeError
+        for enc in ALL_CJKENCODINGS:
+            self.assertRaises(TypeError, codecs.getdecoder(enc), "")
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
@@ -145,6 +149,12 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertEqual(decoder.decode(ESC + b'$'), '')
         self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
+
+    def test_decode_unicode(self):
+        # Trying to decode an unicode string should raise a TypeError
+        for enc in ALL_CJKENCODINGS:
+            decoder = codecs.getincrementaldecoder(enc)()
+            self.assertRaises(TypeError, decoder.decode, "")
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
