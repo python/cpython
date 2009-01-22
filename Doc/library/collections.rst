@@ -191,18 +191,15 @@ For example::
    Counter objects have a dictionary interface except that they return a zero
    count for missing items instead of raising a :exc:`KeyError`::
 
-        >>> c = Counter(['egg', 'ham'])
+        >>> c = Counter(['eggs', 'ham'])
         >>> c['bacon']                              # count of a missing element is zero
         0
 
-   Setting a count to zero still leaves an element in the dictionary.  Use
-   ``del`` to remove it entirely:
+   Setting a count to zero does not remove an element from a counter.
+   Use ``del`` to remove it entirely:
 
-        >>> c = Counter(['arthur', 'gwain'])
-        >>> c['arthur'] = 0                         # set the count of 'arthur' to zero
-        >>> 'arthur' in c                           # but 'arthur' is still in the counter
-        True
-        >>> del c['arthur']                         # del will completely remove the entry
+        >>> c['sausage'] = 0                        # counter entry with a zero count
+        >>> del c['sausage']                        # del actually removes the entry
 
    .. versionadded:: 2.7
 
@@ -284,19 +281,19 @@ counts less than one::
 
 .. seealso::
 
+    * `Counter class <http://code.activestate.com/recipes/576611/>`_
+      adapted for Python 2.5 and an early `Bag recipe
+      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
+
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
-
-    * A `Counter <http://code.activestate.com/recipes/576611/>`_ conformant
-      recipe for Python 2.5 and an early Python `Bag recipe
-      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
     * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
 
     * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-      tutorial with standalone examples.
+      tutorial with examples.
 
-    * For use cases for multisets and mathematical operations on multisets, see
+    * For mathematical operations on multisets and their use cases, see
       *Knuth, Donald. The Art of Computer Programming Volume II,
       Section 4.6.3, Exercise 19*\.
 
@@ -304,7 +301,7 @@ counts less than one::
       elements, see the :func:`combinations_with_replacement` function in the
       :ref:`itertools-recipes` for itertools::
 
-          map(Counter, combinations_with_replacement('abc', 2)) --> AA AB AC BB BC CC
+          map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
