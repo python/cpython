@@ -612,7 +612,7 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
 	const char *data, *errors = NULL;
 	Py_ssize_t datalen, finalsize;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|z:decode",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|z:decode",
 				codeckwarglist, &pdata, &errors))
 		return NULL;
 	data = pdata.buf;
@@ -1038,7 +1038,7 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
 	Py_ssize_t wsize, finalsize = 0, size, origpending;
 	int final = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|i:decode",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:decode",
 			incrementalkwarglist, &pdata, &final))
 		return NULL;
 	data = pdata.buf;
