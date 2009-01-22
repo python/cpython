@@ -68,10 +68,10 @@ Functions
 
 .. function:: import_module(name, package=None)
 
-    Import a module. The ``name`` argument specifies what module to
+    Import a module. The *name* argument specifies what module to
     import in absolute or relative terms
     (e.g. either ``pkg.mod`` or ``..mod``). If the name is
-    specified in relative terms, then the ``package`` argument must be
+    specified in relative terms, then the *package* argument must be
     specified to the package which is to act as the anchor for resolving the
     package name (e.g. ``import_module('..mod', 'pkg.subpkg')`` will import
     ``pkg.mod``). The specified module will be inserted into
