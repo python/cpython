@@ -1475,6 +1475,36 @@ class WithStmtTest(unittest.TestCase):
                                        info.streamwriter, 'strict') as srw:
             self.assertEquals(srw.read(), "\xfc")
 
+class TypesTest(unittest.TestCase):
+    def test_decode_unicode(self):
+        # Most decoders don't accept unicode input
+        decoders = [
+            codecs.utf_7_decode,
+            codecs.utf_8_decode,
+            codecs.utf_16_le_decode,
+            codecs.utf_16_be_decode,
+            codecs.utf_16_ex_decode,
+            codecs.utf_32_decode,
+            codecs.utf_32_le_decode,
+            codecs.utf_32_be_decode,
+            codecs.utf_32_ex_decode,
+            codecs.latin_1_decode,
+            codecs.ascii_decode,
+            codecs.charmap_decode,
+        ]
+        if hasattr(codecs, "mbcs_decode"):
+            decoders.append(codecs.mbcs_decode)
+        for decoder in decoders:
+            self.assertRaises(TypeError, decoder, "xxx")
+
+    def test_unicode_escape(self):
+        # Escape-decoding an unicode string is supported ang gives the same
+        # result as decoding the equivalent ASCII bytes string.
+        self.assertEquals(codecs.unicode_escape_decode(r"\u1234"), ("\u1234", 6))
+        self.assertEquals(codecs.unicode_escape_decode(br"\u1234"), ("\u1234", 6))
+        self.assertEquals(codecs.raw_unicode_escape_decode(r"\u1234"), ("\u1234", 6))
+        self.assertEquals(codecs.raw_unicode_escape_decode(br"\u1234"), ("\u1234", 6))
+
 
 def test_main():
     support.run_unittest(
@@ -1501,6 +1531,7 @@ def test_main():
         BasicUnicodeTest,
         CharmapTest,
         WithStmtTest,
+        TypesTest,
     )
 
 
