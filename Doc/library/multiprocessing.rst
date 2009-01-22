@@ -1522,7 +1522,9 @@ with the :class:`Pool` class.
    .. method:: apply(func[, args[, kwds]])
 
       Call *func* with arguments *args* and keyword arguments *kwds*.  It blocks
-      till the result is ready.
+      till the result is ready. Given this blocks - :meth:`apply_async` is better suited
+      for performing work in parallel. Additionally, the passed
+      in function is only executed in one of the workers of the pool.
 
    .. method:: apply_async(func[, args[, kwds[, callback]]])
 
