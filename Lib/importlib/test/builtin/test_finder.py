@@ -1,4 +1,4 @@
-import importlib
+from importlib import machinery
 from .. import support
 
 import sys
@@ -12,7 +12,7 @@ class FinderTests(unittest.TestCase):
     name = 'errno'
 
     find_module = staticmethod(lambda name, path=None:
-                    importlib.BuiltinImporter().find_module(name, path))
+                    machinery.BuiltinImporter.find_module(name, path))
 
 
     def test_find_module(self):

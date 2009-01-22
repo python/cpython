@@ -1,4 +1,5 @@
 import importlib
+from importlib import machinery
 from .. import support
 
 import sys
@@ -23,7 +24,7 @@ class LoaderTests(unittest.TestCase):
         self.assert_(module.__name__ in sys.modules)
 
     load_module = staticmethod(lambda name:
-                                importlib.BuiltinImporter().load_module(name))
+                                machinery.BuiltinImporter.load_module(name))
 
     def test_load_module(self):
         # Common case.
