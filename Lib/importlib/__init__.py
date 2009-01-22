@@ -38,6 +38,8 @@ def _reset__import__():
     __builtins__['__import__'] = original__import__
 
 
+# Bootstrap help #####################################################
+
 def _case_ok(directory, check):
     """Check if the directory contains something matching 'check'.
 
@@ -110,6 +112,8 @@ marshal._w_long = _w_long
 marshal._r_long = _r_long
 
 
+# Public API #########################################################
+
 __import__ = _bootstrap.Import().__call__
 
 
@@ -134,5 +138,5 @@ def import_module(name, package=None):
     return sys.modules[name]
 
 
-
+# XXX This should go away once the public API is done.
 from ._bootstrap import *
