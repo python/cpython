@@ -1315,9 +1315,13 @@ class PyBuildExt(build_ext):
             if macros.get('HAVE_SEM_OPEN', False):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
 
-        exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
-                                 define_macros=macros.items(),
-                                 include_dirs=["Modules/_multiprocessing"]))
+        if sysconfig.get_config_var('WITH_THREAD'):
+            exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                    define_macros=macros.items(),
+                                    include_dirs=["Modules/_multiprocessing"]))
+        else:
+            missing.append('_multiprocessing')
+
         # End multiprocessing
 
 
