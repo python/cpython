@@ -130,16 +130,6 @@ an unpickler, then you call the unpickler's :meth:`load` method.  The
    The highest protocol version available.  This value can be passed as a
    *protocol* value.
 
-.. note::
-
-   Be sure to always open pickle files created with protocols >= 1 in binary mode.
-   For the old ASCII-based pickle protocol 0 you can use either text mode or binary
-   mode as long as you stay consistent.
-
-   A pickle file written with protocol 0 in binary mode will contain lone linefeeds
-   as line terminators and therefore will look "funny" when viewed in Notepad or
-   other editors which do not support this format.
-
 .. data:: DEFAULT_PROTOCOL
 
    The default protocol used for pickling.  May be less than HIGHEST_PROTOCOL.
