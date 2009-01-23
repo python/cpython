@@ -2881,7 +2881,7 @@ static int
 load_long(UnpicklerObject *self)
 {
     PyObject *value;
-    char *s, *ss;
+    char *s;
     Py_ssize_t len;
 
     if ((len = unpickler_readline(self, &s)) < 0)
@@ -2894,17 +2894,9 @@ load_long(UnpicklerObject *self)
        compatibility with Python 3.0.0, we don't actually *require*
        the 'L' to be present. */
     if (s[len-2] == 'L') {
-        ss = (char *)PyMem_Malloc(len-1);
-        if (ss == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        strncpy(ss, s, len-2);
-        ss[len-2] = '\0';
-
+        s[len-2] = '\0';
         /* XXX: Should the base argument explicitly set to 10? */
-        value = PyLong_FromString(ss, NULL, 0);
-        PyMem_Free(ss);
+        value = PyLong_FromString(s, NULL, 0);
     }
     else {
         value = PyLong_FromString(s, NULL, 0);
