@@ -560,10 +560,8 @@ referenced object.
 Here is a comprehensive example presenting how persistent ID can be used to
 pickle external objects by reference.
 
-.. XXX Work around for some bug in sphinx/pygments.
-.. highlightlang:: python
 .. literalinclude:: ../includes/dbpickle.py
-.. highlightlang:: python3
+
 
 .. _pickle-state:
 
@@ -715,46 +713,35 @@ solutions.
 
 .. _pickle-example:
 
-Example
--------
+Usage Examples
+--------------
 
 For the simplest code, use the :func:`dump` and :func:`load` functions.  Note
 that a self-referencing list is pickled and restored correctly. ::
 
    import pickle
 
-   data1 = {'a': [1, 2.0, 3, 4+6j],
-            'b': ("string", "string using Unicode features \u0394"),
-            'c': None}
+   # An arbitrary collection of objects supported by pickle.
+   data = {
+     'a': [1, 2.0, 3, 4+6j],
+     'b': ("character string", b"byte string"),
+     'c': set([None, True, False])
+   }
 
-   selfref_list = [1, 2, 3]
-   selfref_list.append(selfref_list)
+   with open('data.pickle', 'wb') as f:
+       # Pickle the 'data' dictionary using the highest protocol available.
+       pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
-   output = open('data.pkl', 'wb')
 
-   # Pickle dictionary using protocol 2.
-   pickle.dump(data1, output, 2)
+The following example reads the resulting pickled data. ::
 
-   # Pickle the list using the highest protocol available.
-   pickle.dump(selfref_list, output, -1)
+   import pickle
 
-   output.close()
+   with open('data.pickle', 'rb') as f:
+       # The protocol version used is detected automatically, so we do not
+       # have to specify it.
+       data = pickle.load(f)
 
-The following example reads the resulting pickled data.  When reading a
-pickle-containing file, you should open the file in binary mode because you
-can't be sure if the ASCII or binary format was used. ::
-
-   import pprint, pickle
-
-   pkl_file = open('data.pkl', 'rb')
-
-   data1 = pickle.load(pkl_file)
-   pprint.pprint(data1)
-
-   data2 = pickle.load(pkl_file)
-   pprint.pprint(data2)
-
-   pkl_file.close()
 
 .. seealso::
 
