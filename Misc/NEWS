@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1672332: fix unpickling of subnormal floats, which was
+  producing a ValueError on some platforms.
+
 - Issue #3881: Help Tcl to load even when started through the
   unreadable local symlink to "Program Files" on Vista.
 
