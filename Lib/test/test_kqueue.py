@@ -120,12 +120,15 @@ class TestKQueue(unittest.TestCase):
         client.send("Hello!")
         server.send("world!!!")
 
-        events = kq.control(None, 4, 1)
         # We may need to call it several times
-        for i in range(5):
+        for i in range(10):
+            events = kq.control(None, 4, 1)
             if len(events) == 4:
                 break
-            events = kq.control(None, 4, 1)
+            time.sleep(1.0)
+        else:
+            self.fail('timeout waiting for event notifications')
+
         events = [(e.ident, e.filter, e.flags) for e in events]
         events.sort()
 
