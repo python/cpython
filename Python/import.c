@@ -3255,6 +3255,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 		 * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
 		 */
 		rv = GetFileAttributesA(path);
+		PyMem_Free(path);
 		if (rv != INVALID_FILE_ATTRIBUTES) {
 			/* it exists */
 			if (rv & FILE_ATTRIBUTE_DIRECTORY) {
