@@ -4,7 +4,7 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import struct, os, time, sys, shutil
-import binascii, io
+import binascii, io, stat
 
 try:
     import zlib # We may need its compression method
@@ -959,11 +959,11 @@ class ZipFile:
         """
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
-        if targetpath[-1:] == "/":
+        if targetpath[-1:] in (os.path.sep, os.path.altsep):
             targetpath = targetpath[:-1]
 
         # don't include leading "/" from file name if present
-        if os.path.isabs(member.filename):
+        if member.filename[0] == '/':
             targetpath = os.path.join(targetpath, member.filename[1:])
         else:
             targetpath = os.path.join(targetpath, member.filename)
@@ -974,6 +974,10 @@ class ZipFile:
         upperdirs = os.path.dirname(targetpath)
         if upperdirs and not os.path.exists(upperdirs):
             os.makedirs(upperdirs)
+
+        if member.filename[-1] == '/':
+            os.mkdir(targetpath)
+            return targetpath
 
         source = self.open(member, pwd=pwd)
         target = open(targetpath, "wb")
@@ -1014,6 +1018,7 @@ class ZipFile:
                   "Attempt to write to ZIP archive that was already closed")
 
         st = os.stat(filename)
+        isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
         # Create ZipInfo instance to store file information
@@ -1022,6 +1027,8 @@ class ZipFile:
         arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
         while arcname[0] in (os.sep, os.altsep):
             arcname = arcname[1:]
+        if isdir:
+            arcname += '/'
         zinfo = ZipInfo(arcname, date_time)
         zinfo.external_attr = (st[0] & 0xFFFF) << 16      # Unix attributes
         if compress_type is None:
@@ -1035,6 +1042,16 @@ class ZipFile:
 
         self._writecheck(zinfo)
         self._didModify = True
+
+        if isdir:
+            zinfo.file_size = 0
+            zinfo.compress_size = 0
+            zinfo.CRC = 0
+            self.filelist.append(zinfo)
+            self.NameToInfo[zinfo.filename] = zinfo
+            self.fp.write(zinfo.FileHeader())
+            return
+
         fp = io.open(filename, "rb")
         # Must overwrite CRC and sizes with correct data later
         zinfo.CRC = CRC = 0
