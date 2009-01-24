@@ -1,9 +1,15 @@
-What's New in IDLE 2.6a3?
+What's New in IDLE 2.7a0?
 =========================
 
-*Release date: XX-XXX-2008*
+*Release date: XX-XXX-2009*
 
 - Issue #3549: On MacOS the preferences menu was not present
+
+
+What's New in IDLE 2.6?
+=======================
+
+*Release date: 01-Oct-2008*
 
 - Issue #2665: On Windows, an IDLE installation upgraded from an old version
   would not start if a custom theme was defined.
