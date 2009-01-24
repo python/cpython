@@ -344,6 +344,27 @@ class PathsTests(unittest.TestCase):
         self.assertEqual(mod.testdata, 'test_trailing_slash')
         unload("test_trailing_slash")
 
+    # http://bugs.python.org/issue3677
+    def _test_UNC_path(self):
+        f = open(os.path.join(self.path, 'test_trailing_slash.py'), 'w')
+        f.write("testdata = 'test_trailing_slash'")
+        f.close()
+        #create the UNC path, like \\myhost\c$\foo\bar
+        path = os.path.abspath(self.path)
+        import socket
+        hn = socket.gethostname()
+        drive = path[0]
+        unc = "\\\\%s\\%s$"%(hn, drive)
+        unc += path[2:]
+        sys.path.append(path)
+        mod = __import__("test_trailing_slash")
+        self.assertEqual(mod.testdata, 'test_trailing_slash')
+        unload("test_trailing_slash")
+
+    if sys.platform == "win32":
+        test_UNC_path = _test_UNC_path
+
+
 class RelativeImport(unittest.TestCase):
     def tearDown(self):
         try:
