@@ -2895,12 +2895,9 @@ load_long(UnpicklerObject *self)
        the 'L' to be present. */
     if (s[len-2] == 'L') {
         s[len-2] = '\0';
-        /* XXX: Should the base argument explicitly set to 10? */
-        value = PyLong_FromString(s, NULL, 0);
     }
-    else {
-        value = PyLong_FromString(s, NULL, 0);
-    }
+    /* XXX: Should the base argument explicitly set to 10? */
+    value = PyLong_FromString(s, NULL, 0);
     if (value == NULL)
         return -1;
 
