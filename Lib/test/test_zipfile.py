@@ -11,9 +11,10 @@ from tempfile import TemporaryFile
 from random import randint, random
 
 import test.test_support as support
-from test.test_support import TESTFN, run_unittest
+from test.test_support import TESTFN, run_unittest, findfile
 
 TESTFN2 = TESTFN + "2"
+TESTFNDIR = TESTFN + "d"
 FIXEDTEST_SIZE = 1000
 
 SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
@@ -1011,6 +1012,28 @@ class TestsWithMultipleOpens(unittest.TestCase):
     def tearDown(self):
         os.remove(TESTFN2)
 
+class TestWithDirectory(unittest.TestCase):
+    def setUp(self):
+        os.mkdir(TESTFN2)
+
+    def testExtractDir(self):
+        zipf = zipfile.ZipFile(findfile("zipdir.zip"))
+        zipf.extractall(TESTFN2)
+        self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a")))
+        self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
+        self.assertTrue(os.path.exists(os.path.join(TESTFN2, "a", "b", "c")))
+
+    def testStoreDir(self):
+        os.mkdir(os.path.join(TESTFN2, "x"))
+        zipf = zipfile.ZipFile(TESTFN, "w")
+        zipf.write(os.path.join(TESTFN2, "x"), "x")
+        self.assertTrue(zipf.filelist[0].filename.endswith("x/"))
+
+    def tearDown(self):
+        shutil.rmtree(TESTFN2)
+        if os.path.exists(TESTFN):
+            os.remove(TESTFN)
+
 
 class UniversalNewlineTests(unittest.TestCase):
     def setUp(self):
@@ -1119,6 +1142,7 @@ class UniversalNewlineTests(unittest.TestCase):
 def test_main():
     run_unittest(TestsWithSourceFile, TestZip64InSmallFiles, OtherTests,
                  PyZipFileTests, DecryptionTests, TestsWithMultipleOpens,
+                 TestWithDirectory,
                  UniversalNewlineTests, TestsWithRandomBinaryFiles)
 
 if __name__ == "__main__":
