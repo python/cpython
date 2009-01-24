@@ -3465,7 +3465,8 @@ load_float(Unpicklerobject *self)
 	errno = 0;
 	d = PyOS_ascii_strtod(s, &endptr);
 
-	if (errno || (endptr[0] != '\n') || (endptr[1] != '\0')) {
+	if ((errno == ERANGE && !(fabs(d) <= 1.0)) ||
+	    (endptr[0] != '\n') || (endptr[1] != '\0')) {
 		PyErr_SetString(PyExc_ValueError,
 				"could not convert string to float");
 		goto finally;

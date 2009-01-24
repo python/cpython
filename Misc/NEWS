@@ -194,6 +194,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1672332: fix unpickling of subnormal floats, which was
+  producing a ValueError on some platforms.
+
 - Restore Python 2.3 compatibility for decimal.py.
 
 - Issue #1702551: distutils sdist was not excluding VCS directories under
