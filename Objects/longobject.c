@@ -175,7 +175,7 @@ PyObject *
 PyLong_FromLong(long ival)
 {
 	PyLongObject *v;
-        unsigned long abs_ival;
+	unsigned long abs_ival;
 	unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
 	int ndigits = 0;
 	int sign = 1;
@@ -183,33 +183,35 @@ PyLong_FromLong(long ival)
 	CHECK_SMALL_INT(ival);
 
 	if (ival < 0) {
-		/* if LONG_MIN == -LONG_MAX-1 (true on most platforms) then
-		   ANSI C says that the result of -ival is undefined when ival
-		   == LONG_MIN.  Hence the following workaround. */
-		abs_ival = (unsigned long)(-1-ival) + 1;
+		/* negate: can't write this as abs_ival = -ival since that
+		   invokes undefined behaviour when ival is LONG_MIN */
+		abs_ival = 0U-(unsigned long)ival;
 		sign = -1;
 	}
 	else {
 		abs_ival = (unsigned long)ival;
 	}
 
-	/* Fast path for single-digits ints */
-	if (!(ival>>PyLong_SHIFT)) {
+	/* Fast path for single-digit ints */
+	if (!(abs_ival >> PyLong_SHIFT)) {
 		v = _PyLong_New(1);
 		if (v) {
 			Py_SIZE(v) = sign;
-			v->ob_digit[0] = (digit)ival;
+			v->ob_digit[0] = Py_SAFE_DOWNCAST(
+				abs_ival, unsigned long, digit);
 		}
 		return (PyObject*)v;
 	}
 
 	/* 2 digits */
-	if (!(ival >> 2*PyLong_SHIFT)) {
+	if (!(abs_ival >> 2*PyLong_SHIFT)) {
 		v = _PyLong_New(2);
 		if (v) {
 			Py_SIZE(v) = 2*sign;
-			v->ob_digit[0] = (digit)ival & PyLong_MASK;
-			v->ob_digit[1] = (digit)(ival >> PyLong_SHIFT);
+			v->ob_digit[0] = Py_SAFE_DOWNCAST(
+				abs_ival & PyLong_MASK, unsigned long, digit);
+			v->ob_digit[1] = Py_SAFE_DOWNCAST(
+			      abs_ival >> PyLong_SHIFT, unsigned long, digit);
 		}
 		return (PyObject*)v;
 	}
@@ -226,7 +228,8 @@ PyLong_FromLong(long ival)
 		Py_SIZE(v) = ndigits*sign;
 		t = abs_ival;
 		while (t) {
-			*p++ = (digit)(t & PyLong_MASK);
+			*p++ = Py_SAFE_DOWNCAST(
+				t & PyLong_MASK, unsigned long, digit);
 			t >>= PyLong_SHIFT;
 		}
 	}
