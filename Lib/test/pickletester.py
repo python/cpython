@@ -545,6 +545,16 @@ class AbstractPickleTests(unittest.TestCase):
             got = self.loads(p)
             self.assertEqual(n, got)
 
+    def test_float(self):
+        test_values = [0.0, 4.94e-324, 1e-310, 7e-308, 6.626e-34, 0.1, 0.5,
+                       3.14, 263.44582062374053, 6.022e23, 1e30]
+        test_values = test_values + [-x for x in test_values]
+        for proto in protocols:
+            for value in test_values:
+                pickle = self.dumps(value, proto)
+                got = self.loads(pickle)
+                self.assertEqual(value, got)
+
     @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
