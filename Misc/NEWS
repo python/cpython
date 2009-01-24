@@ -139,6 +139,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3881: Help Tcl to load even when started through the
+  unreadable local symlink to "Program Files" on Vista.
+
 - Issue #4710: Extract directories properly in the zipfile module;
   allow adding directories to a zipfile.
 
