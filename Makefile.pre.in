@@ -247,6 +247,16 @@ ASDLGEN=	$(srcdir)/Parser/asdl_c.py
 
 ##########################################################################
 # Python
+
+OPCODETARGETS_H= \
+		$(srcdir)/Python/opcode_targets.h
+
+OPCODETARGETGEN= \
+		$(srcdir)/Python/makeopcodetargets.py
+
+OPCODETARGETGEN_FILES= \
+		$(OPCODETARGETGEN) $(srcdir)/Lib/opcode.py
+
 PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
@@ -566,6 +576,11 @@ Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(BYTESTR_DEPS) \
 				$(srcdir)/Objects/stringlib/formatter.h
+
+$(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
+	$(OPCODETARGETGEN) $(OPCODETARGETS_H)
+
+Python/ceval.o: $(OPCODETARGETS_H)
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS)

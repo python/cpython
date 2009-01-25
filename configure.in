@@ -3660,6 +3660,22 @@ then
    wide chars that would be converted.])
 fi
 
+# Check for --with-computed-gotos
+AC_MSG_CHECKING(for --with-computed-gotos)
+AC_ARG_WITH(computed-gotos,
+            AC_HELP_STRING(--with-computed-gotos,
+                           Use computed gotos / threaded dispatch in evaluation loop (not available on all compilers)),
+[
+if test "$withval" != no
+then 
+  AC_DEFINE(USE_COMPUTED_GOTOS, 1,
+  [Define if you want to use computed gotos in ceval.c.]) 
+  AC_MSG_RESULT(yes)
+else AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
+
 AC_SUBST(THREADHEADERS)
 
 for h in `(cd $srcdir;echo Python/thread_*.h)`
