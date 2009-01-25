@@ -847,23 +847,6 @@ This module provides the EMXCCompiler class, a subclass of
 :class:`UnixCCompiler` that handles the EMX port of the GNU C compiler to OS/2.
 
 
-:mod:`distutils.mwerkscompiler` --- Metrowerks CodeWarrior support
-==================================================================
-
-.. module:: distutils.mwerkscompiler
-   :synopsis: Metrowerks CodeWarrior support
-
-
-Contains :class:`MWerksCompiler`, an implementation of the abstract
-:class:`CCompiler` class for MetroWerks CodeWarrior on the pre-Mac OS X
-Macintosh. Needs work to support CW on Windows or Mac OS X.
-
-.. % \subsection{Utility modules}
-.. %
-.. % The following modules all provide general utility functions. They haven't
-.. % all been documented yet.
-
-
 :mod:`distutils.archive_util` ---  Archiving utilities
 ======================================================
 
