@@ -2,6 +2,9 @@
    built-in formatter for unicode.  That is, unicode.__format__(). */
 
 #include "Python.h"
+
+#ifdef Py_USING_UNICODE
+
 #include "../Objects/stringlib/unicodedefs.h"
 
 #define FORMAT_STRING _PyUnicode_FormatAdvanced
@@ -11,3 +14,5 @@
    will convert them to unicode. */
 
 #include "../Objects/stringlib/formatter.h"
+
+#endif
