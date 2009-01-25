@@ -17,7 +17,8 @@ from multiprocessing.process import current_process, active_children
 __all__ = [
     'sub_debug', 'debug', 'info', 'sub_warning', 'get_logger',
     'log_to_stderr', 'get_temp_dir', 'register_after_fork',
-    'is_exiting', 'Finalize', 'ForkAwareThreadLock', 'ForkAwareLocal'
+    'is_exiting', 'Finalize', 'ForkAwareThreadLock', 'ForkAwareLocal',
+    'SUBDEBUG', 'SUBWARNING',
     ]
 
 #
@@ -57,19 +58,27 @@ def get_logger():
     Returns logger used by multiprocessing
     '''
     global _logger
+    import logging, atexit
 
-    if not _logger:
-        import logging, atexit
+    logging._acquireLock()
+    try:
+        if not _logger:
 
-        # XXX multiprocessing should cleanup before logging
-        if hasattr(atexit, 'unregister'):
-            atexit.unregister(_exit_function)
-            atexit.register(_exit_function)
-        else:
-            atexit._exithandlers.remove((_exit_function, (), {}))
-            atexit._exithandlers.append((_exit_function, (), {}))
+            _logger = logging.getLogger(LOGGER_NAME)
+            _logger.propagate = 0
+            logging.addLevelName(SUBDEBUG, 'SUBDEBUG')
+            logging.addLevelName(SUBWARNING, 'SUBWARNING')
 
-        _logger = logging.getLogger(LOGGER_NAME)
+            # XXX multiprocessing should cleanup before logging
+            if hasattr(atexit, 'unregister'):
+                atexit.unregister(_exit_function)
+                atexit.register(_exit_function)
+            else:
+                atexit._exithandlers.remove((_exit_function, (), {}))
+                atexit._exithandlers.append((_exit_function, (), {}))
+
+    finally:
+        logging._releaseLock()
 
     return _logger
 
@@ -79,14 +88,17 @@ def log_to_stderr(level=None):
     '''
     global _log_to_stderr
     import logging
+
     logger = get_logger()
     formatter = logging.Formatter(DEFAULT_LOGGING_FORMAT)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    if level is not None:
+
+    if level:
         logger.setLevel(level)
     _log_to_stderr = True
+    return _logger
 
 #
 # Function returning a temp directory which will be removed on exit
