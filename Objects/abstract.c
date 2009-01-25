@@ -740,7 +740,7 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 	}
 
 	/* Check the format_spec type, and make sure it's str or unicode */
-#if Py_USING_UNICODE
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(format_spec))
 		spec_is_unicode = 1;
 	else if (PyString_Check(format_spec))
