@@ -95,12 +95,12 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
-    .. method:: find_module(fullname, path=None)
+    .. classmethod:: find_module(fullname, path=None)
 
         Class method that allows this class to be a :term:`finder` for built-in
         modules.
 
-    .. method:: load_module(fullname)
+    .. classmethod:: load_module(fullname)
 
         Class method that allows this class to be a :term:`loader` for built-in
         modules.
@@ -113,12 +113,12 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
-    .. method:: find_module(fullname, path=None)
+    .. classmethod:: find_module(fullname, path=None)
 
         Class method that allows this class to be a :term:`finder` for frozen
         modules.
 
-    .. method:: load_module(fullname)
+    .. classmethod:: load_module(fullname)
 
         Class method that allows this class to be a :term:`loader` for frozen
         modules.
