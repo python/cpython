@@ -110,8 +110,8 @@ class BuiltinImporter:
             return None
         return cls if imp.is_builtin(fullname) else None
 
-    @staticmethod
-    def load_module(fullname):
+    @classmethod
+    def load_module(cls, fullname):
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
