@@ -1287,11 +1287,9 @@ Samuele
 ...             nexts = cycle(islice(nexts, pending))
 
 >>> def powerset(iterable):
-...     "powerset('ab') --> set([]), set(['a']), set(['b']), set(['a', 'b'])"
-...     # Recipe credited to Eric Raymond
-...     pairs = [(2**i, x) for i, x in enumerate(iterable)]
-...     for n in xrange(2**len(pairs)):
-...         yield set(x for m, x in pairs if m&n)
+...     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+...     s = list(iterable)
+...     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 >>> def combinations_with_replacement(iterable, r):
 ...     "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
@@ -1385,8 +1383,8 @@ perform as purported.
 >>> list(roundrobin('abc', 'd', 'ef'))
 ['a', 'd', 'e', 'b', 'f', 'c']
 
->>> map(sorted, powerset('ab'))
-[[], ['a'], ['b'], ['a', 'b']]
+>>> list(powerset([1,2,3]))
+[(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
 >>> list(combinations_with_replacement('abc', 2))
 [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'b'), ('b', 'c'), ('c', 'c')]
