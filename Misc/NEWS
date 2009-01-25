@@ -147,6 +147,8 @@ Library
 
 - Issue #4863: distutils.mwerkscompiler has been removed.
 
+- Added a new function:  itertools.compress().
+
 - Fix and properly document the multiprocessing module's logging
   support, expose the internal levels and provide proper usage
   examples.
