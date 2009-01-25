@@ -12,6 +12,11 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4753: By enabling a configure option named '--with-computed-gotos'
+  on compilers that support it (notably: gcc, SunPro, icc), the bytecode
+  evaluation loop is compiled with a new dispatch mechanism which gives
+  speedups of up to 20%, depending on the system, on various benchmarks.
+
 - Issue #4874: Most builtin decoders now reject unicode input.
 
 - Issue #4842: Don't allow trailing 'L' when constructing an integer
