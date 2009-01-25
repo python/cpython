@@ -145,6 +145,10 @@ Core and Builtins
 Library
 -------
 
+- Fix and properly document the multiprocessing module's logging
+  support, expose the internal levels and provide proper usage
+  examples.
+
 - Issue #1672332: fix unpickling of subnormal floats, which was
   producing a ValueError on some platforms.
 
