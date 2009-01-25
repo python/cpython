@@ -805,9 +805,16 @@ class Decimal(object):
         if self > other.  This routine is for internal use only."""
 
         if self._is_special or other._is_special:
-            return cmp(self._isinfinity(), other._isinfinity())
+            self_inf = self._isinfinity()
+            other_inf = other._isinfinity()
+            if self_inf == other_inf:
+                return 0
+            elif self_inf < other_inf:
+                return -1
+            else:
+                return 1
 
-        # check for zeros;  note that cmp(0, -0) should return 0
+        # check for zeros;  Decimal('0') == Decimal('-0')
         if not self:
             if not other:
                 return 0
@@ -827,7 +834,12 @@ class Decimal(object):
         if self_adjusted == other_adjusted:
             self_padded = self._int + '0'*(self._exp - other._exp)
             other_padded = other._int + '0'*(other._exp - self._exp)
-            return cmp(self_padded, other_padded) * (-1)**self._sign
+            if self_padded == other_padded:
+                return 0
+            elif self_padded < other_padded:
+                return -(-1)**self._sign
+            else:
+                return (-1)**self._sign
         elif self_adjusted > other_adjusted:
             return (-1)**self._sign
         else: # self_adjusted < other_adjusted
