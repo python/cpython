@@ -139,6 +139,20 @@ loops that truncate the stream.
 
    .. versionadded:: 2.6
 
+.. function:: compress(data, selectors)
+
+   Make an iterator that filters elements from *data* returning only those that
+   have a corresponding element in *selectors* that evaluates to ``True``.
+   Stops when either the *data* or *selectors* iterables have been exhausted.
+   Equivalent to::
+
+       def compress(data, selectors):
+           # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
+           return (d for d, s in izip(data, selectors) if s)
+
+   .. versionadded:: 2.7
+
+
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
@@ -678,10 +692,6 @@ which incur interpreter overhead.
        pairs = [(2**i, x) for i, x in enumerate(iterable)]
        for n in xrange(2**len(pairs)):
            yield set(x for m, x in pairs if m&n)
-
-   def compress(data, selectors):
-       "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
-       return (d for d, s in izip(data, selectors) if s)
 
    def combinations_with_replacement(iterable, r):
        "combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
