@@ -547,7 +547,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 	twodigits accum;	/* sliding register */
 	unsigned int accumbits; /* # bits in accum */
 	int do_twos_comp;	/* store 2's-comp?  is_signed and v < 0 */
-	twodigits carry;	/* for computing 2's-comp */
+	digit carry;		/* for computing 2's-comp */
 	size_t j;		/* # bytes filled */
 	unsigned char* p;	/* pointer to next byte in bytes */
 	int pincr;		/* direction to move p */
