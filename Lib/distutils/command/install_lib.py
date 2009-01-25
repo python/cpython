@@ -1,5 +1,3 @@
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os

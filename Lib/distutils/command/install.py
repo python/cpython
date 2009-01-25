@@ -4,8 +4,6 @@ Implements the Distutils 'install' command."""
 
 from distutils import log
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, string

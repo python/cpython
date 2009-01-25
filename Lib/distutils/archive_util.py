@@ -3,8 +3,6 @@
 Utility functions for creating archive files (tarballs, zip files,
 that sort of thing)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os
