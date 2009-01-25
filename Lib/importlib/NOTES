@@ -1,12 +1,6 @@
 to do
 /////
 
-* Document:
-
-    + The terms "importer", "finder", and "loader".
-    + machinery.BuiltinImporter.
-    + machinery.FrozenImporter.
-
 * Expose resolve_name().
 
 * Backport to Python 2.7.
