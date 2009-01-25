@@ -4,10 +4,13 @@ import unittest
 import shutil
 import zipfile
 from os.path import join
+import sys
 
 from distutils.command.sdist import sdist
 from distutils.core import Distribution
 from distutils.tests.test_config import PyPIRCCommandTestCase
+from distutils.errors import DistutilsExecError
+from distutils.spawn import spawn
 
 CURDIR = os.path.dirname(__file__)
 TEMP_PKG = join(CURDIR, 'temppkg')
@@ -35,6 +38,19 @@ class sdistTestCase(PyPIRCCommandTestCase):
             shutil.rmtree(TEMP_PKG)
         PyPIRCCommandTestCase.tearDown(self)
 
+    def _init_tmp_pkg(self):
+        if os.path.exists(TEMP_PKG):
+            shutil.rmtree(TEMP_PKG)
+        os.mkdir(TEMP_PKG)
+        os.mkdir(join(TEMP_PKG, 'somecode'))
+        os.mkdir(join(TEMP_PKG, 'dist'))
+        # creating a MANIFEST, a package, and a README
+        self._write(join(TEMP_PKG, 'MANIFEST.in'), MANIFEST_IN)
+        self._write(join(TEMP_PKG, 'README'), 'xxx')
+        self._write(join(TEMP_PKG, 'somecode', '__init__.py'), '#')
+        self._write(join(TEMP_PKG, 'setup.py'), SETUP_PY)
+        os.chdir(TEMP_PKG)
+
     def _write(self, path, content):
         f = open(path, 'w')
         try:
@@ -46,15 +62,7 @@ class sdistTestCase(PyPIRCCommandTestCase):
         # this test creates a package with some vcs dirs in it
         # and launch sdist to make sure they get pruned
         # on all systems
-        if not os.path.exists(TEMP_PKG):
-            os.mkdir(TEMP_PKG)
-        os.mkdir(join(TEMP_PKG, 'somecode'))
-
-        # creating a MANIFEST, a package, and a README
-        self._write(join(TEMP_PKG, 'MANIFEST.in'), MANIFEST_IN)
-        self._write(join(TEMP_PKG, 'README'), 'xxx')
-        self._write(join(TEMP_PKG, 'somecode', '__init__.py'), '#')
-        self._write(join(TEMP_PKG, 'setup.py'), SETUP_PY)
+        self._init_tmp_pkg()
 
         # creating VCS directories with some files in them
         os.mkdir(join(TEMP_PKG, 'somecode', '.svn'))
@@ -67,8 +75,6 @@ class sdistTestCase(PyPIRCCommandTestCase):
         os.mkdir(join(TEMP_PKG, 'somecode', '.git'))
         self._write(join(TEMP_PKG, 'somecode', '.git',
                          'ok'), 'xxx')
-
-        os.chdir(TEMP_PKG)
 
         # now building a sdist
         dist = Distribution()
@@ -102,6 +108,55 @@ class sdistTestCase(PyPIRCCommandTestCase):
 
         # making sure everything has been pruned correctly
         self.assertEquals(len(content), 4)
+
+    def test_make_distribution(self):
+
+        self._init_tmp_pkg()
+
+        # check if tar is installed under win32
+        if sys.platform == 'win32':
+            try:
+                spawn('tar --help')
+            except DistutilsExecError:
+                # let's return, no need to go further
+                return
+
+        # now building a sdist
+        dist = Distribution()
+        dist.script_name = 'setup.py'
+        dist.metadata.name = 'fake'
+        dist.metadata.version = '1.0'
+        dist.metadata.url = 'http://xxx'
+        dist.metadata.author = dist.metadata.author_email = 'xxx'
+        dist.packages = ['somecode']
+        dist.include_package_data = True
+        cmd = sdist(dist)
+        cmd.manifest = 'MANIFEST'
+        cmd.template = 'MANIFEST.in'
+        cmd.dist_dir = 'dist'
+
+        # creating a gztar then a tar
+        cmd.formats = ['gztar', 'tar']
+        cmd.run()
+
+        # making sure we have two files
+        dist_folder = join(TEMP_PKG, 'dist')
+        result = os.listdir(dist_folder)
+        result.sort()
+        self.assertEquals(result,
+                          ['fake-1.0.tar', 'fake-1.0.tar.gz'] )
+
+        os.remove(join(dist_folder, 'fake-1.0.tar'))
+        os.remove(join(dist_folder, 'fake-1.0.tar.gz'))
+
+        # now trying a tar then a gztar
+        cmd.formats = ['tar', 'gztar']
+        cmd.run()
+
+        result = os.listdir(dist_folder)
+        result.sort()
+        self.assertEquals(result,
+                ['fake-1.0.tar', 'fake-1.0.tar.gz'])
 
 def test_suite():
     return unittest.makeSuite(sdistTestCase)
