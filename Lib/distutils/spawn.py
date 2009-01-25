@@ -6,8 +6,6 @@ Also provides the 'find_executable()' to search the path for a given
 executable name.
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, string

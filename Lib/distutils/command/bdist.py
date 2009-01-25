@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist' command (create a built [binary]
 distribution)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os

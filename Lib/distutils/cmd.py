@@ -4,8 +4,6 @@ Provides the Command class, the base class for the command classes
 in the distutils.command package.
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, string, re
