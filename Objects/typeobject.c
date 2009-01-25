@@ -3418,9 +3418,13 @@ object_format(PyObject *self, PyObject *args)
 
         if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
                 return NULL;
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(format_spec)) {
 	        self_as_str = PyObject_Unicode(self);
 	} else if (PyString_Check(format_spec)) {
+#else
+        if (PyString_Check(format_spec)) {
+#endif
 	        self_as_str = PyObject_Str(self);
 	} else {
 	        PyErr_SetString(PyExc_TypeError, "argument to __format__ must be unicode or str");

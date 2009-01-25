@@ -2933,8 +2933,11 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
-			if (keyword == NULL || !(PyString_Check(keyword) ||
-						 PyUnicode_Check(keyword))) {
+			if (keyword == NULL || !(PyString_Check(keyword)
+#ifdef Py_USING_UNICODE
+						 || PyUnicode_Check(keyword)
+#endif
+				    )) {
 				PyErr_Format(PyExc_TypeError,
 				    "%.200s() keywords must be strings",
 				    PyString_AsString(co->co_name));
@@ -3115,14 +3118,20 @@ fail: /* Jump here from prelude on failure */
 }
 
 
+
 static PyObject *
 kwd_as_string(PyObject *kwd) {
+#ifdef Py_USING_UNICODE
 	if (PyString_Check(kwd)) {
+#else
+		assert(PyString_Check(kwd));
+#endif
 		Py_INCREF(kwd);
 		return kwd;
+#ifdef Py_USING_UNICODE
 	}
-	else
-		return _PyUnicode_AsDefaultEncodedString(kwd, "replace");
+	return _PyUnicode_AsDefaultEncodedString(kwd, "replace");
+#endif
 }
 
 
@@ -4503,7 +4512,9 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (locals == Py_None)
 		locals = globals;
 	if (!PyString_Check(prog) &&
+#ifdef Py_USING_UNICODE
 	    !PyUnicode_Check(prog) &&
+#endif
 	    !PyCode_Check(prog) &&
 	    !PyFile_Check(prog)) {
 		PyErr_SetString(PyExc_TypeError,

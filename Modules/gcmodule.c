@@ -784,7 +784,9 @@ clear_freelists(void)
 	(void)PyFrame_ClearFreeList();
 	(void)PyCFunction_ClearFreeList();
 	(void)PyTuple_ClearFreeList();
+#ifdef Py_USING_UNICODE
 	(void)PyUnicode_ClearFreeList();
+#endif
 	(void)PyInt_ClearFreeList();
 	(void)PyFloat_ClearFreeList();
 }

@@ -720,8 +720,10 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 	static PyObject * str__format__ = NULL;
 	PyObject *empty = NULL;
 	PyObject *result = NULL;
+#ifdef Py_USING_UNICODE
 	int spec_is_unicode;
 	int result_is_unicode;
+#endif
 
 	/* Initialize cached value */
 	if (str__format__ == NULL) {
@@ -738,11 +740,15 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 	}
 
 	/* Check the format_spec type, and make sure it's str or unicode */
+#if Py_USING_UNICODE
 	if (PyUnicode_Check(format_spec))
 		spec_is_unicode = 1;
 	else if (PyString_Check(format_spec))
 		spec_is_unicode = 0;
 	else {
+#else
+        if (!PyString_Check(format_spec)) {
+#endif
 		PyErr_Format(PyExc_TypeError,
 			     "format expects arg 2 to be string "
 			     "or unicode, not %.100s", Py_TYPE(format_spec)->tp_name);
@@ -773,9 +779,11 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 			   depending on the type of the format
 			   specifier).  For new-style classes, this
 			   logic is done by object.__format__(). */
+#ifdef Py_USING_UNICODE
 			if (spec_is_unicode)
 				self_as_str = PyObject_Unicode(obj);
 			else
+#endif
 				self_as_str = PyObject_Str(obj);
 			if (self_as_str == NULL)
 				goto done;
@@ -818,11 +826,15 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 		goto done;
 
 	/* Check the result type, and make sure it's str or unicode */
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(result))
 		result_is_unicode = 1;
 	else if (PyString_Check(result))
 		result_is_unicode = 0;
 	else {
+#else
+	if (!PyString_Check(result)) {
+#endif
 		PyErr_Format(PyExc_TypeError,
 			     "%.100s.__format__ must return string or "
 			     "unicode, not %.100s", Py_TYPE(obj)->tp_name,
@@ -834,12 +846,14 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 
 	/* Convert to unicode, if needed.  Required if spec is unicode
 	   and result is str */
+#ifdef Py_USING_UNICODE
 	if (spec_is_unicode && !result_is_unicode) {
 		PyObject *tmp = PyObject_Unicode(result);
 		/* This logic works whether or not tmp is NULL */
 		Py_DECREF(result);
 		result = tmp;
 	}
+#endif
 
 done:
 	Py_XDECREF(empty);
