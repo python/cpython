@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1885: distutils. When running sdist with --formats=tar,gztar
+  the tar file was overriden by the gztar one.
+
 - Issue #4863: distutils.mwerkscompiler has been removed.
 
 - Added a new function:  itertools.compress().
