@@ -179,6 +179,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the core and
       with user code.
 
+   finder
+      An object that tries to find the :term:`loader` for a module. It must
+      implement a method named :meth:`find_module`. See :pep:`302` for
+      details.
+
    floor division
       Mathematical division discarding any remainder.  The floor division
       operator is ``//``.  For example, the expression ``11//4`` evaluates to
@@ -270,6 +275,10 @@ Glossary
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.
 
+   importer
+      An object that both finds and loads a module; both a
+      :term:`finder` and :term:`loader` object.
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
@@ -350,6 +359,11 @@ Glossary
       even hex numbers (0x..) in the range from 0 to 255. The :keyword:`if`
       clause is optional.  If omitted, all elements in ``range(256)`` are
       processed.
+
+   loader
+      An object that loads a module. It must define a method named
+      :meth:`load_module`. A loader is typically returned by a
+      :term:`finder`. See :pep:`302` for details.
 
    mapping
       A container object (such as :class:`dict`) which supports arbitrary key
