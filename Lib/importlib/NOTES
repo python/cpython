@@ -1,19 +1,8 @@
 to do
 /////
 
-* Expose resolve_name().
-
-* Backport to Python 2.7.
-
-    + import_module
-    + resolve_name
-
 * Create reasonable base tests that all finders and loaders must pass so
   that various implementations can just subclass as needed.
-
-* Expose built-in and frozen importers.
-
-    + Make staticmethods so that class can be used directly.
 
 * Reorganize support code.
 
@@ -31,13 +20,6 @@ to do
     + write_bytecode -> complete set of bytes for bytecode instead of
       individual arguments.
 
-* Implement PEP 302 protocol for loaders (should just be a matter of testing).
-
-    + Built-in.
-    + Frozen.
-    + Extension.
-    + Source/bytecode.
-
 * Create meta_path importer for sys.path.
 
 * OPTIMIZE!
@@ -47,6 +29,13 @@ to do
 
     - Absolute name from sys.path.
     - Relative name from sys.path.
+
+* Implement PEP 302 protocol for loaders (should just be a matter of testing).
+
+    + Built-in.
+    + Frozen.
+    + Extension.
+    + Source/bytecode.
 
 * Public API to expose (w/ docs!)
 
@@ -80,6 +69,7 @@ to do
 
       - get_module decorator (new name)
       - check_name decorator (new name)
+      - resolve_name
 
   + machinery
 
