@@ -195,6 +195,21 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
 
+    def test_compress(self):
+        self.assertEqual(list(compress('ABCDEF', [1,0,1,0,1,1])), list('ACEF'))
+        self.assertEqual(list(compress('ABCDEF', [0,0,0,0,0,0])), list(''))
+        self.assertEqual(list(compress('ABCDEF', [1,1,1,1,1,1])), list('ABCDEF'))
+        self.assertEqual(list(compress('ABCDEF', [1,0,1])), list('AC'))
+        self.assertEqual(list(compress('ABC', [0,1,1,1,1,1])), list('BC'))
+        n = 10000
+        data = chain.from_iterable(repeat(range(6), n))
+        selectors = chain.from_iterable(repeat((0, 1)))
+        self.assertEqual(list(compress(data, selectors)), [1,3,5] * n)
+        self.assertRaises(TypeError, compress, None, range(6))      # 1st arg not iterable
+        self.assertRaises(TypeError, compress, range(6), None)      # 2nd arg not iterable
+        self.assertRaises(TypeError, compress, range(6))            # too few args
+        self.assertRaises(TypeError, compress, range(6), None)      # too many args
+
     def test_count(self):
         self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
@@ -715,6 +730,9 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(combinations(range(4), 3)),
                          [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
 
+    def test_compress(self):
+        self.assertEqual(list(compress('ABCDEF', [1,0,1,0,1,1])), list('ACEF'))
+
     def test_count(self):
         self.assertEqual(list(islice(count(10), 5)), [10, 11, 12, 13, 14])
 
@@ -794,6 +812,10 @@ class TestGC(unittest.TestCase):
     def test_combinations(self):
         a = []
         self.makecycle(combinations([1,2,a,3], 3), a)
+
+    def test_compress(self):
+        a = []
+        self.makecycle(compress('ABCDEF', [1,0,1,0,1,0]), a)
 
     def test_cycle(self):
         a = []
@@ -947,6 +969,15 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, list, chain(X(s)))
             self.assertRaises(TypeError, list, chain(N(s)))
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
+
+    def test_compress(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            n = len(s)
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(compress(g(s), repeat(1))), list(g(s)))
+            self.assertRaises(TypeError, compress, X(s), repeat(1))
+            self.assertRaises(TypeError, compress, N(s), repeat(1))
+            self.assertRaises(ZeroDivisionError, list, compress(E(s), repeat(1)))
 
     def test_product(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
@@ -1144,7 +1175,7 @@ class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
         for cls in (repeat, zip, filter, filterfalse, chain, map,
-                    starmap, islice, takewhile, dropwhile, cycle):
+                    starmap, islice, takewhile, dropwhile, cycle, compress):
             class Subclass(cls):
                 def __init__(self, newarg=None, *args):
                     cls.__init__(self, *args)
@@ -1281,10 +1312,6 @@ Samuele
 ...     s = list(iterable)
 ...     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
->>> def compress(data, selectors):
-...     "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
-...     return (d for d, s in zip(data, selectors) if s)
-
 >>> def combinations_with_replacement(iterable, r):
 ...     "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
 ...     pool = tuple(iterable)
@@ -1379,9 +1406,6 @@ perform as purported.
 
 >>> list(powerset([1,2,3]))
 [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
-
->>> list(compress('abcdef', [1,0,1,0,1,1]))
-['a', 'c', 'e', 'f']
 
 >>> list(combinations_with_replacement('abc', 2))
 [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'b'), ('b', 'c'), ('c', 'c')]

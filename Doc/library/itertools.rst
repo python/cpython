@@ -133,6 +133,20 @@ loops that truncate the stream.
    The number of items returned is ``n! / r! / (n-r)!`` when ``0 <= r <= n``
    or zero when ``r > n``.
 
+.. function:: compress(data, selectors)
+
+   Make an iterator that filters elements from *data* returning only those that
+   have a corresponding element in *selectors* that evaluates to ``True``.
+   Stops when either the *data* or *selectors* iterables have been exhausted.
+   Equivalent to::
+
+       def compress(data, selectors):
+           # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
+           return (d for d, s in zip(data, selectors) if s)
+
+   .. versionadded:: 2.7
+
+
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
@@ -593,10 +607,6 @@ which incur interpreter overhead.
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
-   def compress(data, selectors):
-       "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
-       return (d for d, s in zip(data, selectors) if s)
 
    def combinations_with_replacement(iterable, r):
        "combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"

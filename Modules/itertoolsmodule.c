@@ -2331,6 +2331,162 @@ static PyTypeObject permutations_type = {
 };
 
 
+/* compress object ************************************************************/
+
+/* Equivalent to:
+
+	def compress(data, selectors):
+		"compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
+		return (d for d, s in zip(data, selectors) if s)
+*/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *data;
+	PyObject *selectors;
+} compressobject;
+
+static PyTypeObject compress_type;
+
+static PyObject *
+compress_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *seq1, *seq2;
+	PyObject *data=NULL, *selectors=NULL;
+	compressobject *lz;
+
+	if (type == &compress_type && !_PyArg_NoKeywords("compress()", kwds))
+		return NULL;
+
+	if (!PyArg_UnpackTuple(args, "compress", 2, 2, &seq1, &seq2))
+		return NULL;
+
+	data = PyObject_GetIter(seq1);
+	if (data == NULL)
+		goto fail;
+	selectors = PyObject_GetIter(seq2);
+	if (selectors == NULL)
+		goto fail;
+
+	/* create compressobject structure */
+	lz = (compressobject *)type->tp_alloc(type, 0);
+	if (lz == NULL)
+		goto fail;
+	lz->data = data;
+	lz->selectors = selectors;
+	return (PyObject *)lz;
+
+fail:
+	Py_XDECREF(data);
+	Py_XDECREF(selectors);
+	return NULL;
+}
+
+static void
+compress_dealloc(compressobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->data);
+	Py_XDECREF(lz->selectors);
+	Py_TYPE(lz)->tp_free(lz);
+}
+
+static int
+compress_traverse(compressobject *lz, visitproc visit, void *arg)
+{
+	Py_VISIT(lz->data);
+	Py_VISIT(lz->selectors);
+	return 0;
+}
+
+static PyObject *
+compress_next(compressobject *lz)
+{
+	PyObject *data = lz->data, *selectors = lz->selectors;
+	PyObject *datum, *selector;
+	PyObject *(*datanext)(PyObject *) = *Py_TYPE(data)->tp_iternext;
+	PyObject *(*selectornext)(PyObject *) = *Py_TYPE(selectors)->tp_iternext;
+	int ok;
+
+	while (1) {
+		/* Steps:  get datum, get selector, evaluate selector.
+		   Order is important (to match the pure python version
+		   in terms of which input gets a chance to raise an
+		   exception first).
+		*/
+
+		datum = datanext(data);
+		if (datum == NULL)
+			return NULL;
+
+		selector = selectornext(selectors);
+		if (selector == NULL) {
+			Py_DECREF(datum);
+			return NULL;
+		}
+
+		ok = PyObject_IsTrue(selector);
+		Py_DECREF(selector);
+		if (ok == 1)
+			return datum;
+		Py_DECREF(datum);
+		if (ok == -1)
+			return NULL;
+	}
+}
+
+PyDoc_STRVAR(compress_doc,
+"compress(data sequence, selector sequence) --> iterator over selected data\n\
+\n\
+Return data elements corresponding to true selector elements.\n\
+Forms a shorter iterator from selected data elements using the\n\
+selectors to choose the data elements.");
+
+static PyTypeObject compress_type = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"itertools.compress",		/* tp_name */
+	sizeof(compressobject),		/* tp_basicsize */
+	0,							/* tp_itemsize */
+	/* methods */
+	(destructor)compress_dealloc,	/* tp_dealloc */
+	0,								/* tp_print */
+	0,								/* tp_getattr */
+	0,								/* tp_setattr */
+	0,								/* tp_compare */
+	0,								/* tp_repr */
+	0,								/* tp_as_number */
+	0,								/* tp_as_sequence */
+	0,								/* tp_as_mapping */
+	0,								/* tp_hash */
+	0,								/* tp_call */
+	0,								/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,								/* tp_setattro */
+	0,								/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
+	compress_doc,					/* tp_doc */
+	(traverseproc)compress_traverse,	/* tp_traverse */
+	0,								/* tp_clear */
+	0,								/* tp_richcompare */
+	0,								/* tp_weaklistoffset */
+	PyObject_SelfIter,				/* tp_iter */
+	(iternextfunc)compress_next,	/* tp_iternext */
+	0,								/* tp_methods */
+	0,								/* tp_members */
+	0,								/* tp_getset */
+	0,								/* tp_base */
+	0,								/* tp_dict */
+	0,								/* tp_descr_get */
+	0,								/* tp_descr_set */
+	0,								/* tp_dictoffset */
+	0,								/* tp_init */
+	0,								/* tp_alloc */
+	compress_new,					/* tp_new */
+	PyObject_GC_Del,				/* tp_free */
+};
+
+
 /* filterfalse object ************************************************************/
 
 typedef struct {
@@ -3041,6 +3197,7 @@ PyInit_itertools(void)
 		&islice_type,
 		&starmap_type,
 		&chain_type,
+		&compress_type,
 		&filterfalse_type,
 		&count_type,
 		&ziplongest_type,
