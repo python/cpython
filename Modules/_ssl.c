@@ -1592,7 +1592,7 @@ static int _setup_ssl_threads(void) {
 		for (i = 0;  i < _ssl_locks_count;  i++) {
 			_ssl_locks[i] = PyThread_allocate_lock();
 			if (_ssl_locks[i] == NULL) {
-				int j;
+				unsigned int j;
 				for (j = 0;  j < i;  j++) {
 					PyThread_free_lock(_ssl_locks[j]);
 				}
