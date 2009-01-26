@@ -65,7 +65,6 @@ used for special class methods; variants without leading and trailing\n\
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   return PyObject_RichCompare(a1,a2,A); }
 
-spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
 spam2(op_add           , PyNumber_Add)
 spam2(op_sub           , PyNumber_Subtract)
@@ -95,15 +94,11 @@ spam2(op_irshift       , PyNumber_InPlaceRshift)
 spam2(op_iand          , PyNumber_InPlaceAnd)
 spam2(op_ixor          , PyNumber_InPlaceXor)
 spam2(op_ior           , PyNumber_InPlaceOr)
-spami(isSequenceType   , PySequence_Check)
 spam2(op_concat        , PySequence_Concat)
-spamoi(op_repeat       , PySequence_Repeat)
 spam2(op_iconcat       , PySequence_InPlaceConcat)
-spamoi(op_irepeat      , PySequence_InPlaceRepeat)
 spami2b(op_contains     , PySequence_Contains)
 spamn2(indexOf         , PySequence_Index)
 spamn2(countOf         , PySequence_Count)
-spami(isMappingType    , PyMapping_Check)
 spam2(op_getitem       , PyObject_GetItem)
 spam2n(op_delitem       , PyObject_DelItem)
 spam3n(op_setitem      , PyObject_SetItem)
@@ -173,10 +168,6 @@ is_not(PyObject *s, PyObject *a)
 
 static struct PyMethodDef operator_methods[] = {
 
-spam1o(isNumberType,
- "isNumberType(a) -- Return True if a has a numeric type, False otherwise.")
-spam1o(isSequenceType,
- "isSequenceType(a) -- Return True if a has a sequence type, False otherwise.")
 spam1o(truth,
  "truth(a) -- Return True if a is true, False otherwise.")
 spam2(contains,__contains__,
@@ -185,8 +176,6 @@ spam1(indexOf,
  "indexOf(a, b) -- Return the first index of b in a.")
 spam1(countOf,
  "countOf(a, b) -- Return the number of times b occurs in a.")
-spam1o(isMappingType,
- "isMappingType(a) -- Return True if a has a mapping type, False otherwise.")
 
 spam1(is_, "is_(a, b) -- Same as a is b.")
 spam1(is_not, "is_not(a, b) -- Same as a is not b.")
@@ -221,12 +210,8 @@ spam2(ixor,__ixor__, "ixor(a, b) -- Same as a ^= b.")
 spam2(ior,__ior__, "ior(a, b) -- Same as a |= b.")
 spam2(concat,__concat__,
  "concat(a, b) -- Same as a + b, for a and b sequences.")
-spam2(repeat,__repeat__,
- "repeat(a, b) -- Return a * b, where a is a sequence, and b is an integer.")
 spam2(iconcat,__iconcat__,
  "iconcat(a, b) -- Same as a += b, for a and b sequences.")
-spam2(irepeat,__irepeat__,
- "irepeat(a, b) -- Same as a *= b, where a is a sequence, and b is an integer.")
 spam2(getitem,__getitem__,
  "getitem(a, b) -- Same as a[b].")
 spam2(setitem,__setitem__,

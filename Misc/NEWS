@@ -100,6 +100,10 @@ Core and Builtins
 Library
 -------
 
+- Removed isSequenceType(), isMappingType, and isNumberType() from the
+  operator module; use the abstract base classes instead.  Also removed
+  the repeat() function; use mul() instead.
+
 - Issue #1672332: fix unpickling of subnormal floats, which was
   producing a ValueError on some platforms.
 
