@@ -187,7 +187,7 @@ def format(percent, value, grouping=False, monetary=False, *additional):
             formatted = _group(formatted, monetary=monetary)[0]
     return formatted
 
-import re, operator
+import re, collections
 _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
@@ -207,7 +207,7 @@ def format_string(f, val, grouping=False):
             del new_val[i+1:i+1+starcount]
             i += (1 + starcount)
         val = tuple(new_val)
-    elif operator.isMappingType(val):
+    elif isinstance(val, collections.Mapping):
         for perc in percents:
             key = perc.group("key")
             val[key] = format(perc.group(), val[key], grouping)

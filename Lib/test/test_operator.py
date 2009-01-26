@@ -164,31 +164,6 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.invert, None)
         self.assertEqual(operator.inv(4), -5)
 
-    def test_isMappingType(self):
-        self.failUnlessRaises(TypeError, operator.isMappingType)
-        self.failIf(operator.isMappingType(1))
-        self.failIf(operator.isMappingType(operator.isMappingType))
-        self.failUnless(operator.isMappingType(operator.__dict__))
-        self.failUnless(operator.isMappingType({}))
-
-    def test_isNumberType(self):
-        self.failUnlessRaises(TypeError, operator.isNumberType)
-        self.failUnless(operator.isNumberType(8))
-        self.failUnless(operator.isNumberType(8j))
-        self.failUnless(operator.isNumberType(8))
-        self.failUnless(operator.isNumberType(8.3))
-        self.failIf(operator.isNumberType(dir()))
-
-    def test_isSequenceType(self):
-        self.failUnlessRaises(TypeError, operator.isSequenceType)
-        self.failUnless(operator.isSequenceType(dir()))
-        self.failUnless(operator.isSequenceType(()))
-        self.failUnless(operator.isSequenceType(range(10)))
-        self.failUnless(operator.isSequenceType('yeahbuddy'))
-        self.failIf(operator.isSequenceType(3))
-        class Dict(dict): pass
-        self.failIf(operator.isSequenceType(Dict()))
-
     def test_lshift(self):
         self.failUnlessRaises(TypeError, operator.lshift)
         self.failUnlessRaises(TypeError, operator.lshift, None, 42)
@@ -234,31 +209,6 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.__pow__(3,5), 3**5)
         self.assertRaises(TypeError, operator.pow, 1)
         self.assertRaises(TypeError, operator.pow, 1, 2, 3)
-
-    def test_repeat(self):
-        a = list(range(3))
-        self.failUnlessRaises(TypeError, operator.repeat)
-        self.failUnlessRaises(TypeError, operator.repeat, a, None)
-        self.failUnless(operator.repeat(a, 2) == a+a)
-        self.failUnless(operator.repeat(a, 1) == a)
-        self.failUnless(operator.repeat(a, 0) == [])
-        a = (1, 2, 3)
-        self.failUnless(operator.repeat(a, 2) == a+a)
-        self.failUnless(operator.repeat(a, 1) == a)
-        self.failUnless(operator.repeat(a, 0) == ())
-        a = '123'
-        self.failUnless(operator.repeat(a, 2) == a+a)
-        self.failUnless(operator.repeat(a, 1) == a)
-        self.failUnless(operator.repeat(a, 0) == '')
-        a = Seq1([4, 5, 6])
-        self.failUnless(operator.repeat(a, 2) == [4, 5, 6, 4, 5, 6])
-        self.failUnless(operator.repeat(a, 1) == [4, 5, 6])
-        self.failUnless(operator.repeat(a, 0) == [])
-        a = Seq2([4, 5, 6])
-        self.failUnless(operator.repeat(a, 2) == [4, 5, 6, 4, 5, 6])
-        self.failUnless(operator.repeat(a, 1) == [4, 5, 6])
-        self.failUnless(operator.repeat(a, 0) == [])
-        self.failUnlessRaises(TypeError, operator.repeat, 6, 7)
 
     def test_rshift(self):
         self.failUnlessRaises(TypeError, operator.rshift)
@@ -443,7 +393,6 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.itruediv (c, 5), "itruediv")
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
-        self.assertEqual(operator.irepeat  (c, 5), "imul")
         self.assertEqual(operator.__iadd__     (c, 5), "iadd")
         self.assertEqual(operator.__iand__     (c, 5), "iand")
         self.assertEqual(operator.__ifloordiv__(c, 5), "ifloordiv")
@@ -457,7 +406,6 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.__itruediv__ (c, 5), "itruediv")
         self.assertEqual(operator.__ixor__     (c, 5), "ixor")
         self.assertEqual(operator.__iconcat__  (c, c), "iadd")
-        self.assertEqual(operator.__irepeat__  (c, 5), "imul")
 
 def test_main(verbose=None):
     import sys
