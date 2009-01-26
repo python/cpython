@@ -167,7 +167,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assertEqual(data.strip(), b'x')
+        self.assert_(data.startswith(b'x'), data)
 
 
 def test_main():
