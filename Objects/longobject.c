@@ -1962,7 +1962,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
 static long
 long_hash(PyLongObject *v)
 {
-	long x;
+	unsigned long x;
 	Py_ssize_t i;
 	int sign;
 
@@ -1977,17 +1977,18 @@ long_hash(PyLongObject *v)
 		i = -(i);
 	}
 #define LONG_BIT_PyLong_SHIFT	(8*sizeof(long) - PyLong_SHIFT)
-	/* The following loop produces a C long x such that (unsigned long)x
-	   is congruent to the absolute value of v modulo ULONG_MAX.  The
-	   resulting x is nonzero if and only if v is. */
+	/* The following loop produces a C long x such that x is congruent to
+	   the absolute value of v modulo ULONG_MAX.  The resulting x is
+	   nonzero if and only if v is. */
 	while (--i >= 0) {
 		/* Force a native long #-bits (32 or 64) circular shift */
-		x = ((x << PyLong_SHIFT) & ~PyLong_MASK) | ((x >> LONG_BIT_PyLong_SHIFT) & PyLong_MASK);
+		x = ((x << PyLong_SHIFT) & ~PyLong_MASK) |
+			((x >> LONG_BIT_PyLong_SHIFT) & PyLong_MASK);
 		x += v->ob_digit[i];
-		/* If the addition above overflowed (thinking of x as
-		   unsigned), we compensate by incrementing.  This preserves
-		   the value modulo ULONG_MAX. */
-		if ((unsigned long)x < v->ob_digit[i])
+		/* If the addition above overflowed we compensate by
+		   incrementing.  This preserves the value modulo
+		   ULONG_MAX. */
+		if (x < v->ob_digit[i])
 			x++;
 	}
 #undef LONG_BIT_PyLong_SHIFT
