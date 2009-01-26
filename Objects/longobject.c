@@ -1977,9 +1977,9 @@ long_hash(PyLongObject *v)
 		i = -(i);
 	}
 #define LONG_BIT_PyLong_SHIFT	(8*sizeof(long) - PyLong_SHIFT)
-	/* The following loop produces a C long x such that x is congruent to
-	   the absolute value of v modulo ULONG_MAX.  The resulting x is
-	   nonzero if and only if v is. */
+	/* The following loop produces a C unsigned long x such that x is
+	   congruent to the absolute value of v modulo ULONG_MAX.  The
+	   resulting x is nonzero if and only if v is. */
 	while (--i >= 0) {
 		/* Force a native long #-bits (32 or 64) circular shift */
 		x = ((x << PyLong_SHIFT) & ~PyLong_MASK) |
