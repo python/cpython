@@ -221,12 +221,6 @@ Operations which work with sequences include:
    Return the index of the first of occurrence of *b* in *a*.
 
 
-.. function:: repeat(a, b)
-              __repeat__(a, b)
-
-   Return ``a * b`` where *a* is a sequence and *b* is an integer.
-
-
 .. function:: setitem(a, b, c)
               __setitem__(a, b, c)
 
@@ -294,13 +288,6 @@ example, the :term:`statement` ``x += y`` is equivalent to
    ``a = ipow(a, b)`` is equivalent to ``a **= b``.
 
 
-.. function:: irepeat(a, b)
-              __irepeat__(a, b)
-
-   ``a = irepeat(a, b)`` is equivalent to ``a *= b`` where *a* is a sequence and
-   *b* is an integer.
-
-
 .. function:: irshift(a, b)
               __irshift__(a, b)
 
@@ -323,67 +310,6 @@ example, the :term:`statement` ``x += y`` is equivalent to
               __ixor__(a, b)
 
    ``a = ixor(a, b)`` is equivalent to ``a ^= b``.
-
-
-The :mod:`operator` module also defines a few predicates to test the type of
-objects.
-
-.. XXX just remove them?
-.. note::
-
-   Be careful not to misinterpret the results of these functions; none have any
-   measure of reliability with instance objects.
-   For example:
-
-      >>> class C:
-      ...     pass
-      ...
-      >>> import operator
-      >>> obj = C()
-      >>> operator.isMappingType(obj)
-      True
-
-.. note::
-
-   Since there are now abstract classes for collection types, you should write,
-   for example, ``isinstance(obj, collections.Mapping)`` and ``isinstance(obj,
-   collections.Sequence)``.
-
-.. function:: isMappingType(obj)
-
-   Returns true if the object *obj* supports the mapping interface. This is true for
-   dictionaries and all instance objects defining :meth:`__getitem__`.
-
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete mapping
-      protocol since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
-
-
-.. function:: isNumberType(obj)
-
-   Returns true if the object *obj* represents a number.  This is true for all
-   numeric types implemented in C.
-
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete numeric
-      interface since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
-
-
-.. function:: isSequenceType(obj)
-
-   Returns true if the object *obj* supports the sequence protocol. This returns true
-   for all objects which define sequence methods in C, and for all instance objects
-   defining :meth:`__getitem__`.
-
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete sequence
-      interface since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
 
 Example: Build a dictionary that maps the ordinals from ``0`` to ``255`` to
 their character equivalents.
@@ -512,8 +438,6 @@ Python syntax and the functions in the :mod:`operator` module.
 | Negation (Logical)    | ``not a``               | ``not_(a)``                     |
 +-----------------------+-------------------------+---------------------------------+
 | Right Shift           | ``a >> b``              | ``rshift(a, b)``                |
-+-----------------------+-------------------------+---------------------------------+
-| Sequence Repetition   | ``seq * i``             | ``repeat(seq, i)``              |
 +-----------------------+-------------------------+---------------------------------+
 | String Formatting     | ``s % obj``             | ``mod(s, obj)``                 |
 +-----------------------+-------------------------+---------------------------------+
