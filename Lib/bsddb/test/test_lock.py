@@ -124,7 +124,7 @@ class LockingTestCase(unittest.TestCase):
                 self.env.lock_get,anID2, "shared lock", db.DB_LOCK_READ)
         end_time=time.time()
         deadlock_detection.end=True
-        self.assertTrue((end_time-start_time) >= 0.1)
+        self.assertTrue((end_time-start_time) >= 0.0999)
         self.env.lock_put(lock)
         t.join()
 
