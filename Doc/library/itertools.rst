@@ -673,11 +673,9 @@ which incur interpreter overhead.
                nexts = cycle(islice(nexts, pending))
 
    def powerset(iterable):
-       "powerset('ab') --> set([]), set(['a']), set(['b']), set(['a', 'b'])"
-       # Recipe credited to Eric Raymond
-       pairs = [(2**i, x) for i, x in enumerate(iterable)]
-       for n in xrange(2**len(pairs)):
-           yield set(x for m, x in pairs if m&n)
+       "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       s = list(iterable)
+       return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
    def compress(data, selectors):
        "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
