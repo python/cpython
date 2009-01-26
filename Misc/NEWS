@@ -148,6 +148,9 @@ Library
   operator module; use the abstract base classes instead.  Also removed
   the repeat() function; use mul() instead.
 
+- Issue #1885: distutils. When running sdist with --formats=tar,gztar
+  the tar file was overriden by the gztar one.
+
 - Issue #4863: distutils.mwerkscompiler has been removed.
 
 - Added a new function:  itertools.compress().
