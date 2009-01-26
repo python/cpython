@@ -286,7 +286,7 @@ counts less than one::
       Section 4.6.3, Exercise 19*\.
 
     * To enumerate all distinct multisets of a given size over a given set of
-      elements, see the :func:`combinations_with_replacement` function in the
+      elements, see :func:`combinations_with_replacement` in the
       :ref:`itertools-recipes` for itertools::
 
           map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
