@@ -48,8 +48,15 @@ from pprint import pformat
 from docutils.io import StringOutput
 from docutils.utils import new_document
 
-from sphinx.builders import Builder
-from sphinx.writers.text import TextWriter
+try:
+    from sphinx.builders import Builder
+except ImportError:
+    from sphinx.builder import Builder
+
+try:
+    from sphinx.writers.text import TextWriter
+except ImportError:
+    from sphinx.textwriter import TextWriter
 
 
 class PydocTopicsBuilder(Builder):
