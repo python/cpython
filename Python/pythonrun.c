@@ -739,7 +739,12 @@ create_stdio(PyObject* io,
 	PyObject *line_buffering;
 	int buffering, isatty;
 
-	if (Py_UnbufferedStdioFlag)
+	/* stdin is always opened in buffered mode, first because it shouldn't
+	   make a difference in common use cases, second because TextIOWrapper
+	   depends on the presence of a read1() method which only exists on
+	   buffered streams.
+	*/
+	if (Py_UnbufferedStdioFlag && write_mode)
 		buffering = 0;
 	else
 		buffering = -1;
@@ -753,7 +758,7 @@ create_stdio(PyObject* io,
 	if (buf == NULL)
 		goto error;
 
-	if (!Py_UnbufferedStdioFlag) {
+	if (buffering) {
 		raw = PyObject_GetAttrString(buf, "raw");
 		if (raw == NULL)
 			goto error;

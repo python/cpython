@@ -159,6 +159,16 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(data.strip(), b'x',
                 "text %s not line-buffered" % stream)
 
+    def test_unbuffered_input(self):
+        # sys.stdin still works with '-u'
+        code = ("import sys; sys.stdout.write(sys.stdin.read(1))")
+        p = _spawn_python('-u', '-c', code)
+        p.stdin.write(b'x')
+        p.stdin.flush()
+        data, rc = _kill_python_and_exit_code(p)
+        self.assertEqual(rc, 0)
+        self.assertEqual(data.strip(), b'x')
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
