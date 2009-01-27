@@ -686,6 +686,8 @@ which incur interpreter overhead.
        # number items returned:  (n+r-1)! / r! / (n-1)!
        pool = tuple(iterable)
        n = len(pool)
+       if not n and r:
+           return
        indices = [0] * r
        yield tuple(pool[i] for i in indices)
        while 1:
