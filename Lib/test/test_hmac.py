@@ -291,7 +291,7 @@ class CopyTestCase(unittest.TestCase):
         # Testing if the copy method created a real copy.
         h1 = hmac.HMAC(b"key")
         h2 = h1.copy()
-        # Using id() in case somebody has overridden __cmp__.
+        # Using id() in case somebody has overridden __eq__/__ne__.
         self.failUnless(id(h1) != id(h2), "No real copy of the HMAC instance.")
         self.failUnless(id(h1.inner) != id(h2.inner),
             "No real copy of the attribute 'inner'.")

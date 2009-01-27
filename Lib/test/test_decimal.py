@@ -1012,17 +1012,11 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.failUnless(da != dc)
         self.failUnless(da <= db)
         self.failUnless(da >= db)
-        self.assertEqual(cmp(dc,da), 1)
-        self.assertEqual(cmp(da,dc), -1)
-        self.assertEqual(cmp(da,db), 0)
 
         #a Decimal and an int
         self.failUnless(dc > 23)
         self.failUnless(23 < dc)
         self.assertEqual(dc, 45)
-        self.assertEqual(cmp(dc,23), 1)
-        self.assertEqual(cmp(23,dc), -1)
-        self.assertEqual(cmp(dc,45), 0)
 
         #a Decimal and uncomparable
         self.assertNotEqual(da, 'ugly')

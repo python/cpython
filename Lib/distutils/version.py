@@ -21,7 +21,7 @@ Every version number class implements the following interface:
     an equivalent string -- ie. one that will generate an equivalent
     version number instance)
   * __repr__ generates Python code to recreate the version number instance
-  * __cmp__ compares the current instance with either another instance
+  * _cmp compares the current instance with either another instance
     of the same class or a string (which will be parsed to an instance
     of the same class, thus must follow the same rules)
 """
@@ -32,7 +32,7 @@ class Version:
     """Abstract base class for version numbering classes.  Just provides
     constructor (__init__) and reproducer (__repr__), because those
     seem to be the same for all version numbering classes; and route
-    rich comparisons to __cmp__.
+    rich comparisons to _cmp.
     """
 
     def __init__ (self, vstring=None):
@@ -43,37 +43,37 @@ class Version:
         return "%s ('%s')" % (self.__class__.__name__, str(self))
 
     def __eq__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c == 0
 
     def __ne__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c != 0
 
     def __lt__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c < 0
 
     def __le__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c <= 0
 
     def __gt__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c > 0
 
     def __ge__(self, other):
-        c = self.__cmp__(other)
+        c = self._cmp(other)
         if c is NotImplemented:
             return c
         return c >= 0
@@ -91,7 +91,7 @@ class Version:
 #                        (if not identical to) the string supplied to parse
 #    __repr__ (self)   - generate Python code to recreate
 #                        the instance
-#    __cmp__ (self, other) - compare two version numbers ('other' may
+#    _cmp (self, other) - compare two version numbers ('other' may
 #                        be an unparsed version string, or another
 #                        instance of your version class)
 
@@ -169,30 +169,39 @@ class StrictVersion (Version):
         return vstring
 
 
-    def __cmp__ (self, other):
+    def _cmp (self, other):
         if isinstance(other, str):
             other = StrictVersion(other)
 
-        compare = cmp(self.version, other.version)
-        if (compare == 0):              # have to compare prerelease
-
-            # case 1: neither has prerelease; they're equal
-            # case 2: self has prerelease, other doesn't; other is greater
-            # case 3: self doesn't have prerelease, other does: self is greater
-            # case 4: both have prerelease: must compare them!
-
-            if (not self.prerelease and not other.prerelease):
-                return 0
-            elif (self.prerelease and not other.prerelease):
+        if self.version != other.version:
+            # numeric versions don't match
+            # prerelease stuff doesn't matter
+            if self.version < other.version:
                 return -1
-            elif (not self.prerelease and other.prerelease):
+            else:
                 return 1
-            elif (self.prerelease and other.prerelease):
-                return cmp(self.prerelease, other.prerelease)
 
-        else:                           # numeric versions don't match --
-            return compare              # prerelease stuff doesn't matter
+        # have to compare prerelease
+        # case 1: neither has prerelease; they're equal
+        # case 2: self has prerelease, other doesn't; other is greater
+        # case 3: self doesn't have prerelease, other does: self is greater
+        # case 4: both have prerelease: must compare them!
 
+        if (not self.prerelease and not other.prerelease):
+            return 0
+        elif (self.prerelease and not other.prerelease):
+            return -1
+        elif (not self.prerelease and other.prerelease):
+            return 1
+        elif (self.prerelease and other.prerelease):
+            if self.prerelease == other.prerelease:
+                return 0
+            elif self.prerelease < other.prerelease:
+                return -1
+            else:
+                return 1
+        else:
+            assert False, "never get here"
 
 # end class StrictVersion
 
@@ -325,7 +334,7 @@ class LooseVersion (Version):
         return "LooseVersion ('%s')" % str(self)
 
 
-    def __cmp__ (self, other):
+    def _cmp (self, other):
         if isinstance(other, str):
             other = LooseVersion(other)
 

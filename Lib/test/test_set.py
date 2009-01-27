@@ -1036,16 +1036,6 @@ class TestBinaryOps(unittest.TestCase):
         result = self.set ^ set([8])
         self.assertEqual(result, set([2, 4, 6, 8]))
 
-    def test_cmp(self):
-        a, b = set('a'), set('b')
-        self.assertRaises(TypeError, cmp, a, b)
-
-        # In py3k, this works!
-        self.assertRaises(TypeError, cmp, a, a)
-
-        self.assertRaises(TypeError, cmp, a, 12)
-        self.assertRaises(TypeError, cmp, "abc", a)
-
 #==============================================================================
 
 class TestUpdateOps(unittest.TestCase):

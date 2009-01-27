@@ -1103,7 +1103,7 @@ class Test_TestLoader(TestCase):
     # getTestCaseNames() and all the loadTestsFromX() methods"
     def test_sortTestMethodsUsing__loadTestsFromTestCase(self):
         def reversed_cmp(x, y):
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         class Foo(unittest.TestCase):
             def test_1(self): pass
@@ -1119,7 +1119,7 @@ class Test_TestLoader(TestCase):
     # getTestCaseNames() and all the loadTestsFromX() methods"
     def test_sortTestMethodsUsing__loadTestsFromModule(self):
         def reversed_cmp(x, y):
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         m = types.ModuleType('m')
         class Foo(unittest.TestCase):
@@ -1137,7 +1137,7 @@ class Test_TestLoader(TestCase):
     # getTestCaseNames() and all the loadTestsFromX() methods"
     def test_sortTestMethodsUsing__loadTestsFromName(self):
         def reversed_cmp(x, y):
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         m = types.ModuleType('m')
         class Foo(unittest.TestCase):
@@ -1155,7 +1155,7 @@ class Test_TestLoader(TestCase):
     # getTestCaseNames() and all the loadTestsFromX() methods"
     def test_sortTestMethodsUsing__loadTestsFromNames(self):
         def reversed_cmp(x, y):
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         m = types.ModuleType('m')
         class Foo(unittest.TestCase):
@@ -1175,7 +1175,7 @@ class Test_TestLoader(TestCase):
     # Does it actually affect getTestCaseNames()?
     def test_sortTestMethodsUsing__getTestCaseNames(self):
         def reversed_cmp(x, y):
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         class Foo(unittest.TestCase):
             def test_1(self): pass
@@ -1188,9 +1188,19 @@ class Test_TestLoader(TestCase):
         self.assertEqual(loader.getTestCaseNames(Foo), test_names)
 
     # "The default value is the built-in cmp() function"
+    # Since cmp is now defunct, we simply verify that the results
+    # occur in the same order as they would with the default sort.
     def test_sortTestMethodsUsing__default_value(self):
         loader = unittest.TestLoader()
-        self.failUnless(loader.sortTestMethodsUsing is cmp)
+
+        class Foo(unittest.TestCase):
+            def test_2(self): pass
+            def test_3(self): pass
+            def test_1(self): pass
+
+        test_names = ['test_2', 'test_3', 'test_1']
+        self.assertEqual(loader.getTestCaseNames(Foo), sorted(test_names))
+
 
     # "it can be set to None to disable the sort."
     #

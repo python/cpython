@@ -457,15 +457,6 @@ def makeunicodetype(unicode, trace):
 # --------------------------------------------------------------------
 # unicode name database
 
-def CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj, *args):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
-
 def makeunicodename(unicode, trace):
 
     FILE = "Modules/unicodename_db.h"
@@ -508,14 +499,10 @@ def makeunicodename(unicode, trace):
     wordlist = list(words.items())
 
     # sort on falling frequency, then by name
-    def cmpwords(a,b):
+    def word_key(a):
         aword, alist = a
-        bword, blist = b
-        r = -cmp(len(alist),len(blist))
-        if r:
-            return r
-        return cmp(aword, bword)
-    wordlist.sort(key=CmpToKey(cmpwords))
+        return -len(alist), aword
+    wordlist.sort(key=word_key)
 
     # figure out how many phrasebook escapes we need
     escapes = 0

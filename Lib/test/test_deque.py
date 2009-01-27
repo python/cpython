@@ -103,7 +103,6 @@ class TestBasic(unittest.TestCase):
                 self.assertEqual(x <= y, list(x) <= list(y), (x,y))
                 self.assertEqual(x >  y, list(x) >  list(y), (x,y))
                 self.assertEqual(x >= y, list(x) >= list(y), (x,y))
-                self.assertEqual(cmp(x,y), cmp(list(x),list(y)), (x,y))
 
     def test_extend(self):
         d = deque('a')

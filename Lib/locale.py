@@ -31,7 +31,7 @@ def _strcoll(a,b):
     """ strcoll(string,string) -> int.
         Compares two strings according to the locale.
     """
-    return cmp(a,b)
+    return (a > b) - (a < b)
 
 def _strxfrm(s):
     """ strxfrm(string) -> string.
