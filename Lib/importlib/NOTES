@@ -1,15 +1,12 @@
 to do
 /////
 
-* Standardized loader tests.
+* Use test.loader_tests
 
-    + Create test.loader_tests.
-    + Use
-
-	- builtin
-	- frozen
-	- extension
-	-source
+    + builtin
+    + frozen
+    + extension
+    + source
 
 * Reorganize support code.
 
