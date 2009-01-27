@@ -498,10 +498,30 @@ class QName:
         return self.text
     def __hash__(self):
         return hash(self.text)
-    def __cmp__(self, other):
+    def __le__(self, other):
         if isinstance(other, QName):
-            return cmp(self.text, other.text)
-        return cmp(self.text, other)
+            return self.text <= other.text
+        return self.text <= other
+    def __lt__(self, other):
+        if isinstance(other, QName):
+            return self.text < other.text
+        return self.text < other
+    def __ge__(self, other):
+        if isinstance(other, QName):
+            return self.text >= other.text
+        return self.text >= other
+    def __gt__(self, other):
+        if isinstance(other, QName):
+            return self.text > other.text
+        return self.text > other
+    def __eq__(self, other):
+        if isinstance(other, QName):
+            return self.text == other.text
+        return self.text == other
+    def __ne__(self, other):
+        if isinstance(other, QName):
+            return self.text != other.text
+        return self.text != other
 
 ##
 # ElementTree wrapper class.  This class represents an entire element

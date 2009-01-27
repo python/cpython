@@ -1643,7 +1643,7 @@ class Helper:
         'SPECIALMETHODS': ('specialnames', 'BASICMETHODS ATTRIBUTEMETHODS '
                            'CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS '
                            'SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
-        'BASICMETHODS': ('customization', 'cmp hash repr str SPECIALMETHODS'),
+        'BASICMETHODS': ('customization', 'hash repr str SPECIALMETHODS'),
         'ATTRIBUTEMETHODS': ('attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
         'CALLABLEMETHODS': ('callable-types', 'CALLS SPECIALMETHODS'),
         'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS2 '

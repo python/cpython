@@ -697,7 +697,8 @@ class LongTest(unittest.TestCase):
             def _cmp__(self, other):
                 if not isinstance(other, Rat):
                     other = Rat(other)
-                return cmp(self.n * other.d, self.d * other.n)
+                x, y = self.n * other.d, self.d * other.n
+                return (x > y) - (x < y)
             def __eq__(self, other):
                 return self._cmp__(other) == 0
             def __ne__(self, other):
@@ -727,8 +728,8 @@ class LongTest(unittest.TestCase):
             Rx = Rat(x)
             for y in cases:
                 Ry = Rat(y)
-                Rcmp = cmp(Rx, Ry)
-                xycmp = cmp(x, y)
+                Rcmp = (Rx > Ry) - (Rx < Ry)
+                xycmp = (x > y) - (x < y)
                 eq(Rcmp, xycmp, Frm("%r %r %d %d", x, y, Rcmp, xycmp))
                 eq(x == y, Rcmp == 0, Frm("%r == %r %d", x, y, Rcmp))
                 eq(x != y, Rcmp != 0, Frm("%r != %r %d", x, y, Rcmp))

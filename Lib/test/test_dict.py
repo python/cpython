@@ -570,7 +570,7 @@ class DictTest(unittest.TestCase):
             self.fail("missing KeyError")
 
     def test_bad_key(self):
-        # Dictionary lookups should fail if __cmp__() raises an exception.
+        # Dictionary lookups should fail if __eq__() raises an exception.
         class CustomException(Exception):
             pass
 

@@ -42,7 +42,7 @@ class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotAscii(self):
         con = sqlite.connect(":memory:")
         try:
-            con.create_collation("collä", cmp)
+            con.create_collation("collä", lambda x, y: (x > y) - (x < y))
             self.fail("should have raised a ProgrammingError")
         except sqlite.ProgrammingError as e:
             pass
@@ -52,7 +52,7 @@ class CollationTests(unittest.TestCase):
             return
         def mycoll(x, y):
             # reverse order
-            return -cmp(x, y)
+            return -((x > y) - (x < y))
 
         con = sqlite.connect(":memory:")
         con.create_collation("mycoll", mycoll)
@@ -82,8 +82,8 @@ class CollationTests(unittest.TestCase):
         Verify that the last one is actually used.
         """
         con = sqlite.connect(":memory:")
-        con.create_collation("mycoll", cmp)
-        con.create_collation("mycoll", lambda x, y: -cmp(x, y))
+        con.create_collation("mycoll", lambda x, y: (x > y) - (x < y))
+        con.create_collation("mycoll", lambda x, y: -((x > y) - (x < y)))
         result = con.execute("""
             select x from (select 'a' as x union select 'b' as x) order by x collate mycoll
             """).fetchall()
@@ -96,7 +96,7 @@ class CollationTests(unittest.TestCase):
         to use it.
         """
         con = sqlite.connect(":memory:")
-        con.create_collation("mycoll", cmp)
+        con.create_collation("mycoll", lambda x, y: (x > y) - (x < y))
         con.create_collation("mycoll", None)
         try:
             con.execute("select 'a' as x union select 'b' as x order by x collate mycoll")

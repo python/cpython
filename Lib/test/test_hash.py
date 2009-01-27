@@ -55,13 +55,8 @@ class OnlyInequality(object):
     def __ne__(self, other):
         return self is not other
 
-class OnlyCmp(object):
-    def __cmp__(self, other):
-        return cmp(id(self), id(other))
-
 class InheritedHashWithEquality(FixedHash, OnlyEquality): pass
 class InheritedHashWithInequality(FixedHash, OnlyInequality): pass
-class InheritedHashWithCmp(FixedHash, OnlyCmp): pass
 
 class NoHash(object):
     __hash__ = None
@@ -74,7 +69,6 @@ class HashInheritanceTestCase(unittest.TestCase):
     fixed_expected = [FixedHash(),
                       InheritedHashWithEquality(),
                       InheritedHashWithInequality(),
-                      InheritedHashWithCmp(),
                       ]
     error_expected = [NoHash(),
                       OnlyEquality(),

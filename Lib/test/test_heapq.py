@@ -234,9 +234,9 @@ class GetOnly:
 
 class CmpErr:
     "Dummy element that always raises an error during comparison"
-    def __cmp__(self, other):
+    def __eq__(self, other):
         raise ZeroDivisionError
-    __eq__ = __ne__ = __lt__ = __le__ = __gt__ = __ge__ = __cmp__
+    __ne__ = __lt__ = __le__ = __gt__ = __ge__ = __eq__
 
 def R(seqn):
     'Regular generator'

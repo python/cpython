@@ -349,10 +349,6 @@ class DateTime:
     def timetuple(self):
         return time.strptime(self.value, "%Y%m%dT%H:%M:%S")
 
-    def __cmp__(self, other):
-        s, o = self.make_comparable(other)
-        return cmp(s, o)
-
     ##
     # Get date/time value.
     #

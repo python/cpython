@@ -539,12 +539,16 @@ def CmpToKey(mycmp):
             return mycmp(self.obj, other.obj) == -1
     return K
 
+def three_way_cmp(x, y):
+    """Return -1 if x < y, 0 if x == y and 1 if x > y"""
+    return (x > y) - (x < y)
+
 class TestLoader(object):
     """This class is responsible for loading tests according to various
     criteria and returning them wrapped in a TestSuite
     """
     testMethodPrefix = 'test'
-    sortTestMethodsUsing = cmp
+    sortTestMethodsUsing = staticmethod(three_way_cmp)
     suiteClass = TestSuite
 
     def loadTestsFromTestCase(self, testCaseClass):

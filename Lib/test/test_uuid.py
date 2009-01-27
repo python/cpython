@@ -181,7 +181,12 @@ class TestUUID(TestCase):
         # Test comparison of UUIDs.
         for i in range(len(ascending)):
             for j in range(len(ascending)):
-                equal(cmp(i, j), cmp(ascending[i], ascending[j]))
+                equal(i < j, ascending[i] < ascending[j])
+                equal(i <= j, ascending[i] <= ascending[j])
+                equal(i == j, ascending[i] == ascending[j])
+                equal(i > j, ascending[i] > ascending[j])
+                equal(i >= j, ascending[i] >= ascending[j])
+                equal(i != j, ascending[i] != ascending[j])
 
         # Test sorting of UUIDs (above list is in ascending order).
         resorted = ascending[:]

@@ -520,11 +520,29 @@ class NamedNodeMap(object):
 
     __len__ = _get_length
 
-    def __cmp__(self, other):
+    def _cmp(self, other):
         if self._attrs is getattr(other, "_attrs", None):
             return 0
         else:
-            return cmp(id(self), id(other))
+            return (id(self) > id(other)) - (id(self) < id(other))
+
+    def __eq__(self, other):
+        return self._cmp(other) == 0
+
+    def __ge__(self, other):
+        return self._cmp(other) >= 0
+
+    def __gt__(self, other):
+        return self._cmp(other) > 0
+
+    def __le__(self, other):
+        return self._cmp(other) <= 0
+
+    def __lt__(self, other):
+        return self._cmp(other) < 0
+
+    def __ne__(self, other):
+        return self._cmp(other) != 0
 
     def __getitem__(self, attname_or_tuple):
         if isinstance(attname_or_tuple, tuple):

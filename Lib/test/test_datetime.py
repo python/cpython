@@ -7,6 +7,8 @@ import os
 import pickle
 import unittest
 
+from operator import lt, le, gt, ge, eq, ne
+
 from test import support
 
 from datetime import MINYEAR, MAXYEAR
@@ -155,9 +157,6 @@ class HarmlessMixedComparison:
         self.assertRaises(TypeError, lambda: () <= me)
         self.assertRaises(TypeError, lambda: () > me)
         self.assertRaises(TypeError, lambda: () >= me)
-
-        self.assertRaises(TypeError, cmp, (), me)
-        self.assertRaises(TypeError, cmp, me, ())
 
 #############################################################################
 # timedelta tests
@@ -309,8 +308,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.failUnless(not t1 != t2)
         self.failUnless(not t1 < t2)
         self.failUnless(not t1 > t2)
-        self.assertEqual(cmp(t1, t2), 0)
-        self.assertEqual(cmp(t2, t1), 0)
 
         for args in (3, 3, 3), (2, 4, 4), (2, 3, 5):
             t2 = timedelta(*args)   # this is larger than t1
@@ -326,8 +323,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             self.failUnless(not t2 < t1)
             self.failUnless(not t1 >= t2)
             self.failUnless(not t2 <= t1)
-            self.assertEqual(cmp(t1, t2), -1)
-            self.assertEqual(cmp(t2, t1), 1)
 
         for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
@@ -953,8 +948,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.failUnless(not t1 != t2)
         self.failUnless(not t1 < t2)
         self.failUnless(not t1 > t2)
-        self.assertEqual(cmp(t1, t2), 0)
-        self.assertEqual(cmp(t2, t1), 0)
 
         for args in (3, 3, 3), (2, 4, 4), (2, 3, 5):
             t2 = self.theclass(*args)   # this is larger than t1
@@ -970,8 +963,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.failUnless(not t2 < t1)
             self.failUnless(not t1 >= t2)
             self.failUnless(not t2 <= t1)
-            self.assertEqual(cmp(t1, t2), -1)
-            self.assertEqual(cmp(t2, t1), 1)
 
         for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
@@ -999,8 +990,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # But the ordering is undefined
         self.assertRaises(TypeError, lambda: our < 1)
         self.assertRaises(TypeError, lambda: 1 < our)
-        self.assertRaises(TypeError, cmp, our, 1)
-        self.assertRaises(TypeError, cmp, 1, our)
 
         # Repeat those tests with a different class
 
@@ -1014,8 +1003,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(their != our, True)
         self.assertRaises(TypeError, lambda: our < their)
         self.assertRaises(TypeError, lambda: their < our)
-        self.assertRaises(TypeError, cmp, our, their)
-        self.assertRaises(TypeError, cmp, their, our)
 
         # However, if the other class explicitly defines ordering
         # relative to our class, it is allowed to do so
@@ -1041,8 +1028,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(their != our, True)
         self.assertEqual(our < their, True)
         self.assertEqual(their < our, False)
-        self.assertEqual(cmp(our, their), -1)
-        self.assertEqual(cmp(their, our), 1)
 
     def test_bool(self):
         # All dates are considered true.
@@ -1440,8 +1425,6 @@ class TestDateTime(TestDate):
         self.failUnless(not t1 != t2)
         self.failUnless(not t1 < t2)
         self.failUnless(not t1 > t2)
-        self.assertEqual(cmp(t1, t2), 0)
-        self.assertEqual(cmp(t2, t1), 0)
 
         for i in range(len(args)):
             newargs = args[:]
@@ -1459,8 +1442,6 @@ class TestDateTime(TestDate):
             self.failUnless(not t2 < t1)
             self.failUnless(not t1 >= t2)
             self.failUnless(not t2 <= t1)
-            self.assertEqual(cmp(t1, t2), -1)
-            self.assertEqual(cmp(t2, t1), 1)
 
 
     # A helper for timestamp constructor tests.
@@ -1728,8 +1709,6 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.failUnless(not t1 != t2)
         self.failUnless(not t1 < t2)
         self.failUnless(not t1 > t2)
-        self.assertEqual(cmp(t1, t2), 0)
-        self.assertEqual(cmp(t2, t1), 0)
 
         for i in range(len(args)):
             newargs = args[:]
@@ -1747,8 +1726,6 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             self.failUnless(not t2 < t1)
             self.failUnless(not t1 >= t2)
             self.failUnless(not t2 <= t1)
-            self.assertEqual(cmp(t1, t2), -1)
-            self.assertEqual(cmp(t2, t1), 1)
 
         for badarg in OTHERSTUFF:
             self.assertEqual(t1 == badarg, False)
@@ -2122,9 +2099,10 @@ class TZInfoBase:
         d2 = base.replace(minute=11)
         for x in d0, d1, d2:
             for y in d0, d1, d2:
-                got = cmp(x, y)
-                expected = cmp(x.minute, y.minute)
-                self.assertEqual(got, expected)
+                for op in lt, le, gt, ge, eq, ne:
+                    got = op(x, y)
+                    expected = op(x.minute, y.minute)
+                    self.assertEqual(got, expected)
 
         # However, if they're different members, uctoffset is not ignored.
         # Note that a time can't actually have an operand-depedent offset,
@@ -2136,7 +2114,7 @@ class TZInfoBase:
             d2 = base.replace(minute=11, tzinfo=OperandDependentOffset())
             for x in d0, d1, d2:
                 for y in d0, d1, d2:
-                    got = cmp(x, y)
+                    got = (x > y) - (x < y)
                     if (x is d0 or x is d1) and (y is d0 or y is d1):
                         expected = 0
                     elif x is y is d2:
