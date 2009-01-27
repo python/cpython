@@ -56,30 +56,15 @@ class TestContains(unittest.TestCase):
             This class is designed to make sure that the contains code
             works when the list is modified during the check.
             """
-            aList = range(15)
-            def __cmp__(self, other):
+            aList = list(range(15))
+            def __eq__(self, other):
                 if other == 12:
                     self.aList.remove(12)
                     self.aList.remove(13)
                     self.aList.remove(14)
-                return 1
+                return 0
 
         self.assert_(Deviant1() not in Deviant1.aList)
-
-        class Deviant2:
-            """Behaves strangely when compared
-
-            This class raises an exception during comparison.  That in
-            turn causes the comparison to fail with a TypeError.
-            """
-            def __cmp__(self, other):
-                if other == 4:
-                    raise RuntimeError("gotcha")
-
-        try:
-            self.assert_(Deviant2() not in a)
-        except TypeError:
-            pass
 
     def test_nonreflexive(self):
         # containment and equality tests involving elements that are

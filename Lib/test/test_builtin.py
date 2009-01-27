@@ -10,6 +10,7 @@ warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
                         DeprecationWarning, "unittest")
+import builtins
 
 class Squares:
 
@@ -219,21 +220,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises((OverflowError, ValueError), chr, 2**32)
 
     def test_cmp(self):
-        self.assertEqual(cmp(-1, 1), -1)
-        self.assertEqual(cmp(1, -1), 1)
-        self.assertEqual(cmp(1, 1), 0)
-        # verify that circular objects are not handled
-        a = []; a.append(a)
-        b = []; b.append(b)
-        from collections import UserList
-        c = UserList(); c.append(c)
-        self.assertRaises(RuntimeError, cmp, a, b)
-        self.assertRaises(RuntimeError, cmp, b, c)
-        self.assertRaises(RuntimeError, cmp, c, a)
-        self.assertRaises(RuntimeError, cmp, a, c)
-       # okay, now break the cycles
-        a.pop(); b.pop(); c.pop()
-        self.assertRaises(TypeError, cmp)
+        # uncomment the following line once cmp has been removed
+        #self.assert_(not hasattr(builtins, "cmp"))
+        pass
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -736,10 +725,6 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 raise ValueError
         self.assertRaises(ValueError, min, BadSeq())
-        class BadNumber:
-            def __cmp__(self, other):
-                raise ValueError
-        self.assertRaises(TypeError, min, (42, BadNumber()))
 
         for stmt in (
             "min(key=int)",                 # no args

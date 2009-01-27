@@ -102,7 +102,7 @@ class TestBase(unittest.TestCase):
             y = x[:]
             y.reverse()
             s = x[:]
-            check("reversed via function", y, s, lambda a, b: cmp(b, a))
+            check("reversed via function", y, s, lambda a, b: (b>a)-(b<a))
 
             if verbose:
                 print("    Checking against an insane comparison function.")
@@ -157,13 +157,13 @@ class TestBugs(unittest.TestCase):
             def mutating_cmp(x, y):
                 L.append(3)
                 L.pop()
-                return cmp(x, y)
+                return (x > y) - (x < y)
             L = [1,2]
             self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
             def mutating_cmp(x, y):
                 L.append(3)
                 del L[:]
-                return cmp(x, y)
+                return (x > y) - (x < y)
             self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
             memorywaster = [memorywaster]
 
@@ -176,7 +176,10 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         copy = data[:]
         random.shuffle(data)
         data.sort(key=str.lower)
-        copy.sort(key=CmpToKey(lambda x,y: cmp(x.lower(), y.lower())))
+        def my_cmp(x, y):
+            xlower, ylower = x.lower(), y.lower()
+            return (xlower > ylower) - (xlower < ylower)
+        copy.sort(key=CmpToKey(my_cmp))
 
     def test_baddecorator(self):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
@@ -246,8 +249,14 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         data = [(random.randrange(100), i) for i in range(200)]
         copy1 = data[:]
         copy2 = data[:]
-        data.sort(key=CmpToKey(lambda x,y: cmp(x[0],y[0])), reverse=True)
-        copy1.sort(key=CmpToKey(lambda x,y: cmp(y[0],x[0])))
+        def my_cmp(x, y):
+            x0, y0 = x[0], y[0]
+            return (x0 > y0) - (x0 < y0)
+        def my_cmp_reversed(x, y):
+            x0, y0 = x[0], y[0]
+            return (y0 > x0) - (y0 < x0)
+        data.sort(key=CmpToKey(my_cmp), reverse=True)
+        copy1.sort(key=CmpToKey(my_cmp_reversed))
         self.assertEqual(data, copy1)
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
