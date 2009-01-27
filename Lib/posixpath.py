@@ -369,12 +369,12 @@ def _resolve_link(path):
     until we either arrive at something that isn't a symlink, or
     encounter a path we've seen before (meaning that there's a loop).
     """
-    paths_seen = []
+    paths_seen = set()
     while islink(path):
         if path in paths_seen:
             # Already seen this path, so we must have a symlink loop
             return None
-        paths_seen.append(path)
+        paths_seen.add(path)
         # Resolve where the link points to
         resolved = os.readlink(path)
         if not isabs(resolved):
