@@ -133,6 +133,53 @@ loops that truncate the stream.
    The number of items returned is ``n! / r! / (n-r)!`` when ``0 <= r <= n``
    or zero when ``r > n``.
 
+.. function:: combinations_with_replacement(iterable, r)
+
+   Return *r* length subsequences of elements from the input *iterable*
+   allowing individual elements to be repeated more than once.
+
+   Combinations are emitted in lexicographic sort order.  So, if the
+   input *iterable* is sorted, the combination tuples will be produced
+   in sorted order.
+
+   Elements are treated as unique based on their position, not on their
+   value.  So if the input elements are unique, the generated combinations
+   will also be unique.
+
+   Equivalent to::
+
+        def combinations_with_replacement(iterable, r):
+            # combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC
+            pool = tuple(iterable)
+            n = len(pool)
+            if not n and r:
+                return
+            indices = [0] * r
+            yield tuple(pool[i] for i in indices)
+            while 1:
+                for i in reversed(range(r)):
+                    if indices[i] != n - 1:
+                        break
+                else:
+                    return
+                indices[i:] = [indices[i] + 1] * (r - i)
+                yield tuple(pool[i] for i in indices)
+
+   The code for :func:`combinations_with_replacement` can be also expressed as
+   a subsequence of :func:`product` after filtering entries where the elements
+   are not in sorted order (according to their position in the input pool)::
+
+        def combinations_with_replacement(iterable, r):
+            pool = tuple(iterable)
+            n = len(pool)
+            for indices in product(range(n), repeat=r):
+                if sorted(indices) == list(indices):
+                    yield tuple(pool[i] for i in indices)
+
+   The number of items returned is ``(n+r-1)! / r! / (n-1)!`` when ``n > 0``.
+
+   .. versionadded:: 2.7
+
 .. function:: compress(data, selectors)
 
    Make an iterator that filters elements from *data* returning only those that
@@ -607,22 +654,6 @@ which incur interpreter overhead.
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
-   def combinations_with_replacement(iterable, r):
-       "combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
-       # number items returned:  (n+r-1)! / r! / (n-1)!
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = [0] * r
-       yield tuple(pool[i] for i in indices)
-       while True:
-           for i in reversed(range(r)):
-               if indices[i] != n - 1:
-                   break
-           else:
-               return
-           indices[i:] = [indices[i] + 1] * (r - i)
-           yield tuple(pool[i] for i in indices)
 
     def unique_everseen(iterable, key=None):
         "List unique elements, preserving order. Remember all elements ever seen."
