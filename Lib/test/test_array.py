@@ -725,6 +725,8 @@ class BaseTest(unittest.TestCase):
         self.assertRaises(BufferError, operator.setitem, a, slice(0, 0), a)
         self.assertRaises(BufferError, operator.delitem, a, 0)
         self.assertRaises(BufferError, operator.delitem, a, slice(0, 1))
+        self.assertRaises(BufferError, operator.imul, a, 2)
+        self.assertRaises(BufferError, operator.imul, a, 0)
 
     def test_weakref(self):
         s = array.array(self.typecode, self.example)
