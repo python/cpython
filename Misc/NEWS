@@ -104,6 +104,9 @@ Library
   operator module; use the abstract base classes instead.  Also removed
   the repeat() function; use mul() instead.
 
+- Issue 5021:  doctest.testfile() did not create __name__ and
+  collections.namedtuple() relied on __name__ being defined.
+
 - Issue #1885: distutils. When running sdist with --formats=tar,gztar
   the tar file was overriden by the gztar one.
 
