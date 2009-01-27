@@ -171,10 +171,10 @@ For example::
    Elements are counted from an *iterable* or initialized from another
    *mapping* (or counter)::
 
-       >>> c = Counter()                            # a new, empty counter
-       >>> c = Counter('gallahad')                  # a new counter from an iterable
-       >>> c = Counter({'red': 4, 'blue': 2})       # a new counter from a mapping
-       >>> c = Counter(spam=8, eggs=1)              # a new counter from keyword args
+        >>> c = Counter()                           # a new, empty counter
+        >>> c = Counter('gallahad')                 # a new counter from an iterable
+        >>> c = Counter({'red': 4, 'blue': 2})      # a new counter from a mapping
+        >>> c = Counter(cats=4, dogs=8)             # a new counter from keyword args
 
    Counter objects have a dictionary interface except that they return a zero
    count for missing items instead of raising a :exc:`KeyError`::
@@ -207,10 +207,10 @@ For example::
 
    .. method:: most_common([n])
 
-      Return a list of the *n* most common elements and their counts from
-      the most common to the least.  If *n* is not specified or is ``None``,
-      return a list of all element counts in decreasing order of frequency.
-      Elements with equal counts are ordered arbitrarily::
+      Return a list of the *n* most common elements and their counts from the
+      most common to the least.  If *n* not specified, :func:`most_common`
+      returns *all* elements in the counter.  Elements with equal counts are
+      ordered arbitrarily::
 
             >>> Counter('abracadabra').most_common(3)
             [('a', 5), ('r', 2), ('b', 2)]
@@ -220,33 +220,26 @@ For example::
 
    .. method:: fromkeys(iterable)
 
-       This class method is not implemented for :class:`Counter` objects.
+      This class method is not implemented for :class:`Counter` objects.
 
    .. method:: update([iterable-or-mapping])
 
-       Elements are counted from an *iterable* or added-in from another
-       *mapping* (or counter).  Like :meth:`dict.update` but adds-in counts
-       instead of replacing them.  Also, the *iterable* is expected to be a
-       sequence of elements, not a sequence of ``(key, value)`` pairs::
-
-            >>> c = Counter('which')
-            >>> c.update('witch')           # add elements from another iterable
-            >>> d = Counter('watch')
-            >>> c.update(d)                 # add elements from another counter
-            >>> c['h']                      # four 'h' in which, witch, and watch
-            4
+      Elements are counted from an *iterable* or added-in from another
+      *mapping* (or counter).  Like :meth:`dict.update` but adds counts
+      instead of replacing them.  Also, the *iterable* is expected to be a
+      sequence of elements, not a sequence of ``(key, value)`` pairs.
 
 Common patterns for working with :class:`Counter` objects::
 
-    sum(c.values())               # total of all counts
-    c.clear()                     # reset all counts
-    list(c)                       # list unique elements
-    set(c)                        # convert to a set
-    dict(c)                       # convert to a regular dictionary
-    c.items()                     # convert to a list of (elem, cnt) pairs
-    Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
-    c.most_common()[:-n:-1]       # n least common elements
-    c += Counter()                # remove zero and negative counts
+    sum(c.values())                 # total of all counts
+    c.clear()                       # reset all counts
+    list(c)                         # list unique elements
+    set(c)                          # convert to a set
+    dict(c)                         # convert to a regular dictionary
+    c.items()                       # convert to a list of (elem, cnt) pairs
+    Counter(dict(list_of_pairs))    # convert from a list of (elem, cnt) pairs
+    c.most_common()[:-n:-1]         # n least common elements
+    c += Counter()                  # remove zero and negative counts
 
 Several multiset mathematical operations are provided for combining
 :class:`Counter` objects.  Multisets are like regular sets but are allowed to
@@ -258,13 +251,13 @@ counts less than one::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
-    >>> c + d                           # add two counters together:  c[x] + d[x]
+    >>> c + d                       # add two counters together:  c[x] + d[x]
     Counter({'a': 4, 'b': 3})
-    >>> c - d                           # subtract (keeping only positive counts)
+    >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                           # intersection:  min(c[x], d[x])
+    >>> c & d                       # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
-    >>> c | d                           # union:  max(c[x], d[x])
+    >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
 
 .. seealso::
