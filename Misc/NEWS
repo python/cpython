@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 5021:  doctest.testfile() did not create __name__ and
+  collections.namedtuple() relied on __name__ being defined.
+
 - Backport importlib from Python 3.1. Only the import_module() function has
   been backported to help facilitate transitions from 2.7 to 3.1.
 
