@@ -1512,6 +1512,12 @@ perform as purported.
 >>> list(powerset([1,2,3]))
 [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
+>>> all(len(list(powerset(range(n)))) == 2**n for n in range(18))
+True
+
+>>> list(powerset('abcde')) == sorted(sorted(set(powerset('abcde'))), key=len)
+True
+
 >>> list(unique_everseen('AAAABBBCCDAABBB'))
 ['A', 'B', 'C', 'D']
 
