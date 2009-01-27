@@ -1,8 +1,15 @@
 to do
 /////
 
-* Create reasonable base tests that all finders and loaders must pass so
-  that various implementations can just subclass as needed.
+* Standardized loader tests.
+
+    + Create test.loader_tests.
+    + Use
+
+	- builtin
+	- frozen
+	- extension
+	-source
 
 * Reorganize support code.
 
