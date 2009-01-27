@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 5021:  doctest.testfile() did not create __name__ and
+  collections.namedtuple() relied on __name__ being defined.
+
 - Issue #3881: Help Tcl to load even when started through the
   unreadable local symlink to "Program Files" on Vista.
 
