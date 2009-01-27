@@ -1,29 +1,48 @@
 from importlib import machinery
+from .. import finder_tests
 from .. import support
 
 import sys
 import unittest
 
-class FinderTests(unittest.TestCase):
+class FinderTests(finder_tests.FinderTests):
 
     """Test find_module() for built-in modules."""
 
     assert 'errno' in sys.builtin_module_names
     name = 'errno'
 
-    find_module = staticmethod(lambda name, path=None:
-                    machinery.BuiltinImporter.find_module(name, path))
-
-
-    def test_find_module(self):
+    def test_module(self):
         # Common case.
         with support.uncache(self.name):
-            self.assert_(self.find_module(self.name))
+            self.assert_(machinery.BuiltinImporter.find_module(self.name))
+
+    def test_package(self):
+        # Built-in modules cannot be a package.
+        pass
+
+    def test_module_in_package(self):
+        # Built-in modules cannobt be in a package.
+        pass
+
+    def test_package_in_package(self):
+        # Built-in modules cannot be a package.
+        pass
+
+    def test_package_over_module(self):
+        # Built-in modules cannot be a package.
+        pass
+
+    def test_failure(self):
+        assert 'importlib' not in sys.builtin_module_names
+        loader = machinery.BuiltinImporter.find_module('importlib')
+        self.assert_(loader is None)
 
     def test_ignore_path(self):
         # The value for 'path' should always trigger a failed import.
         with support.uncache(self.name):
-            self.assert_(self.find_module(self.name, ['pkg']) is None)
+            loader = machinery.BuiltinImporter.find_module(self.name, ['pkg'])
+            self.assert_(loader is None)
 
 
 
