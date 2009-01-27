@@ -1,18 +1,16 @@
-from importlib import machinery
-from ..builtin import test_finder
-from .. import support
+from ... import machinery
+from .. import finder_tests
 
 import unittest
 
 
-class FinderTests(test_finder.FinderTests):
+class FinderTests(finder_tests.FinderTests):
 
     """Test finding frozen modules."""
 
     def find(self, name, path=None):
         finder = machinery.FrozenImporter
         return finder.find_module(name, path)
-
 
     def test_module(self):
         name = '__hello__'
@@ -28,6 +26,11 @@ class FinderTests(test_finder.FinderTests):
         self.assert_(hasattr(loader, 'load_module'))
 
     def test_package_in_package(self):
+        # No frozen package within another package to test with.
+        pass
+
+    def test_package_over_module(self):
+        # No easy way to test.
         pass
 
     def test_failure(self):
