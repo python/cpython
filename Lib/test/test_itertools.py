@@ -1370,7 +1370,7 @@ Samuele
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
 ...     args = [iter(iterable)] * n
-...     return zip_longest(fillvalue=fillvalue, *args)
+...     return zip_longest(*args, fillvalue=fillvalue)
 
 >>> def roundrobin(*iterables):
 ...     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
