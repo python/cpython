@@ -20,7 +20,7 @@ from collections import deque
 class mutex:
     def __init__(self):
         """Create a new mutex -- initially unlocked."""
-        self.locked = 0
+        self.locked = False
         self.queue = deque()
 
     def test(self):
@@ -31,7 +31,7 @@ class mutex:
         """Atomic test-and-set -- grab the lock if it is not set,
         return True if it succeeded."""
         if not self.locked:
-            self.locked = 1
+            self.locked = True
             return True
         else:
             return False
@@ -52,4 +52,4 @@ class mutex:
             function, argument = self.queue.popleft()
             function(argument)
         else:
-            self.locked = 0
+            self.locked = False
