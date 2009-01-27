@@ -1268,6 +1268,8 @@ Samuele
 ...     "combinations_with_replacement('ABC', 3) --> AA AB AC BB BC CC"
 ...     pool = tuple(iterable)
 ...     n = len(pool)
+...     if not n and r:
+...         return
 ...     indices = [0] * r
 ...     yield tuple(pool[i] for i in indices)
 ...     while 1:
