@@ -281,11 +281,15 @@ class TestBasicOps(unittest.TestCase):
             perm = list(permutations(s, r))
             comb = list(combinations(s, r))
 
+            self.assertEquals(len(prod), len(s)**r)
+            self.assertEquals(prod, sorted(set(prod)))                      # prod in lexicographic order without repeats
             self.assertEquals(cwr, [t for t in prod if sorted(t)==list(t)]) # cwr: prods which are sorted
             self.assertEquals(perm, [t for t in prod if len(set(t))==r])    # perm: prods with no dups
             self.assertEqual(comb, [t for t in perm if sorted(t)==list(t)]) # comb: perms that are sorted
             self.assertEqual(comb, [t for t in cwr if len(set(t))==r])      # comb: cwrs without dups
-            self.assertEqual(set(comb), set(cwr) & set(perm))               # comb: both a cwr and a perm
+            self.assertEqual(comb, filter(set(cwr).__contains__, perm))     # comb: perm that is a cwr
+            self.assertEqual(comb, filter(set(perm).__contains__, cwr))     # comb: cwr that is a perm
+            self.assertEqual(comb, sorted(set(cwr) & set(perm)))            # comb: both a cwr and a perm
 
     def test_compress(self):
         self.assertEqual(list(compress('ABCDEF', [1,0,1,0,1,1])), list('ACEF'))
