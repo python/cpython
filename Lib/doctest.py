@@ -837,6 +837,8 @@ class DocTestFinder:
             globs = globs.copy()
         if extraglobs is not None:
             globs.update(extraglobs)
+        if '__name__' not in globs:
+            globs['__name__'] = '__main__'  # provide a default module name
 
         # Recursively expore `obj`, extracting DocTests.
         tests = []
@@ -1947,6 +1949,8 @@ def testfile(filename, module_relative=True, name=None, package=None,
         globs = globs.copy()
     if extraglobs is not None:
         globs.update(extraglobs)
+    if '__name__' not in globs:
+        globs['__name__'] = '__main__'
 
     if raise_on_error:
         runner = DebugRunner(verbose=verbose, optionflags=optionflags)

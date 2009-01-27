@@ -111,7 +111,7 @@ def namedtuple(typename, field_names, verbose=False):
     # where the named tuple is created.  Bypass this step in enviroments where
     # sys._getframe is not defined (Jython for example).
     if hasattr(_sys, '_getframe'):
-        result.__module__ = _sys._getframe(1).f_globals['__name__']
+        result.__module__ = _sys._getframe(1).f_globals.get('__name__', '__main__')
 
     return result
 
