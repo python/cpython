@@ -708,10 +708,13 @@ class NotebookTest(unittest.TestCase):
 class TreeviewTest(unittest.TestCase):
 
     def setUp(self):
-        self.tv = ttk.Treeview()
+        self.root = support.get_tk_root()
+        self.tv = ttk.Treeview(self.root)
 
     def tearDown(self):
         self.tv.destroy()
+        self.root.update_idletasks()
+        self.root.destroy()
 
 
     def test_bbox(self):
