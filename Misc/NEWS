@@ -12,6 +12,9 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Issue #4707: round(x, n) now returns an integer if x is an integer.
+  Previously it returned a float.
+
 - Issue #4874: Most builtin decoders now reject unicode input.
 
 - Issue #4842: Don't allow trailing 'L' when constructing an integer

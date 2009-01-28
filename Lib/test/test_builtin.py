@@ -1068,9 +1068,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(8), 8)
         self.assertEqual(round(-8), -8)
         self.assertEqual(type(round(0)), int)
-        self.assertEqual(type(round(-8, -1)), float)
-        self.assertEqual(type(round(-8, 0)), float)
-        self.assertEqual(type(round(-8, 1)), float)
+        self.assertEqual(type(round(-8, -1)), int)
+        self.assertEqual(type(round(-8, 0)), int)
+        self.assertEqual(type(round(-8, 1)), int)
 
         # test new kwargs
         self.assertEqual(round(number=-8.0, ndigits=-1), -10.0)
