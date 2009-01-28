@@ -160,7 +160,24 @@ class TestNamedTuple(unittest.TestCase):
             self.assertEqual(p, q)
             self.assertEqual(p._fields, q._fields)
 
-class TestOneTrickPonyABCs(unittest.TestCase):
+class ABCTestCase(unittest.TestCase):
+
+    def validate_abstract_methods(self, abc, *names):
+        methodstubs = dict.fromkeys(names, lambda s, *args: 0)
+
+        # everything should work will all required methods are present
+        C = type('C', (abc,), methodstubs)
+        C()
+
+        # instantiation should fail if a required method is missing
+        for name in names:
+            stubs = methodstubs.copy()
+            del stubs[name]
+            C = type('C', (abc,), stubs)
+            self.assertRaises(TypeError, C, name)
+
+
+class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Hashable(self):
         # Check some non-hashables
@@ -185,6 +202,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
                 return super().__hash__()
         self.assertEqual(hash(H()), 0)
         self.failIf(issubclass(int, H))
+        self.validate_abstract_methods(Hashable, '__hash__')
 
     def test_Iterable(self):
         # Check some non-iterables
@@ -208,6 +226,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
                 return super().__iter__()
         self.assertEqual(list(I()), [])
         self.failIf(issubclass(str, I))
+        self.validate_abstract_methods(Iterable, '__iter__')
 
     def test_Iterator(self):
         non_samples = [None, 42, 3.14, 1j, b"", "", (), [], {}, set()]
@@ -225,6 +244,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in samples:
             self.failUnless(isinstance(x, Iterator), repr(x))
             self.failUnless(issubclass(type(x), Iterator), repr(type(x)))
+        self.validate_abstract_methods(Iterator, '__next__')
 
     def test_Sized(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -241,6 +261,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in samples:
             self.failUnless(isinstance(x, Sized), repr(x))
             self.failUnless(issubclass(type(x), Sized), repr(type(x)))
+        self.validate_abstract_methods(Sized, '__len__')
 
     def test_Container(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -257,6 +278,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in samples:
             self.failUnless(isinstance(x, Container), repr(x))
             self.failUnless(issubclass(type(x), Container), repr(type(x)))
+        self.validate_abstract_methods(Container, '__contains__')
 
     def test_Callable(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -275,6 +297,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in samples:
             self.failUnless(isinstance(x, Callable), repr(x))
             self.failUnless(issubclass(type(x), Callable), repr(type(x)))
+        self.validate_abstract_methods(Callable, '__call__')
 
     def test_direct_subclassing(self):
         for B in Hashable, Iterable, Iterator, Sized, Container, Callable:
@@ -292,7 +315,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
             self.failUnless(issubclass(C, B))
 
 
-class TestCollectionABCs(unittest.TestCase):
+class TestCollectionABCs(ABCTestCase):
 
     # XXX For now, we only test some virtual inheritance properties.
     # We should also test the proper behavior of the collection ABCs
@@ -302,6 +325,7 @@ class TestCollectionABCs(unittest.TestCase):
         for sample in [set, frozenset]:
             self.failUnless(isinstance(sample(), Set))
             self.failUnless(issubclass(sample, Set))
+        self.validate_abstract_methods(Set, '__contains__', '__iter__', '__len__')
 
     def test_hash_Set(self):
         class OneTwoThreeSet(Set):
@@ -323,22 +347,57 @@ class TestCollectionABCs(unittest.TestCase):
         self.failUnless(issubclass(set, MutableSet))
         self.failIf(isinstance(frozenset(), MutableSet))
         self.failIf(issubclass(frozenset, MutableSet))
+        self.validate_abstract_methods(MutableSet, '__contains__', '__iter__', '__len__',
+            'add', 'discard')
+
+    def test_issue_4920(self):
+        # MutableSet.pop() method did not work
+        class MySet(collections.MutableSet):
+            __slots__=['__s']
+            def __init__(self,items=None):
+                if items is None:
+                    items=[]
+                self.__s=set(items)
+            def __contains__(self,v):
+                return v in self.__s
+            def __iter__(self):
+                return iter(self.__s)
+            def __len__(self):
+                return len(self.__s)
+            def add(self,v):
+                result=v not in self.__s
+                self.__s.add(v)
+                return result
+            def discard(self,v):
+                result=v in self.__s
+                self.__s.discard(v)
+                return result
+            def __repr__(self):
+                return "MySet(%s)" % repr(list(self))
+        s = MySet([5,43,2,1])
+        self.assertEqual(s.pop(), 1)
 
     def test_Mapping(self):
         for sample in [dict]:
             self.failUnless(isinstance(sample(), Mapping))
             self.failUnless(issubclass(sample, Mapping))
+        self.validate_abstract_methods(Mapping, '__contains__', '__iter__', '__len__',
+            '__getitem__')
 
     def test_MutableMapping(self):
         for sample in [dict]:
             self.failUnless(isinstance(sample(), MutableMapping))
             self.failUnless(issubclass(sample, MutableMapping))
+        self.validate_abstract_methods(MutableMapping, '__contains__', '__iter__', '__len__',
+            '__getitem__', '__setitem__', '__delitem__')
 
     def test_Sequence(self):
         for sample in [tuple, list, bytes, str]:
             self.failUnless(isinstance(sample(), Sequence))
             self.failUnless(issubclass(sample, Sequence))
         self.failUnless(issubclass(str, Sequence))
+        self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
+            '__getitem__')
 
     def test_ByteString(self):
         for sample in [bytes, bytearray]:
@@ -358,6 +417,8 @@ class TestCollectionABCs(unittest.TestCase):
             self.failUnless(isinstance(sample(), MutableSequence))
             self.failUnless(issubclass(sample, MutableSequence))
         self.failIf(issubclass(str, MutableSequence))
+        self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
+            '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
 
 class TestCounter(unittest.TestCase):
 
