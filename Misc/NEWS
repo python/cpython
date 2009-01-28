@@ -351,6 +351,8 @@ Library
 Tools/Demos
 -----------
 
+- Ttk demos added in Demo/tkinter/ttk/
+
 - Issue #4677: add two list comprehension tests to pybench.
 
 
