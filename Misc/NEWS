@@ -145,6 +145,8 @@ Core and Builtins
 Library
 -------
 
+- Added the ttk module. See issue #2983: Ttk support for Tkinter.
+
 - Issue 5021:  doctest.testfile() did not create __name__ and
   collections.namedtuple() relied on __name__ being defined.
 
