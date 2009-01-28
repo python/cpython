@@ -116,6 +116,8 @@ resources to test.  Currently only the following are defined:
 
     urlfetch -  It is okay to download files required on testing.
 
+    gui -       Run tests that require a running GUI.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -168,7 +170,7 @@ if sys.platform == 'darwin':
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'compiler', 'subprocess', 'urlfetch')
+                  'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui')
 
 
 def usage(code, msg=''):
