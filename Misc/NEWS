@@ -442,6 +442,11 @@ Extension Modules
 
 - Issue #4396: The parser module now correctly validates the with statement.
 
+Tests
+-----
+
+- Issue #5083: New 'gui' resource for regrtest.
+
 
 What's New in Python 2.6 final
 ==============================
