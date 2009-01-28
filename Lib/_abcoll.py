@@ -301,7 +301,7 @@ class MutableSet(Set):
         """Return the popped value.  Raise KeyError if empty."""
         it = iter(self)
         try:
-            value = it.__next__()
+            value = next(it)
         except StopIteration:
             raise KeyError
         self.discard(value)
