@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 4920:  Fixed .next() vs .__next__() issues in the ABCs for
+  Iterator and MutableSet.
+
 - Added the ttk module. See issue #2983: Ttk support for Tkinter.
 
 - Issue 5021:  doctest.testfile() did not create __name__ and
