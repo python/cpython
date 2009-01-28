@@ -1,0 +1,68 @@
+"""
+Use this module to get and run all tk tests.
+
+tkinter tests should live in a package inside the directory where this file
+lives, like test_tkinter.
+Extensions also should live in packages following the same rule as above.
+"""
+
+import os
+import sys
+import unittest
+import test.support
+
+this_dir_path = os.path.abspath(os.path.dirname(__file__))
+
+def is_package(path):
+    for name in os.listdir(path):
+        if name in ('__init__.py', '__init__.pyc', '__init.pyo'):
+            return True
+    return False
+
+def get_tests_modules(basepath=this_dir_path, gui=True):
+    """This will import and yield modules whose names start with test_
+    and are inside packages found in the path starting at basepath."""
+    py_ext = '.py'
+
+    for dirpath, dirnames, filenames in os.walk(basepath):
+        for dirname in list(dirnames):
+            if dirname[0] == '.':
+                dirnames.remove(dirname)
+
+        if is_package(dirpath) and filenames:
+            pkg_name = dirpath[len(basepath) + len(os.sep):].replace('/', '.')
+            filenames = filter(
+                    lambda x: x.startswith('test_') and x.endswith(py_ext),
+                    filenames)
+
+            for name in filenames:
+                try:
+                    yield __import__(
+                            "%s.%s.%s" % (
+                                "tkinter.test",
+                                pkg_name,
+                                name[:-len(py_ext)]),
+                            fromlist=['']
+                            )
+                except test.support.ResourceDenied:
+                    if gui:
+                        raise
+
+def get_tests(text=True, gui=True):
+    """Yield all the tests in the modules found by get_tests_modules.
+
+    If nogui is True, only tests that do not require a GUI will be
+    returned."""
+    attrs = []
+    if text:
+        attrs.append('tests_nogui')
+    if gui:
+        attrs.append('tests_gui')
+    for module in get_tests_modules(gui=gui):
+        for attr in attrs:
+            for test in getattr(module, attr, ()):
+                yield test
+
+if __name__ == "__main__":
+    test.support.use_resources = ['gui']
+    test.support.run_unittest(*get_tests())
