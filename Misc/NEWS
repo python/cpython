@@ -423,6 +423,12 @@ Extension Modules
   buffer.
 
 
+Tests
+-----
+
+- Issue #5083: New 'gui' resource for regrtest.
+
+
 Docs
 ----
 

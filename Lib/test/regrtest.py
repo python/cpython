@@ -123,6 +123,8 @@ resources to test.  Currently only the following are defined:
 
     urlfetch -  It is okay to download files required on testing.
 
+    gui -       Run tests that require a running GUI.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -176,7 +178,7 @@ if sys.platform == 'darwin':
 from test import support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'compiler', 'subprocess', 'urlfetch')
+                  'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui')
 
 
 def usage(msg):
@@ -1073,6 +1075,8 @@ _expectations = {
         test_pty
         test_socketserver
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_timeout
         test_urllibnet
         test_multiprocessing
@@ -1088,6 +1092,8 @@ _expectations = {
         test_kqueue
         test_ossaudiodev
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_zipimport
         test_zlib
         """,
@@ -1103,6 +1109,8 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_multiprocessing
         """,
     'netbsd3':
@@ -1117,6 +1125,8 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_multiprocessing
         """,
 }
