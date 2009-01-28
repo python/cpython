@@ -60,7 +60,7 @@ Iterable.register(str)
 class Iterator(Iterable):
 
     @abstractmethod
-    def __next__(self):
+    def next(self):
         raise StopIteration
 
     def __iter__(self):
@@ -267,7 +267,7 @@ class MutableSet(Set):
         """Return the popped value.  Raise KeyError if empty."""
         it = iter(self)
         try:
-            value = it.__next__()
+            value = next(it)
         except StopIteration:
             raise KeyError
         self.discard(value)
