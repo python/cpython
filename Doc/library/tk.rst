@@ -12,7 +12,8 @@ Graphical User Interfaces with Tk
 
 Tk/Tcl has long been an integral part of Python.  It provides a robust and
 platform independent windowing toolkit, that is available to Python programmers
-using the :mod:`Tkinter` module, and its extension, the :mod:`Tix` module.
+using the :mod:`Tkinter` module, and its extensions, the :mod:`Tix` and
+the :mod:`ttk` modules.
 
 The :mod:`Tkinter` module is a thin object-oriented layer on top of Tcl/Tk. To
 use :mod:`Tkinter`, you don't need to write Tcl code, but you will need to
@@ -32,6 +33,7 @@ alternatives, see the :ref:`other-gui-packages` section.
 .. toctree::
 
    tkinter.rst
+   ttk.rst
    tix.rst
    scrolledtext.rst
    turtle.rst
