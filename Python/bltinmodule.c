@@ -1717,15 +1717,14 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
 	static PyObject *round_str = NULL;
-	int ndigits = UNDEF_NDIGITS;
+	PyObject *ndigits = NULL;
 	static char *kwlist[] = {"number", "ndigits", 0};
 	PyObject *number, *round;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:round",
-                kwlist, &number, &ndigits))
-                return NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:round",
+					 kwlist, &number, &ndigits))
+		return NULL;
 
 	if (Py_TYPE(number)->tp_dict == NULL) {
 		if (PyType_Ready(Py_TYPE(number)) < 0)
@@ -1746,15 +1745,14 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	if (ndigits == UNDEF_NDIGITS)
-                return PyObject_CallFunction(round, "O", number);
+	if (ndigits == NULL)
+		return PyObject_CallFunction(round, "O", number);
 	else
-                return PyObject_CallFunction(round, "Oi", number, ndigits);
-#undef UNDEF_NDIGITS
+		return PyObject_CallFunction(round, "OO", number, ndigits);
 }
 
 PyDoc_STRVAR(round_doc,
-"round(number[, ndigits]) -> floating point number\n\
+"round(number[, ndigits]) -> number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
 This returns an int when called with one argument, otherwise the\n\

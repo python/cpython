@@ -3643,32 +3643,140 @@ long__format__(PyObject *self, PyObject *args)
 				      PyUnicode_GET_SIZE(format_spec));
 }
 
-
 static PyObject *
 long_round(PyObject *self, PyObject *args)
 {
-#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
-	int ndigits = UNDEF_NDIGITS;
-	double x;
-	PyObject *res;
-	
-	if (!PyArg_ParseTuple(args, "|i", &ndigits))
-		return NULL;
+	PyObject *o_ndigits=NULL, *temp;
+	PyLongObject *pow=NULL, *q=NULL, *r=NULL, *ndigits=NULL, *one;
+	int errcode;
+	digit q_mod_4;
 
-	if (ndigits == UNDEF_NDIGITS)
+	/* Notes on the algorithm: to round to the nearest 10**n (n positive),
+	   the straightforward method is:
+
+	      (1) divide by 10**n
+	      (2) round to nearest integer (round to even in case of tie)
+	      (3) multiply result by 10**n.
+
+	   But the rounding step involves examining the fractional part of the
+	   quotient to see whether it's greater than 0.5 or not.  Since we
+	   want to do the whole calculation in integer arithmetic, it's
+	   simpler to do:
+
+	      (1) divide by (10**n)/2
+	      (2) round to nearest multiple of 2 (multiple of 4 in case of tie)
+	      (3) multiply result by (10**n)/2.
+
+	   Then all we need to know about the fractional part of the quotient
+	   arising in step (2) is whether it's zero or not.
+
+	   Doing both a multiplication and division is wasteful, and is easily
+	   avoided if we just figure out how much to adjust the original input
+	   by to do the rounding.
+
+	   Here's the whole algorithm expressed in Python.
+
+	    def round(self, ndigits = None):
+	        """round(int, int) -> int"""
+	        if ndigits is None or ndigits >= 0:
+	            return self
+	        pow = 10**-ndigits >> 1
+	        q, r = divmod(self, pow)
+	        self -= r
+	        if (q & 1 != 0):
+	            if (q & 2 == r == 0):
+	                self -= pow
+	            else:
+	                self += pow
+	        return self
+
+	*/
+	if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
+		return NULL;
+	if (o_ndigits == NULL)
 		return long_long(self);
 
-	/* If called with two args, defer to float.__round__(). */
-	x = PyLong_AsDouble(self);
-	if (x == -1.0 && PyErr_Occurred())
+	ndigits = (PyLongObject *)PyNumber_Index(o_ndigits);
+	if (ndigits == NULL)
 		return NULL;
-	self = PyFloat_FromDouble(x);
-	if (self == NULL)
-		return NULL;
-	res = PyObject_CallMethod(self, "__round__", "i", ndigits);
+
+	if (Py_SIZE(ndigits) >= 0) {
+		Py_DECREF(ndigits);
+		return long_long(self);
+	}
+
+	Py_INCREF(self); /* to keep refcounting simple */
+	/* we now own references to self, ndigits */
+
+	/* pow = 10 ** -ndigits >> 1 */
+	pow = (PyLongObject *)PyLong_FromLong(10L);
+	if (pow == NULL)
+		goto error;
+	temp = long_neg(ndigits);
+	Py_DECREF(ndigits);
+	ndigits = (PyLongObject *)temp;
+	if (ndigits == NULL)
+		goto error;
+	temp = long_pow((PyObject *)pow, (PyObject *)ndigits, Py_None);
+	Py_DECREF(pow);
+	pow = (PyLongObject *)temp;
+	if (pow == NULL)
+		goto error;
+	assert(PyLong_Check(pow)); /* check long_pow returned a long */
+	one = (PyLongObject *)PyLong_FromLong(1L);
+	if (one == NULL)
+		goto error;
+	temp = long_rshift(pow, one);
+	Py_DECREF(one);
+	Py_DECREF(pow);
+	pow = (PyLongObject *)temp;
+	if (pow == NULL)
+		goto error;
+
+	/* q, r = divmod(self, pow) */
+	errcode = l_divmod((PyLongObject *)self, pow, &q, &r);
+	if (errcode == -1)
+		goto error;
+
+	/* self -= r */
+	temp = long_sub((PyLongObject *)self, r);
 	Py_DECREF(self);
-	return res;
-#undef UNDEF_NDIGITS
+	self = temp;
+	if (self == NULL)
+		goto error;
+
+	/* get value of quotient modulo 4 */
+	if (Py_SIZE(q) == 0)
+		q_mod_4 = 0;
+	else if (Py_SIZE(q) > 0)
+		q_mod_4 = q->ob_digit[0] & 3;
+	else
+		q_mod_4 = (PyLong_BASE-q->ob_digit[0]) & 3;
+
+	if ((q_mod_4 & 1) == 1) {
+		/* q is odd; round self up or down by adding or subtracting pow */
+		if (q_mod_4 == 1 && Py_SIZE(r) == 0)
+			temp = (PyObject *)long_sub((PyLongObject *)self, pow);
+		else
+			temp = (PyObject *)long_add((PyLongObject *)self, pow);
+		Py_DECREF(self);
+		self = temp;
+		if (self == NULL)
+			goto error;
+	}
+	Py_DECREF(q);
+	Py_DECREF(r);
+	Py_DECREF(pow);
+	Py_DECREF(ndigits);
+	return self;
+
+  error:
+	Py_XDECREF(q);
+	Py_XDECREF(r);
+	Py_XDECREF(pow);
+	Py_XDECREF(self);
+	Py_XDECREF(ndigits);
+	return NULL;
 }
 
 static PyObject *
@@ -3773,8 +3881,8 @@ static PyMethodDef long_methods[] = {
 	{"__ceil__",	(PyCFunction)long_long,	METH_NOARGS,
          "Ceiling of an Integral returns itself."},
 	{"__round__",	(PyCFunction)long_round, METH_VARARGS,
-         "Rounding an Integral returns itself.\n"
-	 "Rounding with an ndigits arguments defers to float.__round__."},
+	 "Rounding an Integral returns itself.\n"
+	 "Rounding with an ndigits argument also returns an integer."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
         {"__format__", (PyCFunction)long__format__, METH_VARARGS},
 	{"__sizeof__",	(PyCFunction)long_sizeof, METH_NOARGS,
