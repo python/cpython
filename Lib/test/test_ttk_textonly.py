@@ -10,7 +10,8 @@ if lib_tk_test not in sys.path:
 import runtktests
 
 def test_main():
-    test_support.run_unittest(*runtktests.get_tests(gui=False))
+    test_support.run_unittest(
+            *runtktests.get_tests(gui=False, packages=['test_ttk']))
 
 if __name__ == '__main__':
     test_main()

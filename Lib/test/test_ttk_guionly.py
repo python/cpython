@@ -1,6 +1,14 @@
 import os
 import sys
+import ttk
+from _tkinter import TclError
 from test import test_support
+
+try:
+    ttk.Button()
+except TclError, msg:
+    # assuming ttk is not available
+    raise test_support.TestSkipped("ttk not available: %s" % msg)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
@@ -17,7 +25,8 @@ def test_main(enable_gui=False):
         elif 'gui' not in test_support.use_resources:
             test_support.use_resources.append('gui')
 
-    test_support.run_unittest(*runtktests.get_tests(text=False))
+    test_support.run_unittest(
+            *runtktests.get_tests(text=False, packages=['test_ttk']))
 
 if __name__ == '__main__':
     test_main(enable_gui=True)

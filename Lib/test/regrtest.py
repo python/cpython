@@ -1045,6 +1045,8 @@ _expectations = {
         test_socket_ssl
         test_socketserver
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_timeout
         test_urllibnet
         test_multiprocessing
@@ -1062,6 +1064,8 @@ _expectations = {
         test_kqueue
         test_ossaudiodev
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_zipimport
         test_zlib
         """,
@@ -1078,6 +1082,8 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_multiprocessing
         """,
     'netbsd3':
@@ -1094,6 +1100,8 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_ttk_guionly
+        test_ttk_textonly
         test_multiprocessing
         """,
 }
