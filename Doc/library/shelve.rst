@@ -23,7 +23,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    database file is opened for reading and writing.  The optional *flag* parameter
    has the same interpretation as the *flag* parameter of :func:`dbm.open`.
 
-   By default, version 0 pickles are used to serialize values.  The version of the
+   By default, version 2 pickles are used to serialize values.  The version of the
    pickle protocol can be specified with the *protocol* parameter.
 
    By default, mutations to persistent-dictionary mutable entries are not
