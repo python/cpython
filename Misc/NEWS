@@ -147,6 +147,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2047: shutil.move() could believe that its destination path was
+  inside its source path if it began with the same letters (e.g. "src" vs.
+  "src.new").
+
 - Added the ttk module. See issue #2983: Ttk support for Tkinter.
 
 - Removed isSequenceType(), isMappingType, and isNumberType() from the
