@@ -76,6 +76,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2047: shutil.move() could believe that its destination path was
+  inside its source path if it began with the same letters (e.g. "src" vs.
+  "src.new").
+
 - Issue 4920:  Fixed .next() vs .__next__() issues in the ABCs for
   Iterator and MutableSet.
 

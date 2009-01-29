@@ -340,7 +340,29 @@ class TestMove(unittest.TestCase):
         dst = os.path.join(self.src_dir, "bar")
         self.assertRaises(shutil.Error, shutil.move, self.src_dir, dst)
 
+    def test_destinsrc_false_negative(self):
+        os.mkdir(TESTFN)
+        try:
+            for src, dst in [('srcdir', 'srcdir/dest')]:
+                src = os.path.join(TESTFN, src)
+                dst = os.path.join(TESTFN, dst)
+                self.assert_(shutil.destinsrc(src, dst),
+                             msg='destinsrc() wrongly concluded that '
+                             'dst (%s) is not in src (%s)' % (dst, src))
+        finally:
+            shutil.rmtree(TESTFN, ignore_errors=True)
 
+    def test_destinsrc_false_positive(self):
+        os.mkdir(TESTFN)
+        try:
+            for src, dst in [('srcdir', 'src/dest'), ('srcdir', 'srcdir.new')]:
+                src = os.path.join(TESTFN, src)
+                dst = os.path.join(TESTFN, dst)
+                self.failIf(shutil.destinsrc(src, dst),
+                            msg='destinsrc() wrongly concluded that '
+                            'dst (%s) is in src (%s)' % (dst, src))
+        finally:
+            shutil.rmtree(TESTFN, ignore_errors=True)
 
 def test_main():
     test_support.run_unittest(TestShutil, TestMove)
