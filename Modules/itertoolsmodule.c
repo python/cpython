@@ -3920,8 +3920,10 @@ cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
 repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
-izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
+chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
+combine(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
+dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
+groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
 ifilter(pred, seq) --> elements of seq where pred(elem) is True\n\
 ifilterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
@@ -3929,10 +3931,15 @@ islice(seq, [start,] stop [, step]) --> elements from\n\
 imap(fun, p, q, ...) --> fun(p0, q0), fun(p1, q1), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
-chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
-dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
-groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
+izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
+izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
+\n\
+Combinatoric generators:\n\
+product(p, q, ... [repeat=1]) --> cartesian product\n\
+permutations(p[, r])\n\
+combinations(p[, r])\n\
+combinations_with_replacement(p[, r])\n\
 ");
 
 
