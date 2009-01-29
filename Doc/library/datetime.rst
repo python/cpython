@@ -1266,7 +1266,7 @@ Example:
 :class:`tzinfo` Objects
 -----------------------
 
-:class:`tzinfo` is an abstract base clase, meaning that this class should not be
+:class:`tzinfo` is an abstract base class, meaning that this class should not be
 instantiated directly.  You need to derive a concrete subclass, and (at least)
 supply implementations of the standard :class:`tzinfo` methods needed by the
 :class:`datetime` methods you use.  The :mod:`datetime` module does not supply
