@@ -3921,7 +3921,7 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
-combine(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
+compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
 ifilter(pred, seq) --> elements of seq where pred(elem) is True\n\
