@@ -10,7 +10,7 @@ from distutils.command.sdist import sdist
 from distutils.core import Distribution
 from distutils.tests.test_config import PyPIRCCommandTestCase
 from distutils.errors import DistutilsExecError
-from distutils.spawn import spawn
+from distutils.spawn import find_executable
 
 CURDIR = os.path.dirname(__file__)
 TEMP_PKG = join(CURDIR, 'temppkg')
@@ -111,15 +111,12 @@ class sdistTestCase(PyPIRCCommandTestCase):
 
     def test_make_distribution(self):
 
-        self._init_tmp_pkg()
+        # check if tar and gzip are installed
+        if (find_executable('tar') is None or
+            find_executable('gzip') is None):
+            return
 
-        # check if tar is installed under win32
-        if sys.platform == 'win32':
-            try:
-                spawn('tar --help')
-            except DistutilsExecError:
-                # let's return, no need to go further
-                return
+        self._init_tmp_pkg()
 
         # now building a sdist
         dist = Distribution()
