@@ -265,4 +265,10 @@ def move(src, dst):
             os.unlink(src)
 
 def destinsrc(src, dst):
-    return abspath(dst).startswith(abspath(src))
+    src = abspath(src)
+    dst = abspath(dst)
+    if not src.endswith(os.path.sep):
+        src += os.path.sep
+    if not dst.endswith(os.path.sep):
+        dst += os.path.sep
+    return dst.startswith(src)
