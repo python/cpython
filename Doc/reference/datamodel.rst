@@ -1257,7 +1257,9 @@ Basic customization
       is printed to ``sys.stderr`` instead.  Also, when :meth:`__del__` is invoked in
       response to a module being deleted (e.g., when execution of the program is
       done), other globals referenced by the :meth:`__del__` method may already have
-      been deleted.  For this reason, :meth:`__del__` methods should do the absolute
+      been deleted or in the process of being torn down (e.g. the import
+      machinery shutting down).  For this reason, :meth:`__del__` methods
+      should do the absolute
       minimum needed to maintain external invariants.  Starting with version 1.5,
       Python guarantees that globals whose name begins with a single underscore are
       deleted from their module before other globals are deleted; if no other
