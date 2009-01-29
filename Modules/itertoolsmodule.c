@@ -3411,12 +3411,12 @@ starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-+\n\
-+Combinatoric generators:\n\
-+product(p, q, ... [repeat=1]) --> cartesian product\n\
-+permutations(p[, r])\n\
-+combinations(p[, r])\n\
-+combinations_with_replacement(p[, r])\n\
+\n\
+Combinatoric generators:\n\
+product(p, q, ... [repeat=1]) --> cartesian product\n\
+permutations(p[, r])\n\
+combinations(p[, r])\n\
+combinations_with_replacement(p[, r])\n\
 ");
 
 
