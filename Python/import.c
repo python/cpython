@@ -2894,12 +2894,14 @@ static PyObject *
 imp_find_module(PyObject *self, PyObject *args)
 {
 	char *name;
-	PyObject *path = NULL;
+	PyObject *ret, *path = NULL;
 	if (!PyArg_ParseTuple(args, "es|O:find_module",
 	                      Py_FileSystemDefaultEncoding, &name,
 	                      &path))
 		return NULL;
-	return call_find_module(name, path);
+	ret = call_find_module(name, path);
+	PyMem_Free(name);
+	return ret;
 }
 
 static PyObject *
