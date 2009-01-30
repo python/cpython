@@ -1,5 +1,5 @@
 import importlib
-from .. import finder_tests
+from .. import abc
 from .. import support
 import os
 import py_compile
@@ -7,7 +7,7 @@ import unittest
 import warnings
 
 
-class FinderTests(finder_tests.FinderTests):
+class FinderTests(abc.FinderTests):
 
     """For a top-level module, it should just be found directly in the
     directory being searched. This is true for a directory with source
