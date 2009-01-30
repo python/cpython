@@ -367,7 +367,7 @@ def find_lines_from_code(code, strs):
     """Return dict where keys are lines in the line number table."""
     linenos = {}
 
-    line_increments = [ord(c) for c in code.co_lnotab[1::2]]
+    line_increments = code.co_lnotab[1::2]
     table_length = len(line_increments)
     docstring = False
 
