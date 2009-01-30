@@ -290,10 +290,22 @@ they should be marked simply with ``*var*``.
 
 For all other roles, you have to write ``:rolename:`content```.
 
-.. note::
+There are some additional facilities that make cross-referencing roles more
+versatile:
 
-   For all cross-referencing roles, if you prefix the content with ``!``, no
-   reference/hyperlink will be created.
+* You may supply an explicit title and reference target, like in reST direct
+  hyperlinks: ``:role:`title <target>``` will refer to *target*, but the link
+  text will be *title*.
+
+* If you prefix the content with ``!``, no reference/hyperlink will be created.
+
+* For the Python object roles, if you prefix the content with ``~``, the link
+  text will only be the last component of the target.  For example,
+  ``:meth:`~Queue.Queue.get``` will refer to ``Queue.Queue.get`` but only
+  display ``get`` as the link text.
+
+  In HTML output, the link's ``title`` attribute (that is e.g. shown as a
+  tool-tip on mouse-hover) will always be the full target name.
 
 The following roles refer to objects in modules and are possibly hyperlinked if
 a matching identifier is found:
