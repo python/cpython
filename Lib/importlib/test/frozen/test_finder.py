@@ -1,10 +1,10 @@
 from ... import machinery
-from .. import finder_tests
+from .. import abc
 
 import unittest
 
 
-class FinderTests(finder_tests.FinderTests):
+class FinderTests(abc.FinderTests):
 
     """Test finding frozen modules."""
 

@@ -1,11 +1,11 @@
 from importlib import machinery
-from .. import finder_tests
+from .. import abc
 from .. import support
 
 import sys
 import unittest
 
-class FinderTests(finder_tests.FinderTests):
+class FinderTests(abc.FinderTests):
 
     """Test find_module() for built-in modules."""
 

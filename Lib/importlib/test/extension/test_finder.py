@@ -1,10 +1,10 @@
 import importlib
-from .. import finder_tests
+from .. import abc
 from . import test_path_hook
 
 import unittest
 
-class FinderTests(finder_tests.FinderTests):
+class FinderTests(abc.FinderTests):
 
     """Test the finder for extension modules."""
 
