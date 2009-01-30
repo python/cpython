@@ -6,6 +6,8 @@
 :Release: |release|
 :Date: |today|
 
+.. Fix accents on Kristjan Valur Jonsson, Fuerstenau.
+
 .. $Id$
    Rules for maintenance:
 
@@ -60,11 +62,6 @@ No release schedule has been decided yet for 2.7.
 .. ========================================================================
 
 
-Kristján Valur Jónsson, issue 4293
-Py_AddPendingCall is now thread safe.  This allows any worker thread
-to submit notifications to the python main thread.  This is particularly
-useful for asynchronous IO operations.
-
 
 Other Language Changes
 ======================
@@ -95,7 +92,19 @@ Some smaller changes made to the core Python language are:
 Optimizations
 -------------
 
-To be written.
+A few performance enhancements have been added:
+
+* The garbage collector now performs better when many objects are
+  being allocated without deallocating any.  A full garbage collection
+  pass is only performed when the middle generation has been collected
+  10 times and when the number of survivor objects from the middle
+  generation exceeds 10% of the number of objects in the oldest
+  generation.  The second condition was added to reduce the number
+  of full garbage collections as the number of objects on the heap grows,
+  avoiding quadratic performance when allocating very many objects.
+  (Suggested by Martin von Loewis and implemented by Antoine Pitrou;
+  :issue:`4074`.)
+
 
 .. ======================================================================
 
@@ -107,6 +116,62 @@ enhancements and bug fixes.  Here's a partial list of the most notable
 changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
+
+* It is not mandatory anymore to store clear text passwords in the
+  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
+  as the username is present in that file, the :mod:`distutils` package will
+  prompt for the password if not present.  (Added by tarek, with the initial
+  contribution of Nathan Van Gheem; :issue:`4394`.)
+
+* The :mod:`bz2` module's :class:`BZ2File` now supports the context
+  management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
+  (Contributed by Hagen Fuerstenau; :issue:`3860`.)
+
+* A new :class:`Counter` class in the :mod:`collections` module is
+  useful for tallying data.  :class:`Counter` instances behave mostly
+  like dictionaries but return zero for missing keys instead of
+  raising a :exc:`KeyError`::
+
+    >>> from collections import Counter
+    >>> c=Counter()
+    >>> for letter in 'here is a sample of english text':
+    ...   c[letter] += 1
+    ...
+    >>> c
+    Counter({' ': 6, 'e': 5, 's': 3, 'a': 2, 'i': 2, 'h': 2,
+    'l': 2, 't': 2, 'g': 1, 'f': 1, 'm': 1, 'o': 1, 'n': 1,
+    'p': 1, 'r': 1, 'x': 1})
+    >>> c['e']
+    5
+    >>> c['z']
+    0
+
+  There are two additional :class:`Counter` methods: :meth:`most_common`
+  returns the N most common elements and their counts, and :meth:`elements`
+  returns an iterator over the contained element, repeating each element
+  as many times as its count::
+
+    >>> c.most_common(5)
+    [(' ', 6), ('e', 5), ('s', 3), ('a', 2), ('i', 2)]
+    >>> c.elements() ->
+       'a', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
+       'e', 'e', 'e', 'e', 'e', 'g', 'f', 'i', 'i',
+       'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
+       's', 's', 'r', 't', 't', 'x']
+
+  Contributed by Raymond Hettinger; :issue:`1696199`.
+
+* The :mod:`gzip` module's :class:`GzipFile` now supports the context
+  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``.
+  (Contributed by Hagen Fuerstenau; :issue:`3860`.)
+
+* The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
+  an invalid file descriptor.  (Implemented by Benjamin Peterson;
+  :issue:`4991`.)
+
+* The :mod:`pydoc` module now has help for the various symbols that Python
+  uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
+  (Contributed by David Laban; :issue:`4739`.)
 
 * A new function in the :mod:`subprocess` module,
   :func:`check_output`, runs a command with a specified set of arguments
@@ -125,11 +190,9 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Gregory P. Smith.)
 
-* It is not mandatory anymore to store clear text passwords in the
-  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
-  as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by tarek, with the initial
-  contribution of Nathan Van Gheem; :issue:`4394`.)
+* The :func:`is_zipfile` function in the :mod:`zipfile` module will now
+  accept a file object, in addition to the path names accepted in earlier
+  versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -145,7 +208,13 @@ Changes to Python's build process and to the C API include:
 * If you use the :file:`.gdbinit` file provided with Python,
   the "pyo" macro in the 2.7 version will now work when the thread being
   debugged doesn't hold the GIL; the macro will now acquire it before printing.
-  (Contributed by haypo XXX; :issue:`3632`.)
+  (Contributed by Victor Stinner; :issue:`3632`.)
+
+* :cfunc:`Py_AddPendingCall` is now thread safe, letting any
+  worker thread submit notifications to the main Python thread.  This
+  is particularly useful for asynchronous IO operations.
+  (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
+
 
 .. ======================================================================
 
@@ -157,7 +226,11 @@ Port-Specific Changes: Windows
   :data:`CRT_ASSEMBLY_VERSION`,
   :data:`VC_ASSEMBLY_PUBLICKEYTOKEN`,
   and :data:`LIBRARIES_ASSEMBLY_NAME_PREFIX`.
-  (Added by Martin von Loewis (XXX check); :issue:`4365`.)
+  (Contributed by David Cournapeau; :issue:`4365`.)
+
+* The new :cfunc:`_beginthreadex` API is used to start threads, and
+  the native thread-local storage functions are now used.
+  (Contributed by Kristjan Valur Jonsson; :issue:`3582`.)
 
 .. ======================================================================
 
