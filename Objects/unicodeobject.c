@@ -12,8 +12,8 @@ Copyright (c) Corporation for National Research Initiatives.
 --------------------------------------------------------------------
 The original string type implementation is:
 
-Copyright (c) 1999 by Secret Labs AB
-Copyright (c) 1999 by Fredrik Lundh
+  Copyright (c) 1999 by Secret Labs AB
+  Copyright (c) 1999 by Fredrik Lundh
 
 By obtaining, using, and/or copying this software and/or its
 associated documentation, you agree that you have read, understood,
