@@ -157,7 +157,7 @@ Why is that?  1/10 is not exactly representable as a binary fraction. Almost all
 machines today (November 2000) use IEEE-754 floating point arithmetic, and
 almost all platforms map Python floats to IEEE-754 "double precision".  754
 doubles contain 53 bits of precision, so on input the computer strives to
-convert 0.1 to the closest fraction it can of the form *J*/2\*\**N* where *J* is
+convert 0.1 to the closest fraction it can of the form *J*/2**\ *N* where *J* is
 an integer containing exactly 53 bits.  Rewriting ::
 
    1 / 10 ~= J / (2**N)
