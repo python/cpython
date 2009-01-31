@@ -3,6 +3,7 @@
 # portable than they had been thought to be.
 
 import os
+import errno
 import unittest
 import warnings
 import sys
@@ -249,7 +250,6 @@ class StatAttributeTests(unittest.TestCase):
             result = os.statvfs(self.fname)
         except OSError, e:
             # On AtheOS, glibc always returns ENOSYS
-            import errno
             if e.errno == errno.ENOSYS:
                 return
 
@@ -549,7 +549,13 @@ class TestInvalidFD(unittest.TestCase):
         locals()["test_"+f] = get_single(f)
 
     def check(self, f, *args):
-        self.assertRaises(OSError, f, test_support.make_bad_fd(), *args)
+        try:
+            f(test_support.make_bad_fd(), *args)
+        except OSError as e:
+            self.assertEqual(e.errno, errno.EBADF)
+        else:
+            self.fail("%r didn't raise a OSError with a bad file descriptor"
+                      % f)
 
     def test_isatty(self):
         if hasattr(os, "isatty"):
