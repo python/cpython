@@ -383,6 +383,10 @@ Library
 - Issue #4861: ctypes.util.find_library(): Robustify. Fix library detection on
   biarch systems. Try to rely on ldconfig only, without using objdump and gcc.
 
+- Issue #5104: The socket module now raises OverflowError when 16-bit port and
+  protocol numbers are supplied outside the allowed 0-65536 range on bind()
+  and getservbyport().
+
 Tools/Demos
 -----------
 

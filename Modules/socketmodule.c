@@ -1259,6 +1259,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 PyMem_Free(host);
                 if (result < 0)
 			return 0;
+		if (port < 0 || port > 0xffff) {
+			PyErr_SetString(
+				PyExc_OverflowError,
+				"getsockaddrarg: port must be 0-65535.");
+			return 0;
+		}
 		addr->sin_family = AF_INET;
 		addr->sin_port = htons((short)port);
 		*len_ret = sizeof *addr;
@@ -1291,6 +1297,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 PyMem_Free(host);
                 if (result < 0)
 			return 0;
+		if (port < 0 || port > 0xffff) {
+			PyErr_SetString(
+				PyExc_OverflowError,
+				"getsockaddrarg: port must be 0-65535.");
+			return 0;
+		}
 		addr->sin6_family = s->sock_family;
 		addr->sin6_port = htons((short)port);
 		addr->sin6_flowinfo = flowinfo;
@@ -1416,6 +1428,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		  PyErr_SetString(PyExc_ValueError,
 				  "Hardware address must be 8 bytes or less");
 		  return 0;
+		}
+		if (protoNumber < 0 || protoNumber > 0xffff) {
+			PyErr_SetString(
+				PyExc_OverflowError,
+				"getsockaddrarg: protoNumber must be 0-65535.");
+			return 0;
 		}
 		addr = (struct sockaddr_ll*)addr_ret;
 		addr->sll_family = AF_PACKET;
@@ -3446,13 +3464,19 @@ otherwise any protocol will match.");
 static PyObject *
 socket_getservbyport(PyObject *self, PyObject *args)
 {
-	unsigned short port;
+	int port;
 	char *proto=NULL;
 	struct servent *sp;
-	if (!PyArg_ParseTuple(args, "H|s:getservbyport", &port, &proto))
+	if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
 		return NULL;
+	if (port < 0 || port > 0xffff) {
+		PyErr_SetString(
+			PyExc_OverflowError,
+			"getservbyport: port must be 0-65535.");
+		return NULL;
+	}
 	Py_BEGIN_ALLOW_THREADS
-	sp = getservbyport(htons(port), proto);
+	sp = getservbyport(htons((short)port), proto);
 	Py_END_ALLOW_THREADS
 	if (sp == NULL) {
 		PyErr_SetString(socket_error, "port/proto not found");
