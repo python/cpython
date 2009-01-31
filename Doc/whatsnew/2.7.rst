@@ -197,6 +197,23 @@ changes, or look through the Subversion logs for all the details.
 .. ======================================================================
 .. whole new modules get described in subsections here
 
+ttk: Themed Widgets for Tk
+--------------------------
+
+Tcl/Tk 8.5 includes a set of themed widgets that re-implement basic Tk
+widgets but have a more customizable appearance and can therefore more
+closely resemble the native platform's widgets.  This widget
+set was originally called Tile, but was renamed to Ttk (for "themed Tk")
+on being added to Tcl/Tck release 8.5.
+
+XXX write a brief discussion and an example here.
+
+The :mod:`ttk` module was written by Guilherme Polo and added in
+:issue:`2983`.  An alternate version called ``Tile.py``, written by
+Martin Franklin and maintained by Kevin Walzer, was proposed for
+inclusion in :issue:`2618`, but the authors argued that Guilherme
+Polo's work was more comprehensive.
+
 .. ======================================================================
 
 
