@@ -1217,7 +1217,7 @@ PyObject *PyUnicode_AsEncodedObject(PyObject *unicode,
     }
 
     if (encoding == NULL)
-    encoding = PyUnicode_GetDefaultEncoding();
+        encoding = PyUnicode_GetDefaultEncoding();
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(unicode, encoding, errors);
@@ -1241,7 +1241,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     if (encoding == NULL)
-    encoding = PyUnicode_GetDefaultEncoding();
+        encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
     if (errors == NULL) {
