@@ -3794,13 +3794,11 @@ compute_code_flags(struct compiler *c)
 			flags |= CO_NESTED;
 		if (ste->ste_generator)
 			flags |= CO_GENERATOR;
+		if (ste->ste_varargs)
+			flags |= CO_VARARGS;
+		if (ste->ste_varkeywords)
+			flags |= CO_VARKEYWORDS;
 	}
-	if (ste->ste_varargs)
-		flags |= CO_VARARGS;
-	if (ste->ste_varkeywords)
-		flags |= CO_VARKEYWORDS;
-	if (ste->ste_generator)
-		flags |= CO_GENERATOR;
 
 	/* (Only) inherit compilerflags in PyCF_MASK */
 	flags |= (c->c_flags->cf_flags & PyCF_MASK);
