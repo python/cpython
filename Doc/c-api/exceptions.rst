@@ -282,9 +282,10 @@ is a separate error indicator for each thread.
 
 .. cfunction:: void PyErr_BadInternalCall()
 
-   This is a shorthand for ``PyErr_SetString(PyExc_TypeError, message)``, where
-   *message* indicates that an internal operation (e.g. a Python/C API function)
-   was invoked with an illegal argument.  It is mostly for internal use.
+   This is a shorthand for ``PyErr_SetString(PyExc_SystemError, message)``,
+   where *message* indicates that an internal operation (e.g. a Python/C API
+   function) was invoked with an illegal argument.  It is mostly for internal
+   use.
 
 
 .. cfunction:: int PyErr_WarnEx(PyObject *category, char *message, int stacklevel)
