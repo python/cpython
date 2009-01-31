@@ -3,6 +3,9 @@
 (for compilers supporting computed gotos or "labels-as-values", such as gcc).
 """
 
+# This code should stay compatible with Python 2.3, at least while
+# some of the buildbots have Python 2.3 as their system Python.
+
 import imp
 import os
 
@@ -25,7 +28,7 @@ def write_contents(f):
             continue
         targets[op] = "TARGET_%s" % opname
     f.write("static void *opcode_targets[256] = {\n")
-    f.write(",\n".join("\t&&%s" % s for s in targets))
+    f.write(",\n".join(["\t&&%s" % s for s in targets]))
     f.write("\n};\n")
 
 
