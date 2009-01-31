@@ -44,9 +44,9 @@ You may optionally want to use::
 And then several :mod:`ttk` widgets (:class:`Button`, :class:`Checkbutton`,
 :class:`Entry`, :class:`Frame`, :class:`Label`, :class:`LabelFrame`,
 :class:`Menubutton`, :class:`PanedWindow`, :class:`Radiobutton`, :class:`Scale`
-and :class:`Scrollbar`) will automatically substitute the Tk widgets.
+and :class:`Scrollbar`) will automatically substitute for the Tk widgets.
 
-This has the direct benefit of using the new widgets which gives better
+This has the direct benefit of using the new widgets, giving better
 look & feel across platforms, but you should be aware that they are not
 totally compatible. The main difference you will find out is that widget
 options such as "fg", "bg" and others related to widget styling are no
@@ -57,21 +57,22 @@ to achieve the same (or better) styling.
 
    `Converting existing applications to use the Tile widgets <http://tktable.sourceforge.net/tile/doc/converting.txt>`_
      A text which talks in Tcl terms about differences typically found when
-     moving applications to use the new widgets.
+     converting applications to use the new widgets.
 
 
 Ttk Widgets
 -----------
 
-Ttk comes with 17 widgets, where 11 of these already existed in Tkinter:
+Ttk comes with 17 widgets, 11 of which already exist in Tkinter:
 :class:`Button`, :class:`Checkbutton`, :class:`Entry`, :class:`Frame`,
-:class:`Label`, :class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`. The others 6 are
-new: :class:`Combobox`, :class:`Notebook`, :class:`Progressbar`,
-:class:`Separator`, :class:`Sizegrip` and :class:`Treeview`. And all them are
+:class:`Label`, :class:`LabelFrame`, :class:`Menubutton`,
+:class:`PanedWindow`, :class:`Radiobutton`, :class:`Scale` and
+:class:`Scrollbar`. The 6 new widget classes are: :class:`Combobox`,
+:class:`Notebook`, :class:`Progressbar`, :class:`Separator`,
+:class:`Sizegrip` and :class:`Treeview`.  All of these classes are
 subclasses of :class:`Widget`.
 
-Like it was told before, you will notice changes in look & feel as well in the
+As said previously, you will notice changes in look-and-feel as well in the
 styling code. To demonstrate the latter, a very simple example is shown below.
 
 Tk code::
@@ -80,7 +81,7 @@ Tk code::
    l2 = Tkinter.Label(text="Test", fg="black", bg="white")
 
 
-Ttk code::
+Corresponding Ttk code::
 
    style = ttk.Style()
    style.configure("BW.TLabel", foreground="black", background="white")
@@ -101,7 +102,7 @@ themed widgets and is not supposed to be directly instantiated.
 Standard Options
 ^^^^^^^^^^^^^^^^
 
-All the :mod:`ttk` Widgets accepts the following options:
+All the :mod:`ttk` widgets accept the following options:
 
    +-----------+--------------------------------------------------------------+
    | Option    | Description                                                  |
@@ -110,18 +111,19 @@ All the :mod:`ttk` Widgets accepts the following options:
    |           | the option database for the window's other options, to       |
    |           | determine the default bindtags for the window, and to select |
    |           | the widget's default layout and style. This is a read-only   |
-   |           | which may only be specified when the window is created       |
+   |           | option which may only be specified when the window is        |
+   |           | created.                                                     |
    +-----------+--------------------------------------------------------------+
    | cursor    | Specifies the mouse cursor to be used for the widget. If set |
    |           | to the empty string (the default), the cursor is inherited   |
-   |           | for the parent widget.                                       |
+   |           | from the parent widget.                                      |
    +-----------+--------------------------------------------------------------+
    | takefocus | Determines whether the window accepts the focus during       |
-   |           | keyboard traversal. 0, 1 or an empty is return. If 0 is      |
-   |           | returned, it means that the window should be skipped entirely|
-   |           | during keyboard traversal. If 1, it means that the window    |
-   |           | should receive the input focus as long as it is viewable. And|
-   |           | an empty string means that the traversal scripts make the    |
+   |           | keyboard traversal. 0, 1 or an empty string is returned.     |
+   |           | If 0, the window should be skipped entirely                  |
+   |           | during keyboard traversal. If 1, the window                  |
+   |           | should receive the input focus as long as it is viewable.    |
+   |           | An empty string means that the traversal scripts make the    |
    |           | decision about whether or not to focus on the window.        |
    +-----------+--------------------------------------------------------------+
    | style     | May be used to specify a custom widget style.                |
@@ -137,18 +139,19 @@ scrollbar.
    +----------------+---------------------------------------------------------+
    | option         | description                                             |
    +================+=========================================================+
-   | xscrollcommand | Used to comunicate with horizontal scrollbars.          |
+   | xscrollcommand | Used to communicate with horizontal scrollbars.         |
    |                |                                                         |
-   |                | When the view in the widget's window change, the widget |
+   |                | When the view in the widget's window changes, the widget|
    |                | will generate a Tcl command based on the scrollcommand. |
    |                |                                                         |
-   |                | Usually this option consists of the method              |
-   |                | :meth:`Scrollbar.set` of some scrollbar. This will cause|
+   |                | Usually this option consists of the                     |
+   |                | :meth:`Scrollbar.set` method of some scrollbar. This    |
+   |                | will cause                                              |
    |                | the scrollbar to be updated whenever the view in the    |
    |                | window changes.                                         |
    +----------------+---------------------------------------------------------+
-   | yscrollcommand | Used to comunicate with vertical scrollbars.            |
-   |                | For some more information, see above.                   |
+   | yscrollcommand | Used to communicate with vertical scrollbars.           |
+   |                | For more information, see above.                        |
    +----------------+---------------------------------------------------------+
 
 
@@ -172,14 +175,14 @@ widgets.
    +--------------+-----------------------------------------------------------+
    | image        | Specifies an image to display. This is a list of 1 or more|
    |              | elements. The first element is the default image name. The|
-   |              | rest of the list if a sequence of statespec/value pairs as|
+   |              | rest of the list is a sequence of statespec/value pairs as|
    |              | defined by :meth:`Style.map`, specifying different images |
    |              | to use when the widget is in a particular state or a      |
    |              | combination of states. All images in the list should have |
    |              | the same size.                                            |
    +--------------+-----------------------------------------------------------+
    | compound     | Specifies how to display the image relative to the text,  |
-   |              | in the case both text and images options are present.     |
+   |              | in the case both text and image options are present.      |
    |              | Valid values are:                                         |
    |              |                                                           |
    |              | * text: display text only                                 |
@@ -190,7 +193,7 @@ widgets.
    |              |   otherwise the text.                                     |
    +--------------+-----------------------------------------------------------+
    | width        | If greater than zero, specifies how much space, in        |
-   |              | character widths, to allocate for the text label, if less |
+   |              | character widths, to allocate for the text label; if less |
    |              | than zero, specifies a minimum width. If zero or          |
    |              | unspecified, the natural width of the text label is used. |
    +--------------+-----------------------------------------------------------+
@@ -217,27 +220,27 @@ The widget state is a bitmap of independent state flags.
    | flag       | description                                                 |
    +============+=============================================================+
    | active     | The mouse cursor is over the widget and pressing a mouse    |
-   |            | button will cause some action to occur                      |
+   |            | button will cause some action to occur.                     |
    +------------+-------------------------------------------------------------+
-   | disabled   | Widget is disabled under program control                    |
+   | disabled   | Widget is disabled under program control.                   |
    +------------+-------------------------------------------------------------+
-   | focus      | Widget has keyboard focus                                   |
+   | focus      | Widget has keyboard focus.                                  |
    +------------+-------------------------------------------------------------+
-   | pressed    | Widget is being pressed                                     |
+   | pressed    | Widget is being pressed.                                    |
    +------------+-------------------------------------------------------------+
    | selected   | "On", "true", or "current" for things like Checkbuttons and |
-   |            | radiobuttons                                                |
+   |            | radiobuttons.                                               |
    +------------+-------------------------------------------------------------+
    | background | Windows and Mac have a notion of an "active" or foreground  |
    |            | window. The *background* state is set for widgets in a      |
    |            | background window, and cleared for those in the foreground  |
-   |            | window                                                      |
+   |            | window.                                                     |
    +------------+-------------------------------------------------------------+
-   | readonly   | Widget should not allow user modification                   |
+   | readonly   | Widget should not allow user modification.                  |
    +------------+-------------------------------------------------------------+
-   | alternate  | A widget-specific alternate display format                  |
+   | alternate  | A widget-specific alternate display format.                 |
    +------------+-------------------------------------------------------------+
-   | invalid    | The widget's value is invalid                               |
+   | invalid    | The widget's value is invalid.                              |
    +------------+-------------------------------------------------------------+
 
 A state specification is a sequence of state names, optionally prefixed with
@@ -248,7 +251,7 @@ ttk.Widget
 ^^^^^^^^^^
 
 Besides the methods described below, the class :class:`ttk.Widget` supports the
-methods :meth:`Tkinter.Widget.cget` and :meth:`Tkinter.Widget.configure`.
+:meth:`Tkinter.Widget.cget` and :meth:`Tkinter.Widget.configure` methods.
 
 .. class:: Widget
 
@@ -264,14 +267,14 @@ methods :meth:`Tkinter.Widget.cget` and :meth:`Tkinter.Widget.configure`.
 
       Test the widget's state. If a callback is not specified, returns True
       if the widget state matches *statespec* and False otherwise. If callback
-      is specified then it is called with args if widget state matches
+      is specified then it is called with *args* if widget state matches
       *statespec*.
 
 
    .. method:: state([statespec=None])
 
-      Modify or inquire widget state. If *statespec* is specified, sets the
-      widget state according to it and return a new *statespec* indicating
+      Modify or read widget state. If *statespec* is specified, sets the
+      widget state accordingly and returns a new *statespec* indicating
       which flags were changed. If *statespec* is not specified, returns
       the currently-enabled state flags.
 
@@ -284,39 +287,40 @@ Combobox
 The :class:`ttk.Combobox` widget combines a text field with a pop-down list of
 values. This widget is a subclass of :class:`Entry`.
 
-Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
+Besides the methods inherited from :class:`Widget` (:meth:`Widget.cget`,
 :meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
-and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
-:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
+and :meth:`Widget.state`) and those inherited from :class:`Entry`
+(:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
 :meth:`Entry.index`, :meth:`Entry.inset`, :meth:`Entry.selection`,
-:meth:`Entry.xview`, it has some other methods, described at
+:meth:`Entry.xview`), this class has some other methods, described at
 :class:`ttk.Combobox`.
 
 
 Options
 ^^^^^^^
 
-This widget accepts the following specific options:
+This widget accepts the following options:
 
    +-----------------+--------------------------------------------------------+
    | option          | description                                            |
    +=================+========================================================+
    | exportselection | Boolean value. If set, the widget selection is linked  |
    |                 | to the Window Manager selection (which can be returned |
-   |                 | by invoking Misc.selection_get, for example).          |
+   |                 | by invoking :meth:`Misc.selection_get`, for example).  |
    +-----------------+--------------------------------------------------------+
    | justify         | Specifies how the text is aligned within the widget.   |
    |                 | One of "left", "center", or "right".                   |
    +-----------------+--------------------------------------------------------+
    | height          | Specifies the height of the pop-down listbox, in rows. |
    +-----------------+--------------------------------------------------------+
-   | postcommand     | A script (possibly registered with Misc.register) that |
+   | postcommand     | A script (possibly registered with                     |
+   |                 | :meth:`Misc.register`) that                            |
    |                 | is called immediately before displaying the values. It |
    |                 | may specify which values to display.                   |
    +-----------------+--------------------------------------------------------+
    | state           | One of "normal", "readonly", or "disabled". In the     |
    |                 | "readonly" state, the value may not be edited directly,|
-   |                 | and the user can only selection of the values from the |
+   |                 | and the user can only select one of the values from the|
    |                 | dropdown list. In the "normal" state, the text field is|
    |                 | directly editable. In the "disabled" state, no         |
    |                 | interaction is possible.                               |
@@ -338,7 +342,7 @@ This widget accepts the following specific options:
 Virtual events
 ^^^^^^^^^^^^^^
 
-The combobox widgets generates a **<<ComboboxSelected>>** virtual event
+The combobox widget generates a **<<ComboboxSelected>>** virtual event
 when the user selects an element from the list of values.
 
 
@@ -367,7 +371,7 @@ ttk.Combobox
 Notebook
 --------
 
-Ttk Notebook widget manages a collection of windows and displays a single
+The Ttk Notebook widget manages a collection of windows and displays a single
 one at a time. Each child window is associated with a tab, which the user
 may select to change the currently-displayed window.
 
@@ -385,12 +389,12 @@ This widget accepts the following specific options:
    |         | Otherwise, the maximum height of all panes is used.            |
    +---------+----------------------------------------------------------------+
    | padding | Specifies the amount of extra space to add around the outside  |
-   |         | of the notebook. The padding is a list up to four length       |
-   |         | specifications left top right bottom. If fewer than four       |
+   |         | of the notebook. The padding is a list of up to four length    |
+   |         | specifications: left top right bottom. If fewer than four      |
    |         | elements are specified, bottom defaults to top, right defaults |
    |         | to left, and top defaults to left.                             |
    +---------+----------------------------------------------------------------+
-   | width   | If present and greater than zero, specified the desired width  |
+   | width   | If present and greater than zero, specifies the desired width  |
    |         | of the pane area (not including internal padding). Otherwise,  |
    |         | the maximum width of all panes is used.                        |
    +---------+----------------------------------------------------------------+
@@ -424,7 +428,7 @@ There are also specific options for tabs:
    |           | image described in :class:`Widget`.                          |
    +-----------+--------------------------------------------------------------+
    | compound  | Specifies how to display the image relative to the text, in  |
-   |           | the case both options text and image are present. See        |
+   |           | the case both text and image options are present. See        |
    |           | `Label Options`_ for legal values.                           |
    +-----------+--------------------------------------------------------------+
    | underline | Specifies the index (0-based) of a character to underline in |
@@ -437,15 +441,15 @@ There are also specific options for tabs:
 Tab Identifiers
 ^^^^^^^^^^^^^^^
 
-The tab_id present in several methods of :class:`ttk.Notebook` may take any
+The *tab_id* present in several methods of :class:`ttk.Notebook` may take any
 of the following forms:
 
-* An integer between zero and the number of tabs
-* The name of a child window
-* A positional specification of the form "@x,y", which identifies the tab
-* The literal string "current", which identifies the currently-selected tab
+* An integer between zero and the number of tabs.
+* The name of a child window.
+* A positional specification of the form "@x,y", which identifies the tab.
+* The literal string "current", which identifies the currently-selected tab.
 * The literal string "end", which returns the number of tabs (only valid for
-  :meth:`Notebook.index`)
+  :meth:`Notebook.index`).
 
 
 Virtual Events
