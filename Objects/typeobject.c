@@ -3886,13 +3886,6 @@ PyType_Ready(PyTypeObject *type)
 			goto error;
 	}
 
-	/* Check reserved slots */
-	if (type->tp_compare) {
-		PyErr_Format(PyExc_TypeError,
-			     "type %s has tp_compare",
-			     type->tp_name);
-	}
-
 	/* All done -- set the ready flag */
 	assert(type->tp_dict != NULL);
 	type->tp_flags =
