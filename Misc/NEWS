@@ -12,9 +12,11 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
-- Issue #1717: Remove builtin cmp() function, C-API functions
-  PyObject_Cmp and PyObject_Compare, and the support function
-  Py_CmpToRich.
+- Issue #1717: Removed builtin cmp() function, dropped tp_compare
+  slot, the C API functions PyObject_Compare and PyUnicode_Compare and
+  the type definition cmpfunc.  The tp_compare slot is reserved for
+  future usage.  An attempt to initialize a type with a nonzero
+  tp_compare slot will raise TypeError.
 
 - Issue #4707: round(x, n) now returns an integer if x is an integer.
   Previously it returned a float.
