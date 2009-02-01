@@ -3662,7 +3662,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		type->tp_setattr = base->tp_setattr;
 		type->tp_setattro = base->tp_setattro;
 	}
-	/* tp_compare see tp_richcompare */
+	/* tp_compare is ignored, see tp_richcompare */
 	COPYSLOT(tp_repr);
 	/* tp_hash see tp_richcompare */
 	COPYSLOT(tp_call);
@@ -3670,12 +3670,10 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	{
 		/* Copy comparison-related slots only when
 		   not overriding them anywhere */
-		if (type->tp_compare == NULL &&
-		    type->tp_richcompare == NULL &&
+		if (type->tp_richcompare == NULL &&
 		    type->tp_hash == NULL &&
 		    !overrides_hash(type))
 		{
-			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
 			type->tp_hash = base->tp_hash;
 		}
@@ -3886,6 +3884,13 @@ PyType_Ready(PyTypeObject *type)
 		if (PyType_Check(b) &&
 		    add_subclass((PyTypeObject *)b, type) < 0)
 			goto error;
+	}
+
+	/* Check reserved slots */
+	if (type->tp_compare) {
+		PyErr_Format(PyExc_TypeError,
+			     "type %s has tp_compare",
+			     type->tp_name);
 	}
 
 	/* All done -- set the ready flag */

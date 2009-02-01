@@ -500,35 +500,19 @@ PyObject_Bytes(PyObject *v)
 	return PyBytes_FromObject(v);
 }
 
-/* The new comparison philosophy is: we completely separate three-way
-   comparison from rich comparison.  That is, PyObject_Compare() and
-   PyObject_Cmp() *just* use the tp_compare slot.  And PyObject_RichCompare()
-   and PyObject_RichCompareBool() *just* use the tp_richcompare slot.
+/* For Python 3.0.1 and later, the old three-way comparison has been
+   completely removed in favour of rich comparisons.  PyObject_Compare() and
+   PyObject_Cmp() are gone, and the builtin cmp function no longer exists.
+   The old tp_compare slot will be renamed to tp_reserved, and should no
+   longer be used.  Use tp_richcompare instead.
 
    See (*) below for practical amendments.
 
-   IOW, only cmp() uses tp_compare; the comparison operators (==, !=, <=, <,
-   >=, >) only use tp_richcompare.  Note that list.sort() only uses <.
+   tp_richcompare gets called with a first argument of the appropriate type
+   and a second object of an arbitrary type.  We never do any kind of
+   coercion.
 
-   (And yes, eventually we'll rip out cmp() and tp_compare.)
-
-   The calling conventions are different: tp_compare only gets called with two
-   objects of the appropriate type; tp_richcompare gets called with a first
-   argument of the appropriate type and a second object of an arbitrary type.
-   We never do any kind of coercion.
-
-   The return conventions are also different.
-
-   The tp_compare slot should return a C int, as follows:
-
-     -1 if a < b or if an exception occurred
-      0 if a == b
-     +1 if a > b
-
-   No other return values are allowed.  PyObject_Compare() has the same
-   calling convention.
-
-  The tp_richcompare slot should return an object, as follows:
+   The tp_richcompare slot should return an object, as follows:
 
     NULL if an exception occurred
     NotImplemented if the requested comparison is not implemented
@@ -543,9 +527,6 @@ PyObject_Bytes(PyObject *v)
   - If rich comparison returns NotImplemented, == and != are decided by
     comparing the object pointer (i.e. falling back to the base object
     implementation).
-
-  - If three-way comparison is not implemented, it falls back on rich
-    comparison (but not the other way around!).
 
 */
 
