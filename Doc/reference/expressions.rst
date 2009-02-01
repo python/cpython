@@ -1022,8 +1022,8 @@ Comparison of objects of the same type depends on the type:
   length.
 
   If not equal, the sequences are ordered the same as their first differing
-  elements.  For example, ``cmp([1,2,x], [1,2,y])`` returns the same as
-  ``cmp(x,y)``.  If the corresponding element does not exist, the shorter
+  elements.  For example, ``[1,2,x] <= [1,2,y]`` has the same value as
+  ``x <= y``.  If the corresponding element does not exist, the shorter
   sequence is ordered first (for example, ``[1,2] < [1,2,3]``).
 
 * Mappings (dictionaries) compare equal if and only if their sorted ``(key,
