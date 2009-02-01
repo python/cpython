@@ -1,7 +1,7 @@
 import importlib
 from . import test_path_hook
 from .. import abc
-from .. import support
+from .. import util
 
 import sys
 import unittest
@@ -18,7 +18,7 @@ class LoaderTests(abc.LoaderTests):
         return loader.load_module(fullname)
 
     def test_module(self):
-        with support.uncache(test_path_hook.NAME):
+        with util.uncache(test_path_hook.NAME):
             module = self.load_module(test_path_hook.NAME)
             for attr, value in [('__name__', test_path_hook.NAME),
                                 ('__file__', test_path_hook.FILEPATH)]:
@@ -34,7 +34,7 @@ class LoaderTests(abc.LoaderTests):
         pass
 
     def test_module_reuse(self):
-        with support.uncache(test_path_hook.NAME):
+        with util.uncache(test_path_hook.NAME):
             module1 = self.load_module(test_path_hook.NAME)
             module2 = self.load_module(test_path_hook.NAME)
             self.assert_(module1 is module2)

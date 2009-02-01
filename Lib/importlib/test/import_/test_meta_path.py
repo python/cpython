@@ -1,5 +1,4 @@
-from ..support import import_state, mock_modules, import_
-
+from .. import util
 from contextlib import nested
 from types import MethodType
 import unittest
@@ -16,24 +15,25 @@ class CallingOrder(unittest.TestCase):
     def test_first_called(self):
         # [first called]
         mod = 'top_level'
-        first = mock_modules(mod)
-        second = mock_modules(mod)
-        with nested(mock_modules(mod), mock_modules(mod)) as (first, second):
+        first = util.mock_modules(mod)
+        second = util.mock_modules(mod)
+        context = nested(util.mock_modules(mod), util.mock_modules(mod))
+        with  context as (first, second):
             first.modules[mod] = 42
             second.modules[mod] = -13
-            with import_state(meta_path=[first, second]):
-                self.assertEquals(import_(mod), 42)
+            with util.import_state(meta_path=[first, second]):
+                self.assertEquals(util.import_(mod), 42)
 
     def test_continuing(self):
         # [continuing]
         mod_name = 'for_real'
-        first = mock_modules('nonexistent')
-        second = mock_modules(mod_name)
+        first = util.mock_modules('nonexistent')
+        second = util.mock_modules(mod_name)
         with nested(first, second):
             first.find_module = lambda self, fullname, path=None: None
             second.modules[mod_name] = 42
-            with import_state(meta_path=[first, second]):
-                self.assertEquals(import_(mod_name), 42)
+            with util.import_state(meta_path=[first, second]):
+                self.assertEquals(util.import_(mod_name), 42)
 
 
 class CallSignature(unittest.TestCase):
@@ -54,11 +54,11 @@ class CallSignature(unittest.TestCase):
         # [no path]
         mod_name = 'top_level'
         assert '.' not in mod_name
-        with mock_modules(mod_name) as importer:
+        with util.mock_modules(mod_name) as importer:
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
-            with import_state(meta_path=[importer]):
-                import_(mod_name)
+            with util.import_state(meta_path=[importer]):
+                util.import_(mod_name)
                 assert len(log) == 1
                 args = log[0][0]
                 kwargs = log[0][1]
@@ -74,12 +74,12 @@ class CallSignature(unittest.TestCase):
         mod_name = pkg_name + '.module'
         path = [42]
         assert '.' in mod_name
-        with mock_modules(pkg_name+'.__init__', mod_name) as importer:
+        with util.mock_modules(pkg_name+'.__init__', mod_name) as importer:
             importer.modules[pkg_name].__path__ = path
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
-            with import_state(meta_path=[importer]):
-                import_(mod_name)
+            with util.import_state(meta_path=[importer]):
+                util.import_(mod_name)
                 assert len(log) == 2
                 args = log[1][0]
                 kwargs = log[1][1]

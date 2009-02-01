@@ -1,5 +1,4 @@
 import importlib
-from .. import support
 from . import util as source_util
 
 import codecs

@@ -1,6 +1,6 @@
 """Test case-sensitivity (PEP 235)."""
 import importlib
-from .. import support
+from .. import util
 from . import util as source_util
 import os
 import sys
@@ -8,7 +8,7 @@ from test import support as test_support
 import unittest
 
 
-@support.case_insensitive_tests
+@util.case_insensitive_tests
 class CaseSensitivityTest(unittest.TestCase):
 
     """PEP 235 dictates that on case-preserving, case-insensitive file systems

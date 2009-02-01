@@ -1,12 +1,12 @@
 from importlib import machinery
 from .. import abc
-from .. import support
+from .. import util
 
 
 class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
-        with support.uncache('__hello__'):
+        with util.uncache('__hello__'):
             module = machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__', '__file__': '<frozen>',
                         '__package__': None}
@@ -14,7 +14,7 @@ class LoaderTests(abc.LoaderTests):
                 self.assertEqual(getattr(module, attr), value)
 
     def test_package(self):
-        with support.uncache('__phello__'):
+        with util.uncache('__phello__'):
             module = machinery.FrozenImporter.load_module('__phello__')
             check = {'__name__': '__phello__', '__file__': '<frozen>',
                      '__package__': '__phello__', '__path__': ['__phello__']}
@@ -25,7 +25,7 @@ class LoaderTests(abc.LoaderTests):
                                  (attr, attr_value, value))
 
     def test_lacking_parent(self):
-        with support.uncache('__phello__', '__phello__.spam'):
+        with util.uncache('__phello__', '__phello__.spam'):
             module = machinery.FrozenImporter.load_module('__phello__.spam')
             check = {'__name__': '__phello__.spam', '__file__': '<frozen>',
                      '__package__': '__phello__'}
@@ -36,7 +36,7 @@ class LoaderTests(abc.LoaderTests):
                                  (attr, attr_value, value))
 
     def test_module_reuse(self):
-        with support.uncache('__hello__'):
+        with util.uncache('__hello__'):
             module1 = machinery.FrozenImporter.load_module('__hello__')
             module2 = machinery.FrozenImporter.load_module('__hello__')
             self.assert_(module1 is module2)

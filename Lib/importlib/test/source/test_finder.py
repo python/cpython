@@ -1,6 +1,5 @@
 import importlib
 from .. import abc
-from .. import support
 from . import util as source_util
 import os
 import py_compile
