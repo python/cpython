@@ -1,12 +1,6 @@
 to do
 /////
 
-* Reorganize support code.
-
-    + Add a file loader mock that returns monotonically increasing mtime.
-        - Use in source/test_reload.
-        - Use in source/test_load_module_mixed.
-
 * API simplification?
 
     + read_source -> get_data/source_path
