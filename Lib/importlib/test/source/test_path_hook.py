@@ -1,5 +1,5 @@
 import importlib
-from .. import support
+from . import util
 import unittest
 
 
@@ -9,7 +9,7 @@ class PathHookTest(unittest.TestCase):
 
     def test_success(self):
         # XXX Only work on existing directories?
-        with support.create_modules('dummy') as mapping:
+        with util.create_modules('dummy') as mapping:
             self.assert_(hasattr(importlib.FileImporter(mapping['.root']),
                                  'find_module'))
 
