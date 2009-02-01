@@ -1,4 +1,5 @@
 import importlib
+from .. import abc
 from .. import support
 
 import imp
@@ -16,11 +17,80 @@ class SimpleTest(unittest.TestCase):
     """
 
     # [basic]
-    def test_basic(self):
+    def test_module(self):
         with support.create_modules('_temp') as mapping:
             loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
-            loader.load_module('_temp')
+            module = loader.load_module('_temp')
             self.assert_('_temp' in sys.modules)
+            check = {'__name__': '_temp', '__file__': mapping['_temp'],
+                     '__package__': None}
+            for attr, value in check.items():
+                self.assertEqual(getattr(module, attr), value)
+
+    def test_package(self):
+        with support.create_modules('_pkg.__init__') as mapping:
+            loader = importlib._PyFileLoader('_pkg', mapping['_pkg.__init__'],
+                                             True)
+            module = loader.load_module('_pkg')
+            self.assert_('_pkg' in sys.modules)
+            check = {'__name__': '_pkg', '__file__': mapping['_pkg.__init__'],
+                     '__path__': [os.path.dirname(mapping['_pkg.__init__'])],
+                     '__package__': '_pkg'}
+            for attr, value in check.items():
+                self.assertEqual(getattr(module, attr), value)
+
+
+    def test_lacking_parent(self):
+        with support.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
+            loader = importlib._PyFileLoader('_pkg.mod', mapping['_pkg.mod'],
+                                             False)
+            module = loader.load_module('_pkg.mod')
+            self.assert_('_pkg.mod' in sys.modules)
+            check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod'],
+                     '__package__': '_pkg'}
+            for attr, value in check.items():
+                self.assertEqual(getattr(module, attr), value)
+
+    def fake_mtime(self, fxn):
+        """Fake mtime to always be higher than expected."""
+        return lambda name: fxn(name) + 1
+
+    def test_module_reuse(self):
+        with support.create_modules('_temp') as mapping:
+            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            module = loader.load_module('_temp')
+            module_id = id(module)
+            module_dict_id = id(module.__dict__)
+            with open(mapping['_temp'], 'w') as file:
+                file.write("testing_var = 42\n")
+            # For filesystems where the mtime is only to a second granularity,
+            # everything that has happened above can be too fast;
+            # force an mtime on the source that is guaranteed to be different
+            # than the original mtime.
+            loader.source_mtime = self.fake_mtime(loader.source_mtime)
+            module = loader.load_module('_temp')
+            self.assert_('testing_var' in module.__dict__,
+                         "'testing_var' not in "
+                            "{0}".format(list(module.__dict__.keys())))
+            self.assertEqual(module, sys.modules['_temp'])
+            self.assertEqual(id(module), module_id)
+            self.assertEqual(id(module.__dict__), module_dict_id)
+
+    def test_state_after_failure(self):
+        # A failed reload should leave the original module intact.
+        attributes = ('__file__', '__path__', '__package__')
+        value = '<test>'
+        name = '_temp'
+        with support.create_modules(name) as mapping:
+            orig_module = imp.new_module(name)
+            for attr in attributes:
+                setattr(orig_module, attr, value)
+            with open(mapping[name], 'w') as file:
+                file.write('+++ bad syntax +++')
+            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            self.assertRaises(SyntaxError, loader.load_module, name)
+            for attr in attributes:
+                self.assertEqual(getattr(orig_module, attr), value)
 
     # [syntax error]
     def test_bad_syntax(self):
