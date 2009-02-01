@@ -20,7 +20,7 @@ typedef struct {
     PyObject *co_varnames;	/* tuple of strings (local variable names) */
     PyObject *co_freevars;	/* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest doesn't count for hash/cmp */
+    /* The rest doesn't count for hash or comparisons */
     PyObject *co_filename;	/* unicode (where it was loaded from) */
     PyObject *co_name;		/* unicode (name, for reference) */
     int co_firstlineno;		/* first source line number */
