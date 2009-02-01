@@ -137,7 +137,12 @@ class FrozenImporter:
         """Load a frozen module."""
         if cls.find_module(fullname) is None:
             raise ImportError("{0} is not a frozen module".format(fullname))
-        return imp.init_frozen(fullname)
+        module = imp.init_frozen(fullname)
+        if hasattr(module, '__path__'):
+            module.__package__ = module.__name__
+        elif '.' in module.__name__:
+            module.__package__ = module.__name__.rsplit('.', 1)[0]
+        return module
 
 
 class ChainedImporter(object):
