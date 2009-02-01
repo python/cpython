@@ -1,20 +1,10 @@
 to do
 /////
 
-* API simplification?
-
-    + write_bytecode -> complete set of bytes for bytecode instead of
-      individual arguments.
-
 * Create meta_path importer for sys.path.
 
-* OPTIMIZE!
-
-  + Write benchmark suite.
-  + Fast path common cases.
-
-    - Absolute name from sys.path.
-    - Relative name from sys.path.
+    + Create hook.
+    + Rewrite Import to use the hook.
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
@@ -72,5 +62,14 @@ to do
 
           * SourceFinder
           * (?) Loader
+
+* Write benchmark suite.
+
+* OPTIMIZE!
+
+  + Fast path common cases.
+
+    - Absolute name from sys.path.
+    - Relative name from sys.path.
 
 * Bootstrap importlib as implementation of builtins.__import__
