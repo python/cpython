@@ -3,10 +3,6 @@ to do
 
 * Reorganize support code.
 
-    + Separate out support code for extensions out of test_support_hook.
-    + Move util.import_ and utill.mock_modules to import_, importlib_only,
-      mock_path_hook?
-
     + Add a file loader mock that returns monotonically increasing mtime.
         - Use in source/test_reload.
         - Use in source/test_load_module_mixed.

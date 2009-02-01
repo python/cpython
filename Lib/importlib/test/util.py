@@ -1,31 +1,8 @@
-from importlib import Import
-
 from contextlib import contextmanager
-from functools import update_wrapper
 import imp
 import os.path
 from test.support import unlink
 import sys
-
-
-using___import__ = False
-
-def import_(*args, **kwargs):
-    """Delegate to allow for injecting different implementations of import."""
-    if using___import__:
-        return __import__(*args, **kwargs)
-    return Import()(*args, **kwargs)
-
-def importlib_only(fxn):
-    """Decorator to mark which tests are not supported by the current
-    implementation of __import__()."""
-    def inner(*args, **kwargs):
-        if using___import__:
-            return
-        else:
-            return fxn(*args, **kwargs)
-    update_wrapper(inner, fxn)
-    return inner
 
 
 def case_insensitive_tests(class_):
@@ -142,12 +119,3 @@ class mock_modules:
 
     def __exit__(self, *exc_info):
         self._uncache.__exit__(None, None, None)
-
-
-def mock_path_hook(*entries, importer):
-    """A mock sys.path_hooks entry."""
-    def hook(entry):
-        if entry not in entries:
-            raise ImportError
-        return importer
-    return hook

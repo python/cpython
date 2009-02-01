@@ -1,5 +1,6 @@
 """Test that the semantics relating to the 'fromlist' argument are correct."""
 from .. import util
+from . import util as import_util
 import unittest
 
 class ReturnValue(unittest.TestCase):
@@ -17,14 +18,14 @@ class ReturnValue(unittest.TestCase):
         # [import return]
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg.module')
+                module = import_util.import_('pkg.module')
                 self.assertEquals(module.__name__, 'pkg')
 
     def test_return_from_from_import(self):
         # [from return]
         with util.mock_modules('pkg.__init__', 'pkg.module')as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg.module', fromlist=['attr'])
+                module = import_util.import_('pkg.module', fromlist=['attr'])
                 self.assertEquals(module.__name__, 'pkg.module')
 
 
@@ -49,14 +50,14 @@ class HandlingFromlist(unittest.TestCase):
         # [object case]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('module', fromlist=['attr'])
+                module = import_util.import_('module', fromlist=['attr'])
                 self.assertEquals(module.__name__, 'module')
 
     def test_unexistent_object(self):
         # [bad object]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('module', fromlist=['non_existent'])
+                module = import_util.import_('module', fromlist=['non_existent'])
                 self.assertEquals(module.__name__, 'module')
                 self.assert_(not hasattr(module, 'non_existent'))
 
@@ -64,7 +65,7 @@ class HandlingFromlist(unittest.TestCase):
         # [module]
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg', fromlist=['module'])
+                module = import_util.import_('pkg', fromlist=['module'])
                 self.assertEquals(module.__name__, 'pkg')
                 self.assert_(hasattr(module, 'module'))
                 self.assertEquals(module.module.__name__, 'pkg.module')
@@ -73,14 +74,14 @@ class HandlingFromlist(unittest.TestCase):
         # [no module]
         with util.mock_modules('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg', fromlist='non_existent')
+                module = import_util.import_('pkg', fromlist='non_existent')
                 self.assertEquals(module.__name__, 'pkg')
                 self.assert_(not hasattr(module, 'non_existent'))
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg.mod', fromlist=[''])
+                module = import_util.import_('pkg.mod', fromlist=[''])
                 self.assertEquals(module.__name__, 'pkg.mod')
 
     def test_using_star(self):
@@ -88,7 +89,7 @@ class HandlingFromlist(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
-                module = util.import_('pkg', fromlist=['*'])
+                module = import_util.import_('pkg', fromlist=['*'])
                 self.assertEquals(module.__name__, 'pkg')
                 self.assert_(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
@@ -99,7 +100,7 @@ class HandlingFromlist(unittest.TestCase):
         with context as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module1']
-                module = util.import_('pkg', fromlist=['module2', '*'])
+                module = import_util.import_('pkg', fromlist=['module2', '*'])
                 self.assertEquals(module.__name__, 'pkg')
                 self.assert_(hasattr(module, 'module1'))
                 self.assert_(hasattr(module, 'module2'))
