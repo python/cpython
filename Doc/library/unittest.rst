@@ -327,8 +327,9 @@ will create a test suite that will run ``WidgetTestCase.testDefaultSize()`` and
 ``WidgetTestCase.testResize``. :class:`TestLoader` uses the ``'test'`` method
 name prefix to identify test methods automatically.
 
-Note that the order in which the various test cases will be run is determined by
-sorting the test function names with the built-in :func:`cmp` function.
+Note that the order in which the various test cases will be run is
+determined by sorting the test function names with respect to the
+built-in ordering for strings.
 
 Often it is desirable to group suites of test cases together, so as to run tests
 for the whole system at once.  This is easy, since :class:`TestSuite` instances
@@ -921,9 +922,13 @@ subclassing or assignment on an instance:
 .. attribute:: TestLoader.sortTestMethodsUsing
 
    Function to be used to compare method names when sorting them in
-   :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*` methods. The
-   default value is the built-in :func:`cmp` function; the attribute can also be
-   set to :const:`None` to disable the sort.
+   :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*`
+   methods.  This should be a function that takes two arguments
+   ``self`` and ``other``, and returns ``-1`` if ``self`` precedes
+   ``other`` in the desired ordering, ``1`` if ``other`` precedes
+   ``self``, and ``0`` if ``self`` and ``other`` are equal.  The
+   default ordering is the built-in ordering for strings.  This
+   attribute can also be set to :const:`None` to disable the sort.
 
 
 .. attribute:: TestLoader.suiteClass

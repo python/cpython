@@ -225,12 +225,11 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: strxfrm(string)
 
-   .. index:: builtin: cmp
-
-   Transforms a string to one that can be used for the built-in function
-   :func:`cmp`, and still returns locale-aware results.  This function can be used
-   when the same string is compared repeatedly, e.g. when collating a sequence of
-   strings.
+   Transforms a string to one that can be used in locale-aware
+   comparisons.  For example, ``strxfrm(s1) < strxfrm(s2)`` is
+   equivalent to ``strcoll(s1, s2) < 0``.  This function can be used
+   when the same string is compared repeatedly, e.g. when collating a
+   sequence of strings.
 
 
 .. function:: format(format, val[, grouping[, monetary]])
