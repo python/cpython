@@ -48,11 +48,11 @@ The available exception and functions in this module are:
    To generate the same numeric value across all Python versions and
    platforms use adler32(data) & 0xffffffff.  If you are only using
    the checksum in packed binary format this is not necessary as the
-   return value will have the correct 32bit binary representation
+   return value is the correct 32bit binary representation
    regardless of sign.
 
 .. versionchanged:: 3.0
-   The return value will always be unsigned and in the range [0, 2**32-1]
+   The return value is unsigned and in the range [0, 2**32-1]
    regardless of platform.
 
 
@@ -93,11 +93,11 @@ The available exception and functions in this module are:
    To generate the same numeric value across all Python versions and
    platforms use crc32(data) & 0xffffffff.  If you are only using
    the checksum in packed binary format this is not necessary as the
-   return value will have the correct 32bit binary representation
+   return value is the correct 32bit binary representation
    regardless of sign.
 
 .. versionchanged:: 3.0
-   The return value will always be unsigned and in the range [0, 2**32-1]
+   The return value is unsigned and in the range [0, 2**32-1]
    regardless of platform.
 
 
