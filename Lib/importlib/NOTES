@@ -1,10 +1,6 @@
 to do
 /////
 
-* Use test.abc.LoaderTests
-
-    + source
-
 * Reorganize support code.
 
     + Separate general support code and importer-specific (e.g. source) support
