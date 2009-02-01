@@ -3,8 +3,7 @@ to do
 
 * API simplification?
 
-    + read_source -> get_data/source_path
-    + read_bytecode -> get_data/bytecode_path
+    + Use *_path() along with get_data
     + write_bytecode -> complete set of bytes for bytecode instead of
       individual arguments.
 

@@ -341,13 +341,15 @@ class _PyFileLoader(object):
         else:
             return None
 
-    def _source_path(self):
+    @check_name
+    def source_path(self, fullname):
         """Return the path to an existing source file for the module, or None
         if one cannot be found."""
         # Not a property so that it is easy to override.
         return self._find_path(imp.PY_SOURCE)
 
-    def _bytecode_path(self):
+    @check_name
+    def bytecode_path(self, fullname):
         """Return the path to a bytecode file, or None if one does not
         exist."""
         # Not a property for easy overriding.
@@ -357,8 +359,9 @@ class _PyFileLoader(object):
     @get_module
     def load_module(self, module):
         """Load a Python source or bytecode module."""
-        source_path = self._source_path()
-        bytecode_path = self._bytecode_path()
+        name = module.__name__
+        source_path = self.source_path(name)
+        bytecode_path = self.bytecode_path(name)
         code_object = self.get_code(module.__name__)
         module.__file__ = source_path if source_path else bytecode_path
         module.__loader__ = self
@@ -376,7 +379,7 @@ class _PyFileLoader(object):
     def source_mtime(self, name):
         """Return the modification time of the source for the specified
         module."""
-        source_path = self._source_path()
+        source_path = self.source_path(name)
         if not source_path:
             return None
         return int(_os.stat(source_path).st_mtime)
@@ -389,7 +392,7 @@ class _PyFileLoader(object):
         laoder cannot handle the specified module.
 
         """
-        source_path = self._source_path()
+        source_path = self._source_path(name)
         if source_path is None:
             return None
         import tokenize
@@ -407,7 +410,7 @@ class _PyFileLoader(object):
         The returned path is used by 'compile' for error messages.
 
         """
-        source_path = self._source_path()
+        source_path = self.source_path(fullname)
         if source_path is None:
             return None
         with closing(_fileio._FileIO(source_path, 'r')) as bytes_file:
@@ -422,7 +425,7 @@ class _PyFileLoader(object):
         the module. Returns None if there is no bytecode.
 
         """
-        path = self._bytecode_path()
+        path = self.bytecode_path(name)
         if path is None:
             return None
         file = _fileio._FileIO(path, 'r')
@@ -443,7 +446,7 @@ class _PyFileLoader(object):
         cannot be handled by the loader.
 
         """
-        bytecode_path = self._bytecode_path()
+        bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
             bytecode_path = self._base_path + suffix_list(imp.PY_COMPILED)[0]
         file = _fileio._FileIO(bytecode_path, 'w')
