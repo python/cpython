@@ -1,4 +1,5 @@
 from .. import util
+from . import util as import_util
 from contextlib import nested
 from imp import new_module
 import sys
@@ -41,11 +42,11 @@ class BaseTests(unittest.TestCase):
         with nested(misser, hitter):
             cache = dict(zip(search_path, (misser, hitter)))
             with util.import_state(path=path, path_importer_cache=cache):
-                util.import_(to_import)
+                import_util.import_(to_import)
         self.assertEquals(log[0], misser)
         self.assertEquals(log[1], hitter)
 
-    @util.importlib_only  # __import__ uses PyDict_GetItem(), bypassing log.
+    @import_util.importlib_only  # __import__ uses PyDict_GetItem(), bypassing log.
     def cache_use_test(self, to_import, entry, path=[]):
         # [cache check], [cache use]
         log = []
@@ -58,7 +59,7 @@ class BaseTests(unittest.TestCase):
             cache = LoggingDict()
             cache[entry] = importer
             with util.import_state(path=[entry], path_importer_cache=cache):
-                module = util.import_(to_import, fromlist=['a'])
+                module = import_util.import_(to_import, fromlist=['a'])
             self.assert_(module is importer[to_import])
         self.assertEquals(len(cache), 1)
         self.assertEquals([entry], log)
@@ -70,10 +71,10 @@ class BaseTests(unittest.TestCase):
             log.append(entry)
             raise ImportError
         with util.mock_modules(to_import) as importer:
-            hitter = util.mock_path_hook(entry, importer=importer)
+            hitter = import_util.mock_path_hook(entry, importer=importer)
             path_hooks = [logging_hook, logging_hook, hitter]
             with util.import_state(path_hooks=path_hooks, path=path):
-                util.import_(to_import)
+                import_util.import_(to_import)
                 self.assertEquals(sys.path_importer_cache[entry], importer)
         self.assertEquals(len(log), 2)
 
@@ -88,7 +89,7 @@ class BaseTests(unittest.TestCase):
                 raise ImportError
 
         try:
-            util.import_(to_import)
+            import_util.import_(to_import)
         except ImportError:
             pass
 
@@ -126,7 +127,7 @@ class __path__Tests(BaseTests):
             test('pkg.hit', entry, *args)
 
 
-    @util.importlib_only  # XXX Unknown reason why this fails.
+    @import_util.importlib_only  # XXX Unknown reason why this fails.
     def test_order(self):
         self.run_test(self.order_test, 'second', ('first', 'second'), ['first',
             'second'])

@@ -1,5 +1,6 @@
 """Test that sys.modules is used properly by import."""
 from .. import util
+from . import util as import_util
 import sys
 from types import MethodType
 import unittest
@@ -23,7 +24,7 @@ class UseCache(unittest.TestCase):
         # [use cache]
         module_to_use = "some module found!"
         sys.modules['some_module'] = module_to_use
-        module = util.import_('some_module')
+        module = import_util.import_('some_module')
         self.assertEqual(id(module_to_use), id(module))
 
     def create_mock(self, *names, return_=None):
@@ -37,31 +38,31 @@ class UseCache(unittest.TestCase):
 
     # __import__ inconsistent between loaders and built-in import when it comes
     #   to when to use the module in sys.modules and when not to.
-    @util.importlib_only
+    @import_util.importlib_only
     def test_using_cache_after_loader(self):
         # [from cache on return]
         with self.create_mock('module') as mock:
             with util.import_state(meta_path=[mock]):
-                module = util.import_('module')
+                module = import_util.import_('module')
                 self.assertEquals(id(module), id(sys.modules['module']))
 
     # See test_using_cache_after_loader() for reasoning.
-    @util.importlib_only
+    @import_util.importlib_only
     def test_using_cache_for_assigning_to_attribute(self):
         # [from cache to attribute]
         with self.create_mock('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg.module')
+                module = import_util.import_('pkg.module')
                 self.assert_(hasattr(module, 'module'))
                 self.assert_(id(module.module), id(sys.modules['pkg.module']))
 
     # See test_using_cache_after_loader() for reasoning.
-    @util.importlib_only
+    @import_util.importlib_only
     def test_using_cache_for_fromlist(self):
         # [from cache for fromlist]
         with self.create_mock('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = util.import_('pkg', fromlist=['module'])
+                module = import_util.import_('pkg', fromlist=['module'])
                 self.assert_(hasattr(module, 'module'))
                 self.assertEquals(id(module.module), id(sys.modules['pkg.module']))
 

@@ -1,4 +1,5 @@
 from .. import util
+from . import util as import_util
 from contextlib import nested
 from types import MethodType
 import unittest
@@ -22,7 +23,7 @@ class CallingOrder(unittest.TestCase):
             first.modules[mod] = 42
             second.modules[mod] = -13
             with util.import_state(meta_path=[first, second]):
-                self.assertEquals(util.import_(mod), 42)
+                self.assertEquals(import_util.import_(mod), 42)
 
     def test_continuing(self):
         # [continuing]
@@ -33,7 +34,7 @@ class CallingOrder(unittest.TestCase):
             first.find_module = lambda self, fullname, path=None: None
             second.modules[mod_name] = 42
             with util.import_state(meta_path=[first, second]):
-                self.assertEquals(util.import_(mod_name), 42)
+                self.assertEquals(import_util.import_(mod_name), 42)
 
 
 class CallSignature(unittest.TestCase):
@@ -58,7 +59,7 @@ class CallSignature(unittest.TestCase):
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
             with util.import_state(meta_path=[importer]):
-                util.import_(mod_name)
+                import_util.import_(mod_name)
                 assert len(log) == 1
                 args = log[0][0]
                 kwargs = log[0][1]
@@ -79,7 +80,7 @@ class CallSignature(unittest.TestCase):
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
             with util.import_state(meta_path=[importer]):
-                util.import_(mod_name)
+                import_util.import_(mod_name)
                 assert len(log) == 2
                 args = log[1][0]
                 kwargs = log[1][1]
