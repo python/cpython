@@ -1,9 +1,8 @@
 to do
 /////
 
-* Use test.loader_tests
+* Use test.abc.LoaderTests
 
-    + builtin
     + frozen
     + extension
     + source

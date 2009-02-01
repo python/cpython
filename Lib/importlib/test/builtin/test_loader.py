@@ -1,5 +1,6 @@
 import importlib
 from importlib import machinery
+from .. import abc
 from .. import support
 
 import sys
@@ -7,7 +8,7 @@ import types
 import unittest
 
 
-class LoaderTests(unittest.TestCase):
+class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for built-in modules."""
 
@@ -26,13 +27,32 @@ class LoaderTests(unittest.TestCase):
     load_module = staticmethod(lambda name:
                                 machinery.BuiltinImporter.load_module(name))
 
-    def test_load_module(self):
+    def test_module(self):
         # Common case.
         with support.uncache(self.name):
             module = self.load_module(self.name)
             self.verify(module)
 
-    def test_nonexistent(self):
+    def test_package(self):
+        # Built-in modules cannot be a package.
+        pass
+
+    def test_lacking_parent(self):
+        # Built-in modules cannot be a package.
+        pass
+
+    def test_state_after_failure(self):
+        # Not way to force an imoprt failure.
+        pass
+
+    def test_module_reuse(self):
+        # Test that the same module is used in a reload.
+        with support.uncache(self.name):
+            module1 = self.load_module(self.name)
+            module2 = self.load_module(self.name)
+            self.assert_(module1 is module2)
+
+    def test_unloadable(self):
         name = 'dssdsdfff'
         assert name not in sys.builtin_module_names
         self.assertRaises(ImportError, self.load_module, name)
