@@ -1,5 +1,6 @@
 import importlib
 from .. import support
+from . import util as source_util
 
 import codecs
 import re
@@ -32,7 +33,7 @@ class EncodingTest(unittest.TestCase):
     module_name = '_temp'
 
     def run_test(self, source):
-        with support.create_modules(self.module_name) as mapping:
+        with source_util.create_modules(self.module_name) as mapping:
             with open(mapping[self.module_name], 'wb')as file:
                 file.write(source)
             loader = importlib._PyFileLoader(self.module_name,
@@ -93,7 +94,7 @@ class LineEndingTest(unittest.TestCase):
         module_name = '_temp'
         source_lines = [b"a = 42", b"b = -13", b'']
         source = line_ending.join(source_lines)
-        with support.create_modules(module_name) as mapping:
+        with source_util.create_modules(module_name) as mapping:
             with open(mapping[module_name], 'wb') as file:
                 file.write(source)
             loader = importlib._PyFileLoader(module_name, mapping[module_name],

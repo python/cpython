@@ -3,9 +3,6 @@ to do
 
 * Reorganize support code.
 
-    + Separate general support code and importer-specific (e.g. source) support
-      code.
-        - Create support modules for each subdirectory (as needed).
     + Add a file loader mock that returns monotonically increasing mtime.
         - Use in source/test_reload.
         - Use in source/test_load_module_mixed.

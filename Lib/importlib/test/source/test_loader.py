@@ -1,6 +1,7 @@
 import importlib
 from .. import abc
 from .. import support
+from . import util as source_util
 
 import imp
 import os
@@ -18,7 +19,7 @@ class SimpleTest(unittest.TestCase):
 
     # [basic]
     def test_module(self):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
             module = loader.load_module('_temp')
             self.assert_('_temp' in sys.modules)
@@ -28,7 +29,7 @@ class SimpleTest(unittest.TestCase):
                 self.assertEqual(getattr(module, attr), value)
 
     def test_package(self):
-        with support.create_modules('_pkg.__init__') as mapping:
+        with source_util.create_modules('_pkg.__init__') as mapping:
             loader = importlib._PyFileLoader('_pkg', mapping['_pkg.__init__'],
                                              True)
             module = loader.load_module('_pkg')
@@ -41,7 +42,7 @@ class SimpleTest(unittest.TestCase):
 
 
     def test_lacking_parent(self):
-        with support.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
+        with source_util.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
             loader = importlib._PyFileLoader('_pkg.mod', mapping['_pkg.mod'],
                                              False)
             module = loader.load_module('_pkg.mod')
@@ -56,7 +57,7 @@ class SimpleTest(unittest.TestCase):
         return lambda name: fxn(name) + 1
 
     def test_module_reuse(self):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
             module = loader.load_module('_temp')
             module_id = id(module)
@@ -81,7 +82,7 @@ class SimpleTest(unittest.TestCase):
         attributes = ('__file__', '__path__', '__package__')
         value = '<test>'
         name = '_temp'
-        with support.create_modules(name) as mapping:
+        with source_util.create_modules(name) as mapping:
             orig_module = imp.new_module(name)
             for attr in attributes:
                 setattr(orig_module, attr, value)
@@ -94,7 +95,7 @@ class SimpleTest(unittest.TestCase):
 
     # [syntax error]
     def test_bad_syntax(self):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             with open(mapping['_temp'], 'w') as file:
                 file.write('=')
             loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
@@ -109,12 +110,12 @@ class DontWriteBytecodeTest(unittest.TestCase):
     def tearDown(self):
         sys.dont_write_bytecode = False
 
-    @support.writes_bytecode
+    @source_util.writes_bytecode
     def run_test(self, assertion):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
             loader.load_module('_temp')
-            bytecode_path = support.bytecode_path(mapping['_temp'])
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
             assertion(bytecode_path)
 
     def test_bytecode_written(self):
@@ -137,10 +138,10 @@ class BadDataTest(unittest.TestCase):
 
     # [bad magic]
     def test_bad_magic(self):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
             os.unlink(mapping['_temp'])
-            bytecode_path = support.bytecode_path(mapping['_temp'])
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
             with open(bytecode_path, 'r+b') as file:
                 file.seek(0)
                 file.write(b'\x00\x00\x00\x00')
@@ -164,7 +165,7 @@ class SourceBytecodeInteraction(unittest.TestCase):
 
     def run_test(self, test, *create, pkg=False):
         create += (test,)
-        with support.create_modules(*create) as mapping:
+        with source_util.create_modules(*create) as mapping:
             for name in create:
                 py_compile.compile(mapping[name])
             if pkg:
@@ -217,11 +218,11 @@ class BadBytecodeTest(unittest.TestCase):
         self.assert_(module_name in sys.modules)
 
     # [bad magic]
-    @support.writes_bytecode
+    @source_util.writes_bytecode
     def test_bad_magic(self):
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
-            bytecode_path = support.bytecode_path(mapping['_temp'])
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(0)
                 bytecode_file.write(b'\x00\x00\x00\x00')
@@ -230,12 +231,12 @@ class BadBytecodeTest(unittest.TestCase):
                 self.assertEqual(bytecode_file.read(4), imp.get_magic())
 
     # [bad timestamp]
-    @support.writes_bytecode
+    @source_util.writes_bytecode
     def test_bad_bytecode(self):
         zeros = b'\x00\x00\x00\x00'
-        with support.create_modules('_temp') as mapping:
+        with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
-            bytecode_path = support.bytecode_path(mapping['_temp'])
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(4)
                 bytecode_file.write(zeros)
@@ -248,8 +249,8 @@ class BadBytecodeTest(unittest.TestCase):
 
     # [bad marshal]
     def test_bad_marshal(self):
-        with support.create_modules('_temp') as mapping:
-            bytecode_path = support.bytecode_path(mapping['_temp'])
+        with source_util.create_modules('_temp') as mapping:
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
             source_mtime = os.path.getmtime(mapping['_temp'])
             source_timestamp = importlib._w_long(source_mtime)
             with open(bytecode_path, 'wb') as bytecode_file:
