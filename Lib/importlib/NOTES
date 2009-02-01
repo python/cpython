@@ -4,7 +4,6 @@ to do
 * Use test.abc.LoaderTests
 
     + frozen
-    + extension
     + source
 
 * Reorganize support code.
