@@ -715,7 +715,7 @@ whichmodule(PyObject *global, PyObject *global_name)
     i = 0;
     module_name = NULL;
     while ((j = PyDict_Next(modules_dict, &i, &module_name, &module))) {
-        if (PyObject_Compare(module_name, main_str) == 0)
+        if (PyObject_RichCompareBool(module_name, main_str, Py_EQ) == 1)
             continue;
 
         obj = PyObject_GetAttr(module, global_name);

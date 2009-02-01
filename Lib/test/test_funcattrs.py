@@ -224,10 +224,41 @@ class FunctionDocstringTest(FuncAttrsTest):
         del self.b.__doc__
         self.assertEqual(self.b.__doc__, None)
 
+def cell(value):
+    """Create a cell containing the given value."""
+    def f():
+        print(a)
+    a = value
+    return f.__closure__[0]
+
+def empty_cell(empty=True):
+    """Create an empty cell."""
+    def f():
+        print(a)
+    # the intent of the following line is simply "if False:";  it's
+    # spelt this way to avoid the danger that a future optimization
+    # might simply remove an "if False:" code block.
+    if not empty:
+        a = 1729
+    return f.__closure__[0]
+
+class CellTest(unittest.TestCase):
+    def test_comparison(self):
+        # These tests are here simply to exercise the comparison code;
+        # their presence should not be interpreted as providing any
+        # guarantees about the semantics (or even existence) of cell
+        # comparisons in future versions of CPython.
+        self.assert_(cell(2) < cell(3))
+        self.assert_(empty_cell() < cell('saturday'))
+        self.assert_(empty_cell() == empty_cell())
+        self.assert_(cell(-36) == cell(-36.0))
+        self.assert_(cell(True) > empty_cell())
+
+
 def test_main():
     support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
                               ArbitraryFunctionAttrTest, FunctionDictsTest,
-                              FunctionDocstringTest)
+                              FunctionDocstringTest, CellTest)
 
 if __name__ == "__main__":
     test_main()

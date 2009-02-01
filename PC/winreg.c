@@ -326,7 +326,7 @@ PyDoc_STRVAR(PyHKEY_doc,
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"__cmp__ - Handle objects are compared using the handle value.");
+"rich comparison - Handle objects are compared using the handle value.");
 
 
 PyDoc_STRVAR(PyHKEY_Close_doc,
@@ -485,7 +485,7 @@ PyTypeObject PyHKEY_Type =
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	PyHKEY_compareFunc,		/* tp_compare */
+	0,				/* tp_compare */
 	0,				/* tp_repr */
 	&PyHKEY_NumberMethods,		/* tp_as_number */
 	0,				/* tp_as_sequence */

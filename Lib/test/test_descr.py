@@ -3885,7 +3885,7 @@ order (MRO) for bases """
         # Testing method-wrapper objects...
         # <type 'method-wrapper'> did not support any reflection before 2.5
 
-        return # XXX should methods really support __eq__?
+        # XXX should methods really support __eq__?
 
         l = []
         self.assertEqual(l.__add__, l.__add__)

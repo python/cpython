@@ -272,7 +272,9 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
 
 #ifdef HAVE_WCSXFRM
 PyDoc_STRVAR(strxfrm__doc__,
-"string -> string. Returns a string that behaves for cmp locale-aware.");
+"strxfrm(string) -> string.\n\
+\n\
+Return a string that can be used as a key for locale-aware comparisons.");
 
 static PyObject*
 PyLocale_strxfrm(PyObject* self, PyObject* args)
