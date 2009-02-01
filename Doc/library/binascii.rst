@@ -120,17 +120,17 @@ The :mod:`binascii` module defines the following functions:
    To generate the same numeric value across all Python versions and
    platforms use crc32(data) & 0xffffffff.  If you are only using
    the checksum in packed binary format this is not necessary as the
-   return value will have the correct 32bit binary representation
+   return value is the correct 32bit binary representation
    regardless of sign.
 
 .. versionchanged:: 2.6
-   The return value will always be in the range [-2**31, 2**31-1]
+   The return value is in the range [-2**31, 2**31-1]
    regardless of platform.  In the past the value would be signed on
    some platforms and unsigned on others.  Use & 0xffffffff on the
    value if you want it to match 3.0 behavior.
 
 .. versionchanged:: 3.0
-   The return value will always be unsigned and in the range [0, 2**32-1]
+   The return value is unsigned and in the range [0, 2**32-1]
    regardless of platform.
 
 
