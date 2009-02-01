@@ -761,7 +761,7 @@ element_find(ElementObject* self, PyObject* args)
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         if (Element_CheckExact(item) &&
-            PyObject_Compare(((ElementObject*)item)->tag, tag) == 0) {
+            PyObject_RichCompareBool(((ElementObject*)item)->tag, tag, Py_EQ) == 1) {
             Py_INCREF(item);
             return item;
         }
@@ -792,7 +792,8 @@ element_findtext(ElementObject* self, PyObject* args)
 
     for (i = 0; i < self->extra->length; i++) {
         ElementObject* item = (ElementObject*) self->extra->children[i];
-        if (Element_CheckExact(item) && !PyObject_Compare(item->tag, tag)) {
+        if (Element_CheckExact(item) && (PyObject_RichCompareBool(item->tag, tag, Py_EQ) == 1)) {
+
             PyObject* text = element_get_text(item);
             if (text == Py_None)
                 return PyBytes_FromString("");
@@ -830,7 +831,7 @@ element_findall(ElementObject* self, PyObject* args)
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         if (Element_CheckExact(item) &&
-            PyObject_Compare(((ElementObject*)item)->tag, tag) == 0) {
+            PyObject_RichCompareBool(((ElementObject*)item)->tag, tag, Py_EQ) == 1) {
             if (PyList_Append(out, item) < 0) {
                 Py_DECREF(out);
                 return NULL;
@@ -1102,7 +1103,7 @@ element_remove(ElementObject* self, PyObject* args)
     for (i = 0; i < self->extra->length; i++) {
         if (self->extra->children[i] == element)
             break;
-        if (PyObject_Compare(self->extra->children[i], element) == 0)
+        if (PyObject_RichCompareBool(self->extra->children[i], element, Py_EQ) == 1)
             break;
     }
 

@@ -788,15 +788,59 @@ PyTclObject_repr(PyTclObject *self)
 	                            self->value->typePtr->name, self->value);
 }
 
-static int
-PyTclObject_cmp(PyTclObject *self, PyTclObject *other)
+#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
+
+static PyObject *
+PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 {
-	int res;
-	res = strcmp(Tcl_GetString(self->value),
-		     Tcl_GetString(other->value));
-	if (res < 0) return -1;
-	if (res > 0) return 1;
-	return 0;
+	int result;
+	PyObject *v;
+
+	/* neither argument should be NULL, unless something's gone wrong */
+	if (self == NULL || other == NULL) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+
+	/* both arguments should be instances of PyTclObject */
+	if (!PyTclObject_Check(self) || !PyTclObject_Check(other)) {
+		v = Py_NotImplemented;
+		goto finished;
+	}
+
+	if (self == other)
+		/* fast path when self and other are identical */
+		result = 0;
+	else
+		result = strcmp(Tcl_GetString(((PyTclObject *)self)->value),
+				Tcl_GetString(((PyTclObject *)other)->value));
+	/* Convert return value to a Boolean */
+	switch (op) {
+	case Py_EQ:
+		v = TEST_COND(result == 0);
+		break;
+	case Py_NE:
+		v = TEST_COND(result != 0);
+		break;
+	case Py_LE:
+		v = TEST_COND(result <= 0);
+		break;
+	case Py_GE:
+		v = TEST_COND(result >= 0);
+		break;
+	case Py_LT:
+		v = TEST_COND(result < 0);
+		break;
+	case Py_GT:
+		v = TEST_COND(result > 0);
+		break;
+	default:
+		PyErr_BadArgument();
+		return NULL;
+	}
+  finished:
+	Py_INCREF(v);
+	return v;
 }
 
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
@@ -818,45 +862,45 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 static PyTypeObject PyTclObject_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"_tkinter.Tcl_Obj",		/*tp_name*/
-	sizeof(PyTclObject),	/*tp_basicsize*/
-	0,			/*tp_itemsize*/
+	sizeof(PyTclObject),		/*tp_basicsize*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	(destructor)PyTclObject_dealloc, /*tp_dealloc*/
-	0,			/*tp_print*/
-	0,			/*tp_getattr*/
-	0,			/*tp_setattr*/
-	(cmpfunc)PyTclObject_cmp,	/*tp_compare*/
+	(destructor)PyTclObject_dealloc,/*tp_dealloc*/
+	0,				/*tp_print*/
+	0,				/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
 	(reprfunc)PyTclObject_repr,	/*tp_repr*/
-	0,			/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	0,			/*tp_as_mapping*/
-	0,			/*tp_hash*/
-        0,                      /*tp_call*/
-        (reprfunc)PyTclObject_str,        /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        0,                      /*tp_setattro*/
-        0,                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
-        0,                      /*tp_doc*/
-        0,                      /*tp_traverse*/
-        0,                      /*tp_clear*/
-        0,                      /*tp_richcompare*/
-        0,                      /*tp_weaklistoffset*/
-        0,                      /*tp_iter*/
-        0,                      /*tp_iternext*/
-        0,    /*tp_methods*/
-        0,			/*tp_members*/
-        PyTclObject_getsetlist, /*tp_getset*/
-        0,                      /*tp_base*/
-        0,                      /*tp_dict*/
-        0,                      /*tp_descr_get*/
-        0,                      /*tp_descr_set*/
-        0,                      /*tp_dictoffset*/
-        0,                      /*tp_init*/
-        0,                      /*tp_alloc*/
-        0,                      /*tp_new*/
-        0,                      /*tp_free*/
-        0,                      /*tp_is_gc*/
+	0,				/*tp_as_number*/
+	0,				/*tp_as_sequence*/
+	0,				/*tp_as_mapping*/
+	0,				/*tp_hash*/
+	0,				/*tp_call*/
+	(reprfunc)PyTclObject_str,	/*tp_str*/
+	PyObject_GenericGetAttr,	/*tp_getattro*/
+	0,				/*tp_setattro*/
+	0,				/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,		/*tp_flags*/
+	0,				/*tp_doc*/
+	0,				/*tp_traverse*/
+	0,				/*tp_clear*/
+	PyTclObject_richcompare,	/*tp_richcompare*/
+	0,				/*tp_weaklistoffset*/
+	0,				/*tp_iter*/
+	0,				/*tp_iternext*/
+	0,				/*tp_methods*/
+	0,				/*tp_members*/
+	PyTclObject_getsetlist,		/*tp_getset*/
+	0,				/*tp_base*/
+	0,				/*tp_dict*/
+	0,				/*tp_descr_get*/
+	0,				/*tp_descr_set*/
+	0,				/*tp_dictoffset*/
+	0,				/*tp_init*/
+	0,				/*tp_alloc*/
+	0,				/*tp_new*/
+	0,				/*tp_free*/
+	0,				/*tp_is_gc*/
 };
 
 static Tcl_Obj*
