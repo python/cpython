@@ -317,25 +317,25 @@ want a list of those, they are defined in the standard module
    >>> dir(builtins)
 
    ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'Buffer
-   Error', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Excep
-   tion', 'False', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError
-   ', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyError',
-    'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError', 'None', 'NotImp
-   lemented', 'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecatio
-   nWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StopIteration',
-   'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
-    'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', '
-   UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueE
-   rror', 'Warning', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__'
-   , '__import__', '__name__', 'abs', 'all', 'any', 'basestring', 'bin', 'bool', 'b
-   uffer', 'bytes', 'chr', 'chr8', 'classmethod', 'cmp', 'compile', 'complex', 'cop
-   yright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'ex
-   ec', 'exit', 'filter', 'float', 'frozenset', 'getattr', 'globals', 'hasattr', 'h
-   ash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', '
-   len', 'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'o
-   bject', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr
-   ', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'st
-   r', 'str8', 'sum', 'super', 'trunc', 'tuple', 'type', 'vars', 'zip']
+   Error', 'BytesWarning', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'Environme
+   ntError', 'Exception', 'False', 'FloatingPointError', 'FutureWarning', 'Generato
+   rExit', 'IOError', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexErr
+   or', 'KeyError', 'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError',
+    'None', 'NotImplemented', 'NotImplementedError', 'OSError', 'OverflowError', 'P
+   endingDeprecationWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', '
+   StopIteration', 'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'Ta
+   bError', 'True', 'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'Unicod
+   eEncodeError', 'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserW
+   arning', 'ValueError', 'Warning', 'ZeroDivisionError', '__build_class__', '__deb
+   ug__', '__doc__', '__import__', '__name__', '__package__', 'abs', 'all', 'any',
+   'ascii', 'bin', 'bool', 'bytearray', 'bytes', 'chr', 'classmethod', 'compile', '
+   complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate
+   ', 'eval', 'exec', 'exit', 'filter', 'float', 'format', 'frozenset', 'getattr',
+   'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int', 'isinstance',
+    'issubclass', 'iter', 'len', 'license', 'list', 'locals', 'map', 'max', 'memory
+   view', 'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print', 'property'
+   , 'quit', 'range', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice', 'sort
+   ed', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars', 'zip']
 
 .. _tut-packages:
 

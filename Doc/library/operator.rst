@@ -43,9 +43,9 @@ the rich comparison operators they support:
    equivalent to ``a < b``, ``le(a, b)`` is equivalent to ``a <= b``, ``eq(a,
    b)`` is equivalent to ``a == b``, ``ne(a, b)`` is equivalent to ``a != b``,
    ``gt(a, b)`` is equivalent to ``a > b`` and ``ge(a, b)`` is equivalent to ``a
-   >= b``.  Note that unlike the built-in :func:`cmp`, these functions can
-   return any value, which may or may not be interpretable as a Boolean value.
-   See :ref:`comparisons` for more information about rich comparisons.
+   >= b``.  Note that these functions can return any value, which may
+   or may not be interpretable as a Boolean value.  See
+   :ref:`comparisons` for more information about rich comparisons.
 
 
 The logical operations are also generally applicable to all objects, and support
