@@ -51,16 +51,56 @@ cell_dealloc(PyCellObject *op)
 	PyObject_GC_Del(op);
 }
 
-static int
-cell_compare(PyCellObject *a, PyCellObject *b)
+#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
+
+static PyObject *
+cell_richcompare(PyObject *a, PyObject *b, int op)
 {
-	if (a->ob_ref == NULL) {
-		if (b->ob_ref == NULL)
-			return 0;
-		return -1;
-	} else if (b->ob_ref == NULL)
-		return 1;
-	return PyObject_Compare(a->ob_ref, b->ob_ref);
+	int result;
+	PyObject *v;
+
+	/* neither argument should be NULL, unless something's gone wrong */
+	assert(a != NULL && b != NULL);
+
+	/* both arguments should be instances of PyCellObject */
+	if (!PyCell_Check(a) || !PyCell_Check(b)) {
+		v = Py_NotImplemented;
+		Py_INCREF(v);
+		return v;
+	}
+
+	/* compare cells by contents; empty cells come before anything else */
+	a = ((PyCellObject *)a)->ob_ref;
+	b = ((PyCellObject *)b)->ob_ref;
+	if (a != NULL && b != NULL)
+		return PyObject_RichCompare(a, b, op);
+
+	result = (b == NULL) - (a == NULL);
+	switch (op) {
+	case Py_EQ:
+		v = TEST_COND(result == 0);
+		break;
+	case Py_NE:
+		v = TEST_COND(result != 0);
+		break;
+	case Py_LE:
+		v = TEST_COND(result <= 0);
+		break;
+	case Py_GE:
+		v = TEST_COND(result >= 0);
+		break;
+	case Py_LT:
+		v = TEST_COND(result < 0);
+		break;
+	case Py_GT:
+		v = TEST_COND(result > 0);
+		break;
+	default:
+		PyErr_BadArgument();
+		return NULL;
+	}
+	Py_INCREF(v);
+	return v;
 }
 
 static PyObject *
@@ -114,7 +154,7 @@ PyTypeObject PyCell_Type = {
 	0,                                      /* tp_print */
 	0,	                                /* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)cell_compare,					/* tp_compare */
+	0,					/* tp_compare */
 	(reprfunc)cell_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,			                /* tp_as_sequence */
@@ -129,7 +169,7 @@ PyTypeObject PyCell_Type = {
  	0,					/* tp_doc */
  	(traverseproc)cell_traverse,		/* tp_traverse */
  	(inquiry)cell_clear,			/* tp_clear */
-	0,					/* tp_richcompare */
+	cell_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0, 					/* tp_iter */
 	0,					/* tp_iternext */

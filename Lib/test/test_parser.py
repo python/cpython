@@ -2,6 +2,7 @@ import parser
 import os
 import unittest
 import sys
+import operator
 from test import support
 
 #
@@ -496,12 +497,81 @@ class ParserStackLimitTestCase(unittest.TestCase):
               file=sys.stderr)
         self.assertRaises(MemoryError, parser.expr, e)
 
+class STObjectTestCase(unittest.TestCase):
+    """Test operations on ST objects themselves"""
+
+    def test_comparisons(self):
+        # ST objects should support order and equality comparisons
+        st1 = parser.expr('2 + 3')
+        st2 = parser.suite('x = 2; y = x + 3')
+        st3 = parser.expr('list(x**3 for x in range(20))')
+        st1_copy = parser.expr('2 + 3')
+        st2_copy = parser.suite('x = 2; y = x + 3')
+        st3_copy = parser.expr('list(x**3 for x in range(20))')
+
+        # exercise fast path for object identity
+        self.assertEquals(st1 == st1, True)
+        self.assertEquals(st2 == st2, True)
+        self.assertEquals(st3 == st3, True)
+        # slow path equality
+        self.assertEqual(st1, st1_copy)
+        self.assertEqual(st2, st2_copy)
+        self.assertEqual(st3, st3_copy)
+        self.assertEquals(st1 == st2, False)
+        self.assertEquals(st1 == st3, False)
+        self.assertEquals(st2 == st3, False)
+        self.assertEquals(st1 != st1, False)
+        self.assertEquals(st2 != st2, False)
+        self.assertEquals(st3 != st3, False)
+        self.assertEquals(st1 != st1_copy, False)
+        self.assertEquals(st2 != st2_copy, False)
+        self.assertEquals(st3 != st3_copy, False)
+        self.assertEquals(st2 != st1, True)
+        self.assertEquals(st1 != st3, True)
+        self.assertEquals(st3 != st2, True)
+        # we don't particularly care what the ordering is;  just that
+        # it's usable and self-consistent
+        self.assertEquals(st1 < st2, not (st2 <= st1))
+        self.assertEquals(st1 < st3, not (st3 <= st1))
+        self.assertEquals(st2 < st3, not (st3 <= st2))
+        self.assertEquals(st1 < st2, st2 > st1)
+        self.assertEquals(st1 < st3, st3 > st1)
+        self.assertEquals(st2 < st3, st3 > st2)
+        self.assertEquals(st1 <= st2, st2 >= st1)
+        self.assertEquals(st3 <= st1, st1 >= st3)
+        self.assertEquals(st2 <= st3, st3 >= st2)
+        # transitivity
+        bottom = min(st1, st2, st3)
+        top = max(st1, st2, st3)
+        mid = sorted([st1, st2, st3])[1]
+        self.assert_(bottom < mid)
+        self.assert_(bottom < top)
+        self.assert_(mid < top)
+        self.assert_(bottom <= mid)
+        self.assert_(bottom <= top)
+        self.assert_(mid <= top)
+        self.assert_(bottom <= bottom)
+        self.assert_(mid <= mid)
+        self.assert_(top <= top)
+        # interaction with other types
+        self.assertEquals(st1 == 1588.602459, False)
+        self.assertEquals('spanish armada' != st2, True)
+        self.assertRaises(TypeError, operator.ge, st3, None)
+        self.assertRaises(TypeError, operator.le, False, st1)
+        self.assertRaises(TypeError, operator.lt, st1, 1815)
+        self.assertRaises(TypeError, operator.gt, b'waterloo', st2)
+
+
+    # XXX tests for pickling and unpickling of ST objects should go here
+
+
 def test_main():
     support.run_unittest(
         RoundtripLegalSyntaxTestCase,
         IllegalSyntaxTestCase,
         CompileTestCase,
         ParserStackLimitTestCase,
+        STObjectTestCase,
     )
 
 
