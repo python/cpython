@@ -403,9 +403,8 @@ class _PyFileLoader(object):
         return open(source_path, encoding=encoding).read()
 
     @check_name
-    def write_bytecode(self, name, magic, timestamp, data):
-        """Write out 'data' for the specified module using the specific
-        timestamp, returning a boolean
+    def write_bytecode(self, name, data):
+        """Write out 'data' for the specified module, returning a boolean
         signifying if the write-out actually occurred.
 
         Raises ImportError (just like get_source) if the specified module
@@ -418,8 +417,6 @@ class _PyFileLoader(object):
         file = _fileio._FileIO(bytecode_path, 'w')
         try:
             with closing(file) as bytecode_file:
-                bytecode_file.write(magic)
-                bytecode_file.write(marshal._w_long(timestamp))
                 bytecode_file.write(data)
                 return True
         except IOError as exc:
@@ -430,29 +427,7 @@ class _PyFileLoader(object):
 
     @check_name
     def get_code(self, name):
-        """Return the code object for the module.
-
-            'self' must implement:
-
-            * read_bytecode(name:str) -> (int, int, bytes) or None
-                Return the magic number, timestamp, and bytecode for the
-                module. None is returned if not bytecode is available.
-
-            * source_mtime(name:str) -> int
-                Return the last modification time for the source of the module.
-                Returns None if their is no source.
-
-            * read_source(name:str) -> (bytes, str)
-                Return the source code for the module and the path to use in
-                the call to 'compile'. Not called if source_mtime returned
-                None.
-
-            * write_bytecode(name:str, magic:bytes, timestamp:int, data:str)
-                Write out bytecode for the module with the specified magic
-                number and timestamp. Not called if sys.dont_write_bytecode is
-                True.
-
-        """
+        """Return the code object for the module."""
         # XXX Care enough to make sure this call does not happen if the magic
         #     number is bad?
         source_timestamp = self.source_mtime(name)
@@ -507,8 +482,10 @@ class _PyFileLoader(object):
         code_object = compile(source, source_path, 'exec', dont_inherit=True)
         # Generate bytecode and write it out.
         if not sys.dont_write_bytecode:
-            data = marshal.dumps(code_object)
-            self.write_bytecode(name, imp.get_magic(), source_timestamp, data)
+            data = bytearray(imp.get_magic())
+            data.extend(marshal._w_long(source_timestamp))
+            data.extend(marshal.dumps(code_object))
+            self.write_bytecode(name, data)
         return code_object
 
     def get_data(self, path):
