@@ -1,7 +1,7 @@
 import importlib
 from importlib import machinery
 from .. import abc
-from .. import support
+from .. import util
 
 import sys
 import types
@@ -29,7 +29,7 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         # Common case.
-        with support.uncache(self.name):
+        with util.uncache(self.name):
             module = self.load_module(self.name)
             self.verify(module)
 
@@ -47,7 +47,7 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module_reuse(self):
         # Test that the same module is used in a reload.
-        with support.uncache(self.name):
+        with util.uncache(self.name):
             module1 = self.load_module(self.name)
             module2 = self.load_module(self.name)
             self.assert_(module1 is module2)

@@ -1,6 +1,6 @@
 from importlib import machinery
 from .. import abc
-from .. import support
+from .. import util
 
 import sys
 import unittest
@@ -14,7 +14,7 @@ class FinderTests(abc.FinderTests):
 
     def test_module(self):
         # Common case.
-        with support.uncache(self.name):
+        with util.uncache(self.name):
             self.assert_(machinery.BuiltinImporter.find_module(self.name))
 
     def test_package(self):
@@ -40,7 +40,7 @@ class FinderTests(abc.FinderTests):
 
     def test_ignore_path(self):
         # The value for 'path' should always trigger a failed import.
-        with support.uncache(self.name):
+        with util.uncache(self.name):
             loader = machinery.BuiltinImporter.find_module(self.name, ['pkg'])
             self.assert_(loader is None)
 

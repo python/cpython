@@ -1,12 +1,12 @@
 import sys
-from test import support as test_support
+from test import support
 import unittest
 import importlib
-from .. import support
+from .. import util
 from . import test_path_hook
 
 
-@support.case_insensitive_tests
+@util.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
     def find_module(self):
@@ -17,13 +17,13 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         return finder.find_module(bad_name)
 
     def test_case_sensitive(self):
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
             loader = self.find_module()
             self.assert_(loader is None)
 
     def test_case_insensitivity(self):
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
             loader = self.find_module()
             self.assert_(hasattr(loader, 'load_module'))
@@ -32,7 +32,7 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(ExtensionModuleCaseSensitivityTest)
+    support.run_unittest(ExtensionModuleCaseSensitivityTest)
 
 
 if __name__ == '__main__':

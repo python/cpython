@@ -5,7 +5,7 @@ of using the typical __path__/__name__ test).
 
 """
 import unittest
-from .. import support
+from .. import util
 
 
 class Using__package__(unittest.TestCase):
@@ -34,19 +34,19 @@ class Using__package__(unittest.TestCase):
 
     def test_using___package__(self):
         # [__package__]
-        with support.mock_modules('pkg.__init__', 'pkg.fake') as importer:
-            with support.import_state(meta_path=[importer]):
-                support.import_('pkg.fake')
-                module = support.import_('', globals={'__package__': 'pkg.fake'},
+        with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
+            with util.import_state(meta_path=[importer]):
+                util.import_('pkg.fake')
+                module = util.import_('', globals={'__package__': 'pkg.fake'},
                                  fromlist=['attr'], level=2)
         self.assertEquals(module.__name__, 'pkg')
 
     def test_using___name__(self):
         # [__name__]
-        with support.mock_modules('pkg.__init__', 'pkg.fake') as importer:
-            with support.import_state(meta_path=[importer]):
-                support.import_('pkg.fake')
-                module = support.import_('',
+        with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
+            with util.import_state(meta_path=[importer]):
+                util.import_('pkg.fake')
+                module = util.import_('',
                                  globals={'__name__': 'pkg.fake',
                                           '__path__': []},
                                  fromlist=['attr'], level=2)
@@ -54,12 +54,12 @@ class Using__package__(unittest.TestCase):
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
-        self.assertRaises(SystemError, support.import_,'', globals, {},
+        self.assertRaises(SystemError, util.import_,'', globals, {},
                             ['relimport'], 1)
 
     def test_bunk__package__(self):
         globals = {'__package__': 42}
-        self.assertRaises(ValueError, support.import_, '', globals, {},
+        self.assertRaises(ValueError, util.import_, '', globals, {},
                             ['relimport'], 1)
 
 
@@ -77,26 +77,26 @@ class Setting__package__(unittest.TestCase):
 
     # [top-level]
     def test_top_level(self):
-        with support.mock_modules('top_level') as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules('top_level') as mock:
+            with util.import_state(meta_path=[mock]):
                 del mock['top_level'].__package__
-                module = support.import_('top_level')
+                module = util.import_('top_level')
                 self.assert_(module.__package__ is None)
 
     # [package]
     def test_package(self):
-        with support.mock_modules('pkg.__init__') as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules('pkg.__init__') as mock:
+            with util.import_state(meta_path=[mock]):
                 del mock['pkg'].__package__
-                module = support.import_('pkg')
+                module = util.import_('pkg')
                 self.assertEqual(module.__package__, 'pkg')
 
     # [submodule]
     def test_submodule(self):
-        with support.mock_modules('pkg.__init__', 'pkg.mod') as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules('pkg.__init__', 'pkg.mod') as mock:
+            with util.import_state(meta_path=[mock]):
                 del mock['pkg.mod'].__package__
-                pkg = support.import_('pkg.mod')
+                pkg = util.import_('pkg.mod')
                 module = getattr(pkg, 'mod')
                 self.assertEqual(module.__package__, 'pkg')
 

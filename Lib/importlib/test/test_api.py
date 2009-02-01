@@ -1,6 +1,6 @@
 import unittest
 import importlib
-from . import support
+from . import util
 
 
 class ImportModuleTests(unittest.TestCase):
@@ -9,8 +9,8 @@ class ImportModuleTests(unittest.TestCase):
 
     def test_module_import(self):
         # Test importing a top-level module.
-        with support.mock_modules('top_level') as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules('top_level') as mock:
+            with util.import_state(meta_path=[mock]):
                 module = importlib.import_module('top_level')
                 self.assertEqual(module.__name__, 'top_level')
 
@@ -19,8 +19,8 @@ class ImportModuleTests(unittest.TestCase):
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with support.mock_modules(pkg_long_name, name) as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules(pkg_long_name, name) as mock:
+            with util.import_state(meta_path=[mock]):
                 module = importlib.import_module(name)
                 self.assertEqual(module.__name__, name)
 
@@ -31,8 +31,8 @@ class ImportModuleTests(unittest.TestCase):
         module_name = 'mod'
         absolute_name = '{0}.{1}'.format(pkg_name, module_name)
         relative_name = '.{0}'.format(module_name)
-        with support.mock_modules(pkg_long_name, absolute_name) as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules(pkg_long_name, absolute_name) as mock:
+            with util.import_state(meta_path=[mock]):
                 module = importlib.import_module(relative_name, pkg_name)
                 self.assertEqual(module.__name__, absolute_name)
 
@@ -42,8 +42,8 @@ class ImportModuleTests(unittest.TestCase):
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with support.mock_modules(pkg_long_name, name) as mock:
-            with support.import_state(meta_path=[mock]):
+        with util.mock_modules(pkg_long_name, name) as mock:
+            with util.import_state(meta_path=[mock]):
                 module = importlib.import_module(name, pkg_name)
                 self.assertEqual(module.__name__, name)
 

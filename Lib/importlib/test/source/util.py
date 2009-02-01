@@ -1,11 +1,11 @@
-from .. import support as util
+from .. import util
 import contextlib
 import imp
 import os
 import os.path
 import sys
 import tempfile
-from test import support as support
+from test import support
 
 
 def writes_bytecode(fxn):
