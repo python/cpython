@@ -4,8 +4,14 @@ import unittest
 import os
 import _tkinter
 from test import test_support
-from Tkinter import Tcl
+from Tkinter import Tk, Tcl
 from _tkinter import TclError
+
+# Restore Tkinter.Tk._loadtk that may have been overridden by ttk.
+# If this is not done then this test may fail for reasons related
+# to ttk only (like failing to load the tile package).
+from ttk import __loadtk__
+Tk._loadtk = __loadtk__
 
 
 class TkinterTest(unittest.TestCase):
