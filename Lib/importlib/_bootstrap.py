@@ -403,40 +403,6 @@ class _PyFileLoader(object):
         return open(source_path, encoding=encoding).read()
 
     @check_name
-    def read_source(self, fullname):
-        """Return the source for the specified module as bytes along with the
-        path where the source came from.
-
-        The returned path is used by 'compile' for error messages.
-
-        """
-        source_path = self.source_path(fullname)
-        if source_path is None:
-            return None
-        with closing(_fileio._FileIO(source_path, 'r')) as bytes_file:
-            return bytes_file.read(), source_path
-
-    @check_name
-    def read_bytecode(self, name):
-        """Return the magic number, timestamp, and the module bytecode for the
-        module.
-
-        Raises ImportError (just like get_source) if the laoder cannot handle
-        the module. Returns None if there is no bytecode.
-
-        """
-        path = self.bytecode_path(name)
-        if path is None:
-            return None
-        file = _fileio._FileIO(path, 'r')
-        try:
-            with closing(file) as bytecode_file:
-                data = bytecode_file.read()
-            return data[:4], marshal._r_long(data[4:8]), data[8:]
-        except AttributeError:
-            return None
-
-    @check_name
     def write_bytecode(self, name, magic, timestamp, data):
         """Write out 'data' for the specified module using the specific
         timestamp, returning a boolean
@@ -462,7 +428,6 @@ class _PyFileLoader(object):
             else:
                 raise
 
-    # XXX Take an optional argument to flag whether to write bytecode?
     @check_name
     def get_code(self, name):
         """Return the code object for the module.
@@ -492,9 +457,12 @@ class _PyFileLoader(object):
         #     number is bad?
         source_timestamp = self.source_mtime(name)
         # Try to use bytecode if it is available.
-        bytecode_tuple = self.read_bytecode(name)
-        if bytecode_tuple:
-            magic, pyc_timestamp, bytecode = bytecode_tuple
+        bytecode_path = self.bytecode_path(name)
+        if bytecode_path:
+            data = self.get_data(bytecode_path)
+            magic = data[:4]
+            pyc_timestamp = marshal._r_long(data[4:8])
+            bytecode = data[8:]
             try:
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
@@ -519,7 +487,8 @@ class _PyFileLoader(object):
             raise ImportError("no source or bytecode available to create code "
                                 "object for {0!r}".format(name))
         # Use the source.
-        source, source_path = self.read_source(name)
+        source_path = self.source_path(name)
+        source = self.get_data(source_path)
         # Convert to universal newlines.
         line_endings = b'\n'
         for index, c in enumerate(source):

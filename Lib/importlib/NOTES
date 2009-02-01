@@ -3,7 +3,6 @@ to do
 
 * API simplification?
 
-    + Use *_path() along with get_data
     + write_bytecode -> complete set of bytes for bytecode instead of
       individual arguments.
 
