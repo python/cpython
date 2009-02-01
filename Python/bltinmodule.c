@@ -493,25 +493,6 @@ PyDoc_STR(
 ;
 
 
-static PyObject *
-builtin_cmp(PyObject *self, PyObject *args)
-{
-	PyObject *a, *b;
-	int c;
-
-	if (!PyArg_UnpackTuple(args, "cmp", 2, 2, &a, &b))
-		return NULL;
-	if (PyObject_Cmp(a, b, &c) < 0)
-		return NULL;
-	return PyLong_FromLong((long)c);
-}
-
-PyDoc_STRVAR(cmp_doc,
-"cmp(x, y) -> integer\n\
-\n\
-Return negative if x<y, zero if x==y, positive if x>y.");
-
-
 static char *
 source_as_string(PyObject *cmd, char *funcname, char *what)
 {
@@ -2230,7 +2211,6 @@ static PyMethodDef builtin_methods[] = {
  	{"ascii",	builtin_ascii,      METH_O, ascii_doc},
 	{"bin",		builtin_bin,	    METH_O, bin_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
- 	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
  	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
  	{"dir",		builtin_dir,        METH_VARARGS, dir_doc},

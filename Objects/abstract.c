@@ -27,22 +27,6 @@ null_error(void)
 
 /* Operations on any object */
 
-int
-PyObject_Cmp(PyObject *o1, PyObject *o2, int *result)
-{
-	int r;
-
-	if (o1 == NULL || o2 == NULL) {
-		null_error();
-		return -1;
-	}
-	r = PyObject_Compare(o1, o2);
-	if (PyErr_Occurred())
-		return -1;
-	*result = r;
-	return 0;
-}
-
 PyObject *
 PyObject_Type(PyObject *o)
 {
