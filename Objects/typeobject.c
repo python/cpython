@@ -2897,7 +2897,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 	slots_a = ((PyHeapTypeObject *)a)->ht_slots;
 	slots_b = ((PyHeapTypeObject *)b)->ht_slots;
 	if (slots_a && slots_b) {
-		if (PyObject_Compare(slots_a, slots_b) != 0)
+		if (PyObject_RichCompareBool(slots_a, slots_b, Py_EQ) != 1)
 			return 0;
 		size += sizeof(PyObject *) * PyTuple_GET_SIZE(slots_a);
 	}

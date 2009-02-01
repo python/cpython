@@ -220,9 +220,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises((OverflowError, ValueError), chr, 2**32)
 
     def test_cmp(self):
-        # uncomment the following line once cmp has been removed
-        #self.assert_(not hasattr(builtins, "cmp"))
-        pass
+        self.assert_(not hasattr(builtins, "cmp"))
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')

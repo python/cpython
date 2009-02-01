@@ -549,68 +549,6 @@ PyObject_Bytes(PyObject *v)
 
 */
 
-/* Forward */
-static PyObject *do_richcompare(PyObject *v, PyObject *w, int op);
-
-/* Perform a three-way comparison, raising TypeError if three-way comparison
-   is not supported.  */
-static int
-do_compare(PyObject *v, PyObject *w)
-{
-	cmpfunc f;
-	int ok;
-
-	if (v->ob_type == w->ob_type &&
-	    (f = v->ob_type->tp_compare) != NULL) {
-		return (*f)(v, w);
-	}
-
-	/* Now try three-way compare before giving up.  This is intentionally
-	   elaborate; if you have a it will raise TypeError if it detects two
-	   objects that aren't ordered with respect to each other. */
-	ok = PyObject_RichCompareBool(v, w, Py_LT);
-	if (ok < 0)
-		return -1; /* Error */
-	if (ok)
-		return -1; /* Less than */
-	ok = PyObject_RichCompareBool(v, w, Py_GT);
-	if (ok < 0)
-		return -1; /* Error */
-	if (ok)
-		return 1; /* Greater than */
-	ok = PyObject_RichCompareBool(v, w, Py_EQ);
-	if (ok < 0)
-		return -1; /* Error */
-	if (ok)
-		return 0; /* Equal */
-
-	/* Give up */
-	PyErr_Format(PyExc_TypeError,
-		     "unorderable types: '%.100s' != '%.100s'",
-		     v->ob_type->tp_name,
-		     w->ob_type->tp_name);
-	return -1;
-}
-
-/* Perform a three-way comparison.  This wraps do_compare() with a check for
-   NULL arguments and a recursion check. */
-int
-PyObject_Compare(PyObject *v, PyObject *w)
-{
-	int res;
-
-	if (v == NULL || w == NULL) {
-		if (!PyErr_Occurred())
-			PyErr_BadInternalCall();
-		return -1;
-	}
-	if (Py_EnterRecursiveCall(" in cmp"))
-		return -1;
-	res = do_compare(v, w);
-	Py_LeaveRecursiveCall();
-	return res < 0 ? -1 : res;
-}
-
 /* Map rich comparison operators to their swapped version, e.g. LT <--> GT */
 int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
@@ -713,44 +651,6 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
 		ok = PyObject_IsTrue(res);
 	Py_DECREF(res);
 	return ok;
-}
-
-/* Turn the result of a three-way comparison into the result expected by a
-   rich comparison. */
-PyObject *
-Py_CmpToRich(int op, int cmp)
-{
-	PyObject *res;
-	int ok;
-
-	if (PyErr_Occurred())
-		return NULL;
-	switch (op) {
-	case Py_LT:
-		ok = cmp <  0;
-		break;
-	case Py_LE:
-		ok = cmp <= 0;
-		break;
-	case Py_EQ:
-		ok = cmp == 0;
-		break;
-	case Py_NE:
-		ok = cmp != 0;
-		break;
-	case Py_GT:
-		ok = cmp >  0;
-		break;
-	case Py_GE:
-		ok = cmp >= 0;
-		break;
-	default:
-		PyErr_BadArgument();
-		return NULL;
-	}
-	res = ok ? Py_True : Py_False;
-	Py_INCREF(res);
-	return res;
 }
 
 /* Set of hash utility functions to help maintaining the invariant that
