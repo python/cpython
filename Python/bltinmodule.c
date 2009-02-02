@@ -268,6 +268,8 @@ builtin_filter(PyObject *self, PyObject *args)
 
 	/* Guess a result list size. */
 	len = _PyObject_LengthHint(seq, 8);
+	if (len == -1)
+		goto Fail_it;
 
 	/* Get a result list. */
 	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
