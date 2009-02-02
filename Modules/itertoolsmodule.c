@@ -148,7 +148,7 @@ static PyTypeObject groupby_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -279,7 +279,7 @@ static PyTypeObject _grouper_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -432,7 +432,7 @@ static PyTypeObject teedataobject_type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -588,7 +588,7 @@ static PyTypeObject tee_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -783,7 +783,7 @@ static PyTypeObject cycle_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -925,7 +925,7 @@ static PyTypeObject dropwhile_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -1064,7 +1064,7 @@ static PyTypeObject takewhile_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -1257,7 +1257,7 @@ static PyTypeObject islice_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -1388,7 +1388,7 @@ static PyTypeObject starmap_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -1556,7 +1556,7 @@ static PyTypeObject chain_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -1804,7 +1804,7 @@ static PyTypeObject product_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -2027,7 +2027,7 @@ static PyTypeObject combinations_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -2273,7 +2273,7 @@ static PyTypeObject cwr_type = {
 	0,						/* tp_print */
 	0,						/* tp_getattr */
 	0,						/* tp_setattr */
-	0,						/* tp_compare */
+	0,						/* tp_reserved */
 	0,						/* tp_repr */
 	0,						/* tp_as_number */
 	0,						/* tp_as_sequence */
@@ -2544,7 +2544,7 @@ static PyTypeObject permutations_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -2700,7 +2700,7 @@ static PyTypeObject compress_type = {
 	0,								/* tp_print */
 	0,								/* tp_getattr */
 	0,								/* tp_setattr */
-	0,								/* tp_compare */
+	0,								/* tp_reserved */
 	0,								/* tp_repr */
 	0,								/* tp_as_number */
 	0,								/* tp_as_sequence */
@@ -2843,7 +2843,7 @@ static PyTypeObject filterfalse_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -2994,7 +2994,7 @@ static PyTypeObject count_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	(reprfunc)count_repr,		/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -3129,7 +3129,7 @@ static PyTypeObject repeat_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	(reprfunc)repeat_repr,		/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -3355,7 +3355,7 @@ static PyTypeObject ziplongest_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */

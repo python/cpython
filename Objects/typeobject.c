@@ -2584,7 +2584,7 @@ PyTypeObject PyType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)type_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -3357,7 +3357,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	object_repr,				/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -3662,7 +3662,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		type->tp_setattr = base->tp_setattr;
 		type->tp_setattro = base->tp_setattro;
 	}
-	/* tp_compare is ignored, see tp_richcompare */
+	/* tp_reserved is ignored */
 	COPYSLOT(tp_repr);
 	/* tp_hash see tp_richcompare */
 	COPYSLOT(tp_call);
@@ -6250,7 +6250,7 @@ PyTypeObject PySuper_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	super_repr,				/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
