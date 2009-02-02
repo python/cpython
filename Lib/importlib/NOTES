@@ -1,6 +1,10 @@
 to do
 /////
 
+* Use rpartition for getting the package of a module.
+
+    + Make sure that an empty string is acceptable for __package__.
+
 * Create meta_path importer for sys.path.
 
     + Create hook.
