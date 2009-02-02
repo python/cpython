@@ -152,6 +152,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
+
 - Fix a bug in the trace module where a bytes object from co_lnotab had its
   items being passed through ord().
 
