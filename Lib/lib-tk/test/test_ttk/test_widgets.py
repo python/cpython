@@ -12,12 +12,14 @@ class WidgetTest(unittest.TestCase):
     """Tests methods available in every ttk widget."""
 
     def setUp(self):
+        support.root_deiconify()
         self.widget = ttk.Button()
         self.widget.pack()
         self.widget.wait_visibility()
 
     def tearDown(self):
         self.widget.destroy()
+        support.root_withdraw()
 
 
     def test_identify(self):
@@ -107,10 +109,12 @@ class CheckbuttonTest(unittest.TestCase):
 class ComboboxTest(unittest.TestCase):
 
     def setUp(self):
+        support.root_deiconify()
         self.combo = ttk.Combobox()
 
     def tearDown(self):
         self.combo.destroy()
+        support.root_withdraw()
 
     def _show_drop_down_listbox(self):
         width = self.combo.winfo_width()
@@ -195,10 +199,12 @@ class ComboboxTest(unittest.TestCase):
 class EntryTest(unittest.TestCase):
 
     def setUp(self):
+        support.root_deiconify()
         self.entry = ttk.Entry()
 
     def tearDown(self):
         self.entry.destroy()
+        support.root_withdraw()
 
 
     def test_bbox(self):
@@ -297,10 +303,12 @@ class EntryTest(unittest.TestCase):
 class PanedwindowTest(unittest.TestCase):
 
     def setUp(self):
+        support.root_deiconify()
         self.paned = ttk.Panedwindow()
 
     def tearDown(self):
         self.paned.destroy()
+        support.root_withdraw()
 
 
     def test_add(self):
@@ -445,12 +453,14 @@ class RadiobuttonTest(unittest.TestCase):
 class ScaleTest(unittest.TestCase):
 
     def setUp(self):
+        support.root_deiconify()
         self.scale = ttk.Scale()
         self.scale.pack()
         self.scale.update()
 
     def tearDown(self):
         self.scale.destroy()
+        support.root_withdraw()
 
 
     def test_custom_event(self):
@@ -519,6 +529,7 @@ class ScaleTest(unittest.TestCase):
 class NotebookTest(unittest.TestCase):
 
     def setUp(self):
+        support.root_deiconify()
         self.nb = ttk.Notebook()
         self.child1 = ttk.Label()
         self.child2 = ttk.Label()
@@ -529,6 +540,7 @@ class NotebookTest(unittest.TestCase):
         self.child1.destroy()
         self.child2.destroy()
         self.nb.destroy()
+        support.root_withdraw()
 
 
     def test_tab_identifiers(self):
@@ -708,13 +720,12 @@ class NotebookTest(unittest.TestCase):
 class TreeviewTest(unittest.TestCase):
 
     def setUp(self):
-        self.root = support.get_tk_root()
-        self.tv = ttk.Treeview(self.root)
+        support.root_deiconify()
+        self.tv = ttk.Treeview()
 
     def tearDown(self):
         self.tv.destroy()
-        self.root.update_idletasks()
-        self.root.destroy()
+        support.root_withdraw()
 
 
     def test_bbox(self):

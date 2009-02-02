@@ -10,6 +10,13 @@ requires('gui')
 
 class LabeledScaleTest(unittest.TestCase):
 
+    def setUp(self):
+        support.root_deiconify()
+
+    def tearDown(self):
+        support.root_withdraw()
+
+
     def test_widget_destroy(self):
         # automatically created variable
         x = ttk.LabeledScale()
@@ -175,12 +182,12 @@ class LabeledScaleTest(unittest.TestCase):
 class OptionMenuTest(unittest.TestCase):
 
     def setUp(self):
-        self.root = support.get_tk_root()
-        self.textvar = Tkinter.StringVar(self.root)
+        support.root_deiconify()
+        self.textvar = Tkinter.StringVar()
 
     def tearDown(self):
         del self.textvar
-        self.root.destroy()
+        support.root_withdraw()
 
 
     def test_widget_destroy(self):
