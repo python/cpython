@@ -145,6 +145,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
+
 - Issue #2047: shutil.move() could believe that its destination path was
   inside its source path if it began with the same letters (e.g. "src" vs.
   "src.new").
