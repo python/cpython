@@ -17,6 +17,9 @@ Core and Builtins
   the type definition cmpfunc.  The tp_compare slot has been renamed
   to tp_reserved, and is reserved for future usage.
 
+- Issue 1242657: the __len__() and __length_hint__() calls in several tools
+  were suppressing all exceptions.  These include list() and bytearray().
+
 - Issue #4707: round(x, n) now returns an integer if x is an integer.
   Previously it returned a float.
 
