@@ -1622,7 +1622,7 @@ static PyTypeObject Xmlparsetype = {
 	(printfunc)0,		/*tp_print*/
 	0,			/*tp_getattr*/
 	(setattrfunc)xmlparse_setattr,	/*tp_setattr*/
-	0,			/*tp_compare*/
+	0,			/*tp_reserved*/
 	(reprfunc)0,		/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,		/*tp_as_sequence*/

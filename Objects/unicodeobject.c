@@ -4368,7 +4368,7 @@ static PyTypeObject EncodingMapType = {
     0,                      /*tp_print*/
     0,                      /*tp_getattr*/
     0,                      /*tp_setattr*/
-    0,                      /*tp_compare*/
+    0,                      /*tp_reserved*/
     0,                      /*tp_repr*/
     0,                      /*tp_as_number*/
     0,                      /*tp_as_sequence*/
@@ -9294,7 +9294,7 @@ PyTypeObject PyUnicode_Type = {
     0,                  /* tp_print */
     0,                  /* tp_getattr */
     0,                  /* tp_setattr */
-    0,                  /* tp_compare */
+    0,                  /* tp_reserved */
     unicode_repr,           /* tp_repr */
     &unicode_as_number,         /* tp_as_number */
     &unicode_as_sequence,       /* tp_as_sequence */
@@ -9600,7 +9600,7 @@ PyTypeObject PyUnicodeIter_Type = {
     0,                  /* tp_print */
     0,                  /* tp_getattr */
     0,                  /* tp_setattr */
-    0,                  /* tp_compare */
+    0,                  /* tp_reserved */
     0,                  /* tp_repr */
     0,                  /* tp_as_number */
     0,                  /* tp_as_sequence */

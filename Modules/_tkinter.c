@@ -869,7 +869,7 @@ static PyTypeObject PyTclObject_Type = {
 	0,				/*tp_print*/
 	0,				/*tp_getattr*/
 	0,				/*tp_setattr*/
-	0,				/*tp_compare*/
+	0,				/*tp_reserved*/
 	(reprfunc)PyTclObject_repr,	/*tp_repr*/
 	0,				/*tp_as_number*/
 	0,				/*tp_as_sequence*/
@@ -2351,7 +2351,7 @@ static PyTypeObject Tktt_Type =
 	0,				     /*tp_print */
 	0,				     /*tp_getattr */
 	0,				     /*tp_setattr */
-	0,				     /*tp_compare */
+	0,				     /*tp_reserved */
 	Tktt_Repr,			     /*tp_repr */
 	0,				     /*tp_as_number */
 	0,				     /*tp_as_sequence */
@@ -2677,7 +2677,7 @@ static PyTypeObject Tkapp_Type =
 	0,				     /*tp_print */
 	0,				     /*tp_getattr */
 	0,				     /*tp_setattr */
-	0,				     /*tp_compare */
+	0,				     /*tp_reserved */
 	0,				     /*tp_repr */
 	0,				     /*tp_as_number */
 	0,				     /*tp_as_sequence */

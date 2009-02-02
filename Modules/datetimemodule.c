@@ -1427,7 +1427,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For various reasons, we need to use tp_richcompare instead of tp_compare.
+/* For various reasons, we need to use tp_richcompare instead of tp_reserved.
  * The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
@@ -2138,7 +2138,7 @@ static PyTypeObject PyDateTime_DeltaType = {
 	0,						/* tp_print */
 	0,						/* tp_getattr */
 	0,						/* tp_setattr */
-	0,						/* tp_compare */
+	0,						/* tp_reserved */
 	(reprfunc)delta_repr,				/* tp_repr */
 	&delta_as_number,				/* tp_as_number */
 	0,						/* tp_as_sequence */
@@ -2709,7 +2709,7 @@ static PyTypeObject PyDateTime_DateType = {
 	0,						/* tp_print */
 	0,						/* tp_getattr */
 	0,						/* tp_setattr */
-	0,						/* tp_compare */
+	0,						/* tp_reserved */
 	(reprfunc)date_repr,				/* tp_repr */
 	&date_as_number,				/* tp_as_number */
 	0,						/* tp_as_sequence */
@@ -2963,7 +2963,7 @@ static PyTypeObject PyDateTime_TZInfoType = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -3478,7 +3478,7 @@ static PyTypeObject PyDateTime_TimeType = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)time_repr,			/* tp_repr */
 	&time_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -4606,7 +4606,7 @@ static PyTypeObject PyDateTime_DateTimeType = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)datetime_repr,		/* tp_repr */
 	&datetime_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
