@@ -589,6 +589,82 @@ class PyFileImporter(FileImporter):
         super(PyFileImporter, self).__init__(path_entry)
 
 
+class SysPathFinder:
+
+    """Meta path finder for sys.(path|path_hooks|path_importer_cache)."""
+
+    def _default_hook(self, path):
+        """Use the default hook on 'path'.
+
+        If the path will not work for the default hook then raise ImportError.
+
+        """
+        # TODO(brett.cannon) Implement
+        raise ImportError
+
+    # The list of implicit hooks cannot be a class attribute because of
+    # bootstrapping issues for accessing imp.
+    def _implicit_hooks(self, path):
+        """Return a list of the implicit path hooks."""
+        return [self._default_hook, imp.NullImporter]
+
+    def _path_hooks(self, path):
+        """Search sys.path_hooks for a finder for 'path'.
+
+        Guaranteed to return a finder for the path as NullImporter is the
+        default importer for any path that does not have an explicit finder.
+
+        """
+        for hook in sys.path_hooks + self._implicit_hooks():
+            try:
+                return hook(path)
+            except ImportError:
+                continue
+        else:
+            # This point should never be reached thanks to NullImporter.
+            raise SystemError("no hook could find an importer for "
+                              "{0}".format(path))
+
+    def _path_importer_cache(self, path):
+        """Get the finder for the path from sys.path_importer_cache.
+
+        If the path is not in the cache, find the appropriate finder and cache
+        it. If None is cached, get the default finder and cache that
+        (if applicable).
+
+        Because of NullImporter, some finder should be returned. The only
+        explicit fail case is if None is cached but the path cannot be used for
+        the default hook, for which ImportError is raised.
+
+        """
+        try:
+            finder = sys.path_importer_cache(path);
+        except KeyError:
+            finder = self._path_hooks(path)
+            sys.path_importer_cache[path] = finder
+        else:
+            if finder is None:
+                # Raises ImportError on failure.
+                finder = self._default_hook(path)
+                sys.path_importer_cache[path] = finder
+        return finder
+
+    def find_module(self, fullname, path=None):
+        """Find the module on sys.path or 'path'."""
+        if not path:
+            path = sys.path
+        for entry in path:
+            try:
+                finder = self._path_importer_cache(entry)
+            except ImportError:
+                continue
+            loader = finder.find_module(fullname)
+            if loader:
+                return loader
+        else:
+            return None
+
+
 class ImportLockContext(object):
 
     """Context manager for the import lock."""
