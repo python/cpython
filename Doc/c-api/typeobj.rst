@@ -23,7 +23,7 @@ structure.
 Typedefs: unaryfunc, binaryfunc, ternaryfunc, inquiry, intargfunc,
 intintargfunc, intobjargproc, intintobjargproc, objobjargproc, destructor,
 freefunc, printfunc, getattrfunc, getattrofunc, setattrfunc, setattrofunc,
-cmpfunc, reprfunc, hashfunc
+reprfunc, hashfunc
 
 The structure definition for :ctype:`PyTypeObject` can be found in
 :file:`Include/object.h`.  For convenience of reference, this repeats the
@@ -244,19 +244,9 @@ type objects) *must* have the :attr:`ob_size` field.
    the subtype's :attr:`tp_setattr` and :attr:`tp_setattro` are both *NULL*.
 
 
-.. cmember:: cmpfunc PyTypeObject.tp_compare
+.. cmember:: void* PyTypeObject.tp_reserved
 
-   An optional pointer to the three-way comparison function.
-
-   The signature is the same as for :cfunc:`PyObject_Compare`. The function should
-   return ``1`` if *self* greater than *other*, ``0`` if *self* is equal to
-   *other*, and ``-1`` if *self* less than *other*.  It should return ``-1`` and
-   set an exception condition when an error occurred during the comparison.
-
-   This field is inherited by subtypes together with :attr:`tp_richcompare` and
-   :attr:`tp_hash`: a subtypes inherits all three of :attr:`tp_compare`,
-   :attr:`tp_richcompare`, and :attr:`tp_hash` when the subtype's
-   :attr:`tp_compare`, :attr:`tp_richcompare`, and :attr:`tp_hash` are all *NULL*.
+   Reserved slot, formerly known as tp_compare.
 
 
 .. cmember:: reprfunc PyTypeObject.tp_repr
@@ -329,14 +319,13 @@ type objects) *must* have the :attr:`ob_size` field.
    the Python level will result in the ``tp_hash`` slot being set to
    :cfunc:`PyObject_HashNotImplemented`.
 
-   When this field is not set, two possibilities exist: if the :attr:`tp_compare`
-   and :attr:`tp_richcompare` fields are both *NULL*, a default hash value based on
-   the object's address is returned; otherwise, a :exc:`TypeError` is raised.
+   When this field is not set, an attempt to take the hash of the
+   object raises :exc:`TypeError`.
 
-   This field is inherited by subtypes together with :attr:`tp_richcompare` and
-   :attr:`tp_compare`: a subtypes inherits all three of :attr:`tp_compare`,
-   :attr:`tp_richcompare`, and :attr:`tp_hash`, when the subtype's
-   :attr:`tp_compare`, :attr:`tp_richcompare` and :attr:`tp_hash` are all *NULL*.
+   This field is inherited by subtypes together with
+   :attr:`tp_richcompare`: a subtype inherits both of
+   :attr:`tp_richcompare` and :attr:`tp_hash`, when the subtype's
+   :attr:`tp_richcompare` and :attr:`tp_hash` are both *NULL*.
 
 
 .. cmember:: ternaryfunc PyTypeObject.tp_call
@@ -596,10 +585,10 @@ type objects) *must* have the :attr:`ob_size` field.
       comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
       friends), directly raise :exc:`TypeError` in the rich comparison function.
 
-   This field is inherited by subtypes together with :attr:`tp_compare` and
-   :attr:`tp_hash`: a subtype inherits all three of :attr:`tp_compare`,
-   :attr:`tp_richcompare`, and :attr:`tp_hash`, when the subtype's
-   :attr:`tp_compare`, :attr:`tp_richcompare`, and :attr:`tp_hash` are all *NULL*.
+   This field is inherited by subtypes together with :attr:`tp_hash`:
+   a subtype inherits :attr:`tp_richcompare` and :attr:`tp_hash` when
+   the subtype's :attr:`tp_richcompare` and :attr:`tp_hash` are both
+   *NULL*.
 
    The following constants are defined to be used as the third argument for
    :attr:`tp_richcompare` and for :cfunc:`PyObject_RichCompare`:
