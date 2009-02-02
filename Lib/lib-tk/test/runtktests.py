@@ -9,6 +9,7 @@ Extensions also should live in packages following the same rule as above.
 import os
 import sys
 import unittest
+import importlib
 import test.test_support
 
 this_dir_path = os.path.abspath(os.path.dirname(__file__))
@@ -44,10 +45,8 @@ def get_tests_modules(basepath=this_dir_path, gui=True, packages=None):
 
             for name in filenames:
                 try:
-                    yield __import__(
-                            "%s.%s" % (pkg_name, name[:-len(py_ext)]),
-                            fromlist=['']
-                            )
+                    yield importlib.import_module(
+                            ".%s" % name[:-len(py_ext)], pkg_name)
                 except test.test_support.ResourceDenied:
                     if gui:
                         raise
