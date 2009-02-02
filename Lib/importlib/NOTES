@@ -1,6 +1,8 @@
 to do
 /////
 
+* Create sandbox directory for a distutils packaging of what is in Python 2.7.
+
 * Use rpartition for getting the package of a module.
 
     + Make sure that an empty string is acceptable for __package__.
@@ -77,3 +79,9 @@ to do
     - Relative name from sys.path.
 
 * Bootstrap importlib as implementation of builtins.__import__
+
+* Replace standard library modules.
+
+  + imp
+  + py_compile
+  + compileall
