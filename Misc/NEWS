@@ -14,6 +14,10 @@ Core and Builtins
 
 - Issue #4978: Passing keyword arguments as unicode strings is now allowed.
 
+- Issue 1242657: the __len__() and __length_hint__() calls in several tools
+  were suppressing all exceptions.  These include list(), filter(), map(),
+  zip(), and bytearray().
+
 - os.ftruncate raises OSErrors instead of IOErrors for consistency with other os
   functions.
 
