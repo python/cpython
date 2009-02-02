@@ -334,7 +334,7 @@ static PyTypeObject itemgetter_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -508,7 +508,7 @@ static PyTypeObject attrgetter_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
@@ -639,7 +639,7 @@ static PyTypeObject methodcaller_type = {
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	0,				/* tp_compare */
+	0,				/* tp_reserved */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */

@@ -179,7 +179,7 @@ static PyTypeObject DictRemover_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -713,7 +713,7 @@ PyTypeObject StructType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,			/* tp_as_sequence */
@@ -755,7 +755,7 @@ static PyTypeObject UnionType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,		/* tp_as_sequence */
@@ -988,7 +988,7 @@ PyTypeObject PointerType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,		/* tp_as_sequence */
@@ -1390,7 +1390,7 @@ PyTypeObject ArrayType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,			/* tp_as_sequence */
@@ -2059,7 +2059,7 @@ PyTypeObject SimpleType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,		/* tp_as_sequence */
@@ -2277,7 +2277,7 @@ PyTypeObject CFuncPtrType_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,			       		/* tp_repr */
 	0,					/* tp_as_number */
 	&CDataType_as_sequence,			/* tp_as_sequence */
@@ -2560,7 +2560,7 @@ PyTypeObject CData_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -3889,7 +3889,7 @@ PyTypeObject CFuncPtr_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)CFuncPtr_repr,		/* tp_repr */
 	&CFuncPtr_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -4032,7 +4032,7 @@ static PyTypeObject Struct_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -4074,7 +4074,7 @@ static PyTypeObject Union_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -4383,7 +4383,7 @@ PyTypeObject Array_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	&Array_as_sequence,			/* tp_as_sequence */
@@ -4615,7 +4615,7 @@ static PyTypeObject Simple_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)&Simple_repr,			/* tp_repr */
 	&Simple_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -4992,7 +4992,7 @@ PyTypeObject Pointer_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	&Pointer_as_number,			/* tp_as_number */
 	&Pointer_as_sequence,			/* tp_as_sequence */
@@ -5086,7 +5086,7 @@ static PyTypeObject PyComError_Type = {
     0,                          /* tp_print */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_compare */
+    0,                          /* tp_reserved */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */

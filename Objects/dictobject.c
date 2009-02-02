@@ -2032,7 +2032,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)dict_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	&dict_as_sequence,			/* tp_as_sequence */
@@ -2226,7 +2226,7 @@ PyTypeObject PyDictIterKey_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -2298,7 +2298,7 @@ PyTypeObject PyDictIterValue_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -2384,7 +2384,7 @@ PyTypeObject PyDictIterItem_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -2699,7 +2699,7 @@ PyTypeObject PyDictKeys_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	&dictviews_as_number,			/* tp_as_number */
 	&dictkeys_as_sequence,			/* tp_as_sequence */
@@ -2783,7 +2783,7 @@ PyTypeObject PyDictItems_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	&dictviews_as_number,			/* tp_as_number */
 	&dictitems_as_sequence,			/* tp_as_sequence */
@@ -2848,7 +2848,7 @@ PyTypeObject PyDictValues_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	&dictvalues_as_sequence,		/* tp_as_sequence */

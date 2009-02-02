@@ -1379,7 +1379,7 @@ static PyTypeObject Element_Type = {
     0, /* tp_print */
     0, /* tp_getattr */
     (setattrfunc)element_setattr, /* tp_setattr */
-    0, /* tp_compare */
+    0, /* tp_reserved */
     (reprfunc)element_repr, /* tp_repr */
     0, /* tp_as_number */
     &element_as_sequence, /* tp_as_sequence */
@@ -1803,7 +1803,7 @@ static PyTypeObject TreeBuilder_Type = {
     0, /* tp_print */
     0, /* tp_getattr */
     0, /* tp_setattr */
-    0, /* tp_compare */
+    0, /* tp_reserved */
     0, /* tp_repr */
     0, /* tp_as_number */
     0, /* tp_as_sequence */
@@ -2559,7 +2559,7 @@ static PyTypeObject XMLParser_Type = {
     0, /* tp_print */
     0, /* tp_getattr */
     0, /* tp_setattr */
-    0, /* tp_compare */
+    0, /* tp_reserved */
     0, /* tp_repr */
     0, /* tp_as_number */
     0, /* tp_as_sequence */
