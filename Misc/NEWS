@@ -252,6 +252,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #4494: Fix build with Py_NO_ENABLE_SHARED on Windows.
+
 - Issue #4472: "configure --enable-shared" now works on OSX
 
 - Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
