@@ -201,6 +201,7 @@ search_for_prefix(char *argv0_path, char *landmark)
 }
 
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
 
 /* a string loaded from the DLL at startup.*/
 extern const char *PyWin_DLLVersionString;
@@ -363,6 +364,7 @@ done:
 		free(keyBuf);
 	return retval;
 }
+#endif /* Py_ENABLE_SHARED */
 #endif /* MS_WINDOWS */
 
 static void
@@ -380,6 +382,7 @@ get_progpath(void)
 	   but makes no mention of the null terminator.  Play it safe.
 	   PLUS Windows itself defines MAX_PATH as the same, but anyway...
 	*/
+#ifdef Py_ENABLE_SHARED
 	wprogpath[MAXPATHLEN]=_T('\0');
 	if (PyWin_DLLhModule &&
 	    GetModuleFileName(PyWin_DLLhModule, wprogpath, MAXPATHLEN)) {
@@ -388,6 +391,9 @@ get_progpath(void)
 		                    dllpath, MAXPATHLEN+1, 
 		                    NULL, NULL);
 	}
+#else
+	dllpath[0] = 0;
+#endif
 	wprogpath[MAXPATHLEN]=_T('\0');
 	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
 		WideCharToMultiByte(CP_ACP, 0, 
@@ -398,9 +404,13 @@ get_progpath(void)
 	}
 #else
 	/* static init of progpath ensures final char remains \0 */
+#ifdef Py_ENABLE_SHARED
 	if (PyWin_DLLhModule)
 		if (!GetModuleFileName(PyWin_DLLhModule, dllpath, MAXPATHLEN))
 			dllpath[0] = 0;
+#else
+	dllpath[0] = 0;
+#endif
 	if (GetModuleFileName(NULL, progpath, MAXPATHLEN))
 		return;
 #endif
@@ -501,8 +511,10 @@ calculate_path(void)
 	}
  
 	skiphome = pythonhome==NULL ? 0 : 1;
+#ifdef Py_ENABLE_SHARED
 	machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
 	userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+#endif
 	/* We only use the default relative PYTHONPATH if we havent
 	   anything better to use! */
 	skipdefault = envpath!=NULL || pythonhome!=NULL || \
