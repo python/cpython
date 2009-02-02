@@ -802,6 +802,10 @@ listextend(PyListObject *self, PyObject *b)
 
 	/* Guess a result list size. */
 	n = _PyObject_LengthHint(b, 8);
+	if (n == -1) {
+		Py_DECREF(it);
+		return NULL;
+	}
 	m = Py_SIZE(self);
 	mn = m + n;
 	if (mn >= m) {

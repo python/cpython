@@ -2616,6 +2616,10 @@ bytes_extend(PyByteArrayObject *self, PyObject *arg)
 
     /* Try to determine the length of the argument. 32 is abitrary. */
     buf_size = _PyObject_LengthHint(arg, 32);
+	if (buf_size == -1) {
+		Py_DECREF(it);
+		return NULL;
+	}
 
     bytes_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
     if (bytes_obj == NULL)
