@@ -375,6 +375,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #4494: Fix build with Py_NO_ENABLE_SHARED on Windows.
+
 - Issue #4895: Use _strdup on Windows CE.
 
 - Issue #4472: "configure --enable-shared" now works on OSX

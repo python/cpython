@@ -200,6 +200,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *landmark)
 }
 
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
 
 /* a string loaded from the DLL at startup.*/
 extern const char *PyWin_DLLVersionString;
@@ -349,6 +350,7 @@ done:
 		free(keyBuf);
 	return retval;
 }
+#endif /* Py_ENABLE_SHARED */
 #endif /* MS_WINDOWS */
 
 static void
@@ -359,11 +361,15 @@ get_progpath(void)
 	wchar_t *prog = Py_GetProgramName();
 
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
 	extern HANDLE PyWin_DLLhModule;
 	/* static init of progpath ensures final char remains \0 */
 	if (PyWin_DLLhModule)
 		if (!GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN))
 			dllpath[0] = 0;
+#else
+	dllpath[0] = 0;
+#endif
 	if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
 		return;
 #endif
@@ -471,8 +477,10 @@ calculate_path(void)
 	}
  
 	skiphome = pythonhome==NULL ? 0 : 1;
+#ifdef Py_ENABLE_SHARED
 	machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
 	userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+#endif
 	/* We only use the default relative PYTHONPATH if we havent
 	   anything better to use! */
 	skipdefault = envpath!=NULL || pythonhome!=NULL || \
