@@ -195,6 +195,29 @@ class TestListReversed(TestInvariantWithoutMutations):
         d.extend(range(20))
         self.assertEqual(len(it), 0)
 
+## -- Check to make sure exceptions are not suppressed by __length_hint__()
+
+
+class BadLen(object):
+    def __iter__(self): return iter(range(10))
+    def __len__(self):
+        raise RuntimeError('hello')
+
+class BadLengthHint(object):
+    def __iter__(self): return iter(range(10))
+    def __length_hint__(self):
+        raise RuntimeError('hello')
+
+class TestLengthHintExceptions(unittest.TestCase):
+
+    def test_issue1242657(self):
+        self.assertRaises(RuntimeError, list, BadLen())
+        self.assertRaises(RuntimeError, list, BadLengthHint())
+        self.assertRaises(RuntimeError, [].extend, BadLen())
+        self.assertRaises(RuntimeError, [].extend, BadLengthHint())
+        b = bytearray(range(10))
+        self.assertRaises(RuntimeError, b.extend, BadLen())
+        self.assertRaises(RuntimeError, b.extend, BadLengthHint())
 
 def test_main():
     unittests = [
@@ -210,6 +233,7 @@ def test_main():
         TestSet,
         TestList,
         TestListReversed,
+        TestLengthHintExceptions,
     ]
     support.run_unittest(*unittests)
 

@@ -67,8 +67,8 @@ PyObject_Length(PyObject *o)
 
 /* The length hint function returns a non-negative value from o.__len__()
    or o.__length_hint__().  If those methods aren't found or return a negative
-   value, then the defaultvalue is returned.  This function never fails. 
-   Accordingly, it will mask exceptions raised in either method.
+   value, then the defaultvalue is returned.  If one of the calls fails,
+   this function returns -1.
 */
 
 Py_ssize_t
@@ -82,29 +82,32 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 	rv = PyObject_Size(o);
 	if (rv >= 0)
 		return rv;
-	if (PyErr_Occurred())
+	if (PyErr_Occurred()) {
+		if (!PyErr_ExceptionMatches(PyExc_TypeError) &&
+			!PyErr_ExceptionMatches(PyExc_AttributeError))
+				return -1;
 		PyErr_Clear();
+	}
 
 	/* cache a hashed version of the attribute string */
 	if (hintstrobj == NULL) {
 		hintstrobj = PyUnicode_InternFromString("__length_hint__");
 		if (hintstrobj == NULL)
-			goto defaultcase;
+			return -1;
 	}
 
 	/* try o.__length_hint__() */
 	ro = PyObject_CallMethodObjArgs(o, hintstrobj, NULL);
-	if (ro == NULL)
-		goto defaultcase;
+	if (ro == NULL) {
+		if (!PyErr_ExceptionMatches(PyExc_TypeError) &&
+			!PyErr_ExceptionMatches(PyExc_AttributeError))
+				return -1;
+		PyErr_Clear();
+		return defaultvalue;
+	}
 	rv = PyLong_AsSsize_t(ro);
 	Py_DECREF(ro);
-	if (rv >= 0)
-		return rv;
-
-defaultcase:
-	if (PyErr_Occurred())
-		PyErr_Clear();
-	return defaultvalue;
+	return rv;
 }
 
 PyObject *
@@ -1742,7 +1745,7 @@ PySequence_Tuple(PyObject *v)
 {
 	PyObject *it;  /* iter(v) */
 	Py_ssize_t n;	      /* guess for result tuple size */
-	PyObject *result;
+	PyObject *result = NULL;
 	Py_ssize_t j;
 
 	if (v == NULL)
@@ -1767,6 +1770,8 @@ PySequence_Tuple(PyObject *v)
 
 	/* Guess result size and allocate space. */
 	n = _PyObject_LengthHint(v, 10);
+	if (n == -1)
+		goto Fail;
 	result = PyTuple_New(n);
 	if (result == NULL)
 		goto Fail;
