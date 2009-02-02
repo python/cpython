@@ -1236,8 +1236,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 	int objc, i;
 	PyObject *res = NULL;
 	TkappObject *self = (TkappObject*)selfptr;
-	/* Could add TCL_EVAL_GLOBAL if wrapped by GlobalCall... */
-	int flags = TCL_EVAL_DIRECT;
+	int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
 
 	/* If args is a single tuple, replace with contents of tuple */
 	if (1 == PyTuple_Size(args)){
