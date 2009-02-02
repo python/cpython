@@ -10,15 +10,7 @@ requires('gui')
 class StyleTest(unittest.TestCase):
 
     def setUp(self):
-        self.root = support.get_tk_root()
-        self.style = ttk.Style(self.root)
-
-    def tearDown(self):
-        # As tests have shown, these tests are likely to deliver
-        # <<ThemeChanged>> events after the root is destroyed, so
-        # lets let them happen now.
-        self.root.update_idletasks()
-        self.root.destroy()
+        self.style = ttk.Style()
 
 
     def test_configure(self):

@@ -15,6 +15,14 @@ def get_tk_root():
 
     return root
 
+def root_deiconify():
+    root = get_tk_root()
+    root.deiconify()
+
+def root_withdraw():
+    root = get_tk_root()
+    root.withdraw()
+
 
 def simulate_mouse_click(widget, x, y):
     """Generate proper events to click at the x, y position (tries to act
