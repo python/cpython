@@ -274,7 +274,6 @@ typedef PyObject *(*getattrfunc)(PyObject *, char *);
 typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
 typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
 typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
-typedef int (*cmpfunc)(PyObject *, PyObject *);
 typedef PyObject *(*reprfunc)(PyObject *);
 typedef long (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
@@ -297,7 +296,7 @@ typedef struct _typeobject {
 	printfunc tp_print;
 	getattrfunc tp_getattr;
 	setattrfunc tp_setattr;
-	cmpfunc tp_reserved;
+	void *tp_reserved; /* formerly known as tp_compare */
 	reprfunc tp_repr;
 
 	/* Method suites for standard classes */
