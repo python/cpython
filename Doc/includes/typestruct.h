@@ -9,7 +9,7 @@ typedef struct _typeobject {
     printfunc tp_print;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
-    cmpfunc tp_compare;
+    void *tp_reserved;
     reprfunc tp_repr;
 
     /* Method suites for standard classes */

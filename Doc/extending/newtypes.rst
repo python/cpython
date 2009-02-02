@@ -80,7 +80,7 @@ Moving on, we come to the crunch --- the type object. ::
        0,                         /* tp_print */
        0,                         /* tp_getattr */
        0,                         /* tp_setattr */
-       0,                         /* tp_compare */
+       0,                         /* tp_reserved */
        0,                         /* tp_repr */
        0,                         /* tp_as_number */
        0,                         /* tp_as_sequence */
@@ -1484,10 +1484,10 @@ provide.  They are in :file:`object.h` in the Python include directory that
 comes with the source distribution of Python.
 
 In order to learn how to implement any specific method for your new data type,
-do the following: Download and unpack the Python source distribution.  Go the
-:file:`Objects` directory, then search the C source files for ``tp_`` plus the
-function you want (for example, ``tp_compare``).  You will find examples of the
-function you want to implement.
+do the following: Download and unpack the Python source distribution.  Go to
+the :file:`Objects` directory, then search the C source files for ``tp_`` plus
+the function you want (for example, ``tp_richcompare``).  You will find examples
+of the function you want to implement.
 
 When you need to verify that an object is an instance of the type you are
 implementing, use the :cfunc:`PyObject_TypeCheck` function. A sample of its use
