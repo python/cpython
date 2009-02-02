@@ -15,6 +15,10 @@ Core and Builtins
 - Issue #5013: Fixed a bug in FileHandler which occurred when the delay
   parameter was set.
 
+- Issue 1242657: the __len__() and __length_hint__() calls in several tools
+  were suppressing all exceptions.  These include list(), filter(), map(),
+  zip(), and bytearray().
+
 - Issue #4935: The overflow checking code in the expandtabs() method common
   to str, bytes and bytearray could be optimized away by the compiler, letting
   the interpreter segfault instead of raising an error.
