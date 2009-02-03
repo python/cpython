@@ -208,6 +208,11 @@ class BadLengthHint(object):
     def __length_hint__(self):
         raise RuntimeError('hello')
 
+class NoneLengthHint(object):
+    def __iter__(self): return iter(range(10))
+    def __length_hint__(self):
+        return None
+
 class TestLengthHintExceptions(unittest.TestCase):
 
     def test_issue1242657(self):
@@ -224,6 +229,11 @@ class TestLengthHintExceptions(unittest.TestCase):
         b = bytearray(range(10))
         self.assertRaises(RuntimeError, b.extend, BadLen())
         self.assertRaises(RuntimeError, b.extend, BadLengthHint())
+
+    def test_invalid_hint(self):
+        # Make sure an invalid result doesn't muck-up the works
+        self.assertEqual(list(NoneLengthHint()), list(range(10)))
+
 
 def test_main():
     unittests = [

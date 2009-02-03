@@ -123,7 +123,7 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 		PyErr_Clear();
 		return defaultvalue;
 	}
-	rv = PyInt_AsLong(ro);
+	rv = rv = PyLong_Check(ro) ? PyLong_AsSsize_t(ro) : defaultvalue;
 	Py_DECREF(ro);
 	return rv;
 }
