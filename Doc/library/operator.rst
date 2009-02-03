@@ -241,7 +241,7 @@ Operations which work with sequences include:
    Delete the slice of *a* from index *b* to index *c-1*.
 
    .. deprecated:: 2.6
-      This function is removed in Python 3.x.  Use :func:`delitem` with a slice
+      This function is removed in Python 3.0.  Use :func:`delitem` with a slice
       index.
 
 
@@ -257,7 +257,7 @@ Operations which work with sequences include:
    Return the slice of *a* from index *b* to index *c-1*.
 
    .. deprecated:: 2.6
-      This function is removed in Python 3.x.  Use :func:`getitem` with a slice
+      This function is removed in Python 3.0.  Use :func:`getitem` with a slice
       index.
 
 
@@ -268,6 +268,9 @@ Operations which work with sequences include:
 
 .. function:: repeat(a, b)
               __repeat__(a, b)
+
+   .. deprecated:: 2.6
+      This function is removed in Python 3.0.  Use :func:`__mul__` instead.
 
    Return ``a * b`` where *a* is a sequence and *b* is an integer.
 
@@ -292,7 +295,7 @@ Operations which work with sequences include:
    Set the slice of *a* from index *b* to index *c-1* to the sequence *v*.
 
    .. deprecated:: 2.6
-      This function is removed in Python 3.x.  Use :func:`setitem` with a slice
+      This function is removed in Python 3.0.  Use :func:`setitem` with a slice
       index.
 
 
@@ -387,6 +390,9 @@ example, the :term:`statement` ``x += y`` is equivalent to
 .. function:: irepeat(a, b)
               __irepeat__(a, b)
 
+   .. deprecated:: 2.6
+      This function is removed in Python 3.0.  Use :func:`__imul__` instead.
+
    ``a = irepeat(a, b)`` is equivalent to ``a *= b`` where *a* is a sequence and
    *b* is an integer.
 
@@ -427,33 +433,14 @@ example, the :term:`statement` ``x += y`` is equivalent to
 
 
 The :mod:`operator` module also defines a few predicates to test the type of
-objects.
-
-.. note::
-
-   Be careful not to misinterpret the results of these functions; only
-   :func:`isCallable` has any measure of reliability with instance objects.
-   For example:
-
-      >>> class C:
-      ...     pass
-      ...
-      >>> import operator
-      >>> obj = C()
-      >>> operator.isMappingType(obj)
-      True
-
-.. note::
-
-   Python 3 is expected to introduce abstract base classes for
-   collection types, so it should be possible to write, for example,
-   ``isinstance(obj, collections.Mapping)`` and ``isinstance(obj,
-   collections.Sequence)``.
+objects; however, these are not all reliable.  It is preferable to test
+abstract base classes instead (see :mod:`collections` and
+:mod:`numbers` for details).
 
 .. function:: isCallable(obj)
 
    .. deprecated:: 2.0
-      Use the :func:`callable` built-in function instead.
+      Use ``isinstance(x, collections.Callable)`` instead.
 
    Returns true if the object *obj* can be called like a function, otherwise it
    returns false.  True is returned for functions, bound and unbound methods, class
@@ -461,6 +448,9 @@ objects.
 
 
 .. function:: isMappingType(obj)
+
+   .. deprecated:: 2.6
+      This function is removed in Python 3.0.  Use ``isinstance(x, collections.Mapping)`` instead.
 
    Returns true if the object *obj* supports the mapping interface. This is true for
    dictionaries and all instance objects defining :meth:`__getitem__`.
@@ -474,6 +464,9 @@ objects.
 
 .. function:: isNumberType(obj)
 
+   .. deprecated:: 2.6
+      This function is removed in Python 3.0.  Use ``isinstance(x, numbers.Number)`` instead.
+
    Returns true if the object *obj* represents a number.  This is true for all
    numeric types implemented in C.
 
@@ -485,6 +478,9 @@ objects.
 
 
 .. function:: isSequenceType(obj)
+
+   .. deprecated:: 2.6
+      This function is removed in Python 3.0.  Use ``isinstance(x, collections.Sequence)`` instead.
 
    Returns true if the object *obj* supports the sequence protocol. This returns true
    for all objects which define sequence methods in C, and for all instance objects
