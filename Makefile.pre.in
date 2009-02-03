@@ -831,6 +831,9 @@ LIBSUBDIRS=	tkinter site-packages test test/output test/data \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		importlib importlib/test importlib/test/builtin \
+		importlib/test/extension importlib/test/frozen \
+		importlib/test/import_ importlib/test/source \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		multiprocessing multiprocessing/dummy \
 		curses $(MACHDEPS)
