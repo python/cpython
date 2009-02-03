@@ -1,4 +1,6 @@
 """Backport of importlib.import_module from 3.x."""
+# While not critical (and in no way guaranteed!), it would be nice to keep this
+# code compatible with Python 2.3.
 import sys
 
 def _resolve_name(name, package, level):
@@ -9,8 +11,14 @@ def _resolve_name(name, package, level):
             raise ValueError("attempted relative import beyond top-level "
                               "package")
     except AttributeError:
-        raise ValueError("__package__ not set to a string")
-    base = package.rsplit('.', level)[0]
+        raise ValueError("'package' not set to a string")
+    try:
+        # rpartition is more "correct" and rfind is just as easy to use, but
+        # neither are in Python 2.3.
+        dot_rindex = package.rindex('.', level)[0]
+        base = package[:dot_rindex]
+    except ValueError:
+        base = package
     if name:
         return "%s.%s" % (base, name)
     else:
@@ -34,5 +42,10 @@ def import_module(name, package=None):
                 break
             level += 1
         name = _resolve_name(name[level:], package, level)
-    __import__(name)
+    # Try to import specifying the level to be as accurate as possible, but
+    # realize that keyword arguments are not found in Python 2.3.
+    try:
+        __import__(name, level=0)
+    except TypeError:
+        __import__(name)
     return sys.modules[name]
