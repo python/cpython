@@ -213,7 +213,7 @@ Library
 - Issue #1885: distutils. When running sdist with --formats=tar,gztar
   the tar file was overriden by the gztar one.
 
-- Registered Decimal as a numbers.Number.
+- Registered Decimal as a numbers.Number so that isinstance(d, Number) works.
 
 - Issue #1672332: fix unpickling of subnormal floats, which was
   producing a ValueError on some platforms.
