@@ -12,7 +12,7 @@ def _resolve_name(name, package, level):
         raise ValueError("__package__ not set to a string")
     base = package.rsplit('.', level)[0]
     if name:
-        return "{0}.{1}".format(base, name)
+        return "%s.%s" % (base, name)
     else:
         return base
 
