@@ -84,7 +84,7 @@ class Shelf(collections.MutableMapping):
                  keyencoding="utf-8"):
         self.dict = dict
         if protocol is None:
-            protocol = 2
+            protocol = 3
         self._protocol = protocol
         self.writeback = writeback
         self.cache = {}
