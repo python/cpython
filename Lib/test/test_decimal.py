@@ -30,6 +30,7 @@ import os, sys
 import pickle, copy
 import unittest
 from decimal import *
+import numbers
 from test.support import (TestSkipped, run_unittest, run_doctest,
                                is_resource_enabled)
 import random
@@ -1388,6 +1389,12 @@ class DecimalUsabilityTest(unittest.TestCase):
 
 
 class DecimalPythonAPItests(unittest.TestCase):
+
+    def test_abc(self):
+        self.assert_(issubclass(Decimal, numbers.Number))
+        self.assert_(not issubclass(Decimal, numbers.Real))
+        self.assert_(isinstance(Decimal(0), numbers.Number))
+        self.assert_(not isinstance(Decimal(0), numbers.Real))
 
     def test_pickle(self):
         d = Decimal('-3.141590000')

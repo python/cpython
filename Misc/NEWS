@@ -152,7 +152,8 @@ Library
   rather than delaying the close by waiting for garbage collection to do it.
 
 - Issue #4998: Decimal no longer subclasses from or is registered to
-  numbers.Real.
+  numbers.Real.  Instead, it is registered to numbers.Number so that
+  isinstance(d, Number) will work.
 
 - Issue #4867: Fixed a crash in ctypes when passing a string to a
   function without defining argtypes.
