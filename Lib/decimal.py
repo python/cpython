@@ -136,6 +136,7 @@ __all__ = [
 
 import copy as _copy
 import math as _math
+import numbers as _numbers
 
 try:
     from collections import namedtuple as _namedtuple
@@ -3694,6 +3695,12 @@ def _dec_from_triple(sign, coefficient, exponent, special=False):
     self._is_special = special
 
     return self
+
+# Register Decimal as a kind of Number (an abstract base class).
+# However, do not register it as Real (because Decimals are not
+# interoperable with floats).
+_numbers.Number.register(Decimal)
+
 
 ##### Context class #######################################################
 
