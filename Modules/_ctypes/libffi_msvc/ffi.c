@@ -148,27 +148,12 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 }
 
 #ifdef _WIN32
-/*@-declundef@*/
-/*@-exportheader@*/
 extern int
-ffi_call_SYSV(void (*)(char *, extended_cif *), 
-	      /*@out@*/ extended_cif *, 
-	      unsigned, unsigned, 
-	      /*@out@*/ unsigned *, 
-	      void (*fn)());
-/*@=declundef@*/
-/*@=exportheader@*/
-
-/*@-declundef@*/
-/*@-exportheader@*/
-extern int
-ffi_call_STDCALL(void (*)(char *, extended_cif *),
-		 /*@out@*/ extended_cif *,
-		 unsigned, unsigned,
-		 /*@out@*/ unsigned *,
-		 void (*fn)());
-/*@=declundef@*/
-/*@=exportheader@*/
+ffi_call_x86(void (*)(char *, extended_cif *), 
+	     /*@out@*/ extended_cif *, 
+	     unsigned, unsigned, 
+	     /*@out@*/ unsigned *, 
+	     void (*fn)());
 #endif
 
 #ifdef _WIN64
@@ -209,17 +194,9 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
     {
 #if !defined(_WIN64)
     case FFI_SYSV:
-      /*@-usedef@*/
-      return ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, 
-			   cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
-      break;
-
     case FFI_STDCALL:
-      /*@-usedef@*/
-      return ffi_call_STDCALL(ffi_prep_args, &ecif, cif->bytes,
-			      cif->flags, ecif.rvalue, fn);
-      /*@=usedef@*/
+      return ffi_call_x86(ffi_prep_args, &ecif, cif->bytes, 
+			  cif->flags, ecif.rvalue, fn);
       break;
 #else
     case FFI_SYSV:
