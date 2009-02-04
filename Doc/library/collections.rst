@@ -218,7 +218,7 @@ For example::
    .. method:: most_common([n])
 
       Return a list of the *n* most common elements and their counts from the
-      most common to the least.  If *n* not specified, :func:`most_common`
+      most common to the least.  If *n* is not specified, :func:`most_common`
       returns *all* elements in the counter.  Elements with equal counts are
       ordered arbitrarily::
 
