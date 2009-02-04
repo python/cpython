@@ -298,6 +298,15 @@ Operations which work with sequences include:
       This function is removed in Python 3.0.  Use :func:`setitem` with a slice
       index.
 
+Example use of operator functions::
+
+    >>> # Elementwise multiplication
+    >>> map(mul, [0, 1, 2, 3], [10, 20, 30, 40])
+    [0, 20, 60, 120]
+
+    >>> # Dot product
+    >>> sum(map(mul, [0, 1, 2, 3], [10, 20, 30, 40]))
+    200
 
 Many operations have an "in-place" version.  The following functions provide a
 more primitive access to in-place operators than the usual syntax does; for
@@ -455,12 +464,6 @@ abstract base classes instead (see :mod:`collections` and
    Returns true if the object *obj* supports the mapping interface. This is true for
    dictionaries and all instance objects defining :meth:`__getitem__`.
 
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete mapping
-      protocol since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
-
 
 .. function:: isNumberType(obj)
 
@@ -469,12 +472,6 @@ abstract base classes instead (see :mod:`collections` and
 
    Returns true if the object *obj* represents a number.  This is true for all
    numeric types implemented in C.
-
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete numeric
-      interface since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
 
 
 .. function:: isSequenceType(obj)
@@ -486,21 +483,6 @@ abstract base classes instead (see :mod:`collections` and
    for all objects which define sequence methods in C, and for all instance objects
    defining :meth:`__getitem__`.
 
-   .. warning::
-
-      There is no reliable way to test if an instance supports the complete sequence
-      interface since the interface itself is ill-defined.  This makes this test less
-      useful than it otherwise might be.
-
-Example: Build a dictionary that maps the ordinals from ``0`` to ``255`` to
-their character equivalents.
-
-   >>> d = {}
-   >>> keys = range(256)
-   >>> vals = map(chr, keys)
-   >>> map(operator.setitem, [d]*len(keys), keys, vals)   # doctest: +SKIP
-
-.. XXX: find a better, readable, example
 
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
