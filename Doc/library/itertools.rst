@@ -290,7 +290,7 @@ loops that truncate the stream.
 
       class groupby(object):
           # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
-          # [(list(g)) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
+          # [list(g) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
           def __init__(self, iterable, key=None):
               if key is None:
                   key = lambda x: x
@@ -591,8 +591,8 @@ which incur interpreter overhead.
        return map(function, count(start))
 
    def nth(iterable, n):
-       "Returns the nth item or empty list"
-       return list(islice(iterable, n, n+1))
+       "Returns the nth item or None"
+       return next(islice(iterable, n, None), None)
 
    def quantify(iterable, pred=bool):
        "Count how many times the predicate is true"
