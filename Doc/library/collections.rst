@@ -144,14 +144,14 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 A counter tool is provided to support convenient and rapid tallies.
 For example::
 
-    # Tally occurrences of words in a list
+    >>> # Tally occurrences of words in a list
     >>> cnt = Counter()
     >>> for word in ['red', 'blue', 'red', 'green', 'blue', 'blue']:
     ...     cnt[word] += 1
     >>> cnt
     Counter({'blue': 3, 'red': 2, 'green': 1})
 
-    # Find the ten most common words in Hamlet
+    >>> # Find the ten most common words in Hamlet
     >>> import re
     >>> words = re.findall('\w+', open('hamlet.txt').read().lower())
     >>> Counter(words).most_common(10)
@@ -244,8 +244,8 @@ Several multiset mathematical operations are provided for combining
 contain repeated elements (with counts of one or more).  Addition and
 subtraction combine counters by adding or subtracting the counts of
 corresponding elements.  Intersection and union return the minimum and maximum
-of corresponding counts.  All four multiset operations exclude results with
-counts less than one::
+of corresponding counts.  Each operation can accept inputs with signed counts,
+but the output excludes results with counts less than one.
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
