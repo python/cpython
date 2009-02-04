@@ -379,7 +379,7 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      Any tuple subclass whose indexable elements are also accessible using
+      Any tuple-like class whose indexable elements are also accessible using
       named attributes (for example, :func:`time.localtime` returns a
       tuple-like object where the *year* is accessible either with an
       index such as ``t[0]`` or with a named attribute like ``t.tm_year``).

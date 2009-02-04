@@ -1220,8 +1220,8 @@ Samuele
 ...     return map(function, count(start))
 
 >>> def nth(iterable, n):
-...     "Returns the nth item or empty list"
-...     return list(islice(iterable, n, n+1))
+...     "Returns the nth item or None"
+...     return next(islice(iterable, n, None), None)
 
 >>> def quantify(iterable, pred=bool):
 ...     "Count how many times the predicate is true"
@@ -1337,7 +1337,10 @@ perform as purported.
 [0, 2, 4, 6]
 
 >>> nth('abcde', 3)
-['d']
+'d'
+
+>>> nth('abcde', 9) is None
+True
 
 >>> quantify(range(99), lambda x: x%2==0)
 50
