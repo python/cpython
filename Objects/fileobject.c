@@ -181,6 +181,87 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	return (PyObject *) f;
 }
 
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#define Py_VERIFY_WINNT
+/* The CRT on windows compiled with Visual Studio 2005 and higher may
+ * assert if given invalid mode strings.  This is all fine and well
+ * in static languages like C where the mode string is typcially hard
+ * coded.  But in Python, were we pass in the mode string from the user,
+ * we need to verify it first manually
+ */
+static int _PyVerify_Mode_WINNT(const char *mode)
+{
+	/* See if mode string is valid on Windows to avoid hard assertions */
+	/* remove leading spacese */
+	int singles = 0;
+	int pairs = 0;
+	int encoding = 0;
+	const char *s, *c;
+
+	while(*mode == ' ') /* strip initial spaces */
+		++mode;
+	if (!strchr("rwa", *mode)) /* must start with one of these */
+		return 0;
+	while (*++mode) {
+		if (*mode == ' ' || *mode == 'N') /* ignore spaces and N */
+			continue;
+		s = "+TD"; /* each of this can appear only once */
+		c = strchr(s, *mode);
+		if (c) {
+			ptrdiff_t idx = s-c;
+			if (singles & (1<<idx))
+				return 0;
+			singles |= (1<<idx);
+			continue;
+		}
+		s = "btcnSR"; /* only one of each letter in the pairs allowed */
+		c = strchr(s, *mode);
+		if (c) {
+			ptrdiff_t idx = (s-c)/2;
+			if (pairs & (1<<idx))
+				return 0;
+			pairs |= (1<<idx);
+			continue;
+		}
+		if (*mode == ',') {
+			encoding = 1;
+			break;
+		}
+		return 0; /* found an invalid char */
+	}
+
+	if (encoding) {
+		char *e[] = {"UTF-8", "UTF-16LE", "UNICODE"};
+		while (*mode == ' ')
+			++mode;
+		/* find 'ccs =' */
+		if (strncmp(mode, "ccs", 3))
+			return 0;
+		mode += 3;
+		while (*mode == ' ')
+			++mode;
+		if (*mode != '=')
+			return 0;
+		while (*mode == ' ')
+			++mode;
+		for(encoding = 0; encoding<_countof(e); ++encoding) {
+			size_t l = strlen(e[encoding]);
+			if (!strncmp(mode, e[encoding], l)) {
+				mode += l; /* found a valid encoding */
+				break;
+			}
+		}
+		if (encoding == _countof(e))
+			return 0;
+	}
+	/* skip trailing spaces */
+	while (*mode == ' ')
+		++mode;
+
+	return *mode == '\0'; /* must be at the end of the string */
+}
+#endif
+
 /* check for known incorrect mode strings - problem is, platforms are
    free to accept any mode characters they like and are supposed to
    ignore stuff they don't understand... write or append mode with
@@ -223,7 +304,13 @@ _PyFile_SanitizeMode(char *mode)
 	        	    "one of 'r', 'w', 'a' or 'U', not '%.200s'", mode);
 		return -1;
 	}
-
+#ifdef Py_VERIFY_WINNT
+	/* additional checks on NT with visual studio 2005 and higher */
+	if (!_PyVerify_Mode_WINNT(mode)) {
+		PyErr_Format(PyExc_ValueError, "Invalid mode ('%.50s')", mode);
+		return -1;
+	}
+#endif
 	return 0;
 }
 

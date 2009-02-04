@@ -470,6 +470,23 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
 
+#ifdef MS_WINDOWS
+	/* check that the format string contains only valid directives */
+	for(outbuf = strchr(fmt, '%');
+		outbuf != NULL;
+		outbuf = strchr(outbuf+2, '%'))
+	{
+		if (outbuf[1]=='#')
+			++outbuf; /* not documented by python, */
+		if (outbuf[1]=='\0' ||
+			!strchr("aAbBcdfHIjmMpSUwWxXyYzZ%", outbuf[1]))
+		{
+			PyErr_SetString(PyExc_ValueError, "Invalid format string");
+			return 0;
+		}
+	}
+#endif
+
 	fmtlen = strlen(fmt);
 
 	/* I hate these functions that presume you know how big the output
