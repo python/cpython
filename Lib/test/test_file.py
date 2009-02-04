@@ -154,7 +154,7 @@ class OtherFileTests(unittest.TestCase):
         for name in (TESTFN, unicode(TESTFN), unicode(TESTFN + '\t')):
             try:
                 f = open(name, "rr")
-            except IOError:
+            except (IOError, ValueError):
                 pass
             else:
                 f.close()
