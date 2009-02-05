@@ -369,6 +369,20 @@ Initialization, Finalization, and Threads
       check w/ Guido.
 
 
+.. cfunction:: void Py_SetPythonHome(char *home)
+
+   Set the default "home" directory, that is, the location of the standard
+   Python libraries.  The libraries are searched in
+   :file:`{home}/lib/python{version}` and :file:`{home}/lib/python{version}`.
+
+
+.. cfunction:: char* Py_GetPythonHome()
+
+   Return the default "home", that is, the value set by a previous call to
+   :cfunc:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
+   environment variable if it is set.
+
+
 .. _threads:
 
 Thread State and the Global Interpreter Lock
