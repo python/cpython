@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5132: Fixed trouble building extensions under Solaris with 
+  --enabled-shared activated. Initial patch by Dave Peterson.
+
 - Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
 
 - Issue #2047: shutil.move() could believe that its destination path was
