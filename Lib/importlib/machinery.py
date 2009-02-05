@@ -2,3 +2,4 @@
 
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter
+from ._bootstrap import PathFinder
