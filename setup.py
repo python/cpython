@@ -118,51 +118,35 @@ class PyBuildExt(build_ext):
         if not srcdir:
             # Maybe running on Windows but not using CYGWIN?
             raise ValueError("No source directory; cannot proceed.")
-
-        # Figure out the location of the source code for extension modules
-        # (This logic is copied in distutils.test.test_sysconfig,
-        # so building in a separate directory does not break test_distutils.)
-        moddir = os.path.join(os.getcwd(), srcdir, 'Modules')
-        moddir = os.path.normpath(moddir)
-        srcdir, tail = os.path.split(moddir)
         srcdir = os.path.normpath(srcdir)
-        moddir = os.path.normpath(moddir)
-
-        moddirlist = [moddir]
-        incdirlist = ['./Include']
+        moddirlist = [os.path.join(srcdir, 'Modules')]
 
         # Platform-dependent module source and include directories
         platform = self.get_platform()
         if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in
             sysconfig.get_config_var("CONFIG_ARGS")):
             # Mac OS X also includes some mac-specific modules
-            macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
+            macmoddir = os.path.join(srcdir, 'Mac/Modules')
             moddirlist.append(macmoddir)
             incdirlist.append('./Mac/Include')
-
-        alldirlist = moddirlist + incdirlist
 
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(srcdir, filename)
                                      for filename in self.distribution.scripts]
 
         # Python header files
-        headers = glob("Include/*.h") + ["pyconfig.h"]
-
+        headers = [sysconfig.get_config_h_filename()]
+        headers += glob(os.path.join(sysconfig.get_python_inc(), "*.h"))
         for ext in self.extensions[:]:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
             if ext.depends is not None:
-                ext.depends = [find_module_file(filename, alldirlist)
+                ext.depends = [find_module_file(filename, moddirlist)
                                for filename in ext.depends]
             else:
                 ext.depends = []
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
-
-            ext.include_dirs.append( '.' ) # to get config.h
-            for incdir in incdirlist:
-                ext.include_dirs.append( os.path.join(srcdir, incdir) )
 
             # If a module has already been built statically,
             # don't build it here
@@ -374,7 +358,7 @@ class PyBuildExt(build_ext):
         config_h_vars = sysconfig.parse_config_h(open(config_h))
 
         platform = self.get_platform()
-        (srcdir,) = sysconfig.get_config_vars('srcdir')
+        srcdir = sysconfig.get_config_var('srcdir')
 
         # Check for AtheOS which has libraries in non-standard locations
         if platform == 'atheos':
@@ -1640,7 +1624,7 @@ class PyBuildExt(build_ext):
     def configure_ctypes_darwin(self, ext):
         # Darwin (OS X) uses preconfigured files, in
         # the Modules/_ctypes/libffi_osx directory.
-        (srcdir,) = sysconfig.get_config_vars('srcdir')
+        srcdir = sysconfig.get_config_var('srcdir')
         ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
                                                   '_ctypes', 'libffi_osx'))
         sources = [os.path.join(ffi_srcdir, p)
@@ -1669,7 +1653,7 @@ class PyBuildExt(build_ext):
             if sys.platform == 'darwin':
                 return self.configure_ctypes_darwin(ext)
 
-            (srcdir,) = sysconfig.get_config_vars('srcdir')
+            srcdir = sysconfig.get_config_var('srcdir')
             ffi_builddir = os.path.join(self.build_temp, 'libffi')
             ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
                                          '_ctypes', 'libffi'))
