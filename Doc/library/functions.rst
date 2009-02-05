@@ -666,9 +666,14 @@ are always available.  They are listed here in alphabetical order.
    Other common values are ``'w'`` for writing (truncating the file if it
    already exists), and ``'a'`` for appending (which on *some* Unix systems,
    means that *all* writes append to the end of the file regardless of the
-   current seek position).  In text mode, if *encoding* is not specified the
-   encoding used is platform dependent. (For reading and writing raw bytes use
-   binary mode and leave *encoding* unspecified.)  The available modes are:
+   current seek position).
+
+   In text mode, if *encoding* is not specified the encoding used is the same as
+   returned by :func:`locale.getpreferredencoding`, if the :mod:`locale` module
+   is available, else ASCII.  For reading and writing raw bytes, use binary mode
+   and leave *encoding* unspecified.
+
+   The available modes are:
 
    ========= ===============================================================
    Character Meaning
