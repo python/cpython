@@ -601,7 +601,7 @@ class PathFinder:
     @classmethod
     def _implicit_hooks(cls):
         """Return a list of the implicit path hooks."""
-        return [self._default_hook, imp.NullImporter]
+        return [cls._default_hook, imp.NullImporter]
 
     @classmethod
     def _path_hooks(cls, path):
