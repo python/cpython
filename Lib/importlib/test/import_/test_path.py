@@ -208,8 +208,16 @@ class FinderTests(unittest.TestCase):
 
     def test_path_hooks(self):
         # Test that sys.path_hooks is used.
-        # TODO(brett.cannon) implement
-        pass
+        # Test that sys.path_importer_cache is set.
+        module = '<test module>'
+        path = '<test path>'
+        importer = util.mock_modules(module)
+        hook = import_util.mock_path_hook(path, importer=importer)
+        with util.import_state(path_hooks=[hook]):
+            loader = machinery.PathFinder.find_module(module, [path])
+            self.assert_(loader is importer)
+            self.assert_(path in sys.path_importer_cache)
+            self.assert_(sys.path_importer_cache[path] is importer)
 
     def test_implicit_hooks(self):
         # Test that the implicit path hooks are used.
