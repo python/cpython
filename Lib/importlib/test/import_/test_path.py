@@ -3,6 +3,7 @@ from .. import util
 from . import util as import_util
 from contextlib import nested
 from imp import new_module
+import os
 import sys
 from types import MethodType
 import unittest
@@ -191,8 +192,19 @@ class FinderTests(unittest.TestCase):
     def test_path_importer_cache_has_None(self):
         # Test that the default hook is used when sys.path_importer_cache
         # contains None for a path.
-        # TODO(brett.cannon) implement
-        pass
+        module = '<test module>'
+        importer = util.mock_modules(module)
+        path = '<test path>'
+        # XXX Not blackbox.
+        original_hook = machinery.PathFinder._default_hook
+        mock_hook = import_util.mock_path_hook(path, importer=importer)
+        machinery.PathFinder._default_hook = staticmethod(mock_hook)
+        try:
+            with util.import_state(path_importer_cache={path: None}):
+                loader = machinery.PathFinder.find_module(module, path=[path])
+                self.assert_(loader is importer)
+        finally:
+            machinery.PathFinder._default_hook = original_hook
 
     def test_path_hooks(self):
         # Test that sys.path_hooks is used.
