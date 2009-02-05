@@ -72,14 +72,17 @@ def get_python_inc(plat_specific=0, prefix=None):
         prefix = plat_specific and EXEC_PREFIX or PREFIX
     if os.name == "posix":
         if python_build:
+            # Assume the executable is in the build directory.  The
+            # pyconfig.h file should be in the same directory.  Since
+            # the build directory may not be the source directory, we
+            # must use "srcdir" from the makefile to find the "Include"
+            # directory.
             base = os.path.dirname(os.path.abspath(sys.executable))
             if plat_specific:
-                inc_dir = base
+                return base
             else:
-                inc_dir = os.path.join(base, "Include")
-                if not os.path.exists(inc_dir):
-                    inc_dir = os.path.join(os.path.dirname(base), "Include")
-            return inc_dir
+                incdir = os.path.join(get_config_var('srcdir'), 'Include')
+                return os.path.normpath(incdir)
         return os.path.join(prefix, "include", "python" + get_python_version())
     elif os.name == "nt":
         return os.path.join(prefix, "include")
