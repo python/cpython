@@ -122,13 +122,14 @@ class PyBuildExt(build_ext):
         moddirlist = [os.path.join(srcdir, 'Modules')]
 
         # Platform-dependent module source and include directories
+        incdirlist = []
         platform = self.get_platform()
         if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in
             sysconfig.get_config_var("CONFIG_ARGS")):
             # Mac OS X also includes some mac-specific modules
             macmoddir = os.path.join(srcdir, 'Mac/Modules')
             moddirlist.append(macmoddir)
-            incdirlist.append('./Mac/Include')
+            incdirlist.append(os.path.join(srcdir, 'Mac/Include'))
 
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(srcdir, filename)
@@ -147,6 +148,9 @@ class PyBuildExt(build_ext):
                 ext.depends = []
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
+
+            # platform specific include directories
+            ext.include_dirs.extend(incdirlist)
 
             # If a module has already been built statically,
             # don't build it here
