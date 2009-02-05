@@ -10,7 +10,9 @@ to do
 * Create meta_path importer for sys.path.
 
     + Create hook.
+    + Write tests.
     + Rewrite Import to use the hook.
+    + Document.
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
