@@ -111,6 +111,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5132: Fixed trouble building extensions under Solaris with 
+  --enabled-shared activated. Initial patch by Dave Peterson.
+
 - Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
 
 - The shelve module now defaults to pickle protocol 3.
