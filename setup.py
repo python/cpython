@@ -118,7 +118,7 @@ class PyBuildExt(build_ext):
         if not srcdir:
             # Maybe running on Windows but not using CYGWIN?
             raise ValueError("No source directory; cannot proceed.")
-        srcdir = os.path.normpath(srcdir)
+        srcdir = os.path.abspath(srcdir)
         moddirlist = [os.path.join(srcdir, 'Modules')]
 
         # Platform-dependent module source and include directories
