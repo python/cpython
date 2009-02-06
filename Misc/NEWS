@@ -149,6 +149,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1520877: Now distutils.sysconfig reads $AR from the 
+  environment/Makefile. Patch by Douglas Greiman.
+
 - Issue #4285: Change sys.version_info to be a named tuple. Patch by
   Ross Light.
 
