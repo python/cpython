@@ -15,6 +15,10 @@ from test import support
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
+def _get_source_filename():
+    srcdir = sysconfig.get_config_var('srcdir')
+    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
+
 class BuildExtTestCase(unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
@@ -22,9 +26,7 @@ class BuildExtTestCase(unittest.TestCase):
         self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
-
-        xx_c = os.path.join(sysconfig.project_base, 'Modules', 'xxmodule.c')
-        shutil.copy(xx_c, self.tmp_dir)
+        shutil.copy(_get_source_filename(), self.tmp_dir)
 
     def test_build_ext(self):
         global ALREADY_TESTED
@@ -97,9 +99,11 @@ class BuildExtTestCase(unittest.TestCase):
         self.assert_(len(cmd.library_dirs) > 0)
 
 def test_suite():
-    if not sysconfig.python_build:
+    src = _get_source_filename()
+    if not os.path.exists(src):
         if support.verbose:
-            print('test_build_ext: The test must be run in a python build dir')
+            print('test_build_ext: Cannot find source code (test'
+                  ' must run in python build dir)')
         return unittest.TestSuite()
     else: return unittest.makeSuite(BuildExtTestCase)
 
