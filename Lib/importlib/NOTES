@@ -15,6 +15,19 @@ to do
 
     + Create a greatest common denominator function for __import__/import_module
       that takes in an absolute module name and performs the import.
+
+      - Needs of __import__
+
+        * Figure out caller's package.
+        * Import module.
+        * Set __package__.
+        * Figure out what module to return.
+
+      - Needs of import_module
+
+        * Resolve name/level.
+        * Import module.
+
     + Use GCD import for __import__.
     + Use GCD import for import_module.
 

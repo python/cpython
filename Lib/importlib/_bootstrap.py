@@ -676,6 +676,48 @@ class ImportLockContext(object):
         imp.release_lock()
 
 
+def _gcd_import(name, package=None, level=0):
+    """Import and return the module based on its name, the package the call is
+    being made from, and the level adjustment.
+
+    This function represents the greatest common denominator of functionality
+    between import_module and __import__.
+    """
+    if package and package not in sys.modules:
+        msg = "Parent module {0!r} not loaded, cannot perform relative import"
+        raise SystemError(msg.format(package))
+    dot = len(package)
+    if level > 0:
+        for x in range(level, 1, -1):
+            try:
+                dot = package.rindex('.', 0, dot)
+            except AttributeError:
+                raise ValueError("__package__ not set to a string")
+            except ValueError:
+                raise ValueError("attempted relative import beyond top-level "
+                                 "package")
+        name = "{0}.{1}".format(package[:dot], name)
+    with ImportLockContext():
+        try:
+            return sys.modules[name]
+        except KeyError:
+            pass
+        parent = name.rpartition('.')[0]
+        path = None
+        if parent:
+            if parent not in sys.modules:
+                parent_module = _gcd_import(parent)
+            else:
+                parent_module = sys.modules[parent]
+            path = parent_module.__path__
+        for finder in sys.meta_path + [PathFinder]:
+            loader = finder.find_module(name, path)
+            if loader:  # XXX Worth checking for None explicitly?
+                return loader.load_module(name)
+        else:
+            raise ImportError("No module named {0}".format(name))
+
+
 class Import(object):
 
     """Class that implements the __import__ interface.
@@ -950,6 +992,7 @@ class Import(object):
         (e.g. has a value of 2 for ``from .. import foo``).
 
         """
+        # TODO(brett.cannon) outdated check; just care that level >= 0
         if not name and level < 1:
             raise ValueError("Empty module name")
         is_pkg = True if '__path__' in globals else False
