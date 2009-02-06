@@ -112,7 +112,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
         dir = os.path.dirname(dst)
 
     if update and not newer(src, dst):
-        if verbose == 1:
+        if verbose >= 1:
             log.debug("not copying %s (output up-to-date)", src)
         return (dst, 0)
 
@@ -121,7 +121,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
     except KeyError:
         raise ValueError("invalid value '%s' for 'link' argument" % link)
 
-    if verbose == 1:
+    if verbose >= 1:
         if os.path.basename(dst) == os.path.basename(src):
             log.info("%s %s -> %s", action, src, dir)
         else:
@@ -180,7 +180,7 @@ def move_file (src, dst,
     from os.path import exists, isfile, isdir, basename, dirname
     import errno
 
-    if verbose == 1:
+    if verbose >= 1:
         log.info("moving %s -> %s", src, dst)
 
     if dry_run:
