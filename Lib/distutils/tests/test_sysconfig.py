@@ -1,6 +1,8 @@
 """Tests for distutils.dist."""
 
 from distutils import sysconfig
+from distutils.ccompiler import get_default_compiler
+
 import os
 import unittest
 
@@ -40,6 +42,10 @@ class SysconfigTestCase(unittest.TestCase):
         self.assert_(cvars)
 
     def test_customize_compiler(self):
+
+        # not testing if default compiler is not unix
+        if get_default_compiler() != 'unix':
+            return
 
         os.environ['AR'] = 'xxx'
 
