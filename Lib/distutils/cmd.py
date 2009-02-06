@@ -7,8 +7,7 @@ in the distutils.command package.
 __revision__ = "$Id$"
 
 import sys, os, string, re
-from types import *
-from distutils.errors import *
+from distutils.errors import DistutilsOptionError
 from distutils import util, dir_util, file_util, archive_util, dep_util
 from distutils import log
 
@@ -220,7 +219,7 @@ class Command:
         if val is None:
             setattr(self, option, default)
             return default
-        elif type(val) is not StringType:
+        elif not isinstance(val, str):
             raise DistutilsOptionError, \
                   "'%s' must be a %s (got `%s`)" % (option, what, val)
         return val
@@ -240,19 +239,24 @@ class Command:
         val = getattr(self, option)
         if val is None:
             return
-        elif type(val) is StringType:
+        elif isinstance(val, str):
             setattr(self, option, re.split(r',\s*|\s+', val))
         else:
-            if type(val) is ListType:
-                types = map(type, val)
-                ok = (types == [StringType] * len(val))
+            if isinstance(val, list):
+                # checks if all elements are str
+                ok = 1
+                for element in val:
+                    if not isinstance(element, str):
+                        ok = 0
+                        break
             else:
                 ok = 0
 
             if not ok:
                 raise DistutilsOptionError, \
-                      "'%s' must be a list of strings (got %r)" % \
-                      (option, val)
+                    "'%s' must be a list of strings (got %r)" % \
+                        (option, val)
+
 
     def _ensure_tested_string (self, option, tester,
                                what, error_fmt, default=None):
