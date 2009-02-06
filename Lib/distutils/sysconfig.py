@@ -504,6 +504,20 @@ def get_config_vars(*args):
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
 
+        # Convert srcdir into an absolute path if it appears necessary.
+        # Normally it is relative to the build directory.  However, during
+        # testing, for example, we might be running a non-installed python
+        # from a different directory.
+        if python_build and os.name == "posix":
+            base = os.path.dirname(os.path.abspath(sys.executable))
+            if (not os.path.isabs(_config_vars['srcdir']) and
+                base != os.getcwd()):
+                # srcdir is relative and we are not in the same directory
+                # as the executable. Assume executable is in the build
+                # directory and make srcdir absolute.
+                srcdir = os.path.join(base, _config_vars['srcdir'])
+                _config_vars['srcdir'] = os.path.normpath(srcdir)
+
         if sys.platform == 'darwin':
             kernel_version = os.uname()[2] # Kernel version (8.4.3)
             major_version = int(kernel_version.split('.')[0])
