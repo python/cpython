@@ -671,7 +671,7 @@ class CodeGenerator:
             self.startBlock(anchor)
             self.emit('POP_BLOCK')
             self.setups.pop()
-            self.startBlock(end)
+            self.nextBlock(end)
 
         self.emit('LOAD_CONST', None)
 

@@ -21,6 +21,7 @@ class FlowGraph:
             if self.current:
                 print "end", repr(self.current)
                 print "    next", self.current.next
+                print "    prev", self.current.prev
                 print "   ", self.current.get_children()
             print repr(block)
         self.current = block
@@ -40,13 +41,12 @@ class FlowGraph:
         if block is None:
             block = self.newBlock()
 
-        # Note: If the current block ends with an unconditional
-        # control transfer, then it is incorrect to add an implicit
-        # transfer to the block graph.  The current code requires
-        # these edges to get the blocks emitted in the right order,
-        # however. :-(  If a client needs to remove these edges, call
-        # pruneEdges().
-
+        # Note: If the current block ends with an unconditional control
+        # transfer, then it is techically incorrect to add an implicit
+        # transfer to the block graph. Doing so results in code generation
+        # for unreachable blocks.  That doesn't appear to be very common
+        # with Python code and since the built-in compiler doesn't optimize
+        # it out we don't either.
         self.current.addNext(block)
         self.startBlock(block)
 
@@ -69,8 +69,6 @@ class FlowGraph:
     def emit(self, *inst):
         if self._debug:
             print "\t", inst
-        if inst[0] in ['RETURN_VALUE', 'YIELD_VALUE']:
-            self.current.addOutEdge(self.exit)
         if len(inst) == 2 and isinstance(inst[1], Block):
             self.current.addOutEdge(inst[1])
         self.current.emit(inst)
@@ -80,117 +78,8 @@ class FlowGraph:
 
         i.e. each node appears before all of its successors
         """
-        # XXX make sure every node that doesn't have an explicit next
-        # is set so that next points to exit
-        for b in self.blocks.elements():
-            if b is self.exit:
-                continue
-            if not b.next:
-                b.addNext(self.exit)
-        order = dfs_postorder(self.entry, {})
-        order.reverse()
-        self.fixupOrder(order, self.exit)
-        # hack alert
-        if not self.exit in order:
-            order.append(self.exit)
-
+        order = order_blocks(self.entry, self.exit)
         return order
-
-    def fixupOrder(self, blocks, default_next):
-        """Fixup bad order introduced by DFS."""
-
-        # XXX This is a total mess.  There must be a better way to get
-        # the code blocks in the right order.
-
-        self.fixupOrderHonorNext(blocks, default_next)
-        self.fixupOrderForward(blocks, default_next)
-
-    def fixupOrderHonorNext(self, blocks, default_next):
-        """Fix one problem with DFS.
-
-        The DFS uses child block, but doesn't know about the special
-        "next" block.  As a result, the DFS can order blocks so that a
-        block isn't next to the right block for implicit control
-        transfers.
-        """
-        index = {}
-        for i in range(len(blocks)):
-            index[blocks[i]] = i
-
-        for i in range(0, len(blocks) - 1):
-            b = blocks[i]
-            n = blocks[i + 1]
-            if not b.next or b.next[0] == default_next or b.next[0] == n:
-                continue
-            # The blocks are in the wrong order.  Find the chain of
-            # blocks to insert where they belong.
-            cur = b
-            chain = []
-            elt = cur
-            while elt.next and elt.next[0] != default_next:
-                chain.append(elt.next[0])
-                elt = elt.next[0]
-            # Now remove the blocks in the chain from the current
-            # block list, so that they can be re-inserted.
-            l = []
-            for b in chain:
-                assert index[b] > i
-                l.append((index[b], b))
-            l.sort()
-            l.reverse()
-            for j, b in l:
-                del blocks[index[b]]
-            # Insert the chain in the proper location
-            blocks[i:i + 1] = [cur] + chain
-            # Finally, re-compute the block indexes
-            for i in range(len(blocks)):
-                index[blocks[i]] = i
-
-    def fixupOrderForward(self, blocks, default_next):
-        """Make sure all JUMP_FORWARDs jump forward"""
-        index = {}
-        chains = []
-        cur = []
-        for b in blocks:
-            index[b] = len(chains)
-            cur.append(b)
-            if b.next and b.next[0] == default_next:
-                chains.append(cur)
-                cur = []
-        chains.append(cur)
-
-        while 1:
-            constraints = []
-
-            for i in range(len(chains)):
-                l = chains[i]
-                for b in l:
-                    for c in b.get_children():
-                        if index[c] < i:
-                            forward_p = 0
-                            for inst in b.insts:
-                                if inst[0] == 'JUMP_FORWARD':
-                                    if inst[1] == c:
-                                        forward_p = 1
-                            if not forward_p:
-                                continue
-                            constraints.append((index[c], i))
-
-            if not constraints:
-                break
-
-            # XXX just do one for now
-            # do swaps to get things in the right order
-            goes_before, a_chain = constraints[0]
-            assert a_chain > goes_before
-            c = chains[a_chain]
-            chains.remove(c)
-            chains.insert(goes_before, c)
-
-        del blocks[:]
-        for c in chains:
-            for b in c:
-                blocks.append(b)
 
     def getBlocks(self):
         return self.blocks.elements()
@@ -205,27 +94,81 @@ class FlowGraph:
             l.extend(b.getContainedGraphs())
         return l
 
-def dfs_postorder(b, seen):
-    """Depth-first search of tree rooted at b, return in postorder"""
+
+def order_blocks(start_block, exit_block):
+    """Order blocks so that they are emitted in the right order"""
+    # Rules:
+    # - when a block has a next block, the next block must be emitted just after
+    # - when a block has followers (relative jumps), it must be emitted before
+    #   them
+    # - all reachable blocks must be emitted
     order = []
-    seen[b] = b
-    for c in b.get_children():
-        if c in seen:
+
+    # Find all the blocks to be emitted.
+    remaining = set()
+    todo = [start_block]
+    while todo:
+        b = todo.pop()
+        if b in remaining:
             continue
-        order = order + dfs_postorder(c, seen)
-    order.append(b)
+        remaining.add(b)
+        for c in b.get_children():
+            if c not in remaining:
+                todo.append(c)
+
+    # A block is dominated by another block if that block must be emitted
+    # before it.
+    dominators = {}
+    for b in remaining:
+        if __debug__ and b.next:
+            assert b is b.next[0].prev[0], (b, b.next)
+        # preceeding blocks dominate following blocks
+        for c in b.get_followers():
+            while 1:
+                dominators.setdefault(c, set()).add(b)
+                # Any block that has a next pointer leading to c is also
+                # dominated because the whole chain will be emitted at once.
+                # Walk backwards and add them all.
+                if c.prev and c.prev[0] is not b:
+                    c = c.prev[0]
+                else:
+                    break
+
+    def find_next():
+        # Find a block that can be emitted next.
+        for b in remaining:
+            for c in dominators[b]:
+                if c in remaining:
+                    break # can't emit yet, dominated by a remaining block
+            else:
+                return b
+        assert 0, 'circular dependency, cannot find next block'
+
+    b = start_block
+    while 1:
+        order.append(b)
+        remaining.discard(b)
+        if b.next:
+            b = b.next[0]
+            continue
+        elif b is not exit_block and not b.has_unconditional_transfer():
+            order.append(exit_block)
+        if not remaining:
+            break
+        b = find_next()
     return order
+
 
 class Block:
     _count = 0
 
     def __init__(self, label=''):
         self.insts = []
-        self.inEdges = misc.Set()
-        self.outEdges = misc.Set()
+        self.outEdges = set()
         self.label = label
         self.bid = Block._count
         self.next = []
+        self.prev = []
         Block._count = Block._count + 1
 
     def __repr__(self):
@@ -241,15 +184,10 @@ class Block:
 
     def emit(self, inst):
         op = inst[0]
-        if op[:4] == 'JUMP':
-            self.outEdges.add(inst[1])
         self.insts.append(inst)
 
     def getInstructions(self):
         return self.insts
-
-    def addInEdge(self, block):
-        self.inEdges.add(block)
 
     def addOutEdge(self, block):
         self.outEdges.add(block)
@@ -257,35 +195,35 @@ class Block:
     def addNext(self, block):
         self.next.append(block)
         assert len(self.next) == 1, map(str, self.next)
+        block.prev.append(self)
+        assert len(block.prev) == 1, map(str, block.prev)
 
-    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS', 'YIELD_VALUE',
-                        'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP')
+    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
+                        'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP',
+                        )
 
-    def pruneNext(self):
-        """Remove bogus edge for unconditional transfers
-
-        Each block has a next edge that accounts for implicit control
-        transfers, e.g. from a JUMP_IF_FALSE to the block that will be
-        executed if the test is true.
-
-        These edges must remain for the current assembler code to
-        work. If they are removed, the dfs_postorder gets things in
-        weird orders.  However, they shouldn't be there for other
-        purposes, e.g. conversion to SSA form.  This method will
-        remove the next edge when it follows an unconditional control
-        transfer.
-        """
+    def has_unconditional_transfer(self):
+        """Returns True if there is an unconditional transfer to an other block
+        at the end of this block. This means there is no risk for the bytecode
+        executer to go past this block's bytecode."""
         try:
             op, arg = self.insts[-1]
         except (IndexError, ValueError):
             return
-        if op in self._uncond_transfer:
-            self.next = []
+        return op in self._uncond_transfer
 
     def get_children(self):
-        if self.next and self.next[0] in self.outEdges:
-            self.outEdges.remove(self.next[0])
-        return self.outEdges.elements() + self.next
+        return list(self.outEdges) + self.next
+
+    def get_followers(self):
+        """Get the whole list of followers, including the next block."""
+        followers = set(self.next)
+        # Blocks that must be emitted *after* this one, because of
+        # bytecode offsets (e.g. relative jumps) pointing to them.
+        for inst in self.insts:
+            if inst[0] in PyFlowGraph.hasjrel:
+                followers.add(inst[1])
+        return followers
 
     def getContainedGraphs(self):
         """Return all graphs contained within this block.
@@ -446,18 +384,18 @@ class PyFlowGraph(FlowGraph):
             elif inst[0] != "SET_LINENO":
                 pc = pc + 3
             opname = inst[0]
-            if self.hasjrel.has_elt(opname):
+            if opname in self.hasjrel:
                 oparg = inst[1]
                 offset = begin[oparg] - pc
                 insts[i] = opname, offset
-            elif self.hasjabs.has_elt(opname):
+            elif opname in self.hasjabs:
                 insts[i] = opname, begin[inst[1]]
         self.stage = FLAT
 
-    hasjrel = misc.Set()
+    hasjrel = set()
     for i in dis.hasjrel:
         hasjrel.add(dis.opname[i])
-    hasjabs = misc.Set()
+    hasjabs = set()
     for i in dis.hasjabs:
         hasjabs.add(dis.opname[i])
 
