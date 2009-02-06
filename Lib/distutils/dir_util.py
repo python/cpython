@@ -15,7 +15,7 @@ _path_created = {}
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
-def mkpath (name, mode=0o777, verbose=0, dry_run=0):
+def mkpath (name, mode=0o777, verbose=1, dry_run=0):
     """Create a directory and any missing ancestor directories.  If the
        directory already exists (or if 'name' is the empty string, which
        means the current directory, which of course exists), then do
@@ -48,12 +48,8 @@ def mkpath (name, mode=0o777, verbose=0, dry_run=0):
     tails = [tail]                      # stack of lone dirs to create
 
     while head and tail and not os.path.isdir(head):
-        #print "splitting '%s': " % head,
         (head, tail) = os.path.split(head)
-        #print "to ('%s','%s')" % (head, tail)
         tails.insert(0, tail)          # push next higher dir onto stack
-
-    #print "stack of tails:", tails
 
     # now 'head' contains the deepest directory that already exists
     # (that is, the child of 'head' in 'name' is the highest directory
@@ -66,7 +62,8 @@ def mkpath (name, mode=0o777, verbose=0, dry_run=0):
         if _path_created.get(abs_head):
             continue
 
-        log.info("creating %s", head)
+        if verbose == 1:
+            log.info("creating %s", head)
 
         if not dry_run:
             try:
@@ -82,7 +79,7 @@ def mkpath (name, mode=0o777, verbose=0, dry_run=0):
 # mkpath ()
 
 
-def create_tree (base_dir, files, mode=0o777, verbose=0, dry_run=0):
+def create_tree (base_dir, files, mode=0o777, verbose=1, dry_run=0):
 
     """Create all the empty directories under 'base_dir' needed to
        put 'files' there.  'base_dir' is just the a name of a directory
@@ -99,7 +96,7 @@ def create_tree (base_dir, files, mode=0o777, verbose=0, dry_run=0):
 
     # Now create them
     for dir in sorted(need_dir):
-        mkpath(dir, mode, dry_run=dry_run)
+        mkpath(dir, mode, verbose=verbose, dry_run=dry_run)
 
 # create_tree ()
 
@@ -109,7 +106,7 @@ def copy_tree (src, dst,
                preserve_times=1,
                preserve_symlinks=0,
                update=0,
-               verbose=0,
+               verbose=1,
                dry_run=0):
 
     """Copy an entire directory tree 'src' to a new location 'dst'.  Both
@@ -146,7 +143,7 @@ def copy_tree (src, dst,
                   "error listing files in '%s': %s" % (src, errstr))
 
     if not dry_run:
-        mkpath(dst)
+        mkpath(dst, verbose=verbose)
 
     outputs = []
 
@@ -156,7 +153,8 @@ def copy_tree (src, dst,
 
         if preserve_symlinks and os.path.islink(src_name):
             link_dest = os.readlink(src_name)
-            log.info("linking %s -> %s", dst_name, link_dest)
+            if verbose == 1:
+                log.info("linking %s -> %s", dst_name, link_dest)
             if not dry_run:
                 os.symlink(link_dest, dst_name)
             outputs.append(dst_name)
@@ -165,10 +163,11 @@ def copy_tree (src, dst,
             outputs.extend(
                 copy_tree(src_name, dst_name, preserve_mode,
                           preserve_times, preserve_symlinks, update,
-                          dry_run=dry_run))
+                          verbose=verbose, dry_run=dry_run))
         else:
             copy_file(src_name, dst_name, preserve_mode,
-                      preserve_times, update, dry_run=dry_run)
+                      preserve_times, update, verbose=verbose,
+                      dry_run=dry_run)
             outputs.append(dst_name)
 
     return outputs
@@ -184,14 +183,15 @@ def _build_cmdtuple(path, cmdtuples):
     cmdtuples.append((os.rmdir, path))
 
 
-def remove_tree (directory, verbose=0, dry_run=0):
+def remove_tree (directory, verbose=1, dry_run=0):
     """Recursively remove an entire directory tree.  Any errors are ignored
     (apart from being reported to stdout if 'verbose' is true).
     """
     from distutils.util import grok_environment_error
     global _path_created
 
-    log.info("removing '%s' (and everything under it)", directory)
+    if verbose == 1:
+        log.info("removing '%s' (and everything under it)", directory)
     if dry_run:
         return
     cmdtuples = []
