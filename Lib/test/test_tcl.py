@@ -10,7 +10,7 @@ from _tkinter import TclError
 # Restore Tkinter.Tk._loadtk that may have been overridden by ttk.
 # If this is not done then this test may fail for reasons related
 # to ttk only (like failing to load the tile package).
-from ttk import __loadtk__
+from tkinter.ttk import __loadtk__
 Tk._loadtk = __loadtk__
 
 

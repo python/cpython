@@ -46,7 +46,8 @@ def get_tests_modules(basepath=this_dir_path, gui=True, packages=None):
             for name in filenames:
                 try:
                     yield importlib.import_module(
-                        ".%s" % name[:-len(py_ext)], pkg_name)
+                        ".%s.%s" % (pkg_name, name[:-len(py_ext)]),
+                        "tkinter.test")
                 except test.support.ResourceDenied:
                     if gui:
                         raise
