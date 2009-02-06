@@ -8,6 +8,13 @@ from test.test_support import TESTFN
 
 class SysconfigTestCase(unittest.TestCase):
 
+    def setUp(self):
+        self.old_AR = os.environ.get('AR')
+
+    def tearDown(self):
+        if self.old_AR is not None:
+            os.environ['AR'] = self.old_AR
+
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assert_(os.path.isfile(config_h), config_h)
@@ -31,6 +38,21 @@ class SysconfigTestCase(unittest.TestCase):
         cvars = sysconfig.get_config_vars()
         self.assert_(isinstance(cvars, dict))
         self.assert_(cvars)
+
+    def test_customize_compiler(self):
+
+        os.environ['AR'] = 'xxx'
+
+        # make sure AR gets caught
+        class compiler:
+            compiler_type = 'unix'
+
+            def set_executables(self, **kw):
+                self.exes = kw
+
+        comp = compiler()
+        sysconfig.customize_compiler(comp)
+        self.assertEquals(comp.exes['archiver'], 'xxx')
 
 
 def test_suite():
