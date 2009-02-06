@@ -7,7 +7,7 @@ in the distutils.command package.
 __revision__ = "$Id$"
 
 import sys, os, re
-from distutils.errors import *
+from distutils.errors import DistutilsOptionError
 from distutils import util, dir_util, file_util, archive_util, dep_util
 from distutils import log
 
