@@ -195,7 +195,7 @@ def nlargest(n, iterable):
     heapify(result)
     _heappushpop = heappushpop
     for elem in it:
-        heappushpop(result, elem)
+        _heappushpop(result, elem)
     result.sort(reverse=True)
     return result
 
