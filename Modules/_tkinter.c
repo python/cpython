@@ -1256,7 +1256,9 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
 		*(e->res) = Tkapp_CallResult(e->self);
 	}
 	LEAVE_PYTHON
-  done:
+
+	Tkapp_CallDeallocArgs(objv, objStore, objc);
+done:
 	/* Wake up calling thread. */
 	Tcl_MutexLock(&call_mutex);
 	Tcl_ConditionNotify(&e->done);
