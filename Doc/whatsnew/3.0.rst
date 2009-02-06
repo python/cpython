@@ -691,7 +691,7 @@ new powerful features added:
   idiom for handling all exceptions except for this latter category is
   to use :keyword:`except` :exc:`Exception`.
 
-* :exc:`StandardError` was removed (in 2.6 already).
+* :exc:`StandardError` was removed.
 
 * Exceptions no longer behave as sequences.  Use the :attr:`args`
   attribute instead.
