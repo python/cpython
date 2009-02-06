@@ -298,13 +298,25 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.prefix, str))
         self.assert_(isinstance(sys.version, str))
         vi = sys.version_info
-        self.assert_(isinstance(vi, tuple))
+        self.assert_(isinstance(vi[:], tuple))
         self.assertEqual(len(vi), 5)
         self.assert_(isinstance(vi[0], int))
         self.assert_(isinstance(vi[1], int))
         self.assert_(isinstance(vi[2], int))
         self.assert_(vi[3] in ("alpha", "beta", "candidate", "final"))
         self.assert_(isinstance(vi[4], int))
+        self.assert_(isinstance(vi.major, int))
+        self.assert_(isinstance(vi.minor, int))
+        self.assert_(isinstance(vi.micro, int))
+        self.assert_(vi.releaselevel in
+                     ("alpha", "beta", "candidate", "final"))
+        self.assert_(isinstance(vi.serial, int))
+        self.assertEqual(vi[0], vi.major)
+        self.assertEqual(vi[1], vi.minor)
+        self.assertEqual(vi[2], vi.micro)
+        self.assertEqual(vi[3], vi.releaselevel)
+        self.assertEqual(vi[4], vi.serial)
+        self.assert_(vi > (1,0,0))
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when

@@ -769,8 +769,12 @@ always available.
    *micro*, *releaselevel*, and *serial*.  All values except *releaselevel* are
    integers; the release level is ``'alpha'``, ``'beta'``, ``'candidate'``, or
    ``'final'``.  The ``version_info`` value corresponding to the Python version 2.0
-   is ``(2, 0, 0, 'final', 0)``.
+   is ``(2, 0, 0, 'final', 0)``.  The components can also be accessed by name,
+   so ``sys.version_info[0]`` is equivalent to ``sys.version_info.major``
+   and so on.
 
+   .. versionchanged:: 2.7
+      Added named component attributes
 
 .. data:: warnoptions
 
