@@ -149,6 +149,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4285: Change sys.version_info to be a named tuple. Patch by
+  Ross Light.
+
 - Issue #1276768: The verbose option was not used in the code of
   distutils.file_util and distutils.dir_util.
 
