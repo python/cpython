@@ -149,6 +149,10 @@ Core and Builtins
 Library
 -------
 
+- Partial fix to issue #1731706: memory leak in Tkapp_Call when calling
+  from a thread different than the one that created the Tcl interpreter.
+  Patch by Robert Hancock.
+
 - Issue #1520877: Now distutils.sysconfig reads $AR from the 
   environment/Makefile. Patch by Douglas Greiman.
 
