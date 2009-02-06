@@ -160,9 +160,9 @@ def customize_compiler(compiler):
     varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
-        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext) = \
+        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar) = \
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
-                            'CCSHARED', 'LDSHARED', 'SO')
+                            'CCSHARED', 'LDSHARED', 'SO', 'AR')
 
         if 'CC' in os.environ:
             cc = os.environ['CC']
@@ -183,6 +183,8 @@ def customize_compiler(compiler):
             cpp = cpp + ' ' + os.environ['CPPFLAGS']
             cflags = cflags + ' ' + os.environ['CPPFLAGS']
             ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
+        if 'AR' in os.environ:
+            ar = os.environ['AR']
 
         cc_cmd = cc + ' ' + cflags
         compiler.set_executables(
@@ -191,7 +193,8 @@ def customize_compiler(compiler):
             compiler_so=cc_cmd + ' ' + ccshared,
             compiler_cxx=cxx,
             linker_so=ldshared,
-            linker_exe=cc)
+            linker_exe=cc,
+            archiver=ar)
 
         compiler.shared_lib_extension = so_ext
 

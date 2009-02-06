@@ -155,6 +155,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1520877: Now distutils.sysconfig reads $AR from the 
+  environment/Makefile. Patch by Douglas Greiman.
+
 - Issue #1276768: The verbose option was not used in the code of
   distutils.file_util and distutils.dir_util.
 
