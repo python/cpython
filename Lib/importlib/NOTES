@@ -9,10 +9,14 @@ to do
 
 * Create meta_path importer for sys.path.
 
-    + Create hook.
-    + Write tests.
-    + Rewrite Import to use the hook.
     + Document.
+
+* Refactor __import__.
+
+    + Create a greatest common denominator function for __import__/import_module
+      that takes in an absolute module name and performs the import.
+    + Use GCD import for __import__.
+    + Use GCD import for import_module.
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
@@ -21,7 +25,7 @@ to do
     + Extension.
     + Source/bytecode.
 
-* Public API to expose (w/ docs!)
+* Public API left to expose (w/ docs!)
 
   + abc
 
@@ -32,6 +36,8 @@ to do
       - Loader
 
         * load_module
+
+      - (?) Importer(Finder, Loader)
 
       - ResourceLoader(Loader)
 
@@ -58,8 +64,6 @@ to do
   + machinery
 
       - (?) Chained path hook/finder
-      - BuiltinImporter
-      - FrozenImporter
       - (?) FileFinder
       - Extensions importers
 
@@ -75,10 +79,8 @@ to do
 
 * OPTIMIZE!
 
-  + Fast path common cases.
-
-    - Absolute name from sys.path.
-    - Relative name from sys.path.
+  + Fast path absolute name.
+  + Fast path pulling from sys.modules.
 
 * Bootstrap importlib as implementation of builtins.__import__
 

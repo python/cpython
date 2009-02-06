@@ -2,9 +2,10 @@ from importlib import machinery
 from .. import util
 from . import util as import_util
 from contextlib import nested
-from imp import new_module
+import imp
 import os
 import sys
+from test import support
 from types import MethodType
 import unittest
 
@@ -143,7 +144,7 @@ class __path__Tests(BaseTests):
         self.run_test(self.hooks_order_test, location, [location])
 
     def test_path_argument(self):
-        module = new_module('pkg')
+        module = imp.new_module('pkg')
         module.__path__ = ['random __path__']
         name = 'pkg.whatever'
         sys.modules['pkg'] = module
@@ -221,8 +222,22 @@ class FinderTests(unittest.TestCase):
 
     def test_implicit_hooks(self):
         # Test that the implicit path hooks are used.
-        # TODO(brett.cannon) implement
-        pass
+        existing_path = os.path.dirname(support.TESTFN)
+        bad_path = '<path>'
+        module = '<module>'
+        assert not os.path.exists(bad_path)
+        with util.import_state():
+            nothing = machinery.PathFinder.find_module(module,
+                                                       path=[existing_path])
+            self.assert_(nothing is None)
+            self.assert_(existing_path in sys.path_importer_cache)
+            self.assert_(not isinstance(sys.path_importer_cache[existing_path],
+                                        imp.NullImporter))
+            nothing = machinery.PathFinder.find_module(module, path=[bad_path])
+            self.assert_(nothing is None)
+            self.assert_(bad_path in sys.path_importer_cache)
+            self.assert_(isinstance(sys.path_importer_cache[bad_path],
+                                    imp.NullImporter))
 
 
 def test_main():
