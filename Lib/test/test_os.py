@@ -524,16 +524,18 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
 
     def test_mkdir(self):
-        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+        f = open(test_support.TESTFN, "w")
+        try:
+            self.assertRaises(WindowsError, os.mkdir, test_support.TESTFN)
+        finally:
+            f.close()
+            os.unlink(test_support.TESTFN)
 
     def test_utime(self):
         self.assertRaises(WindowsError, os.utime, test_support.TESTFN, None)
 
-    def test_access(self):
-        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
-
     def test_chmod(self):
-        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+        self.assertRaises(WindowsError, os.chmod, test_support.TESTFN, 0)
 
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "fdopen", "dup", "fdatasync", "fstat",
