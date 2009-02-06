@@ -9,7 +9,6 @@ really defined in distutils.dist and distutils.cmd.
 __revision__ = "$Id$"
 
 import sys, os
-from types import *
 
 from distutils.debug import DEBUG
 from distutils.errors import *
