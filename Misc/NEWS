@@ -149,6 +149,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1276768: The verbose option was not used in the code of
+  distutils.file_util and distutils.dir_util.
+
 - Issue #5132: Fixed trouble building extensions under Solaris with 
   --enabled-shared activated. Initial patch by Dave Peterson.
 
