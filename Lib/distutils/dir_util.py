@@ -63,7 +63,7 @@ def mkpath (name, mode=0777, verbose=1, dry_run=0):
         if _path_created.get(abs_head):
             continue
 
-        if verbose == 1:
+        if verbose >= 1:
             log.info("creating %s", head)
 
         if not dry_run:
@@ -155,7 +155,7 @@ def copy_tree (src, dst,
 
         if preserve_symlinks and os.path.islink(src_name):
             link_dest = os.readlink(src_name)
-            if verbose == 1:
+            if verbose >= 1:
                 log.info("linking %s -> %s", dst_name, link_dest)
             if not dry_run:
                 os.symlink(link_dest, dst_name)
@@ -194,7 +194,7 @@ def remove_tree (directory, verbose=1, dry_run=0):
     from distutils.util import grok_environment_error
     global _path_created
 
-    if verbose == 1:
+    if verbose >= 1:
         log.info("removing '%s' (and everything under it)", directory)
     if dry_run:
         return
