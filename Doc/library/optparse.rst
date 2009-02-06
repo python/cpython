@@ -1506,7 +1506,7 @@ Here's an example of a callback option that takes no arguments, and simply
 records that the option was seen::
 
    def record_foo_seen(option, opt_str, value, parser):
-       parser.saw_foo = True
+       parser.values.saw_foo = True
 
    parser.add_option("--foo", action="callback", callback=record_foo_seen)
 
@@ -1646,7 +1646,7 @@ arguments::
             value.append(arg)
 
         del parser.rargs[:len(value)]
-        setattr(parser.values, option.dest, value))
+        setattr(parser.values, option.dest, value)
 
    [...]
    parser.add_option("-c", "--callback", dest="vararg_attr",

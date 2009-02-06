@@ -350,16 +350,34 @@ Initialization, Finalization, and Threads
       single: Py_FatalError()
       single: argv (in module sys)
 
-   Set ``sys.argv`` based on *argc* and *argv*.  These parameters are similar to
-   those passed to the program's :cfunc:`main` function with the difference that
-   the first entry should refer to the script file to be executed rather than the
-   executable hosting the Python interpreter.  If there isn't a script that will be
-   run, the first entry in *argv* can be an empty string.  If this function fails
-   to initialize ``sys.argv``, a fatal condition is signalled using
-   :cfunc:`Py_FatalError`.
+   Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
+   similar to those passed to the program's :cfunc:`main` function with the
+   difference that the first entry should refer to the script file to be
+   executed rather than the executable hosting the Python interpreter.  If there
+   isn't a script that will be run, the first entry in *argv* can be an empty
+   string.  If this function fails to initialize :data:`sys.argv`, a fatal
+   condition is signalled using :cfunc:`Py_FatalError`.
+
+   This function also prepends the executed script's path to :data:`sys.path`.
+   If no script is executed (in the case of calling ``python -c`` or just the
+   interactive interpreter), the empty string is used instead.
 
    .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
       check w/ Guido.
+
+
+.. cfunction:: void Py_SetPythonHome(char *home)
+
+   Set the default "home" directory, that is, the location of the standard
+   Python libraries.  The libraries are searched in
+   :file:`{home}/lib/python{version}` and :file:`{home}/lib/python{version}`.
+
+
+.. cfunction:: char* Py_GetPythonHome()
+
+   Return the default "home", that is, the value set by a previous call to
+   :cfunc:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
+   environment variable if it is set.
 
 
 .. _threads:
