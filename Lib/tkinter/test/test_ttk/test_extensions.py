@@ -167,14 +167,15 @@ class LabeledScaleTest(unittest.TestCase):
         x.update()
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
-        width, height = width * 2, height * 2
+        width_new, height_new = width * 2, height * 2
 
         x.value = 3
         x.update()
-        x.master.wm_geometry("%dx%d" % (width, height))
+        x.master.wm_geometry("%dx%d" % (width_new, height_new))
         self.failUnlessEqual(int(x.label.place_info()['x']),
             x.scale.coords()[0])
 
+        # Reset geometry
         x.master.wm_geometry("%dx%d" % (width, height))
         x.destroy()
 
