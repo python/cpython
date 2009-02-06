@@ -114,11 +114,11 @@ tracker:
 If you're not sure whether you're dealing with a bug or a feature, use the
 mailing list:
 
-    python-3000@python.org
+    python-dev@python.org
 
 To subscribe to the list, use the Mailman form:
 
-    http://mail.python.org/mailman/listinfo/python-3000/
+    http://mail.python.org/mailman/listinfo/python-dev/
 
 
 Build Instructions
