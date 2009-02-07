@@ -1,6 +1,6 @@
 import importlib
 from .. import abc
-from . import test_path_hook
+from . import util
 
 import unittest
 
@@ -9,11 +9,11 @@ class FinderTests(abc.FinderTests):
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = importlib.ExtensionFileImporter(test_path_hook.PATH)
+        importer = importlib.ExtensionFileImporter(util.PATH)
         return importer.find_module(fullname)
 
     def test_module(self):
-        self.assert_(self.find_module(test_path_hook.NAME))
+        self.assert_(self.find_module(util.NAME))
 
     def test_package(self):
         # Extension modules cannot be an __init__ for a package.
