@@ -1171,8 +1171,10 @@ available.  They are listed here in alphabetical order.
    If the second argument is omitted the super
    object returned is unbound.  If the second argument is an object,
    ``isinstance(obj, type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true. :func:`super` only works for
-   :term:`new-style class`\es.
+   ``issubclass(type2, type)`` must be true.
+
+   .. note::
+      :func:`super` only works for :term:`new-style class`\es.
 
    There are two typical use cases for "super".  In a class hierarchy with
    single inheritance, "super" can be used to refer to parent classes without
