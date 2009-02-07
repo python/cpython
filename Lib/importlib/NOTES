@@ -38,7 +38,7 @@ to do
         * bytecode_path
         * write_bytecode (not abstract)
 
-  + util (for decorators, make sure to wrap with functools.wraps)
+  + util
 
       - get_module decorator (rename: module_for_loader)
       - set___package__ decorator
