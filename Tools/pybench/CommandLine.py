@@ -11,6 +11,8 @@
 
 """
 
+from __future__ import print_function
+
 __copyright__ = """\
 Copyright (c), 1997-2006, Marc-Andre Lemburg (mal@lemburg.com)
 Copyright (c), 2000-2006, eGenix.com Software GmbH (info@egenix.com)

@@ -3,13 +3,14 @@
 """ A Python Benchmark Suite
 
 """
-#
-# Note: Please keep this module compatible to Python 1.5.2.
+# Note: Please keep this module compatible to Python 2.6.
 #
 # Tests may include features in later Python versions, but these
 # should then be embedded in try-except clauses in the configuration
 # module Setup.py.
 #
+
+from __future__ import print_function
 
 # pybench Copyright
 __copyright__ = """\
@@ -44,7 +45,7 @@ except ImportError:
     import pickle
 
 # Version number; version history: see README file !
-__version__ = '2.0'
+__version__ = '2.1'
 
 ### Constants
 
@@ -174,7 +175,7 @@ class Test:
     # Version number of the test as float (x.yy); this is important
     # for comparisons of benchmark runs - tests with unequal version
     # number will not get compared.
-    version = 2.0
+    version = 2.1
 
     # The number of abstract operations done in each round of the
     # test. An operation is the basic unit of what you want to
@@ -403,7 +404,7 @@ class Benchmark:
     roundtime = 0
 
     # Benchmark version number as float x.yy
-    version = 2.0
+    version = 2.1
 
     # Produce verbose output ?
     verbose = 0
