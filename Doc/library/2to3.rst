@@ -14,6 +14,8 @@ adapted to custom applications in which Python code needs to be edited
 automatically.
 
 
+.. _2to3-using:
+
 Using 2to3
 ----------
 
@@ -52,10 +54,10 @@ After transformation, :file:`example.py` looks like this::
 
 Comments and exact indentation are preserved throughout the translation process.
 
-By default, 2to3 runs a set of predefined fixers.  The :option:`-l` flag lists
-all available fixers.  An explicit set of fixers to run can be given with
-:option:`-f`.  Likewise the :option:`-x` explicitly disables a fixer.  The
-following example runs only the ``imports`` and ``has_key`` fixers::
+By default, 2to3 runs a set of :ref:`predefined fixers <2to3-fixers>`.  The
+:option:`-l` flag lists all available fixers.  An explicit set of fixers to run
+can be given with :option:`-f`.  Likewise the :option:`-x` explicitly disables a
+fixer.  The following example runs only the ``imports`` and ``has_key`` fixers::
 
    $ 2to3 -f imports -f has_key example.py
 
@@ -84,12 +86,258 @@ document could also be refactored with this option.
 The :option:`-v` option enables output of more information on the translation
 process.
 
-When the :option:`-p` is passed, 2to3 treats ``print`` as a function instead of
-a statement.  This is useful when ``from __future__ import print_function`` is
-being used.  If this option is not given, the print fixer will surround print
-calls in an extra set of parentheses because it cannot differentiate between the
-print statement with parentheses (such as ``print ("a" + "b" + "c")``) and a
-true function call.
+When the :option:`-p` is passed, the :2to3fixer:`print` fixer ``print`` as a
+function instead of a statement.  This is useful when ``from __future__ import
+print_function`` is being used.  If this option is not given, the print fixer
+will surround print calls in an extra set of parentheses because it cannot
+differentiate between the print statement with parentheses (such as ``print
+("a" + "b" + "c")``) and a true function call.
+
+
+.. _2to3-fixers:
+
+Fixers
+------
+
+Each step of tranforming code is encapsulated in a fixer.  The command ``2to3
+-l`` lists them.  As :ref:`documented above <2to3-using>`, each can be turned on
+and off individually.  They are described here in more detail.
+
+
+.. 2to3fixer:: apply
+
+   Removes usage of :func:`apply`.  For example ``apply(function, *args,
+   **kwargs)`` is converted to ``function(*args, **kwargs)``.
+
+.. 2to3fixer:: basestring
+
+   Converts :class:`basestring` to :class:`str`.
+
+.. 2to3fixer:: buffer
+
+   Converts :class:`buffer` to :class:`memoryview`.  This fixer is optional
+   because the :class:`memoryview` API is similar but not exactly the same as
+   that of :class:`buffer`.
+
+.. 2to3fixer:: callable
+
+   Converts ``callable(x)`` to ``hasattr(x, "__call_")``.
+
+.. 2to3fixer:: dict
+
+   Fixes dictionary iteration methods.  :meth:`dict.iteritems` is converted to
+   :meth:`dict.items`, :meth:`dict.iterkeys` to :meth:`dict.keys`, and
+   :meth:`dict.itervalues` to :meth:`dict.values`.  It also wraps existing
+   usages of :meth:`dict.items`, :meth:`dict.keys`, and :meth:`dict.values` in a
+   call to :class:`list`.
+
+.. 2to3fixer:: except
+
+   Converts ``except X, T`` to ``except X as T``.
+
+.. 2to3fixer:: exec
+
+   Converts the :keyword:`exec` statement to the :func:`exec` function.
+
+.. 2to3fixer:: execfile
+
+   Removes usage of :func:`execfile`.  The argument to :func:`execfile` is
+   wrapped in calls to :func:`open`, :func:`compile`, and :func:`exec`.
+
+.. 2to3fixer:: filter
+
+   Wraps :func:`filter` in a :class:`list` call.
+
+.. 2to3fixer:: funcattrs
+
+   Fixes function attributes that have been renamed.  For example,
+   ``my_function.func_closure`` is converted to ``my_function.__closure__``.
+
+.. 2to3fixer:: future
+
+   Removes ``from __future__ import new_feature`` statements.
+
+.. 2to3fixer:: getcwdu
+
+   Renames :func:`os.getcwdu` to :func:`os.getcwd`.
+
+.. 2to3fixer:: has_key
+
+   Changes ``dict.has_key(key)`` to ``key in dict``.
+
+.. 2to3fixer:: idioms
+
+   This optional fixer preforms several transformations that make Python code
+   more idiomatic.  Type comparisions like ``type(x) is SomeClass`` and
+   ``type(x) == SomeClass`` are converted to ``isinstance(x, SomeClass)``.
+   ``while 1`` becomes ``while True``.  This fixer also tries to make use of
+   :func:`sorted` in appropiate places.  For example, this block ::
+
+       L = list(some_iterable)
+       L.sort()
+
+   is changed to ::
+
+      L = sorted(some_iterable)
+
+.. 2to3fixer:: import
+
+   Detects sibling imports and converts them to relative imports.
+
+.. 2to3fixer:: imports
+
+   Handles module renames in the standard library.
+
+.. 2to3fixer:: imports2
+
+   Handles other modules reanmes in the standard library.  It is separate from
+   :2to3fixer:`imports` only because of technical limitations.
+
+.. 2to3fixer:: input
+
+   Converts ``input(prompt)`` to ``eval(input(prompt))``
+
+.. 2to3fixer:: intern
+
+   Converts :func:`intern` to :func:`sys.itern`.
+
+.. 2to3fixer:: isinstance
+
+   Fixes duplicate types in the second argument of :func:`isinstance`.  For
+   example, ``isinstance(x, (int, int))`` is converted to ``isinstance(x,
+   (int))``.
+
+.. 2to3fixer:: itertools_imports
+
+   Removes imports of :func:`itertools.ifilter`, :func:`itertools.izip`, and
+   :func:`itertools.imap`.  Imports of :func:`itertools.ifilterfalse` are also
+   changed to :func:`itertools.filterfalse`.
+
+.. 2to3fixer:: itertools
+
+   Changes usage of :func:`itertools.ifilter`, :func:`itertools.izip`, and
+   :func:`itertools.imap` to their builtin equivalents.
+   :func:`itertools.ifilterfalse` is changed to :func:`itertools.filterfalse`.
+
+.. 2to3fixer:: long
+
+   Strips the ``L`` prefix on numbers and renamed :class:`long` to :class:`int`.
+
+.. 2to3fixer:: map
+
+   Wraps :func:`map` in a :class:`list` call.  It also changes ``map(none, x)``
+   to ``list(x)``.  Using ``from future_builtins import map`` disables this
+   fixer.
+
+.. 2to3fixer:: metaclass
+
+   Converts the old metaclass syntax (``__metaclass__ = Meta`` in the class
+   body) to the new (``class X(metaclass=Meta)``).
+
+.. 2to3fixer:: methodattrs
+
+   Fixes old method attribute names.  For example, ``meth.im_func`` is converted
+   to ``meth.__func__``.
+
+.. 2to3fixer:: ne
+
+   Converts the old not-equal syntax, ``<>``, to ``!=``.
+
+.. 2to3fixer:: next
+
+   Converts the use of iterator's :meth:`next` methods to the :func:`next`
+   function.  It also renames :meth:`next` methods to :meth:`~object.__next__`.
+
+.. 2to3fixer:: nonzero
+
+   Renames :meth:`~object.__nonzero__` to :meth:`~object.__bool__`.
+
+.. 2to3fixer:: paren
+
+   Add extra parenthesis where they are required in list comprehensions.  For
+   example, ``[x for x in 1, 2]`` to ``[x for x in (1, 2)]``.
+
+.. 2to3fixer:: print
+
+   Converts the :keyword:`print` statement to the :func:`print` function.
+
+.. 2to3fixer:: raises
+
+   Converts ``raise E, V`` to ``raise E(V)``, and ``raise E, V, T`` as ``raise
+   E(V).with_traceback(T)``.  If ``E`` is a tuple, the translation will be
+   incorrect because substituting tuples for exceptions has been removed in 3.0.
+
+.. 2to3fixer:: raw_input
+
+   Converts :func:`raw_input` to :func:`input`.
+
+.. 2to3fixer:: reduce
+
+   Handles the move of :func:`reduce` to :func:`functools.reduce`.
+
+.. 2to3fixer:: renames
+
+   Changes :data:`sys.maxint` to :data:`sys.maxsize`.
+
+.. 2to3fixer:: repr
+
+   Replaces backtick repr with the :func:`repr` function.
+
+.. 2to3fixer:: set_literal
+
+   Replaces use of the :class:`set` constructor with set literals.  This fixer
+   is optional.
+
+.. 2to3fixer:: standard_error
+
+   Renames :exc:`StandardError` to :exc:`Exception`.
+
+.. 2to3fixer:: sys_exc
+
+   Changes the deprecated :data:`sys.exc_value`, :data:`sys.exc_type`,
+   :data:`sys.exc_traceback` to use :func:`sys.exc_info`.
+
+.. 2to3fixer:: throw
+
+   Fixes the API change in generators :meth:`throw` method.
+
+.. 2to3fixer:: tuple_params
+
+   Removes implicit tuple parameter unpacking.  This fixer inserts temporary
+   variables.
+
+.. 2to3fixer:: types
+
+   Fixes code broken from the removal of some members in the :mod:`types`
+   module.
+
+.. 2to3fixer:: unicode
+
+   Renames :class:`unicode` to :class:`str`.
+
+.. 2to3fixer:: urllib
+
+   Handles the rename of :mod:`urllib` and :mod:`urllib2` to the :mod:`urllib`
+   package.
+
+.. 2to3fixer:: ws_comma
+
+   Removes excess whitespace from comma separated items.  This fixer is
+   optional.
+
+.. 2to3fixer:: xrange
+
+   Renames :func:`xrange` to :func:`range` and wraps existing :func:`range`
+   calls with :class:`list`.
+
+.. 2to3fixer:: xreadlines
+
+   Change ``for x in file.xreadlines()`` to ``for x in file``.
+
+.. 2to3fixer:: zip
+
+   Wraps :func:`zip` usage in a :class:`list` call.  This is disabled when
+   ``from future_builtins import zip`` appears.
 
 
 :mod:`lib2to3` - 2to3's library
