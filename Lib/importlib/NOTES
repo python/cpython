@@ -3,6 +3,8 @@ to do
 
 * Extract test_path_hooks constants into a util module for extension testing.
 
+* Backport a poor-man's functools.wraps.
+
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
     + Built-in.
@@ -40,9 +42,10 @@ to do
         * bytecode_path
         * write_bytecode (not abstract)
 
-  + util
+  + util (for decorators, make sure to wrap with functools.wraps)
 
       - get_module decorator (rename: module_for_loader)
+      - set___package__ decorator
 
   + machinery
 
