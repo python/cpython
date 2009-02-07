@@ -1,8 +1,6 @@
 to do
 /////
 
-* Backport a poor-man's functools.wraps.
-
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
     + Built-in.

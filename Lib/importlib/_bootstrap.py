@@ -90,6 +90,13 @@ class closing:
         self.obj.close()
 
 
+def wrap(new, old):
+    """Simple substitute for functools.wraps."""
+    for replace in ['__module__', '__name__', '__doc__']:
+        setattr(new, replace, getattr(old, replace))
+    new.__dict__.update(old.__dict__)
+
+
 def set___package__(fxn):
     """Set __package__ on the returned module."""
     def wrapper(*args, **kwargs):
@@ -99,6 +106,7 @@ def set___package__(fxn):
             if not hasattr(module, '__path__'):
                 module.__package__ = module.__package__.rpartition('.')[0]
         return module
+    wrap(wrapper, fxn)
     return wrapper
 
 
@@ -213,9 +221,7 @@ def check_name(method):
         if self._name != name:
             raise ImportError("loader cannot handle %s" % name)
         return method(self, name, *args, **kwargs)
-    inner.__name__ = method.__name__
-    inner.__doc__ = method.__doc__
-    inner.__dict__.update(method.__dict__)
+    wrap(inner, method)
     return inner
 
 
@@ -318,6 +324,7 @@ def get_module(fxn):
                     elif hasattr(module, attr):
                         delattr(module, attr)
             raise
+    wrap(decorated, fxn)
     return decorated
 
 
