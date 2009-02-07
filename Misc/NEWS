@@ -264,6 +264,9 @@ Library
 Tools/Demos
 -----------
 
+- Issue #4704: remove use of cmp() in pybench, bump its version number to 2.1,
+  and make it 2.6-compatible.
+
 - Issue #4677: add two list comprehension tests to pybench.
 
 

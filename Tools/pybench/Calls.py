@@ -2,7 +2,7 @@ from pybench import Test
 
 class PythonFunctionCalls(Test):
 
-    version = 2.0
+    version = 2.1
     operations = 5*(1+4+4+2)
     rounds = 60000
 
@@ -178,8 +178,8 @@ class BuiltinFunctionCalls(Test):
         # localize functions
         f0 = globals
         f1 = hash
-        f2 = cmp
-        f3 = range
+        f2 = divmod
+        f3 = max
 
         # do calls
         for i in range(self.rounds):
@@ -279,8 +279,8 @@ class BuiltinFunctionCalls(Test):
         # localize functions
         f0 = dir
         f1 = hash
-        f2 = range
-        f3 = range
+        f2 = divmod
+        f3 = max
 
         # do calls
         for i in range(self.rounds):
