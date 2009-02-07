@@ -29,32 +29,40 @@ import tkinter
 
 _flatten = tkinter._flatten
 
-# Verify if Tk is new enough to not need Tile checking
+# Verify if Tk is new enough to not need the Tile package
 _REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
 
-def _loadttk(loadtk):
-    # This extends the default tkinter.Tk._loadtk method so we can be
-    # sure that ttk is available for use, or not.
-    def _wrapper(self):
-        loadtk(self)
+def _load_tile(master):
+    if _REQUIRE_TILE:
+        import os
+        tilelib = os.environ.get('TILE_LIBRARY')
+        if tilelib:
+            # append custom tile path to the the list of directories that
+            # Tcl uses when attempting to resolve packages with the package
+            # command
+            master.tk.eval(
+                    'global auto_path; '
+                    'lappend auto_path {%s}' % tilelib)
 
-        if _REQUIRE_TILE:
-            import os
-            tilelib = os.environ.get('TILE_LIBRARY')
-            if tilelib:
-                # append custom tile path to the the list of directories that
-                # Tcl uses when attempting to resolve packages with the package
-                # command
-                self.tk.eval('global auto_path; '
-                             'lappend auto_path {%s}' % tilelib)
-            self.tk.eval('package require tile') # TclError may be raised here
+        master.tk.eval('package require tile') # TclError may be raised here
+        master._tile_loaded = True
 
-    return _wrapper
 
-# Store the original tkinter.Tk._loadtk before replacing it just in case
-# someone wants to restore it.
-__loadtk__ = tkinter.Tk._loadtk
-tkinter.Tk._loadtk = _loadttk(tkinter.Tk._loadtk)
+def _setup_master(master=None):
+    """If master is not None, itself is returned. If master is None,
+    the default master is returned if there is one, otherwise a new
+    master is created and returned.
+
+    If it is not allowed to use the default root and master is None,
+    RuntimeError is raised."""
+    if master is None:
+        if tkinter._support_default_root:
+            master = tkinter._default_root or tkinter.Tk()
+        else:
+            raise RuntimeError(
+                    "No master specified and tkinter is "
+                    "configured to not support default root")
+    return master
 
 
 def _format_optdict(optdict, script=False, ignore=None):
@@ -366,12 +374,11 @@ class Style(object):
     _name = "ttk::style"
 
     def __init__(self, master=None):
-        if master is None:
-            if tkinter._support_default_root:
-                master = tkinter._default_root or tkinter.Tk()
-            else:
-                raise RuntimeError("No master specified and tkinter is "
-                    "configured to not support default master")
+        master = _setup_master(master)
+
+        if not getattr(master, '_tile_loaded', False):
+            # Load tile now, if needed
+            _load_tile(master)
 
         self.master = master
         self.tk = self.master.tk
@@ -548,6 +555,10 @@ class Widget(tkinter.Widget):
             active, disabled, focus, pressed, selected, background,
             readonly, alternate, invalid
         """
+        master = _setup_master(master)
+        if not getattr(master, '_tile_loaded', False):
+            # Load tile now, if needed
+            _load_tile(master)
         tkinter.Widget.__init__(self, master, widgetname, kw=kw)
 
 
