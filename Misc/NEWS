@@ -410,6 +410,9 @@ Library
   protocol numbers are supplied outside the allowed 0-65536 range on bind()
   and getservbyport().
 
+- Issue #999042: The Python compiler now handles explict global statements
+  correctly (should be assigned using STORE_GLOBAL opcode).
+
 Tools/Demos
 -----------
 
