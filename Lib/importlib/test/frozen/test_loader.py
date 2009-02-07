@@ -9,7 +9,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__hello__'):
             module = machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__', '__file__': '<frozen>',
-                        '__package__': None}
+                        '__package__': ''}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 
