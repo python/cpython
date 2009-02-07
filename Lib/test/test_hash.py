@@ -33,7 +33,7 @@ class HashEqualityTestCase(unittest.TestCase):
         # for 64-bit platforms
         self.same_hash(int(2**31), float(2**31))
         self.same_hash(int(-2**63), float(-2**63))
-        self.same_hash(long(2**63), float(2**63))
+        self.same_hash(int(2**63), float(2**63))
 
     def test_coerced_floats(self):
         self.same_hash(int(1.23e300), float(1.23e300))
