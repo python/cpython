@@ -256,7 +256,7 @@ def move(src, dst):
         os.rename(src, real_dst)
     except OSError:
         if os.path.isdir(src):
-            if destinsrc(src, dst):
+            if _destinsrc(src, dst):
                 raise Error, "Cannot move a directory '%s' into itself '%s'." % (src, dst)
             copytree(src, real_dst, symlinks=True)
             rmtree(src)
@@ -264,7 +264,7 @@ def move(src, dst):
             copy2(src, real_dst)
             os.unlink(src)
 
-def destinsrc(src, dst):
+def _destinsrc(src, dst):
     src = abspath(src)
     dst = abspath(dst)
     if not src.endswith(os.path.sep):
