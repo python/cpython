@@ -72,11 +72,15 @@ Functions
     import in absolute or relative terms
     (e.g. either ``pkg.mod`` or ``..mod``). If the name is
     specified in relative terms, then the *package* argument must be
-    specified to the package which is to act as the anchor for resolving the
+    set to the package which is to act as the anchor for resolving the
     package name (e.g. ``import_module('..mod', 'pkg.subpkg')`` will import
-    ``pkg.mod``). The specified module will be inserted into
-    :data:`sys.modules` and returned.
+    ``pkg.mod``).
 
+    The :func:`import_module` function acts as a simplifying wrapper around
+    :func:`__import__`. This means all semantics of the function are derived
+    from :func:`__import__`, including requiring the package where an import is
+    occuring from to already be imported (i.e., *package* must already be
+    imported).
 
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------

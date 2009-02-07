@@ -29,7 +29,7 @@ def _set__import__():
     """Set __import__ to an instance of Import."""
     global original__import__
     original__import__ = __import__
-    __builtins__['__import__'] = Import()
+    __builtins__['__import__'] = _bootstrap._import
 
 
 def _reset__import__():
@@ -114,7 +114,7 @@ marshal._r_long = _r_long
 
 # Public API #########################################################
 
-__import__ = _bootstrap.Import().__call__
+__import__ = _bootstrap._import
 
 
 def import_module(name, package=None):
@@ -125,17 +125,15 @@ def import_module(name, package=None):
     relative import to an absolute import.
 
     """
+    level = 0
     if name.startswith('.'):
         if not package:
             raise TypeError("relative imports require the 'package' argument")
-        level = 0
         for character in name:
             if character != '.':
                 break
             level += 1
-        name = Import._resolve_name(name[level:], package, level)
-    __import__(name)
-    return sys.modules[name]
+    return _bootstrap._gcd_import(name[level:], package, level)
 
 
 # XXX This should go away once the public API is done.

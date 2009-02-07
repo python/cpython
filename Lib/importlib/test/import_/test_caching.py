@@ -64,7 +64,8 @@ class UseCache(unittest.TestCase):
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg', fromlist=['module'])
                 self.assert_(hasattr(module, 'module'))
-                self.assertEquals(id(module.module), id(sys.modules['pkg.module']))
+                self.assertEquals(id(module.module),
+                                  id(sys.modules['pkg.module']))
 
 
 def test_main():

@@ -38,8 +38,9 @@ class Using__package__(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
                 import_util.import_('pkg.fake')
-                module = import_util.import_('', globals={'__package__': 'pkg.fake'},
-                                 fromlist=['attr'], level=2)
+                module = import_util.import_('',
+                                            globals={'__package__': 'pkg.fake'},
+                                            fromlist=['attr'], level=2)
         self.assertEquals(module.__name__, 'pkg')
 
     def test_using___name__(self):
@@ -82,7 +83,7 @@ class Setting__package__(unittest.TestCase):
             with util.import_state(meta_path=[mock]):
                 del mock['top_level'].__package__
                 module = import_util.import_('top_level')
-                self.assert_(module.__package__ is None)
+                self.assertEqual(module.__package__, '')
 
     # [package]
     def test_package(self):

@@ -1,35 +1,10 @@
 to do
 /////
 
-* Create sandbox directory for a distutils packaging of what is in Python 2.7.
-
 * Use rpartition for getting the package of a module.
 
-    + Make sure that an empty string is acceptable for __package__.
-
-* Create meta_path importer for sys.path.
-
-    + Document.
-
-* Refactor __import__.
-
-    + Create a greatest common denominator function for __import__/import_module
-      that takes in an absolute module name and performs the import.
-
-      - Needs of __import__
-
-        * Figure out caller's package.
-        * Import module.
-        * Set __package__.
-        * Figure out what module to return.
-
-      - Needs of import_module
-
-        * Resolve name/level.
-        * Import module.
-
-    + Use GCD import for __import__.
-    + Use GCD import for import_module.
+    + Make sure there is a test for the empty string as acceptable for
+      __package__.
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
@@ -66,13 +41,11 @@ to do
 
         * source_path
         * bytecode_path
-        * write_bytecode
+        * write_bytecode (not abstract)
 
   + util
 
-      - get_module decorator (new name)
-      - check_name decorator (new name)
-      - resolve_name
+      - get_module decorator (rename: module_for_loader)
 
   + machinery
 
@@ -87,6 +60,8 @@ to do
 
           * SourceFinder
           * (?) Loader
+
+      - PathFinder
 
 * Write benchmark suite.
 
