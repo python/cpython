@@ -1,5 +1,5 @@
 import functools
-import importlib
+import importlib._bootstrap
 
 
 using___import__ = False
@@ -9,7 +9,8 @@ def import_(*args, **kwargs):
     """Delegate to allow for injecting different implementations of import."""
     if using___import__:
         return __import__(*args, **kwargs)
-    return importlib.Import()(*args, **kwargs)
+    #return importlib.Import()(*args, **kwargs)
+    return importlib._bootstrap._import(*args, **kwargs)
 
 
 def importlib_only(fxn):

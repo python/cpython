@@ -1,6 +1,8 @@
-import unittest
-import importlib
 from . import util
+import imp
+import importlib
+import sys
+import unittest
 
 
 class ImportModuleTests(unittest.TestCase):
@@ -33,6 +35,7 @@ class ImportModuleTests(unittest.TestCase):
         relative_name = '.{0}'.format(module_name)
         with util.mock_modules(pkg_long_name, absolute_name) as mock:
             with util.import_state(meta_path=[mock]):
+                importlib.import_module(pkg_name)
                 module = importlib.import_module(relative_name, pkg_name)
                 self.assertEqual(module.__name__, absolute_name)
 
@@ -44,6 +47,7 @@ class ImportModuleTests(unittest.TestCase):
         name = '{0}.mod'.format(pkg_name)
         with util.mock_modules(pkg_long_name, name) as mock:
             with util.import_state(meta_path=[mock]):
+                importlib.import_module(pkg_name)
                 module = importlib.import_module(name, pkg_name)
                 self.assertEqual(module.__name__, name)
 
