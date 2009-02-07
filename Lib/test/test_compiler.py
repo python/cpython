@@ -165,6 +165,13 @@ class CompilerTest(unittest.TestCase):
         exec c in dct
         self.assertEquals(dct.get('result'), 1)
 
+    def testGlobal(self):
+        code = compiler.compile('global x\nx=1', '<string>', 'exec')
+        d1 = {'__builtins__': {}}
+        d2 = {}
+        exec code in d1, d2
+        # x should be in the globals dict
+        self.assertEquals(d1.get('x'), 1)
 
     def testPrintFunction(self):
         c = compiler.compile('from __future__ import print_function\n'
