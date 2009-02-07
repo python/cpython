@@ -3,17 +3,17 @@ from test import support
 import unittest
 import importlib
 from .. import util
-from . import test_path_hook
+from . import util as ext_util
 
 
 @util.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
     def find_module(self):
-        good_name = test_path_hook.NAME
+        good_name = ext_util.NAME
         bad_name = good_name.upper()
         assert good_name != bad_name
-        finder = importlib.ExtensionFileImporter(test_path_hook.PATH)
+        finder = importlib.ExtensionFileImporter(ext_util.PATH)
         return finder.find_module(bad_name)
 
     def test_case_sensitive(self):
