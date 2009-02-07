@@ -138,10 +138,9 @@ class FrozenImporter:
         if cls.find_module(fullname) is None:
             raise ImportError("{0} is not a frozen module".format(fullname))
         module = imp.init_frozen(fullname)
-        if hasattr(module, '__path__'):
-            module.__package__ = module.__name__
-        elif '.' in module.__name__:
-            module.__package__ = module.__name__.rsplit('.', 1)[0]
+        module.__package__ = module.__name__
+        if not hasattr(module, '__path__'):
+            module.__package__ = module.__package__.rpartition('.')[0]
         return module
 
 
