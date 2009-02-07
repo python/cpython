@@ -21,7 +21,8 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache(test_path_hook.NAME):
             module = self.load_module(test_path_hook.NAME)
             for attr, value in [('__name__', test_path_hook.NAME),
-                                ('__file__', test_path_hook.FILEPATH)]:
+                                ('__file__', test_path_hook.FILEPATH),
+                                ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
             self.assert_(test_path_hook.NAME in sys.modules)
 
