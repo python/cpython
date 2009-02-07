@@ -23,7 +23,7 @@ class SimpleTest(unittest.TestCase):
             module = loader.load_module('_temp')
             self.assert_('_temp' in sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
-                     '__package__': None}
+                     '__package__': ''}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 

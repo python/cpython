@@ -1,10 +1,7 @@
 to do
 /////
 
-* Use rpartition for getting the package of a module.
-
-    + Make sure there is a test for the empty string as acceptable for
-      __package__.
+* Extract test_path_hooks constants into a util module for extension testing.
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 

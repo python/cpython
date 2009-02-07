@@ -90,6 +90,18 @@ class closing:
         self.obj.close()
 
 
+def set___package__(fxn):
+    """Set __package__ on the returned module."""
+    def wrapper(*args, **kwargs):
+        module = fxn(*args, **kwargs)
+        if not hasattr(module, '__package__') or module.__package__ is None:
+            module.__package__ = module.__name__
+            if not hasattr(module, '__path__'):
+                module.__package__ = module.__package__.rpartition('.')[0]
+        return module
+    return wrapper
+
+
 class BuiltinImporter:
 
     """Meta path loader for built-in modules.
@@ -111,12 +123,12 @@ class BuiltinImporter:
         return cls if imp.is_builtin(fullname) else None
 
     @classmethod
+    @set___package__
     def load_module(cls, fullname):
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
         module = imp.init_builtin(fullname)
-        module.__package__ = ''
         return module
 
 
@@ -135,14 +147,12 @@ class FrozenImporter:
         return cls if imp.is_frozen(fullname) else None
 
     @classmethod
+    @set___package__
     def load_module(cls, fullname):
         """Load a frozen module."""
         if cls.find_module(fullname) is None:
             raise ImportError("{0} is not a frozen module".format(fullname))
         module = imp.init_frozen(fullname)
-        module.__package__ = module.__name__
-        if not hasattr(module, '__path__'):
-            module.__package__ = module.__package__.rpartition('.')[0]
         return module
 
 
@@ -230,6 +240,7 @@ class _ExtensionFileLoader(object):
             raise ValueError("extension modules cannot be packages")
 
     @check_name
+    @set___package__
     def load_module(self, fullname):
         """Load an extension module."""
         assert self._name == fullname
@@ -368,11 +379,9 @@ class _PyFileLoader(object):
         module.__loader__ = self
         if self._is_pkg:
             module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
-            module.__package__ = module.__name__
-        elif '.' in module.__name__:
-            module.__package__ = module.__name__.rsplit('.', 1)[0]
-        else:
-            module.__package__ = None
+        module.__package__ = module.__name__
+        if not hasattr(module, '__path__'):
+            module.__package__ = module.__package__.rpartition('.')[0]
         exec(code_object, module.__dict__)
         return module
 
