@@ -6,7 +6,7 @@ in the distutils.command package.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, re
 from distutils.errors import DistutilsOptionError
 from distutils import util, dir_util, file_util, archive_util, dep_util
 from distutils import log
@@ -156,19 +156,19 @@ class Command:
               "abstract method -- subclass %s must override" % self.__class__
 
 
-    def dump_options (self, header=None, indent=""):
+    def dump_options(self, header=None, indent=""):
         from distutils.fancy_getopt import longopt_xlate
         if header is None:
             header = "command options for '%s':" % self.get_command_name()
-        print indent + header
+        self.announce(indent + header, level=log.INFO)
         indent = indent + "  "
         for (option, _, _) in self.user_options:
-            option = string.translate(option, longopt_xlate)
+            option = option.translate(longopt_xlate)
             if option[-1] == "=":
                 option = option[:-1]
             value = getattr(self, option)
-            print indent + "%s = %s" % (option, value)
-
+            self.announce(indent + "%s = %s" % (option, value),
+                          level=log.INFO)
 
     def run (self):
         """A command's raison d'etre: carry out the action it exists to
@@ -405,8 +405,8 @@ class Command:
             base_name, format, root_dir, base_dir, dry_run=self.dry_run)
 
 
-    def make_file (self, infiles, outfile, func, args,
-                   exec_msg=None, skip_msg=None, level=1):
+    def make_file(self, infiles, outfile, func, args,
+                  exec_msg=None, skip_msg=None, level=1):
         """Special case of 'execute()' for operations that process one or
         more input files and generate one output file.  Works just like
         'execute()', except the operation is skipped and a different
@@ -415,24 +415,24 @@ class Command:
         and it is true, then the command is unconditionally run -- does no
         timestamp checks.
         """
-        if exec_msg is None:
-            exec_msg = "generating %s from %s" % \
-                       (outfile, string.join(infiles, ', '))
         if skip_msg is None:
             skip_msg = "skipping %s (inputs unchanged)" % outfile
 
-
         # Allow 'infiles' to be a single string
-        if type(infiles) is StringType:
+        if isinstance(infiles, str):
             infiles = (infiles,)
-        elif type(infiles) not in (ListType, TupleType):
+        elif not isinstance(infiles, (list, tuple)):
             raise TypeError, \
                   "'infiles' must be a string, or a list or tuple of strings"
+
+        if exec_msg is None:
+            exec_msg = "generating %s from %s" % \
+                       (outfile, ', '.join(infiles))
 
         # If 'outfile' must be regenerated (either because it doesn't
         # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if self.force or dep_util.newer_group (infiles, outfile):
+        if self.force or dep_util.newer_group(infiles, outfile):
             self.execute(func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
