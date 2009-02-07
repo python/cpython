@@ -115,7 +115,9 @@ class BuiltinImporter:
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
-        return imp.init_builtin(fullname)
+        module = imp.init_builtin(fullname)
+        module.__package__ = ''
+        return module
 
 
 class FrozenImporter:
