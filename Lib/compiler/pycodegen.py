@@ -814,8 +814,8 @@ class CodeGenerator:
     def visitWith(self, node):
         body = self.newBlock()
         final = self.newBlock()
-        valuevar = "$value%d" % self.__with_count
         self.__with_count += 1
+        valuevar = "_[%d]" % self.__with_count
         self.set_lineno(node)
         self.visit(node.expr)
         self.emit('DUP_TOP')
