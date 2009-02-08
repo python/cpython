@@ -26,17 +26,22 @@ The :mod:`runpy` module provides a single function:
    mechanism (refer to PEP 302 for details) and then executed in a fresh module
    namespace.
 
+   If the supplied module name refers to a package rather than a normal module,
+   then that package is imported and the ``__main__`` submodule within that
+   package is then executed and the resulting module globals dictionary returned.
+
    The optional dictionary argument *init_globals* may be used to pre-populate the
    globals dictionary before the code is executed. The supplied dictionary will not
    be modified. If any of the special global variables below are defined in the
    supplied dictionary, those definitions are overridden by the ``run_module``
    function.
 
-   The special global variables ``__name__``, ``__file__``, ``__loader__`` and
-   ``__builtins__`` are set in the globals dictionary before the module code is
-   executed.
+   The special global variables ``__name__``, ``__file__``, ``__loader__``,
+   ``__builtins__`` and ``__package__`` are set in the globals dictionary before
+   the module code is executed.
 
-   ``__name__`` is set to *run_name* if this optional argument is supplied, and the
+   ``__name__`` is set to *run_name* if this optional argument is supplied, to
+   ``mod_name + '.__main__'`` if the named module is a package and to the
    *mod_name* argument otherwise.
 
    ``__loader__`` is set to the PEP 302 module loader used to retrieve the code for
@@ -47,6 +52,9 @@ The :mod:`runpy` module provides a single function:
 
    ``__builtins__`` is automatically initialised with a reference to the top level
    namespace of the :mod:`builtins` module.
+
+   ``__package__`` is set to *mod_name* if the named module is a package and to
+   ``mod_name.rpartition('.')[0]`` otherwise.
 
    If the argument *alter_sys* is supplied and evaluates to ``True``, then
    ``sys.argv[0]`` is updated with the value of ``__file__`` and
@@ -60,8 +68,15 @@ The :mod:`runpy` module provides a single function:
    function from threaded code.
 
 
+   .. versionchanged:: 3.1
+         Added ability to execute packages by looking for a ``__main__`` submodule
+
+
 .. seealso::
 
    :pep:`338` - Executing modules as scripts
-      PEP written and  implemented by Nick Coghlan.
+      PEP written and implemented by Nick Coghlan.
+
+   :pep:`366` - Main module explicit relative imports
+      PEP written and implemented by Nick Coghlan.
 
