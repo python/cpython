@@ -1028,7 +1028,7 @@ _Py_HashDouble(double v)
 	fractpart = modf(v, &intpart);
 	if (fractpart == 0.0) {
 		/* This must return the same hash as an equal int or long. */
-		if (intpart > LONG_MAX || -intpart > LONG_MAX) {
+		if (intpart > LONG_MAX/2 || -intpart > LONG_MAX/2) {
 			/* Convert to long and use its hash. */
 			PyObject *plong;	/* converted to Python long */
 			if (Py_IS_INFINITY(intpart))
