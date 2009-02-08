@@ -155,6 +155,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a
+  public documented method ``ZipImporter.get_filename()``.
+
 - Issue #4195: The ``runpy`` module (and the ``-m`` switch) now support
   the execution of packages by looking for and executing a ``__main__``
   submodule when a package name is supplied. Initial patch by Andi
