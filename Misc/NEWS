@@ -12,6 +12,9 @@ What's New in Python 3.0.1?
 Core and Builtins
 -----------------
 
+- Issue #5137: Make len() correctly raise a TypeError when a __len__ method
+  returns a non-number type.
+
 - Issue #5182: Removed memoryview.__str__.
 
 - Issue #1717: Removed builtin cmp() function, dropped tp_compare
