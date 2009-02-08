@@ -4618,7 +4618,7 @@ slot_sq_length(PyObject *self)
 
 	if (res == NULL)
 		return -1;
-	len = PyLong_AsSsize_t(res);
+	len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
 	Py_DECREF(res);
 	if (len < 0) {
 		if (!PyErr_Occurred())

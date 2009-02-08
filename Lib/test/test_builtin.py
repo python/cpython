@@ -611,6 +611,18 @@ class BuiltinTest(unittest.TestCase):
             def __len__(self):
                 raise ValueError
         self.assertRaises(ValueError, len, BadSeq())
+        class InvalidLen:
+            def __len__(self):
+                return None
+        self.assertRaises(TypeError, len, InvalidLen())
+        class FloatLen:
+            def __len__(self):
+                return 4.5
+        self.assertRaises(TypeError, len, FloatLen())
+        class HugeLen:
+            def __len__(self):
+                return sys.maxsize + 1
+        self.assertRaises(OverflowError, len, HugeLen())
 
     def test_map(self):
         self.assertEqual(
