@@ -252,6 +252,10 @@ and off individually.  They are described here in more detail.
 
    Renames :meth:`~object.__nonzero__` to :meth:`~object.__bool__`.
 
+.. 2to3fixer:: numliterals
+
+   Converts octal literals into the new syntax.
+
 .. 2to3fixer:: paren
 
    Add extra parenthesis where they are required in list comprehensions.  For
