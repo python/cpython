@@ -272,7 +272,7 @@ class HTTPResponse:
         # applies to HTTP/1.1 connections.)  This will happen if a self.fp.read()
         # is done (without a size) whether self.fp is buffered or not.
         # So, no self.fp.read() by clients unless they know what they are doing.
-        self.fp = sock.makefile(sock, "rb")
+        self.fp = sock.makefile("rb")
         self.debuglevel = debuglevel
         self.strict = strict
         self._method = method
