@@ -155,6 +155,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #4195: The ``runpy`` module (and the ``-m`` switch) now support
+  the execution of packages by looking for and executing a ``__main__``
+  submodule when a package name is supplied. Initial patch by Andi
+  Vajda.
+
 - Issue #1731706: Call Tcl_ConditionFinalize for Tcl_Conditions that will
   not be used again (this requires Tcl/Tk 8.3.1), also fix a memory leak in
   Tkapp_Call when calling from a thread different than the one that created
