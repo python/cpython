@@ -94,6 +94,15 @@ zipimporter Objects
       file wasn't found.
 
 
+   .. method:: get_filename(fullname)
+
+      Return the value ``__file__`` would be set to if the specified module
+      was imported. Raise :exc:`ZipImportError` if the module couldn't be
+      found.
+
+   .. versionadded:: 2.7
+
+
    .. method:: get_source(fullname)
 
       Return the source code for the specified module. Raise

@@ -215,7 +215,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             self.assertEquals(zi.archive, TEMP_ZIP)
             self.assertEquals(zi.is_package(TESTPACK), True)
             mod = zi.load_module(TESTPACK)
-            self.assertEquals(zi._get_filename(TESTPACK), mod.__file__)
+            self.assertEquals(zi.get_filename(TESTPACK), mod.__file__)
 
             self.assertEquals(zi.is_package(packdir + '__init__'), False)
             self.assertEquals(zi.is_package(packdir + TESTPACK2), True)
@@ -227,11 +227,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             mod = sys.modules[mod_name]
             self.assertEquals(zi.get_source(TESTPACK), None)
             self.assertEquals(zi.get_source(mod_path), None)
-            self.assertEquals(zi._get_filename(mod_path), mod.__file__)
+            self.assertEquals(zi.get_filename(mod_path), mod.__file__)
             # To pass in the module name instead of the path, we must use the right importer
             loader = mod.__loader__
             self.assertEquals(loader.get_source(mod_name), None)
-            self.assertEquals(loader._get_filename(mod_name), mod.__file__)
+            self.assertEquals(loader.get_filename(mod_name), mod.__file__)
 
             # test prefix and archivepath members
             zi2 = zipimport.zipimporter(TEMP_ZIP + os.sep + TESTPACK)
@@ -260,7 +260,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             self.assertEquals(zi.prefix, packdir)
             self.assertEquals(zi.is_package(TESTPACK2), True)
             mod = zi.load_module(TESTPACK2)
-            self.assertEquals(zi._get_filename(TESTPACK2), mod.__file__)
+            self.assertEquals(zi.get_filename(TESTPACK2), mod.__file__)
 
             self.assertEquals(zi.is_package(TESTPACK2 + os.sep + '__init__'), False)
             self.assertEquals(zi.is_package(TESTPACK2 + os.sep + TESTMOD), False)
@@ -271,11 +271,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             mod = sys.modules[mod_name]
             self.assertEquals(zi.get_source(TESTPACK2), None)
             self.assertEquals(zi.get_source(mod_path), None)
-            self.assertEquals(zi._get_filename(mod_path), mod.__file__)
+            self.assertEquals(zi.get_filename(mod_path), mod.__file__)
             # To pass in the module name instead of the path, we must use the right importer
             loader = mod.__loader__
             self.assertEquals(loader.get_source(mod_name), None)
-            self.assertEquals(loader._get_filename(mod_name), mod.__file__)
+            self.assertEquals(loader.get_filename(mod_name), mod.__file__)
         finally:
             z.close()
             os.remove(TEMP_ZIP)
