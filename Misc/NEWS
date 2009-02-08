@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #5182: Removed memoryview.__str__.
+
 - Issue #1717: Removed builtin cmp() function, dropped tp_compare
   slot, the C API functions PyObject_Compare and PyUnicode_Compare and
   the type definition cmpfunc.  The tp_compare slot has been renamed

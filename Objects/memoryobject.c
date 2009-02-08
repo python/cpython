@@ -498,22 +498,6 @@ memory_repr(PyMemoryViewObject *self)
     return PyUnicode_FromFormat("<memory at %p>", self);
 }
 
-
-static PyObject *
-memory_str(PyMemoryViewObject *self)
-{
-    Py_buffer view;
-    PyObject *res;
-
-    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
-        return NULL;
-
-    res = PyBytes_FromStringAndSize(NULL, view.len);
-    PyBuffer_ToContiguous(PyBytes_AS_STRING(res), &view, view.len, 'C');
-    PyBuffer_Release(&view);
-    return res;
-}
-
 /* Sequence methods */
 static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
@@ -812,7 +796,7 @@ PyTypeObject PyMemoryView_Type = {
     &memory_as_mapping,                       /* tp_as_mapping */
     0,                                        /* tp_hash */
     0,                                        /* tp_call */
-    (reprfunc)memory_str,                     /* tp_str */
+    0,                                        /* tp_str */
     PyObject_GenericGetAttr,                  /* tp_getattro */
     0,                                        /* tp_setattro */
     &memory_as_buffer,                        /* tp_as_buffer */
