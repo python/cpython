@@ -758,17 +758,19 @@ class StreamHandler(Handler):
         """
         try:
             msg = self.format(record)
+            stream = self.stream
             fs = "%s\n"
             if not hasattr(types, "UnicodeType"): #if no unicode support...
-                self.stream.write(fs % msg)
+                stream.write(fs % msg)
             else:
                 try:
-                    if getattr(self.stream, 'encoding', None) is not None:
-                        self.stream.write(fs % msg.encode(self.stream.encoding))
+                    if (isinstance(msg, unicode) or
+                        getattr(stream, 'encoding', None) is None):
+                        stream.write(fs % msg)
                     else:
-                        self.stream.write(fs % msg)
+                        stream.write(fs % msg.encode(stream.encoding))
                 except UnicodeError:
-                    self.stream.write(fs % msg.encode("UTF-8"))
+                    stream.write(fs % msg.encode("UTF-8"))
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
