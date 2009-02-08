@@ -859,6 +859,7 @@ class MemoryTest(BaseTest):
             ('foo', 'DEBUG', '3'),
         ])
 
+
 class EncodingTest(BaseTest):
     def test_encoding_plain_file(self):
         # In Python 2.x, a plain file object is treated as having no encoding.
@@ -884,6 +885,27 @@ class EncodingTest(BaseTest):
         finally:
             if os.path.isfile(fn):
                 os.remove(fn)
+
+    def test_encoding_cyrillic_unicode(self):
+        log = logging.getLogger("test")
+        #Get a message in Unicode: Do svidanya in Cyrillic (meaning goodbye)
+        message = u'\u0434\u043e \u0441\u0432\u0438\u0434\u0430\u043d\u0438\u044f'
+        #Ensure it's written in a Cyrillic encoding
+        writer_class = codecs.getwriter('cp1251')
+        stream = cStringIO.StringIO()
+        writer = writer_class(stream, 'strict')
+        handler = logging.StreamHandler(writer)
+        log.addHandler(handler)
+        try:
+            log.warning(message)
+        finally:
+            log.removeHandler(handler)
+            handler.close()
+        # check we wrote exactly those bytes, ignoring trailing \n etc
+        s = stream.getvalue()
+        #Compare against what the data should be when encoded in CP-1251
+        self.assertEqual(s, '\xe4\xee \xf1\xe2\xe8\xe4\xe0\xed\xe8\xff\n')
+
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale

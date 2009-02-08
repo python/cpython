@@ -80,11 +80,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #5170: Fixed Unicode output bug in logging and added test case.
+  This is a regression which did not occur in 2.5.
+
 - Partial fix to issue #1731706: memory leak in Tkapp_Call when calling
   from a thread different than the one that created the Tcl interpreter.
   Patch by Robert Hancock.
 
-- Issue #5132: Fixed trouble building extensions under Solaris with 
+- Issue #5132: Fixed trouble building extensions under Solaris with
   --enabled-shared activated. Initial patch by Dave Peterson.
 
 - Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
