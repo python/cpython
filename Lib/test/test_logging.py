@@ -25,6 +25,7 @@ import logging
 import logging.handlers
 import logging.config
 
+import codecs
 import copy
 import cPickle
 import cStringIO
