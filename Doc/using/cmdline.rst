@@ -78,6 +78,12 @@ source.
    the implementation may not always enforce this (e.g. it may allow you to
    use a name that includes a hyphen).
 
+   Package names are also permitted. When a package name is supplied instead
+   of a normal module, the interpreter will execute ``<pkg>.__main__`` as
+   the main module. This behaviour is deliberately similar to the handling
+   of directories and zipfiles that are passed to the interpreter as the
+   script argument.
+
    .. note::
 
       This option cannot be used with builtin modules and extension modules
@@ -97,7 +103,7 @@ source.
 
    .. seealso::
       :func:`runpy.run_module`
-         The actual implementation of this feature.
+         Equivalent functionality directly available to Python code
 
       :pep:`338` -- Executing modules as scripts
 
@@ -105,6 +111,9 @@ source.
 
    .. versionchanged:: 2.5
       The named module can now be located inside a package.
+
+   .. versionchanged:: 2.7
+      Supply the package name to run a ``__main__`` submodule.
 
 
 .. describe:: -

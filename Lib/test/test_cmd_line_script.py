@@ -158,6 +158,16 @@ class CmdLineTest(unittest.TestCase):
         self.assert_(printed_package in data)
         self.assert_(printed_argv0 in data)
 
+    def _check_import_error(self, script_name, expected_msg,
+                            *cmd_line_switches):
+        run_args = cmd_line_switches + (script_name,)
+        exit_code, data = _run_python(*run_args)
+        if verbose:
+            print 'Output from test script %r:' % script_name
+            print data
+            print 'Expected output: %r' % expected_msg
+        self.assert_(expected_msg in data)
+
     def test_basic_script(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
@@ -182,6 +192,11 @@ class CmdLineTest(unittest.TestCase):
             os.remove(script_name)
             self._check_script(script_dir, compiled_name, script_dir, '')
 
+    def test_directory_error(self):
+        with temp_dir() as script_dir:
+            msg = "can't find '__main__.py' in %r" % script_dir
+            self._check_import_error(script_dir, msg)
+
     def test_zipfile(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -194,6 +209,13 @@ class CmdLineTest(unittest.TestCase):
             compiled_name = _compile_test_script(script_name)
             zip_name, run_name = _make_test_zip(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, '')
+
+    def test_zipfile_error(self):
+        with temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'not_main')
+            zip_name, run_name = _make_test_zip(script_dir, 'test_zip', script_name)
+            msg = "can't find '__main__.py' in %r" % zip_name
+            self._check_import_error(zip_name, msg)
 
     def test_module_in_package(self):
         with temp_dir() as script_dir:
@@ -214,6 +236,47 @@ class CmdLineTest(unittest.TestCase):
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script', depth=2)
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.test_pkg.script', zip_name)
             self._check_script(launch_name, run_name, run_name, 'test_pkg.test_pkg')
+
+    def test_package(self):
+        with temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            _make_test_pkg(pkg_dir)
+            script_name = _make_test_script(pkg_dir, '__main__')
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
+            self._check_script(launch_name, script_name,
+                               script_name, 'test_pkg')
+
+    def test_package_compiled(self):
+        with temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            _make_test_pkg(pkg_dir)
+            script_name = _make_test_script(pkg_dir, '__main__')
+            compiled_name = _compile_test_script(script_name)
+            os.remove(script_name)
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
+            self._check_script(launch_name, compiled_name,
+                               compiled_name, 'test_pkg')
+
+    def test_package_error(self):
+        with temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            _make_test_pkg(pkg_dir)
+            msg = ("'test_pkg' is a package and cannot "
+                   "be directly executed")
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
+            self._check_import_error(launch_name, msg)
+
+    def test_package_recursion(self):
+        with temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            _make_test_pkg(pkg_dir)
+            main_dir = os.path.join(pkg_dir, '__main__')
+            _make_test_pkg(main_dir)
+            msg = ("Cannot use package as __main__ module; "
+                   "'test_pkg' is a package and cannot "
+                   "be directly executed")
+            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
+            self._check_import_error(launch_name, msg)
 
 
 def test_main():
