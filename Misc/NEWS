@@ -149,6 +149,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5170: Fixed Unicode output bug in logging and added test case.
+  This is a regression which did not occur in 2.5.
+
 - Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a
   public documented method ``ZipImporter.get_filename()``.
 
@@ -162,7 +165,7 @@ Library
   Tkapp_Call when calling from a thread different than the one that created
   the Tcl interpreter. Patch by Robert Hancock.
 
-- Issue #1520877: Now distutils.sysconfig reads $AR from the 
+- Issue #1520877: Now distutils.sysconfig reads $AR from the
   environment/Makefile. Patch by Douglas Greiman.
 
 - Issue #4285: Change sys.version_info to be a named tuple. Patch by
@@ -171,7 +174,7 @@ Library
 - Issue #1276768: The verbose option was not used in the code of
   distutils.file_util and distutils.dir_util.
 
-- Issue #5132: Fixed trouble building extensions under Solaris with 
+- Issue #5132: Fixed trouble building extensions under Solaris with
   --enabled-shared activated. Initial patch by Dave Peterson.
 
 - Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
@@ -212,7 +215,7 @@ Library
 - Issue #4710: Extract directories properly in the zipfile module;
   allow adding directories to a zipfile.
 
-- Issue #3807: _multiprocessing build fails when configure is passed 
+- Issue #3807: _multiprocessing build fails when configure is passed
   --without-threads argument. When this occurs, _multiprocessing will
   be disabled, and not compiled.
 
