@@ -146,7 +146,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: filter
 
-   Wraps :func:`filter` in a :class:`list` call.
+   Wraps :func:`filter` usage in a :class:`list` call.
 
 .. 2to3fixer:: funcattrs
 
@@ -190,8 +190,8 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: imports2
 
-   Handles other modules reanmes in the standard library.  It is separate from
-   :2to3fixer:`imports` only because of technical limitations.
+   Handles other modules renames in the standard library.  It is separate from
+   the :2to3fixer:`imports` fixer only because of technical limitations.
 
 .. 2to3fixer:: input
 
@@ -199,7 +199,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: intern
 
-   Converts :func:`intern` to :func:`sys.itern`.
+   Converts :func:`intern` to :func:`sys.intern`.
 
 .. 2to3fixer:: isinstance
 
@@ -221,11 +221,12 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: long
 
-   Strips the ``L`` prefix on numbers and renamed :class:`long` to :class:`int`.
+   Strips the ``L`` prefix on long literals and renames :class:`long` to
+   :class:`int`.
 
 .. 2to3fixer:: map
 
-   Wraps :func:`map` in a :class:`list` call.  It also changes ``map(none, x)``
+   Wraps :func:`map` in a :class:`list` call.  It also changes ``map(None, x)``
    to ``list(x)``.  Using ``from future_builtins import map`` disables this
    fixer.
 
@@ -259,7 +260,7 @@ and off individually.  They are described here in more detail.
 .. 2to3fixer:: paren
 
    Add extra parenthesis where they are required in list comprehensions.  For
-   example, ``[x for x in 1, 2]`` to ``[x for x in (1, 2)]``.
+   example, ``[x for x in 1, 2]`` becomes ``[x for x in (1, 2)]``.
 
 .. 2to3fixer:: print
 
@@ -267,7 +268,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: raises
 
-   Converts ``raise E, V`` to ``raise E(V)``, and ``raise E, V, T`` as ``raise
+   Converts ``raise E, V`` to ``raise E(V)``, and ``raise E, V, T`` to ``raise
    E(V).with_traceback(T)``.  If ``E`` is a tuple, the translation will be
    incorrect because substituting tuples for exceptions has been removed in 3.0.
 
@@ -303,7 +304,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: throw
 
-   Fixes the API change in generators :meth:`throw` method.
+   Fixes the API change in generator's :meth:`throw` method.
 
 .. 2to3fixer:: tuple_params
 
@@ -336,7 +337,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: xreadlines
 
-   Change ``for x in file.xreadlines()`` to ``for x in file``.
+   Changes ``for x in file.xreadlines()`` to ``for x in file``.
 
 .. 2to3fixer:: zip
 
