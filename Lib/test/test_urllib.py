@@ -146,7 +146,8 @@ class urlopen_HttpTests(unittest.TestCase):
     def fakehttp(self, fakedata):
         class FakeSocket(io.BytesIO):
             def sendall(self, str): pass
-            def makefile(self, mode, name): return self
+            def makefile(self, *args, **kwds):
+                return self
             def read(self, amt=None):
                 if self.closed: return b""
                 return io.BytesIO.read(self, amt)
