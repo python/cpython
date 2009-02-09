@@ -160,6 +160,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4890: Handle empty text search pattern in Tkinter.Text.search.
+
 - Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a
   public documented method ``ZipImporter.get_filename()``.
 

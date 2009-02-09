@@ -3016,7 +3016,8 @@ class Text(Widget):
            forwards=None, backwards=None, exact=None,
            regexp=None, nocase=None, count=None, elide=None):
         """Search PATTERN beginning from INDEX until STOPINDEX.
-        Return the index of the first character of a match or an empty string."""
+        Return the index of the first character of a match or an
+        empty string."""
         args = [self._w, 'search']
         if forwards: args.append('-forwards')
         if backwards: args.append('-backwards')
@@ -3025,7 +3026,7 @@ class Text(Widget):
         if nocase: args.append('-nocase')
         if elide: args.append('-elide')
         if count: args.append('-count'); args.append(count)
-        if pattern[0] == '-': args.append('--')
+        if pattern and pattern[0] == '-': args.append('--')
         args.append(pattern)
         args.append(index)
         if stopindex: args.append(stopindex)
