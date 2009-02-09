@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4575: Fix Py_IS_INFINITY macro to work correctly on x87 FPUs:
+  it now forces its argument to double before testing for infinity.
+
 - Issue #4978: Passing keyword arguments as unicode strings is now allowed.
 
 - Issue 1242657: the __len__() and __length_hint__() calls in several tools

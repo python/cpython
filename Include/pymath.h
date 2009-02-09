@@ -77,6 +77,21 @@ extern double copysign(double, double);
 #define Py_MATH_E 2.7182818284590452354
 #endif
 
+/* On x86, Py_FORCE_DOUBLE forces a floating-point number out of an x87 FPU
+   register and into a 64-bit memory location, rounding from extended
+   precision to double precision in the process.  On other platforms it does
+   nothing. */
+
+/* we take double rounding as evidence of x87 usage */
+#ifndef Py_FORCE_DOUBLE
+#  ifdef X87_DOUBLE_ROUNDING
+PyAPI_FUNC(double) _Py_force_double(double);
+#    define Py_FORCE_DOUBLE(X) (_Py_force_double(X))
+#  else
+#    define Py_FORCE_DOUBLE(X) (X)
+#  endif
+#endif
+
 /* Py_IS_NAN(X)
  * Return 1 if float or double arg is a NaN, else 0.
  * Caution:
@@ -101,14 +116,18 @@ extern double copysign(double, double);
  *    This implementation may set the underflow flag if |X| is very small;
  *    it really can't be implemented correctly (& easily) before C99.
  *    Override in pyconfig.h if you have a better spelling on your platform.
+ *  Py_FORCE_DOUBLE is used to avoid getting false negatives from a
+ *    non-infinite value v sitting in an 80-bit x87 register such that
+ *    v becomes infinite when spilled from the register to 64-bit memory.
  * Note: PC/pyconfig.h defines Py_IS_INFINITY as _isinf
  */
 #ifndef Py_IS_INFINITY
-#if defined HAVE_DECL_ISINF && HAVE_DECL_ISINF == 1
-#define Py_IS_INFINITY(X) isinf(X)
-#else
-#define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
-#endif
+#  if defined HAVE_DECL_ISINF && HAVE_DECL_ISINF == 1
+#    define Py_IS_INFINITY(X) isinf(X)
+#  else
+#    define Py_IS_INFINITY(X) ((X) &&                                   \
+                               (Py_FORCE_DOUBLE(X)*0.5 == Py_FORCE_DOUBLE(X)))
+#  endif
 #endif
 
 /* Py_IS_FINITE(X)
