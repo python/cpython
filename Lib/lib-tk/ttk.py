@@ -23,7 +23,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
-           "tclobjs_to_py"]
+           "tclobjs_to_py", "setup_master"]
 
 import Tkinter
 
@@ -46,25 +46,6 @@ def _load_tile(master):
 
         master.tk.eval('package require tile') # TclError may be raised here
         master._tile_loaded = True
-
-
-def _setup_master(master=None):
-    """If master is not None, itself is returned. If master is None,
-    the default master is returned if there is one, otherwise a new
-    master is created and returned.
-
-    If it is not allowed to use the default root and master is None,
-    RuntimeError is raised."""
-    if master is None:
-        if Tkinter._support_default_root:
-            master = Tkinter._default_root or Tkinter.Tk()
-        else:
-            raise RuntimeError(
-                    "No master specified and Tkinter is "
-                    "configured to not support default root")
-    return master
-
-
 
 def _format_optdict(optdict, script=False, ignore=None):
     """Formats optdict to a tuple to pass it to tk.call.
@@ -368,6 +349,22 @@ def tclobjs_to_py(adict):
 
     return adict
 
+def setup_master(master=None):
+    """If master is not None, itself is returned. If master is None,
+    the default master is returned if there is one, otherwise a new
+    master is created and returned.
+
+    If it is not allowed to use the default root and master is None,
+    RuntimeError is raised."""
+    if master is None:
+        if Tkinter._support_default_root:
+            master = Tkinter._default_root or Tkinter.Tk()
+        else:
+            raise RuntimeError(
+                    "No master specified and Tkinter is "
+                    "configured to not support default root")
+    return master
+
 
 class Style(object):
     """Manipulate style database."""
@@ -375,7 +372,7 @@ class Style(object):
     _name = "ttk::style"
 
     def __init__(self, master=None):
-        master = _setup_master(master)
+        master = setup_master(master)
 
         if not getattr(master, '_tile_loaded', False):
             # Load tile now, if needed
@@ -556,7 +553,7 @@ class Widget(Tkinter.Widget):
             active, disabled, focus, pressed, selected, background,
             readonly, alternate, invalid
         """
-        master = _setup_master(master)
+        master = setup_master(master)
         if not getattr(master, '_tile_loaded', False):
             # Load tile now, if needed
             _load_tile(master)
