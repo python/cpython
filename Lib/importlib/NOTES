@@ -1,6 +1,10 @@
 to do
 /////
 
+* Refactor source/bytecode finder/loader code such that bytecode support is a
+  subclass of source support (makes it nicer for VMs that don't use CPython
+  bytecode).
+
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
     + Built-in.
