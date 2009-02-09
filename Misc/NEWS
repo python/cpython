@@ -152,6 +152,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4890: Handle empty text search pattern in Tkinter.Text.search.
+
 - Issue #5170: Fixed Unicode output bug in logging and added test case.
   This is a regression which did not occur in 2.5.
 
