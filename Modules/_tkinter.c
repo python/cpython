@@ -33,6 +33,8 @@ Copyright (C) 1994 Steen Lumholt.
 #include <windows.h>
 #endif
 
+#include "tkinter.h"
+
 /* Allow using this code in Python 2.[12] */
 #ifndef PyDoc_STRVAR
 #define PyDoc_STRVAR(name,str) static char name[] = str
@@ -74,9 +76,7 @@ Copyright (C) 1994 Steen Lumholt.
 #define CONST
 #endif
 
-#define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
-
-#if TKMAJORMINOR < 8002
+#if TK_VERSION_HEX < 0x08020002
 #error "Tk older than 8.2 not supported"
 #endif
 
@@ -280,6 +280,9 @@ static PyObject *excInCmd;
 static PyObject *valInCmd;
 static PyObject *trbInCmd;
 
+#ifdef TKINTER_PROTECT_LOADTK
+static int tk_load_failed;
+#endif
 
 
 static PyObject *
@@ -555,21 +558,35 @@ SplitObj(PyObject *arg)
 int
 Tcl_AppInit(Tcl_Interp *interp)
 {
-	Tk_Window main;
 	const char * _tkinter_skip_tk_init;
 
 	if (Tcl_Init(interp) == TCL_ERROR) {
 		PySys_WriteStderr("Tcl_Init error: %s\n", Tcl_GetStringResult(interp));
 		return TCL_ERROR;
 	}
-	_tkinter_skip_tk_init =	Tcl_GetVar(interp, "_tkinter_skip_tk_init", TCL_GLOBAL_ONLY);
-	if (_tkinter_skip_tk_init == NULL || strcmp(_tkinter_skip_tk_init, "1")	!= 0) {
-		main = Tk_MainWindow(interp);
-		if (Tk_Init(interp) == TCL_ERROR) {
-			PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
-			return TCL_ERROR;
-		}
+
+	_tkinter_skip_tk_init = Tcl_GetVar(interp,
+			"_tkinter_skip_tk_init", TCL_GLOBAL_ONLY);
+	if (_tkinter_skip_tk_init != NULL &&
+			strcmp(_tkinter_skip_tk_init, "1") == 0) {
+		return TCL_OK;
 	}
+
+#ifdef TKINTER_PROTECT_LOADTK
+	if (tk_load_failed) {
+		PySys_WriteStderr("Tk_Init error: %s\n", TKINTER_LOADTK_ERRMSG);
+		return TCL_ERROR;
+	}
+#endif
+
+	if (Tk_Init(interp) == TCL_ERROR) {
+#ifdef TKINTER_PROTECT_LOADTK
+		tk_load_failed = 1;
+#endif
+		PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
+		return TCL_ERROR;
+	}
+
 	return TCL_OK;
 }
 #endif /* !WITH_APPINIT */
@@ -652,8 +669,15 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 	ckfree(argv0);
 
 	if (! wantTk) {
-	    Tcl_SetVar(v->interp, "_tkinter_skip_tk_init", "1",	TCL_GLOBAL_ONLY);
+		Tcl_SetVar(v->interp,
+				"_tkinter_skip_tk_init", "1", TCL_GLOBAL_ONLY);
 	}
+#ifdef TKINTER_PROTECT_LOADTK
+	else if (tk_load_failed) {
+		Tcl_SetVar(v->interp,
+				"_tkinter_tk_failed", "1", TCL_GLOBAL_ONLY);
+	}
+#endif
 
 	/* some initial arguments need to be in argv */
 	if (sync || use) {
@@ -688,6 +712,18 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 
 	if (Tcl_AppInit(v->interp) != TCL_OK) {
 		PyObject *result = Tkinter_Error((PyObject *)v);
+#ifdef TKINTER_PROTECT_LOADTK
+		if (wantTk) {
+			const char *_tkinter_tk_failed;
+			_tkinter_tk_failed = Tcl_GetVar(v->interp,
+					"_tkinter_tk_failed", TCL_GLOBAL_ONLY);
+
+			if ( _tkinter_tk_failed != NULL &&
+					strcmp(_tkinter_tk_failed, "1") == 0) {
+				tk_load_failed = 1;
+			}
+		}
+#endif
 		Py_DECREF((PyObject *)v);
 		return (TkappObject *)result;
 	}
@@ -2669,23 +2705,22 @@ Tkapp_InterpAddr(PyObject *self, PyObject *args)
 static PyObject	*
 Tkapp_TkInit(PyObject *self, PyObject *args)
 {
-	static int has_failed;
 	Tcl_Interp *interp = Tkapp_Interp(self);
-	Tk_Window main_window;
 	const char * _tk_exists = NULL;
 	int err;
-	main_window = Tk_MainWindow(interp);
 
-	/* In all current versions of Tk (including 8.4.13), Tk_Init
-	   deadlocks on the second call when the first call failed.
-	   To avoid the deadlock, we just refuse the second call through
-	   a static variable. */
-	if (has_failed) {
-		PyErr_SetString(Tkinter_TclError, 
-				"Calling Tk_Init again after a previous call failed might deadlock");
+#ifdef TKINTER_PROTECT_LOADTK
+	/* Up to Tk 8.4.13, Tk_Init deadlocks on the second call when the
+	 * first call failed.
+	 * To avoid the deadlock, we just refuse the second call through
+	 * a static variable.
+	 */
+	if (tk_load_failed) {
+		PyErr_SetString(Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
 		return NULL;
 	}
-	   
+#endif
+
 	/* We want to guard against calling Tk_Init() multiple times */
 	CHECK_TCL_APPARTMENT;
 	ENTER_TCL
@@ -2704,8 +2739,10 @@ Tkapp_TkInit(PyObject *self, PyObject *args)
 	}
 	if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)	{
 		if (Tk_Init(interp)	== TCL_ERROR) {
-		        PyErr_SetString(Tkinter_TclError, Tcl_GetStringResult(Tkapp_Interp(self)));
-			has_failed = 1;
+			PyErr_SetString(Tkinter_TclError, Tcl_GetStringResult(Tkapp_Interp(self)));
+#ifdef TKINTER_PROTECT_LOADTK
+			tk_load_failed = 1;
+#endif
 			return NULL;
 		}
 	}
