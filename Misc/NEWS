@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+- Issue #4575: Fix Py_IS_INFINITY macro to work correctly on x87 FPUs:
+  it now forces its argument to double before testing for infinity.
+
 - Issue #5137: Make len() correctly raise a TypeError when a __len__ method
   returns a non-number type.
 
