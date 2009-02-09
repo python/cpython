@@ -1047,6 +1047,7 @@ _expectations = {
         test_socket_ssl
         test_socketserver
         test_tcl
+        test_tk
         test_ttk_guionly
         test_ttk_textonly
         test_timeout
@@ -1066,6 +1067,7 @@ _expectations = {
         test_kqueue
         test_ossaudiodev
         test_tcl
+        test_tk
         test_ttk_guionly
         test_ttk_textonly
         test_zipimport
@@ -1084,6 +1086,7 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_tk
         test_ttk_guionly
         test_ttk_textonly
         test_multiprocessing
@@ -1102,6 +1105,7 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_tcl
+        test_tk
         test_ttk_guionly
         test_ttk_textonly
         test_multiprocessing
