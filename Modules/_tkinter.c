@@ -76,8 +76,8 @@ Copyright (C) 1994 Steen Lumholt.
 #define CONST
 #endif
 
-#if TK_VERSION_HEX < 0x08020002
-#error "Tk older than 8.2 not supported"
+#if TK_VERSION_HEX < 0x08030102
+#error "Tk older than 8.3.1 not supported"
 #endif
 
 /* Unicode conversion assumes that Tcl_UniChar is two bytes.
