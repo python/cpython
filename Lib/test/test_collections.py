@@ -44,6 +44,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(TypeError, Point._make, [11])                     # catch too few args
         self.assertRaises(TypeError, Point._make, [11, 22, 33])             # catch too many args
 
+    def test_name_fixer(self):
+        for spec, renamed in [
+            [('efg', 'g%hi'),  ('efg', '_2')],                              # field with non-alpha char
+            [('abc', 'class'), ('abc', '_2')],                              # field has keyword
+            [('8efg', '9ghi'), ('_1', '_2')],                               # field starts with digit
+            [('abc', '_efg'), ('abc', '_2')],                               # field with leading underscore
+            [('abc', 'efg', 'efg', 'ghi'), ('abc', 'efg', '_3', 'ghi')],    # duplicate field
+            [('abc', '', 'x'), ('abc', '_2', 'x')],                         # fieldname is a space
+        ]:
+            self.assertEqual(namedtuple('NT', spec, rename=True)._fields, renamed)
+
     def test_instance(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)

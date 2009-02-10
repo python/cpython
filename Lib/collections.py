@@ -16,7 +16,7 @@ from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, i
 ### namedtuple
 ################################################################################
 
-def namedtuple(typename, field_names, verbose=False):
+def namedtuple(typename, field_names, verbose=False, rename=False):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', 'x y')
@@ -45,6 +45,16 @@ def namedtuple(typename, field_names, verbose=False):
     if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(map(str, field_names))
+    if rename:
+        names = list(field_names)
+        seen = set()
+        for i, name in enumerate(names):
+            if (not all(c.isalnum() or c=='_' for c in name) or _iskeyword(name)
+                or not name or name[0].isdigit() or name.startswith('_')
+                or name in seen):
+                names[i] = '_%d' % (i+1)
+            seen.add(name)
+        field_names = tuple(names)
     for name in (typename,) + field_names:
         if not all(c.isalnum() or c=='_' for c in name):
             raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
@@ -54,7 +64,7 @@ def namedtuple(typename, field_names, verbose=False):
             raise ValueError('Type names and field names cannot start with a number: %r' % name)
     seen_names = set()
     for name in field_names:
-        if name.startswith('_'):
+        if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: %r' % name)
         if name in seen_names:
             raise ValueError('Encountered duplicate field name: %r' % name)
