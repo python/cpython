@@ -448,7 +448,8 @@ class PyBuildExt(build_ext):
         # _json speedups
         exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
-        exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
+        exts.append( Extension('_testcapi', ['_testcapimodule.c'],
+                               depends=['testcapi_long.h']) )
         # profiler (_lsprof is for cProfile.py)
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
