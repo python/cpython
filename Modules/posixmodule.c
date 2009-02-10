@@ -343,6 +343,109 @@ extern int lstat(const char *, struct stat *);
 #endif
 #endif
 
+#if defined _MSC_VER && _MSC_VER >= 1400
+/* Microsoft CRT in VS2005 and higher will verify that a filehandle is
+ * valid and throw an assertion if it isn't.
+ * Normally, an invalid fd is likely to be a C program error and therefore
+ * an assertion can be useful, but it does contradict the POSIX standard
+ * which for write(2) states:
+ *    "Otherwise, -1 shall be returned and errno set to indicate the error."
+ *    "[EBADF] The fildes argument is not a valid file descriptor open for
+ *     writing."
+ * Furthermore, python allows the user to enter any old integer
+ * as a fd and should merely raise a python exception on error.
+ * The Microsoft CRT doesn't provide an official way to check for the
+ * validity of a file descriptor, but we can emulate its internal behaviour
+ * by using the exported __pinfo data member and knowledge of the 
+ * internal structures involved.
+ * The structures below must be updated for each version of visual studio
+ * according to the file internal.h in the CRT source, until MS comes
+ * up with a less hacky way to do this.
+ * (all of this is to avoid globally modifying the CRT behaviour using
+ * _set_invalid_parameter_handler() and _CrtSetReportMode())
+ */
+#if _MSC_VER >= 1500 /* VS 2008 */
+typedef struct {
+        intptr_t osfhnd;
+        char osfile;
+        char pipech;
+        int lockinitflag;
+        CRITICAL_SECTION lock;
+#ifndef _SAFECRT_IMPL
+        char textmode : 7;
+        char unicode : 1;
+        char pipech2[2];
+        __int64 startpos;
+        BOOL utf8translations;
+        char dbcsBuffer;
+        BOOL dbcsBufferUsed;
+#endif  /* _SAFECRT_IMPL */
+    }   ioinfo;
+#elif _MSC_VER >= 1400  /* VS 2005 */
+typedef struct {
+        intptr_t osfhnd;
+        char osfile;
+        char pipech;
+        int lockinitflag;
+        CRITICAL_SECTION lock;
+#ifndef _SAFECRT_IMPL
+        char textmode : 7;
+        char unicode : 1;
+        char pipech2[2];
+        __int64 startpos;
+        BOOL utf8translations;
+#endif  /* _SAFECRT_IMPL */
+    }   ioinfo;
+#endif
+
+extern __declspec(dllimport) ioinfo * __pioinfo[];
+#define IOINFO_L2E 5
+#define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
+#define IOINFO_ARRAYS 64
+#define _NHANDLE_           (IOINFO_ARRAYS * IOINFO_ARRAY_ELTS)
+#define FOPEN 0x01
+#define _NO_CONSOLE_FILENO (intptr_t)-2
+
+/* This function emulates what the windows CRT does to validate file handles */
+int
+_PyVerify_fd(int fd)
+{
+	const int i1 = fd >> IOINFO_L2E;
+	const int i2 = fd & ((1 << IOINFO_L2E) - 1);
+
+	/* See that it isn't a special CLEAR fileno */
+	if (fd != _NO_CONSOLE_FILENO) {
+		/* Microsoft CRT would check that 0<=fd<_nhandle but we can't do that.  Instead
+		 * we check pointer validity and other info
+		 */
+		if (0 <= i1 && i1 < IOINFO_ARRAYS && __pioinfo[i1] != NULL) {
+			/* finally, check that the file is open */
+			if (__pioinfo[i1][i2].osfile & FOPEN)
+				return 1;
+		}
+	}
+	errno = EBADF;
+	return 0;
+}
+
+/* the special case of checking dup2.  The target fd must be in a sensible range */
+static int
+_PyVerify_fd_dup2(int fd1, int fd2)
+{
+	if (!_PyVerify_fd(fd1))
+		return 0;
+	if (fd2 == _NO_CONSOLE_FILENO)
+		return 0;
+	if ((unsigned)fd2 < _NHANDLE_)
+		return 1;
+	else
+		return 0;
+}
+#else
+/* dummy version. _PyVerify_fd() is already defined in fileobject.h */
+#define _PyVerify_fd_dup2(A, B) (1)
+#endif
+
 /* Return a dictionary corresponding to the POSIX environment table */
 #ifdef WITH_NEXT_FRAMEWORK
 /* On Darwin/MacOSX a shared library or framework has no access to
@@ -581,6 +684,8 @@ posix_fildes(PyObject *fdobj, int (*func)(int))
 	fd = PyObject_AsFileDescriptor(fdobj);
 	if (fd < 0)
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(fd);
 	Py_END_ALLOW_THREADS
@@ -6188,6 +6293,8 @@ posix_close(PyObject *self, PyObject *args)
 	int fd, res;
 	if (!PyArg_ParseTuple(args, "i:close", &fd))
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
 	Py_END_ALLOW_THREADS
@@ -6210,7 +6317,8 @@ posix_closerange(PyObject *self, PyObject *args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	for (i = fd_from; i < fd_to; i++)
-		close(i);
+		if (_PyVerify_fd(i))
+			close(i);
 	Py_END_ALLOW_THREADS
 	Py_RETURN_NONE;
 }
@@ -6226,6 +6334,8 @@ posix_dup(PyObject *self, PyObject *args)
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:dup", &fd))
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	fd = dup(fd);
 	Py_END_ALLOW_THREADS
@@ -6245,6 +6355,8 @@ posix_dup2(PyObject *self, PyObject *args)
 	int fd, fd2, res;
 	if (!PyArg_ParseTuple(args, "ii:dup2", &fd, &fd2))
 		return NULL;
+	if (!_PyVerify_fd_dup2(fd, fd2))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	res = dup2(fd, fd2);
 	Py_END_ALLOW_THREADS
@@ -6289,6 +6401,8 @@ posix_lseek(PyObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		return NULL;
 
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
 	res = _lseeki64(fd, pos, how);
@@ -6325,6 +6439,8 @@ posix_read(PyObject *self, PyObject *args)
 	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	n = read(fd, PyString_AsString(buffer), size);
 	Py_END_ALLOW_THREADS
@@ -6351,6 +6467,8 @@ posix_write(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "is*:write", &fd, &pbuf))
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, pbuf.buf, (size_t)pbuf.len);
 	Py_END_ALLOW_THREADS
@@ -6377,6 +6495,8 @@ posix_fstat(PyObject *self, PyObject *args)
         /* on OpenVMS we must ensure that all bytes are written to the file */
         fsync(fd);
 #endif
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 	res = FSTAT(fd, &st);
 	Py_END_ALLOW_THREADS
@@ -6419,6 +6539,8 @@ posix_fdopen(PyObject *self, PyObject *args)
 		PyMem_FREE(mode);
 		return NULL;
 	}
+	if (!_PyVerify_fd(fd))
+		return posix_error();
 	Py_BEGIN_ALLOW_THREADS
 #if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
 	if (mode[0] == 'a') {
@@ -6458,6 +6580,8 @@ posix_isatty(PyObject *self, PyObject *args)
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:isatty", &fd))
 		return NULL;
+	if (!_PyVerify_fd(fd))
+		return PyBool_FromLong(0);
 	return PyBool_FromLong(isatty(fd));
 }
 
