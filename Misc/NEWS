@@ -170,6 +170,10 @@ Library
 - Issue #5122: Synchronize tk load failure check to prevent a potential
   deadlock.
 
+- Issue #1818: collections.namedtuple() now supports a keyword argument
+  'rename' which lets invalid fieldnames be automatically converted to
+  positional names in the form, _1, _2, ...
+
 - Issue #4890: Handle empty text search pattern in Tkinter.Text.search.
 
 - Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a

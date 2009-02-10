@@ -597,7 +597,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, [verbose])
+.. function:: namedtuple(typename, field_names, [verbose], [rename])
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
    create tuple-like objects that have fields accessible by attribute lookup as
@@ -615,10 +615,18 @@ they add the ability to access fields by name instead of position index.
    a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*,
    or *raise*.
 
+   If *rename* is true, invalid fieldnames are automatically replaced
+   with positional names.  For example, ``['abc', 'def', 'ghi', 'abc']`` is
+   converted to ``['abc', '_2', 'ghi', '_4']``, eliminating the keyword
+   ``def`` and the duplicate fieldname ``abc``.
+
    If *verbose* is true, the class definition is printed just before being built.
 
    Named tuple instances do not have per-instance dictionaries, so they are
    lightweight and require no more memory than regular tuples.
+
+   .. versionchanged:: 2.7
+      added support for *rename*.
 
 Example:
 
