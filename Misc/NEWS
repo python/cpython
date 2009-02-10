@@ -116,6 +116,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5203: Fixed ctypes segfaults when passing a unicode string to a
+  function without argtypes (only occurs if HAVE_USABLE_WCHAR_T is false).
+
 - Issue #3386: distutils.sysconfig.get_python_lib prefix argument was ignored
   under NT and OS2. Patch by Philip Jenvey.
 
