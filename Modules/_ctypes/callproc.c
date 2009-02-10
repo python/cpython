@@ -664,6 +664,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 		return 0;
 #else
 		int size = PyUnicode_GET_SIZE(obj);
+		pa->ffi_type = &ffi_type_pointer;
 		size += 1; /* terminating NUL */
 		size *= sizeof(wchar_t);
 		pa->value.p = PyMem_Malloc(size);
