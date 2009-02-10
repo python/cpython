@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3386: distutils.sysconfig.get_python_lib prefix argument was ignored
+  under NT and OS2. Patch by Philip Jenvey.
+
 - Issue #5128: Make compileall properly inspect bytecode to determine if needs
   to be recreated. This avoids a timing hole thanks to the old reliance on the
   ctime of the files involved.
