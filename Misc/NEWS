@@ -453,6 +453,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
+
 - Issue #4494: Fix build with Py_NO_ENABLE_SHARED on Windows.
 
 - Issue #4895: Use _strdup on Windows CE.
