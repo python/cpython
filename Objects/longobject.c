@@ -557,7 +557,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 	if (Py_SIZE(v) < 0) {
 		ndigits = -(Py_SIZE(v));
 		if (!is_signed) {
-			PyErr_SetString(PyExc_TypeError,
+			PyErr_SetString(PyExc_OverflowError,
 				"can't convert negative long to unsigned");
 			return -1;
 		}
