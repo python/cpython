@@ -163,6 +163,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5128: Make compileall properly inspect bytecode to determine if needs
+  to be recreated. This avoids a timing hole thanks to the old reliance on the
+  ctime of the files involved.
+
 - Issue #5122: Synchronize tk load failure check to prevent a potential
   deadlock.
 
