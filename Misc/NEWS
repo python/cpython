@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3386: distutils.sysconfig.get_python_lib prefix argument was ignored
+  under NT and OS2. Patch by Philip Jenvey.
+
 - Issue #4890: Handle empty text search pattern in Tkinter.Text.search.
 
 - Issue #5170: Fixed Unicode output bug in logging and added test case.
