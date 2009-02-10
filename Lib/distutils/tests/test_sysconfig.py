@@ -26,6 +26,8 @@ class SysconfigTestCase(unittest.TestCase):
         # XXX doesn't work on Linux when Python was never installed before
         #self.assert_(os.path.isdir(lib_dir), lib_dir)
         # test for pythonxx.lib?
+        self.assertNotEqual(sysconfig.get_python_lib(),
+                            sysconfig.get_python_lib(prefix=TESTFN))
 
     def test_get_python_inc(self):
         inc_dir = sysconfig.get_python_inc()
