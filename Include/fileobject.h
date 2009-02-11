@@ -75,6 +75,9 @@ int _PyFile_SanitizeMode(char *mode);
  * Visual Studio 2005
  */
 int _PyVerify_fd(int fd);
+#elif defined _MSC_VER && _MSC_VER >= 1200
+/* fdopen doesn't set errno EBADF and crashes for large fd on debug build */
+#define _PyVerify_fd(fd) (_get_osfhandle(fd) >= 0)
 #else
 #define _PyVerify_fd(A) (1) /* dummy */
 #endif
