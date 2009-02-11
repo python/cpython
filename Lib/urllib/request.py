@@ -333,7 +333,6 @@ class OpenerDirector:
         handlers = chain.get(kind, ())
         for handler in handlers:
             func = getattr(handler, meth_name)
-
             result = func(*args)
             if result is not None:
                 return result
@@ -1070,7 +1069,8 @@ class AbstractHTTPHandler(BaseHandler):
         except socket.error as err: # XXX what error?
             raise URLError(err)
 
-        resp = addinfourl(r.fp, r.msg, req.get_full_url())
+##        resp = addinfourl(r.fp, r.msg, req.get_full_url())
+        resp = addinfourl(r, r.msg, req.get_full_url())
         resp.code = r.status
         resp.msg = r.reason
         return resp
@@ -1606,7 +1606,7 @@ class URLopener:
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
         if 200 <= response.status < 300:
-            return addinfourl(response.fp, response.msg, "http:" + url,
+            return addinfourl(response, response.msg, "http:" + url,
                               response.status)
         else:
             return self.http_error(

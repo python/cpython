@@ -310,7 +310,7 @@ def GetRequestHandler(responses):
             self.send_response(response_code)
 
             for (header, value) in headers:
-                self.send_header(header, value % self.port)
+                self.send_header(header, value % {'port':self.port})
             if body:
                 self.send_header("Content-type", "text/plain")
                 self.end_headers()
@@ -341,10 +341,17 @@ class TestUrlopen(unittest.TestCase):
             self.server.stop()
 
     def urlopen(self, url, data=None):
+        l = []
         f = urllib.request.urlopen(url, data)
-        result = f.read()
-        f.close()
-        return result
+        try:
+            # Exercise various methods
+            l.extend(f.readlines(200))
+            l.append(f.readline())
+            l.append(f.read(1024))
+            l.append(f.read())
+        finally:
+            f.close()
+        return b"".join(l)
 
     def start_server(self, responses=None):
         if responses is None:
@@ -361,7 +368,8 @@ class TestUrlopen(unittest.TestCase):
     def test_redirection(self):
         expected_response = b"We got here..."
         responses = [
-            (302, [("Location", "http://localhost:%s/somewhere_else")], ""),
+            (302, [("Location", "http://localhost:%(port)s/somewhere_else")],
+             ""),
             (200, [], expected_response)
         ]
 
@@ -369,6 +377,20 @@ class TestUrlopen(unittest.TestCase):
         data = self.urlopen("http://localhost:%s/" % handler.port)
         self.assertEquals(data, expected_response)
         self.assertEquals(handler.requests, ["/", "/somewhere_else"])
+
+    def test_chunked(self):
+        expected_response = b"hello world"
+        chunked_start = (
+                        b'a\r\n'
+                        b'hello worl\r\n'
+                        b'1\r\n'
+                        b'd\r\n'
+                        b'0\r\n'
+                        )
+        response = [(200, [("Transfer-Encoding", "chunked")], chunked_start)]
+        handler = self.start_server(response)
+        data = self.urlopen("http://localhost:%s/" % handler.port)
+        self.assertEquals(data, expected_response)
 
     def test_404(self):
         expected_response = b"Bad bad bad..."
