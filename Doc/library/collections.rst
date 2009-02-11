@@ -614,7 +614,8 @@ function:
     >>> getattr(p, 'x')
     11
 
-To convert a dictionary to a named tuple, use the double-star-operator [#]_:
+To convert a dictionary to a named tuple, use the double-star-operator
+(as described in :ref:`tut-unpacking-arguments`):
 
    >>> d = {'x': 11, 'y': 22}
    >>> Point(**d)
@@ -662,10 +663,10 @@ and more efficient to use a simple class declaration:
     >>> class Status:
     ...     open, pending, closed = range(3)
 
-.. rubric:: Footnotes
+.. seealso::
 
-.. [#] For information on the double-star-operator see
-   :ref:`tut-unpacking-arguments` and :ref:`calls`.
+   `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
+   adapted for Python 2.4.
 
 
 
