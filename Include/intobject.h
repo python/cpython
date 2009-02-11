@@ -1,8 +1,8 @@
 /* Integer object interface
 
-   This header files exists to make porting code to Python 3.0 easier. It
-   defines aliases from PyInt_* to PyLong_*. Only PyInt_GetMax() and
-   PyInt_CheckExact() remain in longobject.h.
+   This header file exists to make porting code to Python 3.0 easier. It
+   defines aliases from PyInt_* to PyLong_* and an alias from
+   PyNumber_Int to PyNumber_Long.
  */
 
 #ifndef Py_INTOBJECT_H
@@ -28,6 +28,7 @@ extern "C" {
 #define PyInt_AsUnsignedLongMask PyLong_AsUnsignedLongMask
 #define PyInt_AsUnsignedLongLongMask PyLong_AsUnsignedLongLongMask
 #define PyInt_AS_LONG PyLong_AS_LONG
+#define PyNumber_Int PyNumber_Long
 
 #ifdef __cplusplus
 }
