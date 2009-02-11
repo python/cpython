@@ -17,7 +17,8 @@ class addbase(object):
         self.read = self.fp.read
         self.readline = self.fp.readline
         # TODO(jhylton): Make sure an object with readlines() is also iterable
-        if hasattr(self.fp, "readlines"): self.readlines = self.fp.readlines
+        if hasattr(self.fp, "readlines"):
+            self.readlines = self.fp.readlines
         if hasattr(self.fp, "fileno"):
             self.fileno = self.fp.fileno
         else:
