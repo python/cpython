@@ -116,6 +116,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4631: Fix urlopen() result when an HTTP response uses chunked
+  encoding.
+
 - Issue #5203: Fixed ctypes segfaults when passing a unicode string to a
   function without argtypes (only occurs if HAVE_USABLE_WCHAR_T is false).
 

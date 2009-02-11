@@ -249,7 +249,7 @@ def parse_headers(fp):
 
     return email.parser.Parser(_class=HTTPMessage).parsestr(hstring)
 
-class HTTPResponse:
+class HTTPResponse(io.RawIOBase):
 
     # strict: If true, raise BadStatusLine if the status line can't be
     # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
@@ -471,8 +471,6 @@ class HTTPResponse:
         #          called, meaning self.isclosed() is meaningful.
         return self.fp is None
 
-    # XXX It would be nice to have readline and __iter__ for this, too.
-
     def read(self, amt=None):
         if self.fp is None:
             return b""
@@ -585,6 +583,9 @@ class HTTPResponse:
             amt -= len(chunk)
         return b"".join(s)
 
+    def fileno(self):
+        return self.fp.fileno()
+
     def getheader(self, name, default=None):
         if self.msg is None:
             raise ResponseNotReady()
@@ -595,6 +596,11 @@ class HTTPResponse:
         if self.msg is None:
             raise ResponseNotReady()
         return list(self.msg.items())
+
+    # We override IOBase.__iter__ so that it doesn't check for closed-ness
+
+    def __iter__(self):
+        return self
 
 
 class HTTPConnection:

@@ -491,7 +491,6 @@ class IOBase(metaclass=abc.ABCMeta):
         terminator(s) recognized.
         """
         # For backwards compatibility, a (slowish) readline().
-        self._checkClosed()
         if hasattr(self, "peek"):
             def nreadahead():
                 readahead = self.peek(1)
@@ -533,7 +532,6 @@ class IOBase(metaclass=abc.ABCMeta):
         lines will be read if the total size (in bytes/characters) of all
         lines so far exceeds hint.
         """
-        self._checkClosed()
         if hint is None or hint <= 0:
             return list(self)
         n = 0

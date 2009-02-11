@@ -1359,6 +1359,7 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, f.fileno)
             self.assertRaises(ValueError, f.isatty)
             self.assertRaises(ValueError, f.__iter__)
+            self.assertRaises(ValueError, next, f)
             if hasattr(f, "peek"):
                 self.assertRaises(ValueError, f.peek, 1)
             self.assertRaises(ValueError, f.read)
