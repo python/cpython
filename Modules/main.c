@@ -487,10 +487,23 @@ Py_Main(int argc, wchar_t **argv)
 	   so the actual executable path is passed in an environment variable.
 	   See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
 	   script. */
-	if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0')
-		Py_SetProgramName(p);
-	else
+	if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0') {
+		wchar_t* buffer;
+		size_t len = strlen(p);
+		size_t r;
+
+		buffer = malloc(len * sizeof(wchar_t));
+		if (buffer == NULL) {
+			Py_FatalError(
+			   "not enough memory to copy PYTHONEXECUTABLE");
+		}
+
+		r = mbstowcs(buffer, p, len);
+		Py_SetProgramName(buffer);
+		/* buffer is now handed off - do not free */
+	} else {
 		Py_SetProgramName(argv[0]);
+	}
 #else
 	Py_SetProgramName(argv[0]);
 #endif
