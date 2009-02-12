@@ -15,6 +15,8 @@ class Number(metaclass=ABCMeta):
     If you just want to check if an argument x is a number, without
     caring what kind, use isinstance(x, Number).
     """
+    __slots__ = ()
+
     # Concrete numeric types must provide their own hash implementation
     __hash__ = None
 
@@ -37,6 +39,8 @@ class Complex(Number):
     knowledge about them, it should fall back to the builtin complex
     type as described below.
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __complex__(self):
@@ -152,6 +156,8 @@ class Real(Complex):
     Real also provides defaults for the derived operations.
     """
 
+    __slots__ = ()
+
     @abstractmethod
     def __float__(self):
         """Any Real can be converted to a native float object.
@@ -264,6 +270,8 @@ Real.register(float)
 class Rational(Real):
     """.numerator and .denominator should be in lowest terms."""
 
+    __slots__ = ()
+
     @abstractproperty
     def numerator(self):
         raise NotImplementedError
@@ -286,6 +294,8 @@ class Rational(Real):
 
 class Integral(Rational):
     """Integral adds a conversion to int and the bit-string operations."""
+
+    __slots__ = ()
 
     @abstractmethod
     def __int__(self):
