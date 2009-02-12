@@ -457,6 +457,7 @@ calculate_path(void)
 #else
     unsigned long nsexeclength = MAXPATHLEN;
 #endif
+	char execpath[MAXPATHLEN+1];
 #endif
 
     if (_path) {
@@ -486,8 +487,13 @@ calculate_path(void)
       * will fail if a relative path was used. but in that case,
       * absolutize() should help us out below
       */
-     else if(0 == _NSGetExecutablePath(progpath, &nsexeclength) && progpath[0] == SEP)
-       ;
+	else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) && execpath[0] == SEP) {
+		size_t r = mbstowcs(progpath, execpath, MAXPATHLEN+1);
+		if (r == (size_t)-1 || r > MAXPATHLEN) {
+			/* Could not convert execpath, or it's too long. */
+			progpath[0] = '\0';
+		}
+	}
 #endif /* __APPLE__ */
 	else if (path) {
 		while (1) {
