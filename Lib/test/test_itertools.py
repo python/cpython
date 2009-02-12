@@ -328,7 +328,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, lzip('abc',count(3))), [('a', 3), ('b', 4)])
         self.assertEqual(take(2, zip('abc',count(-1))), [('a', -1), ('b', 0)])
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
-        self.assertRaises(TypeError, count, 2, 3)
+        self.assertRaises(TypeError, count, 2, 3, 4)
         self.assertRaises(TypeError, count, 'a')
         self.assertEqual(list(islice(count(maxsize-5), 10)),
                          list(range(maxsize-5, maxsize+5)))
@@ -341,12 +341,47 @@ class TestBasicOps(unittest.TestCase):
         c = count(-9)
         self.assertEqual(repr(c), 'count(-9)')
         next(c)
+        self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(next(c), -8)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr (ignoring the L in longs)
             r1 = repr(count(i)).replace('L', '')
             r2 = 'count(%r)'.__mod__(i).replace('L', '')
             self.assertEqual(r1, r2)
+
+    def test_count_with_stride(self):
+        self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
+        self.assertEqual(lzip('abc',count(2,0)), [('a', 2), ('b', 2), ('c', 2)])
+        self.assertEqual(lzip('abc',count(2,1)), [('a', 2), ('b', 3), ('c', 4)])
+        self.assertEqual(take(20, count(maxsize-15, 3)), take(20, range(maxsize-15, maxsize+100, 3)))
+        self.assertEqual(take(20, count(-maxsize-15, 3)), take(20, range(-maxsize-15,-maxsize+100, 3)))
+        self.assertEqual(take(3, count(2, 3.25-4j)), [2, 5.25-4j, 8.5-8j])
+        self.assertEqual(repr(take(3, count(10, 2.5))), repr([10, 12.5, 15.0]))
+        c = count(3, 5)
+        self.assertEqual(repr(c), 'count(3, 5)')
+        next(c)
+        self.assertEqual(repr(c), 'count(8, 5)')
+        c = count(-9, 0)
+        self.assertEqual(repr(c), 'count(-9, 0)')
+        next(c)
+        self.assertEqual(repr(c), 'count(-9, 0)')
+        c = count(-9, -3)
+        self.assertEqual(repr(c), 'count(-9, -3)')
+        next(c)
+        self.assertEqual(repr(c), 'count(-12, -3)')
+        self.assertEqual(repr(c), 'count(-12, -3)')
+        self.assertEqual(repr(count(10.5, 1.25)), 'count(10.5, 1.25)')
+        self.assertEqual(repr(count(10.5, 1)), 'count(10.5)')           # suppress step=1 when it's an int
+        self.assertEqual(repr(count(10.5, 1.00)), 'count(10.5, 1.0)')   # do show float values lilke 1.0
+        for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
+            for j in  (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 1, 10, sys.maxsize-5, sys.maxsize+5):
+                # Test repr (ignoring the L in longs)
+                r1 = repr(count(i, j)).replace('L', '')
+                if j == 1:
+                    r2 = ('count(%r)' % i).replace('L', '')
+                else:
+                    r2 = ('count(%r, %r)' % (i, j)).replace('L', '')
+                self.assertEqual(r1, r2)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))

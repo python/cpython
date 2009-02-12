@@ -178,7 +178,7 @@ loops that truncate the stream.
 
    The number of items returned is ``(n+r-1)! / r! / (n-1)!`` when ``n > 0``.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
 
 .. function:: compress(data, selectors)
 
@@ -191,22 +191,24 @@ loops that truncate the stream.
            # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
            return (d for d, s in zip(data, selectors) if s)
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
 
 
-.. function:: count([n])
+.. function:: count(n=0, step=1)
 
-   Make an iterator that returns consecutive integers starting with *n*. If not
-   specified *n* defaults to zero.   Often used as an argument to :func:`map` to
-   generate consecutive data points. Also, used with :func:`zip` to add sequence
-   numbers.  Equivalent to::
+   Make an iterator that returns evenly spaced values starting with *n*. Often
+   used as an argument to :func:`map` to generate consecutive data points.
+   Also, used with :func:`zip` to add sequence numbers.  Equivalent to::
 
-      def count(n=0):
+      def count(n=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
+          # count(2.5, 0.5) -> 3.5 3.0 4.5 ...
           while True:
               yield n
-              n += 1
+              n += step
 
+   .. versionchanged:: 3.1
+      added *step* argument and allowed non-integer arguments.
 
 .. function:: cycle(iterable)
 
