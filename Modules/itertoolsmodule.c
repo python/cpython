@@ -3357,13 +3357,12 @@ PyDoc_STRVAR(count_doc,
 \n\
 Return a count object whose .next() method returns consecutive\n\
 integers starting from zero or, if specified, from firstval.\n\
-If step is specified, counts by that interval.\n\
-Same as:\n\
+If step is specified, counts by that interval.  Equivalent to:\n\n\
     def count(firstval=0, step=1):\n\
         x = firstval\n\
-	    while 1:\n\
+        while 1:\n\
             yield x\n\
-		    x += step\n");
+            x += step\n");
 
 static PyTypeObject count_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
