@@ -441,7 +441,7 @@ def build_opener(*handlers):
     """
     import types
     def isclass(obj):
-        return isinstance(obj, types.ClassType) or hasattr(obj, "__bases__")
+        return isinstance(obj, (types.ClassType, type))
 
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
