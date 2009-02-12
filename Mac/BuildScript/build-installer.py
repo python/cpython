@@ -1033,8 +1033,7 @@ def main():
     buildPythonDocs()
     fn = os.path.join(WORKDIR, "_root", "Applications",
                 "Python %s"%(getVersion(),), "Update Shell Profile.command")
-    patchFile("scripts/postflight.patch-profile",  fn)
-    os.chmod(fn, 0755)
+    patchScript("scripts/postflight.patch-profile",  fn)
 
     folder = os.path.join(WORKDIR, "_root", "Applications", "Python %s"%(
         getVersion(),))
