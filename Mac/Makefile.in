@@ -215,7 +215,7 @@ install_Python4way: install_Python
 
 install_IDLE:
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
-	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -rf "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 	/bin/cp -PR "$(srcdir)/IDLE/IDLE.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
 	ln -sf $(INSTALLED_PYTHONAPP) "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python"
 	sed -e "s!%prefix%!$(prefix)!g" -e 's!%exe%!$(PYTHONFRAMEWORK)!g' < "$(srcdir)/IDLE/IDLE.app/Contents/MacOS/IDLE" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
