@@ -3,6 +3,7 @@ from test import test_support
 from itertools import *
 from weakref import proxy
 from decimal import Decimal
+from fractions import Fraction
 import sys
 import operator
 import random
@@ -353,6 +354,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(3, count(2, 3.25-4j)), [2, 5.25-4j, 8.5-8j])
         self.assertEqual(take(3, count(Decimal('1.1'), Decimal('.1'))),
                          [Decimal('1.1'), Decimal('1.2'), Decimal('1.3')])
+        self.assertEqual(take(3, count(Fraction(2,3), Fraction(1,7))),
+                         [Fraction(2,3), Fraction(17,21), Fraction(20,21)])
         self.assertEqual(repr(take(3, count(10, 2.5))), repr([10, 12.5, 15.0]))
         c = count(3, 5)
         self.assertEqual(repr(c), 'count(3, 5)')
