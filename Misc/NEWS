@@ -227,6 +227,9 @@ Library
 - Added a new itertools functions:  combinations_with_replacement()
   and compress().
 
+- Issue 5032:  added a step argument to itertools.count() and
+  allowed non-integer arguments.
+
 - Fix and properly document the multiprocessing module's logging
   support, expose the internal levels and provide proper usage
   examples.
