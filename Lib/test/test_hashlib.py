@@ -63,6 +63,18 @@ class HashLibTestCase(unittest.TestCase):
         computed = hashlib.new(name, data).hexdigest()
         self.assertEqual(computed, digest)
 
+    def check_no_unicode(self, algorithm_name):
+        # Unicode objects are not allowed as input.
+        self.assertRaises(TypeError, getattr(hashlib, algorithm_name), 'spam')
+        self.assertRaises(TypeError, hashlib.new, algorithm_name, 'spam')
+
+    def test_no_unicode(self):
+        self.check_no_unicode('md5')
+        self.check_no_unicode('sha1')
+        self.check_no_unicode('sha224')
+        self.check_no_unicode('sha256')
+        self.check_no_unicode('sha384')
+        self.check_no_unicode('sha512')
 
     def test_case_md5_0(self):
         self.check('md5', b'', 'd41d8cd98f00b204e9800998ecf8427e')

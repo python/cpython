@@ -15,6 +15,7 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "hashlib.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -154,23 +155,6 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     return retval;
 }
 
-#define MY_GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) do { \
-                if (PyUnicode_Check(obj) || !PyObject_CheckBuffer((obj))) { \
-                    PyErr_SetString(PyExc_TypeError, \
-                                    "object supporting the buffer API required"); \
-                    return NULL; \
-                } \
-                if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
-                    return NULL; \
-                } \
-                if ((viewp)->ndim > 1) { \
-                    PyErr_SetString(PyExc_BufferError, \
-                                    "Buffer must be single dimension"); \
-                    PyBuffer_Release((viewp)); \
-                    return NULL; \
-                } \
-            } while(0);
-
 PyDoc_STRVAR(EVP_update__doc__,
 "Update this hash object's state with the provided string.");
 
@@ -183,7 +167,7 @@ EVP_update(EVPobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:update", &obj))
         return NULL;
 
-    MY_GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
+    GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
     if (view.len > 0 && view.len <= MUNCH_SIZE) {
         EVP_DigestUpdate(&self->ctx, view.buf, view.len);
     } else {
@@ -271,7 +255,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     }
 
     if (data_obj)
-        MY_GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
     if (!PyArg_Parse(name_obj, "s", &nameStr)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
@@ -444,7 +428,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     }
 
     if (data_obj)
-        MY_GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
     digest = EVP_get_digestbyname(name);
 
@@ -475,7 +459,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
         } \
      \
         if (data_obj) \
-            MY_GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view); \
+            GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view); \
      \
         ret_obj = EVPnew( \
                     CONST_ ## NAME ## _name_obj, \
