@@ -21,6 +21,7 @@ from idlelib.tabbedpages import TabbedPageSet
 from idlelib.keybindingDialog import GetKeysDialog
 from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
 from idlelib.configHelpSourceEdit import GetHelpSourceDialog
+from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 
@@ -71,18 +72,27 @@ class ConfigDialog(Toplevel):
                 page_names=['Fonts/Tabs','Highlighting','Keys','General'])
         frameActionButtons = Frame(self,pady=2)
         #action buttons
+
+        if macosxSupport.runningAsOSXApp():
+            # Surpress the padx and pady arguments when
+            # running as IDLE.app, otherwise the text
+            # on these buttons will not be readable.
+            extraKwds={}
+        else:
+            extraKwds=dict(padx=6, pady=3)
+
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE,
-                padx=6,pady=3)
+                **extraKwds)
         self.buttonOk = Button(frameActionButtons,text='Ok',
                 command=self.Ok,takefocus=FALSE,
-                padx=6,pady=3)
+                **extraKwds)
         self.buttonApply = Button(frameActionButtons,text='Apply',
                 command=self.Apply,takefocus=FALSE,
-                padx=6,pady=3)
+                **extraKwds)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE,
-                padx=6,pady=3)
+                **extraKwds)
         self.CreatePageFontTab()
         self.CreatePageHighlight()
         self.CreatePageKeys()
