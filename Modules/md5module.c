@@ -17,6 +17,7 @@
 /* MD5 objects */
 
 #include "Python.h"
+#include "hashlib.h"
 
 
 /* Some useful types */
@@ -411,10 +412,13 @@ PyDoc_STRVAR(MD5_update__doc__,
 static PyObject *
 MD5_update(MD5object *self, PyObject *args)
 {
+    PyObject *obj;
     Py_buffer buf;
  
-    if (!PyArg_ParseTuple(args, "s*:update", &buf))
+    if (!PyArg_ParseTuple(args, "O:update", &obj))
         return NULL;
+
+    GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
     md5_process(&self->hash_state, buf.buf, buf.len);
 
@@ -511,13 +515,16 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"string", NULL};
     MD5object *new;
+    PyObject *data_obj = NULL;
     Py_buffer buf;
-    buf.buf = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s*:new", kwlist,
-                                     &buf)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|O:new", kwlist,
+                                     &data_obj)) {
         return NULL;
     }
+
+    if (data_obj)
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &buf);
 
     if ((new = newMD5object()) == NULL)
         return NULL;
@@ -528,7 +535,7 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
         Py_DECREF(new);
         return NULL;
     }
-    if (buf.buf) {
+    if (data_obj) {
         md5_process(&new->hash_state, buf.buf, buf.len);
 	PyBuffer_Release(&buf);
     }
