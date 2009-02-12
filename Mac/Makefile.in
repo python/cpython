@@ -49,7 +49,7 @@ installapps: install_Python install_PythonLauncher install_IDLE \
 	checkapplepython install_pythonw install_versionedtools
 
 installapps4way: install_Python4way install_PythonLauncher \
-	install_IDLE install_pythonw4way install_versionedtools
+	install_IDLE4way install_pythonw4way install_versionedtools
 
 
 install_pythonw: pythonw
@@ -217,7 +217,7 @@ install_IDLE:
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -rf "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 	/bin/cp -PR "$(srcdir)/IDLE/IDLE.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
-	ln -sf $(INSTALLED_PYTHONAPP) "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python"
+	ln -sf "$(INSTALLED_PYTHONAPP)" "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python"
 	sed -e "s!%prefix%!$(prefix)!g" -e 's!%exe%!$(PYTHONFRAMEWORK)!g' < "$(srcdir)/IDLE/IDLE.app/Contents/MacOS/IDLE" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
 	sed "s!%version%!`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`!g" < "$(srcdir)/IDLE/IDLE.app/Contents/Info.plist" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/Info.plist"
 	if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ]; then \
@@ -237,6 +237,11 @@ install_IDLE:
 			> "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ; \
 		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
 	fi
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+
+install_IDLE4way: install_IDLE
+	ln -sf "$(INSTALLED_PYTHONAPP)-32" "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python"
+	sed -e "s!%prefix%!$(prefix)!g" -e 's!%exe%!$(PYTHONFRAMEWORK)-32!g' < "$(srcdir)/IDLE/IDLE.app/Contents/MacOS/IDLE" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 
 $(INSTALLED_PYTHONAPP): install_Python
