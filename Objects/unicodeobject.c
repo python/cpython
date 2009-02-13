@@ -1385,7 +1385,7 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
-        PyErr_Format(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[4]);
         goto onError;
     }
     if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type, &repunicode, &newpos))
@@ -3440,7 +3440,7 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
-        PyErr_Format(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[4]);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -4712,7 +4712,7 @@ static PyObject *unicode_translate_call_errorhandler(const char *errors,
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
-        PyErr_Format(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[4]);
         Py_DECREF(restuple);
         return NULL;
     }
