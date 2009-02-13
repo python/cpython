@@ -2252,7 +2252,8 @@ will not be supported.
 
   In the current implementation, the built-in numeric types :class:`int`,
   :class:`long` and :class:`float` do not use coercion; the type :class:`complex`
-  however does use it.  The difference can become apparent when subclassing these
+  however does use coercion for binary operators and rich comparisons, despite
+  the above rules.  The difference can become apparent when subclassing these
   types.  Over time, the type :class:`complex` may be fixed to avoid coercion.
   All these types implement a :meth:`__coerce__` method, for use by the built-in
   :func:`coerce` function.
