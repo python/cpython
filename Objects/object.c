@@ -1072,23 +1072,15 @@ _Py_HashDouble(double v)
 long
 _Py_HashPointer(void *p)
 {
-#if SIZEOF_LONG >= SIZEOF_VOID_P
-	return (long)p;
-#else
-	/* convert to a Python long and hash that */
-	PyObject* longobj;
 	long x;
-
-	if ((longobj = PyLong_FromVoidPtr(p)) == NULL) {
-		x = -1;
-		goto finally;
-	}
-	x = PyObject_Hash(longobj);
-
-finally:
-	Py_XDECREF(longobj);
+	size_t y = (size_t)p;
+	/* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
+	   excessive hash collisions for dicts and sets */
+	y = (y >> 4) | (y << 8*SIZEOF_VOID_P - 4);
+	x = (long)y;
+	if (x == -1)
+		x = -2;
 	return x;
-#endif
 }
 
 long
