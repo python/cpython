@@ -524,6 +524,10 @@ class StructTest(unittest.TestCase):
         self.assertRaises(struct.error, s.pack_into, small_buf, 0, test_string)
         self.assertRaises(struct.error, s.pack_into, small_buf, 2, test_string)
 
+        # Test bogus offset (issue 3694)
+        sb = small_buf
+        self.assertRaises(TypeError, struct.pack_into, b'1', sb, None)
+
     def test_pack_into_fn(self):
         test_string = b'Reykjavik rocks, eow!'
         writable_buf = array.array('b', b' '*100)
