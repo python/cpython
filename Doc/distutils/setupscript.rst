@@ -347,6 +347,10 @@ symbols (functions or variables) to be exported. This option is not needed when
 building compiled extensions: Distutils  will automatically add ``initmodule``
 to the list of exported symbols.
 
+The :option:`depends` option is a list of files that the extension depends on
+(for example header files). The build command will call the compiler on the
+sources to rebuild extension if any on this files has been modified since the
+previous build.
 
 Relationships between Distributions and Packages
 ================================================
