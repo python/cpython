@@ -135,6 +135,14 @@ class XMLRPCTestCase(unittest.TestCase):
                           xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
 
+    def test_get_host_info(self):
+        # see bug #3613, this raised a TypeError
+        transp = xmlrpc.client.Transport()
+        self.assertEquals(transp.get_host_info("user@host.tld"),
+                          ('host.tld',
+                           [('Authorization', 'Basic dXNlcg==')], {}))
+
+
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
         self.assertEqual(xmlrpclib.escape("a&b"), "a&amp;b")

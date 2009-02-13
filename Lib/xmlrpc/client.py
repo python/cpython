@@ -1161,7 +1161,8 @@ class Transport:
 
         if auth:
             import base64
-            auth = base64.encodestring(urllib.parse.unquote(auth))
+            auth = urllib.parse.unquote_to_bytes(auth)
+            auth = base64.encodestring(auth).decode("utf-8")
             auth = "".join(auth.split()) # get rid of whitespace
             extra_headers = [
                 ("Authorization", "Basic " + auth)
