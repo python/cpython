@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5186: Reduce hash collisions for objects with no __hash__ method by
+  rotating the object pointer by 4 bits to the right.
+
 - Issue #4575: Fix Py_IS_INFINITY macro to work correctly on x87 FPUs:
   it now forces its argument to double before testing for infinity.
 
