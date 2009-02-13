@@ -52,18 +52,18 @@ def build(platform, clean):
     if 1:
         os.chdir(os.path.join(ROOT, TK, "win"))
         if clean:
-            nmake("makefile.vc", "clean", TCLDIR=tcldir)
-        nmake("makefile.vc", TCLDIR=tcldir, MACHINE=machine)
-        nmake("makefile.vc", "install", TCLDIR=tcldir, INSTALLDIR=dest, MACHINE=machine)
+            nmake("makefile.vc", "clean", DEBUG=0, TCLDIR=tcldir)
+        nmake("makefile.vc", DEBUG=0, MACHINE=machine)
+        nmake("makefile.vc", "install", DEBUG=0, INSTALLDIR=dest, MACHINE=machine)
 
     # TIX
     if 1:
         # python9.mak is available at http://svn.python.org
         os.chdir(os.path.join(ROOT, TIX, "win"))
         if clean:
-            nmake("python9.mak", "clean")
-        nmake("python9.mak", MACHINE=machine, INSTALL_DIR=dest)
-        nmake("python9.mak", "install", INSTALL_DIR=dest)
+            nmake("python.mak", "clean")
+        nmake("python.mak", MACHINE=machine, INSTALL_DIR=dest)
+        nmake("python.mak", "install", INSTALL_DIR=dest)
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("Win32", "AMD64"):
