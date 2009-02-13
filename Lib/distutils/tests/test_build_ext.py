@@ -1,5 +1,6 @@
 import sys
 import os
+import tempfile
 import shutil
 from io import StringIO
 
@@ -18,8 +19,7 @@ class BuildExtTestCase(unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
-        self.tmp_dir = os.path.join(os.path.dirname(__file__), 'xx')
-        os.mkdir(self.tmp_dir)
+        self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
 
