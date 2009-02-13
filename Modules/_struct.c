@@ -1785,7 +1785,7 @@ s_pack_into(PyObject *self, PyObject *args)
 	assert( buffer_len >= 0 );
 
 	/* Extract the offset from the first argument */
-	offset = PyLong_AsSsize_t(PyTuple_GET_ITEM(args, 1));
+	offset = PyNumber_AsSsize_t(PyTuple_GET_ITEM(args, 1), PyExc_IndexError);
 	if (offset == -1 && PyErr_Occurred())
 		return NULL;
 
