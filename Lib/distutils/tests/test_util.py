@@ -35,10 +35,11 @@ class utilTestCase(unittest.TestCase):
         if hasattr(os, 'uname'):
             self.uname = os.uname
             self._uname = os.uname()
-            os.uname = self._get_uname
         else:
             self.uname = None
             self._uname = None
+
+        os.uname = self._get_uname
 
     def tearDown(self):
         # getting back tne environment
@@ -91,6 +92,7 @@ class utilTestCase(unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         self.assertEquals(get_platform(), 'macosx-10.3-i386')
 
@@ -136,6 +138,9 @@ class utilTestCase(unittest.TestCase):
         def _isabs(path):
             return path[0] == '/'
         os.path.isabs = _isabs
+        def _join(*path):
+            return '/'.join(path)
+        os.path.join = _join
 
         self.assertEquals(change_root('/root', '/old/its/here'),
                           '/root/old/its/here')
