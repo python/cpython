@@ -602,14 +602,15 @@ HTTPRedirectHandler Objects
    precise meanings of the various redirection codes.
 
 
-.. method:: HTTPRedirectHandler.redirect_request(req, fp, code, msg, hdrs)
+.. method:: HTTPRedirectHandler.redirect_request(req, fp, code, msg, hdrs, newurl)
 
    Return a :class:`Request` or ``None`` in response to a redirect. This is called
    by the default implementations of the :meth:`http_error_30\*` methods when a
    redirection is received from the server.  If a redirection should take place,
    return a new :class:`Request` to allow :meth:`http_error_30\*` to perform the
-   redirect.  Otherwise, raise :exc:`HTTPError` if no other handler should try to
-   handle this URL, or return ``None`` if you can't but another handler might.
+   redirect to *newurl*.  Otherwise, raise :exc:`HTTPError` if no other handler
+   should try to handle this URL, or return ``None`` if you can't but another
+   handler might.
 
    .. note::
 
@@ -622,8 +623,8 @@ HTTPRedirectHandler Objects
 
 .. method:: HTTPRedirectHandler.http_error_301(req, fp, code, msg, hdrs)
 
-   Redirect to the ``Location:`` URL.  This method is called by the parent
-   :class:`OpenerDirector` when getting an HTTP 'moved permanently' response.
+   Redirect to the ``Location:`` or ``URI:`` URL.  This method is called by the
+   parent :class:`OpenerDirector` when getting an HTTP 'moved permanently' response.
 
 
 .. method:: HTTPRedirectHandler.http_error_302(req, fp, code, msg, hdrs)
