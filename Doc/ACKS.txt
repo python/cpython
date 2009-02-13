@@ -18,6 +18,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Oliver Andrich
    * Heidi Annexstad
    * Jesús Cea Avión
+   * Manuel Balsera
    * Daniel Barclay
    * Chris Barker
    * Don Bashford
