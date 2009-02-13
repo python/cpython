@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "hashlib.h"
 
 
 /* Endianness testing and definitions */
@@ -236,9 +237,9 @@ sha_init(SHAobject *sha_info)
 /* update the SHA digest */
 
 static void
-sha_update(SHAobject *sha_info, SHA_BYTE *buffer, int count)
+sha_update(SHAobject *sha_info, SHA_BYTE *buffer, unsigned int count)
 {
-    int i;
+    unsigned int i;
     SHA_INT32 clo;
 
     clo = sha_info->count_lo + ((SHA_INT32) count << 3);
@@ -428,14 +429,18 @@ PyDoc_STRVAR(SHA_update__doc__,
 static PyObject *
 SHA_update(SHAobject *self, PyObject *args)
 {
-    unsigned char *cp;
-    int len;
+    PyObject *data_obj;
+    Py_buffer view;
 
-    if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+    if (!PyArg_ParseTuple(args, "O:update", &data_obj))
         return NULL;
 
-    sha_update(self, cp, len);
+    GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
+    sha_update(self, (unsigned char*)view.buf,
+               Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+
+    PyBuffer_Release(&view);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -535,26 +540,34 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"string", NULL};
     SHAobject *new;
-    unsigned char *cp = NULL;
-    int len;
+    PyObject *data_obj = NULL;
+    Py_buffer view;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
-                                     &cp, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|O:new", kwlist,
+                                     &data_obj)) {
         return NULL;
     }
 
-    if ((new = newSHAobject()) == NULL)
+    GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
+
+    if ((new = newSHAobject()) == NULL) {
+        PyBuffer_Release(&view);
         return NULL;
+    }
 
     sha_init(new);
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
+        PyBuffer_Release(&view);
         return NULL;
     }
-    if (cp)
-        sha_update(new, cp, len);
+    if (data_obj) {
+        sha_update(new, (unsigned char*)view.buf,
+                   Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+    }
 
+    PyBuffer_Release(&view);
     return (PyObject *)new;
 }
 

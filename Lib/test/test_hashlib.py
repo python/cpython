@@ -39,11 +39,11 @@ class HashLibTestCase(unittest.TestCase):
             h = hashlib.new(name)
             self.assert_(hexstr(h.digest()) == h.hexdigest())
 
-
     def test_large_update(self):
         aas = 'a' * 128
         bees = 'b' * 127
         cees = 'c' * 126
+        abcs = aas + bees + cees
 
         for name in self.supported_hash_names:
             m1 = hashlib.new(name)
@@ -52,8 +52,11 @@ class HashLibTestCase(unittest.TestCase):
             m1.update(cees)
 
             m2 = hashlib.new(name)
-            m2.update(aas + bees + cees)
-            self.assertEqual(m1.digest(), m2.digest())
+            m2.update(abcs)
+            self.assertEqual(m1.digest(), m2.digest(), name+' update problem.')
+
+            m3 = hashlib.new(name, abcs)
+            self.assertEqual(m1.digest(), m3.digest(), name+' new problem.')
 
     def check(self, name, data, digest):
         # test the direct constructors
@@ -63,6 +66,18 @@ class HashLibTestCase(unittest.TestCase):
         computed = hashlib.new(name, data).hexdigest()
         self.assert_(computed == digest)
 
+    def check_no_unicode(self, algorithm_name):
+        # Unicode objects are not allowed as input.
+        self.assertRaises(TypeError, getattr(hashlib, algorithm_name), u'spam')
+        self.assertRaises(TypeError, hashlib.new, algorithm_name, u'spam')
+
+    def test_no_unicode(self):
+        self.check_no_unicode('md5')
+        self.check_no_unicode('sha1')
+        self.check_no_unicode('sha224')
+        self.check_no_unicode('sha256')
+        self.check_no_unicode('sha384')
+        self.check_no_unicode('sha512')
 
     def test_case_md5_0(self):
         self.check('md5', '', 'd41d8cd98f00b204e9800998ecf8427e')
