@@ -63,7 +63,8 @@ The modern interface, which was introduced in Python 2.4, provides:
 .. function:: urlsafe_b64encode(s)
 
    Encode string *s* using a URL-safe alphabet, which substitutes ``-`` instead of
-   ``+`` and ``_`` instead of ``/`` in the standard Base64 alphabet.
+   ``+`` and ``_`` instead of ``/`` in the standard Base64 alphabet.  The result
+   can still contain ``=``.
 
 
 .. function:: urlsafe_b64decode(s)
