@@ -12,6 +12,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "md5.h"
+#include "hashlib.h"
 
 typedef struct {
 	PyObject_HEAD
@@ -50,14 +51,18 @@ md5_dealloc(md5object *md5p)
 static PyObject *
 md5_update(md5object *self, PyObject *args)
 {
-	unsigned char *cp;
-	int len;
+	PyObject *data_obj;
+	Py_buffer view;
 
-	if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+	if (!PyArg_ParseTuple(args, "O:update", &data_obj))
 		return NULL;
 
-	md5_append(&self->md5, cp, len);
+	GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
+	md5_append(&self->md5, (unsigned char*)view.buf,
+		   Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+
+	PyBuffer_Release(&view);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -261,18 +266,25 @@ static PyObject *
 MD5_new(PyObject *self, PyObject *args)
 {
 	md5object *md5p;
-	unsigned char *cp = NULL;
-	int len = 0;
+	PyObject *data_obj = NULL;
+	Py_buffer view;
 
-	if (!PyArg_ParseTuple(args, "|s#:new", &cp, &len))
+	if (!PyArg_ParseTuple(args, "|O:new", &data_obj))
 		return NULL;
 
-	if ((md5p = newmd5object()) == NULL)
+	GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
+
+	if ((md5p = newmd5object()) == NULL) {
+		PyBuffer_Release(&view);
 		return NULL;
+	}
 
-	if (cp)
-		md5_append(&md5p->md5, cp, len);
+	if (data_obj) {
+		md5_append(&md5p->md5, (unsigned char*)view.buf,
+		       Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+	}
 
+	PyBuffer_Release(&view);
 	return (PyObject *)md5p;
 }
 

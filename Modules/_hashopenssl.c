@@ -1,7 +1,7 @@
 /* Module that wraps all OpenSSL hash algorithms */
 
 /*
- * Copyright (C) 2005   Gregory P. Smith (greg@krypto.org)
+ * Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
  * Licensed to PSF under a Contributor Agreement.
  *
  * Derived from a skeleton of shamodule.c containing work performed by:
@@ -15,6 +15,7 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "hashlib.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -30,6 +31,11 @@ typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          ctx;    /* OpenSSL message digest context */
+    /*
+     * TODO investigate performance impact of including a lock for this object
+     * here and releasing the Python GIL while hash updates are in progress.
+     * (perhaps only release GIL if input length will take long to process?)
+     */
 } EVPobject;
 
 
@@ -160,24 +166,30 @@ PyDoc_STRVAR(EVP_update__doc__,
 static PyObject *
 EVP_update(EVPobject *self, PyObject *args)
 {
-    unsigned char *cp;
-    Py_ssize_t len;
+    PyObject *obj;
+    Py_buffer view;
 
-    if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+    if (!PyArg_ParseTuple(args, "O:update", &obj))
         return NULL;
 
-    if (len > 0 && len <= MUNCH_SIZE) {
-    EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                      unsigned int));
+    GET_BUFFER_VIEW_OR_ERROUT(obj, &view, NULL);
+
+    if (view.len > 0 && view.len <= MUNCH_SIZE) {
+        EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
+                         Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
     } else {
-        Py_ssize_t offset = 0;
-        while (len) {
+        Py_ssize_t len = view.len;
+        unsigned char *cp = (unsigned char *)view.buf;
+        while (len > 0) {
             unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-            EVP_DigestUpdate(&self->ctx, cp + offset, process);
+            EVP_DigestUpdate(&self->ctx, cp, process);
             len -= process;
-            offset += process;
+            cp += process;
         }
     }
+
+    PyBuffer_Release(&view);
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -241,24 +253,31 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
+    PyObject *data_obj = NULL;
+    Py_buffer view;
     char *nameStr;
-    unsigned char *cp = NULL;
-    Py_ssize_t len = 0;
     const EVP_MD *digest;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s#:HASH", kwlist,
-                                     &name_obj, &cp, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:HASH", kwlist,
+                                     &name_obj, &data_obj)) {
         return -1;
     }
 
+    if (data_obj)
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, -1);
+
     if (!PyArg_Parse(name_obj, "s", &nameStr)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
+        if (data_obj)
+            PyBuffer_Release(&view);
         return -1;
     }
 
     digest = EVP_get_digestbyname(nameStr);
     if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unknown hash function");
+        if (data_obj)
+            PyBuffer_Release(&view);
         return -1;
     }
     EVP_DigestInit(&self->ctx, digest);
@@ -266,21 +285,23 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     self->name = name_obj;
     Py_INCREF(self->name);
 
-    if (cp && len) {
-        if (len > 0 && len <= MUNCH_SIZE) {
-        EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                          unsigned int));
+    if (data_obj) {
+        if (view.len > 0 && view.len <= MUNCH_SIZE) {
+            EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
+                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
         } else {
-            Py_ssize_t offset = 0;
-            while (len) {
+            Py_ssize_t len = view.len;
+            unsigned char *cp = (unsigned char*)view.buf;
+            while (len > 0) {
                 unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-                EVP_DigestUpdate(&self->ctx, cp + offset, process);
+                EVP_DigestUpdate(&self->ctx, cp, process);
                 len -= process;
-                offset += process;
+                cp += process;
             }
         }
+        PyBuffer_Release(&view);
     }
-    
+
     return 0;
 }
 #endif
@@ -373,7 +394,7 @@ EVPnew(PyObject *name_obj,
                                                               unsigned int));
         } else {
             Py_ssize_t offset = 0;
-            while (len) {
+            while (len > 0) {
                 unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
                 EVP_DigestUpdate(&self->ctx, cp + offset, process);
                 len -= process;
@@ -400,13 +421,14 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
+    PyObject *data_obj = NULL;
+    Py_buffer view = { 0 };
+    PyObject *ret_obj;
     char *name;
     const EVP_MD *digest;
-    unsigned char *cp = NULL;
-    Py_ssize_t len = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|s#:new", kwlist,
-                                     &name_obj, &cp, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|O:new", kwlist,
+                                     &name_obj, &data_obj)) {
         return NULL;
     }
 
@@ -415,9 +437,17 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
+    if (data_obj)
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
+
     digest = EVP_get_digestbyname(name);
 
-    return EVPnew(name_obj, digest, NULL, cp, len);
+    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf,
+                        Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+
+    if (data_obj)
+        PyBuffer_Release(&view);
+    return ret_obj;
 }
 
 /*
@@ -431,18 +461,27 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     static PyObject * \
     EVP_new_ ## NAME (PyObject *self, PyObject *args) \
     { \
-        unsigned char *cp = NULL; \
-        Py_ssize_t len = 0; \
+        PyObject *data_obj = NULL; \
+        Py_buffer view = { 0 }; \
+        PyObject *ret_obj; \
      \
-        if (!PyArg_ParseTuple(args, "|s#:" #NAME , &cp, &len)) { \
+        if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
             return NULL; \
         } \
      \
-        return EVPnew( \
-                CONST_ ## NAME ## _name_obj, \
-                NULL, \
-                CONST_new_ ## NAME ## _ctx_p, \
-                cp, len); \
+        if (data_obj) \
+            GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL); \
+     \
+        ret_obj = EVPnew( \
+                    CONST_ ## NAME ## _name_obj, \
+                    NULL, \
+                    CONST_new_ ## NAME ## _ctx_p, \
+                    (unsigned char*)view.buf, \
+                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int)); \
+     \
+        if (data_obj) \
+            PyBuffer_Release(&view); \
+        return ret_obj; \
     }
 
 /* a PyMethodDef structure for the constructor */
