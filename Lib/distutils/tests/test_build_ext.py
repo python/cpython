@@ -1,5 +1,6 @@
 import sys
 import os
+import tempfile
 import shutil
 from StringIO import StringIO
 
@@ -10,6 +11,10 @@ from distutils import sysconfig
 import unittest
 from test import test_support
 
+# http://bugs.python.org/issue4373
+# Don't load the xx module more than once.
+ALREADY_TESTED = False
+
 def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
@@ -18,13 +23,13 @@ class BuildExtTestCase(unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
-        self.tmp_dir = os.path.join(os.path.dirname(__file__), 'xx')
-        os.mkdir(self.tmp_dir)
+        self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
         shutil.copy(_get_source_filename(), self.tmp_dir)
 
     def test_build_ext(self):
+        global ALREADY_TESTED
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
         xx_ext = Extension('xx', [xx_c])
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
@@ -46,6 +51,11 @@ class BuildExtTestCase(unittest.TestCase):
             cmd.run()
         finally:
             sys.stdout = old_stdout
+
+        if ALREADY_TESTED:
+            return
+        else:
+            ALREADY_TESTED = True
 
         import xx
 
