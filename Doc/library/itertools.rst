@@ -200,19 +200,19 @@ loops that truncate the stream.
    .. versionadded:: 2.7
 
 
-.. function:: count(n=0, step=1)
+.. function:: count(start=0, step=1)
 
    Make an iterator that returns evenly spaced values starting with *n*. Often
    used as an argument to :func:`imap` to generate consecutive data points.
    Also, used with :func:`izip` to add sequence numbers.  Equivalent to::
 
-      def count(n=0, step=1):
+      def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
           # count(2.5, 0.5) -> 3.5 3.0 4.5 ...
+          n = start
           while True:
               yield n
               n += step
-
 
    .. versionchanged:: 2.7
       added *step* argument and allowed non-integer arguments.

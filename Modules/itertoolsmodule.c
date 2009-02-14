@@ -3233,11 +3233,10 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_ssize_t cnt = 0;
 	PyObject *long_cnt = NULL;
 	PyObject *long_step = NULL;
+	static char *kwlist[] = {"start", "step", 0};
 
-	if (type == &count_type && !_PyArg_NoKeywords("count()", kwds))
-		return NULL;
-
-	if (!PyArg_UnpackTuple(args, "count", 0, 2, &long_cnt, &long_step))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:count",
+			kwlist, &long_cnt, &long_step))
 		return NULL;
 
 	if (long_cnt != NULL && !PyNumber_Check(long_cnt) ||
@@ -3353,10 +3352,10 @@ count_repr(countobject *lz)
 }
 
 PyDoc_STRVAR(count_doc,
-			 "count([firstval[, step]]) --> count object\n\
+			 "count([start[, step]]) --> count object\n\
 \n\
 Return a count object whose .next() method returns consecutive\n\
-integers starting from zero or, if specified, from firstval.\n\
+integers starting from zero or, if specified, from start.\n\
 If step is specified, counts by that interval.  Equivalent to:\n\n\
     def count(firstval=0, step=1):\n\
         x = firstval\n\
