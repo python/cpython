@@ -5,8 +5,9 @@ import shutil
 
 from distutils.file_util import move_file
 from distutils import log
+from distutils.tests import support
 
-class FileUtilTestCase(unittest.TestCase):
+class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def _log(self, msg, *args):
         if len(args) > 0:
@@ -15,24 +16,20 @@ class FileUtilTestCase(unittest.TestCase):
             self._logs.append(msg)
 
     def setUp(self):
+        support.TempdirManager.setUp(self)
         self._logs = []
         self.old_log = log.info
         log.info = self._log
-        self.source = os.path.join(os.path.dirname(__file__), 'f1')
-        self.target = os.path.join(os.path.dirname(__file__), 'f2')
-        self.target_dir = os.path.join(os.path.dirname(__file__), 'd1')
+        tmp_dir = self.mkdtemp()
+        self.source = os.path.join(tmp_dir, 'f1')
+        self.target = os.path.join(tmp_dir, 'f2')
+        self.target_dir = os.path.join(tmp_dir, 'd1')
 
     def tearDown(self):
         log.info = self.old_log
-        for f in (self.source, self.target, self.target_dir):
-            if os.path.exists(f):
-                if os.path.isfile(f):
-                    os.remove(f)
-                else:
-                    shutil.rmtree(f)
+        support.TempdirManager.tearDown(self)
 
     def test_move_file_verbosity(self):
-
         f = open(self.source, 'w')
         f.write('some content')
         f.close()
