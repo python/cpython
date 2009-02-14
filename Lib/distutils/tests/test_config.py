@@ -2,6 +2,7 @@
 import sys
 import os
 import unittest
+import tempfile
 
 from distutils.core import PyPIRCCommand
 from distutils.core import Distribution
@@ -49,13 +50,15 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
+        support.TempdirManager.setUp(self)
+
         if 'HOME' in os.environ:
             self._old_home = os.environ['HOME']
         else:
             self._old_home = None
-        curdir = os.path.dirname(__file__)
-        os.environ['HOME'] = curdir
-        self.rc = os.path.join(curdir, '.pypirc')
+        self.tmp_dir = self.mkdtemp()
+        os.environ['HOME'] = self.tmp_dir
+        self.rc = os.path.join(self.tmp_dir, '.pypirc')
         self.dist = Distribution()
 
         class command(PyPIRCCommand):
@@ -74,9 +77,8 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
             del os.environ['HOME']
         else:
             os.environ['HOME'] = self._old_home
-        if os.path.exists(self.rc):
-            os.remove(self.rc)
         set_threshold(self.old_threshold)
+        support.TempdirManager.tearDown(self)
 
     def test_server_registration(self):
         # This test makes sure PyPIRCCommand knows how to:

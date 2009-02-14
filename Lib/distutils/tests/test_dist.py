@@ -9,6 +9,7 @@ import unittest
 import warnings
 
 from test.support import TESTFN
+from distutils.tests import support
 
 
 class test_dist(distutils.cmd.Command):
@@ -120,7 +121,7 @@ class DistributionTestCase(unittest.TestCase):
 
         self.assertEquals(len(warns), 0)
 
-class MetadataTestCase(unittest.TestCase):
+class MetadataTestCase(support.TempdirManager, unittest.TestCase):
 
     def test_simple_metadata(self):
         attrs = {"name": "package",
@@ -219,8 +220,8 @@ class MetadataTestCase(unittest.TestCase):
         else:
             user_filename = "pydistutils.cfg"
 
-        curdir = os.path.dirname(__file__)
-        user_filename = os.path.join(curdir, user_filename)
+        temp_dir = self.mkdtemp()
+        user_filename = os.path.join(temp_dir, user_filename)
         f = open(user_filename, 'w')
         f.write('.')
         f.close()
@@ -230,14 +231,14 @@ class MetadataTestCase(unittest.TestCase):
 
             # linux-style
             if sys.platform in ('linux', 'darwin'):
-                os.environ['HOME'] = curdir
+                os.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assert_(user_filename in files)
 
             # win32-style
             if sys.platform == 'win32':
                 # home drive should be found
-                os.environ['HOME'] = curdir
+                os.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assert_(user_filename in files,
                              '%r not found in %r' % (user_filename, files))
