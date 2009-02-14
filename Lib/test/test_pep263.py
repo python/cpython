@@ -1,4 +1,4 @@
-#! -*- coding: koi8-r -*-
+# -*- coding: koi8-r -*-
 
 import unittest
 from test import test_support
