@@ -1,5 +1,5 @@
 """Support code for distutils test cases."""
-
+import os
 import shutil
 import tempfile
 
@@ -31,7 +31,7 @@ class TempdirManager(object):
         super().tearDown()
         while self.tempdirs:
             d = self.tempdirs.pop()
-            shutil.rmtree(d)
+            shutil.rmtree(d, os.name in ('nt', 'cygwin'))
 
     def mkdtemp(self):
         """Create a temporary directory that will be cleaned up.

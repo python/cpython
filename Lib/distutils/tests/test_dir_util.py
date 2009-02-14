@@ -9,8 +9,9 @@ from distutils.dir_util import create_tree
 from distutils.dir_util import copy_tree
 
 from distutils import log
+from distutils.tests import support
 
-class DirUtilTestCase(unittest.TestCase):
+class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def _log(self, msg, *args):
         if len(args) > 0:
@@ -19,18 +20,18 @@ class DirUtilTestCase(unittest.TestCase):
             self._logs.append(msg)
 
     def setUp(self):
+        support.TempdirManager.setUp(self)
         self._logs = []
-        self.root_target = os.path.join(os.path.dirname(__file__), 'deep')
+        tmp_dir = self.mkdtemp()
+        self.root_target = os.path.join(tmp_dir, 'deep')
         self.target = os.path.join(self.root_target, 'here')
-        self.target2 = os.path.join(os.path.dirname(__file__), 'deep2')
+        self.target2 = os.path.join(tmp_dir, 'deep2')
         self.old_log = log.info
         log.info = self._log
 
     def tearDown(self):
-        for target in (self.target, self.target2):
-            if os.path.exists(target):
-                shutil.rmtree(target)
         log.info = self.old_log
+        support.TempdirManager.tearDown(self)
 
     def test_mkpath_remove_tree_verbosity(self):
 

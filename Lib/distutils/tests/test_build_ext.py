@@ -7,6 +7,7 @@ from io import StringIO
 from distutils.core import Extension, Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
+from distutils.tests.support import TempdirManager
 
 import unittest
 from test import support
@@ -19,11 +20,12 @@ def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
-class BuildExtTestCase(unittest.TestCase):
+class BuildExtTestCase(TempdirManager, unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
-        self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
+        TempdirManager.setUp(self)
+        self.tmp_dir = self.mkdtemp()
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
         shutil.copy(_get_source_filename(), self.tmp_dir)
@@ -74,8 +76,7 @@ class BuildExtTestCase(unittest.TestCase):
         # Get everything back to normal
         support.unload('xx')
         sys.path = self.sys_path
-        # XXX on Windows the test leaves a directory with xx module in TEMP
-        shutil.rmtree(self.tmp_dir, os.name == 'nt' or sys.platform == 'cygwin')
+        TempdirManager.tearDown(self)
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
