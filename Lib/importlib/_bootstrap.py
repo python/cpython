@@ -610,36 +610,25 @@ class PathFinder:
 
     """Meta path finder for sys.(path|path_hooks|path_importer_cache)."""
 
-    _default_hook = staticmethod(chaining_fs_path_hook(ExtensionFileImporter,
-                                                        PyFileImporter))
-
-    # The list of implicit hooks cannot be a class attribute because of
-    # bootstrapping issues for accessing imp.
     @classmethod
-    def _implicit_hooks(cls):
-        """Return a list of the implicit path hooks."""
-        return [cls._default_hook, imp.NullImporter]
+    def _path_hooks(cls, path, hooks=None):
+        """Search sequence of hooks for a finder for 'path'.
 
-    @classmethod
-    def _path_hooks(cls, path):
-        """Search sys.path_hooks for a finder for 'path'.
-
-        Guaranteed to return a finder for the path as NullImporter is the
-        default importer for any path that does not have an explicit finder.
+        If 'hooks' is false then use sys.path_hooks.
 
         """
-        for hook in sys.path_hooks + cls._implicit_hooks():
+        if not hooks:
+            hooks = sys.path_hooks
+        for hook in hooks:
             try:
                 return hook(path)
             except ImportError:
                 continue
         else:
-            # This point should never be reached thanks to NullImporter.
-            raise SystemError("no hook could find an importer for "
-                              "{0}".format(path))
+            raise ImportError("no path hook found for {0}".format(path))
 
     @classmethod
-    def _path_importer_cache(cls, path):
+    def _path_importer_cache(cls, path, default=None):
         """Get the finder for the path from sys.path_importer_cache.
 
         If the path is not in the cache, find the appropriate finder and cache
@@ -657,9 +646,9 @@ class PathFinder:
             finder = cls._path_hooks(path)
             sys.path_importer_cache[path] = finder
         else:
-            if finder is None:
+            if finder is None and default:
                 # Raises ImportError on failure.
-                finder = cls._default_hook(path)
+                finder = default(path)
                 sys.path_importer_cache[path] = finder
         return finder
 
@@ -680,6 +669,30 @@ class PathFinder:
             return None
 
 
+class _DefaultPathFinder(PathFinder):
+
+    """Subclass of PathFinder that implements implicit semantics for
+    __import__."""
+
+    _default_hook = staticmethod(chaining_fs_path_hook(ExtensionFileImporter,
+                                                        PyFileImporter))
+
+    @classmethod
+    def _path_hooks(cls, path):
+        """Search sys.path_hooks as well as implicit path hooks."""
+        try:
+            return super()._path_hooks(path)
+        except ImportError:
+            implicit_hooks = [cls._default_hook, imp.NullImporter]
+            return super()._path_hooks(path, implicit_hooks)
+
+    @classmethod
+    def _path_importer_cache(cls, path):
+        """Use the default path hook when None is stored in
+        sys.path_importer_cache."""
+        return super()._path_importer_cache(path, cls._default_hook)
+
+
 class ImportLockContext(object):
 
     """Context manager for the import lock."""
@@ -692,6 +705,8 @@ class ImportLockContext(object):
         """Release the import lock regardless of any raised exceptions."""
         imp.release_lock()
 
+
+_IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
 
 def _gcd_import(name, package=None, level=0):
     """Import and return the module based on its name, the package the call is
@@ -736,8 +751,7 @@ def _gcd_import(name, package=None, level=0):
             # Backwards-compatibility; be nicer to skip the dict lookup.
             parent_module = sys.modules[parent]
             path = parent_module.__path__
-        meta_path = (sys.meta_path +
-                     [BuiltinImporter, FrozenImporter, PathFinder])
+        meta_path = sys.meta_path + _IMPLICIT_META_PATH
         for finder in meta_path:
             loader = finder.find_module(name, path)
             if loader is not None:
