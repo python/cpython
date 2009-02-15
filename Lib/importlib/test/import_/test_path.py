@@ -1,3 +1,4 @@
+from importlib import _bootstrap
 from importlib import machinery
 from .. import util
 from . import util as import_util
@@ -12,20 +13,13 @@ import unittest
 
 class FinderTests(unittest.TestCase):
 
-    """Tests for SysPathImporter."""
+    """Tests for PathFinder."""
 
     def test_failure(self):
         # Test None returned upon not finding a suitable finder.
-        def mock_implicit_hooks():
-            return []
-        # XXX Not blackbox.
-        original_hooks = machinery.PathFinder._implicit_hooks
-        machinery.PathFinder._implicit_hooks = staticmethod(mock_implicit_hooks)
-        try:
-            with util.import_state():
-                self.assert_(machinery.PathFinder.find_module('XXX') is None)
-        finally:
-            machinery.PathFinder._implicit_hooks = original_hooks
+        module = '<test module>'
+        with util.import_state():
+            self.assert_(machinery.PathFinder.find_module(module) is None)
 
     def test_sys_path(self):
         # Test that sys.path is used when 'path' is None.
@@ -48,23 +42,6 @@ class FinderTests(unittest.TestCase):
             loader = machinery.PathFinder.find_module(module, [path])
             self.assert_(loader is importer)
 
-    def test_path_importer_cache_has_None(self):
-        # Test that the default hook is used when sys.path_importer_cache
-        # contains None for a path.
-        module = '<test module>'
-        importer = util.mock_modules(module)
-        path = '<test path>'
-        # XXX Not blackbox.
-        original_hook = machinery.PathFinder._default_hook
-        mock_hook = import_util.mock_path_hook(path, importer=importer)
-        machinery.PathFinder._default_hook = staticmethod(mock_hook)
-        try:
-            with util.import_state(path_importer_cache={path: None}):
-                loader = machinery.PathFinder.find_module(module, path=[path])
-                self.assert_(loader is importer)
-        finally:
-            machinery.PathFinder._default_hook = original_hook
-
     def test_path_hooks(self):
         # Test that sys.path_hooks is used.
         # Test that sys.path_importer_cache is set.
@@ -78,6 +55,11 @@ class FinderTests(unittest.TestCase):
             self.assert_(path in sys.path_importer_cache)
             self.assert_(sys.path_importer_cache[path] is importer)
 
+
+class DefaultPathFinderTests(unittest.TestCase):
+
+    """Test importlib._bootstrap._DefaultPathFinder."""
+
     def test_implicit_hooks(self):
         # Test that the implicit path hooks are used.
         existing_path = os.path.dirname(support.TESTFN)
@@ -85,22 +67,41 @@ class FinderTests(unittest.TestCase):
         module = '<module>'
         assert not os.path.exists(bad_path)
         with util.import_state():
-            nothing = machinery.PathFinder.find_module(module,
-                                                       path=[existing_path])
+            nothing = _bootstrap._DefaultPathFinder.find_module(module,
+                                                           path=[existing_path])
             self.assert_(nothing is None)
             self.assert_(existing_path in sys.path_importer_cache)
             self.assert_(not isinstance(sys.path_importer_cache[existing_path],
                                         imp.NullImporter))
-            nothing = machinery.PathFinder.find_module(module, path=[bad_path])
+            nothing = _bootstrap._DefaultPathFinder.find_module(module,
+                                                                path=[bad_path])
             self.assert_(nothing is None)
             self.assert_(bad_path in sys.path_importer_cache)
             self.assert_(isinstance(sys.path_importer_cache[bad_path],
                                     imp.NullImporter))
 
+    def test_path_importer_cache_has_None(self):
+        # Test that the default hook is used when sys.path_importer_cache
+        # contains None for a path.
+        module = '<test module>'
+        importer = util.mock_modules(module)
+        path = '<test path>'
+        # XXX Not blackbox.
+        original_hook = _bootstrap._DefaultPathFinder._default_hook
+        mock_hook = import_util.mock_path_hook(path, importer=importer)
+        _bootstrap._DefaultPathFinder._default_hook = staticmethod(mock_hook)
+        try:
+            with util.import_state(path_importer_cache={path: None}):
+                loader = _bootstrap._DefaultPathFinder.find_module(module,
+                                                                    path=[path])
+                self.assert_(loader is importer)
+        finally:
+            _bootstrap._DefaultPathFinder._default_hook = original_hook
+
 
 def test_main():
     from test.support import run_unittest
-    run_unittest(PathTests, __path__Tests, FinderTests)
+    run_unittest(FinderTests, DefaultPathFinderTests)
 
 if __name__ == '__main__':
     test_main()
