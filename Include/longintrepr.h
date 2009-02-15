@@ -19,14 +19,13 @@ extern "C" {
    long_pow() requires that SHIFT be divisible by 5. */
 
 typedef unsigned short digit;
-typedef unsigned int wdigit; /* digit widened to parameter size */
 #define BASE_TWODIGITS_TYPE long
 typedef unsigned BASE_TWODIGITS_TYPE twodigits;
 typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
 
 #define PyLong_SHIFT    15
 #define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
-#define PyLong_MASK     ((int)(PyLong_BASE - 1))
+#define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
 /* b/w compatibility with Python 2.5 */
 #define SHIFT	PyLong_SHIFT
