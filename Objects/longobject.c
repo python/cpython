@@ -6,6 +6,7 @@
 #include "longintrepr.h"
 
 #include <ctype.h>
+#include <stddef.h>
 
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS		257
@@ -90,12 +91,6 @@ maybe_small_long(PyLongObject *v)
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
-/* Forward */
-static PyLongObject *long_normalize(PyLongObject *);
-static PyLongObject *mul1(PyLongObject *, wdigit);
-static PyLongObject *muladd1(PyLongObject *, wdigit, wdigit);
-static PyLongObject *divrem1(PyLongObject *, digit, digit *);
-
 #define SIGCHECK(PyTryBlock) \
 	if (--_Py_Ticker < 0) { \
 		_Py_Ticker = _Py_CheckInterval; \
@@ -122,25 +117,29 @@ long_normalize(register PyLongObject *v)
 /* Allocate a new long int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
+#define MAX_LONG_DIGITS \
+	((PY_SSIZE_T_MAX - offsetof(PyLongObject, ob_digit))/sizeof(digit))
+
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
 	PyLongObject *result;
-	/* Can't use sizeof(PyLongObject) here, since the
-	   compiler takes padding at the end into account.
-	   As the consequence, this would waste 2 bytes on
-	   a 32-bit system, and 6 bytes on a 64-bit system.
-	   This computation would be incorrect on systems
-	   which have padding before the digits; with 16-bit
-	   digits this should not happen. */
-	result = PyObject_MALLOC(sizeof(PyVarObject) + 
+	/* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+	   sizeof(digit)*size.  Previous incarnations of this code used
+	   sizeof(PyVarObject) instead of the offsetof, but this risks being
+	   incorrect in the presence of padding between the PyVarObject header
+	   and the digits. */
+	if (size > MAX_LONG_DIGITS) {
+		PyErr_SetString(PyExc_OverflowError,
+				"too many digits in integer");
+		return NULL;
+	}
+	result = PyObject_MALLOC(offsetof(PyLongObject, ob_digit) +
 				 size*sizeof(digit));
 	if (!result) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	/* XXX(nnorwitz): This can overflow --
-           PyObject_NEW_VAR / _PyObject_VAR_SIZE need to detect overflow */
 	return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
 }
 
@@ -297,8 +296,8 @@ PyLong_FromDouble(double dval)
 		return NULL;
 	frac = ldexp(frac, (expo-1) % PyLong_SHIFT + 1);
 	for (i = ndig; --i >= 0; ) {
-		long bits = (long)frac;
-		v->ob_digit[i] = (digit) bits;
+		digit bits = (digit)frac;
+		v->ob_digit[i] = bits;
 		frac = frac - (double)bits;
 		frac = ldexp(frac, PyLong_SHIFT);
 	}
@@ -667,9 +666,9 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 	int incr;			/* direction to move pstartbyte */
 	const unsigned char* pendbyte;	/* MSB of bytes */
 	size_t numsignificantbytes;	/* number of bytes that matter */
-	size_t ndigits;			/* number of Python long digits */
+	Py_ssize_t ndigits;		/* number of Python long digits */
 	PyLongObject* v;		/* result */
-	int idigit = 0;  		/* next free index in v->ob_digit */
+	Py_ssize_t idigit = 0;		/* next free index in v->ob_digit */
 
 	if (n == 0)
 		return PyLong_FromLong(0L);
@@ -712,12 +711,16 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 	}
 
 	/* How many Python long digits do we need?  We have
-	   8*numsignificantbytes bits, and each Python long digit has PyLong_SHIFT
-	   bits, so it's the ceiling of the quotient. */
+	   8*numsignificantbytes bits, and each Python long digit has
+	   PyLong_SHIFT bits, so it's the ceiling of the quotient. */
+	/* catch overflow before it happens */
+	if (numsignificantbytes > (PY_SSIZE_T_MAX - PyLong_SHIFT) / 8) {
+		PyErr_SetString(PyExc_OverflowError,
+				"byte array too long to convert to int");
+		return NULL;
+	}
 	ndigits = (numsignificantbytes * 8 + PyLong_SHIFT - 1) / PyLong_SHIFT;
-	if (ndigits > (size_t)INT_MAX)
-		return PyErr_NoMemory();
-	v = _PyLong_New((int)ndigits);
+	v = _PyLong_New(ndigits);
 	if (v == NULL)
 		return NULL;
 
@@ -746,8 +749,9 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 			accumbits += 8;
 			if (accumbits >= PyLong_SHIFT) {
 				/* There's enough to fill a Python digit. */
-				assert(idigit < (int)ndigits);
-				v->ob_digit[idigit] = (digit)(accum & PyLong_MASK);
+				assert(idigit < ndigits);
+				v->ob_digit[idigit] = (digit)(accum &
+							      PyLong_MASK);
 				++idigit;
 				accum >>= PyLong_SHIFT;
 				accumbits -= PyLong_SHIFT;
@@ -756,7 +760,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 		}
 		assert(accumbits < PyLong_SHIFT);
 		if (accumbits) {
-			assert(idigit < (int)ndigits);
+			assert(idigit < ndigits);
 			v->ob_digit[idigit] = (digit)accum;
 			++idigit;
 		}
@@ -1409,19 +1413,11 @@ v_isub(digit *x, Py_ssize_t m, digit *y, Py_ssize_t n)
 /* Multiply by a single digit, ignoring the sign. */
 
 static PyLongObject *
-mul1(PyLongObject *a, wdigit n)
-{
-	return muladd1(a, n, (digit)0);
-}
-
-/* Multiply by a single digit and add a single digit, ignoring the sign. */
-
-static PyLongObject *
-muladd1(PyLongObject *a, wdigit n, wdigit extra)
+mul1(PyLongObject *a, digit n)
 {
 	Py_ssize_t size_a = ABS(Py_SIZE(a));
 	PyLongObject *z = _PyLong_New(size_a+1);
-	twodigits carry = extra;
+	twodigits carry = 0;
 	Py_ssize_t i;
 
 	if (z == NULL)
@@ -2034,8 +2030,6 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 static PyLongObject *x_divrem
 	(PyLongObject *, PyLongObject *, PyLongObject **);
 static PyObject *long_long(PyObject *v);
-static int long_divrem(PyLongObject *, PyLongObject *,
-	PyLongObject **, PyLongObject **);
 
 /* Long division with remainder, top-level routine */
 
@@ -2293,14 +2287,12 @@ long_hash(PyLongObject *v)
 		sign = -1;
 		i = -(i);
 	}
-#define LONG_BIT_PyLong_SHIFT	(8*sizeof(long) - PyLong_SHIFT)
 	/* The following loop produces a C unsigned long x such that x is
 	   congruent to the absolute value of v modulo ULONG_MAX.  The
 	   resulting x is nonzero if and only if v is. */
 	while (--i >= 0) {
 		/* Force a native long #-bits (32 or 64) circular shift */
-		x = ((x << PyLong_SHIFT) & ~PyLong_MASK) |
-			((x >> LONG_BIT_PyLong_SHIFT) & PyLong_MASK);
+		x = (x >> (8*SIZEOF_LONG-PyLong_SHIFT)) | (x << PyLong_SHIFT);
 		x += v->ob_digit[i];
 		/* If the addition above overflowed we compensate by
 		   incrementing.  This preserves the value modulo
@@ -2308,11 +2300,10 @@ long_hash(PyLongObject *v)
 		if (x < v->ob_digit[i])
 			x++;
 	}
-#undef LONG_BIT_PyLong_SHIFT
 	x = x * sign;
-	if (x == -1)
-		x = -2;
-	return x;
+	if (x == (unsigned long)-1)
+		x = (unsigned long)-2;
+	return (long)x;
 }
 
 
@@ -3566,12 +3557,12 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
 		char *string;
-		int size = Py_SIZE(x);
+		Py_ssize_t size = Py_SIZE(x);
 		if (PyByteArray_Check(x))
 			string = PyByteArray_AS_STRING(x);
 		else
 			string = PyBytes_AS_STRING(x);
-		if (strlen(string) != size) {
+		if (strlen(string) != (size_t)size) {
 			/* We only see this if there's a null byte in x,
 			   x is a bytes or buffer, *and* a base is given. */
 			PyErr_Format(PyExc_ValueError,
@@ -3784,7 +3775,7 @@ long_sizeof(PyLongObject *v)
 {
 	Py_ssize_t res;
 
-	res = sizeof(PyVarObject) + abs(Py_SIZE(v))*sizeof(digit);
+	res = offsetof(PyLongObject, ob_digit) + ABS(Py_SIZE(v))*sizeof(digit);
 	return PyLong_FromSsize_t(res);
 }
 
@@ -3959,9 +3950,7 @@ static PyNumberMethods long_as_number = {
 PyTypeObject PyLong_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"int",					/* tp_name */
-	/* See _PyLong_New for why this isn't
-	   sizeof(PyLongObject) - sizeof(digit) */
-	sizeof(PyVarObject),			/* tp_basicsize */
+	offsetof(PyLongObject, ob_digit),	/* tp_basicsize */
 	sizeof(digit),				/* tp_itemsize */
 	long_dealloc,				/* tp_dealloc */
 	0,					/* tp_print */
@@ -3973,8 +3962,8 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)long_hash,			/* tp_hash */
-        0,              			/* tp_call */
-        long_repr,				/* tp_str */
+	0,					/* tp_call */
+	long_repr,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
@@ -3998,7 +3987,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	long_new,				/* tp_new */
-	PyObject_Del,                           /* tp_free */
+	PyObject_Del,				/* tp_free */
 };
 
 int
