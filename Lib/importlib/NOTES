@@ -1,6 +1,8 @@
 to do
 /////
 
+* Change failed loading based on PEP 302 changes.
+
 * Refactor source/bytecode finder/loader code such that bytecode support is a
   subclass of source support (makes it nicer for VMs that don't use CPython
   bytecode).
