@@ -15,8 +15,10 @@
 #define NSMALLNEGINTS		5
 #endif
 
-#define MEDIUM_VALUE(x) (Py_SIZE(x) < 0 ? -(x)->ob_digit[0] : \
-			 (Py_SIZE(x) == 0 ? 0 : (x)->ob_digit[0]))
+/* convert a PyLong of size 1, 0 or -1 to an sdigit */
+#define MEDIUM_VALUE(x) (Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :	\
+			 (Py_SIZE(x) == 0 ? (sdigit)0 :			\
+			  (sdigit)(x)->ob_digit[0]))
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
@@ -31,7 +33,7 @@ int quick_int_allocs, quick_neg_int_allocs;
 #endif
 
 static PyObject *
-get_small_int(int ival)
+get_small_int(sdigit ival)
 {
 	PyObject *v = (PyObject*)(small_ints + ival + NSMALLNEGINTS);
 	Py_INCREF(v);
@@ -52,7 +54,7 @@ static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
 	if (v && ABS(Py_SIZE(v)) <= 1) {
-		int ival = MEDIUM_VALUE(v);
+		sdigit ival = MEDIUM_VALUE(v);
 		if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 			Py_DECREF(v);
 			return (PyLongObject *)get_small_int(ival);
@@ -129,7 +131,7 @@ _PyLong_New(Py_ssize_t size)
 	   sizeof(PyVarObject) instead of the offsetof, but this risks being
 	   incorrect in the presence of padding between the PyVarObject header
 	   and the digits. */
-	if (size > MAX_LONG_DIGITS) {
+	if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
 		PyErr_SetString(PyExc_OverflowError,
 				"too many digits in integer");
 		return NULL;
@@ -154,7 +156,7 @@ _PyLong_Copy(PyLongObject *src)
 	if (i < 0)
 		i = -(i);
 	if (i < 2) {
-		int ival = src->ob_digit[0];
+		sdigit ival = src->ob_digit[0];
 		if (Py_SIZE(src) < 0)
 			ival = -ival;
 		CHECK_SMALL_INT(ival);
@@ -2142,7 +2144,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			carry += v->ob_digit[i+k] - z
 				+ ((twodigits)zz << PyLong_SHIFT);
 			v->ob_digit[i+k] = (digit)(carry & PyLong_MASK);
-			carry = Py_ARITHMETIC_RIGHT_SHIFT(BASE_TWODIGITS_TYPE,
+			carry = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits,
 							  carry, PyLong_SHIFT);
 			carry -= zz;
 		}
@@ -2162,7 +2164,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 				carry += v->ob_digit[i+k] + w->ob_digit[i];
 				v->ob_digit[i+k] = (digit)(carry & PyLong_MASK);
 				carry = Py_ARITHMETIC_RIGHT_SHIFT(
-						BASE_TWODIGITS_TYPE,
+						stwodigits,
 						carry, PyLong_SHIFT);
 			}
 		}
@@ -2216,7 +2218,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
 		if (i < 0)
 			sign = 0;
 		else {
-			sign = (int)a->ob_digit[i] - (int)b->ob_digit[i];
+			sign = (sdigit)a->ob_digit[i] - (sdigit)b->ob_digit[i];
 			if (Py_SIZE(a) < 0)
 				sign = -sign;
 		}
@@ -3159,7 +3161,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		for (i = Py_SIZE(b) - 1; i >= 0; --i) {
 			digit bi = b->ob_digit[i];
 
-			for (j = 1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
+			for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
 				MULT(z, z, z)
 				if (bi & j)
 					MULT(z, a, z)
@@ -3384,9 +3386,8 @@ long_bitwise(PyLongObject *a,
 {
 	digit maska, maskb; /* 0 or PyLong_MASK */
 	int negz;
-	Py_ssize_t size_a, size_b, size_z;
+	Py_ssize_t size_a, size_b, size_z, i;
 	PyLongObject *z;
-	int i;
 	digit diga, digb;
 	PyObject *v;
 
