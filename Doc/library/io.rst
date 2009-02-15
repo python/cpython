@@ -633,7 +633,7 @@ Text I/O
 
 .. class:: StringIO([initial_value[, encoding[, errors[, newline]]]])
 
-   An in-memory stream for text.  It in inherits :class:`TextIOWrapper`.
+   An in-memory stream for text.  It inherits :class:`TextIOWrapper`.
 
    Create a new StringIO stream with an inital value, encoding, error handling,
    and newline setting.  See :class:`TextIOWrapper`\'s constructor for more
