@@ -593,12 +593,12 @@ class SizeofTest(unittest.TestCase):
         # listreverseiterator (list)
         check(reversed([]), size(h + 'lP'))
         # long
-        check(0L, size(vh + 'H') - self.H)
-        check(1L, size(vh + 'H'))
-        check(-1L, size(vh + 'H'))
-        check(32768L, size(vh + 'H') + self.H)
-        check(32768L*32768L-1, size(vh + 'H') + self.H)
-        check(32768L*32768L, size(vh + 'H') + 2*self.H)
+        check(0L, size(vh))
+        check(1L, size(vh) + self.H)
+        check(-1L, size(vh) + self.H)
+        check(32768L, size(vh) + 2*self.H)
+        check(32768L*32768L-1, size(vh) + 2*self.H)
+        check(32768L*32768L, size(vh) + 3*self.H)
         # module
         check(unittest, size(h + 'P'))
         # None
