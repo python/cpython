@@ -63,7 +63,7 @@ long_normalize(register PyLongObject *v)
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
-	if (size > MAX_LONG_DIGITS) {
+	if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
 		PyErr_SetString(PyExc_OverflowError,
 				"too many digits in integer");
 		return NULL;
@@ -1945,7 +1945,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
 		if (i < 0)
 			sign = 0;
 		else {
-			sign = (int)a->ob_digit[i] - (int)b->ob_digit[i];
+			sign = (sdigit)a->ob_digit[i] - (sdigit)b->ob_digit[i];
 			if (Py_SIZE(a) < 0)
 				sign = -sign;
 		}
@@ -2865,7 +2865,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		for (i = Py_SIZE(b) - 1; i >= 0; --i) {
 			digit bi = b->ob_digit[i];
 
-			for (j = 1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
+			for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
 				MULT(z, z, z)
 				if (bi & j)
 					MULT(z, a, z)
@@ -3099,9 +3099,8 @@ long_bitwise(PyLongObject *a,
 {
 	digit maska, maskb; /* 0 or PyLong_MASK */
 	int negz;
-	Py_ssize_t size_a, size_b, size_z;
+	Py_ssize_t size_a, size_b, size_z, i;
 	PyLongObject *z;
-	int i;
 	digit diga, digb;
 	PyObject *v;
 
