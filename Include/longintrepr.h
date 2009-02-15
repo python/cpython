@@ -19,6 +19,7 @@ extern "C" {
    long_pow() requires that SHIFT be divisible by 5. */
 
 typedef unsigned short digit;
+typedef short sdigit;                   /* signed variant of digit */
 #define BASE_TWODIGITS_TYPE long
 typedef unsigned BASE_TWODIGITS_TYPE twodigits;
 typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
