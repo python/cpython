@@ -47,7 +47,7 @@ get_small_int(sdigit ival)
 }
 #define CHECK_SMALL_INT(ival) \
 	do if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) { \
-		return get_small_int((int)ival); \
+		return get_small_int((sdigit)ival); \
 	} while(0)
 
 static PyLongObject * 
@@ -365,7 +365,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 
 	switch (i) {
 	case -1:
-		res = -v->ob_digit[0];
+		res = -(sdigit)v->ob_digit[0];
 		break;
 	case 0:
 		res = 0;
@@ -440,7 +440,7 @@ PyLong_AsSsize_t(PyObject *vv) {
 	v = (PyLongObject *)vv;
 	i = Py_SIZE(v);
 	switch (i) {
-	case -1: return -v->ob_digit[0];
+	case -1: return -(sdigit)v->ob_digit[0];
 	case 0: return 0;
 	case 1: return v->ob_digit[0];
 	}
@@ -1235,7 +1235,7 @@ PyLong_AsLongLong(PyObject *vv)
 
 	v = (PyLongObject*)vv;
 	switch(Py_SIZE(v)) {
-	case -1: return -v->ob_digit[0];
+	case -1: return -(sdigit)v->ob_digit[0];
 	case 0: return 0;
 	case 1: return v->ob_digit[0];
 	}
@@ -2279,7 +2279,7 @@ long_hash(PyLongObject *v)
 	   of mapping keys will turn out weird */
 	i = Py_SIZE(v);
 	switch(i) {
-	case -1: return v->ob_digit[0]==1 ? -2 : -v->ob_digit[0];
+	case -1: return v->ob_digit[0]==1 ? -2 : -(sdigit)v->ob_digit[0];
 	case 0: return 0;
 	case 1: return v->ob_digit[0];
 	}
