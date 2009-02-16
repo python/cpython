@@ -979,6 +979,11 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(compress('ABCDEF', [1,0,1,0,1,0]), a)
 
+    def test_count(self):
+        a = []
+        Int = type('Int', (int,), dict(x=a))
+        self.makecycle(count(Int(0), Int(1)), a)
+
     def test_cycle(self):
         a = []
         self.makecycle(cycle([a]*2), a)
