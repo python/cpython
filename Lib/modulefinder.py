@@ -1,5 +1,4 @@
 """Find modules used by a script, using introspection."""
-# This module should be kept compatible with Python 2.2, see PEP 291.
 
 from __future__ import generators
 import dis
@@ -10,11 +9,7 @@ import sys
 import types
 import struct
 
-if hasattr(sys.__stdout__, "newlines"):
-    READ_MODE = "U"  # universal line endings
-else:
-    # remain compatible with Python  < 2.3
-    READ_MODE = "r"
+READ_MODE = "rU"
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
