@@ -745,8 +745,10 @@ cycle_next(cycleobject *lz)
 	while (1) {
 		item = PyIter_Next(lz->it);
 		if (item != NULL) {
-			if (!lz->firstpass)
-				PyList_Append(lz->saved, item);
+			if (!lz->firstpass && PyList_Append(lz->saved, item)) {
+				Py_DECREF(item);
+				return NULL;
+			}
 			return item;
 		}
 		if (PyErr_Occurred()) {
@@ -2922,8 +2924,8 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			kwlist, &long_cnt, &long_step))
 		return NULL;
 
-	if (long_cnt != NULL && !PyNumber_Check(long_cnt) ||
-		long_step != NULL && !PyNumber_Check(long_step)) {
+	if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
+            (long_step != NULL && !PyNumber_Check(long_step))) {
 			PyErr_SetString(PyExc_TypeError, "a number is required");
 			return NULL;
 	}
@@ -2950,8 +2952,8 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		} else
 			long_cnt = NULL;
 	}
-	assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL ||
-		   cnt == PY_SSIZE_T_MAX && long_cnt != NULL);
+	assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL) ||
+               (cnt == PY_SSIZE_T_MAX && long_cnt != NULL));
 
 	/* create countobject structure */
 	lz = (countobject *)type->tp_alloc(type, 0);
@@ -2975,6 +2977,7 @@ count_dealloc(countobject *lz)
 	Py_TYPE(lz)->tp_free(lz);
 }
 
+static int
 count_traverse(countobject *lz, visitproc visit, void *arg)
 {
 	Py_VISIT(lz->long_cnt);
@@ -2985,7 +2988,6 @@ count_traverse(countobject *lz, visitproc visit, void *arg)
 static PyObject *
 count_nextlong(countobject *lz)
 {
-	static PyObject *one = NULL;
 	PyObject *long_cnt;
 	PyObject *stepped_up;
 
