@@ -503,7 +503,7 @@ You can create an exception and set your own traceback in one step using the
 :meth:`with_traceback` exception method (which returns the same exception
 instance, with its traceback set to its argument), like so::
 
-   raise RuntimeError("foo occurred").with_traceback(tracebackobj)
+   raise Exception("foo occurred").with_traceback(tracebackobj)
 
 .. index:: pair: exception; chaining
            __cause__ (exception attribute)
