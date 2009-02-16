@@ -259,6 +259,9 @@ class sdist (Command):
           - setup.py
           - test/test*.py
           - all pure Python modules mentioned in setup script
+          - all files pointed by package_data (build_py)
+          - all files defined in data_files.
+          - all files defined as scripts.
           - all C sources listed as part of extensions or C libraries
             in the setup script (doesn't catch C headers!)
         Warns if (README or README.txt) or setup.py are missing; everything
@@ -291,9 +294,26 @@ class sdist (Command):
             if files:
                 self.filelist.extend(files)
 
+        # build_py is used to get:
+        #  - python modules
+        #  - files defined in package_data
+        build_py = self.get_finalized_command('build_py')
+
+        # getting python files
         if self.distribution.has_pure_modules():
-            build_py = self.get_finalized_command('build_py')
             self.filelist.extend(build_py.get_source_files())
+
+        # getting package_data files
+        # (computed in build_py.data_files by build_py.finalize_options)
+        for pkg, src_dir, build_dir, filenames in build_py.data_files:
+            for filename in filenames:
+                self.filelist.append(os.path.join(src_dir, filename))
+
+        # getting distribution.data_files
+        if self.distribution.has_data_files():
+            for dirname, filenames in self.distribution.data_files:
+                for filename in filenames:
+                    self.filelist.append(os.path.join(dirname, filename))
 
         if self.distribution.has_ext_modules():
             build_ext = self.get_finalized_command('build_ext')

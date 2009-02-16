@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2279: distutils.sdist.add_defaults now add files 
+  from the package_data and the data_files metadata.
+
 - Issue #5257: refactored all tests in distutils, so they use 
   support.TempdirManager, to avoid writing in the tests directory.
 
