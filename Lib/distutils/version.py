@@ -338,7 +338,12 @@ class LooseVersion (Version):
         if isinstance(other, str):
             other = LooseVersion(other)
 
-        return cmp(self.version, other.version)
+        if self.version == other.version:
+            return 0
+        if self.version < other.version:
+            return -1
+        if self.version > other.version:
+            return 1
 
 
 # end class LooseVersion
