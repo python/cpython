@@ -2954,7 +2954,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		   cnt == PY_SSIZE_T_MAX && long_cnt != NULL);
 
 	/* create countobject structure */
-	lz = (countobject *)PyObject_New(countobject, &count_type);
+	lz = (countobject *)type->tp_alloc(type, 0);
 	if (lz == NULL) {
 		Py_XDECREF(long_cnt);
 		return NULL;
@@ -2969,9 +2969,17 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 count_dealloc(countobject *lz)
 {
+	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->long_cnt);
 	Py_XDECREF(lz->long_step);
-	PyObject_Del(lz);
+	Py_TYPE(lz)->tp_free(lz);
+}
+
+count_traverse(countobject *lz, visitproc visit, void *arg)
+{
+	Py_VISIT(lz->long_cnt);
+	Py_VISIT(lz->long_step);
+	return 0;
 }
 
 static PyObject *
@@ -3058,9 +3066,10 @@ static PyTypeObject count_type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,		/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	count_doc,			/* tp_doc */
-	0,				/* tp_traverse */
+	(traverseproc)count_traverse,				/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
@@ -3077,6 +3086,7 @@ static PyTypeObject count_type = {
 	0,				/* tp_init */
 	0,				/* tp_alloc */
 	count_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
 };
 
 
