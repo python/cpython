@@ -74,6 +74,7 @@ source distribution:
   :meth:`get_source_files` method in :file:`build_clib.py`! **\*\***)
 
 * scripts identified by the :option:`scripts` option
+  See :ref:`distutils-installing-scripts`.
 
 * anything that looks like a test script: :file:`test/test\*.py` (currently, the
   Distutils don't do anything with test scripts except include them in source
@@ -82,6 +83,17 @@ source distribution:
 
 * :file:`README.txt` (or :file:`README`), :file:`setup.py` (or whatever  you
   called your setup script), and :file:`setup.cfg`
+
+* all files that matches the ``package_data`` metadata.
+  See :ref:`distutils-installing-package-data`.
+
+  .. versionadded:: 2.7
+
+* all files that matches the ``data_files`` metadata.
+  See :ref:`distutils-additional-files`.
+
+  .. versionadded:: 2.7
+
 
 Sometimes this is enough, but usually you will want to specify additional files
 to distribute.  The typical way to do this is to write a *manifest template*,
