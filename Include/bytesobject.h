@@ -23,11 +23,5 @@
 #define _PyBytes_FormatLong _PyString_FormatLong
 #define PyBytes_DecodeEscape PyString_DecodeEscape
 #define _PyBytes_Join _PyString_Join
-#define PyBytes_Decode PyString_Decode
-#define PyBytes_Encode PyString_Encode
-#define PyBytes_AsEncodedObject PyString_AsEncodedObject
-#define PyBytes_AsEncodedString PyString_AsEncodedString
-#define PyBytes_AsDecodedObject PyString_AsDecodedObject
-#define PyBytes_AsDecodedString PyString_AsDecodedString
 #define PyBytes_AsStringAndSize PyString_AsStringAndSize
 #define _PyBytes_InsertThousandsGrouping _PyString_InsertThousandsGrouping

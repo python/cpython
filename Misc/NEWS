@@ -506,6 +506,8 @@ Build
 C-API
 -----
 
+- Some PyBytes_* aliases have been removed because they don't exist in 3.x.
+
 - Issue #5175: PyLong_AsUnsignedLongLong now raises OverflowError
   for negative arguments.  Previously, it raised TypeError.
 
