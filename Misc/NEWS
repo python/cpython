@@ -12,6 +12,9 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5249: time.strftime returned malformed string when format string
+  contained non ascii character on windows.
+
 Library
 -------
 
