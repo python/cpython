@@ -9,8 +9,10 @@ These functions raise :exc:`TypeError` when expecting a string parameter and are
 called with a non-string parameter.
 
 .. note::
-   These functions have been renamed to PyBytes_* in Python 3.x. The PyBytes
-   names are also available in 2.6.
+
+   These functions have been renamed to PyBytes_* in Python 3.x. Unless
+   otherwise noted, the PyBytes functions available in 3.x are aliased to their
+   PyString_* equivalents to help porting.
 
 .. index:: object: string
 
@@ -219,6 +221,10 @@ called with a non-string parameter.
    reference-count-neutral; you own the object after the call if and only if you
    owned it before the call.)
 
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
+
 
 .. cfunction:: PyObject* PyString_InternFromString(const char *v)
 
@@ -226,6 +232,10 @@ called with a non-string parameter.
    :cfunc:`PyString_InternInPlace`, returning either a new string object that has
    been interned, or a new ("owned") reference to an earlier interned string object
    with the same value.
+
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
 
 
 .. cfunction:: PyObject* PyString_Decode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
@@ -236,6 +246,10 @@ called with a non-string parameter.
    The codec to be used is looked up using the Python codec registry.  Return
    *NULL* if an exception was raised by the codec.
 
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
+
 
 .. cfunction:: PyObject* PyString_AsDecodedObject(PyObject *str, const char *encoding, const char *errors)
 
@@ -244,6 +258,10 @@ called with a non-string parameter.
    meaning as the parameters of the same name in the string :meth:`encode` method.
    The codec to be used is looked up using the Python codec registry. Return *NULL*
    if an exception was raised by the codec.
+
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
 
 
 .. cfunction:: PyObject* PyString_Encode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
@@ -254,6 +272,10 @@ called with a non-string parameter.
    :meth:`encode` method. The codec to be used is looked up using the Python codec
    registry.  Return *NULL* if an exception was raised by the codec.
 
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
+
 
 .. cfunction:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)
 
@@ -262,3 +284,7 @@ called with a non-string parameter.
    parameters of the same name in the string :meth:`encode` method. The codec to be
    used is looked up using the Python codec registry. Return *NULL* if an exception
    was raised by the codec.
+
+   .. note::
+
+      This function is not available in 3.x and does not have a PyBytes alias.
