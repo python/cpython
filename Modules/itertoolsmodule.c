@@ -745,8 +745,10 @@ cycle_next(cycleobject *lz)
 	while (1) {
 		item = PyIter_Next(lz->it);
 		if (item != NULL) {
-			if (!lz->firstpass)
-				PyList_Append(lz->saved, item);
+			if (!lz->firstpass && PyList_Append(lz->saved, item)) {
+				Py_DECREF(item);
+				return NULL;
+			}
 			return item;
 		}
 		if (PyErr_Occurred()) {
