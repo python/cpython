@@ -1166,7 +1166,11 @@ available.  They are listed here in alphabetical order.
 
 .. function:: super(type[, object-or-type])
 
-   Return a "super" object that acts like the superclass of *type*.
+   Return a proxy object that delegates method calls to a parent class of
+   *type*.  This is useful for accessing inherited methods that have been
+   overriden in a child class.  The search order for parent classes is
+   determined by the ``__mro__`` attribute of the *type* and can change
+   whenever the parent classes are updated.
 
    If the second argument is omitted the super
    object returned is unbound.  If the second argument is an object,
