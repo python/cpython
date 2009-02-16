@@ -18,12 +18,12 @@ implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
 implementaiton of :keyword:`import` which is portable to any Python
 interpreter. This also provides a reference implementation which is easier to
-read than one in a programming language other than Python.
+comprehend than one in a programming language other than Python.
 
 Two, the components to implement :keyword:`import` can be exposed in this
 package, making it easier for users to create their own custom objects (known
-generically as importers) to participate in the import process. Details on
-providing custom importers can be found in :pep:`302`.
+generically as an :term:`importer`) to participate in the import process.
+Details on providing custom importers can be found in :pep:`302`.
 
 .. seealso::
 
@@ -126,3 +126,28 @@ find and load modules.
 
         Class method that allows this class to be a :term:`loader` for frozen
         modules.
+
+
+.. class:: PathFinder
+
+    :term:`Finder` for :data:`sys.path`.
+
+    This class does not perfectly mirror the semantics of :keyword:`import` in
+    terms of :data:`sys.path`. No implicit path hooks are assumed for
+    simplification of the class and its semantics.
+
+    Only class method are defined by this class to alleviate the need for
+    instantiation.
+
+    .. classmethod:: find_module(fullname, path=None)
+
+        Class method that attempts to find a :term:`loader` for the module
+        specified by *fullname* either on :data:`sys.path` or, if defined, on
+        *path*. For each path entry that is searched,
+        :data:`sys.path_importer_cache` is checked. If an non-false object is
+        found then it is used as the :term:`finder` to query for the module
+        being searched for. For no entry is found in
+        :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
+        searched for a finder for the path entry and, if found, is stored in
+        :data:`sys.path_importer_cache` along with being queried about the
+        module.
