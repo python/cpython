@@ -24,11 +24,11 @@ setup(name='fake')
 MANIFEST = """\
 README
 setup.py
-data/data.dt
-scripts/script.py
-somecode/__init__.py
-somecode/doc.dat
-somecode/doc.txt
+data%(sep)sdata.dt
+scripts%(sep)sscript.py
+somecode%(sep)s__init__.py
+somecode%(sep)sdoc.dat
+somecode%(sep)sdoc.txt
 """
 
 class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
@@ -198,7 +198,7 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
 
         # checking the MANIFEST
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
-        self.assertEquals(manifest, MANIFEST)
+        self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
 
 def test_suite():
     return unittest.makeSuite(sdistTestCase)
