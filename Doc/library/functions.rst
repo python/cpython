@@ -1175,7 +1175,7 @@ available.  They are listed here in alphabetical order.
    If the second argument is omitted the super
    object returned is unbound.  If the second argument is an object,
    ``isinstance(obj, type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true.
+   ``issubclass(type2, type)`` must be true (this is useful for classmethods).
 
    .. note::
       :func:`super` only works for :term:`new-style class`\es.
