@@ -14,11 +14,8 @@
    __name__ = '<doctest>'
 
 This module implements high-performance container datatypes.  Currently,
-there are two datatypes, :class:`deque` and :class:`defaultdict`, and
-one datatype factory function, :func:`namedtuple`. This module also
-provides the :class:`UserDict` and :class:`UserList` classes which may
-be useful when inheriting directly from :class:`dict` or
-:class:`list` isn't convenient.
+there are three datatypes, :class:`Counter`, :class:`deque` and
+:class:`defaultdict`, and one datatype factory function, :func:`namedtuple`.
 
 The specialized containers provided in this module provide alternatives
 to Python's general purpose built-in containers, :class:`dict`,
@@ -26,8 +23,8 @@ to Python's general purpose built-in containers, :class:`dict`,
 
 In addition to containers, the collections module provides some ABCs
 (abstract base classes) that can be used to test whether a class
-provides a particular interface, for example, is it hashable or
-a mapping, and some of them can also be used as mixin classes.
+provides a particular interface, for example, whether it is hashable or
+a mapping.
 
 ABCs - abstract base classes
 ----------------------------
