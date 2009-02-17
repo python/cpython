@@ -136,8 +136,13 @@ class BuiltinImporter:
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
-        module = imp.init_builtin(fullname)
-        return module
+        is_reload = fullname in sys.modules
+        try:
+            return imp.init_builtin(fullname)
+        except:
+            if not is_reload and fullname in sys.modules:
+                del sys.modules[fullname]
+            raise
 
 
 class FrozenImporter:
@@ -160,8 +165,13 @@ class FrozenImporter:
         """Load a frozen module."""
         if cls.find_module(fullname) is None:
             raise ImportError("{0} is not a frozen module".format(fullname))
-        module = imp.init_frozen(fullname)
-        return module
+        is_reload = fullname in sys.modules
+        try:
+            return imp.init_frozen(fullname)
+        except:
+            if not is_reload and fullname in sys.modules:
+                del sys.modules[fullname]
+            raise
 
 
 class ChainedImporter(object):
@@ -249,14 +259,13 @@ class _ExtensionFileLoader(object):
     @set___package__
     def load_module(self, fullname):
         """Load an extension module."""
-        assert self._name == fullname
+        is_reload = fullname in sys.modules
         try:
             module = imp.load_dynamic(fullname, self._path)
             module.__loader__ = self
             return module
         except:
-            # If an error occurred, don't leave a partially initialized module.
-            if fullname in sys.modules:
+            if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
             raise
 
@@ -282,16 +291,17 @@ def suffix_list(suffix_type):
             if suffix[2] == suffix_type]
 
 
-# XXX Need a better name.
-def get_module(fxn):
-    """Decorator to handle selecting the proper module for load_module
-    implementations.
+def module_for_loader(fxn):
+    """Decorator to handle selecting the proper module for loaders.
 
     Decorated modules are passed the module to use instead of the module name.
     The module is either from sys.modules if it already exists (for reloading)
     or is a new module which has __name__ set. If any exception is raised by
-    the decorated method then __loader__, __name__, __file__, and __path__ are
-    all restored on the module to their original values.
+    the decorated method and the decorator added a module to sys.modules, then
+    the module is deleted from sys.modules.
+
+    The decorator assumes that the decorated method takes self/cls as a first
+    argument and the module as the second argument.
 
     """
     def decorated(self, fullname):
@@ -302,27 +312,12 @@ def get_module(fxn):
             # implicitly imports 'locale' and would otherwise trigger an
             # infinite loop.
             module = imp.new_module(fullname)
-            module.__name__ = fullname
             sys.modules[fullname] = module
-        else:
-            original_values = {}
-            modified_attrs = ['__loader__', '__name__', '__file__', '__path__']
-            for attr in modified_attrs:
-                try:
-                    original_values[attr] = getattr(module, attr)
-                except AttributeError:
-                    pass
         try:
             return fxn(self, module)
         except:
             if not is_reload:
                 del sys.modules[fullname]
-            else:
-                for attr in modified_attrs:
-                    if attr in original_values:
-                        setattr(module, attr, original_values[attr])
-                    elif hasattr(module, attr):
-                        delattr(module, attr)
             raise
     wrap(decorated, fxn)
     return decorated
@@ -375,7 +370,7 @@ class _PyFileLoader(object):
         return self._find_path(imp.PY_COMPILED)
 
     @check_name
-    @get_module
+    @module_for_loader
     def load_module(self, module):
         """Load a Python source or bytecode module."""
         name = module.__name__

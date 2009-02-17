@@ -151,3 +151,36 @@ find and load modules.
         searched for a finder for the path entry and, if found, is stored in
         :data:`sys.path_importer_cache` along with being queried about the
         module.
+
+
+:mod:`importlib.util` -- Utility code for importers
+---------------------------------------------------
+
+.. module:: importlib.util
+    :synopsis: Importers and path hooks
+
+This module contains the various objects that help in the construction of
+an :term:`importer`.
+
+.. function:: module_for_loader(method)
+
+    A :term:`decorator` for a :term:`loader` which handles selecting the proper
+    module object to load with. The decorated method is expected to have a call
+    signature of ``method(self, module_object)`` for which the second argument
+    will be the module object to be used (note that the decorator will not work
+    on static methods because of the assumption of two arguments).
+
+    The decorated method will take in the name of the module to be loaded as
+    normal. If the module is not found in :data:`sys.modules` then a new one is
+    constructed with its :attr:`__name__` attribute set. Otherwise the module
+    found in :data:`sys.modules` will be passed into the method. If an
+    exception is raised by the decorated method and a module was added to
+    :data:`sys.modules` it will be removed to prevent a partially initialized
+    module from being in left in :data:`sys.modules` If an exception is raised
+    by the decorated method and a module was added to :data:`sys.modules` it
+    will be removed to prevent a partially initialized module from being in
+    left in :data:`sys.modules`. If the module was already in
+    :data:`sys.modules` then it is left alone.
+
+    Use of this decorator handles all the details of what module a loader
+    should use as specified by :pep:`302`.
