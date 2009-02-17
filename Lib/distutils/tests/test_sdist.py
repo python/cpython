@@ -23,6 +23,7 @@ setup(name='fake')
 
 MANIFEST = """\
 README
+inroot.txt
 setup.py
 data%(sep)sdata.dt
 scripts%(sep)sscript.py
@@ -171,10 +172,13 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
         self.write_file((data_dir, 'data.dt'), '#')
         some_dir = join(self.tmp_dir, 'some')
         os.mkdir(some_dir)
+        self.write_file((self.tmp_dir, 'inroot.txt'), '#')
         self.write_file((some_dir, 'file.txt'), '#')
         self.write_file((some_dir, 'other_file.txt'), '#')
 
-        dist.data_files = [('data', ['data.dt', 'notexisting']),
+        dist.data_files = [('data', ['data/data.dt',
+                                     'inroot.txt',
+                                     'notexisting']),
                            'some/file.txt',
                            'some/other_file.txt']
 
@@ -202,7 +206,7 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything was added
-        self.assertEquals(len(content), 10)
+        self.assertEquals(len(content), 11)
 
         # checking the MANIFEST
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()

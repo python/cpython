@@ -319,7 +319,7 @@ class sdist (Command):
                 else:    # a (dirname, filenames) tuple
                     dirname, filenames = item
                     for f in filenames:
-                        f = convert_path(os.path.join(dirname, f))
+                        f = convert_path(f)
                         if os.path.isfile(f):
                             self.filelist.append(f)
 
