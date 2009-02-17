@@ -26,6 +26,8 @@ README
 setup.py
 data%(sep)sdata.dt
 scripts%(sep)sscript.py
+some%(sep)sfile.txt
+some%(sep)sother_file.txt
 somecode%(sep)s__init__.py
 somecode%(sep)sdoc.dat
 somecode%(sep)sdoc.txt
@@ -167,14 +169,20 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
         data_dir = join(self.tmp_dir, 'data')
         os.mkdir(data_dir)
         self.write_file((data_dir, 'data.dt'), '#')
-        dist.data_files = [('data', ['data.dt'])]
+        some_dir = join(self.tmp_dir, 'some')
+        os.mkdir(some_dir)
+        self.write_file((some_dir, 'file.txt'), '#')
+        self.write_file((some_dir, 'other_file.txt'), '#')
+
+        dist.data_files = [('data', ['data.dt', 'notexisting']),
+                           'some/file.txt',
+                           'some/other_file.txt']
 
         # adding a script
         script_dir = join(self.tmp_dir, 'scripts')
         os.mkdir(script_dir)
         self.write_file((script_dir, 'script.py'), '#')
         dist.scripts = [join('scripts', 'script.py')]
-
 
         cmd.formats = ['zip']
         cmd.use_defaults = True
@@ -194,7 +202,7 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything was added
-        self.assertEquals(len(content), 8)
+        self.assertEquals(len(content), 10)
 
         # checking the MANIFEST
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
