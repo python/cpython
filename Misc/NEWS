@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5287: Add exception handling around findCaller() call in logging to
+  help out IronPython.
+
 - Issue #4524: distutils build_script command failed with --with-suffix=3.
   Initial patch by Amaury Forgeot d'Arc.
 
