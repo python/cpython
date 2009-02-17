@@ -15,7 +15,7 @@ from distutils.text_file import TextFile
 from distutils.errors import *
 from distutils.filelist import FileList
 from distutils import log
-
+from distutils.util import convert_path
 
 def show_formats ():
     """Print all possible values for the 'formats' option (used by
@@ -303,9 +303,17 @@ class sdist (Command):
 
         # getting distribution.data_files
         if self.distribution.has_data_files():
-            for dirname, filenames in self.distribution.data_files:
-                for filename in filenames:
-                    self.filelist.append(os.path.join(dirname, filename))
+            for item in self.distribution.data_files:
+                if isinstance(item, str): # plain file
+                    item = convert_path(item)
+                    if os.path.isfile(item):
+                        self.filelist.append(item)
+                else:    # a (dirname, filenames) tuple
+                    dirname, filenames = item
+                    for f in filenames:
+                        f = convert_path(os.path.join(dirname, f))
+                        if os.path.isfile(f):
+                            self.filelist.append(f)
 
         if self.distribution.has_ext_modules():
             build_ext = self.get_finalized_command('build_ext')
