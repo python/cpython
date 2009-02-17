@@ -41,6 +41,10 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(m[0], '\0')
             self.assertEqual(m[0:3], '\0\0\0')
 
+            # Shouldn't crash on boundary (Issue #5292)
+            self.assertRaises(IndexError, m.__getitem__, len(m))
+            self.assertRaises(IndexError, m.__setitem__, len(m), '\0')
+
             # Modify the file's content
             m[0] = '3'
             m[PAGESIZE +3: PAGESIZE +3+3] = 'bar'
