@@ -417,6 +417,27 @@ class MmapTests(unittest.TestCase):
             m = mmap.mmap(f.fileno(), mapsize - halfsize, offset=halfsize)
             self.assertEqual(m[0:3], 'foo')
             f.close()
+
+            # Try resizing map
+            try:
+                m.resize(512)
+            except SystemError:
+                pass
+            else:
+                # resize() is supported
+                self.assertEqual(len(m), 512)
+                # Check that we can no longer seek beyond the new size.
+                self.assertRaises(ValueError, m.seek, 513, 0)
+                # Check that the content is not changed
+                self.assertEqual(m[0:3], 'foo')
+
+                # Check that the underlying file is truncated too
+                f = open(TESTFN)
+                f.seek(0, 2)
+                self.assertEqual(f.tell(), halfsize + 512)
+                f.close()
+                self.assertEqual(m.size(), halfsize + 512)
+
             m.close()
 
         finally:

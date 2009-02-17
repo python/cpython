@@ -444,7 +444,7 @@ mmap_resize_method(mmap_object *self,
 		off_lo = (DWORD)(self->offset & 0xFFFFFFFF);
 #else
 		newSizeHigh = 0;
-		newSizeLow = (DWORD)new_size;
+		newSizeLow = (DWORD)(self->offset + new_size);
 		off_hi = 0;
 		off_lo = (DWORD)self->offset;
 #endif
@@ -490,7 +490,7 @@ mmap_resize_method(mmap_object *self,
 	} else {
 		void *newmap;
 
-		if (ftruncate(self->fd, new_size) == -1) {
+		if (ftruncate(self->fd, self->offset + new_size) == -1) {
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
