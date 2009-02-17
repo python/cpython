@@ -1150,7 +1150,9 @@ void init_Snd(void)
 	SPB_Type.ob_type = &PyType_Type;
 	if (PyType_Ready(&SPB_Type) < 0) return;
 	Py_INCREF(&SPB_Type);
+#if 0
 	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);
+#endif
 	/* Backward-compatible name */
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPBType", (PyObject *)&SPB_Type);
