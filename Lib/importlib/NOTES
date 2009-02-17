@@ -5,6 +5,27 @@ to do
   subclass of source support (makes it nicer for VMs that don't use CPython
   bytecode).
 
+    + chained_path_hook
+    + FileFinder
+
+        - find_module
+
+    + ExtensionFileFinder
+    + PyFileFinder
+    + PyPycFileFinder
+    + PyFileLoader
+
+        - get_code for source only
+        - get_data
+        - source_mtime
+        - source_path
+
+    + PyPycFileLoader(PyFileLoader)
+
+        - get_code
+        - bytecode_path
+        - write_bytecode
+
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
     + Source/bytecode.
