@@ -16,30 +16,30 @@
    __name__ = '<doctest>'
 
 This module implements high-performance container datatypes.  Currently,
-there are two datatypes, :class:`deque` and :class:`defaultdict`, and
-one datatype factory function, :func:`namedtuple`.
-
-.. versionchanged:: 2.5
-   Added :class:`defaultdict`.
-
-.. versionchanged:: 2.6
-   Added :func:`namedtuple`.
+there are three datatypes, :class:`Counter`, :class:`deque` and
+:class:`defaultdict`, and one datatype factory function, :func:`namedtuple`.
 
 The specialized containers provided in this module provide alternatives
 to Python's general purpose built-in containers, :class:`dict`,
 :class:`list`, :class:`set`, and :class:`tuple`.
 
-Besides the containers provided here, the optional :mod:`bsddb`
-module offers the ability to create in-memory or file based ordered
-dictionaries with string keys using the :meth:`bsddb.btopen` method.
+.. versionchanged:: 2.4
+   Added :class:`deque`.
+
+.. versionchanged:: 2.5
+   Added :class:`defaultdict`.
+
+.. versionchanged:: 2.6
+   Added :func:`namedtuple` and added abstract base classes.
+
+.. versionchanged:: 2.7
+   Added :class:`Counter`.
 
 In addition to containers, the collections module provides some ABCs
 (abstract base classes) that can be used to test whether a class
-provides a particular interface, for example, is it hashable or
+provides a particular interface, for example, whether it is hashable or
 a mapping.
 
-.. versionchanged:: 2.6
-   Added abstract base classes.
 
 ABCs - abstract base classes
 ----------------------------
