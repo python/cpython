@@ -1,68 +1,66 @@
 to do
 /////
 
-* Change failed loading based on PEP 302 changes.
-
 * Refactor source/bytecode finder/loader code such that bytecode support is a
   subclass of source support (makes it nicer for VMs that don't use CPython
   bytecode).
 
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
-    + Built-in.
-    + Frozen.
-    + Extension.
     + Source/bytecode.
 
 * Public API left to expose (w/ docs!)
 
-  + abc
+    + abc
 
-      - Finder
+        - Finder
 
-        * find_module
+            * find_module
 
-      - Loader
+        - Loader
 
-        * load_module
+            * load_module
 
-      - (?) Importer(Finder, Loader)
+        - (?) Importer(Finder, Loader)
+        - ResourceLoader(Loader)
 
-      - ResourceLoader(Loader)
+            * get_data
 
-        * get_data
+        - InspectLoader(Loader)
 
-      - InspectLoader(Loader)
+            * is_package
+            * get_code
+            * get_source
 
-        * is_package
-        * get_code
-        * get_source
+        - (?) SourceLoader(ResourceLoader)
 
-      - (?) SourceLoader(ResourceLoader)
+            * source_path
+            * bytecode_path
+            * write_bytecode (not abstract)
 
-        * source_path
-        * bytecode_path
-        * write_bytecode (not abstract)
+    + util
 
-  + util
+        - set___package__ decorator
 
-      - get_module decorator (rename: module_for_loader)
-      - set___package__ decorator
+    + machinery
 
-  + machinery
+        - (?) Chained path hook/finder
+        - Extensions importers
 
-      - (?) Chained path hook/finder
-      - Extensions importers
+            * ExtensionFinder
+            * (?) Loader
 
-          * ExtensionFinder
-          * (?) Loader
+        - Source/bytecode importers
 
-      - Source/bytecode importers
+            * SourceFinder
+            * (?) Loader
 
-          * SourceFinder
-          * (?) Loader
+    + test
 
-      - PathFinder
+        - abc
+
+            * FinderTests [doc]
+            * LoaderTests [doc]
 
 * Make sure that there is documentation *somewhere* fully explaining the
 semantics of import that can be referenced from the package's documentation
