@@ -13,39 +13,61 @@
    from itertools import *
 
 
-This module implements a number of :term:`iterator` building blocks inspired by
-constructs from the Haskell and SML programming languages.  Each has been recast
-in a form suitable for Python.
+This module implements a number of :term:`iterator` building blocks inspired
+by constructs from APL, Haskell, and SML.  Each has been recast in a form
+suitable for Python.
 
 The module standardizes a core set of fast, memory efficient tools that are
-useful by themselves or in combination.  Standardization helps avoid the
-readability and reliability problems which arise when many different individuals
-create their own slightly varying implementations, each with their own quirks
-and naming conventions.
-
-The tools are designed to combine readily with one another.  This makes it easy
-to construct more specialized tools succinctly and efficiently in pure Python.
+useful by themselves or in combination.  Together, they form an "iterator
+algebra" making it possible to construct specialized tools succinctly and
+efficiently in pure Python.
 
 For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  But, this effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-Likewise, the functional tools are designed to work well with the high-speed
-functions provided by the :mod:`operator` module.
-
-Whether cast in pure python form or compiled code, tools that use iterators are
-more memory efficient (and often faster) than their list based counterparts. Adopting
-the principles of just-in-time manufacturing, they create data when and where
-needed instead of consuming memory with the computer equivalent of "inventory".
+The tools also work well with the high-speed functions in the :mod:`operator`
+module.  For example, the plus-operator can be mapped across two vectors to
+form an efficient dot-product: ``sum(map(operator.add, vector1, vector2))``.
 
 
-.. seealso::
+**Infinite Iterators:**
 
-   The Standard ML Basis Library, `The Standard ML Basis Library
-   <http://www.standardml.org/Basis/>`_.
+    ==================  =================       =================================================
+    Iterator            Arguments               Results
+    ==================  =================       =================================================
+    :func:`count`       start, [step]           start, start+step, start+2*step, ...
+    :func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...
+    :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times
+    ==================  =================       =================================================
 
-   Haskell, A Purely Functional Language, `Definition of Haskell and the Standard
-   Libraries <http://www.haskell.org/definition/>`_.
+**Iterators terminating on the shortest input sequence:**
+
+    ====================    ============================    =================================================
+    Iterator                Arguments                       Results
+    ====================    ============================    =================================================
+    :func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...
+    :func:`compress`        data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...
+    :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails
+    :func:`filterfalse`     pred, seq                       elements of seq where pred(elem) is False
+    :func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+    :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]
+    :func:`starmap`         func, seq                       func(\*seq[0]), fun(\*seq[1]), ...
+    :func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
+    :func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails
+    :func:`zip_longest`     p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
+    ====================    ============================    =================================================
+
+**Combinatoric generators:**
+
+    =====================================   ====================       =================================================
+    Iterator                                Arguments                  Results
+    =====================================   ====================       =================================================
+    :func:`product`                         p, q, ... [repeat=1]       cartesian product
+    :func:`permutations`                    p[, r]                     r-length permutations (without repeated elements)
+    :func:`combinations`                    p[, r]                     r-length combinations (sorted and no repeats)
+    :func:`combinations_with_replacement`   p[, r]                     r-length combinations (sorted but with repeats)
+    =====================================   ====================       =================================================
 
 
 .. _itertools-functions:
