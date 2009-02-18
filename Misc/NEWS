@@ -12,6 +12,9 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Running Python with the -3 option now also warns about classic division
+  for ints and longs.
+
 - Issue #5013: Fixed a bug in FileHandler which occurred when the delay
   parameter was set.
 

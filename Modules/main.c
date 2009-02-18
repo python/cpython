@@ -317,6 +317,8 @@ Py_Main(int argc, char **argv)
 
 		case '3':
 			Py_Py3kWarningFlag++;
+			if (!Py_DivisionWarningFlag)
+				Py_DivisionWarningFlag = 1;
 			break;
 
 		case 'Q':
