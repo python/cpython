@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Running Python with the -3 option now also warns about classic division
+  for ints and longs.
+
 - Issue #5260: Long integers now consume less memory:  average
   saving is 2 bytes per long on a 32-bit system and 6 bytes per long
   on a 64-bit system.
