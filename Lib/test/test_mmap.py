@@ -42,6 +42,10 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m[0], 0)
         self.assertEqual(m[0:3], b'\0\0\0')
 
+        # Shouldn't crash on boundary (Issue #5292)
+        self.assertRaises(IndexError, m.__getitem__, len(m))
+        self.assertRaises(IndexError, m.__setitem__, len(m), b'\0')
+
         # Modify the file's content
         m[0] = b'3'[0]
         m[PAGESIZE +3: PAGESIZE +3+3] = b'bar'
@@ -412,6 +416,27 @@ class MmapTests(unittest.TestCase):
             m = mmap.mmap(f.fileno(), mapsize - halfsize, offset=halfsize)
             self.assertEqual(m[0:3], b'foo')
             f.close()
+
+            # Try resizing map
+            try:
+                m.resize(512)
+            except SystemError:
+                pass
+            else:
+                # resize() is supported
+                self.assertEqual(len(m), 512)
+                # Check that we can no longer seek beyond the new size.
+                self.assertRaises(ValueError, m.seek, 513, 0)
+                # Check that the content is not changed
+                self.assertEqual(m[0:3], b'foo')
+
+                # Check that the underlying file is truncated too
+                f = open(TESTFN)
+                f.seek(0, 2)
+                self.assertEqual(f.tell(), halfsize + 512)
+                f.close()
+                self.assertEqual(m.size(), halfsize + 512)
+
             m.close()
 
         finally:

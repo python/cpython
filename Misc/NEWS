@@ -169,6 +169,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
+  The file was resized to wrong size.
+
+- Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
+
 - Issue #2279: distutils.sdist.add_defaults now add files 
   from the package_data and the data_files metadata.
 
