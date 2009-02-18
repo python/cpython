@@ -131,6 +131,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
+  The file was resized to wrong size.
+
+- Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
+
 - Issue #4524: distutils build_script command failed with --with-suffix=3.
   Initial patch by Amaury Forgeot d'Arc.
 
