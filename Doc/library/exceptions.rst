@@ -398,6 +398,11 @@ The following exceptions are the exceptions that are actually raised.
    more precise exception such as :exc:`IndexError`.
 
 
+.. exception:: VMSError
+
+   Only available on VMS.  Raised when a VMS-specific error occurs.
+
+
 .. exception:: WindowsError
 
    Raised when a Windows-specific error occurs or when the error number does not
