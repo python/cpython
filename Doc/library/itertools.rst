@@ -112,7 +112,7 @@ loops that truncate the stream.
                 return
             indices = range(r)
             yield tuple(pool[i] for i in indices)
-            while 1:
+            while True:
                 for i in reversed(range(r)):
                     if indices[i] != i + n - r:
                         break
@@ -521,28 +521,28 @@ loops that truncate the stream.
 
 .. function:: tee(iterable[, n=2])
 
-   Return *n* independent iterators from a single iterable. The case where ``n==2``
-   is equivalent to::
+   Return *n* independent iterators from a single iterable.  Equivalent to::
 
-      def tee(iterable):
-          def gen(next, data={}):
-              for i in count():
-                  if i in data:
-                      yield data.pop(i)
-                  else:
-                      data[i] = next()
-                      yield data[i]
-          it = iter(iterable)
-          return gen(it.next), gen(it.next)
+        def tee(iterable, n=2):
+            it = iter(iterable)
+            deques = [collections.deque() for i in range(n)]
+            def gen(mydeque):
+                while True:
+                    if not mydeque:             # when the local deque is empty
+                        newval = next(it)       # fetch a new value and
+                        for d in deques:        # load it to all the deques
+                            d.append(newval)
+                    yield mydeque.popleft()
+            return tuple(gen(d) for d in deques)
 
-   Note, once :func:`tee` has made a split, the original *iterable* should not be
-   used anywhere else; otherwise, the *iterable* could get advanced without the tee
-   objects being informed.
+   Once :func:`tee` has made a split, the original *iterable* should not be
+   used anywhere else; otherwise, the *iterable* could get advanced without
+   the tee objects being informed.
 
-   Note, this member of the toolkit may require significant auxiliary storage
-   (depending on how much temporary data needs to be stored). In general, if one
-   iterator is going to use most or all of the data before the other iterator, it
-   is faster to use :func:`list` instead of :func:`tee`.
+   This itertool may require significant auxiliary storage (depending on how
+   much temporary data needs to be stored). In general, if one iterator uses
+   most or all of the data before another iterator starts, it is faster to use
+   :func:`list` instead of :func:`tee`.
 
    .. versionadded:: 2.4
 
@@ -690,7 +690,7 @@ which incur interpreter overhead.
            return
        indices = [0] * r
        yield tuple(pool[i] for i in indices)
-       while 1:
+       while True:
            for i in reversed(range(r)):
                if indices[i] != n - 1:
                    break
