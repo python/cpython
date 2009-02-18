@@ -80,6 +80,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
+
+- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
+  The file was resized to wrong size.
+
 - Issue #5287: Add exception handling around findCaller() call in logging to
   help out IronPython.
 

@@ -444,7 +444,7 @@ mmap_resize_method(mmap_object *self,
 		off_lo = (DWORD)(self->offset & 0xFFFFFFFF);
 #else
 		newSizeHigh = 0;
-		newSizeLow = (DWORD)new_size;
+		newSizeLow = (DWORD)(self->offset + new_size);
 		off_hi = 0;
 		off_lo = (DWORD)self->offset;
 #endif
@@ -490,7 +490,7 @@ mmap_resize_method(mmap_object *self,
 	} else {
 		void *newmap;
 
-		if (ftruncate(self->fd, new_size) == -1) {
+		if (ftruncate(self->fd, self->offset + new_size) == -1) {
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
@@ -731,7 +731,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
 			return NULL;
 		if (i < 0)
 			i += self->size;
-		if (i < 0 || (size_t)i > self->size) {
+		if (i < 0 || (size_t)i >= self->size) {
 			PyErr_SetString(PyExc_IndexError,
 				"mmap index out of range");
 			return NULL;
@@ -872,7 +872,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 			return -1;
 		if (i < 0)
 			i += self->size;
-		if (i < 0 || (size_t)i > self->size) {
+		if (i < 0 || (size_t)i >= self->size) {
 			PyErr_SetString(PyExc_IndexError,
 				"mmap index out of range");
 			return -1;
