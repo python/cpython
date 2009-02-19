@@ -100,6 +100,10 @@ Number-theoretic and representation functions
    occasionally double-round an intermediate sum causing it to be off in its
    least significant bit.
 
+   For further discussion and two alternative approaches, see the `ASPN cookbook
+   recipes for accurate floating point summation
+   <http://code.activestate.com/recipes/393090/>`_\.
+
    .. versionadded:: 2.6
 
 
