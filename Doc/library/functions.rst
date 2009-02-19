@@ -397,6 +397,9 @@ available.  They are listed here in alphabetical order.
    iterable if function(item)]`` if function is not ``None`` and ``[item for item
    in iterable if item]`` if function is ``None``.
 
+   See :func:`itertools.filterfalse` for the complementary function that returns
+   elements of *iterable* for which *function* returns false.
+
 
 .. function:: float([x])
 
@@ -1077,7 +1080,8 @@ available.  They are listed here in alphabetical order.
    default).  They have no other explicit functionality; however they are used by
    Numerical Python and other third party extensions.  Slice objects are also
    generated when extended indexing syntax is used.  For example:
-   ``a[start:stop:step]`` or ``a[start:stop, i]``.
+   ``a[start:stop:step]`` or ``a[start:stop, i]``.  See :func:`itertools.islice`
+   for an alternate version that returns an iterator.
 
 
 .. function:: sorted(iterable[, cmp[, key[, reverse]]])
@@ -1160,6 +1164,7 @@ available.  They are listed here in alphabetical order.
    and are not allowed to be strings.  The fast, correct way to concatenate a
    sequence of strings is by calling ``''.join(sequence)``. Note that
    ``sum(range(n), m)`` is equivalent to ``reduce(operator.add, range(n), m)``
+   To add floating point values with extended precision, see :func:`math.fsum`\.
 
    .. versionadded:: 2.3
 
@@ -1323,7 +1328,9 @@ available.  They are listed here in alphabetical order.
       :func:`xrange` is intended to be simple and fast. Implementations may impose
       restrictions to achieve this. The C implementation of Python restricts all
       arguments to native C longs ("short" Python integers), and also requires that
-      the number of elements fit in a native C long.
+      the number of elements fit in a native C long.  If a larger range is needed,
+      an alternate version can be crafted using the :mod:`itertools` module:
+      ``islice(count(start, step), (stop-start+step-1)//step)``.
 
 
 .. function:: zip([iterable, ...])
