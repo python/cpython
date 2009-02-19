@@ -87,14 +87,18 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums.  The
-   algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
-   typical case where the rounding mode is half-even.
+   loss of precision by tracking multiple intermediate partial sums::
 
-   .. note::
+        >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
+        0.99999999999999989
+        >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
+        1.0
 
-      The accuracy of fsum() may be impaired on builds that use
-      extended precision addition and then double-round the results.
+   The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
+   typical case where the rounding mode is half-even.  On some non-Windows
+   builds, the underlying C library uses extended precision addition and may
+   occasionally double-round an intermediate sum causing it to be off in its
+   least significant bit.
 
    .. versionadded:: 2.6
 
