@@ -576,12 +576,12 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(WindowsError, os.chdir, support.TESTFN)
 
     def test_mkdir(self):
-        f = open(test_support.TESTFN, "w")
+        f = open(support.TESTFN, "w")
         try:
             self.assertRaises(WindowsError, os.mkdir, support.TESTFN)
         finally:
             f.close()
-            os.unlink(test_support.TESTFN)
+            os.unlink(support.TESTFN)
 
     def test_utime(self):
         self.assertRaises(WindowsError, os.utime, support.TESTFN, None)
