@@ -1104,10 +1104,12 @@ available.  They are listed here in alphabetical order.
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
 
-   In general, the *key* and *reverse* conversion processes are much faster than
-   specifying an equivalent *cmp* function.  This is because *cmp* is called
-   multiple times for each list element while *key* and *reverse* touch each
-   element only once.
+   In general, the *key* and *reverse* conversion processes are much faster
+   than specifying an equivalent *cmp* function.  This is because *cmp* is
+   called multiple times for each list element while *key* and *reverse* touch
+   each element only once.  To convert an old-style *cmp* function to a *key*
+   function, see the `CmpToKey recipe in the ASPN cookbook
+   <http://code.activestate.com/recipes/576653/>`_\.
 
    .. versionadded:: 2.4
 
