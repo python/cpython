@@ -380,6 +380,9 @@ are always available.  They are listed here in alphabetical order.
    not ``None`` and ``(item for item in iterable if item)`` if function is
    ``None``.
 
+   See :func:`itertools.filterfalse` for the complementary function that returns
+   elements of *iterable* for which *function* returns false.
+
 
 .. function:: float([x])
 
@@ -595,7 +598,8 @@ are always available.  They are listed here in alphabetical order.
    yielding the results.  If additional *iterable* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
-   shortest iterable is exhausted.
+   shortest iterable is exhausted.  For cases where the function inputs are
+   already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
 .. function:: max(iterable[, args...], *[, key])
@@ -953,7 +957,8 @@ are always available.  They are listed here in alphabetical order.
    default).  They have no other explicit functionality; however they are used by
    Numerical Python and other third party extensions.  Slice objects are also
    generated when extended indexing syntax is used.  For example:
-   ``a[start:stop:step]`` or ``a[start:stop, i]``.
+   ``a[start:stop:step]`` or ``a[start:stop, i]``.  See :func:`itertools.islice`
+   for an alternate version that returns an iterator.
 
 
 .. function:: sorted(iterable[, key[, reverse]])
@@ -1030,7 +1035,8 @@ are always available.  They are listed here in alphabetical order.
    Sums *start* and the items of an *iterable* from left to right and returns the
    total.  *start* defaults to ``0``. The *iterable*'s items are normally numbers,
    and are not allowed to be strings.  The fast, correct way to concatenate a
-   sequence of strings is by calling ``''.join(sequence)``.
+   sequence of strings is by calling ``''.join(sequence)``.  To add floating
+   point values with extended precision, see :func:`math.fsum`\.
 
 
 .. function:: super([type[, object-or-type]])
@@ -1145,8 +1151,7 @@ are always available.  They are listed here in alphabetical order.
           # zip('ABCD', 'xy') --> Ax By
           iterables = map(iter, iterables)
           while iterables:
-              result = [it.next() for it in iterables]
-              yield tuple(result)
+              yield tuple(map(next, iterables))
 
    The left-to-right evaluation order of the iterables is guaranteed. This
    makes possible an idiom for clustering a data series into n-length groups
