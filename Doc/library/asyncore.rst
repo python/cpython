@@ -246,7 +246,8 @@ asyncore Example basic HTTP client
 Here is a very basic HTTP client that uses the :class:`dispatcher` class to
 implement its socket handling::
 
-   import asyncore, socket
+   import asyncore
+   import socket
 
    class http_client(asyncore.dispatcher):
 

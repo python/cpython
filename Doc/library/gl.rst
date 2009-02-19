@@ -124,7 +124,9 @@ The following functions are non-standard or have special argument conventions:
 
 Here is a tiny but complete example GL program in Python::
 
-   import gl, GL, time
+   import gl
+   import GL
+   import time
 
    def main():
        gl.foreground()

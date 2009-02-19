@@ -64,7 +64,8 @@ Example usage of :class:`ModuleFinder`
 
 The script that is going to get analyzed later on (bacon.py)::
 
-   import re, itertools
+   import itertools
+   import re
 
    try:
        import baconhameggs

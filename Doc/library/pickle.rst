@@ -708,7 +708,8 @@ The following example reads the resulting pickled data.  When reading a
 pickle-containing file, you should open the file in binary mode because you
 can't be sure if the ASCII or binary format was used. ::
 
-   import pprint, pickle
+   import pickle
+   import pprint
 
    pkl_file = open('data.pkl', 'rb')
 
