@@ -1,4 +1,4 @@
-# Copyright 2001-2008 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2009 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -1127,7 +1127,12 @@ class Logger(Filterer):
         all the handlers of this logger to handle the record.
         """
         if _srcfile:
-            fn, lno, func = self.findCaller()
+            #IronPython doesn't track Python frames, so findCaller throws an
+            #exception. We trap it here so that IronPython can use logging.
+            try:
+                fn, lno, func = self.findCaller()
+            except ValueError:
+                fn, lno, func = "(unknown file)", 0, "(unknown function)"
         else:
             fn, lno, func = "(unknown file)", 0, "(unknown function)"
         if exc_info:
