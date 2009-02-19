@@ -1200,9 +1200,9 @@ Samuele
 ...     "Return function(0), function(1), ..."
 ...     return imap(function, count(start))
 
->>> def nth(iterable, n):
-...     "Returns the nth item or None"
-...     return next(islice(iterable, n, None), None)
+>>> def nth(iterable, n, default=None):
+...     "Returns the nth item or a default value"
+...     return next(islice(iterable, n, None), default)
 
 >>> def quantify(iterable, pred=bool):
 ...     "Count how many times the predicate is true"
