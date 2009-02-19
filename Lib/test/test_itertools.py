@@ -310,6 +310,7 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(comb, sorted(set(cwr) & set(perm)))            # comb: both a cwr and a perm
 
     def test_compress(self):
+        self.assertEqual(list(compress(data='ABCDEF', selectors=[1,0,1,0,1,1])), list('ACEF'))
         self.assertEqual(list(compress('ABCDEF', [1,0,1,0,1,1])), list('ACEF'))
         self.assertEqual(list(compress('ABCDEF', [0,0,0,0,0,0])), list(''))
         self.assertEqual(list(compress('ABCDEF', [1,1,1,1,1,1])), list('ABCDEF'))

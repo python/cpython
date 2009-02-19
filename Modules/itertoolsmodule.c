@@ -2607,11 +2607,9 @@ compress_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *seq1, *seq2;
 	PyObject *data=NULL, *selectors=NULL;
 	compressobject *lz;
-
-	if (type == &compress_type && !_PyArg_NoKeywords("compress()", kwds))
-		return NULL;
-
-	if (!PyArg_UnpackTuple(args, "compress", 2, 2, &seq1, &seq2))
+	static char *kwargs[] = {"data", "selectors", NULL};
+ 
+ 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO:compress", kwargs, &seq1, &seq2))
 		return NULL;
 
 	data = PyObject_GetIter(seq1);
@@ -2689,7 +2687,7 @@ compress_next(compressobject *lz)
 }
 
 PyDoc_STRVAR(compress_doc,
-"compress(data sequence, selector sequence) --> iterator over selected data\n\
+"compress(data, selectors) --> iterator over selected data\n\
 \n\
 Return data elements corresponding to true selector elements.\n\
 Forms a shorter iterator from selected data elements using the\n\
