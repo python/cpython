@@ -5,7 +5,7 @@ import random
 import time
 import pickle
 import warnings
-from math import log, exp, sqrt, pi, fsum as msum
+from math import log, exp, sqrt, pi, fsum, sin
 from test import support
 
 class TestBasicOps(unittest.TestCase):
@@ -383,15 +383,23 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         self.assert_(stop < x <= start)
         self.assertEqual((x+stop)%step, 0)
 
-_gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
-              771.3234287757674,  -176.6150291498386, 12.50734324009056,
-              -0.1385710331296526, 0.9934937113930748e-05, 0.1659470187408462e-06)
-
-def gamma(z, cof=_gammacoeff, g=7):
-    z -= 1.0
-    s = msum([cof[0]] + [cof[i] / (z+i) for i in range(1,len(cof))])
-    z += 0.5
-    return (z+g)**z / exp(z+g) * sqrt(2.0*pi) * s
+def gamma(z, sqrt2pi=(2.0*pi)**0.5):
+    # Reflection to right half of complex plane
+    if z < 0.5:
+        return pi / sin(pi*z) / gamma(1.0-z)
+    # Lanczos approximation with g=7
+    az = z + (7.0 - 0.5)
+    return az ** (z-0.5) / exp(az) * sqrt2pi * fsum([
+        0.9999999999995183,
+        676.5203681218835 / z,
+        -1259.139216722289 / (z+1.0),
+        771.3234287757674 / (z+2.0),
+        -176.6150291498386 / (z+3.0),
+        12.50734324009056 / (z+4.0),
+        -0.1385710331296526 / (z+5.0),
+        0.9934937113930748e-05 / (z+6.0),
+        0.1659470187408462e-06 / (z+7.0),
+    ])
 
 class TestDistributions(unittest.TestCase):
     def test_zeroinputs(self):
