@@ -816,14 +816,14 @@ Raising a negative number to a fractional power results in a :exc:`ValueError`.
 
 .. _unary:
 
-Unary arithmetic operations
-===========================
+Unary arithmetic and bitwise operations
+=======================================
 
 .. index::
    triple: unary; arithmetic; operation
    triple: unary; bitwise; operation
 
-All unary arithmetic (and bitwise) operations have the same priority:
+All unary arithmetic and bitwise operations have the same priority:
 
 .. productionlist::
    u_expr: `power` | "-" `u_expr` | "+" `u_expr` | "~" `u_expr`
@@ -1276,12 +1276,9 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`not` *x*                            | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not` :keyword:`in`   | Membership tests                    |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`is`, :keyword:`is not`              | Identity tests                      |
-+-----------------------------------------------+-------------------------------------+
-| ``<``, ``<=``, ``>``, ``>=``, ``<>``, ``!=``, | Comparisons                         |
-| ``==``                                        |                                     |
+| :keyword:`in`, :keyword:`not` :keyword:`in`,  | Comparisons, including membership   |
+| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests,           |
+| ``<=``, ``>``, ``>=``, ``<>``, ``!=``, ``==`` |                                     |
 +-----------------------------------------------+-------------------------------------+
 | ``|``                                         | Bitwise OR                          |
 +-----------------------------------------------+-------------------------------------+
@@ -1293,29 +1290,19 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | ``+``, ``-``                                  | Addition and subtraction            |
 +-----------------------------------------------+-------------------------------------+
-| ``*``, ``/``, ``%``                           | Multiplication, division, remainder |
+| ``*``, ``/``, ``//``, ``%``                   | Multiplication, division, remainder |
 +-----------------------------------------------+-------------------------------------+
-| ``+x``, ``-x``                                | Positive, negative                  |
+| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
 +-----------------------------------------------+-------------------------------------+
-| ``~x``                                        | Bitwise not                         |
+| ``**``                                        | Exponentiation [#]_                 |
 +-----------------------------------------------+-------------------------------------+
-| ``**``                                        | Exponentiation                      |
+| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``x[index]``                                  | Subscription                        |
-+-----------------------------------------------+-------------------------------------+
-| ``x[index:index]``                            | Slicing                             |
-+-----------------------------------------------+-------------------------------------+
-| ``x(arguments...)``                           | Call                                |
-+-----------------------------------------------+-------------------------------------+
-| ``x.attribute``                               | Attribute reference                 |
-+-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``                          | Binding or tuple display            |
-+-----------------------------------------------+-------------------------------------+
-| ``[expressions...]``                          | List display                        |
-+-----------------------------------------------+-------------------------------------+
-| ``{key:datum...}``                            | Dictionary display                  |
-+-----------------------------------------------+-------------------------------------+
-| ```expressions...```                          | String conversion                   |
+| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``[expressions...]``,                         | list display,                       |
+| ``{key:datum...}``,                           | dictionary display,                 |
+| ```expressions...```                          | string conversion                   |
 +-----------------------------------------------+-------------------------------------+
 
 .. rubric:: Footnotes
@@ -1358,3 +1345,6 @@ groups from right to left).
    descriptors, you may notice seemingly unusual behaviour in certain uses of
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.
+
+.. [#] The power operator ``**`` binds less tightly than an arithmetic or
+   bitwise unary operator on its right, that is, ``2**-1`` is ``0.5``.
