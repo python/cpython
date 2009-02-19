@@ -267,7 +267,8 @@ sequence with comparable semantics, for example, yet many people write their own
 :func:`max`/:func:`min`. Another highly useful function is :func:`reduce`. A
 classical use of :func:`reduce` is something like ::
 
-   import sys, operator
+   import operator
+   import sys
    nums = map(float, sys.argv[1:])
    print reduce(operator.add, nums)/len(nums)
 

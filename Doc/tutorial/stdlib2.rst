@@ -170,7 +170,8 @@ case is running I/O in parallel with computations in another thread.
 The following code shows how the high level :mod:`threading` module can run
 tasks in background while the main program continues to run::
 
-   import threading, zipfile
+   import threading
+   import zipfile
 
    class AsyncZip(threading.Thread):
        def __init__(self, infile, outfile):

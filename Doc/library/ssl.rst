@@ -481,7 +481,9 @@ Client-side operation
 This example connects to an SSL server, prints the server's address and certificate,
 sends some bytes, and reads part of the response::
 
-   import socket, ssl, pprint
+   import pprint
+   import socket
+   import ssl
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -535,7 +537,8 @@ For server operation, typically you'd need to have a server certificate, and pri
 You'd open a socket, bind it to a port, call :meth:`listen` on it, then start waiting for clients
 to connect::
 
-   import socket, ssl
+   import socket
+   import ssl
 
    bindsocket = socket.socket()
    bindsocket.bind(('myaddr.mydomain.com', 10023))

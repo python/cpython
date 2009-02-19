@@ -139,7 +139,8 @@ on the implementation of the underlying system call.
 
 Example::
 
-   import os, sys
+   import os
+   import sys
    from stat import *
 
    def walktree(top, callback):

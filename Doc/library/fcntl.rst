@@ -133,7 +133,9 @@ The module defines the following functions:
 
 Examples (all on a SVR4 compliant system)::
 
-   import struct, fcntl, os
+   import fcntl
+   import os
+   import struct
 
    f = open(...)
    rv = fcntl.fcntl(f, fcntl.F_SETFL, os.O_NDELAY)

@@ -747,7 +747,8 @@ Examples
 
 The first example shows the most common usage of :mod:`cookielib`::
 
-   import cookielib, urllib2
+   import cookielib
+   import urllib2
    cj = cookielib.CookieJar()
    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
@@ -755,7 +756,9 @@ The first example shows the most common usage of :mod:`cookielib`::
 This example illustrates how to open a URL using your Netscape, Mozilla, or Lynx
 cookies (assumes Unix/Netscape convention for location of the cookies file)::
 
-   import os, cookielib, urllib2
+   import cookielib
+   import os
+   import urllib2
    cj = cookielib.MozillaCookieJar()
    cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))

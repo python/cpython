@@ -114,7 +114,8 @@ Using long option names is equally easy:
 
 In a script, typical usage is something like this::
 
-   import getopt, sys
+   import getopt
+   import sys
 
    def main():
        try:
