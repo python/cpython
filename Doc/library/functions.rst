@@ -1035,16 +1035,19 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: super([type[, object-or-type]])
 
-   Return a *super* object that acts as a proxy to superclasses of *type*.
+   Return a proxy object that delegates method calls to a parent class of
+   *type*.  This is useful for accessing inherited methods that have been
+   overriden in a child class.  The search order for parent classes is
+   determined by the ``__mro__`` attribute of the *type* and can change
+   whenever the parent classes are updated.
 
    If the second argument is omitted the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
-   the second argument is a type, ``issubclass(type2, type)`` must be true.
-   Calling :func:`super` without arguments is equivalent to ``super(this_class,
-   first_arg)``.
+   the second argument is a type, ``issubclass(type2, type)`` must be true (this
+   is useful for classmethods).
 
-   There are two typical use cases for :func:`super`.  In a class hierarchy with
-   single inheritance, :func:`super` can be used to refer to parent classes without
+   There are two typical use cases for "super".  In a class hierarchy with
+   single inheritance, "super" can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
    closely parallels the use of "super" in other programming languages.
 
