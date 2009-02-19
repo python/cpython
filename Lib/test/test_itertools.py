@@ -640,6 +640,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertNotEqual(len(set(map(id, list(product('abc', 'def'))))), 1)
 
     def test_repeat(self):
+        self.assertEqual(list(repeat(object='a', times=3)), ['a', 'a', 'a'])
         self.assertEqual(lzip(range(3),repeat('a')),
                          [(0, 'a'), (1, 'a'), (2, 'a')])
         self.assertEqual(list(repeat('a', 3)), ['a', 'a', 'a'])
