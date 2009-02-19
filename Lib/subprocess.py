@@ -1139,6 +1139,9 @@ class Popen(object):
             if data:
                 os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
+                for fd in (p2cwrite, c2pread, errread):
+                    if fd is not None:
+                        os.close(fd)
                 raise child_exception
 
 
