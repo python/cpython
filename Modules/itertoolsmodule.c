@@ -3617,11 +3617,10 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	repeatobject *ro;
 	PyObject *element;
 	Py_ssize_t cnt = -1;
-
-	if (type == &repeat_type && !_PyArg_NoKeywords("repeat()", kwds))
-		return NULL;
-
-	if (!PyArg_ParseTuple(args, "O|n:repeat", &element, &cnt))
+	static char *kwargs[] = {"object", "times", NULL};
+ 
+ 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs, 
+					 &element, &cnt))
 		return NULL;
 
 	if (PyTuple_Size(args) == 2 && cnt < 0)
@@ -3699,8 +3698,8 @@ static PyMethodDef repeat_methods[] = {
 };
 
 PyDoc_STRVAR(repeat_doc,
-"repeat(element [,times]) -> create an iterator which returns the element\n\
-for the specified number of times.  If not specified, returns the element\n\
+"repeat(object [,times]) -> create an iterator which returns the object\n\
+for the specified number of times.  If not specified, returns the object\n\
 endlessly.");
 
 static PyTypeObject repeat_type = {
