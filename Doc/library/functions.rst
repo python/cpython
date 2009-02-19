@@ -973,6 +973,9 @@ are always available.  They are listed here in alphabetical order.
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
 
+   To convert an old-style *cmp* function to a *key* function, see the
+   `CmpToKey recipe in the ASPN cookbook
+   <http://code.activestate.com/recipes/576653/>`_\.
 
 .. function:: staticmethod(function)
 
