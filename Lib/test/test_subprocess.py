@@ -535,7 +535,7 @@ class ProcessTestCase(unittest.TestCase):
             # Windows raises IOError
             except (IOError, OSError) as err:
                 if err.errno != 2:  # ignore "no such file"
-                    pass # XXX see #5312
+                    raise
 
     #
     # POSIX tests
