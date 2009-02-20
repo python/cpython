@@ -15,6 +15,34 @@
 
 #define ALLOW_PARENS_FOR_SIGN 0
 
+/* Raises an exception about an unknown presentation type for this
+ * type. */
+
+static void
+unknown_presentation_type(STRINGLIB_CHAR presentation_type,
+                          const char* type_name)
+{
+#if STRINGLIB_IS_UNICODE
+    /* If STRINGLIB_CHAR is Py_UNICODE, %c might be out-of-range,
+       hence the two cases. If it is char, gcc complains that the
+       condition below is always true, hence the ifdef. */
+    if (presentation_type > 32 && presentation_type < 128)
+#endif
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code '%c' "
+                     "for object of type '%.200s'",
+                     presentation_type,
+                     type_name);
+#if STRINGLIB_IS_UNICODE
+    else
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code '\\x%x' "
+                     "for object of type '%.200s'",
+                     (unsigned int)presentation_type,
+                     type_name);
+#endif
+}
+
 /*
     get_integer consumes 0 or more decimal digit characters from an
     input string, updates *result with the corresponding positive
@@ -854,19 +882,7 @@ FORMAT_STRING(PyObject *obj,
         break;
     default:
         /* unknown */
-	#if STRINGLIB_IS_UNICODE
-	/* If STRINGLIB_CHAR is Py_UNICODE, %c might be out-of-range,
-	   hence the two cases. If it is char, gcc complains that the
-	   condition below is always true, hence the ifdef. */
-        if (format.type > 32 && format.type <128)
-	#endif
-            PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
-                         (char)format.type);
-	#if STRINGLIB_IS_UNICODE
-	else
-            PyErr_Format(PyExc_ValueError, "Unknown conversion type '\\x%x'",
-                         (unsigned int)format.type);
-	#endif
+        unknown_presentation_type(format.type, obj->ob_type->tp_name);
         goto done;
     }
 
@@ -928,8 +944,7 @@ format_int_or_long(PyObject* obj,
 
     default:
         /* unknown */
-        PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
-                     format.type);
+        unknown_presentation_type(format.type, obj->ob_type->tp_name);
         goto done;
     }
 
@@ -1031,8 +1046,7 @@ FORMAT_FLOAT(PyObject *obj,
 
     default:
         /* unknown */
-        PyErr_Format(PyExc_ValueError, "Unknown conversion type %c",
-                     format.type);
+        unknown_presentation_type(format.type, obj->ob_type->tp_name);
         goto done;
     }
 
