@@ -346,8 +346,8 @@ class TestMove(unittest.TestCase):
             for src, dst in [('srcdir', 'srcdir/dest')]:
                 src = os.path.join(TESTFN, src)
                 dst = os.path.join(TESTFN, dst)
-                self.assert_(shutil.destinsrc(src, dst),
-                             msg='destinsrc() wrongly concluded that '
+                self.assert_(shutil._destinsrc(src, dst),
+                             msg='_destinsrc() wrongly concluded that '
                              'dst (%s) is not in src (%s)' % (dst, src))
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
@@ -358,8 +358,8 @@ class TestMove(unittest.TestCase):
             for src, dst in [('srcdir', 'src/dest'), ('srcdir', 'srcdir.new')]:
                 src = os.path.join(TESTFN, src)
                 dst = os.path.join(TESTFN, dst)
-                self.failIf(shutil.destinsrc(src, dst),
-                            msg='destinsrc() wrongly concluded that '
+                self.failIf(shutil._destinsrc(src, dst),
+                            msg='_destinsrc() wrongly concluded that '
                             'dst (%s) is in src (%s)' % (dst, src))
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)

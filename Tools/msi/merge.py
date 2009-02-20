@@ -1,5 +1,6 @@
 import msilib,os,win32com,tempfile,sys
 PCBUILD="PCBuild"
+certname = None
 from config import *
 
 Win64 = "amd64" in PCBUILD
@@ -76,3 +77,8 @@ def merge(msi, feature, rootdir, modules):
     db.Commit()
 
 merge(msi, "SharedCRT", "TARGETDIR", modules)
+
+# certname (from config.py) should be (a substring of)
+# the certificate subject, e.g. "Python Software Foundation"
+if certname:
+    os.system('signtool sign /n "%s" /t http://timestamp.verisign.com/scripts/timestamp.dll %s' % (certname, msi))
