@@ -1347,8 +1347,7 @@ Let's say you want to send logging events across a network, and handle them at
 the receiving end. A simple way of doing this is attaching a
 :class:`SocketHandler` instance to the root logger at the sending end::
 
-   import logging
-   import logging.handlers
+   import logging, logging.handlers
 
    rootLogger = logging.getLogger('')
    rootLogger.setLevel(logging.DEBUG)
@@ -2601,9 +2600,7 @@ properly preceded with the binary-encoded length, as the new logging
 configuration::
 
     #!/usr/bin/env python
-    import socket
-    import struct
-    import sys
+    import socket, sys, struct
 
     data_to_send = open(sys.argv[1], "r").read()
 

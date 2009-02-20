@@ -135,12 +135,10 @@ methods (except ``control`` objects which only provide :meth:`getinfo`,
 The audio device supports asynchronous notification of various events, through
 the SIGPOLL signal.  Here's an example of how you might enable this in Python::
 
-   import fcntl
-   import signal
-   import STROPTS
-
    def handle_sigpoll(signum, frame):
        print 'I got a SIGPOLL update'
+
+   import fcntl, signal, STROPTS
 
    signal.signal(signal.SIGPOLL, handle_sigpoll)
    fcntl.ioctl(audio_obj.fileno(), STROPTS.I_SETSIG, STROPTS.S_MSG)

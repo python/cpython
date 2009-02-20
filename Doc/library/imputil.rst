@@ -112,9 +112,7 @@ This code is intended to be read, not executed.  However, it does work
 
 ::
 
-   import __builtin__
-   import imp
-   import sys
+   import sys, imp, __builtin__
 
    # Replacement for __import__()
    def import_hook(name, globals=None, locals=None, fromlist=None):

@@ -182,8 +182,7 @@ POP3 Example
 Here is a minimal example (without error checking) that opens a mailbox and
 retrieves and prints all messages::
 
-   import getpass
-   import poplib
+   import getpass, poplib
 
    M = poplib.POP3('localhost')
    M.user(getpass.getuser())

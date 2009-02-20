@@ -551,8 +551,7 @@ transport.  The following example shows how:
 
 ::
 
-   import httplib
-   import xmlrpclib
+   import xmlrpclib, httplib
 
    class ProxiedTransport(xmlrpclib.Transport):
        def set_proxy(self, proxy):

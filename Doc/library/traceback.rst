@@ -145,8 +145,7 @@ less useful than) the standard Python interactive interpreter loop.  For a more
 complete implementation of the interpreter loop, refer to the :mod:`code`
 module. ::
 
-   import sys
-   import traceback
+   import sys, traceback
 
    def run_user_code(envdir):
        source = raw_input(">>> ")
@@ -166,8 +165,7 @@ module. ::
 The following example demonstrates the different ways to print and format the
 exception and traceback::
 
-   import sys
-   import traceback
+   import sys, traceback
 
    def lumberjack():
        bright_side_of_death()

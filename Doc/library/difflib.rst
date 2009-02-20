@@ -708,11 +708,7 @@ It is also contained in the Python source distribution, as
 
    """
 
-   import difflib
-   import os
-   import optparse
-   import sys
-   import time
+   import sys, os, time, difflib, optparse
 
    def main():
         # Configure the option parser

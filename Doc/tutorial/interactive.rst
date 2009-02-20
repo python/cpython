@@ -99,8 +99,7 @@ Automatic completion of variable and module names is optionally available.  To
 enable it in the interpreter's interactive mode, add the following to your
 startup file: [#]_  ::
 
-   import readline
-   import rlcompleter
+   import rlcompleter, readline
    readline.parse_and_bind('tab: complete')
 
 This binds the :kbd:`Tab` key to the completion function, so hitting the

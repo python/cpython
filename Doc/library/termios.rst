@@ -91,8 +91,7 @@ technique using a separate :func:`tcgetattr` call and a :keyword:`try` ...
 exactly no matter what happens::
 
    def getpass(prompt = "Password: "):
-       import sys
-       import termios
+       import termios, sys
        fd = sys.stdin.fileno()
        old = termios.tcgetattr(fd)
        new = termios.tcgetattr(fd)

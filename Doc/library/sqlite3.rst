@@ -423,8 +423,7 @@ Connection Objects
    Example::
 
       # Convert file existing_db.db to SQL dump file dump.sql
-      import os
-      import sqlite3
+      import sqlite3, os
 
       con = sqlite3.connect('existing_db.db')
       with open('dump.sql', 'w') as f:
