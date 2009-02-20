@@ -12,6 +12,10 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- Issue #5247: Improve error message when unknown format codes are
+  used when using str.format() with str, unicode, long, int, and
+  float arguments.
+
 - Running Python with the -3 option now also warns about classic division
   for ints and longs.
 
