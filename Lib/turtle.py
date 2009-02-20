@@ -55,7 +55,7 @@ Roughly it has the following features added:
 - Different turtle shapes, gif-images as turtle shapes, user defined
   and user controllable turtle shapes, among them compound
   (multicolored) shapes. Turtle shapes can be stgretched and tilted, which
-  makes turtles zu very versatile geometrical objects.
+  makes turtles very versatile geometrical objects.
 
 - Fine control over turtle movement and screen updates via delay(),
   and enhanced tracer() and speed() methods.
