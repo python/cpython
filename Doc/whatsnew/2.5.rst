@@ -1761,8 +1761,8 @@ ElementTree 1.2.6.    The :mod:`cElementTree` accelerator module is also
 included.
 
 The rest of this section will provide a brief overview of using ElementTree.
-Full documentation for ElementTree is available at http://effbot.org/zone
-/element-index.htm.
+Full documentation for ElementTree is available at
+http://effbot.org/zone/element-index.htm.
 
 ElementTree represents an XML document as a tree of element nodes. The text
 content of the document is stored as the :attr:`.text` and :attr:`.tail`
