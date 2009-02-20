@@ -372,8 +372,8 @@ def _execvpe(file, args, env=None):
                 saved_exc = e
                 saved_tb = tb
     if saved_exc:
-        raise error(saved_exc).with_traceback(saved_tb)
-    raise error(last_exc).with_traceback(tb)
+        raise saved_exc.with_traceback(saved_tb)
+    raise last_exc.with_traceback(tb)
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.

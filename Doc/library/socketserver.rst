@@ -508,7 +508,7 @@ An example for the :class:`ThreadingMixIn` class::
        # Exit the server thread when the main thread terminates
        server_thread.setDaemon(True)
        server_thread.start()
-       print("Server loop running in thread:", server_thread.getName())
+       print("Server loop running in thread:", server_thread.name)
 
        client(ip, port, b"Hello World 1")
        client(ip, port, b"Hello World 2")
