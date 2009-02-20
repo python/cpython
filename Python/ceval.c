@@ -1283,7 +1283,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case BINARY_MODULO:
 			w = POP();
 			v = TOP();
-			x = PyNumber_Remainder(v, w);
+			if (PyString_CheckExact(v))
+				x = PyString_Format(v, w);
+			else
+				x = PyNumber_Remainder(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
