@@ -521,8 +521,7 @@ IMAP4 Example
 Here is a minimal example (without error checking) that opens a mailbox and
 retrieves and prints all messages::
 
-   import getpass
-   import imaplib
+   import getpass, imaplib
 
    M = imaplib.IMAP4()
    M.login(getpass.getuser(), getpass.getpass())

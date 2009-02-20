@@ -99,8 +99,7 @@ simple CGI program::
     # -*- coding: UTF-8 -*-
 
     # enable debugging
-    import cgitb
-    cgitb.enable()
+    import cgitb; cgitb.enable()
 
     print "Content-Type: text/plain;charset=utf-8"
     print
@@ -280,9 +279,7 @@ following WSGI-application::
     # -*- coding: UTF-8 -*-
 
     from cgi import escape
-    import os
-    import sys
-
+    import sys, os
     from flup.server.fcgi import WSGIServer
 
     def app(environ, start_response):

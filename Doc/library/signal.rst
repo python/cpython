@@ -228,8 +228,7 @@ serial device that may not be turned on, which would normally cause the
 before opening the file; if the operation takes too long, the alarm signal will
 be sent, and the handler raises an exception. ::
 
-   import os
-   import signal
+   import signal, os
 
    def handler(signum, frame):
        print 'Signal handler called with signal', signum

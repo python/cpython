@@ -67,20 +67,16 @@ Begin by writing ``import cgi``.  Do not use ``from cgi import *`` --- the
 module defines all sorts of names for its own use or for backward compatibility
 that you don't want in your namespace.
 
-When you write a new script, consider adding the following::
+When you write a new script, consider adding the line::
 
-   import cgitb
-
-   cgitb.enable()
+   import cgitb; cgitb.enable()
 
 This activates a special exception handler that will display detailed reports in
 the Web browser if any errors occur.  If you'd rather not show the guts of your
 program to users of your script, you can have the reports saved to files
-instead, with something like this::
+instead, with a line like this::
 
-   import cgitb
-
-   cgitb.enable(display=0, logdir="/tmp")
+   import cgitb; cgitb.enable(display=0, logdir="/tmp")
 
 It's very helpful to use this feature during script development. The reports
 produced by :mod:`cgitb` provide information that can save you a lot of time in

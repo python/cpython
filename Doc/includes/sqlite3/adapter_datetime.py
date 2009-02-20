@@ -1,6 +1,5 @@
-import datetime
 import sqlite3
-import time
+import datetime, time
 
 def adapt_datetime(ts):
     return time.mktime(ts.timetuple())

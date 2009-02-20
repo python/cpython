@@ -951,11 +951,9 @@ Python 2.4, :mod:`doctest`'s :class:`Tester` class is deprecated, and
 test suites from modules and text files containing doctests.  These test suites
 can then be run using :mod:`unittest` test runners::
 
-   import doctest
    import unittest
-
-   import my_module_with_doctests
-   import my_other_module_with_doctests
+   import doctest
+   import my_module_with_doctests, and_another
 
    suite = unittest.TestSuite()
    for mod in my_module_with_doctests, and_another:

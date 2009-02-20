@@ -231,8 +231,7 @@ RawConfigParser Objects
    load the required file or files using :meth:`readfp` before calling :meth:`read`
    for any optional files::
 
-      import ConfigParser
-      import os
+      import ConfigParser, os
 
       config = ConfigParser.ConfigParser()
       config.readfp(open('defaults.cfg'))

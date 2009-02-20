@@ -473,8 +473,7 @@ statement both starts a database transaction and acquires a thread lock::
 Finally, the :func:`closing(object)` function returns *object* so that it can be
 bound to a variable, and calls ``object.close`` at the end of the block. ::
 
-   import sys
-   import urllib
+   import urllib, sys
    from contextlib import closing
 
    with closing(urllib.urlopen('http://www.yahoo.com')) as f:

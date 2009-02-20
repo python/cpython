@@ -45,9 +45,7 @@ this module.
 
 A simple example illustrating typical use::
 
-   import crypt
-   import getpass
-   import pwd
+   import crypt, getpass, pwd
 
    def login():
        username = raw_input('Python login:')

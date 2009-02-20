@@ -460,8 +460,7 @@ Registering a new dialect::
 
 A slightly more advanced use of the reader --- catching and reporting errors::
 
-   import csv
-   import sys
+   import csv, sys
    filename = "some.csv"
    reader = csv.reader(open(filename, "rb"))
    try:
@@ -507,9 +506,7 @@ For all other encodings the following :class:`UnicodeReader` and
 parameter in their constructor and make sure that the data passes the real
 reader or writer encoded as UTF-8::
 
-   import codecs
-   import cStringIO
-   import csv
+   import csv, codecs, cStringIO
 
    class UTF8Recoder:
        """
