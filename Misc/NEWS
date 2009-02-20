@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 0
 Core and Builtins
 -----------------
 
+=======
+- Issue #5247: Improve error message when unknown format codes are
+  used when using str.format() with str, int, and float arguments.
+
 - Issue #5249: time.strftime returned malformed string when format string
   contained non ascii character on windows.
 
