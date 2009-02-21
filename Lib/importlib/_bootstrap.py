@@ -361,7 +361,6 @@ class _PyFileLoader:
         # Not a property for easy overriding.
         return self._find_path(imp.PY_COMPILED)
 
-    @check_name
     @module_for_loader
     def load_module(self, module):
         """Load a Python source or bytecode module."""
@@ -371,7 +370,7 @@ class _PyFileLoader:
         code_object = self.get_code(module.__name__)
         module.__file__ = source_path if source_path else bytecode_path
         module.__loader__ = self
-        if self._is_pkg:
+        if self.is_package(name):
             module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
         module.__package__ = module.__name__
         if not hasattr(module, '__path__'):
@@ -429,7 +428,6 @@ class _PyFileLoader:
             else:
                 raise
 
-    @check_name
     def get_code(self, name):
         """Return the code object for the module."""
         # XXX Care enough to make sure this call does not happen if the magic
