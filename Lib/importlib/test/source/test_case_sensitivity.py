@@ -19,7 +19,7 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = importlib.PyFileFinder(path)
+        finder = importlib.PyPycFileFinder(path)
         return finder.find_module(self.name)
 
     def sensitivity_test(self):

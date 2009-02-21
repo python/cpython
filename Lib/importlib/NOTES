@@ -5,19 +5,22 @@ to do
   subclass of source support (makes it nicer for VMs that don't use CPython
   bytecode).
 
-    + ExtensionFileFinder
-    + PyFileFinder
-    + PyPycFileFinder
-    + PyFileLoader
+    + PyLoader (for ABC)
 
         - get_code for source only
+
+    + PyFileLoader(PyLoader)
+
         - get_data
         - source_mtime
         - source_path
 
-    + PyPycFileLoader(PyFileLoader)
+    +PyPycLoader (PyLoader, for ABC)
 
-        - get_code
+        - get_code for source and bytecode
+        
+    + PyPycFileLoader(PyPycLoader, PyFileLoader)
+
         - bytecode_path
         - write_bytecode
 

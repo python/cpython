@@ -32,7 +32,7 @@ class FinderTests(abc.FinderTests):
     """
 
     def import_(self, root, module):
-        finder = importlib.PyFileFinder(root)
+        finder = importlib.PyPycFileFinder(root)
         return finder.find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
