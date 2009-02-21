@@ -5,11 +5,6 @@ to do
   subclass of source support (makes it nicer for VMs that don't use CPython
   bytecode).
 
-    + chained_path_hook
-    + FileFinder
-
-        - find_module
-
     + ExtensionFileFinder
     + PyFileFinder
     + PyPycFileFinder
@@ -81,6 +76,13 @@ to do
 
             * FinderTests [doc]
             * LoaderTests [doc]
+
+* Remove ``import *`` from importlib.__init__.
+
+* Remove __all__ from importlib._bootstrap.
+
+* Add leading underscores to all objects in importlib._bootstrap that are not
+  publicly exposed.
 
 * Make sure that there is documentation *somewhere* fully explaining the
 semantics of import that can be referenced from the package's documentation
