@@ -315,17 +315,124 @@ def module_for_loader(fxn):
     return decorated
 
 
-class _PyFileLoader:
-    # XXX Still smart to have this as a separate class?  Or would it work
-    # better to integrate with PyFileFinder?  Could cache _is_pkg info.
-    # FileFinder can be changed to return self instead of a specific loader
-    # call.  Otherwise _base_path can be calculated on the fly without issue if
-    # it is known whether a module should be treated as a path or package to
-    # minimize stat calls.  Could even go as far as to stat the directory the
-    # importer is in to detect changes and then cache all the info about what
-    # files were found (if stating directories is platform-dependent).
+class PyLoader:
 
-    """Load a Python source or bytecode file."""
+    """Loader base class for Python source.
+
+    Requires implementing the optional PEP 302 protocols as well as
+    source_mtime and source_path.
+
+    """
+
+    @module_for_loader
+    def load_module(self, module):
+        """Load a source module."""
+        return _load_module(module)
+
+    def _load_module(self, module):
+        """Initialize a module from source."""
+        name = module.__name__
+        source_path = self.source_path(name)
+        code_object = self.get_code(module.__name__)
+        if not hasattr(module, '__file__'):
+            module.__file__ = source_path
+        if self.is_package(name):
+            module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
+        module.__package__ = module.__name__
+        if not hasattr(module, '__path__'):
+            module.__package__ = module.__package__.rpartition('.')[0]
+        exec(code_object, module.__dict__)
+        return module
+
+    def get_code(self, fullname):
+        """Get a code object from source."""
+        source_path = self.source_path(fullname)
+        source = self.get_data(source_path)
+        # Convert to universal newlines.
+        line_endings = b'\n'
+        for index, c in enumerate(source):
+            if c == ord(b'\n'):
+                break
+            elif c == ord(b'\r'):
+                line_endings = b'\r'
+                try:
+                    if source[index+1] == ord(b'\n'):
+                        line_endings += b'\n'
+                except IndexError:
+                    pass
+                break
+        if line_endings != b'\n':
+            source = source.replace(line_endings, b'\n')
+        return compile(source, source_path, 'exec', dont_inherit=True)
+
+
+class PyPycLoader(PyLoader):
+
+    """Loader base class for Python source and bytecode.
+
+    Requires implementing the methods needed for PyLoader as well as
+    bytecode_path and write_bytecode.
+
+    """
+
+    @module_for_loader
+    def load_module(self, module):
+        """Load a module from source or bytecode."""
+        name = module.__name__
+        source_path = self.source_path(name)
+        bytecode_path = self.bytecode_path(name)
+        module.__file__ = source_path if source_path else bytecode_path
+        return self._load_module(module)
+
+    def get_code(self, fullname):
+        """Get a code object from source or bytecode."""
+        # XXX Care enough to make sure this call does not happen if the magic
+        #     number is bad?
+        source_timestamp = self.source_mtime(fullname)
+        # Try to use bytecode if it is available.
+        bytecode_path = self.bytecode_path(fullname)
+        if bytecode_path:
+            data = self.get_data(bytecode_path)
+            magic = data[:4]
+            pyc_timestamp = marshal._r_long(data[4:8])
+            bytecode = data[8:]
+            try:
+                # Verify that the magic number is valid.
+                if imp.get_magic() != magic:
+                    raise ImportError("bad magic number")
+                # Verify that the bytecode is not stale (only matters when
+                # there is source to fall back on.
+                if source_timestamp:
+                    if pyc_timestamp < source_timestamp:
+                        raise ImportError("bytecode is stale")
+            except ImportError:
+                # If source is available give it a shot.
+                if source_timestamp is not None:
+                    pass
+                else:
+                    raise
+            else:
+                # Bytecode seems fine, so try to use it.
+                # XXX If the bytecode is ill-formed, would it be beneficial to
+                #     try for using source if available and issue a warning?
+                return marshal.loads(bytecode)
+        elif source_timestamp is None:
+            raise ImportError("no source or bytecode available to create code "
+                                "object for {0!r}".format(fullname))
+        # Use the source.
+        code_object = super().get_code(fullname)
+        # Generate bytecode and write it out.
+        if not sys.dont_write_bytecode:
+            data = bytearray(imp.get_magic())
+            data.extend(marshal._w_long(source_timestamp))
+            data.extend(marshal.dumps(code_object))
+            self.write_bytecode(fullname, data)
+        return code_object
+
+
+class PyFileLoader(PyLoader):
+
+    """Load a Python source file."""
 
     def __init__(self, name, path, is_pkg):
         self._name = name
@@ -354,29 +461,6 @@ class _PyFileLoader:
         # Not a property so that it is easy to override.
         return self._find_path(imp.PY_SOURCE)
 
-    @check_name
-    def bytecode_path(self, fullname):
-        """Return the path to a bytecode file, or None if one does not
-        exist."""
-        # Not a property for easy overriding.
-        return self._find_path(imp.PY_COMPILED)
-
-    @module_for_loader
-    def load_module(self, module):
-        """Load a Python source or bytecode module."""
-        name = module.__name__
-        source_path = self.source_path(name)
-        bytecode_path = self.bytecode_path(name)
-        code_object = self.get_code(module.__name__)
-        module.__file__ = source_path if source_path else bytecode_path
-        module.__loader__ = self
-        if self.is_package(name):
-            module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
-        module.__package__ = module.__name__
-        if not hasattr(module, '__path__'):
-            module.__package__ = module.__package__.rpartition('.')[0]
-        exec(code_object, module.__dict__)
-        return module
 
     @check_name
     def source_mtime(self, name):
@@ -405,6 +489,34 @@ class _PyFileLoader:
         # anything other than UTF-8.
         return open(source_path, encoding=encoding).read()
 
+
+    def get_data(self, path):
+        """Return the data from path as raw bytes."""
+        return _fileio._FileIO(path, 'r').read()
+
+    @check_name
+    def is_package(self, fullname):
+        """Return a boolean based on whether the module is a package.
+
+        Raises ImportError (like get_source) if the loader cannot handle the
+        package.
+
+        """
+        return self._is_pkg
+
+
+# XXX Rename _PyFileLoader throughout
+class PyPycFileLoader(PyPycLoader, PyFileLoader):
+
+    """Load a module from a source or bytecode file."""
+
+    @check_name
+    def bytecode_path(self, fullname):
+        """Return the path to a bytecode file, or None if one does not
+        exist."""
+        # Not a property for easy overriding.
+        return self._find_path(imp.PY_COMPILED)
+
     @check_name
     def write_bytecode(self, name, data):
         """Write out 'data' for the specified module, returning a boolean
@@ -427,82 +539,6 @@ class _PyFileLoader:
                 return False
             else:
                 raise
-
-    def get_code(self, name):
-        """Return the code object for the module."""
-        # XXX Care enough to make sure this call does not happen if the magic
-        #     number is bad?
-        source_timestamp = self.source_mtime(name)
-        # Try to use bytecode if it is available.
-        bytecode_path = self.bytecode_path(name)
-        if bytecode_path:
-            data = self.get_data(bytecode_path)
-            magic = data[:4]
-            pyc_timestamp = marshal._r_long(data[4:8])
-            bytecode = data[8:]
-            try:
-                # Verify that the magic number is valid.
-                if imp.get_magic() != magic:
-                    raise ImportError("bad magic number")
-                # Verify that the bytecode is not stale (only matters when
-                # there is source to fall back on.
-                if source_timestamp:
-                    if pyc_timestamp < source_timestamp:
-                        raise ImportError("bytcode is stale")
-            except ImportError:
-                # If source is available give it a shot.
-                if source_timestamp is not None:
-                    pass
-                else:
-                    raise
-            else:
-                # Bytecode seems fine, so try to use it.
-                # XXX If the bytecode is ill-formed, would it be beneficial to
-                #     try for using source if available and issue a warning?
-                return marshal.loads(bytecode)
-        elif source_timestamp is None:
-            raise ImportError("no source or bytecode available to create code "
-                                "object for {0!r}".format(name))
-        # Use the source.
-        source_path = self.source_path(name)
-        source = self.get_data(source_path)
-        # Convert to universal newlines.
-        line_endings = b'\n'
-        for index, c in enumerate(source):
-            if c == ord(b'\n'):
-                break
-            elif c == ord(b'\r'):
-                line_endings = b'\r'
-                try:
-                    if source[index+1] == ord(b'\n'):
-                        line_endings += b'\n'
-                except IndexError:
-                    pass
-                break
-        if line_endings != b'\n':
-            source = source.replace(line_endings, b'\n')
-        code_object = compile(source, source_path, 'exec', dont_inherit=True)
-        # Generate bytecode and write it out.
-        if not sys.dont_write_bytecode:
-            data = bytearray(imp.get_magic())
-            data.extend(marshal._w_long(source_timestamp))
-            data.extend(marshal.dumps(code_object))
-            self.write_bytecode(name, data)
-        return code_object
-
-    def get_data(self, path):
-        """Return the data from path as raw bytes."""
-        return _fileio._FileIO(path, 'r').read()
-
-    @check_name
-    def is_package(self, fullname):
-        """Return a boolean based on whether the module is a package.
-
-        Raises ImportError (like get_source) if the loader cannot handle the
-        package.
-
-        """
-        return self._is_pkg
 
 
 class FileFinder:
@@ -583,7 +619,7 @@ class PyFileFinder(FileFinder):
     """Importer for source/bytecode files."""
 
     _possible_package = True
-    _loader = _PyFileLoader
+    _loader = PyFileLoader
 
     def __init__(self, path_entry):
         # Lack of imp during class creation means _suffixes is set here.
@@ -596,6 +632,8 @@ class PyFileFinder(FileFinder):
 class PyPycFileFinder(PyFileFinder):
 
     """Finder for source and bytecode files."""
+
+    _loader = PyPycFileLoader
 
     def __init__(self, path_entry):
         super().__init__(path_entry)

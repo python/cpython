@@ -1,31 +1,6 @@
 to do
 /////
 
-* Refactor source/bytecode finder/loader code such that bytecode support is a
-  subclass of source support (makes it nicer for VMs that don't use CPython
-  bytecode).
-
-    + PyLoader (for ABC)
-
-        - load_module for source only
-        - get_code for source only
-
-    + PyFileLoader(PyLoader)
-
-        - get_data
-        - source_mtime
-        - source_path
-
-    +PyPycLoader (PyLoader, for ABC)
-
-        - load_module for source and bytecode
-        - get_code for source and bytecode
-        
-    + PyPycFileLoader(PyPycLoader, PyFileLoader)
-
-        - bytecode_path
-        - write_bytecode
-
 * Implement PEP 302 protocol for loaders (should just be a matter of testing).
 
     + Source/bytecode.
@@ -42,7 +17,6 @@ to do
 
             * load_module
 
-        - (?) Importer(Finder, Loader)
         - ResourceLoader(Loader)
 
             * get_data
@@ -88,6 +62,8 @@ to do
 
 * Add leading underscores to all objects in importlib._bootstrap that are not
   publicly exposed.
+
+* Reorder importlib/_bootstrap.py so definitions are not in inverted order.
 
 * Make sure that there is documentation *somewhere* fully explaining the
 semantics of import that can be referenced from the package's documentation
