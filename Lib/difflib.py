@@ -1329,7 +1329,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     (from line tuple, to line tuple, boolean flag)
 
     from/to line tuple -- (line num, line text)
-        line num -- integer or None (to indicate a context seperation)
+        line num -- integer or None (to indicate a context separation)
         line text -- original line text with following markers inserted:
             '\0+' -- marks start of added text
             '\0-' -- marks start of deleted text
