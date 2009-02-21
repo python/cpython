@@ -592,8 +592,16 @@ class PyFileFinder(FileFinder):
         # Make sure that Python source files are listed first!  Needed for an
         # optimization by the loader.
         self._suffixes = suffix_list(imp.PY_SOURCE)
-        self._suffixes += suffix_list(imp.PY_COMPILED)
         super().__init__(path_entry)
+
+
+class PyPycFileFinder(PyFileFinder):
+
+    """Finder for source and bytecode files."""
+
+    def __init__(self, path_entry):
+        super().__init__(path_entry)
+        self._suffixes += suffix_list(imp.PY_COMPILED)
 
 
 class PathFinder:
@@ -659,7 +667,7 @@ class PathFinder:
             return None
 
 
-_DEFAULT_PATH_HOOK = chained_path_hook(ExtensionFileFinder, PyFileFinder)
+_DEFAULT_PATH_HOOK = chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
 
 class _DefaultPathFinder(PathFinder):
 
