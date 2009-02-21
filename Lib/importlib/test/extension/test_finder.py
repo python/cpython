@@ -9,7 +9,7 @@ class FinderTests(abc.FinderTests):
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = importlib.ExtensionFileImporter(util.PATH)
+        importer = importlib.ExtensionFileFinder(util.PATH)
         return importer.find_module(fullname)
 
     def test_module(self):

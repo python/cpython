@@ -174,49 +174,41 @@ class FrozenImporter:
             raise
 
 
-class ChainedImporter(object):
+def chained_path_hook(*path_hooks):
+    """Create a closure which sequentially checks path hooks to see which ones
+    (if any) can work with a path."""
+    def path_hook(entry):
+        """Check to see if 'entry' matches any of the enclosed path hooks."""
+        finders = []
+        for hook in path_hooks:
+            try:
+                finder = hook(entry)
+            except ImportError:
+                continue
+            else:
+                finders.append(finder)
+        if not finders:
+            raise ImportError("no finder found")
+        else:
+            return ChainedFinder(*finders)
+
+    return path_hook
+
+
+class ChainedFinder:
 
     """Finder that sequentially calls other finders."""
 
-    def __init__(self, *importers):
-        self._importers = importers
+    def __init__(self, *finders):
+        self._finders = finders
 
     def find_module(self, fullname, path=None):
-        for importer in self._importers:
-            result = importer.find_module(fullname, path)
+        for finder in self._finders:
+            result = finder.find_module(fullname, path)
             if result:
                 return result
         else:
             return None
-
-
-# XXX Don't make filesystem-specific and instead make generic for any path
-#     hooks.
-def chaining_fs_path_hook(*path_hooks):
-    """Create a closure which calls the path hooks sequentially looking for
-    which path hooks can handle a path entry.
-
-
-    Passed-in path hooks work as any other path hooks, raising ImportError if
-    they cannot handle the path, otherwise returning a finder.
-
-    """
-    def chained_fs_path_hook(path_entry):
-        """Closure which sees which of the captured path hooks can handle the
-        path entry."""
-        absolute_path = _path_absolute(path_entry)
-        if not _path_isdir(absolute_path):
-            raise ImportError("only directories are supported")
-        accepted = []
-        for path_hook in path_hooks:
-            try:
-                accepted.append(path_hook(absolute_path))
-            except ImportError:
-                continue
-        if not accepted:
-            raise ImportError("no path hooks could handle %s" % path_entry)
-        return ChainedImporter(*accepted)
-    return chained_fs_path_hook
 
 
 def check_name(method):
@@ -235,11 +227,11 @@ def check_name(method):
     return inner
 
 
-class _ExtensionFileLoader(object):
+class _ExtensionFileLoader:
 
     """Loader for extension modules.
 
-    The constructor is designed to work with FileImporter.
+    The constructor is designed to work with FileFinder.
 
     """
 
@@ -323,10 +315,10 @@ def module_for_loader(fxn):
     return decorated
 
 
-class _PyFileLoader(object):
+class _PyFileLoader:
     # XXX Still smart to have this as a separate class?  Or would it work
-    # better to integrate with PyFileImporter?  Could cache _is_pkg info.
-    # FileImporter can be changed to return self instead of a specific loader
+    # better to integrate with PyFileFinder?  Could cache _is_pkg info.
+    # FileFinder can be changed to return self instead of a specific loader
     # call.  Otherwise _base_path can be calculated on the fly without issue if
     # it is known whether a module should be treated as a path or package to
     # minimize stat calls.  Could even go as far as to stat the directory the
@@ -515,9 +507,9 @@ class _PyFileLoader(object):
         return self._is_pkg
 
 
-class FileImporter(object):
+class FileFinder:
 
-    """Base class for file importers.
+    """Base class for file finders.
 
     Subclasses are expected to define the following attributes:
 
@@ -541,10 +533,13 @@ class FileImporter(object):
         Can be used as an entry on sys.path_hook.
 
         """
-        self._path_entry = path_entry
+        absolute_path = _path_absolute(path_entry)
+        if not _path_isdir(absolute_path):
+            raise ImportError("only directories are supported")
+        self._path_entry = absolute_path
 
     def find_module(self, fullname, path=None):
-        tail_module = fullname.rsplit('.', 1)[-1]
+        tail_module = fullname.rpartition('.')[2]
         package_directory = None
         if self._possible_package:
             for ext in self._suffixes:
@@ -571,7 +566,7 @@ class FileImporter(object):
             return None
 
 
-class ExtensionFileImporter(FileImporter):
+class ExtensionFileFinder(FileFinder):
 
     """Importer for extension files."""
 
@@ -582,10 +577,10 @@ class ExtensionFileImporter(FileImporter):
         # Assigning to _suffixes here instead of at the class level because
         # imp is not imported at the time of class creation.
         self._suffixes = suffix_list(imp.C_EXTENSION)
-        super(ExtensionFileImporter, self).__init__(path_entry)
+        super().__init__(path_entry)
 
 
-class PyFileImporter(FileImporter):
+class PyFileFinder(FileFinder):
 
     """Importer for source/bytecode files."""
 
@@ -598,7 +593,7 @@ class PyFileImporter(FileImporter):
         # optimization by the loader.
         self._suffixes = suffix_list(imp.PY_SOURCE)
         self._suffixes += suffix_list(imp.PY_COMPILED)
-        super(PyFileImporter, self).__init__(path_entry)
+        super().__init__(path_entry)
 
 
 class PathFinder:
@@ -664,13 +659,12 @@ class PathFinder:
             return None
 
 
+_DEFAULT_PATH_HOOK = chained_path_hook(ExtensionFileFinder, PyFileFinder)
+
 class _DefaultPathFinder(PathFinder):
 
     """Subclass of PathFinder that implements implicit semantics for
     __import__."""
-
-    _default_hook = staticmethod(chaining_fs_path_hook(ExtensionFileImporter,
-                                                        PyFileImporter))
 
     @classmethod
     def _path_hooks(cls, path):
@@ -678,17 +672,17 @@ class _DefaultPathFinder(PathFinder):
         try:
             return super()._path_hooks(path)
         except ImportError:
-            implicit_hooks = [cls._default_hook, imp.NullImporter]
+            implicit_hooks = [_DEFAULT_PATH_HOOK, imp.NullImporter]
             return super()._path_hooks(path, implicit_hooks)
 
     @classmethod
     def _path_importer_cache(cls, path):
         """Use the default path hook when None is stored in
         sys.path_importer_cache."""
-        return super()._path_importer_cache(path, cls._default_hook)
+        return super()._path_importer_cache(path, _DEFAULT_PATH_HOOK)
 
 
-class ImportLockContext(object):
+class ImportLockContext:
 
     """Context manager for the import lock."""
 
