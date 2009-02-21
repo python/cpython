@@ -87,16 +87,16 @@ class DefaultPathFinderTests(unittest.TestCase):
         importer = util.mock_modules(module)
         path = '<test path>'
         # XXX Not blackbox.
-        original_hook = _bootstrap._DefaultPathFinder._default_hook
+        original_hook = _bootstrap._DEFAULT_PATH_HOOK
         mock_hook = import_util.mock_path_hook(path, importer=importer)
-        _bootstrap._DefaultPathFinder._default_hook = staticmethod(mock_hook)
+        _bootstrap._DEFAULT_PATH_HOOK = mock_hook
         try:
             with util.import_state(path_importer_cache={path: None}):
                 loader = _bootstrap._DefaultPathFinder.find_module(module,
                                                                     path=[path])
                 self.assert_(loader is importer)
         finally:
-            _bootstrap._DefaultPathFinder._default_hook = original_hook
+            _bootstrap._DEFAULT_PATH_HOOK = original_hook
 
 
 def test_main():
