@@ -130,7 +130,7 @@ __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest', 'heappushpop']
 
 from itertools import islice, repeat, count, imap, izip, tee, chain
-from operator import itemgetter, neg
+from operator import itemgetter
 import bisect
 
 def heappush(heap, item):
@@ -413,13 +413,13 @@ def nlargest(n, iterable, key=None):
 
     # When key is none, use simpler decoration
     if key is None:
-        it = izip(iterable, imap(neg, count()))             # decorate
+        it = izip(iterable, count(0,-1))                    # decorate
         result = _nlargest(n, it)
         return map(itemgetter(0), result)                   # undecorate
 
     # General case, slowest method
     in1, in2 = tee(iterable)
-    it = izip(imap(key, in1), imap(neg, count()), in2)      # decorate
+    it = izip(imap(key, in1), count(0,-1), in2)             # decorate
     result = _nlargest(n, it)
     return map(itemgetter(2), result)                       # undecorate
 
