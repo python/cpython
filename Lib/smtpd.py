@@ -419,7 +419,7 @@ class MailmanProxy(PureProxy):
         s = StringIO(data)
         msg = Message.Message(s)
         # These headers are required for the proper execution of Mailman.  All
-        # MTAs in existance seem to add these if the original message doesn't
+        # MTAs in existence seem to add these if the original message doesn't
         # have them.
         if not msg.get('from'):
             msg['From'] = mailfrom

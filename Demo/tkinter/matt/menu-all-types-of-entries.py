@@ -110,12 +110,12 @@ def makeCascadeMenu():
     Cascade_button.menu.choices = Menu(Cascade_button.menu)
 
     # ...and this is a menu that cascades from that.
-    Cascade_button.menu.choices.wierdones = Menu(Cascade_button.menu.choices)
+    Cascade_button.menu.choices.weirdones = Menu(Cascade_button.menu.choices)
 
     # then you define the menus from the deepest level on up.
-    Cascade_button.menu.choices.wierdones.add_command(label='avacado')
-    Cascade_button.menu.choices.wierdones.add_command(label='belgian endive')
-    Cascade_button.menu.choices.wierdones.add_command(label='beefaroni')
+    Cascade_button.menu.choices.weirdones.add_command(label='avacado')
+    Cascade_button.menu.choices.weirdones.add_command(label='belgian endive')
+    Cascade_button.menu.choices.weirdones.add_command(label='beefaroni')
 
     # definition of the menu one level up...
     Cascade_button.menu.choices.add_command(label='Chocolate')
@@ -125,8 +125,8 @@ def makeCascadeMenu():
     Cascade_button.menu.choices.add_command(label='Rocky Road')
     Cascade_button.menu.choices.add_command(label='BubbleGum')
     Cascade_button.menu.choices.add_cascade(
-        label='Wierd Flavors',
-        menu=Cascade_button.menu.choices.wierdones)
+        label='Weird Flavors',
+        menu=Cascade_button.menu.choices.weirdones)
 
     # and finally, the definition for the top level
     Cascade_button.menu.add_cascade(label='more choices',

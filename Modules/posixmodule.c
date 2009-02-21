@@ -2490,7 +2490,7 @@ posix_listdir(PyObject *self, PyObject *args)
 static PyObject *
 posix__getfullpathname(PyObject *self, PyObject *args)
 {
-	/* assume encoded strings wont more than double no of chars */
+	/* assume encoded strings won't more than double no of chars */
 	char inbuf[MAX_PATH*2];
 	char *inbufp = inbuf;
 	Py_ssize_t insize = sizeof(inbuf);

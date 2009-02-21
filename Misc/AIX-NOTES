@@ -22,7 +22,7 @@ Date: Wed, 6 Aug 1997 11:41:00 +0200 (EET)
 (2) Stefan Esser (se@MI.Uni-Koeln.DE), in work done to compile Python
     1.0.0 on AIX 3.2.4, reports that AIX compilers don't like the LANG
     environment varaiable set to European locales.  This makes the compiler
-    generate floating point constants using "," as the decimal seperator,
+    generate floating point constants using "," as the decimal separator,
     which the assembler doesn't understand (or perhaps it is the other way
     around, with the assembler expecting, but not getting "," in float
     numbers).  "LANG=C; export LANG" solves the problem, as does
