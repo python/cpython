@@ -2892,19 +2892,19 @@ typedef struct {
 
 /* Counting logic and invariants:
 
-C_add_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
+fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
 	assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyInt(1));
 	Advances with:  cnt += 1
-	When count hits Y_SSIZE_T_MAX, switch to Py_add_mode.
+	When count hits Y_SSIZE_T_MAX, switch to slow_mode.
 
-Py_add_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
+slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 
 	assert(cnt == PY_SSIZE_T_MAX && long_cnt != NULL && long_step != NULL);
 	All counting is done with python objects (no overflows or underflows).
 	Advances with:  long_cnt += long_step
 	Step may be zero -- effectively a slow version of repeat(cnt).
-	Either long_cnt or long_step may be a float.
+	Either long_cnt or long_step may be a float, Fraction, or Decimal.
 */
 
 static PyTypeObject count_type;
@@ -2913,6 +2913,7 @@ static PyObject *
 count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	countobject *lz;
+	int slow_mode = 0;
 	Py_ssize_t cnt = 0;
 	PyObject *long_cnt = NULL;
 	PyObject *long_step = NULL;
@@ -2922,36 +2923,51 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			kwlist, &long_cnt, &long_step))
 		return NULL;
 
-	if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
-            (long_step != NULL && !PyNumber_Check(long_step))) {
+	if (long_cnt != NULL && !PyNumber_Check(long_cnt) ||
+        long_step != NULL && !PyNumber_Check(long_step)) {
 			PyErr_SetString(PyExc_TypeError, "a number is required");
 			return NULL;
 	}
 
-	if (long_step == NULL) {
-		/* If not specified, step defaults to 1 */
-		long_step = PyLong_FromLong(1);
-		if (long_step == NULL)
-			return NULL;
-	} else
-		Py_INCREF(long_step);
-	assert(long_step != NULL);
-
 	if (long_cnt != NULL) {
 		cnt = PyLong_AsSsize_t(long_cnt);
-		if ((cnt == -1 && PyErr_Occurred()) || 
-				!PyIndex_Check(long_cnt)  || 
-				!PyLong_Check(long_step) ||
-				PyLong_AS_LONG(long_step) != 1) {
-			/* Switch to Py_add_mode */
+		if (cnt == -1 && PyErr_Occurred() || !PyLong_Check(long_cnt)) {
 			PyErr_Clear();
-			Py_INCREF(long_cnt);
-			cnt = PY_SSIZE_T_MAX;
-		} else
-			long_cnt = NULL;
+			slow_mode = 1;
+		}
+		Py_INCREF(long_cnt);
+	} else {
+		cnt = 0;
+		long_cnt = PyLong_FromLong(0);
 	}
-	assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL) ||
-               (cnt == PY_SSIZE_T_MAX && long_cnt != NULL));
+
+	/* If not specified, step defaults to 1 */
+	if (long_step == NULL) {
+		long_step = PyLong_FromLong(1);
+		if (long_step == NULL) {
+			Py_DECREF(long_cnt);
+			return NULL;
+		}
+	} else
+		Py_INCREF(long_step);
+
+	assert(long_cnt != NULL && long_step != NULL);
+
+	/* Fast mode only works when the step is 1 */
+	if (!PyLong_Check(long_step) ||
+		PyLong_AS_LONG(long_step) != 1) {
+			slow_mode = 1;
+	}
+
+	if (slow_mode)
+		cnt = PY_SSIZE_T_MAX;
+	else
+		Py_CLEAR(long_cnt);
+
+	assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && !slow_mode ||
+           cnt == PY_SSIZE_T_MAX && long_cnt != NULL && slow_mode);
+	assert(slow_mode || 
+		   PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1);
 
 	/* create countobject structure */
 	lz = (countobject *)type->tp_alloc(type, 0);
@@ -2991,7 +3007,7 @@ count_nextlong(countobject *lz)
 
 	long_cnt = lz->long_cnt;
 	if (long_cnt == NULL) {
-		/* Switch to Py_add_mode */
+		/* Switch to slow_mode */
 		long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
 		if (long_cnt == NULL)
 			return NULL;
@@ -3034,11 +3050,10 @@ count_repr(countobject *lz)
 }
 
 PyDoc_STRVAR(count_doc,
-			 "count([start[, step]]) --> count object\n\
+			 "count(start=0, step=1]) --> count object\n\
 \n\
-Return a count object whose .__next__() method returns consecutive\n\
-integers starting from zero or, if specified, from start.\n\
-If step is specified, counts by that interval.  Equivalent to:\n\n\
+Return a count object whose .__next__() method returns consecutive values.\n\
+Equivalent to:\n\n\
     def count(firstval=0, step=1):\n\
         x = firstval\n\
         while 1:\n\
