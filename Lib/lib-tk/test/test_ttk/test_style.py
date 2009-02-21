@@ -61,7 +61,7 @@ class StyleTest(unittest.TestCase):
 
         # correct layout, but "option" doesn't exist as option
         self.failUnlessRaises(Tkinter.TclError, style.layout, 'Treeview',
-            [('name', {'option': 'inexistant'})])
+            [('name', {'option': 'inexistent'})])
 
 
     def test_theme_use(self):

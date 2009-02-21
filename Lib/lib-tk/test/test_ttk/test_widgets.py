@@ -861,9 +861,9 @@ class TreeviewTest(unittest.TestCase):
 
         # bad values
         self.failUnlessRaises(Tkinter.TclError,
-            self.tv.reattach, 'nonexistant', '', 'end')
+            self.tv.reattach, 'nonexistent', '', 'end')
         self.failUnlessRaises(Tkinter.TclError,
-            self.tv.detach, 'nonexistant')
+            self.tv.detach, 'nonexistent')
         self.failUnlessRaises(Tkinter.TclError,
             self.tv.reattach, item2, 'otherparent', 'end')
         self.failUnlessRaises(Tkinter.TclError,
@@ -897,7 +897,7 @@ class TreeviewTest(unittest.TestCase):
         self.tv.delete(item1)
         self.failUnlessEqual(self.tv.focus(), '')
 
-        # try focusing inexistant item
+        # try focusing inexistent item
         self.failUnlessRaises(Tkinter.TclError, self.tv.focus, 'hi')
 
 
@@ -1064,11 +1064,11 @@ class TreeviewTest(unittest.TestCase):
         self.failUnlessEqual(self.tv.item(item, values=None), (123, 'a'))
         self.failUnlessEqual(self.tv.set(item), {'B': 123})
 
-        # inexistant column
+        # inexistent column
         self.failUnlessRaises(Tkinter.TclError, self.tv.set, item, 'A')
         self.failUnlessRaises(Tkinter.TclError, self.tv.set, item, 'A', 'b')
 
-        # inexistant item
+        # inexistent item
         self.failUnlessRaises(Tkinter.TclError, self.tv.set, 'notme')
 
 

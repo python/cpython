@@ -150,7 +150,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         if verbose:
             print rec
 
-        # test that non-existant key lookups work (and that
+        # test that non-existent key lookups work (and that
         # DBC_set_range doesn't have a memleak under valgrind)
         rec = c.set_range(999999)
         self.assertEqual(rec, None)

@@ -20,7 +20,7 @@ from email import errors
 SEMISPACE = '; '
 
 # Regular expression that matches `special' characters in parameters, the
-# existance of which force quoting of the parameter value.
+# existence of which force quoting of the parameter value.
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
 

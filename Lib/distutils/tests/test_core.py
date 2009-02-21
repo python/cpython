@@ -57,7 +57,7 @@ class CoreTestCase(unittest.TestCase):
 
     def test_run_setup_uses_current_dir(self):
         # This tests that the setup script is run with the current directory
-        # as it's own current directory; this was temporarily broken by a
+        # as its own current directory; this was temporarily broken by a
         # previous patch when TESTFN did not use the current directory.
         sys.stdout = StringIO.StringIO()
         cwd = os.getcwd()
