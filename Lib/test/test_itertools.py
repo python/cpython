@@ -354,6 +354,10 @@ class TestBasicOps(unittest.TestCase):
 
     def test_count_with_stride(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
+        self.assertEqual(lzip('abc',count(start=2,step=3)),
+                         [('a', 2), ('b', 5), ('c', 8)])
+        self.assertEqual(lzip('abc',count(step=-1)),
+                         [('a', 0), ('b', -1), ('c', -2)])
         self.assertEqual(lzip('abc',count(2,0)), [('a', 2), ('b', 2), ('c', 2)])
         self.assertEqual(lzip('abc',count(2,1)), [('a', 2), ('b', 3), ('c', 4)])
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
