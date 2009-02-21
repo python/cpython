@@ -2923,15 +2923,15 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			kwlist, &long_cnt, &long_step))
 		return NULL;
 
-	if (long_cnt != NULL && !PyNumber_Check(long_cnt) ||
-        long_step != NULL && !PyNumber_Check(long_step)) {
+	if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
+            (long_step != NULL && !PyNumber_Check(long_step))) {
 			PyErr_SetString(PyExc_TypeError, "a number is required");
 			return NULL;
 	}
 
 	if (long_cnt != NULL) {
 		cnt = PyLong_AsSsize_t(long_cnt);
-		if (cnt == -1 && PyErr_Occurred() || !PyLong_Check(long_cnt)) {
+		if ((cnt == -1 && PyErr_Occurred()) || !PyLong_Check(long_cnt)) {
 			PyErr_Clear();
 			slow_mode = 1;
 		}
@@ -2964,10 +2964,10 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	else
 		Py_CLEAR(long_cnt);
 
-	assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && !slow_mode ||
-           cnt == PY_SSIZE_T_MAX && long_cnt != NULL && slow_mode);
+	assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && !slow_mode) ||
+               (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && slow_mode));
 	assert(slow_mode || 
-		   PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1);
+               (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
 
 	/* create countobject structure */
 	lz = (countobject *)type->tp_alloc(type, 0);
