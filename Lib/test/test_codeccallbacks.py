@@ -109,7 +109,7 @@ class CodecCallbackTest(unittest.TestCase):
         # useful that the error handler is not called for every single
         # unencodable character, but for a complete sequence of
         # unencodable characters, otherwise we would output many
-        # unneccessary escape sequences.
+        # unnecessary escape sequences.
 
         def uninamereplace(exc):
             if not isinstance(exc, UnicodeEncodeError):

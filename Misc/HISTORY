@@ -9862,7 +9862,7 @@ Tue Apr  6 19:38:18 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 	Also (quite separately, but strangely related to the philosophical
 	issue above) fix abspath() so that if win32api exists, it doesn't fail
 	when the path doesn't actually exist -- if GetFullPathName() fails,
-	fall back on the old strategy (join with getcwd() if neccessary, and
+	fall back on the old strategy (join with getcwd() if necessary, and
 	then use normpath()).
 
 	* configure.in, configure, config.h.in, acconfig.h:

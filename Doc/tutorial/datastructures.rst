@@ -308,7 +308,7 @@ A more verbose version of this snippet shows the flow explicitly::
             print row[i],
         print
 
-In real world, you should prefer builtin functions to complex flow statements.
+In real world, you should prefer built-in functions to complex flow statements.
 The :func:`zip` function would do a great job for this use case::
 
     >>> zip(*mat)

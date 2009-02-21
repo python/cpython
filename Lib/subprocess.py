@@ -494,9 +494,9 @@ def check_output(*popenargs, **kwargs):
     To capture standard error in the result, use stderr=subprocess.STDOUT.
 
     >>> check_output(["/bin/sh", "-c",
-                      "ls -l non_existant_file ; exit 0"],
+                      "ls -l non_existent_file ; exit 0"],
                      stderr=subprocess.STDOUT)
-    'ls: non_existant_file: No such file or directory\n'
+    'ls: non_existent_file: No such file or directory\n'
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')

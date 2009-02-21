@@ -170,7 +170,7 @@ result_2004_html = """
 
 class OutputTestCase(unittest.TestCase):
     def normalize_calendar(self, s):
-        # Filters out locale dependant strings
+        # Filters out locale dependent strings
         def neitherspacenordigit(c):
             return not c.isspace() and not c.isdigit()
 

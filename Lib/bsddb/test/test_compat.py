@@ -133,7 +133,7 @@ class CompatibilityTestCase(unittest.TestCase):
             except KeyError:
                 pass
             else:
-                self.fail("set_location on non-existant key did not raise KeyError")
+                self.fail("set_location on non-existent key did not raise KeyError")
 
         f.sync()
         f.close()

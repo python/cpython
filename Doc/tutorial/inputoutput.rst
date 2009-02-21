@@ -187,7 +187,7 @@ notation.::
 This is particularly useful in combination with the new built-in :func:`vars`
 function, which returns a dictionary containing all local variables.
 
-For a complete overview of string formating with :meth:`str.format`, see
+For a complete overview of string formatting with :meth:`str.format`, see
 :ref:`formatstrings`.
 
 

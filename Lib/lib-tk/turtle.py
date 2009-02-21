@@ -2794,7 +2794,7 @@ class RawTurtle(TPen, TNavigator):
 
     def _drawturtle(self):
         """Manages the correct rendering of the turtle with respect to
-        its shape, resizemode, strech and tilt etc."""
+        its shape, resizemode, stretch and tilt etc."""
         screen = self.screen
         shape = screen._shapes[self.turtle.shapeIndex]
         ttype = shape._type

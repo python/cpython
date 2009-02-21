@@ -48,7 +48,7 @@ def makeFileMenu():
     File_button.menu = Menu(File_button)
 
     # add an item. The first param is a menu entry type,
-    # must be one of: "cascade", "checkbutton", "command", "radiobutton", "seperator"
+    # must be one of: "cascade", "checkbutton", "command", "radiobutton", "separator"
     # see menu-demo-2.py for examples of use
     File_button.menu.add_command(label='New...', underline=0,
                                  command=new_file)

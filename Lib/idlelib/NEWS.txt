@@ -300,7 +300,7 @@ What's New in IDLE 1.1a3?
   window raising, especially in the Windows menu and in the debugger.
   IDLEfork 763524.
 
-- If user passes a non-existant filename on the commandline, just
+- If user passes a non-existent filename on the commandline, just
   open a new file, don't raise a dialog.  IDLEfork 854928.
 
 

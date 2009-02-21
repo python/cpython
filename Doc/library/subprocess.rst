@@ -181,9 +181,9 @@ This module also defines two shortcut functions:
    To capture standard error in the result, use stderr=subprocess.STDOUT.
 
       >>> subprocess.check_output(
-              ["/bin/sh", "-c", "ls non_existant_file ; exit 0"],
+              ["/bin/sh", "-c", "ls non_existent_file ; exit 0"],
               stderr=subprocess.STDOUT)
-      'ls: non_existant_file: No such file or directory\n'
+      'ls: non_existent_file: No such file or directory\n'
 
    .. versionadded:: 2.7
 
