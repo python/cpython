@@ -65,7 +65,6 @@ to do
 
     + machinery
 
-        - (?) Chained path hook/finder
         - Extensions importers
 
             * ExtensionFinder
@@ -76,7 +75,7 @@ to do
             * SourceFinder
             * (?) Loader
 
-    + test
+    + test (Really want to worry about compatibility with future versions?)
 
         - abc
 
