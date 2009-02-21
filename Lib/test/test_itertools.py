@@ -350,6 +350,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(zip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
         self.assertEqual(zip('abc',count(start=2,step=3)),
                          [('a', 2), ('b', 5), ('c', 8)])
+        self.assertEqual(zip('abc',count(step=-1)),
+                         [('a', 0), ('b', -1), ('c', -2)])
         self.assertEqual(zip('abc',count(2,0)), [('a', 2), ('b', 2), ('c', 2)])
         self.assertEqual(zip('abc',count(2,1)), [('a', 2), ('b', 3), ('c', 4)])
         self.assertEqual(take(20, count(maxsize-15, 3)), take(20, range(maxsize-15, maxsize+100, 3)))
