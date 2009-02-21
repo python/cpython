@@ -19,7 +19,7 @@ class SimpleTest(unittest.TestCase):
     # [basic]
     def test_module(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             module = loader.load_module('_temp')
             self.assert_('_temp' in sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
@@ -29,7 +29,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_package(self):
         with source_util.create_modules('_pkg.__init__') as mapping:
-            loader = importlib._PyFileLoader('_pkg', mapping['_pkg.__init__'],
+            loader = importlib.PyPycFileLoader('_pkg', mapping['_pkg.__init__'],
                                              True)
             module = loader.load_module('_pkg')
             self.assert_('_pkg' in sys.modules)
@@ -42,7 +42,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_lacking_parent(self):
         with source_util.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
-            loader = importlib._PyFileLoader('_pkg.mod', mapping['_pkg.mod'],
+            loader = importlib.PyPycFileLoader('_pkg.mod', mapping['_pkg.mod'],
                                              False)
             module = loader.load_module('_pkg.mod')
             self.assert_('_pkg.mod' in sys.modules)
@@ -57,7 +57,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_module_reuse(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             module = loader.load_module('_temp')
             module_id = id(module)
             module_dict_id = id(module.__dict__)
@@ -87,7 +87,7 @@ class SimpleTest(unittest.TestCase):
                 setattr(orig_module, attr, value)
             with open(mapping[name], 'w') as file:
                 file.write('+++ bad syntax +++')
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             self.assertRaises(SyntaxError, loader.load_module, name)
             for attr in attributes:
                 self.assertEqual(getattr(orig_module, attr), value)
@@ -97,7 +97,7 @@ class SimpleTest(unittest.TestCase):
         with source_util.create_modules('_temp') as mapping:
             with open(mapping['_temp'], 'w') as file:
                 file.write('=')
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             self.assertRaises(SyntaxError, loader.load_module, '_temp')
             self.assert_('_temp' not in sys.modules)
 
@@ -112,7 +112,7 @@ class DontWriteBytecodeTest(unittest.TestCase):
     @source_util.writes_bytecode
     def run_test(self, assertion):
         with source_util.create_modules('_temp') as mapping:
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             loader.load_module('_temp')
             bytecode_path = source_util.bytecode_path(mapping['_temp'])
             assertion(bytecode_path)
@@ -144,7 +144,7 @@ class BadDataTest(unittest.TestCase):
             with open(bytecode_path, 'r+b') as file:
                 file.seek(0)
                 file.write(b'\x00\x00\x00\x00')
-            loader = importlib._PyFileLoader('_temp', mapping['_temp'], False)
+            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
             self.assertRaises(ImportError, loader.load_module, '_temp')
             self.assert_('_temp' not in sys.modules)
 
@@ -159,7 +159,7 @@ class SourceBytecodeInteraction(unittest.TestCase):
     """
 
     def import_(self, file, module, *, pkg=False):
-        loader = importlib._PyFileLoader(module, file, pkg)
+        loader = importlib.PyPycFileLoader(module, file, pkg)
         return loader.load_module(module)
 
     def run_test(self, test, *create, pkg=False):
@@ -171,7 +171,7 @@ class SourceBytecodeInteraction(unittest.TestCase):
                 import_name = test.rsplit('.', 1)[0]
             else:
                 import_name = test
-            loader = importlib._PyFileLoader(import_name, mapping[test], pkg)
+            loader = importlib.PyPycFileLoader(import_name, mapping[test], pkg)
             # Because some platforms only have a granularity to the second for
             # atime you can't check the physical files. Instead just make it an
             # exception trigger if source was read.
@@ -212,7 +212,7 @@ class BadBytecodeTest(unittest.TestCase):
     """
 
     def import_(self, file, module_name):
-        loader = importlib._PyFileLoader(module_name, file, False)
+        loader = importlib.PyPycFileLoader(module_name, file, False)
         module = loader.load_module(module_name)
         self.assert_(module_name in sys.modules)
 
