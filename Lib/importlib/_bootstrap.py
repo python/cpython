@@ -320,7 +320,7 @@ class PyLoader:
     """Loader base class for Python source.
 
     Requires implementing the optional PEP 302 protocols as well as
-    source_mtime and source_path.
+    source_path.
 
     """
 
@@ -371,7 +371,7 @@ class PyPycLoader(PyLoader):
     """Loader base class for Python source and bytecode.
 
     Requires implementing the methods needed for PyLoader as well as
-    bytecode_path and write_bytecode.
+    source_mtime, bytecode_path, and write_bytecode.
 
     """
 
@@ -461,16 +461,6 @@ class PyFileLoader(PyLoader):
         # Not a property so that it is easy to override.
         return self._find_path(imp.PY_SOURCE)
 
-
-    @check_name
-    def source_mtime(self, name):
-        """Return the modification time of the source for the specified
-        module."""
-        source_path = self.source_path(name)
-        if not source_path:
-            return None
-        return int(_os.stat(source_path).st_mtime)
-
     @check_name
     def get_source(self, fullname):
         """Return the source for the module as a string.
@@ -505,10 +495,18 @@ class PyFileLoader(PyLoader):
         return self._is_pkg
 
 
-# XXX Rename _PyFileLoader throughout
 class PyPycFileLoader(PyPycLoader, PyFileLoader):
 
     """Load a module from a source or bytecode file."""
+
+    @check_name
+    def source_mtime(self, name):
+        """Return the modification time of the source for the specified
+        module."""
+        source_path = self.source_path(name)
+        if not source_path:
+            return None
+        return int(_os.stat(source_path).st_mtime)
 
     @check_name
     def bytecode_path(self, fullname):
