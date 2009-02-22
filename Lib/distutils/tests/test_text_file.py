@@ -18,8 +18,9 @@ class TextFileTestCase(support.TempdirManager, unittest.TestCase):
         # so they are really called by the buildbots
 
         # result 1: no fancy options
-        result1 = map(lambda x: x + "\n",
-                      TEST_DATA.split("\n")[0:-1])
+        result1 = ['# test file\n', '\n', 'line 3 \\\n',
+                   '# intervening comment\n',
+                   '  continues on next line\n']
 
         # result 2: just strip comments
         result2 = ["\n",
