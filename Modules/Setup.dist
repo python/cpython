@@ -169,6 +169,7 @@ _symtable symtablemodule.c
 #_pickle _pickle.c	# pickle accelerator
 #datetime datetimemodule.c	# date/time type
 #_bisect _bisectmodule.c	# Bisection algorithms
+#_heapq _heapqmodule.c	# Heap queue algorithm
 
 #unicodedata unicodedata.c    # static Unicode character database
 
