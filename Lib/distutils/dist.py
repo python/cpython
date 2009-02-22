@@ -1180,8 +1180,3 @@ def fix_help_options (options):
     for help_tuple in options:
         new_options.append(help_tuple[0:3])
     return new_options
-
-
-if __name__ == "__main__":
-    dist = Distribution()
-    print("ok")
