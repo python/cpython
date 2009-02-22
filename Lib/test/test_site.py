@@ -99,10 +99,9 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_s_option(self):
         usersite = site.USER_SITE
         self.assert_(usersite in sys.path)
-        print usersite, sys.path
 
         rc = subprocess.call([sys.executable, '-c',
-            'import sys; print sys.path; sys.exit(%r in sys.path)' % usersite])
+            'import sys; sys.exit(%r in sys.path)' % usersite])
         self.assertEqual(rc, 1)
 
         rc = subprocess.call([sys.executable, '-s', '-c',
