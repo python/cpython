@@ -450,10 +450,9 @@ way.  From the PyXML setup script::
          scripts=['scripts/xmlproc_parse', 'scripts/xmlproc_val']
          )
 
-All the scripts will also be added to the ``MANIFEST``
-file if no template is provided. See :ref:`manifest`.
-
-.. versionadded:: 2.7
+.. versionchanged:: 2.7
+  All the scripts will also be added to the ``MANIFEST``
+  file if no template is provided. See :ref:`manifest`.
 
 .. _distutils-installing-package-data:
 
@@ -499,10 +498,10 @@ The corresponding call to :func:`setup` might be::
 
 .. versionadded:: 2.4
 
-All the files that match ``package_data`` will be added to the ``MANIFEST``
-file if no template is provided. See :ref:`manifest`.
+.. versionchanged:: 2.7
+  All the files that match ``package_data`` will be added to the ``MANIFEST``
+  file if no template is provided. See :ref:`manifest`.
 
-.. versionadded:: 2.7
 
 .. _distutils-additional-files:
 
@@ -540,10 +539,10 @@ without specifying a target directory, but this is not recommended, and the
 files directly in the target directory, an empty string should be given as the
 directory.
 
-All the files that match ``data_files`` will be added to the ``MANIFEST``
-file if no template is provided. See :ref:`manifest`.
+.. versionchanged:: 2.7
+  All the files that match ``data_files`` will be added to the ``MANIFEST``
+  file if no template is provided. See :ref:`manifest`.
 
-.. versionadded:: 2.7
 
 
 .. _meta-data:
