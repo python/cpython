@@ -436,7 +436,3 @@ class install_misc(Command):
 
     def get_outputs (self):
         return self.outfiles
-
-
-if __name__ == "__main__":
-    print("ok")
