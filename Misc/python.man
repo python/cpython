@@ -306,9 +306,6 @@ Recommended locations of the directories containing the include files
 needed for developing Python extensions and embedding the
 interpreter.
 .RE
-.IP \fI~/.pythonrc.py\fP
-User-specific initialization file loaded by the \fIuser\fP module;
-not used by default or by most applications.
 .SH ENVIRONMENT VARIABLES
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
