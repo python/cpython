@@ -232,14 +232,14 @@ loops that truncate the stream.
               return self
           def next(self):
               while self.currkey == self.tgtkey:
-                  self.currvalue = self.it.next() # Exit on StopIteration
+                  self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
               return (self.currkey, self._grouper(self.tgtkey))
           def _grouper(self, tgtkey):
               while self.currkey == tgtkey:
                   yield self.currvalue
-                  self.currvalue = self.it.next() # Exit on StopIteration
+                  self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
 
    .. versionadded:: 2.4
@@ -289,7 +289,7 @@ loops that truncate the stream.
           # imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000
           iterables = map(iter, iterables)
           while True:
-              args = [it.next() for it in iterables]
+              args = [next(it) for it in iterables]
               if function is None:
                   yield tuple(args)
               else:
@@ -315,11 +315,11 @@ loops that truncate the stream.
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
           it = iter(xrange(s.start or 0, s.stop or sys.maxint, s.step or 1))
-          nexti = it.next()
+          nexti = next(it)
           for i, element in enumerate(iterable):
               if i == nexti:
                   yield element
-                  nexti = it.next()
+                  nexti = next(it)
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
@@ -649,8 +649,7 @@ which incur interpreter overhead.
    def pairwise(iterable):
        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
        a, b = tee(iterable)
-       for elem in b:
-           break
+       next(b, None)
        return izip(a, b)
 
    def grouper(n, iterable, fillvalue=None):
