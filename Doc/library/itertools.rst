@@ -14,40 +14,63 @@
 
 .. versionadded:: 2.3
 
-This module implements a number of :term:`iterator` building blocks inspired by
-constructs from the Haskell and SML programming languages.  Each has been recast
-in a form suitable for Python.
+This module implements a number of :term:`iterator` building blocks inspired
+by constructs from APL, Haskell, and SML.  Each has been recast in a form
+suitable for Python.
 
 The module standardizes a core set of fast, memory efficient tools that are
-useful by themselves or in combination.  Standardization helps avoid the
-readability and reliability problems which arise when many different individuals
-create their own slightly varying implementations, each with their own quirks
-and naming conventions.
-
-The tools are designed to combine readily with one another.  This makes it easy
-to construct more specialized tools succinctly and efficiently in pure Python.
+useful by themselves or in combination.  Together, they form an "iterator
+algebra" making it possible to construct specialized tools succinctly and
+efficiently in pure Python.
 
 For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  This toolbox provides :func:`imap` and
-:func:`count` which can be combined to form ``imap(f, count())`` and produce an
+:func:`count` which can be combined to form ``imap(f, count())`` to produce an
 equivalent result.
 
-Likewise, the functional tools are designed to work well with the high-speed
-functions provided by the :mod:`operator` module.
-
-Whether cast in pure python form or compiled code, tools that use iterators are
-more memory efficient (and often faster) than their list based counterparts. Adopting
-the principles of just-in-time manufacturing, they create data when and where
-needed instead of consuming memory with the computer equivalent of "inventory".
+The tools also work well with the high-speed functions in the :mod:`operator`
+module.  For example, the plus-operator can be mapped across two vectors to
+form an efficient dot-product: ``sum(imap(operator.add, vector1, vector2))``.
 
 
-.. seealso::
+**Infinite Iterators:**
 
-   The Standard ML Basis Library, `The Standard ML Basis Library
-   <http://www.standardml.org/Basis/>`_.
+    ==================  =================       =================================================
+    Iterator            Arguments               Results
+    ==================  =================       =================================================
+    :func:`count`       start                   start, start+1, start+2, ...
+    :func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...
+    :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times
+    ==================  =================       =================================================
 
-   Haskell, A Purely Functional Language, `Definition of Haskell and the Standard
-   Libraries <http://www.haskell.org/definition/>`_.
+**Iterators terminating on the shortest input sequence:**
+
+    ====================    ============================    =================================================
+    Iterator                Arguments                       Results
+    ====================    ============================    =================================================
+    :func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...
+    :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails
+    :func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+    :func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True
+    :func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False
+    :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]
+    :func:`imap`            func, p, q, ...                 func(p0, q0), fun(p1, q1), ...
+    :func:`starmap`         func, seq                       func(\*seq[0]), fun(\*seq[1]), ...
+    :func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
+    :func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails
+    :func:`izip`            p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
+    :func:`izip_longest`    p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
+    ====================    ============================    =================================================
+
+**Combinatoric generators:**
+
+    =====================================   ====================       =================================================
+    Iterator                                Arguments                  Results
+    =====================================   ====================       =================================================
+    :func:`product`                         p, q, ... [repeat=1]       cartesian product
+    :func:`permutations`                    p[, r]                     r-length permutations (without repeated elements)
+    :func:`combinations`                    p[, r]                     r-length combinations (sorted and no repeats)
+    =====================================   ====================       =================================================
 
 
 .. _itertools-functions:
@@ -697,26 +720,31 @@ which incur interpreter overhead.
            indices[i:] = [indices[i] + 1] * (r - i)
            yield tuple(pool[i] for i in indices)
 
-    def unique_everseen(iterable, key=None):
-        "List unique elements, preserving order. Remember all elements ever seen."
-        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-        # unique_everseen('ABBCcAD', str.lower) --> A B C D
-        seen = set()
-        seen_add = seen.add
-        if key is None:
-            for element in iterable:
-                if element not in seen:
-                    seen_add(element)
-                    yield element
-        else:
-            for element in iterable:
-                k = key(element)
-                if k not in seen:
-                    seen_add(k)
-                    yield element
+   def powerset(iterable):
+       "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       s = list(iterable)
+       return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-    def unique_justseen(iterable, key=None):
-        "List unique elements, preserving order. Remember only the element just seen."
-        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-        return imap(next, imap(itemgetter(1), groupby(iterable, key)))
+   def unique_everseen(iterable, key=None):
+       "List unique elements, preserving order. Remember all elements ever seen."
+       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+       # unique_everseen('ABBCcAD', str.lower) --> A B C D
+       seen = set()
+       seen_add = seen.add
+       if key is None:
+           for element in iterable:
+               if element not in seen:
+                   seen_add(element)
+                   yield element
+       else:
+           for element in iterable:
+               k = key(element)
+               if k not in seen:
+                   seen_add(k)
+                   yield element
+
+   def unique_justseen(iterable, key=None):
+       "List unique elements, preserving order. Remember only the element just seen."
+       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+       # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+       return imap(next, imap(itemgetter(1), groupby(iterable, key)))
