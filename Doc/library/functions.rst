@@ -415,14 +415,15 @@ are always available.  They are listed here in alphabetical order.
       pair: str; format
       single: __format__
 
-   Convert a string or a number to a "formatted" representation, as controlled
-   by *format_spec*.  The interpretation of *format_spec* will depend on the
-   type of the *value* argument, however there is a standard formatting syntax
-   that is used by most built-in types: :ref:`formatspec`.
+   Convert a *value* to a "formatted" representation, as controlled by
+   *format_spec*.  The interpretation of *format_spec* will depend on the type
+   of the *value* argument, however there is a standard formatting syntax that
+   is used by most built-in types: :ref:`formatspec`.
 
    .. note::
 
-      ``format(value, format_spec)`` merely calls ``value.__format__(format_spec)``.
+      ``format(value, format_spec)`` merely calls
+      ``value.__format__(format_spec)``.
 
 
 .. function:: frozenset([iterable])
