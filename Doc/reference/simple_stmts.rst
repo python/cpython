@@ -118,8 +118,8 @@ Assignment of an object to a target list is recursively defined as follows.
 
 * If the target list is a single target: The object is assigned to that target.
 
-* If the target list is a comma-separated list of targets: The object must be a
-  sequence with the same number of items as there are targets in the target list,
+* If the target list is a comma-separated list of targets: The object must be an
+  iterable with the same number of items as there are targets in the target list,
   and the items are assigned, from left to right, to the corresponding targets.
   (This rule is relaxed as of Python 1.5; in earlier versions, the object had to
   be a tuple.  Since strings are sequences, an assignment like ``a, b = "xy"`` is
@@ -143,9 +143,9 @@ Assignment of an object to a single target is recursively defined as follows.
   be deallocated and its destructor (if it has one) to be called.
 
 * If the target is a target list enclosed in parentheses or in square brackets:
-  The object must be a sequence with the same number of items as there are targets
-  in the target list, and its items are assigned, from left to right, to the
-  corresponding targets.
+  The object must be an iterable with the same number of items as there are
+  targets in the target list, and its items are assigned, from left to right,
+  to the corresponding targets.
 
   .. index:: pair: attribute; assignment
 
@@ -228,7 +228,8 @@ Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
 
 .. productionlist::
-   augmented_assignment_stmt: `target` `augop` (`expression_list` | `yield_expression`)
+   augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
+   augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
    augop: "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 

@@ -271,7 +271,6 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('(True, False, None)'), (True, False, None))
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
 
-
 def test_main():
     test_support.run_unittest(AST_Tests, ASTHelpers_Test)
 

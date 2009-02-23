@@ -187,7 +187,7 @@ caller is said to receive a *new* reference.  When no ownership is transferred,
 the caller is said to *borrow* the reference. Nothing needs to be done for a
 borrowed reference.
 
-Conversely, when a calling function passes it a reference to an  object, there
+Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
 does not.  *Stealing a reference* means that when you pass a reference to a
 function, that function assumes that it now owns that reference, and you are not

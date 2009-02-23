@@ -13,6 +13,14 @@ ISSUE_URI = 'http://bugs.python.org/issue%s'
 
 from docutils import nodes, utils
 
+# monkey-patch reST parser to disable alphabetic and roman enumerated lists
+from docutils.parsers.rst.states import Body
+Body.enum.converters['loweralpha'] = \
+    Body.enum.converters['upperalpha'] = \
+    Body.enum.converters['lowerroman'] = \
+    Body.enum.converters['upperroman'] = lambda x: None
+
+
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
     text = 'issue ' + issue

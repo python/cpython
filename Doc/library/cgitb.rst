@@ -26,9 +26,10 @@ as well as the values of the arguments and local variables to currently running
 functions, to help you debug the problem.  Optionally, you can save this
 information to a file instead of sending it to the browser.
 
-To enable this feature, simply add one line to the top of your CGI script::
+To enable this feature, simply add this to the top of your CGI script::
 
-   import cgitb; cgitb.enable()
+   import cgitb
+   cgitb.enable()
 
 The options to the :func:`enable` function control whether the report is
 displayed in the browser and whether the report is logged to a file for later
