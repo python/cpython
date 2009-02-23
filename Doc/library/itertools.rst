@@ -326,14 +326,14 @@ loops that truncate the stream.
               return self
           def __next__(self):
               while self.currkey == self.tgtkey:
-                  self.currvalue = next(self.it) # Exit on StopIteration
+                  self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
               return (self.currkey, self._grouper(self.tgtkey))
           def _grouper(self, tgtkey):
               while self.currkey == tgtkey:
                   yield self.currvalue
-                  self.currvalue = next(self.it) # Exit on StopIteration
+                  self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
 
 
@@ -652,8 +652,7 @@ which incur interpreter overhead.
    def pairwise(iterable):
        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
        a, b = tee(iterable)
-       for elem in b:
-           break
+       next(b, None)
        return zip(a, b)
 
    def grouper(n, iterable, fillvalue=None):
