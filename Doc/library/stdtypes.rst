@@ -795,9 +795,9 @@ string functions based on regular expressions.
 
 .. method:: str.count(sub[, start[, end]])
 
-   Return the number of occurrences of substring *sub* in the range [*start*,
-   *end*].  Optional arguments *start* and *end* are interpreted as in slice
-   notation.
+   Return the number of non-overlapping occurrences of substring *sub* in the
+   range [*start*, *end*].  Optional arguments *start* and *end* are
+   interpreted as in slice notation.
 
 
 .. method:: str.decode([encoding[, errors]])
