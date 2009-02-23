@@ -1274,6 +1274,7 @@ library to load.
 
 
 .. data:: find_library(name)
+   :module: ctypes.util
    :noindex:
 
    Try to find a library and return a pathname.  *name* is the library name without

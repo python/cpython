@@ -375,7 +375,7 @@ All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 +--------------------+------------------------------------+--------+
 | Operation          | Result                             | Notes  |
 +====================+====================================+========+
-| ``trunc(x)``       | *x* truncated to Integral          |        |
+| ``math.trunc(x)``  | *x* truncated to Integral          |        |
 +--------------------+------------------------------------+--------+
 | ``round(x[, n])``  | *x* rounded to n digits,           |        |
 |                    | rounding half to even. If n is     |        |
@@ -601,9 +601,9 @@ Sequence Types --- :class:`str`, :class:`unicode`, :class:`list`, :class:`tuple`
 
 There are six sequence types: strings, Unicode strings, lists, tuples, buffers,
 and xrange objects.
-(For other containers see the built in :class:`dict`, :class:`list`,
-:class:`set`, and :class:`tuple` classes, and the :mod:`collections`
-module.)
+
+For other containers see the built in :class:`dict` and :class:`set` classes,
+and the :mod:`collections` module.
 
 
 .. index::
@@ -1648,7 +1648,7 @@ The constructors for both classes work the same:
    .. method:: union(other, ...)
                set | other | ...
 
-      Return a new set with elements from both sets.
+      Return a new set with elements from the set and all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
@@ -1656,7 +1656,7 @@ The constructors for both classes work the same:
    .. method:: intersection(other, ...)
                set & other & ...
 
-      Return a new set with elements common to both sets.
+      Return a new set with elements common to the set and all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.

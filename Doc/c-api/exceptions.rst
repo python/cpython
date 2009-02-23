@@ -41,11 +41,20 @@ is a separate error indicator for each thread.
    Either alphabetical or some kind of structure.
 
 
-.. cfunction:: void PyErr_Print()
+.. cfunction:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
    Call this function only when the error indicator is set.  (Otherwise it will
    cause a fatal error!)
+
+   If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
+   :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
+   type, value and traceback of the printed exception, respectively.
+
+
+.. cfunction:: void PyErr_Print()
+
+   Alias for ``PyErr_PrintEx(1)``.
 
 
 .. cfunction:: PyObject* PyErr_Occurred()

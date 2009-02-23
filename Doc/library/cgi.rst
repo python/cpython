@@ -67,16 +67,18 @@ Begin by writing ``import cgi``.  Do not use ``from cgi import *`` --- the
 module defines all sorts of names for its own use or for backward compatibility
 that you don't want in your namespace.
 
-When you write a new script, consider adding the line::
+When you write a new script, consider adding these lines::
 
-   import cgitb; cgitb.enable()
+   import cgitb
+   cgitb.enable()
 
 This activates a special exception handler that will display detailed reports in
 the Web browser if any errors occur.  If you'd rather not show the guts of your
 program to users of your script, you can have the reports saved to files
-instead, with a line like this::
+instead, with code like this::
 
-   import cgitb; cgitb.enable(display=0, logdir="/tmp")
+   import cgitb
+   cgitb.enable(display=0, logdir="/tmp")
 
 It's very helpful to use this feature during script development. The reports
 produced by :mod:`cgitb` provide information that can save you a lot of time in
@@ -470,9 +472,10 @@ discarded altogether.
 
 Fortunately, once you have managed to get your script to execute *some* code,
 you can easily send tracebacks to the Web browser using the :mod:`cgitb` module.
-If you haven't done so already, just add the line::
+If you haven't done so already, just add the lines::
 
-   import cgitb; cgitb.enable()
+   import cgitb
+   cgitb.enable()
 
 to the top of your script.  Then try running it again; when a problem occurs,
 you should see a detailed report that will likely make apparent the cause of the

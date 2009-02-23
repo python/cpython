@@ -6,6 +6,9 @@
 #
 # 01/2009, Georg Brandl
 
+# TODO: - wrong versions in versionadded/changed
+#       - wrong markup after versionchanged directive
+
 from __future__ import with_statement
 
 import os

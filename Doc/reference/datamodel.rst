@@ -2078,13 +2078,13 @@ left undefined.
             object.__ixor__(self, other)
             object.__ior__(self, other)
 
-   These methods are called to implement the augmented arithmetic operations
+   These methods are called to implement the augmented arithmetic assignments
    (``+=``, ``-=``, ``*=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``, ``>>=``,
    ``&=``, ``^=``, ``|=``).  These methods should attempt to do the operation
    in-place (modifying *self*) and return the result (which could be, but does
    not have to be, *self*).  If a specific method is not defined, the augmented
-   operation falls back to the normal methods.  For instance, to evaluate the
-   expression ``x += y``, where *x* is an instance of a class that has an
+   assignment falls back to the normal methods.  For instance, to execute the
+   statement ``x += y``, where *x* is an instance of a class that has an
    :meth:`__iadd__` method, ``x.__iadd__(y)`` is called.  If *x* is an instance
    of a class that does not define a :meth:`__iadd__` method, ``x.__add__(y)``
    and ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``.
@@ -2244,7 +2244,8 @@ will not be supported.
 
   In the current implementation, the built-in numeric types :class:`int`,
   :class:`long` and :class:`float` do not use coercion; the type :class:`complex`
-  however does use it.  The difference can become apparent when subclassing these
+  however does use coercion for binary operators and rich comparisons, despite
+  the above rules.  The difference can become apparent when subclassing these
   types.  Over time, the type :class:`complex` may be fixed to avoid coercion.
   All these types implement a :meth:`__coerce__` method, for use by the built-in
   :func:`coerce` function.
