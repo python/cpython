@@ -102,7 +102,8 @@ class HelperFunctionsTests(unittest.TestCase):
 
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite])
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc, 1, "%r is not in sys.path (sys.exit returned %r)"
+                % (usersite, rc))
 
         rc = subprocess.call([sys.executable, '-s', '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite])
