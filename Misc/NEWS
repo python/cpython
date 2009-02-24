@@ -12,7 +12,6 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
-=======
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, int, and float arguments.
 
@@ -21,6 +20,14 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
+  The file was resized to wrong size.
+
+- Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
+
+- Issue #4524: distutils build_script command failed with --with-suffix=3.
+  Initial patch by Amaury Forgeot d'Arc.
 
 Build
 -----
@@ -139,14 +146,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
-  The file was resized to wrong size.
-
-- Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
-
-- Issue #4524: distutils build_script command failed with --with-suffix=3.
-  Initial patch by Amaury Forgeot d'Arc.
 
 - Issue #4998: The memory saving effect of __slots__ had been lost on Fractions
   which inherited from numbers.py which did not have __slots__ defined.  The
