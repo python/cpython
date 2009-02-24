@@ -22,6 +22,11 @@ Core and Builtins
 Library
 -------
 
+Build
+-----
+
+- Link the shared python library with $(MODLIBS).
+
 
 What's New in Python 3.0.1?
 ===========================
