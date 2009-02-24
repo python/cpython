@@ -393,6 +393,9 @@ class TestCollectionABCs(ABCTestCase):
             self.failUnless(isinstance(sample(), Sequence))
             self.failUnless(issubclass(sample, Sequence))
         self.failUnless(issubclass(basestring, Sequence))
+        self.failUnless(isinstance(range(10), Sequence))
+        self.failUnless(issubclass(xrange, Sequence))
+        self.failUnless(issubclass(str, Sequence))
         self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
             '__getitem__')
 
