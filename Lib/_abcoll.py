@@ -519,6 +519,7 @@ class Sequence(Sized, Iterable, Container):
 Sequence.register(tuple)
 Sequence.register(basestring)
 Sequence.register(buffer)
+Sequence.register(xrange)
 
 
 class MutableSequence(Sequence):
