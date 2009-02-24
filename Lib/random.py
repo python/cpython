@@ -43,6 +43,7 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 from binascii import hexlify as _hexlify
+import collections as _collections
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -296,10 +297,10 @@ class Random(_random.Random):
         # preferred since the list takes less space than the
         # set and it doesn't suffer from frequent reselections.
 
-        if isinstance(population, (set, frozenset)):
+        if isinstance(population, _collections.Set):
             population = tuple(population)
-        if not hasattr(population, '__getitem__') or hasattr(population, 'keys'):
-            raise TypeError("Population must be a sequence or set.  For dicts, use dict.keys().")
+        if not isinstance(population, _collections.Sequence):
+            raise TypeError("Population must be a sequence or Set.  For dicts, use list(d).")
         random = self.random
         n = len(population)
         if not 0 <= k <= n:
