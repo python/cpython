@@ -12,6 +12,8 @@ What's New in Python 2.6.2
 Core and Builtins
 -----------------
 
+- xrange() is now registered as a Sequence.
+
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, unicode, long, int, and
   float arguments.
