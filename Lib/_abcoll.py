@@ -546,6 +546,7 @@ class Sequence(Sized, Iterable, Container):
 
 Sequence.register(tuple)
 Sequence.register(str)
+Sequence.register(range)
 
 
 class ByteString(Sequence):
