@@ -945,11 +945,14 @@ that are not yet using glibc 6), test_strftime fails due to a
 non-standard implementation of strftime() in the C library. Please
 ignore this, or upgrade to glibc version 6.
 
+By default, tests are prevented from overusing resources like disk space and
+memory.  To enable these tests, run "make testall".
+
 IMPORTANT: If the tests fail and you decide to mail a bug report,
 *don't* include the output of "make test".  It is useless.  Run the
 failing test manually, as follows:
 
-        ./python ./Lib/test/test_whatever.py
+        ./python Lib/test/regrtest.py -v test_whatever
 
 (substituting the top of the source tree for '.' if you built in a
 different directory).  This runs the test in verbose mode.
