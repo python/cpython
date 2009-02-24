@@ -390,7 +390,7 @@ class HTMLRepr(Repr):
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
         return re.sub(r'((\\[\\abfnrtv\'"]|\\[0-9]..|\\x..|\\u....)+)',
-                      r'<font color="#c040c0">\1</font>',
+                      r'<span class="">\1</span>',
                       self.escape(testrepr))
 
     repr_str = repr_string
@@ -417,7 +417,7 @@ class HTMLDoc(Doc):
         return '''
 <!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
-</head><body bgcolor="#f0f0f8">
+</head><body>
 %s
 </body></html>''' % (title, contents)
 
@@ -456,7 +456,7 @@ class HTMLDoc(Doc):
 
     def bigsection(self, title, *args):
         """Format a section with a big heading."""
-        title = '<big><strong>%s</strong></big>' % title
+        title = '<span class="bigsection">%s</span>' % title
         return self.section(title, *args)
 
     def preformat(self, text):
@@ -477,7 +477,7 @@ class HTMLDoc(Doc):
             result = result + '</td>'
         return '<table width="100%%" summary="list"><tr>%s</tr></table>' % result
 
-    def grey(self, text): return '<font color="#909090">%s</font>' % text
+    def grey(self, text): return '<span class="grey">%s</span>' % text
 
     def namelink(self, name, *dicts):
         """Make a link for an identifier, given name-to-URL mappings."""
@@ -508,7 +508,7 @@ class HTMLDoc(Doc):
         else:
             url = '%s.html' % name
         if ispackage:
-            text = '<strong>%s</strong>&nbsp;(package)' % name
+            text = '<span class="package">%s</span>&nbsp;(package)' % name
         else:
             text = name
         return '<a href="%s">%s</a>' % (url, text)
@@ -542,7 +542,7 @@ class HTMLDoc(Doc):
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))
             elif selfdot:
-                results.append('self.<strong>%s</strong>' % name)
+                results.append('self.<span class="selfdot">%s</span>' % name)
             else:
                 results.append(self.namelink(name, classes))
             here = end
@@ -557,14 +557,14 @@ class HTMLDoc(Doc):
         for entry in tree:
             if type(entry) is type(()):
                 c, bases = entry
-                result = result + '<dt><font face="helvetica, arial">'
+                result = result + '<dt class="classlink">'
                 result = result + self.classlink(c, modname)
                 if bases and bases != (parent,):
                     parents = []
                     for base in bases:
                         parents.append(self.classlink(base, modname))
                     result = result + '(' + ', '.join(parents) + ')'
-                result = result + '\n</font></dt>'
+                result = result + '\n</dt>'
             elif type(entry) is type([]):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
                     entry, modname, c)
@@ -581,10 +581,10 @@ class HTMLDoc(Doc):
         links = []
         for i in range(len(parts)-1):
             links.append(
-                '<a href="%s.html"><font color="#ffffff">%s</font></a>' %
+                '<a href="%s.html" class="links">%s</a>' %
                 ('.'.join(parts[:i+1]), parts[i]))
         linkedname = '.'.join(links + parts[-1:])
-        head = '<big><big><strong>%s</strong></big></big>' % linkedname
+        head = '<span class="linkedname">%s</span>' % linkedname
         try:
             path = inspect.getabsfile(object)
             url = path
