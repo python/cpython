@@ -32,7 +32,7 @@ instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: in that case, override the :meth:`random`,
-:meth:`seed`, :meth:`getstate`, and :meth:`setstate`.
+:meth:`seed`, :meth:`getstate`, and :meth:`setstate` methods.
 Optionally, a new generator can supply a :meth:`getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
@@ -66,17 +66,6 @@ Bookkeeping functions:
    the time :func:`setstate` was called.
 
 
-.. function:: jumpahead(n)
-
-   Change the internal state to one different from and likely far away from the
-   current state.  *n* is a non-negative integer which is used to scramble the
-   current state vector.  This is most useful in multi-threaded programs, in
-   conjunction with multiple instances of the :class:`Random` class:
-   :meth:`setstate` or :meth:`seed` can be used to force all instances into the
-   same internal state, and then :meth:`jumpahead` can be used to force the
-   instances' states far apart.
-
-
 .. function:: getrandbits(k)
 
    Returns a python integer with *k* random bits. This method is supplied with
@@ -96,7 +85,8 @@ Functions for integers:
 
 .. function:: randint(a, b)
 
-   Return a random integer *N* such that ``a <= N <= b``.
+   Return a random integer *N* such that ``a <= N <= b``.  Alias for
+   ``randrange(a, b+1)``.
 
 
 Functions for sequences:
@@ -228,7 +218,7 @@ Alternative Generators:
    Class that uses the :func:`os.urandom` function for generating random numbers
    from sources provided by the operating system. Not available on all systems.
    Does not rely on software state and sequences are not reproducible. Accordingly,
-   the :meth:`seed` and :meth:`jumpahead` methods have no effect and are ignored.
+   the :meth:`seed` method has no effect and is ignored.
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
 
