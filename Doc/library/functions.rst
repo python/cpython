@@ -1198,9 +1198,9 @@ available.  They are listed here in alphabetical order.
    been overridden in a class. The search order is same as that used by
    :func:`getattr` except that the *type* itself is skipped.
 
-   The ``__mro__`` attribute of the *type* lists the method resolution search
-   order used by both :func:`getattr` and :func:`super`.  The attribue is
-   dynamic and can change whenever the inheritance hierarchy is updated.
+   The :attr:`__mro__` attribute of the *type* lists the method resolution
+   search order used by both :func:`getattr` and :func:`super`.  The attribute
+   is dynamic and can change whenever the inheritance hierarchy is updated.
 
    If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
@@ -1210,10 +1210,10 @@ available.  They are listed here in alphabetical order.
    .. note::
       :func:`super` only works for :term:`new-style class`\es.
 
-   There are two typical use cases for "super".  In a class hierarchy with
-   single inheritance, "super" can be used to refer to parent classes without
+   There are two typical use cases for *super*.  In a class hierarchy with
+   single inheritance, *super* can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
-   closely parallels the use of "super" in other programming languages.
+   closely parallels the use of *super* in other programming languages.
 
    The second use case is to support cooperative multiple inheritance in a
    dynamic execution environment.  This use case is unique to Python and is
