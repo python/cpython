@@ -1051,10 +1051,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`getattr` except that the *type* itself is skipped.
 
    The ``__mro__`` attribute of the *type* lists the method resolution search
-   order used by both func:`getattr` and :func:`super`.  The attribue is dynamic
-   and can change whenever the inheritance hierarchy is updated.
+   order used by both :func:`getattr` and :func:`super`.  The attribue is
+   dynamic and can change whenever the inheritance hierarchy is updated.
 
-   If the second argument is omitted the super object returned is unbound.  If
+   If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
    the second argument is a type, ``issubclass(type2, type)`` must be true (this
    is useful for classmethods).
@@ -1087,8 +1087,8 @@ are always available.  They are listed here in alphabetical order.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.
 
-   Also note that :func:`super` is not limited to use inside methods.  The
-   two argument specifies the arguments exactly and makes the appropriate
+   Also note that :func:`super` is not limited to use inside methods.  The two
+   argument form specifies the arguments exactly and makes the appropriate
    references.  The zero argument form automatically searches the stack frame
    for the class (``__class__``) and the first argument.
 
