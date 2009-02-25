@@ -87,8 +87,10 @@ typedef unsigned short mode_t;
        Python 3.0a5: 3130 (lexical exception stacking, including POP_EXCEPT)
        Python 3.1a0: 3140 (optimize list, set and dict comprehensions:
 			   change LIST_APPEND and SET_ADD, add MAP_ADD)
+       Python 3.1a0: 3150 (optimize conditional branches:
+			   introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
 */
-#define MAGIC (3140 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3150 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
