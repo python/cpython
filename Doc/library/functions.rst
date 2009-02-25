@@ -1229,7 +1229,7 @@ available.  They are listed here in alphabetical order.
 
       class C(B):
           def method(self, arg):
-              super().method(arg)    # This does the same thing as: super(C, self).method(arg)
+              super(C, self).method(arg)
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
