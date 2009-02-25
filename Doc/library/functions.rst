@@ -1240,8 +1240,7 @@ available.  They are listed here in alphabetical order.
 
    Also note that :func:`super` is not limited to use inside methods.  The two
    argument form specifies the arguments exactly and makes the appropriate
-   references.  The zero argument form automatically searches the stack frame
-   for the class (``__class__``) and the first argument.
+   references.
 
    .. versionadded:: 2.2
 
