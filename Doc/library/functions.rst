@@ -1193,12 +1193,19 @@ available.  They are listed here in alphabetical order.
 
 .. function:: super(type[, object-or-type])
 
-   Return a "super" object that acts like the superclass of *type*.
+   Return a proxy object that delegates method calls to a parent or sibling
+   class of *type*.  This is useful for accessing inherited methods that have
+   been overridden in a class. The search order is same as that used by
+   :func:`getattr` except that the *type* itself is skipped.
 
-   If the second argument is omitted the super
-   object returned is unbound.  If the second argument is an object,
-   ``isinstance(obj, type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true.
+   The ``__mro__`` attribute of the *type* lists the method resolution search
+   order used by both :func:`getattr` and :func:`super`.  The attribue is
+   dynamic and can change whenever the inheritance hierarchy is updated.
+
+   If the second argument is omitted, the super object returned is unbound.  If
+   the second argument is an object, ``isinstance(obj, type)`` must be true.  If
+   the second argument is a type, ``issubclass(type2, type)`` must be true (this
+   is useful for classmethods).
 
    .. note::
       :func:`super` only works for :term:`new-style class`\es.
@@ -1208,27 +1215,33 @@ available.  They are listed here in alphabetical order.
    naming them explicitly, thus making the code more maintainable.  This use
    closely parallels the use of "super" in other programming languages.
 
-   The second use case is to support cooperative multiple inheritence in a
+   The second use case is to support cooperative multiple inheritance in a
    dynamic execution environment.  This use case is unique to Python and is
    not found in statically compiled languages or languages that only support
    single inheritance.  This makes in possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
    that this method have the same calling signature in every case (because the
-   order of parent calls is determined at runtime and because that order adapts
-   to changes in the class hierarchy).
+   order of calls is determined at runtime, because that order adapts
+   to changes in the class hierarchy, and because that order can include
+   sibling classes that are unknown prior to runtime).
 
    For both use cases, a typical superclass call looks like this::
 
       class C(B):
-          def meth(self, arg):
-              super(C, self).meth(arg)
+          def method(self, arg):
+              super(C, self).method(arg)
 
    Note that :func:`super` is implemented as part of the binding process for
-   explicit dotted attribute lookups such as ``super(C, self).__getitem__(name)``.
+   explicit dotted attribute lookups such as ``super().__getitem__(name)``.
    It does so by implementing its own :meth:`__getattribute__` method for searching
-   parent classes in a predictable order that supports cooperative multiple inheritance.
+   classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
-   operators such as ``super(C, self)[name]``.
+   operators such as ``super()[name]``.
+
+   Also note that :func:`super` is not limited to use inside methods.  The two
+   argument form specifies the arguments exactly and makes the appropriate
+   references.  The zero argument form automatically searches the stack frame
+   for the class (``__class__``) and the first argument.
 
    .. versionadded:: 2.2
 
