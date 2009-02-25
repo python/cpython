@@ -818,10 +818,14 @@ opcode_stack_effect(int opcode, int oparg)
 			return 1;
 
 		case JUMP_FORWARD:
-		case JUMP_IF_FALSE:
-		case JUMP_IF_TRUE:
+		case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
+		case JUMP_IF_FALSE_OR_POP:  /*  "" */
 		case JUMP_ABSOLUTE:
 			return 0;
+
+		case POP_JUMP_IF_FALSE:
+		case POP_JUMP_IF_TRUE:
+			return -1;
 
 		case LOAD_GLOBAL:
 			return 1;
@@ -1664,12 +1668,10 @@ compiler_ifexp(struct compiler *c, expr_ty e)
 	if (next == NULL)
 		return 0;
 	VISIT(c, expr, e->v.IfExp.test);
-	ADDOP_JREL(c, JUMP_IF_FALSE, next);
-	ADDOP(c, POP_TOP);
+	ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
 	VISIT(c, expr, e->v.IfExp.body);
 	ADDOP_JREL(c, JUMP_FORWARD, end);
 	compiler_use_next_block(c, next);
-	ADDOP(c, POP_TOP);
 	VISIT(c, expr, e->v.IfExp.orelse);
 	compiler_use_next_block(c, end);
 	return 1;
@@ -1732,9 +1734,6 @@ compiler_if(struct compiler *c, stmt_ty s)
 	end = compiler_new_block(c);
 	if (end == NULL)
 		return 0;
-	next = compiler_new_block(c);
-	if (next == NULL)
-	    return 0;
 	
 	constant = expr_constant(s->v.If.test);
 	/* constant = 0: "if 0"
@@ -1746,15 +1745,21 @@ compiler_if(struct compiler *c, stmt_ty s)
 	} else if (constant == 1) {
 		VISIT_SEQ(c, stmt, s->v.If.body);
 	} else {
+		if (s->v.If.orelse) {
+			next = compiler_new_block(c);
+			if (next == NULL)
+			    return 0;
+		}
+		else
+			next = end;
 		VISIT(c, expr, s->v.If.test);
-		ADDOP_JREL(c, JUMP_IF_FALSE, next);
-		ADDOP(c, POP_TOP);
+		ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
 		VISIT_SEQ(c, stmt, s->v.If.body);
 		ADDOP_JREL(c, JUMP_FORWARD, end);
-		compiler_use_next_block(c, next);
-		ADDOP(c, POP_TOP);
-		if (s->v.If.orelse)
+		if (s->v.If.orelse) {
+			compiler_use_next_block(c, next);
 			VISIT_SEQ(c, stmt, s->v.If.orelse);
+		}
 	}
 	compiler_use_next_block(c, end);
 	return 1;
@@ -1828,8 +1833,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 		   so we need to set an extra line number. */
 		c->u->u_lineno_set = 0;
 		VISIT(c, expr, s->v.While.test);
-		ADDOP_JREL(c, JUMP_IF_FALSE, anchor);
-		ADDOP(c, POP_TOP);
+		ADDOP_JABS(c, POP_JUMP_IF_FALSE, anchor);
 	}
 	VISIT_SEQ(c, stmt, s->v.While.body);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
@@ -1840,7 +1844,6 @@ compiler_while(struct compiler *c, stmt_ty s)
 
 	if (constant == -1) {
 		compiler_use_next_block(c, anchor);
-		ADDOP(c, POP_TOP);
 		ADDOP(c, POP_BLOCK);
 	}
 	compiler_pop_fblock(c, LOOP, loop);
@@ -1947,7 +1950,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 }
 
 /*
-   Code generated for "try: S except E1, V1: S1 except E2, V2: S2 ...":
+   Code generated for "try: S except E1 as V1: S1 except E2 as V2: S2 ...":
    (The contents of the value stack is shown in [], with the top
    at the right; 'tb' is trace-back info, 'val' the exception's
    associated value, and 'exc' the exception.)
@@ -1961,20 +1964,17 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
    [tb, val, exc]	L1:	DUP				)
    [tb, val, exc, exc]		<evaluate E1>			)
    [tb, val, exc, exc, E1]	COMPARE_OP	EXC_MATCH	) only if E1
-   [tb, val, exc, 1-or-0]	JUMP_IF_FALSE	L2		)
-   [tb, val, exc, 1]		POP				)
+   [tb, val, exc, 1-or-0]	POP_JUMP_IF_FALSE	L2	)
    [tb, val, exc]		POP
    [tb, val]			<assign to V1>	(or POP if no V1)
    [tb]				POP
    []				<code for S1>
 				JUMP_FORWARD	L0
    
-   [tb, val, exc, 0]	L2:	POP
-   [tb, val, exc]		DUP
+   [tb, val, exc]	L2:	DUP
    .............................etc.......................
 
-   [tb, val, exc, 0]	Ln+1:	POP
-   [tb, val, exc]		END_FINALLY	# re-raise exception
+   [tb, val, exc]	Ln+1:	END_FINALLY	# re-raise exception
    
    []			L0:	<next statement>
    
@@ -2016,8 +2016,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 			ADDOP(c, DUP_TOP);
 			VISIT(c, expr, handler->v.ExceptHandler.type);
 			ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-			ADDOP_JREL(c, JUMP_IF_FALSE, except);
-			ADDOP(c, POP_TOP);
+			ADDOP_JABS(c, POP_JUMP_IF_FALSE, except);
 		}
 		ADDOP(c, POP_TOP);
 		if (handler->v.ExceptHandler.name) {
@@ -2088,8 +2087,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 		}
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
-		if (handler->v.ExceptHandler.type)
-			ADDOP(c, POP_TOP);
 	}
 	ADDOP(c, END_FINALLY);
 	compiler_use_next_block(c, orelse);
@@ -2268,8 +2265,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	end = compiler_new_block(c);
 	if (end == NULL)
 		return 0;
-	ADDOP_JREL(c, JUMP_IF_TRUE, end);
-	ADDOP(c, POP_TOP);
+	ADDOP_JABS(c, POP_JUMP_IF_TRUE, end);
 	ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
 	if (s->v.Assert.msg) {
 		VISIT(c, expr, s->v.Assert.msg);
@@ -2277,7 +2273,6 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	}
 	ADDOP_I(c, RAISE_VARARGS, 1);
 	compiler_use_next_block(c, end);
-	ADDOP(c, POP_TOP);
 	return 1;
 }
 
@@ -2629,9 +2624,9 @@ compiler_boolop(struct compiler *c, expr_ty e)
 
 	assert(e->kind == BoolOp_kind);
 	if (e->v.BoolOp.op == And)
-		jumpi = JUMP_IF_FALSE;
+		jumpi = JUMP_IF_FALSE_OR_POP;
 	else
-		jumpi = JUMP_IF_TRUE;
+		jumpi = JUMP_IF_TRUE_OR_POP;
 	end = compiler_new_block(c);
 	if (end == NULL)
 		return 0;
@@ -2640,8 +2635,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 	assert(n >= 0);
 	for (i = 0; i < n; ++i) {
 		VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
-		ADDOP_JREL(c, jumpi, end);
-		ADDOP(c, POP_TOP)
+		ADDOP_JABS(c, jumpi, end);
 	}
 	VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
 	compiler_use_next_block(c, end);
@@ -2737,9 +2731,8 @@ compiler_compare(struct compiler *c, expr_ty e)
 		ADDOP_I(c, COMPARE_OP,
 			cmpop((cmpop_ty)(asdl_seq_GET(
 						  e->v.Compare.ops, i - 1))));
-		ADDOP_JREL(c, JUMP_IF_FALSE, cleanup);
+		ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
 		NEXT_BLOCK(c);
-		ADDOP(c, POP_TOP);
 		if (i < (n - 1))
 		    VISIT(c, expr, 
 			    (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
@@ -2872,10 +2865,9 @@ compiler_comprehension_generator(struct compiler *c,
 	for (i = 0; i < n; i++) {
 		expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
 		VISIT(c, expr, e);
-		ADDOP_JREL(c, JUMP_IF_FALSE, if_cleanup);
+		ADDOP_JABS(c, POP_JUMP_IF_FALSE, if_cleanup);
 		NEXT_BLOCK(c);
-		ADDOP(c, POP_TOP);
-	} 
+	}
 
 	if (++gen_index < asdl_seq_LEN(generators))
 		if (!compiler_comprehension_generator(c, 
@@ -2913,13 +2905,7 @@ compiler_comprehension_generator(struct compiler *c,
 
 		compiler_use_next_block(c, skip);
 	}
-	for (i = 0; i < n; i++) {
-		ADDOP_I(c, JUMP_FORWARD, 1);
-		if (i == 0)
-			compiler_use_next_block(c, if_cleanup);
-		
-		ADDOP(c, POP_TOP);
-	} 
+	compiler_use_next_block(c, if_cleanup);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 	compiler_use_next_block(c, anchor);
 

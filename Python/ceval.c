@@ -1295,7 +1295,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			SETLOCAL(oparg, v);
 			FAST_DISPATCH();
 
-		PREDICTED(POP_TOP);
 		TARGET(POP_TOP)
 			v = POP();
 			Py_DECREF(v);
@@ -2204,8 +2203,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x == NULL) break;
-			PREDICT(JUMP_IF_FALSE);
-			PREDICT(JUMP_IF_TRUE);
+			PREDICT(POP_JUMP_IF_FALSE);
+			PREDICT(POP_JUMP_IF_TRUE);
 			DISPATCH();
 
 		TARGET(IMPORT_NAME)
@@ -2282,44 +2281,95 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			JUMPBY(oparg);
 			FAST_DISPATCH();
 
-		PREDICTED_WITH_ARG(JUMP_IF_FALSE);
-		TARGET(JUMP_IF_FALSE)
-			w = TOP();
+		PREDICTED_WITH_ARG(POP_JUMP_IF_FALSE);
+		TARGET(POP_JUMP_IF_FALSE)
+			w = POP();
 			if (w == Py_True) {
-				PREDICT(POP_TOP);
+				Py_DECREF(w);
 				FAST_DISPATCH();
 			}
 			if (w == Py_False) {
-				JUMPBY(oparg);
+				Py_DECREF(w);
+				JUMPTO(oparg);
 				FAST_DISPATCH();
 			}
 			err = PyObject_IsTrue(w);
+			Py_DECREF(w);
 			if (err > 0)
 				err = 0;
 			else if (err == 0)
-				JUMPBY(oparg);
+				JUMPTO(oparg);
 			else
 				break;
 			DISPATCH();
 
-		PREDICTED_WITH_ARG(JUMP_IF_TRUE);
-		TARGET(JUMP_IF_TRUE)
-			w = TOP();
+		PREDICTED_WITH_ARG(POP_JUMP_IF_TRUE);
+		TARGET(POP_JUMP_IF_TRUE)
+			w = POP();
 			if (w == Py_False) {
-				PREDICT(POP_TOP);
+				Py_DECREF(w);
 				FAST_DISPATCH();
 			}
 			if (w == Py_True) {
-				JUMPBY(oparg);
+				Py_DECREF(w);
+				JUMPTO(oparg);
+				FAST_DISPATCH();
+			}
+			err = PyObject_IsTrue(w);
+			Py_DECREF(w);
+			if (err > 0) {
+				err = 0;
+				JUMPTO(oparg);
+			}
+			else if (err == 0)
+				;
+			else
+				break;
+			DISPATCH();
+
+		TARGET(JUMP_IF_FALSE_OR_POP)
+			w = TOP();
+			if (w == Py_True) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				FAST_DISPATCH();
+			}
+			if (w == Py_False) {
+				JUMPTO(oparg);
+				FAST_DISPATCH();
+			}
+			err = PyObject_IsTrue(w);
+			if (err > 0) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				err = 0;
+			}
+			else if (err == 0)
+				JUMPTO(oparg);
+			else
+				break;
+			DISPATCH();
+
+		TARGET(JUMP_IF_TRUE_OR_POP)
+			w = TOP();
+			if (w == Py_False) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				FAST_DISPATCH();
+			}
+			if (w == Py_True) {
+				JUMPTO(oparg);
 				FAST_DISPATCH();
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0) {
 				err = 0;
-				JUMPBY(oparg);
+				JUMPTO(oparg);
 			}
-			else if (err == 0)
-				;
+			else if (err == 0) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+			}
 			else
 				break;
 			DISPATCH();

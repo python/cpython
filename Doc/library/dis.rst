@@ -595,16 +595,26 @@ the more significant byte last.
    Increments bytecode counter by *delta*.
 
 
-.. opcode:: JUMP_IF_TRUE (delta)
+.. opcode:: POP_JUMP_IF_TRUE (target)
 
-   If TOS is true, increment the bytecode counter by *delta*.  TOS is left on the
-   stack.
+   If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
 
 
-.. opcode:: JUMP_IF_FALSE (delta)
+.. opcode:: POP_JUMP_IF_FALSE (target)
 
-   If TOS is false, increment the bytecode counter by *delta*.  TOS is not
-   changed.
+   If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+
+
+.. opcode:: JUMP_IF_TRUE_OR_POP (target)
+
+   If TOS is true, sets the bytecode counter to *target* and leaves TOS
+   on the stack.  Otherwise (TOS is false), TOS is popped.
+
+
+.. opcode:: JUMP_IF_FALSE_OR_POP (target)
+
+   If TOS is false, sets the bytecode counter to *target* and leaves
+   TOS on the stack.  Otherwise (TOS is true), TOS is popped.
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
