@@ -172,6 +172,8 @@ Core and Builtins
 
 Library
 -------
+- Issue #5316: Fixed buildbot failures introduced by multiple inheritance
+  in Distutils tests.
 
 - Issue #5287: Add exception handling around findCaller() call to help out
   IronPython.
