@@ -1557,7 +1557,7 @@ _PyLong_Format(PyObject *aa, int base)
 		digit powbase = base;  /* powbase == base ** power */
 		int power = 1;
 		for (;;) {
-			unsigned long newpow = powbase * (unsigned long)base;
+			twodigits newpow = powbase * (twodigits)base;
 			if (newpow >> PyLong_SHIFT)  /* doesn't fit in a digit */
 				break;
 			powbase = (digit)newpow;
