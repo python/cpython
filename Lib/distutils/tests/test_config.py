@@ -51,7 +51,7 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
-        support.TempdirManager.setUp(self)
+        super(PyPIRCCommandTestCase, self).setUp()
 
         if os.environ.has_key('HOME'):
             self._old_home = os.environ['HOME']
@@ -79,7 +79,7 @@ class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
         else:
             os.environ['HOME'] = self._old_home
         set_threshold(self.old_threshold)
-        support.TempdirManager.tearDown(self)
+        super(PyPIRCCommandTestCase, self).tearDown()
 
     def test_server_registration(self):
         # This test makes sure PyPIRCCommand knows how to:
