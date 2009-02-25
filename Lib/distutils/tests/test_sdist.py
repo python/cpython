@@ -37,10 +37,9 @@ somecode%(sep)sdoc.txt
 class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
 
     def setUp(self):
-        support.LoggingSilencer.setUp(self)
         # PyPIRCCommandTestCase creates a temp dir already
         # and put it in self.tmp_dir
-        PyPIRCCommandTestCase.setUp(self)
+        super(sdistTestCase, self).setUp()
         # setting up an environment
         self.old_path = os.getcwd()
         os.mkdir(join(self.tmp_dir, 'somecode'))
@@ -54,8 +53,7 @@ class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
     def tearDown(self):
         # back to normal
         os.chdir(self.old_path)
-        PyPIRCCommandTestCase.tearDown(self)
-        support.LoggingSilencer.tearDown(self)
+        super(sdistTestCase, self).tearDown()
 
     def get_cmd(self, metadata=None):
         """Returns a cmd"""
