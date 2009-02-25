@@ -251,14 +251,12 @@ Common patterns for working with :class:`Counter` objects::
     c.most_common()[:-n:-1]         # n least common elements
     c += Counter()                  # remove zero and negative counts
 
-Several multiset mathematical operations are provided for combining
-:class:`Counter` objects.  Multisets are counters with the restriction
-that all counts are at least one.  They are like regular sets but are
-allowed to contain repeated elements.  Addition and subtraction combine
-counters by adding or subtracting the counts of corresponding elements.
-Intersection and union return the minimum and maximum of corresponding
-counts.  Each operation can accept inputs with signed counts,
-but the output excludes results with counts less than one.
+Several mathematical operations are provided for combining :class:`Counter`
+objects to produce multisets (counters that have counts greater than zero).
+Addition and subtraction combine counters by adding or subtracting the counts
+of corresponding elements.  Intersection and union return the minimum and
+maximum of corresponding counts.  Each operation can accept inputs with signed
+counts, but the output will exclude results with counts of zero or less.
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
