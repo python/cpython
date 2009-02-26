@@ -163,7 +163,7 @@ variables.  When it's done, you are ready to run make.
 
 To build Python, you normally type "make" in the toplevel directory.
 If you have changed the configuration, the Makefile may have to be
-rebuilt.  In this case you may have to run make again to correctly
+rebuilt.  In this case, you may have to run make again to correctly
 build your desired target.  The interpreter executable is built in the
 top level directory.
 
