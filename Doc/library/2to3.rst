@@ -36,9 +36,9 @@ It can be converted to Python 3.x code via 2to3 on the command line::
    $ 2to3 example.py
 
 A diff against the original source file is printed.  2to3 can also write the
-needed modifications right back to the source file.  (Of course, a backup of the
-original is also be made unless :option:`-n` is also given.)  Writing the
-changes back is enabled with the :option:`-w` flag::
+needed modifications right back to the source file.  (A backup of the original
+file is made unless :option:`-n` is also given.)  Writing the changes back is
+enabled with the :option:`-w` flag::
 
    $ 2to3 -w example.py
 

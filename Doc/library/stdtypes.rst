@@ -793,9 +793,9 @@ functions based on regular expressions.
 
 .. method:: str.count(sub[, start[, end]])
 
-   Return the number of occurrences of substring *sub* in the range [*start*,
-   *end*].  Optional arguments *start* and *end* are interpreted as in slice
-   notation.
+   Return the number of non-overlapping occurrences of substring *sub* in the
+   range [*start*, *end*].  Optional arguments *start* and *end* are
+   interpreted as in slice notation.
 
 
 .. method:: str.encode([encoding[, errors]])
@@ -835,7 +835,7 @@ functions based on regular expressions.
    found.
 
 
-.. method:: str.format(format_string, *args, **kwargs)
+.. method:: str.format(*args, **kwargs)
 
    Perform a string formatting operation.  The *format_string* argument can
    contain literal text or replacement fields delimited by braces ``{}``.  Each

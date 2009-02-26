@@ -487,7 +487,7 @@ class ForkingMixIn:
             # libraries that expect to be able to wait for their own
             # children.
             try:
-                pid, status = os.waitpid(0, options=0)
+                pid, status = os.waitpid(0, 0)
             except os.error:
                 pid = None
             if pid not in self.active_children: continue
