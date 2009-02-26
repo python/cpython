@@ -8,7 +8,7 @@ __revision__ = "$Id$"
 
 import sys, os, string, re
 from types import *
-from site import USER_BASE, USER_SITE
+from site import USER_BASE
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler, get_python_version
