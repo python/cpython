@@ -1218,7 +1218,7 @@ available.  They are listed here in alphabetical order.
    The second use case is to support cooperative multiple inheritance in a
    dynamic execution environment.  This use case is unique to Python and is
    not found in statically compiled languages or languages that only support
-   single inheritance.  This makes in possible to implement "diamond diagrams"
+   single inheritance.  This makes it possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
    that this method have the same calling signature in every case (because the
    order of calls is determined at runtime, because that order adapts
