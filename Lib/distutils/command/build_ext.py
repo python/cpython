@@ -7,7 +7,7 @@ extensions ASAP)."""
 __revision__ = "$Id$"
 
 import sys, os, re
-from site import USER_BASE, USER_SITE
+from site import USER_BASE
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler, get_python_version
