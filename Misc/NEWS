@@ -165,6 +165,10 @@ Core and Builtins
 
 Library
 -------
+
+- Deprecated methods of symtable.Symbol have been removed: is_keywordarg(),
+  is_vararg(), and is_in_tuple().
+
 - Issue #5316: Fixed buildbot failures introduced by multiple inheritance
   in Distutils tests.
 
