@@ -16,7 +16,7 @@ parameter.  The available start symbols are :const:`Py_eval_input`,
 :const:`Py_file_input`, and :const:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
-Note also that several of these functions take :ctype:`FILE\*` parameters.  On
+Note also that several of these functions take :ctype:`FILE\*` parameters.  One
 particular issue which needs to be handled carefully is that the :ctype:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
