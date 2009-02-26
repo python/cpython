@@ -1446,7 +1446,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		TARGET(BINARY_MODULO)
 			w = POP();
 			v = TOP();
-			x = PyNumber_Remainder(v, w);
+			if (PyUnicode_CheckExact(v))
+				x = PyUnicode_Format(v, w);
+			else
+				x = PyNumber_Remainder(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
