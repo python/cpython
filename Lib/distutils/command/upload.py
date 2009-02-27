@@ -6,7 +6,7 @@ from distutils.errors import *
 from distutils.core import PyPIRCCommand
 from distutils.spawn import spawn
 from distutils import log
-from hashlib import md5
+import sys
 import os
 import socket
 import platform
@@ -16,6 +16,11 @@ import urlparse
 import cStringIO as StringIO
 from ConfigParser import ConfigParser
 
+# this keeps compatibility for 2.3 and 2.4
+if sys.version < "2.5":
+    from md5 import md5
+else:
+    from hashlib import md5
 
 class upload(PyPIRCCommand):
 

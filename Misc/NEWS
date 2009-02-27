@@ -166,6 +166,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5052: make Distutils compatible with 2.3 again.
+
 - Deprecated methods of symtable.Symbol have been removed: is_keywordarg(),
   is_vararg(), and is_in_tuple().
 
