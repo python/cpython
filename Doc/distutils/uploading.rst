@@ -41,3 +41,32 @@ Other :command:`upload` options include :option:`--repository=<url>` or
 *section* the name of the section in :file:`$HOME/.pypirc`, and
 :option:`--show-response` (which displays the full response text from the PyPI
 server for help in debugging upload problems).
+
+PyPI package display
+====================
+
+The ``long_description`` field plays a special role at PyPI. It is used by
+the server to display a home page for the registered package.
+
+If you use the `reStructuredText <http://docutils.sourceforge.net/rst.html>`_
+syntax for this field, PyPI will parse it and display an HTML output for
+the package home page.
+
+The ``long_description`` field can be attached to a text file located
+in the package::
+
+    from distutils.core import setup
+
+    setup(name='Distutils',
+          long_description=open('README.txt'))
+
+In that case, `README.txt` is a regular reStructuredText text file located
+in the root of the package besides `setup.py`.
+
+To prevent registering broken reStructuredText content, you can use the
+:program:`rst2html` program that is provided by the `docutils` package
+and check the ``long_description`` from the command line::
+
+    $ python setup.py --long-description | rst2html.py > output.html
+
+`docutils` will display a warning if there's something wrong with your syntax.
