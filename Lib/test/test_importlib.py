@@ -140,11 +140,14 @@ class ImportModuleTests(unittest.TestCase):
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         module_name = 'mod'
+        subpkg_name = '{0}.subpkg'.format(pkg_name)
+        subpkg_long_name = '{0}.__init__'.format(subpkg_name)
         absolute_name = '{0}.{1}'.format(pkg_name, module_name)
-        relative_name = '.{0}'.format(module_name)
-        with mock_modules(pkg_long_name, absolute_name) as mock:
+        relative_name = '..{0}'.format(module_name)
+        with mock_modules(pkg_long_name, subpkg_long_name,
+                            absolute_name) as mock:
             with import_state(meta_path=[mock]):
-                module = importlib.import_module(relative_name, pkg_name)
+                module = importlib.import_module(relative_name, subpkg_name)
                 self.assertEqual(module.__name__, absolute_name)
 
     def test_absolute_import_with_package(self):
