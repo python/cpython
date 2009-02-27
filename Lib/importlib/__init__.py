@@ -15,7 +15,7 @@ def _resolve_name(name, package, level):
     try:
         # rpartition is more "correct" and rfind is just as easy to use, but
         # neither are in Python 2.3.
-        dot_rindex = package.rindex('.', level)[0]
+        dot_rindex = package.rindex('.', level)
         base = package[:dot_rindex]
     except ValueError:
         base = package
