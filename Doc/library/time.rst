@@ -118,6 +118,24 @@ An explanation of some terminology and conventions is in order.
      The time value sequence was changed from a tuple to a :class:`struct_time`, with
      the addition of attribute names for the fields.
 
+* Use the following functions to convert between time representations:
+
+  +-------------------------+-------------------------+-------------------------+
+  | From                    | To                      | Use                     |
+  +=========================+=========================+=========================+
+  | seconds since the epoch | :class:`struct_time` in | :func:`gmtime`          |
+  |                         | UTC                     |                         |
+  +-------------------------+-------------------------+-------------------------+
+  | seconds since the epoch | :class:`struct_time` in | :func:`localtime`       |
+  |                         | local time              |                         |
+  +-------------------------+-------------------------+-------------------------+
+  | :class:`struct_time` in | seconds since the epoch | :func:`calendar.timegm` |
+  | UTC                     |                         |                         |
+  +-------------------------+-------------------------+-------------------------+
+  | :class:`struct_time` in | seconds since the epoch | :func:`mktime`          |
+  | local time              |                         |                         |
+  +-------------------------+-------------------------+-------------------------+
+
 
 The module defines the following functions and data items:
 
