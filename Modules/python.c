@@ -37,7 +37,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "out of memory\n");
 		return 1;
 	}
-	oldloc = setlocale(LC_ALL, NULL);
+	oldloc = strdup(setlocale(LC_ALL, NULL));
 	setlocale(LC_ALL, "");
 	for (i = 0; i < argc; i++) {
 #ifdef HAVE_BROKEN_MBSTOWCS
@@ -67,6 +67,7 @@ main(int argc, char **argv)
 		}
 	}
 	setlocale(LC_ALL, oldloc);
+	free(oldloc);
 	res = Py_Main(argc, argv_copy);
 	for (i = 0; i < argc; i++) {
 		PyMem_Free(argv_copy2[i]);
