@@ -19,18 +19,18 @@ existence so that Python 1.5.2 users can use them to install other module
 distributions.  The Distutils' own setup script, shown here, is used to install
 the package into Python 1.5.2.) ::
 
-   #!/usr/bin/env python
+    #!/usr/bin/env python
 
-   from distutils.core import setup
+    from distutils.core import setup
 
-   setup(name='Distutils',
-         version='1.0',
-         description='Python Distribution Utilities',
-         author='Greg Ward',
-         author_email='gward@python.net',
-         url='http://www.python.org/sigs/distutils-sig/',
-         packages=['distutils', 'distutils.command'],
-        )
+    setup(name='Distutils',
+          version='1.0',
+          description='Python Distribution Utilities',
+          author='Greg Ward',
+          author_email='gward@python.net',
+          url='http://www.python.org/sigs/distutils-sig/',
+          packages=['distutils', 'distutils.command'],
+         )
 
 There are only two differences between this and the trivial one-file
 distribution presented in section :ref:`distutils-simple-example`: more metadata, and the
@@ -53,8 +53,8 @@ you, for example, use standard Python functions such as :func:`glob.glob` or
 :func:`os.listdir` to specify files, you should be careful to write portable
 code instead of hardcoding path separators::
 
-   glob.glob(os.path.join('mydir', 'subdir', '*.html'))
-   os.listdir(os.path.join('mydir', 'subdir'))
+    glob.glob(os.path.join('mydir', 'subdir', '*.html'))
+    os.listdir(os.path.join('mydir', 'subdir'))
 
 
 .. _listing-packages:
@@ -81,7 +81,7 @@ under :file:`lib`, so that modules in the "root package" (i.e., not in any
 package at all) are in :file:`lib`, modules in the :mod:`foo` package are in
 :file:`lib/foo`, and so forth.  Then you would put ::
 
-   package_dir = {'': 'lib'}
+    package_dir = {'': 'lib'}
 
 in your setup script.  The keys to this dictionary are package names, and an
 empty package name stands for the root package.  The values are directory names
@@ -92,7 +92,7 @@ Another possible convention is to put the :mod:`foo` package right in
 :file:`lib`, the :mod:`foo.bar` package in :file:`lib/bar`, etc.  This would be
 written in the setup script as ::
 
-   package_dir = {'foo': 'lib'}
+    package_dir = {'foo': 'lib'}
 
 A ``package: dir`` entry in the :option:`package_dir` dictionary implicitly
 applies to all packages below *package*, so the :mod:`foo.bar` case is
@@ -114,7 +114,7 @@ than listing packages---especially the case of a single module that goes in the
 "root package" (i.e., no package at all).  This simplest case was shown in
 section :ref:`distutils-simple-example`; here is a slightly more involved example::
 
-   py_modules = ['mod1', 'pkg.mod2']
+    py_modules = ['mod1', 'pkg.mod2']
 
 This describes two modules, one of them in the "root" package, the other in the
 :mod:`pkg` package.  Again, the default package/directory layout implies that
@@ -144,17 +144,17 @@ Suppose your distribution includes a single extension, called :mod:`foo` and
 implemented by :file:`foo.c`.  If no additional instructions to the
 compiler/linker are needed, describing this extension is quite simple::
 
-   Extension('foo', ['foo.c'])
+    Extension('foo', ['foo.c'])
 
 The :class:`Extension` class can be imported from :mod:`distutils.core` along
 with :func:`setup`.  Thus, the setup script for a module distribution that
 contains only this one extension and nothing else might be::
 
-   from distutils.core import setup, Extension
-   setup(name='foo',
-         version='1.0',
-         ext_modules=[Extension('foo', ['foo.c'])],
-         )
+    from distutils.core import setup, Extension
+    setup(name='foo',
+          version='1.0',
+          ext_modules=[Extension('foo', ['foo.c'])],
+          )
 
 The :class:`Extension` class (actually, the underlying extension-building
 machinery implemented by the :command:`build_ext` command) supports a great deal
@@ -168,11 +168,11 @@ Extension names and packages
 The first argument to the :class:`Extension` constructor is always the name of
 the extension, including any package names.  For example, ::
 
-   Extension('foo', ['src/foo1.c', 'src/foo2.c'])
+    Extension('foo', ['src/foo1.c', 'src/foo2.c'])
 
 describes an extension that lives in the root package, while ::
 
-   Extension('pkg.foo', ['src/foo1.c', 'src/foo2.c'])
+    Extension('pkg.foo', ['src/foo1.c', 'src/foo2.c'])
 
 describes the same extension in the :mod:`pkg` package.  The source files and
 resulting object code are identical in both cases; the only difference is where
@@ -183,11 +183,11 @@ If you have a number of extensions all in the same package (or all under the
 same base package), use the :option:`ext_package` keyword argument to
 :func:`setup`.  For example, ::
 
-   setup(...,
-         ext_package='pkg',
-         ext_modules=[Extension('foo', ['foo.c']),
-                      Extension('subpkg.bar', ['bar.c'])],
-        )
+    setup(...,
+          ext_package='pkg',
+          ext_modules=[Extension('foo', ['foo.c']),
+                       Extension('subpkg.bar', ['bar.c'])],
+         )
 
 will compile :file:`foo.c` to the extension :mod:`pkg.foo`, and :file:`bar.c` to
 :mod:`pkg.subpkg.bar`.
@@ -212,15 +212,15 @@ extension.
 This warning notwithstanding, options to SWIG can be currently passed like
 this::
 
-   setup(...,
-         ext_modules=[Extension('_foo', ['foo.i'],
-                                swig_opts=['-modern', '-I../include'])],
-         py_modules=['foo'],
-        )
+    setup(...,
+          ext_modules=[Extension('_foo', ['foo.i'],
+                                 swig_opts=['-modern', '-I../include'])],
+          py_modules=['foo'],
+         )
 
 Or on the commandline like this::
 
-   > python setup.py build_ext --swig-opts="-modern -I../include"
+    > python setup.py build_ext --swig-opts="-modern -I../include"
 
 On some platforms, you can include non-source files that are processed by the
 compiler and included in your extension.  Currently, this just means Windows
@@ -239,18 +239,18 @@ include directories to search or preprocessor macros to define/undefine:
 For example, if your extension requires header files in the :file:`include`
 directory under your distribution root, use the ``include_dirs`` option::
 
-   Extension('foo', ['foo.c'], include_dirs=['include'])
+    Extension('foo', ['foo.c'], include_dirs=['include'])
 
 You can specify absolute directories there; if you know that your extension will
 only be built on Unix systems with X11R6 installed to :file:`/usr`, you can get
 away with ::
 
-   Extension('foo', ['foo.c'], include_dirs=['/usr/include/X11'])
+    Extension('foo', ['foo.c'], include_dirs=['/usr/include/X11'])
 
 You should avoid this sort of non-portable usage if you plan to distribute your
 code: it's probably better to write C code like  ::
 
-   #include <X11/Xlib.h>
+    #include <X11/Xlib.h>
 
 If you need to include header files from some other Python extension, you can
 take advantage of the fact that header files are installed in a consistent way
@@ -262,17 +262,17 @@ directory---\ :file:`/usr/local/include/python1.5` in this case---is always
 included in the search path when building Python extensions, the best approach
 is to write C code like  ::
 
-   #include <Numerical/arrayobject.h>
+    #include <Numerical/arrayobject.h>
 
 If you must put the :file:`Numerical` include directory right into your header
 search path, though, you can find that directory using the Distutils
 :mod:`distutils.sysconfig` module::
 
-   from distutils.sysconfig import get_python_inc
-   incdir = os.path.join(get_python_inc(plat_specific=1), 'Numerical')
-   setup(...,
-         Extension(..., include_dirs=[incdir]),
-         )
+    from distutils.sysconfig import get_python_inc
+    incdir = os.path.join(get_python_inc(plat_specific=1), 'Numerical')
+    setup(...,
+          Extension(..., include_dirs=[incdir]),
+          )
 
 Even though this is quite portable---it will work on any Python installation,
 regardless of platform---it's probably easier to just write your C code in the
@@ -288,17 +288,17 @@ just a list of macros to undefine.
 
 For example::
 
-   Extension(...,
-             define_macros=[('NDEBUG', '1'),
-                            ('HAVE_STRFTIME', None)],
-             undef_macros=['HAVE_FOO', 'HAVE_BAR'])
+    Extension(...,
+              define_macros=[('NDEBUG', '1'),
+                             ('HAVE_STRFTIME', None)],
+              undef_macros=['HAVE_FOO', 'HAVE_BAR'])
 
 is the equivalent of having this at the top of every C source file::
 
-   #define NDEBUG 1
-   #define HAVE_STRFTIME
-   #undef HAVE_FOO
-   #undef HAVE_BAR
+    #define NDEBUG 1
+    #define HAVE_STRFTIME
+    #undef HAVE_FOO
+    #undef HAVE_BAR
 
 
 Library options
@@ -313,15 +313,15 @@ directories to  search for shared (dynamically loaded) libraries at run-time.
 For example, if you need to link against libraries known to be in the standard
 library search path on target systems ::
 
-   Extension(...,
-             libraries=['gdbm', 'readline'])
+    Extension(...,
+              libraries=['gdbm', 'readline'])
 
 If you need to link with libraries in a non-standard location, you'll have to
 include the location in ``library_dirs``::
 
-   Extension(...,
-             library_dirs=['/usr/X11R6/lib'],
-             libraries=['X11', 'Xt'])
+    Extension(...,
+              library_dirs=['/usr/X11R6/lib'],
+              libraries=['X11', 'Xt'])
 
 (Again, this sort of non-portable construct should be avoided if you intend to
 distribute your code.)
@@ -379,8 +379,8 @@ If specific versions are required, a sequence of qualifiers can be supplied in
 parentheses.  Each qualifier may consist of a comparison operator and a version
 number.  The accepted comparison operators are::
 
-   <    >    ==
-   <=   >=   !=
+    <    >    ==
+    <=   >=   !=
 
 These can be combined by using multiple qualifiers separated by commas (and
 optional whitespace).  In this case, all of the qualifiers must be matched; a
@@ -446,13 +446,13 @@ option will allow the interpreter path to be explicitly overridden.
 The :option:`scripts` option simply is a list of files to be handled in this
 way.  From the PyXML setup script::
 
-   setup(...,
-         scripts=['scripts/xmlproc_parse', 'scripts/xmlproc_val']
-         )
+    setup(...,
+          scripts=['scripts/xmlproc_parse', 'scripts/xmlproc_val']
+          )
 
 .. versionchanged:: 2.7
-  All the scripts will also be added to the ``MANIFEST``
-  file if no template is provided. See :ref:`manifest`.
+    All the scripts will also be added to the ``MANIFEST``
+    file if no template is provided. See :ref:`manifest`.
 
 .. _distutils-installing-package-data:
 
@@ -478,29 +478,29 @@ created in the installation.
 For example, if a package should contain a subdirectory with several data files,
 the files can be arranged like this in the source tree::
 
-   setup.py
-   src/
-       mypkg/
-           __init__.py
-           module.py
-           data/
-               tables.dat
-               spoons.dat
-               forks.dat
+    setup.py
+    src/
+        mypkg/
+            __init__.py
+            module.py
+            data/
+                tables.dat
+                spoons.dat
+                forks.dat
 
 The corresponding call to :func:`setup` might be::
 
-   setup(...,
-         packages=['mypkg'],
-         package_dir={'mypkg': 'src/mypkg'},
-         package_data={'mypkg': ['data/*.dat']},
-         )
+    setup(...,
+          packages=['mypkg'],
+          package_dir={'mypkg': 'src/mypkg'},
+          package_data={'mypkg': ['data/*.dat']},
+          )
 
 .. versionadded:: 2.4
 
 .. versionchanged:: 2.7
-  All the files that match ``package_data`` will be added to the ``MANIFEST``
-  file if no template is provided. See :ref:`manifest`.
+    All the files that match ``package_data`` will be added to the ``MANIFEST``
+    file if no template is provided. See :ref:`manifest`.
 
 
 .. _distutils-additional-files:
@@ -515,11 +515,11 @@ anything which doesn't fit in the previous categories.
 :option:`data_files` specifies a sequence of (*directory*, *files*) pairs in the
 following way::
 
-   setup(...,
-         data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
-                     ('config', ['cfg/data.cfg']),
-                     ('/etc/init.d', ['init-script'])]
-        )
+    setup(...,
+          data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
+                      ('config', ['cfg/data.cfg']),
+                      ('/etc/init.d', ['init-script'])]
+         )
 
 Note that you can specify the directory names where the data files will be
 installed, but you cannot rename the data files themselves.
@@ -540,8 +540,8 @@ files directly in the target directory, an empty string should be given as the
 directory.
 
 .. versionchanged:: 2.7
-  All the files that match ``data_files`` will be added to the ``MANIFEST``
-  file if no template is provided. See :ref:`manifest`.
+    All the files that match ``data_files`` will be added to the ``MANIFEST``
+    file if no template is provided. See :ref:`manifest`.
 
 
 
@@ -576,7 +576,7 @@ This information includes:
 |                      | description of the        |                 |        |
 |                      | package                   |                 |        |
 +----------------------+---------------------------+-----------------+--------+
-| ``long_description`` | longer description of the | long string     |        |
+| ``long_description`` | longer description of the | long string     | \(5)   |
 |                      | package                   |                 |        |
 +----------------------+---------------------------+-----------------+--------+
 | ``download_url``     | location where the        | URL             | \(4)   |
@@ -590,28 +590,32 @@ This information includes:
 Notes:
 
 (1)
-   These fields are required.
+    These fields are required.
 
 (2)
-   It is recommended that versions take the form *major.minor[.patch[.sub]]*.
+    It is recommended that versions take the form *major.minor[.patch[.sub]]*.
 
 (3)
-   Either the author or the maintainer must be identified.
+    Either the author or the maintainer must be identified.
 
 (4)
-   These fields should not be used if your package is to be compatible with Python
-   versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
-   <http://pypi.python.org/pypi>`_.
+    These fields should not be used if your package is to be compatible with Python
+    versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
+    <http://pypi.python.org/pypi>`_.
+
+(5)
+    The ``long_description`` field is used by PyPI when you are registering a
+    package, to build its home page.
 
 'short string'
-   A single line of text, not more than 200 characters.
+    A single line of text, not more than 200 characters.
 
 'long string'
-   Multiple lines of plain text in reStructuredText format (see
-   http://docutils.sf.net/).
+    Multiple lines of plain text in reStructuredText format (see
+    http://docutils.sf.net/).
 
 'list of strings'
-   See below.
+    See below.
 
 None of the string values may be Unicode.
 
@@ -627,44 +631,44 @@ information is sometimes used to indicate sub-releases.  These are
 (for final pre-release release testing). Some examples:
 
 0.1.0
-   the first, experimental release of a package
+    the first, experimental release of a package
 
 1.0.1a2
-   the second alpha release of the first patch version of 1.0
+    the second alpha release of the first patch version of 1.0
 
 :option:`classifiers` are specified in a python list::
 
-   setup(...,
-         classifiers=[
-             'Development Status :: 4 - Beta',
-             'Environment :: Console',
-             'Environment :: Web Environment',
-             'Intended Audience :: End Users/Desktop',
-             'Intended Audience :: Developers',
-             'Intended Audience :: System Administrators',
-             'License :: OSI Approved :: Python Software Foundation License',
-             'Operating System :: MacOS :: MacOS X',
-             'Operating System :: Microsoft :: Windows',
-             'Operating System :: POSIX',
-             'Programming Language :: Python',
-             'Topic :: Communications :: Email',
-             'Topic :: Office/Business',
-             'Topic :: Software Development :: Bug Tracking',
-             ],
-         )
+    setup(...,
+          classifiers=[
+              'Development Status :: 4 - Beta',
+              'Environment :: Console',
+              'Environment :: Web Environment',
+              'Intended Audience :: End Users/Desktop',
+              'Intended Audience :: Developers',
+              'Intended Audience :: System Administrators',
+              'License :: OSI Approved :: Python Software Foundation License',
+              'Operating System :: MacOS :: MacOS X',
+              'Operating System :: Microsoft :: Windows',
+              'Operating System :: POSIX',
+              'Programming Language :: Python',
+              'Topic :: Communications :: Email',
+              'Topic :: Office/Business',
+              'Topic :: Software Development :: Bug Tracking',
+              ],
+          )
 
 If you wish to include classifiers in your :file:`setup.py` file and also wish
 to remain backwards-compatible with Python releases prior to 2.2.3, then you can
 include the following code fragment in your :file:`setup.py` before the
 :func:`setup` call. ::
 
-   # patch distutils if it can't cope with the "classifiers" or
-   # "download_url" keywords
-   from sys import version
-   if version < '2.2.3':
-       from distutils.dist import DistributionMetadata
-       DistributionMetadata.classifiers = None
-       DistributionMetadata.download_url = None
+    # patch distutils if it can't cope with the "classifiers" or
+    # "download_url" keywords
+    from sys import version
+    if version < '2.2.3':
+        from distutils.dist import DistributionMetadata
+        DistributionMetadata.classifiers = None
+        DistributionMetadata.download_url = None
 
 
 Debugging the setup script
@@ -686,5 +690,3 @@ failure. For this purpose, the DISTUTILS_DEBUG environment variable can be set
 to anything except an empty string, and distutils will now print detailed
 information what it is doing, and prints the full traceback in case an exception
 occurs.
-
-
