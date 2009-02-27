@@ -31,16 +31,23 @@ The :mod:`filecmp` module defines the following functions:
 
 .. function:: cmpfiles(dir1, dir2, common[, shallow])
 
-   Returns three lists of file names: *match*, *mismatch*, *errors*.  *match*
-   contains the list of files match in both directories, *mismatch* includes the
-   names of those that don't, and *errros* lists the names of files which could not
-   be compared.  Files may be listed in *errors* because the user may lack
-   permission to read them or many other reasons, but always that the comparison
-   could not be done for some reason.
+   Compare the files in the two directories *dir1* and *dir2* whose names are
+   given by *common*.
 
-   The *common* parameter is a list of file names found in both directories. The
-   *shallow* parameter has the same meaning and default value as for
+   Returns three lists of file names: *match*, *mismatch*,
+   *errors*.  *match* contains the list of files that match, *mismatch* contains
+   the names of those that don't, and *errors* lists the names of files which
+   could not be compared.  Files are listed in *errors* if they don't exist in
+   one of the directories, the user lacks permission to read them or if the
+   comparison could not be done for some other reason.
+
+   The *shallow* parameter has the same meaning and default value as for
    :func:`filecmp.cmp`.
+
+   For example, ``cmpfiles('a', 'b', ['c', 'd/e'])`` will compare ``a/c`` with
+   ``b/c`` and ``a/d/e`` with ``b/d/e``.  ``'c'`` and ``'d/e'`` will each be in
+   one of the three returned lists.
+
 
 Example::
 
