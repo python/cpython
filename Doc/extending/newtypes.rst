@@ -1154,8 +1154,6 @@ combined using bitwise-OR.
 +===========================+==============================================+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
-| :const:`RO`               | Shorthand for :const:`READONLY`.             |
-+---------------------------+----------------------------------------------+
 | :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
 +---------------------------+----------------------------------------------+
 | :const:`WRITE_RESTRICTED` | Not writable in restricted mode.             |
@@ -1165,7 +1163,6 @@ combined using bitwise-OR.
 
 .. index::
    single: READONLY
-   single: RO
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED
    single: RESTRICTED
