@@ -172,6 +172,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #5052: make Distutils compatible with 2.3 again.
+
 - Issue #5316: Fixed buildbot failures introduced by multiple inheritance
   in Distutils tests.
 

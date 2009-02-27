@@ -24,11 +24,17 @@ class BuildExtTestCase(TempdirManager, unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
-        TempdirManager.setUp(self)
+        super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
         shutil.copy(_get_source_filename(), self.tmp_dir)
+        if sys.version > "2.6":
+            import site
+            self.old_user_base = site.USER_BASE
+            site.USER_BASE = self.mkdtemp()
+            from distutils.command import build_ext
+            build_ext.USER_BASE = site.USER_BASE
 
     def test_build_ext(self):
         global ALREADY_TESTED
@@ -76,7 +82,12 @@ class BuildExtTestCase(TempdirManager, unittest.TestCase):
         # Get everything back to normal
         support.unload('xx')
         sys.path = self.sys_path
-        TempdirManager.tearDown(self)
+        if sys.version > "2.6":
+            import site
+            site.USER_BASE = self.old_user_base
+            from distutils.command import build_ext
+            build_ext.USER_BASE = self.old_user_base
+        super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
@@ -98,6 +109,37 @@ class BuildExtTestCase(TempdirManager, unittest.TestCase):
 
         # make sur we get some lobrary dirs under solaris
         self.assert_(len(cmd.library_dirs) > 0)
+
+    def test_user_site(self):
+        # site.USER_SITE was introduced in 2.6
+        if sys.version < '2.6':
+            return
+
+        import site
+        dist = Distribution({'name': 'xx'})
+        cmd = build_ext(dist)
+
+        # making sure the suer option is there
+        options = [name for name, short, lable in
+                   cmd.user_options]
+        self.assert_('user' in options)
+
+        # setting a value
+        cmd.user = 1
+
+        # setting user based lib and include
+        lib = os.path.join(site.USER_BASE, 'lib')
+        incl = os.path.join(site.USER_BASE, 'include')
+        os.mkdir(lib)
+        os.mkdir(incl)
+
+        # let's run finalize
+        cmd.ensure_finalized()
+
+        # see if include_dirs and library_dirs
+        # were set
+        self.assert_(lib in cmd.library_dirs)
+        self.assert_(incl in cmd.include_dirs)
 
 def test_suite():
     src = _get_source_filename()
