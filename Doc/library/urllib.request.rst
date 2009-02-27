@@ -37,20 +37,20 @@ The :mod:`urllib.request` module defines the following functions:
    * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
      determine if a redirect was followed
 
-   * :meth:`info` --- return the meta-information of the page, such as headers, in
-     the form of an ``http.client.HTTPMessage`` instance
-     (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
+   * :meth:`info` --- return the meta-information of the page, such as headers,
+     in the form of an ``http.client.HTTPMessage`` instance (see `Quick
+     Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    Raises :exc:`URLError` on errors.
 
-   Note that ``None`` may be returned if no handler handles the request (though the
-   default installed global :class:`OpenerDirector` uses :class:`UnknownHandler` to
-   ensure this never happens).
-   The urlopen function from the previous version, Python 2.6 and earlier,  of
-   the module  urllib has been discontinued as urlopen can return the
-   file-object as the previous. The proxy handling, which in earlier was passed
-   as a dict parameter to urlopen can be availed by the use of
-   :class:`ProxyHandler` objects.
+   Note that ``None`` may be returned if no handler handles the request (though
+   the default installed global :class:`OpenerDirector` uses
+   :class:`UnknownHandler` to ensure this never happens).
+
+   The legacy ``urllib.urlopen`` function from Python 2.6 and earlier has been
+   discontinued; :func:`urlopen` corresponds to the old ``urllib2.urlopen``.
+   Proxy handling, which was done by passing a dictionary parameter to
+   ``urllib.urlopen``, can be obtained by using :class:`ProxyHandler` objects.
 
 
 .. function:: install_opener(opener)
