@@ -16,9 +16,16 @@ from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
 from distutils.util import get_platform
 from distutils.errors import DistutilsOptionError
-from site import USER_BASE
-from site import USER_SITE
 
+# this keeps compatibility from 2.3 to 2.5
+if sys.version < "2.6":
+    USER_BASE = None
+    USER_SITE = None
+    HAS_USER_SITE = False
+else:
+    from site import USER_BASE
+    from site import USER_SITE
+    HAS_USER_SITE = True
 
 if sys.version < "2.2":
     WINDOWS_SCHEME = {
@@ -52,21 +59,7 @@ INSTALL_SCHEMES = {
         'scripts': '$base/bin',
         'data'   : '$base',
         },
-    'unix_user': {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/include/python$py_version_short/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        },
     'nt': WINDOWS_SCHEME,
-    'nt_user': {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/Python$py_version_nodot/Include/$dist_name',
-        'scripts': '$userbase/Scripts',
-        'data'   : '$userbase',
-        },
     'mac': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',
@@ -74,13 +67,7 @@ INSTALL_SCHEMES = {
         'scripts': '$base/Scripts',
         'data'   : '$base',
         },
-    'mac_user': {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/$py_version_short/include/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        },
+
     'os2': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',
@@ -88,14 +75,41 @@ INSTALL_SCHEMES = {
         'scripts': '$base/Scripts',
         'data'   : '$base',
         },
-    'os2_home': {
+    }
+
+# user site schemes
+if HAS_USER_SITE:
+    INSTALL_SCHEMES['nt_user'] = {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/Python$py_version_nodot/Include/$dist_name',
+        'scripts': '$userbase/Scripts',
+        'data'   : '$userbase',
+        }
+
+    INSTALL_SCHEMES['unix_user'] = {
         'purelib': '$usersite',
         'platlib': '$usersite',
         'headers': '$userbase/include/python$py_version_short/$dist_name',
         'scripts': '$userbase/bin',
         'data'   : '$userbase',
-        },
-    }
+        }
+
+    INSTALL_SCHEMES['mac_user'] = {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/$py_version_short/include/$dist_name',
+        'scripts': '$userbase/bin',
+        'data'   : '$userbase',
+        }
+
+    INSTALL_SCHEMES['os2_home'] = {
+        'purelib': '$usersite',
+        'platlib': '$usersite',
+        'headers': '$userbase/include/python$py_version_short/$dist_name',
+        'scripts': '$userbase/bin',
+        'data'   : '$userbase',
+        }
 
 # The keys to an installation scheme; if any new types of files are to be
 # installed, be sure to add an entry to every installation scheme above,
@@ -115,8 +129,6 @@ class install (Command):
          "(Unix only) prefix for platform-specific files"),
         ('home=', None,
          "(Unix only) home directory to install under"),
-        ('user', None,
-         "install in user site-package '%s'" % USER_SITE),
 
         # Or, just set the base director(y|ies)
         ('install-base=', None,
@@ -168,7 +180,13 @@ class install (Command):
          "filename in which to record list of installed files"),
         ]
 
-    boolean_options = ['compile', 'force', 'skip-build', 'user']
+    boolean_options = ['compile', 'force', 'skip-build']
+
+    if HAS_USER_SITE:
+        user_options.append(('user', None,
+                             "install in user site-package '%s'" % USER_SITE))
+        boolean_options.append('user')
+
     negative_opt = {'no-compile' : 'compile'}
 
 
@@ -320,9 +338,12 @@ class install (Command):
                             'prefix': prefix,
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
-                            'userbase': self.install_userbase,
-                            'usersite': self.install_usersite,
                            }
+
+        if HAS_USER_SITE:
+            self.config_vars['userbase'] = self.install_userbase
+            self.config_vars['usersite'] = self.install_usersite
+
         self.expand_basedirs()
 
         self.dump_dirs("post-expand_basedirs()")
