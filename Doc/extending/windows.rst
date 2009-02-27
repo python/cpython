@@ -169,11 +169,11 @@ described here are distributed with the Python sources in the
 
 If your module creates a new type, you may have trouble with this line::
 
-   PyObject_HEAD_INIT(&PyType_Type)
+   PyVarObject_HEAD_INIT(&PyType_Type, 0)
 
 Change it to::
 
-   PyObject_HEAD_INIT(NULL)
+   PyVarObject_HEAD_INIT(NULL, 0)
 
 and add the following to the module initialization function::
 
