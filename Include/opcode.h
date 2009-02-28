@@ -106,9 +106,12 @@ extern "C" {
 #define IMPORT_FROM	108	/* Index in name list */
 
 #define JUMP_FORWARD	110	/* Number of bytes to skip */
-#define JUMP_IF_FALSE	111	/* "" */
-#define JUMP_IF_TRUE	112	/* "" */
-#define JUMP_ABSOLUTE	113	/* Target byte offset from beginning of code */
+#define JUMP_IF_FALSE_OR_POP 111 /* Target byte offset from beginning
+                                    of code */
+#define JUMP_IF_TRUE_OR_POP 112	/* "" */
+#define JUMP_ABSOLUTE	113	/* "" */
+#define POP_JUMP_IF_FALSE 114	/* "" */
+#define POP_JUMP_IF_TRUE 115	/* "" */
 
 #define LOAD_GLOBAL	116	/* Index in name list */
 

@@ -72,9 +72,11 @@ typedef unsigned short mode_t;
        Python 2.6a0: 62151 (peephole optimizations and STORE_MAP opcode)
        Python 2.6a1: 62161 (WITH_CLEANUP optimization)
        Python 2.7a0: 62171 (optimize list comprehensions/change LIST_APPEND)
+       Python 2.7a0: 62181 (optimize conditional branches:
+			    introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
 .
 */
-#define MAGIC (62171 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62181 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

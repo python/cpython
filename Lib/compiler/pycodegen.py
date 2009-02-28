@@ -421,13 +421,11 @@ class CodeGenerator:
             self.set_lineno(test)
             self.visit(test)
             nextTest = self.newBlock()
-            self.emit('JUMP_IF_FALSE', nextTest)
+            self.emit('POP_JUMP_IF_FALSE', nextTest)
             self.nextBlock()
-            self.emit('POP_TOP')
             self.visit(suite)
             self.emit('JUMP_FORWARD', end)
             self.startBlock(nextTest)
-            self.emit('POP_TOP')
         if node.else_:
             self.visit(node.else_)
         self.nextBlock(end)
@@ -446,15 +444,13 @@ class CodeGenerator:
 
         self.set_lineno(node, force=True)
         self.visit(node.test)
-        self.emit('JUMP_IF_FALSE', else_ or after)
+        self.emit('POP_JUMP_IF_FALSE', else_ or after)
 
         self.nextBlock()
-        self.emit('POP_TOP')
         self.visit(node.body)
         self.emit('JUMP_ABSOLUTE', loop)
 
         self.startBlock(else_) # or just the POPs if not else clause
-        self.emit('POP_TOP')
         self.emit('POP_BLOCK')
         self.setups.pop()
         if node.else_:
@@ -525,26 +521,23 @@ class CodeGenerator:
             self.visit(child)
             self.emit(jump, end)
             self.nextBlock()
-            self.emit('POP_TOP')
         self.visit(node.nodes[-1])
         self.nextBlock(end)
 
     def visitAnd(self, node):
-        self.visitTest(node, 'JUMP_IF_FALSE')
+        self.visitTest(node, 'JUMP_IF_FALSE_OR_POP')
 
     def visitOr(self, node):
-        self.visitTest(node, 'JUMP_IF_TRUE')
+        self.visitTest(node, 'JUMP_IF_TRUE_OR_POP')
 
     def visitIfExp(self, node):
         endblock = self.newBlock()
         elseblock = self.newBlock()
         self.visit(node.test)
-        self.emit('JUMP_IF_FALSE', elseblock)
-        self.emit('POP_TOP')
+        self.emit('POP_JUMP_IF_FALSE', elseblock)
         self.visit(node.then)
         self.emit('JUMP_FORWARD', endblock)
         self.nextBlock(elseblock)
-        self.emit('POP_TOP')
         self.visit(node.else_)
         self.nextBlock(endblock)
 
@@ -556,9 +549,8 @@ class CodeGenerator:
             self.emit('DUP_TOP')
             self.emit('ROT_THREE')
             self.emit('COMPARE_OP', op)
-            self.emit('JUMP_IF_FALSE', cleanup)
+            self.emit('JUMP_IF_FALSE_OR_POP', cleanup)
             self.nextBlock()
-            self.emit('POP_TOP')
         # now do the last comparison
         if node.ops:
             op, code = node.ops[-1]
@@ -593,11 +585,7 @@ class CodeGenerator:
 
         for start, cont, anchor in stack:
             if cont:
-                skip_one = self.newBlock()
-                self.emit('JUMP_FORWARD', skip_one)
-                self.startBlock(cont)
-                self.emit('POP_TOP')
-                self.nextBlock(skip_one)
+                self.nextBlock(cont)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
 
@@ -617,9 +605,8 @@ class CodeGenerator:
     def visitListCompIf(self, node, branch):
         self.set_lineno(node, force=True)
         self.visit(node.test)
-        self.emit('JUMP_IF_FALSE', branch)
+        self.emit('POP_JUMP_IF_FALSE', branch)
         self.newBlock()
-        self.emit('POP_TOP')
 
     def _makeClosure(self, gen, args):
         frees = gen.scope.get_free_vars()
@@ -665,11 +652,7 @@ class CodeGenerator:
 
         for start, cont, anchor, end in stack:
             if cont:
-                skip_one = self.newBlock()
-                self.emit('JUMP_FORWARD', skip_one)
-                self.startBlock(cont)
-                self.emit('POP_TOP')
-                self.nextBlock(skip_one)
+                self.nextBlock(cont)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
             self.emit('POP_BLOCK')
@@ -702,9 +685,8 @@ class CodeGenerator:
     def visitGenExprIf(self, node, branch):
         self.set_lineno(node, force=True)
         self.visit(node.test)
-        self.emit('JUMP_IF_FALSE', branch)
+        self.emit('POP_JUMP_IF_FALSE', branch)
         self.newBlock()
-        self.emit('POP_TOP')
 
     # exception related
 
@@ -719,9 +701,8 @@ class CodeGenerator:
             # is a sort of renaming op.
             self.nextBlock()
             self.visit(node.test)
-            self.emit('JUMP_IF_TRUE', end)
+            self.emit('POP_JUMP_IF_TRUE', end)
             self.nextBlock()
-            self.emit('POP_TOP')
             self.emit('LOAD_GLOBAL', 'AssertionError')
             if node.fail:
                 self.visit(node.fail)
@@ -729,7 +710,6 @@ class CodeGenerator:
             else:
                 self.emit('RAISE_VARARGS', 1)
             self.nextBlock(end)
-            self.emit('POP_TOP')
 
     def visitRaise(self, node):
         self.set_lineno(node)
@@ -772,9 +752,8 @@ class CodeGenerator:
                 self.visit(expr)
                 self.emit('COMPARE_OP', 'exception match')
                 next = self.newBlock()
-                self.emit('JUMP_IF_FALSE', next)
+                self.emit('POP_JUMP_IF_FALSE', next)
                 self.nextBlock()
-                self.emit('POP_TOP')
             self.emit('POP_TOP')
             if target:
                 self.visit(target)
@@ -787,8 +766,6 @@ class CodeGenerator:
                 self.nextBlock(next)
             else:
                 self.nextBlock()
-            if expr: # XXX
-                self.emit('POP_TOP')
         self.emit('END_FINALLY')
         if node.else_:
             self.nextBlock(lElse)

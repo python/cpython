@@ -19,15 +19,14 @@ def dis_single(line):
 class TestTranforms(unittest.TestCase):
 
     def test_unot(self):
-        # UNARY_NOT JUMP_IF_FALSE POP_TOP  -->  JUMP_IF_TRUE POP_TOP'
+        # UNARY_NOT POP_JUMP_IF_FALSE  -->  POP_JUMP_IF_TRUE
         def unot(x):
             if not x == 2:
                 del x
         asm = disassemble(unot)
-        for elem in ('UNARY_NOT', 'JUMP_IF_FALSE'):
+        for elem in ('UNARY_NOT', 'POP_JUMP_IF_FALSE'):
             self.assert_(elem not in asm)
-        for elem in ('JUMP_IF_TRUE', 'POP_TOP'):
-            self.assert_(elem in asm)
+        self.assert_('POP_JUMP_IF_TRUE' in asm)
 
     def test_elim_inversion_of_is_or_in(self):
         for line, elem in (
@@ -56,13 +55,13 @@ class TestTranforms(unittest.TestCase):
         self.assert_('LOAD_GLOBAL' not in disassemble(f))
 
     def test_while_one(self):
-        # Skip over:  LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP
+        # Skip over:  LOAD_CONST trueconst  POP_JUMP_IF_FALSE xx
         def f():
             while 1:
                 pass
             return list
         asm = disassemble(f)
-        for elem in ('LOAD_CONST', 'JUMP_IF_FALSE'):
+        for elem in ('LOAD_CONST', 'POP_JUMP_IF_FALSE'):
             self.assert_(elem not in asm)
         for elem in ('JUMP_ABSOLUTE',):
             self.assert_(elem in asm)

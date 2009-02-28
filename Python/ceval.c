@@ -764,8 +764,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 /* OpCode prediction macros
 	Some opcodes tend to come in pairs thus making it possible to
 	predict the second code when the first is run.  For example,
-	COMPARE_OP is often followed by JUMP_IF_FALSE or JUMP_IF_TRUE.  And,
-	those opcodes are often followed by a POP_TOP.
+	GET_ITER is often followed by FOR_ITER. And FOR_ITER is often
+	followed by STORE_FAST or UNPACK_SEQUENCE.
 
 	Verifying the prediction costs a single high-speed test of a register
 	variable against a constant.  If the pairing was good, then the
@@ -1110,7 +1110,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			SETLOCAL(oparg, v);
 			goto fast_next_opcode;
 
-		PREDICTED(POP_TOP);
 		case POP_TOP:
 			v = POP();
 			Py_DECREF(v);
@@ -2220,8 +2219,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x == NULL) break;
-			PREDICT(JUMP_IF_FALSE);
-			PREDICT(JUMP_IF_TRUE);
+			PREDICT(POP_JUMP_IF_FALSE);
+			PREDICT(POP_JUMP_IF_TRUE);
 			continue;
 
 		case IMPORT_NAME:
@@ -2298,44 +2297,95 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			JUMPBY(oparg);
 			goto fast_next_opcode;
 
-		PREDICTED_WITH_ARG(JUMP_IF_FALSE);
-		case JUMP_IF_FALSE:
-			w = TOP();
+		PREDICTED_WITH_ARG(POP_JUMP_IF_FALSE);
+		case POP_JUMP_IF_FALSE:
+			w = POP();
 			if (w == Py_True) {
-				PREDICT(POP_TOP);
+				Py_DECREF(w);
 				goto fast_next_opcode;
 			}
 			if (w == Py_False) {
-				JUMPBY(oparg);
+				Py_DECREF(w);
+				JUMPTO(oparg);
 				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
+			Py_DECREF(w);
 			if (err > 0)
 				err = 0;
 			else if (err == 0)
-				JUMPBY(oparg);
+				JUMPTO(oparg);
 			else
 				break;
 			continue;
 
-		PREDICTED_WITH_ARG(JUMP_IF_TRUE);
-		case JUMP_IF_TRUE:
-			w = TOP();
+		PREDICTED_WITH_ARG(POP_JUMP_IF_TRUE);
+		case POP_JUMP_IF_TRUE:
+			w = POP();
 			if (w == Py_False) {
-				PREDICT(POP_TOP);
+				Py_DECREF(w);
 				goto fast_next_opcode;
 			}
 			if (w == Py_True) {
-				JUMPBY(oparg);
+				Py_DECREF(w);
+				JUMPTO(oparg);
+				goto fast_next_opcode;
+			}
+			err = PyObject_IsTrue(w);
+			Py_DECREF(w);
+			if (err > 0) {
+				err = 0;
+				JUMPTO(oparg);
+			}
+			else if (err == 0)
+				;
+			else
+				break;
+			continue;
+
+		case JUMP_IF_FALSE_OR_POP:
+			w = TOP();
+			if (w == Py_True) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				goto fast_next_opcode;
+			}
+			if (w == Py_False) {
+				JUMPTO(oparg);
+				goto fast_next_opcode;
+			}
+			err = PyObject_IsTrue(w);
+			if (err > 0) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				err = 0;
+			}
+			else if (err == 0)
+				JUMPTO(oparg);
+			else
+				break;
+			continue;
+
+		case JUMP_IF_TRUE_OR_POP:
+			w = TOP();
+			if (w == Py_False) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+				goto fast_next_opcode;
+			}
+			if (w == Py_True) {
+				JUMPTO(oparg);
 				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0) {
 				err = 0;
-				JUMPBY(oparg);
+				JUMPTO(oparg);
 			}
-			else if (err == 0)
-				;
+			else if (err == 0) {
+				STACKADJ(-1);
+				Py_DECREF(w);
+			}
 			else
 				break;
 			continue;

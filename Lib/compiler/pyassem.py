@@ -122,6 +122,9 @@ def order_blocks(start_block, exit_block):
     for b in remaining:
         if __debug__ and b.next:
             assert b is b.next[0].prev[0], (b, b.next)
+        # Make sure every block appears in dominators, even if no
+        # other block must precede it.
+        dominators.setdefault(b, set())
         # preceeding blocks dominate following blocks
         for c in b.get_followers():
             while 1:
