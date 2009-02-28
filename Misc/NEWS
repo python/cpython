@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
+  overrun.
+
 - Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
 
 - Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
