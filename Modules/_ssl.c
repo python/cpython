@@ -1244,9 +1244,12 @@ pending on the connection.\n");
 
 static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 {
-	PyObject *buf = NULL;
+	PyObject *dest = NULL;
+	Py_buffer buf;
 	int buf_passed = 0;
 	int count = -1;
+	char *mem;
+	/* XXX this should use Py_ssize_t */
 	int len = 1024;
 	int sockstate;
 	int err;
@@ -1260,19 +1263,22 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
                 return NULL;
         }
 
-	if (!PyArg_ParseTuple(args, "|Oi:read", &buf, &count))
+	if (!PyArg_ParseTuple(args, "|Oi:read", &dest, &count))
 		return NULL;
-        if ((buf == NULL) || (buf == Py_None)) {
-		if (!(buf = PyByteArray_FromStringAndSize((char *) 0, len)))
+        if ((dest == NULL) || (dest == Py_None)) {
+		if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
 			return NULL;
-        } else if (PyLong_Check(buf)) {
-		len = PyLong_AS_LONG(buf);
-		if (!(buf = PyByteArray_FromStringAndSize((char *) 0, len)))
+		mem = PyByteArray_AS_STRING(dest);
+        } else if (PyLong_Check(dest)) {
+		len = PyLong_AS_LONG(dest);
+		if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
 			return NULL;
+		mem = PyByteArray_AS_STRING(dest);
 	} else {
-		if (!PyByteArray_Check(buf))
+		if (PyObject_GetBuffer(dest, &buf, PyBUF_CONTIG) < 0)
 			return NULL;
-		len = PyByteArray_Size(buf);
+		mem = buf.buf;
+		len = buf.len;
 		if ((count > 0) && (count <= len))
 			len = count;
 		buf_passed = 1;
@@ -1293,18 +1299,11 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
 					"The read operation timed out");
-			if (!buf_passed) {
-				Py_DECREF(buf);
-			}
-			return NULL;
+			goto error;
 		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
 			PyErr_SetString(PySSLErrorObject,
 				"Underlying socket too large for select().");
-			if (!buf_passed) {
-				Py_DECREF(buf);
-			}
-			Py_DECREF(buf);
-			return NULL;
+			goto error;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
 			count = 0;
 			goto done;
@@ -1313,15 +1312,11 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	do {
 		err = 0;
 		PySSL_BEGIN_ALLOW_THREADS
-		count = SSL_read(self->ssl, PyByteArray_AsString(buf), len);
+		count = SSL_read(self->ssl, mem, len);
 		err = SSL_get_error(self->ssl, count);
 		PySSL_END_ALLOW_THREADS
-		if(PyErr_CheckSignals()) {
-			if (!buf_passed) {
-				Py_DECREF(buf);
-			}
-			return NULL;
-		}
+		if (PyErr_CheckSignals())
+			goto error;
 		if (err == SSL_ERROR_WANT_READ) {
 			sockstate =
 			  check_socket_and_wait_for_timeout(sock, 0);
@@ -1340,29 +1335,31 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
 					"The read operation timed out");
-			if (!buf_passed) {
-				Py_DECREF(buf);
-			}
-			return NULL;
+			goto error;
 		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
 			break;
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 	if (count <= 0) {
-		if (!buf_passed) {
-			Py_DECREF(buf);
-		}
-		return PySSL_SetError(self, count, __FILE__, __LINE__);
+		PySSL_SetError(self, count, __FILE__, __LINE__);
+		goto error;
 	}
   done:
 	if (!buf_passed) {
-		PyObject *res = PyBytes_FromStringAndSize(
-			PyByteArray_AS_STRING(buf), count);
-		Py_DECREF(buf);
+		PyObject *res = PyBytes_FromStringAndSize(mem, count);
+		Py_DECREF(dest);
 		return res;
 	} else {
+		PyBuffer_Release(&buf);
 		return PyLong_FromLong(count);
 	}
+  error:
+	if (!buf_passed) {
+		Py_DECREF(dest);
+	} else {
+		PyBuffer_Release(&buf);
+	}
+	return NULL;
 }
 
 PyDoc_STRVAR(PySSL_SSLread_doc,
