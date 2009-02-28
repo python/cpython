@@ -499,6 +499,34 @@ class MmapTests(unittest.TestCase):
         m.seek(8)
         self.assertRaises(ValueError, m.write, "bar")
 
+    if os.name == 'nt':
+        def test_tagname(self):
+            data1 = "0123456789"
+            data2 = "abcdefghij"
+            assert len(data1) == len(data2)
+            # Test same tag
+            m1 = mmap.mmap(-1, len(data1), tagname="foo")
+            m1[:] = data1
+            m2 = mmap.mmap(-1, len(data2), tagname="foo")
+            m2[:] = data2
+            self.assertEquals(m1[:], data2)
+            self.assertEquals(m2[:], data2)
+            # Test differnt tag
+            m1 = mmap.mmap(-1, len(data1), tagname="foo")
+            m1[:] = data1
+            m2 = mmap.mmap(-1, len(data2), tagname="boo")
+            m2[:] = data2
+            self.assertEquals(m1[:], data1)
+            self.assertEquals(m2[:], data2)
+
+        def test_tagname_crash(self):
+            # Should not crash (Issue 1733986)
+            m = mmap.mmap(-1, 1000, tagname="foo")
+            try:
+                mmap.mmap(-1, 5000, tagname="foo")[:] # same tagname, but larger size
+            except:
+                pass
+
 
 def test_main():
     run_unittest(MmapTests)
