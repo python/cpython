@@ -15,7 +15,8 @@ def abstractmethod(funcobj):
 
     Usage:
 
-        class C(metaclass=ABCMeta):
+        class C:
+            __metaclass__ = ABCMeta
             @abstractmethod
             def my_abstract_method(self, ...):
                 ...
@@ -35,7 +36,8 @@ class abstractproperty(property):
 
     Usage:
 
-        class C(metaclass=ABCMeta):
+        class C:
+            __metaclass__ = ABCMeta
             @abstractproperty
             def my_abstract_property(self):
                 ...
@@ -43,7 +45,8 @@ class abstractproperty(property):
     This defines a read-only property; you can also define a read-write
     abstract property using the 'long' form of property declaration:
 
-        class C(metaclass=ABCMeta):
+        class C:
+            __metaclass__ = ABCMeta
             def getx(self): ...
             def setx(self, value): ...
             x = abstractproperty(getx, setx)
