@@ -368,7 +368,7 @@ c_cos(Py_complex z)
 
 PyDoc_STRVAR(c_cos_doc,
 "cos(x)\n"
-"n"
+"\n"
 "Return the cosine of x.");
 
 
@@ -427,7 +427,7 @@ c_cosh(Py_complex z)
 
 PyDoc_STRVAR(c_cosh_doc,
 "cosh(x)\n"
-"n"
+"\n"
 "Return the hyperbolic cosine of x.");
 
 
