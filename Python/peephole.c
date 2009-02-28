@@ -425,7 +425,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				cumlc = lastlc + 1;
 				j = GETARG(codestr, i);
 				if (codestr[i+3] != POP_JUMP_IF_FALSE  ||
-				    !ISBASICBLOCK(blocks,i,7)  ||
+				    !ISBASICBLOCK(blocks,i,6)  ||
 				    !PyObject_IsTrue(PyList_GET_ITEM(consts, j)))
 					continue;
 				memset(codestr+i, NOP, 6);
@@ -516,8 +516,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				   "if a or b:"
 				   "a and b or c"
 				   "(a and b) and c"
-				   x:POP_OR_JUMP y   y:POP_OR_JUMP z  -->  x:POP_OR_JUMP z
-				   x:POP_OR_JUMP y   y:JUMP_OR_POP z  -->  x:POP_JUMP_IF_FALSE y+3
+				   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
+				      -->  x:JUMP_IF_FALSE_OR_POP z
+				   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
+				      -->  x:POP_JUMP_IF_FALSE y+3
 				   where y+3 is the instruction following the second test.
 				*/
 			case JUMP_IF_FALSE_OR_POP:
