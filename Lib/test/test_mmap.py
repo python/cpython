@@ -467,6 +467,38 @@ class MmapTests(unittest.TestCase):
         self.assert_(issubclass(mmap.error, EnvironmentError))
         self.assert_("mmap.error" in str(mmap.error))
 
+    def test_io_methods(self):
+        data = "0123456789"
+        open(TESTFN, "wb").write("x"*len(data))
+        f = open(TESTFN, "r+b")
+        m = mmap.mmap(f.fileno(), len(data))
+        f.close()
+        # Test write_byte()
+        for i in xrange(len(data)):
+            self.assertEquals(m.tell(), i)
+            m.write_byte(data[i:i+1])
+            self.assertEquals(m.tell(), i+1)
+        self.assertRaises(ValueError, m.write_byte, "x")
+        self.assertEquals(m[:], data)
+        # Test read_byte()
+        m.seek(0)
+        for i in xrange(len(data)):
+            self.assertEquals(m.tell(), i)
+            self.assertEquals(m.read_byte(), data[i:i+1])
+            self.assertEquals(m.tell(), i+1)
+        self.assertRaises(ValueError, m.read_byte)
+        # Test read()
+        m.seek(3)
+        self.assertEquals(m.read(3), "345")
+        self.assertEquals(m.tell(), 6)
+        # Test write()
+        m.seek(3)
+        m.write("bar")
+        self.assertEquals(m.tell(), 6)
+        self.assertEquals(m[:], "012bar6789")
+        m.seek(8)
+        self.assertRaises(ValueError, m.write, "bar")
+
 
 def test_main():
     run_unittest(MmapTests)
