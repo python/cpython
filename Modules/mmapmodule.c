@@ -1373,7 +1373,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 						     dwDesiredAccess,
 						     off_hi,
 						     off_lo,
-						     0);
+						     m_obj->size);
 		if (m_obj->data != NULL)
 			return (PyObject *)m_obj;
 		else

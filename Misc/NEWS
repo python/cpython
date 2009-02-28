@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1733986: Fixed mmap crash in accessing elements of second map object
+  with same tagname but larger size than first map. (Windows)
+
 - Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
   overrun.
 
