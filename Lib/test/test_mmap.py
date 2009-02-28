@@ -466,6 +466,44 @@ class MmapTests(unittest.TestCase):
         self.assert_(issubclass(mmap.error, EnvironmentError))
         self.assert_("mmap.error" in str(mmap.error))
 
+    def test_io_methods(self):
+        data = b"0123456789"
+        open(TESTFN, "wb").write(b"x"*len(data))
+        f = open(TESTFN, "r+b")
+        m = mmap.mmap(f.fileno(), len(data))
+        f.close()
+        # Test write_byte()
+        for i in range(len(data)):
+            self.assertEquals(m.tell(), i)
+            m.write_byte(data[i:i+1])
+            self.assertEquals(m.tell(), i+1)
+        self.assertRaises(ValueError, m.write_byte, b"x")
+        self.assertEquals(m[:], data)
+        # Test read_byte()
+        m.seek(0)
+        for i in range(len(data)):
+            self.assertEquals(m.tell(), i)
+            # XXX: Disable this test for now because it's not clear
+            # which type of object m.read_byte returns. Currently, it
+            # returns 1-length str (unicode).
+            if 0:
+                self.assertEquals(m.read_byte(), data[i:i+1])
+            else:
+                m.read_byte()
+            self.assertEquals(m.tell(), i+1)
+        self.assertRaises(ValueError, m.read_byte)
+        # Test read()
+        m.seek(3)
+        self.assertEquals(m.read(3), b"345")
+        self.assertEquals(m.tell(), 6)
+        # Test write()
+        m.seek(3)
+        m.write(b"bar")
+        self.assertEquals(m.tell(), 6)
+        self.assertEquals(m[:], b"012bar6789")
+        m.seek(8)
+        self.assertRaises(ValueError, m.write, b"bar")
+
 
 def test_main():
     run_unittest(MmapTests)
