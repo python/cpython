@@ -365,10 +365,17 @@ mmap_write_byte_method(mmap_object *self,
 
 	if (!is_writeable(self))
 		return NULL;
-	*(self->data+self->pos) = value;
-	self->pos += 1;
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	if (self->pos < self->size) {
+		*(self->data+self->pos) = value;
+		self->pos += 1;
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else {
+		PyErr_SetString(PyExc_ValueError, "write byte out of range");
+		return NULL;
+	}
 }
 
 static PyObject *
