@@ -76,7 +76,7 @@ write-back, as will be the keys within each section.
       *dict_type* was added.
 
 
-.. class:: ConfigParser([defaults])
+.. class:: ConfigParser([defaults[, dict_type]])
 
    Derived class of :class:`RawConfigParser` that implements the magical
    interpolation feature and adds optional arguments to the :meth:`get` and
@@ -92,7 +92,7 @@ write-back, as will be the keys within each section.
    equivalent.
 
 
-.. class:: SafeConfigParser([defaults])
+.. class:: SafeConfigParser([defaults[, dict_type]])
 
    Derived class of :class:`ConfigParser` that implements a more-sane variant of
    the magical interpolation feature.  This implementation is more predictable as
