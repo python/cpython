@@ -61,6 +61,7 @@ struct tok_state {
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *);
+extern struct tok_state *PyTokenizer_FromUTF8(const char *);
 extern struct tok_state *PyTokenizer_FromFile(FILE *, char*,
 					      char *, char *);
 extern void PyTokenizer_Free(struct tok_state *);
