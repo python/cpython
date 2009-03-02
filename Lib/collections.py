@@ -11,8 +11,7 @@ from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
-                      zip_longest as _zip_longest
+from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 
 ################################################################################
 ### OrderedDict
@@ -83,7 +82,7 @@ class OrderedDict(dict, MutableMapping):
 
     def __eq__(self, other):
         if isinstance(other, OrderedDict):
-            return all(p==q for p, q in  _zip_longest(self.items(), other.items()))
+            return len(self)==len(other) and all(p==q for p, q in  zip(self.items(), other.items()))
         return dict.__eq__(self, other)
 
 
