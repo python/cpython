@@ -440,19 +440,23 @@ form.
 
    The sequence ::
 
-      prog = re.compile(pat)
-      result = prog.match(str)
+      prog = re.compile(pattern)
+      result = prog.match(string)
 
    is equivalent to ::
 
-      result = re.match(pat, str)
+      result = re.match(pattern, string)
 
-   but the version using :func:`compile` is more efficient when the expression
-   will be used several times in a single program.
+   but using :func:`compile` and saving the resulting regular expression object
+   for reuse is more efficient when the expression will be used several times
+   in a single program.
 
-   .. (The compiled version of the last pattern passed to :func:`re.match` or
-      :func:`re.search` is cached, so programs that use only a single regular
-      expression at a time needn't worry about compiling regular expressions.)
+   .. note::
+
+      The compiled versions of the most recent patterns passed to
+      :func:`re.match`, :func:`re.search` or :func:`re.compile` are cached, so
+      programs that use only a few regular expressions at a time needn't worry
+      about compiling regular expressions.
 
 
 .. data:: I
