@@ -14,7 +14,7 @@
    __name__ = '<doctest>'
 
 This module implements high-performance container datatypes.  Currently,
-there are three datatypes, :class:`Counter`, :class:`deque` and
+there are four datatypes, :class:`Counter`, :class:`deque`, :class:`OrderedDict` and
 :class:`defaultdict`, and one datatype factory function, :func:`namedtuple`.
 
 The specialized containers provided in this module provide alternatives
@@ -805,6 +805,33 @@ and more efficient to use a simple class declaration:
    `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
    adapted for Python 2.4.
 
+
+:class:`OrderedDict` objects
+----------------------------
+
+Ordered dictionaries are just like regular dictionaries but they remember the
+order that items were inserted.  When iterating over an ordered dictionary,
+the items are returned in the order their keys were first added.
+
+.. class:: OrderedDict([items])
+
+   Return an instance of a dict subclass, supporting the usual :class:`dict`
+   methods.  An *OrderedDict* is a dict that remembers the order that keys
+   were first inserted. If a new entry overwrites an existing entry, the
+   original insertion position is left unchanged.  Deleting an entry and
+   reinserting it will move it to the end.
+
+   .. versionadded:: 2.7
+
+The :meth:`popitem` method for ordered dictionaries returns and removes the
+last added entry.  The key/value pairs are returned in LIFO order.
+
+Equality tests between :class:`OrderedDict` objects are order-sensitive
+and are implemented as ``list(od1.items())==list(od2.items())``.
+Equality tests between :class:`OrderedDict` objects and other
+:class:`Mapping` objects are order-insensitive like regular dictionaries.
+This allows :class:`OrderedDict` objects to be substituted anywhere a
+regular dictionary is used.
 
 
 :class:`UserDict` objects

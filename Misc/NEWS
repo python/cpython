@@ -175,6 +175,8 @@ Core and Builtins
 Library
 -------
 
+- PEP 372:  Added collections.OrderedDict().
+
 - Issue #1733986: Fixed mmap crash in accessing elements of second map object
   with same tagname but larger size than first map. (Windows)
 
