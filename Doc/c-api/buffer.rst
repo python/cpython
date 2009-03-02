@@ -252,7 +252,7 @@ Buffer related functions
 
 .. cfunction:: void PyBuffer_Release(PyObject *obj, Py_buffer *view)
 
-   Release the buffer *view* over *obj*.  This shouldd be called when the buffer
+   Release the buffer *view* over *obj*.  This should be called when the buffer
    is no longer being used as it may free memory from it.
 
 
