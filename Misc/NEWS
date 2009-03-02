@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4308: httplib.IncompleteRead's repr doesn't include all of the data all
+  ready received.
+
 - Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
   import guess_extension`` was used.
 

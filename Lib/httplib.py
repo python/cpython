@@ -616,7 +616,7 @@ class HTTPResponse:
         while amt > 0:
             chunk = self.fp.read(min(amt, MAXAMOUNT))
             if not chunk:
-                raise IncompleteRead(s)
+                raise IncompleteRead(''.join(s), amt)
             s.append(chunk)
             amt -= len(chunk)
         return ''.join(s)
@@ -1130,9 +1130,18 @@ class UnimplementedFileMode(HTTPException):
     pass
 
 class IncompleteRead(HTTPException):
-    def __init__(self, partial):
+    def __init__(self, partial, expected=None):
         self.args = partial,
         self.partial = partial
+        self.expected = expected
+    def __repr__(self):
+        if self.expected is not None:
+            e = ', %i more expected' % self.expected
+        else:
+            e = ''
+        return 'IncompleteRead(%i bytes read%s)' % (len(self.partial), e)
+    def __str__(self):
+        return repr(self)
 
 class ImproperConnectionState(HTTPException):
     pass
