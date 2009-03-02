@@ -141,16 +141,16 @@ def search(pattern, string, flags=0):
     a match object, or None if no match was found."""
     return _compile(pattern, flags).search(string)
 
-def sub(pattern, repl, string, count=0):
+def sub(pattern, repl, string, count=0, flags=0):
     """Return the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in string by the
     replacement repl.  repl can be either a string or a callable;
     if a string, backslash escapes in it are processed.  If it is
     a callable, it's passed the match object and must return
     a replacement string to be used."""
-    return _compile(pattern, 0).sub(repl, string, count)
+    return _compile(pattern, flags).sub(repl, string, count)
 
-def subn(pattern, repl, string, count=0):
+def subn(pattern, repl, string, count=0, flags=0):
     """Return a 2-tuple containing (new_string, number).
     new_string is the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in the source
@@ -159,12 +159,12 @@ def subn(pattern, repl, string, count=0):
     callable; if a string, backslash escapes in it are processed.
     If it is a callable, it's passed the match object and must
     return a replacement string to be used."""
-    return _compile(pattern, 0).subn(repl, string, count)
+    return _compile(pattern, flags).subn(repl, string, count)
 
-def split(pattern, string, maxsplit=0):
+def split(pattern, string, maxsplit=0, flags=0):
     """Split the source string by the occurrences of the pattern,
     returning a list containing the resulting substrings."""
-    return _compile(pattern, 0).split(string, maxsplit)
+    return _compile(pattern, flags).split(string, maxsplit)
 
 def findall(pattern, string, flags=0):
     """Return a list of all non-overlapping matches in the string.
