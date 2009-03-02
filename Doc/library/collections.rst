@@ -621,7 +621,7 @@ they add the ability to access fields by name instead of position index.
    Named tuple instances do not have per-instance dictionaries, so they are
    lightweight and require no more memory than regular tuples.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       added support for *rename*.
 
 Example:
