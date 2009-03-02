@@ -185,6 +185,8 @@ class BasicTest(TestCase):
                 resp.read()
             except httplib.IncompleteRead, i:
                 self.assertEquals(i.partial, 'hello world')
+                self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
+                self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
             else:
                 self.fail('IncompleteRead expected')
             finally:
@@ -197,6 +199,23 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEquals(resp.read(), 'Hello\r\n')
         resp.close()
+
+    def test_incomplete_read(self):
+        sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
+        resp = httplib.HTTPResponse(sock, method="GET")
+        resp.begin()
+        try:
+            resp.read()
+        except httplib.IncompleteRead as i:
+            self.assertEquals(i.partial, 'Hello\r\n')
+            self.assertEqual(repr(i),
+                             "IncompleteRead(7 bytes read, 3 more expected)")
+            self.assertEqual(str(i),
+                             "IncompleteRead(7 bytes read, 3 more expected)")
+        else:
+            self.fail('IncompleteRead expected')
+        finally:
+            resp.close()
 
 
 class OfflineTest(TestCase):
