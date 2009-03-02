@@ -184,7 +184,7 @@ For example::
         >>> c['sausage'] = 0                        # counter entry with a zero count
         >>> del c['sausage']                        # del actually removes the entry
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
 
 
    Counter objects support two methods beyond those available for all
@@ -821,7 +821,7 @@ the items are returned in the order their keys were first added.
    original insertion position is left unchanged.  Deleting an entry and
    reinserting it will move it to the end.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
 
 The :meth:`popitem` method for ordered dictionaries returns and removes the
 last added entry.  The key/value pairs are returned in LIFO order.
