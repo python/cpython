@@ -167,20 +167,28 @@ an :term:`importer`.
     A :term:`decorator` for a :term:`loader` which handles selecting the proper
     module object to load with. The decorated method is expected to have a call
     signature of ``method(self, module_object)`` for which the second argument
-    will be the module object to be used (note that the decorator will not work
-    on static methods because of the assumption of two arguments).
+    will be the module object to be used by the loader (note that the decorator
+    will not work on static methods because of the assumption of two
+    arguments).
 
     The decorated method will take in the name of the module to be loaded as
-    normal. If the module is not found in :data:`sys.modules` then a new one is
-    constructed with its :attr:`__name__` attribute set. Otherwise the module
-    found in :data:`sys.modules` will be passed into the method. If an
+    expected for a :term:`loader`. If the module is not found in
+    :data:`sys.modules` then a new one is constructed with its
+    :attr:`__name__` attribute set. Otherwise the module found in
+    :data:`sys.modules` will be passed into the method. If an
     exception is raised by the decorated method and a module was added to
     :data:`sys.modules` it will be removed to prevent a partially initialized
-    module from being in left in :data:`sys.modules` If an exception is raised
-    by the decorated method and a module was added to :data:`sys.modules` it
-    will be removed to prevent a partially initialized module from being in
-    left in :data:`sys.modules`. If the module was already in
-    :data:`sys.modules` then it is left alone.
+    module from being in left in :data:`sys.modules`. If the module was already
+    in :data:`sys.modules` then it is left alone.
 
-    Use of this decorator handles all the details of what module a loader
-    should use as specified by :pep:`302`.
+    Use of this decorator handles all the details of what module object a
+    loader should initialize as specified by :pep:`302`.
+
+
+.. function:: set___package__(method)
+
+    A :term:`decorator` for a :term:`loader` to set the :attr:`__package__`
+    attribute on the module returned by the loader. If :attr:`__package__` is
+    set and has a value other than :keyword:`None` it will not be changed.
+    Note that the module returned by the loader is what has the attribute
+    set on and not the module found in :data:`sys.modules`.

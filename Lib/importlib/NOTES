@@ -1,10 +1,6 @@
 to do
 /////
 
-* Implement PEP 302 protocol for loaders (should just be a matter of testing).
-
-    + Source/bytecode.
-
 * Public API left to expose (w/ docs!)
 
     + abc
@@ -27,27 +23,15 @@ to do
             * get_code
             * get_source
 
-        - (?) SourceLoader(ResourceLoader)
+        - PyLoader(ResourceLoader)
 
             * source_path
+
+        - PyPycLoader(PyLoader)
+
+            * source_mtime
             * bytecode_path
-            * write_bytecode (not abstract)
-
-    + util
-
-        - set___package__ decorator
-
-    + machinery
-
-        - Extensions importers
-
-            * ExtensionFinder
-            * (?) Loader
-
-        - Source/bytecode importers
-
-            * SourceFinder
-            * (?) Loader
+            * write_bytecode
 
     + test (Really want to worry about compatibility with future versions?)
 
