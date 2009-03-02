@@ -179,6 +179,8 @@ Library
 
 - The _asdict() for method for namedtuples now returns an OrderedDict().
 
+- configparser now defaults to using an ordered dictionary.
+
 - Issue #1733986: Fixed mmap crash in accessing elements of second map object
   with same tagname but larger size than first map. (Windows)
 
