@@ -1002,9 +1002,17 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 }
 
 /* compute parser flags based on compiler flags */
-#define PARSER_FLAGS(flags) \
-	((flags) ? ((((flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
-		      PyPARSE_DONT_IMPLY_DEDENT : 0)) : 0)
+static int PARSER_FLAGS(PyCompilerFlags *flags)
+{
+	int parser_flags = 0;
+	if (!flags)
+		return 0;
+	if (flags->cf_flags & PyCF_DONT_IMPLY_DEDENT)
+		parser_flags |= PyPARSE_DONT_IMPLY_DEDENT;
+	if (flags->cf_flags & PyCF_IGNORE_COOKIE)
+		parser_flags |= PyPARSE_IGNORE_COOKIE;
+	return parser_flags;
+}
 
 #if 0
 /* Keep an example of flags with future keyword support. */

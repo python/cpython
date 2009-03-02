@@ -715,6 +715,28 @@ PyTokenizer_FromString(const char *str)
 	return tok;
 }
 
+struct tok_state *
+PyTokenizer_FromUTF8(const char *str)
+{
+	struct tok_state *tok = tok_new();
+	if (tok == NULL)
+		return NULL;
+	tok->decoding_state = STATE_RAW;
+	tok->read_coding_spec = 1;
+	tok->enc = NULL;
+	tok->str = str;
+	tok->encoding = (char *)PyMem_MALLOC(6);
+	if (!tok->encoding) {
+		PyTokenizer_Free(tok);
+		return NULL;
+	}
+	strcpy(tok->encoding, "utf-8");
+
+	/* XXX: constify members. */
+	tok->buf = tok->cur = tok->end = tok->inp = (char*)str;
+	return tok;
+}
+
 
 /* Set up tokenizer for file */
 

@@ -494,12 +494,13 @@ PyDoc_STR(
 
 
 static char *
-source_as_string(PyObject *cmd, char *funcname, char *what)
+source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
 {
 	char *str;
 	Py_ssize_t size;
 
 	if (PyUnicode_Check(cmd)) {
+		cf->cf_flags |= PyCF_IGNORE_COOKIE;
 		cmd = _PyUnicode_AsDefaultEncodedString(cmd, NULL);
 		if (cmd == NULL)
 			return NULL;
@@ -591,7 +592,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		return result;
 	}
 
-	str = source_as_string(cmd, "compile", "string, bytes, AST or code");
+	str = source_as_string(cmd, "compile", "string, bytes, AST or code", &cf);
 	if (str == NULL)
 		return NULL;
 
@@ -703,14 +704,14 @@ builtin_eval(PyObject *self, PyObject *args)
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
 	}
 
-	str = source_as_string(cmd, "eval", "string, bytes or code");
+	cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+	str = source_as_string(cmd, "eval", "string, bytes or code", &cf);
 	if (str == NULL)
 		return NULL;
 
 	while (*str == ' ' || *str == '\t')
 		str++;
 
-	cf.cf_flags = PyCF_SOURCE_IS_UTF8;
 	(void)PyEval_MergeCompilerFlags(&cf);
 	result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 	Py_XDECREF(tmp);
@@ -779,12 +780,13 @@ builtin_exec(PyObject *self, PyObject *args)
 		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
 	}
 	else {
-		char *str = source_as_string(prog, "exec",
-					     "string, bytes or code");
+		char *str;
 		PyCompilerFlags cf;
+		cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+		str = source_as_string(prog, "exec",
+					     "string, bytes or code", &cf);
 		if (str == NULL)
 			return NULL;
-		cf.cf_flags = PyCF_SOURCE_IS_UTF8;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_StringFlags(str, Py_file_input, globals,
 					      locals, &cf);

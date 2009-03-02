@@ -17,10 +17,10 @@ class CodingTest(unittest.TestCase):
 
         path = os.path.dirname(__file__)
         filename = os.path.join(path, module_name + '.py')
-        fp = open(filename, encoding='utf-8')
-        text = fp.read()
+        fp = open(filename, "rb")
+        bytes = fp.read()
         fp.close()
-        self.assertRaises(SyntaxError, compile, text, filename, 'exec')
+        self.assertRaises(SyntaxError, compile, bytes, filename, 'exec')
 
     def test_exec_valid_coding(self):
         d = {}

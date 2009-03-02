@@ -19,6 +19,9 @@ Core and Builtins
 - Issue #5249: time.strftime returned malformed string when format string
   contained non ascii character on windows.
 
+- Issue #4626: compile(), exec(), and eval() ignore the coding cookie if the
+  source has already been decoded into str.
+
 - Issue #5186: Reduce hash collisions for objects with no __hash__ method by
   rotating the object pointer by 4 bits to the right.
 
