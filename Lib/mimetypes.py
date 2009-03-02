@@ -237,7 +237,8 @@ def guess_type(url, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found, but
     non-standard types.
     """
-    init()
+    if not inited:
+        init()
     return guess_type(url, strict)
 
 
@@ -254,7 +255,8 @@ def guess_all_extensions(type, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
-    init()
+    if not inited:
+        init()
     return guess_all_extensions(type, strict)
 
 def guess_extension(type, strict=True):
@@ -269,7 +271,8 @@ def guess_extension(type, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
-    init()
+    if not inited:
+        init()
     return guess_extension(type, strict)
 
 def add_type(type, ext, strict=True):
@@ -284,7 +287,8 @@ def add_type(type, ext, strict=True):
     list of standard types, else to the list of non-standard
     types.
     """
-    init()
+    if not inited:
+        init()
     return add_type(type, ext, strict)
 
 
