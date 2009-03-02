@@ -170,6 +170,8 @@ Core and Builtins
 
 - Issue #4748: Lambda generators no longer return a value.
 
+- The re.sub(), re.subn() and re.split() functions now accept a flags parameter.
+
 Library
 -------
 
