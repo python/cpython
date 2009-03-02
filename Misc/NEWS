@@ -177,6 +177,8 @@ Library
 
 - PEP 372:  Added collections.OrderedDict().
 
+- The _asdict() for method for namedtuples now returns an OrderedDict().
+
 - Issue #1733986: Fixed mmap crash in accessing elements of second map object
   with same tagname but larger size than first map. (Windows)
 

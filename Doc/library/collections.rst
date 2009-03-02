@@ -651,9 +651,9 @@ Example:
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
    <BLANKLINE>
-           def _asdict(t):
-               'Return a new dict which maps field names to their values'
-               return {'x': t[0], 'y': t[1]}
+           def _asdict(self):
+               'Return a new OrderedDict which maps field names to their values'
+               return OrderedDict(zip(self._fields, self))
    <BLANKLINE>
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
@@ -711,10 +711,14 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-   Return a new dict which maps field names to their corresponding values::
+   Return a new :class:`OrderedDict` which maps field names to their corresponding
+   values::
 
       >>> p._asdict()
-      {'x': 11, 'y': 22}
+      OrderedDict([('x', 11), ('y', 22)])
+
+   .. versionchanged 3.1
+      Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
 .. method:: somenamedtuple._replace(kwargs)
 

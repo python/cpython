@@ -149,7 +149,6 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     numfields = len(field_names)
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
-    dicttxt = ', '.join('%r: t[%d]' % (name, pos) for pos, name in enumerate(field_names))
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)' \n
         __slots__ = () \n
@@ -165,9 +164,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             return result \n
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self \n
-        def _asdict(t):
-            'Return a new dict which maps field names to their values'
-            return {%(dicttxt)s} \n
+        def _asdict(self):
+            'Return a new OrderedDict which maps field names to their values'
+            return OrderedDict(zip(self._fields, self)) \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
             result = self._make(map(kwds.pop, %(field_names)r, self))
@@ -183,7 +182,8 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     # Execute the template string in a temporary namespace and
     # support tracing utilities by setting a value for frame.f_globals['__name__']
-    namespace = dict(itemgetter=_itemgetter, __name__='namedtuple_%s' % typename)
+    namespace = dict(itemgetter=_itemgetter, __name__='namedtuple_%s' % typename,
+                     OrderedDict=OrderedDict)
     try:
         exec(template, namespace)
     except SyntaxError as e:
