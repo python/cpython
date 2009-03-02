@@ -163,6 +163,8 @@ Core and Builtins
 
 - Issue #3582: Use native TLS functions on Windows
 
+- The re.sub(), re.subn() and re.split() functions now accept a flags parameter.
+
 Library
 -------
 
