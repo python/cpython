@@ -60,9 +60,58 @@ class ModuleForLoaderTests(unittest.TestCase):
             self.assert_(sys.modules[name] is module)
 
 
+class SetPackageTests(unittest.TestCase):
+
+
+    """Tests for importlib.util.set___package__."""
+
+    def verify(self, module, expect):
+        """Verify the module has the expected value for __package__ after
+        passing through set___package__."""
+        fxn = lambda: module
+        wrapped = util.set___package__(fxn)
+        wrapped()
+        self.assert_(hasattr(module, '__package__'))
+        self.assertEqual(expect, module.__package__)
+
+    def test_top_level(self):
+        # __package__ should be set to the empty string if a top-level module.
+        # Implicitly tests when package is set to None.
+        module = imp.new_module('module')
+        module.__package__ = None
+        self.verify(module, '')
+
+    def test_package(self):
+        # Test setting __package__ for a package.
+        module = imp.new_module('pkg')
+        module.__path__ = ['<path>']
+        module.__package__ = None
+        self.verify(module, 'pkg')
+
+    def test_submodule(self):
+        # Test __package__ for a module in a package.
+        module = imp.new_module('pkg.mod')
+        module.__package__ = None
+        self.verify(module, 'pkg')
+
+    def test_setting_if_missing(self):
+        # __package__ should be set if it is missing.
+        module = imp.new_module('mod')
+        if hasattr(module, '__package__'):
+            delattr(module, '__package__')
+        self.verify(module, '')
+
+    def test_leaving_alone(self):
+        # If __package__ is set and not None then leave it alone.
+        for value in (True, False):
+            module = imp.new_module('mod')
+            module.__package__ = value
+            self.verify(module, value)
+
+
 def test_main():
     from test import support
-    support.run_unittest(ModuleForLoaderTests)
+    support.run_unittest(ModuleForLoaderTests, SetPackageTests)
 
 
 if __name__ == '__main__':
