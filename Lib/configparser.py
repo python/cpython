@@ -88,6 +88,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 import re
+from collections import OrderedDict
 
 __all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
            "InterpolationError", "InterpolationDepthError",
@@ -215,7 +216,7 @@ class MissingSectionHeaderError(ParsingError):
 
 
 class RawConfigParser:
-    def __init__(self, defaults=None, dict_type=dict):
+    def __init__(self, defaults=None, dict_type=OrderedDict):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
