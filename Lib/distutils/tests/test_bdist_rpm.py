@@ -109,8 +109,6 @@ class BuildRpmTestCase(support.TempdirManager,
         cmd = bdist_rpm(dist)
         cmd.fix_python = True
 
-        # running with force-optimize = 1
-        # and quiet = 1
         cmd.quiet = 1
         cmd.ensure_finalized()
         cmd.run()
@@ -118,29 +116,6 @@ class BuildRpmTestCase(support.TempdirManager,
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
         self.assert_('foo-0.1-1.noarch.rpm' in dist_created)
         os.remove(os.path.join(pkg_dir, 'dist', 'foo-0.1-1.noarch.rpm'))
-
-        # XXX I am unable yet to make this test work without
-        # spurious stderr output
-        # so returning until distutils.spawn acts better
-        return
-
-        # running with force-optimize = 0
-        cmd.force_optimize = 0
-        try:
-            # XXX How to prevent the spawned
-            # rpmbuild command to display errors ?
-            # this can be a problem for buildbots
-            cmd.ensure_finalized()
-            cmd.run()
-        except DistutilsExecError:
-            # happens only under Fedora/RedHat
-            # and some flavors of Linux
-            # otherwise it's a bug
-            if sys.platform == 'linux2':
-                return
-
-        dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
-        self.assert_('foo-0.1-1.noarch.rpm' in dist_created)
 
 def test_suite():
     return unittest.makeSuite(BuildRpmTestCase)

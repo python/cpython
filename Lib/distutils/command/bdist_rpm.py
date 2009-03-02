@@ -126,18 +126,10 @@ class bdist_rpm (Command):
 
         ('quiet', 'q',
          "Run the INSTALL phase of RPM building in quiet mode"),
-
-        # Forces the -O1 option when calling the install command,
-        # so the rpm contains all files needed for proper operation under
-        # SELinux. Some systems checks for this on build-time and will
-        # fail without this.
-        ('force-optimize', None,
-         "Forces the -O1 option when calling the install command"),
-
         ]
 
     boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode',
-                       'no-autoreq', 'quiet', 'force-optimize']
+                       'no-autoreq', 'quiet']
 
     negative_opt = {'no-keep-temp': 'keep-temp',
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
@@ -188,7 +180,6 @@ class bdist_rpm (Command):
 
         self.force_arch = None
         self.quiet = 0
-        self.force_optimize = 1
 
     # initialize_options()
 
@@ -504,14 +495,8 @@ class bdist_rpm (Command):
         # that we open and interpolate into the spec file, but the defaults
         # are just text that we drop in as-is.  Hmmm.
 
-        # forcing -O1 if force-optimize
-        if self.force_optimize:
-            optimize = ' -O1'
-        else:
-            optimize = ''
-
-        install_cmd = ('%s install%s --root=$RPM_BUILD_ROOT '
-                       '--record=INSTALLED_FILES') % (def_setup_call, optimize)
+        install_cmd = ('%s install -O1 --root=$RPM_BUILD_ROOT '
+                       '--record=INSTALLED_FILES') % def_setup_call
 
         script_options = [
             ('prep', 'prep_script', "%setup -n %{name}-%{unmangled_version}"),
