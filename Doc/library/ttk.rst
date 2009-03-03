@@ -8,12 +8,12 @@
 
 .. index:: single: ttk
 
-The :mod:`ttk` module provides access to the Tk themed widget set, which
-has been introduced in Tk 8.5. If you do not have Python compiled against
-Tk 8.5 you may still use this module as long as you have Tile installed, but
-then you will miss some features provided by the new Tk, like anti-aliased font
-rendering under X11, window transparency (on X11 you will need a composition
-window manager) and others.
+The :mod:`ttk` module provides access to the Tk themed widget set, which has
+been introduced in Tk 8.5. If Python is not compiled against Tk 8.5 code may
+still use this module as long as Tile is installed. However, some features
+provided by the new Tk, like anti-aliased font rendering under X11, window
+transparency (on X11 you will need a composition window manager) will be
+missing.
 
 The basic idea of :mod:`ttk` is to separate, to the extent possible, the code
 implementing a widget's behavior from the code implementing its appearance.
@@ -28,15 +28,15 @@ implementing a widget's behavior from the code implementing its appearance.
 Using Ttk
 ---------
 
-Basically, to start using Ttk, you have to import its module::
+To start using Ttk, import its module::
 
    import ttk
 
-But if you already have some code that does::
+But code like this::
 
    from Tkinter import *
 
-You may optionally want to use::
+may optionally want to use this::
 
    from Tkinter import *
    from ttk import *
@@ -46,12 +46,11 @@ And then several :mod:`ttk` widgets (:class:`Button`, :class:`Checkbutton`,
 :class:`Menubutton`, :class:`PanedWindow`, :class:`Radiobutton`, :class:`Scale`
 and :class:`Scrollbar`) will automatically substitute for the Tk widgets.
 
-This has the direct benefit of using the new widgets, giving better
-look & feel across platforms, but you should be aware that they are not
-totally compatible. The main difference you will find out is that widget
-options such as "fg", "bg" and others related to widget styling are no
-longer present in Ttk widgets, instead you will have to use :class:`ttk.Style`
-to achieve the same (or better) styling.
+This has the direct benefit of using the new widgets, giving better look & feel
+across platforms, but be aware that they are not totally compatible. The main
+difference is that widget options such as "fg", "bg" and others related to
+widget styling are no longer present in Ttk widgets. Use :class:`ttk.Style` to
+achieve the same (or better) styling.
 
 .. seealso::
 
@@ -1142,10 +1141,10 @@ Ttk Styling
 -----------
 
 Each widget in :mod:`ttk` is assigned a style, which specifies the set of
-elements making up the widget and how they are arranged, along with dynamic
-and default settings for element options. By default the style name is the
-same as the widget's class name, but it may be overriden by the widget's style
-option. If you don't know the class name of a widget, use the method
+elements making up the widget and how they are arranged, along with dynamic and
+default settings for element options. By default the style name is the same as
+the widget's class name, but it may be overriden by the widget's style
+option. If the class name of a widget is unkown, use the method
 :meth:`Misc.winfo_class` (somewidget.winfo_class()).
 
 .. seealso::
@@ -1166,8 +1165,8 @@ option. If you don't know the class name of a widget, use the method
       Each key in *kw* is an option and each value is a string identifying
       the value for that option.
 
-      For example, to change every default button to be a flat button with
-      some padding and a different background color you could do::
+      For example, to change every default button to be a flat button with some
+      padding and a different background color do::
 
          import ttk
          import Tkinter
@@ -1192,7 +1191,7 @@ option. If you don't know the class name of a widget, use the method
       something else of your preference. A statespec is compound of one or more
       states and then a value.
 
-      An example may make it more understandable::
+      An example::
 
          import Tkinter
          import ttk
@@ -1213,9 +1212,9 @@ option. If you don't know the class name of a widget, use the method
       There is a thing to note in this previous short example:
 
        * The order of the (states, value) sequences for an option does matter,
-         if you changed the order to [('active', 'blue'), ('pressed', 'red')]
-         in the foreground option, for example, you would get a blue foreground
-         when the widget were in active or pressed states.
+         if the order was changed to [('active', 'blue'), ('pressed', 'red')] in
+         the foreground option, for example, the style would be a blue
+         foreground when the widget was in active or pressed states.
 
 
    .. method:: lookup(style, option[, state=None[, default=None]])
@@ -1226,7 +1225,7 @@ option. If you don't know the class name of a widget, use the method
       states. If the *default* argument is set, it is used as a fallback value
       in case no specification for option is found.
 
-      To check what font a Button uses by default, you would do::
+      To check what font a Button uses by default, do::
 
          import ttk
 
