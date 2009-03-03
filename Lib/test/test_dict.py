@@ -36,16 +36,16 @@ class DictTest(unittest.TestCase):
         k = d.keys()
         self.assert_('a' in d)
         self.assert_('b' in d)
-
         self.assertRaises(TypeError, d.keys, None)
+        self.assertEqual(repr(dict(a=1).keys()), "dict_keys(['a'])")
 
     def test_values(self):
         d = {}
         self.assertEqual(set(d.values()), set())
         d = {1:2}
         self.assertEqual(set(d.values()), {2})
-
         self.assertRaises(TypeError, d.values, None)
+        self.assertEqual(repr(dict(a=1).values()), "dict_values([1])")
 
     def test_items(self):
         d = {}
@@ -53,8 +53,8 @@ class DictTest(unittest.TestCase):
 
         d = {1:2}
         self.assertEqual(set(d.items()), {(1, 2)})
-
         self.assertRaises(TypeError, d.items, None)
+        self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
     def test_contains(self):
         d = {}
