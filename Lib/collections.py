@@ -27,11 +27,11 @@ class OrderedDict(dict, MutableMapping):
         except AttributeError:
             # Note the underlying data structure for this class is likely to
             # change in the future.  Do not rely on it or access it directly.
-            self.__keys = []
+            self.__keys = deque()
         self.update(*args, **kwds)
 
     def clear(self):
-        del self.__keys[:]
+        self.__keys.clear()
         dict.clear(self)
 
     def __setitem__(self, key, value):
