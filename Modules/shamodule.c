@@ -548,10 +548,12 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
-    GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
+    if (data_obj)
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
     if ((new = newSHAobject()) == NULL) {
-        PyBuffer_Release(&view);
+        if (data_obj)
+            PyBuffer_Release(&view);
         return NULL;
     }
 
@@ -559,15 +561,16 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
-        PyBuffer_Release(&view);
+        if (data_obj)
+            PyBuffer_Release(&view);
         return NULL;
     }
     if (data_obj) {
         sha_update(new, (unsigned char*)view.buf,
                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+        PyBuffer_Release(&view);
     }
 
-    PyBuffer_Release(&view);
     return (PyObject *)new;
 }
 

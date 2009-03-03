@@ -272,19 +272,21 @@ MD5_new(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|O:new", &data_obj))
 		return NULL;
 
-	GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
+	if (data_obj)
+		GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
 	if ((md5p = newmd5object()) == NULL) {
-		PyBuffer_Release(&view);
+		if (data_obj)
+			PyBuffer_Release(&view);
 		return NULL;
 	}
 
 	if (data_obj) {
 		md5_append(&md5p->md5, (unsigned char*)view.buf,
 		       Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+		PyBuffer_Release(&view);
 	}
-
-	PyBuffer_Release(&view);
+	
 	return (PyObject *)md5p;
 }
 
