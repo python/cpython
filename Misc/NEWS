@@ -13,6 +13,9 @@ Core and Builtins
 -----------------
 
 =======
+
+- Give dict views an informative __repr__.
+
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, int, and float arguments.
 

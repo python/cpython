@@ -2563,6 +2563,21 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
 	return result;
 }
 
+static PyObject *
+dictview_repr(dictviewobject *dv)
+{
+	PyObject *seq;
+	PyObject *result;
+	
+	seq = PySequence_List((PyObject *)dv);
+	if (seq == NULL)
+		return NULL;
+
+	result = PyUnicode_FromFormat("%s(%R)", Py_TYPE(dv)->tp_name, seq);
+	Py_DECREF(seq);
+	return result;
+}
+
 /*** dict_keys ***/
 
 static PyObject *
@@ -2700,7 +2715,7 @@ PyTypeObject PyDictKeys_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_reserved */
-	0,					/* tp_repr */
+	(reprfunc)dictview_repr,		/* tp_repr */
 	&dictviews_as_number,			/* tp_as_number */
 	&dictkeys_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
@@ -2784,7 +2799,7 @@ PyTypeObject PyDictItems_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_reserved */
-	0,					/* tp_repr */
+	(reprfunc)dictview_repr,		/* tp_repr */
 	&dictviews_as_number,			/* tp_as_number */
 	&dictitems_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
@@ -2849,7 +2864,7 @@ PyTypeObject PyDictValues_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_reserved */
-	0,					/* tp_repr */
+	(reprfunc)dictview_repr,		/* tp_repr */
 	0,					/* tp_as_number */
 	&dictvalues_as_sequence,		/* tp_as_sequence */
 	0,					/* tp_as_mapping */
