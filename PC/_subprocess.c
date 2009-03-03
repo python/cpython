@@ -84,7 +84,7 @@ sp_handle_detach(sp_handle_object* self, PyObject* args)
 
 	handle = self->handle;
 
-	self->handle = NULL;
+	self->handle = INVALID_HANDLE_VALUE;
 
 	/* note: return the current handle, as an integer */
 	return HANDLE_TO_PYNUM(handle);
