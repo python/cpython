@@ -58,9 +58,13 @@ class OrderedDict(dict, MutableMapping):
 
     def __reduce__(self):
         items = [[k, self[k]] for k in self]
+        tmp = self.__keys
+        del self.__keys
         inst_dict = vars(self).copy()
-        inst_dict.pop('__keys', None)
-        return (self.__class__, (items,), inst_dict)
+        self.__keys = tmp
+        if inst_dict:
+            return (self.__class__, (items,), inst_dict)
+        return self.__class__, (items,)
 
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
