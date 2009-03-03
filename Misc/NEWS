@@ -168,6 +168,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5179: Fixed subprocess handle leak on failure on windows.
+
 - PEP 372:  Added collections.OrderedDict().
 
 - The _asdict() for method for namedtuples now returns an OrderedDict().
