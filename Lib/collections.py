@@ -22,40 +22,44 @@ class OrderedDict(dict, MutableMapping):
     def __init__(self, *args, **kwds):
         if len(args) > 1:
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        if not hasattr(self, '_keys'):
-            self._keys = []
+        try:
+            self.__keys
+        except AttributeError:
+            # Note the underlying data structure for this class is likely to
+            # change in the future.  Do not rely on it or access it directly.
+            self.__keys = []
         self.update(*args, **kwds)
 
     def clear(self):
-        del self._keys[:]
+        del self.__keys[:]
         dict.clear(self)
 
     def __setitem__(self, key, value):
         if key not in self:
-            self._keys.append(key)
+            self.__keys.append(key)
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
         dict.__delitem__(self, key)
-        self._keys.remove(key)
+        self.__keys.remove(key)
 
     def __iter__(self):
-        return iter(self._keys)
+        return iter(self.__keys)
 
     def __reversed__(self):
-        return reversed(self._keys)
+        return reversed(self.__keys)
 
     def popitem(self):
         if not self:
             raise KeyError('dictionary is empty')
-        key = self._keys.pop()
+        key = self.__keys.pop()
         value = dict.pop(self, key)
         return key, value
 
     def __reduce__(self):
         items = [[k, self[k]] for k in self]
         inst_dict = vars(self).copy()
-        inst_dict.pop('_keys', None)
+        inst_dict.pop('__keys', None)
         return (self.__class__, (items,), inst_dict)
 
     setdefault = MutableMapping.setdefault
@@ -63,22 +67,22 @@ class OrderedDict(dict, MutableMapping):
     pop = MutableMapping.pop
 
     def keys(self):
-        return self._keys[:]
+        return self.__keys[:]
 
     def values(self):
-        return map(self.__getitem__, self._keys)
+        return map(self.__getitem__, self.__keys)
 
     def items(self):
-        return zip(self._keys, self.values())
+        return zip(self.__keys, self.values())
 
     def iterkeys(self):
-        return iter(self._keys)
+        return iter(self.__keys)
 
     def itervalues(self):
-        return _imap(self.__getitem__, self._keys)
+        return _imap(self.__getitem__, self.__keys)
 
     def iteritems(self):
-        return _izip(self._keys, _imap(self.__getitem__, self._keys))
+        return _izip(self.__keys, _imap(self.__getitem__, self.__keys))
 
     def __repr__(self):
         if not self:
