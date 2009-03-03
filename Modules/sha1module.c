@@ -502,18 +502,23 @@ SHA1_new(PyObject *self, PyObject *args, PyObject *kwdict)
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &buf);
 
-    if ((new = newSHA1object()) == NULL)
+    if ((new = newSHA1object()) == NULL) {
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
+    }
 
     sha1_init(&new->hash_state);
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
     }
     if (data_obj) {
         sha1_process(&new->hash_state, buf.buf, buf.len);
-	PyBuffer_Release(&buf);
+        PyBuffer_Release(&buf);
     }
 
     return (PyObject *)new;
