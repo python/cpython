@@ -645,9 +645,12 @@ class TestOrderedDict(unittest.TestCase):
         shuffle(pairs)
         od = OrderedDict(pairs)
         self.assertEqual(list(od), [t[0] for t in pairs])
-        self.assertEqual(list(od.keys()), [t[0] for t in pairs])
-        self.assertEqual(list(od.values()), [t[1] for t in pairs])
-        self.assertEqual(list(od.items()), pairs)
+        self.assertEqual(od.keys()[:], [t[0] for t in pairs])
+        self.assertEqual(od.values()[:], [t[1] for t in pairs])
+        self.assertEqual(od.items()[:], pairs)
+        self.assertEqual(list(od.iterkeys()), [t[0] for t in pairs])
+        self.assertEqual(list(od.itervalues()), [t[1] for t in pairs])
+        self.assertEqual(list(od.iteritems()), pairs)
         self.assertEqual(list(reversed(od)),
                          [t[0] for t in reversed(pairs)])
 
