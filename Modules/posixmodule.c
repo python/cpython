@@ -382,6 +382,12 @@ typedef struct {
         char pipech2[2];
         __int64 startpos;
         BOOL utf8translations;
+#ifndef _DEBUG
+        /* padding hack.  8 byte extra length observed at
+         * runtime, for 32 and 64 bits when not in _DEBUG
+         */
+        __int32 _padding[2];
+#endif
 #endif  /* _SAFECRT_IMPL */
     }   ioinfo;
 #endif
