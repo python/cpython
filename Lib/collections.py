@@ -1,4 +1,4 @@
-__all__ = ['Counter', 'deque', 'defaultdict', 'namedtuple']
+__all__ = ['Counter', 'deque', 'defaultdict', 'namedtuple', 'OrderedDict']
 # For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
 # They should however be considered an integral part of collections.py.
 from _abcoll import *
@@ -6,11 +6,101 @@ import _abcoll
 __all__ += _abcoll.__all__
 
 from _collections import deque, defaultdict
-from operator import itemgetter as _itemgetter
+from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, ifilter as _ifilter
+from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
+                      ifilter as _ifilter, imap as _imap, izip as _izip
+
+################################################################################
+### OrderedDict
+################################################################################
+
+class OrderedDict(dict, MutableMapping):
+
+    def __init__(self, *args, **kwds):
+        if len(args) > 1:
+            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        if not hasattr(self, '_keys'):
+            self._keys = []
+        self.update(*args, **kwds)
+
+    def clear(self):
+        del self._keys[:]
+        dict.clear(self)
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            self._keys.append(key)
+        dict.__setitem__(self, key, value)
+
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        self._keys.remove(key)
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def __reversed__(self):
+        return reversed(self._keys)
+
+    def popitem(self):
+        if not self:
+            raise KeyError('dictionary is empty')
+        key = self._keys.pop()
+        value = dict.pop(self, key)
+        return key, value
+
+    def __reduce__(self):
+        items = [[k, self[k]] for k in self]
+        inst_dict = vars(self).copy()
+        inst_dict.pop('_keys', None)
+        return (self.__class__, (items,), inst_dict)
+
+    setdefault = MutableMapping.setdefault
+    update = MutableMapping.update
+    pop = MutableMapping.pop
+
+    def keys(self):
+        return self._keys[:]
+
+    def values(self):
+        return map(self.__getitem__, self._keys)
+
+    def items(self):
+        return zip(self._keys, self.values())
+
+    def iterkeys(self):
+        return iter(self._keys)
+
+    def itervalues(self):
+        return _imap(self.__getitem__, self._keys)
+
+    def iteritems(self):
+        return _izip(self._keys, _imap(self.__getitem__, self._keys))
+
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+
+    def copy(self):
+        return self.__class__(self)
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+
+    def __eq__(self, other):
+        if isinstance(other, OrderedDict):
+            return len(self)==len(other) and all(_imap(_eq, self.items(), other.items()))
+        return dict.__eq__(self, other)
+
+
 
 ################################################################################
 ### namedtuple
