@@ -64,7 +64,7 @@ write-back, as will be the keys within each section.
    options within a section, and for the default values. This class does not
    support the magical interpolation behavior.
 
-   .. versionchanged 3.1
+   .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
 
@@ -83,7 +83,7 @@ write-back, as will be the keys within each section.
    option names to lower case), the values ``foo %(bar)s`` and ``foo %(BAR)s`` are
    equivalent.
 
-   .. versionchanged 3.1
+   .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
 
@@ -96,7 +96,7 @@ write-back, as will be the keys within each section.
 
    .. XXX Need to explain what's safer/more predictable about it.
 
-   .. versionchanged 3.1
+   .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
 
