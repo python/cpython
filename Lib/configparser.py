@@ -87,8 +87,13 @@ ConfigParser -- responsible for parsing a list of
         write the configuration state in .ini format
 """
 
+try:
+    from collections import OrderedDict as _default_dict
+except ImportError:
+    # fallback for setup.py which hasn't yet built _collections
+    _default_dict = dict
+
 import re
-from collections import OrderedDict
 
 __all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
            "InterpolationError", "InterpolationDepthError",
@@ -216,7 +221,7 @@ class MissingSectionHeaderError(ParsingError):
 
 
 class RawConfigParser:
-    def __init__(self, defaults=None, dict_type=OrderedDict):
+    def __init__(self, defaults=None, dict_type=_default_dict):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
