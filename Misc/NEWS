@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5179: Fixed subprocess handle leak on failure on windows.
+
 - Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
   The file was resized to wrong size.
 
