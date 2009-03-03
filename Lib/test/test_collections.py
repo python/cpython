@@ -717,6 +717,23 @@ class TestOrderedDict(unittest.TestCase):
             self.assertEquals(len(dup), len(od))
             self.assertEquals(type(dup), type(od))
 
+    def test_yaml_linkage(self):
+        # Verify that __reduce__ is setup in a way that supports PyYAML's dump() feature.
+        # In yaml, lists are native but tuples are not.
+        pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
+        od = OrderedDict(pairs)
+        # yaml.dump(od) -->
+        # '!!python/object/apply:__main__.OrderedDict\n- - [a, 1]\n  - [b, 2]\n'
+        self.assert_(all(type(pair)==list for pair in od.__reduce__()[1]))
+
+    def test_reduce_not_too_fat(self):
+        # do not save instance dictionary if not needed
+        pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
+        od = OrderedDict(pairs)
+        self.assertEqual(len(od.__reduce__()), 2)
+        od.x = 10
+        self.assertEqual(len(od.__reduce__()), 3)
+
     def test_repr(self):
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
