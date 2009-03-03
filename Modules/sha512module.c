@@ -695,13 +695,18 @@ SHA512_new(PyObject *self, PyObject *args, PyObject *kwdict)
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &buf);
 
-    if ((new = newSHA512object()) == NULL)
+    if ((new = newSHA512object()) == NULL) {
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
+    }
 
     sha512_init(new);
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
     }
     if (data_obj) {
@@ -731,13 +736,18 @@ SHA384_new(PyObject *self, PyObject *args, PyObject *kwdict)
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &buf);
 
-    if ((new = newSHA384object()) == NULL)
+    if ((new = newSHA384object()) == NULL) {
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
+    }
 
     sha384_init(new);
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
+        if (data_obj)
+            PyBuffer_Release(&buf);
         return NULL;
     }
     if (data_obj) {
