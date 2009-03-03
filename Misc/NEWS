@@ -170,6 +170,8 @@ Library
 
 - PEP 372:  Added collections.OrderedDict().
 
+- The _asdict() for method for namedtuples now returns an OrderedDict().
+
 - Issue #4308: httplib.IncompleteRead's repr doesn't include all of the data all
   ready received.
 
