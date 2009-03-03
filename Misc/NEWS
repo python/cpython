@@ -172,6 +172,8 @@ Library
 
 - The _asdict() for method for namedtuples now returns an OrderedDict().
 
+- The configparser module now defaults to using an ordered dictionary.
+
 - Issue #4308: httplib.IncompleteRead's repr doesn't include all of the data all
   ready received.
 
