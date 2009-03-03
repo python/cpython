@@ -1524,22 +1524,13 @@ compiler_function(struct compiler *c, stmt_ty s)
 static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
-	static PyObject *locals = NULL;
 	PyCodeObject *co;
 	PyObject *str;
-	PySTEntryObject *ste;
-	int err, i;
+	int i;
 	asdl_seq* decos = s->v.ClassDef.decorator_list;
 
         if (!compiler_decorators(c, decos))
                 return 0;
-
-	/* initialize statics */
-	if (locals == NULL) {
-		locals = PyUnicode_InternFromString("__locals__");
-		if (locals == NULL)
-			return 0;
-	}
 
 	/* ultimately generate code for:
 	     <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -1552,16 +1543,6 @@ compiler_class(struct compiler *c, stmt_ty s)
 	     <keywords> is the keyword arguments and **kwds argument
 	   This borrows from compiler_call.
 	*/
-
-	/* 0. Create a fake argument named __locals__ */
-	ste = PySymtable_Lookup(c->c_st, s);
-	if (ste == NULL)
-		return 0;
-	assert(PyList_Check(ste->ste_varnames));
-	err = PyList_Append(ste->ste_varnames, locals);
-	Py_DECREF(ste);
-	if (err < 0)
-		return 0;
 
 	/* 1. compile the class body into a code object */
 	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s, s->lineno))

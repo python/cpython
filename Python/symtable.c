@@ -186,7 +186,8 @@ static int symtable_visit_annotations(struct symtable *st, stmt_ty s);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
-    listcomp = NULL, setcomp = NULL, dictcomp = NULL, __class__ = NULL;
+	listcomp = NULL, setcomp = NULL, dictcomp = NULL,
+	__class__ = NULL, __locals__ = NULL;
 
 #define GET_IDENTIFIER(VAR) \
 	((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
@@ -1050,7 +1051,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 					  (void *)s, s->lineno))
 			return 0;
 		if (!GET_IDENTIFIER(__class__) ||
-		    !symtable_add_def(st, __class__, DEF_LOCAL)) {
+		    !symtable_add_def(st, __class__, DEF_LOCAL) ||
+		    !GET_IDENTIFIER(__locals__) ||
+		    !symtable_add_def(st, __locals__, DEF_PARAM)) {
 			symtable_exit_block(st, s);
 			return 0;
 		}
