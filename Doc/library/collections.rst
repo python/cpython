@@ -742,7 +742,7 @@ field names, the method and attribute names start with an underscore.
       >>> p._asdict()
       OrderedDict([('x', 11), ('y', 22)])
 
-   .. versionchanged 3.1
+   .. versionchanged:: 2.7
       Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
 .. method:: somenamedtuple._replace(kwargs)
