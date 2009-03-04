@@ -27,7 +27,9 @@ class OSXEnvironmentVariableTestCase(unittest.TestCase):
         self._check_sys('PYTHONEXECUTABLE', '==', 'sys.executable')
 
 def test_main():
-    if sys.platform == 'darwin':
+    from distutils import sysconfig
+
+    if sys.platform == 'darwin' and sysconfig.get_config_var('WITH_NEXT_FRAMEWORK'):
         run_unittest(OSXEnvironmentVariableTestCase)
 
 if __name__ == "__main__":
