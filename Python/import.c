@@ -988,12 +988,14 @@ update_compiled_module(PyCodeObject *co, char *pathname)
 {
 	PyObject *oldname, *newname;
 
-	if (!PyUnicode_CompareWithASCIIString(co->co_filename, pathname))
-		return 0;
-
-	newname = PyUnicode_FromString(pathname);
+	newname = PyUnicode_DecodeFSDefault(pathname);
 	if (newname == NULL)
 		return -1;
+
+	if (!PyUnicode_Compare(co->co_filename, newname)) {
+		Py_DECREF(newname);
+		return 0;
+	}
 
 	oldname = co->co_filename;
 	Py_INCREF(oldname);
