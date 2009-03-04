@@ -5,8 +5,8 @@ echo "of python is not early enough of the PATH of your shell."
 echo "These changes will be effective only in shell windows that you open"
 echo "after running this script."
 
-PYVER=2.7
-PYTHON_ROOT="/Library/Frameworks/Python.framework/Versions/Current"
+PYVER="@PYVER@"
+PYTHON_ROOT="/Library/Frameworks/Python.framework/Versions/@PYVER@"
 
 if [ `id -ur` = 0 ]; then
 	# Run from the installer, do some trickery to fetch the information
