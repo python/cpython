@@ -135,20 +135,20 @@ class ImportModuleTests(unittest.TestCase):
                 module = importlib.import_module(name)
                 self.assertEqual(module.__name__, name)
 
-    def test_relative_package_import(self):
-        # Test importing a module from a package through a relatve import.
-        pkg_name = 'pkg'
-        pkg_long_name = '{0}.__init__'.format(pkg_name)
-        module_name = 'mod'
-        subpkg_name = '{0}.subpkg'.format(pkg_name)
-        subpkg_long_name = '{0}.__init__'.format(subpkg_name)
-        absolute_name = '{0}.{1}'.format(pkg_name, module_name)
-        relative_name = '..{0}'.format(module_name)
-        with mock_modules(pkg_long_name, subpkg_long_name,
-                            absolute_name) as mock:
+    def test_shallow_relative_package_import(self):
+        modules = ['a.__init__', 'a.b.__init__', 'a.b.c.__init__', 'a.b.c.d']
+        with mock_modules(*modules) as mock:
             with import_state(meta_path=[mock]):
-                module = importlib.import_module(relative_name, subpkg_name)
-                self.assertEqual(module.__name__, absolute_name)
+                module = importlib.import_module('.d', 'a.b.c')
+                self.assertEqual(module.__name__, 'a.b.c.d')
+
+    def test_deep_relative_package_import(self):
+        # Test importing a module from a package through a relatve import.
+        modules = ['a.__init__', 'a.b.__init__', 'a.c']
+        with mock_modules(*modules) as mock:
+            with import_state(meta_path=[mock]):
+                module = importlib.import_module('..c', 'a.b')
+                self.assertEqual(module.__name__, 'a.c')
 
     def test_absolute_import_with_package(self):
         # Test importing a module from a package with an absolute name with
