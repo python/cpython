@@ -5,24 +5,16 @@ import sys
 
 def _resolve_name(name, package, level):
     """Return the absolute name of the module to be imported."""
-    level -= 1
-    try:
-        if package.count('.') < level:
+    if not hasattr(package, 'rindex'):
+        raise ValueError("'package' not set to a string")
+    dot = len(package)
+    for x in xrange(level, 1, -1):
+        try:
+            dot = package.rindex('.', 0, dot)
+        except ValueError:
             raise ValueError("attempted relative import beyond top-level "
                               "package")
-    except AttributeError:
-        raise ValueError("'package' not set to a string")
-    try:
-        # rpartition is more "correct" and rfind is just as easy to use, but
-        # neither are in Python 2.3.
-        dot_rindex = package.rindex('.', level)
-        base = package[:dot_rindex]
-    except ValueError:
-        base = package
-    if name:
-        return "%s.%s" % (base, name)
-    else:
-        return base
+    return "%s.%s" % (package[:dot], name)
 
 
 def import_module(name, package=None):
@@ -42,10 +34,5 @@ def import_module(name, package=None):
                 break
             level += 1
         name = _resolve_name(name[level:], package, level)
-    # Try to import specifying the level to be as accurate as possible, but
-    # realize that keyword arguments are not found in Python 2.3.
-    try:
-        __import__(name, level=0)
-    except TypeError:
-        __import__(name)
+    __import__(name)
     return sys.modules[name]
