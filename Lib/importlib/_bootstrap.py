@@ -7,8 +7,8 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 
-# Injected modules are '_warnings', 'imp', 'sys', 'marshal', 'errno', and '_os'
-# (a.k.a. 'posix', 'nt' or 'os2').
+# Injected modules are '_warnings', 'imp', 'sys', 'marshal', 'errno', '_io',
+# and '_os' (a.k.a. 'posix', 'nt' or 'os2').
 # Injected attribute is path_sep.
 #
 # When editing this code be aware that code executed at import time CANNOT
@@ -473,7 +473,7 @@ class PyFileLoader(PyLoader):
         if source_path is None:
             return None
         import tokenize
-        with closing(_io.FileIO(source_path, 'r')) as file:
+        with closing(_io.FileIO(source_path, 'r')) as file:  # Assuming bytes.
             encoding, lines = tokenize.detect_encoding(file.readline)
         # XXX Will fail when passed to compile() if the encoding is
         # anything other than UTF-8.
@@ -482,7 +482,7 @@ class PyFileLoader(PyLoader):
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        return _fileio._FileIO(path, 'r').read()
+        return _io.FileIO(path, 'r').read()  # Assuming bytes.
 
     @check_name
     def is_package(self, fullname):
@@ -527,7 +527,7 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
         bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
             bytecode_path = self._base_path + suffix_list(imp.PY_COMPILED)[0]
-        file = _io.FileIO(bytecode_path, 'w')
+        file = _io.FileIO(bytecode_path, 'w')  # Assuming bytes.
         try:
             with closing(file) as bytecode_file:
                 bytecode_file.write(data)
