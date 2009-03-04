@@ -193,8 +193,8 @@ class OtherFileTests(unittest.TestCase):
             os.unlink(TESTFN)
 
     def testInvalidFd(self):
-        self.assertRaises(ValueError, _fileio._FileIO, -10)
-        self.assertRaises(OSError, _fileio._FileIO, make_bad_fd())
+        self.assertRaises(ValueError, _FileIO, -10)
+        self.assertRaises(OSError, _FileIO, make_bad_fd())
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
