@@ -57,12 +57,14 @@ PyTypeObject PyFileIO_Type;
 
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
-
 int
 _PyFileIO_closed(PyObject *self)
 {
 	return ((PyFileIOObject *)self)->fd < 0;
 }
+
+static PyObject *
+portable_lseek(int fd, PyObject *posobj, int whence);
 
 /* Returns 0 on success, -1 with exception set on failure. */
 static int
@@ -156,7 +158,7 @@ check_fd(int fd)
 {
 #if defined(HAVE_FSTAT)
 	struct stat buf;
-	if (fstat(fd, &buf) < 0 && errno == EBADF) {
+	if (!_PyVerify_fd(fd) || (fstat(fd, &buf) < 0 && errno == EBADF)) {
 		PyObject *exc;
 		char *msg = strerror(EBADF);
 		exc = PyObject_CallFunction(PyExc_OSError, "(is)",
@@ -176,7 +178,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	PyFileIOObject *self = (PyFileIOObject *) oself;
 	static char *kwlist[] = {"file", "mode", "closefd", NULL};
 	const char *name = NULL;
-	PyObject *nameobj;
+	PyObject *nameobj, *stringobj = NULL;
 	char *mode = "r";
 	char *s;
 #ifdef MS_WINDOWS
@@ -226,26 +228,27 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	if (fd < 0)
 	{
 		if (PyBytes_Check(nameobj) || PyByteArray_Check(nameobj)) {
-			if (PyObject_AsCharBuffer(nameobj, &name, NULL) < 0)
+			Py_ssize_t namelen;
+			if (PyObject_AsCharBuffer(nameobj, &name, &namelen) < 0)
 				return -1;
 		}
 		else {
-			PyObject *s;
 			PyObject *u = PyUnicode_FromObject(nameobj);
 
 			if (u == NULL)
 				return -1;
 
-			s = PyUnicode_AsEncodedString(
+			stringobj = PyUnicode_AsEncodedString(
 				u, Py_FileSystemDefaultEncoding, NULL);
 			Py_DECREF(u);
-			if (s == NULL)
+			if (stringobj == NULL)
 				return -1;
-			if (!PyBytes_Check(s)) {
+			if (!PyBytes_Check(stringobj)) {
 				PyErr_SetString(PyExc_TypeError,
 						"encoder failed to return bytes");
+				goto error;
 			}
-			name = PyBytes_AS_STRING(s);
+			name = PyBytes_AS_STRING(stringobj);
 		}
 	}
 
@@ -312,10 +315,10 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #endif
 
 	if (fd >= 0) {
-		self->fd = fd;
-		self->closefd = closefd;
 		if (check_fd(fd))
 			goto error;
+		self->fd = fd;
+		self->closefd = closefd;
 	}
 	else {
 		self->closefd = 1;
@@ -350,12 +353,23 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	if (PyObject_SetAttrString((PyObject *)self, "name", nameobj) < 0)
 		goto error;
 
+	if (append) {
+		/* For consistent behaviour, we explicitly seek to the
+		   end of file (otherwise, it might be done only on the
+		   first write()). */
+		PyObject *pos = portable_lseek(self->fd, NULL, 2);
+		if (pos == NULL)
+			goto error;
+		Py_DECREF(pos);
+	}
+
 	goto done;
 
  error:
 	ret = -1;
 
  done:
+	Py_CLEAR(stringobj);
 	return ret;
 }
 
@@ -942,14 +956,14 @@ static PyGetSetDef fileio_getsetlist[] = {
 
 PyTypeObject PyFileIO_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"FileIO",
+	"_io.FileIO",
 	sizeof(PyFileIOObject),
 	0,
 	(destructor)fileio_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	0,					/* tp_reserved */
 	(reprfunc)fileio_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
