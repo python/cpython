@@ -47,7 +47,7 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>, "
               "Mark Russell <mark.russell@zen.co.uk>, "
               "Antoine Pitrou <solipsis@pitrou.net>, "
-              "Amaury Forgeotdarc <amauryfa@gmail.com>")
+              "Amaury Forgeot d'Arc <amauryfa@gmail.com>")
 
 __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
            "BytesIO", "StringIO", "BufferedIOBase",

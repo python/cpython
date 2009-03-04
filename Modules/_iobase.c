@@ -459,9 +459,6 @@ IOBase_readline(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyIOBase_checkClosed(self, Py_True) == NULL)
-        return NULL;
-
     if (PyObject_HasAttrString(self, "peek"))
         has_peek = 1;
 
