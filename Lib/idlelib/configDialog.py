@@ -19,6 +19,7 @@ from tabbedpages import TabbedPageSet
 from keybindingDialog import GetKeysDialog
 from configSectionNameDialog import GetCfgSectionNameDialog
 from configHelpSourceEdit import GetHelpSourceDialog
+import macosxSupport
 
 class ConfigDialog(Toplevel):
 
@@ -69,18 +70,25 @@ class ConfigDialog(Toplevel):
                 page_names=['Fonts/Tabs','Highlighting','Keys','General'])
         frameActionButtons = Frame(self,pady=2)
         #action buttons
+        if macosxSupport.runningAsOSXApp():
+            # Changing the default padding on OSX results in unreadable
+            # text in the buttons
+            paddingArgs={}
+        else:
+            paddingArgs={'padx':6, 'pady':3}
+
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE,
-                padx=6,pady=3)
+                **paddingArgs)
         self.buttonOk = Button(frameActionButtons,text='Ok',
                 command=self.Ok,takefocus=FALSE,
-                padx=6,pady=3)
+                **paddingArgs)
         self.buttonApply = Button(frameActionButtons,text='Apply',
                 command=self.Apply,takefocus=FALSE,
-                padx=6,pady=3)
+                **paddingArgs)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE,
-                padx=6,pady=3)
+                **paddingArgs)
         self.CreatePageFontTab()
         self.CreatePageHighlight()
         self.CreatePageKeys()

@@ -368,7 +368,7 @@ class EditorWindow(object):
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
 
-        if sys.platform == 'darwin' and '.framework' in sys.executable:
+        if macosxSupport.runningAsOSXApp():
             # Insert the application menu
             menudict['application'] = menu = Menu(mbar, name='apple')
             mbar.add_cascade(label='IDLE', menu=menu)

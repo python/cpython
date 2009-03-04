@@ -10,6 +10,7 @@ windows.
 """
 import sys
 from configHandler import idleConf
+import macosxSupport
 
 menudefs = [
  # underscore prefixes character to underscore
@@ -80,8 +81,7 @@ menudefs = [
    ]),
 ]
 
-import sys
-if sys.platform == 'darwin' and '.app' in sys.executable:
+if macosxSupport.runningAsOSXApp():
     # Running as a proper MacOS application bundle. This block restructures
     # the menus a little to make them conform better to the HIG.
 

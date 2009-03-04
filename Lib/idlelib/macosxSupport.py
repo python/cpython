@@ -6,8 +6,12 @@ import sys
 import Tkinter
 
 def runningAsOSXApp():
-    """ Returns True iff running from the IDLE.app bundle on OSX """
-    return (sys.platform == 'darwin' and 'IDLE.app' in sys.argv[0])
+    """
+    Returns True if Python is running from within an app on OSX.
+    If so, assume that Python was built with Aqua Tcl/Tk rather than
+    X11 Tck/Tk.
+    """
+    return (sys.platform == 'darwin' and '.app' in sys.executable)
 
 def addOpenEventSupport(root, flist):
     """
