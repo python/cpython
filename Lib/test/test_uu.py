@@ -32,6 +32,8 @@ class FakeIO(io.TextIOWrapper):
                                      encoding=encoding,
                                      errors=errors,
                                      newline=newline)
+        self._encoding = encoding
+        self._errors = errors
         if initial_value:
             if not isinstance(initial_value, str):
                 initial_value = str(initial_value)

@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "structmember.h"       /* for offsetof() */
+#include "_iomodule.h"
 
 typedef struct {
     PyObject_HEAD
@@ -6,6 +8,8 @@ typedef struct {
     Py_ssize_t pos;
     Py_ssize_t string_size;
     size_t buf_size;
+    PyObject *dict;
+    PyObject *weakreflist;
 } BytesIOObject;
 
 #define CHECK_CLOSED(self)                                  \
@@ -144,10 +148,12 @@ write_bytes(BytesIOObject *self, const char *bytes, Py_ssize_t len)
 static PyObject *
 bytesio_get_closed(BytesIOObject *self)
 {
-    if (self->buf == NULL)
+    if (self->buf == NULL) {
         Py_RETURN_TRUE;
-    else
+    }
+    else {
         Py_RETURN_FALSE;
+    }
 }
 
 /* Generic getter for the writable, readable and seekable properties */
@@ -532,22 +538,22 @@ PyDoc_STRVAR(write_doc,
 static PyObject *
 bytesio_write(BytesIOObject *self, PyObject *obj)
 {
-    const char *bytes;
-    Py_ssize_t size;
     Py_ssize_t n = 0;
+    Py_buffer buf;
+    PyObject *result = NULL;
 
     CHECK_CLOSED(self);
 
-    if (PyObject_AsReadBuffer(obj, (void *)&bytes, &size) < 0)
+    if (PyObject_GetBuffer(obj, &buf, PyBUF_CONTIG_RO) < 0)
         return NULL;
 
-    if (size != 0) {
-        n = write_bytes(self, bytes, size);
-        if (n < 0)
-            return NULL;
-    }
+    if (buf.len != 0)
+        n = write_bytes(self, buf.buf, buf.len);
+    if (n >= 0)
+        result = PyLong_FromSsize_t(n);
 
-    return PyLong_FromSsize_t(n);
+    PyBuffer_Release(&buf);
+    return result;
 }
 
 PyDoc_STRVAR(writelines_doc,
@@ -607,6 +613,7 @@ bytesio_dealloc(BytesIOObject *self)
         PyMem_Free(self->buf);
         self->buf = NULL;
     }
+    Py_TYPE(self)->tp_clear((PyObject *)self);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -656,6 +663,24 @@ bytesio_init(BytesIOObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static int
+bytesio_traverse(BytesIOObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->dict);
+    Py_VISIT(self->weakreflist);
+    return 0;
+}
+
+static int
+bytesio_clear(BytesIOObject *self)
+{
+    Py_CLEAR(self->dict);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *)self);
+    return 0;
+}
+
+
 static PyGetSetDef bytesio_getsetlist[] = {
     {"closed",  (getter)bytesio_get_closed, NULL,
      "True if the file is closed."},
@@ -689,9 +714,9 @@ PyDoc_STRVAR(bytesio_doc,
 "Create a buffered I/O implementation using an in-memory bytes\n"
 "buffer, ready for reading and writing.");
 
-static PyTypeObject BytesIO_Type = {
+PyTypeObject PyBytesIO_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_bytesio._BytesIO",                       /*tp_name*/
+    "_io.BytesIO",                             /*tp_name*/
     sizeof(BytesIOObject),                     /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesio_dealloc,               /*tp_dealloc*/
@@ -709,12 +734,13 @@ static PyTypeObject BytesIO_Type = {
     0,                                         /*tp_getattro*/
     0,                                         /*tp_setattro*/
     0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+    Py_TPFLAGS_HAVE_GC,                        /*tp_flags*/
     bytesio_doc,                               /*tp_doc*/
-    0,                                         /*tp_traverse*/
-    0,                                         /*tp_clear*/
+    (traverseproc)bytesio_traverse,            /*tp_traverse*/
+    (inquiry)bytesio_clear,                    /*tp_clear*/
     0,                                         /*tp_richcompare*/
-    0,                                         /*tp_weaklistoffset*/
+    offsetof(BytesIOObject, weakreflist),      /*tp_weaklistoffset*/
     PyObject_SelfIter,                         /*tp_iter*/
     (iternextfunc)bytesio_iternext,            /*tp_iternext*/
     bytesio_methods,                           /*tp_methods*/
@@ -724,36 +750,8 @@ static PyTypeObject BytesIO_Type = {
     0,                                         /*tp_dict*/
     0,                                         /*tp_descr_get*/
     0,                                         /*tp_descr_set*/
-    0,                                         /*tp_dictoffset*/
+    offsetof(BytesIOObject, dict),             /*tp_dictoffset*/
     (initproc)bytesio_init,                    /*tp_init*/
     0,                                         /*tp_alloc*/
     bytesio_new,                               /*tp_new*/
 };
-
-
-static struct PyModuleDef _bytesiomodule = {
-	PyModuleDef_HEAD_INIT,
-	"_bytesio",
-	NULL,
-	-1,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL
-};
-
-PyMODINIT_FUNC
-PyInit__bytesio(void)
-{
-    PyObject *m;
-
-    if (PyType_Ready(&BytesIO_Type) < 0)
-        return NULL;
-    m = PyModule_Create(&_bytesiomodule);
-    if (m == NULL)
-        return NULL;
-    Py_INCREF(&BytesIO_Type);
-    PyModule_AddObject(m, "_BytesIO", (PyObject *)&BytesIO_Type);
-    return m;
-}

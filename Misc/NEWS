@@ -14,6 +14,8 @@ Core and Builtins
 
 =======
 
+- The io module has been reimplemented in C for speed.
+
 - Give dict views an informative __repr__.
 
 - Issue #5247: Improve error message when unknown format codes are

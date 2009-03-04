@@ -93,12 +93,12 @@ except ImportError:
         except ImportError:
             raise ImportError('posix, nt, or os2 module required for importlib')
 _bootstrap._os = _os
-import imp, sys, marshal, errno, _fileio
+import imp, sys, marshal, errno, _io
 _bootstrap.imp = imp
 _bootstrap.sys = sys
 _bootstrap.marshal = marshal
 _bootstrap.errno = errno
-_bootstrap._fileio = _fileio
+_bootstrap._io = _io
 import _warnings
 _bootstrap._warnings = _warnings
 

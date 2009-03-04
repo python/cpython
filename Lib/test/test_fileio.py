@@ -10,13 +10,13 @@ from test.support import (TESTFN, findfile, check_warnings, run_unittest,
                           make_bad_fd)
 from collections import UserList
 
-import _fileio
+from _io import FileIO as _FileIO
 
 class AutoFileTests(unittest.TestCase):
     # file tests for which a test file is automatically set up
 
     def setUp(self):
-        self.f = _fileio._FileIO(TESTFN, 'w')
+        self.f = _FileIO(TESTFN, 'w')
 
     def tearDown(self):
         if self.f:
@@ -63,13 +63,13 @@ class AutoFileTests(unittest.TestCase):
         self.f.write(bytes([1, 2]))
         self.f.close()
         a = array('b', b'x'*10)
-        self.f = _fileio._FileIO(TESTFN, 'r')
+        self.f = _FileIO(TESTFN, 'r')
         n = self.f.readinto(a)
         self.assertEquals(array('b', [1, 2]), a[:n])
 
     def testRepr(self):
         self.assertEquals(repr(self.f),
-                          "_fileio._FileIO(%d, %s)" % (self.f.fileno(),
+                          "io.FileIO(%d, %s)" % (self.f.fileno(),
                                                        repr(self.f.mode)))
 
     def testErrors(self):
@@ -80,7 +80,7 @@ class AutoFileTests(unittest.TestCase):
         self.assertRaises(ValueError, f.read, 10) # Open for reading
         f.close()
         self.assert_(f.closed)
-        f = _fileio._FileIO(TESTFN, 'r')
+        f = _FileIO(TESTFN, 'r')
         self.assertRaises(TypeError, f.readinto, "")
         self.assert_(not f.closed)
         f.close()
@@ -106,7 +106,7 @@ class AutoFileTests(unittest.TestCase):
         # Windows always returns "[Errno 13]: Permission denied
         # Unix calls dircheck() and returns "[Errno 21]: Is a directory"
         try:
-            _fileio._FileIO('.', 'r')
+            _FileIO('.', 'r')
         except IOError as e:
             self.assertNotEqual(e.errno, 0)
             self.assertEqual(e.filename, ".")
@@ -118,19 +118,19 @@ class OtherFileTests(unittest.TestCase):
 
     def testAbles(self):
         try:
-            f = _fileio._FileIO(TESTFN, "w")
+            f = _FileIO(TESTFN, "w")
             self.assertEquals(f.readable(), False)
             self.assertEquals(f.writable(), True)
             self.assertEquals(f.seekable(), True)
             f.close()
 
-            f = _fileio._FileIO(TESTFN, "r")
+            f = _FileIO(TESTFN, "r")
             self.assertEquals(f.readable(), True)
             self.assertEquals(f.writable(), False)
             self.assertEquals(f.seekable(), True)
             f.close()
 
-            f = _fileio._FileIO(TESTFN, "a+")
+            f = _FileIO(TESTFN, "a+")
             self.assertEquals(f.readable(), True)
             self.assertEquals(f.writable(), True)
             self.assertEquals(f.seekable(), True)
@@ -139,14 +139,14 @@ class OtherFileTests(unittest.TestCase):
 
             if sys.platform != "win32":
                 try:
-                    f = _fileio._FileIO("/dev/tty", "a")
+                    f = _FileIO("/dev/tty", "a")
                 except EnvironmentError:
                     # When run in a cron job there just aren't any
                     # ttys, so skip the test.  This also handles other
                     # OS'es that don't support /dev/tty.
                     pass
                 else:
-                    f = _fileio._FileIO("/dev/tty", "a")
+                    f = _FileIO("/dev/tty", "a")
                     self.assertEquals(f.readable(), False)
                     self.assertEquals(f.writable(), True)
                     if sys.platform != "darwin" and \
@@ -163,7 +163,7 @@ class OtherFileTests(unittest.TestCase):
         # check invalid mode strings
         for mode in ("", "aU", "wU+", "rw", "rt"):
             try:
-                f = _fileio._FileIO(TESTFN, mode)
+                f = _FileIO(TESTFN, mode)
             except ValueError:
                 pass
             else:
@@ -172,9 +172,25 @@ class OtherFileTests(unittest.TestCase):
 
     def testUnicodeOpen(self):
         # verify repr works for unicode too
-        f = _fileio._FileIO(str(TESTFN), "w")
+        f = _FileIO(str(TESTFN), "w")
         f.close()
         os.unlink(TESTFN)
+
+    def testBytesOpen(self):
+        # Opening a bytes filename
+        try:
+            fn = TESTFN.encode("ascii")
+        except UnicodeEncodeError:
+            # Skip test
+            return
+        f = _FileIO(fn, "w")
+        try:
+            f.write(b"abc")
+            f.close()
+            with open(TESTFN, "rb") as f:
+                self.assertEquals(f.read(), b"abc")
+        finally:
+            os.unlink(TESTFN)
 
     def testInvalidFd(self):
         self.assertRaises(ValueError, _fileio._FileIO, -10)
@@ -184,7 +200,7 @@ class OtherFileTests(unittest.TestCase):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
         try:
-            f = _fileio._FileIO(TESTFN, bad_mode)
+            f = _FileIO(TESTFN, bad_mode)
         except ValueError as msg:
             if msg.args[0] != 0:
                 s = str(msg)
@@ -200,11 +216,11 @@ class OtherFileTests(unittest.TestCase):
         def bug801631():
             # SF bug <http://www.python.org/sf/801631>
             # "file.truncate fault on windows"
-            f = _fileio._FileIO(TESTFN, 'w')
+            f = _FileIO(TESTFN, 'w')
             f.write(bytes(range(11)))
             f.close()
 
-            f = _fileio._FileIO(TESTFN,'r+')
+            f = _FileIO(TESTFN,'r+')
             data = f.read(5)
             if data != bytes(range(5)):
                 self.fail("Read on file opened for update failed %r" % data)
@@ -244,14 +260,14 @@ class OtherFileTests(unittest.TestCase):
                 pass
 
     def testInvalidInit(self):
-        self.assertRaises(TypeError, _fileio._FileIO, "1", 0, 0)
+        self.assertRaises(TypeError, _FileIO, "1", 0, 0)
 
     def testWarnings(self):
         with check_warnings() as w:
             self.assertEqual(w.warnings, [])
-            self.assertRaises(TypeError, _fileio._FileIO, [])
+            self.assertRaises(TypeError, _FileIO, [])
             self.assertEqual(w.warnings, [])
-            self.assertRaises(ValueError, _fileio._FileIO, "/some/invalid/name", "rt")
+            self.assertRaises(ValueError, _FileIO, "/some/invalid/name", "rt")
             self.assertEqual(w.warnings, [])
 
 

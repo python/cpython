@@ -7,6 +7,8 @@ import sys
 import unittest
 from test.support import run_unittest, TESTFN, verbose, requires, \
                               TestSkipped, unlink
+import io  # C implementation of io
+import _pyio as pyio # Python implementation of io
 
 try:
     import signal
@@ -21,7 +23,7 @@ except (ImportError, AttributeError):
 size = 2500000000
 
 
-class TestCase(unittest.TestCase):
+class LargeFileTest(unittest.TestCase):
     """Test that each file function works as expected for a large
     (i.e. > 2GB, do  we have to check > 4GB) files.
 
@@ -34,7 +36,7 @@ class TestCase(unittest.TestCase):
     def test_seek(self):
         if verbose:
             print('create large file via seek (may be sparse file) ...')
-        with open(TESTFN, 'wb') as f:
+        with self.open(TESTFN, 'wb') as f:
             f.write(b'z')
             f.seek(0)
             f.seek(size)
@@ -52,7 +54,7 @@ class TestCase(unittest.TestCase):
     def test_seek_read(self):
         if verbose:
             print('play around with seek() and read() with the built largefile')
-        with open(TESTFN, 'rb') as f:
+        with self.open(TESTFN, 'rb') as f:
             self.assertEqual(f.tell(), 0)
             self.assertEqual(f.read(1), b'z')
             self.assertEqual(f.tell(), 1)
@@ -85,7 +87,7 @@ class TestCase(unittest.TestCase):
     def test_lseek(self):
         if verbose:
             print('play around with os.lseek() with the built largefile')
-        with open(TESTFN, 'rb') as f:
+        with self.open(TESTFN, 'rb') as f:
             self.assertEqual(os.lseek(f.fileno(), 0, 0), 0)
             self.assertEqual(os.lseek(f.fileno(), 42, 0), 42)
             self.assertEqual(os.lseek(f.fileno(), 42, 1), 84)
@@ -100,7 +102,7 @@ class TestCase(unittest.TestCase):
     def test_truncate(self):
         if verbose:
             print('try truncate')
-        with open(TESTFN, 'r+b') as f:
+        with self.open(TESTFN, 'r+b') as f:
             # this is already decided before start running the test suite
             # but we do it anyway for extra protection
             if not hasattr(f, 'truncate'):
@@ -143,7 +145,7 @@ def test_main():
         # Only run if the current filesystem supports large files.
         # (Skip this test on Windows, since we now always support
         # large files.)
-        f = open(TESTFN, 'wb')
+        f = open(TESTFN, 'wb', buffering=0)
         try:
             # 2**31 == 2147483648
             f.seek(2147483649)
@@ -158,14 +160,19 @@ def test_main():
         else:
             f.close()
     suite = unittest.TestSuite()
-    suite.addTest(TestCase('test_seek'))
-    suite.addTest(TestCase('test_osstat'))
-    suite.addTest(TestCase('test_seek_read'))
-    suite.addTest(TestCase('test_lseek'))
-    with open(TESTFN, 'w') as f:
-        if hasattr(f, 'truncate'):
-            suite.addTest(TestCase('test_truncate'))
-    unlink(TESTFN)
+    for _open, prefix in [(io.open, 'C'), (pyio.open, 'Py')]:
+        class TestCase(LargeFileTest):
+            pass
+        TestCase.open = staticmethod(_open)
+        TestCase.__name__ = prefix + LargeFileTest.__name__
+        suite.addTest(TestCase('test_seek'))
+        suite.addTest(TestCase('test_osstat'))
+        suite.addTest(TestCase('test_seek_read'))
+        suite.addTest(TestCase('test_lseek'))
+        with _open(TESTFN, 'wb') as f:
+            if hasattr(f, 'truncate'):
+                suite.addTest(TestCase('test_truncate'))
+        unlink(TESTFN)
     try:
         run_unittest(suite)
     finally:

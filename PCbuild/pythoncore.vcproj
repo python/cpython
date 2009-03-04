@@ -975,6 +975,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\_bufferedio.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\_codecsmodule.c"
 				>
 			</File>
@@ -1000,6 +1004,14 @@
 			</File>
 			<File
 				RelativePath="..\Modules\_heapqmodule.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_iobase.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_iomodule.h"
 				>
 			</File>
 			<File
@@ -1032,6 +1044,10 @@
 			</File>
 			<File
 				RelativePath="..\Modules\_struct.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_textio.c"
 				>
 			</File>
 			<File
@@ -1072,6 +1088,10 @@
 			</File>
 			<File
 				RelativePath="..\Modules\itertoolsmodule.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\io.c"
 				>
 			</File>
 			<File

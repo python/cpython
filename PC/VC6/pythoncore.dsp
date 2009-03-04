@@ -97,6 +97,10 @@ SOURCE=..\..\Modules\_bisectmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_bufferedio.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_bytesio.c
 # End Source File
 # Begin Source File
@@ -149,6 +153,10 @@ SOURCE=..\..\Modules\_heapqmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_iobase.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_json.c
 # End Source File
 # Begin Source File
@@ -182,6 +190,10 @@ SOURCE=..\..\Modules\_struct.c
 # Begin Source File
 
 SOURCE=..\..\PC\_subprocess.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\_textio.c
 # End Source File
 # Begin Source File
 
@@ -460,6 +472,10 @@ SOURCE=..\..\Modules\zlib\inflate.c
 # Begin Source File
 
 SOURCE=..\..\Modules\zlib\inftrees.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\io.c
 # End Source File
 # Begin Source File
 

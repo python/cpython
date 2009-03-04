@@ -4,6 +4,9 @@ import unittest
 from array import array
 from weakref import proxy
 
+import io
+import _pyio as pyio
+
 from test.support import TESTFN, findfile, run_unittest
 from collections import UserList
 
@@ -11,7 +14,7 @@ class AutoFileTests(unittest.TestCase):
     # file tests for which a test file is automatically set up
 
     def setUp(self):
-        self.f = open(TESTFN, 'wb')
+        self.f = self.open(TESTFN, 'wb')
 
     def tearDown(self):
         if self.f:
@@ -39,7 +42,7 @@ class AutoFileTests(unittest.TestCase):
         self.f.write(b'12')
         self.f.close()
         a = array('b', b'x'*10)
-        self.f = open(TESTFN, 'rb')
+        self.f = self.open(TESTFN, 'rb')
         n = self.f.readinto(a)
         self.assertEquals(b'12', a.tostring()[:n])
 
@@ -47,7 +50,7 @@ class AutoFileTests(unittest.TestCase):
         # verify readinto refuses text files
         a = array('b', b'x'*10)
         self.f.close()
-        self.f = open(TESTFN, 'r')
+        self.f = self.open(TESTFN, 'r')
         if hasattr(self.f, "readinto"):
             self.assertRaises(TypeError, self.f.readinto, a)
 
@@ -56,7 +59,7 @@ class AutoFileTests(unittest.TestCase):
         l = UserList([b'1', b'2'])
         self.f.writelines(l)
         self.f.close()
-        self.f = open(TESTFN, 'rb')
+        self.f = self.open(TESTFN, 'rb')
         buf = self.f.read()
         self.assertEquals(buf, b'12')
 
@@ -126,13 +129,20 @@ class AutoFileTests(unittest.TestCase):
     def testReadWhenWriting(self):
         self.assertRaises(IOError, self.f.read)
 
+class CAutoFileTests(AutoFileTests):
+    open = io.open
+
+class PyAutoFileTests(AutoFileTests):
+    open = staticmethod(pyio.open)
+
+
 class OtherFileTests(unittest.TestCase):
 
     def testModeStrings(self):
         # check invalid mode strings
         for mode in ("", "aU", "wU+"):
             try:
-                f = open(TESTFN, mode)
+                f = self.open(TESTFN, mode)
             except ValueError:
                 pass
             else:
@@ -153,7 +163,7 @@ class OtherFileTests(unittest.TestCase):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
         try:
-            f = open(TESTFN, bad_mode)
+            f = self.open(TESTFN, bad_mode)
         except ValueError as msg:
             if msg.args[0] != 0:
                 s = str(msg)
@@ -170,11 +180,11 @@ class OtherFileTests(unittest.TestCase):
         # misbehaviour especially with repeated close() calls
         for s in (-1, 0, 1, 512):
             try:
-                f = open(TESTFN, 'wb', s)
+                f = self.open(TESTFN, 'wb', s)
                 f.write(str(s).encode("ascii"))
                 f.close()
                 f.close()
-                f = open(TESTFN, 'rb', s)
+                f = self.open(TESTFN, 'rb', s)
                 d = int(f.read().decode("ascii"))
                 f.close()
                 f.close()
@@ -187,13 +197,13 @@ class OtherFileTests(unittest.TestCase):
         # "file.truncate fault on windows"
 
         os.unlink(TESTFN)
-        f = open(TESTFN, 'wb')
+        f = self.open(TESTFN, 'wb')
 
         try:
             f.write(b'12345678901')   # 11 bytes
             f.close()
 
-            f = open(TESTFN,'rb+')
+            f = self.open(TESTFN,'rb+')
             data = f.read(5)
             if data != b'12345':
                 self.fail("Read on file opened for update failed %r" % data)
@@ -233,13 +243,13 @@ class OtherFileTests(unittest.TestCase):
 
         try:
             # Prepare the testfile
-            bag = open(TESTFN, "wb")
+            bag = self.open(TESTFN, "wb")
             bag.write(filler * nchunks)
             bag.writelines(testlines)
             bag.close()
             # Test for appropriate errors mixing read* and iteration
             for methodname, args in methods:
-                f = open(TESTFN, 'rb')
+                f = self.open(TESTFN, 'rb')
                 if next(f) != filler:
                     self.fail, "Broken testfile"
                 meth = getattr(f, methodname)
@@ -253,7 +263,7 @@ class OtherFileTests(unittest.TestCase):
             # ("h", "a", "m", "\n"), so 4096 lines of that should get us
             # exactly on the buffer boundary for any power-of-2 buffersize
             # between 4 and 16384 (inclusive).
-            f = open(TESTFN, 'rb')
+            f = self.open(TESTFN, 'rb')
             for i in range(nchunks):
                 next(f)
             testline = testlines.pop(0)
@@ -295,7 +305,7 @@ class OtherFileTests(unittest.TestCase):
                 self.fail("readlines() after next() with empty buffer "
                           "failed. Got %r, expected %r" % (line, testline))
             # Reading after iteration hit EOF shouldn't hurt either
-            f = open(TESTFN, 'rb')
+            f = self.open(TESTFN, 'rb')
             try:
                 for line in f:
                     pass
@@ -311,12 +321,19 @@ class OtherFileTests(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+class COtherFileTests(OtherFileTests):
+    open = io.open
+
+class PyOtherFileTests(OtherFileTests):
+    open = staticmethod(pyio.open)
+
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        run_unittest(AutoFileTests, OtherFileTests)
+        run_unittest(CAutoFileTests, PyAutoFileTests,
+                     COtherFileTests, PyOtherFileTests)
     finally:
         if os.path.exists(TESTFN):
             os.unlink(TESTFN)

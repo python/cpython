@@ -6,6 +6,8 @@
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 .. moduleauthor:: Mike Verdone <mike.verdone@gmail.com>
 .. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
+.. moduleauthor:: Antoine Pitrou <solipsis@pitrou.net>
+.. moduleauthor:: Amaury Forgeot d'Arc <amauryfa@gmail.com>
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
 The :mod:`io` module provides the Python interfaces to stream handling.  The
@@ -364,6 +366,11 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream has no
       data at the moment.
 
+   .. method:: read1([n])
+
+      Read and return up to *n* bytes, with at most one call to the underlying
+      raw stream's :meth:`~RawIOBase.read` method.
+
    .. method:: readinto(b)
 
       Read up to len(b) bytes into bytearray *b* and return the number of bytes
@@ -501,7 +508,7 @@ Buffered Streams
 
    The constructor creates a :class:`BufferedWriter` for the given writeable
    *raw* stream.  If the *buffer_size* is not given, it defaults to
-   :data:`DEAFULT_BUFFER_SIZE`.  If *max_buffer_size* is omitted, it defaults to
+   :data:`DEFAULT_BUFFER_SIZE`.  If *max_buffer_size* is omitted, it defaults to
    twice the buffer size.
 
    :class:`BufferedWriter` provides or overrides these methods in addition to
