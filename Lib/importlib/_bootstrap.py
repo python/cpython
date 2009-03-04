@@ -473,7 +473,7 @@ class PyFileLoader(PyLoader):
         if source_path is None:
             return None
         import tokenize
-        with closing(_fileio._FileIO(source_path, 'r')) as file:
+        with closing(_io.FileIO(source_path, 'r')) as file:
             encoding, lines = tokenize.detect_encoding(file.readline)
         # XXX Will fail when passed to compile() if the encoding is
         # anything other than UTF-8.
@@ -527,7 +527,7 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
         bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
             bytecode_path = self._base_path + suffix_list(imp.PY_COMPILED)[0]
-        file = _fileio._FileIO(bytecode_path, 'w')
+        file = _io.FileIO(bytecode_path, 'w')
         try:
             with closing(file) as bytecode_file:
                 bytecode_file.write(data)

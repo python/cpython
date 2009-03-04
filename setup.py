@@ -982,8 +982,6 @@ class PyBuildExt(build_ext):
         # Thomas Heller's _ctypes module
         self.detect_ctypes(inc_dirs, lib_dirs)
 
-        # _fileio -- supposedly cross platform
-        exts.append(Extension('_fileio', ['_fileio.c']))
         # Richard Oudkerk's multiprocessing module
         if platform == 'win32':             # Windows
             macros = dict()

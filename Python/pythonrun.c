@@ -769,7 +769,7 @@ create_stdio(PyObject* io,
 	}
 
 	text = PyUnicode_FromString(name);
-	if (text == NULL || PyObject_SetAttrString(raw, "_name", text) < 0)
+	if (text == NULL || PyObject_SetAttrString(raw, "name", text) < 0)
 		goto error;
 	res = PyObject_CallMethod(raw, "isatty", "");
 	if (res == NULL)

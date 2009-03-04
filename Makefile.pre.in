@@ -193,6 +193,15 @@ MODULE_OBJS=	\
 # Used of signalmodule.o is not available
 SIGNAL_OBJS=	@SIGNAL_OBJS@
 
+IO_H=		Modules/_iomodule.h
+
+IO_OBJS=	\
+		Modules/io.o \
+		Modules/_iobase.o \
+		Modules/_fileio.o \
+		Modules/_bufferedio.o \
+		Modules/_textio.o \
+		Modules/_bytesio.o
 
 ##########################################################################
 # Grammar
@@ -521,6 +530,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 Modules/python.o: $(srcdir)/Modules/python.c
 	$(MAINCC) -c $(PY_CFLAGS) -o $@ $(srcdir)/Modules/python.c
 
+$(IO_OBJS): $(IO_H)
 
 $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
 		-@$(INSTALL) -d Include
