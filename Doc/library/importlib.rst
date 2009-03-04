@@ -185,7 +185,7 @@ an :term:`importer`.
     loader should initialize as specified by :pep:`302`.
 
 
-.. function:: set___package__(method)
+.. function:: set_package(method)
 
     A :term:`decorator` for a :term:`loader` to set the :attr:`__package__`
     attribute on the module returned by the loader. If :attr:`__package__` is

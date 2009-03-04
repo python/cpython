@@ -97,7 +97,7 @@ def wrap(new, old):
     new.__dict__.update(old.__dict__)
 
 
-def set___package__(fxn):
+def set_package(fxn):
     """Set __package__ on the returned module."""
     def wrapper(*args, **kwargs):
         module = fxn(*args, **kwargs)
@@ -131,7 +131,7 @@ class BuiltinImporter:
         return cls if imp.is_builtin(fullname) else None
 
     @classmethod
-    @set___package__
+    @set_package
     def load_module(cls, fullname):
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
@@ -160,7 +160,7 @@ class FrozenImporter:
         return cls if imp.is_frozen(fullname) else None
 
     @classmethod
-    @set___package__
+    @set_package
     def load_module(cls, fullname):
         """Load a frozen module."""
         if cls.find_module(fullname) is None:
@@ -248,7 +248,7 @@ class _ExtensionFileLoader:
             raise ValueError("extension modules cannot be packages")
 
     @check_name
-    @set___package__
+    @set_package
     def load_module(self, fullname):
         """Load an extension module."""
         is_reload = fullname in sys.modules
