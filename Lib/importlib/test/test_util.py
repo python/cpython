@@ -63,13 +63,13 @@ class ModuleForLoaderTests(unittest.TestCase):
 class SetPackageTests(unittest.TestCase):
 
 
-    """Tests for importlib.util.set___package__."""
+    """Tests for importlib.util.set_package."""
 
     def verify(self, module, expect):
         """Verify the module has the expected value for __package__ after
-        passing through set___package__."""
+        passing through set_package."""
         fxn = lambda: module
-        wrapped = util.set___package__(fxn)
+        wrapped = util.set_package(fxn)
         wrapped()
         self.assert_(hasattr(module, '__package__'))
         self.assertEqual(expect, module.__package__)
