@@ -149,6 +149,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5385: Fixed mmap crash after resize failure on windows.
+
 - Issue #1733986: Fixed mmap crash in accessing elements of second map object
   with same tagname but larger size than first map. (Windows)
 
