@@ -183,6 +183,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5385: Fixed mmap crash after resize failure on windows.
+
 - Issue #5179: Fixed subprocess handle leak on failure on windows.
 
 - PEP 372:  Added collections.OrderedDict().
