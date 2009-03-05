@@ -1706,6 +1706,8 @@ class TextIOWrapperTest(unittest.TestCase):
             f.write(data)
             f.seek(0)
             self.assertEquals(f.read(), data * 2)
+            f.seek(0)
+            self.assertEquals(f.read(), data * 2)
             self.assertEquals(buf.getvalue(), (data * 2).encode(encoding))
 
     def test_read_one_by_one(self):
