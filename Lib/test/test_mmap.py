@@ -535,9 +535,12 @@ class MmapTests(unittest.TestCase):
             m.close()
 
             # Should not crash (Issue 5385)
-            m = mmap.mmap(-1, 1000)
+            open(TESTFN, "wb").write("x"*10)
+            f = open(TESTFN, "r+b")
+            m = mmap.mmap(f.fileno(), 0)
+            f.close()
             try:
-                m.resize(0)
+                m.resize(0) # will raise WindowsError
             except:
                 pass
             try:
@@ -545,19 +548,6 @@ class MmapTests(unittest.TestCase):
             except:
                 pass
             m.close()
-
-            m1 = mmap.mmap(-1, 1000)
-            m2 = mmap.mmap(-1, 1000)
-            try:
-                m2.resize(5000)
-            except:
-                pass
-            try:
-                m2[:]
-            except:
-                pass
-            m2.close()
-            m1.close()
 
 
 def test_main():
