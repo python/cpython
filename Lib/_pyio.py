@@ -1667,7 +1667,9 @@ class TextIOWrapper(TextIOBase):
         self._snapshot = None
 
         # Restore the decoder to its state from the safe start point.
-        if self._decoder or dec_flags or chars_to_skip:
+        if cookie == 0 and self._decoder:
+            self._decoder.reset()
+        elif self._decoder or dec_flags or chars_to_skip:
             self._decoder = self._decoder or self._get_decoder()
             self._decoder.setstate((b'', dec_flags))
             self._snapshot = (dec_flags, b'')
