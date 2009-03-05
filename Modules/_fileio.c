@@ -887,7 +887,7 @@ PyDoc_STRVAR(tell_doc,
 "tell() -> int.	 Current file position");
 
 PyDoc_STRVAR(readinto_doc,
-"readinto() -> Undocumented.  Don't use this; it may go away.");
+"readinto() -> Same as RawIOBase.readinto().");
 
 PyDoc_STRVAR(close_doc,
 "close() -> None.  Close the file.\n"

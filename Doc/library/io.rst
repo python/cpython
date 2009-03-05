@@ -438,9 +438,6 @@ Raw File I/O
       the number actually written. Only one system call is made, so it
       is possible that only some of the data is written.
 
-   Note that the inherited ``readinto()`` method should not be used on
-   :class:`FileIO` objects.
-
 
 Buffered Streams
 ----------------
