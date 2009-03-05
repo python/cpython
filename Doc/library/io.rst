@@ -505,8 +505,9 @@ Buffered Streams
 
    The constructor creates a :class:`BufferedWriter` for the given writeable
    *raw* stream.  If the *buffer_size* is not given, it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.  If *max_buffer_size* is omitted, it defaults to
-   twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   *max_buffer_size* is unused and deprecated.
 
    :class:`BufferedWriter` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
@@ -532,8 +533,9 @@ Buffered Streams
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.  The *max_buffer_size* (for the buffered writer)
-   defaults to twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   *max_buffer_size* is unused and deprecated.
 
    :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods.
 
@@ -545,8 +547,9 @@ Buffered Streams
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.  The *max_buffer_size* (for the buffered writer)
-   defaults to twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   *max_buffer_size* is unused and deprecated.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
    :class:`BufferedWriter` can do.
