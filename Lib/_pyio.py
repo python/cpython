@@ -1815,8 +1815,6 @@ class StringIO(TextIOWrapper):
     argument is like the one of TextIOWrapper's constructor.
     """
 
-    # XXX This is really slow, but fully functional
-
     def __init__(self, initial_value="", newline="\n"):
         super(StringIO, self).__init__(BytesIO(),
                                        encoding="utf-8",
