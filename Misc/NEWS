@@ -12,6 +12,9 @@ What's New in Python 2.5.4?
 Core and builtins
 -----------------
 
+- Issue #5389: Avoid potential for undefined variable 'startinpos' in
+  PyUnicode_DecodeUTF7().
+
 - Revert patch for #1706039, as it can crash the interpreter.
 
 - Added test case to ensure attempts to read from a file opened for writing
