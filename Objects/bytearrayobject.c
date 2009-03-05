@@ -298,7 +298,7 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     size = va.len + vb.len;
     if (size < 0) {
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
             goto done;
     }
 
