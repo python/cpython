@@ -1648,7 +1648,7 @@ class TextIOWrapperTest(unittest.TestCase):
         # Make test faster by doing smaller seeks
         CHUNK_SIZE = 128
 
-        def testSeekAndTellWithData(data, min_pos=0):
+        def test_seek_and_tell_with_data(data, min_pos=0):
             """Tell/seek to various points within a data stream and ensure
             that the decoded data returned by read() is consistent."""
             f = self.open(support.TESTFN, 'wb')
@@ -1676,7 +1676,7 @@ class TextIOWrapperTest(unittest.TestCase):
         try:
             # Try each test case.
             for input, _, _ in StatefulIncrementalDecoderTest.test_cases:
-                testSeekAndTellWithData(input)
+                test_seek_and_tell_with_data(input)
 
             # Position each test case so that it crosses a chunk boundary.
             for input, _, _ in StatefulIncrementalDecoderTest.test_cases:
@@ -1684,7 +1684,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 prefix = b'.'*offset
                 # Don't bother seeking into the prefix (takes too long).
                 min_pos = offset*2
-                testSeekAndTellWithData(prefix + input, min_pos)
+                test_seek_and_tell_with_data(prefix + input, min_pos)
 
         # Ensure our test decoder won't interfere with subsequent tests.
         finally:
