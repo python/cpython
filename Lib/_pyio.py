@@ -971,9 +971,6 @@ class BufferedWriter(_BufferedIOMixin):
         if buffer_size <= 0:
             raise ValueError("invalid buffer size")
         self.buffer_size = buffer_size
-        self.max_buffer_size = (2*buffer_size
-                                if max_buffer_size is None
-                                else max_buffer_size)
         self._write_buf = bytearray()
         self._write_lock = Lock()
 
@@ -1000,12 +997,12 @@ class BufferedWriter(_BufferedIOMixin):
                 try:
                     self._flush_unlocked()
                 except BlockingIOError as e:
-                    if len(self._write_buf) > self.max_buffer_size:
-                        # We've hit max_buffer_size. We have to accept a
-                        # partial write and cut back our buffer.
-                        overage = len(self._write_buf) - self.max_buffer_size
+                    if len(self._write_buf) > self.buffer_size:
+                        # We've hit the buffer_size. We have to accept a partial
+                        # write and cut back our buffer.
+                        overage = len(self._write_buf) - self.buffer_size
                         written -= overage
-                        self._write_buf = self._write_buf[:self.max_buffer_size]
+                        self._write_buf = self._write_buf[:self.buffer_size]
                         raise BlockingIOError(e.errno, e.strerror, written)
             return written
 
