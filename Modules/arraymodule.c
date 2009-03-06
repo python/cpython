@@ -1201,6 +1201,7 @@ array_fromfile(arrayobject *self, PyObject *args)
 	PyObject *f, *b, *res;
 	Py_ssize_t itemsize = self->ob_descr->itemsize;
 	Py_ssize_t n, nbytes;
+	int not_enough_bytes;
 
         if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
 		return NULL;
@@ -1222,12 +1223,7 @@ array_fromfile(arrayobject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (PyBytes_GET_SIZE(b) != nbytes) {
-		PyErr_SetString(PyExc_EOFError,
-				"read() didn't return enough bytes");
-		Py_DECREF(b);
-		return NULL;
-	}
+	not_enough_bytes = (PyBytes_GET_SIZE(b) != nbytes);
 
 	args = Py_BuildValue("(O)", b);
 	Py_DECREF(b);
@@ -1236,6 +1232,15 @@ array_fromfile(arrayobject *self, PyObject *args)
 
 	res = array_fromstring(self, args);
 	Py_DECREF(args);
+	if (res == NULL)
+		return NULL;
+
+	if (not_enough_bytes) {
+		PyErr_SetString(PyExc_EOFError,
+				"read() didn't return enough bytes");
+		Py_DECREF(res);
+		return NULL;
+	}
 
 	return res;
 }
