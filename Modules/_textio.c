@@ -1736,11 +1736,11 @@ TextIOWrapper_parseCookie(CookieStruct *cookie, PyObject *cookieObj)
     }
     Py_DECREF(cookieLong);
 
-    cookie->start_pos     = * (Py_off_t *)(buffer + OFF_START_POS);
-    cookie->dec_flags     = * (int *)     (buffer + OFF_DEC_FLAGS);
-    cookie->bytes_to_feed = * (int *)     (buffer + OFF_BYTES_TO_FEED);
-    cookie->chars_to_skip = * (int *)     (buffer + OFF_CHARS_TO_SKIP);
-    cookie->need_eof      = * (char *)    (buffer + OFF_NEED_EOF);
+    memcpy(&cookie->start_pos, buffer + OFF_START_POS, sizeof(cookie->start_pos));
+    memcpy(&cookie->dec_flags, buffer + OFF_DEC_FLAGS, sizeof(cookie->dec_flags));
+    memcpy(&cookie->bytes_to_feed, buffer + OFF_BYTES_TO_FEED, sizeof(cookie->bytes_to_feed));
+    memcpy(&cookie->chars_to_skip, buffer + OFF_CHARS_TO_SKIP, sizeof(cookie->chars_to_skip));
+    memcpy(&cookie->need_eof, buffer + OFF_NEED_EOF, sizeof(cookie->need_eof));
 
     return 0;
 }
@@ -1750,11 +1750,11 @@ TextIOWrapper_buildCookie(CookieStruct *cookie)
 {
     unsigned char buffer[COOKIE_BUF_LEN];
 
-    * (Py_off_t *)(buffer + OFF_START_POS)     = cookie->start_pos;
-    * (int *)     (buffer + OFF_DEC_FLAGS)     = cookie->dec_flags;
-    * (int *)     (buffer + OFF_BYTES_TO_FEED) = cookie->bytes_to_feed;
-    * (int *)     (buffer + OFF_CHARS_TO_SKIP) = cookie->chars_to_skip;
-    * (char *)    (buffer + OFF_NEED_EOF)      = cookie->need_eof;
+    memcpy(buffer + OFF_START_POS, &cookie->start_pos, sizeof(cookie->start_pos));
+    memcpy(buffer + OFF_DEC_FLAGS, &cookie->dec_flags, sizeof(cookie->dec_flags));
+    memcpy(buffer + OFF_BYTES_TO_FEED, &cookie->bytes_to_feed, sizeof(cookie->bytes_to_feed));
+    memcpy(buffer + OFF_CHARS_TO_SKIP, &cookie->chars_to_skip, sizeof(cookie->chars_to_skip));
+    memcpy(buffer + OFF_NEED_EOF, &cookie->need_eof, sizeof(cookie->need_eof));
 
     return _PyLong_FromByteArray(buffer, sizeof(buffer), IS_LITTLE_ENDIAN, 0);
 }
