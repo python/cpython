@@ -91,14 +91,22 @@ class Queue:
         return n
 
     def empty(self):
-        """Return True if the queue is empty, False otherwise (not reliable!)."""
+        """Return True if the queue is empty, False otherwise (not reliable!).
+
+        This method is likely to be removed at some point.  Use qsize() instead.
+
+        """
         self.mutex.acquire()
         n = not self._qsize()
         self.mutex.release()
         return n
 
     def full(self):
-        """Return True if the queue is full, False otherwise (not reliable!)."""
+        """Return True if the queue is full, False otherwise (not reliable!).
+
+        This method is likely to be removed at some point.  Use qsize() instead.
+
+        """
         self.mutex.acquire()
         n = 0 < self.maxsize == self._qsize()
         self.mutex.release()
