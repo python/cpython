@@ -1915,6 +1915,19 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         decoder = self.IncrementalNewlineDecoder(decoder, translate=True)
         self.check_newline_decoding_utf8(decoder)
 
+    def test_newline_bytes(self):
+        # Issue 5433: Excessive optimization in IncrementalNewlineDecoder
+        def _check(dec):
+            self.assertEquals(dec.newlines, None)
+            self.assertEquals(dec.decode("\u0D00"), "\u0D00")
+            self.assertEquals(dec.newlines, None)
+            self.assertEquals(dec.decode("\u0A00"), "\u0A00")
+            self.assertEquals(dec.newlines, None)
+        dec = self.IncrementalNewlineDecoder(None, translate=False)
+        _check(dec)
+        dec = self.IncrementalNewlineDecoder(None, translate=True)
+        _check(dec)
+
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass
 

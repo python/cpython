@@ -305,21 +305,39 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
            for the \r *byte* with the libc's optimized memchr.
            */
         if (seennl == SEEN_LF || seennl == 0) {
-            int has_cr, has_lf;
-            has_lf = (seennl == SEEN_LF) ||
-                    (memchr(in_str, '\n', len * sizeof(Py_UNICODE)) != NULL);
-            has_cr = (memchr(in_str, '\r', len * sizeof(Py_UNICODE)) != NULL);
-            if (has_lf && !has_cr) {
-                only_lf = 1;
-                seennl = SEEN_LF;
-            }
+            only_lf = !(memchr(in_str, '\r', len * sizeof(Py_UNICODE)) != NULL);
         }
 
-        if (!self->translate) {
+        if (only_lf) {
+            /* If not already seen, quick scan for a possible "\n" character.
+               (there's nothing else to be done, even when in translation mode)
+            */
+            if (seennl == 0 &&
+                memchr(in_str, '\n', len * sizeof(Py_UNICODE)) != NULL) {
+                Py_UNICODE *s, *end;
+                s = in_str;
+                end = in_str + len;
+                for (;;) {
+                    Py_UNICODE c;
+                    /* Fast loop for non-control characters */
+                    while (*s > '\n')
+                        s++;
+                    c = *s++;
+                    if (c == '\n') {
+                        seennl |= SEEN_LF;
+                        break;
+                    }
+                    if (s > end)
+                        break;
+                }
+            }
+            /* Finished: we have scanned for newlines, and none of them
+               need translating */
+        }
+        else if (!self->translate) {
             Py_UNICODE *s, *end;
+            /* We have already seen all newline types, no need to scan again */
             if (seennl == SEEN_ALL)
-                goto endscan;
-            if (only_lf)
                 goto endscan;
             s = in_str;
             end = in_str + len;
@@ -347,7 +365,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
         endscan:
             ;
         }
-        else if (!only_lf) {
+        else {
             PyObject *translated = NULL;
             Py_UNICODE *out_str;
             Py_UNICODE *in, *out, *end;
