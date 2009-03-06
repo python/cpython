@@ -174,9 +174,8 @@ class BaseTest(unittest.TestCase):
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
             self.assertNotEqual(a, b)
-            b.fromfile(f, len(self.example))
+            self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
             self.assertEqual(a, b)
-            self.assertRaises(EOFError, b.fromfile, f, 1)
             f.close()
         finally:
             if not f.closed:
