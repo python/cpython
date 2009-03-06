@@ -305,7 +305,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
            for the \r *byte* with the libc's optimized memchr.
            */
         if (seennl == SEEN_LF || seennl == 0) {
-            only_lf = !(memchr(in_str, '\r', len * sizeof(Py_UNICODE)) != NULL);
+            only_lf = (memchr(in_str, '\r', len * sizeof(Py_UNICODE)) == NULL);
         }
 
         if (only_lf) {
