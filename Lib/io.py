@@ -58,12 +58,12 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
 import _io
 import abc
 
-# open() uses st_blksize whenever we can
-DEFAULT_BUFFER_SIZE = _io.DEFAULT_BUFFER_SIZE
-BlockingIOError = _io.BlockingIOError
-UnsupportedOperation = _io.UnsupportedOperation
-open = _io.open
-OpenWrapper = _io.open
+from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
+                 open, FileIO, BytesIO, StringIO, BufferedReader,
+                 BufferedWriter, BufferedRWPair, BufferedRandom,
+                 IncrementalNewlineDecoder, TextIOWrapper)
+
+OpenWrapper = _io.open # for compatibility with _pyio
 
 # Declaring ABCs in C is tricky so we do it here.
 # Method descriptions and default implementations are inherited from the C
@@ -80,23 +80,12 @@ class BufferedIOBase(_io._BufferedIOBase, IOBase):
 class TextIOBase(_io._TextIOBase, IOBase):
     pass
 
-FileIO = _io.FileIO
-BytesIO = _io.BytesIO
-StringIO = _io.StringIO
-BufferedReader = _io.BufferedReader
-BufferedWriter = _io.BufferedWriter
-BufferedRWPair = _io.BufferedRWPair
-BufferedRandom = _io.BufferedRandom
-IncrementalNewlineDecoder = _io.IncrementalNewlineDecoder
-TextIOWrapper = _io.TextIOWrapper
-
 RawIOBase.register(FileIO)
 
-BufferedIOBase.register(BytesIO)
-BufferedIOBase.register(BufferedReader)
-BufferedIOBase.register(BufferedWriter)
-BufferedIOBase.register(BufferedRandom)
-BufferedIOBase.register(BufferedRWPair)
+for klass in (BytesIO, BufferedReader, BufferedWriter, BufferedRandom,
+              BufferedRWPair):
+    BufferedIOBase.register(klass)
 
-TextIOBase.register(StringIO)
-TextIOBase.register(TextIOWrapper)
+for klass in (StringIO, TextIOWrapper):
+    TextIOBase.register(klass)
+del klass
