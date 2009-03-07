@@ -168,6 +168,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5193: Guarantee that Tkinter.Text.search returns a string.
+
 - Issue #5394: removed > 2.3 syntax from distutils.msvc9compiler.
   Original patch by Akira Kitada.
 
