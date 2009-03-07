@@ -30,6 +30,28 @@ class msvc9compilerTestCase(unittest.TestCase):
         finally:
             msvc9compiler.find_vcvarsall = old_find_vcvarsall
 
+    def test_reg_class(self):
+        if sys.platform != 'win32':
+            # this test is only for win32
+            return
+
+        from distutils.msvc9compiler import Reg
+        self.assertRaises(KeyError, Reg.get_value, 'xxx', 'xxx')
+
+        # looking for values that should exist on all
+        # windows registeries versions.
+        path = r'Software\Microsoft\Notepad'
+        v = Reg.get_value(path, "lfitalic")
+        self.assert_(v in (0, 1))
+
+        import _winreg
+        HKCU = _winreg.HKEY_CURRENT_USER
+        keys = Reg.read_keys(HKCU, 'xxxx')
+        self.assertEquals(keys, None)
+
+        keys = Reg.read_keys(HKCU, r'Software\Microsoft')
+        self.assert_('Notepad' in keys)
+
 def test_suite():
     return unittest.makeSuite(msvc9compilerTestCase)
 

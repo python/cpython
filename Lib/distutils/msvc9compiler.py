@@ -17,10 +17,11 @@ __revision__ = "$Id$"
 import os
 import subprocess
 import sys
-from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
-    CompileError, LibError, LinkError)
-from distutils.ccompiler import (CCompiler, gen_preprocess_options,
-    gen_lib_options)
+
+from distutils.errors import DistutilsExecError, DistutilsPlatformError, \
+                             CompileError, LibError, LinkError
+from distutils.ccompiler import CCompiler, gen_preprocess_options, \
+                                gen_lib_options
 from distutils import log
 from distutils.util import get_platform
 
@@ -53,15 +54,14 @@ class Reg:
     """Helper class to read values from the registry
     """
 
-    @classmethod
     def get_value(cls, path, key):
         for base in HKEYS:
             d = cls.read_values(base, path)
             if d and key in d:
                 return d[key]
         raise KeyError(key)
+    get_value = classmethod(get_value)
 
-    @classmethod
     def read_keys(cls, base, key):
         """Return list of registry keys."""
         try:
@@ -78,8 +78,8 @@ class Reg:
             L.append(k)
             i += 1
         return L
+    read_keys = classmethod(read_keys)
 
-    @classmethod
     def read_values(cls, base, key):
         """Return dict of registry keys and values.
 
@@ -100,8 +100,8 @@ class Reg:
             d[cls.convert_mbcs(name)] = cls.convert_mbcs(value)
             i += 1
         return d
+    read_values = classmethod(read_values)
 
-    @staticmethod
     def convert_mbcs(s):
         dec = getattr(s, "decode", None)
         if dec is not None:
@@ -110,6 +110,7 @@ class Reg:
             except UnicodeError:
                 pass
         return s
+    convert_mbcs = staticmethod(convert_mbcs)
 
 class MacroExpander:
 
@@ -131,7 +132,7 @@ class MacroExpander:
                                "sdkinstallrootv2.0")
             else:
                 raise KeyError("sdkinstallrootv2.0")
-        except KeyError as exc: #
+        except KeyError:
             raise DistutilsPlatformError(
             """Python was built with Visual Studio 2008;
 extensions must be built with a compiler than can generate compatible binaries.
@@ -478,7 +479,7 @@ class MSVCCompiler(CCompiler) :
                 try:
                     self.spawn([self.rc] + pp_opts +
                                [output_opt] + [input_opt])
-                except DistutilsExecError as msg:
+                except DistutilsExecError, msg:
                     raise CompileError(msg)
                 continue
             elif ext in self._mc_extensions:
@@ -505,7 +506,7 @@ class MSVCCompiler(CCompiler) :
                     self.spawn([self.rc] +
                                ["/fo" + obj] + [rc_file])
 
-                except DistutilsExecError as msg:
+                except DistutilsExecError, msg:
                     raise CompileError(msg)
                 continue
             else:
@@ -518,7 +519,7 @@ class MSVCCompiler(CCompiler) :
                 self.spawn([self.cc] + compile_opts + pp_opts +
                            [input_opt, output_opt] +
                            extra_postargs)
-            except DistutilsExecError as msg:
+            except DistutilsExecError, msg:
                 raise CompileError(msg)
 
         return objects
@@ -543,7 +544,7 @@ class MSVCCompiler(CCompiler) :
                 pass # XXX what goes here?
             try:
                 self.spawn([self.lib] + lib_args)
-            except DistutilsExecError as msg:
+            except DistutilsExecError, msg:
                 raise LibError(msg)
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
@@ -632,7 +633,7 @@ class MSVCCompiler(CCompiler) :
             self.mkpath(os.path.dirname(output_filename))
             try:
                 self.spawn([self.linker] + ld_args)
-            except DistutilsExecError as msg:
+            except DistutilsExecError, msg:
                 raise LinkError(msg)
 
             # embed the manifest
@@ -640,12 +641,15 @@ class MSVCCompiler(CCompiler) :
             # will still consider the DLL up-to-date, but it will not have a
             # manifest.  Maybe we should link to a temp file?  OTOH, that
             # implies a build environment error that shouldn't go undetected.
-            mfid = 1 if target_desc == CCompiler.EXECUTABLE else 2
+            if target_desc == CCompiler.EXECUTABLE:
+                mfid = 1
+            else:
+                mfid = 2
             out_arg = '-outputresource:%s;%s' % (output_filename, mfid)
             try:
                 self.spawn(['mt.exe', '-nologo', '-manifest',
                             temp_manifest, out_arg])
-            except DistutilsExecError as msg:
+            except DistutilsExecError, msg:
                 raise LinkError(msg)
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
