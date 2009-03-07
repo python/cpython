@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5394: removed > 2.3 syntax from distutils.msvc9compiler.
+  Original patch by Akira Kitada.
+
 - Issue #5334: array.fromfile() failed to insert values when EOFError was raised.
 
 - Issue #5385: Fixed mmap crash after resize failure on windows.
