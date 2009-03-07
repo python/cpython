@@ -78,6 +78,22 @@ provide the public methods described below.
    guarantee that put() will not block.
 
 
+.. method:: Queue.empty()
+
+   Return ``True`` if the queue is empty, ``False`` otherwise.  If empty()
+   returns ``True`` it doesn't guarantee that a subsequent call to put()
+   will not block.  Similarly, if empty() returns ``False`` it doesn't
+   guarantee that a subsequent call to get() will not block.
+
+
+.. method:: Queue.full()
+
+   Return ``True`` if the queue is full, ``False`` otherwise.  If full()
+   returns ``True`` it doesn't guarantee that a subsequent call to get()
+   will not block.  Similarly, if full() returns ``False`` it doesn't
+   guarantee that a subsequent call to put() will not block.
+
+
 .. method:: Queue.put(item[, block[, timeout]])
 
    Put *item* into the queue. If optional args *block* is true and *timeout* is
