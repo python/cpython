@@ -33,6 +33,10 @@ import functools
 #    memuse-per-size should remain sane (less than a few thousand); if your
 #    test uses more, adjust 'size' upward, instead.
 
+# BEWARE: it seems that one failing test can yield other subsequent tests to
+# fail as well. I do not know whether it is due to memory fragmentation
+# issues, or other specifics of the platform malloc() routine.
+
 character_size = 4 if sys.maxunicode > 0xFFFF else 2
 
 
