@@ -1,4 +1,4 @@
-This is Python version 3.1 alpha 0
+This is Python version 3.1 alpha 1
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -20,7 +20,7 @@ the standard library namespace.
 Release Schedule
 ----------------
 
-See PEP XXX for release details: http://www.python.org/dev/peps/pep-XXX/
+See PEP 375 for release details: http://www.python.org/dev/peps/pep-0375/
 
 
 Documentation
