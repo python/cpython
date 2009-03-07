@@ -609,6 +609,10 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
     """
     def decorator(f):
         def wrapper(self):
+            # Retrieve values in case someone decided to adjust them
+            minsize = wrapper.minsize
+            memuse = wrapper.memuse
+            overhead = wrapper.overhead
             if not max_memuse:
                 # If max_memuse is 0 (the default),
                 # we still want to run the tests with size set to a few kb,
@@ -636,6 +640,9 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
 def precisionbigmemtest(size, memuse, overhead=5*_1M):
     def decorator(f):
         def wrapper(self):
+            size = wrapper.size
+            memuse = wrapper.memuse
+            overhead = wrapper.overhead
             if not real_max_memuse:
                 maxsize = 5147
             else:
