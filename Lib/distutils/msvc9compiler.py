@@ -479,7 +479,7 @@ class MSVCCompiler(CCompiler) :
                 try:
                     self.spawn([self.rc] + pp_opts +
                                [output_opt] + [input_opt])
-                except DistutilsExecError, msg:
+                except DistutilsExecError as msg:
                     raise CompileError(msg)
                 continue
             elif ext in self._mc_extensions:
@@ -506,7 +506,7 @@ class MSVCCompiler(CCompiler) :
                     self.spawn([self.rc] +
                                ["/fo" + obj] + [rc_file])
 
-                except DistutilsExecError, msg:
+                except DistutilsExecError as msg:
                     raise CompileError(msg)
                 continue
             else:
@@ -519,7 +519,7 @@ class MSVCCompiler(CCompiler) :
                 self.spawn([self.cc] + compile_opts + pp_opts +
                            [input_opt, output_opt] +
                            extra_postargs)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise CompileError(msg)
 
         return objects
@@ -544,7 +544,7 @@ class MSVCCompiler(CCompiler) :
                 pass # XXX what goes here?
             try:
                 self.spawn([self.lib] + lib_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LibError(msg)
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
@@ -633,7 +633,7 @@ class MSVCCompiler(CCompiler) :
             self.mkpath(os.path.dirname(output_filename))
             try:
                 self.spawn([self.linker] + ld_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LinkError(msg)
 
             # embed the manifest
@@ -649,7 +649,7 @@ class MSVCCompiler(CCompiler) :
             try:
                 self.spawn(['mt.exe', '-nologo', '-manifest',
                             temp_manifest, out_arg])
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LinkError(msg)
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
