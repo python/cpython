@@ -89,6 +89,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #4792: Prevent a segfault in _tkinter by using the
+  guaranteed to be safe interp argument given to the PythonCmd in place of
+  the Tcl interpreter taken from a PythonCmd_ClientData.
+
+- Issue #5193: Guarantee that Tkinter.Text.search returns a string.
+
 - Issue #5385: Fixed mmap crash after resize failure on windows.
 
 - Issue #5179: Fixed subprocess handle leak on failure on windows.
