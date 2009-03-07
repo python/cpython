@@ -168,6 +168,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2638: Show a window constructed with tkSimpleDialog.Dialog only after
+  it is has been populated and properly configured in order to prevent
+  window flashing.
+
 - Issue #4792: Prevent a segfault in _tkinter by using the
   guaranteed to be safe interp argument given to the PythonCmd in place of
   the Tcl interpreter taken from a PythonCmd_ClientData.
