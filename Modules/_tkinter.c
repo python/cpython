@@ -2070,7 +2070,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return PythonCmd_Error(interp);
 	}
 	else {
-		Tcl_SetObjResult(Tkapp_Interp(self), obj_res);
+		Tcl_SetObjResult(interp, obj_res);
 		rv = TCL_OK;
 	}
 
