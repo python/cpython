@@ -168,6 +168,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4792: Prevent a segfault in _tkinter by using the
+  guaranteed to be safe interp argument given to the PythonCmd in place of
+  the Tcl interpreter taken from a PythonCmd_ClientData.
+
 - Issue #5193: Guarantee that Tkinter.Text.search returns a string.
 
 - Issue #5394: removed > 2.3 syntax from distutils.msvc9compiler.
