@@ -149,6 +149,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #4792: Prevent a segfault in _tkinter by using the
+  guaranteed to be safe interp argument given to the PythonCmd in place of
+  the Tcl interpreter taken from a PythonCmd_ClientData.
+
+- Issue #5193: Guarantee that tkinter.Text.search returns a string.
+
 - Issue #5334: array.fromfile() failed to insert values when EOFError was raised.
 
 - Issue #5385: Fixed mmap crash after resize failure on windows.

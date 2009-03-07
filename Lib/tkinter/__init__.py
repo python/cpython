@@ -3030,7 +3030,7 @@ class Text(Widget):
         args.append(pattern)
         args.append(index)
         if stopindex: args.append(stopindex)
-        return self.tk.call(tuple(args))
+        return str(self.tk.call(tuple(args)))
     def see(self, index):
         """Scroll such that the character at INDEX is visible."""
         self.tk.call(self._w, 'see', index)
