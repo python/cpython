@@ -46,6 +46,7 @@ class Dialog(Toplevel):
         '''
         Toplevel.__init__(self, parent)
 
+        self.withdraw() # remain invisible for now
         # If the master is not viewable, don't
         # make the child transient, or else it
         # would be opened withdrawn
@@ -65,8 +66,6 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
-        self.wait_visibility() # window needs to be visible for the grab
-        self.grab_set()
 
         if not self.initial_focus:
             self.initial_focus = self
@@ -77,8 +76,13 @@ class Dialog(Toplevel):
             self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                       parent.winfo_rooty()+50))
 
+        self.deiconify() # become visibile now
+
         self.initial_focus.focus_set()
 
+        # wait for window to appear on screen before calling grab_set
+        self.wait_visibility()
+        self.grab_set()
         self.wait_window(self)
 
     def destroy(self):
