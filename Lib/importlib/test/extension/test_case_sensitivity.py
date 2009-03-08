@@ -32,6 +32,8 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
 
 
 def test_main():
+    if ext_util.FILENAME is None:
+        return
     support.run_unittest(ExtensionModuleCaseSensitivityTest)
 
 
