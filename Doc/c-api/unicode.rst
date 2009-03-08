@@ -291,7 +291,7 @@ APIs:
    |                   |                     | *NULL*).                       |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%S`        | PyObject\*          | The result of calling          |
-   |                   |                     | :func:`PyObject_Unicode`.      |
+   |                   |                     | :func:`PyObject_Str`.          |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%R`        | PyObject\*          | The result of calling          |
    |                   |                     | :func:`PyObject_Repr`.         |
