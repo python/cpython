@@ -1095,11 +1095,11 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
 static void
 bytes_dealloc(PyByteArrayObject *self)
 {
-	if (self->ob_exports > 0) {
-		PyErr_SetString(PyExc_SystemError,
+    if (self->ob_exports > 0) {
+        PyErr_SetString(PyExc_SystemError,
 			"deallocated bytearray object has exported buffers");
-		PyErr_Print();
-	}
+        PyErr_Print();
+    }
     if (self->ob_bytes != 0) {
         PyMem_Free(self->ob_bytes);
     }
