@@ -1952,7 +1952,7 @@ get_frozen_object(char *name)
 }
 
 /* Initialize a frozen module.
-   Return 1 for succes, 0 if the module is not found, and -1 with
+   Return 1 for success, 0 if the module is not found, and -1 with
    an exception set if the initialization failed.
    This function is also used from frozenmain.c */
 
