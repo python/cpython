@@ -327,26 +327,30 @@ class PyLoader:
     @module_for_loader
     def load_module(self, module):
         """Load a source module."""
-        return _load_module(module)
+        return self._load_module(module)
 
     def _load_module(self, module):
         """Initialize a module from source."""
         name = module.__name__
-        source_path = self.source_path(name)
         code_object = self.get_code(module.__name__)
+        # __file__ may have been set by the caller, e.g. bytecode path.
         if not hasattr(module, '__file__'):
-            module.__file__ = source_path
+            module.__file__ = self.source_path(name)
         if self.is_package(name):
             module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
         module.__package__ = module.__name__
         if not hasattr(module, '__path__'):
             module.__package__ = module.__package__.rpartition('.')[0]
+        module.__loader__ = self
         exec(code_object, module.__dict__)
         return module
 
     def get_code(self, fullname):
         """Get a code object from source."""
         source_path = self.source_path(fullname)
+        if source_path is None:
+            message = "a source path must exist to load {0}".format(fullname)
+            raise ImportError(message)
         source = self.get_data(source_path)
         # Convert to universal newlines.
         line_endings = b'\n'
