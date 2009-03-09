@@ -274,7 +274,7 @@ structure is::
 
 The expression is evaluated, and it should result in an object that supports the
 context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
-methods.
+methods).
 
 The object's :meth:`__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the

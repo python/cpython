@@ -164,6 +164,12 @@ Examining Symbol Tables
       If the name is used as the target of a function or class statement, this
       will be true.
 
+      For example::
+
+         >>> table = symtable.symtable("def some_func(): pass", "string", "exec")
+         >>> table.lookup("some_func").is_namespace()
+         True
+
       Note that a single name can be bound to multiple objects.  If the result
       is ``True``, the name may also be bound to other objects, like an int or
       list, that does not introduce a new namespace.

@@ -58,7 +58,6 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
    reading. Instances support iteration in the same way as normal :class:`file`
    instances.
 
-
    .. method:: close()
 
       Close the file. Sets data attribute :attr:`closed` to true. A closed file
