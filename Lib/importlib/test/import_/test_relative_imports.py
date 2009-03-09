@@ -176,7 +176,6 @@ class RelativeImports(unittest.TestCase):
         # Test importing from a different package than the caller.
         # in pkg.subpkg1.mod
         # from ..subpkg2 import mod
-        # XXX
         create = ['__runpy_pkg__.__init__',
                     '__runpy_pkg__.__runpy_pkg__.__init__',
                     '__runpy_pkg__.uncle.__init__',
