@@ -637,13 +637,13 @@ Text I/O
       Whether line buffering is enabled.
 
 
-.. class:: StringIO([initial_value[, encoding[, errors[, newline]]]])
+.. class:: StringIO([initial_value[, newline]])
 
    An in-memory stream for text.  It inherits :class:`TextIOWrapper`.
 
-   Create a new StringIO stream with an initial value, encoding, error handling,
-   and newline setting.  See :class:`TextIOWrapper`\'s constructor for more
-   information.
+   The initial value of the buffer (an empty string by default) can be set by
+   providing *initial_value*.  The *newline* argument works like that of
+   :class:`TextIOWrapper`.  The default is to do no newline translation.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOWrapper` and its parents:
