@@ -1354,6 +1354,12 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(TypeError, t.__init__, b, newline=42)
         self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
 
+    def test_repr(self):
+        raw = self.BytesIO("hello".encode("utf-8"))
+        b = self.BufferedReader(raw)
+        t = self.TextIOWrapper(b, encoding="utf-8")
+        self.assertEqual(repr(t), "<TextIOWrapper encoding=utf-8>")
+
     def test_line_buffering(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r, 1000)
