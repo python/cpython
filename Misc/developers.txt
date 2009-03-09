@@ -17,7 +17,10 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
-- Tarek Ziadé as given SVN access on Decmeber 21 2008 by NCN,
+- Chris Withers was given SVN access on March 8 2009 by MvL,
+  after recommendation by GvR.
+
+- Tarek Ziadé was given SVN access on December 21 2008 by NCN,
   for maintenance of distutils.
 
 - Hirokazu Yamamoto was given SVN access on August 12 2008 by MvL,

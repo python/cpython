@@ -48,7 +48,7 @@ The module defines the following exception and functions:
 
 .. function:: unpack_from(fmt, buffer[,offset=0])
 
-   Unpack the *buffer* according to tthe given format. The result is a tuple even
+   Unpack the *buffer* according to the given format. The result is a tuple even
    if it contains exactly one item. The *buffer* must contain at least the amount
    of data required by the format (``len(buffer[offset:])`` must be at least
    ``calcsize(fmt)``).

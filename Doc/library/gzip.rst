@@ -53,7 +53,7 @@ The module defines the following items:
    ``9`` is slowest and produces the most compression.  The default is ``9``.
 
    The *mtime* argument is an optional numeric timestamp to be written to
-   the stream when compressing.  All :program:`gzip`compressed streams are
+   the stream when compressing.  All :program:`gzip` compressed streams are
    required to contain a timestamp.  If omitted or ``None``, the current
    time is used.  This module ignores the timestamp when decompressing;
    however, some programs, such as :program:`gunzip`\ , make use of it.
@@ -66,6 +66,11 @@ The module defines the following items:
    data.  This also allows you to pass a :class:`StringIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
    :class:`StringIO` object's :meth:`getvalue` method.
+
+   :class:`GzipFile` supports the :keyword:`with` statement.
+
+   .. versionchanged:: 2.7
+      Support for the :keyword:`with` statement was added.
 
 
 .. function:: open(filename[, mode[, compresslevel]])

@@ -220,6 +220,9 @@ Library
 
 - configparser now defaults to using an ordered dictionary.
 
+- Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
+  import guess_extension`` was used.
+
 - Issue #1733986: Fixed mmap crash in accessing elements of second map object
   with same tagname but larger size than first map. (Windows)
 
