@@ -215,7 +215,10 @@ are also provided to help in implementing the core ABCs.
     ..method:: load_module(fullname)
 
         A concrete implementation of :meth:`importlib.abc.Loader.load_module`
-        that loads Python source code.
+        that loads Python source code. All needed information comes from the
+        abstract methods required by this ABC. The only pertinent assumption
+        made by this method is that when loading a package
+        :attr:`__path__` is set to ``[os.path.dirname(__file__)]``.
 
     ..method:: get_code(fullname)
 
