@@ -23,19 +23,3 @@ to do
 semantics of import that can be referenced from the package's documentation
 (even if it is in the package documentation itself, although it might be best
 in the language specification).
-
-* Write benchmark suite.
-
-* OPTIMIZE!
-
-  + Fast path absolute name.
-  + Fast path pulling from sys.modules.
-
-* Bootstrap importlib as implementation of builtins.__import__
-
-* Replace standard library modules.
-
-  + imp
-  + py_compile
-  + compileall
-  + zipimport
