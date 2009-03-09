@@ -376,6 +376,10 @@ class PyStringIOTest(MemoryTestMixin, unittest.TestCase):
     ioclass = io._StringIO
     EOF = ""
 
+    def test_newline_none(self):
+        memio = self.ioclass('hello\r\nhi\r\n', newline=None)
+        self.assertEqual(memio.readlines(), ["hello\n", "hi\n"])
+
     def test_relative_seek(self):
         memio = self.ioclass()
 

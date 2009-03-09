@@ -1942,13 +1942,12 @@ try:
             self._seennl |= (lf and self._LF) | (cr and self._CR) \
                          | (crlf and self._CRLF)
 
+            output = input
             if self._readtranslate:
                 if crlf:
                     output = input.replace("\r\n", "\n")
                 if cr:
                     output = input.replace("\r", "\n")
-            else:
-                output = input
 
             return output
 
