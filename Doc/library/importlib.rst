@@ -97,7 +97,7 @@ are also provided to help in implementing the core ABCs.
 
     An abstract base class representing a :term:`finder`.
 
-    ..method:: find_module(fullname, path=None)
+    .. method:: find_module(fullname, path=None)
 
         An abstract method for finding a :term:`loader` for the specified
         module. If the :term:`finder` is found on :data:`sys.meta_path` and the
@@ -112,7 +112,7 @@ are also provided to help in implementing the core ABCs.
 
     An abstract base class for a :term:`loader`.
 
-    ..method:: load_module(fullname)
+    .. method:: load_module(fullname)
 
         An abstract method for loading a module. If the module cannot be
         loaded, :exc:`ImportError` is raised, otherwise the loaded module is
@@ -160,7 +160,7 @@ are also provided to help in implementing the core ABCs.
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
-    ..method:: get_data(path)
+    .. method:: get_data(path)
 
         An abstract method to return the bytes for the data located at *path*.
         Loaders that have a file-like storage back-end can implement this
@@ -175,20 +175,20 @@ are also provided to help in implementing the core ABCs.
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loaders which inspect modules.
 
-    ..method:: is_package(fullname)
+    .. method:: is_package(fullname)
 
         An abstract method to return a true value if the module is a package, a
         false value otherwise. :exc:`ImportError` is raised if the
         :term:`loader` cannot find the module.
 
-    ..method:: get_source(fullname)
+    .. method:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
         a string with universal newline support. Returns :keyword:`None` if no
         source is available (e.g. a built-in module). Raises :exc:`ImportError`
         if the loader cannot find the module specified.
 
-    ..method:: get_code(fullname)
+    .. method:: get_code(fullname)
 
         An abstract method to return the :class:`code` object for a module.
         :keyword:`None` is returned if the module does not have a code object
@@ -206,13 +206,13 @@ are also provided to help in implementing the core ABCs.
     code is stored; all other details for loading Python source code will be
     handled by the concrete implementations of key methods.
 
-    ..method:: source_path(fullname)
+    .. method:: source_path(fullname)
 
         An abstract method that returns the path to the source code for a
         module. Should return :keyword:`None` if there is no source code.
         :exc:`ImportError` if the module cannot be found.
 
-    ..method:: load_module(fullname)
+    .. method:: load_module(fullname)
 
         A concrete implementation of :meth:`importlib.abc.Loader.load_module`
         that loads Python source code. All needed information comes from the
@@ -220,7 +220,7 @@ are also provided to help in implementing the core ABCs.
         made by this method is that when loading a package
         :attr:`__path__` is set to ``[os.path.dirname(__file__)]``.
 
-    ..method:: get_code(fullname)
+    .. method:: get_code(fullname)
 
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_code` that creates code objects
@@ -233,20 +233,20 @@ are also provided to help in implementing the core ABCs.
     This ABC is meant to help in creating loaders that support both Python
     source and bytecode.
 
-    ..method:: source_mtime(fullname)
+    .. method:: source_mtime(fullname)
 
         An abstract method which returns the modification time for the source
         code of the specified module. The modification time should be an
         integer. If there is no source code, return :keyword:`None. If the
         module cannot be found then :exc:`ImportError` is raised.
 
-    ..method:: bytecode_path(fullname)
+    .. method:: bytecode_path(fullname)
 
         An abstract method which returns the path to the bytecode for the
         specified module. :keyword:`None` is returned if there is no bytecode.
         :exc:`ImportError` is raised if the module is not found.
 
-    ..method:: write_bytecode(fullname, bytecode)
+    .. method:: write_bytecode(fullname, bytecode)
 
         An abstract method which has the loader write *bytecode* for future
         use. If the bytecode is written, return :keyword:`True`. Return
