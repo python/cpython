@@ -426,7 +426,7 @@ quirks, and provide complete lists of all the functions, attributes, and
 Because the curses API is so large, some functions aren't supported in the
 Python interface, not because they're difficult to implement, but because no one
 has needed them yet.  Feel free to add them and then submit a patch.  Also, we
-don't yet have support for the menus or panels libraries associated with
+don't yet have support for the menu library associated with
 ncurses; feel free to add that.
 
 If you write an interesting little program, feel free to contribute it as

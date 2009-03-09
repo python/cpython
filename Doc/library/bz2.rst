@@ -58,6 +58,11 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
    reading. Instances support iteration in the same way as normal :class:`file`
    instances.
 
+   :class:`BZ2File` supports the :keyword:`with` statement.
+
+   .. versionchanged:: 2.7
+      Support for the :keyword:`with` statement was added.
+
 
    .. method:: close()
 
