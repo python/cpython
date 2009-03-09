@@ -1829,3 +1829,8 @@ class StringIO(TextIOWrapper):
     def getvalue(self):
         self.flush()
         return self.buffer.getvalue().decode(self._encoding, self._errors)
+
+    def __repr__(self):
+        # TextIOWrapper tells the encoding in its repr. In StringIO,
+        # that's a implementation detail.
+        return object.__repr__(self)
