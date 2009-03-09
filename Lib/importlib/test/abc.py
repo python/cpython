@@ -65,10 +65,11 @@ class LoaderTests(unittest.TestCase, metaclass=abc.ABCMeta):
 
         Attributes to verify:
 
-            * __file__
-            * __loader__
             * __name__
+            * __file__
+            * __package__
             * __path__
+            * __loader__
 
         """
         pass

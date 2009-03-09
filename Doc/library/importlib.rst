@@ -82,6 +82,175 @@ Functions
     occuring from to already be imported (i.e., *package* must already be
     imported).
 
+:mod:`importlib.abc` -- Abstract base classes related to import
+---------------------------------------------------------------
+
+.. module:: importlib.abc
+    :synopsis: Abstract base classes related to import
+
+The :mod:`importlib.abc` module contains all of the core abstract base classes
+used by :keyword:`import`. Some subclasses of the core abstract base classes
+are also provided to help in implementing the core ABCs.
+
+
+.. class:: Finder
+
+    An abstract base class representing a :term:`finder`.
+
+    ..method:: find_module(fullname, path=None)
+
+        An abstract method for finding a :term:`loader` for the specified
+        module. If the :term:`finder` is found on :data:`sys.meta_path` and the
+        module to be searched for is a subpackage or module then *path* is set
+        to the value of :attr:`__path__` from the parent package. If a loader
+        cannot be found, :keyword:`None` is returned.
+
+        The exact definition of a :term:`finder` can be found in :pep:`302`.
+
+
+.. class:: Loader
+
+    An abstract base class for a :term:`loader`.
+
+    ..method:: load_module(fullname)
+
+        An abstract method for loading a module. If the module cannot be
+        loaded, :exc:`ImportError` is raised, otherwise the loaded module is
+        returned.
+
+        If the requested module is already exists in :data:`sys.modules`, that
+        module should be used and reloaded.
+        Otherwise a new module is to be created by the loader and inserted into
+        :data:`sys.modules`before any loading begins to prevent recursion from
+        the import. If the loader inserted into a module and the load fails it
+        must be removed by the loader from :data:`sys.modules`; modules already
+        in :data:`sys.modules` before the loader began execution should be left
+        alone. The :func:`importlib.util.module_for_loader` decorator handles
+        all of these details.
+
+        The loader is expected to set several attributes on the module when
+        adding a new module to :data:`sys.modules`.
+
+        - :attr:`__name__`
+            The name of the module.
+
+        - :attr:`__file__`
+            The path to where the module data is stored (not set for built-in
+            modules).
+
+        - :attr:`__path__`
+            Set to a list of strings specifying the search path within a
+            package. This attribute is not set on modules.
+
+        - :attr:`__package__`
+            The parent package for the module/package. If the module is
+            top-level then it has a value of the empty string. The
+            :func:`importlib.util.set_package` decorator can handle the details
+            for :attr:`__package__`.
+
+        - :attr:`__loader__`
+            Set to the loader used to load the module.
+
+        See :pep:`302` for the exact definition for a loader.
+
+
+.. class:: ResourceLoader
+
+    An abstract base class for a :term:`loader` which implements the optional
+    :pep:`302` protocol for loading arbitrary resources from the storage
+    back-end.
+
+    ..method:: get_data(path)
+
+        An abstract method to return the bytes for the data located at *path*.
+        Loaders that have a file-like storage back-end can implement this
+        abstract method to give direct access
+        to the data stored. :exc:`IOError` is to be raised if the *path* cannot
+        be found. The *path* is expected to be constructed using a module's
+        :attr:`__path__` attribute or an item from :attr:`__path__`.
+
+
+.. class:: InspectLoader
+
+    An abstract base class for a :term:`loader` which implements the optional
+    :pep:`302` protocol for loaders which inspect modules.
+
+    ..method:: is_package(fullname)
+
+        An abstract method to return a true value if the module is a package, a
+        false value otherwise. :exc:`ImportError` is raised if the
+        :term:`loader` cannot find the module.
+
+    ..method:: get_source(fullname)
+
+        An abstract method to return the source of a module. It is returned as
+        a string with universal newline support. Returns :keyword:`None` if no
+        source is available (e.g. a built-in module). Raises :exc:`ImportError`
+        if the loader cannot find the module specified.
+
+    ..method:: get_code(fullname)
+
+        An abstract method to return the :class:`code` object for a module.
+        :keyword:`None` is returned if the module does not have a code object
+        (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
+        find the requested module.
+
+
+.. class:: PyLoader
+
+    An abstract base class inheriting from :class:`importlib.abc.InspectLoader`
+    and :class:`importlib.abc.ResourceLoader` designed to ease the loading of
+    Python source modules (bytecode is not handled; see
+    :class:`importlib.abc.PyPycLoader` for a source/bytecode ABC). A subclass
+    implementing this ABC will only need to worry about exposing how the source
+    code is stored; all other details for loading Python source code will be
+    handled by the concrete implementations of key methods.
+
+    ..method:: source_path(fullname)
+
+        An abstract method that returns the path to the source code for a
+        module. Should return :keyword:`None` if there is no source code.
+        :exc:`ImportError` if the module cannot be found.
+
+    ..method:: load_module(fullname)
+
+        A concrete implementation of :meth:`importlib.abc.Loader.load_module`
+        that loads Python source code.
+
+    ..method:: get_code(fullname)
+
+        A concrete implementation of
+        :meth:`importlib.abc.InspectLoader.get_code` that creates code objects
+        from Python source code.
+
+
+.. class:: PyPycLoader
+
+    An abstract base class inheriting from :class:`importlib.abc.PyLoader`.
+    This ABC is meant to help in creating loaders that support both Python
+    source and bytecode.
+
+    ..method:: source_mtime(fullname)
+
+        An abstract method which returns the modification time for the source
+        code of the specified module. The modification time should be an
+        integer. If there is no source code, return :keyword:`None. If the
+        module cannot be found then :exc:`ImportError` is raised.
+
+    ..method:: bytecode_path(fullname)
+
+        An abstract method which returns the path to the bytecode for the
+        specified module. :keyword:`None` is returned if there is no bytecode.
+        :exc:`ImportError` is raised if the module is not found.
+
+    ..method:: write_bytecode(fullname, bytecode)
+
+        An abstract method which has the loader write *bytecode* for future
+        use. If the bytecode is written, return :keyword:`True`. Return
+        :keyword:`False` if the bytecode could not be written. This method
+        should not be called if :data:`sys.dont_write_bytecode` is true.
+
+
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------
 
@@ -93,44 +262,27 @@ find and load modules.
 
 .. class:: BuiltinImporter
 
-    :term:`Importer` for built-in modules. All known built-in modules are
-    listed in :data:`sys.builtin_module_names`.
+    An :term:`importer` for built-in modules. All known built-in modules are
+    listed in :data:`sys.builtin_module_names`. This class implements the
+    :class:`importlib.abc.Finder` and :class:`importlib.abc.Loader` ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
-
-    .. classmethod:: find_module(fullname, path=None)
-
-        Class method that allows this class to be a :term:`finder` for built-in
-        modules.
-
-    .. classmethod:: load_module(fullname)
-
-        Class method that allows this class to be a :term:`loader` for built-in
-        modules.
 
 
 .. class:: FrozenImporter
 
-    :term:`Importer` for frozen modules.
+    An :term:`importer` for frozen modules. This class implements the
+    :class:`importlib.abc.Finder` and :class:`importlib.abc.Loader` ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
-    .. classmethod:: find_module(fullname, path=None)
-
-        Class method that allows this class to be a :term:`finder` for frozen
-        modules.
-
-    .. classmethod:: load_module(fullname)
-
-        Class method that allows this class to be a :term:`loader` for frozen
-        modules.
-
 
 .. class:: PathFinder
 
-    :term:`Finder` for :data:`sys.path`.
+    :term:`Finder` for :data:`sys.path`. This class implements the
+    :class:`importlib.abc.Finder` ABC.
 
     This class does not perfectly mirror the semantics of :keyword:`import` in
     terms of :data:`sys.path`. No implicit path hooks are assumed for
@@ -142,15 +294,15 @@ find and load modules.
     .. classmethod:: find_module(fullname, path=None)
 
         Class method that attempts to find a :term:`loader` for the module
-        specified by *fullname* either on :data:`sys.path` or, if defined, on
+        specified by *fullname* on :data:`sys.path` or, if defined, on
         *path*. For each path entry that is searched,
         :data:`sys.path_importer_cache` is checked. If an non-false object is
-        found then it is used as the :term:`finder` to query for the module
-        being searched for. For no entry is found in
+        found then it is used as the :term:`finder` to look for the module
+        being searched for. If no entry is found in
         :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
         searched for a finder for the path entry and, if found, is stored in
         :data:`sys.path_importer_cache` along with being queried about the
-        module.
+        module. If no finder is ever found then :keyword:`None` is returned.
 
 
 :mod:`importlib.util` -- Utility code for importers
@@ -166,10 +318,11 @@ an :term:`importer`.
 
     A :term:`decorator` for a :term:`loader` which handles selecting the proper
     module object to load with. The decorated method is expected to have a call
-    signature of ``method(self, module_object)`` for which the second argument
-    will be the module object to be used by the loader (note that the decorator
+    signature taking two positional arguments
+    (e.g. ``load_module(self, module)``) for which the second argument
+    will be the module object to be used by the loader. Note that the decorator
     will not work on static methods because of the assumption of two
-    arguments).
+    arguments.
 
     The decorated method will take in the name of the module to be loaded as
     expected for a :term:`loader`. If the module is not found in

@@ -3,42 +3,12 @@ to do
 
 * Public API left to expose (w/ docs!)
 
-    + abc
+    + abc.PyLoader.get_source
+    + util.set_loader
 
-        - Finder
+* Implement InspectLoader for BuiltinImporter and FrozenImporter.
 
-            * find_module
-
-        - Loader
-
-            * load_module
-
-        - ResourceLoader(Loader)
-
-            * get_data
-
-        - InspectLoader(Loader)
-
-            * is_package
-            * get_code
-            * get_source
-
-        - PyLoader(ResourceLoader)
-
-            * source_path
-
-        - PyPycLoader(PyLoader)
-
-            * source_mtime
-            * bytecode_path
-            * write_bytecode
-
-    + test (Really want to worry about compatibility with future versions?)
-
-        - abc
-
-            * FinderTests [doc]
-            * LoaderTests [doc]
+    + Expose function to see if a frozen module is a package.
 
 * Remove ``import *`` from importlib.__init__.
 
@@ -68,3 +38,4 @@ in the language specification).
   + imp
   + py_compile
   + compileall
+  + zipimport
