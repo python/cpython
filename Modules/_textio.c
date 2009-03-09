@@ -2171,6 +2171,14 @@ TextIOWrapper_truncate(PyTextIOWrapperObject *self, PyObject *args)
     return PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_truncate, NULL);
 }
 
+static PyObject *
+TextIOWrapper_repr(PyTextIOWrapperObject *self)
+{
+  CHECK_INITIALIZED(self);
+  return PyUnicode_FromFormat("<TextIOWrapper encoding=%S>", self->encoding);
+}
+
+
 /* Inquiries */
 
 static PyObject *
@@ -2372,9 +2380,9 @@ PyTypeObject PyTextIOWrapper_Type = {
     (destructor)TextIOWrapper_dealloc, /*tp_dealloc*/
     0,                          /*tp_print*/
     0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
+    0,                          /*tps_etattr*/
     0,                          /*tp_compare */
-    0,                          /*tp_repr*/
+    (reprfunc)TextIOWrapper_repr,/*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/

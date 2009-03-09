@@ -1399,6 +1399,9 @@ class TextIOWrapper(TextIOBase):
     #   - "bytes_..." for integer variables that count input bytes
     #   - "chars_..." for integer variables that count decoded characters
 
+    def __repr__(self):
+        return "<TextIOWrapper encoding={0}>".format(self.encoding)
+
     @property
     def encoding(self):
         return self._encoding
