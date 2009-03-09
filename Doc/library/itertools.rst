@@ -549,6 +549,10 @@ which incur interpreter overhead.
        "Return function(0), function(1), ..."
        return map(function, count(start))
 
+   def consume(iterator, n):
+       "Advance the iterator n-steps ahead. If n is none, consume entirely."
+       collections.deque(islice(iterator, n), maxlen=0)
+
    def nth(iterable, n, default=None):
        "Returns the nth item or a default value"
        return next(islice(iterable, n, None), default)
