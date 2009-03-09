@@ -60,7 +60,7 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
 
    :class:`BZ2File` supports the :keyword:`with` statement.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
 
 
