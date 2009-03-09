@@ -14,7 +14,11 @@ def writes_bytecode(fxn):
     if sys.dont_write_bytecode:
         return lambda *args, **kwargs: None
     else:
-        return fxn
+        def wrapper(*args, **kwargs):
+            to_return = fxn(*args, **kwargs)
+            sys.dont_write_bytecode = False
+            return to_return
+        return wrapper
 
 
 def bytecode_path(source_path):
