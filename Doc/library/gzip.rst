@@ -67,6 +67,11 @@ The module defines the following items:
    writing as *fileobj*, and retrieve the resulting memory buffer using the
    :class:`StringIO` object's :meth:`getvalue` method.
 
+   :class:`GzipFile` supports the :keyword:`with` statement.
+
+   .. versionchanged:: 2.7
+      Support for the :keyword:`with` statement was added.
+
 
 .. function:: open(filename[, mode[, compresslevel]])
 
