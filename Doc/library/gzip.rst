@@ -53,7 +53,7 @@ The module defines the following items:
    ``9`` is slowest and produces the most compression.  The default is ``9``.
 
    The *mtime* argument is an optional numeric timestamp to be written to
-   the stream when compressing.  All :program:`gzip`compressed streams are
+   the stream when compressing.  All :program:`gzip` compressed streams are
    required to contain a timestamp.  If omitted or ``None``, the current
    time is used.  This module ignores the timestamp when decompressing;
    however, some programs, such as :program:`gunzip`\ , make use of it.
