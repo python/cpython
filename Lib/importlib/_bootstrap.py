@@ -383,9 +383,16 @@ class PyPycLoader(PyLoader):
     def load_module(self, module):
         """Load a module from source or bytecode."""
         name = module.__name__
-        source_path = self.source_path(name)
-        bytecode_path = self.bytecode_path(name)
-        module.__file__ = source_path if source_path else bytecode_path
+        try:
+            source_path = self.source_path(name)
+        except ImportError:
+            source_path = None
+        try:
+            bytecode_path = self.bytecode_path(name)
+        except ImportError:
+            bytecode_path = None
+        # get_code can worry about no viable paths existing.
+        module.__file__ = source_path or bytecode_path
         return self._load_module(module)
 
     def get_code(self, fullname):
