@@ -1907,47 +1907,28 @@ of significant places in the coefficient.  For example, expressing
 original's two-place significance.
 
 If an application does not care about tracking significance, it is easy to
-remove the exponent and trailing zeroes, losing significance, but keeping the
-value unchanged:
+remove the exponent and trailing zeros, losing significance, but keeping the
+value unchanged::
 
-    >>> def remove_exponent(d):
-    ...     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
+    def remove_exponent(d):
+        '''Remove exponent and trailing zeros.
 
-    >>> remove_exponent(Decimal('5E+3'))
-    Decimal('5000')
+        >>> remove_exponent(Decimal('5E+3'))
+        Decimal('5000')
 
-Q. Is there a way to convert a regular float to a :class:`Decimal`?
+        '''
+        return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
 
-A. Yes, all binary floating point numbers can be exactly expressed as a
-Decimal.  An exact conversion may take more precision than intuition would
-suggest, so we trap :const:`Inexact` to signal a need for more precision:
+Q. Is there a way to convert a regular float to a Decimal?
 
-.. testcode::
+A. Yes, the classmethod :meth:`from_float` makes an exact conversion.
 
-    def float_to_decimal(f):
-        "Convert a floating point number to a Decimal with no loss of information"
-        n, d = f.as_integer_ratio()
-        numerator, denominator = Decimal(n), Decimal(d)
-        ctx = Context(prec=60)
-        result = ctx.divide(numerator, denominator)
-        while ctx.flags[Inexact]:
-            ctx.flags[Inexact] = False
-            ctx.prec *= 2
-            result = ctx.divide(numerator, denominator)
-        return result
+The regular decimal constructor does not do this by default because there is
+some question about whether it is advisable to mix binary and decimal floating
+point. Also, its use requires some care to avoid the representation issues
+associated with binary floating point:
 
-.. doctest::
-
-    >>> float_to_decimal(math.pi)
-    Decimal('3.141592653589793115997963468544185161590576171875')
-
-Q. Why isn't the :func:`float_to_decimal` routine included in the module?
-
-A. There is some question about whether it is advisable to mix binary and
-decimal floating point.  Also, its use requires some care to avoid the
-representation issues associated with binary floating point:
-
-   >>> float_to_decimal(1.1)
+   >>> Decimal.from_float(1.1)
    Decimal('1.100000000000000088817841970012523233890533447265625')
 
 Q. Within a complex calculation, how can I make sure that I haven't gotten a
