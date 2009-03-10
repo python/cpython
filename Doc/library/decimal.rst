@@ -108,7 +108,7 @@ reset them before monitoring a calculation.
 .. seealso::
 
    * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
-     Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
+     Specification <http://speleotrove.com/decimal/>`_.
 
    * IEEE standard 854-1987, `Unofficial IEEE 854 Text
      <http://754r.ucbtest.org/standards/854.pdf>`_.
