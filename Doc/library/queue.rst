@@ -168,7 +168,7 @@ fully processed by daemon consumer threads.
    The count of unfinished tasks goes up whenever an item is added to the queue.
    The count goes down whenever a consumer thread calls :meth:`task_done` to
    indicate that the item was retrieved and all work on it is complete. When the
-   count of unfinished tasks drops to zero, join() unblocks.
+   count of unfinished tasks drops to zero, :meth:`join` unblocks.
 
    .. versionadded:: 2.5
 
