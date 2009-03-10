@@ -382,6 +382,15 @@ counts, but the output will exclude results with counts of zero or less.
       ``d.appendleft(d.pop())``.
 
 
+   Deque objects also provide one read-only attribute:
+
+   .. attribute:: maxlen
+
+      Maximum size of a deque or *None* if unbounded.
+
+      .. versionadded:: 2.7
+
+
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
 the :keyword:`in` operator, and subscript references such as ``d[-1]``.  Indexed
