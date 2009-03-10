@@ -24,6 +24,8 @@ class LoaderTests(abc.LoaderTests):
                                 ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
             self.assert_(ext_util.NAME in sys.modules)
+            self.assert_(isinstance(module.__loader__,
+                                    importlib._ExtensionFileLoader))
 
     def test_package(self):
         # Extensions are not found in packages.

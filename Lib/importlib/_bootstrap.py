@@ -110,6 +110,17 @@ def set_package(fxn):
     return wrapper
 
 
+def set_loader(fxn):
+    """Set __loader__ on the returned module."""
+    def wrapper(self, *args, **kwargs):
+        module = fxn(self, *args, **kwargs)
+        if not hasattr(module, '__loader__'):
+            module.__loader__ = self
+        return module
+    wrap(wrapper, fxn)
+    return wrapper
+
+
 class BuiltinImporter:
 
     """Meta path loader for built-in modules.
@@ -132,6 +143,7 @@ class BuiltinImporter:
 
     @classmethod
     @set_package
+    @set_loader
     def load_module(cls, fullname):
         """Load a built-in module."""
         if fullname not in sys.builtin_module_names:
@@ -161,6 +173,7 @@ class FrozenImporter:
 
     @classmethod
     @set_package
+    @set_loader
     def load_module(cls, fullname):
         """Load a frozen module."""
         if cls.find_module(fullname) is None:
@@ -249,13 +262,12 @@ class _ExtensionFileLoader:
 
     @check_name
     @set_package
+    @set_loader
     def load_module(self, fullname):
         """Load an extension module."""
         is_reload = fullname in sys.modules
         try:
-            module = imp.load_dynamic(fullname, self._path)
-            module.__loader__ = self
-            return module
+            return imp.load_dynamic(fullname, self._path)
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]

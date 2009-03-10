@@ -15,7 +15,8 @@ class LoaderTests(abc.LoaderTests):
     assert 'errno' in sys.builtin_module_names
     name = 'errno'
 
-    verification = {'__name__': 'errno', '__package__': ''}
+    verification = {'__name__': 'errno', '__package__': '',
+                    '__loader__': machinery.BuiltinImporter}
 
     def verify(self, module):
         """Verify that the module matches against what it should have."""

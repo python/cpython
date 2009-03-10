@@ -348,7 +348,15 @@ an :term:`importer`.
     loader should initialize as specified by :pep:`302`.
 
 
-.. function:: set_package(method)
+.. function:: set_loader(fxn)
+
+    A :term:`decorator` for a :term:`loader` to set the :attr:`__loader__`
+    attribute on loaded modules. If the attribute is already set the decorator
+    does nothing. It is assumed that the first positional argument to the
+    wrapped method is what :attr:`__loader__` should be set to.
+
+
+.. function:: set_package(fxn)
 
     A :term:`decorator` for a :term:`loader` to set the :attr:`__package__`
     attribute on the module returned by the loader. If :attr:`__package__` is

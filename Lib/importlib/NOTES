@@ -1,10 +1,6 @@
 to do
 /////
 
-* Public API left to expose (w/ docs!)
-
-    + util.set_loader
-
 * Implement InspectLoader for BuiltinImporter and FrozenImporter.
 
     + Expose function to see if a frozen module is a package.
