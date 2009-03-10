@@ -369,6 +369,26 @@ class PyLoader:
             source = source.replace(line_endings, b'\n')
         return compile(source, source_path, 'exec', dont_inherit=True)
 
+    # Never use in implementing import! Imports code within the method.
+    def get_source(self, fullname):
+        """Return the source code for a module.
+
+        self.source_path() and self.get_data() are used to implement this
+        method.
+
+        """
+        path = self.source_path(fullname)
+        if path is None:
+            return None
+        try:
+            source_bytes = self.get_data(path)
+        except IOError:
+            return ImportError("source not available through get_data()")
+        import io
+        import tokenize
+        encoding = tokenize.detect_encoding(io.BytesIO(source_bytes).readline)
+        return source_bytes.decode(encoding[0])
+
 
 class PyPycLoader(PyLoader):
 

@@ -14,8 +14,8 @@ import unittest
 class PyLoaderMock(abc.PyLoader):
 
     # Globals that should be defined for all modules.
-    source = ("_ = '::'.join([__name__, __file__, __package__, "
-              "repr(__loader__)])")
+    source = (b"_ = '::'.join([__name__, __file__, __package__, "
+              b"repr(__loader__)])")
 
     def __init__(self, data):
         """Take a dict of 'module_name: path' pairings.
@@ -30,16 +30,13 @@ class PyLoaderMock(abc.PyLoader):
     def get_data(self, path):
         if path not in self.path_to_module:
             raise IOError
-        return self.source.encode('utf-8')
+        return self.source
 
     def is_package(self, name):
         try:
             return '__init__' in self.module_paths[name]
         except KeyError:
             raise ImportError
-
-    def get_source(self, name):  # Should not be needed.
-        raise NotImplementedError
 
     def source_path(self, name):
         try:
@@ -181,7 +178,7 @@ class PyLoaderTests(testing_abc.LoaderTests):
         module = imp.new_module(name)
         module.blah = None
         mock = self.mocker({name: 'path/to/mod'})
-        mock.source = "1/0"
+        mock.source = b"1/0"
         with util.uncache(name):
             sys.modules[name] = module
             self.assertRaises(ZeroDivisionError, mock.load_module, name)
@@ -192,7 +189,7 @@ class PyLoaderTests(testing_abc.LoaderTests):
     def test_unloadable(self):
         name = "mod"
         mock = self.mocker({name: 'path/to/mod'})
-        mock.source = "1/0"
+        mock.source = b"1/0"
         with util.uncache(name):
             self.assertRaises(ZeroDivisionError, mock.load_module, name)
             self.assert_(name not in sys.modules)
@@ -201,6 +198,8 @@ class PyLoaderTests(testing_abc.LoaderTests):
 
 class PyLoaderInterfaceTests(unittest.TestCase):
 
+    """Tests for importlib.abc.PyLoader to make sure that when source_path()
+    doesn't return a path everything works as expected."""
 
     def test_no_source_path(self):
         # No source path should lead to ImportError.
@@ -214,6 +213,30 @@ class PyLoaderInterfaceTests(unittest.TestCase):
         mock = PyLoaderMock({name: None})
         with util.uncache(name):
             self.assertRaises(ImportError, mock.load_module, name)
+
+
+class PyLoaderGetSourceTests(unittest.TestCase):
+
+    """Tests for importlib.abc.PyLoader.get_source()."""
+
+    def test_default_encoding(self):
+        # Should have no problems with UTF-8 text.
+        name = 'mod'
+        mock = PyLoaderMock({name: 'path/to/mod'})
+        source = 'x = "ü"'
+        mock.source = source.encode('utf-8')
+        returned_source = mock.get_source(name)
+        self.assertEqual(returned_source, source)
+
+    def test_decoded_source(self):
+        # Decoding should work.
+        name = 'mod'
+        mock = PyLoaderMock({name: 'path/to/mod'})
+        source = "# coding: Latin-1\nx='ü'"
+        assert source.encode('latin-1') != source.encode('utf-8')
+        mock.source = source.encode('latin-1')
+        returned_source = mock.get_source(name)
+        self.assertEqual(returned_source, source)
 
 
 class PyPycLoaderTests(PyLoaderTests):
@@ -380,7 +403,7 @@ class MissingPathsTests(unittest.TestCase):
 
 def test_main():
     from test.support import run_unittest
-    run_unittest(PyLoaderTests, PyLoaderInterfaceTests,
+    run_unittest(PyLoaderTests, PyLoaderInterfaceTests, PyLoaderGetSourceTests,
                     PyPycLoaderTests, SkipWritingBytecodeTests,
                     RegeneratedBytecodeTests, BadBytecodeFailureTests,
                     MissingPathsTests)
