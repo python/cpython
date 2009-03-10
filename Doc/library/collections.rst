@@ -367,7 +367,7 @@ counts, but the output will exclude results with counts of zero or less.
 
       Maximum size of a deque or *None* if unbounded.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
