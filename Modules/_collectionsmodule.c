@@ -870,6 +870,20 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 	return 0;
 }
 
+static PyObject *
+deque_get_maxlen(dequeobject *deque)
+{
+	if (deque->maxlen == -1)
+		Py_RETURN_NONE;
+	return PyInt_FromSsize_t(deque->maxlen);
+}
+
+static PyGetSetDef deque_getset[] = {
+	{"maxlen", (getter)deque_get_maxlen, (setter)NULL,
+	 "maximum size of a deque or None if unbounded"},
+	{0}
+};
+
 static PySequenceMethods deque_as_sequence = {
 	(lenfunc)deque_len,		/* sq_length */
 	0,				/* sq_concat */
@@ -951,7 +965,7 @@ static PyTypeObject deque_type = {
 	0,				/* tp_iternext */
 	deque_methods,			/* tp_methods */
 	0,				/* tp_members */
-	0,				/* tp_getset */
+	deque_getset,	/* tp_getset */
 	0,				/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
