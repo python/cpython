@@ -17,7 +17,7 @@ strings, however, so to use other objects as keys or to store other kinds of
 objects the user must serialize them somehow, typically using
 :func:`marshal.dumps` or  :func:`pickle.dumps`.
 
-The :mod:`bsddb` module requires a Berkeley DB library version from 3.3 thru
+The :mod:`bsddb` module requires a Berkeley DB library version from 4.0 thru
 4.7.
 
 
