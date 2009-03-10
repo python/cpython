@@ -195,6 +195,8 @@ Core and Builtins
 Library
 -------
 
+- collections.deque() objects now have a read-only attribute called maxlen.
+
 - Issue #2638: Show a window constructed with tkSimpleDialog.Dialog only after
   it is has been populated and properly configured in order to prevent
   window flashing.
