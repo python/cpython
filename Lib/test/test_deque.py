@@ -105,6 +105,16 @@ class TestBasic(unittest.TestCase):
         d.extendleft(it)
         self.assertEqual(list(it), [])
 
+    def test_maxlen_attribute(self):
+        self.assertEqual(deque().maxlen, None)
+        self.assertEqual(deque('abc').maxlen, None)
+        self.assertEqual(deque('abc', maxlen=4).maxlen, 4)
+        self.assertEqual(deque('abc', maxlen=2).maxlen, 2)
+        self.assertEqual(deque('abc', maxlen=0).maxlen, 0)
+        with self.assertRaises(AttributeError):
+            d = deque('abc')
+            d.maxlen = 10
+
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
