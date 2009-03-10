@@ -9,7 +9,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__hello__'):
             module = machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__', '__file__': '<frozen>',
-                        '__package__': ''}
+                    '__package__': '', '__loader__': machinery.FrozenImporter}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 
@@ -17,7 +17,8 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__phello__'):
             module = machinery.FrozenImporter.load_module('__phello__')
             check = {'__name__': '__phello__', '__file__': '<frozen>',
-                     '__package__': '__phello__', '__path__': ['__phello__']}
+                     '__package__': '__phello__', '__path__': ['__phello__'],
+                     '__loader__': machinery.FrozenImporter}
             for attr, value in check.items():
                 attr_value = getattr(module, attr)
                 self.assertEqual(attr_value, value,
@@ -28,7 +29,8 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__phello__', '__phello__.spam'):
             module = machinery.FrozenImporter.load_module('__phello__.spam')
             check = {'__name__': '__phello__.spam', '__file__': '<frozen>',
-                     '__package__': '__phello__'}
+                    '__package__': '__phello__',
+                    '__loader__': machinery.FrozenImporter}
             for attr, value in check.items():
                 attr_value = getattr(module, attr)
                 self.assertEqual(attr_value, value,
