@@ -3,7 +3,6 @@ to do
 
 * Public API left to expose (w/ docs!)
 
-    + abc.PyLoader.get_source
     + util.set_loader
 
 * Implement InspectLoader for BuiltinImporter and FrozenImporter.

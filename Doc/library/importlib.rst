@@ -226,6 +226,13 @@ are also provided to help in implementing the core ABCs.
         :meth:`importlib.abc.InspectLoader.get_code` that creates code objects
         from Python source code.
 
+    .. method:: get_source(fullname)
+
+        A concrete implementation of
+        :meth:`importlib.abc.InspectLoader.get_source`. Uses
+        :meth:`importlib.abc.InspectLoader.get_data` and :meth:`source_path` to
+        get the source code.
+
 
 .. class:: PyPycLoader
 
