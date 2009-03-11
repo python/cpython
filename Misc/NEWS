@@ -195,6 +195,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5472: Fixed distutils.test_util tear down. Original patch by
+  Tim Golden.
+
 - collections.deque() objects now have a read-only attribute called maxlen.
 
 - Issue #2638: Show a window constructed with tkSimpleDialog.Dialog only after
