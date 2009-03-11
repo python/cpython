@@ -53,6 +53,8 @@ class utilTestCase(unittest.TestCase):
         os.path.splitdrive = self.splitdrive
         if self.uname is not None:
             os.uname = self.uname
+        else:
+            del os.uname
 
     def _set_uname(self, uname):
         self._uname = uname
