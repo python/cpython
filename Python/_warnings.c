@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "code.h"  /* For DeprecationWarning about adding 'line'. */
 #include "frameobject.h"
 
 #define MODULE_NAME "_warnings"
@@ -387,54 +386,23 @@ warn_explicit(PyObject *category, PyObject *message,
             show_warning(filename, lineno, text, category, sourceline);
         }
         else {
-            const char *msg = "functions overriding warnings.showwarning() "
-                                "must support the 'line' argument";
-            const char *text_char = PyString_AS_STRING(text);
+              PyObject *res;
 
-            if (strcmp(msg, text_char) == 0) {
-                /* Prevent infinite recursion by using built-in implementation
-                   of showwarning(). */
-                show_warning(filename, lineno, text, category, sourceline);
-            }
-            else {
-                PyObject *check_fxn;
-                PyObject *defaults;
-                PyObject *res;
+              if (!PyMethod_Check(show_fxn) && !PyFunction_Check(show_fxn)) {
+                  PyErr_SetString(PyExc_TypeError,
+                                  "warnings.showwarning() must be set to a "
+                                  "function or method");
+                  Py_DECREF(show_fxn);
+                  goto cleanup;
+              }
 
-                if (PyMethod_Check(show_fxn))
-                    check_fxn = PyMethod_Function(show_fxn);
-                else if (PyFunction_Check(show_fxn))
-                    check_fxn = show_fxn;
-                else {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "warnings.showwarning() must be set to a "
-                                    "function or method");
-                    Py_DECREF(show_fxn);
-                    goto cleanup;
-                }
-
-                defaults = PyFunction_GetDefaults(check_fxn);
-                /* A proper implementation of warnings.showwarning() should
-                    have at least two default arguments. */
-                if ((defaults == NULL) || (PyTuple_Size(defaults) < 2)) {
-	            PyCodeObject *code = (PyCodeObject *)
-						PyFunction_GetCode(check_fxn);
-		    if (!(code->co_flags & CO_VARARGS)) {
-		        if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1) <
-				0) {
-                            Py_DECREF(show_fxn);
-                            goto cleanup;
-                        }
-                    }
-		}
-                res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
-                                                    filename, lineno_obj,
-                                                    NULL);
-                Py_DECREF(show_fxn);
-                Py_XDECREF(res);
-                if (res == NULL)
-                    goto cleanup;
-            }
+              res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
+                                                  filename, lineno_obj,
+                                                  NULL);
+              Py_DECREF(show_fxn);
+              Py_XDECREF(res);
+              if (res == NULL)
+                  goto cleanup;
         }
     }
     else /* if (rc == -1) */
