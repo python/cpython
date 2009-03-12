@@ -1,4 +1,5 @@
 import importlib
+from importlib import _bootstrap
 from .. import abc
 from . import util as source_util
 
@@ -19,7 +20,8 @@ class SimpleTest(unittest.TestCase):
     # [basic]
     def test_module(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
+            loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
+                                                    False)
             module = loader.load_module('_temp')
             self.assert_('_temp' in sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
@@ -29,8 +31,9 @@ class SimpleTest(unittest.TestCase):
 
     def test_package(self):
         with source_util.create_modules('_pkg.__init__') as mapping:
-            loader = importlib.PyPycFileLoader('_pkg', mapping['_pkg.__init__'],
-                                             True)
+            loader = _bootstrap._PyPycFileLoader('_pkg',
+                                                 mapping['_pkg.__init__'],
+                                                 True)
             module = loader.load_module('_pkg')
             self.assert_('_pkg' in sys.modules)
             check = {'__name__': '_pkg', '__file__': mapping['_pkg.__init__'],
@@ -42,8 +45,8 @@ class SimpleTest(unittest.TestCase):
 
     def test_lacking_parent(self):
         with source_util.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
-            loader = importlib.PyPycFileLoader('_pkg.mod', mapping['_pkg.mod'],
-                                             False)
+            loader = _bootstrap._PyPycFileLoader('_pkg.mod',
+                                                    mapping['_pkg.mod'], False)
             module = loader.load_module('_pkg.mod')
             self.assert_('_pkg.mod' in sys.modules)
             check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod'],
@@ -57,7 +60,8 @@ class SimpleTest(unittest.TestCase):
 
     def test_module_reuse(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
+            loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
+                                                    False)
             module = loader.load_module('_temp')
             module_id = id(module)
             module_dict_id = id(module.__dict__)
@@ -87,7 +91,8 @@ class SimpleTest(unittest.TestCase):
                 setattr(orig_module, attr, value)
             with open(mapping[name], 'w') as file:
                 file.write('+++ bad syntax +++')
-            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
+            loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
+                                                    False)
             self.assertRaises(SyntaxError, loader.load_module, name)
             for attr in attributes:
                 self.assertEqual(getattr(orig_module, attr), value)
@@ -97,7 +102,8 @@ class SimpleTest(unittest.TestCase):
         with source_util.create_modules('_temp') as mapping:
             with open(mapping['_temp'], 'w') as file:
                 file.write('=')
-            loader = importlib.PyPycFileLoader('_temp', mapping['_temp'], False)
+            loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
+                                                    False)
             self.assertRaises(SyntaxError, loader.load_module, '_temp')
             self.assert_('_temp' not in sys.modules)
 
@@ -116,7 +122,7 @@ class BadBytecodeTest(unittest.TestCase):
     """
 
     def import_(self, file, module_name):
-        loader = importlib.PyPycFileLoader(module_name, file, False)
+        loader = _bootstrap._PyPycFileLoader(module_name, file, False)
         module = loader.load_module(module_name)
         self.assert_(module_name in sys.modules)
 

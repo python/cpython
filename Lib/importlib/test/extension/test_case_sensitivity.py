@@ -1,7 +1,7 @@
 import sys
 from test import support
 import unittest
-import importlib
+from importlib import _bootstrap
 from .. import util
 from . import util as ext_util
 
@@ -13,7 +13,7 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         good_name = ext_util.NAME
         bad_name = good_name.upper()
         assert good_name != bad_name
-        finder = importlib.ExtensionFileFinder(ext_util.PATH)
+        finder = _bootstrap._ExtensionFileFinder(ext_util.PATH)
         return finder.find_module(bad_name)
 
     def test_case_sensitive(self):
