@@ -173,7 +173,13 @@ def _check_name(method):
     return inner
 
 
-# Finders/loaders #############################################################
+def _suffix_list(suffix_type):
+    """Return a list of file suffixes based on the imp file type."""
+    return [suffix[0] for suffix in imp.get_suffixes()
+            if suffix[2] == suffix_type]
+
+
+# Loaders #####################################################################
 
 class BuiltinImporter:
 
@@ -239,100 +245,6 @@ class FrozenImporter:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
             raise
-
-
-def _chained_path_hook(*path_hooks):
-    """Create a closure which sequentially checks path hooks to see which ones
-    (if any) can work with a path."""
-    def path_hook(entry):
-        """Check to see if 'entry' matches any of the enclosed path hooks."""
-        finders = []
-        for hook in path_hooks:
-            try:
-                finder = hook(entry)
-            except ImportError:
-                continue
-            else:
-                finders.append(finder)
-        if not finders:
-            raise ImportError("no finder found")
-        else:
-            return _ChainedFinder(*finders)
-
-    return path_hook
-
-
-class _ChainedFinder:
-
-    """Finder that sequentially calls other finders."""
-
-    def __init__(self, *finders):
-        self._finders = finders
-
-    def find_module(self, fullname, path=None):
-        for finder in self._finders:
-            result = finder.find_module(fullname, path)
-            if result:
-                return result
-        else:
-            return None
-
-
-
-class _ExtensionFileLoader:
-
-    """Loader for extension modules.
-
-    The constructor is designed to work with FileFinder.
-
-    """
-
-    def __init__(self, name, path, is_pkg):
-        """Initialize the loader.
-
-        If is_pkg is True then an exception is raised as extension modules
-        cannot be the __init__ module for an extension module.
-
-        """
-        self._name = name
-        self._path = path
-        if is_pkg:
-            raise ValueError("extension modules cannot be packages")
-
-    @_check_name
-    @set_package
-    @set_loader
-    def load_module(self, fullname):
-        """Load an extension module."""
-        is_reload = fullname in sys.modules
-        try:
-            return imp.load_dynamic(fullname, self._path)
-        except:
-            if not is_reload and fullname in sys.modules:
-                del sys.modules[fullname]
-            raise
-
-    @_check_name
-    def is_package(self, fullname):
-        """Return False as an extension module can never be a package."""
-        return False
-
-    @_check_name
-    def get_code(self, fullname):
-        """Return None as an extension module cannot create a code object."""
-        return None
-
-    @_check_name
-    def get_source(self, fullname):
-        """Return None as extension modules have no source code."""
-        return None
-
-
-def _suffix_list(suffix_type):
-    """Return a list of file suffixes based on the imp file type."""
-    return [suffix[0] for suffix in imp.get_suffixes()
-            if suffix[2] == suffix_type]
-
 
 
 class PyLoader:
@@ -584,104 +496,56 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
                 raise
 
 
-class FileFinder:
+class _ExtensionFileLoader:
 
-    """Base class for file finders.
+    """Loader for extension modules.
 
-    Subclasses are expected to define the following attributes:
-
-        * _suffixes
-            Sequence of file suffixes whose order will be followed.
-
-        * _possible_package
-            True if importer should check for packages.
-
-        * _loader
-            A callable that takes the module name, a file path, and whether
-            the path points to a package and returns a loader for the module
-            found at that path.
+    The constructor is designed to work with FileFinder.
 
     """
 
-    def __init__(self, path_entry):
-        """Initialize an importer for the passed-in sys.path entry (which is
-        assumed to have already been verified as an existing directory).
+    def __init__(self, name, path, is_pkg):
+        """Initialize the loader.
 
-        Can be used as an entry on sys.path_hook.
+        If is_pkg is True then an exception is raised as extension modules
+        cannot be the __init__ module for an extension module.
 
         """
-        absolute_path = _path_absolute(path_entry)
-        if not _path_isdir(absolute_path):
-            raise ImportError("only directories are supported")
-        self._path_entry = absolute_path
+        self._name = name
+        self._path = path
+        if is_pkg:
+            raise ValueError("extension modules cannot be packages")
 
-    def find_module(self, fullname, path=None):
-        tail_module = fullname.rpartition('.')[2]
-        package_directory = None
-        if self._possible_package:
-            for ext in self._suffixes:
-                package_directory = _path_join(self._path_entry, tail_module)
-                init_filename = '__init__' + ext
-                package_init = _path_join(package_directory, init_filename)
-                if (_path_isfile(package_init) and
-                        _case_ok(self._path_entry, tail_module) and
-                        _case_ok(package_directory, init_filename)):
-                    return self._loader(fullname, package_init, True)
-        for ext in self._suffixes:
-            file_name = tail_module + ext
-            file_path = _path_join(self._path_entry, file_name)
-            if (_path_isfile(file_path) and
-                    _case_ok(self._path_entry, file_name)):
-                return self._loader(fullname, file_path, False)
-        else:
-            # Raise a warning if it matches a directory w/o an __init__ file.
-            if (package_directory is not None and
-                    _path_isdir(package_directory) and
-                    _case_ok(self._path_entry, tail_module)):
-                _warnings.warn("Not importing directory %s: missing __init__"
-                                % package_directory, ImportWarning)
-            return None
+    @_check_name
+    @set_package
+    @set_loader
+    def load_module(self, fullname):
+        """Load an extension module."""
+        is_reload = fullname in sys.modules
+        try:
+            return imp.load_dynamic(fullname, self._path)
+        except:
+            if not is_reload and fullname in sys.modules:
+                del sys.modules[fullname]
+            raise
 
+    @_check_name
+    def is_package(self, fullname):
+        """Return False as an extension module can never be a package."""
+        return False
 
-class ExtensionFileFinder(FileFinder):
+    @_check_name
+    def get_code(self, fullname):
+        """Return None as an extension module cannot create a code object."""
+        return None
 
-    """Importer for extension files."""
-
-    _possible_package = False
-    _loader = _ExtensionFileLoader
-
-    def __init__(self, path_entry):
-        # Assigning to _suffixes here instead of at the class level because
-        # imp is not imported at the time of class creation.
-        self._suffixes = _suffix_list(imp.C_EXTENSION)
-        super().__init__(path_entry)
+    @_check_name
+    def get_source(self, fullname):
+        """Return None as extension modules have no source code."""
+        return None
 
 
-class PyFileFinder(FileFinder):
-
-    """Importer for source/bytecode files."""
-
-    _possible_package = True
-    _loader = PyFileLoader
-
-    def __init__(self, path_entry):
-        # Lack of imp during class creation means _suffixes is set here.
-        # Make sure that Python source files are listed first!  Needed for an
-        # optimization by the loader.
-        self._suffixes = _suffix_list(imp.PY_SOURCE)
-        super().__init__(path_entry)
-
-
-class PyPycFileFinder(PyFileFinder):
-
-    """Finder for source and bytecode files."""
-
-    _loader = PyPycFileLoader
-
-    def __init__(self, path_entry):
-        super().__init__(path_entry)
-        self._suffixes += _suffix_list(imp.PY_COMPILED)
-
+# Finders #####################################################################
 
 class PathFinder:
 
@@ -746,19 +610,144 @@ class PathFinder:
             return None
 
 
+class _ChainedFinder:
+
+    """Finder that sequentially calls other finders."""
+
+    def __init__(self, *finders):
+        self._finders = finders
+
+    def find_module(self, fullname, path=None):
+        for finder in self._finders:
+            result = finder.find_module(fullname, path)
+            if result:
+                return result
+        else:
+            return None
+
+
+class FileFinder:
+
+    """Base class for file finders.
+
+    Subclasses are expected to define the following attributes:
+
+        * _suffixes
+            Sequence of file suffixes whose order will be followed.
+
+        * _possible_package
+            True if importer should check for packages.
+
+        * _loader
+            A callable that takes the module name, a file path, and whether
+            the path points to a package and returns a loader for the module
+            found at that path.
+
+    """
+
+    def __init__(self, path_entry):
+        """Initialize an importer for the passed-in sys.path entry (which is
+        assumed to have already been verified as an existing directory).
+
+        Can be used as an entry on sys.path_hook.
+
+        """
+        absolute_path = _path_absolute(path_entry)
+        if not _path_isdir(absolute_path):
+            raise ImportError("only directories are supported")
+        self._path_entry = absolute_path
+
+    def find_module(self, fullname, path=None):
+        tail_module = fullname.rpartition('.')[2]
+        package_directory = None
+        if self._possible_package:
+            for ext in self._suffixes:
+                package_directory = _path_join(self._path_entry, tail_module)
+                init_filename = '__init__' + ext
+                package_init = _path_join(package_directory, init_filename)
+                if (_path_isfile(package_init) and
+                        _case_ok(self._path_entry, tail_module) and
+                        _case_ok(package_directory, init_filename)):
+                    return self._loader(fullname, package_init, True)
+        for ext in self._suffixes:
+            file_name = tail_module + ext
+            file_path = _path_join(self._path_entry, file_name)
+            if (_path_isfile(file_path) and
+                    _case_ok(self._path_entry, file_name)):
+                return self._loader(fullname, file_path, False)
+        else:
+            # Raise a warning if it matches a directory w/o an __init__ file.
+            if (package_directory is not None and
+                    _path_isdir(package_directory) and
+                    _case_ok(self._path_entry, tail_module)):
+                _warnings.warn("Not importing directory %s: missing __init__"
+                                % package_directory, ImportWarning)
+            return None
+
+
+class PyFileFinder(FileFinder):
+
+    """Importer for source/bytecode files."""
+
+    _possible_package = True
+    _loader = PyFileLoader
+
+    def __init__(self, path_entry):
+        # Lack of imp during class creation means _suffixes is set here.
+        # Make sure that Python source files are listed first!  Needed for an
+        # optimization by the loader.
+        self._suffixes = _suffix_list(imp.PY_SOURCE)
+        super().__init__(path_entry)
+
+
+class PyPycFileFinder(PyFileFinder):
+
+    """Finder for source and bytecode files."""
+
+    _loader = PyPycFileLoader
+
+    def __init__(self, path_entry):
+        super().__init__(path_entry)
+        self._suffixes += _suffix_list(imp.PY_COMPILED)
+
+
+
+
+class ExtensionFileFinder(FileFinder):
+
+    """Importer for extension files."""
+
+    _possible_package = False
+    _loader = _ExtensionFileLoader
+
+    def __init__(self, path_entry):
+        # Assigning to _suffixes here instead of at the class level because
+        # imp is not imported at the time of class creation.
+        self._suffixes = _suffix_list(imp.C_EXTENSION)
+        super().__init__(path_entry)
+
+
 # Import itself ###############################################################
 
-class _ImportLockContext:
+def _chained_path_hook(*path_hooks):
+    """Create a closure which sequentially checks path hooks to see which ones
+    (if any) can work with a path."""
+    def path_hook(entry):
+        """Check to see if 'entry' matches any of the enclosed path hooks."""
+        finders = []
+        for hook in path_hooks:
+            try:
+                finder = hook(entry)
+            except ImportError:
+                continue
+            else:
+                finders.append(finder)
+        if not finders:
+            raise ImportError("no finder found")
+        else:
+            return _ChainedFinder(*finders)
 
-    """Context manager for the import lock."""
-
-    def __enter__(self):
-        """Acquire the import lock."""
-        imp.acquire_lock()
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        """Release the import lock regardless of any raised exceptions."""
-        imp.release_lock()
+    return path_hook
 
 
 _DEFAULT_PATH_HOOK = _chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
@@ -783,6 +772,18 @@ class _DefaultPathFinder(PathFinder):
         sys.path_importer_cache."""
         return super()._path_importer_cache(path, _DEFAULT_PATH_HOOK)
 
+
+class _ImportLockContext:
+
+    """Context manager for the import lock."""
+
+    def __enter__(self):
+        """Acquire the import lock."""
+        imp.acquire_lock()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Release the import lock regardless of any raised exceptions."""
+        imp.release_lock()
 
 
 _IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
