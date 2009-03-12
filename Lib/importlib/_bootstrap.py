@@ -56,7 +56,7 @@ def _path_isdir(path):
 
 def _path_without_ext(path, ext_type):
     """Replacement for os.path.splitext()[0]."""
-    for suffix in suffix_list(ext_type):
+    for suffix in _suffix_list(ext_type):
         if path.endswith(suffix):
             return path[:-len(suffix)]
     else:
@@ -76,7 +76,7 @@ def _path_absolute(path):
             return _path_join(_os.getcwd(), path)
 
 
-class closing:
+class _closing:
 
     """Simple replacement for contextlib.closing."""
 
@@ -90,7 +90,7 @@ class closing:
         self.obj.close()
 
 
-def wrap(new, old):
+def _wrap(new, old):
     """Simple substitute for functools.wraps."""
     for replace in ['__module__', '__name__', '__doc__']:
         setattr(new, replace, getattr(old, replace))
@@ -106,7 +106,7 @@ def set_package(fxn):
             if not hasattr(module, '__path__'):
                 module.__package__ = module.__package__.rpartition('.')[0]
         return module
-    wrap(wrapper, fxn)
+    _wrap(wrapper, fxn)
     return wrapper
 
 
@@ -117,7 +117,7 @@ def set_loader(fxn):
         if not hasattr(module, '__loader__'):
             module.__loader__ = self
         return module
-    wrap(wrapper, fxn)
+    _wrap(wrapper, fxn)
     return wrapper
 
 
@@ -187,7 +187,7 @@ class FrozenImporter:
             raise
 
 
-def chained_path_hook(*path_hooks):
+def _chained_path_hook(*path_hooks):
     """Create a closure which sequentially checks path hooks to see which ones
     (if any) can work with a path."""
     def path_hook(entry):
@@ -203,12 +203,12 @@ def chained_path_hook(*path_hooks):
         if not finders:
             raise ImportError("no finder found")
         else:
-            return ChainedFinder(*finders)
+            return _ChainedFinder(*finders)
 
     return path_hook
 
 
-class ChainedFinder:
+class _ChainedFinder:
 
     """Finder that sequentially calls other finders."""
 
@@ -224,7 +224,7 @@ class ChainedFinder:
             return None
 
 
-def check_name(method):
+def _check_name(method):
     """Decorator to verify that the module being requested matches the one the
     loader can handle.
 
@@ -236,7 +236,7 @@ def check_name(method):
         if self._name != name:
             raise ImportError("loader cannot handle %s" % name)
         return method(self, name, *args, **kwargs)
-    wrap(inner, method)
+    _wrap(inner, method)
     return inner
 
 
@@ -260,7 +260,7 @@ class _ExtensionFileLoader:
         if is_pkg:
             raise ValueError("extension modules cannot be packages")
 
-    @check_name
+    @_check_name
     @set_package
     @set_loader
     def load_module(self, fullname):
@@ -273,23 +273,23 @@ class _ExtensionFileLoader:
                 del sys.modules[fullname]
             raise
 
-    @check_name
+    @_check_name
     def is_package(self, fullname):
         """Return False as an extension module can never be a package."""
         return False
 
-    @check_name
+    @_check_name
     def get_code(self, fullname):
         """Return None as an extension module cannot create a code object."""
         return None
 
-    @check_name
+    @_check_name
     def get_source(self, fullname):
         """Return None as extension modules have no source code."""
         return None
 
 
-def suffix_list(suffix_type):
+def _suffix_list(suffix_type):
     """Return a list of file suffixes based on the imp file type."""
     return [suffix[0] for suffix in imp.get_suffixes()
             if suffix[2] == suffix_type]
@@ -323,7 +323,7 @@ def module_for_loader(fxn):
             if not is_reload:
                 del sys.modules[fullname]
             raise
-    wrap(decorated, fxn)
+    _wrap(decorated, fxn)
     return decorated
 
 
@@ -484,21 +484,21 @@ class PyFileLoader(PyLoader):
     def _find_path(self, ext_type):
         """Find a path from the base path and the specified extension type that
         exists, returning None if one is not found."""
-        for suffix in suffix_list(ext_type):
+        for suffix in _suffix_list(ext_type):
             path = self._base_path + suffix
             if _path_exists(path):
                 return path
         else:
             return None
 
-    @check_name
+    @_check_name
     def source_path(self, fullname):
         """Return the path to an existing source file for the module, or None
         if one cannot be found."""
         # Not a property so that it is easy to override.
         return self._find_path(imp.PY_SOURCE)
 
-    @check_name
+    @_check_name
     def get_source(self, fullname):
         """Return the source for the module as a string.
 
@@ -510,7 +510,7 @@ class PyFileLoader(PyLoader):
         if source_path is None:
             return None
         import tokenize
-        with closing(_io.FileIO(source_path, 'r')) as file:  # Assuming bytes.
+        with _closing(_io.FileIO(source_path, 'r')) as file:  # Assuming bytes.
             encoding, lines = tokenize.detect_encoding(file.readline)
         # XXX Will fail when passed to compile() if the encoding is
         # anything other than UTF-8.
@@ -521,7 +521,7 @@ class PyFileLoader(PyLoader):
         """Return the data from path as raw bytes."""
         return _io.FileIO(path, 'r').read()  # Assuming bytes.
 
-    @check_name
+    @_check_name
     def is_package(self, fullname):
         """Return a boolean based on whether the module is a package.
 
@@ -536,7 +536,7 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
 
     """Load a module from a source or bytecode file."""
 
-    @check_name
+    @_check_name
     def source_mtime(self, name):
         """Return the modification time of the source for the specified
         module."""
@@ -545,14 +545,14 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
             return None
         return int(_os.stat(source_path).st_mtime)
 
-    @check_name
+    @_check_name
     def bytecode_path(self, fullname):
         """Return the path to a bytecode file, or None if one does not
         exist."""
         # Not a property for easy overriding.
         return self._find_path(imp.PY_COMPILED)
 
-    @check_name
+    @_check_name
     def write_bytecode(self, name, data):
         """Write out 'data' for the specified module, returning a boolean
         signifying if the write-out actually occurred.
@@ -563,10 +563,10 @@ class PyPycFileLoader(PyPycLoader, PyFileLoader):
         """
         bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
-            bytecode_path = self._base_path + suffix_list(imp.PY_COMPILED)[0]
+            bytecode_path = self._base_path + _suffix_list(imp.PY_COMPILED)[0]
         file = _io.FileIO(bytecode_path, 'w')  # Assuming bytes.
         try:
-            with closing(file) as bytecode_file:
+            with _closing(file) as bytecode_file:
                 bytecode_file.write(data)
                 return True
         except IOError as exc:
@@ -645,7 +645,7 @@ class ExtensionFileFinder(FileFinder):
     def __init__(self, path_entry):
         # Assigning to _suffixes here instead of at the class level because
         # imp is not imported at the time of class creation.
-        self._suffixes = suffix_list(imp.C_EXTENSION)
+        self._suffixes = _suffix_list(imp.C_EXTENSION)
         super().__init__(path_entry)
 
 
@@ -660,7 +660,7 @@ class PyFileFinder(FileFinder):
         # Lack of imp during class creation means _suffixes is set here.
         # Make sure that Python source files are listed first!  Needed for an
         # optimization by the loader.
-        self._suffixes = suffix_list(imp.PY_SOURCE)
+        self._suffixes = _suffix_list(imp.PY_SOURCE)
         super().__init__(path_entry)
 
 
@@ -672,7 +672,7 @@ class PyPycFileFinder(PyFileFinder):
 
     def __init__(self, path_entry):
         super().__init__(path_entry)
-        self._suffixes += suffix_list(imp.PY_COMPILED)
+        self._suffixes += _suffix_list(imp.PY_COMPILED)
 
 
 class PathFinder:
@@ -738,7 +738,7 @@ class PathFinder:
             return None
 
 
-_DEFAULT_PATH_HOOK = chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
+_DEFAULT_PATH_HOOK = _chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
 
 class _DefaultPathFinder(PathFinder):
 
@@ -761,7 +761,7 @@ class _DefaultPathFinder(PathFinder):
         return super()._path_importer_cache(path, _DEFAULT_PATH_HOOK)
 
 
-class ImportLockContext:
+class _ImportLockContext:
 
     """Context manager for the import lock."""
 
@@ -806,7 +806,7 @@ def _gcd_import(name, package=None, level=0):
             name = "{0}.{1}".format(package[:dot], name)
         else:
             name = package[:dot]
-    with ImportLockContext():
+    with _ImportLockContext():
         try:
             return sys.modules[name]
         except KeyError:
