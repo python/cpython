@@ -28,9 +28,10 @@ sequence ``f(0), f(1), ...``.  This toolbox provides :func:`imap` and
 :func:`count` which can be combined to form ``imap(f, count())`` to produce an
 equivalent result.
 
-The tools also work well with the high-speed functions in the :mod:`operator`
-module.  For example, the plus-operator can be mapped across two vectors to
-form an efficient dot-product: ``sum(imap(operator.add, vector1, vector2))``.
+These tools and their built-in counterparts also work well with the high-speed
+functions in the :mod:`operator` module.  For example, the multiplication
+operator can be mapped across two vectors to form an efficient dot-product:
+``sum(imap(operator.mul, vector1, vector2))``.
 
 
 **Infinite Iterators:**
