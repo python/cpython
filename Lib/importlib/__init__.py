@@ -18,13 +18,15 @@ References on import:
           http://www.python.org/dev/peps/pep-0328
 
 """
+__all__ = ['__import__', 'import_module']
+
 from . import _bootstrap
 
-# XXX Temporary functions that should eventually be removed.
 import os
 import re
 import tokenize
 
+# XXX Temporary functions that should eventually be removed.
 def _set__import__():
     """Set __import__ to an instance of Import."""
     global original__import__
