@@ -16,6 +16,8 @@ work. One should use importlib as the public-facing version of this module.
 # anything specified at the class level.
 
 
+# Bootstrap-related code ######################################################
+
 # XXX Could also expose Modules/getpath.c:joinpath()
 def _path_join(*args):
     """Replacement for os.path.join."""
@@ -97,6 +99,8 @@ def _wrap(new, old):
     new.__dict__.update(old.__dict__)
 
 
+# Finder/loader utility code ##################################################
+
 def set_package(fxn):
     """Set __package__ on the returned module."""
     def wrapper(*args, **kwargs):
@@ -120,6 +124,56 @@ def set_loader(fxn):
     _wrap(wrapper, fxn)
     return wrapper
 
+
+def module_for_loader(fxn):
+    """Decorator to handle selecting the proper module for loaders.
+
+    Decorated modules are passed the module to use instead of the module name.
+    The module is either from sys.modules if it already exists (for reloading)
+    or is a new module which has __name__ set. If any exception is raised by
+    the decorated method and the decorator added a module to sys.modules, then
+    the module is deleted from sys.modules.
+
+    The decorator assumes that the decorated method takes self/cls as a first
+    argument and the module as the second argument.
+
+    """
+    def decorated(self, fullname):
+        module = sys.modules.get(fullname)
+        is_reload = bool(module)
+        if not is_reload:
+            # This must be done before open() is called as the 'io' module
+            # implicitly imports 'locale' and would otherwise trigger an
+            # infinite loop.
+            module = imp.new_module(fullname)
+            sys.modules[fullname] = module
+        try:
+            return fxn(self, module)
+        except:
+            if not is_reload:
+                del sys.modules[fullname]
+            raise
+    _wrap(decorated, fxn)
+    return decorated
+
+
+def _check_name(method):
+    """Decorator to verify that the module being requested matches the one the
+    loader can handle.
+
+    The first argument (self) must define _name which the second argument is
+    comapred against. If the comparison fails then ImportError is raised.
+
+    """
+    def inner(self, name, *args, **kwargs):
+        if self._name != name:
+            raise ImportError("loader cannot handle %s" % name)
+        return method(self, name, *args, **kwargs)
+    _wrap(inner, method)
+    return inner
+
+
+# Finders/loaders #############################################################
 
 class BuiltinImporter:
 
@@ -224,21 +278,6 @@ class _ChainedFinder:
             return None
 
 
-def _check_name(method):
-    """Decorator to verify that the module being requested matches the one the
-    loader can handle.
-
-    The first argument (self) must define _name which the second argument is
-    comapred against. If the comparison fails then ImportError is raised.
-
-    """
-    def inner(self, name, *args, **kwargs):
-        if self._name != name:
-            raise ImportError("loader cannot handle %s" % name)
-        return method(self, name, *args, **kwargs)
-    _wrap(inner, method)
-    return inner
-
 
 class _ExtensionFileLoader:
 
@@ -294,37 +333,6 @@ def _suffix_list(suffix_type):
     return [suffix[0] for suffix in imp.get_suffixes()
             if suffix[2] == suffix_type]
 
-
-def module_for_loader(fxn):
-    """Decorator to handle selecting the proper module for loaders.
-
-    Decorated modules are passed the module to use instead of the module name.
-    The module is either from sys.modules if it already exists (for reloading)
-    or is a new module which has __name__ set. If any exception is raised by
-    the decorated method and the decorator added a module to sys.modules, then
-    the module is deleted from sys.modules.
-
-    The decorator assumes that the decorated method takes self/cls as a first
-    argument and the module as the second argument.
-
-    """
-    def decorated(self, fullname):
-        module = sys.modules.get(fullname)
-        is_reload = bool(module)
-        if not is_reload:
-            # This must be done before open() is called as the 'io' module
-            # implicitly imports 'locale' and would otherwise trigger an
-            # infinite loop.
-            module = imp.new_module(fullname)
-            sys.modules[fullname] = module
-        try:
-            return fxn(self, module)
-        except:
-            if not is_reload:
-                del sys.modules[fullname]
-            raise
-    _wrap(decorated, fxn)
-    return decorated
 
 
 class PyLoader:
@@ -738,6 +746,21 @@ class PathFinder:
             return None
 
 
+# Import itself ###############################################################
+
+class _ImportLockContext:
+
+    """Context manager for the import lock."""
+
+    def __enter__(self):
+        """Acquire the import lock."""
+        imp.acquire_lock()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Release the import lock regardless of any raised exceptions."""
+        imp.release_lock()
+
+
 _DEFAULT_PATH_HOOK = _chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
 
 class _DefaultPathFinder(PathFinder):
@@ -760,18 +783,6 @@ class _DefaultPathFinder(PathFinder):
         sys.path_importer_cache."""
         return super()._path_importer_cache(path, _DEFAULT_PATH_HOOK)
 
-
-class _ImportLockContext:
-
-    """Context manager for the import lock."""
-
-    def __enter__(self):
-        """Acquire the import lock."""
-        imp.acquire_lock()
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        """Release the import lock regardless of any raised exceptions."""
-        imp.release_lock()
 
 
 _IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
