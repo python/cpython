@@ -1,4 +1,4 @@
-import importlib
+from importlib import _bootstrap
 from . import util as source_util
 
 import codecs
@@ -35,7 +35,7 @@ class EncodingTest(unittest.TestCase):
         with source_util.create_modules(self.module_name) as mapping:
             with open(mapping[self.module_name], 'wb')as file:
                 file.write(source)
-            loader = importlib.PyPycFileLoader(self.module_name,
+            loader = _bootstrap._PyPycFileLoader(self.module_name,
                                        mapping[self.module_name], False)
             return loader.load_module(self.module_name)
 
@@ -96,8 +96,8 @@ class LineEndingTest(unittest.TestCase):
         with source_util.create_modules(module_name) as mapping:
             with open(mapping[module_name], 'wb') as file:
                 file.write(source)
-            loader = importlib.PyPycFileLoader(module_name, mapping[module_name],
-                                                False)
+            loader = _bootstrap._PyPycFileLoader(module_name,
+                                                 mapping[module_name], False)
             return loader.load_module(module_name)
 
     # [cr]

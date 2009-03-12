@@ -387,7 +387,7 @@ class PyPycLoader(PyLoader):
         return code_object
 
 
-class PyFileLoader(PyLoader):
+class _PyFileLoader(PyLoader):
 
     """Load a Python source file."""
 
@@ -452,7 +452,7 @@ class PyFileLoader(PyLoader):
         return self._is_pkg
 
 
-class PyPycFileLoader(PyPycLoader, PyFileLoader):
+class _PyPycFileLoader(PyPycLoader, _PyFileLoader):
 
     """Load a module from a source or bytecode file."""
 
@@ -626,7 +626,7 @@ class _ChainedFinder:
             return None
 
 
-class FileFinder:
+class _FileFinder:
 
     """Base class for file finders.
 
@@ -685,12 +685,12 @@ class FileFinder:
             return None
 
 
-class PyFileFinder(FileFinder):
+class _PyFileFinder(_FileFinder):
 
     """Importer for source/bytecode files."""
 
     _possible_package = True
-    _loader = PyFileLoader
+    _loader = _PyFileLoader
 
     def __init__(self, path_entry):
         # Lack of imp during class creation means _suffixes is set here.
@@ -700,11 +700,11 @@ class PyFileFinder(FileFinder):
         super().__init__(path_entry)
 
 
-class PyPycFileFinder(PyFileFinder):
+class _PyPycFileFinder(_PyFileFinder):
 
     """Finder for source and bytecode files."""
 
-    _loader = PyPycFileLoader
+    _loader = _PyPycFileLoader
 
     def __init__(self, path_entry):
         super().__init__(path_entry)
@@ -713,7 +713,7 @@ class PyPycFileFinder(PyFileFinder):
 
 
 
-class ExtensionFileFinder(FileFinder):
+class _ExtensionFileFinder(_FileFinder):
 
     """Importer for extension files."""
 
@@ -750,7 +750,7 @@ def _chained_path_hook(*path_hooks):
     return path_hook
 
 
-_DEFAULT_PATH_HOOK = _chained_path_hook(ExtensionFileFinder, PyPycFileFinder)
+_DEFAULT_PATH_HOOK = _chained_path_hook(_ExtensionFileFinder, _PyPycFileFinder)
 
 class _DefaultPathFinder(PathFinder):
 
@@ -902,8 +902,3 @@ def _import(name, globals={}, locals={}, fromlist=[], level=0):
                 except ImportError:
                     pass
         return module
-
-
-# XXX Eventually replace with a proper __all__ value (i.e., don't expose os
-# replacements but do expose _ExtensionFileLoader, etc. for testing).
-__all__ = [obj for obj in globals().keys() if not obj.startswith('__')]

@@ -7,15 +7,6 @@ to do
 
     + Expose function to see if a frozen module is a package.
 
-* Remove ``import *`` from importlib.__init__.
-
-* Remove __all__ from importlib._bootstrap.
-
-* Add leading underscores to all objects in importlib._bootstrap that are not
-  publicly exposed.
-
-* Reorder importlib/_bootstrap.py so definitions are not in inverted order.
-
 * Make sure that there is documentation *somewhere* fully explaining the
 semantics of import that can be referenced from the package's documentation
 (even if it is in the package documentation itself, although it might be best

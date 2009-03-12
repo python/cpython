@@ -1,5 +1,5 @@
 """Test case-sensitivity (PEP 235)."""
-import importlib
+from importlib import _bootstrap
 from .. import util
 from . import util as source_util
 import os
@@ -19,7 +19,7 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = importlib.PyPycFileFinder(path)
+        finder = _bootstrap._PyPycFileFinder(path)
         return finder.find_module(self.name)
 
     def sensitivity_test(self):

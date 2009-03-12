@@ -1,4 +1,4 @@
-import importlib
+from importlib import _bootstrap
 from .. import abc
 from . import util as source_util
 import os
@@ -32,7 +32,7 @@ class FinderTests(abc.FinderTests):
     """
 
     def import_(self, root, module):
-        finder = importlib.PyPycFileFinder(root)
+        finder = _bootstrap._PyPycFileFinder(root)
         return finder.find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):

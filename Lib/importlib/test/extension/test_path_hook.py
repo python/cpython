@@ -1,4 +1,4 @@
-import importlib
+from importlib import _bootstrap
 from . import util
 
 import collections
@@ -14,7 +14,7 @@ class PathHookTests(unittest.TestCase):
     # XXX Should it only work for directories containing an extension module?
 
     def hook(self, entry):
-        return importlib.ExtensionFileFinder(entry)
+        return _bootstrap._ExtensionFileFinder(entry)
 
     def test_success(self):
         # Path hook should handle a directory where a known extension module

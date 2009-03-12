@@ -1,4 +1,4 @@
-import importlib
+from importlib import _bootstrap
 from .. import abc
 from . import util
 
@@ -9,7 +9,7 @@ class FinderTests(abc.FinderTests):
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = importlib.ExtensionFileFinder(util.PATH)
+        importer = _bootstrap._ExtensionFileFinder(util.PATH)
         return importer.find_module(fullname)
 
     def test_module(self):
