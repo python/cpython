@@ -26,9 +26,10 @@ For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  But, this effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-The tools also work well with the high-speed functions in the :mod:`operator`
-module.  For example, the plus-operator can be mapped across two vectors to
-form an efficient dot-product: ``sum(map(operator.add, vector1, vector2))``.
+These tools and their built-in counterparts also work well with the high-speed
+functions in the :mod:`operator` module.  For example, the multiplication
+operator can be mapped across two vectors to form an efficient dot-product:
+``sum(map(operator.mul, vector1, vector2))``.
 
 
 **Infinite Iterators:**
