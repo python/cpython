@@ -97,6 +97,11 @@ raiseExceptions = 1
 logThreads = 1
 
 #
+# If you don't want multiprocessing information in the log, set this to zero
+#
+logMultiprocessing = 1
+
+#
 # If you don't want process information in the log, set this to zero
 #
 logProcesses = 1
@@ -263,6 +268,11 @@ class LogRecord:
         else:
             self.thread = None
             self.threadName = None
+        if logMultiprocessing:
+            from multiprocessing import current_process
+            self.processName = current_process().name
+        else:
+            self.processName = None
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
