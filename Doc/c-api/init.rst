@@ -835,7 +835,7 @@ interpreter lock and can perform any Python API calls.
    it returns -1 without setting any exception.
 
    This function can be called on any thread, be it a Python thread or
-   some other system thread.  If it is a Python thread, it doesen't matter if
+   some other system thread.  If it is a Python thread, it doesn't matter if
    it holds the global interpreter lock or not.
 
    .. versionadded:: 2.7

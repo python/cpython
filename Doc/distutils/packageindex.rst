@@ -98,7 +98,7 @@ repository to work with::
 
     python setup.py register -r http://example.com/pypi
 
-The name of the section that describes the repository may also be used
-for conveniency::
+For convenience, the name of the section that describes the repository
+may also be used::
 
     python setup.py register -r other
