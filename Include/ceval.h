@@ -92,11 +92,10 @@ PyAPI_DATA(int) _Py_CheckRecursionLimit;
 #  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
 #endif
 
-#ifdef USE_STACKCHECK
-#  define _Py_MakeEndRecCheck(x)  (--(x) < _Py_CheckRecursionLimit - 50)
-#else
-#  define _Py_MakeEndRecCheck(x)  (--(x) < _Py_CheckRecursionLimit - 50)
-#endif
+#define _Py_MakeEndRecCheck(x) \
+	(--(x) < ((_Py_CheckRecursionLimit > 100) \
+		? (_Py_CheckRecursionLimit - 50) \
+		: (3 * (_Py_CheckRecursionLimit >> 2))))
 
 #define Py_ALLOW_RECURSION \
   do { unsigned char _old = PyThreadState_GET()->recursion_critical;\

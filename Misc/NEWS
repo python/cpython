@@ -12,6 +12,9 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5392: when a very low recursion limit was set, the interpreter would
+  abort with a fatal error after the recursion limit was hit twice.
+
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, int, and float arguments.
 

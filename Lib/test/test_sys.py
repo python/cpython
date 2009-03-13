@@ -2,6 +2,8 @@
 import unittest, test.support
 import sys, io, os
 import struct
+import subprocess
+import textwrap
 
 class SysModuleTest(unittest.TestCase):
 
@@ -154,6 +156,46 @@ class SysModuleTest(unittest.TestCase):
         sys.setrecursionlimit(10000)
         self.assertEqual(sys.getrecursionlimit(), 10000)
         sys.setrecursionlimit(oldlimit)
+
+    def test_recursionlimit_recovery(self):
+        # NOTE: this test is slightly fragile in that it depends on the current
+        # recursion count when executing the test being low enough so as to
+        # trigger the recursion recovery detection in the _Py_MakeEndRecCheck
+        # macro (see ceval.h).
+        oldlimit = sys.getrecursionlimit()
+        def f():
+            f()
+        try:
+            for i in (50, 1000):
+                # Issue #5392: stack overflow after hitting recursion limit twice
+                sys.setrecursionlimit(i)
+                self.assertRaises(RuntimeError, f)
+                self.assertRaises(RuntimeError, f)
+        finally:
+            sys.setrecursionlimit(oldlimit)
+
+    def test_recursionlimit_fatalerror(self):
+        # A fatal error occurs if a second recursion limit is hit when recovering
+        # from a first one.
+        code = textwrap.dedent("""
+            import sys
+
+            def f():
+                try:
+                    f()
+                except RuntimeError:
+                    f()
+
+            sys.setrecursionlimit(%d)
+            f()""")
+        for i in (50, 1000):
+            sub = subprocess.Popen([sys.executable, '-c', code % i],
+                stderr=subprocess.PIPE)
+            err = sub.communicate()[1]
+            self.assertTrue(sub.returncode, sub.returncode)
+            self.assertTrue(
+                b"Fatal Python error: Cannot recover from stack overflow" in err,
+                err)
 
     def test_getwindowsversion(self):
         if hasattr(sys, "getwindowsversion"):
