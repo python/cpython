@@ -1240,7 +1240,7 @@ Basic customization
    ``isinstance(obj, collections.Hashable)`` (unlike classes which define their
    own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
 
-   If a class that overrrides :meth:`__eq__` needs to retain the implementation
+   If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
    explicitly by setting ``__hash__ = <ParentClass>.__hash__``. Otherwise the
    inheritance of :meth:`__hash__` will be blocked, just as if :attr:`__hash__`

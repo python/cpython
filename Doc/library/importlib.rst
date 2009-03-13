@@ -78,9 +78,9 @@ Functions
 
     The :func:`import_module` function acts as a simplifying wrapper around
     :func:`__import__`. This means all semantics of the function are derived
-    from :func:`__import__`, including requiring the package where an import is
-    occuring from to already be imported (i.e., *package* must already be
-    imported).
+    from :func:`__import__`, including requiring the package from which an
+    import is occurring to have been previously imported (i.e., *package*
+    must already be imported).
 
 :mod:`importlib.abc` -- Abstract base classes related to import
 ---------------------------------------------------------------

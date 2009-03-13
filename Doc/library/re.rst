@@ -16,7 +16,7 @@ those found in Perl.  The :mod:`re` module is always available.
 Both patterns and strings to be searched can be Unicode strings as well as
 8-bit strings. However, Unicode strings and 8-bit strings cannot be mixed:
 that is, you cannot match an Unicode string with a byte pattern or
-vice-versa; similarly, when asking for a substition, the replacement
+vice-versa; similarly, when asking for a substitution, the replacement
 string must be of the same type as both the pattern and the search string.
 
 Regular expressions use the backslash character (``'\'``) to indicate

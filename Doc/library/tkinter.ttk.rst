@@ -139,7 +139,7 @@ scrollbar.
    +----------------+---------------------------------------------------------+
    | option         | description                                             |
    +================+=========================================================+
-   | xscrollcommand | Used to comunicate with horizontal scrollbars.          |
+   | xscrollcommand | Used to communicate with horizontal scrollbars.         |
    |                |                                                         |
    |                | When the view in the widget's window change, the widget |
    |                | will generate a Tcl command based on the scrollcommand. |
@@ -149,7 +149,7 @@ scrollbar.
    |                | the scrollbar to be updated whenever the view in the    |
    |                | window changes.                                         |
    +----------------+---------------------------------------------------------+
-   | yscrollcommand | Used to comunicate with vertical scrollbars.            |
+   | yscrollcommand | Used to communicate with vertical scrollbars.           |
    |                | For some more information, see above.                   |
    +----------------+---------------------------------------------------------+
 

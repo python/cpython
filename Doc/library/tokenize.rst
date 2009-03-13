@@ -82,7 +82,7 @@ function it uses to do this is available:
 .. function:: detect_encoding(readline)
 
     The :func:`detect_encoding` function is used to detect the encoding that
-    should be used to decode a Python source file. It requires one argment,
+    should be used to decode a Python source file. It requires one argument,
     readline, in the same way as the :func:`tokenize` generator.
 
     It will call readline a maximum of twice, and return the encoding used
