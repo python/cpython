@@ -133,6 +133,15 @@ class LargeFileTest(unittest.TestCase):
             f.seek(0)
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
 
+    def test_seekable(self):
+        # Issue #5016; seekable() can return False when the current position
+        # is negative when truncated to an int.
+        for pos in (2**31-1, 2**31, 2**31+1):
+            with self.open(TESTFN, 'rb') as f:
+                f.seek(pos)
+                self.assert_(f.seekable())
+
+
 def test_main():
     # On Windows and Mac OSX this test comsumes large resources; It
     # takes a long time to build the >2GB file and takes >2GB of disk
@@ -172,6 +181,7 @@ def test_main():
         with _open(TESTFN, 'wb') as f:
             if hasattr(f, 'truncate'):
                 suite.addTest(TestCase('test_truncate'))
+        suite.addTest(TestCase('test_seekable'))
         unlink(TESTFN)
     try:
         run_unittest(suite)

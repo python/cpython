@@ -21,6 +21,9 @@ Library
 - The error detection code in FileIO.close() could fail to reflect the `errno`
   value, and report it as -1 instead.
 
+- Issue #5016: FileIO.seekable() could return False if the file position
+  was negative when truncated to a C int. Patch by Victor Stinner.
+
 
 What's New in Python 3.1 alpha 1
 ================================
