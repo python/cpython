@@ -97,10 +97,8 @@ fileio_close(PyFileIOObject *self)
 		Py_RETURN_NONE;
 	}
 	errno = internal_close(self);
-	if (errno < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
+	if (errno < 0)
 		return NULL;
-	}
 
 	return PyObject_CallMethod((PyObject*)&PyRawIOBase_Type,
 				   "close", "O", self);
