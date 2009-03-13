@@ -93,7 +93,7 @@ could be used to pass around structured data in its native, in-memory format.
       occur (striding in a contiguous memory block).
 
       Here is a function that returns a pointer to the element in an N-D array
-      pointed to by an N-dimesional index when there are both non-NULL strides
+      pointed to by an N-dimensional index when there are both non-NULL strides
       and suboffsets::
 
           void *get_item_pointer(int ndim, void *buf, Py_ssize_t *strides,

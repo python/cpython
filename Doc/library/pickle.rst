@@ -473,13 +473,13 @@ objects. [#]_
 Although powerful, implementing :meth:`__reduce__` directly in your classes is
 error prone.  For this reason, class designers should use the high-level
 interface (i.e., :meth:`__getnewargs__`, :meth:`__getstate__` and
-:meth:`__setstate__`) whenever possible.  We will show however cases where using
+:meth:`__setstate__`) whenever possible.  We will show, however, cases where using
 :meth:`__reduce__` is the only option or leads to more efficient pickling or
 both.
 
-The interface is currently defined as follow. The :meth:`__reduce__` method
+The interface is currently defined as follows. The :meth:`__reduce__` method
 takes no argument and shall return either a string or preferably a tuple (the
-returned object is often refered as the "reduce value").
+returned object is often referred to as the "reduce value").
 
 If a string is returned, the string should be interpreted as the name of a
 global variable.  It should be the object's local name relative to its module;

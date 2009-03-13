@@ -99,7 +99,7 @@ differentiate between the print statement with parentheses (such as ``print
 Fixers
 ------
 
-Each step of tranforming code is encapsulated in a fixer.  The command ``2to3
+Each step of transforming code is encapsulated in a fixer.  The command ``2to3
 -l`` lists them.  As :ref:`documented above <2to3-using>`, each can be turned on
 and off individually.  They are described here in more detail.
 
@@ -167,11 +167,11 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: idioms
 
-   This optional fixer preforms several transformations that make Python code
-   more idiomatic.  Type comparisions like ``type(x) is SomeClass`` and
+   This optional fixer performs several transformations that make Python code
+   more idiomatic.  Type comparisons like ``type(x) is SomeClass`` and
    ``type(x) == SomeClass`` are converted to ``isinstance(x, SomeClass)``.
    ``while 1`` becomes ``while True``.  This fixer also tries to make use of
-   :func:`sorted` in appropiate places.  For example, this block ::
+   :func:`sorted` in appropriate places.  For example, this block ::
 
        L = list(some_iterable)
        L.sort()

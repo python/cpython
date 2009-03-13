@@ -1214,7 +1214,7 @@ member in the :ctype:`PyTypeObject` structure should be *NULL*.  Otherwise, the
       export, *view* is the :ctype:`Py_buffer` struct to fill, and *flags* gives
       the conditions the caller wants the memory under.  (See
       :cfunc:`PyObject_GetBuffer` for all flags.)  :cmember:`bf_getbuffer` is
-      responsible for filling *view* with the approiate information.
+      responsible for filling *view* with the appropriate information.
       (:cfunc:`PyBuffer_FillView` can be used in simple cases.)  See
       :ctype:`Py_buffer`\s docs for what needs to be filled in.
 

@@ -61,7 +61,7 @@ The object-oriented interface uses essentially two+two classes:
 
 The procedural interface provides functions which are derived from the methods
 of the classes :class:`Screen` and :class:`Turtle`.  They have the same names as
-the corresponding methods.  A screen object is automativally created whenever a
+the corresponding methods.  A screen object is automatically created whenever a
 function derived from a Screen method is called.  An (unnamed) turtle object is
 automatically created whenever any of the functions derived from a Turtle method
 is called.
@@ -1584,7 +1584,7 @@ The public classes of the module :mod:`turtle`
    =========== ===========
    "polygon"   a polygon-tuple, i.e. a tuple of pairs of coordinates
    "image"     an image  (in this form only used internally!)
-   "compound"  ``None`` (a compund shape has to be constructed using the
+   "compound"  ``None`` (a compound shape has to be constructed using the
                :meth:`addcomponent` method)
    =========== ===========
 
@@ -1806,7 +1806,7 @@ There is a set of demo scripts in the turtledemo directory located in the
 
 It contains:
 
-- a set of 15 demo scripts demonstrating differet features of the new module
+- a set of 15 demo scripts demonstrating different features of the new module
   :mod:`turtle`
 - a demo viewer :file:`turtleDemo.py` which can be used to view the sourcecode
   of the scripts and run them at the same time. 14 of the examples can be
