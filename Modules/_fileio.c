@@ -66,6 +66,8 @@ _PyFileIO_closed(PyObject *self)
 static PyObject *
 portable_lseek(int fd, PyObject *posobj, int whence);
 
+static PyObject *portable_lseek(int fd, PyObject *posobj, int whence);
+
 /* Returns 0 on success, -1 with exception set on failure. */
 static int
 internal_close(PyFileIOObject *self)
@@ -441,14 +443,14 @@ fileio_seekable(PyFileIOObject *self)
 	if (self->fd < 0)
 		return err_closed();
 	if (self->seekable < 0) {
-		int ret;
-		Py_BEGIN_ALLOW_THREADS
-		ret = lseek(self->fd, 0, SEEK_CUR);
-		Py_END_ALLOW_THREADS
-		if (ret < 0)
+		PyObject *pos = portable_lseek(self->fd, NULL, SEEK_CUR);
+		if (pos == NULL) {
+			PyErr_Clear();
 			self->seekable = 0;
-		else
+		} else {
+			Py_DECREF(pos);
 			self->seekable = 1;
+		}
 	}
 	return PyBool_FromLong((long) self->seekable);
 }
