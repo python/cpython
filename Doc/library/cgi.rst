@@ -295,12 +295,12 @@ algorithms implemented in this module in other circumstances.
 .. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
 
    This function is deprecated in this module. Use :func:`urlparse.parse_qs`
-   instead. It is maintained here only for backward compatiblity.
+   instead. It is maintained here only for backward compatibility.
 
 .. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
 
    This function is deprecated in this module. Use :func:`urlparse.parse_qsl`
-   instead. It is maintained here only for backward compatiblity.
+   instead. It is maintained here only for backward compatibility.
 
 .. function:: parse_multipart(fp, pdict)
 
