@@ -2,6 +2,7 @@
 
 import sys
 import os
+import errno
 import unittest
 from array import array
 from weakref import proxy
@@ -110,6 +111,20 @@ class AutoFileTests(unittest.TestCase):
         except IOError as e:
             self.assertNotEqual(e.errno, 0)
             self.assertEqual(e.filename, ".")
+        else:
+            self.fail("Should have raised IOError")
+
+    def testErrnoOnClose(self):
+        # Test that the IOError's `errno` attribute is correctly set when
+        # close() fails. Here we first close the file descriptor ourselves so
+        # that close() fails with EBADF ('Bad file descriptor').
+        f = self.f
+        os.close(f.fileno())
+        self.f = None
+        try:
+            f.close()
+        except IOError as e:
+            self.assertEqual(e.errno, errno.EBADF)
         else:
             self.fail("Should have raised IOError")
 

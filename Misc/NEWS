@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- The error detection code in FileIO.close() could fail to reflect the `errno`
+  value, and report it as -1 instead.
+
 
 What's New in Python 3.1 alpha 1
 ================================
