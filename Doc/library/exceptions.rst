@@ -52,7 +52,7 @@ The following exceptions are only used as base classes for other exceptions.
    The base class for all built-in exceptions.  It is not meant to be directly
    inherited by user-defined classes (for that use :exc:`Exception`).  If
    :func:`str` or :func:`unicode` is called on an instance of this class, the
-   representation of the argument(s) to the instance are returned or the emptry
+   representation of the argument(s) to the instance are returned or the empty
    string when there were no arguments.  All arguments are  stored in :attr:`args`
    as a tuple.
 
