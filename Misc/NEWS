@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1222: locale.format() bug when the thousands separator is a space
+  character.
+
 - Issue #4792: Prevent a segfault in _tkinter by using the
   guaranteed to be safe interp argument given to the PythonCmd in place of
   the Tcl interpreter taken from a PythonCmd_ClientData.
