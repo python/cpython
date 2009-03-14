@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1222: locale.format() bug when the thousands separator is a space
+  character.
+
 - Issue #5016: FileIO.seekable() could return False if the file position
   was negative when truncated to a C int. Patch by Victor Stinner.
 
