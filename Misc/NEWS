@@ -171,6 +171,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1222: locale.format() bug when the thousands separator is a space
+  character.
+
 - Issue #5472: Fixed distutils.test_util tear down. Original patch by
   Tim Golden.
 
