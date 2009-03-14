@@ -12,6 +12,9 @@ What's New in Python 3.1 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #5237: Allow auto-numbered fields in str.format(). For
+  example: '{} {}'.format(1, 2) == '1 2'.
+
 - Issue #5392: when a very low recursion limit was set, the interpreter would
   abort with a fatal error after the recursion limit was hit twice.
 
@@ -33,6 +36,7 @@ What's New in Python 3.1 alpha 1
 Core and Builtins
 -----------------
 
+=======
 - The io module has been reimplemented in C for speed.
 
 - Give dict views an informative __repr__.
