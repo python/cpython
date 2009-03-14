@@ -347,9 +347,9 @@ class StrTest(
         self.assertRaises(ValueError, "{0!}".format, 0)
         self.assertRaises(ValueError, "{0!rs}".format, 0)
         self.assertRaises(ValueError, "{!}".format)
-        self.assertRaises(ValueError, "{:}".format)
-        self.assertRaises(ValueError, "{:s}".format)
-        self.assertRaises(ValueError, "{}".format)
+        self.assertRaises(IndexError, "{:}".format)
+        self.assertRaises(IndexError, "{:s}".format)
+        self.assertRaises(IndexError, "{}".format)
 
         # can't have a replacement on the field name portion
         self.assertRaises(TypeError, '{0[{1}]}'.format, 'abcdefg', 4)
@@ -363,6 +363,36 @@ class StrTest(
         self.assertRaises(ValueError, "{0:-s}".format, '')
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
+
+    def test_format_auto_numbering(self):
+        class C:
+            def __init__(self, x=100):
+                self._x = x
+            def __format__(self, spec):
+                return spec
+
+        self.assertEqual('{}'.format(10), '10')
+        self.assertEqual('{:5}'.format('s'), 's    ')
+        self.assertEqual('{!r}'.format('s'), "'s'")
+        self.assertEqual('{._x}'.format(C(10)), '10')
+        self.assertEqual('{[1]}'.format([1, 2]), '2')
+        self.assertEqual('{[a]}'.format({'a':4, 'b':2}), '4')
+        self.assertEqual('a{}b{}c'.format(0, 1), 'a0b1c')
+
+        self.assertEqual('a{:{}}b'.format('x', '^10'), 'a    x     b')
+        self.assertEqual('a{:{}x}b'.format(20, '#'), 'a0x14b')
+
+        # can't mix and match numbering and auto-numbering
+        self.assertRaises(ValueError, '{}{1}'.format, 1, 2)
+        self.assertRaises(ValueError, '{1}{}'.format, 1, 2)
+        self.assertRaises(ValueError, '{:{1}}'.format, 1, 2)
+        self.assertRaises(ValueError, '{0:{}}'.format, 1, 2)
+
+        # can mix and match auto-numbering and named
+        self.assertEqual('{f}{}'.format(4, f='test'), 'test4')
+        self.assertEqual('{}{f}'.format(4, f='test'), '4test')
+        self.assertEqual('{:{f}}{g}{}'.format(1, 3, g='g', f=2), ' 1g3')
+        self.assertEqual('{f:{}}{}{g}'.format(2, 4, f=1, g='g'), ' 14g')
 
     def test_buffer_is_readonly(self):
         self.assertRaises(TypeError, sys.stdin.readinto, b"")
