@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5237: Allow auto-numbered fields in str.format(). For
+  example: '{} {}'.format(1, 2) == '1 2'.
+
 - Issue #3652: Make the 'line' argument for warnings.showwarning() a
   requirement.  Means the DeprecationWarning from Python 2.6 can go away.
 

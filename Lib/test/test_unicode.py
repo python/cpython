@@ -1087,9 +1087,9 @@ class UnicodeTest(
         self.assertRaises(ValueError, "{0!}".format, 0)
         self.assertRaises(ValueError, "{0!rs}".format, 0)
         self.assertRaises(ValueError, "{!}".format)
-        self.assertRaises(ValueError, "{:}".format)
-        self.assertRaises(ValueError, "{:s}".format)
-        self.assertRaises(ValueError, "{}".format)
+        self.assertRaises(IndexError, "{:}".format)
+        self.assertRaises(IndexError, "{:s}".format)
+        self.assertRaises(IndexError, "{}".format)
 
         # can't have a replacement on the field name portion
         self.assertRaises(TypeError, '{0[{1}]}'.format, 'abcdefg', 4)
@@ -1112,6 +1112,36 @@ class UnicodeTest(
         # This will try to convert the argument from unicode to str, which
         #  will fail
         self.assertRaises(UnicodeEncodeError, "foo{0}".format, u'\u1000bar')
+
+    def test_format_auto_numbering(self):
+        class C:
+            def __init__(self, x=100):
+                self._x = x
+            def __format__(self, spec):
+                return spec
+
+        self.assertEqual(u'{}'.format(10), u'10')
+        self.assertEqual(u'{:5}'.format('s'), u's    ')
+        self.assertEqual(u'{!r}'.format('s'), u"'s'")
+        self.assertEqual(u'{._x}'.format(C(10)), u'10')
+        self.assertEqual(u'{[1]}'.format([1, 2]), u'2')
+        self.assertEqual(u'{[a]}'.format({'a':4, 'b':2}), u'4')
+        self.assertEqual(u'a{}b{}c'.format(0, 1), u'a0b1c')
+
+        self.assertEqual(u'a{:{}}b'.format('x', '^10'), u'a    x     b')
+        self.assertEqual(u'a{:{}x}b'.format(20, '#'), u'a0x14b')
+
+        # can't mix and match numbering and auto-numbering
+        self.assertRaises(ValueError, u'{}{1}'.format, 1, 2)
+        self.assertRaises(ValueError, u'{1}{}'.format, 1, 2)
+        self.assertRaises(ValueError, u'{:{1}}'.format, 1, 2)
+        self.assertRaises(ValueError, u'{0:{}}'.format, 1, 2)
+
+        # can mix and match auto-numbering and named
+        self.assertEqual(u'{f}{}'.format(4, f='test'), u'test4')
+        self.assertEqual(u'{}{f}'.format(4, f='test'), u'4test')
+        self.assertEqual(u'{:{f}}{g}{}'.format(1, 3, g='g', f=2), u' 1g3')
+        self.assertEqual(u'{f:{}}{}{g}'.format(2, 4, f=1, g='g'), u' 14g')
 
     def test_raiseMemError(self):
         # Ensure that the freelist contains a consistent object, even
