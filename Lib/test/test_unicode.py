@@ -1036,73 +1036,73 @@ class UnicodeTest(
         self.assertEqual(u'{0:>15s}'.format(G(u'data')), u' string is data')
         self.assertEqual(u'{0!s}'.format(G(u'data')), u'string is data')
 
-        self.assertEqual("{0:date: %Y-%m-%d}".format(I(year=2007,
-                                                       month=8,
-                                                       day=27)),
-                         "date: 2007-08-27")
+        self.assertEqual(u"{0:date: %Y-%m-%d}".format(I(year=2007,
+                                                        month=8,
+                                                        day=27)),
+                         u"date: 2007-08-27")
 
         # test deriving from a builtin type and overriding __format__
-        self.assertEqual("{0}".format(J(10)), "20")
+        self.assertEqual(u"{0}".format(J(10)), u"20")
 
 
         # string format specifiers
-        self.assertEqual('{0:}'.format('a'), 'a')
+        self.assertEqual(u'{0:}'.format('a'), u'a')
 
         # computed format specifiers
-        self.assertEqual("{0:.{1}}".format('hello world', 5), 'hello')
-        self.assertEqual("{0:.{1}s}".format('hello world', 5), 'hello')
-        self.assertEqual("{0:.{precision}s}".format('hello world', precision=5), 'hello')
-        self.assertEqual("{0:{width}.{precision}s}".format('hello world', width=10, precision=5), 'hello     ')
-        self.assertEqual("{0:{width}.{precision}s}".format('hello world', width='10', precision='5'), 'hello     ')
+        self.assertEqual(u"{0:.{1}}".format(u'hello world', 5), u'hello')
+        self.assertEqual(u"{0:.{1}s}".format(u'hello world', 5), u'hello')
+        self.assertEqual(u"{0:.{precision}s}".format('hello world', precision=5), u'hello')
+        self.assertEqual(u"{0:{width}.{precision}s}".format('hello world', width=10, precision=5), u'hello     ')
+        self.assertEqual(u"{0:{width}.{precision}s}".format('hello world', width='10', precision='5'), u'hello     ')
 
         # test various errors
-        self.assertRaises(ValueError, '{'.format)
-        self.assertRaises(ValueError, '}'.format)
-        self.assertRaises(ValueError, 'a{'.format)
-        self.assertRaises(ValueError, 'a}'.format)
-        self.assertRaises(ValueError, '{a'.format)
-        self.assertRaises(ValueError, '}a'.format)
-        self.assertRaises(IndexError, '{0}'.format)
-        self.assertRaises(IndexError, '{1}'.format, 'abc')
-        self.assertRaises(KeyError,   '{x}'.format)
-        self.assertRaises(ValueError, "}{".format)
-        self.assertRaises(ValueError, "{".format)
-        self.assertRaises(ValueError, "}".format)
-        self.assertRaises(ValueError, "abc{0:{}".format)
-        self.assertRaises(ValueError, "{0".format)
-        self.assertRaises(IndexError, "{0.}".format)
-        self.assertRaises(ValueError, "{0.}".format, 0)
-        self.assertRaises(IndexError, "{0[}".format)
-        self.assertRaises(ValueError, "{0[}".format, [])
-        self.assertRaises(KeyError,   "{0]}".format)
-        self.assertRaises(ValueError, "{0.[]}".format, 0)
-        self.assertRaises(ValueError, "{0..foo}".format, 0)
-        self.assertRaises(ValueError, "{0[0}".format, 0)
-        self.assertRaises(ValueError, "{0[0:foo}".format, 0)
-        self.assertRaises(KeyError,   "{c]}".format)
-        self.assertRaises(ValueError, "{{ {{{0}}".format, 0)
-        self.assertRaises(ValueError, "{0}}".format, 0)
-        self.assertRaises(KeyError,   "{foo}".format, bar=3)
-        self.assertRaises(ValueError, "{0!x}".format, 3)
-        self.assertRaises(ValueError, "{0!}".format, 0)
-        self.assertRaises(ValueError, "{0!rs}".format, 0)
-        self.assertRaises(ValueError, "{!}".format)
-        self.assertRaises(ValueError, "{:}".format)
-        self.assertRaises(ValueError, "{:s}".format)
-        self.assertRaises(ValueError, "{}".format)
+        self.assertRaises(ValueError, u'{'.format)
+        self.assertRaises(ValueError, u'}'.format)
+        self.assertRaises(ValueError, u'a{'.format)
+        self.assertRaises(ValueError, u'a}'.format)
+        self.assertRaises(ValueError, u'{a'.format)
+        self.assertRaises(ValueError, u'}a'.format)
+        self.assertRaises(IndexError, u'{0}'.format)
+        self.assertRaises(IndexError, u'{1}'.format, u'abc')
+        self.assertRaises(KeyError,   u'{x}'.format)
+        self.assertRaises(ValueError, u"}{".format)
+        self.assertRaises(ValueError, u"{".format)
+        self.assertRaises(ValueError, u"}".format)
+        self.assertRaises(ValueError, u"abc{0:{}".format)
+        self.assertRaises(ValueError, u"{0".format)
+        self.assertRaises(IndexError, u"{0.}".format)
+        self.assertRaises(ValueError, u"{0.}".format, 0)
+        self.assertRaises(IndexError, u"{0[}".format)
+        self.assertRaises(ValueError, u"{0[}".format, [])
+        self.assertRaises(KeyError,   u"{0]}".format)
+        self.assertRaises(ValueError, u"{0.[]}".format, 0)
+        self.assertRaises(ValueError, u"{0..foo}".format, 0)
+        self.assertRaises(ValueError, u"{0[0}".format, 0)
+        self.assertRaises(ValueError, u"{0[0:foo}".format, 0)
+        self.assertRaises(KeyError,   u"{c]}".format)
+        self.assertRaises(ValueError, u"{{ {{{0}}".format, 0)
+        self.assertRaises(ValueError, u"{0}}".format, 0)
+        self.assertRaises(KeyError,   u"{foo}".format, bar=3)
+        self.assertRaises(ValueError, u"{0!x}".format, 3)
+        self.assertRaises(ValueError, u"{0!}".format, 0)
+        self.assertRaises(ValueError, u"{0!rs}".format, 0)
+        self.assertRaises(ValueError, u"{!}".format)
+        self.assertRaises(ValueError, u"{:}".format)
+        self.assertRaises(ValueError, u"{:s}".format)
+        self.assertRaises(ValueError, u"{}".format)
 
         # can't have a replacement on the field name portion
-        self.assertRaises(TypeError, '{0[{1}]}'.format, 'abcdefg', 4)
+        self.assertRaises(TypeError, u'{0[{1}]}'.format, u'abcdefg', 4)
 
         # exceed maximum recursion depth
-        self.assertRaises(ValueError, "{0:{1:{2}}}".format, 'abc', 's', '')
-        self.assertRaises(ValueError, "{0:{1:{2:{3:{4:{5:{6}}}}}}}".format,
+        self.assertRaises(ValueError, u"{0:{1:{2}}}".format, u'abc', u's', u'')
+        self.assertRaises(ValueError, u"{0:{1:{2:{3:{4:{5:{6}}}}}}}".format,
                           0, 1, 2, 3, 4, 5, 6, 7)
 
         # string format spec errors
-        self.assertRaises(ValueError, "{0:-s}".format, '')
-        self.assertRaises(ValueError, format, "", "-")
-        self.assertRaises(ValueError, "{0:=s}".format, '')
+        self.assertRaises(ValueError, u"{0:-s}".format, u'')
+        self.assertRaises(ValueError, format, u"", u"-")
+        self.assertRaises(ValueError, u"{0:=s}".format, u'')
 
         # test combining string and unicode
         self.assertEqual(u"foo{0}".format('bar'), u'foobar')
