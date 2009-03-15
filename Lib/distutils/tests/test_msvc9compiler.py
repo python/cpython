@@ -34,6 +34,10 @@ class msvc9compilerTestCase(unittest.TestCase):
         if sys.platform != 'win32':
             # this test is only for win32
             return
+        from distutils.msvccompiler import get_build_version
+        if get_build_version() < 8.0:
+            # this test is only for MSVC8.0 or above
+            return
 
         from distutils.msvc9compiler import Reg
         self.assertRaises(KeyError, Reg.get_value, 'xxx', 'xxx')
