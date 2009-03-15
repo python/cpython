@@ -128,14 +128,14 @@ def set_loader(fxn):
 def module_for_loader(fxn):
     """Decorator to handle selecting the proper module for loaders.
 
-    Decorated modules are passed the module to use instead of the module name.
-    The module is either from sys.modules if it already exists (for reloading)
-    or is a new module which has __name__ set. If any exception is raised by
-    the decorated method and the decorator added a module to sys.modules, then
-    the module is deleted from sys.modules.
+    The decorated function is passed the module to use instead of the module
+    name. The module passed in to the function is either from sys.modules if
+    it already exists or is a new module which has __name__ set and is inserted
+    into sys.modules. If an exception is raised and the decorator created the
+    module it is subsequently removed from sys.modules.
 
-    The decorator assumes that the decorated method takes self/cls as a first
-    argument and the module as the second argument.
+    The decorator assumes that the decorated function takes the module name as
+    the second argument.
 
     """
     def decorated(self, fullname):
