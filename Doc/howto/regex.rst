@@ -4,7 +4,7 @@
   Regular Expression HOWTO
 ****************************
 
-:Author: A.M. Kuchling
+:Author: A.M. Kuchling <amk@amk.ca>
 :Release: 0.05
 
 .. TODO:
