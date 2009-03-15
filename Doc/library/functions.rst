@@ -1207,9 +1207,8 @@ are always available.  They are listed here in alphabetical order.
    not use its *locals* argument at all, and uses its *globals* only to
    determine the package context of the :keyword:`import` statement.
 
-   *level* specifies whether to use absolute or relative imports.  The default
-   is ``-1`` which indicates both absolute and relative imports will be
-   attempted.  ``0`` means only perform absolute imports.  Positive values for
+   *level* specifies whether to use absolute or relative imports. ``0`` (the
+   default) means only perform absolute imports.  Positive values for
    *level* indicate the number of parent directories to search relative to the
    directory of the module calling :func:`__import__`.
 
@@ -1221,11 +1220,11 @@ are always available.  They are listed here in alphabetical order.
    For example, the statement ``import spam`` results in bytecode resembling the
    following code::
 
-      spam = __import__('spam', globals(), locals(), [], -1)
+      spam = __import__('spam', globals(), locals(), [], 0)
 
    The statement ``import spam.ham`` results in this call::
 
-      spam = __import__('spam.ham', globals(), locals(), [], -1)
+      spam = __import__('spam.ham', globals(), locals(), [], 0)
 
    Note how :func:`__import__` returns the toplevel module here because this is
    the object that is bound to a name by the :keyword:`import` statement.
@@ -1233,7 +1232,7 @@ are always available.  They are listed here in alphabetical order.
    On the other hand, the statement ``from spam.ham import eggs, sausage as
    saus`` results in ::
 
-      _temp = __import__('spam.ham', globals(), locals(), ['eggs', 'sausage'], -1)
+      _temp = __import__('spam.ham', globals(), locals(), ['eggs', 'sausage'], 0)
       eggs = _temp.eggs
       saus = _temp.sausage
 
