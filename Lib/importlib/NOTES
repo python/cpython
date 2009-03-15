@@ -1,9 +1,7 @@
 to do
 /////
 
-* Fill in docstrings for ABCs.
-
-* Implement InspectLoader for BuiltinImporter and FrozenImporter.
+* Implement InspectLoader for FrozenImporter.
 
     + Expose function to see if a frozen module is a package.
 

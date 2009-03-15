@@ -173,6 +173,16 @@ def _check_name(method):
     return inner
 
 
+def _requires_builtin(fxn):
+    """Decorator to verify the named module is built-in."""
+    def wrapper(self, fullname):
+        if fullname not in sys.builtin_module_names:
+            raise ImportError("{0} is not a built-in module".format(fullname))
+        return fxn(self, fullname)
+    _wrap(wrapper, fxn)
+    return wrapper
+
+
 def _suffix_list(suffix_type):
     """Return a list of file suffixes based on the imp file type."""
     return [suffix[0] for suffix in imp.get_suffixes()
@@ -204,10 +214,9 @@ class BuiltinImporter:
     @classmethod
     @set_package
     @set_loader
+    @_requires_builtin
     def load_module(cls, fullname):
         """Load a built-in module."""
-        if fullname not in sys.builtin_module_names:
-            raise ImportError("{0} is not a built-in module".format(fullname))
         is_reload = fullname in sys.modules
         try:
             return imp.init_builtin(fullname)
@@ -215,6 +224,24 @@ class BuiltinImporter:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
             raise
+
+    @classmethod
+    @_requires_builtin
+    def get_code(cls, fullname):
+        """Return None as built-in modules do not have code objects."""
+        return None
+
+    @classmethod
+    @_requires_builtin
+    def get_source(cls, fullname):
+        """Return None as built-in modules do not have source code."""
+        return None
+
+    @classmethod
+    @_requires_builtin
+    def is_package(cls, fullname):
+        """Return None as built-in module are never packages."""
+        return False
 
 
 class FrozenImporter:

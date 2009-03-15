@@ -1,6 +1,7 @@
 from importlib import machinery
 from .. import abc
 from .. import util
+from . import util as builtin_util
 
 import sys
 import unittest
@@ -9,13 +10,11 @@ class FinderTests(abc.FinderTests):
 
     """Test find_module() for built-in modules."""
 
-    assert 'errno' in sys.builtin_module_names
-    name = 'errno'
-
     def test_module(self):
         # Common case.
-        with util.uncache(self.name):
-            self.assert_(machinery.BuiltinImporter.find_module(self.name))
+        with util.uncache(builtin_util.NAME):
+            found = machinery.BuiltinImporter.find_module(builtin_util.NAME)
+            self.assert_(found)
 
     def test_package(self):
         # Built-in modules cannot be a package.
@@ -40,8 +39,9 @@ class FinderTests(abc.FinderTests):
 
     def test_ignore_path(self):
         # The value for 'path' should always trigger a failed import.
-        with util.uncache(self.name):
-            loader = machinery.BuiltinImporter.find_module(self.name, ['pkg'])
+        with util.uncache(builtin_util.NAME):
+            loader = machinery.BuiltinImporter.find_module(builtin_util.NAME,
+                                                            ['pkg'])
             self.assert_(loader is None)
 
 
