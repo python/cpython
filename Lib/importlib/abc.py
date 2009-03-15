@@ -14,8 +14,6 @@ class Loader(metaclass=abc.ABCMeta):
         """Abstract method which when implemented should load a module."""
         raise NotImplementedError
 
-Loader.register(machinery.FrozenImporter)
-
 
 class Finder(metaclass=abc.ABCMeta):
 
@@ -75,6 +73,7 @@ class InspectLoader(Loader):
         return NotImplementedError
 
 InspectLoader.register(machinery.BuiltinImporter)
+InspectLoader.register(machinery.FrozenImporter)
 
 
 class PyLoader(_bootstrap.PyLoader, InspectLoader):

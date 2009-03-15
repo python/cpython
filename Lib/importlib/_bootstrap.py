@@ -183,6 +183,16 @@ def _requires_builtin(fxn):
     return wrapper
 
 
+def _requires_frozen(fxn):
+    """Decorator to verify the named module is frozen."""
+    def wrapper(self, fullname):
+        if not imp.is_frozen(fullname):
+            raise ImportError("{0} is not a frozen module".format(fullname))
+        return fxn(self, fullname)
+    _wrap(wrapper, fxn)
+    return wrapper
+
+
 def _suffix_list(suffix_type):
     """Return a list of file suffixes based on the imp file type."""
     return [suffix[0] for suffix in imp.get_suffixes()
@@ -261,10 +271,9 @@ class FrozenImporter:
     @classmethod
     @set_package
     @set_loader
+    @_requires_frozen
     def load_module(cls, fullname):
         """Load a frozen module."""
-        if cls.find_module(fullname) is None:
-            raise ImportError("{0} is not a frozen module".format(fullname))
         is_reload = fullname in sys.modules
         try:
             return imp.init_frozen(fullname)
@@ -272,6 +281,24 @@ class FrozenImporter:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
             raise
+
+    @classmethod
+    @_requires_frozen
+    def get_code(cls, fullname):
+        """Return the code object for the frozen module."""
+        return imp.get_frozen_object(fullname)
+
+    @classmethod
+    @_requires_frozen
+    def get_source(cls, fullname):
+        """Return None as frozen modules do not have source code."""
+        return None
+
+    @classmethod
+    @_requires_frozen
+    def is_package(cls, fullname):
+        """Return if the frozen module is a package."""
+        return imp.is_frozen_package(fullname)
 
 
 class PyLoader:

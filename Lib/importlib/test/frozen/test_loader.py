@@ -1,4 +1,6 @@
 from importlib import machinery
+import imp
+import unittest
 from .. import abc
 from .. import util
 
@@ -53,9 +55,41 @@ class LoaderTests(abc.LoaderTests):
                             '_not_real')
 
 
+class InspectLoaderTests(unittest.TestCase):
+
+    """Tests for the InspectLoader methods for FrozenImporter."""
+
+    def test_get_code(self):
+        # Make sure that the code object is good.
+        name = '__hello__'
+        code = machinery.FrozenImporter.get_code(name)
+        mod = imp.new_module(name)
+        exec(code, mod.__dict__)
+        self.assert_(hasattr(mod, 'initialized'))
+
+    def test_get_source(self):
+        # Should always return None.
+        result = machinery.FrozenImporter.get_source('__hello__')
+        self.assert_(result is None)
+
+    def test_is_package(self):
+        # Should be able to tell what is a package.
+        test_for = (('__hello__', False), ('__phello__', True),
+                    ('__phello__.spam', False))
+        for name, is_package in test_for:
+            result = machinery.FrozenImporter.is_package(name)
+            self.assert_(bool(result) == is_package)
+
+    def test_failure(self):
+        # Raise ImportError for modules that are not frozen.
+        for meth_name in ('get_code', 'get_source', 'is_package'):
+            method = getattr(machinery.FrozenImporter, meth_name)
+            self.assertRaises(ImportError, method, 'importlib')
+
+
 def test_main():
     from test.support import run_unittest
-    run_unittest(LoaderTests)
+    run_unittest(LoaderTests, InspectLoaderTests)
 
 
 if __name__ == '__main__':
