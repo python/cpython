@@ -175,11 +175,12 @@ are also provided to help in implementing the core ABCs.
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loaders which inspect modules.
 
-    .. method:: is_package(fullname)
+    .. method:: get_code(fullname)
 
-        An abstract method to return a true value if the module is a package, a
-        false value otherwise. :exc:`ImportError` is raised if the
-        :term:`loader` cannot find the module.
+        An abstract method to return the :class:`code` object for a module.
+        :keyword:`None` is returned if the module does not have a code object
+        (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
+        find the requested module.
 
     .. method:: get_source(fullname)
 
@@ -188,12 +189,11 @@ are also provided to help in implementing the core ABCs.
         source is available (e.g. a built-in module). Raises :exc:`ImportError`
         if the loader cannot find the module specified.
 
-    .. method:: get_code(fullname)
+    .. method:: is_package(fullname)
 
-        An abstract method to return the :class:`code` object for a module.
-        :keyword:`None` is returned if the module does not have a code object
-        (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
-        find the requested module.
+        An abstract method to return a true value if the module is a package, a
+        false value otherwise. :exc:`ImportError` is raised if the
+        :term:`loader` cannot find the module.
 
 
 .. class:: PyLoader
@@ -274,7 +274,8 @@ find and load modules.
 
     An :term:`importer` for built-in modules. All known built-in modules are
     listed in :data:`sys.builtin_module_names`. This class implements the
-    :class:`importlib.abc.Finder` and :class:`importlib.abc.Loader` ABCs.
+    :class:`importlib.abc.Finder` and :class:`importlib.abc.InspectLoader`
+    ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.

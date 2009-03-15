@@ -2,6 +2,7 @@ import importlib
 from importlib import machinery
 from .. import abc
 from .. import util
+from . import util as builtin_util
 
 import sys
 import types
@@ -11,9 +12,6 @@ import unittest
 class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for built-in modules."""
-
-    assert 'errno' in sys.builtin_module_names
-    name = 'errno'
 
     verification = {'__name__': 'errno', '__package__': '',
                     '__loader__': machinery.BuiltinImporter}
@@ -30,8 +28,8 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         # Common case.
-        with util.uncache(self.name):
-            module = self.load_module(self.name)
+        with util.uncache(builtin_util.NAME):
+            module = self.load_module(builtin_util.NAME)
             self.verify(module)
 
     def test_package(self):
@@ -48,9 +46,9 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module_reuse(self):
         # Test that the same module is used in a reload.
-        with util.uncache(self.name):
-            module1 = self.load_module(self.name)
-            module2 = self.load_module(self.name)
+        with util.uncache(builtin_util.NAME):
+            module1 = self.load_module(builtin_util.NAME)
+            module2 = self.load_module(builtin_util.NAME)
             self.assert_(module1 is module2)
 
     def test_unloadable(self):
@@ -65,9 +63,36 @@ class LoaderTests(abc.LoaderTests):
         self.assertRaises(ImportError, self.load_module, 'importlib')
 
 
+class InspectLoaderTests(unittest.TestCase):
+
+    """Tests for InspectLoader methods for BuiltinImporter."""
+
+    def test_get_code(self):
+        # There is no code object.
+        result = machinery.BuiltinImporter.get_code(builtin_util.NAME)
+        self.assert_(result is None)
+
+    def test_get_source(self):
+        # There is no source.
+        result = machinery.BuiltinImporter.get_source(builtin_util.NAME)
+        self.assert_(result is None)
+
+    def test_is_package(self):
+        # Cannot be a package.
+        result = machinery.BuiltinImporter.is_package(builtin_util.NAME)
+        self.assert_(not result)
+
+    def test_not_builtin(self):
+        # Modules not built-in should raise ImportError.
+        for meth_name in ('get_code', 'get_source', 'is_package'):
+            method = getattr(machinery.BuiltinImporter, meth_name)
+        self.assertRaises(ImportError, method, builtin_util.BAD_NAME)
+
+
+
 def test_main():
     from test.support import run_unittest
-    run_unittest(LoaderTests)
+    run_unittest(LoaderTests, InspectLoaderTests)
 
 
 if __name__ == '__main__':
