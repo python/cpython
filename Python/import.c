@@ -1951,6 +1951,28 @@ get_frozen_object(char *name)
 	return PyMarshal_ReadObjectFromString((char *)p->code, size);
 }
 
+static PyObject *
+is_frozen_package(char *name)
+{
+	struct _frozen *p = find_frozen(name);
+	int size;
+
+	if (p == NULL) {
+		PyErr_Format(PyExc_ImportError,
+			     "No such frozen object named %.200s",
+			     name);
+		return NULL;
+	}
+
+	size = p->size;
+
+	if (size < 0)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
+}
+
+
 /* Initialize a frozen module.
    Return 1 for success, 0 if the module is not found, and -1 with
    an exception set if the initialization failed.
@@ -2959,6 +2981,16 @@ imp_get_frozen_object(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+imp_is_frozen_package(PyObject *self, PyObject *args)
+{
+	char *name;
+
+	if (!PyArg_ParseTuple(args, "s:is_frozen_package", &name))
+		return NULL;
+	return is_frozen_package(name);
+}
+
+static PyObject *
 imp_is_builtin(PyObject *self, PyObject *args)
 {
 	char *name;
@@ -3191,6 +3223,7 @@ static PyMethodDef imp_methods[] = {
 	{"reload",       imp_reload,       METH_O,       doc_reload},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
+	{"is_frozen_package",   imp_is_frozen_package,  METH_VARARGS},
 	{"init_builtin",	imp_init_builtin,	METH_VARARGS},
 	{"init_frozen",		imp_init_frozen,	METH_VARARGS},
 	{"is_builtin",		imp_is_builtin,		METH_VARARGS},

@@ -284,7 +284,8 @@ find and load modules.
 .. class:: FrozenImporter
 
     An :term:`importer` for frozen modules. This class implements the
-    :class:`importlib.abc.Finder` and :class:`importlib.abc.Loader` ABCs.
+    :class:`importlib.abc.Finder` and :class:`importlib.abc.InspectLoader`
+    ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
