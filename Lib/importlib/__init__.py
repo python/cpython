@@ -26,20 +26,6 @@ import os
 import re
 import tokenize
 
-# XXX Temporary functions that should eventually be removed.
-def _set__import__():
-    """Set __import__ to an instance of Import."""
-    global original__import__
-    original__import__ = __import__
-    __builtins__['__import__'] = _bootstrap._import
-
-
-def _reset__import__():
-    """Set __import__ back to the original implementation (assumes
-    _set__import__ was called previously)."""
-    __builtins__['__import__'] = original__import__
-
-
 # Bootstrap help #####################################################
 
 def _case_ok(directory, check):
@@ -116,7 +102,7 @@ marshal._r_long = _r_long
 
 # Public API #########################################################
 
-__import__ = _bootstrap._import
+from ._bootstrap import __import__
 
 
 def import_module(name, package=None):

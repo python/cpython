@@ -183,16 +183,16 @@ def _suffix_list(suffix_type):
 
 class BuiltinImporter:
 
-    """Meta path loader for built-in modules.
+    """Meta path import for built-in modules.
 
-    All methods are either class or static methods, allowing direct use of the
-    class.
+    All methods are either class or static methods to avoid the need to
+    instantiate the class.
 
     """
 
     @classmethod
     def find_module(cls, fullname, path=None):
-        """Try to find the built-in module.
+        """Find the built-in module.
 
         If 'path' is ever specified then the search is considered a failure.
 
@@ -219,10 +219,10 @@ class BuiltinImporter:
 
 class FrozenImporter:
 
-    """Meta path class for importing frozen modules.
+    """Meta path import for frozen modules.
 
-    All methods are either class or static method to allow direct use of the
-    class.
+    All methods are either class or static methods to avoid the need to
+    instantiate the class.
 
     """
 
@@ -249,10 +249,13 @@ class FrozenImporter:
 
 class PyLoader:
 
-    """Loader base class for Python source.
+    """Loader base class for Python source code.
 
-    Requires implementing the optional PEP 302 protocols as well as
-    source_path.
+    Subclasses need to implement the methods:
+
+    - source_path
+    - get_data
+    - is_package
 
     """
 
@@ -595,7 +598,8 @@ class PathFinder:
 
     @classmethod
     def find_module(cls, fullname, path=None):
-        """Find the module on sys.path or 'path'."""
+        """Find the module on sys.path or 'path' based on sys.path_hooks and
+        sys.path_importer_cache."""
         if not path:
             path = sys.path
         for entry in path:
@@ -857,7 +861,7 @@ def _gcd_import(name, package=None, level=0):
         return module
 
 
-def _import(name, globals={}, locals={}, fromlist=[], level=0):
+def __import__(name, globals={}, locals={}, fromlist=[], level=0):
     """Import a module.
 
     The 'globals' argument is used to infer where the import is occuring from

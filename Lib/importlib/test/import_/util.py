@@ -10,7 +10,7 @@ def import_(*args, **kwargs):
     if using___import__:
         return __import__(*args, **kwargs)
     else:
-        return importlib._bootstrap._import(*args, **kwargs)
+        return importlib._bootstrap.__import__(*args, **kwargs)
 
 
 def importlib_only(fxn):

@@ -7,13 +7,11 @@ import types
 
 class Loader(metaclass=abc.ABCMeta):
 
-    """Abstract base class for import loaders.
+    """Abstract base class for import loaders."""
 
-    See PEP 302 for details.
-
-    """
-
+    @abc.abstractmethod
     def load_module(self, fullname:str) -> types.ModuleType:
+        """Abstract method which when implemented should load a module."""
         raise NotImplementedError
 
 Loader.register(machinery.BuiltinImporter)
@@ -22,14 +20,11 @@ Loader.register(machinery.FrozenImporter)
 
 class Finder(metaclass=abc.ABCMeta):
 
-    """Abstract base class for import finders.
-
-    See PEP 302 for details.
-
-    """
+    """Abstract base class for import finders."""
 
     @abc.abstractmethod
     def find_module(self, fullname:str, path:[str]=None) -> Loader:
+        """Abstract method which when implemented should find a module."""
         raise NotImplementedError
 
 Finder.register(machinery.BuiltinImporter)
@@ -37,16 +32,10 @@ Finder.register(machinery.FrozenImporter)
 Finder.register(machinery.PathFinder)
 
 
-class Importer(Finder, Loader):
-
-    """Abstract base class for importers."""
-
-
-
 class ResourceLoader(Loader):
 
-    """Abstract base class for loaders which can return data from the back-end
-    storage.
+    """Abstract base class for loaders which can return data from their
+    back-end storage.
 
     This ABC represents one of the optional protocols specified by PEP 302.
 
@@ -54,12 +43,15 @@ class ResourceLoader(Loader):
 
     @abc.abstractmethod
     def get_data(self, path:str) -> bytes:
+        """Abstract method which when implemented should return the bytes for
+        the specified path."""
         raise NotImplementedError
 
 
 class InspectLoader(Loader):
 
-    """Abstract base class for loaders which supports introspection.
+    """Abstract base class for loaders which support inspection about the
+    modules they can load.
 
     This ABC represents one of the optional protocols specified by PEP 302.
 
@@ -67,44 +59,64 @@ class InspectLoader(Loader):
 
     @abc.abstractmethod
     def is_package(self, fullname:str) -> bool:
+        """Abstract method which when implemented should return whether the
+        module is a package."""
         return NotImplementedError
 
     @abc.abstractmethod
     def get_code(self, fullname:str) -> types.CodeType:
+        """Abstract method which when implemented should return the code object
+        for the module"""
         return NotImplementedError
 
     @abc.abstractmethod
     def get_source(self, fullname:str) -> str:
+        """Abstract method which should return the source code for the
+        module."""
         return NotImplementedError
 
 
 class PyLoader(_bootstrap.PyLoader, InspectLoader):
 
-    """Abstract base class that implements the core parts needed to load Python
-    source code."""
+    """Abstract base class to assist in loading source code by requiring only
+    back-end storage methods to be implemented.
 
-    # load_module and get_code are implemented.
+    The methods get_code, get_source, and load_module are implemented for the
+    user.
+
+    """
 
     @abc.abstractmethod
     def source_path(self, fullname:str) -> object:
+        """Abstract method which when implemented should return the path to the
+        sourced code for the module."""
         raise NotImplementedError
 
 
 class PyPycLoader(_bootstrap.PyPycLoader, PyLoader):
 
-    """Abstract base class that implements the core parts needed to load Python
-    source and bytecode."""
+    """Abstract base class to assist in loading source and bytecode by
+    requiring only back-end storage methods to be implemented.
 
-    # Implements load_module and get_code.
+    The methods get_code, get_source, and load_module are implemented for the
+    user.
+
+    """
 
     @abc.abstractmethod
     def source_mtime(self, fullname:str) -> int:
+        """Abstract method which when implemented should return the
+        modification time for the source of the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def bytecode_path(self, fullname:str) -> object:
+        """Abstract method which when implemented should return the path to the
+        bytecode for the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def write_bytecode(self, fullname:str, bytecode:bytes):
+        """Abstract method which when implemented should attempt to write the
+        bytecode for the module."""
         raise NotImplementedError
