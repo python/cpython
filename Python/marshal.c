@@ -550,7 +550,7 @@ r_object(RFILE *p)
 			n = r_long(p);
 			if (n < -INT_MAX || n > INT_MAX) {
 				PyErr_SetString(PyExc_ValueError,
-						"bad marshal data");
+						"bad marshal data (long size out of range)");
 				retval = NULL;
 				break;
 			}
@@ -566,7 +566,7 @@ r_object(RFILE *p)
 				if (digit < 0) {
 					Py_DECREF(ob);
 					PyErr_SetString(PyExc_ValueError,
-							"bad marshal data");
+							"bad marshal data (negative digit in long)");
 					ob = NULL;
 					break;
 				}
@@ -682,7 +682,7 @@ r_object(RFILE *p)
 	case TYPE_STRING:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
 			retval = NULL;
 			break;
 		}
@@ -707,7 +707,7 @@ r_object(RFILE *p)
 
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
 			retval = NULL;
 			break;
 		}
@@ -732,7 +732,7 @@ r_object(RFILE *p)
 	case TYPE_TUPLE:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			PyErr_SetString(PyExc_ValueError, "bad marshal data (tuple size out of range)");
 			retval = NULL;
 			break;
 		}
@@ -746,7 +746,7 @@ r_object(RFILE *p)
 			if ( v2 == NULL ) {
 				if (!PyErr_Occurred())
 					PyErr_SetString(PyExc_TypeError,
-						"NULL object in marshal data");
+						"NULL object in marshal data for tuple");
 				Py_DECREF(v);
 				v = NULL;
 				break;
@@ -759,7 +759,7 @@ r_object(RFILE *p)
 	case TYPE_LIST:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			PyErr_SetString(PyExc_ValueError, "bad marshal data (list size out of range)");
 			retval = NULL;
 			break;
 		}
@@ -773,7 +773,7 @@ r_object(RFILE *p)
 			if ( v2 == NULL ) {
 				if (!PyErr_Occurred())
 					PyErr_SetString(PyExc_TypeError,
-						"NULL object in marshal data");
+						"NULL object in marshal data for list");
 				Py_DECREF(v);
 				v = NULL;
 				break;
@@ -811,7 +811,7 @@ r_object(RFILE *p)
 	case TYPE_FROZENSET:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			PyErr_SetString(PyExc_ValueError, "bad marshal data (set size out of range)");
 			retval = NULL;
 			break;
 		}
@@ -825,7 +825,7 @@ r_object(RFILE *p)
 			if ( v2 == NULL ) {
 				if (!PyErr_Occurred())
 					PyErr_SetString(PyExc_TypeError,
-						"NULL object in marshal data");
+						"NULL object in marshal data for set");
 				Py_DECREF(v);
 				v = NULL;
 				break;
@@ -920,7 +920,7 @@ r_object(RFILE *p)
 	default:
 		/* Bogus data got written, which isn't ideal.
 		   This will let you keep working and recover. */
-		PyErr_SetString(PyExc_ValueError, "bad marshal data");
+		PyErr_SetString(PyExc_ValueError, "bad marshal data (unknown type code)");
 		retval = NULL;
 		break;
 
@@ -939,7 +939,7 @@ read_object(RFILE *p)
 	}
 	v = r_object(p);
 	if (v == NULL && !PyErr_Occurred())
-		PyErr_SetString(PyExc_TypeError, "NULL object in marshal data");
+		PyErr_SetString(PyExc_TypeError, "NULL object in marshal data for object");
 	return v;
 }
 
