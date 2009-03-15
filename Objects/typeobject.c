@@ -5096,6 +5096,7 @@ slot_nb_nonzero(PyObject *self)
 	PyObject *func, *args;
 	static PyObject *nonzero_str, *len_str;
 	int result = -1;
+	int using_len = 0;
 
 	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
 	if (func == NULL) {
@@ -5104,6 +5105,7 @@ slot_nb_nonzero(PyObject *self)
 		func = lookup_maybe(self, "__len__", &len_str);
 		if (func == NULL)
 			return PyErr_Occurred() ? -1 : 1;
+		using_len = 1;
 	}
 	args = PyTuple_New(0);
 	if (args != NULL) {
@@ -5114,8 +5116,10 @@ slot_nb_nonzero(PyObject *self)
 				result = PyObject_IsTrue(temp);
 			else {
 				PyErr_Format(PyExc_TypeError,
-					     "__nonzero__ should return "
+					     "%s should return "
 					     "bool or int, returned %s",
+					     (using_len ? "__len__"
+					                : "__nonzero__"),
 					     temp->ob_type->tp_name);
 				result = -1;
 			}
