@@ -121,7 +121,7 @@ are also provided to help in implementing the core ABCs.
         If the requested module is already exists in :data:`sys.modules`, that
         module should be used and reloaded.
         Otherwise a new module is to be created by the loader and inserted into
-        :data:`sys.modules`before any loading begins to prevent recursion from
+        :data:`sys.modules` before any loading begins to prevent recursion from
         the import. If the loader inserted into a module and the load fails it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
