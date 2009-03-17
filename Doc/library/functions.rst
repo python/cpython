@@ -596,6 +596,25 @@ available.  They are listed here in alphabetical order.
    its :meth:`next` method; if the value returned is equal to *sentinel*,
    :exc:`StopIteration` will be raised, otherwise the value will be returned.
 
+   Example usage: ::
+
+      >>> iterator = iter(range(10))
+      >>> iterator
+      <listiterator object at 0x86b50>
+      >>> iterator.next()
+      0
+      >>> iterator.next()
+      1
+      >>> def my_generator():
+      ...     for i in range(10):
+      ...             yield i
+      ...
+      >>> iterator = iter(my_generator().next, 7)
+      >>> iterator
+      <callable-iterator object at 0x86bb0>
+      >>> list(iterator)
+      [0, 1, 2, 3, 4, 5, 6]
+
    .. versionadded:: 2.2
 
 
