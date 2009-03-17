@@ -51,5 +51,14 @@ class TestUnicode(TestCase):
     def test_unicode_decode(self):
         for i in range(0, 0xd7ff):
             u = unichr(i)
-            js = '"\\u{0:04x}"'.format(i)
-            self.assertEquals(json.loads(js), u)
+            s = '"\\u{0:04x}"'.format(i)
+            self.assertEquals(json.loads(s), u)
+
+    def test_default_encoding(self):
+        self.assertEquals(json.loads(u'{"a": "\xe9"}'.encode('utf-8')),
+            {'a': u'\xe9'})
+
+    def test_unicode_preservation(self):
+        self.assertEquals(type(json.loads(u'""')), unicode)
+        self.assertEquals(type(json.loads(u'"a"')), unicode)
+        self.assertEquals(type(json.loads(u'["a"]')[0]), unicode)

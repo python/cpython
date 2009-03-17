@@ -26,10 +26,14 @@ class TestEncodeBaseStringAscii(TestCase):
         self._test_encode_basestring_ascii(json.encoder.py_encode_basestring_ascii)
 
     def test_c_encode_basestring_ascii(self):
+        if not json.encoder.c_encode_basestring_ascii:
+            return
         self._test_encode_basestring_ascii(json.encoder.c_encode_basestring_ascii)
 
     def _test_encode_basestring_ascii(self, encode_basestring_ascii):
         fname = encode_basestring_ascii.__name__
         for input_string, expect in CASES:
             result = encode_basestring_ascii(input_string)
-            self.assertEquals(result, expect)
+            self.assertEquals(result, expect,
+                '{0!r} != {1!r} for {2}({3!r})'.format(
+                    result, expect, fname, input_string))
