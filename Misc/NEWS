@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2110: Add support for thousands separator and 'n' type
+  specifier to Decimal.__format__
+
 - Fix Decimal.__format__ bug that swapped the meanings of the '<' and
   '>' alignment characters.
 
