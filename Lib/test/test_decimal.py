@@ -694,6 +694,12 @@ class DecimalFormatTest(unittest.TestCase):
             ('.0g', '-sNaN', '-sNaN'),
 
             ('', '1.00', '1.00'),
+
+            # check alignment
+            ('<6', '123', '123   '),
+            ('>6', '123', '   123'),
+            ('^6', '123', ' 123  '),
+            ('=+6', '123', '+  123'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)

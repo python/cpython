@@ -5576,9 +5576,9 @@ def _format_align(body, spec_dict):
 
     align = spec_dict['align']
     if align == '<':
-        result = padding + sign + body
-    elif align == '>':
         result = sign + body + padding
+    elif align == '>':
+        result = padding + sign + body
     elif align == '=':
         result = sign + padding + body
     else: #align == '^'
