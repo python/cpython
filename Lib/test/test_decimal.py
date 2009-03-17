@@ -616,6 +616,7 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
             self.assertEqual(eval('Decimal(10)' + sym + 'E()'),
                              '10' + rop + 'str')
 
+
 class DecimalFormatTest(unittest.TestCase):
     '''Unit tests for the format function.'''
     def test_formatting(self):
@@ -705,14 +706,109 @@ class DecimalFormatTest(unittest.TestCase):
 
             ('', '1.00', '1.00'),
 
-            # check alignment
+            # test alignment and padding
             ('<6', '123', '123   '),
             ('>6', '123', '   123'),
             ('^6', '123', ' 123  '),
             ('=+6', '123', '+  123'),
+            ('#<10', 'NaN', 'NaN#######'),
+            ('#<10', '-4.3', '-4.3######'),
+            ('#<+10', '0.0130', '+0.0130###'),
+            ('#< 10', '0.0130', ' 0.0130###'),
+            ('@>10', '-Inf', '@-Infinity'),
+            ('#>5', '-Inf', '-Infinity'),
+            ('?^5', '123', '?123?'),
+            ('%^6', '123', '%123%%'),
+            (' ^6', '-45.6', '-45.6 '),
+            ('/=10', '-45.6', '-/////45.6'),
+            ('/=+10', '45.6', '+/////45.6'),
+            ('/= 10', '45.6', ' /////45.6'),
+
+            # thousands separator
+            (',', '1234567', '1,234,567'),
+            (',', '123456', '123,456'),
+            (',', '12345', '12,345'),
+            (',', '1234', '1,234'),
+            (',', '123', '123'),
+            (',', '12', '12'),
+            (',', '1', '1'),
+            (',', '0', '0'),
+            (',', '-1234567', '-1,234,567'),
+            (',', '-123456', '-123,456'),
+            ('7,', '123456', '123,456'),
+            ('8,', '123456', '123,456 '),
+            ('08,', '123456', '0,123,456'), # special case: extra 0 needed
+            ('+08,', '123456', '+123,456'), # but not if there's a sign
+            (' 08,', '123456', ' 123,456'),
+            ('08,', '-123456', '-123,456'),
+            ('+09,', '123456', '+0,123,456'),
+            # ... with fractional part...
+            ('07,', '1234.56', '1,234.56'),
+            ('08,', '1234.56', '1,234.56'),
+            ('09,', '1234.56', '01,234.56'),
+            ('010,', '1234.56', '001,234.56'),
+            ('011,', '1234.56', '0,001,234.56'),
+            ('012,', '1234.56', '0,001,234.56'),
+            ('08,.1f', '1234.5', '01,234.5'),
+            # no thousands separators in fraction part
+            (',', '1.23456789', '1.23456789'),
+            (',%', '123.456789', '12,345.6789%'),
+            (',e', '123456', '1.23456e+5'),
+            (',E', '123456', '1.23456E+5'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)
+
+    def test_n_format(self):
+        try:
+            from locale import CHAR_MAX
+        except ImportError:
+            return
+
+        # Set up some localeconv-like dictionaries
+        en_US = {
+            'decimal_point' : '.',
+            'grouping' : [3, 3, 0],
+            'thousands_sep': ','
+            }
+
+        fr_FR = {
+            'decimal_point' : ',',
+            'grouping' : [CHAR_MAX],
+            'thousands_sep' : ''
+            }
+
+        ru_RU = {
+            'decimal_point' : ',',
+            'grouping' : [3, 3, 0],
+            'thousands_sep' : ' '
+            }
+
+        crazy = {
+            'decimal_point' : '&',
+            'grouping' : [1, 4, 2, CHAR_MAX],
+            'thousands_sep' : '-'
+            }
+
+
+        def get_fmt(x, locale, fmt='n'):
+            return Decimal.__format__(Decimal(x), fmt, _localeconv=locale)
+
+        self.assertEqual(get_fmt(Decimal('12.7'), en_US), '12.7')
+        self.assertEqual(get_fmt(Decimal('12.7'), fr_FR), '12,7')
+        self.assertEqual(get_fmt(Decimal('12.7'), ru_RU), '12,7')
+        self.assertEqual(get_fmt(Decimal('12.7'), crazy), '1-2&7')
+
+        self.assertEqual(get_fmt(123456789, en_US), '123,456,789')
+        self.assertEqual(get_fmt(123456789, fr_FR), '123456789')
+        self.assertEqual(get_fmt(123456789, ru_RU), '123 456 789')
+        self.assertEqual(get_fmt(1234567890123, crazy), '123456-78-9012-3')
+
+        self.assertEqual(get_fmt(123456789, en_US, '.6n'), '1.23457e+8')
+        self.assertEqual(get_fmt(123456789, fr_FR, '.6n'), '1,23457e+8')
+        self.assertEqual(get_fmt(123456789, ru_RU, '.6n'), '1,23457e+8')
+        self.assertEqual(get_fmt(123456789, crazy, '.6n'), '1&23457e+8')
+
 
 class DecimalArithmeticOperatorsTest(unittest.TestCase):
     '''Unit tests for all arithmetic operators, binary and unary.'''
