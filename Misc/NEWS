@@ -206,6 +206,9 @@ Core and Builtins
 Library
 -------
 
+- Fix Decimal.__format__ bug that swapped the meanings of the '<' and
+  '>' alignment characters.
+
 - Issue #1222: locale.format() bug when the thousands separator is a space
   character.
 
