@@ -12,6 +12,10 @@ What's New in Python 3.1 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #4474: PyUnicode_FromWideChar now converts characters outside
+  the BMP to surrogate pairs, on systems with sizeof(wchar_t) == 4
+  and sizeof(Py_UNICODE) == 2.
+
 - Issue #5237: Allow auto-numbered fields in str.format(). For
   example: '{} {}'.format(1, 2) == '1 2'.
 
