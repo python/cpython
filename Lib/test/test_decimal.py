@@ -798,6 +798,28 @@ class DecimalFormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(123456789, ru_RU, '.6n'), '1,23457e+8')
         self.assertEqual(get_fmt(123456789, crazy, '.6n'), '1&23457e+8')
 
+        # zero padding
+        self.assertEqual(get_fmt(1234, fr_FR, '03n'), '1234')
+        self.assertEqual(get_fmt(1234, fr_FR, '04n'), '1234')
+        self.assertEqual(get_fmt(1234, fr_FR, '05n'), '01234')
+        self.assertEqual(get_fmt(1234, fr_FR, '06n'), '001234')
+
+        self.assertEqual(get_fmt(12345, en_US, '05n'), '12,345')
+        self.assertEqual(get_fmt(12345, en_US, '06n'), '12,345')
+        self.assertEqual(get_fmt(12345, en_US, '07n'), '012,345')
+        self.assertEqual(get_fmt(12345, en_US, '08n'), '0,012,345')
+        self.assertEqual(get_fmt(12345, en_US, '09n'), '0,012,345')
+        self.assertEqual(get_fmt(12345, en_US, '010n'), '00,012,345')
+
+        self.assertEqual(get_fmt(123456, crazy, '06n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '07n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '08n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '09n'), '01-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '010n'), '0-01-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '011n'), '0-01-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '012n'), '00-01-2345-6')
+        self.assertEqual(get_fmt(123456, crazy, '013n'), '000-01-2345-6')
+
 
 class DecimalArithmeticOperatorsTest(unittest.TestCase):
     '''Unit tests for all arithmetic operators, binary and unary.'''
