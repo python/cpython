@@ -1012,6 +1012,7 @@ PyDoc_STR(
 Static objects:\n\
 \n\
 float_info -- a dict with information about the float implementation.\n\
+int_info -- a struct sequence with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the largest supported character\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
@@ -1375,6 +1376,8 @@ _PySys_Init(void)
 			    PyLong_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("float_info",
 			    PyFloat_GetInfo());
+	SET_SYS_FROM_STRING("int_info",
+			    PyLong_GetInfo());
 	SET_SYS_FROM_STRING("maxunicode",
 			    PyLong_FromLong(PyUnicode_GetMax()));
 	SET_SYS_FROM_STRING("builtin_module_names",

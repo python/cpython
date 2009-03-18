@@ -12,6 +12,13 @@ What's New in Python 3.1 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #4258: Make it possible to use base 2**30 instead of base
+  2**15 for the internal representation of integers, for performance
+  reasons.  Base 2**30 is enabled by default on 64-bit machines.  Add
+  --enable-big-digits option to configure, which overrides the
+  default.  Add sys.int_info structseq to provide information about
+  the internal format.
+
 - Issue #4474: PyUnicode_FromWideChar now converts characters outside
   the BMP to surrogate pairs, on systems with sizeof(wchar_t) == 4
   and sizeof(Py_UNICODE) == 2.

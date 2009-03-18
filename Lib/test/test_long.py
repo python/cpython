@@ -15,7 +15,7 @@ class Frm(object):
         return self.format % self.args
 
 # SHIFT should match the value in longintrepr.h for best testing.
-SHIFT = 15
+SHIFT = sys.int_info.bits_per_digit
 BASE = 2 ** SHIFT
 MASK = BASE - 1
 KARATSUBA_CUTOFF = 70   # from longobject.c
@@ -119,6 +119,35 @@ class LongTest(unittest.TestCase):
             for leny in digits:
                 y = self.getran(leny) or 1
                 self.check_division(x, y)
+
+        # specific numbers chosen to exercise corner cases of the
+        # current long division implementation
+
+        # 30-bit cases involving a quotient digit estimate of BASE+1
+        self.check_division(1231948412290879395966702881,
+                            1147341367131428698)
+        self.check_division(815427756481275430342312021515587883,
+                       707270836069027745)
+        self.check_division(627976073697012820849443363563599041,
+                       643588798496057020)
+        self.check_division(1115141373653752303710932756325578065,
+                       1038556335171453937726882627)
+        # 30-bit cases that require the post-subtraction correction step
+        self.check_division(922498905405436751940989320930368494,
+                       949985870686786135626943396)
+        self.check_division(768235853328091167204009652174031844,
+                       1091555541180371554426545266)
+
+        # 15-bit cases involving a quotient digit estimate of BASE+1
+        self.check_division(20172188947443, 615611397)
+        self.check_division(1020908530270155025, 950795710)
+        self.check_division(128589565723112408, 736393718)
+        self.check_division(609919780285761575, 18613274546784)
+        # 15-bit cases that require the post-subtraction correction step
+        self.check_division(710031681576388032, 26769404391308)
+        self.check_division(1933622614268221, 30212853348836)
+
+
 
     def test_karatsuba(self):
         digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
