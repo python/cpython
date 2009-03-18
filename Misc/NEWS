@@ -14,6 +14,9 @@ Core and Builtins
 
 - xrange() is now registered as a Sequence.
 
+- Issue #4034: Fix weird attribute error messages of the traceback object. (As a
+  result traceback.__members__ no longer exists.)
+
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, unicode, long, int, and
   float arguments.
