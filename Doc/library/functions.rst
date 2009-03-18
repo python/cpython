@@ -596,24 +596,13 @@ available.  They are listed here in alphabetical order.
    its :meth:`next` method; if the value returned is equal to *sentinel*,
    :exc:`StopIteration` will be raised, otherwise the value will be returned.
 
-   Example usage: ::
+   One useful application of the second form of :func:`iter` is to read lines of
+   a file until a certain line is reached.  The following example reads a file
+   until ``"STOP"`` is reached: ::
 
-      >>> iterator = iter(range(10))
-      >>> iterator
-      <listiterator object at 0x86b50>
-      >>> iterator.next()
-      0
-      >>> iterator.next()
-      1
-      >>> def my_generator():
-      ...     for i in range(10):
-      ...             yield i
-      ...
-      >>> iterator = iter(my_generator().next, 7)
-      >>> iterator
-      <callable-iterator object at 0x86bb0>
-      >>> list(iterator)
-      [0, 1, 2, 3, 4, 5, 6]
+      with open("mydata.txt") as fp:
+          for line in iter(fp.readline, "STOP"):
+              process_line(line)
 
    .. versionadded:: 2.2
 
