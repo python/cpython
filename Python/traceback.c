@@ -11,19 +11,13 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
-static struct memberlist tb_memberlist[] = {
-	{"tb_next",	T_OBJECT,	OFF(tb_next)},
-	{"tb_frame",	T_OBJECT,	OFF(tb_frame)},
-	{"tb_lasti",	T_INT,		OFF(tb_lasti)},
-	{"tb_lineno",	T_INT,		OFF(tb_lineno)},
+static PyMemberDef tb_memberlist[] = {
+	{"tb_next",	T_OBJECT,	OFF(tb_next), READONLY},
+	{"tb_frame",	T_OBJECT,	OFF(tb_frame), READONLY},
+	{"tb_lasti",	T_INT,		OFF(tb_lasti), READONLY},
+	{"tb_lineno",	T_INT,		OFF(tb_lineno), READONLY},
 	{NULL}	/* Sentinel */
 };
-
-static PyObject *
-tb_getattr(PyTracebackObject *tb, char *name)
-{
-	return PyMember_Get((char *)tb, tb_memberlist, name);
-}
 
 static void
 tb_dealloc(PyTracebackObject *tb)
@@ -58,7 +52,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,
 	(destructor)tb_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	(getattrfunc)tb_getattr, /*tp_getattr*/
+	0,              /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -80,8 +74,8 @@ PyTypeObject PyTraceBack_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,			/* tp_members */
-	0,			/* tp_getset */
+	tb_memberlist,			        /* tp_members */
+	0,			                /* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 };

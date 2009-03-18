@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4034: Fix weird attribute error messages of the traceback object. (As a
+  result traceback.__members__ no longer exists.)
+
 - Issue #4474: PyUnicode_FromWideChar now converts characters outside
   the BMP to surrogate pairs, on systems with sizeof(wchar_t) == 4
   and sizeof(Py_UNICODE) == 2.
