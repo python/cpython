@@ -5621,8 +5621,6 @@ def _insert_thousands_sep(digits, spec, min_width=1):
 
     groups = []
     for l in _group_lengths(grouping):
-        if groups:
-            min_width -= len(sep)
         if l <= 0:
             raise ValueError("group length should be positive")
         # max(..., 1) forces at least 1 digit to the left of a separator
@@ -5632,6 +5630,7 @@ def _insert_thousands_sep(digits, spec, min_width=1):
         min_width -= l
         if not digits and min_width <= 0:
             break
+        min_width -= len(sep)
     else:
         l = max(len(digits), min_width, 1)
         groups.append('0'*(l - len(digits)) + digits[-l:])
