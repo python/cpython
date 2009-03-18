@@ -413,6 +413,23 @@ always available.
    same information.
 
 
+.. data:: int_info
+
+   A struct sequence that holds information about Python's
+   internal representation of integers.  The attributes are read only.
+
+   +-------------------------+----------------------------------------------+
+   | attribute               | explanation                                  |
+   +=========================+==============================================+
+   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
+   |                         | integers are stored internally in base       |
+   |                         | ``2**int_info.bits_per_digit``               |
+   +-------------------------+----------------------------------------------+
+   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
+   |                         | represent a digit                            |
+   +-------------------------+----------------------------------------------+
+
+
 .. function:: intern(string)
 
    Enter *string* in the table of "interned" strings and return the interned string

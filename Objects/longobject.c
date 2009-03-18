@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "longintrepr.h"
+#include "structseq.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -204,6 +205,7 @@ PyLong_FromLong(long ival)
 		return (PyObject*)v;
 	}
 
+#if PyLONG_SHIFT==15
 	/* 2 digits */
 	if (!(abs_ival >> 2*PyLong_SHIFT)) {
 		v = _PyLong_New(2);
@@ -216,6 +218,7 @@ PyLong_FromLong(long ival)
 		}
 		return (PyObject*)v;
 	}
+#endif
 
 	/* Larger numbers: loop to determine number of digits */
 	t = abs_ival;
@@ -2864,10 +2867,20 @@ long_mul(PyLongObject *a, PyLongObject *b)
 
 	CHECK_BINOP(a, b);
 
+	/* fast path for single-digit multiplication */
 	if (ABS(Py_SIZE(a)) <= 1 && ABS(Py_SIZE(b)) <= 1) {
-		PyObject *r;
-		r = PyLong_FromLong(MEDIUM_VALUE(a)*MEDIUM_VALUE(b));
-		return r;
+		stwodigits v = (stwodigits)(MEDIUM_VALUE(a)) * MEDIUM_VALUE(b);
+#ifdef HAVE_LONG_LONG
+		return PyLong_FromLongLong((PY_LONG_LONG)v);
+#else
+		/* if we don't have long long then we're almost certainly
+		   using 15-bit digits, so v will fit in a long.  In the
+		   unlikely event that we're using 30-bit digits on a platform
+		   without long long, a large v will just cause us to fall
+		   through to the general multiplication code below. */
+		if (v >= LONG_MIN && v <= LONG_MAX)
+			return PyLong_FromLong((long)v);
+#endif
 	}
 
 	z = k_mul(a, b);
@@ -3991,6 +4004,45 @@ PyTypeObject PyLong_Type = {
 	PyObject_Del,				/* tp_free */
 };
 
+static PyTypeObject Int_InfoType;
+
+PyDoc_STRVAR(int_info__doc__,
+"sys.int_info\n\
+\n\
+A struct sequence that holds information about Python's\n\
+internal representation of integers.  The attributes are read only.");
+
+static PyStructSequence_Field int_info_fields[] = {
+	{"bits_per_digit", "size of a digit in bits"},
+	{"sizeof_digit", "size in bytes of the C type used to "
+	                 "represent a digit"},
+	{NULL, NULL}
+};
+
+static PyStructSequence_Desc int_info_desc = {
+	"sys.int_info",   /* name */
+	int_info__doc__,  /* doc */
+	int_info_fields,  /* fields */
+	2                 /* number of fields */
+};
+
+PyObject *
+PyLong_GetInfo(void)
+{
+	PyObject* int_info;
+	int field = 0;
+	int_info = PyStructSequence_New(&Int_InfoType);
+	if (int_info == NULL)
+		return NULL;
+	PyStructSequence_SET_ITEM(int_info, field++, PyLong_FromLong(PyLong_SHIFT));
+	PyStructSequence_SET_ITEM(int_info, field++, PyLong_FromLong(sizeof(digit)));
+	if (PyErr_Occurred()) {
+		Py_CLEAR(int_info);
+		return NULL;
+	}
+	return int_info;
+}
+
 int
 _PyLong_Init(void)
 {
@@ -4023,6 +4075,10 @@ _PyLong_Init(void)
 		v->ob_digit[0] = abs(ival);
 	}
 #endif
+	/* initialize int_info */
+	if (Int_InfoType.tp_name == 0)
+		PyStructSequence_InitType(&Int_InfoType, &int_info_desc);
+
 	return 1;
 }
 

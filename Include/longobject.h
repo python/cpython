@@ -26,6 +26,7 @@ PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
 PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
+PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 
 /* It may be useful in the future. I've added it in the PyInt -> PyLong
    cleanup to keep the extra information. [CH] */

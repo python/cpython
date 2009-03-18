@@ -855,6 +855,9 @@
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
+/* Define as the preferred size in bits of long digits */
+#undef PYLONG_BITS_IN_DIGIT
+
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
 
@@ -1036,6 +1039,16 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
+/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef was allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT32_T
+
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef was allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT64_T
+
 /* Define to the level of X/Open that your system supports */
 #undef _XOPEN_SOURCE
 
@@ -1062,6 +1075,14 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
+/* Define to the type of a signed integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int32_t
+
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int64_t
+
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -1082,6 +1103,14 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint32_t
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint64_t
 
 /* Define to empty if the keyword does not work. */
 #undef volatile

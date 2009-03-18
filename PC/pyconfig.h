@@ -396,6 +396,42 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 #endif
 
+/* define signed and unsigned exact-width 32-bit and 64-bit types, used in the
+   implementation of Python long integers. */
+#ifndef PY_UINT32_T
+#if SIZEOF_INT == 4
+#define HAVE_UINT32_T 1
+#define PY_UINT32_T unsigned int
+#elif SIZEOF_LONG == 4
+#define HAVE_UINT32_T 1
+#define PY_UINT32_T unsigned long
+#endif
+#endif
+
+#ifndef PY_UINT64_T
+#if SIZEOF_LONG_LONG == 8
+#define HAVE_UINT64_T 1
+#define PY_UINT64_T unsigned PY_LONG_LONG
+#endif
+#endif
+
+#ifndef PY_INT32_T
+#if SIZEOF_INT == 4
+#define HAVE_INT32_T 1
+#define PY_INT32_T int
+#elif SIZEOF_LONG == 4
+#define HAVE_INT32_T 1
+#define PY_INT32_T long
+#endif
+#endif
+
+#ifndef PY_INT64_T
+#if SIZEOF_LONG_LONG == 8
+#define HAVE_INT64_T 1
+#define PY_INT64_T PY_LONG_LONG
+#endif
+#endif
+
 /* Fairly standard from here! */
 
 /* Define to 1 if you have the `copysign' function. */
