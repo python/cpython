@@ -158,7 +158,7 @@ def _group(s, monetary=False):
     groups.reverse()
     return (
         left_spaces + thousands_sep.join(groups) + right_spaces,
-        len(groups) - 1
+        len(thousands_sep) * (len(groups) - 1)
     )
 
 # Strip a given amount of excess padding from the given string
