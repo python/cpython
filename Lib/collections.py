@@ -69,24 +69,13 @@ class OrderedDict(dict, MutableMapping):
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
     pop = MutableMapping.pop
-
-    def keys(self):
-        return list(self.__keys)
-
-    def values(self):
-        return map(self.__getitem__, self.__keys)
-
-    def items(self):
-        return zip(self.__keys, self.values())
-
-    def iterkeys(self):
-        return iter(self.__keys)
-
-    def itervalues(self):
-        return _imap(self.__getitem__, self.__keys)
-
-    def iteritems(self):
-        return _izip(self.__keys, _imap(self.__getitem__, self.__keys))
+    keys = MutableMapping.keys
+    values = MutableMapping.values
+    items = MutableMapping.items
+    iterkeys = MutableMapping.iterkeys
+    itervalues = MutableMapping.itervalues
+    iteritems = MutableMapping.iteritems
+    __ne__ = MutableMapping.__ne__
 
     def __repr__(self):
         if not self:
