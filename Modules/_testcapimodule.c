@@ -621,6 +621,48 @@ test_u_code(PyObject *self)
 }
 
 static PyObject *
+test_widechar(PyObject *self)
+{
+#if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
+	const wchar_t wtext[2] = {(wchar_t)0x10ABCDu};
+	size_t wtextlen = 1;
+#else
+	const wchar_t wtext[3] = {(wchar_t)0xDBEAu, (wchar_t)0xDFCDu};
+	size_t wtextlen = 2;
+#endif
+	PyObject *wide, *utf8;
+
+	wide = PyUnicode_FromWideChar(wtext, wtextlen);
+	if (wide == NULL)
+		return NULL;
+
+	utf8 = PyUnicode_FromString("\xf4\x8a\xaf\x8d");
+	if (utf8 == NULL) {
+		Py_DECREF(wide);
+		return NULL;
+	}
+
+	if (PyUnicode_GET_SIZE(wide) != PyUnicode_GET_SIZE(utf8)) {
+		Py_DECREF(wide);
+		Py_DECREF(utf8);
+		return raiseTestError("test_widechar",
+				"wide string and utf8 string have different length");
+	}
+	if (PyUnicode_Compare(wide, utf8)) {
+		Py_DECREF(wide);
+		Py_DECREF(utf8);
+		if (PyErr_Occurred())
+			return NULL;
+		return raiseTestError("test_widechar",
+				"wide string and utf8 string are differents");
+	}
+
+	Py_DECREF(wide);
+	Py_DECREF(utf8);
+	Py_RETURN_NONE;
+}
+
+static PyObject *
 test_empty_argparse(PyObject *self)
 {
 	/* Test that formats can begin with '|'. See issue #4720. */
@@ -975,6 +1017,7 @@ static PyMethodDef TestMethods[] = {
 #endif
 #ifdef Py_USING_UNICODE
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
+	{"test_widechar",	(PyCFunction)test_widechar,	 METH_NOARGS},
 #endif
 #ifdef WITH_THREAD
 	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
