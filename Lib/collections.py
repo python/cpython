@@ -23,13 +23,13 @@ class OrderedDict(dict, MutableMapping):
     # The internal self.__map dictionary maps keys to links in a doubly linked list.
     # The doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted.  It simplifies the algorithm.
-    # Setting a new item cause a new link to append to the doubly linked list.
+    # Setting a new item causes a new link to append to the doubly linked list.
     # Deleting an item uses self.__map to find the link, which is then removed.
     # Iteration follows the linked list in order.
     # Reverse iteration follows the links backwards.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
     # The remaining methods are order-aware.
-    # Big-Oh running times for all methods is the same as for regular dictionaries.
+    # Big-Oh running times for all methods are the same as for regular dictionaries.
 
     def __init__(self, *args, **kwds):
         if len(args) > 1:
