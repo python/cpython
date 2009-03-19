@@ -18,6 +18,18 @@ from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 ################################################################################
 
 class OrderedDict(dict, MutableMapping):
+    'Dictionary that remembers insertion order'
+    # The inherited dict maps keys to values.
+    # The internal self.__map dictionary maps keys to links in a doubly linked list.
+    # The doubly linked list starts and ends with a sentinel element.
+    # The sentinel element never gets deleted.  It simplifies the algorithm.
+    # Setting a new item cause a new link to append to the doubly linked list.
+    # Deleting an item uses self.__map to find the link, which is then removed.
+    # Iteration follows the linked list in order.
+    # Reverse iteration follows the links backwards.
+    # The inherited dict provides __getitem__, __len__, __contains__, and get.
+    # The remaining methods are order-aware.
+    # Big-Oh running times for all methods is the same as for regular dictionaries.
 
     def __init__(self, *args, **kwds):
         if len(args) > 1:
@@ -49,24 +61,17 @@ class OrderedDict(dict, MutableMapping):
 
     def __iter__(self):
         end = self.__end
-        curr = end[2]
+        curr = end[2]                   # start at first link
         while curr is not end:
-            yield curr[0]
-            curr = curr[2]
+            yield curr[0]               # yield KEY for each link
+            curr = curr[2]              # goto next link
 
     def __reversed__(self):
         end = self.__end
-        curr = end[1]
+        curr = end[1]                   # start at last link
         while curr is not end:
-            yield curr[0]
-            curr = curr[1]
-
-    def popitem(self, last=True):
-        if not self:
-            raise KeyError('dictionary is empty')
-        key = next(reversed(self)) if last else next(iter(self))
-        value = self.pop(key)
-        return key, value
+            yield curr[0]               # yield KEY for each link
+            curr = curr[1]              # goto prev link
 
     def __reduce__(self):
         items = [[k, self[k]] for k in self]
@@ -84,6 +89,13 @@ class OrderedDict(dict, MutableMapping):
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
+
+    def popitem(self, last=True):
+        if not self:
+            raise KeyError('dictionary is empty')
+        key = next(reversed(self)) if last else next(iter(self))
+        value = self.pop(key)
+        return key, value
 
     def __repr__(self):
         if not self:
