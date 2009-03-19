@@ -116,7 +116,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyObject *rval, PyObject *obj, Py_ssi
 static int
 encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ssize_t indent_level);
 static PyObject *
-_encoded_const(PyObject *const);
+_encoded_const(PyObject *obj);
 static void
 raise_errmsg(char *msg, PyObject *s, Py_ssize_t end);
 static PyObject *
