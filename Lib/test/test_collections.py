@@ -770,12 +770,19 @@ class TestOrderedDict(unittest.TestCase):
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict
 
+    def test_popitem(self):
+        d = self._empty_mapping()
+        self.assertRaises(KeyError, d.popitem)
+
 class MyOrderedDict(OrderedDict):
     pass
 
 class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = MyOrderedDict
 
+    def test_popitem(self):
+        d = self._empty_mapping()
+        self.assertRaises(KeyError, d.popitem)
 
 
 import doctest, collections

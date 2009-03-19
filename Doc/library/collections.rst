@@ -836,8 +836,11 @@ the items are returned in the order their keys were first added.
 
    .. versionadded:: 3.1
 
-The :meth:`popitem` method for ordered dictionaries returns and removes the
-last added entry.  The key/value pairs are returned in LIFO order.
+.. method:: OrderedDict.popitem(last=True)
+
+   The :meth:`popitem` method for ordered dictionaries returns and removes
+   a (key, value) pair.  The pairs are returned in LIFO order if *last* is
+   true or FIFO order if false.
 
 Equality tests between :class:`OrderedDict` objects are order-sensitive
 and are implemented as ``list(od1.items())==list(od2.items())``.
@@ -845,6 +848,11 @@ Equality tests between :class:`OrderedDict` objects and other
 :class:`Mapping` objects are order-insensitive like regular dictionaries.
 This allows :class:`OrderedDict` objects to be substituted anywhere a
 regular dictionary is used.
+
+.. seealso::
+
+   `Equivalent OrderedDict recipe <http://code.activestate.com/recipes/576693/>`_
+   that runs on Python 2.4 or later.
 
 
 :class:`UserDict` objects
