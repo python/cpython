@@ -11,6 +11,7 @@ Functions:
 
 import os
 import stat
+import contextlib
 from itertools import ifilter, ifilterfalse, imap, izip
 
 __all__ = ["cmp","dircmp","cmpfiles"]
@@ -62,15 +63,14 @@ def _sig(st):
 
 def _do_cmp(f1, f2):
     bufsize = BUFSIZE
-    fp1 = open(f1, 'rb')
-    fp2 = open(f2, 'rb')
-    while True:
-        b1 = fp1.read(bufsize)
-        b2 = fp2.read(bufsize)
-        if b1 != b2:
-            return False
-        if not b1:
-            return True
+    with contextlib.nested(open(f1, 'rb'), open(f2, 'rb')) as (fp1, fp2):
+        while True:
+            b1 = fp1.read(bufsize)
+            b2 = fp2.read(bufsize)
+            if b1 != b2:
+                return False
+            if not b1:
+                return True
 
 # Directory comparison class.
 #
