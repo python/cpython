@@ -35,6 +35,7 @@ typedef struct _PyScannerObject {
     PyObject *encoding;
     PyObject *strict;
     PyObject *object_hook;
+    PyObject *pairs_hook;
     PyObject *parse_float;
     PyObject *parse_int;
     PyObject *parse_constant;
@@ -44,6 +45,7 @@ static PyMemberDef scanner_members[] = {
     {"encoding", T_OBJECT, offsetof(PyScannerObject, encoding), READONLY, "encoding"},
     {"strict", T_OBJECT, offsetof(PyScannerObject, strict), READONLY, "strict"},
     {"object_hook", T_OBJECT, offsetof(PyScannerObject, object_hook), READONLY, "object_hook"},
+    {"object_pairs_hook", T_OBJECT, offsetof(PyScannerObject, pairs_hook), READONLY, "object_pairs_hook"},
     {"parse_float", T_OBJECT, offsetof(PyScannerObject, parse_float), READONLY, "parse_float"},
     {"parse_int", T_OBJECT, offsetof(PyScannerObject, parse_int), READONLY, "parse_int"},
     {"parse_constant", T_OBJECT, offsetof(PyScannerObject, parse_constant), READONLY, "parse_constant"},
@@ -891,6 +893,7 @@ scanner_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(s->encoding);
     Py_VISIT(s->strict);
     Py_VISIT(s->object_hook);
+    Py_VISIT(s->pairs_hook);
     Py_VISIT(s->parse_float);
     Py_VISIT(s->parse_int);
     Py_VISIT(s->parse_constant);
@@ -906,6 +909,7 @@ scanner_clear(PyObject *self)
     Py_CLEAR(s->encoding);
     Py_CLEAR(s->strict);
     Py_CLEAR(s->object_hook);
+    Py_CLEAR(s->pairs_hook);
     Py_CLEAR(s->parse_float);
     Py_CLEAR(s->parse_int);
     Py_CLEAR(s->parse_constant);
@@ -923,13 +927,17 @@ _parse_object_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     */
     char *str = PyString_AS_STRING(pystr);
     Py_ssize_t end_idx = PyString_GET_SIZE(pystr) - 1;
-    PyObject *rval = PyDict_New();
+    PyObject *rval;
+    PyObject *pairs;
+    PyObject *item;
     PyObject *key = NULL;
     PyObject *val = NULL;
     char *encoding = PyString_AS_STRING(s->encoding);
     int strict = PyObject_IsTrue(s->strict);
     Py_ssize_t next_idx;
-    if (rval == NULL)
+
+    pairs = PyList_New(0);
+    if (pairs == NULL)
         return NULL;
 
     /* skip whitespace after { */
@@ -962,11 +970,16 @@ _parse_object_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             if (val == NULL)
                 goto bail;
 
-            if (PyDict_SetItem(rval, key, val) == -1)
+            item = PyTuple_Pack(2, key, val);
+            if (item == NULL)
                 goto bail;
-
             Py_CLEAR(key);
             Py_CLEAR(val);
+            if (PyList_Append(pairs, item) == -1) {
+                Py_DECREF(item);
+                goto bail;
+            }
+            Py_DECREF(item);
             idx = next_idx;
 
             /* skip whitespace before } or , */
@@ -992,6 +1005,23 @@ _parse_object_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
         raise_errmsg("Expecting object", pystr, end_idx);
         goto bail;
     }
+
+    /* if pairs_hook is not None: rval = object_pairs_hook(pairs) */
+    if (s->pairs_hook != Py_None) {
+        val = PyObject_CallFunctionObjArgs(s->pairs_hook, pairs, NULL);
+        if (val == NULL)
+            goto bail;
+        Py_DECREF(pairs);
+        *next_idx_ptr = idx + 1;
+        return val;
+    }
+
+    rval = PyObject_CallFunctionObjArgs((PyObject *)(&PyDict_Type), 
+                                         pairs, NULL);
+    if (rval == NULL)
+        goto bail;
+    Py_CLEAR(pairs);
+
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
         val = PyObject_CallFunctionObjArgs(s->object_hook, rval, NULL);
@@ -1006,7 +1036,7 @@ _parse_object_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
 bail:
     Py_XDECREF(key);
     Py_XDECREF(val);
-    Py_DECREF(rval);
+    Py_XDECREF(pairs);
     return NULL;
 }
 
@@ -1021,12 +1051,16 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     */
     Py_UNICODE *str = PyUnicode_AS_UNICODE(pystr);
     Py_ssize_t end_idx = PyUnicode_GET_SIZE(pystr) - 1;
-    PyObject *val = NULL;
-    PyObject *rval = PyDict_New();
+    PyObject *rval;
+    PyObject *pairs;
+    PyObject *item;
     PyObject *key = NULL;
+    PyObject *val = NULL;
     int strict = PyObject_IsTrue(s->strict);
     Py_ssize_t next_idx;
-    if (rval == NULL)
+
+    pairs = PyList_New(0);
+    if (pairs == NULL)
         return NULL;
 
     /* skip whitespace after { */
@@ -1059,11 +1093,16 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             if (val == NULL)
                 goto bail;
 
-            if (PyDict_SetItem(rval, key, val) == -1)
+            item = PyTuple_Pack(2, key, val);
+            if (item == NULL)
                 goto bail;
-
             Py_CLEAR(key);
             Py_CLEAR(val);
+            if (PyList_Append(pairs, item) == -1) {
+                Py_DECREF(item);
+                goto bail;
+            }
+            Py_DECREF(item);
             idx = next_idx;
 
             /* skip whitespace before } or , */
@@ -1091,6 +1130,22 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
         goto bail;
     }
 
+    /* if pairs_hook is not None: rval = object_pairs_hook(pairs) */
+    if (s->pairs_hook != Py_None) {
+        val = PyObject_CallFunctionObjArgs(s->pairs_hook, pairs, NULL);
+        if (val == NULL)
+            goto bail;
+        Py_DECREF(pairs);
+        *next_idx_ptr = idx + 1;
+        return val;
+    }
+
+    rval = PyObject_CallFunctionObjArgs((PyObject *)(&PyDict_Type), 
+                                         pairs, NULL);
+    if (rval == NULL)
+        goto bail;
+    Py_CLEAR(pairs);
+
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
         val = PyObject_CallFunctionObjArgs(s->object_hook, rval, NULL);
@@ -1105,7 +1160,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
 bail:
     Py_XDECREF(key);
     Py_XDECREF(val);
-    Py_DECREF(rval);
+    Py_XDECREF(pairs);
     return NULL;
 }
 
@@ -1648,6 +1703,7 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->encoding = NULL;
         s->strict = NULL;
         s->object_hook = NULL;
+        s->pairs_hook = NULL;
         s->parse_float = NULL;
         s->parse_int = NULL;
         s->parse_constant = NULL;
@@ -1690,6 +1746,9 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
     s->object_hook = PyObject_GetAttrString(ctx, "object_hook");
     if (s->object_hook == NULL)
         goto bail;
+    s->pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
+    if (s->object_hook == NULL)
+        goto bail;
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
         goto bail;
@@ -1706,6 +1765,7 @@ bail:
     Py_CLEAR(s->encoding);
     Py_CLEAR(s->strict);
     Py_CLEAR(s->object_hook);
+    Py_CLEAR(s->pairs_hook);
     Py_CLEAR(s->parse_float);
     Py_CLEAR(s->parse_int);
     Py_CLEAR(s->parse_constant);

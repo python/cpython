@@ -181,6 +181,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5381: Added object_pairs_hook to the json module.  This allows
+  OrderedDicts to be built by the decoder.
+
 - Issue #2110: Add support for thousands separator and 'n' type
   specifier to Decimal.__format__
 

@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import json
+from collections import OrderedDict
 
 class TestUnicode(TestCase):
     def test_encoding1(self):
@@ -53,6 +54,21 @@ class TestUnicode(TestCase):
             u = unichr(i)
             s = '"\\u{0:04x}"'.format(i)
             self.assertEquals(json.loads(s), u)
+
+    def test_object_pairs_hook_with_unicode(self):
+        s = u'{"xkd":1, "kcw":2, "art":3, "hxm":4, "qrt":5, "pad":6, "hoy":7}'
+        p = [(u"xkd", 1), (u"kcw", 2), (u"art", 3), (u"hxm", 4),
+             (u"qrt", 5), (u"pad", 6), (u"hoy", 7)]
+        self.assertEqual(json.loads(s), eval(s))
+        self.assertEqual(json.loads(s, object_pairs_hook = lambda x: x), p)
+        od = json.loads(s, object_pairs_hook = OrderedDict)
+        self.assertEqual(od, OrderedDict(p))
+        self.assertEqual(type(od), OrderedDict)
+        # the object_pairs_hook takes priority over the object_hook
+        self.assertEqual(json.loads(s,
+                                    object_pairs_hook = OrderedDict,
+                                    object_hook = lambda x: None),
+                         OrderedDict(p))
 
     def test_default_encoding(self):
         self.assertEquals(json.loads(u'{"a": "\xe9"}'.encode('utf-8')),

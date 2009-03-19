@@ -147,8 +147,9 @@ WHITESPACE = re.compile(r'[ \t\n\r]*', FLAGS)
 WHITESPACE_STR = ' \t\n\r'
 
 def JSONObject((s, end), encoding, strict, scan_once, object_hook,
-        _w=WHITESPACE.match, _ws=WHITESPACE_STR):
-    pairs = {}
+               object_pairs_hook, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+    pairs = []
+    pairs_append = pairs.append
     # Use a slice to prevent IndexError from being raised, the following
     # check will raise a more specific ValueError if the string is empty
     nextchar = s[end:end + 1]
@@ -187,7 +188,7 @@ def JSONObject((s, end), encoding, strict, scan_once, object_hook,
             value, end = scan_once(s, end)
         except StopIteration:
             raise ValueError(errmsg("Expecting object", s, end))
-        pairs[key] = value
+        pairs_append((key, value))
 
         try:
             nextchar = s[end]
@@ -218,6 +219,10 @@ def JSONObject((s, end), encoding, strict, scan_once, object_hook,
         if nextchar != '"':
             raise ValueError(errmsg("Expecting property name", s, end - 1))
 
+    if object_pairs_hook is not None:
+        result = object_pairs_hook(pairs)
+        return result, end
+    pairs = dict(pairs)
     if object_hook is not None:
         pairs = object_hook(pairs)
     return pairs, end
@@ -289,7 +294,8 @@ class JSONDecoder(object):
     """
 
     def __init__(self, encoding=None, object_hook=None, parse_float=None,
-            parse_int=None, parse_constant=None, strict=True):
+            parse_int=None, parse_constant=None, strict=True,
+            object_pairs_hook=None):
         """``encoding`` determines the encoding used to interpret any ``str``
         objects decoded by this instance (utf-8 by default).  It has no
         effect when decoding ``unicode`` objects.
@@ -320,6 +326,7 @@ class JSONDecoder(object):
         """
         self.encoding = encoding
         self.object_hook = object_hook
+        self.object_pairs_hook = object_pairs_hook
         self.parse_float = parse_float or float
         self.parse_int = parse_int or int
         self.parse_constant = parse_constant or _CONSTANTS.__getitem__
