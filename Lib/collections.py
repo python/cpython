@@ -30,7 +30,7 @@ class OrderedDict(dict, MutableMapping):
 
     def clear(self):
         self.__end = end = []
-        end += [None, end, end]         # null entry
+        end += [None, end, end]         # sentinel node for doubly linked list
         self.__map = {}                 # key --> [key, prev, next]
         dict.clear(self)
 
@@ -61,10 +61,10 @@ class OrderedDict(dict, MutableMapping):
             yield curr[0]
             curr = curr[1]
 
-    def popitem(self):
+    def popitem(self, last=True):
         if not self:
             raise KeyError('dictionary is empty')
-        key = next(reversed(self))
+        key = next(reversed(self)) if last else next(iter(self))
         value = self.pop(key)
         return key, value
 
