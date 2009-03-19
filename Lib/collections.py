@@ -23,45 +23,57 @@ class OrderedDict(dict, MutableMapping):
         if len(args) > 1:
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
         try:
-            self.__keys
+            self.__end
         except AttributeError:
-            # Note the underlying data structure for this class is likely to
-            # change in the future.  Do not rely on it or access it directly.
-            self.__keys = deque()
+            self.clear()
         self.update(*args, **kwds)
 
     def clear(self):
-        self.__keys.clear()
+        self.__end = end = []
+        end += [None, end, end]         # sentinel node for doubly linked list
+        self.__map = {}                 # key --> [key, prev, next]
         dict.clear(self)
 
     def __setitem__(self, key, value):
         if key not in self:
-            self.__keys.append(key)
+            end = self.__end
+            curr = end[1]
+            curr[2] = end[1] = self.__map[key] = [key, curr, end]
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
         dict.__delitem__(self, key)
-        self.__keys.remove(key)
+        key, prev, next = self.__map.pop(key)
+        prev[2] = next
+        next[1] = prev
 
     def __iter__(self):
-        return iter(self.__keys)
+        end = self.__end
+        curr = end[2]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[2]
 
     def __reversed__(self):
-        return reversed(self.__keys)
+        end = self.__end
+        curr = end[1]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[1]
 
-    def popitem(self):
+    def popitem(self, last=True):
         if not self:
             raise KeyError('dictionary is empty')
-        key = self.__keys.pop()
-        value = dict.pop(self, key)
+        key = next(reversed(self)) if last else next(iter(self))
+        value = self.pop(key)
         return key, value
 
     def __reduce__(self):
         items = [[k, self[k]] for k in self]
-        tmp = self.__keys
-        del self.__keys
+        tmp = self.__map, self.__end
+        del self.__map, self.__end
         inst_dict = vars(self).copy()
-        self.__keys = tmp
+        self.__map, self.__end = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
