@@ -429,6 +429,8 @@ always available.
    |                         | represent a digit                            |
    +-------------------------+----------------------------------------------+
 
+   .. versionadded:: 3.1
+
 
 .. function:: intern(string)
 

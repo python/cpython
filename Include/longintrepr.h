@@ -67,7 +67,7 @@ typedef long stwodigits; /* signed variant of twodigits */
 #define PyLong_MASK	((digit)(PyLong_BASE - 1))
 
 #if PyLong_SHIFT % 5 != 0
-#error "longobject.c requires that SHIFT be divisible by 5"
+#error "longobject.c requires that PyLong_SHIFT be divisible by 5"
 #endif
 
 /* Long integer representation.
