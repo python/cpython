@@ -6,6 +6,7 @@
 
 #include "Python.h"
 #include "longintrepr.h"
+#include "structseq.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -3646,3 +3647,51 @@ PyTypeObject PyLong_Type = {
 	long_new,				/* tp_new */
 	PyObject_Del,                           /* tp_free */
 };
+
+static PyTypeObject Long_InfoType;
+
+PyDoc_STRVAR(long_info__doc__,
+"sys.long_info\n\
+\n\
+A struct sequence that holds information about Python's\n\
+internal representation of integers.  The attributes are read only.");
+
+static PyStructSequence_Field long_info_fields[] = {
+	{"bits_per_digit", "size of a digit in bits"},
+	{"sizeof_digit", "size in bytes of the C type used to "
+	                 "represent a digit"},
+	{NULL, NULL}
+};
+
+static PyStructSequence_Desc long_info_desc = {
+	"sys.long_info",   /* name */
+	long_info__doc__,  /* doc */
+	long_info_fields,  /* fields */
+	2                 /* number of fields */
+};
+
+PyObject *
+PyLong_GetInfo(void)
+{
+	PyObject* long_info;
+	int field = 0;
+	long_info = PyStructSequence_New(&Long_InfoType);
+	if (long_info == NULL)
+		return NULL;
+	PyStructSequence_SET_ITEM(long_info, field++, PyLong_FromLong(PyLong_SHIFT));
+	PyStructSequence_SET_ITEM(long_info, field++, PyLong_FromLong(sizeof(digit)));
+	if (PyErr_Occurred()) {
+		Py_CLEAR(long_info);
+		return NULL;
+	}
+	return long_info;
+}
+
+int
+_PyLong_Init(void)
+{
+	/* initialize long_info */
+	if (Long_InfoType.tp_name == 0)
+		PyStructSequence_InitType(&Long_InfoType, &long_info_desc);
+	return 1;
+}

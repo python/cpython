@@ -1333,6 +1333,10 @@ AC_TYPE_PID_T
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
 AC_CHECK_TYPE(ssize_t,
   AC_DEFINE(HAVE_SSIZE_T, 1, Define if your compiler provides ssize_t),,)
 
@@ -3211,6 +3215,25 @@ AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite hypot log1p])
 AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 LIBS=$LIBS_SAVE
+
+# determine what size digit to use for Python's longs
+AC_MSG_CHECKING([digit size for Python's longs])
+AC_ARG_ENABLE(big-digits,
+AC_HELP_STRING([--enable-big-digits@<:@=BITS@:>@],[use big digits for Python longs [[BITS=30]]]),
+[case $enable_big_digits in
+yes)
+  enable_big_digits=30 ;;
+no)
+  enable_big_digits=15 ;;
+[15|30])
+  ;;
+*)
+  AC_MSG_ERROR([bad value $enable_big_digits for --enable-big-digits; value should be 15 or 30]) ;;
+esac
+AC_MSG_RESULT($enable_big_digits)
+AC_DEFINE_UNQUOTED(PYLONG_BITS_IN_DIGIT, $enable_big_digits, [Define as the preferred size in bits of long digits])
+],
+[AC_MSG_RESULT(no value specified)])
 
 # check for wchar.h
 AC_CHECK_HEADER(wchar.h, [

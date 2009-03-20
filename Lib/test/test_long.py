@@ -15,7 +15,7 @@ class Frm(object):
         return self.format % self.args
 
 # SHIFT should match the value in longintrepr.h for best testing.
-SHIFT = 15
+SHIFT = sys.long_info.bits_per_digit
 BASE = 2 ** SHIFT
 MASK = BASE - 1
 KARATSUBA_CUTOFF = 70   # from longobject.c
@@ -142,6 +142,35 @@ class LongTest(unittest.TestCase):
             for leny in digits:
                 y = self.getran(leny) or 1L
                 self.check_division(x, y)
+
+        # specific numbers chosen to exercise corner cases of the
+        # current long division implementation
+
+        # 30-bit cases involving a quotient digit estimate of BASE+1
+        self.check_division(1231948412290879395966702881L,
+                            1147341367131428698L)
+        self.check_division(815427756481275430342312021515587883L,
+                       707270836069027745L)
+        self.check_division(627976073697012820849443363563599041L,
+                       643588798496057020L)
+        self.check_division(1115141373653752303710932756325578065L,
+                       1038556335171453937726882627L)
+        # 30-bit cases that require the post-subtraction correction step
+        self.check_division(922498905405436751940989320930368494L,
+                       949985870686786135626943396L)
+        self.check_division(768235853328091167204009652174031844L,
+                       1091555541180371554426545266L)
+
+        # 15-bit cases involving a quotient digit estimate of BASE+1
+        self.check_division(20172188947443L, 615611397L)
+        self.check_division(1020908530270155025L, 950795710L)
+        self.check_division(128589565723112408L, 736393718L)
+        self.check_division(609919780285761575L, 18613274546784L)
+        # 15-bit cases that require the post-subtraction correction step
+        self.check_division(710031681576388032L, 26769404391308L)
+        self.check_division(1933622614268221L, 30212853348836L)
+
+
 
     def test_karatsuba(self):
         digits = range(1, 5) + range(KARATSUBA_CUTOFF, KARATSUBA_CUTOFF + 10)

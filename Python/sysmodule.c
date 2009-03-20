@@ -1043,6 +1043,8 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
+float_info -- a dict with information about the float inplementation.\n\
+long_info -- a struct sequence with information about the long implementation.\n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the largest supported character\n\
@@ -1443,6 +1445,8 @@ _PySys_Init(void)
 			    PyBool_FromLong(Py_Py3kWarningFlag));
 	SET_SYS_FROM_STRING("float_info",
 			    PyFloat_GetInfo());
+	SET_SYS_FROM_STRING("long_info",
+			    PyLong_GetInfo());
 #ifdef Py_USING_UNICODE
 	SET_SYS_FROM_STRING("maxunicode",
 			    PyInt_FromLong(PyUnicode_GetMax()));
