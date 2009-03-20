@@ -1871,7 +1871,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			carry += v->ob_digit[i+k] - z
 				+ ((twodigits)zz << PyLong_SHIFT);
 			v->ob_digit[i+k] = (digit)(carry & PyLong_MASK);
-			carry = Py_ARITHMETIC_RIGHT_SHIFT(PyLong_BASE_TWODIGITS_TYPE,
+			carry = Py_ARITHMETIC_RIGHT_SHIFT(BASE_TWODIGITS_TYPE,
 							  carry, PyLong_SHIFT);
 			carry -= zz;
 		}
@@ -1891,7 +1891,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 				carry += v->ob_digit[i+k] + w->ob_digit[i];
 				v->ob_digit[i+k] = (digit)(carry & PyLong_MASK);
 				carry = Py_ARITHMETIC_RIGHT_SHIFT(
-						PyLong_BASE_TWODIGITS_TYPE,
+						BASE_TWODIGITS_TYPE,
 						carry, PyLong_SHIFT);
 			}
 		}
