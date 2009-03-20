@@ -7,26 +7,61 @@ extern "C" {
 
 /* This is published for the benefit of "friend" marshal.c only. */
 
-/* Parameters of the long integer representation.
-   These shouldn't have to be changed as C should guarantee that a short
-   contains at least 16 bits, but it's made changeable anyway.
-   Note: 'digit' should be able to hold 2*MASK+1, and 'twodigits'
-   should be able to hold the intermediate results in 'mul'
-   (at most (BASE-1)*(2*BASE+1) == MASK*(2*MASK+3)).
-   Also, x_sub assumes that 'digit' is an unsigned type, and overflow
-   is handled by taking the result mod 2**N for some N > SHIFT.
-   And, at some places it is assumed that MASK fits in an int, as well.
-   long_pow() requires that SHIFT be divisible by 5. */
+/* Parameters of the long integer representation.  There are two different
+   sets of parameters: one set for 30-bit digits, stored in an unsigned 32-bit
+   integer type, and one set for 15-bit digits with each digit stored in an
+   unsigned short.  The value of PYLONG_BITS_IN_DIGIT, defined either at
+   configure time or in pyport.h, is used to decide which digit size to use.
 
+   Type 'digit' should be able to hold 2*PyLong_BASE-1, and type 'twodigits'
+   should be an unsigned integer type able to hold all integers up to
+   PyLong_BASE*PyLong_BASE-1.  x_sub assumes that 'digit' is an unsigned type,
+   and that overflow is handled by taking the result modulo 2**N for some N >
+   PyLong_SHIFT.  The majority of the code doesn't care about the precise
+   value of PyLong_SHIFT, but there are some notable exceptions:
+
+   - long_pow() requires that PyLong_SHIFT be divisible by 5
+
+   - PyLong_{As,From}ByteArray require that PyLong_SHIFT be at least 8
+
+   - long_hash() requires that PyLong_SHIFT is *strictly* less than the number
+     of bits in an unsigned long, as do the PyLong <-> long (or unsigned long)
+     conversion functions
+
+   - the long <-> size_t/Py_ssize_t conversion functions expect that
+     PyLong_SHIFT is strictly less than the number of bits in a size_t
+
+   - the marshal code currently expects that PyLong_SHIFT is a multiple of 15
+
+  The values 15 and 30 should fit all of the above requirements, on any
+  platform.
+*/
+
+#if HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#if PYLONG_BITS_IN_DIGIT == 30
+#if !(defined HAVE_UINT64_T && defined HAVE_UINT32_T &&          \
+      defined HAVE_INT64_T && defined HAVE_INT32_T)
+#error "30-bit long digits requested, but the necessary types are not available on this platform"
+#endif
+typedef PY_UINT32_T digit;
+typedef PY_INT32_T sdigit; /* signed variant of digit */
+typedef PY_UINT64_T twodigits;
+typedef PY_INT64_T stwodigits; /* signed variant of twodigits */
+#define PyLong_SHIFT	30
+#elif PYLONG_BITS_IN_DIGIT == 15
 typedef unsigned short digit;
-typedef short sdigit;                   /* signed variant of digit */
-#define BASE_TWODIGITS_TYPE long
-typedef unsigned BASE_TWODIGITS_TYPE twodigits;
-typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
-
-#define PyLong_SHIFT    15
-#define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
-#define PyLong_MASK     ((digit)(PyLong_BASE - 1))
+typedef short sdigit; /* signed variant of digit */
+typedef unsigned long twodigits;
+typedef long stwodigits; /* signed variant of twodigits */
+#define PyLong_SHIFT	15
+#else
+#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
+#endif
+#define PyLong_BASE	((digit)1 << PyLong_SHIFT)
+#define PyLong_MASK	((digit)(PyLong_BASE - 1))
 
 /* b/w compatibility with Python 2.5 */
 #define SHIFT	PyLong_SHIFT

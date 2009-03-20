@@ -498,6 +498,25 @@ always available.
    .. versionadded:: 1.5.2
 
 
+.. data:: long_info
+
+   A struct sequence that holds information about Python's
+   internal representation of integers.  The attributes are read only.
+
+   +-------------------------+----------------------------------------------+
+   | attribute               | explanation                                  |
+   +=========================+==============================================+
+   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
+   |                         | integers are stored internally in base       |
+   |                         | ``2**long_info.bits_per_digit``              |
+   +-------------------------+----------------------------------------------+
+   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
+   |                         | represent a digit                            |
+   +-------------------------+----------------------------------------------+
+
+   .. versionadded:: 2.7
+
+
 .. data:: last_type
           last_value
           last_traceback

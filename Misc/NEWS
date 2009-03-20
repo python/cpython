@@ -12,6 +12,13 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4258: Make it possible to use base 2**30 instead of base
+  2**15 for the internal representation of integers, for performance
+  reasons.  Base 2**30 is enabled by default on 64-bit machines.  Add
+  --enable-big-digits option to configure, which overrides the
+  default.  Add sys.long_info structseq to provide information about
+  the internal format.
+
 - Issue #4034: Fix weird attribute error messages of the traceback object. (As a
   result traceback.__members__ no longer exists.)
 
