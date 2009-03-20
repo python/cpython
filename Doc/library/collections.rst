@@ -147,7 +147,12 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    inherit from both :meth:`Set` and :meth:`Hashable`, then define
    ``__hash__ = Set._hash``.
 
-(For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
+.. seealso::
+
+   * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
+     example built on :class:`MutableSet`.
+
+   * For more about ABCs, see the :mod:`abc` module and :pep:`3119`.
 
 
 :class:`Counter` objects
