@@ -86,6 +86,30 @@ Some smaller changes made to the core Python language are:
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
 
+* Integers are now stored internally either in base 2**15 or in base
+  2**30, the base being determined at build time.  Previously, they
+  were always stored in base 2**15.  Using base 2**30 gives
+  significant performance improvements on 64-bit machines, but
+  benchmark results on 32-bit machines have been mixed.  Therefore,
+  the default is to use base 2**30 on 64-bit machines and base 2**15
+  on 32-bit machines; on Unix, there's a new configure option
+  --enable-big-digits that can be used to override this default.
+
+  Apart from the performance improvements this change should be
+  invisible to end users, with one exception: for testing and
+  debugging purposes there's a new structseq ``sys.long_info`` that
+  provides information about the internal format, giving the number of
+  bits per digit and the size in bytes of the C type used to store
+  each digit::
+
+     >>> import sys
+     >>> sys.long_info
+     sys.long_info(bits_per_digit=30, sizeof_digit=4)
+
+
+  (Contributed by Mark Dickinson; :issue:`4258`.)
+
+
 .. ======================================================================
 
 
