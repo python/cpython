@@ -561,6 +561,14 @@ are always available.  They are listed here in alphabetical order.
    its :meth:`__next__` method; if the value returned is equal to *sentinel*,
    :exc:`StopIteration` will be raised, otherwise the value will be returned.
 
+   One useful application of the second form of :func:`iter` is to read lines of
+   a file until a certain line is reached.  The following example reads a file
+   until ``"STOP"`` is reached: ::
+
+      with open("mydata.txt") as fp:
+          for line in iter(fp.readline, "STOP"):
+              process_line(line)
+
 
 .. function:: len(s)
 

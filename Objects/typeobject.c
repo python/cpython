@@ -4785,7 +4785,7 @@ slot_nb_bool(PyObject *self)
 	PyObject *func, *args;
 	static PyObject *bool_str, *len_str;
 	int result = -1;
-	int from_len = 0;
+	int using_len = 0;
 
 	func = lookup_maybe(self, "__bool__", &bool_str);
 	if (func == NULL) {
@@ -4794,14 +4794,14 @@ slot_nb_bool(PyObject *self)
 		func = lookup_maybe(self, "__len__", &len_str);
 		if (func == NULL)
 			return PyErr_Occurred() ? -1 : 1;
-		from_len = 1;
- 	}
+		using_len = 1;
+	}
 	args = PyTuple_New(0);
 	if (args != NULL) {
 		PyObject *temp = PyObject_Call(func, args, NULL);
 		Py_DECREF(args);
 		if (temp != NULL) {
-			if (from_len) {
+			if (using_len) {
 				/* enforced by slot_nb_len */
 				result = PyObject_IsTrue(temp);
 			}
@@ -4810,9 +4810,11 @@ slot_nb_bool(PyObject *self)
 			}
 			else {
 				PyErr_Format(PyExc_TypeError,
-					 "__bool__ should return "
-					 "bool, returned %s",
-					 Py_TYPE(temp)->tp_name);
+					     "%s should return "
+					     "bool or int, returned %s",
+					     (using_len ? "__len__"
+					                : "__bool__"),
+					     Py_TYPE(temp)->tp_name);
 				result = -1;
 			}
 			Py_DECREF(temp);

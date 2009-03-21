@@ -196,7 +196,7 @@ The grammar for a replacement field is as follows:
 
    .. productionlist:: sf
       replacement_field: "{" `field_name` ["!" `conversion`] [":" `format_spec`] "}"
-      field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" element_index "]")*
+      field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" `element_index` "]")*
       attribute_name: `identifier`
       element_index: `integer`
       conversion: "r" | "s" | "a"
