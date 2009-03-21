@@ -1052,6 +1052,7 @@ Number Object Structures
             binaryfunc nb_inplace_add;
             binaryfunc nb_inplace_subtract;
             binaryfunc nb_inplace_multiply;
+            binaryfunc nb_inplace_divide;
             binaryfunc nb_inplace_remainder;
             ternaryfunc nb_inplace_power;
             binaryfunc nb_inplace_lshift;

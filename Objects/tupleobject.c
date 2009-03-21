@@ -458,7 +458,7 @@ tupleindex(PyTupleObject *self, PyObject *args)
 		else if (cmp < 0)
 			return NULL;
 	}
-	PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in list");
+	PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in tuple");
 	return NULL;
 }
 

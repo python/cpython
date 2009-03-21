@@ -61,14 +61,15 @@ Functions provided:
 
       from contextlib import nested
 
-      with nested(A, B, C) as (X, Y, Z):
+      with nested(A(), B(), C()) as (X, Y, Z):
           do_something()
 
    is equivalent to this::
 
-      with A as X:
-          with B as Y:
-              with C as Z:
+      m1, m2, m3 = A(), B(), C()
+      with m1 as X:
+          with m2 as Y:
+              with m3 as Z:
                   do_something()
 
    Note that if the :meth:`__exit__` method of one of the nested context managers
