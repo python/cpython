@@ -665,7 +665,7 @@ stringio_encoding(StringIOObject *self, void *context)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-    return PyUnicode_FromString("utf-8");
+    Py_RETURN_NONE;
 }
 
 static PyObject *
