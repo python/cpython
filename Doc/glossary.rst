@@ -182,7 +182,8 @@ Glossary
    finder
       An object that tries to find the :term:`loader` for a module. It must
       implement a method named :meth:`find_module`. See :pep:`302` for
-      details.
+      details and :class:`importlib.abc.Finder` for an
+      :term:`abstract base class`.
 
    floor division
       Mathematical division discarding any remainder.  The floor division
@@ -363,7 +364,8 @@ Glossary
    loader
       An object that loads a module. It must define a method named
       :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details.
+      :term:`finder`. See :pep:`302` for details and
+      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
    mapping
       A container object (such as :class:`dict`) which supports arbitrary key

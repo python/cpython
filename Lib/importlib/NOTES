@@ -1,7 +1,0 @@
-to do
-/////
-
-* Make sure that there is documentation *somewhere* fully explaining the
-semantics of import that can be referenced from the package's documentation
-(even if it is in the package documentation itself, although it might be best
-in the language specification).
