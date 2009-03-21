@@ -478,6 +478,22 @@ always available.
    characters are stored as UCS-2 or UCS-4.
 
 
+.. data:: meta_path
+
+    A list of :term:`finder` objects that have their :meth:`find_module`
+    methods called to see if one of the objects can find the module to be
+    imported. The :meth:`find_module` method is called at least with the
+    absolute name of the module being imported. If the module to be imported is
+    contained in package then the parent package's :attr:`__path__` attribute
+    is passed in as a second argument. The method returns :keyword:`None` if
+    the module cannot be found, else returns a :term:`loader`.
+
+    :data:`sys.meta_path` is searched before any implicit default finders or
+    :data:`sys.path`.
+
+    See :pep:`302` for the original specification.
+
+
 .. data:: modules
 
    This is a dictionary that maps module names to modules which have already been
@@ -506,6 +522,27 @@ always available.
    .. seealso::
       Module :mod:`site` This describes how to use .pth files to extend
       :data:`sys.path`.
+
+
+.. data:: path_hooks
+
+    A list of callables that take a path argument to try to create a
+    :term:`finder` for the path. If a finder can be created, it is to be
+    returned by the callable, else raise :exc:`ImportError`.
+
+    Originally specified in :pep:`302`.
+
+
+.. data:: path_importer_cache
+
+    A dictionary acting as a cache for :term:`finder` objects. The keys are
+    paths that have been passed to :data:`sys.path_hooks` and the values are
+    the finders that are found. If a path is a valid file system path but no
+    explicit finder is found on :data:`sys.path_hooks` then :keyword:`None` is
+    stored to represent the implicit default finder should be used. If the path
+    is not an existing path then :class:`imp.NullImporter` is set.
+
+    Originally specified in :pep:`302`.
 
 
 .. data:: platform
