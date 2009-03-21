@@ -60,7 +60,6 @@ What's New in Python 3.1 alpha 1
 Core and Builtins
 -----------------
 
-=======
 - The io module has been reimplemented in C for speed.
 
 - Give dict views an informative __repr__.
