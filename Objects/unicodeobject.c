@@ -3795,7 +3795,7 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
-#if SIZEOF_INT < SIZEOF_SSIZE_T
+#if SIZEOF_INT < SIZEOF_SIZE_T
 #define NEED_RETRY
 #endif
 
