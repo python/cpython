@@ -44,6 +44,13 @@ Library
 - Issue #5016: FileIO.seekable() could return False if the file position
   was negative when truncated to a C int. Patch by Victor Stinner.
 
+Extension Modules
+-----------------
+
+- Issue #5463: In struct module, remove deprecated overflow wrapping
+  when packing an integer: struct.pack('=L', -1) now raises
+  struct.error instead of returning b'\xff\xff\xff\xff'.
+
 
 What's New in Python 3.1 alpha 1
 ================================

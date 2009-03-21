@@ -2,8 +2,6 @@ import array
 import unittest
 import struct
 import warnings
-warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated",
-                        DeprecationWarning)
 
 from functools import wraps
 from test.support import TestFailed, verbose, run_unittest
@@ -17,11 +15,9 @@ try:
     import _struct
 except ImportError:
     PY_STRUCT_RANGE_CHECKING = 0
-    PY_STRUCT_OVERFLOW_MASKING = 1
     PY_STRUCT_FLOAT_COERCE = 2
 else:
     PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
-    PY_STRUCT_OVERFLOW_MASKING = getattr(_struct, '_PY_STRUCT_OVERFLOW_MASKING', 0)
     PY_STRUCT_FLOAT_COERCE = getattr(_struct, '_PY_STRUCT_FLOAT_COERCE', 0)
 
 def string_reverse(s):
@@ -51,8 +47,7 @@ def deprecated_err(func, *args):
     except (struct.error, OverflowError):
         pass
     except DeprecationWarning:
-        if not PY_STRUCT_OVERFLOW_MASKING:
-            raise TestFailed("%s%s expected to raise DeprecationWarning" % (
+        raise TestFailed("%s%s expected to raise DeprecationWarning" % (
                 func.__name__, args))
     else:
         raise TestFailed("%s%s did not raise error" % (
@@ -470,11 +465,6 @@ class StructTest(unittest.TestCase):
             for fmt in ('B', 'H', 'I', 'L', 'b', 'h', 'i', 'l'):
                 self.check_float_coerce(endian + fmt, 1.0)
                 self.check_float_coerce(endian + fmt, 1.5)
-
-    def test_issue4228(self):
-        # Packing a long may yield either 32 or 64 bits
-        x = struct.pack('L', -1)[:4]
-        self.assertEqual(x, b'\xff'*4)
 
     def test_unpack_from(self):
         test_string = b'abcd01234'
