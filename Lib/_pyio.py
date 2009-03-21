@@ -1834,3 +1834,7 @@ class StringIO(TextIOWrapper):
         # TextIOWrapper tells the encoding in its repr. In StringIO,
         # that's a implementation detail.
         return object.__repr__(self)
+
+    @property
+    def encoding(self):
+        return None
