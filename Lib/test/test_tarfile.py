@@ -1121,6 +1121,30 @@ class Bz2WriteTest(WriteTest):
 class Bz2StreamWriteTest(StreamWriteTest):
     mode = "w|bz2"
 
+class Bz2PartialReadTest(unittest.TestCase):
+    # Issue5068: The _BZ2Proxy.read() method loops forever
+    # on an empty or partial bzipped file.
+
+    def _test_partial_input(self, mode):
+        class MyBytesIO(io.BytesIO):
+            hit_eof = False
+            def read(self, n):
+                if self.hit_eof:
+                    raise AssertionError("infinite loop detected in tarfile.open()")
+                self.hit_eof = self.tell() == len(self.getvalue())
+                return super(MyBytesIO, self).read(n)
+
+        data = bz2.compress(tarfile.TarInfo("foo").tobuf())
+        for x in range(len(data) + 1):
+            tarfile.open(fileobj=MyBytesIO(data[:x]), mode=mode)
+
+    def test_partial_input(self):
+        self._test_partial_input("r")
+
+    def test_partial_input_bz2(self):
+        self._test_partial_input("r:bz2")
+
+
 def test_main():
     if not os.path.exists(TEMPDIR):
         os.mkdir(TEMPDIR)
@@ -1178,6 +1202,7 @@ def test_main():
             Bz2StreamReadTest,
             Bz2WriteTest,
             Bz2StreamWriteTest,
+            Bz2PartialReadTest,
         ]
 
     try:
