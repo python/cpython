@@ -665,7 +665,10 @@ class _BZ2Proxy(object):
             raw = self.fileobj.read(self.blocksize)
             if not raw:
                 break
-            data = self.bz2obj.decompress(raw)
+            try:
+                data = self.bz2obj.decompress(raw)
+            except EOFError:
+                break
             b.append(data)
             x += len(data)
         self.buf = "".join(b)
