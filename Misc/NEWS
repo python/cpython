@@ -188,6 +188,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5536: urllib.urlretrieve makes sure to close the file it's writing to
+  even if an exception occurs.
+
 - Issue #5381: Added object_pairs_hook to the json module.  This allows
   OrderedDicts to be built by the decoder.
 
