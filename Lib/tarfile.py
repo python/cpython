@@ -639,12 +639,11 @@ class _BZ2Proxy(object):
     def read(self, size):
         x = len(self.buf)
         while x < size:
-            try:
-                raw = self.fileobj.read(self.blocksize)
-                data = self.bz2obj.decompress(raw)
-                self.buf += data
-            except EOFError:
+            raw = self.fileobj.read(self.blocksize)
+            if not raw:
                 break
+            data = self.bz2obj.decompress(raw)
+            self.buf += data
             x += len(data)
 
         buf = self.buf[:size]
