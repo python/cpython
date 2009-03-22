@@ -594,12 +594,11 @@ class _BZ2Proxy(object):
         b = [self.buf]
         x = len(self.buf)
         while x < size:
-            try:
-                raw = self.fileobj.read(self.blocksize)
-                data = self.bz2obj.decompress(raw)
-                b.append(data)
-            except EOFError:
+            raw = self.fileobj.read(self.blocksize)
+            if not raw:
                 break
+            data = self.bz2obj.decompress(raw)
+            b.append(data)
             x += len(data)
         self.buf = "".join(b)
 

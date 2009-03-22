@@ -4,6 +4,20 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5.5?
+===========================
+
+*Release date: XX-XXX-20XX*
+
+Library
+-------
+
+- Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
+  forever on incomplete input. That caused tarfile.open() to hang when used
+  with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
+  partial bzip2 compressed data.
+
+
 What's New in Python 2.5.4?
 ===========================
 

@@ -751,6 +751,29 @@ if bz2:
     class ReadFileobjTestBzip2(ReadFileobjTest):
         comp = "bz2"
 
+    class PartialReadTestBzip2(unittest.TestCase):
+        # Issue5068: The _BZ2Proxy.read() method loops forever
+        # on an empty or partial bzipped file.
+
+        def _test_partial_input(self, mode):
+            class MyStringIO(StringIO.StringIO):
+                hit_eof = False
+                def read(self, n):
+                    if self.hit_eof:
+                        raise AssertionError("infinite loop detected in tarfile.open()")
+                    self.hit_eof = self.pos == self.len
+                    return StringIO.StringIO.read(self, n)
+
+            data = bz2.compress(tarfile.TarInfo("foo").tobuf())
+            for x in range(len(data) + 1):
+                tarfile.open(fileobj=MyStringIO(data[:x]), mode=mode)
+
+        def test_partial_input(self):
+            self._test_partial_input("r")
+
+        def test_partial_input_bz2(self):
+            self._test_partial_input("r:bz2")
+
 # If importing gzip failed, discard the Gzip TestCases.
 if not gzip:
     del ReadTestGzip
@@ -811,7 +834,7 @@ def test_main():
             WriteTestBzip2, WriteStreamTestBzip2,
             ReadDetectTestBzip2, ReadDetectFileobjTestBzip2,
             ReadAsteriskTestBzip2, ReadStreamAsteriskTestBzip2,
-            ReadFileobjTestBzip2
+            ReadFileobjTestBzip2, PartialReadTestBzip2
         ])
     try:
         test_support.run_unittest(*tests)
