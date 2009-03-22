@@ -102,7 +102,7 @@ class cPickleDeepRecursive(unittest.TestCase):
         for n in nodes:
             n.connections = list(nodes)
             n.connections.remove(n)
-        self.assertRaises(RuntimeError, cPickle.dumps, n)
+        self.assertRaises((AttributeError, RuntimeError), cPickle.dumps, n)
 
     def test_issue3179(self):
         # Safe test, because I broke this case when fixing the
