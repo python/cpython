@@ -683,26 +683,26 @@ which incur interpreter overhead.
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def unique_everseen(iterable, key=None):
-       "List unique elements, preserving order. Remember all elements ever seen."
-       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBCcAD', str.lower) --> A B C D
-       seen = set()
-       seen_add = seen.add
-       if key is None:
-           for element in iterable:
-               if element not in seen:
-                   seen_add(element)
-                   yield element
-       else:
-           for element in iterable:
-               k = key(element)
-               if k not in seen:
-                   seen_add(k)
-                   yield element
+    def unique_everseen(iterable, key=None):
+        "List unique elements, preserving order. Remember all elements ever seen."
+        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+        # unique_everseen('ABBCcAD', str.lower) --> A B C D
+        seen = set()
+        seen_add = seen.add
+        if key is None:
+            for element in iterable:
+                if element not in seen:
+                    seen_add(element)
+                    yield element
+        else:
+            for element in iterable:
+                k = key(element)
+                if k not in seen:
+                    seen_add(k)
+                    yield element
 
-   def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
-       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-       return map(next, imap(itemgetter(1), groupby(iterable, key)))
+    def unique_justseen(iterable, key=None):
+        "List unique elements, preserving order. Remember only the element just seen."
+        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+        return map(next, map(itemgetter(1), groupby(iterable, key)))
