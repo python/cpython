@@ -164,6 +164,7 @@ _symtable symtablemodule.c
 #_collections _collectionsmodule.c # Container types
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
+#_functools _functoolsmodule.c # Tools for working with functions and callable objects
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #datetime datetimemodule.c	# date/time type
