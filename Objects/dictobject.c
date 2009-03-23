@@ -500,6 +500,7 @@ _PyDict_MaybeUntrack(PyObject *op)
 			_PyObject_GC_MAY_BE_TRACKED(ep[i].me_key))
 			return;
 	}
+	DECREASE_TRACK_COUNT
 	_PyObject_GC_UNTRACK(op);
 }
 
