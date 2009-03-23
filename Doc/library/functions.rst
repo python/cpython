@@ -749,9 +749,22 @@ are always available.  They are listed here in alphabetical order.
      the other legal values, any ``'\n'`` characters written are translated to
      the given string.
 
-   If *closefd* is ``False``, the underlying file descriptor will be kept open
-   when the file is closed.  This does not work when a file name is given and
-   must be ``True`` in that case.
+   If *closefd* is ``False`` and a file descriptor rather than a filename was
+   given, the underlying file descriptor will be kept open when the file is
+   closed.  If a filename is given *closefd* has no effect and must be ``True``
+   (the default).
+
+   The type of file object returned by the :func:`open` function depends on the
+   mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
+   ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
+   :class:`io.TextIOBase` (specifically :class:`io.TextIOWrapper`).  When used
+   to open a file in a binary mode with buffering, the returned class is a
+   subclass of :class:`io.BufferedIOBase`.  The exact class varies: in read
+   binary mode, it returns a :class:`io.BufferedReader`; in write binary and
+   append binary modes, it returns a :class:`io.BufferedWriter`, and in
+   read/write mode, it returns a :class:`io.BufferedRandom`.  When buffering is
+   disabled, the raw stream, a subclass of :class:`io.RawIOBase`,
+   :class:`io.FileIO`, is returned.
 
    .. index::
       single: line-buffered I/O
@@ -763,8 +776,8 @@ are always available.  They are listed here in alphabetical order.
       module: sys
 
    See also the file handling modules, such as, :mod:`fileinput`, :mod:`io`
-   (where :func:`open()` is declared), :mod:`os`, :mod:`os.path`,
-   :mod:`tempfile`, and :mod:`shutil`.
+   (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
+   and :mod:`shutil`.
 
 
 .. XXX works for bytes too, but should it?

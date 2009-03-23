@@ -134,19 +134,21 @@ Module Interface
      the other legal values, any ``'\n'`` characters written are translated to
      the given string.
 
-   If *closefd* is ``False`` and a file descriptor rather than a
-   filename was given, the underlying file descriptor will be kept open
-   when the file is closed.  If a filename is given *closefd* has no
-   effect but must be ``True`` (the default).
+   If *closefd* is ``False`` and a file descriptor rather than a filename was
+   given, the underlying file descriptor will be kept open when the file is
+   closed.  If a filename is given *closefd* has no effect and must be ``True``
+   (the default).
 
-   The type of file object returned by the :func:`open` function depends
-   on the mode.  When :func:`open` is used to open a file in a text mode
-   (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a
-   :class:`TextIOWrapper`. When used to open a file in a binary mode,
-   the returned class varies: in read binary mode, it returns a
-   :class:`BufferedReader`; in write binary and append binary modes, it
-   returns a :class:`BufferedWriter`, and in read/write mode, it returns
-   a :class:`BufferedRandom`.
+   The type of file object returned by the :func:`open` function depends on the
+   mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
+   ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
+   :class:`TextIOBase` (specifically :class:`TextIOWrapper`).  When used to open
+   a file in a binary mode with buffering, the returned class is a subclass of
+   :class:`BufferedIOBase`.  The exact class varies: in read binary mode, it
+   returns a :class:`BufferedReader`; in write binary and append binary modes,
+   it returns a :class:`BufferedWriter`, and in read/write mode, it returns a
+   :class:`BufferedRandom`.  When buffering is disabled, the raw stream, a
+   subclass of :class:`RawIOBase`, :class:`FileIO`, is returned.
 
    It is also possible to use a string or bytearray as a file for both reading
    and writing.  For strings :class:`StringIO` can be used like a file opened in
