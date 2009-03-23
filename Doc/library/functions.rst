@@ -666,7 +666,8 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: open(file[, mode='r'[, buffering=None[, encoding=None[, errors=None[, newline=None[, closefd=True]]]]]])
 
-   Open a file.  If the file cannot be opened, :exc:`IOError` is raised.
+   Open *file* and return a corresponding stream.  If the file cannot be opened,
+   an :exc:`IOError` is raised.
 
    *file* is either a string or bytes object giving the name (and the path if
    the file isn't in the current working directory) of the file to be opened or
@@ -679,14 +680,9 @@ are always available.  They are listed here in alphabetical order.
    Other common values are ``'w'`` for writing (truncating the file if it
    already exists), and ``'a'`` for appending (which on *some* Unix systems,
    means that *all* writes append to the end of the file regardless of the
-   current seek position).
-
-   In text mode, if *encoding* is not specified the encoding used is the same as
-   returned by :func:`locale.getpreferredencoding`, if the :mod:`locale` module
-   is available, else ASCII.  For reading and writing raw bytes, use binary mode
-   and leave *encoding* unspecified.
-
-   The available modes are:
+   current seek position).  In text mode, if *encoding* is not specified the
+   encoding used is platform dependent. (For reading and writing raw bytes use
+   binary mode and leave *encoding* unspecified.)  The available modes are:
 
    ========= ===============================================================
    Character Meaning
@@ -697,39 +693,44 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   universal newline mode (for backwards compatibility; unneeded
-             for new code)
+   ``'U'``   universal newline mode (for backwards compatibility; should
+             not be used in new code)
    ========= ===============================================================
 
    The default mode is ``'rt'`` (open for reading text).  For binary random
    access, the mode ``'w+b'`` opens and truncates the file to 0 bytes, while
    ``'r+b'`` opens the file without truncation.
 
-   Python distinguishes between files opened in binary and text modes, even
-   when the underlying operating system doesn't.  Files opened in binary
-   mode (appending ``'b'`` to the *mode* argument) return contents as
-   ``bytes`` objects without any decoding.  In text mode (the default, or when
-   ``'t'`` is appended to the *mode* argument) the contents of
-   the file are returned as strings, the bytes having been first decoded
-   using a platform-dependent encoding or using the specified *encoding*
-   if given.
+   Python distinguishes between files opened in binary and text modes, even when
+   the underlying operating system doesn't.  Files opened in binary mode
+   (including ``'b'`` in the *mode* argument) return contents as ``bytes``
+   objects without any decoding.  In text mode (the default, or when ``'t'`` is
+   included in the *mode* argument), the contents of the file are returned as
+   strings, the bytes having been first decoded using a platform-dependent
+   encoding or using the specified *encoding* if given.
 
    *buffering* is an optional integer used to set the buffering policy.  By
-   default full buffering is on. Pass 0 to switch buffering off (only allowed in
-   binary mode), 1 to set line buffering, and an integer > 1 for full buffering.
+   default full buffering is on.  Pass 0 to switch buffering off (only allowed
+   in binary mode), 1 to set line buffering, and an integer > 1 for full
+   buffering.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent, but any encoding supported by Python can be passed.  See the
-   :mod:`codecs` module for the list of supported encodings.
+   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
+   encoding supported by Python can be used.  See the :mod:`codecs` module for
+   the list of supported encodings.
 
-   *errors* is an optional string that specifies how encoding errors are to be
-   handled---this argument should not be used in binary mode. Pass ``'strict'``
-   to raise a :exc:`ValueError` exception if there is an encoding error (the
-   default of ``None`` has the same effect), or pass ``'ignore'`` to ignore
-   errors. (Note that ignoring encoding errors can lead to data loss.) See the
-   documentation for :func:`codecs.register` for a list of the permitted
-   encoding error strings.
+   *errors* is an optional string that specifies how encoding and decoding
+   errors are to be handled--this cannot be used in binary mode.  Pass
+   ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
+   error (the default of ``None`` has the same effect), or pass ``'ignore'`` to
+   ignore errors.  (Note that ignoring encoding errors can lead to data loss.)
+   ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
+   where there is malformed data.  When writing, ``'xmlcharrefreplace'``
+   (replace with the appropriate XML character reference) or
+   ``'backslashreplace'`` (replace with backslashed escape sequences) can be
+   used.  Any other error handling name that has been registered with
+   :func:`codecs.register_error` is also valid.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
