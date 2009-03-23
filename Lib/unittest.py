@@ -53,6 +53,7 @@ import sys
 import traceback
 import os
 import types
+import functools
 
 ##############################################################################
 # Exported classes and functions
@@ -71,6 +72,79 @@ __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 def _strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
 
+
+class SkipTest(Exception):
+    """
+    Raise this exception in a test to skip it.
+
+    Usually you can use TestResult.skip() or one of the skipping decorators
+    instead of raising this directly.
+    """
+    pass
+
+class _ExpectedFailure(Exception):
+    """
+    Raise this when a test is expected to fail.
+
+    This is an implementation detail.
+    """
+
+    def __init__(self, exc_info):
+        super(_ExpectedFailure, self).__init__()
+        self.exc_info = exc_info
+
+class _UnexpectedSuccess(Exception):
+    """
+    The test was supposed to fail, but it didn't!
+    """
+    pass
+
+def _id(obj):
+    return obj
+
+def skip(reason):
+    """
+    Unconditionally skip a test.
+    """
+    def decorator(test_item):
+        if isinstance(test_item, type) and issubclass(test_item, TestCase):
+            test_item.__unittest_skip__ = True
+            test_item.__unittest_skip_why__ = reason
+            return test_item
+        @functools.wraps(test_item)
+        def skip_wrapper(*args, **kwargs):
+            raise SkipTest(reason)
+        return skip_wrapper
+    return decorator
+
+def skipIf(condition, reason):
+    """
+    Skip a test if the condition is true.
+    """
+    if condition:
+        return skip(reason)
+    return _id
+
+def skipUnless(condition, reason):
+    """
+    Skip a test unless the condition is true.
+    """
+    if not condition:
+        return skip(reason)
+    return _id
+
+
+def expectedFailure(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception:
+            raise _ExpectedFailure(sys.exc_info())
+        raise _UnexpectedSuccess
+    return wrapper
+
+
 __unittest = 1
 
 class TestResult(object):
@@ -88,6 +162,9 @@ class TestResult(object):
         self.failures = []
         self.errors = []
         self.testsRun = 0
+        self.skipped = []
+        self.expected_failures = []
+        self.unexpected_successes = []
         self.shouldStop = False
 
     def startTest(self, test):
@@ -112,6 +189,19 @@ class TestResult(object):
     def addSuccess(self, test):
         "Called when a test has completed successfully"
         pass
+
+    def addSkip(self, test, reason):
+        """Called when a test is skipped."""
+        self.skipped.append((test, reason))
+
+    def addExpectedFailure(self, test, err):
+        """Called when an expected failure/error occured."""
+        self.expected_failures.append(
+            (test, self._exc_info_to_string(err, test)))
+
+    def addUnexpectedSuccess(self, test):
+        """Called when a test was expected to fail, but succeed."""
+        self.unexpected_successes.append(test)
 
     def wasSuccessful(self):
         "Tells whether or not this result was a success"
@@ -273,25 +363,36 @@ class TestCase(object):
         try:
             try:
                 self.setUp()
+            except SkipTest as e:
+                result.addSkip(self, str(e))
+                return
             except Exception:
                 result.addError(self, self._exc_info())
                 return
 
-            ok = False
+            success = False
             try:
                 testMethod()
-                ok = True
             except self.failureException:
                 result.addFailure(self, self._exc_info())
+            except _ExpectedFailure as e:
+                result.addExpectedFailure(self, e.exc_info)
+            except _UnexpectedSuccess:
+                result.addUnexpectedSuccess(self)
+            except SkipTest as e:
+                result.addSkip(self, str(e))
             except Exception:
                 result.addError(self, self._exc_info())
+            else:
+                success = True
 
             try:
                 self.tearDown()
             except Exception:
                 result.addError(self, self._exc_info())
-                ok = False
-            if ok: result.addSuccess(self)
+                success = False
+            if success:
+                result.addSuccess(self)
         finally:
             result.stopTest(self)
 
@@ -310,6 +411,10 @@ class TestCase(object):
            needed.
         """
         return sys.exc_info()
+
+    def skip(self, reason):
+        """Skip this test."""
+        raise SkipTest(reason)
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
@@ -418,8 +523,8 @@ class TestSuite(object):
     __str__ = __repr__
 
     def __eq__(self, other):
-        if type(self) is not type(other):
-            return False
+        if not isinstance(other, self.__class__):
+            return NotImplemented
         return self._tests == other._tests
 
     def __ne__(self, other):
@@ -462,6 +567,37 @@ class TestSuite(object):
     def debug(self):
         """Run the tests without collecting errors in a TestResult"""
         for test in self._tests: test.debug()
+
+
+class ClassTestSuite(TestSuite):
+    """
+    Suite of tests derived from a single TestCase class.
+    """
+
+    def __init__(self, tests, class_collected_from):
+        super(ClassTestSuite, self).__init__(tests)
+        self.collected_from = class_collected_from
+
+    def id(self):
+        module = getattr(self.collected_from, "__module__", None)
+        if module is not None:
+            return "{0}.{1}".format(module, self.collected_from.__name__)
+        return self.collected_from.__name__
+
+    def run(self, result):
+        if getattr(self.collected_from, "__unittest_skip__", False):
+            # ClassTestSuite result pretends to be a TestCase enough to be
+            # reported.
+            result.startTest(self)
+            try:
+                result.addSkip(self, self.collected_from.__unittest_skip_why__)
+            finally:
+                result.stopTest(self)
+        else:
+            result = super(ClassTestSuite, self).run(result)
+        return result
+
+    shortDescription = id
 
 
 class FunctionTestCase(TestCase):
@@ -550,6 +686,7 @@ class TestLoader(object):
     testMethodPrefix = 'test'
     sortTestMethodsUsing = staticmethod(three_way_cmp)
     suiteClass = TestSuite
+    classSuiteClass = ClassTestSuite
 
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
@@ -559,7 +696,9 @@ class TestLoader(object):
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
-        return self.suiteClass(map(testCaseClass, testCaseNames))
+        suite = self.classSuiteClass(map(testCaseClass, testCaseNames),
+                                     testCaseClass)
+        return suite
 
     def loadTestsFromModule(self, module):
         """Return a suite of all tests cases contained in the given module"""
@@ -739,6 +878,30 @@ class _TextTestResult(TestResult):
             self.stream.write('F')
             self.stream.flush()
 
+    def addSkip(self, test, reason):
+        TestResult.addSkip(self, test, reason)
+        if self.showAll:
+            self.stream.writeln("skipped {0!r}".format(reason))
+        elif self.dots:
+            self.stream.write("s")
+            self.stream.flush()
+
+    def addExpectedFailure(self, test, err):
+        TestResult.addExpectedFailure(self, test, err)
+        if self.showAll:
+            self.stream.writeln("expected failure")
+        elif self.dots:
+            self.stream.write(".")
+            self.stream.flush()
+
+    def addUnexpectedSuccess(self, test):
+        TestResult.addUnexpectedSuccess(self, test)
+        if self.showAll:
+            self.stream.writeln("unexpected success")
+        elif self.dots:
+            self.stream.write(".")
+            self.stream.flush()
+
     def printErrors(self):
         if self.dots or self.showAll:
             self.stream.writeln()
@@ -780,17 +943,28 @@ class TextTestRunner(object):
         self.stream.writeln("Ran %d test%s in %.3fs" %
                             (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
+        results = map(len, (result.expected_failures,
+                            result.unexpected_successes,
+                            result.skipped))
+        expected_fails, unexpected_successes, skipped = results
+        infos = []
         if not result.wasSuccessful():
-            self.stream.write("FAILED (")
+            self.stream.write("FAILED")
             failed, errored = len(result.failures), len(result.errors)
             if failed:
-                self.stream.write("failures=%d" % failed)
+                infos.append("failures=%d" % failed)
             if errored:
-                if failed: self.stream.write(", ")
-                self.stream.write("errors=%d" % errored)
-            self.stream.writeln(")")
+                infos.append("errors=%d" % errored)
         else:
-            self.stream.writeln("OK")
+            self.stream.write("OK")
+        if skipped:
+            infos.append("skipped=%d" % skipped)
+        if expected_fails:
+            infos.append("expected failures=%d" % expected_fails)
+        if unexpected_successes:
+            infos.append("unexpected successes=%d" % unexpected_successes)
+        if infos:
+            self.stream.writeln(" (%s)" % (", ".join(infos),))
         return result
 
 
@@ -844,9 +1018,9 @@ Examples:
 
     def parseArgs(self, argv):
         import getopt
+        long_opts = ['help','verbose','quiet']
         try:
-            options, args = getopt.getopt(argv[1:], 'hHvq',
-                                          ['help','verbose','quiet'])
+            options, args = getopt.getopt(argv[1:], 'hHvq', long_opts)
             for opt, value in options:
                 if opt in ('-h','-H','--help'):
                     self.usageExit()
