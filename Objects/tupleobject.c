@@ -23,11 +23,36 @@ Py_ssize_t fast_tuple_allocs;
 Py_ssize_t tuple_zero_allocs;
 #endif
 
+/* Debug statistic to count GC tracking of tuples.
+   Please note that tuples are only untracked when considered by the GC, and
+   many of them will be dead before. Therefore, a tracking rate close to 100%
+   does not necessarily prove that the heuristic is inefficient.
+*/
+#ifdef SHOW_TRACK_COUNT
+static Py_ssize_t count_untracked = 0;
+static Py_ssize_t count_tracked = 0;
+
+static void
+show_track(void)
+{
+	fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
+		count_tracked + count_untracked);
+	fprintf(stderr, "Tuples tracked by the GC: %" PY_FORMAT_SIZE_T
+		"d\n", count_tracked);
+	fprintf(stderr, "%.2f%% tuple tracking rate\n\n",
+		(100.0*count_tracked/(count_untracked+count_tracked)));
+}
+#endif
+
+
 PyObject *
 PyTuple_New(register Py_ssize_t size)
 {
 	register PyTupleObject *op;
 	Py_ssize_t i;
+#ifdef SHOW_TRACK_COUNT
+	count_tracked++;
+#endif
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -129,6 +154,32 @@ PyTuple_SetItem(register PyObject *op, register Py_ssize_t i, PyObject *newitem)
 	*p = newitem;
 	Py_XDECREF(olditem);
 	return 0;
+}
+
+void
+_PyTuple_MaybeUntrack(PyObject *op)
+{
+	PyTupleObject *t;
+	Py_ssize_t i, n;
+	
+	if (!PyTuple_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
+		return;
+	t = (PyTupleObject *) op;
+	n = Py_SIZE(t);
+	for (i = 0; i < n; i++) {
+		PyObject *elt = PyTuple_GET_ITEM(t, i);
+		/* Tuple with NULL elements aren't
+		   fully constructed, don't untrack
+		   them yet. */
+		if (!elt ||
+			_PyObject_GC_MAY_BE_TRACKED(elt))
+			return;
+	}
+#ifdef SHOW_TRACK_COUNT
+	count_tracked--;
+	count_untracked++;
+#endif
+	_PyObject_GC_UNTRACK(op);
 }
 
 PyObject *
@@ -854,6 +905,9 @@ PyTuple_Fini(void)
 	free_list[0] = NULL;
 
 	(void)PyTuple_ClearFreeList();
+#endif
+#ifdef SHOW_TRACK_COUNT
+	show_track();
 #endif
 }
 
