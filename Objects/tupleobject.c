@@ -50,9 +50,6 @@ PyTuple_New(register Py_ssize_t size)
 {
 	register PyTupleObject *op;
 	Py_ssize_t i;
-#ifdef SHOW_TRACK_COUNT
-	count_tracked++;
-#endif
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -103,6 +100,9 @@ PyTuple_New(register Py_ssize_t size)
 		++numfree[0];
 		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
+#endif
+#ifdef SHOW_TRACK_COUNT
+	count_tracked++;
 #endif
 	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
