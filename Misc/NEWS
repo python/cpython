@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5512: Rewrite PyLong long division algorithm (x_divrem) to
+  improve its performance.  Long divisions and remainder operations
+  are now between 50% and 150% faster.
+
 - Issue #4258: Make it possible to use base 2**30 instead of base
   2**15 for the internal representation of integers, for performance
   reasons.  Base 2**30 is enabled by default on 64-bit machines.  Add
