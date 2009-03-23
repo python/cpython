@@ -11,7 +11,7 @@ from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-from weakref import proxy
+from weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 
 ################################################################################
@@ -59,7 +59,7 @@ class OrderedDict(dict, MutableMapping):
             root = self.__root
             last = root.prev
             link.prev, link.next, link.key = last, root, key
-            last.next = root.prev = proxy(link)
+            last.next = root.prev = _proxy(link)
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -127,7 +127,8 @@ class OrderedDict(dict, MutableMapping):
 
     def __eq__(self, other):
         if isinstance(other, OrderedDict):
-            return len(self)==len(other) and all(p==q for p, q in  zip(self.items(), other.items()))
+            return len(self)==len(other) and \
+                   all(p==q for p, q in zip(self.items(), other.items()))
         return dict.__eq__(self, other)
 
 
