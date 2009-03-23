@@ -140,6 +140,31 @@ The :mod:`gc` module provides the following functions:
 
    .. versionadded:: 2.3
 
+.. function:: is_tracked(obj)
+
+   Returns True if the object is currently tracked by the garbage collector,
+   False otherwise.  As a general rule, instances of atomic types aren't
+   tracked and instances of non-atomic types (containers, user-defined
+   objects...) are.  However, some type-specific optimizations can be present
+   in order to suppress the garbage collector footprint of simple instances
+   (e.g. dicts containing only atomic keys and values)::
+
+      >>> gc.is_tracked(0)
+      False
+      >>> gc.is_tracked("a")
+      False
+      >>> gc.is_tracked([])
+      True
+      >>> gc.is_tracked({})
+      False
+      >>> gc.is_tracked({"a": 1})
+      False
+      >>> gc.is_tracked({"a": []})
+      True
+
+   .. versionadded:: 2.7
+
+
 The following variable is provided for read-only access (you can mutate its
 value but should not rebind it):
 

@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4688: Add a heuristic so that tuples and dicts containing only
+  untrackable objects are not tracked by the garbage collector. This can
+  reduce the size of collections and therefore the garbage collection overhead
+  on long-running programs, depending on their particular use of datatypes.
+
 - Issue #5512: Rewrite PyLong long division algorithm (x_divrem) to
   improve its performance.  Long divisions and remainder operations
   are now between 50% and 150% faster.

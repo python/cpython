@@ -415,6 +415,37 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
+    def test_is_tracked(self):
+        # Atomic built-in types are not tracked, user-defined objects and
+        # mutable containers are.
+        # NOTE: types with special optimizations (e.g. tuple) have tests
+        # in their own test files instead.
+        self.assertFalse(gc.is_tracked(None))
+        self.assertFalse(gc.is_tracked(1))
+        self.assertFalse(gc.is_tracked(1.0))
+        self.assertFalse(gc.is_tracked(1.0 + 5.0j))
+        self.assertFalse(gc.is_tracked(True))
+        self.assertFalse(gc.is_tracked(False))
+        self.assertFalse(gc.is_tracked("a"))
+        self.assertFalse(gc.is_tracked(u"a"))
+        self.assertFalse(gc.is_tracked(bytearray("a")))
+        self.assertFalse(gc.is_tracked(type))
+        self.assertFalse(gc.is_tracked(int))
+        self.assertFalse(gc.is_tracked(object))
+        self.assertFalse(gc.is_tracked(object()))
+
+        class OldStyle:
+            pass
+        class NewStyle(object):
+            pass
+        self.assertTrue(gc.is_tracked(gc))
+        self.assertTrue(gc.is_tracked(OldStyle))
+        self.assertTrue(gc.is_tracked(OldStyle()))
+        self.assertTrue(gc.is_tracked(NewStyle))
+        self.assertTrue(gc.is_tracked(NewStyle()))
+        self.assertTrue(gc.is_tracked([]))
+        self.assertTrue(gc.is_tracked(set()))
+
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
 
