@@ -181,6 +181,24 @@ show_alloc(void)
 }
 #endif
 
+/* Debug statistic to count GC tracking of dicts */
+#ifdef SHOW_TRACK_COUNT
+static Py_ssize_t count_untracked = 0;
+static Py_ssize_t count_tracked = 0;
+
+static void
+show_track(void)
+{
+	fprintf(stderr, "Dicts created: %" PY_FORMAT_SIZE_T "d\n",
+		count_tracked + count_untracked);
+	fprintf(stderr, "Dicts tracked by the GC: %" PY_FORMAT_SIZE_T
+		"d\n", count_tracked);
+	fprintf(stderr, "%.2f%% dict tracking rate\n\n",
+		(100.0*count_tracked/(count_untracked+count_tracked)));
+}
+#endif
+
+
 /* Initialization macros.
    There are two ways to create a dict:  PyDict_New() is the main C API
    function, and the tp_new slot maps to dict_new().  In the latter case we
@@ -234,6 +252,9 @@ PyDict_New(void)
 #ifdef SHOW_ALLOC_COUNT
 		Py_AtExit(show_alloc);
 #endif
+#ifdef SHOW_TRACK_COUNT
+		Py_AtExit(show_track);
+#endif
 	}
 	if (numfree) {
 		mp = free_list[--numfree];
@@ -263,10 +284,12 @@ PyDict_New(void)
 #endif
 	}
 	mp->ma_lookup = lookdict_unicode;
+#ifdef SHOW_TRACK_COUNT
+	count_untracked++;
+#endif
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
 #endif
-	_PyObject_GC_TRACK(mp);
 	return (PyObject *)mp;
 }
 
@@ -435,6 +458,52 @@ lookdict_unicode(PyDictObject *mp, PyObject *key, register long hash)
 	return 0;
 }
 
+#ifdef SHOW_TRACK_COUNT
+#define INCREASE_TRACK_COUNT \
+	(count_tracked++, count_untracked--);
+#define DECREASE_TRACK_COUNT \
+	(count_tracked--, count_untracked++);
+#else
+#define INCREASE_TRACK_COUNT
+#define DECREASE_TRACK_COUNT
+#endif
+
+#define MAINTAIN_TRACKING(mp, key, value) \
+	do { \
+		if (!_PyObject_GC_IS_TRACKED(mp)) { \
+			if (_PyObject_GC_MAY_BE_TRACKED(key) || \
+				_PyObject_GC_MAY_BE_TRACKED(value)) { \
+				_PyObject_GC_TRACK(mp); \
+				INCREASE_TRACK_COUNT \
+			} \
+		} \
+	} while(0)
+
+void
+_PyDict_MaybeUntrack(PyObject *op)
+{
+	PyDictObject *mp;
+	PyObject *value;
+	Py_ssize_t mask, i;
+	PyDictEntry *ep;
+
+	if (!PyDict_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
+		return;
+	
+	mp = (PyDictObject *) op;
+	ep = mp->ma_table;
+	mask = mp->ma_mask;
+	for (i = 0; i <= mask; i++) {
+		if ((value = ep[i].me_value) == NULL)
+			continue;
+		if (_PyObject_GC_MAY_BE_TRACKED(value) ||
+			_PyObject_GC_MAY_BE_TRACKED(ep[i].me_key))
+			return;
+	}
+	_PyObject_GC_UNTRACK(op);
+}
+
+
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
@@ -455,6 +524,7 @@ insertdict(register PyDictObject *mp, PyObject *key, long hash, PyObject *value)
 		Py_DECREF(value);
 		return -1;
 	}
+	MAINTAIN_TRACKING(mp, key, value);
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
@@ -494,6 +564,7 @@ insertdict_clean(register PyDictObject *mp, PyObject *key, long hash,
 	PyDictEntry *ep0 = mp->ma_table;
 	register PyDictEntry *ep;
 
+	MAINTAIN_TRACKING(mp, key, value);
 	i = hash & mask;
 	ep = &ep0[i];
 	for (perturb = hash; ep->me_key != NULL; perturb >>= PERTURB_SHIFT) {
@@ -1993,8 +2064,17 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		assert(d->ma_table == NULL && d->ma_fill == 0 && d->ma_used == 0);
 		INIT_NONZERO_DICT_SLOTS(d);
 		d->ma_lookup = lookdict_unicode;
+		/* The object has been implicitely tracked by tp_alloc */
+		if (type == &PyDict_Type)
+			_PyObject_GC_UNTRACK(d);
 #ifdef SHOW_CONVERSION_COUNTS
 		++created;
+#endif
+#ifdef SHOW_TRACK_COUNT
+		if (_PyObject_GC_IS_TRACKED(d))
+			count_tracked++;
+		else
+			count_untracked++;
 #endif
 	}
 	return self;

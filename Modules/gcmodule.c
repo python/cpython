@@ -433,7 +433,13 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
                         (void) traverse(op,
                                         (visitproc)visit_reachable,
                                         (void *)young);
-                        next = gc->gc.gc_next;
+			next = gc->gc.gc_next;
+			if (PyTuple_CheckExact(op)) {
+				_PyTuple_MaybeUntrack(op);
+			}
+			else if (PyDict_CheckExact(op)) {
+				_PyDict_MaybeUntrack(op);
+			}
 		}
 		else {
 			/* This *may* be unreachable.  To make progress,
@@ -1229,6 +1235,26 @@ gc_get_objects(PyObject *self, PyObject *noargs)
 	return result;
 }
 
+PyDoc_STRVAR(gc_is_tracked__doc__,
+"is_tracked(obj) -> bool\n"
+"\n"
+"Returns true if the object is tracked by the garbage collector.\n"
+"Simple atomic objects will return false.\n"
+);
+
+static PyObject *
+gc_is_tracked(PyObject *self, PyObject *obj)
+{
+	PyObject *result;
+	
+	if (PyObject_IS_GC(obj) && IS_TRACKED(obj))
+		result = Py_True;
+	else
+		result = Py_False;
+	Py_INCREF(result);
+	return result;
+}
+
 
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
@@ -1243,6 +1269,7 @@ PyDoc_STRVAR(gc__doc__,
 "set_threshold() -- Set the collection thresholds.\n"
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
+"is_tracked() -- Returns true if a given object is tracked.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n");
 
@@ -1258,6 +1285,7 @@ static PyMethodDef GcMethods[] = {
 	{"collect",	   (PyCFunction)gc_collect,
          	METH_VARARGS | METH_KEYWORDS,           gc_collect__doc__},
 	{"get_objects",    gc_get_objects,METH_NOARGS,  gc_get_objects__doc__},
+	{"is_tracked",     gc_is_tracked, METH_O,       gc_is_tracked__doc__},
 	{"get_referrers",  gc_get_referrers, METH_VARARGS,
 		gc_get_referrers__doc__},
 	{"get_referents",  gc_get_referents, METH_VARARGS,
