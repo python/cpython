@@ -176,8 +176,8 @@ class TestResult(object):
         self.errors = []
         self.testsRun = 0
         self.skipped = []
-        self.expected_failures = []
-        self.unexpected_successes = []
+        self.expectedFailures = []
+        self.unexpectedSuccesses = []
         self.shouldStop = False
 
     def startTest(self, test):
@@ -209,12 +209,12 @@ class TestResult(object):
 
     def addExpectedFailure(self, test, err):
         """Called when an expected failure/error occured."""
-        self.expected_failures.append(
+        self.expectedFailures.append(
             (test, self._exc_info_to_string(err, test)))
 
     def addUnexpectedSuccess(self, test):
         """Called when a test was expected to fail, but succeed."""
-        self.unexpected_successes.append(test)
+        self.unexpectedSuccesses.append(test)
 
     def wasSuccessful(self):
         "Tells whether or not this result was a success"
@@ -923,10 +923,10 @@ class TextTestRunner(object):
         self.stream.writeln("Ran %d test%s in %.3fs" %
                             (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
-        results = map(len, (result.expected_failures,
-                            result.unexpected_successes,
+        results = map(len, (result.expectedFailures,
+                            result.unexpectedSuccesses,
                             result.skipped))
-        expected_fails, unexpected_successes, skipped = results
+        expectedFails, unexpectedSuccesses, skipped = results
         infos = []
         if not result.wasSuccessful():
             self.stream.write("FAILED")
