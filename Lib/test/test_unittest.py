@@ -2362,7 +2362,7 @@ class Test_TestSkipping(TestCase):
         test.run(result)
         self.assertEqual(events,
                          ['startTest', 'addExpectedFailure', 'stopTest'])
-        self.assertEqual(result.expected_failures[0][0], test)
+        self.assertEqual(result.expectedFailures[0][0], test)
         self.assertTrue(result.wasSuccessful())
 
     def test_unexpected_success(self):
@@ -2377,7 +2377,7 @@ class Test_TestSkipping(TestCase):
         self.assertEqual(events,
                          ['startTest', 'addUnexpectedSuccess', 'stopTest'])
         self.assertFalse(result.failures)
-        self.assertEqual(result.unexpected_successes, [test])
+        self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertTrue(result.wasSuccessful())
 
 

@@ -950,7 +950,7 @@ tools which support interactive reporting while tests are being run.
    :func:`expectedFailure` decorator.
 
    The default implementation appends a tuple ``(test, formatted_err)`` to the
-   instance's ``expected_failures`` attribute, where *formatted_err* is a
+   instance's ``expectedFailures`` attribute, where *formatted_err* is a
    formatted traceback derived from *err*.
 
 
@@ -960,7 +960,7 @@ tools which support interactive reporting while tests are being run.
    decorator, but succeeded.
 
    The default implementation appends the test to the instance's
-   ``unexpected_successes`` attribute.
+   ``unexpectedSuccesses`` attribute.
 
 
 .. _testloader-objects:
