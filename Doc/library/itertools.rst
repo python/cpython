@@ -659,4 +659,4 @@ which incur interpreter overhead.
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-       return map(next, imap(itemgetter(1), groupby(iterable, key)))
+       return map(next, map(itemgetter(1), groupby(iterable, key)))
