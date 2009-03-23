@@ -455,6 +455,9 @@ Classes can be skipped just like methods: ::
        def test_not_run(self):
            pass
 
+:meth:`TestCase.setUp` can also skip the test.  This is useful when a resource
+that needs to be set up is not available.
+
 Expected failures use the :func:`expectedFailure` decorator. ::
 
    class ExpectedFailureTestCase(unittest.TestCase):
@@ -569,8 +572,8 @@ Test cases
 
    .. method:: skip(reason)
 
-      Skips the current test.  See :ref:`unittest-skipping` for more
-      information.
+      Calling this during the a test method or :meth:`setUp` skips the current
+      test.  See :ref:`unittest-skipping` for more information.
 
 
    .. method:: debug()
