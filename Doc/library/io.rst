@@ -52,14 +52,14 @@ Module Interface
 
 .. function:: open(file[, mode[, buffering[, encoding[, errors[, newline[, closefd=True]]]]]])
 
-   Open *file* and return a stream.  If the file cannot be opened, an
-   :exc:`IOError` is raised.
+   Open *file* and return a corresponding stream.  If the file cannot be opened,
+   an :exc:`IOError` is raised.
 
-   *file* is either a string giving the name (and the path if the file isn't in
-   the current working directory) of the file to be opened or a file
-   descriptor of the file to be opened.  (If a file descriptor is given,
-   for example, from :func:`os.fdopen`, it is closed when the returned
-   I/O object is closed, unless *closefd* is set to ``False``.)
+   *file* is either a string or bytes object giving the name (and the path if
+   the file isn't in the current working directory) of the file to be opened or
+   an integer file descriptor of the file to be wrapped.  (If a file descriptor
+   is given, it is closed when the returned I/O object is closed, unless
+   *closefd* is set to ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
    opened.  It defaults to ``'r'`` which means open for reading in text mode.
@@ -102,19 +102,21 @@ Module Interface
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent, but any encoding supported by Python can be used.  See the
-   :mod:`codecs` module for the list of supported encodings.
+   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
+   encoding supported by Python can be used.  See the :mod:`codecs` module for
+   the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
-   exception if there is an encoding error (the default of ``None`` has the same
-   effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
-   errors can lead to data loss.)  ``'replace'`` causes a replacement marker
-   (such as ``'?'``) to be inserted where there is malformed data.  When
-   writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
-   reference) or ``'backslashreplace'`` (replace with backslashed escape
-   sequences) can be used.  Any other error handling name that has been
-   registered with :func:`codecs.register_error` is also valid.
+   errors are to be handled--this cannot be used in binary mode.  Pass
+   ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
+   error (the default of ``None`` has the same effect), or pass ``'ignore'`` to
+   ignore errors.  (Note that ignoring encoding errors can lead to data loss.)
+   ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
+   where there is malformed data.  When writing, ``'xmlcharrefreplace'``
+   (replace with the appropriate XML character reference) or
+   ``'backslashreplace'`` (replace with backslashed escape sequences) can be
+   used.  Any other error handling name that has been registered with
+   :func:`codecs.register_error` is also valid.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
