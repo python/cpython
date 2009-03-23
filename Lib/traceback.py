@@ -149,7 +149,7 @@ def format_exception_only(etype, value):
     """Format the exception part of a traceback.
 
     The arguments are the exception type and value such as given by
-    sys.exc_info()[0] and sys.exc_info()[1]. The return value is a list of
+    sys.last_type and sys.last_value. The return value is a list of
     strings, each ending in a newline.
 
     Normally, the list contains a single string; however, for
@@ -239,12 +239,12 @@ def format_exc(limit=None):
 
 
 def print_last(limit=None, file=None):
-    """
-    This is a shorthand for 'print_exception(*sys.exc_info(), limit, file)'.
-    """
+    """This is a shorthand for 'print_exception(sys.last_type,
+    sys.last_value, sys.last_traceback, limit, file)'."""
     if file is None:
         file = sys.stderr
-    print_exception(*(sys.exc_info() + (limit, file)))
+    print_exception(sys.last_type, sys.last_value, sys.last_traceback,
+                    limit, file)
 
 
 def print_stack(f=None, limit=None, file=None):
