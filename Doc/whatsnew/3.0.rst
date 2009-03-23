@@ -813,7 +813,8 @@ Builtins
 * Removed :func:`execfile`.  Instead of ``execfile(fn)`` use
   ``exec(open(fn).read())``.
 
-* Removed :class:`file`.  Use :func:`open`.
+* Removed the :class:`file` type.  Use :func:`open`.  There are now several
+  different kinds of streams that open can return in the :mod:`io` module.
 
 * Removed :func:`reduce`.  Use :func:`functools.reduce` if you really
   need it; however, 99 percent of the time an explicit :keyword:`for`
