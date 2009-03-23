@@ -11,6 +11,9 @@
 
 
 .. versionadded:: 2.1
+.. versionchanged:: 2.7
+
+   Added :ref:`skipping and expected failures <unittest-skipping>`.
 
 The Python unit testing framework, sometimes referred to as "PyUnit," is a
 Python language version of JUnit, by Kent Beck and Erich Gamma. JUnit is, in
@@ -60,7 +63,8 @@ fixture is created for each test.
 
 Test suites are implemented by the :class:`TestSuite` class.  This class allows
 individual tests and test suites to be aggregated; when the suite is executed,
-all tests added directly to the suite and in "child" test suites are run.
+all tests added directly to the suite and in "child" test suites are run.  A
+:class:`ClassTestSuite` contains the test cases of a class.
 
 A test runner is an object that provides a single method, :meth:`run`, which
 accepts a :class:`TestCase` or :class:`TestSuite` object as a parameter, and
@@ -408,6 +412,78 @@ may treat :exc:`AssertionError` differently.
    make future test refactorings infinitely easier.
 
 
+.. _unittest-skipping:
+
+Skipping tests and expected failures
+------------------------------------
+
+Unittest supports skipping individual test methods and even whole classes of
+tests.  In addition, it supports marking a test as a "expected failure," a test
+that is broken and will fail, but shouldn't be counted as a failure on a
+:class:`TestResult`.
+
+Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
+or one of its conditional variants.
+
+Basic skipping looks like this: ::
+
+   class MyTestCase(unittest.TestCase):
+
+       @unittest.skip("demonstrating skipping")
+       def test_nothing(self):
+           self.fail("shouldn't happen")
+
+This is the output of running the example above in verbose mode: ::
+
+   test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
+
+   ----------------------------------------------------------------------
+   Ran 1 test in 0.072s
+
+Classes can be skipped just like methods: ::
+
+   @skip("showing class skipping")
+   class MySkippedTestCase(unittest.TestCase):
+       def test_not_run(self):
+           pass
+
+Expected failures use the :func:`expectedFailure` decorator. ::
+
+   class ExpectedFailureTestCase(unittest.TestCase):
+       @unittest.expectedFailure
+       def test_fail(self):
+           self.assertEqual(1, 0, "broken")
+
+It's easy to roll your own skipping decorators by making a decorator that calls
+:func:`skip` on the test when it wants it to be skipped.  This decorator skips
+the test unless the passed object has a certain attribute: ::
+
+   def skipUnlessHasattr(obj, attr):
+       if hasattr(obj, attr):
+           return lambda func: func
+       return unittest.skip("{0!r} doesn't have {1!r}".format(obj, attr))
+
+The following decorators implement test skipping and expected failures:
+
+.. function:: skip(reason)
+
+   Unconditionally skip the decorated test.  *reason* should describe why the
+   test is being skipped.
+
+.. function:: skipIf(condition, reason)
+
+   Skip the decorated test if *condition* is true.
+
+.. function:: skipUnless(condition, reason)
+
+   Skip the decoratored test unless *condition* is true.
+
+.. function:: expectedFailure
+
+   Mark the test as an expected failure.  If the test fails when run, the test
+   is not counted as a failure.
+
+
 .. _unittest-contents:
 
 Classes and functions
@@ -458,6 +534,13 @@ Classes and functions
    If *tests* is given, it must be an iterable of individual test cases or other
    test suites that will be used to build the suite initially. Additional methods
    are provided to add test cases and suites to the collection later on.
+
+.. class:: ClassTestSuite(tests, collected_from)
+
+   This subclass of :class:`TestSuite` repesents an aggregation of individuals
+   tests from one :class:`TestCase` class.  *tests* is an iterable of
+   :class:`TestCase` instances created from the class.  *collected_from* is the
+   class they came from.
 
 
 .. class:: TestLoader()
@@ -551,6 +634,11 @@ Methods in the first group (running the test) are:
    object is not returned to :meth:`run`'s caller.
 
    The same effect may be had by simply calling the :class:`TestCase` instance.
+
+
+.. method:: TestCase.skip(reason)
+
+   Skips the current test.  See :ref:`unittest-skipping`.
 
 
 .. method:: TestCase.debug()
@@ -690,10 +778,11 @@ test:
 TestSuite Objects
 -----------------
 
-:class:`TestSuite` objects behave much like :class:`TestCase` objects, except
-they do not actually implement a test.  Instead, they are used to aggregate
-tests into groups of tests that should be run together. Some additional methods
-are available to add tests to :class:`TestSuite` instances:
+:class:`TestSuite` (including :class:`ClassTestSuite`) objects behave much like
+:class:`TestCase` objects, except they do not actually implement a test.
+Instead, they are used to aggregate tests into groups of tests that should be
+run together. Some additional methods are available to add tests to
+:class:`TestSuite` instances:
 
 
 .. method:: TestSuite.addTest(test)
@@ -846,6 +935,34 @@ tools which support interactive reporting while tests are being run.
    The default implementation does nothing.
 
 
+.. method:: TestResult.addSkip(test, reason)
+
+   Called when the test case *test* is skipped.  *reason* is the reason the test
+   gave for skipping.
+
+   The default implementation appends a tuple ``(test, reason)`` to the
+   instance's ``skipped`` attribute.
+
+
+.. method:: TestResult.addExpectedFailure(test, err)
+
+   Called when the test case *test* fails, but was marked with the
+   :func:`expectedFailure` decorator.
+
+   The default implementation appends a tuple ``(test, formatted_err)`` to the
+   instance's ``expected_failures`` attribute, where *formatted_err* is a
+   formatted traceback derived from *err*.
+
+
+.. method:: TestResult.addUnexpectedSuccess(test)
+
+   Called when the test case *test* was marked with the :func:`expectedFailure`
+   decorator, but succeeded.
+
+   The default implementation appends the test to the instance's
+   ``unexpected_successes`` attribute.
+
+
 .. _testloader-objects:
 
 TestLoader Objects
@@ -945,4 +1062,10 @@ subclassing or assignment on an instance:
    class.
 
    This affects all the :meth:`loadTestsFrom\*` methods.
+
+
+.. attribute:: TestLoader.classSuiteClass
+
+   Callable object that constructs a test suite for the tests cases from one
+   class.  The default value is :class:`ClassTestSuite`.
 

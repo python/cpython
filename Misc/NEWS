@@ -197,6 +197,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1034053: unittest now supports skipping tests and expected failures.
+
 - Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
   forever on incomplete input. That caused tarfile.open() to hang when used
   with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
