@@ -285,6 +285,17 @@ extern PyGC_Head *_PyGC_generation0;
 	g->gc.gc_next = NULL; \
     } while (0);
 
+/* True if the object is currently tracked by the GC. */
+#define _PyObject_GC_IS_TRACKED(o) \
+	((_Py_AS_GC(o))->gc.gc_refs != _PyGC_REFS_UNTRACKED)
+ 
+/* True if the object may be tracked by the GC in the future, or already is.
+   This can be useful to implement some optimizations. */
+#define _PyObject_GC_MAY_BE_TRACKED(obj) \
+	(PyObject_IS_GC(obj) && \
+		(!PyTuple_CheckExact(obj) || _PyObject_GC_IS_TRACKED(obj)))
+
+
 PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t);
 PyAPI_FUNC(PyObject *) _PyObject_GC_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, Py_ssize_t);

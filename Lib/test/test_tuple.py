@@ -1,5 +1,7 @@
 from test import test_support, seq_tests
 
+import gc
+
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
@@ -81,6 +83,69 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(str(a2), repr(l2))
         self.assertEqual(repr(a0), "()")
         self.assertEqual(repr(a2), "(0, 1, 2)")
+
+    def _not_tracked(self, t):
+        # Nested tuples can take several collections to untrack
+        gc.collect()
+        gc.collect()
+        self.assertFalse(gc.is_tracked(t), t)
+
+    def _tracked(self, t):
+        self.assertTrue(gc.is_tracked(t), t)
+        gc.collect()
+        gc.collect()
+        self.assertTrue(gc.is_tracked(t), t)
+
+    def test_track_literals(self):
+        # Test GC-optimization of tuple literals
+        x, y, z = 1.5, "a", []
+
+        self._not_tracked(())
+        self._not_tracked((1,))
+        self._not_tracked((1, 2))
+        self._not_tracked((1, 2, "a"))
+        self._not_tracked((1, 2, (None, True, False, ()), int))
+        self._not_tracked((object(),))
+        self._not_tracked(((1, x), y, (2, 3)))
+
+        # Tuples with mutable elements are always tracked, even if those
+        # elements are not tracked right now.
+        self._tracked(([],))
+        self._tracked(([1],))
+        self._tracked(({},))
+        self._tracked((set(),))
+        self._tracked((x, y, z))
+
+    def check_track_dynamic(self, tp, always_track):
+        x, y, z = 1.5, "a", []
+
+        check = self._tracked if always_track else self._not_tracked
+        check(tp())
+        check(tp([]))
+        check(tp(set()))
+        check(tp([1, x, y]))
+        check(tp(obj for obj in [1, x, y]))
+        check(tp(set([1, x, y])))
+        check(tp(tuple([obj]) for obj in [1, x, y]))
+        check(tuple(tp([obj]) for obj in [1, x, y]))
+
+        self._tracked(tp([z]))
+        self._tracked(tp([[x, y]]))
+        self._tracked(tp([{x: y}]))
+        self._tracked(tp(obj for obj in [x, y, z]))
+        self._tracked(tp(tuple([obj]) for obj in [x, y, z]))
+        self._tracked(tuple(tp([obj]) for obj in [x, y, z]))
+
+    def test_track_dynamic(self):
+        # Test GC-optimization of dynamically constructed tuples.
+        self.check_track_dynamic(tuple, False)
+
+    def test_track_subtypes(self):
+        # Tuple subtypes must always be tracked
+        class MyTuple(tuple):
+            pass
+        self.check_track_dynamic(MyTuple, True)
+
 
 def test_main():
     test_support.run_unittest(TupleTest)
