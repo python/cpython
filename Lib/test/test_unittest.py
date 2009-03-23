@@ -31,9 +31,26 @@ class LoggingResult(unittest.TestResult):
         self._events.append('addFailure')
         super().addFailure(*args)
 
+    def addSuccess(self, *args):
+        self._events.append('addSuccess')
+        super(LoggingResult, self).addSuccess(*args)
+
     def addError(self, *args):
         self._events.append('addError')
         super().addError(*args)
+
+    def addSkip(self, *args):
+        self._events.append('addSkip')
+        super(LoggingResult, self).addSkip(*args)
+
+    def addExpectedFailure(self, *args):
+        self._events.append('addExpectedFailure')
+        super(LoggingResult, self).addExpectedFailure(*args)
+
+    def addUnexpectedSuccess(self, *args):
+        self._events.append('addUnexpectedSuccess')
+        super(LoggingResult, self).addUnexpectedSuccess(*args)
+
 
 class TestEquality(object):
     # Check for a valid __eq__ implementation
@@ -70,6 +87,13 @@ class TestHashing(object):
                 self.fail("%s and %s hash equal, but shouldn't" % (obj_1, obj_2))
             except Exception as e:
                 self.fail("Problem hashing %s and %s: %s" % (obj_1, obj_2, e))
+
+
+# List subclass we can add attributes to.
+class MyClassSuite(list):
+
+    def __init__(self, tests, klass):
+        super(MyClassSuite, self).__init__(tests)
 
 
 ################################################################
@@ -1233,7 +1257,7 @@ class Test_TestLoader(TestCase):
         tests = [Foo('test_1'), Foo('test_2')]
 
         loader = unittest.TestLoader()
-        loader.suiteClass = list
+        loader.classSuiteClass = MyClassSuite
         self.assertEqual(loader.loadTestsFromTestCase(Foo), tests)
 
     # It is implicit in the documentation for TestLoader.suiteClass that
@@ -1246,7 +1270,7 @@ class Test_TestLoader(TestCase):
             def foo_bar(self): pass
         m.Foo = Foo
 
-        tests = [[Foo('test_1'), Foo('test_2')]]
+        tests = [unittest.ClassTestSuite([Foo('test_1'), Foo('test_2')], Foo)]
 
         loader = unittest.TestLoader()
         loader.suiteClass = list
@@ -1265,7 +1289,7 @@ class Test_TestLoader(TestCase):
         tests = [Foo('test_1'), Foo('test_2')]
 
         loader = unittest.TestLoader()
-        loader.suiteClass = list
+        loader.classSuiteClass = MyClassSuite
         self.assertEqual(loader.loadTestsFromName('Foo', m), tests)
 
     # It is implicit in the documentation for TestLoader.suiteClass that
@@ -1278,7 +1302,7 @@ class Test_TestLoader(TestCase):
             def foo_bar(self): pass
         m.Foo = Foo
 
-        tests = [[Foo('test_1'), Foo('test_2')]]
+        tests = [unittest.ClassTestSuite([Foo('test_1'), Foo('test_2')], Foo)]
 
         loader = unittest.TestLoader()
         loader.suiteClass = list
@@ -2271,8 +2295,102 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         # Make run() find a result object on its own
         Foo('test').run()
 
-        expected = ['startTest', 'test', 'stopTest']
+        expected = ['startTest', 'test', 'addSuccess', 'stopTest']
         self.assertEqual(events, expected)
+
+
+class Test_TestSkipping(TestCase):
+
+    def test_skipping(self):
+        class Foo(unittest.TestCase):
+            def test_skip_me(self):
+                self.skip("skip")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_skip_me")
+        test.run(result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "skip")])
+
+        # Try letting setUp skip the test now.
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                self.skip("testing")
+            def test_nothing(self): pass
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_nothing")
+        test.run(result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "testing")])
+        self.assertEqual(result.testsRun, 1)
+
+    def test_skipping_decorators(self):
+        op_table = ((unittest.skipUnless, False, True),
+                    (unittest.skipIf, True, False))
+        for deco, do_skip, dont_skip in op_table:
+            class Foo(unittest.TestCase):
+                @deco(do_skip, "testing")
+                def test_skip(self): pass
+
+                @deco(dont_skip, "testing")
+                def test_dont_skip(self): pass
+            test_do_skip = Foo("test_skip")
+            test_dont_skip = Foo("test_dont_skip")
+            suite = unittest.ClassTestSuite([test_do_skip, test_dont_skip], Foo)
+            events = []
+            result = LoggingResult(events)
+            suite.run(result)
+            self.assertEqual(len(result.skipped), 1)
+            expected = ['startTest', 'addSkip', 'stopTest',
+                        'startTest', 'addSuccess', 'stopTest']
+            self.assertEqual(events, expected)
+            self.assertEqual(result.testsRun, 2)
+            self.assertEqual(result.skipped, [(test_do_skip, "testing")])
+            self.assertTrue(result.wasSuccessful())
+
+    def test_skip_class(self):
+        @unittest.skip("testing")
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                record.append(1)
+        record = []
+        result = unittest.TestResult()
+        suite = unittest.ClassTestSuite([Foo("test_1")], Foo)
+        suite.run(result)
+        self.assertEqual(result.skipped, [(suite, "testing")])
+        self.assertEqual(record, [])
+
+    def test_expected_failure(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                self.fail("help me!")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        test.run(result)
+        self.assertEqual(events,
+                         ['startTest', 'addExpectedFailure', 'stopTest'])
+        self.assertEqual(result.expected_failures[0][0], test)
+        self.assertTrue(result.wasSuccessful())
+
+    def test_unexpected_success(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                pass
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        test.run(result)
+        self.assertEqual(events,
+                         ['startTest', 'addUnexpectedSuccess', 'stopTest'])
+        self.assertFalse(result.failures)
+        self.assertEqual(result.unexpected_successes, [test])
+        self.assertTrue(result.wasSuccessful())
+
+
 
 class Test_Assertions(TestCase):
     def test_AlmostEqual(self):
@@ -2338,7 +2456,7 @@ class Test_Assertions(TestCase):
 def test_main():
     support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_Assertions)
+        Test_TestSkipping, Test_Assertions)
 
 if __name__ == "__main__":
     test_main()
