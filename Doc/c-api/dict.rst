@@ -73,11 +73,12 @@ Dictionary Objects
 
 .. cfunction:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
-   .. index:: single: PyString_FromString()
+   .. index:: single: PyUnicode_FromString()
 
-   Insert *value* into the dictionary *p* using *key* as a key. *key* should be a
-   :ctype:`char\*`.  The key object is created using ``PyString_FromString(key)``.
-   Return ``0`` on success or ``-1`` on failure.
+   Insert *value* into the dictionary *p* using *key* as a key. *key* should be
+   a :ctype:`char\*`.  The key object is created using
+   :cfunc:`PyUnicode_FromString(key)`.  Return ``0`` on success or ``-1`` on
+   failure.
 
 
 .. cfunction:: int PyDict_DelItem(PyObject *p, PyObject *key)
