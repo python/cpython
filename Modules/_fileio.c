@@ -77,11 +77,15 @@ internal_close(PyFileIOObject *self)
 	if (self->fd >= 0) {
 		int fd = self->fd;
 		self->fd = -1;
-		Py_BEGIN_ALLOW_THREADS
-		err = close(fd);
-		if (err < 0)
-			save_errno = errno;
-		Py_END_ALLOW_THREADS
+		/* fd is accessible and someone else may have closed it */
+		if (_PyVerify_fd(fd)) {
+			Py_BEGIN_ALLOW_THREADS
+			err = close(fd);
+			if (err < 0)
+				save_errno = errno;
+			Py_END_ALLOW_THREADS
+		} else
+		save_errno = errno;
 	}
 	if (err < 0) {
 		errno = save_errno;
