@@ -7,7 +7,7 @@ that name.
 
 import sys
 import os
-import re
+import tokenize
 
 __all__ = ["getline", "clearcache", "checkcache"]
 
@@ -120,27 +120,11 @@ def updatecache(filename, module_globals=None):
                     pass
         else:
             # No luck
-##          print '*** Cannot stat', filename, ':', msg
             return []
-##  print("Refreshing cache for %s..." % fullname)
-    try:
-        fp = open(fullname, 'rU')
+    with open(fullname, 'rb') as fp:
+        coding, line = tokenize.detect_encoding(fp.readline)
+    with open(fullname, 'r', encoding=coding) as fp:
         lines = fp.readlines()
-        fp.close()
-    except Exception as msg:
-##      print '*** Cannot open', fullname, ':', msg
-        return []
-    coding = "utf-8"
-    for line in lines[:2]:
-        m = re.search(r"coding[:=]\s*([-\w.]+)", line)
-        if m:
-            coding = m.group(1)
-            break
-    try:
-        lines = [line if isinstance(line, str) else str(line, coding)
-                 for line in lines]
-    except:
-        pass  # Hope for the best
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
