@@ -370,12 +370,8 @@ def make_bad_fd():
         unlink(TESTFN)
 
 def check_syntax_error(testcase, statement):
-    try:
-        compile(statement, '<test string>', 'exec')
-    except SyntaxError:
-        pass
-    else:
-        testcase.fail('Missing SyntaxError: "%s"' % statement)
+    testcase.assertRaises(SyntaxError, compile, statement,
+                          '<test string>', 'exec')
 
 def open_urlresource(url):
     import urllib, urlparse
