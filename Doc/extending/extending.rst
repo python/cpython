@@ -1262,7 +1262,7 @@ All that a client module must do in order to have access to the function
 :cfunc:`import_spam` in its initialization function::
 
    PyMODINIT_FUNC
-   initclient(void)
+   PyInit_client(void)
    {
        PyObject *m;
 
