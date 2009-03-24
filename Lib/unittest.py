@@ -809,7 +809,8 @@ class _WritelnDecorator(object):
         return getattr(self.stream,attr)
 
     def writeln(self, arg=None):
-        if arg: self.write(arg)
+        if arg:
+            self.write(arg)
         self.write('\n') # text-mode streams translate to \r\n if needed
 
 
