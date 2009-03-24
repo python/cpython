@@ -55,8 +55,10 @@ import functools
 ##############################################################################
 # Exported classes and functions
 ##############################################################################
-__all__ = ['TestResult', 'TestCase', 'TestSuite', 'TextTestRunner',
-           'TestLoader', 'FunctionTestCase', 'main', 'defaultTestLoader']
+__all__ = ['TestResult', 'TestCase', 'TestSuite', 'ClassTestSuite',
+           'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
+           'defaultTestLoader', 'SkipException', 'skip', 'skipIf', 'skipUnless',
+           'expectedFailure']
 
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
