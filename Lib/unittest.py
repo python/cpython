@@ -943,7 +943,7 @@ class TextTestRunner(object):
             if errored:
                 infos.append("errors=%d" % errored)
         else:
-            self.stream.writeln("OK")
+            self.stream.write("OK")
         if skipped:
             infos.append("skipped=%d" % skipped)
         if expectedFails:
@@ -952,6 +952,8 @@ class TextTestRunner(object):
             infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
             self.stream.writeln(" (%s)" % (", ".join(infos),))
+        else:
+            self.stream.write("\n")
         return result
 
 
