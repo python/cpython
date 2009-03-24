@@ -57,7 +57,7 @@ import functools
 ##############################################################################
 __all__ = ['TestResult', 'TestCase', 'TestSuite', 'ClassTestSuite',
            'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
-           'defaultTestLoader', 'SkipException', 'skip', 'skipIf', 'skipUnless',
+           'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure']
 
 # Expose obsolete functions for backwards compatibility
