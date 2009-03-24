@@ -84,8 +84,10 @@ internal_close(PyFileIOObject *self)
 			if (err < 0)
 				save_errno = errno;
 			Py_END_ALLOW_THREADS
-		} else
-		save_errno = errno;
+		} else {
+			save_errno = errno;
+			err = -1;
+		}
 	}
 	if (err < 0) {
 		errno = save_errno;
