@@ -620,6 +620,7 @@ Test cases
       default value for *msg* can be computed to include representations of both
       *first* and *second*.
 
+
    .. method:: assertAlmostEqual(first, second[, places[, msg]])
                failUnlessAlmostEqual(first, second[, places[, msg]])
 
@@ -656,7 +657,7 @@ Test cases
       To catch any of a group of exceptions, a tuple containing the exception
       classes may be passed as *exception*.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.1
 
          If *callable* is omitted or None, returns a context manager so that the
          code under test can be written inline rather than as a function::
@@ -731,7 +732,6 @@ Test cases
 
 
 .. _testsuite-objects:
-
 
 Grouping tests
 ~~~~~~~~~~~~~~
@@ -934,10 +934,6 @@ Loading and running tests
       holding formatted tracebacks. Each tuple represents a test which raised an
       unexpected exception.
 
-      .. versionchanged:: 2.2
-
-         Contains formatted tracebacks instead of :func:`sys.exc_info` results.
-
 
    .. attribute:: failures
 
@@ -946,16 +942,12 @@ Loading and running tests
       was explicitly signalled using the :meth:`TestCase.fail\*` or
       :meth:`TestCase.assert\*` methods.
 
-      .. versionchanged:: 2.2
-
-         Contains formatted tracebacks instead of :func:`sys.exc_info` results.
-
    .. attribute:: skipped
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding the reason for skipping the test.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
    .. attribute:: expectedFailures
 
