@@ -6,6 +6,7 @@ import errno
 import unittest
 from array import array
 from weakref import proxy
+from functools import wraps
 
 from test.support import (TESTFN, findfile, check_warnings, run_unittest,
                           make_bad_fd)
@@ -114,20 +115,106 @@ class AutoFileTests(unittest.TestCase):
         else:
             self.fail("Should have raised IOError")
 
-    def testErrnoOnClose(self):
-        # Test that the IOError's `errno` attribute is correctly set when
-        # close() fails. Here we first close the file descriptor ourselves so
-        # that close() fails with EBADF ('Bad file descriptor').
-        f = self.f
-        os.close(f.fileno())
-        self.f = None
-        try:
-            f.close()
-        except IOError as e:
-            self.assertEqual(e.errno, errno.EBADF)
-        else:
-            self.fail("Should have raised IOError")
+    #A set of functions testing that we get expected behaviour if someone has
+    #manually closed the internal file descriptor.  First, a decorator:
+    def ClosedFD(func):
+        @wraps(func)
+        def wrapper(self):
+            #forcibly close the fd before invoking the problem function
+            f = self.f
+            os.close(f.fileno())
+            try:
+                func(self, f)
+            finally:
+                try:
+                    self.f.close()
+                except IOError:
+                    pass
+        return wrapper
 
+    def ClosedFDRaises(func):
+        @wraps(func)
+        def wrapper(self):
+            #forcibly close the fd before invoking the problem function
+            f = self.f
+            os.close(f.fileno())
+            try:
+                func(self, f)
+            except IOError as e:
+                self.assertEqual(e.errno, errno.EBADF)
+            else:
+                self.fail("Should have raised IOError")
+            finally:
+                try:
+                    self.f.close()
+                except IOError:
+                    pass
+        return wrapper
+
+    @ClosedFDRaises
+    def testErrnoOnClose(self, f):
+        f.close()
+
+    @ClosedFDRaises
+    def testErrnoOnClosedWrite(self, f):
+        f.write('a')
+
+    @ClosedFDRaises
+    def testErrnoOnClosedSeek(self, f):
+        f.seek(0)
+
+    @ClosedFDRaises
+    def testErrnoOnClosedTell(self, f):
+        f.tell()
+
+    @ClosedFDRaises
+    def testErrnoOnClosedTruncate(self, f):
+        f.truncate(0)
+
+    @ClosedFD
+    def testErrnoOnClosedSeekable(self, f):
+        f.seekable()
+
+    @ClosedFD
+    def testErrnoOnClosedReadable(self, f):
+        f.readable()
+
+    @ClosedFD
+    def testErrnoOnClosedWritable(self, f):
+        f.writable()
+
+    @ClosedFD
+    def testErrnoOnClosedFileno(self, f):
+        f.fileno()
+
+    @ClosedFD
+    def testErrnoOnClosedIsatty(self, f):
+        self.assertEqual(f.isatty(), False)
+
+    def ReopenForRead(self):
+        try:
+            self.f.close()
+        except IOError:
+            pass
+        self.f = _FileIO(TESTFN, 'r')
+        os.close(self.f.fileno())
+        return self.f
+
+    @ClosedFDRaises
+    def testErrnoOnClosedRead(self, f):
+        f = self.ReopenForRead()
+        f.read(1)
+
+    @ClosedFDRaises
+    def testErrnoOnClosedReadall(self, f):
+        f = self.ReopenForRead()
+        f.readall()
+
+    @ClosedFDRaises
+    def testErrnoOnClosedReadinto(self, f):
+        f = self.ReopenForRead()
+        a = array('b', b'x'*10)
+        f.readinto(a)
 
 class OtherFileTests(unittest.TestCase):
 

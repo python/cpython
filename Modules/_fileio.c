@@ -475,10 +475,13 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "w*", &pbuf))
 		return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	errno = 0;
-	n = read(self->fd, pbuf.buf, pbuf.len);
-	Py_END_ALLOW_THREADS
+	if (_PyVerify_fd(self->fd)) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		n = read(self->fd, pbuf.buf, pbuf.len);
+		Py_END_ALLOW_THREADS
+	} else
+		n = -1;
 	PyBuffer_Release(&pbuf);
 	if (n < 0) {
 		if (errno == EAGAIN)
@@ -521,6 +524,9 @@ fileio_readall(PyFileIOObject *self)
 	PyObject *result;
 	Py_ssize_t total = 0;
 	int n;
+
+	if (!_PyVerify_fd(self->fd))
+		return PyErr_SetFromErrno(PyExc_IOError);
 
 	result = PyBytes_FromStringAndSize(NULL, SMALLCHUNK);
 	if (result == NULL)
@@ -596,10 +602,13 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	ptr = PyBytes_AS_STRING(bytes);
 
-	Py_BEGIN_ALLOW_THREADS
-	errno = 0;
-	n = read(self->fd, ptr, size);
-	Py_END_ALLOW_THREADS
+	if (_PyVerify_fd(self->fd)) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		n = read(self->fd, ptr, size);
+		Py_END_ALLOW_THREADS
+	} else
+		n = -1;
 
 	if (n < 0) {
 		if (errno == EAGAIN)
@@ -632,10 +641,13 @@ fileio_write(PyFileIOObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s*", &pbuf))
 		return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	errno = 0;
-	n = write(self->fd, pbuf.buf, pbuf.len);
-	Py_END_ALLOW_THREADS
+	if (_PyVerify_fd(self->fd)) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		n = write(self->fd, pbuf.buf, pbuf.len);
+		Py_END_ALLOW_THREADS
+	} else
+		n = -1;
 
 	PyBuffer_Release(&pbuf);
 
@@ -688,13 +700,16 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 			return NULL;
 	}
 
-	Py_BEGIN_ALLOW_THREADS
+	if (_PyVerify_fd(fd)) {
+		Py_BEGIN_ALLOW_THREADS
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-	res = _lseeki64(fd, pos, whence);
+		res = _lseeki64(fd, pos, whence);
 #else
-	res = lseek(fd, pos, whence);
+		res = lseek(fd, pos, whence);
 #endif
-	Py_END_ALLOW_THREADS
+		Py_END_ALLOW_THREADS
+	} else
+		res = -1;
 	if (res < 0)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
@@ -757,13 +772,15 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 		/* Move to the position to be truncated. */
                 posobj = portable_lseek(fd, posobj, 0);
         }
+	if (posobj == NULL)
+		return NULL;
 
 #if defined(HAVE_LARGEFILE_SUPPORT)
 	pos = PyLong_AsLongLong(posobj);
 #else
 	pos = PyLong_AsLong(posobj);
 #endif
-	if (PyErr_Occurred())
+	if (pos == -1 && PyErr_Occurred())
 		return NULL;
 
 #ifdef MS_WINDOWS
