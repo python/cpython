@@ -27,7 +27,6 @@ __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
 import re, string, sys
 from token import *
 from codecs import lookup, BOM_UTF8
-from itertools import chain, repeat
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
 
 import token
@@ -327,13 +326,15 @@ def tokenize(readline):
     which tells you which encoding was used to decode the bytes stream.
     """
     encoding, consumed = detect_encoding(readline)
-    def readline_generator():
+    def readline_generator(consumed):
+        for line in consumed:
+            yield line
         while True:
             try:
                 yield readline()
             except StopIteration:
                 return
-    chained = chain(consumed, readline_generator())
+    chained = readline_generator(consumed)
     return _tokenize(chained.__next__, encoding)
 
 
