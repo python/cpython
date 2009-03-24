@@ -80,6 +80,12 @@ graphical environments) without any need to derive from a specific class.
       Kent Beck's original paper on testing frameworks using the pattern shared by
       :mod:`unittest`.
 
+   `Nose <http://code.google.com/p/python-nose/>`_ and `py.test <http://pytest.org>`_
+      Third-party unittest frameworks with a lighter-weight syntax
+      for writing tests.  For example, ``assert func(10) == 42``.
+
+   `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
+      Tools for creating mock test objects (objects simulating external resources).
 
 .. _unittest-minimal-example:
 
