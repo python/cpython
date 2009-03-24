@@ -25,9 +25,10 @@ Simple usage:
 
 Further information is available in the bundled documentation, and from
 
-  http://docs.python.org/lib/module-unittest.html
+  http://docs.python.org/library/unittest.html
 
 Copyright (c) 1999-2003 Steve Purcell
+Copyright (c) 2003-2009 Python Software Foundation
 This module is free software, and you may redistribute it and/or modify
 it under the same terms as Python itself, so long as this copyright message
 and disclaimer are retained in their original form.
@@ -44,10 +45,6 @@ AND THERE IS NO OBLIGATION WHATSOEVER TO PROVIDE MAINTENANCE,
 SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 '''
 
-__author__ = "Steve Purcell"
-__email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.63 $"[11:-2]
-
 import time
 import sys
 import traceback
@@ -58,8 +55,10 @@ import functools
 ##############################################################################
 # Exported classes and functions
 ##############################################################################
-__all__ = ['TestResult', 'TestCase', 'TestSuite', 'TextTestRunner',
-           'TestLoader', 'FunctionTestCase', 'main', 'defaultTestLoader']
+__all__ = ['TestResult', 'TestCase', 'TestSuite', 'ClassTestSuite',
+           'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
+           'defaultTestLoader', 'SkipException', 'skip', 'skipIf', 'skipUnless',
+           'expectedFailure']
 
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
@@ -163,8 +162,8 @@ class TestResult(object):
         self.errors = []
         self.testsRun = 0
         self.skipped = []
-        self.expected_failures = []
-        self.unexpected_successes = []
+        self.expectedFailures = []
+        self.unexpectedSuccesses = []
         self.shouldStop = False
 
     def startTest(self, test):
@@ -196,12 +195,12 @@ class TestResult(object):
 
     def addExpectedFailure(self, test, err):
         """Called when an expected failure/error occured."""
-        self.expected_failures.append(
+        self.expectedFailures.append(
             (test, self._exc_info_to_string(err, test)))
 
     def addUnexpectedSuccess(self, test):
         """Called when a test was expected to fail, but succeed."""
-        self.unexpected_successes.append(test)
+        self.unexpectedSuccesses.append(test)
 
     def wasSuccessful(self):
         "Tells whether or not this result was a success"
@@ -239,7 +238,10 @@ class TestResult(object):
                (_strclass(self.__class__), self.testsRun, len(self.errors),
                 len(self.failures))
 
+
 class AssertRaisesContext(object):
+
+
     def __init__(self, expected, test_case, callable_obj=None):
         self.expected = expected
         self.failureException = test_case.failureException
@@ -250,8 +252,10 @@ class AssertRaisesContext(object):
                 self.obj_name = str(callable_obj)
         else:
             self.obj_name = None
+
     def __enter__(self):
         pass
+
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is None:
             try:
@@ -268,6 +272,7 @@ class AssertRaisesContext(object):
             return True
         # Let unexpected exceptions skip through
         return False
+
 
 class TestCase(object):
     """A class whose instances are single test cases.
@@ -302,13 +307,13 @@ class TestCase(object):
            method when executed. Raises a ValueError if the instance does
            not have a method with the specified name.
         """
+        self._testMethodName = methodName
         try:
-            self._testMethodName = methodName
             testMethod = getattr(self, methodName)
-            self._testMethodDoc = testMethod.__doc__
         except AttributeError:
             raise ValueError("no such test method in %s: %s" % \
                   (self.__class__, methodName))
+        self._testMethodDoc = testMethod.__doc__
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -339,7 +344,7 @@ class TestCase(object):
 
     def __eq__(self, other):
         if type(self) is not type(other):
-            return False
+            return NotImplemented
 
         return self._testMethodName == other._testMethodName
 
@@ -357,7 +362,8 @@ class TestCase(object):
                (_strclass(self.__class__), self._testMethodName)
 
     def run(self, result=None):
-        if result is None: result = self.defaultTestResult()
+        if result is None:
+            result = self.defaultTestResult()
         result.startTest(self)
         testMethod = getattr(self, self._testMethodName)
         try:
@@ -422,11 +428,13 @@ class TestCase(object):
 
     def failIf(self, expr, msg=None):
         "Fail the test if the expression is true."
-        if expr: raise self.failureException(msg)
+        if expr:
+            raise self.failureException(msg)
 
     def failUnless(self, expr, msg=None):
         """Fail the test unless the expression is true."""
-        if not expr: raise self.failureException(msg)
+        if not expr:
+            raise self.failureException(msg)
 
     def failUnlessRaises(self, excClass, callableObj=None, *args, **kwargs):
         """Fail unless an exception of class excClass is thrown
@@ -520,8 +528,6 @@ class TestSuite(object):
     def __repr__(self):
         return "<%s tests=%s>" % (_strclass(self.__class__), self._tests)
 
-    __str__ = __repr__
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
@@ -566,7 +572,8 @@ class TestSuite(object):
 
     def debug(self):
         """Run the tests without collecting errors in a TestResult"""
-        for test in self._tests: test.debug()
+        for test in self._tests:
+            test.debug()
 
 
 class ClassTestSuite(TestSuite):
@@ -609,9 +616,8 @@ class FunctionTestCase(TestCase):
     always be called if the set-up ('setUp') function ran successfully.
     """
 
-    def __init__(self, testFunc, setUp=None, tearDown=None,
-                 description=None):
-        TestCase.__init__(self)
+    def __init__(self, testFunc, setUp=None, tearDown=None, description=None):
+        super(FunctionTestCase, self).__init__()
         self.__setUpFunc = setUp
         self.__tearDownFunc = tearDown
         self.__testFunc = testFunc
@@ -632,8 +638,8 @@ class FunctionTestCase(TestCase):
         return self.__testFunc.__name__
 
     def __eq__(self, other):
-        if type(self) is not type(other):
-            return False
+        if not isinstance(other, self.__class__):
+            return NotImplemented
 
         return self.__setUpFunc == other.__setUpFunc and \
                self.__tearDownFunc == other.__tearDownFunc and \
@@ -680,8 +686,9 @@ def three_way_cmp(x, y):
     return (x > y) - (x < y)
 
 class TestLoader(object):
-    """This class is responsible for loading tests according to various
-    criteria and returning them wrapped in a TestSuite
+    """
+    This class is responsible for loading tests according to various criteria
+    and returning them wrapped in a TestSuite
     """
     testMethodPrefix = 'test'
     sortTestMethodsUsing = staticmethod(three_way_cmp)
@@ -691,8 +698,8 @@ class TestLoader(object):
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
         if issubclass(testCaseClass, TestSuite):
-            raise TypeError("Test cases should not be derived from TestSuite."
-                            "Maybe you meant to derive from TestCase?")
+            raise TypeError("Test cases should not be derived from TestSuite." \
+                                " Maybe you meant to derive from TestCase?")
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
@@ -727,7 +734,8 @@ class TestLoader(object):
                     break
                 except ImportError:
                     del parts_copy[-1]
-                    if not parts_copy: raise
+                    if not parts_copy:
+                        raise
             parts = parts[1:]
         obj = module
         for part in parts:
@@ -772,8 +780,8 @@ class TestLoader(object):
         """
         def isTestMethod(attrname, testCaseClass=testCaseClass,
                          prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) \
-                   and hasattr(getattr(testCaseClass, attrname), '__call__')
+            return attrname.startswith(prefix) and \
+                hasattr(getattr(testCaseClass, attrname), '__call__')
         testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(key=CmpToKey(self.sortTestMethodsUsing))
@@ -835,7 +843,7 @@ class _TextTestResult(TestResult):
     separator2 = '-' * 70
 
     def __init__(self, stream, descriptions, verbosity):
-        TestResult.__init__(self)
+        super(_TextTestResult, self).__init__()
         self.stream = stream
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
@@ -848,14 +856,14 @@ class _TextTestResult(TestResult):
             return str(test)
 
     def startTest(self, test):
-        TestResult.startTest(self, test)
+        super(_TextTestResult, self).startTest(test)
         if self.showAll:
             self.stream.write(self.getDescription(test))
             self.stream.write(" ... ")
             self.stream.flush()
 
     def addSuccess(self, test):
-        TestResult.addSuccess(self, test)
+        super(_TextTestResult, self).addSuccess(test)
         if self.showAll:
             self.stream.writeln("ok")
         elif self.dots:
@@ -863,7 +871,7 @@ class _TextTestResult(TestResult):
             self.stream.flush()
 
     def addError(self, test, err):
-        TestResult.addError(self, test, err)
+        super(_TextTestResult, self).addError(test, err)
         if self.showAll:
             self.stream.writeln("ERROR")
         elif self.dots:
@@ -871,7 +879,7 @@ class _TextTestResult(TestResult):
             self.stream.flush()
 
     def addFailure(self, test, err):
-        TestResult.addFailure(self, test, err)
+        super(_TextTestResult, self).addFailure(test, err)
         if self.showAll:
             self.stream.writeln("FAIL")
         elif self.dots:
@@ -879,7 +887,7 @@ class _TextTestResult(TestResult):
             self.stream.flush()
 
     def addSkip(self, test, reason):
-        TestResult.addSkip(self, test, reason)
+        super(_TextTestResult, self).addSkip(test, reason)
         if self.showAll:
             self.stream.writeln("skipped {0!r}".format(reason))
         elif self.dots:
@@ -887,7 +895,7 @@ class _TextTestResult(TestResult):
             self.stream.flush()
 
     def addExpectedFailure(self, test, err):
-        TestResult.addExpectedFailure(self, test, err)
+        super(_TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
             self.stream.writeln("expected failure")
         elif self.dots:
@@ -895,7 +903,7 @@ class _TextTestResult(TestResult):
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
-        TestResult.addUnexpectedSuccess(self, test)
+        super(_TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
             self.stream.writeln("unexpected success")
         elif self.dots:
@@ -943,10 +951,10 @@ class TextTestRunner(object):
         self.stream.writeln("Ran %d test%s in %.3fs" %
                             (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
-        results = map(len, (result.expected_failures,
-                            result.unexpected_successes,
+        results = map(len, (result.expectedFailures,
+                            result.unexpectedSuccesses,
                             result.skipped))
-        expected_fails, unexpected_successes, skipped = results
+        expectedFails, unexpectedSuccesses, skipped = results
         infos = []
         if not result.wasSuccessful():
             self.stream.write("FAILED")
@@ -956,13 +964,13 @@ class TextTestRunner(object):
             if errored:
                 infos.append("errors=%d" % errored)
         else:
-            self.stream.write("OK")
+            self.stream.writeln("OK")
         if skipped:
             infos.append("skipped=%d" % skipped)
-        if expected_fails:
-            infos.append("expected failures=%d" % expected_fails)
-        if unexpected_successes:
-            infos.append("unexpected successes=%d" % unexpected_successes)
+        if expectedFails:
+            infos.append("expected failures=%d" % expectedFails)
+        if unexpectedSuccesses:
+            infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
             self.stream.writeln(" (%s)" % (", ".join(infos),))
         return result
@@ -1012,7 +1020,8 @@ Examples:
         self.runTests()
 
     def usageExit(self, msg=None):
-        if msg: print(msg)
+        if msg:
+            print(msg)
         print(self.USAGE % self.__dict__)
         sys.exit(2)
 
