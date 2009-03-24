@@ -44,10 +44,6 @@ AND THERE IS NO OBLIGATION WHATSOEVER TO PROVIDE MAINTENANCE,
 SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 '''
 
-__author__ = "Steve Purcell"
-__email__ = "stephen_purcell at yahoo dot com"
-__version__ = "$Id$"
-
 import time
 import sys
 import traceback
