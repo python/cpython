@@ -6830,9 +6830,7 @@ device_encoding(PyObject *self, PyObject *args)
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:device_encoding", &fd))
 		return NULL;
-	if (!_PyVerify_fd(fd))
-		return posix_error();
-	if (!isatty(fd)) {
+	if (!_PyVerify_fd(fd) || !isatty(fd)) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
