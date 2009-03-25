@@ -123,7 +123,7 @@ def requires(resource, msg=None):
     possibility of False being returned occurs when regrtest.py is executing."""
     # see if the caller's module is __main__ - if so, treat as if
     # the resource was set
-    if sys._getframe().f_back.f_globals.get("__name__") == "__main__":
+    if sys._getframe(1).f_globals.get("__name__") == "__main__":
         return
     if not is_resource_enabled(resource):
         if msg is None:
