@@ -197,6 +197,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5561: Removed the sys.version_info shortcuts from platform's
+  python_version() and python_version_tuple() since they produced different
+  output compared to previous Python versions.
+
 - Issue #1034053: unittest now supports skipping tests and expected failures.
 
 - Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
