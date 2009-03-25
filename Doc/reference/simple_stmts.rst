@@ -794,10 +794,10 @@ namespace which do not begin with an underscore character (``'_'``).
 accidentally exporting items that are not part of the API (such as library
 modules which were imported and used within the module).
 
-The :keyword:`from` form with ``*`` may only occur in a module scope.  If the
-wild card form of import --- ``import *`` --- is used in a function and the
-function contains or is a nested block with free variables, the compiler will
-raise a :exc:`SyntaxError`.
+The :keyword:`from` form with ``*`` may only occur in a module scope.  The wild
+card form of import --- ``import *`` --- is only allowed at the module level.
+Attempting to use it in class for function definitions will raise a
+:exc:`SyntaxError`.
 
 .. index::
     single: relative; import
