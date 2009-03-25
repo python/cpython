@@ -1296,10 +1296,10 @@ _sys_version_cache = {}
 def _sys_version(sys_version=None):
 
     """ Returns a parsed version of Python's sys.version as tuple
-       (name, version, branch, revision, buildno, builddate, compiler)
-       referring to the Python implementation name, version, branch,
-       revision, build number, build date/time as string and the compiler
-       identification string.
+        (name, version, branch, revision, buildno, builddate, compiler)
+        referring to the Python implementation name, version, branch,
+        revision, build number, build date/time as string and the compiler
+        identification string.
 
         Note that unlike the Python sys.version, the returned value
         for the Python version will always include the patchlevel (it
@@ -1416,8 +1416,6 @@ def python_version():
         will always include the patchlevel (it defaults to 0).
 
     """
-    if hasattr(sys, 'version_info'):
-        return '%i.%i.%i' % sys.version_info[:3]
     return _sys_version()[1]
 
 def python_version_tuple():
@@ -1429,8 +1427,6 @@ def python_version_tuple():
         will always include the patchlevel (it defaults to 0).
 
     """
-    if hasattr(sys, 'version_info'):
-        return sys.version_info[:3]
     return tuple(string.split(_sys_version()[1], '.'))
 
 def python_branch():
