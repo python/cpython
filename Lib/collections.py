@@ -41,14 +41,15 @@ class OrderedDict(dict, MutableMapping):
         try:
             self.__root
         except AttributeError:
-            self.__root = _Link()       # sentinel node for the doubly linked list
-            self.clear()
+            self.__root = root = _Link()    # sentinel node for the doubly linked list
+            root.prev = root.next = root
+            self.__map = {}
         self.update(*args, **kwds)
 
     def clear(self):
         root = self.__root
         root.prev = root.next = root
-        self.__map = {}
+        self.__map.clear()
         dict.clear(self)
 
     def __setitem__(self, key, value):
