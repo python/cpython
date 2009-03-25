@@ -879,7 +879,7 @@ class _TextTestResult(TestResult):
         if self.showAll:
             self.stream.writeln("expected failure")
         elif self.dots:
-            self.stream.write(".")
+            self.stream.write("x")
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
@@ -887,7 +887,7 @@ class _TextTestResult(TestResult):
         if self.showAll:
             self.stream.writeln("unexpected success")
         elif self.dots:
-            self.stream.write(".")
+            self.stream.write("u")
             self.stream.flush()
 
     def printErrors(self):
