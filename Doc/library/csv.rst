@@ -72,8 +72,8 @@ The :mod:`csv` module defines the following functions:
    dialect.  For full details about the dialect and formatting parameters, see
    section :ref:`csv-fmt-params`.
 
-   All data read are returned as strings.  No automatic data type conversion is
-   performed.
+   Each row read from the csv file is returned as a list of strings.  No
+   automatic data type conversion is performed.
 
    A short usage example::
 
