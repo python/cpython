@@ -1270,6 +1270,11 @@ _ironpython_sys_version_parser = re.compile(
     '(?: \(([\d\.]+)\))?'
     ' on (.NET [\d\.]+)')
 
+_pypy_sys_version_parser = re.compile(
+    r'([\w.+]+)\s*'
+    '\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
+    '\[PyPy [^\]]+\]?')
+
 _sys_version_cache = {}
 
 def _sys_version(sys_version=None):
@@ -1324,6 +1329,16 @@ def _sys_version(sys_version=None):
                 repr(sys_version))
         version, buildno, builddate, buildtime, _ = match.groups()
         compiler = sys.platform
+
+    elif "PyPy" in sys_version:
+        # PyPy
+        name = "PyPy"
+        match = _pypy_sys_version_parser.match(sys_version)
+        if match is None:
+            raise ValueError("failed to parse PyPy sys.version: %s" %
+                             repr(sys_version))
+        version, buildno, builddate, buildtime = match.groups()
+        compiler = ""
 
     else:
         # CPython
