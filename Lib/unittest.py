@@ -373,14 +373,14 @@ class TestCase(object):
                 result.addSkip(self, str(e))
                 return
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
                 return
 
             success = False
             try:
                 testMethod()
             except self.failureException:
-                result.addFailure(self, self._exc_info())
+                result.addFailure(self, sys.exc_info())
             except _ExpectedFailure as e:
                 result.addExpectedFailure(self, e.exc_info)
             except _UnexpectedSuccess:
@@ -388,14 +388,14 @@ class TestCase(object):
             except SkipTest as e:
                 result.addSkip(self, str(e))
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
             else:
                 success = True
 
             try:
                 self.tearDown()
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
                 success = False
             if success:
                 result.addSuccess(self)
@@ -410,13 +410,6 @@ class TestCase(object):
         self.setUp()
         getattr(self, self._testMethodName)()
         self.tearDown()
-
-    def _exc_info(self):
-        """Return a version of sys.exc_info() with the traceback frame
-           minimised; usually the top level of the traceback frame is not
-           needed.
-        """
-        return sys.exc_info()
 
     def skip(self, reason):
         """Skip this test."""
