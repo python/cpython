@@ -504,7 +504,7 @@ def quote_from_bytes(bs, safe='/'):
         _safe_quoters[cachekey] = quoter
     return ''.join(map(quoter.__getitem__, bs))
 
-def urlencode(query,doseq=0):
+def urlencode(query, doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
@@ -515,7 +515,7 @@ def urlencode(query,doseq=0):
     input.
     """
 
-    if hasattr(query,"items"):
+    if hasattr(query, "items"):
         # mapping objects
         query = query.items()
     else:
@@ -531,8 +531,9 @@ def urlencode(query,doseq=0):
             # allowed empty dicts that type of behavior probably should be
             # preserved for consistency
         except TypeError:
-            ty,va,tb = sys.exc_info()
-            raise TypeError("not a valid non-string sequence or mapping object").with_traceback(tb)
+            ty, va, tb = sys.exc_info()
+            raise TypeError("not a valid non-string sequence "
+                            "or mapping object").with_traceback(tb)
 
     l = []
     if not doseq:
@@ -551,7 +552,7 @@ def urlencode(query,doseq=0):
                 # is there a reasonable way to convert to ASCII?
                 # encode generates a string, but "replace" or "ignore"
                 # lose information and "strict" can raise UnicodeError
-                v = quote_plus(v.encode("ASCII","replace"))
+                v = quote_plus(v.encode("ASCII", "replace"))
                 l.append(k + '=' + v)
             else:
                 try:
