@@ -7,7 +7,7 @@
 ###      mhlib.  It should.
 
 import unittest
-from test.test_support import run_unittest, TESTFN, TestSkipped, import_module
+from test.test_support import run_unittest, TESTFN, SkipTest, import_module
 import os, StringIO
 import sys
 mhlib = import_module('mhlib', deprecated=True)
@@ -21,7 +21,7 @@ if (sys.platform.startswith("win") or sys.platform=="riscos" or
     # link counts, and that causes test_listfolders() here to get back
     # an empty list from its call of listallfolders().
     # The other tests here pass on Windows.
-    raise TestSkipped("skipped on %s -- " % sys.platform +
+    raise SkipTest("skipped on %s -- " % sys.platform +
                       "too many Unix assumptions")
 
 _mhroot = TESTFN+"_MH"

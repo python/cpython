@@ -10,7 +10,7 @@ import unittest
 
 from test import test_support
 if not hasattr(select, "kqueue"):
-    raise test_support.TestSkipped("test works only on BSD")
+    raise unittest.SkipTest("test works only on BSD")
 
 class TestKQueue(unittest.TestCase):
     def test_create_queue(self):

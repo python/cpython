@@ -1,9 +1,9 @@
-from test.test_support import run_unittest, TestSkipped
+from test.test_support import run_unittest, SkipTest
 
 try:
     import _sqlite3
 except ImportError:
-    raise TestSkipped('no sqlite available')
+    raise SkipTest('no sqlite available')
 from sqlite3.test import (dbapi, types, userfunctions, py25tests,
                                 factory, transactions, hooks, regression,
                                 dump)

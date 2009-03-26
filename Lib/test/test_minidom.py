@@ -4,7 +4,7 @@ import os
 import sys
 import pickle
 from StringIO import StringIO
-from test.test_support import verbose, run_unittest, TestSkipped
+from test.test_support import verbose, run_unittest, SkipTest
 import unittest
 
 import xml.dom
