@@ -411,7 +411,7 @@ class TestCase(object):
         getattr(self, self._testMethodName)()
         self.tearDown()
 
-    def skip(self, reason):
+    def skipTest(self, reason):
         """Skip this test."""
         raise SkipTest(reason)
 

@@ -576,7 +576,7 @@ Test cases
       instance.
 
 
-   .. method:: skip(reason)
+   .. method:: skipTest(reason)
 
       Calling this during the a test method or :meth:`setUp` skips the current
       test.  See :ref:`unittest-skipping` for more information.
