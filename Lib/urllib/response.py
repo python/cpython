@@ -40,6 +40,14 @@ class addbase(object):
         if self.fp: self.fp.close()
         self.fp = None
 
+    def __enter__(self):
+        if self.fp is None:
+            raise ValueError("I/O operation on closed file")
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
 class addclosehook(addbase):
     """Class to add a close hook to an open file."""
 
