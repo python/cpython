@@ -521,18 +521,17 @@ def urlencode(query, doseq=0):
     """
 
     if hasattr(query, "items"):
-        # mapping objects
         query = query.items()
     else:
-        # it's a bother at times that strings and string-like objects are
-        # sequences...
+        # It's a bother at times that strings and string-like objects are
+        # sequences.
         try:
             # non-sequence items should not work with len()
             # non-empty strings will fail this
             if len(query) and not isinstance(query[0], tuple):
                 raise TypeError
-            # zero-length sequences of all types will get here and succeed,
-            # but that's a minor nit - since the original implementation
+            # Zero-length sequences of all types will get here and succeed,
+            # but that's a minor nit.  Since the original implementation
             # allowed empty dicts that type of behavior probably should be
             # preserved for consistency
         except TypeError:
@@ -542,7 +541,6 @@ def urlencode(query, doseq=0):
 
     l = []
     if not doseq:
-        # preserve old behavior
         for k, v in query:
             k = quote_plus(str(k))
             v = quote_plus(str(v))
@@ -553,15 +551,9 @@ def urlencode(query, doseq=0):
             if isinstance(v, str):
                 v = quote_plus(v)
                 l.append(k + '=' + v)
-            elif isinstance(v, str):
-                # is there a reasonable way to convert to ASCII?
-                # encode generates a string, but "replace" or "ignore"
-                # lose information and "strict" can raise UnicodeError
-                v = quote_plus(v.encode("ASCII", "replace"))
-                l.append(k + '=' + v)
             else:
                 try:
-                    # is this a sufficient test for sequence-ness?
+                    # Is this a sufficient test for sequence-ness?
                     x = len(v)
                 except TypeError:
                     # not a sequence
