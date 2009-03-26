@@ -1264,9 +1264,6 @@ _sys_version_parser = re.compile(
     '\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
     '\[([^\]]+)\]?')
 
-_jython_sys_version_parser = re.compile(
-    r'([\d\.]+)')
-
 _ironpython_sys_version_parser = re.compile(
     r'IronPython\s*'
     '([\d\.]+)'
@@ -1322,12 +1319,12 @@ def _sys_version(sys_version=None):
     elif sys.platform[:4] == 'java':
         # Jython
         name = 'Jython'
-        match = _jython_sys_version_parser.match(sys_version)
+        match = _sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
                 repr(sys_version))
-        version, = match.groups()
+        version, buildno, builddate, buildtime, _ = match.groups()
         branch = ''
         revision = ''
         compiler = sys.platform
