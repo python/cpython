@@ -6,7 +6,7 @@
 # randrange, and then Python hangs.
 
 import thread
-from test.test_support import verbose, SkipTest, TestFailed
+from test.test_support import verbose, TestFailed
 
 critical_section = thread.allocate_lock()
 done = thread.allocate_lock()
@@ -56,7 +56,7 @@ def test_main():        # magic name!  see above
     import imp
     if imp.lock_held():
         # This triggers on, e.g., from test import autotest.
-        raise SkipTest("can't run when import lock is held")
+        raise unittest.SkipTest("can't run when import lock is held")
 
     done.acquire()
     for N in (20, 50) * 3:

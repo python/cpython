@@ -1,4 +1,5 @@
-from test.test_support import findfile, TestFailed, SkipTest, import_module
+from test.test_support import findfile, TestFailed, import_module
+import unittest
 sunaudiodev = import_module('sunaudiodev', deprecated=True)
 import os
 
@@ -8,7 +9,7 @@ except KeyError:
     audiodev = "/dev/audio"
 
 if not os.path.exists(audiodev):
-    raise SkipTest("no audio device found!")
+    raise unittest.SkipTest("no audio device found!")
 
 def play_sound_file(path):
     fp = open(path, 'r')

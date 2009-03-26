@@ -23,8 +23,7 @@ import logging
 try:
     import multiprocessing.synchronize
 except ImportError, e:
-    from test.test_support import SkipTest
-    raise SkipTest(e)
+    raise unittest.SkipTest(e)
 
 import multiprocessing.dummy
 import multiprocessing.connection
@@ -1813,7 +1812,7 @@ def test_main(run=None):
             lock = multiprocessing.RLock()
         except OSError:
             from test.test_support import SkipTest
-            raise SkipTest("OSError raises on RLock creation, see issue 3111!")
+            raise unittest.SkipTest("OSError raises on RLock creation, see issue 3111!")
 
     if run is None:
         from test.test_support import run_unittest as run

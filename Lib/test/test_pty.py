@@ -4,7 +4,7 @@ import pty
 import os
 import sys
 import signal
-from test.test_support import verbose, SkipTest, run_unittest
+from test.test_support import verbose, run_unittest
 import unittest
 
 TEST_STRING_1 = "I wish to buy a fish license.\n"
@@ -69,7 +69,7 @@ class PtyTest(unittest.TestCase):
             debug("Got slave_fd '%d'" % slave_fd)
         except OSError:
             # " An optional feature could not be imported " ... ?
-            raise SkipTest, "Pseudo-terminals (seemingly) not functional."
+            raise unittest.SkipTest, "Pseudo-terminals (seemingly) not functional."
 
         self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
 

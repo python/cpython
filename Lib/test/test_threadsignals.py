@@ -5,10 +5,10 @@ import thread
 import signal
 import os
 import sys
-from test.test_support import run_unittest, SkipTest
+from test.test_support import run_unittest
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
-    raise SkipTest, "Can't test signal on %s" % sys.platform
+    raise unittest.SkipTest, "Can't test signal on %s" % sys.platform
 
 process_pid = os.getpid()
 signalled_all=thread.allocate_lock()
