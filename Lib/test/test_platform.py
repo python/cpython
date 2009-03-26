@@ -93,6 +93,11 @@ class PlatformTest(unittest.TestCase):
             :
                 ("Jython", "2.5.0", "trunk", "6107",
                  ('trunk:6107', 'Mar 26 2009'), "java1.5.0_16"),
+            ("2.5.2 (63378, Mar 26 2009, 18:03:29)\n[PyPy 1.0.0]",
+             ('PyPy', 'trunk', '63378'), self.save_platform)
+            :
+                ("PyPy", "2.5.2", "trunk", "63378", ('63378', 'Mar 26 2009'),
+                 "")
             }
         for (version_tag, subversion, sys_platform), info in \
                 sys_versions.iteritems():
