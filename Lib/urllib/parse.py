@@ -479,12 +479,17 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     HTML form values. Plus signs in the original string are escaped unless
     they are included in safe. It also does not have safe default to '/'.
     """
-    # Check if ' ' in string, where string may either be a str or bytes
-    if ' ' in string if isinstance(string, str) else b' ' in string:
-        string = quote(string,
-                       safe + ' ' if isinstance(safe, str) else safe + b' ')
-        return string.replace(' ', '+')
-    return quote(string, safe, encoding, errors)
+    # Check if ' ' in string, where string may either be a str or bytes.  If
+    # there are no spaces, the regular quote will produce the right answer.
+    if ((isinstance(string, str) and ' ' not in string) or
+        (isinstance(string, bytes) and b' ' not in string)):
+        return quote(string, safe, encoding, errors)
+    if isinstance(safe, str):
+        space = ' '
+    else:
+        space = b' '
+    string = quote(string, safe + space)
+    return string.replace(' ', '+')
 
 def quote_from_bytes(bs, safe='/'):
     """Like quote(), but accepts a bytes object rather than a str, and does
@@ -502,7 +507,7 @@ def quote_from_bytes(bs, safe='/'):
     except KeyError:
         quoter = Quoter(safe)
         _safe_quoters[cachekey] = quoter
-    return ''.join(map(quoter.__getitem__, bs))
+    return ''.join([quoter[char] for char in bs])
 
 def urlencode(query, doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
