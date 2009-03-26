@@ -1,13 +1,12 @@
 import unittest
 import sys
-from test.test_support import (check_warnings, CleanImport,
-                               SkipTest, run_unittest)
+from test.test_support import check_warnings, CleanImport, run_unittest
 import warnings
 
 from contextlib import nested
 
 if not sys.py3kwarning:
-    raise SkipTest('%s must be run with the -3 flag' % __name__)
+    raise unittest.SkipTest('%s must be run with the -3 flag' % __name__)
 
 def reset_module_registry(module):
     try:

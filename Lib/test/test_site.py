@@ -5,7 +5,7 @@ executing have not been removed.
 
 """
 import unittest
-from test.test_support import SkipTest, run_unittest, TESTFN
+from test.test_support import run_unittest, TESTFN
 import __builtin__
 import os
 import sys
@@ -17,7 +17,7 @@ import subprocess
 if "site" in sys.modules:
     import site
 else:
-    raise SkipTest("importation of site.py suppressed")
+    raise unittest.SkipTest("importation of site.py suppressed")
 
 if not os.path.isdir(site.USER_SITE):
     # need to add user site directory for tests

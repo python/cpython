@@ -51,7 +51,7 @@ def import_module(name, deprecated=False):
         try:
             module = __import__(name, level=0)
         except ImportError:
-            raise SkipTest("No module named " + name)
+            raise unittest.SkipTest("No module named " + name)
         else:
             return module
 

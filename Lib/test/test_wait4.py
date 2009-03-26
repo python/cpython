@@ -4,17 +4,17 @@
 import os
 import time
 from test.fork_wait import ForkWait
-from test.test_support import SkipTest, run_unittest, reap_children
+from test.test_support import run_unittest, reap_children
 
 try:
     os.fork
 except AttributeError:
-    raise SkipTest, "os.fork not defined -- skipping test_wait4"
+    raise unittest.SkipTest, "os.fork not defined -- skipping test_wait4"
 
 try:
     os.wait4
 except AttributeError:
-    raise SkipTest, "os.wait4 not defined -- skipping test_wait4"
+    raise unittest.SkipTest, "os.wait4 not defined -- skipping test_wait4"
 
 class Wait4Test(ForkWait):
     def wait_impl(self, cpid):

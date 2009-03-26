@@ -2,7 +2,7 @@
 """Test dlmodule.c
    Roger E. Masse  revised strategy by Barry Warsaw
 """
-from test.test_support import verbose,SkipTest, import_module
+from test.test_support import verbose, import_module
 dl = import_module('dl', deprecated=True)
 
 sharedlibs = [
@@ -31,7 +31,7 @@ def test_main():
                 print 'worked!'
             break
     else:
-        raise SkipTest, 'Could not open any shared libraries'
+        raise unittest.SkipTest, 'Could not open any shared libraries'
 
 
 if __name__ == '__main__':

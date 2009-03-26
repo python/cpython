@@ -2,10 +2,10 @@ import pipes
 import os
 import string
 import unittest
-from test.test_support import TESTFN, run_unittest, unlink, SkipTest
+from test.test_support import TESTFN, run_unittest, unlink
 
 if os.name != 'posix':
-    raise SkipTest('pipes module only works on posix')
+    raise unittest.SkipTest('pipes module only works on posix')
 
 TESTFN2 = TESTFN + "2"
 

@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, verbose, SkipTest
+from test.test_support import run_unittest, verbose
 import unittest
 import locale
 import sys
@@ -10,7 +10,7 @@ enUS_locale = None
 def get_enUS_locale():
     global enUS_locale
     if sys.platform == 'darwin':
-        raise SkipTest("Locale support on MacOSX is minimal")
+        raise unittest.SkipTest("Locale support on MacOSX is minimal")
     if sys.platform.startswith("win"):
         tlocs = ("En", "English")
     else:
@@ -23,7 +23,7 @@ def get_enUS_locale():
             continue
         break
     else:
-        raise SkipTest(
+        raise unittest.SkipTest(
             "Test locale not supported (tried %s)" % (', '.join(tlocs)))
     enUS_locale = tloc
     locale.setlocale(locale.LC_NUMERIC, oldlocale)

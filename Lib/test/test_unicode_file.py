@@ -5,14 +5,14 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.test_support import run_unittest, SkipTest, TESTFN_UNICODE
+from test.test_support import run_unittest, TESTFN_UNICODE
 from test.test_support import TESTFN_ENCODING, TESTFN_UNICODE_UNENCODEABLE
 try:
     TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
     # cannot be encoded in the file system encoding.
-    raise SkipTest("No Unicode filesystem semantics on this platform.")
+    raise unittest.SkipTest("No Unicode filesystem semantics on this platform.")
 
 if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
     # The file system encoding does not support Latin-1
@@ -26,10 +26,10 @@ if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
             # MBCS will not report the error properly
             raise UnicodeError, "mbcs encoding problem"
     except (UnicodeError, TypeError):
-        raise SkipTest("Cannot find a suiteable filename.")
+        raise unittest.SkipTest("Cannot find a suiteable filename.")
 
 if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
-    raise SkipTest("Cannot find a suitable filename.")
+    raise unittest.SkipTest("Cannot find a suitable filename.")
 
 def remove_if_exists(filename):
     if os.path.exists(filename):

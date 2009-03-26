@@ -6,7 +6,7 @@ import stat
 import sys
 import unittest
 from test.test_support import run_unittest, TESTFN, verbose, requires, \
-                              SkipTest, unlink
+                              unlink
 
 try:
     import signal
@@ -104,7 +104,7 @@ class TestCase(unittest.TestCase):
             # this is already decided before start running the test suite
             # but we do it anyway for extra protection
             if not hasattr(f, 'truncate'):
-                raise SkipTest, "open().truncate() not available on this system"
+                raise unittest.SkipTest, "open().truncate() not available on this system"
             f.seek(0, 2)
             # else we've lost track of the true size
             self.assertEqual(f.tell(), size+1)
@@ -155,7 +155,7 @@ def test_main():
         except (IOError, OverflowError):
             f.close()
             unlink(TESTFN)
-            raise SkipTest, "filesystem does not have largefile support"
+            raise unittest.SkipTest, "filesystem does not have largefile support"
         else:
             f.close()
     suite = unittest.TestSuite()
