@@ -73,10 +73,10 @@ class PlatformTest(unittest.TestCase):
                 ("IronPython", "2.0.0", "", "", ("", ""),
                  ".NET 2.0.50727.3053"),
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
-             None, "java1.5.0_16")
+            ('Jython', 'trunk', '6107'), "java1.5.0_16")
             :
-                ("Jython", "2.5.0", "", "", ("", ""),
-                 "java1.5.0_16"),
+                ("Jython", "2.5.0", "trunk", "6107",
+                 ('trunk:6107', 'Mar 26 2009'), "java1.5.0_16"),
             }
         for (version_tag, subversion, sys_platform), info in \
                 sys_versions.iteritems():
