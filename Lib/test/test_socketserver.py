@@ -16,7 +16,7 @@ import unittest
 import SocketServer
 
 import test.test_support
-from test.test_support import reap_children, verbose, TestSkipped
+from test.test_support import reap_children, verbose, SkipTest
 from test.test_support import TESTFN as TEST_FILE
 
 test.test_support.requires("network")
@@ -247,7 +247,7 @@ class SocketServerTest(unittest.TestCase):
 def test_main():
     if imp.lock_held():
         # If the import lock is held, the threads will hang
-        raise TestSkipped("can't run when import lock is held")
+        raise SkipTest("can't run when import lock is held")
 
     test.test_support.run_unittest(SocketServerTest)
 

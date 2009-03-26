@@ -7,7 +7,7 @@ try:
     Tkinter.Button()
 except Tkinter.TclError, msg:
     # assuming tk is not available
-    raise test_support.TestSkipped("tk not available: %s" % msg)
+    raise unittest.SkipTest("tk not available: %s" % msg)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,

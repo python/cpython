@@ -10,7 +10,7 @@ class NisTests(unittest.TestCase):
             # NIS is probably not active, so this test isn't useful
             if test_support.verbose:
                 print "Test Skipped:", msg
-            # Can't raise TestSkipped as regrtest only recognizes the exception
+            # Can't raise SkipTest as regrtest only recognizes the exception
             #   import time.
             return
         try:

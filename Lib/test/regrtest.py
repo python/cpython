@@ -132,6 +132,7 @@ import sys
 import time
 import traceback
 import warnings
+import unittest
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -567,7 +568,7 @@ def runtest_inner(test, verbose, quiet, test_times,
             print test, "skipped --", msg
             sys.stdout.flush()
         return -2
-    except (ImportError, test_support.TestSkipped), msg:
+    except (ImportError, unittest.SkipTest), msg:
         if not quiet:
             print test, "skipped --", msg
             sys.stdout.flush()

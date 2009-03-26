@@ -1,18 +1,18 @@
 import unittest
-from test.test_support import TestSkipped, run_unittest
+from test.test_support import SkipTest, run_unittest
 import os, struct
 try:
     import fcntl, termios
 except ImportError:
-    raise TestSkipped("No fcntl or termios module")
+    raise SkipTest("No fcntl or termios module")
 if not hasattr(termios,'TIOCGPGRP'):
-    raise TestSkipped("termios module doesn't have TIOCGPGRP")
+    raise SkipTest("termios module doesn't have TIOCGPGRP")
 
 try:
     tty = open("/dev/tty", "r")
     tty.close()
 except IOError:
-    raise TestSkipped("Unable to open /dev/tty")
+    raise SkipTest("Unable to open /dev/tty")
 
 try:
     import pty
@@ -41,7 +41,7 @@ class IoctlTests(unittest.TestCase):
 
     def test_ioctl_signed_unsigned_code_param(self):
         if not pty:
-            raise TestSkipped('pty module required')
+            raise SkipTest('pty module required')
         mfd, sfd = pty.openpty()
         try:
             if termios.TIOCSWINSZ < 0:

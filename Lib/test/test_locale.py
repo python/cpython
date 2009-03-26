@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, verbose, TestSkipped
+from test.test_support import run_unittest, verbose, SkipTest
 import unittest
 import locale
 import sys
@@ -10,7 +10,7 @@ enUS_locale = None
 def get_enUS_locale():
     global enUS_locale
     if sys.platform == 'darwin':
-        raise TestSkipped("Locale support on MacOSX is minimal")
+        raise SkipTest("Locale support on MacOSX is minimal")
     if sys.platform.startswith("win"):
         tlocs = ("En", "English")
     else:
@@ -23,7 +23,7 @@ def get_enUS_locale():
             continue
         break
     else:
-        raise TestSkipped(
+        raise SkipTest(
             "Test locale not supported (tried %s)" % (', '.join(tlocs)))
     enUS_locale = tloc
     locale.setlocale(locale.LC_NUMERIC, oldlocale)
@@ -355,10 +355,10 @@ def test_main():
         TestCNumberFormatting,
         TestFrFRNumberFormatting,
     ]
-    # TestSkipped can't be raised inside unittests, handle it manually instead
+    # SkipTest can't be raised inside unittests, handle it manually instead
     try:
         get_enUS_locale()
-    except TestSkipped as e:
+    except SkipTest as e:
         if verbose:
             print "Some tests will be disabled: %s" % e
     else:

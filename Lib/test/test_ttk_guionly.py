@@ -8,7 +8,7 @@ try:
     ttk.Button()
 except TclError, msg:
     # assuming ttk is not available
-    raise test_support.TestSkipped("ttk not available: %s" % msg)
+    raise unittest.SkipTest("ttk not available: %s" % msg)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,

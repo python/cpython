@@ -3,7 +3,7 @@
     taken mostly from the documentation.
     Roger E. Masse
 """
-from test.test_support import verbose, TestSkipped
+from test.test_support import verbose, SkipTest
 import gl, GL, time
 
 glattrs = ['RGBcolor', 'RGBcursor', 'RGBmode', 'RGBrange', 'RGBwritemask',
@@ -87,7 +87,7 @@ def test_main():
     try:
         display = os.environ['DISPLAY']
     except:
-        raise TestSkipped, "No $DISPLAY -- skipping gl test"
+        raise SkipTest, "No $DISPLAY -- skipping gl test"
 
     # touch all the attributes of gl without doing anything
     if verbose:

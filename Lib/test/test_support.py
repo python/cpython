@@ -13,7 +13,7 @@ import shutil
 import warnings
 import unittest
 
-__all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_module",
+__all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
            "get_original_stdout", "unload", "unlink", "rmtree", "forget",
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
@@ -33,17 +33,7 @@ class Error(Exception):
 class TestFailed(Error):
     """Test failed."""
 
-class TestSkipped(Error):
-    """Test skipped.
-
-    This can be raised to indicate that a test was deliberatly
-    skipped, but not because a feature wasn't available.  For
-    example, if some resource can't be used, such as the network
-    appears to be unavailable, this should be raised instead of
-    TestFailed.
-    """
-
-class ResourceDenied(TestSkipped):
+class ResourceDenied(SkipTest):
     """Test skipped because it requested a disallowed resource.
 
     This is raised when a test calls requires() for a resource that
@@ -52,7 +42,7 @@ class ResourceDenied(TestSkipped):
     """
 
 def import_module(name, deprecated=False):
-    """Import the module to be tested, raising TestSkipped if it is not
+    """Import the module to be tested, raising SkipTest if it is not
     available."""
     with warnings.catch_warnings():
         if deprecated:
@@ -61,7 +51,7 @@ def import_module(name, deprecated=False):
         try:
             module = __import__(name, level=0)
         except ImportError:
-            raise TestSkipped("No module named " + name)
+            raise SkipTest("No module named " + name)
         else:
             return module
 
