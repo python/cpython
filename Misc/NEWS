@@ -12,6 +12,8 @@ What's New in Python 3.1 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #5126: str.isprintable() returned False for space characters.
+
 - Issue #4688: Add a heuristic so that tuples and dicts containing only
   untrackable objects are not tracked by the garbage collector. This can
   reduce the size of collections and therefore the garbage collection overhead
