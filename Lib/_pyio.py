@@ -5,6 +5,7 @@ Python implementation of the io module.
 import os
 import abc
 import codecs
+import warnings
 # Import _thread instead of threading to reduce startup cost
 try:
     from _thread import allocate_lock as Lock
@@ -960,9 +961,10 @@ class BufferedWriter(_BufferedIOMixin):
 
     The constructor creates a BufferedWriter for the given writeable raw
     stream. If the buffer_size is not given, it defaults to
-    DEFAULT_BUFFER_SIZE. If max_buffer_size is omitted, it defaults to
-    twice the buffer size.
+    DEFAULT_BUFFER_SIZE.
     """
+
+    _warning_stack_offset = 2
 
     def __init__(self, raw,
                  buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
@@ -970,6 +972,9 @@ class BufferedWriter(_BufferedIOMixin):
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
             raise ValueError("invalid buffer size")
+        if max_buffer_size is not None:
+            warnings.warn("max_buffer_size is deprecated", DeprecationWarning,
+                          self._warning_stack_offset)
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
@@ -1055,8 +1060,7 @@ class BufferedRWPair(BufferedIOBase):
 
     reader and writer are RawIOBase objects that are readable and
     writeable respectively. If the buffer_size is omitted it defaults to
-    DEFAULT_BUFFER_SIZE. The max_buffer_size (for the buffered writer)
-    defaults to twice the buffer size.
+    DEFAULT_BUFFER_SIZE.
     """
 
     # XXX The usefulness of this (compared to having two separate IO
@@ -1068,10 +1072,12 @@ class BufferedRWPair(BufferedIOBase):
 
         The arguments are two RawIO instances.
         """
+        if max_buffer_size is not None:
+            warnings.warn("max_buffer_size is deprecated", DeprecationWarning, 2)
         reader._checkReadable()
         writer._checkWritable()
         self.reader = BufferedReader(reader, buffer_size)
-        self.writer = BufferedWriter(writer, buffer_size, max_buffer_size)
+        self.writer = BufferedWriter(writer, buffer_size)
 
     def read(self, n=None):
         if n is None:
@@ -1117,9 +1123,10 @@ class BufferedRandom(BufferedWriter, BufferedReader):
 
     The constructor creates a reader and writer for a seekable stream,
     raw, given in the first argument. If the buffer_size is omitted it
-    defaults to DEFAULT_BUFFER_SIZE. The max_buffer_size (for the buffered
-    writer) defaults to twice the buffer size.
+    defaults to DEFAULT_BUFFER_SIZE.
     """
+
+    _warning_stack_offset = 3
 
     def __init__(self, raw,
                  buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):

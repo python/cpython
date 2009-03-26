@@ -26,6 +26,7 @@ import array
 import threading
 import random
 import unittest
+import warnings
 import weakref
 import gc
 import abc
@@ -861,7 +862,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 
     def test_write_non_blocking(self):
         raw = self.MockNonBlockWriterIO()
-        bufio = self.tp(raw, 8, 8)
+        bufio = self.tp(raw, 8)
 
         self.assertEquals(bufio.write(b"abcd"), 4)
         self.assertEquals(bufio.write(b"efghi"), 5)
@@ -979,6 +980,17 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(IOError, bufio.tell)
         self.assertRaises(IOError, bufio.write, b"abcdef")
 
+    def test_max_buffer_size_deprecation(self):
+        with support.check_warnings() as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            self.tp(self.MockRawIO(), 8, 12)
+            self.assertEqual(len(w.warnings), 1)
+            warning = w.warnings[0]
+            self.assertTrue(warning.category is DeprecationWarning)
+            self.assertEqual(str(warning.message),
+                             "max_buffer_size is deprecated")
+
+
 class CBufferedWriterTest(BufferedWriterTest):
     tp = io.BufferedWriter
 
@@ -1029,6 +1041,16 @@ class BufferedRWPairTest(unittest.TestCase):
         pair = self.tp(r, w)
         self.assertFalse(pair.closed)
 
+    def test_max_buffer_size_deprecation(self):
+        with support.check_warnings() as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            self.tp(self.MockRawIO(), self.MockRawIO(), 8, 12)
+            self.assertEqual(len(w.warnings), 1)
+            warning = w.warnings[0]
+            self.assertTrue(warning.category is DeprecationWarning)
+            self.assertEqual(str(warning.message),
+                             "max_buffer_size is deprecated")
+
         # XXX More Tests
 
 class CBufferedRWPairTest(BufferedRWPairTest):
@@ -1048,7 +1070,7 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 
     def test_read_and_write(self):
         raw = self.MockRawIO((b"asdf", b"ghjk"))
-        rw = self.tp(raw, 8, 12)
+        rw = self.tp(raw, 8)
 
         self.assertEqual(b"as", rw.read(2))
         rw.write(b"ddd")
