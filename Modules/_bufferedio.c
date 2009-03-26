@@ -1415,6 +1415,16 @@ PyTypeObject PyBufferedReader_Type = {
 };
 
 
+
+static int
+complain_about_max_buffer_size(void)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "max_buffer_size is deprecated", 1) < 0)
+        return 0;
+    return 1;
+}
+
 /*
  * class BufferedWriter
  */
@@ -1439,7 +1449,7 @@ BufferedWriter_init(BufferedObject *self, PyObject *args, PyObject *kwds)
     /* TODO: properly deprecate max_buffer_size */
     char *kwlist[] = {"raw", "buffer_size", "max_buffer_size", NULL};
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -1;
+    Py_ssize_t max_buffer_size = -234;
     PyObject *raw;
 
     self->ok = 0;
@@ -1448,6 +1458,9 @@ BufferedWriter_init(BufferedObject *self, PyObject *args, PyObject *kwds)
                                      &raw, &buffer_size, &max_buffer_size)) {
         return -1;
     }
+
+    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
+        return -1;
 
     if (_PyIOBase_checkWritable(raw, Py_True) == NULL)
         return -1;
@@ -1767,8 +1780,7 @@ PyDoc_STRVAR(BufferedRWPair_doc,
     "\n"
     "reader and writer are RawIOBase objects that are readable and\n"
     "writeable respectively. If the buffer_size is omitted it defaults to\n"
-    "DEFAULT_BUFFER_SIZE. The max_buffer_size (for the buffered writer)\n"
-    "defaults to twice the buffer size.\n"
+    "DEFAULT_BUFFER_SIZE.\n"
     );
 
 /* XXX The usefulness of this (compared to having two separate IO objects) is
@@ -1789,12 +1801,15 @@ BufferedRWPair_init(BufferedRWPairObject *self, PyObject *args,
 {
     PyObject *reader, *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -1;
+    Py_ssize_t max_buffer_size = -234;
 
     if (!PyArg_ParseTuple(args, "OO|nn:BufferedRWPair", &reader, &writer,
                           &buffer_size, &max_buffer_size)) {
         return -1;
     }
+
+    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
+        return -1;
 
     if (_PyIOBase_checkReadable(reader, Py_True) == NULL)
         return -1;
@@ -1812,7 +1827,7 @@ BufferedRWPair_init(BufferedRWPairObject *self, PyObject *args,
     if (self->reader == NULL)
         return -1;
 
-    args = Py_BuildValue("(nn)", buffer_size, max_buffer_size);
+    args = Py_BuildValue("(n)", buffer_size);
     if (args == NULL) {
         Py_CLEAR(self->reader);
         return -1;
@@ -2016,7 +2031,7 @@ BufferedRandom_init(BufferedObject *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"raw", "buffer_size", "max_buffer_size", NULL};
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -1;
+    Py_ssize_t max_buffer_size = -234;
     PyObject *raw;
 
     self->ok = 0;
@@ -2025,6 +2040,9 @@ BufferedRandom_init(BufferedObject *self, PyObject *args, PyObject *kwds)
                                      &raw, &buffer_size, &max_buffer_size)) {
         return -1;
     }
+
+    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
+        return -1;
 
     if (_PyIOBase_checkSeekable(raw, Py_True) == NULL)
         return -1;

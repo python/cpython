@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- The max_buffer_size arguments of io.BufferedWriter, io.BufferedRWPair, and
+  io.BufferedRandom have been deprecated for removal in Python 3.2.
+
 - Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
   forever on incomplete input. That caused tarfile.open() to hang when used
   with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
