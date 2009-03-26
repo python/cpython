@@ -358,7 +358,7 @@ def test_main():
     # SkipTest can't be raised inside unittests, handle it manually instead
     try:
         get_enUS_locale()
-    except SkipTest as e:
+    except unittest.SkipTest as e:
         if verbose:
             print "Some tests will be disabled: %s" % e
     else:
