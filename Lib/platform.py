@@ -1311,8 +1311,6 @@ def _sys_version(sys_version=None):
                 'failed to parse IronPython sys.version: %s' %
                 repr(sys_version))
         version, alt_version, compiler = match.groups()
-        branch = ''
-        revision = ''
         buildno = ''
         builddate = ''
 
@@ -1325,11 +1323,7 @@ def _sys_version(sys_version=None):
                 'failed to parse Jython sys.version: %s' %
                 repr(sys_version))
         version, buildno, builddate, buildtime, _ = match.groups()
-        branch = ''
-        revision = ''
         compiler = sys.platform
-        buildno = ''
-        builddate = ''
 
     else:
         # CPython
@@ -1340,14 +1334,15 @@ def _sys_version(sys_version=None):
                 repr(sys_version))
         version, buildno, builddate, buildtime, compiler = \
               match.groups()
-        if hasattr(sys, 'subversion'):
-            # sys.subversion was added in Python 2.5
-            name, branch, revision = sys.subversion
-        else:
-            name = 'CPython'
-            branch = ''
-            revision = ''
+        name = 'CPython'
         builddate = builddate + ' ' + buildtime
+
+    if hasattr(sys, 'subversion'):
+        # sys.subversion was added in Python 2.5
+        _, branch, revision = sys.subversion
+    else:
+        branch = ''
+        revision = ''
 
     # Add the patchlevel version if missing
     l = string.split(version, '.')
