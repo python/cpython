@@ -75,8 +75,9 @@ class OperatorsTest(unittest.TestCase):
         # Find method in parent class
         while meth not in t.__dict__:
             t = t.__bases__[0]
-
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         self.assertEqual(m(a), res)
         bm = getattr(a, meth)
         self.assertEqual(bm(), res)
@@ -95,7 +96,9 @@ class OperatorsTest(unittest.TestCase):
         m = getattr(t, meth)
         while meth not in t.__dict__:
             t = t.__bases__[0]
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         self.assertEqual(m(a, b), res)
         bm = getattr(a, meth)
         self.assertEqual(bm(b), res)
@@ -107,7 +110,9 @@ class OperatorsTest(unittest.TestCase):
         m = getattr(t, meth)
         while meth not in t.__dict__:
             t = t.__bases__[0]
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         self.assertEqual(m(a, b, c), res)
         bm = getattr(a, meth)
         self.assertEqual(bm(b, c), res)
@@ -120,7 +125,9 @@ class OperatorsTest(unittest.TestCase):
         m = getattr(t, meth)
         while meth not in t.__dict__:
             t = t.__bases__[0]
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         d['a'] = deepcopy(a)
         m(d['a'], b)
         self.assertEqual(d['a'], res)
@@ -137,7 +144,9 @@ class OperatorsTest(unittest.TestCase):
         m = getattr(t, meth)
         while meth not in t.__dict__:
             t = t.__bases__[0]
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         d['a'] = deepcopy(a)
         m(d['a'], b, c)
         self.assertEqual(d['a'], res)
@@ -154,7 +163,9 @@ class OperatorsTest(unittest.TestCase):
         while meth not in t.__dict__:
             t = t.__bases__[0]
         m = getattr(t, meth)
-        self.assertEqual(m, t.__dict__[meth])
+        # in some implementations (e.g. PyPy), 'm' can be a regular unbound
+        # method object; the getattr() below obtains its underlying function.
+        self.assertEqual(getattr(m, 'im_func', m), t.__dict__[meth])
         dictionary['a'] = deepcopy(a)
         m(dictionary['a'], b, c, d)
         self.assertEqual(dictionary['a'], res)
@@ -182,7 +193,10 @@ class OperatorsTest(unittest.TestCase):
 
     def test_dicts(self):
         # Testing dict operations...
-        self.binop_test({1:2}, {2:1}, -1, "cmp(a,b)", "__cmp__")
+        if hasattr(dict, '__cmp__'):   # PyPy has only rich comparison on dicts
+            self.binop_test({1:2}, {2:1}, -1, "cmp(a,b)", "__cmp__")
+        else:
+            self.binop_test({1:2}, {2:1}, True, "a < b", "__lt__")
         self.binop_test({1:2,3:4}, 1, 1, "b in a", "__contains__")
         self.binop_test({1:2,3:4}, 2, 0, "b in a", "__contains__")
         self.binop_test({1:2,3:4}, 1, 2, "a[b]", "__getitem__")
@@ -293,6 +307,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(repr(a), "234.5")
         self.assertEqual(a.prec, 12)
 
+    @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_spam_lists(self):
         # Testing spamlist operations...
         import copy, xxsubtype as spam
@@ -336,6 +351,7 @@ class OperatorsTest(unittest.TestCase):
         a.setstate(42)
         self.assertEqual(a.getstate(), 42)
 
+    @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_spam_dicts(self):
         # Testing spamdict operations...
         import copy, xxsubtype as spam
@@ -891,8 +907,11 @@ order (MRO) for bases """
             try:
                 callable(*args)
             except exc, msg:
-                if not str(msg).startswith(expected):
-                    self.fail("Message %r, expected %r" % (str(msg), expected))
+                # the exact msg is generally considered an impl detail
+                if test_support.check_impl_detail():
+                    if not str(msg).startswith(expected):
+                        self.fail("Message %r, expected %r" %
+                                  (str(msg), expected))
             else:
                 self.fail("Expected %s" % exc)
 
@@ -1085,6 +1104,7 @@ order (MRO) for bases """
         x.c = Counted()
         self.assertEqual(Counted.counter, 3)
         del x
+        test_support.gc_collect()
         self.assertEqual(Counted.counter, 0)
         class D(C):
             pass
@@ -1093,6 +1113,7 @@ order (MRO) for bases """
         x.z = Counted()
         self.assertEqual(Counted.counter, 2)
         del x
+        test_support.gc_collect()
         self.assertEqual(Counted.counter, 0)
         class E(D):
             __slots__ = ['e']
@@ -1102,6 +1123,7 @@ order (MRO) for bases """
         x.e = Counted()
         self.assertEqual(Counted.counter, 3)
         del x
+        test_support.gc_collect()
         self.assertEqual(Counted.counter, 0)
 
         # Test cyclical leaks [SF bug 519621]
@@ -1112,22 +1134,23 @@ order (MRO) for bases """
         s.a = [Counted(), s]
         self.assertEqual(Counted.counter, 1)
         s = None
-        import gc
-        gc.collect()
+        test_support.gc_collect()
         self.assertEqual(Counted.counter, 0)
 
         # Test lookup leaks [SF bug 572567]
         import sys,gc
-        class G(object):
-            def __cmp__(self, other):
-                return 0
-            __hash__ = None # Silence Py3k warning
-        g = G()
-        orig_objects = len(gc.get_objects())
-        for i in xrange(10):
-            g==g
-        new_objects = len(gc.get_objects())
-        self.assertEqual(orig_objects, new_objects)
+        if hasattr(gc, 'get_objects'):
+            class G(object):
+                def __cmp__(self, other):
+                    return 0
+                __hash__ = None # Silence Py3k warning
+            g = G()
+            orig_objects = len(gc.get_objects())
+            for i in xrange(10):
+                g==g
+            new_objects = len(gc.get_objects())
+            self.assertEqual(orig_objects, new_objects)
+
         class H(object):
             __slots__ = ['a', 'b']
             def __init__(self):
@@ -1382,6 +1405,7 @@ order (MRO) for bases """
         else:
             self.fail("classmethod shouldn't accept keyword args")
 
+    @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
         import xxsubtype as spam
@@ -1413,6 +1437,7 @@ order (MRO) for bases """
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
 
+    @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_staticmethods_in_c(self):
         # Testing C-based static methods...
         import xxsubtype as spam
@@ -1529,6 +1554,14 @@ order (MRO) for bases """
                 class __metaclass__(type):
                     def mro(self):
                         return [self, dict, object]
+            # In CPython, the class creation above already raises
+            # TypeError, as a protection against the fact that
+            # instances of X would segfault it.  In other Python
+            # implementations it would be ok to let the class X
+            # be created, but instead get a clean TypeError on the
+            # __setitem__ below.
+            x = object.__new__(X)
+            x[5] = 6
         except TypeError:
             pass
         else:
@@ -1766,6 +1799,10 @@ order (MRO) for bases """
 
         # Safety test for __cmp__
         def unsafecmp(a, b):
+            if not hasattr(a, '__cmp__'):
+                return   # some types don't have a __cmp__ any more (so the
+                         # test doesn't make sense any more), or maybe they
+                         # never had a __cmp__ at all, e.g. in PyPy
             try:
                 a.__class__.__cmp__(a, b)
             except TypeError:
@@ -1781,7 +1818,8 @@ order (MRO) for bases """
         unsafecmp(1, 1L)
         unsafecmp(1L, 1)
 
-    def test_recursions(self):
+    @test_support.impl_detail("custom logic for printing to real file objects")
+    def test_recursions_1(self):
         # Testing recursion checks ...
         class Letter(str):
             def __new__(cls, letter):
@@ -1806,6 +1844,7 @@ order (MRO) for bases """
         finally:
             sys.stdout = test_stdout
 
+    def test_recursions_2(self):
         # Bug #1202533.
         class A(object):
             pass
@@ -1826,6 +1865,7 @@ order (MRO) for bases """
         r = weakref.ref(c)
         self.assertEqual(r(), c)
         del c
+        test_support.gc_collect()
         self.assertEqual(r(), None)
         del r
         class NoWeak(object):
@@ -1843,6 +1883,7 @@ order (MRO) for bases """
         r = weakref.ref(yes)
         self.assertEqual(r(), yes)
         del yes
+        test_support.gc_collect()
         self.assertEqual(r(), None)
         del r
 
@@ -2179,7 +2220,10 @@ order (MRO) for bases """
 
         # Two essentially featureless objects, just inheriting stuff from
         # object.
-        self.assertEqual(dir(None), dir(Ellipsis))
+        self.assertEqual(dir(NotImplemented), dir(Ellipsis))
+        if test_support.check_impl_detail():
+            # None differs in PyPy: it has a __nonzero__
+            self.assertEqual(dir(None), dir(Ellipsis))
 
         # Nasty test case for proxied objects
         class Wrapper(object):
@@ -2893,7 +2937,7 @@ order (MRO) for bases """
                 self.fail("shouldn't allow %r.__class__ = %r" % (x, C))
             try:
                 delattr(x, "__class__")
-            except TypeError:
+            except (TypeError, AttributeError):
                 pass
             else:
                 self.fail("shouldn't allow del %r.__class__" % x)
@@ -3027,6 +3071,16 @@ order (MRO) for bases """
             mod.__dict__["spam"] = "eggs"
 
         # Exception's __dict__ can be replaced, but not deleted
+        # (at least not any more than regular exception's __dict__ can
+        # be deleted; on CPython it is not the case, whereas on PyPy they
+        # can, just like any other new-style instance's __dict__.)
+        def can_delete_dict(e):
+            try:
+                del e.__dict__
+            except (TypeError, AttributeError):
+                return False
+            else:
+                return True
         class Exception1(Exception, Base):
             pass
         class Exception2(Base, Exception):
@@ -3035,12 +3089,7 @@ order (MRO) for bases """
             e = ExceptionType()
             e.__dict__ = {"a": 1}
             self.assertEqual(e.a, 1)
-            try:
-                del e.__dict__
-            except (TypeError, AttributeError):
-                pass
-            else:
-                self.fail("%r's __dict__ can be deleted" % e)
+            self.assertEqual(can_delete_dict(e), can_delete_dict(ValueError()))
 
     def test_pickles(self):
         # Testing pickling and copying new-style classes and objects...
@@ -3339,7 +3388,7 @@ order (MRO) for bases """
         class B(A):
             pass
         del B
-        gc.collect()
+        test_support.gc_collect()
         A.__setitem__ = lambda *a: None # crash
 
     def test_buffer_inheritance(self):
@@ -3431,6 +3480,7 @@ order (MRO) for bases """
         c = C()
         self.assertEqual(log, [])
         del c
+        test_support.gc_collect()
         self.assertEqual(log, [1])
 
         class D(object): pass
@@ -3526,7 +3576,7 @@ order (MRO) for bases """
         self.assertEqual(hasattr(m, "__name__"), 0)
         self.assertEqual(hasattr(m, "__file__"), 0)
         self.assertEqual(hasattr(m, "foo"), 0)
-        self.assertEqual(m.__dict__, None)
+        self.assertFalse(m.__dict__)   # None or {} are both reasonable answers
         m.foo = 1
         self.assertEqual(m.__dict__, {"foo": 1})
 
@@ -3661,17 +3711,23 @@ order (MRO) for bases """
         c = C()
         c.attr = 42
 
-        # The most interesting thing here is whether this blows up, due to flawed
-        # GC tracking logic in typeobject.c's call_finalizer() (a 2.2.1 bug).
+        # The most interesting thing here is whether this blows up, due to
+        # flawed GC tracking logic in typeobject.c's call_finalizer() (a 2.2.1
+        # bug).
         del c
 
         # If that didn't blow up, it's also interesting to see whether clearing
-        # the last container slot works:  that will attempt to delete c again,
-        # which will cause c to get appended back to the container again "during"
-        # the del.
-        del C.container[-1]
+        # the last container slot works: that will attempt to delete c again,
+        # which will cause c to get appended back to the container again
+        # "during" the del.  (On non-CPython implementations, however, __del__
+        # is typically not called again.)
+        test_support.gc_collect()
         self.assertEqual(len(C.container), 1)
-        self.assertEqual(C.container[-1].attr, 42)
+        del C.container[-1]
+        if test_support.check_impl_detail():
+            test_support.gc_collect()
+            self.assertEqual(len(C.container), 1)
+            self.assertEqual(C.container[-1].attr, 42)
 
         # Make c mortal again, so that the test framework with -l doesn't report
         # it as a leak.
@@ -3697,7 +3753,8 @@ order (MRO) for bases """
             pass
         class C(A,B) :
             __slots__=()
-        self.assertEqual(C.__basicsize__, B.__basicsize__)
+        if test_support.check_impl_detail():
+            self.assertEqual(C.__basicsize__, B.__basicsize__)
         self.assert_(hasattr(C, '__dict__'))
         self.assert_(hasattr(C, '__weakref__'))
         C().x = 2
@@ -3780,7 +3837,7 @@ order (MRO) for bases """
 
         try:
             del D.__bases__
-        except TypeError:
+        except (TypeError, AttributeError):
             pass
         else:
             self.fail("shouldn't be able to delete .__bases__")
@@ -3981,6 +4038,7 @@ order (MRO) for bases """
         self.assertEqual(E() // C(), "C.__floordiv__")
         self.assertEqual(C() // E(), "C.__floordiv__") # This one would fail
 
+    @test_support.impl_detail("testing an internal kind of method object")
     def test_meth_class_get(self):
         # Testing __get__ method of METH_CLASS C methods...
         # Full coverage of descrobject.c::classmethod_get()
@@ -4166,7 +4224,7 @@ order (MRO) for bases """
 
         self.assertEqual(c.attr, 1)
         # this makes a crash more likely:
-        import gc; gc.collect()
+        test_support.gc_collect()
         self.assertEqual(hasattr(c, 'attr'), False)
 
     def test_init(self):
@@ -4191,8 +4249,14 @@ order (MRO) for bases """
         self.assert_(l.__add__ != [5].__add__)
         self.assert_(l.__add__ != l.__mul__)
         self.assert_(l.__add__.__name__ == '__add__')
-        self.assert_(l.__add__.__self__ is l)
-        self.assert_(l.__add__.__objclass__ is list)
+        if hasattr(l.__add__, '__self__'):
+            # CPython
+            self.assert_(l.__add__.__self__ is l)
+            self.assert_(l.__add__.__objclass__ is list)
+        else:
+            # Python implementations where [].__add__ is a normal bound method
+            self.assert_(l.__add__.im_self is l)
+            self.assert_(l.__add__.im_class is list)
         self.assertEqual(l.__add__.__doc__, list.__add__.__doc__)
         try:
             hash(l.__add__)
