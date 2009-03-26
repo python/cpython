@@ -1,7 +1,7 @@
 .TH PYTHON "1" "$Date$"
 
-./" To view this file while editing, run it through groff:
-./"   groff -Tascii -man python.man | less
+.\" To view this file while editing, run it through groff:
+.\"   groff -Tascii -man python.man | less
 
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
