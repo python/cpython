@@ -58,7 +58,23 @@ class PlatformTest(unittest.TestCase):
         sys.subversion = self.save_subversion
         sys.platform = self.save_platform
 
-    def test_python_info(self):
+    def test_sys_version(self):
+        # Old test.
+        for input, output in (
+            ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
+             ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
+            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
+             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
+            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
+             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
+            ):
+            # branch and revision are not "parsed", but fetched
+            # from sys.subversion.  Ignore them
+            (name, version, branch, revision, buildno, builddate, compiler) \
+                   = platform._sys_version(input)
+            self.assertEqual(
+                (name, version, '', '', buildno, builddate, compiler), output)
+
         # Tests for python_implementation(), python_version(), python_branch(),
         # python_revision(), python_build(), and python_compiler().
         sys_versions = {
@@ -174,23 +190,6 @@ class PlatformTest(unittest.TestCase):
             ):
             self.assertEqual(platform._parse_release_file(input), output)
 
-    def test_sys_version(self):
-
-        platform._sys_version_cache.clear()
-        for input, output in (
-            ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
-             ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
-            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
-             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
-            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
-             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
-            ):
-            # branch and revision are not "parsed", but fetched
-            # from sys.subversion.  Ignore them
-            (name, version, branch, revision, buildno, builddate, compiler) \
-                   = platform._sys_version(input)
-            self.assertEqual(
-                (name, version, '', '', buildno, builddate, compiler), output)
 
 def test_main():
     test_support.run_unittest(
