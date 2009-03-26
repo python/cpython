@@ -2294,7 +2294,7 @@ class Test_TestSkipping(TestCase):
     def test_skipping(self):
         class Foo(unittest.TestCase):
             def test_skip_me(self):
-                self.skip("skip")
+                self.skipTest("skip")
         events = []
         result = LoggingResult(events)
         test = Foo("test_skip_me")
@@ -2305,7 +2305,7 @@ class Test_TestSkipping(TestCase):
         # Try letting setUp skip the test now.
         class Foo(unittest.TestCase):
             def setUp(self):
-                self.skip("testing")
+                self.skipTest("testing")
             def test_nothing(self): pass
         events = []
         result = LoggingResult(events)
