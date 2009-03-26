@@ -705,7 +705,7 @@ def cpython_only(test):
     return impl_detail(cpython=True)(test)
 
 def impl_detail(msg=None, **guards):
-    if check_impl_detail(guards):
+    if check_impl_detail(**guards):
         return _id
     if msg is None:
         guardnames, default = _parse_guards(guards)
