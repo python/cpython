@@ -906,7 +906,9 @@ class HTTPConnection:
             self._set_content_length(body)
         for hdr, value in headers.items():
             self.putheader(hdr, value)
-        self.endheaders(body.encode('ascii') if isinstance(body, str) else body)
+        if isinstance(body, str):
+            body = body.encode('ascii')
+        self.endheaders(body)
 
     def getresponse(self):
         """Get the response from the server."""
