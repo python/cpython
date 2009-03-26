@@ -1,6 +1,7 @@
 import os
 import sys
 import ttk
+import unittest
 from _tkinter import TclError
 from test import test_support
 
