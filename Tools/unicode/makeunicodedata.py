@@ -375,7 +375,7 @@ def makeunicodetype(unicode, trace):
                 flags |= TITLE_MASK
             if category == "Lu":
                 flags |= UPPER_MASK
-            if char == " " or category[0] not in ("C", "Z"):
+            if char == ord(" ") or category[0] not in ("C", "Z"):
                 flags |= PRINTABLE_MASK
             if "XID_Start" in properties:
                 flags |= XID_START_MASK

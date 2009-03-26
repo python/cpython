@@ -424,6 +424,7 @@ class UnicodeTest(
 
     def test_isprintable(self):
         self.assertTrue("".isprintable())
+        self.assertTrue(" ".isprintable())
         self.assertTrue("abcdefg".isprintable())
         self.assertFalse("abcdefg\n".isprintable())
         # some defined Unicode character
