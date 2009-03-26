@@ -33,7 +33,7 @@ class Error(Exception):
 class TestFailed(Error):
     """Test failed."""
 
-class ResourceDenied(SkipTest):
+class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
 
     This is raised when a test calls requires() for a resource that
