@@ -237,8 +237,6 @@ def parse_headers(fp):
     to parse.
 
     """
-    # XXX: Copied from http.server.BaseHTTPRequestHandler.parse_request,
-    # maybe we can just call this function from there.
     headers = []
     while True:
         line = fp.readline()

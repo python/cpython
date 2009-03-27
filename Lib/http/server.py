@@ -88,6 +88,7 @@ import io
 import os
 import sys
 import cgi
+import http.client
 import time
 import socket # For gethostbyaddr()
 import shutil
@@ -312,20 +313,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         self.command, self.path, self.request_version = command, path, version
 
         # Examine the headers and look for a Connection directive.
-
-        # MessageClass wants to see strings rather than bytes.
-        # But a TextIOWrapper around self.rfile would buffer too many bytes
-        # from the stream, bytes which we later need to read as bytes.
-        # So we read the correct bytes here, as bytes, then use StringIO
-        # to make them look like strings for MessageClass to parse.
-        headers = []
-        while True:
-            line = self.rfile.readline()
-            headers.append(line)
-            if line in (b'\r\n', b'\n', b''):
-                break
-        hfile = io.StringIO(b''.join(headers).decode('iso-8859-1'))
-        self.headers = email.parser.Parser(_class=self.MessageClass).parse(hfile)
+        self.headers = http.client.parse_headers(self.rfile)
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
@@ -524,7 +512,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     protocol_version = "HTTP/1.0"
 
     # MessageClass used to parse headers
-    import http.client
     MessageClass = http.client.HTTPMessage
 
     # Table mapping response codes to messages; entries have the
