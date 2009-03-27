@@ -351,14 +351,22 @@ HTTPConnection Objects
 
 .. method:: HTTPConnection.request(method, url[, body[, headers]])
 
-   This will send a request to the server using the HTTP request method *method*
-   and the selector *url*.  If the *body* argument is present, it should be a
-   string of data to send after the headers are finished. Alternatively, it may
-   be an open file object, in which case the contents of the file is sent; this
-   file object should support ``fileno()`` and ``read()`` methods. The header
-   Content-Length is automatically set to the correct value. The *headers*
-   argument should be a mapping of extra HTTP headers to send with the request.
+   This will send a request to the server using the HTTP request
+   method *method* and the selector *url*.  If the *body* argument is
+   present, it should be string or bytes object of data to send after
+   the headers are finished.  Strings are encoded as ISO-8859-1, the
+   default charset for HTTP.  To use other encodings, pass a bytes
+   object.  The Content-Length header is set to the length of the
+   string.
 
+   The *body* may also be an open file object, in which case the
+   contents of the file is sent; this file object should support
+   ``fileno()`` and ``read()`` methods. The header Content-Length is
+   automatically set to the length of the file as reported by
+   stat.
+
+   The *headers* argument should be a mapping of extra HTTP
+   headers to send with the request.
 
 .. method:: HTTPConnection.getresponse()
 
