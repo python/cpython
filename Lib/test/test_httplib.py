@@ -272,9 +272,80 @@ class HTTPSTimeoutTest(TestCase):
             h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
             self.assertEqual(h.timeout, 30)
 
+class RequestBodyTest(TestCase):
+    """Test cases where a request includes a message body."""
+
+    def setUp(self):
+        self.conn = httplib.HTTPConnection('example.com')
+        self.sock = FakeSocket("")
+        self.conn.sock = self.sock
+
+    def get_headers_and_fp(self):
+        f = io.BytesIO(self.sock.data)
+        f.readline()  # read the request line
+        message = httplib.parse_headers(f)
+        return message, f
+
+    def test_manual_content_length(self):
+        # Set an incorrect content-length so that we can verify that
+        # it will not be over-ridden by the library.
+        self.conn.request("PUT", "/url", "body",
+                          {"Content-Length": "42"})
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("42", message.get("content-length"))
+        self.assertEqual(4, len(f.read()))
+
+    def test_ascii_body(self):
+        self.conn.request("PUT", "/url", "body")
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("text/plain", message.get_content_type())
+        self.assertEqual(None, message.get_charset())
+        self.assertEqual("4", message.get("content-length"))
+        self.assertEqual(b'body', f.read())
+
+    def test_latin1_body(self):
+        self.conn.request("PUT", "/url", "body\xc1")
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("text/plain", message.get_content_type())
+        self.assertEqual(None, message.get_charset())
+        self.assertEqual("5", message.get("content-length"))
+        self.assertEqual(b'body\xc1', f.read())
+
+    def test_bytes_body(self):
+        self.conn.request("PUT", "/url", b"body\xc1")
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("text/plain", message.get_content_type())
+        self.assertEqual(None, message.get_charset())
+        self.assertEqual("5", message.get("content-length"))
+        self.assertEqual(b'body\xc1', f.read())
+
+    def test_file_body(self):
+        f = open(support.TESTFN, "w")
+        f.write("body")
+        f.close()
+        f = open(support.TESTFN)
+        self.conn.request("PUT", "/url", f)
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("text/plain", message.get_content_type())
+        self.assertEqual(None, message.get_charset())
+        self.assertEqual("4", message.get("content-length"))
+        self.assertEqual(b'body', f.read())
+
+    def test_binary_file_body(self):
+        f = open(support.TESTFN, "wb")
+        f.write(b"body\xc1")
+        f.close()
+        f = open(support.TESTFN, "rb")
+        self.conn.request("PUT", "/url", f)
+        message, f = self.get_headers_and_fp()
+        self.assertEqual("text/plain", message.get_content_type())
+        self.assertEqual(None, message.get_charset())
+        self.assertEqual("5", message.get("content-length"))
+        self.assertEqual(b'body\xc1', f.read())
+
 def test_main(verbose=None):
     support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                         HTTPSTimeoutTest)
+                         HTTPSTimeoutTest, RequestBodyTest)
 
 if __name__ == '__main__':
     test_main()

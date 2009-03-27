@@ -243,7 +243,6 @@ def parse_headers(fp, _class=HTTPMessage):
         if line in (b'\r\n', b'\n', b''):
             break
     hstring = b''.join(headers).decode('iso-8859-1')
-
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
 class HTTPResponse(io.RawIOBase):
@@ -675,13 +674,22 @@ class HTTPConnection:
         if self.debuglevel > 0:
             print("send:", repr(str))
         try:
-            blocksize=8192
-            if hasattr(str,'read') :
-                if self.debuglevel > 0: print("sendIng a read()able")
-                data=str.read(blocksize)
-                while data:
+            blocksize = 8192
+            if hasattr(str, "read") :
+                if self.debuglevel > 0:
+                    print("sendIng a read()able")
+                encode = False
+                if "b" not in str.mode:
+                    encode = True
+                    if self.debuglevel > 0:
+                        print("encoding file using iso-8859-1")
+                while 1:
+                    data = str.read(blocksize)
+                    if not data:
+                        break
+                    if encode:
+                        data = data.encode("iso-8859-1")
                     self.sock.sendall(data)
-                    data=str.read(blocksize)
             else:
                 self.sock.sendall(str)
         except socket.error as v:
@@ -713,8 +721,8 @@ class HTTPConnection:
             message_body = None
         self.send(msg)
         if message_body is not None:
-            #message_body was not a string (i.e. it is a file) and
-            #we must run the risk of Nagle
+            # message_body was not a string (i.e. it is a file), and
+            # we must run the risk of Nagle.
             self.send(message_body)
 
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
@@ -904,7 +912,9 @@ class HTTPConnection:
         for hdr, value in headers.items():
             self.putheader(hdr, value)
         if isinstance(body, str):
-            body = body.encode('ascii')
+            # RFC 2616 Section 3.7.1 says that text default has a
+            # default charset of iso-8859-1.
+            body = body.encode('iso-8859-1')
         self.endheaders(body)
 
     def getresponse(self):
