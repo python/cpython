@@ -213,7 +213,6 @@ class HTTPMessage(email.message.Message):
         occurrences are returned.  Case is not important in the header name.
 
         """
-        # XXX: copied from rfc822.Message for compatibility
         name = name.lower() + ':'
         n = len(name)
         lst = []
@@ -227,7 +226,7 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def parse_headers(fp):
+def parse_headers(fp, _class=HTTPMessage):
     """Parses only RFC2822 headers from a file pointer.
 
     email Parser wants to see strings rather than bytes.
@@ -245,7 +244,7 @@ def parse_headers(fp):
             break
     hstring = b''.join(headers).decode('iso-8859-1')
 
-    return email.parser.Parser(_class=HTTPMessage).parsestr(hstring)
+    return email.parser.Parser(_class=_class).parsestr(hstring)
 
 class HTTPResponse(io.RawIOBase):
 

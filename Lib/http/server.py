@@ -313,7 +313,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         self.command, self.path, self.request_version = command, path, version
 
         # Examine the headers and look for a Connection directive.
-        self.headers = http.client.parse_headers(self.rfile)
+        self.headers = http.client.parse_headers(self.rfile,
+                                                 _class=self.MessageClass)
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
