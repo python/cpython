@@ -1,4 +1,4 @@
-import http.client as httplib
+from http import client
 import io
 import socket
 
@@ -21,13 +21,13 @@ class FakeSocket:
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
-            raise httplib.UnimplementedFileMode()
+            raise client.UnimplementedFileMode()
         return self.fileclass(self.text)
 
 class NoEOFStringIO(io.BytesIO):
     """Like StringIO, but raises AssertionError on EOF.
 
-    This is used below to test that httplib doesn't try to read
+    This is used below to test that http.client doesn't try to read
     more from the underlying file than it should.
     """
     def read(self, n=-1):
@@ -61,7 +61,7 @@ class HeaderTests(TestCase):
 
         for explicit_header in True, False:
             for header in 'Content-length', 'Host', 'Accept-encoding':
-                conn = httplib.HTTPConnection('example.com')
+                conn = client.HTTPConnection('example.com')
                 conn.sock = FakeSocket('blahblahblah')
                 conn._buffer = HeaderCountingBuffer()
 
@@ -78,22 +78,22 @@ class BasicTest(TestCase):
 
         body = "HTTP/1.1 200 Ok\r\n\r\nText"
         sock = FakeSocket(body)
-        resp = httplib.HTTPResponse(sock)
+        resp = client.HTTPResponse(sock)
         resp.begin()
         self.assertEqual(resp.read(), b"Text")
         self.assertTrue(resp.isclosed())
 
         body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
         sock = FakeSocket(body)
-        resp = httplib.HTTPResponse(sock)
-        self.assertRaises(httplib.BadStatusLine, resp.begin)
+        resp = client.HTTPResponse(sock)
+        self.assertRaises(client.BadStatusLine, resp.begin)
 
     def test_partial_reads(self):
         # if we have a lenght, the system knows when to close itself
         # same behaviour than when we read the whole thing with read()
         body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
         sock = FakeSocket(body)
-        resp = httplib.HTTPResponse(sock)
+        resp = client.HTTPResponse(sock)
         resp.begin()
         self.assertEqual(resp.read(2), b'Te')
         self.assertFalse(resp.isclosed())
@@ -104,14 +104,14 @@ class BasicTest(TestCase):
         # Check invalid host_port
 
         for hp in ("www.python.org:abc", "www.python.org:"):
-            self.assertRaises(httplib.InvalidURL, httplib.HTTPConnection, hp)
+            self.assertRaises(client.InvalidURL, client.HTTPConnection, hp)
 
         for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000",
                           "fe80::207:e9ff:fe9b", 8000),
                          ("www.python.org:80", "www.python.org", 80),
                          ("www.python.org", "www.python.org", 80),
                          ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
-            c = httplib.HTTPConnection(hp)
+            c = client.HTTPConnection(hp)
             self.assertEqual(h, c.host)
             self.assertEqual(p, c.port)
 
@@ -128,7 +128,7 @@ class BasicTest(TestCase):
                ', '
                'Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"')
         s = FakeSocket(text)
-        r = httplib.HTTPResponse(s)
+        r = client.HTTPResponse(s)
         r.begin()
         cookies = r.getheader("Set-Cookie")
         self.assertEqual(cookies, hdr)
@@ -141,7 +141,7 @@ class BasicTest(TestCase):
             'Content-Length: 14432\r\n'
             '\r\n',
             NoEOFStringIO)
-        resp = httplib.HTTPResponse(sock, method="HEAD")
+        resp = client.HTTPResponse(sock, method="HEAD")
         resp.begin()
         if resp.read():
             self.fail("Did not expect response from HEAD request")
@@ -151,7 +151,7 @@ class BasicTest(TestCase):
                     b'Accept-Encoding: identity\r\nContent-Length:')
 
         body = open(__file__, 'rb')
-        conn = httplib.HTTPConnection('example.com')
+        conn = client.HTTPConnection('example.com')
         sock = FakeSocket(body)
         conn.sock = sock
         conn.request('GET', '/foo', body)
@@ -168,18 +168,18 @@ class BasicTest(TestCase):
             'd\r\n'
         )
         sock = FakeSocket(chunked_start + '0\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
         self.assertEquals(resp.read(), b'hello world')
         resp.close()
 
         for x in ('', 'foo\r\n'):
             sock = FakeSocket(chunked_start + x)
-            resp = httplib.HTTPResponse(sock, method="GET")
+            resp = client.HTTPResponse(sock, method="GET")
             resp.begin()
             try:
                 resp.read()
-            except httplib.IncompleteRead as i:
+            except client.IncompleteRead as i:
                 self.assertEquals(i.partial, b'hello world')
                 self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
                 self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
@@ -191,18 +191,18 @@ class BasicTest(TestCase):
     def test_negative_content_length(self):
         sock = FakeSocket(
             'HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nHello\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
         self.assertEquals(resp.read(), b'Hello\r\n')
         resp.close()
 
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
         try:
             resp.read()
-        except httplib.IncompleteRead as i:
+        except client.IncompleteRead as i:
             self.assertEquals(i.partial, b'Hello\r\n')
             self.assertEqual(repr(i),
                              "IncompleteRead(7 bytes read, 3 more expected)")
@@ -216,7 +216,7 @@ class BasicTest(TestCase):
 
 class OfflineTest(TestCase):
     def test_responses(self):
-        self.assertEquals(httplib.responses[httplib.NOT_FOUND], "Not Found")
+        self.assertEquals(client.responses[client.NOT_FOUND], "Not Found")
 
 class TimeoutTest(TestCase):
     PORT = None
@@ -238,7 +238,7 @@ class TimeoutTest(TestCase):
         self.assert_(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
-            httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT)
+            httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT)
             httpConn.connect()
         finally:
             socket.setdefaulttimeout(None)
@@ -249,7 +249,7 @@ class TimeoutTest(TestCase):
         self.assert_(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
-            httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT,
+            httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT,
                                               timeout=None)
             httpConn.connect()
         finally:
@@ -258,7 +258,7 @@ class TimeoutTest(TestCase):
         httpConn.close()
 
         # a value
-        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
+        httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
@@ -268,22 +268,22 @@ class HTTPSTimeoutTest(TestCase):
 
     def test_attributes(self):
         # simple test to check it's storing it
-        if hasattr(httplib, 'HTTPSConnection'):
-            h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
+        if hasattr(client, 'HTTPSConnection'):
+            h = client.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
             self.assertEqual(h.timeout, 30)
 
 class RequestBodyTest(TestCase):
     """Test cases where a request includes a message body."""
 
     def setUp(self):
-        self.conn = httplib.HTTPConnection('example.com')
+        self.conn = client.HTTPConnection('example.com')
         self.sock = FakeSocket("")
         self.conn.sock = self.sock
 
     def get_headers_and_fp(self):
         f = io.BytesIO(self.sock.data)
         f.readline()  # read the request line
-        message = httplib.parse_headers(f)
+        message = client.parse_headers(f)
         return message, f
 
     def test_manual_content_length(self):
