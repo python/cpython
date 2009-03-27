@@ -197,6 +197,9 @@ Core and Builtins
 Library
 -------
 
+- Adjusted _tkinter to compile without warnings when WITH_THREAD is not
+  defined (part of issue #5035).
+
 - Issue #5561: Removed the sys.version_info shortcuts from platform's
   python_version() and python_version_tuple() since they produced different
   output compared to previous Python versions.
