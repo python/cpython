@@ -84,21 +84,21 @@ __version__ = "0.6"
 
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
-import io
-import os
-import sys
 import cgi
-import http.client
-import time
-import socket # For gethostbyaddr()
-import shutil
-import urllib.parse
-import select
-import mimetypes
-import posixpath
-import socketserver
 import email.message
 import email.parser
+import http.client
+import io
+import mimetypes
+import os
+import posixpath
+import select
+import shutil
+import socket # For gethostbyaddr()
+import socketserver
+import sys
+import time
+import urllib.parse
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
