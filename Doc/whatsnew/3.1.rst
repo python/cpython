@@ -112,3 +112,27 @@ Some smaller changes made to the core Python language are:
 
 
 .. ======================================================================
+
+
+Optimizations
+-------------
+
+Major performance enhancements have been added:
+
+* The new I/O library (as defined in :pep:`3116`) was mostly written in
+  Python and quickly proved to be a problematic bottleneck in Python 3.0.
+  In Python 3.1, the I/O library has been entirely rewritten in C and is
+  2 to 20 times faster depending on the task at hand. The pure Python
+  version is still available for experimentation purposes through
+  the ``_pyio`` module.
+
+  (Contributed by Amaury Forgeot d'Arc and Antoine Pitrou.)
+
+* A new configure flag, ``--with-computed-gotos``, enables a faster opcode
+  dispatch mechanism on compilers which support it. Speedups of up to 20%
+  have been observed, depending on the system and compiler.
+
+  (Contributed by Antoine Pitrou, :issue:`4753`.)
+
+
+.. ======================================================================
