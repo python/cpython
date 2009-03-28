@@ -2703,7 +2703,7 @@ Tkapp_Quit(PyObject *self, PyObject *args)
 
 	if (!self && Py_Py3kWarningFlag) {
 		if (PyErr_Warn(PyExc_DeprecationWarning,
-					"_tkinter.createfilehandler is gone in 3.x") < 0)
+					"_tkinter.quit is gone in 3.x") < 0)
 			return NULL;
 	}
 
