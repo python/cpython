@@ -1,8 +1,8 @@
 /*
     An implementation of Text I/O as defined by PEP 3116 - "New I/O"
-    
+
     Classes defined here: TextIOBase, IncrementalNewlineDecoder, TextIOWrapper.
-    
+
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
@@ -169,7 +169,7 @@ typedef struct {
 } PyNewLineDecoderObject;
 
 static int
-IncrementalNewlineDecoder_init(PyNewLineDecoderObject *self, 
+IncrementalNewlineDecoder_init(PyNewLineDecoderObject *self,
                                PyObject *args, PyObject *kwds)
 {
     PyObject *decoder;
@@ -215,7 +215,7 @@ IncrementalNewlineDecoder_dealloc(PyNewLineDecoderObject *self)
 #define SEEN_ALL (SEEN_CR | SEEN_LF | SEEN_CRLF)
 
 PyObject *
-_PyIncrementalNewlineDecoder_decode(PyObject *_self, 
+_PyIncrementalNewlineDecoder_decode(PyObject *_self,
                                     PyObject *input, int final)
 {
     PyObject *output;
@@ -267,7 +267,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
      * then readline() is sure to get \r\n in one pass
      */
     if (!final) {
-        if (output_len > 0 
+        if (output_len > 0
             && PyUnicode_AS_UNICODE(output)[output_len - 1] == '\r') {
 
             if (Py_REFCNT(output) == 1) {
@@ -433,7 +433,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
 }
 
 static PyObject *
-IncrementalNewlineDecoder_decode(PyNewLineDecoderObject *self, 
+IncrementalNewlineDecoder_decode(PyNewLineDecoderObject *self,
                                  PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"input", "final", NULL};
@@ -635,7 +635,7 @@ typedef struct
 
     /* Reads and writes are internally buffered in order to speed things up.
        However, any read will first flush the write buffer if itsn't empty.
-    
+
        Please also note that text to be written is first encoded before being
        buffered. This is necessary so that encoding errors are immediately
        reported to the caller, but it unfortunately means that the
@@ -731,7 +731,7 @@ typedef struct {
     encodefunc_t encodefunc;
 } encodefuncentry;
 
-encodefuncentry encodefuncs[] = {
+static encodefuncentry encodefuncs[] = {
     {"ascii",       (encodefunc_t) ascii_encode},
     {"iso8859-1",   (encodefunc_t) latin1_encode},
     {"utf-16-be",   (encodefunc_t) utf16be_encode},
@@ -942,7 +942,7 @@ TextIOWrapper_init(PyTextIOWrapperObject *self, PyObject *args, PyObject *kwds)
 
     self->buffer = buffer;
     Py_INCREF(buffer);
-    
+
     if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
         Py_TYPE(buffer) == &PyBufferedWriter_Type ||
         Py_TYPE(buffer) == &PyBufferedRandom_Type) {
@@ -1084,7 +1084,7 @@ findchar(const Py_UNICODE *s, Py_ssize_t size, Py_UNICODE ch)
     return NULL;
 }
 
-/* Flush the internal write buffer. This doesn't explicitly flush the 
+/* Flush the internal write buffer. This doesn't explicitly flush the
    underlying buffered object, though. */
 static int
 _TextIOWrapper_writeflush(PyTextIOWrapperObject *self)
@@ -1177,7 +1177,7 @@ TextIOWrapper_write(PyTextIOWrapperObject *self, PyObject *args)
         if (_TextIOWrapper_writeflush(self) < 0)
             return NULL;
     }
-    
+
     if (needflush) {
         ret = PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_flush, NULL);
         if (ret == NULL)
