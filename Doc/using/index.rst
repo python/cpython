@@ -11,6 +11,7 @@ interpreter and things that make working with Python easier.
 
 
 .. toctree::
+   :numbered:
 
    cmdline.rst
    unix.rst
