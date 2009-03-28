@@ -66,10 +66,11 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import io
-import socket
 import email.parser
 import email.message
+import io
+import os
+import socket
 from urllib.parse import urlsplit
 import warnings
 
@@ -673,29 +674,24 @@ class HTTPConnection:
         #       ignore the error... the caller will know if they can retry.
         if self.debuglevel > 0:
             print("send:", repr(str))
-        try:
-            blocksize = 8192
-            if hasattr(str, "read") :
+        blocksize = 8192
+        if hasattr(str, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = False
+            if "b" not in str.mode:
+                encode = True
                 if self.debuglevel > 0:
-                    print("sendIng a read()able")
-                encode = False
-                if "b" not in str.mode:
-                    encode = True
-                    if self.debuglevel > 0:
-                        print("encoding file using iso-8859-1")
-                while 1:
-                    data = str.read(blocksize)
-                    if not data:
-                        break
-                    if encode:
-                        data = data.encode("iso-8859-1")
-                    self.sock.sendall(data)
-            else:
-                self.sock.sendall(str)
-        except socket.error as v:
-            if v.args[0] == 32:      # Broken pipe
-                self.close()
-            raise
+                    print("encoding file using iso-8859-1")
+            while 1:
+                data = str.read(blocksize)
+                if not data:
+                    break
+                if encode:
+                    data = data.encode("iso-8859-1")
+                self.sock.sendall(data)
+        else:
+            self.sock.sendall(str)
 
     def _output(self, s):
         """Add a line of output to the current request buffer.
@@ -869,14 +865,7 @@ class HTTPConnection:
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
-        try:
-            self._send_request(method, url, body, headers)
-        except socket.error as v:
-            # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v.args[0] != 32 or not self.auto_open:
-                raise
-            # try one more time
-            self._send_request(method, url, body, headers)
+        self._send_request(method, url, body, headers)
 
     def _set_content_length(self, body):
         # Set the content-length based on the body.
@@ -886,7 +875,6 @@ class HTTPConnection:
         except TypeError as te:
             # If this is a file-like object, try to
             # fstat its file descriptor
-            import os
             try:
                 thelen = str(os.fstat(body.fileno()).st_size)
             except (AttributeError, OSError):
@@ -897,7 +885,7 @@ class HTTPConnection:
             self.putheader('Content-Length', thelen)
 
     def _send_request(self, method, url, body, headers):
-        # honour explicitly requested Host: and Accept-Encoding headers
+        # Honor explicitly requested Host: and Accept-Encoding: headers.
         header_names = dict.fromkeys([k.lower() for k in headers])
         skips = {}
         if 'host' in header_names:
@@ -983,7 +971,8 @@ else:
         def connect(self):
             "Connect to a host on a given (SSL) port."
 
-            sock = socket.create_connection((self.host, self.port), self.timeout)
+            sock = socket.create_connection((self.host, self.port),
+                                            self.timeout)
             self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
 
