@@ -31,13 +31,13 @@ import unittest
 
 from test import support
 if not hasattr(select, "epoll"):
-    raise support.TestSkipped("test works only on Linux 2.6")
+    raise unittest.SkipTest("test works only on Linux 2.6")
 
 try:
     select.epoll()
 except IOError as e:
     if e.errno == errno.ENOSYS:
-        raise support.TestSkipped("kernel doesn't support epoll()")
+        raise unittest.SkipTest("kernel doesn't support epoll()")
 
 class TestEPoll(unittest.TestCase):
 

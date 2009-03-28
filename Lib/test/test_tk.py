@@ -1,12 +1,13 @@
 import tkinter
 from tkinter.test import runtktests
 from test import support
+import unittest
 
 try:
     tkinter.Button()
 except tkinter.TclError as msg:
     # assuming tk is not available
-    raise support.TestSkipped("tk not available: %s" % msg)
+    raise unittest.SkipTest("tk not available: %s" % msg)
 
 def test_main(enable_gui=False):
     if enable_gui:

@@ -7,8 +7,8 @@ import sys
 from test import support
 
 if not hasattr(sys.stdin, 'newlines'):
-    raise support.TestSkipped(
-                       "This Python does not have universal newline support")
+    raise unittest.SkipTest(
+        "This Python does not have universal newline support")
 
 FATX = 'x' * (2**14)
 

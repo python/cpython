@@ -10,7 +10,7 @@ import traceback
 import sys, os, time, errno
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
-    raise support.TestSkipped("Can't test signal on %s" % \
+    raise unittest.SkipTest("Can't test signal on %s" % \
                                    sys.platform)
 
 

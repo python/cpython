@@ -3,7 +3,7 @@
 import sys, os, unittest
 from test import support
 if not os.path.supports_unicode_filenames:
-    raise support.TestSkipped("test works only on NT+")
+    raise unittest.SkipTest("test works only on NT+")
 
 filenames = [
     'abc',

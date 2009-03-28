@@ -5,14 +5,14 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.support import run_unittest, TestSkipped, TESTFN_UNICODE, rmtree
+from test.support import run_unittest, TESTFN_UNICODE, rmtree
 from test.support import TESTFN_ENCODING, TESTFN_UNICODE_UNENCODEABLE
 try:
     TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
     # cannot be encoded in the file system encoding.
-    raise TestSkipped("No Unicode filesystem semantics on this platform")
+    raise unittest.SkipTest("No Unicode filesystem semantics on this platform.")
 
 def remove_if_exists(filename):
     if os.path.exists(filename):

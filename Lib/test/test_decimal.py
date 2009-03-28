@@ -31,8 +31,7 @@ import pickle, copy
 import unittest
 from decimal import *
 import numbers
-from test.support import (TestSkipped, run_unittest, run_doctest,
-                               is_resource_enabled)
+from test.support import run_unittest, run_doctest, is_resource_enabled
 import random
 try:
     import threading
@@ -194,7 +193,7 @@ class DecimalTest(unittest.TestCase):
     def eval_file(self, file):
         global skip_expected
         if skip_expected:
-            raise TestSkipped
+            raise unittest.SkipTest
             return
         for line in open(file):
             line = line.replace('\r\n', '').replace('\n', '')
