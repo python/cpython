@@ -373,14 +373,14 @@ class TestCase(object):
                 result.addSkip(self, str(e))
                 return
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
                 return
 
             success = False
             try:
                 testMethod()
             except self.failureException:
-                result.addFailure(self, self._exc_info())
+                result.addFailure(self, sys.exc_info())
             except _ExpectedFailure as e:
                 result.addExpectedFailure(self, e.exc_info)
             except _UnexpectedSuccess:
@@ -388,14 +388,14 @@ class TestCase(object):
             except SkipTest as e:
                 result.addSkip(self, str(e))
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
             else:
                 success = True
 
             try:
                 self.tearDown()
             except Exception:
-                result.addError(self, self._exc_info())
+                result.addError(self, sys.exc_info())
                 success = False
             if success:
                 result.addSuccess(self)
@@ -411,14 +411,7 @@ class TestCase(object):
         getattr(self, self._testMethodName)()
         self.tearDown()
 
-    def _exc_info(self):
-        """Return a version of sys.exc_info() with the traceback frame
-           minimised; usually the top level of the traceback frame is not
-           needed.
-        """
-        return sys.exc_info()
-
-    def skip(self, reason):
+    def skipTest(self, reason):
         """Skip this test."""
         raise SkipTest(reason)
 
@@ -830,7 +823,8 @@ class _WritelnDecorator(object):
         return getattr(self.stream,attr)
 
     def writeln(self, arg=None):
-        if arg: self.write(arg)
+        if arg:
+            self.write(arg)
         self.write('\n') # text-mode streams translate to \r\n if needed
 
 
@@ -899,7 +893,7 @@ class _TextTestResult(TestResult):
         if self.showAll:
             self.stream.writeln("expected failure")
         elif self.dots:
-            self.stream.write(".")
+            self.stream.write("x")
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
@@ -907,7 +901,7 @@ class _TextTestResult(TestResult):
         if self.showAll:
             self.stream.writeln("unexpected success")
         elif self.dots:
-            self.stream.write(".")
+            self.stream.write("u")
             self.stream.flush()
 
     def printErrors(self):
@@ -964,7 +958,7 @@ class TextTestRunner(object):
             if errored:
                 infos.append("errors=%d" % errored)
         else:
-            self.stream.writeln("OK")
+            self.stream.write("OK")
         if skipped:
             infos.append("skipped=%d" % skipped)
         if expectedFails:
@@ -973,6 +967,8 @@ class TextTestRunner(object):
             infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
             self.stream.writeln(" (%s)" % (", ".join(infos),))
+        else:
+            self.stream.write("\n")
         return result
 
 

@@ -5,7 +5,7 @@ from test import support
 try:
     import posix
 except ImportError:
-    raise support.TestSkipped("posix is not available")
+    raise unittest.SkipTest("posix is not available")
 
 import time
 import os
@@ -225,17 +225,17 @@ class PosixTester(unittest.TestCase):
                 os.mkdir(base_path)
                 os.chdir(base_path)
             except:
-#               Just returning nothing instead of the TestSkipped exception,
+#               Just returning nothing instead of the SkipTest exception,
 #               because the test results in Error in that case.
 #               Is that ok?
-#                raise support.TestSkipped, "cannot create directory for testing"
+#                raise unittest.SkipTest("cannot create directory for testing")
                 return
 
                 def _create_and_do_getcwd(dirname, current_path_length = 0):
                     try:
                         os.mkdir(dirname)
                     except:
-                        raise support.TestSkipped("mkdir cannot create directory sufficiently deep for getcwd test")
+                        raise unittest.SkipTest("mkdir cannot create directory sufficiently deep for getcwd test")
 
                     os.chdir(dirname)
                     try:

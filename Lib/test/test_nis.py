@@ -2,7 +2,7 @@ from test import support
 import unittest
 import nis
 
-raise support.TestSkipped("test_nis hangs on Solaris")
+raise unittest.SkipTest("test_nis hangs on Solaris")
 
 class NisTests(unittest.TestCase):
     def test_maps(self):
@@ -12,7 +12,7 @@ class NisTests(unittest.TestCase):
             # NIS is probably not active, so this test isn't useful
             if support.verbose:
                 print("Test Skipped:", msg)
-            # Can't raise TestSkipped as regrtest only recognizes the exception
+            # Can't raise SkipTest as regrtest only recognizes the exception
             #   import time.
             return
         try:

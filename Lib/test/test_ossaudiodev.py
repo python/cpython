@@ -1,7 +1,7 @@
 from test import support
 support.requires('audio')
 
-from test.support import findfile, TestSkipped
+from test.support import findfile
 
 import errno
 import ossaudiodev
@@ -46,7 +46,7 @@ class OSSAudioDevTests(unittest.TestCase):
         except IOError as msg:
             if msg.args[0] in (errno.EACCES, errno.ENOENT,
                                errno.ENODEV, errno.EBUSY):
-                raise TestSkipped(msg)
+                raise unittest.SkipTest(msg)
             raise
 
         # at least check that these methods can be invoked
@@ -165,7 +165,7 @@ def test_main():
     except (ossaudiodev.error, IOError) as msg:
         if msg.args[0] in (errno.EACCES, errno.ENOENT,
                            errno.ENODEV, errno.EBUSY):
-            raise TestSkipped(msg)
+            raise unittest.SkipTest(msg)
         raise
     dsp.close()
     support.run_unittest(__name__)

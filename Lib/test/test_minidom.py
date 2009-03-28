@@ -3,7 +3,7 @@
 import os
 import sys
 import pickle
-from test.support import verbose, run_unittest, TestSkipped
+from test.support import verbose, run_unittest
 import unittest
 
 import xml.dom

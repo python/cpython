@@ -1161,7 +1161,7 @@ else:
 
 def test_main(verbose=False):
     if skip_expected:
-        raise support.TestSkipped("No SSL support")
+        raise unittest.SkipTest("No SSL support")
 
     global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,

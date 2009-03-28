@@ -259,7 +259,7 @@ class test__mkstemp_inner(TC):
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
         if not has_stat:
-            return            # ugh, can't use TestSkipped.
+            return            # ugh, can't use SkipTest.
 
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
@@ -274,7 +274,7 @@ class test__mkstemp_inner(TC):
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
         if not has_spawnl:
-            return            # ugh, can't use TestSkipped.
+            return            # ugh, can't use SkipTest.
 
         if support.verbose:
             v="v"
@@ -312,7 +312,7 @@ class test__mkstemp_inner(TC):
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
         if not has_textmode:
-            return            # ugh, can't use TestSkipped.
+            return            # ugh, can't use SkipTest.
 
         self.do_create(bin=0).write(b"blat\n")
         # XXX should test that the file really is a text file
@@ -476,7 +476,7 @@ class test_mkdtemp(TC):
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
         if not has_stat:
-            return            # ugh, can't use TestSkipped.
+            return            # ugh, can't use SkipTest.
 
         dir = self.do_create()
         try:

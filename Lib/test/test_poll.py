@@ -1,12 +1,12 @@
 # Test case for the os.poll() function
 
 import os, select, random, unittest
-from test.support import TestSkipped, TESTFN, run_unittest
+from test.support import TESTFN, run_unittest
 
 try:
     select.poll
 except AttributeError:
-    raise TestSkipped("select.poll not defined -- skipping test_poll")
+    raise unittest.SkipTest("select.poll not defined -- skipping test_poll")
 
 
 def find_ready_matching(ready, flag):

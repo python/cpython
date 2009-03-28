@@ -2,6 +2,7 @@ import os
 import sys
 from tkinter import ttk
 from tkinter.test import runtktests
+import unittest
 from _tkinter import TclError
 from test import support
 
@@ -9,7 +10,7 @@ try:
     ttk.Button()
 except TclError as msg:
     # assuming ttk is not available
-    raise support.TestSkipped("ttk not available: %s" % msg)
+    raise unittest.SkipTest("ttk not available: %s" % msg)
 
 def test_main(enable_gui=False):
     if enable_gui:
