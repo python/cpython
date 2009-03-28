@@ -132,9 +132,13 @@ A few performance enhancements have been added:
 * The garbage collector tries to avoid tracking simple containers which
   can't be part of a cycle. As of now, this is true for tuples and dicts
   containing atomic types (such as ints, strings, etc.). Transitively, a dict
-  containing tuples of atomic types won't be tracked either. This helps brings
-  down the cost of full garbage collections, since it decreases the number of
-  objects to be considered and traversed by the collector.
+  containing tuples of atomic types won't be tracked either. This helps bring
+  down the individual cost of each garbage collection, since it decreases the
+  number of objects to be considered and traversed by the collector.
+
+  To help diagnosing this optimization, a new function in the :mod:`gc`
+  module, :func:`is_tracked`, returns True if a given instance is tracked
+  by the garbage collector, False otherwise.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
 
