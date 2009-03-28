@@ -129,6 +129,14 @@ A few performance enhancements have been added:
   (Suggested by Martin von Loewis and implemented by Antoine Pitrou;
   :issue:`4074`.)
 
+* The garbage collector tries to avoid tracking simple containers which
+  can't be part of a cycle. As of now, this is true for tuples and dicts
+  containing atomic types (such as ints, strings, etc.). Transitively, a dict
+  containing tuples of atomic types won't be tracked either. This helps brings
+  down the cost of full garbage collections, since it decreases the number of
+  objects to be considered and traversed by the collector.
+  (Contributed by Antoine Pitrou; :issue:`4688`.)
+
 
 .. ======================================================================
 
