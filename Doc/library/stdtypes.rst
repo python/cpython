@@ -2674,6 +2674,17 @@ types, where they are relevant.  Some of these are not reported by the
 
    The name of the class or type.
 
+
+.. method:: class.__subclasses__
+
+   :term:`New-style class`\ es keep a list of weak references to their immediate
+   subclasses.  This method returns a list of all those references still alive.
+   Example::
+
+      >>> int.__subclasses__()
+      [<type 'bool'>]
+
+
 .. rubric:: Footnotes
 
 .. [#] Additional information on these special methods may be found in the Python
