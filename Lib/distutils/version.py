@@ -162,7 +162,7 @@ class StrictVersion (Version):
 
 
 # The rules according to Greg Stein:
-# 1) a version number has 1 or more numbers separate by a period or by
+# 1) a version number has 1 or more numbers separated by a period or by
 #    sequences of letters. If only periods, then these are compared
 #    left-to-right to determine an ordering.
 # 2) sequences of letters are part of the tuple for comparison and are
