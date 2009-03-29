@@ -134,6 +134,16 @@ make it fit. For unpacking, the resulting bytes object always has exactly the
 specified number of bytes.  As a special case, ``'0s'`` means a single, empty
 string (while ``'0c'`` means 0 characters).
 
+When packing a value ``x`` using one of the integer formats (``'b'``,
+``'B'``, ``'h'``, ``'H'``, ``'i'``, ``'I'``, ``'l'``, ``'L'``,
+``'q'``, ``'Q'``), if ``x`` is outside the valid range for that format
+then :exc:`struct.error` is raised.
+
+.. versionchanged:: 3.1
+   In 3.0, some of the integer formats wrapped out-of-range values and
+   raised :exc:`DeprecationWarning` instead of :exc:`struct.error`.
+
+
 The ``'p'`` format character encodes a "Pascal string", meaning a short
 variable-length string stored in a fixed number of bytes. The count is the total
 number of bytes stored.  The first byte stored is the length of the string, or
