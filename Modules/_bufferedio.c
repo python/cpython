@@ -1144,7 +1144,6 @@ _BufferedReader_read_unlocked(BufferedObject *self, Py_ssize_t n)
     PyObject *data, *res = NULL;
     Py_ssize_t current_size, remaining, written;
     char *out;
-    static PyObject *sep = NULL;
 
     /* Special case for when the number of bytes to read is unspecified. */
     if (n == -1) {
@@ -1201,15 +1200,7 @@ _BufferedReader_read_unlocked(BufferedObject *self, Py_ssize_t n)
                     return data;
                 }
                 else {
-                    if (sep == NULL) {
-                        sep = PyBytes_FromStringAndSize(NULL, 0);
-                        if (sep == NULL) {
-                            Py_DECREF(data);
-                            Py_DECREF(chunks);
-                            return NULL;
-                        }
-                    }
-                    res =_PyBytes_Join(sep, chunks);
+                    res = _PyBytes_Join(_PyIO_empty_bytes, chunks);
                     Py_DECREF(data);
                     Py_DECREF(chunks);
                     return res;

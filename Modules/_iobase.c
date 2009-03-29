@@ -809,49 +809,41 @@ PyDoc_STRVAR(RawIOBase_readall_doc,
 static PyObject *
 RawIOBase_readall(PyObject *self, PyObject *args)
 {
-    PyObject *b = NULL;
-    Py_ssize_t cursize = 0;
+    int r;
+    PyObject *chunks = PyList_New(0);
+    PyObject *result;
+    
+    if (chunks == NULL)
+        return NULL;
 
     while (1) {
-        Py_ssize_t length;
         PyObject *data = PyObject_CallMethod(self, "read",
                                              "i", DEFAULT_BUFFER_SIZE);
-
         if (!data) {
-            Py_XDECREF(b);
+            Py_DECREF(chunks);
             return NULL;
         }
-
         if (!PyBytes_Check(data)) {
-            Py_XDECREF(b);
+            Py_DECREF(chunks);
             Py_DECREF(data);
             PyErr_SetString(PyExc_TypeError, "read() should return bytes");
             return NULL;
         }
-
-        length = Py_SIZE(data);
-
-        if (b == NULL)
-            b = data;
-        else if (length != 0) {
-
-            _PyBytes_Resize(&b, cursize + length);
-            if (b == NULL) {
-                Py_DECREF(data);
-                return NULL;
-            }
-
-            memcpy(PyBytes_AS_STRING(b) + cursize,
-                   PyBytes_AS_STRING(data), length);
+        if (PyBytes_GET_SIZE(data) == 0) {
+            /* EOF */
             Py_DECREF(data);
-        }
-
-        if (length == 0)
             break;
+        }
+        r = PyList_Append(chunks, data);
+        Py_DECREF(data);
+        if (r < 0) {
+            Py_DECREF(chunks);
+            return NULL;
+        }
     }
-
-    return b;
-
+    result = _PyBytes_Join(_PyIO_empty_bytes, chunks);
+    Py_DECREF(chunks);
+    return result;
 }
 
 static PyMethodDef RawIOBase_methods[] = {
