@@ -502,9 +502,14 @@ new_buffersize(PyFileIOObject *self, size_t currentsize)
 	if (fstat(self->fd, &st) == 0) {
 		end = st.st_size;
 		pos = lseek(self->fd, 0L, SEEK_CUR);
-		if (end >= pos && pos >= 0)
+		/* Files claiming a size smaller than SMALLCHUNK may
+		   actually be streaming pseudo-files. In this case, we
+		   apply the more aggressive algorithm below.
+		*/
+		if (end >= SMALLCHUNK && pos >= 0) {
+			/* Add 1 so if the file were to grow we'd notice. */
 			return currentsize + end - pos + 1;
-		/* Add 1 so if the file were to grow we'd notice. */
+		}
 	}
 #endif
 	if (currentsize > SMALLCHUNK) {
@@ -533,7 +538,13 @@ fileio_readall(PyFileIOObject *self)
 		return NULL;
 
 	while (1) {
-		Py_ssize_t newsize = new_buffersize(self, total);
+		size_t newsize = new_buffersize(self, total);
+		if (newsize > PY_SSIZE_T_MAX || newsize <= 0) {
+			PyErr_SetString(PyExc_OverflowError,
+				"unbounded read returned more bytes "
+				"than a Python string can hold ");
+			return NULL;
+		}
 
 		if (PyBytes_GET_SIZE(result) < newsize) {
 			if (_PyBytes_Resize(&result, newsize) < 0) {
