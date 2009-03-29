@@ -8286,7 +8286,7 @@ formatfloat(Py_UNICODE *buf,
         return -1;
     if (prec < 0)
         prec = 6;
-    if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
+    if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
     /* Worst case length calc to ensure no buffer overrun:
 
