@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 import Tkinter
 from test import test_support
 
