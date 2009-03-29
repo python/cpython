@@ -74,7 +74,9 @@ class PydocTopicsBuilder(Builder):
 
     def write(self, *ignored):
         writer = TextWriter(self)
-        for label in self.status_iterator(pydoc_topic_labels, 'building topics... '):
+        for label in self.status_iterator(pydoc_topic_labels,
+                                          'building topics... ',
+                                          length=len(pydoc_topic_labels)):
             if label not in self.env.labels:
                 self.warn('label %r not in documentation' % label)
                 continue
