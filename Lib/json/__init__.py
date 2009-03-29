@@ -266,7 +266,8 @@ def load(fp, encoding=None, cls=None, object_hook=None, parse_float=None,
     return loads(fp.read(),
         encoding=encoding, cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
-        parse_constant=parse_constant, object_pairs_hook=None, **kw)
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook,
+        **kw)
 
 
 def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
