@@ -465,6 +465,7 @@ fileio_readall(PyFileIOObject *self)
 			PyErr_SetString(PyExc_OverflowError,
 				"unbounded read returned more bytes "
 				"than a Python string can hold ");
+			Py_DECREF(result);
 			return NULL;
 		}
 
@@ -541,6 +542,7 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 
 	if (n < 0) {
+		Py_DECREF(bytes);
 		if (errno == EAGAIN)
 			Py_RETURN_NONE;
 		PyErr_SetFromErrno(PyExc_IOError);
