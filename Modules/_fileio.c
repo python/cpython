@@ -622,6 +622,7 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 		n = -1;
 
 	if (n < 0) {
+		Py_DECREF(bytes);
 		if (errno == EAGAIN)
 			Py_RETURN_NONE;
 		PyErr_SetFromErrno(PyExc_IOError);
