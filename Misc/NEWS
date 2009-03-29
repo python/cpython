@@ -73,7 +73,9 @@ Extension Modules
 
 - Issue #5463: In struct module, remove deprecated overflow wrapping
   when packing an integer: struct.pack('=L', -1) now raises
-  struct.error instead of returning b'\xff\xff\xff\xff'.
+  struct.error instead of returning b'\xff\xff\xff\xff'.  The
+  _PY_STRUCT_RANGE_CHECKING and _PY_STRUCT_OVERFLOW_MASKING constants
+  have been removed from the struct module.
 
 
 What's New in Python 3.1 alpha 1

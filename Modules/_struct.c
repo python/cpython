@@ -2028,7 +2028,6 @@ PyInit__struct(void)
 
 	PyModule_AddObject(m, "__version__", ver);
 
-	PyModule_AddIntConstant(m, "_PY_STRUCT_RANGE_CHECKING", 1);
 #ifdef PY_STRUCT_FLOAT_COERCE
 	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
 #endif
