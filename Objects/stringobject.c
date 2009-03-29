@@ -4336,6 +4336,15 @@ formatfloat(char *buf, size_t buflen, int flags,
 	}
 	if (prec < 0)
 		prec = 6;
+	/* make sure that the decimal representation of precision really does
+	   need at most 10 digits: platforms with sizeof(int) == 8 exist! */
+	if (prec > 0x7fffffffL) {
+		PyErr_SetString(PyExc_OverflowError,
+				"outrageously large precision "
+				"for formatted float");
+		return -1;
+	}
+
 	if (type == 'f' && fabs(x) >= 1e50)
 		type = 'g';
 	/* Worst case length calc to ensure no buffer overrun:
@@ -4364,7 +4373,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
 		      (flags&F_ALT) ? "#" : "",
 		      prec, type);
-        PyOS_ascii_formatd(buf, buflen, fmt, x);
+	PyOS_ascii_formatd(buf, buflen, fmt, x);
 	return (int)strlen(buf);
 }
 
