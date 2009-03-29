@@ -449,7 +449,7 @@ Basic skipping looks like this: ::
 
        @unittest.skipIf(mylib.__version__ < (1, 3), "not supported in this library version")
        def test_format(self):
-           # 2.6+ only code here.
+           # Tests that work for only a certain version of the library.
            pass
 
        @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
@@ -459,7 +459,7 @@ Basic skipping looks like this: ::
 
 This is the output of running the example above in verbose mode: ::
 
-   test_format (__main__.MyTestCase) ... skipped 'not supported in this Python version'
+   test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
    test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
 
