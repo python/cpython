@@ -505,6 +505,22 @@ class IOTest(unittest.TestCase):
         with open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
 
+    def test_unbounded_file(self):
+        # Issue #1174606: reading from an unbounded stream such as /dev/zero.
+        zero = "/dev/zero"
+        if not os.path.exists(zero):
+            raise unittest.SkipTest("{0} does not exist".format(zero))
+        if sys.maxsize > 0x7FFFFFFF:
+            raise unittest.SkipTest("test can only run in a 32-bit address space")
+        if support.real_max_memuse < support._2G:
+            raise unittest.SkipTest("test requires at least 2GB of memory")
+        with open(zero, "rb", buffering=0) as f:
+            self.assertRaises(OverflowError, f.read)
+        with open(zero, "rb") as f:
+            self.assertRaises(OverflowError, f.read)
+        with open(zero, "r") as f:
+            self.assertRaises(OverflowError, f.read)
+
 class CIOTest(IOTest):
     pass
 

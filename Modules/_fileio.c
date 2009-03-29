@@ -543,6 +543,7 @@ fileio_readall(PyFileIOObject *self)
 			PyErr_SetString(PyExc_OverflowError,
 				"unbounded read returned more bytes "
 				"than a Python string can hold ");
+			Py_DECREF(result);
 			return NULL;
 		}
 
