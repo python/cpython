@@ -506,7 +506,7 @@ new_buffersize(PyFileIOObject *self, size_t currentsize)
 		   actually be streaming pseudo-files. In this case, we
 		   apply the more aggressive algorithm below.
 		*/
-		if (end >= SMALLCHUNK && pos >= 0) {
+		if (end >= SMALLCHUNK && end >= pos && pos >= 0) {
 			/* Add 1 so if the file were to grow we'd notice. */
 			return currentsize + end - pos + 1;
 		}
