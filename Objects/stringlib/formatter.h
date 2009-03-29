@@ -789,7 +789,7 @@ format_float_internal(PyObject *value,
 
     if (precision < 0)
         precision = 6;
-    if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
+    if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
 
     /* cast "type", because if we're in unicode we need to pass a
