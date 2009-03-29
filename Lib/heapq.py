@@ -307,7 +307,7 @@ def _siftup(heap, pos):
 
 # If available, use C implementation
 try:
-    from _heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest, heappushpop
+    from _heapq import *
 except ImportError:
     pass
 
