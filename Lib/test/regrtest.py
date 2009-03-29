@@ -31,6 +31,10 @@ If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
+-r randomizes test execution order. You can use --randseed=int to provide a
+int seed value for the randomizer; this is useful for reproducing troublesome
+test orders.
+
 -T turns on code coverage tracing with the trace module.
 
 -D specifies the directory where coverage files are put.
@@ -183,7 +187,8 @@ def usage(code, msg=''):
 def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False, verbose2=False, print_slow=False):
+         runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
+         random_seed=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -201,8 +206,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     files beginning with test_ will be used.
 
     The other default arguments (verbose, quiet, exclude,
-    single, randomize, findleaks, use_resources, trace, coverdir, and
-    print_slow) allow programmers calling main() directly to set the
+    single, randomize, findleaks, use_resources, trace, coverdir, print_slow and
+    random_seed) allow programmers calling main() directly to set the
     values that would normally be set by flags on the command line.
     """
 
@@ -214,11 +219,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
+                                    'randseed='
                                     ])
     except getopt.error, msg:
         usage(2, msg)
 
     # Defaults
+    if random_seed is None:
+        random_seed = random.randrange(10000000)
     if use_resources is None:
         use_resources = []
     for o, a in opts:
@@ -239,6 +247,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
+        elif o == '--randseed':
+            random_seed = int(a)
         elif o in ('-f', '--fromfile'):
             fromfile = a
         elif o in ('-l', '--findleaks'):
@@ -347,6 +357,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if single:
         tests = tests[:1]
     if randomize:
+        random.seed(random_seed)
+        print "Using random seed", random_seed
         random.shuffle(tests)
     if trace:
         import trace
