@@ -1409,7 +1409,7 @@ that ``'\0'`` is the end of the string.
 .. XXX Examples?
 
 For safety reasons, floating point precisions are clipped to 50; ``%f``
-conversions for numbers whose absolute value is over 1e25 are replaced by ``%g``
+conversions for numbers whose absolute value is over 1e50 are replaced by ``%g``
 conversions. [#]_  All other errors raise exceptions.
 
 .. index::

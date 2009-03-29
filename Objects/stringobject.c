@@ -4344,7 +4344,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	}
 	if (prec < 0)
 		prec = 6;
-	if (type == 'f' && fabs(x)/1e25 >= 1e25)
+	if (type == 'f' && fabs(x) >= 1e50)
 		type = 'g';
 	/* Worst case length calc to ensure no buffer overrun:
 
