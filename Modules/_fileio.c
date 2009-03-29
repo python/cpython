@@ -451,7 +451,7 @@ fileio_readall(PyFileIOObject *self)
 		return NULL;
 
 	while (1) {
-		Py_ssize_t newsize = (total < SMALLCHUNK) ? SMALLCHUNK : total;
+		size_t newsize = (total < SMALLCHUNK) ? SMALLCHUNK : total;
 
 		/* Keep doubling until we reach BIGCHUNK;
 		   then keep adding BIGCHUNK. */
@@ -459,8 +459,13 @@ fileio_readall(PyFileIOObject *self)
 			newsize += newsize;
 		}
 		else {
-			/* NOTE: overflow impossible due to limits on BUFSIZ */
 			newsize += BIGCHUNK;
+		}
+		if (newsize > PY_SSIZE_T_MAX || newsize <= 0) {
+			PyErr_SetString(PyExc_OverflowError,
+				"unbounded read returned more bytes "
+				"than a Python string can hold ");
+			return NULL;
 		}
 
 		if (PyBytes_GET_SIZE(result) < newsize) {
