@@ -1,5 +1,6 @@
 import decimal
 from unittest import TestCase
+from StringIO import StringIO
 
 import json
 from collections import OrderedDict
@@ -27,12 +28,14 @@ class TestDecode(TestCase):
         p = [("xkd", 1), ("kcw", 2), ("art", 3), ("hxm", 4),
              ("qrt", 5), ("pad", 6), ("hoy", 7)]
         self.assertEqual(json.loads(s), eval(s))
-        self.assertEqual(json.loads(s, object_pairs_hook = lambda x: x), p)
-        od = json.loads(s, object_pairs_hook = OrderedDict)
+        self.assertEqual(json.loads(s, object_pairs_hook=lambda x: x), p)
+        self.assertEqual(json.load(StringIO(s),
+                                   object_pairs_hook=lambda x: x), p)
+        od = json.loads(s, object_pairs_hook=OrderedDict)
         self.assertEqual(od, OrderedDict(p))
         self.assertEqual(type(od), OrderedDict)
         # the object_pairs_hook takes priority over the object_hook
         self.assertEqual(json.loads(s,
-                                    object_pairs_hook = OrderedDict,
-                                    object_hook = lambda x: None),
+                                    object_pairs_hook=OrderedDict,
+                                    object_hook=lambda x: None),
                          OrderedDict(p))

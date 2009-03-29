@@ -1468,7 +1468,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     if (idx < end_idx && str[idx] == '.' && str[idx + 1] >= '0' && str[idx + 1] <= '9') {
         is_float = 1;
         idx += 2;
-        while (idx < end_idx && str[idx] >= '0' && str[idx] <= '9') idx++;
+        while (idx <= end_idx && str[idx] >= '0' && str[idx] <= '9') idx++;
     }
 
     /* if the next char is 'e' or 'E' then maybe read the exponent (or backtrack) */
