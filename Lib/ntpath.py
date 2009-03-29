@@ -257,7 +257,7 @@ lexists = exists
 def ismount(path):
     """Test whether a path is a mount point (defined as root of drive)"""
     unc, rest = splitunc(path)
-    seps = _get_bothseps(p)
+    seps = _get_bothseps(path)
     if unc:
         return rest in p[:0] + seps
     p = splitdrive(path)[1]

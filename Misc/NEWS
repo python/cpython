@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5595: Fix UnboundedLocalError in ntpath.ismount().
+
 - Issue #1174606: Calling read() without arguments of an unbounded file
   (typically /dev/zero under Unix) could crash the interpreter.
 
