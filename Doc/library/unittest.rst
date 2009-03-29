@@ -672,13 +672,15 @@ Test cases
       To catch any of a group of exceptions, a tuple containing the exception
       classes may be passed as *exception*.
 
+      If *callable* is omitted or None, returns a context manager so that the
+      code under test can be written inline rather than as a function::
+
+         with self.failUnlessRaises(some_error_class):
+             do_something()
+
       .. versionchanged:: 2.7
+         Added the ability to use :meth:`assertRaises` as a context manager.
 
-         If *callable* is omitted or None, returns a context manager so that the
-         code under test can be written inline rather than as a function::
-
-           with self.failUnlessRaises(some_error_class):
-               do_something()
 
    .. method:: failIf(expr[, msg])
                assertFalse(expr[, msg])
