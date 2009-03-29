@@ -142,8 +142,9 @@ class ProcessTestCase(unittest.TestCase):
         self.assertEqual(p.stderr, None)
 
     def test_executable(self):
-        p = subprocess.Popen(["somethingyoudonthave",
-                              "-c", "import sys; sys.exit(47)"],
+        arg0 = os.path.join(os.path.dirname(sys.executable),
+                            "somethingyoudonthave")
+        p = subprocess.Popen([arg0, "-c", "import sys; sys.exit(47)"],
                              executable=sys.executable)
         p.wait()
         self.assertEqual(p.returncode, 47)
