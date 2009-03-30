@@ -1,6 +1,7 @@
 from test import test_support
 import unittest
-import crypt
+
+crypt = test_support.import_module('crypt')
 
 class CryptTestCase(unittest.TestCase):
 

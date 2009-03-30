@@ -1,10 +1,11 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
-import aepack
-import aetypes
 import os
 from test import test_support
+
+aetypes = test_support.import_module('aetypes')
+aepack = test_support.import_module('aepack')
 
 class TestAepack(unittest.TestCase):
     OBJECTS = [

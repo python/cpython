@@ -55,6 +55,20 @@ def import_module(name, deprecated=False):
         else:
             return module
 
+def import_function(module, name, deprecated=False):
+    with warnings.catch_warnings():
+        if deprecated:
+            warnings.filterwarnings("ignore", ".+ (module|package)",
+                                    DeprecationWarning)
+        try:
+            function = getattr(module, name)
+        except AttributeError:
+            raise unittest.SkipTest("No function named %s in module %s" % (
+                name, module.__name__))
+        else:
+            return function
+
+
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with

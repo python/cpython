@@ -1,9 +1,11 @@
 import os
 import sys
-import ttk
 import unittest
-from _tkinter import TclError
 from test import test_support
+
+ttk = test_support.import_module('ttk')
+#If ttk exists _tkinter must exist.
+from _tkinter import TclError
 
 try:
     ttk.Button()

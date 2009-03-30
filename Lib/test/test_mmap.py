@@ -1,7 +1,8 @@
-from test.test_support import TESTFN, run_unittest
-import mmap
+from test.test_support import TESTFN, run_unittest, import_module
 import unittest
 import os, re
+
+mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 

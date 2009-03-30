@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 
-import pwd
+pwd = test_support.import_module('pwd')
 
 class PwdTest(unittest.TestCase):
 

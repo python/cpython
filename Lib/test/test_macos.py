@@ -1,9 +1,11 @@
 import unittest
-import MacOS
-import Carbon.File
 from test import test_support
 import os
 import subprocess
+
+MacOS = test_support.import_module('MacOS')
+#The following should exist if MacOS exists.
+import Carbon.File
 
 TESTFN2 = test_support.TESTFN + '2'
 

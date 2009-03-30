@@ -2,7 +2,8 @@
 
 import unittest
 from test import test_support
-import aetools
+
+aetools = test_support.import_module('aetools')
 
 class TestScriptpackages(unittest.TestCase):
 
