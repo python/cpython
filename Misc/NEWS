@@ -197,6 +197,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5177: Multiprocessing's SocketListener class now uses 
+  socket.SO_REUSEADDR on all connections so that the user no longer needs
+  to wait 120 seconds for the socket to expire.
+
 - Adjusted _tkinter to compile without warnings when WITH_THREAD is not
   defined (part of issue #5035).
 
