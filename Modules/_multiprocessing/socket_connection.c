@@ -153,10 +153,22 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
  */
 
 static int
-conn_poll(ConnectionObject *conn, double timeout)
+conn_poll(ConnectionObject *conn, double timeout, PyThreadState *_save)
 {
 	int res;
 	fd_set rfds;
+
+	/*
+	 * Verify the handle, issue 3321. Not required for windows.
+	 */ 
+	#ifndef MS_WINDOWS
+		if (((int)conn->handle) < 0 || ((int)conn->handle) >= FD_SETSIZE) {
+			Py_BLOCK_THREADS
+			PyErr_SetString(PyExc_IOError, "handle out of range in select()");
+			Py_UNBLOCK_THREADS
+			return MP_EXCEPTION_HAS_BEEN_SET;
+		}
+	#endif
 
 	FD_ZERO(&rfds);
 	FD_SET((SOCKET)conn->handle, &rfds);
