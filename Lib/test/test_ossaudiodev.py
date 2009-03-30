@@ -3,8 +3,9 @@ test_support.requires('audio')
 
 from test.test_support import findfile
 
+ossaudiodev = test_support.import_module('ossaudiodev')
+
 import errno
-import ossaudiodev
 import sys
 import sunau
 import time

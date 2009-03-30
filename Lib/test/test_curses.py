@@ -9,15 +9,16 @@
 # Only called, not tested: getmouse(), ungetmouse()
 #
 
-import curses, sys, tempfile, os
-import curses.panel
+import sys, tempfile, os
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  If not available, nothing after this line will be executed.
 
-from test.test_support import requires
+from test.test_support import requires, import_module
 requires('curses')
+curses = import_module('curses')
+curses.panel = import_module('curses.panel')
 
 # XXX: if newterm was supported we could use it instead of initscr and not exit
 term = os.environ.get('TERM')

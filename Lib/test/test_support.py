@@ -12,6 +12,7 @@ import platform
 import shutil
 import warnings
 import unittest
+import importlib
 
 __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -25,7 +26,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
            "threading_cleanup", "reap_children", "cpython_only",
-           "check_impl_detail"]
+           "check_impl_detail", "get_attribute"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -49,24 +50,26 @@ def import_module(name, deprecated=False):
             warnings.filterwarnings("ignore", ".+ (module|package)",
                                     DeprecationWarning)
         try:
-            module = __import__(name, level=0)
+            module = importlib.import_module(name)
         except ImportError:
             raise unittest.SkipTest("No module named " + name)
         else:
             return module
 
-def import_function(module, name, deprecated=False):
+def get_attribute(module, name, deprecated=False):
+    """Get an attribute from the module, raising SkipTest if it is
+    not available."""
     with warnings.catch_warnings():
         if deprecated:
             warnings.filterwarnings("ignore", ".+ (module|package)",
                                     DeprecationWarning)
         try:
-            function = getattr(module, name)
+            attribute = getattr(module, name)
         except AttributeError:
-            raise unittest.SkipTest("No function named %s in module %s" % (
-                name, module.__name__))
+            raise unittest.SkipTest("module %s has no attribute %s" % (
+                module.__name__, name))
         else:
-            return function
+            return attribute
 
 
 verbose = 1              # Flag set to 0 by regrtest.py

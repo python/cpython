@@ -5,7 +5,7 @@ import sys
 
 from test import test_support
 
-from xml.etree import cElementTree as ET
+ET = test_support.import_module('xml.etree.cElementTree')
 
 SAMPLE_XML = """
 <body>

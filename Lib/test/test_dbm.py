@@ -1,6 +1,6 @@
 from test import test_support
 import unittest
-import dbm
+dbm = test_support.import_module('dbm')
 
 class DbmTestCase(unittest.TestCase):
 
