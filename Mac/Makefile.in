@@ -14,6 +14,7 @@ DESTDIR=
 LDFLAGS=@LDFLAGS@
 FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
+PYTHONFRAMEWORKIDENTIFIER=@PYTHONFRAMEWORKIDENTIFIER@
 
 
 # These are normally glimpsed from the previous set
@@ -206,6 +207,12 @@ install_Python:
 		done; \
 	done
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
+	sed -e "s!%bundleid%!$(PYTHONFRAMEWORKIDENTIFIER)!g" \
+		-e "s!%version%!`$(RUNSHARED) $(BUILDPYTHON) \
+		-c 'import platform; print(platform.python_version())'`!g" \
+		< "$(DESTDIR)$(APPINSTALLDIR)/Contents/Info.plist.in" \
+		> "$(DESTDIR)$(APPINSTALLDIR)/Contents/Info.plist"
+	rm "$(DESTDIR)$(APPINSTALLDIR)/Contents/Info.plist.in"
 
 install_Python4way: install_Python
 	lipo  -extract i386 -extract ppc7400 -output "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
