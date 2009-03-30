@@ -3,11 +3,14 @@
 
 import os
 import time
+import unittest
 from test.fork_wait import ForkWait
-from test.test_support import run_unittest, reap_children, import_module
+from test.test_support import run_unittest, reap_children
 
-import_module('os.fork')
-
+try:
+    os.fork
+except AttributeError:
+    raise unittest.SkipTest, "os.fork not defined -- skipping test_fork1"
 
 class ForkTest(ForkWait):
     def wait_impl(self, cpid):
