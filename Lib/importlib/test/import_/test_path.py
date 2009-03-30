@@ -55,6 +55,25 @@ class FinderTests(unittest.TestCase):
             self.assert_(path in sys.path_importer_cache)
             self.assert_(sys.path_importer_cache[path] is importer)
 
+    def test_path_importer_cache_has_None(self):
+        # Test that if sys.path_importer_cache has None that None is returned.
+        clear_cache = {path: None for path in sys.path}
+        with util.import_state(path_importer_cache=clear_cache):
+            for name in ('asynchat', 'sys', '<test module>'):
+                self.assert_(machinery.PathFinder.find_module(name) is None)
+
+    def test_path_importer_cache_has_None_continues(self):
+        # Test that having None in sys.path_importer_cache causes the search to
+        # continue.
+        path = '<test path>'
+        module = '<test module>'
+        importer = util.mock_modules(module)
+        with util.import_state(path=['1', '2'],
+                            path_importer_cache={'1': None, '2': importer}):
+            loader = machinery.PathFinder.find_module(module)
+            self.assert_(loader is importer)
+
+
 
 class DefaultPathFinderTests(unittest.TestCase):
 
