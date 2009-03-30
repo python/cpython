@@ -1,4 +1,4 @@
-#!/usr/bin/python2.3
+#!/usr/bin/python
 """
 This script is used to build the "official unofficial" universal build on
 Mac OS X. It requires Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK to do its
@@ -18,11 +18,6 @@ VERBOSE = 1
 from plistlib import Plist
 
 import MacOS
-import Carbon.File
-import Carbon.Icn
-import Carbon.Res
-from Carbon.Files import kCustomIconResource, fsRdWrPerm, kHasCustomIcon
-from Carbon.Files import kFSCatInfoFinderInfo
 
 try:
     from plistlib import writePlist
@@ -94,8 +89,9 @@ USAGE = textwrap.dedent("""\
 # batteries included python.
 LIBRARY_RECIPES = [
     dict(
-        name="Bzip2 1.0.3",
-        url="http://www.bzip.org/1.0.3/bzip2-1.0.3.tar.gz",
+        name="Bzip2 1.0.4",
+        url="http://www.bzip.org/1.0.4/bzip2-1.0.4.tar.gz",
+        checksum='fc310b254f6ba5fbb5da018f04533688',
         configure=None,
         install='make install PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
             shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -106,6 +102,7 @@ LIBRARY_RECIPES = [
     dict(
         name="ZLib 1.2.3",
         url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
+        checksum='debc62758716a169df9f62e6ab2bc634',
         configure=None,
         install='make install prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
             shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -117,6 +114,7 @@ LIBRARY_RECIPES = [
         # Note that GNU readline is GPL'd software
         name="GNU Readline 5.1.4",
         url="http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz" ,
+        checksum='7ee5a692db88b30ca48927a13fd60e46',
         patchlevel='0',
         patches=[
             # The readline maintainers don't do actual micro releases, but
@@ -129,9 +127,9 @@ LIBRARY_RECIPES = [
     ),
 
     dict(
-        name="SQLite 3.6.3",
-        url="http://www.sqlite.org/sqlite-3.6.3.tar.gz",
-        checksum='93f742986e8bc2dfa34792e16df017a6feccf3a2',
+        name="SQLite 3.6.11",
+        url="http://www.sqlite.org/sqlite-3.6.11.tar.gz",
+        checksum='7ebb099696ab76cc6ff65dd496d17858',
         configure_pre=[
             '--enable-threadsafe',
             '--enable-tempstore',
@@ -144,6 +142,7 @@ LIBRARY_RECIPES = [
     dict(
         name="NCurses 5.5",
         url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
+        checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
         configure_pre=[
             "--without-cxx",
             "--without-ada",
@@ -172,8 +171,7 @@ LIBRARY_RECIPES = [
     dict(
         name="Sleepycat DB 4.7.25",
         url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
-        #name="Sleepycat DB 4.3.29",
-        #url="http://downloads.sleepycat.com/db-4.3.29.tar.gz",
+        checksum='ec2b87e833779681a0c3a814aa71359e',
         buildDir="build_unix",
         configure="../dist/configure",
         configure_pre=[
@@ -578,31 +576,21 @@ def buildLibraries():
 
 
 def buildPythonDocs():
-    # This stores the documentation as Resources/English.lproj/Docuentation
+    # This stores the documentation as Resources/English.lproj/Documentation
     # inside the framwork. pydoc and IDLE will pick it up there.
     print "Install python documentation"
     rootDir = os.path.join(WORKDIR, '_root')
-    version = getVersion()
+    buildDir = os.path.join('../../Doc')
     docdir = os.path.join(rootDir, 'pydocs')
-
-    novername = 'python-docs-html.tar.bz2'
-    name = 'html-%s.tar.bz2'%(getFullVersion(),)
-    sourceArchive = os.path.join(DEPSRC, name)
-    if os.path.exists(sourceArchive):
-        print "Using local copy of %s"%(name,)
-
-    else:
-        print "Downloading %s"%(novername,)
-        downloadURL('http://www.python.org/ftp/python/doc/%s/%s'%(
-            getFullVersion(), novername), sourceArchive)
-        print "Archive for %s stored as %s"%(name, sourceArchive)
-
-    extractArchive(os.path.dirname(docdir), sourceArchive)
-
-    os.rename(
-            os.path.join(
-                os.path.dirname(docdir), 'python-docs-html'),
-            docdir)
+    curDir = os.getcwd()
+    os.chdir(buildDir)
+    runCommand('make update')
+    runCommand('make html')
+    os.chdir(curDir)
+    if not os.path.exists(docdir):
+        os.mkdir(docdir)
+    os.rename(os.path.join(buildDir, 'build', 'html'),
+            os.path.join(docdir, 'python-docs-html'))
 
 
 def buildPython():
@@ -935,82 +923,20 @@ def buildDMG():
 def setIcon(filePath, icnsPath):
     """
     Set the custom icon for the specified file or directory.
-
-    For a directory the icon data is written in a file named 'Icon\r' inside
-    the directory. For both files and directories write the icon as an 'icns'
-    resource. Furthermore set kHasCustomIcon in the finder flags for filePath.
     """
-    ref, isDirectory = Carbon.File.FSPathMakeRef(icnsPath)
-    icon = Carbon.Icn.ReadIconFile(ref)
-    del ref
 
-    #
-    # Open the resource fork of the target, to add the icon later on.
-    # For directories we use the file 'Icon\r' inside the directory.
-    #
+    toolPath = os.path.join(os.path.dirname(__file__), "seticon.app/Contents/MacOS/seticon")
+    dirPath = os.path.dirname(__file__)
+    if not os.path.exists(toolPath) or os.stat(toolPath).st_mtime < os.stat(dirPath + '/seticon.m').st_mtime:
+        # NOTE: The tool is created inside an .app bundle, otherwise it won't work due
+        # to connections to the window server.
+        if not os.path.exists('seticon.app/Contents/MacOS'):
+            os.makedirs('seticon.app/Contents/MacOS')
+        runCommand("cc -o %s %s/seticon.m -framework Cocoa"%(
+            shellQuote(toolPath), shellQuote(dirPath)))
 
-    ref, isDirectory = Carbon.File.FSPathMakeRef(filePath)
-
-    if isDirectory:
-        # There is a problem with getting this into the pax(1) archive,
-        # just ignore directory icons for now.
-        return
-
-        tmpPath = os.path.join(filePath, "Icon\r")
-        if not os.path.exists(tmpPath):
-            fp = open(tmpPath, 'w')
-            fp.close()
-
-        tmpRef, _ = Carbon.File.FSPathMakeRef(tmpPath)
-        spec = Carbon.File.FSSpec(tmpRef)
-
-    else:
-        spec = Carbon.File.FSSpec(ref)
-
-    try:
-        Carbon.Res.HCreateResFile(*spec.as_tuple())
-    except MacOS.Error:
-        pass
-
-    # Try to create the resource fork again, this will avoid problems
-    # when adding an icon to a directory. I have no idea why this helps,
-    # but without this adding the icon to a directory will fail sometimes.
-    try:
-        Carbon.Res.HCreateResFile(*spec.as_tuple())
-    except MacOS.Error:
-        pass
-
-    refNum = Carbon.Res.FSpOpenResFile(spec, fsRdWrPerm)
-
-    Carbon.Res.UseResFile(refNum)
-
-    # Check if there already is an icon, remove it if there is.
-    try:
-        h = Carbon.Res.Get1Resource('icns', kCustomIconResource)
-    except MacOS.Error:
-        pass
-
-    else:
-        h.RemoveResource()
-        del h
-
-    # Add the icon to the resource for of the target
-    res = Carbon.Res.Resource(icon)
-    res.AddResource('icns', kCustomIconResource, '')
-    res.WriteResource()
-    res.DetachResource()
-    Carbon.Res.CloseResFile(refNum)
-
-    # And now set the kHasCustomIcon property for the target. Annoyingly,
-    # python doesn't seem to have bindings for the API that is needed for
-    # this. Cop out and call SetFile
-    os.system("/Developer/Tools/SetFile -a C %s"%(
-            shellQuote(filePath),))
-
-    if isDirectory:
-        os.system('/Developer/Tools/SetFile -a V %s'%(
-            shellQuote(tmpPath),
-        ))
+    runCommand("%s %s %s"%(shellQuote(os.path.abspath(toolPath)), shellQuote(icnsPath),
+        shellQuote(filePath)))
 
 def main():
     # First parse options and check if we can perform our work
@@ -1054,10 +980,12 @@ def main():
     fp.close()
 
     # Custom icon for the DMG, shown when the DMG is mounted.
-    shutil.copy("../Icons/Disk Image.icns",
-            os.path.join(WORKDIR, "installer", ".VolumeIcon.icns"))
-    os.system("/Developer/Tools/SetFile -a C %s"%(
-            os.path.join(WORKDIR, "installer", ".VolumeIcon.icns")))
+    # XXX: Code is diabled because it doesn't actually work :-(
+#    shutil.copy("../Icons/Disk Image.icns",
+#            os.path.join(WORKDIR, "installer", ".VolumeIcon.icns"))
+#    os.system("/Developer/Tools/SetFile -a C %s"%(
+#            os.path.join(WORKDIR, "installer", ".VolumeIcon.icns")))
+    setIcon(os.path.join(WORKDIR, "installer"), "../Icons/Disk Image.icns")
 
 
     # And copy it to a DMG
