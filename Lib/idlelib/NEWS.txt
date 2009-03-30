@@ -3,6 +3,9 @@ What's New in IDLE 2.7a0?
 
 *Release date: XX-XXX-2009*
 
+- Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle
+  mixed space/tab properly. Issue 5120, patch by Guilherme Polo.
+  
 - Issue #3549: On MacOS the preferences menu was not present
 
 
