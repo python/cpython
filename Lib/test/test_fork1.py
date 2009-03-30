@@ -3,6 +3,7 @@
 
 import os
 import time
+import unittest
 from test.fork_wait import ForkWait
 from test.support import run_unittest, reap_children
 

@@ -3,7 +3,7 @@
 # email package unit tests for (optional) Asian codecs
 
 import unittest
-from test.support import TestSkipped, run_unittest
+from test.support import run_unittest
 
 from email.test.test_email import TestEmailBase
 from email.charset import Charset
@@ -15,7 +15,7 @@ from email.message import Message
 try:
     str('foo', 'euc-jp')
 except LookupError:
-    raise TestSkipped
+    raise unittest.SkipTest
 
 
 
