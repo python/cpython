@@ -661,9 +661,10 @@ class PathFinder:
                 finder = cls._path_importer_cache(entry)
             except ImportError:
                 continue
-            loader = finder.find_module(fullname)
-            if loader:
-                return loader
+            if finder:
+                loader = finder.find_module(fullname)
+                if loader:
+                    return loader
         else:
             return None
 
