@@ -546,7 +546,7 @@ static PyMethodDef semlock_methods[] = {
 	 "acquire the semaphore/lock"},
 	{"release", (PyCFunction)semlock_release, METH_NOARGS, 
 	 "release the semaphore/lock"},
-	{"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS,
+    {"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
 	 "enter the semaphore/lock"},
 	{"__exit__", (PyCFunction)semlock_release, METH_VARARGS, 
 	 "exit the semaphore/lock"},
