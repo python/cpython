@@ -646,7 +646,7 @@ def buildPython():
 
     print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s "
-               "--with-universal-archs=%s "
+               "--with-universal-archs=%s --with-computed-gotos"
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
