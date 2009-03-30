@@ -37,6 +37,17 @@ Here are the steps you need to follow to build a MacPython installer:
 * When done the script will tell you where the DMG image is (by default
   somewhere in ``/tmp/_py``).
 
+Building a 4-way universal installer
+....................................
+
+It is also possible to build a 4-way universal installer that runs on 
+OSX Leopard or later::
+
+  $ ./build-installer.py --dep-target=10.5 --universal-archs=all --sdk=/
+
+This requires that the deployment target is 10.5 (or later), and hence
+also that your building on at least OSX 10.5.
+
 Testing
 -------
 
