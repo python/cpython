@@ -1,6 +1,7 @@
 from test import test_support
 import unittest
-import nis
+
+nis = test_support.import_module('nis')
 
 class NisTests(unittest.TestCase):
     def test_maps(self):

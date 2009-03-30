@@ -4,10 +4,10 @@
 import os
 import time
 from test.fork_wait import ForkWait
-from test.test_support import run_unittest, reap_children, import_function
+from test.test_support import run_unittest, reap_children, get_attribute
 
 #Skip test if fork does not exist.
-import_function(os, 'fork')
+get_attribute(os, 'fork')
 
 
 class ForkTest(ForkWait):

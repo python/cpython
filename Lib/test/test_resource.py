@@ -1,8 +1,8 @@
 import unittest
 from test import test_support
-
-import resource
 import time
+
+resource = test_support.import_module('resource')
 
 # This test is checking a few specific problem spots with the resource module.
 

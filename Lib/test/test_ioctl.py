@@ -1,12 +1,9 @@
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, import_module, get_attribute
 import os, struct
-try:
-    import fcntl, termios
-except ImportError:
-    raise unittest.SkipTest("No fcntl or termios module")
-if not hasattr(termios,'TIOCGPGRP'):
-    raise unittest.SkipTest("termios module doesn't have TIOCGPGRP")
+fcntl = import_module('fcntl')
+termios = import_module('termios')
+get_attribute(termios, 'TIOCGPGRP') #Can't run tests without this feature
 
 try:
     tty = open("/dev/tty", "r")

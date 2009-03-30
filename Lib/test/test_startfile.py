@@ -12,7 +12,7 @@ from test import test_support
 import os
 from os import path
 
-startfile = test_support.import_function(os, 'startfile')
+startfile = test_support.get_attribute(os, 'startfile')
 
 
 class TestCase(unittest.TestCase):
