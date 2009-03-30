@@ -649,6 +649,11 @@ def buildPython():
     # several paths.
     version = getVersion()
 
+    # Since the extra libs are not in their installed framework location
+    # during the build, augment the library path so that the interpreter
+    # will find them during its extension import sanity checks.
+    os.environ['DYLD_LIBRARY_PATH'] = os.path.join(WORKDIR,
+                                        'libraries', 'usr', 'local', 'lib')
     print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s "
                "--with-universal-archs=%s "
@@ -670,6 +675,7 @@ def buildPython():
     runCommand("make frameworkinstallextras DESTDIR=%s"%(
         shellQuote(rootDir)))
 
+    del os.environ['DYLD_LIBRARY_PATH']
     print "Copying required shared libraries"
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         runCommand("mv %s/* %s"%(
