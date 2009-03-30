@@ -1,5 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
-# Author: Barry Warsaw
+# Copyright (C) 2001-2009 Python Software Foundation
 # Contact: email-sig@python.org
 
 """Classes to generate plain text from a message object tree."""
@@ -156,10 +155,13 @@ class Generator:
                 # be to not split the string and risk it being too long.
                 print >> self._fp, v
             else:
-                # Header's got lots of smarts, so use it.
+                # Header's got lots of smarts, so use it.  Note that this is
+                # fundamentally broken though because we lose idempotency when
+                # the header string is continued with tabs.  It will now be
+                # continued with spaces.  This was reversedly broken before we
+                # fixed bug 1974.  Either way, we lose.
                 print >> self._fp, Header(
-                    v, maxlinelen=self._maxheaderlen,
-                    header_name=h, continuation_ws='\t').encode()
+                    v, maxlinelen=self._maxheaderlen, header_name=h).encode()
         # A blank line always separates headers from body
         print >> self._fp
 
