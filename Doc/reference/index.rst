@@ -18,6 +18,7 @@ interfaces available to C/C++ programmers in detail.
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    introduction.rst
    lexical_analysis.rst

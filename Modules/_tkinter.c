@@ -732,6 +732,7 @@ Tkapp_New(char *screenName, char *className,
 }
 
 
+#ifdef WITH_THREAD
 static void
 Tkapp_ThreadSend(TkappObject *self, Tcl_Event *ev,
 		 Tcl_Condition *cond, Tcl_Mutex *mutex)
@@ -744,6 +745,7 @@ Tkapp_ThreadSend(TkappObject *self, Tcl_Event *ev,
 	Tcl_MutexUnlock(mutex);
 	Py_END_ALLOW_THREADS
 }
+#endif
 
 
 /** Tcl Eval **/
@@ -1110,8 +1112,8 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	return newPyTclObject(value);
 }
 
+#ifdef WITH_THREAD
 /* This mutex synchronizes inter-thread command calls. */
-
 TCL_DECLARE_MUTEX(call_mutex)
 
 typedef struct Tkapp_CallEvent {
@@ -1123,6 +1125,7 @@ typedef struct Tkapp_CallEvent {
 	PyObject **exc_type, **exc_value, **exc_tb;
 	Tcl_Condition *done;
 } Tkapp_CallEvent;
+#endif
 
 void
 Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, int objc)
@@ -1210,6 +1213,8 @@ Tkapp_CallResult(TkappObject *self)
 	return res;
 }
 
+#ifdef WITH_THREAD
+
 /* Tkapp_CallProc is the event procedure that is executed in the context of
    the Tcl interpreter thread. Initially, it holds the Tcl lock, and doesn't
    hold the Python lock. */
@@ -1253,6 +1258,8 @@ done:
 	Tcl_MutexUnlock(&call_mutex);
 	return 1;
 }
+
+#endif
 
 /* This is the main entry point for calling a Tcl command.
    It supports three cases, with regard to threading:
@@ -1483,9 +1490,11 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
 
 /** Tcl Variable **/
 
+typedef PyObject* (*EventFunc)(PyObject*, PyObject *args, int flags);
+
+#ifdef WITH_THREAD
 TCL_DECLARE_MUTEX(var_mutex)
 
-typedef PyObject* (*EventFunc)(PyObject*, PyObject *args, int flags);
 typedef struct VarEvent {
 	Tcl_Event ev; /* must be first */
 	PyObject *self;
@@ -1497,6 +1506,7 @@ typedef struct VarEvent {
 	PyObject **exc_val;
 	Tcl_Condition *cond;
 } VarEvent;
+#endif
 
 static int
 varname_converter(PyObject *in, void *_out)
@@ -1517,6 +1527,8 @@ varname_converter(PyObject *in, void *_out)
 	/* XXX: Should give diagnostics. */
 	return 0;
 }
+
+#ifdef WITH_THREAD
 
 static void
 var_perform(VarEvent *ev)
@@ -1545,11 +1557,13 @@ var_proc(VarEvent* ev, int flags)
 	return 1;
 }
 
+#endif
+
 static PyObject*
 var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 {
-	TkappObject *self = (TkappObject*)selfptr;
 #ifdef WITH_THREAD
+	TkappObject *self = (TkappObject*)selfptr;
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		TkappObject *self = (TkappObject*)selfptr;
 		VarEvent *ev;
@@ -2052,6 +2066,7 @@ PythonCmdDelete(ClientData clientData)
 
 
 
+#ifdef WITH_THREAD
 TCL_DECLARE_MUTEX(command_mutex)
 
 typedef struct CommandEvent{
@@ -2078,6 +2093,7 @@ Tkapp_CommandProc(CommandEvent *ev, int flags)
 	Tcl_MutexUnlock(&command_mutex);
 	return 1;
 }
+#endif
 
 static PyObject *
 Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
@@ -2108,7 +2124,7 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 	Py_INCREF(func);
 	data->self = selfptr;
 	data->func = func;
-
+#ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		Tcl_Condition cond = NULL;
 		CommandEvent *ev = (CommandEvent*)ckalloc(sizeof(CommandEvent));
@@ -2122,7 +2138,9 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 		Tkapp_ThreadSend(self, (Tcl_Event*)ev, &cond, &command_mutex);
 		Tcl_ConditionFinalize(&cond);
 	}
-	else {
+	else
+#endif
+	{
 		ENTER_TCL
 		err = Tcl_CreateCommand(
 			Tkapp_Interp(self), cmdName, PythonCmd,
@@ -2150,6 +2168,8 @@ Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s:deletecommand", &cmdName))
 		return NULL;
+
+#ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		Tcl_Condition cond = NULL;
 		CommandEvent *ev;
@@ -2164,7 +2184,9 @@ Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
 				 &command_mutex);
 		Tcl_ConditionFinalize(&cond);
 	}
-	else {
+	else
+#endif
+	{
 		ENTER_TCL
 		err = Tcl_DeleteCommand(self->interp, cmdName);
 		LEAVE_TCL

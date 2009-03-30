@@ -26,6 +26,7 @@ For a detailed description of the whole Python/C API, see the separate
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    extending.rst
    newtypes.rst

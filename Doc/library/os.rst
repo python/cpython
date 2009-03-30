@@ -796,9 +796,10 @@ Files and Directories
    function will not follow symbolic links. Availability: Unix.
 
 
-.. function:: link(src, dst)
+.. function:: link(source, link_name)
 
-   Create a hard link pointing to *src* named *dst*. Availability: Unix.
+   Create a hard link pointing to *source* named *link_name*. Availability:
+   Unix.
 
 
 .. function:: listdir(path)
@@ -1078,9 +1079,10 @@ Files and Directories
    :attr:`f_flag`, :attr:`f_namemax`. Availability: Unix.
 
 
-.. function:: symlink(src, dst)
+.. function:: symlink(source, link_name)
 
-   Create a symbolic link pointing to *src* named *dst*. Availability: Unix.
+   Create a symbolic link pointing to *source* named *link_name*. Availability:
+   Unix.
 
 
 .. function:: unlink(path)

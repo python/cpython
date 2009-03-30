@@ -218,6 +218,7 @@ does an index lookup using :func:`__getitem__`.
 Some simple format string examples::
 
    "First, thou shalt count to {0}" # References first positional argument
+   "Bring me a {}"                  # Implicitly references the first positional argument
    "My quest is {name}"             # References keyword argument 'name'
    "Weight in tons {0.weight}"      # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"  # First element of keyword argument 'players'.

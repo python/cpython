@@ -23,6 +23,7 @@ to write reStructuredText if you're not so inclined; plain text contributions
 are more than welcome as well.
 
 .. toctree::
+   :numbered:
 
    intro.rst
    style.rst
