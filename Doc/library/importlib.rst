@@ -37,7 +37,7 @@ Details on providing custom importers can be found in :pep:`302`.
 
     The :func:`.__import__` function
         The built-in function for which the :keyword:`import` statement is
-        syntactic sugar for.
+        syntactic sugar.
 
     :pep:`235`
         Import on Case-Insensitive Platforms
@@ -71,8 +71,8 @@ Functions
     Import a module. The *name* argument specifies what module to
     import in absolute or relative terms
     (e.g. either ``pkg.mod`` or ``..mod``). If the name is
-    specified in relative terms, then the *package* argument must be
-    set to the package which is to act as the anchor for resolving the
+    specified in relative terms, then the *package* argument must be set to
+    the name of the package which is to act as the anchor for resolving the
     package name (e.g. ``import_module('..mod', 'pkg.subpkg')`` will import
     ``pkg.mod``).
 
@@ -80,7 +80,11 @@ Functions
     :func:`__import__`. This means all semantics of the function are derived
     from :func:`__import__`, including requiring the package from which an
     import is occurring to have been previously imported (i.e., *package*
-    must already be imported).
+    must already be imported).  The most important difference is that
+    :func:`import_module` returns the most nested package or module that
+    was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
+    top-level package or module (e.g. ``pkg``).
+
 
 :mod:`importlib.abc` -- Abstract base classes related to import
 ---------------------------------------------------------------
@@ -96,21 +100,21 @@ are also provided to help in implementing the core ABCs.
 .. class:: Finder
 
     An abstract base class representing a :term:`finder`.
+    See :pep:`302` for the exact definition for a finder.
 
     .. method:: find_module(fullname, path=None)
 
         An abstract method for finding a :term:`loader` for the specified
         module. If the :term:`finder` is found on :data:`sys.meta_path` and the
-        module to be searched for is a subpackage or module then *path* is set
-        to the value of :attr:`__path__` from the parent package. If a loader
+        module to be searched for is a subpackage or module then *path* will
+        be the value of :attr:`__path__` from the parent package. If a loader
         cannot be found, :keyword:`None` is returned.
-
-        The exact definition of a :term:`finder` can be found in :pep:`302`.
 
 
 .. class:: Loader
 
     An abstract base class for a :term:`loader`.
+    See :pep:`302` for the exact definition for a loader.
 
     .. method:: load_module(fullname)
 
@@ -118,18 +122,19 @@ are also provided to help in implementing the core ABCs.
         loaded, :exc:`ImportError` is raised, otherwise the loaded module is
         returned.
 
-        If the requested module is already exists in :data:`sys.modules`, that
+        If the requested module already exists in :data:`sys.modules`, that
         module should be used and reloaded.
-        Otherwise a new module is to be created by the loader and inserted into
-        :data:`sys.modules` before any loading begins to prevent recursion from
-        the import. If the loader inserted into a module and the load fails it
+        Otherwise the loader should create a new module and insert it into
+        :data:`sys.modules` before any loading begins, to prevent recursion
+        from the import. If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
         alone. The :func:`importlib.util.module_for_loader` decorator handles
         all of these details.
 
-        The loader is expected to set several attributes on the module when
-        adding a new module to :data:`sys.modules`.
+        The loader should set several attributes on the module.
+        (Note that some of these attributes can change when a module is
+        reloaded.)
 
         - :attr:`__name__`
             The name of the module.
@@ -139,7 +144,7 @@ are also provided to help in implementing the core ABCs.
             modules).
 
         - :attr:`__path__`
-            Set to a list of strings specifying the search path within a
+            A list of strings specifying the search path within a
             package. This attribute is not set on modules.
 
         - :attr:`__package__`
@@ -149,9 +154,9 @@ are also provided to help in implementing the core ABCs.
             for :attr:`__package__`.
 
         - :attr:`__loader__`
-            Set to the loader used to load the module.
-
-        See :pep:`302` for the exact definition for a loader.
+            The loader used to load the module.
+            (This is not set by the built-in import machinery,
+            but it should be set whenever a :term:`loader` is used.)
 
 
 .. class:: ResourceLoader
@@ -163,17 +168,20 @@ are also provided to help in implementing the core ABCs.
     .. method:: get_data(path)
 
         An abstract method to return the bytes for the data located at *path*.
-        Loaders that have a file-like storage back-end can implement this
-        abstract method to give direct access
+        Loaders that have a file-like storage back-end
+        that allows storing arbitrary data (e.g. a zip archive loader)
+        can implement this abstract method to give direct access
         to the data stored. :exc:`IOError` is to be raised if the *path* cannot
         be found. The *path* is expected to be constructed using a module's
         :attr:`__path__` attribute or an item from :attr:`__path__`.
+.. XXX What's the difference between the latter two?  (Maybe one is __file__?)
+.. XXX Could use a clarification so as not to depend on PEP 302.
 
 
 .. class:: InspectLoader
 
     An abstract base class for a :term:`loader` which implements the optional
-    :pep:`302` protocol for loaders which inspect modules.
+    :pep:`302` protocol for loaders that inspect modules.
 
     .. method:: get_code(fullname)
 
@@ -185,7 +193,7 @@ are also provided to help in implementing the core ABCs.
     .. method:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
-        a string with universal newline support. Returns :keyword:`None` if no
+        a text string with universal newlines. Returns :keyword:`None` if no
         source is available (e.g. a built-in module). Raises :exc:`ImportError`
         if the loader cannot find the module specified.
 
@@ -224,14 +232,17 @@ are also provided to help in implementing the core ABCs.
 
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_code` that creates code objects
-        from Python source code.
+        from Python source code, by requesting the source code (using
+        :meth:`source_path` and :meth:`get_data`), converting it to standard
+        newlines, and compiling it with the built-in :func:`compile` function.
 
     .. method:: get_source(fullname)
 
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_source`. Uses
         :meth:`importlib.abc.InspectLoader.get_data` and :meth:`source_path` to
-        get the source code.
+        get the source code.  It tries to guess the source encoding using
+        :func:`tokenize.detect_encoding`.
 
 
 .. class:: PyPycLoader
@@ -250,8 +261,9 @@ are also provided to help in implementing the core ABCs.
     .. method:: bytecode_path(fullname)
 
         An abstract method which returns the path to the bytecode for the
-        specified module. :keyword:`None` is returned if there is no bytecode.
-        :exc:`ImportError` is raised if the module is not found.
+        specified module, if it exists. It returns :keyword:`None`
+        if no bytecode exists (yet).
+        Raises :exc:`ImportError` if the module is not found.
 
     .. method:: write_bytecode(fullname, bytecode)
 
@@ -259,6 +271,7 @@ are also provided to help in implementing the core ABCs.
         use. If the bytecode is written, return :keyword:`True`. Return
         :keyword:`False` if the bytecode could not be written. This method
         should not be called if :data:`sys.dont_write_bytecode` is true.
+        The *bytecode* argument should be a bytes string or bytes array.
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
@@ -328,16 +341,18 @@ an :term:`importer`.
 
 .. function:: module_for_loader(method)
 
-    A :term:`decorator` for a :term:`loader` which handles selecting the proper
+    A :term:`decorator` for a :term:`loader` method,
+    to handle selecting the proper
     module object to load with. The decorated method is expected to have a call
     signature taking two positional arguments
     (e.g. ``load_module(self, module)``) for which the second argument
-    will be the module object to be used by the loader. Note that the decorator
+    will be the module **object** to be used by the loader.
+    Note that the decorator
     will not work on static methods because of the assumption of two
     arguments.
 
-    The decorated method will take in the name of the module to be loaded as
-    expected for a :term:`loader`. If the module is not found in
+    The decorated method will take in the **name** of the module to be loaded
+    as expected for a :term:`loader`. If the module is not found in
     :data:`sys.modules` then a new one is constructed with its
     :attr:`__name__` attribute set. Otherwise the module found in
     :data:`sys.modules` will be passed into the method. If an
@@ -346,17 +361,16 @@ an :term:`importer`.
     module from being in left in :data:`sys.modules`. If the module was already
     in :data:`sys.modules` then it is left alone.
 
-    Use of this decorator handles all the details of what module object a
+    Use of this decorator handles all the details of which module object a
     loader should initialize as specified by :pep:`302`.
-
 
 .. function:: set_loader(fxn)
 
-    A :term:`decorator` for a :term:`loader` to set the :attr:`__loader__`
+    A :term:`decorator` for a :term:`loader` method,
+    to set the :attr:`__loader__`
     attribute on loaded modules. If the attribute is already set the decorator
     does nothing. It is assumed that the first positional argument to the
     wrapped method is what :attr:`__loader__` should be set to.
-
 
 .. function:: set_package(fxn)
 
@@ -365,3 +379,5 @@ an :term:`importer`.
     set and has a value other than :keyword:`None` it will not be changed.
     Note that the module returned by the loader is what has the attribute
     set on and not the module found in :data:`sys.modules`.
+
+.. XXX This whole chapter desperately needs examples...
