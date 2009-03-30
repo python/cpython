@@ -255,6 +255,36 @@ Core and Builtins
 Library
 -------
 
+- Issue #5177: Multiprocessing's SocketListener class now uses 
+  socket.SO_REUSEADDR on all connections so that the user no longer needs
+  to wait 120 seconds for the socket to expire.
+
+- Adjusted _tkinter to compile without warnings when WITH_THREAD is not
+  defined (part of issue #5035).
+
+- Issue #5561: Removed the sys.version_info shortcuts from platform's
+  python_version() and python_version_tuple() since they produced different
+  output compared to previous Python versions.
+
+- Issue #1034053: unittest now supports skipping tests and expected failures.
+
+- Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
+  forever on incomplete input. That caused tarfile.open() to hang when used
+  with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
+  partial bzip2 compressed data.
+
+- Issue #5536: urllib.urlretrieve makes sure to close the file it's writing to
+  even if an exception occurs.
+
+- Issue #5381: Added object_pairs_hook to the json module.  This allows
+  OrderedDicts to be built by the decoder.
+
+- Issue #2110: Add support for thousands separator and 'n' type
+  specifier to Decimal.__format__
+
+- Fix Decimal.__format__ bug that swapped the meanings of the '<' and
+  '>' alignment characters.
+
 - Issue #1222: locale.format() bug when the thousands separator is a space
   character.
 

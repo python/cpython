@@ -1190,6 +1190,30 @@ class _TestRemoteManager(BaseTestCase):
         del queue
         manager.shutdown()
 
+class _TestManagerRestart(BaseTestCase):
+
+    def _putter(self, address, authkey):
+        manager = QueueManager(
+            address=address, authkey=authkey, serializer=SERIALIZER)
+        manager.connect()
+        queue = manager.get_queue()
+        queue.put('hello world')
+
+    def test_rapid_restart(self):
+        authkey = os.urandom(32)
+        manager = QueueManager(
+            address=('localhost', 9999), authkey=authkey, serializer=SERIALIZER)
+        manager.start()
+
+        p = self.Process(target=self._putter, args=(manager.address, authkey))
+        p.start()
+        queue = manager.get_queue()
+        self.assertEqual(queue.get(), 'hello world')
+        manager.shutdown()
+        manager = QueueManager(
+            address=('localhost', 9999), authkey=authkey, serializer=SERIALIZER)
+        manager.start()
+
 #
 #
 #
