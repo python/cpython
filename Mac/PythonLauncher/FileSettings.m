@@ -267,14 +267,14 @@
 	    [script length]-[[script lastPathComponent] length]];
     
     if (honourhashbang &&
-       (fp=fopen([script cString], "r")) &&
+       (fp=fopen([script fileSystemRepresentation], "r")) &&
        fgets(hashbangbuf, sizeof(hashbangbuf), fp) &&
        strncmp(hashbangbuf, "#!", 2) == 0 &&
        (p=strchr(hashbangbuf, '\n'))) {
             *p = '\0';
             p = hashbangbuf + 2;
             while (*p == ' ') p++;
-            cur_interp = [NSString stringWithCString: p];
+            cur_interp = [NSString stringWithUTF8String: p];
     }
     if (!cur_interp)
         cur_interp = interpreter;
