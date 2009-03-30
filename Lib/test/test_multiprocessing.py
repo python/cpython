@@ -1208,10 +1208,12 @@ class _TestManagerRestart(BaseTestCase):
         p.start()
         queue = manager.get_queue()
         self.assertEqual(queue.get(), 'hello world')
+        del queue
         manager.shutdown()
         manager = QueueManager(
             address=('localhost', 9999), authkey=authkey, serializer=SERIALIZER)
         manager.start()
+        manager.shutdown()
 
 #
 #
