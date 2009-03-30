@@ -6,9 +6,9 @@ import unittest
 from test.support import run_unittest
 
 from email.test.test_email import TestEmailBase
-from email.Charset import Charset
-from email.Header import Header, decode_header
-from email.Message import Message
+from email.charset import Charset
+from email.header import Header, decode_header
+from email.message import Message
 
 # We're compatible with Python 2.3, but it doesn't have the built-in Asian
 # codecs, so we have to skip all these tests.
