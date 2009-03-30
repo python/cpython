@@ -262,7 +262,7 @@ class TimeRE(dict):
 
     def compile(self, format):
         """Return a compiled re object for the format string."""
-        return re_compile(self.pattern(format), IGNORECASE | ASCII)
+        return re_compile(self.pattern(format), IGNORECASE)
 
 _cache_lock = _thread_allocate_lock()
 # DO NOT modify _TimeRE_cache or _regex_cache without acquiring the cache lock
@@ -294,8 +294,15 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
+
+    for index, arg in enumerate([data_string, format]):
+        if not isinstance(arg, str):
+            msg = "strptime() argument {} must be str, not {}"
+            raise TypeError(msg.format(arg, index))
+
     global _TimeRE_cache, _regex_cache
     with _cache_lock:
+
         if _getlang() != _TimeRE_cache.locale_time.lang:
             _TimeRE_cache = TimeRE()
             _regex_cache.clear()

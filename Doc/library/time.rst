@@ -358,15 +358,17 @@ The module defines the following functions and data items:
 
 .. function:: strptime(string[, format])
 
-   Parse a string representing a time according to a format.  The return  value is
-   a :class:`struct_time` as returned by :func:`gmtime` or :func:`localtime`.
+   Parse a string representing a time according to a format.  The return value
+   is a :class:`struct_time` as returned by :func:`gmtime` or
+   :func:`localtime`.
 
    The *format* parameter uses the same directives as those used by
    :func:`strftime`; it defaults to ``"%a %b %d %H:%M:%S %Y"`` which matches the
-   formatting returned by :func:`ctime`. If *string* cannot be parsed according to
-   *format*, or if it has excess data after parsing, :exc:`ValueError` is raised.
-   The default values used to fill in any missing data when more accurate values
-   cannot be inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``.
+   formatting returned by :func:`ctime`. If *string* cannot be parsed according
+   to *format*, or if it has excess data after parsing, :exc:`ValueError` is
+   raised. The default values used to fill in any missing data when more
+   accurate values cannot be inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``.
+   Both *string* and *format* must be strings.
 
    For example:
 
