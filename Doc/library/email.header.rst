@@ -72,7 +72,7 @@ Here is the :class:`Header` class description:
 
    Optional *continuation_ws* must be :rfc:`2822`\ -compliant folding whitespace,
    and is usually either a space or a hard tab character. This character will be
-   prepended to continuation lines.
+   prepended to continuation lines. *continuation_ws* defaults to a single space character (" ").
 
    Optional *errors* is passed straight through to the :meth:`append` method.
 

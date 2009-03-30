@@ -138,7 +138,7 @@ class Generator:
             else:
                 # Header's got lots of smarts, so use it.
                 header = Header(v, maxlinelen=self._maxheaderlen,
-                                header_name=h, continuation_ws='\t')
+                                header_name=h)
                 print(header.encode(), file=self._fp)
         # A blank line always separates headers from body
         print(file=self._fp)

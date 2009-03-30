@@ -769,7 +769,7 @@ Reply-To: =?utf-8?q?Britische_Regierung_gibt_gr=C3=BCnes_Licht_f=C3=BCr_Offs?=
         msg['To'] = to
         eq(msg.as_string(maxheaderlen=78), '''\
 To: "Someone Test #A" <someone@eecs.umich.edu>,<someone@eecs.umich.edu>,
-\t"Someone Test #B" <someone@umich.edu>,
+ "Someone Test #B" <someone@umich.edu>,
  "Someone Test #C" <someone@eecs.umich.edu>,
  "Someone Test #D" <someone@eecs.umich.edu>
 
@@ -852,7 +852,7 @@ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
         # snug against the field name.
         eq(msg.as_string(maxheaderlen=78), """\
 Face-1:\x20
-\tiVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
 Face-2:\x20
  iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
