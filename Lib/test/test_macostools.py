@@ -1,12 +1,14 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
-import macostools
-import Carbon.File
-import MacOS
 import os
 import sys
 from test import test_support
+
+MacOS = test_support.import_module('MacOS')
+#The following modules should exist if MacOS exists.
+import Carbon.File
+import macostools
 
 TESTFN2 = test_support.TESTFN + '2'
 

@@ -2,10 +2,6 @@
 
 from test import test_support
 
-try:
-    import posix
-except ImportError:
-    raise unittest.SkipTest, "posix is not available"
 
 import time
 import os
@@ -13,6 +9,9 @@ import pwd
 import shutil
 import unittest
 import warnings
+
+posix = test_support.import_module('posix')
+
 warnings.filterwarnings('ignore', '.* potential security risk .*',
                         RuntimeWarning)
 

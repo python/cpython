@@ -3,8 +3,10 @@
     taken mostly from the documentation.
     Roger E. Masse
 """
-from test.test_support import verbose
-import gl, GL, time
+from test.test_support import verbose, import_module
+import time
+gl = import_module('gl')
+GL = import_module('GL')
 
 glattrs = ['RGBcolor', 'RGBcursor', 'RGBmode', 'RGBrange', 'RGBwritemask',
 '__doc__', '__name__', 'addtopup', 'altgetmatrix', 'arc', 'arcf',
