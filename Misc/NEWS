@@ -1,5 +1,4 @@
-+++++++++++
-Python News
++++++++++++ Python News
 +++++++++++
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
@@ -17,6 +16,9 @@ Core and Builtins
   converted to the default filesystem encoding, causing nonsense.
 
 - Issue #5126: str.isprintable() returned False for space characters.
+
+- Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to
+  the end sys.path, for compatibility with the system install of Python.
 
 - Issue #4688: Add a heuristic so that tuples and dicts containing only
   untrackable objects are not tracked by the garbage collector. This can
