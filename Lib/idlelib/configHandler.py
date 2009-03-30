@@ -246,7 +246,7 @@ class IdleConf:
         else: #returning default, print warning
             if warn_on_default:
                 warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
-                           ' problem retrieving configration option %r\n'
+                           ' problem retrieving configuration option %r\n'
                            ' from section %r.\n'
                            ' returning default value: %r\n' %
                            (option, section, default))
