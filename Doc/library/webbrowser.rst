@@ -172,8 +172,8 @@ Here are some simple examples::
 Browser Controller Objects
 --------------------------
 
-Browser controllers provide these methods which parallel two of the module-level
-convenience functions:
+Browser controllers provide these methods which parallel three of the
+module-level convenience functions:
 
 
 .. method:: controller.open(url[, new[, autoraise=1]])
