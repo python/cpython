@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- R. David Murray was given SVN access on March 30 2009 by MvL, after
+  recommendation by BAC.
+
 - Chris Withers was given SVN access on March 8 2009 by MvL,
   after recommendation by GvR.
 
