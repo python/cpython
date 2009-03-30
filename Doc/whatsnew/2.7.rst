@@ -56,19 +56,31 @@ No release schedule has been decided yet for 2.7.
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
 
+Python 3.1
+================
+
+Much as Python 2.6 incorporated features from Python 3.0,
+version 2.7 is influenced by features from 3.1.
+
+XXX mention importlib; anything else?
+
+One porting change: the :option:`-3` switch now automatically
+enables the :option:`-Qwarn` switch that causes warnings
+about using classic division with integers and long integers.
+
 .. ========================================================================
 .. Large, PEP-level features and changes should be described here.
 .. ========================================================================
 
 PEP 372: Adding an ordered dictionary to collections
-=============================
+====================================================
 
 XXX write this
 
 Several modules will now use :class:`OrderedDict` by default.  The
 :mod:`ConfigParser` module uses :class:`OrderedDict` for the list
 of sections and the options within a section.
-The :method:`namedtuple._asdict` method returns an :class:`OrderedDict`
+The :meth:`namedtuple._asdict` method returns an :class:`OrderedDict`
 as well.
 
 
@@ -143,8 +155,11 @@ A few performance enhancements have been added:
      >>> sys.long_info
      sys.long_info(bits_per_digit=30, sizeof_digit=4)
 
-
   (Contributed by Mark Dickinson; :issue:`4258`.)
+
+  Another set of changes made long objects a few bytes smaller: 2 bytes
+  smaller on 32-bit systems and 6 bytes on 64-bit.  (:
+  (Contributed by Mark Dickinson; :issue:`5260`.)
 
 * The division algorithm for long integers has been made faster
   by tightening the inner loop, doing shifts instead of multiplications,
@@ -223,7 +238,31 @@ changes, or look through the Subversion logs for all the details.
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
   :issue:`4991`.)
 
-* The :class:`itertools`
+* New function: ``itertools.compress(*data*, *selectors*)`` takes two
+  iterators.  Elements of *data* are returned if the corresponding
+  value in *selectors* is True::
+
+    itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
+      A, C, E, F
+
+  New function: ``itertools.combinations_with_replacement(*iter*, *r*)``
+  returns all the possible *r*-length combinations of elements from the
+  iterable *iter*.  Unlike :func:`combinations`, individual elements
+  can be repeated in the generated combinations::
+
+    itertools.combinations_with_replacement('abc', 2) =>
+      ('a', 'a'), ('a', 'b'), ('a', 'c'),
+      ('b', 'b'), ('b', 'c'), ('c', 'c')
+
+  Note that elements are treated as unique depending on their position
+  in the input, not their actual values.
+
+  The :class:`itertools.count` function now has a *step* argument that
+  allows incrementing by values other than 1.  :func:`count` also
+  now allows keyword arguments, and using non-integer values such as
+  floats or :class:`Decimal` instances.  (Implemented by Raymond
+  Hettinger; :issue:`5032`.)
+
 * The :mod:`json` module was upgraded to version 2.0.9 of the
   simplejson package, which includes a C extension that makes
   encoding and decoding faster.
@@ -265,6 +304,9 @@ changes, or look through the Subversion logs for all the details.
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
+
+  :mod:`zipfile` now supports archiving empty directories and
+  extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
