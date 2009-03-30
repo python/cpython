@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5261: Patch multiprocessing's semaphore.c to support context
+  manager use: "with multiprocessing.Lock()" works now.
+
 - Issue #5177: Multiprocessing's SocketListener class now uses 
   socket.SO_REUSEADDR on all connections so that the user no longer needs
   to wait 120 seconds for the socket to expire.

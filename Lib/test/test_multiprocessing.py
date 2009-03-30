@@ -546,6 +546,10 @@ class _TestLock(BaseTestCase):
         self.assertEqual(lock.release(), None)
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
+    def test_lock_context(self):
+        with self.Lock():
+            pass
+
 
 class _TestSemaphore(BaseTestCase):
 
