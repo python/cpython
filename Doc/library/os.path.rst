@@ -189,7 +189,7 @@ applications should use string objects to access all files.
 
 .. function:: normcase(path)
 
-   Normalize the case of a pathname.  On Unix, this returns the path unchanged; on
+   Normalize the case of a pathname.  On Unix and MacOSX, this returns the path unchanged; on
    case-insensitive filesystems, it converts the path to lowercase.  On Windows, it
    also converts forward slashes to backward slashes.
 
