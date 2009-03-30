@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5236: Change time.strptime() to only take strings. Didn't work with
+  bytes already but the failure was non-obvious.
+
 - Issue #5177: Multiprocessing's SocketListener class now uses
   socket.SO_REUSEADDR on all connections so that the user no longer needs
   to wait 120 seconds for the socket to expire.

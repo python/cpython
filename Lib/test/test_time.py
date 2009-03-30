@@ -116,6 +116,11 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
+    def test_strptime_bytes(self):
+        # Make sure only strings are accepted as arguments to strptime.
+        self.assertRaises(TypeError, time.strptime, b'2009', "%Y")
+        self.assertRaises(TypeError, time.strptime, '2009', b'%Y')
+
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
