@@ -17,6 +17,11 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Several developers of alternative Python implementations where
+  given access for test suite and library adaptions by MvL:
+  Allison Randal (Parrot), Michael Foord (IronPython),
+  Jim Baker, Philip Jenvey, and Frank Wierzbicki (all Jython).
+
 - R. David Murray was given SVN access on March 30 2009 by MvL, after
   recommendation by BAC.
 
