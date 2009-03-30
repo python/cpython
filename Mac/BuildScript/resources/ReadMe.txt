@@ -19,9 +19,11 @@ environment, IDLE, plus a set of pre-built extension modules
 that open up specific Macintosh technologies to Python programs.
 
 The installer puts the applications in "Python $VERSION" 
-in your Applications folder, command-line tools in
-/usr/local/bin and the underlying machinery in
-$PYTHONFRAMEWORKINSTALLDIR.
+in your Applications folder, and the underlying machinery in
+$PYTHONFRAMEWORKINSTALLDIR. It can optionally place
+links to the command-line tools in /usr/local as well,
+by default you have to add the "bin" directory inside
+the framework to you shell's search path.
 
 More information on MacPython can be found at
 http://www.python.org/download/mac/.
