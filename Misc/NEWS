@@ -53,6 +53,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5400: Added patch for multiprocessing on netbsd compilation/support
+
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
 - Issue #5261: Patch multiprocessing's semaphore.c to support context
