@@ -34,7 +34,7 @@ somecode%(sep)sdoc.dat
 somecode%(sep)sdoc.txt
 """
 
-class sdistTestCase(support.LoggingSilencer, PyPIRCCommandTestCase):
+class sdistTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         # PyPIRCCommandTestCase creates a temp dir already

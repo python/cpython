@@ -47,7 +47,9 @@ password:xxx
 """
 
 
-class PyPIRCCommandTestCase(support.TempdirManager, unittest.TestCase):
+class PyPIRCCommandTestCase(support.TempdirManager,
+                            support.LoggingSilencer,
+                            unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
