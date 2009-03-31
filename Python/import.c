@@ -3114,6 +3114,7 @@ imp_load_source(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	m = load_source_module(name, pathname, fp);
+	PyMem_Free(pathname);
 	fclose(fp);
 	return m;
 }
