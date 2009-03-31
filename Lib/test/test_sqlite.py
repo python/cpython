@@ -1,7 +1,7 @@
 import unittest
 from test.test_support import run_unittest, import_module
 
-#Skip test of _sqlite3 module not installed
+# Skip test if _sqlite3 module was not built.
 import_module('_sqlite3')
 
 from sqlite3.test import (dbapi, types, userfunctions, py25tests,
