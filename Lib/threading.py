@@ -466,9 +466,8 @@ class Thread(_Verbose):
             raise RuntimeError("thread already started")
         if __debug__:
             self._note("%s.start(): starting thread", self)
-        _active_limbo_lock.acquire()
-        _limbo[self] = self
-        _active_limbo_lock.release()
+        with _active_limbo_lock:
+            _limbo[self] = self
         _start_new_thread(self.__bootstrap, ())
         self.__started.wait()
 
@@ -505,10 +504,9 @@ class Thread(_Verbose):
         try:
             self.__ident = _get_ident()
             self.__started.set()
-            _active_limbo_lock.acquire()
-            _active[self.__ident] = self
-            del _limbo[self]
-            _active_limbo_lock.release()
+            with _active_limbo_lock:
+                _active[self.__ident] = self
+                del _limbo[self]
             if __debug__:
                 self._note("%s.__bootstrap(): thread started", self)
 
@@ -735,9 +733,8 @@ class _MainThread(Thread):
     def __init__(self):
         Thread.__init__(self, name="MainThread")
         self._Thread__started.set()
-        _active_limbo_lock.acquire()
-        _active[_get_ident()] = self
-        _active_limbo_lock.release()
+        with _active_limbo_lock:
+            _active[_get_ident()] = self
 
     def _set_daemon(self):
         return False
@@ -781,9 +778,8 @@ class _DummyThread(Thread):
         del self._Thread__block
 
         self._Thread__started.set()
-        _active_limbo_lock.acquire()
-        _active[_get_ident()] = self
-        _active_limbo_lock.release()
+        with _active_limbo_lock:
+            _active[_get_ident()] = self
 
     def _set_daemon(self):
         return True
@@ -804,18 +800,14 @@ def currentThread():
 current_thread = currentThread
 
 def activeCount():
-    _active_limbo_lock.acquire()
-    count = len(_active) + len(_limbo)
-    _active_limbo_lock.release()
-    return count
+    with _active_limbo_lock:
+        return len(_active) + len(_limbo)
 
 active_count = activeCount
 
 def enumerate():
-    _active_limbo_lock.acquire()
-    active = _active.values() + _limbo.values()
-    _active_limbo_lock.release()
-    return active
+    with _active_limbo_lock:
+        return _active.values() + _limbo.values()
 
 from thread import stack_size
 
