@@ -78,6 +78,10 @@ the same library that the Python runtime is using.
    there was an error, there is no way to get the exception information. For the
    meaning of *flags*, see below.
 
+   Note that if an otherwise unhandled :exc:`SystemError` is raised, this
+   function will not return ``-1``, but exit the process, as long as
+   ``Py_InspectFlag`` is not set.
+
 
 .. cfunction:: int PyRun_SimpleFile(FILE *fp, const char *filename)
 
