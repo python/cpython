@@ -92,6 +92,10 @@ Core and Builtins
 Library
 -------
 
+- Fix and properly document the multiprocessing module's logging
+  support, expose the internal levels and provide proper usage
+  examples.
+
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
 - Issue #5261: Patch multiprocessing's semaphore.c to support context
