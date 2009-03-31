@@ -702,7 +702,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 			ste->ste_child_free = 1;
 	}
 
-	PyDict_Update(newfree, allfree);
+	if (PyDict_Update(newfree, allfree) < 0)
+		goto error;
 	if (ste->ste_type == FunctionBlock && !analyze_cells(scope, newfree))
 		goto error;
 	if (!update_symbols(ste->ste_symbols, scope, bound, newfree,
