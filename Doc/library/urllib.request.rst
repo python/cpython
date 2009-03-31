@@ -3,7 +3,7 @@
 
 .. module:: urllib.request
    :synopsis: Next generation URL opening library.
-.. moduleauthor:: Jeremy Hylton <jhylton@users.sourceforge.net>
+.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
 .. sectionauthor:: Moshe Zadka <moshez@users.sourceforge.net>
 
 
@@ -16,26 +16,28 @@ The :mod:`urllib.request` module defines the following functions:
 
 .. function:: urlopen(url[, data][, timeout])
 
-   Open the URL *url*, which can be either a string or a :class:`Request` object.
+   Open the URL *url*, which can be either a string or a
+   :class:`Request` object.
 
-   *data* may be a string specifying additional data to send to the server, or
-   ``None`` if no such data is needed.  Currently HTTP requests are the only ones
-   that use *data*; the HTTP request will be a POST instead of a GET when the
-   *data* parameter is provided.  *data* should be a buffer in the standard
+   *data* may be a string specifying additional data to send to the
+   server, or ``None`` if no such data is needed.  Currently HTTP
+   requests are the only ones that use *data*; the HTTP request will
+   be a POST instead of a GET when the *data* parameter is provided.
+   *data* should be a buffer in the standard
    :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.parse.urlencode` function takes a mapping or sequence
    of 2-tuples and returns a string in this format.
 
-   The optional *timeout* parameter specifies a timeout in seconds for blocking
-   operations like the connection attempt (if not specified, the global default
-   timeout setting will be used).  This actually only works for HTTP, HTTPS,
-   FTP and FTPS connections.
+   The optional *timeout* parameter specifies a timeout in seconds for
+   blocking operations like the connection attempt (if not specified,
+   the global default timeout setting will be used).  This actually
+   only works for HTTP, HTTPS, FTP and FTPS connections.
 
    This function returns a file-like object with two additional methods from
    the :mod:`urllib.response` module
 
-   * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
-     determine if a redirect was followed
+   * :meth:`geturl` --- return the URL of the resource retrieved,
+     commonly used to determine if a redirect was followed
 
    * :meth:`info` --- return the meta-information of the page, such as headers,
      in the form of an ``http.client.HTTPMessage`` instance (see `Quick
@@ -51,7 +53,6 @@ The :mod:`urllib.request` module defines the following functions:
    discontinued; :func:`urlopen` corresponds to the old ``urllib2.urlopen``.
    Proxy handling, which was done by passing a dictionary parameter to
    ``urllib.urlopen``, can be obtained by using :class:`ProxyHandler` objects.
-
 
 .. function:: install_opener(opener)
 
@@ -167,37 +168,42 @@ The following classes are provided:
 
    *url* should be a string containing a valid URL.
 
-   *data* may be a string specifying additional data to send to the server, or
-   ``None`` if no such data is needed.  Currently HTTP requests are the only ones
-   that use *data*; the HTTP request will be a POST instead of a GET when the
-   *data* parameter is provided.  *data* should be a buffer in the standard
+   *data* may be a string specifying additional data to send to the
+   server, or ``None`` if no such data is needed.  Currently HTTP
+   requests are the only ones that use *data*; the HTTP request will
+   be a POST instead of a GET when the *data* parameter is provided.
+   *data* should be a buffer in the standard
    :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.parse.urlencode` function takes a mapping or sequence
    of 2-tuples and returns a string in this format.
 
-   *headers* should be a dictionary, and will be treated as if :meth:`add_header`
-   was called with each key and value as arguments.  This is often used to "spoof"
-   the ``User-Agent`` header, which is used by a browser to identify itself --
-   some HTTP servers only allow requests coming from common browsers as opposed
-   to scripts.  For example, Mozilla Firefox may identify itself as ``"Mozilla/5.0
-   (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while :mod:`urllib`'s
-   default user agent string is ``"Python-urllib/2.6"`` (on Python 2.6).
+   *headers* should be a dictionary, and will be treated as if
+   :meth:`add_header` was called with each key and value as arguments.
+   This is often used to "spoof" the ``User-Agent`` header, which is
+   used by a browser to identify itself -- some HTTP servers only
+   allow requests coming from common browsers as opposed to scripts.
+   For example, Mozilla Firefox may identify itself as ``"Mozilla/5.0
+   (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while
+   :mod:`urllib`'s default user agent string is
+   ``"Python-urllib/2.6"`` (on Python 2.6).
 
-   The final two arguments are only of interest for correct handling of third-party
-   HTTP cookies:
+   The final two arguments are only of interest for correct handling
+   of third-party HTTP cookies:
 
-   *origin_req_host* should be the request-host of the origin transaction, as
-   defined by :rfc:`2965`.  It defaults to ``http.cookiejar.request_host(self)``.
-   This is the host name or IP address of the original request that was
-   initiated by the user.  For example, if the request is for an image in an
-   HTML document, this should be the request-host of the request for the page
+   *origin_req_host* should be the request-host of the origin
+   transaction, as defined by :rfc:`2965`.  It defaults to
+   ``http.cookiejar.request_host(self)``.  This is the host name or IP
+   address of the original request that was initiated by the user.
+   For example, if the request is for an image in an HTML document,
+   this should be the request-host of the request for the page
    containing the image.
 
-   *unverifiable* should indicate whether the request is unverifiable, as defined
-   by RFC 2965.  It defaults to False.  An unverifiable request is one whose URL
-   the user did not have the option to approve.  For example, if the request is for
-   an image in an HTML document, and the user had no option to approve the
-   automatic fetching of the image, this should be true.
+   *unverifiable* should indicate whether the request is unverifiable,
+   as defined by RFC 2965.  It defaults to False.  An unverifiable
+   request is one whose URL the user did not have the option to
+   approve.  For example, if the request is for an image in an HTML
+   document, and the user had no option to approve the automatic
+   fetching of the image, this should be true.
 
 .. class:: URLopener([proxies[, **x509]])
 
@@ -441,9 +447,41 @@ The following classes are provided:
 Request Objects
 ---------------
 
-The following methods describe all of :class:`Request`'s public interface, and
-so all must be overridden in subclasses.
+The following methods describe :class:`Request`'s public interface,
+and so all may be overridden in subclasses.  It also defines several
+public attributes that can be used by clients to inspect the parsed
+request.
 
+.. attribute:: Request.full_url
+
+   The original URL passed to the constructor.
+
+.. attribute:: Request.type
+
+   The URI scheme.
+
+.. attribute:: Request.host
+
+   The URI authority, typically a host, but may also contain a port
+   separated by a colon.
+
+.. attribute:: Request.origin_req_host
+
+   The original host for the request, without port.
+
+.. attribute:: Request.selector
+
+   The URI path.  If the :class:`Request` uses a proxy, then selector
+   will be the full url that is passed to the proxy.
+
+.. attribute:: Request.data
+
+   The entity body for the request, or None if not specified.
+
+.. attribute:: Request.unverifiable
+
+   boolean, indicates whether the request is unverifiable as defined
+   by RFC 2965.
 
 .. method:: Request.add_data(data)
 
