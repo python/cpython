@@ -3023,13 +3023,21 @@ get_file(char *pathname, PyObject *fob, char *mode)
 		int fd = PyObject_AsFileDescriptor(fob);
 		if (fd == -1)
 			return NULL;
-		/* XXX This will leak a FILE struct. Fix this!!!!
-		   (But it doesn't leak a file descrioptor!) */
+		if (!_PyVerify_fd(fd))
+			goto error;
+		/* the FILE struct gets a new fd, so that it can be closed
+		 * independently of the file descriptor given
+		 */
+		fd = dup(fd);
+		if (fd == -1)
+			goto error;
 		fp = fdopen(fd, mode);
 	}
-	if (fp == NULL)
-		PyErr_SetFromErrno(PyExc_IOError);
-	return fp;
+	if (fp)
+		return fp;
+error:
+	PyErr_SetFromErrno(PyExc_IOError);
+	return NULL;
 }
 
 static PyObject *
@@ -3051,8 +3059,7 @@ imp_load_compiled(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	m = load_compiled_module(name, pathname, fp);
-	if (fob == NULL)
-		fclose(fp);
+	fclose(fp);
 	PyMem_Free(pathname);
 	return m;
 }
@@ -3081,6 +3088,8 @@ imp_load_dynamic(PyObject *self, PyObject *args)
 	}
 	m = _PyImport_LoadDynamicModule(name, pathname, fp);
 	PyMem_Free(pathname);
+	if (fp)
+		fclose(fp);
 	return m;
 }
 
@@ -3105,8 +3114,7 @@ imp_load_source(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	m = load_source_module(name, pathname, fp);
-	if (fob == NULL)
-		fclose(fp);
+	fclose(fp);
 	return m;
 }
 
@@ -3150,6 +3158,8 @@ imp_load_module(PyObject *self, PyObject *args)
 	} 
 	ret = load_module(name, fp, pathname, type, NULL);
 	PyMem_Free(pathname);
+	if (fp)
+		fclose(fp);
 	return ret;
 }
 
