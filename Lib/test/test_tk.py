@@ -1,8 +1,12 @@
 import os
 import sys
 import unittest
-import Tkinter
 from test import test_support
+
+# Skip test if _tkinter wasn't built.
+test_support.import_module('_tkinter')
+
+import Tkinter
 
 try:
     Tkinter.Button()
