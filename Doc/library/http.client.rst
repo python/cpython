@@ -59,8 +59,8 @@ The module provides the following classes:
 
 .. class:: HTTPResponse(sock[, debuglevel=0][, strict=0])
 
-   Class whose instances are returned upon successful connection.  Not instantiated
-   directly by user.
+   Class whose instances are returned upon successful connection.  Not
+   instantiated directly by user.
 
 
 The following exceptions are raised as appropriate:
@@ -433,7 +433,10 @@ also send your request step by step, by using the four functions below.
 HTTPResponse Objects
 --------------------
 
-:class:`HTTPResponse` instances have the following methods and attributes:
+An :class:`HTTPResponse` instance wraps the HTTP response from the
+server.  It provides access to the request headers and the entity
+body.  The response is an iterable object and can be used in a with
+statement.
 
 
 .. method:: HTTPResponse.read([amt])
@@ -454,7 +457,9 @@ HTTPResponse Objects
 
 .. attribute:: HTTPResponse.msg
 
-   An :class:`email.message.Message` instance containing the response headers.
+   A :class:`http.client.HTTPMessage` instance containing the response
+   headers.  :class:`http.client.HTTPMessage` is a subclass of
+   :class:`email.message.Message`.
 
 
 .. attribute:: HTTPResponse.version
@@ -470,6 +475,12 @@ HTTPResponse Objects
 .. attribute:: HTTPResponse.reason
 
    Reason phrase returned by server.
+
+
+.. attribute:: HTTPResponse.debuglevel
+
+   A debugging hook.  If `debuglevel` is greater than zero, messages
+   will be printed to stdout as the response is read and parsed.
 
 
 Examples
@@ -505,3 +516,14 @@ Here is an example session that shows how to ``POST`` requests::
    >>> data = response.read()
    >>> conn.close()
 
+
+.. _httpmessage-objects:
+
+HTTPMessage Objects
+-------------------
+
+An :class:`http.client.HTTPMessage` instance holds the headers from an
+HTTP response.  It is implemented using the
+:class:`email.message.Message' class.
+
+XXX Define the methods that clients can depend upon between versions.
