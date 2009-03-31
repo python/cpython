@@ -613,6 +613,9 @@ Test cases
       Signal a test failure if *expr* is false; the explanation for the error
       will be *msg* if given, otherwise it will be :const:`None`.
 
+      .. deprecated:: 2.7
+         :meth:`failUnless`.
+
 
    .. method:: assertEqual(first, second[, msg])
                failUnlessEqual(first, second[, msg])
@@ -632,6 +635,9 @@ Test cases
       .. versionchanged:: 2.7
          Added the automatic calling of type specific equality function.
 
+      .. deprecated:: 2.7
+         :meth:`failUnlessEqual`.
+
 
    .. method:: assertNotEqual(first, second[, msg])
                failIfEqual(first, second[, msg])
@@ -642,6 +648,9 @@ Test cases
       the comparison as the first parameter to :meth:`assertTrue` is that the
       default value for *msg* can be computed to include representations of both
       *first* and *second*.
+
+      .. deprecated:: 2.7
+         :meth:`failIfEqual`.
 
 
    .. method:: assertAlmostEqual(first, second[, places[, msg]])
@@ -656,6 +665,9 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      .. deprecated:: 2.7
+         :meth:`failUnlessAlmostEqual`.
+
 
    .. method:: assertNotAlmostEqual(first, second[, places[, msg]])
                failIfAlmostEqual(first, second[, places[, msg]])
@@ -668,6 +680,9 @@ Test cases
       comparing a given number of significant digits. If the values do not
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
+
+      .. deprecated:: 2.7
+         :meth:`failIfAlmostEqual`.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -808,6 +823,9 @@ Test cases
       .. versionchanged:: 2.7
          Added the ability to use :meth:`assertRaises` as a context manager.
 
+      .. deprecated:: 2.7
+         :meth:`failUnlessRaises`.
+
 
    .. method:: assertRaisesRegexp(exception, regexp[, callable, ...])
 
@@ -848,6 +866,9 @@ Test cases
       The inverse of the :meth:`assertTrue` method is the :meth:`assertFalse` method.
       This signals a test failure if *expr* is true, with *msg* or :const:`None`
       for the error message.
+
+      .. deprecated:: 2.7
+         :meth:`failIf`.
 
 
    .. method:: fail([msg])
