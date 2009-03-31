@@ -8,12 +8,9 @@
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
 
-
-
 This module provides regular expression matching operations similar to
 those found in Perl. Both patterns and strings to be searched can be
-Unicode strings as well as 8-bit strings.  The :mod:`re` module is
-always available.
+Unicode strings as well as 8-bit strings.
 
 Regular expressions use the backslash character (``'\'``) to indicate
 special forms or to allow special characters to be used without invoking
@@ -42,9 +39,6 @@ fine-tuning parameters.
       Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
       second edition of the book no longer covers Python at all, but the first
       edition covered writing good regular expression patterns in great detail.
-
-   `Kodos <http://kodos.sf.net/>`_
-      is a graphical regular expression debugger written in Python.
 
 
 .. _re-syntax:
