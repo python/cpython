@@ -1,10 +1,13 @@
-# test asynchat -- requires threading
+# test asynchat
 
-import _thread as thread # If this fails, we can't test this module
+from test import support
+
+# If this fails, the test will be skipped.
+thread = support.import_module('_thread')
+
 import asyncore, asynchat, socket, threading, time
 import unittest
 import sys
-from test import support
 
 HOST = support.HOST
 SERVER_QUIT = b'QUIT\n'

@@ -12,6 +12,7 @@ import platform
 import shutil
 import warnings
 import unittest
+import importlib
 
 __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -24,7 +25,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "TransientResource", "transient_internet", "run_with_locale",
            "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
            "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
-           "reap_children", "cpython_only", "check_impl_detail"]
+           "reap_children", "cpython_only", "check_impl_detail", "get_attribute"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -41,18 +42,31 @@ class ResourceDenied(unittest.SkipTest):
     """
 
 def import_module(name, deprecated=False):
-    """Import the module to be tested, raising SkipTest if it is not
-    available."""
+    """Import and return the module to be tested, raising SkipTest if
+    it is not available.
+
+    If deprecated is True, any module or package deprecation messages
+    will be suppressed."""
     with warnings.catch_warnings():
         if deprecated:
             warnings.filterwarnings("ignore", ".+ (module|package)",
                                     DeprecationWarning)
         try:
-            module = __import__(name, level=0)
-        except ImportError:
-            raise unittest.SkipTest("No module named " + name)
+            module = importlib.import_module(name)
+        except ImportError as msg:
+            raise unittest.SkipTest(str(msg))
         else:
             return module
+
+def get_attribute(obj, name):
+    """Get an attribute, raising SkipTest if AttributeError is raised."""
+    try:
+        attribute = getattr(obj, name)
+    except AttributeError:
+        raise unittest.SkipTest("module %s has no attribute %s" % (
+            obj.__name__, name))
+    else:
+        return attribute
 
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None     # Flag set to [] by regrtest.py

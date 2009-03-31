@@ -17,20 +17,19 @@ import copy
 import socket
 import random
 import logging
+import test.support
 
 
-# Work around broken sem_open implementations
-try:
-    import multiprocessing.synchronize
-except ImportError as e:
-    raise unittest.SkipTest(e)
+# Skip tests if _multiprocessing wasn't built.
+_multiprocessing = test.support.import_module('_multiprocessing')
+# Skip tests if sem_open implementation is broken.
+test.support.import_module('multiprocessing.synchronize')
 
 import multiprocessing.dummy
 import multiprocessing.connection
 import multiprocessing.managers
 import multiprocessing.heap
 import multiprocessing.pool
-import _multiprocessing
 
 from multiprocessing import util
 

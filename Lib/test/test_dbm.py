@@ -3,9 +3,11 @@
 
 import os
 import unittest
-import dbm
 import glob
 import test.support
+
+# Skip tests if dbm module doesn't exist.
+dbm = test.support.import_module('dbm')
 
 _fname = test.support.TESTFN
 

@@ -628,7 +628,7 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             print(test, "skipped --", msg)
             sys.stdout.flush()
         return -2
-    except (ImportError, unittest.SkipTest) as msg:
+    except unittest.SkipTest as msg:
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()

@@ -1,7 +1,9 @@
-from test.support import TESTFN, run_unittest
-import mmap
+from test.support import TESTFN, run_unittest, import_module
 import unittest
 import os, re, itertools
+
+# Skip test if we can't import mmap.
+mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 

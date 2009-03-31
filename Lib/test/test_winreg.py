@@ -2,11 +2,14 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
-from winreg import *
 import os, sys
 import unittest
-
 from test import support
+
+# Do this first so test will be skipped if module doesn't exist
+support.import_module('winreg')
+# Now import everything
+from winreg import *
 
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 

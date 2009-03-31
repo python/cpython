@@ -1,6 +1,10 @@
 import os
 import sys
 from test import support
+
+# Skip this test if _tkinter does not exist.
+support.import_module('_tkinter')
+
 from tkinter.test import runtktests
 
 def test_main():
