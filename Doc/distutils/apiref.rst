@@ -1758,8 +1758,16 @@ This module supplies the abstract base class :class:`Command`.
 .. module:: distutils.command.bdist_msi
    :synopsis: Build a binary distribution as a Windows MSI file
 
+.. class:: bdist_msi(Command)
 
-.. % todo
+   Builds a `Windows Installer`_ (.msi) binary package.
+
+   .. _Windows Installer: http://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
+
+   In most cases, the ``bdist_msi`` installer is a better choice than the
+   ``bdist_wininst`` installer, because it provides better support for
+   Win64 platforms, allows administrators to perform non-interactive
+   installations, and allows installation through group policies.
 
 
 :mod:`distutils.command.bdist_rpm` --- Build a binary distribution as a Redhat RPM and SRPM
