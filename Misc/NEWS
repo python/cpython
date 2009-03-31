@@ -92,6 +92,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5400: Added patch for multiprocessing on netbsd compilation/support
+
 - Fix and properly document the multiprocessing module's logging
   support, expose the internal levels and provide proper usage
   examples.
