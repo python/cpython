@@ -43,8 +43,11 @@ class ResourceDenied(unittest.SkipTest):
     """
 
 def import_module(name, deprecated=False):
-    """Import the module to be tested, raising SkipTest if it is not
-    available."""
+    """Import and return the module to be tested, raising SkipTest if
+    it is not available.
+
+    If deprecated is True, any module or package deprecation messages
+    will be suppressed."""
     with warnings.catch_warnings():
         if deprecated:
             warnings.filterwarnings("ignore", ".+ (module|package)",
@@ -56,20 +59,15 @@ def import_module(name, deprecated=False):
         else:
             return module
 
-def get_attribute(module, name, deprecated=False):
-    """Get an attribute from the module, raising SkipTest if it is
-    not available."""
-    with warnings.catch_warnings():
-        if deprecated:
-            warnings.filterwarnings("ignore", ".+ (module|package)",
-                                    DeprecationWarning)
-        try:
-            attribute = getattr(module, name)
-        except AttributeError:
-            raise unittest.SkipTest("module %s has no attribute %s" % (
-                module.__name__, name))
-        else:
-            return attribute
+def get_attribute(obj, name):
+    """Get an attribute, raising SkipTest if AttributeError is raised."""
+    try:
+        attribute = getattr(obj, name)
+    except AttributeError:
+        raise unittest.SkipTest("module %s has no attribute %s" % (
+            obj.__name__, name))
+    else:
+        return attribute
 
 
 verbose = 1              # Flag set to 0 by regrtest.py
