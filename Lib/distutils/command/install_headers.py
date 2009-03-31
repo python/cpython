@@ -8,6 +8,7 @@ __revision__ = "$Id$"
 from distutils.core import Command
 
 
+# XXX force is never used
 class install_headers(Command):
 
     description = "install C/C++ header files"
