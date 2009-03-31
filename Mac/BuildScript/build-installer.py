@@ -1018,7 +1018,18 @@ def main():
 
     # Now build python itself
     buildPython()
+
+    # And then build the documentation
+    # Remove the Deployment Target from the shell
+    # environment, it's no longer needed and
+    # an unexpected build target can cause problems
+    # when Sphinx and its dependencies need to
+    # be (re-)installed.
+    del os.environ['MACOSX_DEPLOYMENT_TARGET']
     buildPythonDocs()
+
+
+    # Prepare the applications folder
     fn = os.path.join(WORKDIR, "_root", "Applications",
                 "Python %s"%(getVersion(),), "Update Shell Profile.command")
     patchScript("scripts/postflight.patch-profile",  fn)
