@@ -396,7 +396,7 @@ class SGMLParser(markupbase.ParserBase):
             n = int(name)
         except ValueError:
             return
-        if not 0 <= n <= 255:
+        if not 0 <= n <= 127:
             return
         return self.convert_codepoint(n)
 

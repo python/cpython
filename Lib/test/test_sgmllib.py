@@ -373,6 +373,15 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             if len(data) != CHUNK:
                 break
 
+    def test_only_decode_ascii(self):
+        # SF bug #1651995, make sure non-ascii character references are not decoded
+        s = '<signs exclamation="&#33" copyright="&#169" quoteleft="&#8216;">'
+        self.check_events(s, [
+            ('starttag', 'signs',
+             [('exclamation', '!'), ('copyright', '&#169'),
+              ('quoteleft', '&#8216;')]),
+            ])
+
     # XXX These tests have been disabled by prefixing their names with
     # an underscore.  The first two exercise outstanding bugs in the
     # sgmllib module, and the third exhibits questionable behavior
