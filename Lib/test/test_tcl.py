@@ -2,8 +2,11 @@
 
 import unittest
 import os
-import _tkinter
 from test import test_support
+
+# Skip this test if the _tkinter module wasn't built.
+_tkinter = test_support.import_module('_tkinter')
+
 from Tkinter import Tcl
 from _tkinter import TclError
 

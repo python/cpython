@@ -3,8 +3,10 @@ import sys
 import unittest
 from test import test_support
 
-ttk = test_support.import_module('ttk')
-#If ttk exists _tkinter must exist.
+# Skip this test if _tkinter wasn't built.
+test_support.import_module('_tkinter')
+
+import ttk
 from _tkinter import TclError
 
 try:

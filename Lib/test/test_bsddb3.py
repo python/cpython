@@ -10,8 +10,8 @@ import unittest
 from test.test_support import (requires, verbose, run_unittest, unlink, rmtree,
     import_module)
 
-#Skip test if bsddb cannot import _bsddb.
-import_module('bsddb')
+# Skip test if _bsddb module was not built.
+import_module('_bsddb')
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.

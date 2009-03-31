@@ -2,6 +2,9 @@ import os
 import sys
 from test import test_support
 
+# Skip this test if _tkinter does not exist.
+test_support.import_module('_tkinter')
+
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, '..', 'lib-tk', 'test'))
 if lib_tk_test not in sys.path:

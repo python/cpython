@@ -51,8 +51,8 @@ def import_module(name, deprecated=False):
                                     DeprecationWarning)
         try:
             module = importlib.import_module(name)
-        except ImportError:
-            raise unittest.SkipTest("No module named " + name)
+        except ImportError, msg:
+            raise unittest.SkipTest(str(msg))
         else:
             return module
 

@@ -5,9 +5,9 @@ import os, sys
 import unittest
 from test import test_support
 
-#Do this first so test will be skipped if module doesn't exist
+# Do this first so test will be skipped if module doesn't exist
 test_support.import_module('_winreg')
-#Now import everything
+# Now import everything
 from _winreg import *
 
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"

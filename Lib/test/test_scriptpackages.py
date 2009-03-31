@@ -3,7 +3,8 @@
 import unittest
 from test import test_support
 
-aetools = test_support.import_module('aetools')
+# Skip this test if aetools does not exist.
+test_support.import_module('aetools')
 
 class TestScriptpackages(unittest.TestCase):
 
