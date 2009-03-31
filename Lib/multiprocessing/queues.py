@@ -6,7 +6,7 @@
 # Copyright (c) 2006-2008, R Oudkerk --- see COPYING.txt
 #
 
-__all__ = ['Queue', 'SimpleQueue']
+__all__ = ['Queue', 'SimpleQueue', 'JoinableQueue']
 
 import sys
 import os
