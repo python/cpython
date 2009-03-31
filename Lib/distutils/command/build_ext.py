@@ -478,7 +478,7 @@ class build_ext (Command):
         for ext in self.extensions:
             try:
                 self.build_extension(ext)
-            except (CCompilerError, DistutilsError), e:
+            except (CCompilerError, DistutilsError, CompileError), e:
                 if not ext.optional:
                     raise
                 self.warn('building extension "%s" failed: %s' %
