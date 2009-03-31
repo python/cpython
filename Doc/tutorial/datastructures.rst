@@ -405,7 +405,7 @@ This is called, appropriately enough, *sequence unpacking* and works for any
 sequence on the right-hand side.  Sequence unpacking requires the list of
 variables on the left to have the same number of elements as the length of the
 sequence.  Note that multiple assignment is really just a combination of tuple
-packing and sequence unpacking!
+packing and sequence unpacking.
 
 .. XXX Add a bit on the difference between tuples and lists.
 
