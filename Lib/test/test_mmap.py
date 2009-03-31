@@ -1,7 +1,7 @@
 from test.test_support import TESTFN, run_unittest
 import mmap
 import unittest
-import os, re
+import os, re, itertools
 
 PAGESIZE = mmap.PAGESIZE
 
@@ -350,9 +350,21 @@ class MmapTests(unittest.TestCase):
                     self.assertEqual(m[:], expected)
                     m.close()
 
-        # should not crash
-        m = mmap.mmap(-1, 1)
-        self.assertRaises(ValueError, m.move, 1, 1, -1)
+        # segfault test (Issue 5387)
+        m = mmap.mmap(-1, 100)
+        offsets = [-100, -1, 0, 1, 100]
+        for source, dest, size in itertools.product(offsets, offsets, offsets):
+            try:
+                m.move(source, dest, size)
+            except ValueError:
+                pass
+        self.assertRaises(ValueError, m.move, -1, -1, -1)
+        self.assertRaises(ValueError, m.move, -1, -1, 0)
+        self.assertRaises(ValueError, m.move, -1, 0, -1)
+        self.assertRaises(ValueError, m.move, 0, -1, -1)
+        self.assertRaises(ValueError, m.move, -1, 0, 0)
+        self.assertRaises(ValueError, m.move, 0, -1, 0)
+        self.assertRaises(ValueError, m.move, 0, 0, -1)
         m.close()
 
     def test_anonymous(self):
