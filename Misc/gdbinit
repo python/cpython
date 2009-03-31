@@ -138,3 +138,16 @@ define pystackv
     end
     select-frame 0
 end
+
+# generally useful macro to print a Unicode string
+def pu
+  set $uni = $arg0 
+  set $i = 0
+  while (*$uni && $i++<100)
+    if (*$uni < 0x80) 
+      print *(char*)$uni++
+    else
+      print /x *(short*)$uni++
+    end
+  end
+end
