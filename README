@@ -248,24 +248,9 @@ longer:
 - Systems using --with-dl-dld
 - Systems using --without-universal-newlines
 - MacOS 9
-
-The following systems are still supported in Python 2.5, but
-support will be dropped in 2.6:
 - Systems using --with-wctype-functions
 - Win9x, WinME
 
-Warning on install in Windows 98 and Windows Me
------------------------------------------------
-
-Following Microsoft's closing of Extended Support for
-Windows 98/ME (July 11, 2006), Python 2.6 will stop
-supporting these platforms. Python development and
-maintainability becomes easier (and more reliable) when
-platform specific code targeting OSes with few users
-and no dedicated expert developers is taken out. The
-vendor also warns that the OS versions listed above
-"can expose customers to security risks" and recommends
-upgrade.
 
 Platform specific notes
 -----------------------
