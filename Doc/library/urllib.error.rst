@@ -3,7 +3,7 @@
 
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
-.. moduleauthor:: Jeremy Hylton <jhylton@users.sourceforge.net>
+.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
 .. sectionauthor:: Senthil Kumaran <orsenthil@gmail.com>
 
 
