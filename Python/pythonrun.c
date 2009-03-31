@@ -2006,6 +2006,7 @@ void
 Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
+	fflush(stderr); /* it helps in Windows debug build */
 	if (PyErr_Occurred()) {
 		PyErr_Print();
 	}
