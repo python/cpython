@@ -1160,6 +1160,7 @@ Basic customization
    The return value must be a string object.
 
 
+.. _richcmpfuncs:
 .. method:: object.__lt__(self, other)
             object.__le__(self, other)
             object.__eq__(self, other)
