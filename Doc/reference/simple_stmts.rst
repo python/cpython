@@ -966,7 +966,7 @@ The :keyword:`exec` statement
 This statement supports dynamic execution of Python code.  The first expression
 should evaluate to either a string, an open file object, or a code object.  If
 it is a string, the string is parsed as a suite of Python statements which is
-then executed (unless a syntax error occurs).  If it is an open file, the file
+then executed (unless a syntax error occurs). [#]_  If it is an open file, the file
 is parsed until EOF and executed.  If it is a code object, it is simply
 executed.  In all cases, the code that's executed is expected to be valid as
 file input (see section :ref:`file-input`).  Be aware that the
@@ -1004,3 +1004,8 @@ built-in function :func:`eval`.  The built-in functions :func:`globals` and
 which may be useful to pass around for use by :keyword:`exec`.
 
 
+.. rubric:: Footnotes
+
+.. [#] Note that the parser only accepts the Unix-style end of line convention.
+       If you are reading the code from a file, make sure to use universal
+       newline mode to convert Windows or Mac-style newlines.
