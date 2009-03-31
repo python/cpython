@@ -10,6 +10,7 @@ from distutils import sysconfig
 from distutils.tests import support
 from distutils.extension import Extension
 from distutils.errors import UnknownFileError
+from distutils.errors import CompileError
 
 import unittest
 from test import test_support
@@ -154,7 +155,8 @@ class BuildExtTestCase(support.TempdirManager,
         dist = Distribution({'name': 'xx', 'ext_modules': modules})
         cmd = build_ext(dist)
         cmd.ensure_finalized()
-        self.assertRaises(UnknownFileError, cmd.run)  # should raise an error
+        self.assertRaises((UnknownFileError, CompileError),
+                          cmd.run)  # should raise an error
 
         modules = [Extension('foo', ['xxx'], optional=True)]
         dist = Distribution({'name': 'xx', 'ext_modules': modules})
