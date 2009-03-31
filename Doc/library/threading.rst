@@ -696,13 +696,19 @@ An event object manages an internal flag that can be set to true with the
 
 .. method:: Event.wait([timeout])
 
-   Block until the internal flag is true. If the internal flag is true on entry,
-   return immediately.  Otherwise, block until another thread calls :meth:`set` to
-   set the flag to true, or until the optional timeout occurs.
+   Block until the internal flag is true.  If the internal flag is true on entry,
+   return immediately.  Otherwise, block until another thread calls :meth:`set`
+   to set the flag to true, or until the optional timeout occurs.
 
    When the timeout argument is present and not ``None``, it should be a floating
    point number specifying a timeout for the operation in seconds (or fractions
    thereof).
+
+   This method returns the internal flag on exit, so it will always return
+   ``True`` except if a timeout is given and the operation times out.
+
+   .. versionchanged:: 2.7
+      Previously, the method always returned ``None``.
 
 
 .. _timer-objects:

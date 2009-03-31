@@ -391,6 +391,7 @@ class _Event(_Verbose):
         try:
             if not self.__flag:
                 self.__cond.wait(timeout)
+            return self.__flag
         finally:
             self.__cond.release()
 
