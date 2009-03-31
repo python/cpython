@@ -133,9 +133,9 @@ All integers are implemented as "long" integer objects of arbitrary size.
       single: PY_SSIZE_T_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`Py_ssize_t` representation of the contents of *pylong*.  If
-   *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError` is raised
-   and ``-1`` will be returned.
+   Return a C :ctype:`Py_ssize_t` representation of the contents of *pylong*.
+   If *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError`
+   is raised and ``-1`` will be returned.
 
 
 .. cfunction:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
@@ -146,16 +146,6 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
    Return a C :ctype:`unsigned long` representation of the contents of *pylong*.
    If *pylong* is greater than :const:`ULONG_MAX`, an :exc:`OverflowError` is
-   raised.
-
-
-.. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
-
-   .. index::
-      single: PY_SSIZE_T_MAX
-
-   Return a :ctype:`Py_ssize_t` representation of the contents of *pylong*.  If
-   *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError` is
    raised.
 
 
