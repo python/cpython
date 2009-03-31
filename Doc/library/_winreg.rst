@@ -1,4 +1,3 @@
-
 :mod:`_winreg` -- Windows registry access
 =========================================
 
@@ -47,8 +46,8 @@ This module offers the following functions:
 
    *key* is the predefined handle to connect to.
 
-   The return value is the handle of the opened key. If the function fails, an
-   :exc:`EnvironmentError` exception is  raised.
+   The return value is the handle of the opened key. If the function fails, a
+   :exc:`WindowsError` exception is  raised.
 
 
 .. function:: CreateKey(key, sub_key)
@@ -65,8 +64,8 @@ This module offers the following functions:
 
    If the key already exists, this function opens the existing key.
 
-   The return value is the handle of the opened key. If the function fails, an
-   :exc:`EnvironmentError` exception is  raised.
+   The return value is the handle of the opened key. If the function fails, a
+   :exc:`WindowsError` exception is  raised.
 
 
 .. function:: DeleteKey(key, sub_key)
@@ -82,7 +81,7 @@ This module offers the following functions:
    *This method can not delete keys with subkeys.*
 
    If the method succeeds, the entire key, including all of its values, is removed.
-   If the method fails, an :exc:`EnvironmentError`  exception is raised.
+   If the method fails, a :exc:`WindowsError`  exception is raised.
 
 
 .. function:: DeleteValue(key, value)
@@ -105,7 +104,7 @@ This module offers the following functions:
    *index* is an integer that identifies the index of the key to  retrieve.
 
    The function retrieves the name of one subkey each time it  is called.  It is
-   typically called repeatedly until an  :exc:`EnvironmentError` exception  is
+   typically called repeatedly until a  :exc:`WindowsError` exception  is
    raised, indicating, no more values are available.
 
 
@@ -119,7 +118,7 @@ This module offers the following functions:
    *index* is an integer that identifies the index of the value  to retrieve.
 
    The function retrieves the name of one subkey each time it is  called. It is
-   typically called repeatedly, until an  :exc:`EnvironmentError` exception is
+   typically called repeatedly, until a  :exc:`WindowsError` exception is
    raised, indicating  no more values.
 
    The result is a tuple of 3 items:
@@ -209,7 +208,7 @@ This module offers the following functions:
 
    The result is a new handle to the specified key.
 
-   If the function fails, :exc:`EnvironmentError` is raised.
+   If the function fails, :exc:`WindowsError` is raised.
 
 
 .. function:: OpenKeyEx()
