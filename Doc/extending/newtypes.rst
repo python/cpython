@@ -1231,50 +1231,53 @@ example that simply raises an exception; if this were really all you wanted, the
        return -1;
    }
 
-.. XXX tp_compare is dead; need to rewrite for tp_richcompare!
+Object Comparison
+-----------------
 
-   Object Comparison
-   -----------------
+::
 
-   ::
+   richcmpfunc tp_richcompare;
 
-      cmpfunc tp_compare;
+The :attr:`tp_richcompare` handler is called when comparisons are needed.  It is
+analogous to the :ref:`rich comparison methods <richcmpfuncs>`, like
+:meth:`__lt__`, and also called by :cfunc:`PyObject_RichCompare` and
+:cfunc:`PyObject_RichCompareBool`.
 
-   The :attr:`tp_compare` handler is called when comparisons are needed and the
-   object does not implement the specific rich comparison method which matches the
-   requested comparison.  (It is always used if defined and the
-   :cfunc:`PyObject_Compare` or :cfunc:`PyObject_Cmp` functions are used, or if
-   :func:`cmp` is used from Python.) It is analogous to the :meth:`__cmp__` method.
-   This function should return ``-1`` if *obj1* is less than *obj2*, ``0`` if they
-   are equal, and ``1`` if *obj1* is greater than *obj2*. (It was previously
-   allowed to return arbitrary negative or positive integers for less than and
-   greater than, respectively; as of Python 2.2, this is no longer allowed.  In the
-   future, other return values may be assigned a different meaning.)
+This function is called with two Python objects and the operator as arguments,
+where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
+``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
+specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
+successfull, ``Py_NotImplemented`` to indicate that comparison is not
+implemented and the other object's comparison method should be tried, or *NULL*
+if an exception was set.
 
-   A :attr:`tp_compare` handler may raise an exception.  In this case it should
-   return a negative value.  The caller has to test for the exception using
-   :cfunc:`PyErr_Occurred`.
+Here is a sample implementation, for a datatype that is considered equal if the
+size of an internal pointer is equal::
 
-   Here is a sample implementation::
+   static int
+   newdatatype_richcmp(PyObject *obj1, PyObject *obj2, int op)
+   {
+       PyObject *result;
+       int c, size1, size2;
 
-      static int
-      newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
-      {
-          long result;
+       /* code to make sure that both arguments are of type
+          newdatatype omitted */
 
-          if (obj1->obj_UnderlyingDatatypePtr->size <
-              obj2->obj_UnderlyingDatatypePtr->size) {
-              result = -1;
-          }
-          else if (obj1->obj_UnderlyingDatatypePtr->size >
-                   obj2->obj_UnderlyingDatatypePtr->size) {
-              result = 1;
-          }
-          else {
-              result = 0;
-          }
-          return result;
-      }
+       size1 = obj1->obj_UnderlyingDatatypePtr->size;
+       size2 = obj2->obj_UnderlyingDatatypePtr->size;
+
+       switch (op) {
+       case Py_LT: c = size1 <  size2; break;
+       case Py_LE: c = size1 <= size2; break;
+       case Py_EQ: c = size1 == size2; break;
+       case Py_NE: c = size1 != size2; break;
+       case Py_GT: c = size1 >  size2; break;
+       case Py_GE: c = size1 >= size2; break;
+       }
+       result = c ? Py_True : Py_False;
+       Py_INCREF(result);
+       return result;
+    }
 
 
 Abstract Protocol Support
