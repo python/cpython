@@ -18,13 +18,14 @@ class Log:
 
     def _log(self, level, msg, args):
         if level >= self.threshold:
-            if not args:
-                # msg may contain a '%'. If args is empty,
-                # don't even try to string-format
-                print msg
+            if args:
+                msg = msg % args
+            if level in (WARN, ERROR, FATAL):
+                stream = sys.stderr
             else:
-                print msg % args
-            sys.stdout.flush()
+                stream = sys.stdout
+            stream.write('%s\n' % msg)
+            stream.flush()
 
     def log(self, level, msg, *args):
         self._log(level, msg, args)
