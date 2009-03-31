@@ -704,6 +704,10 @@ Extension Modules
 Tests
 -----
 
+- regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
+  that should cause a test to be skipped are now done using import_module 
+  from test support, which does the conversion.
+
 - Issue #5083: New 'gui' resource for regrtest.
 
 
