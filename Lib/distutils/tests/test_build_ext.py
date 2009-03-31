@@ -8,6 +8,9 @@ from distutils.core import Extension, Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
 from distutils.tests.support import TempdirManager
+from distutils.tests.support import LoggingSilencer
+from distutils.extension import Extension
+from distutils.errors import UnknownFileError
 
 import unittest
 from test import support
@@ -20,7 +23,9 @@ def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
-class BuildExtTestCase(TempdirManager, unittest.TestCase):
+class BuildExtTestCase(TempdirManager,
+                       LoggingSilencer,
+                       unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
@@ -140,6 +145,22 @@ class BuildExtTestCase(TempdirManager, unittest.TestCase):
         # were set
         self.assert_(lib in cmd.library_dirs)
         self.assert_(incl in cmd.include_dirs)
+
+    def test_optional_extension(self):
+
+        # this extension will fail, but let's ignore this failure
+        # with the optional argument.
+        modules = [Extension('foo', ['xxx'], optional=False)]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        self.assertRaises(UnknownFileError, cmd.run)  # should raise an error
+
+        modules = [Extension('foo', ['xxx'], optional=True)]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        cmd.run()  # should pass
 
 def test_suite():
     src = _get_source_filename()
