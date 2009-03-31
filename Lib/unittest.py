@@ -467,17 +467,17 @@ class TestCase(object):
         """Fail immediately, with the given message."""
         raise self.failureException(msg)
 
-    def failIf(self, expr, msg=None):
+    def assertFalse(self, expr, msg=None):
         "Fail the test if the expression is true."
         if expr:
             raise self.failureException(msg)
 
-    def failUnless(self, expr, msg=None):
+    def assertTrue(self, expr, msg=None):
         """Fail the test unless the expression is true."""
         if not expr:
             raise self.failureException(msg)
 
-    def failUnlessRaises(self, excClass, callableObj=None, *args, **kwargs):
+    def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
         """Fail unless an exception of class excClass is thrown
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
@@ -488,7 +488,7 @@ class TestCase(object):
            If called with callableObj omitted or None, will return a
            context object used like this::
 
-                with self.failUnlessRaises(some_error_class):
+                with self.assertRaises(some_error_class):
                     do_something()
         """
         context = _AssertRaisesContext(excClass, self)
@@ -524,21 +524,21 @@ class TestCase(object):
         if not first == second:
             raise self.failureException(msg or '%r != %r' % (first, second))
 
-    def failUnlessEqual(self, first, second, msg=None):
+    def assertEqual(self, first, second, msg=None):
         """Fail if the two objects are unequal as determined by the '=='
            operator.
         """
         assertion_func = self._getAssertEqualityFunc(first, second)
         assertion_func(first, second, msg=msg)
 
-    def failIfEqual(self, first, second, msg=None):
+    def assertNotEqual(self, first, second, msg=None):
         """Fail if the two objects are equal as determined by the '=='
            operator.
         """
         if first == second:
             raise self.failureException(msg or '%r == %r' % (first, second))
 
-    def failUnlessAlmostEqual(self, first, second, places=7, msg=None):
+    def assertAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
@@ -550,7 +550,7 @@ class TestCase(object):
             raise self.failureException(
                   msg or '%r != %r within %r places' % (first, second, places))
 
-    def failIfAlmostEqual(self, first, second, places=7, msg=None):
+    def assertNotAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
@@ -564,19 +564,24 @@ class TestCase(object):
 
     # Synonyms for assertion methods
 
-    assertEqual = assertEquals = failUnlessEqual
+    # The plurals are undocumented.  Keep them that way to discourage use.
+    # Do not add more.  Do not remove.
+    # Going through a deprecation cycle on these would annoy many people.
+    assertEquals = assertEqual
+    assertNotEquals = assertNotEqual
+    assertAlmostEquals = assertAlmostEqual
+    assertNotAlmostEquals = assertNotAlmostEqual
+    assert_ = assertTrue
 
-    assertNotEqual = assertNotEquals = failIfEqual
-
-    assertAlmostEqual = assertAlmostEquals = failUnlessAlmostEqual
-
-    assertNotAlmostEqual = assertNotAlmostEquals = failIfAlmostEqual
-
-    assertRaises = failUnlessRaises
-
-    assert_ = assertTrue = failUnless
-
-    assertFalse = failIf
+    # These fail* assertion method names are pending deprecation and will
+    # be a deprecation warning in 3.2; http://bugs.python.org/issue2578
+    failUnlessEqual = assertEqual
+    failIfEqual = assertNotEqual
+    failUnlessAlmostEqual = assertAlmostEqual
+    failIfAlmostEqual = assertNotAlmostEqual
+    failUnless = assertTrue
+    failUnlessRaises = assertRaises
+    failIf = assertFalse
 
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):

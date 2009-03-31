@@ -2283,7 +2283,6 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.'))
 
-
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
@@ -2657,6 +2656,33 @@ test case
                 r'"\^Expected\$" does not match "Unexpected"',
                 self.assertRaisesRegexp, Exception,
                 re.compile('^Expected$'), Stub)
+
+    def testSynonymAssertMethodNames(self):
+        """Test undocumented method name synonyms.
+
+        Please do not use these methods names in your own code.
+
+        This test confirms their continued existence and functionality
+        in order to avoid breaking existing code.
+        """
+        self.assertNotEquals(3, 5)
+        self.assertEquals(3, 3)
+        self.assertAlmostEquals(2.0, 2.0)
+        self.assertNotAlmostEquals(3.0, 5.0)
+        self.assert_(True)
+
+    def testPendingDeprecationMethodNames(self):
+        """Test fail* methods pending deprecation, they will warn in 3.2.
+
+        Do not use these methods.  They will go away in 3.3.
+        """
+        self.failIfEqual(3, 5)
+        self.failUnlessEqual(3, 3)
+        self.failUnlessAlmostEqual(2.0, 2.0)
+        self.failIfAlmostEqual(3.0, 5.0)
+        self.failUnless(True)
+        self.failUnlessRaises(TypeError, lambda _: 3.14 + u'spam')
+        self.failIf(False)
 
 
 class Test_TestSkipping(TestCase):
