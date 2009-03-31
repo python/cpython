@@ -3,7 +3,9 @@ import sys
 import os
 import unittest
 import getpass
+import urllib
 
+from distutils.command import register as register_module
 from distutils.command.register import register
 from distutils.core import Distribution
 
@@ -42,18 +44,20 @@ class Inputs(object):
         finally:
             self.index += 1
 
-class FakeServer(object):
+class FakeOpener(object):
     """Fakes a PyPI server"""
     def __init__(self):
-        self.calls = []
+        self.reqs = []
 
     def __call__(self, *args):
-        # we want to compare them, so let's store
-        # something comparable
-        els = list(args[0].items())
-        els.sort()
-        self.calls.append(tuple(els))
-        return 200, 'OK'
+        return self
+
+    def open(self, req):
+        self.reqs.append(req)
+        return self
+
+    def read(self):
+        return 'xxx'
 
 class registerTestCase(PyPIRCCommandTestCase):
 
@@ -64,24 +68,27 @@ class registerTestCase(PyPIRCCommandTestCase):
         def _getpass(prompt):
             return 'password'
         getpass.getpass = _getpass
+        self.old_opener = urllib.request.build_opener
+        self.conn = urllib.request.build_opener = FakeOpener()
 
     def tearDown(self):
         getpass.getpass = self._old_getpass
+        urllib.request.build_opener = self.old_opener
         PyPIRCCommandTestCase.tearDown(self)
+
+    def _get_cmd(self):
+        metadata = {'url': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': 'xxx'}
+        pkg_info, dist = self.create_dist(**metadata)
+        return register(dist)
 
     def test_create_pypirc(self):
         # this test makes sure a .pypirc file
         # is created when requested.
 
-        # let's create a fake distribution
-        # and a register instance
-        dist = Distribution()
-        dist.metadata.url = 'xxx'
-        dist.metadata.author = 'xxx'
-        dist.metadata.author_email = 'xxx'
-        dist.metadata.name = 'xxx'
-        dist.metadata.version =  'xxx'
-        cmd = register(dist)
+        # let's create a register instance
+        cmd = self._get_cmd()
 
         # we shouldn't have a .pypirc file yet
         self.assert_(not os.path.exists(self.rc))
@@ -95,13 +102,12 @@ class registerTestCase(PyPIRCCommandTestCase):
         # Password : 'password'
         # Save your login (y/N)? : 'y'
         inputs = Inputs('1', 'tarek', 'y')
-        from distutils.command import register as register_module
         register_module.input = inputs.__call__
-
-        cmd.post_to_server = pypi_server = FakeServer()
-
         # let's run the command
-        cmd.run()
+        try:
+            cmd.run()
+        finally:
+            del register_module.input
 
         # we should have a brand new .pypirc file
         self.assert_(os.path.exists(self.rc))
@@ -115,32 +121,68 @@ class registerTestCase(PyPIRCCommandTestCase):
         # if we run the command again
         def _no_way(prompt=''):
             raise AssertionError(prompt)
-        register_module.raw_input = _no_way
+        register_module.input = _no_way
 
+        cmd.show_response = 1
         cmd.run()
 
         # let's see what the server received : we should
         # have 2 similar requests
-        self.assert_(len(pypi_server.calls), 2)
-        self.assert_(pypi_server.calls[0], pypi_server.calls[1])
+        self.assert_(self.conn.reqs, 2)
+        req1 = dict(self.conn.reqs[0].headers)
+        req2 = dict(self.conn.reqs[1].headers)
+
+        self.assertEquals(req1['Content-length'], '1374')
+        self.assertEquals(req2['Content-length'], '1374')
+        self.assert_((b'xxx') in self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
 
-        f = open(self.rc, 'w')
-        f.write(PYPIRC_NOPASSWORD)
-        f.close()
-
-        dist = Distribution()
-        cmd = register(dist)
-        cmd.post_to_server = FakeServer()
-
+        self.write_file(self.rc, PYPIRC_NOPASSWORD)
+        cmd = self._get_cmd()
         cmd._set_config()
         cmd.finalize_options()
         cmd.send_metadata()
 
         # dist.password should be set
         # therefore used afterwards by other commands
-        self.assertEquals(dist.password, 'password')
+        self.assertEquals(cmd.distribution.password, 'password')
+
+    def test_registering(self):
+        # this test runs choice 2
+        cmd = self._get_cmd()
+        inputs = Inputs('2', 'tarek', 'tarek@ziade.org')
+        register_module.input = inputs.__call__
+        try:
+            # let's run the command
+            cmd.run()
+        finally:
+            del register_module.input
+
+        # we should have send a request
+        self.assert_(self.conn.reqs, 1)
+        req = self.conn.reqs[0]
+        headers = dict(req.headers)
+        self.assertEquals(headers['Content-length'], '608')
+        self.assert_((b'tarek') in req.data)
+
+    def test_password_reset(self):
+        # this test runs choice 3
+        cmd = self._get_cmd()
+        inputs = Inputs('3', 'tarek@ziade.org')
+        register_module.input = inputs.__call__
+        try:
+            # let's run the command
+            cmd.run()
+        finally:
+            del register_module.input
+
+        # we should have send a request
+        self.assert_(self.conn.reqs, 1)
+        req = self.conn.reqs[0]
+        headers = dict(req.headers)
+        self.assertEquals(headers['Content-length'], '290')
+        self.assert_((b'tarek') in req.data)
 
 def test_suite():
     return unittest.makeSuite(registerTestCase)

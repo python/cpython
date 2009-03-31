@@ -2,6 +2,7 @@
 import sys
 import os
 import unittest
+import http.client as httpclient
 
 from distutils.command.upload import upload
 from distutils.core import Distribution
@@ -18,17 +19,52 @@ index-servers =
 [server1]
 username:me
 """
+class Response(object):
+    def __init__(self, status=200, reason='OK'):
+        self.status = status
+        self.reason = reason
 
+class FakeConnection(object):
+
+    def __init__(self):
+        self.requests = []
+        self.headers = []
+        self.body = ''
+
+    def __call__(self, netloc):
+        return self
+
+    def connect(self):
+        pass
+    endheaders = connect
+
+    def putrequest(self, method, url):
+        self.requests.append((method, url))
+
+    def putheader(self, name, value):
+        self.headers.append((name, value))
+
+    def send(self, body):
+        self.body = body
+
+    def getresponse(self):
+        return Response()
 
 class uploadTestCase(PyPIRCCommandTestCase):
+
+    def setUp(self):
+        super(uploadTestCase, self).setUp()
+        self.old_class = httpclient.HTTPConnection
+        self.conn = httpclient.HTTPConnection = FakeConnection()
+
+    def tearDown(self):
+        httpclient.HTTPConnection = self.old_class
+        super(uploadTestCase, self).tearDown()
 
     def test_finalize_options(self):
 
         # new format
-        f = open(self.rc, 'w')
-        f.write(PYPIRC)
-        f.close()
-
+        self.write_file(self.rc, PYPIRC)
         dist = Distribution()
         cmd = upload(dist)
         cmd.finalize_options()
@@ -39,9 +75,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
     def test_saved_password(self):
         # file with no password
-        f = open(self.rc, 'w')
-        f.write(PYPIRC_NOPASSWORD)
-        f.close()
+        self.write_file(self.rc, PYPIRC_NOPASSWORD)
 
         # make sure it passes
         dist = Distribution()
@@ -55,6 +89,28 @@ class uploadTestCase(PyPIRCCommandTestCase):
         cmd = upload(dist)
         cmd.finalize_options()
         self.assertEquals(cmd.password, 'xxx')
+
+    def test_upload(self):
+        tmp = self.mkdtemp()
+        path = os.path.join(tmp, 'xxx')
+        self.write_file(path)
+        command, pyversion, filename = 'xxx', '2.6', path
+        dist_files = [(command, pyversion, filename)]
+        self.write_file(self.rc, PYPIRC)
+
+        # lets run it
+        pkg_dir, dist = self.create_dist(dist_files=dist_files)
+        cmd = upload(dist)
+        cmd.ensure_finalized()
+        cmd.run()
+
+        # what did we send ?
+        headers = dict(self.conn.headers)
+        self.assertEquals(headers['Content-length'], '2087')
+        self.assert_(headers['Content-type'].startswith('multipart/form-data'))
+
+        self.assertEquals(self.conn.requests, [('POST', '/pypi')])
+        self.assert_((b'xxx') in self.conn.body)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)

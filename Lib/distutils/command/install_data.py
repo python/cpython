@@ -31,7 +31,6 @@ class install_data(Command):
         self.outfiles = []
         self.root = None
         self.force = 0
-
         self.data_files = self.distribution.data_files
         self.warn_dir = 1
 
