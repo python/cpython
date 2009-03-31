@@ -710,6 +710,8 @@ Extension Modules
 
 - Issue #4396: The parser module now correctly validates the with statement.
 
+- Issue #5228: Make functools.partial objects can now be pickled.
+
 Tests
 -----
 
