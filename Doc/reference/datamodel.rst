@@ -382,7 +382,7 @@ Sequences
       The extension module :mod:`array` provides an additional example of a mutable
       sequence type.
 
-Set types../
+Set types
    .. index::
       builtin: len
       object: set type
