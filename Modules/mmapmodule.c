@@ -509,7 +509,11 @@ mmap_resize_method(mmap_object *self,
 #ifdef MREMAP_MAYMOVE
 		newmap = mremap(self->data, self->size, new_size, MREMAP_MAYMOVE);
 #else
-		newmap = mremap(self->data, self->size, new_size, 0);
+		#if defined(__NetBSD__)
+			newmap = mremap(self->data, self->size, self->data, new_size, 0);
+		#else
+			newmap = mremap(self->data, self->size, new_size, 0);
+		#endif /* __NetBSD__ */
 #endif
 		if (newmap == (void *)-1)
 		{
