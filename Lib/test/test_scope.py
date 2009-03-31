@@ -618,7 +618,6 @@ self.assert_(X.passed)
         self.assertEqual(dec(), 0)
 
     def testNonLocalMethod(self):
-
         def f(x):
             class c:
                 def inc(self):
@@ -630,12 +629,35 @@ self.assert_(X.passed)
                     x -= 1
                     return x
             return c()
-
         c = f(0)
         self.assertEqual(c.inc(), 1)
         self.assertEqual(c.inc(), 2)
         self.assertEqual(c.dec(), 1)
         self.assertEqual(c.dec(), 0)
+
+    def testGlobalInParallelNestedFunctions(self):
+        # A symbol table bug leaked the global statement from one
+        # function to other nested functions in the same block.
+        # This test verifies that a global statement in the first
+        # function does not affect the second function.
+        CODE = """def f():
+    y = 1
+    def g():
+        global y
+        return y
+    def h():
+        return y + 1
+    return g, h
+y = 9
+g, h = f()
+result9 = g()
+result2 = h()
+"""
+        local_ns = {}
+        global_ns = {}
+        exec(CODE, local_ns, global_ns)
+        self.assertEqual(2, global_ns["result2"])
+        self.assertEqual(9, global_ns["result9"])
 
     def testNonLocalClass(self):
 

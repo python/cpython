@@ -376,8 +376,9 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 
 /* Decide on scope of name, given flags.
 
-   The dicts passed in as arguments are modified as necessary.
-   ste is passed so that flags can be updated.
+   The namespace dictionaries may be modified to record information
+   about the new name.  For example, a new global will add an entry to
+   global.  A name that was global can be changed to local.
 */
 
 static int 
@@ -453,7 +454,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 	   explicit?  It could also be global implicit.
 	 */
 	if (global && PySet_Contains(global, name)) {
-		SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
+		SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
 		return 1;
 	}
 	if (ste->ste_nested)
@@ -627,28 +628,56 @@ error:
 }   
 
 /* Make final symbol table decisions for block of ste.
+
    Arguments:
    ste -- current symtable entry (input/output)
-   bound -- set of variables bound in enclosing scopes (input)
+   bound -- set of variables bound in enclosing scopes (input).  bound
+       is NULL for module blocks.
    free -- set of free variables in enclosed scopes (output)
    globals -- set of declared global variables in enclosing scopes (input)
+
+   The implementation uses two mutually recursive functions,
+   analyze_block() and analyze_child_block().  analyze_block() is
+   responsible for analyzing the individual names defined in a block.
+   analyze_child_block() prepares temporary namespace dictionaries
+   used to evaluated nested blocks.
+
+   The two functions exist because a child block should see the name
+   bindings of its enclosing blocks, but those bindings should not
+   propagate back to a parent block.
 */
+
+static int
+analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free, 
+		    PyObject *global, PyObject* child_free);
 
 static int
 analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free, 
 	      PyObject *global)
 {
 	PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-	PyObject *newglobal = NULL, *newfree = NULL;
+	PyObject *newglobal = NULL, *newfree = NULL, *allfree = NULL;
 	int i, success = 0;
 	Py_ssize_t pos = 0;
 
-	scopes = PyDict_New();
-	if (!scopes)
-		goto error;
-	local = PySet_New(NULL);
+	local = PySet_New(NULL);  /* collect new names bound in block */
 	if (!local)
 		goto error;
+	scopes = PyDict_New();  /* collect scopes defined for each name */
+	if (!scopes)
+		goto error;
+
+	/* Allocate new global and bound variable dictionaries.  These
+	   dictionaries hold the names visible in nested blocks.  For
+	   ClassBlocks, the bound and global names are initialized
+	   before analyzing names, because class bindings aren't
+	   visible in methods.  For other blocks, they are initialized
+	   after names are analyzed.
+	 */
+
+	/* TODO(jhylton): Package these dicts in a struct so that we
+	   can write reasonable helper functions?
+	*/
 	newglobal = PySet_New(NULL);
 	if (!newglobal)
 		goto error;
@@ -665,25 +694,22 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 	   this one.
 	 */
 	if (ste->ste_type == ClassBlock) {
+		/* Pass down known globals */
+		if (!PyNumber_InPlaceOr(newglobal, global))
+			goto error;
+		Py_DECREF(newglobal);
 		/* Pass down previously bound symbols */
 		if (bound) {
 			if (!PyNumber_InPlaceOr(newbound, bound))
 				goto error;
 			Py_DECREF(newbound);
 		}
-		/* Pass down known globals */
-		if (!PyNumber_InPlaceOr(newglobal, global))
-			goto error;
-		Py_DECREF(newglobal);
 	}
 
-	/* Analyze symbols in current scope */
-	assert(PySTEntry_Check(ste));
-	assert(PyDict_Check(ste->ste_symbols));
 	while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
 		long flags = PyLong_AS_LONG(v);
-		if (!analyze_name(ste, scopes, name, flags, bound, local, free,
-				  global))
+		if (!analyze_name(ste, scopes, name, flags,
+				  bound, local, free, global))
 			goto error;
 	}
 
@@ -715,18 +741,30 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 			goto error;
 	}
 
-	/* Recursively call analyze_block() on each child block */
+	/* Recursively call analyze_block() on each child block.
+
+	   newbound, newglobal now contain the names visible in
+	   nested blocks.  The free variables in the children will
+	   be collected in allfree.
+	*/
+	allfree = PySet_New(NULL);
+	if (!allfree) 
+		goto error;
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		PyObject *c = PyList_GET_ITEM(ste->ste_children, i);
 		PySTEntryObject* entry;
 		assert(c && PySTEntry_Check(c));
 		entry = (PySTEntryObject*)c;
-		if (!analyze_block(entry, newbound, newfree, newglobal))
+		if (!analyze_child_block(entry, newbound, newfree, newglobal,
+					 allfree))
 			goto error;
 		/* Check if any children have free variables */
 		if (entry->ste_free || entry->ste_child_free)
 			ste->ste_child_free = 1;
 	}
+
+	if (PyNumber_InPlaceOr(newfree, allfree) < 0)
+		goto error;
 
 	/* Check if any local variables must be converted to cell variables */
 	if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree,
@@ -752,8 +790,44 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 	Py_XDECREF(newbound);
 	Py_XDECREF(newglobal);
 	Py_XDECREF(newfree);
+	Py_XDECREF(allfree);
 	if (!success)
 		assert(PyErr_Occurred());
+	return success;
+}
+
+static int
+analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free, 
+		    PyObject *global, PyObject* child_free)
+{
+	PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
+	int success = 0;
+
+	/* Copy the bound and global dictionaries.
+
+	   These dictionary are used by all blocks enclosed by the
+	   current block.  The analyze_block() call modifies these
+	   dictionaries.
+
+	*/
+	temp_bound = PySet_New(bound);
+	if (!temp_bound)
+		goto error;
+	temp_free = PySet_New(free);
+	if (!temp_free)
+		goto error;
+	temp_global = PySet_New(global);
+	if (!temp_global)
+		goto error;
+
+	if (!analyze_block(entry, temp_bound, temp_free, temp_global))
+		goto error;
+	success = PyNumber_InPlaceOr(child_free, temp_free) >= 0;
+	success = 1;
+ error:
+	Py_XDECREF(temp_bound);
+	Py_XDECREF(temp_free);
+	Py_XDECREF(temp_global);
 	return success;
 }
 

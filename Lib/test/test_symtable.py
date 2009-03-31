@@ -88,7 +88,9 @@ class SymtableTest(unittest.TestCase):
 
     def test_globals(self):
         self.assertTrue(self.spam.lookup("glob").is_global())
+        self.assertFalse(self.spam.lookup("glob").is_declared_global())
         self.assertTrue(self.spam.lookup("bar").is_global())
+        self.assertTrue(self.spam.lookup("bar").is_declared_global())
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
 
