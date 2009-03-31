@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5261: Patch multiprocessing's semaphore.c to support context
+  manager use: "with multiprocessing.Lock()" works now.
+
 - Issue #5236: Change time.strptime() to only take strings. Didn't work with
   bytes already but the failure was non-obvious.
 
