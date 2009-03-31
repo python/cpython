@@ -1754,6 +1754,13 @@ class TextIOWrapperTest(unittest.TestCase):
             self.assertEquals(f.read(), data * 2)
             self.assertEquals(buf.getvalue(), (data * 2).encode(encoding))
 
+    def test_unreadable(self):
+        class UnReadable(self.BytesIO):
+            def readable(self):
+                return False
+        txt = self.TextIOWrapper(UnReadable())
+        self.assertRaises(IOError, txt.read)
+
     def test_read_one_by_one(self):
         txt = self.TextIOWrapper(self.BytesIO(b"AA\r\nBB"))
         reads = ""

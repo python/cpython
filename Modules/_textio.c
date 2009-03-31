@@ -1348,6 +1348,11 @@ TextIOWrapper_read(PyTextIOWrapperObject *self, PyObject *args)
 
     CHECK_CLOSED(self);
 
+    if (self->decoder == NULL) {
+        PyErr_SetString(PyExc_IOError, "not readable");
+        return NULL;
+    }
+
     if (_TextIOWrapper_writeflush(self) < 0)
         return NULL;
 
