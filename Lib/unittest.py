@@ -54,6 +54,7 @@ import sys
 import time
 import traceback
 import types
+import warnings
 
 ##############################################################################
 # Exported classes and functions
@@ -574,15 +575,22 @@ class TestCase(object):
     assert_ = assertTrue
 
     # These fail* assertion method names are pending deprecation and will
-    # be a deprecation warning in 3.2; http://bugs.python.org/issue2578
-    failUnlessEqual = assertEqual
-    failIfEqual = assertNotEqual
-    failUnlessAlmostEqual = assertAlmostEqual
-    failIfAlmostEqual = assertNotAlmostEqual
-    failUnless = assertTrue
-    failUnlessRaises = assertRaises
-    failIf = assertFalse
+    # be a DeprecationWarning in 3.2; http://bugs.python.org/issue2578
+    def __deprecate(original_func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn(
+                'Please use {0} instead.'.format(original_func.__name__),
+                PendingDeprecationWarning, 2)
+            return original_func(*args, **kwargs)
+        return deprecated_func
 
+    failUnlessEqual = __deprecate(assertEqual)
+    failIfEqual = __deprecate(assertNotEqual)
+    failUnlessAlmostEqual = __deprecate(assertAlmostEqual)
+    failIfAlmostEqual = __deprecate(assertNotAlmostEqual)
+    failUnless = __deprecate(assertTrue)
+    failUnlessRaises = __deprecate(assertRaises)
+    failIf = __deprecate(assertFalse)
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
