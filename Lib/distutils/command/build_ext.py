@@ -476,7 +476,13 @@ class build_ext (Command):
         self.check_extensions_list(self.extensions)
 
         for ext in self.extensions:
-            self.build_extension(ext)
+            try:
+                self.build_extension(ext)
+            except (CCompilerError, DistutilsError), e:
+                if not ext.optional:
+                    raise
+                self.warn('building extension "%s" failed: %s' %
+                          (ext.name, e))
 
     def build_extension(self, ext):
         sources = ext.sources

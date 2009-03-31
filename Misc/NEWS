@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5583: Added optional Extensions in Distutils. Initial patch by Georg
+  Brandl.
+
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
   popups on windows buildbots. Patch applied to work around this issue.
 
