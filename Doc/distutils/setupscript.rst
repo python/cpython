@@ -334,6 +334,10 @@ Other options
 
 There are still some other options which can be used to handle special cases.
 
+The :option:`optional` option is a boolean; if it is true, that specifies that
+a build failure in the extension should not abort the build process, but simply
+not install the failing extension.
+
 The :option:`extra_objects` option is a list of object files to be passed to the
 linker. These files must not have extensions, as the default extension for the
 compiler is used.
