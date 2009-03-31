@@ -298,7 +298,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):
             msg = "strptime() argument {} must be str, not {}"
-            raise TypeError(msg.format(arg, index))
+            raise TypeError(msg.format(index, type(arg)))
 
     global _TimeRE_cache, _regex_cache
     with _cache_lock:
