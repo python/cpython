@@ -217,6 +217,15 @@ Library
 
 - Issue #1034053: unittest now supports skipping tests and expected failures.
 
+- The unittest.TestCase.assertRaises() method now returns a context manager when
+  not given a callable so that code to be tested can be written inline using
+  a with statement.
+
+- The unittest.TestCase.assertEqual() now displays the differences in lists,
+  tuples, dicts and sets on failure.  Many new handy type and comparison
+  specific assert* methods have been added that fail with error messages
+  actually useful for debugging.  Contributed in part by Google.  [Issue #2578]
+
 - Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
   forever on incomplete input. That caused tarfile.open() to hang when used
   with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or

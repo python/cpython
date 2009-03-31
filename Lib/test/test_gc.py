@@ -244,7 +244,7 @@ class GCTests(unittest.TestCase):
     # - the call to assertEqual somehow avoids building its args tuple
     def test_get_count(self):
         # Avoid future allocation of method object
-        assertEqual = self.assertEqual
+        assertEqual = self._baseAssertEqual
         gc.collect()
         assertEqual(gc.get_count(), (0, 0, 0))
         a = dict()

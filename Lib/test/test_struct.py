@@ -227,6 +227,7 @@ class StructTest(unittest.TestCase):
             BUGGY_RANGE_CHECK = "bBhHiIlL"
 
             def __init__(self, formatpair, bytesize):
+                super(IntTester, self).__init__(methodName='test_one')
                 self.assertEqual(len(formatpair), 2)
                 self.formatpair = formatpair
                 for direction in "<>!=":
