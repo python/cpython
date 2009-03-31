@@ -1291,6 +1291,15 @@ class PyBuildExt(build_ext):
                 )
             libraries = []
 
+        elif platform.startswith('netbsd'):
+            macros = dict(                  # at least NetBSD 5
+                HAVE_SEM_OPEN=1,
+                HAVE_SEM_TIMEDWAIT=0,
+                HAVE_FD_TRANSFER=1,
+                HAVE_BROKEN_SEM_GETVALUE=1
+                )
+            libraries = []
+
         else:                                   # Linux and other unices
             macros = dict(
                 HAVE_SEM_OPEN=1,
