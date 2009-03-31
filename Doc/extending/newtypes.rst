@@ -871,6 +871,7 @@ the module's :cfunc:`init` function. ::
 
        Py_INCREF(&ShoddyType);
        PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+       return m;
    }
 
 Before calling :cfunc:`PyType_Ready`, the type structure must have the

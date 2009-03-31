@@ -1266,12 +1266,13 @@ All that a client module must do in order to have access to the function
    {
        PyObject *m;
 
-       m = Py_InitModule("client", ClientMethods);
+       m = PyModule_Create(&clientmodule);
        if (m == NULL)
-           return;
+           return NULL;
        if (import_spam() < 0)
-           return;
+           return NULL;
        /* additional initialization can happen here */
+       return m;
    }
 
 The main disadvantage of this approach is that the file :file:`spammodule.h` is
