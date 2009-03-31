@@ -334,12 +334,12 @@ are always available.  They are listed here in alphabetical order.
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
-   occurs).  If it is a code object, it is simply executed.  In all cases, the
-   code that's executed is expected to be valid as file input (see the section
-   "File input" in the Reference Manual). Be aware that the :keyword:`return`
-   and :keyword:`yield` statements may not be used outside of function
-   definitions even within the context of code passed to the :func:`exec`
-   function. The return value is ``None``.
+   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
+   the code that's executed is expected to be valid as file input (see the
+   section "File input" in the Reference Manual). Be aware that the
+   :keyword:`return` and :keyword:`yield` statements may not be used outside of
+   function definitions even within the context of code passed to the
+   :func:`exec` function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
    current scope.  If only *globals* is provided, it must be a dictionary, which
@@ -1275,13 +1275,10 @@ are always available.  They are listed here in alphabetical order.
 
 .. rubric:: Footnotes
 
-.. [#] Specifying a buffer size currently has no effect on systems that don't have
-   :cfunc:`setvbuf`.  The interface to specify the buffer size is not done using a
-   method that calls :cfunc:`setvbuf`, because that may dump core when called after
-   any I/O has been performed, and there's no reliable way to determine whether
-   this is the case.
+.. [#] Note that the parser only accepts the Unix-style end of line convention.
+   If you are reading the code from a file, make sure to use newline conversion
+   mode to convert Windows or Mac-style newlines.
 
 .. [#] In the current implementation, local variable bindings cannot normally be
    affected this way, but variables retrieved from other scopes (such as modules)
    can be.  This may change.
-
