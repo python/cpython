@@ -1,6 +1,8 @@
 from test import support
 import unittest
-import nis
+
+# Skip test if nis module does not exist.
+nis = support.import_module('nis')
 
 raise unittest.SkipTest("test_nis hangs on Solaris")
 

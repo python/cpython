@@ -1,10 +1,9 @@
 import unittest
-from test.support import run_unittest
+from test.support import run_unittest, import_module
 
-try:
-    import _sqlite3
-except ImportError:
-    raise unittest.SkipTest('no sqlite available')
+# Skip test if _sqlite3 module not installed
+import_module('_sqlite3')
+
 from sqlite3.test import (dbapi, types, userfunctions,
                                 factory, transactions, hooks, regression,
                                 dump)

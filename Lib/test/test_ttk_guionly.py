@@ -1,10 +1,14 @@
 import os
 import sys
+import unittest
+from test import support
+
+# Skip this test if _tkinter wasn't built.
+support.import_module('_tkinter')
+
+from _tkinter import TclError
 from tkinter import ttk
 from tkinter.test import runtktests
-import unittest
-from _tkinter import TclError
-from test import support
 
 try:
     ttk.Button()
