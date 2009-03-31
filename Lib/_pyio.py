@@ -1696,6 +1696,7 @@ class TextIOWrapper(TextIOBase):
         return cookie
 
     def read(self, n=None):
+        self._checkReadable()
         if n is None:
             n = -1
         decoder = self._decoder or self._get_decoder()
