@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5619: Multiprocessing children disobey the debug flag and causes
+  popups on windows buildbots. Patch applied to work around this issue.
+
 - Issue #5632: Thread.ident was None for the main thread and threads not created
   with the threading module.
 
