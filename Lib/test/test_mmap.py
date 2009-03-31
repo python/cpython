@@ -335,6 +335,23 @@ class MmapTests(unittest.TestCase):
         mf.close()
         f.close()
 
+        # more excessive test
+        data = b"0123456789"
+        for dest in range(len(data)):
+            for src in range(len(data)):
+                for count in range(len(data) - max(dest, src)):
+                    expected = data[:dest] + data[src:src+count] + data[dest+count:]
+                    m = mmap.mmap(-1, len(data))
+                    m[:] = data
+                    m.move(dest, src, count)
+                    self.assertEqual(m[:], expected)
+                    m.close()
+
+        # should not crash
+        m = mmap.mmap(-1, 1)
+        self.assertRaises(ValueError, m.move, 1, 1, -1)
+        m.close()
+
     def test_anonymous(self):
         # anonymous mmap.mmap(-1, PAGE)
         m = mmap.mmap(-1, PAGESIZE)
