@@ -540,6 +540,10 @@ of each one.
 | :const:`VERBOSE`, :const:`X`    | Enable verbose REs, which can be organized |
 |                                 | more cleanly and understandably.           |
 +---------------------------------+--------------------------------------------+
+| :const:`ASCII`, :const:`A`      | Makes several escapes like ``\w``, ``\b``, |
+|                                 | ``\s`` and ``\d`` match only on ASCII      |
+|                                 | characters with the respective property.   |
++---------------------------------+--------------------------------------------+
 
 
 .. data:: I
@@ -592,6 +596,15 @@ of each one.
 
    Makes the ``'.'`` special character match any character at all, including a
    newline; without this flag, ``'.'`` will match anything *except* a newline.
+
+
+.. data:: A
+          ASCII
+   :noindex:
+
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` perform ASCII-only
+   matching instead of full Unicode matching. This is only meaningful for
+   Unicode patterns, and is ignored for byte patterns.
 
 
 .. data:: X
