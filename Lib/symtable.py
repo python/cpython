@@ -190,6 +190,9 @@ class Symbol(object):
     def is_global(self):
         return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT))
 
+    def is_declared_global(self):
+        return bool(self.__scope == GLOBAL_EXPLICIT)
+
     def is_local(self):
         return bool(self.__flags & DEF_BOUND)
 
