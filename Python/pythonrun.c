@@ -1631,6 +1631,8 @@ void
 Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
+	fflush(stderr); /* it helps in Windows debug build */
+
 #ifdef MS_WINDOWS
 	{
 		size_t len = strlen(msg);
