@@ -20,7 +20,7 @@ setup(
     license = "PSF license",
     packages = ["test2to3"],
     scripts = ["maintest.py"],
-    cmdclass = {'build_py':build_py,
-                'build_scripts':build_scripts,
+    cmdclass = {'build_py': build_py,
+                'build_scripts': build_scripts,
                 }
 )
