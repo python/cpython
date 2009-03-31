@@ -583,11 +583,6 @@ class CookieTests(TestCase):
         req = urllib.request.Request("http://www.acme.com/",
                                      headers={"Host": "irrelevant.com"})
         self.assertEquals(request_host(req), "www.acme.com")
-        # not actually sure this one is valid Request object, so maybe should
-        # remove test for no host in url in request_host function?
-        req = urllib.request.Request("/resource.html",
-                                     headers={"Host": "www.acme.com"})
-        self.assertEquals(request_host(req), "www.acme.com")
         # port shouldn't be in request-host
         req = urllib.request.Request("http://www.acme.com:2345/resource.html",
                                      headers={"Host": "www.acme.com:5432"})

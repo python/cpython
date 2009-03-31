@@ -683,8 +683,13 @@ class HandlerTests(unittest.TestCase):
                 self.msg = msg
                 self.status = status
                 self.reason = reason
+                self.code = 200
             def read(self):
                 return ''
+            def info(self):
+                return {}
+            def geturl(self):
+                return self.url
         class MockHTTPClass:
             def __init__(self):
                 self.level = 0

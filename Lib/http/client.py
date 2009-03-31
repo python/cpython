@@ -204,6 +204,12 @@ responses = {
 MAXAMOUNT = 1048576
 
 class HTTPMessage(email.message.Message):
+    # XXX The only usage of this method is in
+    # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
+    # that it doesn't need to be part of the public API.  The API has
+    # never been defined so this could cause backwards compatibility
+    # issues.
+
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
 
@@ -261,20 +267,26 @@ class HTTPResponse(io.RawIOBase):
     # text following RFC 2047.  The basic status line parsing only
     # accepts iso-8859-1.
 
-    def __init__(self, sock, debuglevel=0, strict=0, method=None):
-        # If the response includes a content-length header, we
-        # need to make sure that the client doesn't read more than the
+    def __init__(self, sock, debuglevel=0, strict=0, method=None, url=None):
+        # If the response includes a content-length header, we need to
+        # make sure that the client doesn't read more than the
         # specified number of bytes.  If it does, it will block until
-        # the server times out and closes the connection.  (The only
-        # applies to HTTP/1.1 connections.)  This will happen if a self.fp.read()
-        # is done (without a size) whether self.fp is buffered or not.
-        # So, no self.fp.read() by clients unless they know what they are doing.
+        # the server times out and closes the connection.  This will
+        # happen if a self.fp.read() is done (without a size) whether
+        # self.fp is buffered or not.  So, no self.fp.read() by
+        # clients unless they know what they are doing.
         self.fp = sock.makefile("rb")
         self.debuglevel = debuglevel
         self.strict = strict
         self._method = method
 
-        self.msg = None
+        # The HTTPResponse object is returned via urllib.  The clients
+        # of http and urllib expect different attributes for the
+        # headers.  headers is used here and supports urllib.  msg is
+        # provided as a backwards compatibility layer for http
+        # clients.
+
+        self.headers = self.msg = None
 
         # from the Status-Line of the response
         self.version = _UNKNOWN # HTTP-Version
@@ -326,7 +338,7 @@ class HTTPResponse(io.RawIOBase):
         return version, status, reason
 
     def begin(self):
-        if self.msg is not None:
+        if self.headers is not None:
             # we've already started reading the response
             return
 
@@ -343,7 +355,7 @@ class HTTPResponse(io.RawIOBase):
                 if self.debuglevel > 0:
                     print("header:", skip)
 
-        self.status = status
+        self.code = self.status = status
         self.reason = reason.strip()
         if version == "HTTP/1.0":
             self.version = 10
@@ -358,17 +370,17 @@ class HTTPResponse(io.RawIOBase):
             self.length = None
             self.chunked = False
             self.will_close = True
-            self.msg = email.message_from_string('')
+            self.headers = self.msg = email.message_from_string('')
             return
 
-        self.msg = parse_headers(self.fp)
+        self.headers = self.msg = parse_headers(self.fp)
 
         if self.debuglevel > 0:
-            for hdr in self.msg:
+            for hdr in self.headers:
                 print("header:", hdr, end=" ")
 
         # are we using the chunked-style of transfer encoding?
-        tr_enc = self.msg.get("transfer-encoding")
+        tr_enc = self.headers.get("transfer-encoding")
         if tr_enc and tr_enc.lower() == "chunked":
             self.chunked = True
             self.chunk_left = None
@@ -381,10 +393,10 @@ class HTTPResponse(io.RawIOBase):
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
-        length = self.msg.get("content-length")
+        length = self.headers.get("content-length")
 
          # are we using the chunked-style of transfer encoding?
-        tr_enc = self.msg.get("transfer-encoding")
+        tr_enc = self.headers.get("transfer-encoding")
         if length and not self.chunked:
             try:
                 self.length = int(length)
@@ -411,11 +423,11 @@ class HTTPResponse(io.RawIOBase):
             self.will_close = True
 
     def _check_close(self):
-        conn = self.msg.get("connection")
+        conn = self.headers.get("connection")
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
-            conn = self.msg.get("connection")
+            conn = self.headers.get("connection")
             if conn and "close" in conn.lower():
                 return True
             return False
@@ -424,7 +436,7 @@ class HTTPResponse(io.RawIOBase):
         # connections, using rules different than HTTP/1.1.
 
         # For older HTTP, Keep-Alive indicates persistent connection.
-        if self.msg.get("keep-alive"):
+        if self.headers.get("keep-alive"):
             return False
 
         # At least Akamai returns a "Connection: Keep-Alive" header,
@@ -433,7 +445,7 @@ class HTTPResponse(io.RawIOBase):
             return False
 
         # Proxy-Connection is a netscape hack.
-        pconn = self.msg.get("proxy-connection")
+        pconn = self.headers.get("proxy-connection")
         if pconn and "keep-alive" in pconn.lower():
             return False
 
@@ -584,21 +596,31 @@ class HTTPResponse(io.RawIOBase):
         return self.fp.fileno()
 
     def getheader(self, name, default=None):
-        if self.msg is None:
+        if self.headers is None:
             raise ResponseNotReady()
-        return ', '.join(self.msg.get_all(name, default))
+        return ', '.join(self.headers.get_all(name, default))
 
     def getheaders(self):
         """Return list of (header, value) tuples."""
-        if self.msg is None:
+        if self.headers is None:
             raise ResponseNotReady()
-        return list(self.msg.items())
+        return list(self.headers.items())
 
     # We override IOBase.__iter__ so that it doesn't check for closed-ness
 
     def __iter__(self):
         return self
 
+    # For compatibility with old-style urllib responses.
+
+    def info(self):
+        return self.headers
+
+    def geturl(self):
+        return self.url
+
+    def getcode(self):
+        return self.status
 
 class HTTPConnection:
 
@@ -757,7 +779,7 @@ class HTTPConnection:
         if self.__state == _CS_IDLE:
             self.__state = _CS_REQ_STARTED
         else:
-            raise CannotSendRequest()
+            raise CannotSendRequest(self.__state)
 
         # Save the method we use, we need it later in the response phase
         self._method = method
@@ -906,13 +928,23 @@ class HTTPConnection:
         self.endheaders(body)
 
     def getresponse(self):
-        """Get the response from the server."""
+        """Get the response from the server.
+
+        If the HTTPConnection is in the correct state, returns an
+        instance of HTTPResponse or of whatever object is returned by
+        class the response_class variable.
+
+        If a request has not been sent or if a previous response has
+        not be handled, ResponseNotReady is raised.  If the HTTP
+        response indicates that the connection should be closed, then
+        it will be closed before the response is returned.  When the
+        connection is closed, the underlying socket is closed.
+        """
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
             self.__response = None
 
-        #
         # if a prior response exists, then it must be completed (otherwise, we
         # cannot read this response's header to determine the connection-close
         # behavior)
@@ -929,7 +961,7 @@ class HTTPConnection:
         #                  isclosed() status to become true.
         #
         if self.__state != _CS_REQ_SENT or self.__response:
-            raise ResponseNotReady()
+            raise ResponseNotReady(self.__state)
 
         if self.debuglevel > 0:
             response = self.response_class(self.sock, self.debuglevel,
