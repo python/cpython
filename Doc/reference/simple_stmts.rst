@@ -653,48 +653,124 @@ The :keyword:`import` statement
 
 Import statements are executed in two steps: (1) find a module, and initialize
 it if necessary; (2) define a name or names in the local namespace (of the scope
-where the :keyword:`import` statement occurs). The first form (without
-:keyword:`from`) repeats these steps for each identifier in the list.  The form
-with :keyword:`from` performs step (1) once, and then performs step (2)
-repeatedly.
-
-In this context, to "initialize" a built-in or extension module means to call an
-initialization function that the module must provide for the purpose (in the
-reference implementation, the function's name is obtained by prepending string
-"init" to the module's name); to "initialize" a Python-coded module means to
-execute the module's body.
+where the :keyword:`import` statement occurs). The statement comes in two
+forms differing on whether it uses the :keyword:`from` keyword. The first form
+(without :keyword:`from`) repeats these steps for each identifier in the list.
+The form with :keyword:`from` performs step (1) once, and then performs step
+(2) repeatedly.
 
 .. index::
-   single: modules (in module sys)
-   single: sys.modules
-   pair: module; name
-   pair: built-in; module
-   pair: user-defined; module
-   module: sys
-   pair: filename; extension
-   triple: module; search; path
+    single: package
 
-The system maintains a table of modules that have been or are being initialized,
-indexed by module name.  This table is accessible as ``sys.modules``.  When a
-module name is found in this table, step (1) is finished.  If not, a search for
-a module definition is started.  When a module is found, it is loaded.  Details
-of the module searching and loading process are implementation and platform
-specific.  It generally involves searching for a "built-in" module with the
-given name and then searching a list of locations given as ``sys.path``.
+To understand how step (1) occurs, one must first understand how Python handles
+hierarchical naming of modules. To help organize modules and provide a
+hierarchy in naming, Python has a concept of packages. A package can contain
+other packages and modules while modules cannot contain other modules or
+packages. From a file system perspective, packages are directories and modules
+are files. The original `specification for packages
+<http://www.python.org/doc/essays/packages.html>`_ is still available to read,
+although minor details have changed since the writing of that document.
 
 .. index::
-   pair: module; initialization
-   exception: ImportError
-   single: code block
-   exception: SyntaxError
+    single: sys.modules
 
-If a built-in module is found, its built-in initialization code is executed and
-step (1) is finished.  If no matching file is found, :exc:`ImportError` is
-raised. If a file is found, it is parsed, yielding an executable code block.  If
-a syntax error occurs, :exc:`SyntaxError` is raised.  Otherwise, an empty module
-of the given name is created and inserted in the module table, and then the code
-block is executed in the context of this module.  Exceptions during this
-execution terminate step (1).
+Once the name of the module is known (unless otherwise specified, the term
+"module" will refer to both packages and modules), searching
+for the module or package can begin. The first place checked is
+:data:`sys.modules`, the cache of all modules that have been imported
+previously. If the module is found there then it is used in step (2) of import.
+
+.. index::
+    single: sys.meta_path
+    single: finder
+    pair: finder; find_module
+    single: __path__
+
+If the module is not found in the cache, then :data:`sys.meta_path` is searched
+(the specification for :data:`sys.meta_path` can be found in :pep:`302`).
+The object is a list of :term:`finder` objects which are queried in order as to
+whether they know how to load the module by calling their :meth:`find_module`
+method with the name of the module. If the module happens to be contained
+within a package (as denoted by the existence of a dot in the name), then a
+second argument to :meth:`find_module` is given as the value of the
+:attr:`__path__` attribute from the parent package (everything up to the last
+dot in the name of the module being imported). If a finder can find the module
+it returns a :term:`loader` (discussed later) or returns :keyword:`None`.
+
+.. index::
+    single: sys.path_hooks
+    single: sys.path_importer_cache
+    single: sys.path
+
+If none of the finders on :data:`sys.meta_path` are able to find the module
+then some implicitly defined finders are queried. Implementations of Python
+vary in what implicit meta path finders are defined. The one they all do
+define, though, is one that handles :data:`sys.path_hooks`,
+:data:`sys.path_importer_cache`, and :data:`sys.path`.
+
+The implicit finder searches for the requested module in the "paths" specified
+in one of two places ("paths" do not have to be file system paths). If the
+module being imported is supposed to be contained within a package then the
+second argument passed to :meth:`find_module`, :attr:`__path__` on the parent
+package, is used as the source of paths. If the module is not contained in a
+package then :data:`sys.path` is used as the source of paths.
+
+Once the source of paths is chosen it is iterated over to find a finder that
+can handle that path. The dict at :data:`sys.path_importer_cache` caches
+finders for paths and is checked for a finder. If the path does not have a
+finder cached then :data:`sys.path_hooks` is searched by calling each object in
+the list with a single argument of the path, returning a finder or raises
+:exc:`ImportError`. If a finder is returned then it is cached in
+:data:`sys.path_importer_cache` and then used for that path entry. If no finder
+can be found but the path exists then a value of :keyword:`None` is
+stored in :data:`sys.path_importer_cache` to signify that an implicit,
+file-based finder that handles modules stored as individual files should be
+used for that path. If the path does not exist then a finder which always
+returns :keyword:`None` is placed in the cache for the path.
+
+.. index::
+    single: loader
+    pair: loader; load_module
+    exception: ImportError
+
+If no finder can find the module then :exc:`ImportError` is raised. Otherwise
+some finder returned a loader whose :meth:`load_module` method is called with
+the name of the module to load (see :pep:`302` for the original definition of
+loaders). A loader has several responsibilities to perform on a module it
+loads. First, if the module already exists in :data:`sys.modules` (a
+possibility if the loader is called outside of the import machinery) then it
+is to use that module for initialization and not a new module. But if the
+module does not exist in :data:`sys.modules` then it is to be added to that
+dict before initialization begins. If an error occurs during loading of the
+module and it was added to :data:`sys.modules` it is to be removed from the
+dict. If an error occurs but the module was already in :data:`sys.modules` it
+is left in the dict.
+
+.. index::
+    single: __name__
+    single: __file__
+    single: __path__
+    single: __package__
+    single: __loader__
+
+The loader must set several attributes on the module. :data:`__name__` is to be
+set to the name of the module. :data:`__file__` is to be the "path" to the file
+unless the module is built-in (and thus listed in
+:data:`sys.builtin_module_names`) in which case the attribute is not set.
+If what is being imported is a package then :data:`__path__` is to be set to a
+list of paths to be searched when looking for modules and packages contained
+within the package being imported. :data:`__package__` is optional but should
+be set to the name of package that contains the module or package (the empty
+string is used for module not contained in a package). :data:`__loader__` is
+also optional but should be set to the loader object that is loading the
+module.
+
+.. index::
+    exception: ImportError
+
+If an error occurs during loading then the loader raises :exc:`ImportError` if
+some other exception is not already being propagated. Otherwise the loader
+returns the module that was loaded and initialized.
 
 When step (1) finishes without raising an exception, step (2) can begin.
 
@@ -734,23 +810,21 @@ function contains or is a nested block with free variables, the compiler will
 raise a :exc:`SyntaxError`.
 
 .. index::
-   keyword: from
-   statement: from
-   triple: hierarchical; module; names
-   single: packages
-   single: __init__.py
+    single: relative; import
 
-**Hierarchical module names:** when the module names contains one or more dots,
-the module search path is carried out differently.  The sequence of identifiers
-up to the last dot is used to find a "package"; the final identifier is then
-searched inside the package.  A package is generally a subdirectory of a
-directory on ``sys.path`` that has a file :file:`__init__.py`.
+When specifying what module to import you do not have to specify the absolute
+name of the module. When a module or package is contained within another
+package it is possible to make a relative import within the same top package
+without having to mention the package name. By using leading dots in the
+specified module or package after :keyword:`from` you can specify how high to
+traverse up the current package hierarchy without specifying exact names. One
+leading dot means the current package where the module making the import
+exists. Two dots means up one package level. Three dots is up two levels, etc.
+So if you execute ``from . import mod`` from a module in the ``pkg`` package
+then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
+imprt mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
+The specification for relative imports is contained within :pep:`328`.
 
-..
-   [XXX Can't be
-   bothered to spell this out right now; see the URL
-   http://www.python.org/doc/essays/packages.html for more details, also about how
-   the module search works from inside a package.]
 
 .. index:: builtin: __import__
 
