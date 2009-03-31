@@ -500,9 +500,12 @@ class Thread(_Verbose):
                 return
             raise
 
+    def _set_ident(self):
+        self.__ident = _get_ident()
+
     def __bootstrap_inner(self):
         try:
-            self.__ident = _get_ident()
+            self._set_ident()
             self.__started.set()
             with _active_limbo_lock:
                 _active[self.__ident] = self
@@ -733,6 +736,7 @@ class _MainThread(Thread):
     def __init__(self):
         Thread.__init__(self, name="MainThread")
         self._Thread__started.set()
+        self._set_ident()
         with _active_limbo_lock:
             _active[_get_ident()] = self
 
@@ -778,6 +782,7 @@ class _DummyThread(Thread):
         del self._Thread__block
 
         self._Thread__started.set()
+        self._set_ident()
         with _active_limbo_lock:
             _active[_get_ident()] = self
 

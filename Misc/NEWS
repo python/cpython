@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5632: Thread.ident was None for the main thread and threads not created
+  with the threading module.
+
 - Issue #5400: Added patch for multiprocessing on netbsd compilation/support
 
 - Issue #5387: Fixed mmap.move crash by integer overflow.
