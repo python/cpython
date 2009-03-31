@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5619: Multiprocessing children disobey the debug flag and causes
+  popups on windows buildbots. Patch applied to work around this issue.
+
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
 - Issue #5595: Fix UnboundedLocalError in ntpath.ismount().
