@@ -612,10 +612,8 @@ mmap_move_method(mmap_object *self, PyObject *args)
 		return NULL;
 	} else {
 		/* bounds check the values */
-		if (/* end of source after end of data?? */
-			((src+count) > self->size)
-			/* dest will fit? */
-			|| (dest+count > self->size)) {
+		unsigned long pos = src > dest ? src : dest;
+		if (self->size >= pos && count > self->size - pos) {
 			PyErr_SetString(PyExc_ValueError,
 					"source or destination out of range");
 			return NULL;
