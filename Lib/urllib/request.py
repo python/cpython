@@ -1562,10 +1562,6 @@ class URLopener:
         else:
             auth = None
         http_conn = connection_factory(host)
-##        # XXX We should fix urllib so that it works with HTTP/1.1.
-##        http_conn._http_vsn = 10
-##        http_conn._http_vsn_str = "HTTP/1.0"
-
         headers = {}
         if proxy_auth:
             headers["Proxy-Authorization"] = "Basic %s" % proxy_auth
