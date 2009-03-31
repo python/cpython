@@ -83,10 +83,23 @@ class ThreadTests(unittest.TestCase):
             t.join(NUMTASKS)
             self.assert_(not t.is_alive())
             self.failIfEqual(t.ident, 0)
+            self.assertFalse(t.ident is None)
             self.assert_(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
         if verbose:
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
+
+    def test_ident_of_no_threading_threads(self):
+        # The ident still must work for the main thread and dummy threads.
+        self.assertFalse(threading.currentThread().ident is None)
+        def f():
+            ident.append(threading.currentThread().ident)
+            done.set()
+        done = threading.Event()
+        ident = []
+        thread.start_new_thread(f, ())
+        done.wait()
+        self.assertFalse(ident[0] is None)
 
     # run with a small(ish) thread stack size (256kB)
     def test_various_ops_small_stack(self):
