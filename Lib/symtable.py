@@ -201,6 +201,9 @@ class Symbol(object):
                       DeprecationWarning, 2)
         return False
 
+    def is_declared_global(self):
+        return bool(self.__scope == GLOBAL_EXPLICIT)
+
     def is_local(self):
         return bool(self.__flags & DEF_BOUND)
 
