@@ -571,6 +571,39 @@ def run_2to3(files, fixer_names=None, options=None, explicit=None):
     r = DistutilsRefactoringTool(fixer_names, options=options)
     r.refactor(files, write=True)
 
+def copydir_run_2to3(src, dest, template=None, fixer_names=None,
+                     options=None, explicit=None):
+    """Recursively copy a directory, only copying new and changed files,
+    running run_2to3 over all newly copied Python modules afterward.
+
+    If you give a template string, it's parsed like a MANIFEST.in.
+    """
+    from distutils.dir_util import mkpath
+    from distutils.file_util import copy_file
+    from distutils.filelist import FileList
+    filelist = FileList()
+    curdir = os.getcwd()
+    os.chdir(src)
+    try:
+        filelist.findall()
+    finally:
+        os.chdir(curdir)
+    filelist.files[:] = filelist.allfiles
+    if template:
+        for line in template.splitlines():
+            line = line.strip()
+            if not line: continue
+            filelist.process_template_line(line)
+    copied = []
+    for filename in filelist.files:
+        outname = os.path.join(dest, filename)
+        mkpath(os.path.dirname(outname))
+        res = copy_file(os.path.join(src, filename), outname, update=1)
+        if res[1]: copied.append(outname)
+    run_2to3([fn for fn in copied if fn.lower().endswith('.py')],
+             fixer_names=fixer_names, options=options, explicit=explicit)
+    return copied
+
 class Mixin2to3:
     '''Mixin class for commands that run 2to3.
     To configure 2to3, setup scripts may either change
