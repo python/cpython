@@ -265,11 +265,17 @@ I/O Base Classes
       interpreted relative to the position indicated by *whence*.  Values for
       *whence* are:
 
-      * ``0`` -- start of the stream (the default); *offset* should be zero or positive
-      * ``1`` -- current stream position; *offset* may be negative
-      * ``2`` -- end of the stream; *offset* is usually negative
+      * :data:`SEEK_SET` or ``0`` -- start of the stream (the default);
+        *offset* should be zero or positive
+      * :data:`SEEK_CUR` or ``1`` -- current stream position; *offset* may
+        be negative
+      * :data:`SEEK_END` or ``2`` -- end of the stream; *offset* is usually
+        negative
 
       Return the new absolute position.
+
+      .. versionadded:: 2.7
+         The ``SEEK_*`` constants
 
    .. method:: seekable()
 
