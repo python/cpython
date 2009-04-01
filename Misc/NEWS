@@ -730,6 +730,8 @@ Extension Modules
 Tests
 -----
 
+- Fix test_logging to no longer reset the warnings filter.
+
 - Issue #5635: Fix running test_sys with tracing enabled.
 
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
