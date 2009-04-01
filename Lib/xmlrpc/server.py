@@ -163,7 +163,7 @@ class SimpleXMLRPCDispatcher:
         self.funcs = {}
         self.instance = None
         self.allow_none = allow_none
-        self.encoding = encoding
+        self.encoding = encoding or 'utf-8'
 
     def register_instance(self, instance, allow_dotted_names=False):
         """Registers an instance to respond to XML-RPC requests.
@@ -266,7 +266,7 @@ class SimpleXMLRPCDispatcher:
                 encoding=self.encoding, allow_none=self.allow_none,
                 )
 
-        return response
+        return response.encode(self.encoding)
 
     def system_listMethods(self):
         """system.listMethods() => ['add', 'subtract', 'multiple']
@@ -473,8 +473,6 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
 
             self.end_headers()
         else:
-            # Got a valid XML RPC response; convert to bytes first
-            response = response.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "text/xml")
             self.send_header("Content-length", str(len(response)))
@@ -551,7 +549,9 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         print('Content-Type: text/xml')
         print('Content-Length: %d' % len(response))
         print()
-        sys.stdout.write(response)
+        sys.stdout.flush()
+        sys.stdout.buffer.write(response)
+        sys.stdout.buffer.flush()
 
     def handle_get(self):
         """Handle a single HTTP GET request.
@@ -569,11 +569,14 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
              'message' : message,
              'explain' : explain
             }
+        response = response.encode('utf-8')
         print('Status: %d %s' % (code, message))
-        print('Content-Type: text/html')
+        print('Content-Type: %s' % http.server.DEFAULT_ERROR_CONTENT_TYPE)
         print('Content-Length: %d' % len(response))
         print()
-        sys.stdout.write(response)
+        sys.stdout.flush()
+        sys.stdout.buffer.write(response)
+        sys.stdout.buffer.flush()
 
     def handle_request(self, request_text = None):
         """Handle a single XML-RPC request passed through a CGI post method.
@@ -814,12 +817,12 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
             self.report_404()
             return
 
-        response = self.server.generate_html_documentation()
+        response = self.server.generate_html_documentation().encode('utf-8')
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
-        self.wfile.write(response.encode())
+        self.wfile.write(response)
 
         # shut down the connection
         self.wfile.flush()
@@ -852,12 +855,14 @@ class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
         documentation.
         """
 
-        response = self.generate_html_documentation()
+        response = self.generate_html_documentation().encode('utf-8')
 
         print('Content-Type: text/html')
         print('Content-Length: %d' % len(response))
         print()
-        sys.stdout.write(response)
+        sys.stdout.flush()
+        sys.stdout.buffer.write(response)
+        sys.stdout.buffer.flush()
 
     def __init__(self):
         CGIXMLRPCRequestHandler.__init__(self)
