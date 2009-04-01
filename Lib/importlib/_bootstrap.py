@@ -475,25 +475,6 @@ class _PyFileLoader(PyLoader):
         # Not a property so that it is easy to override.
         return self._find_path(imp.PY_SOURCE)
 
-    @_check_name
-    def get_source(self, fullname):
-        """Return the source for the module as a string.
-
-        Return None if the source is not available. Raise ImportError if the
-        laoder cannot handle the specified module.
-
-        """
-        source_path = self._source_path(name)
-        if source_path is None:
-            return None
-        import tokenize
-        with _closing(_io.FileIO(source_path, 'r')) as file:  # Assuming bytes.
-            encoding, lines = tokenize.detect_encoding(file.readline)
-        # XXX Will fail when passed to compile() if the encoding is
-        # anything other than UTF-8.
-        return open(source_path, encoding=encoding).read()
-
-
     def get_data(self, path):
         """Return the data from path as raw bytes."""
         return _io.FileIO(path, 'r').read()  # Assuming bytes.
