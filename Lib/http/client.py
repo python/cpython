@@ -469,6 +469,9 @@ class HTTPResponse(io.RawIOBase):
     def flush(self):
         self.fp.flush()
 
+    def readable(self):
+        return True
+
     # End of "raw stream" methods
 
     def isclosed(self):
