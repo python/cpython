@@ -52,7 +52,8 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
 __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
            "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
-           "BufferedRandom", "TextIOBase", "TextIOWrapper"]
+           "BufferedRandom", "TextIOBase", "TextIOWrapper",
+           "SEEK_SET", "SEEK_CUR", "SEEK_END"]
 
 
 import _io
@@ -64,6 +65,11 @@ from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  IncrementalNewlineDecoder, TextIOWrapper)
 
 OpenWrapper = _io.open # for compatibility with _pyio
+
+# for seek()
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
 
 # Declaring ABCs in C is tricky so we do it here.
 # Method descriptions and default implementations are inherited from the C
