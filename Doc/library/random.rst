@@ -253,3 +253,7 @@ Examples of basic usage::
    Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.
 
 
+   `Complementary-Multiply-with-Carry recipe
+   <http://code.activestate.com/recipes/576707/>`_ for a compatable alternative
+   random number generator with a long-period and comparatively simple update
+   operations.
