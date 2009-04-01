@@ -2,7 +2,6 @@
 #include "frameobject.h"
 
 #define MODULE_NAME "_warnings"
-#define DEFAULT_ACTION_NAME "default_action"
 
 PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
@@ -12,6 +11,7 @@ MODULE_NAME " provides basic warning filtering support.\n"
    get_warnings_attr() will reset these variables accordingly. */
 static PyObject *_filters;  /* List */
 static PyObject *_once_registry;  /* Dict */
+static PyObject *_default_action; /* String */
 
 
 static int
@@ -78,12 +78,31 @@ get_once_registry(void)
 }
 
 
+static PyObject *
+get_default_action(void)
+{
+    PyObject *default_action;
+
+    default_action = get_warnings_attr("defaultaction");
+    if (default_action == NULL) {
+	if (PyErr_Occurred()) {
+	    return NULL;
+	}
+	return _default_action;
+    }
+
+    Py_DECREF(_default_action);
+    _default_action = default_action;
+    return default_action;
+}
+
+
 /* The item is a borrowed reference. */
 static const char *
 get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
-    PyObject *action, *m, *d;
+    PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
 
@@ -135,21 +154,16 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return PyString_AsString(action);
     }
 
-    m = PyImport_ImportModule(MODULE_NAME);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
-    Py_DECREF(m);
-    if (d == NULL)
-        return NULL;
-    action = PyDict_GetItemString(d, DEFAULT_ACTION_NAME);
-    if (action != NULL)
+    action = get_default_action();
+    if (action != NULL) {
         return PyString_AsString(action);
+    }
 
     PyErr_SetString(PyExc_ValueError,
-                    MODULE_NAME "." DEFAULT_ACTION_NAME " not found");
+                    MODULE_NAME ".defaultaction not found");
     return NULL;
 }
+
 
 static int
 already_warned(PyObject *registry, PyObject *key, int should_set)
@@ -854,7 +868,7 @@ init_filters(void)
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
-    PyObject *m, *default_action;
+    PyObject *m;
 
     m = Py_InitModule3(MODULE_NAME, warnings_functions, warnings__doc__);
     if (m == NULL)
@@ -874,9 +888,9 @@ _PyWarnings_Init(void)
     if (PyModule_AddObject(m, "once_registry", _once_registry) < 0)
         return;
 
-    default_action = PyString_InternFromString("default");
-    if (default_action == NULL)
+    _default_action = PyString_FromString("default");
+    if (_default_action == NULL)
         return;
-    if (PyModule_AddObject(m, DEFAULT_ACTION_NAME, default_action) < 0)
+    if (PyModule_AddObject(m, "default_action", _default_action) < 0)
         return;
 }

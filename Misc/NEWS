@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1665206: Remove the last eager import in _warnings.c and make it lazy.
+
 - Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to
   the end sys.path, for compatibility with the system install of Python.
 
