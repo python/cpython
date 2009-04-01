@@ -166,6 +166,8 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_NONNUMERIC)
         self._write_test(['a',1,'p,q'], '"a","1","p,q"',
                          quoting = csv.QUOTE_ALL)
+        self._write_test(['a\nb',1], '"a\nb","1"',
+                         quoting = csv.QUOTE_ALL)
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
@@ -245,6 +247,7 @@ class Test_Csv(unittest.TestCase):
         # will this fail where locale uses comma for decimals?
         self._read_test([',3,"5",7.3, 9'], [['', 3, '5', 7.3, 9]],
                         quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test(['"a\nb", 7'], [['a\nb', ' 7']])
         self.assertRaises(ValueError, self._read_test,
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
@@ -281,6 +284,21 @@ class Test_Csv(unittest.TestCase):
             self.assertEqual(r.line_num, 3)
             self.assertRaises(StopIteration, r.next)
             self.assertEqual(r.line_num, 3)
+
+    def test_roundtrip_quoteed_newlines(self):
+        fd, name = tempfile.mkstemp()
+        fileobj = os.fdopen(fd, "w+b")
+        try:
+            writer = csv.writer(fileobj)
+            self.assertRaises(TypeError, writer.writerows, None)
+            rows = [['a\nb','b'],['c','x\r\nd']]
+            writer.writerows(rows)
+            fileobj.seek(0)
+            for i, row in enumerate(csv.reader(fileobj)):
+                self.assertEqual(row, rows[i])
+        finally:
+            fileobj.close()
+            os.unlink(name)
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
