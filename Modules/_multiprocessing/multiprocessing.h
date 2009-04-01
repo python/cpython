@@ -16,6 +16,9 @@
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>		     /* getpid() */
+#  ifdef Py_DEBUG
+#    include <crtdbg.h>
+#  endif
 #  define SEM_HANDLE HANDLE
 #  define SEM_VALUE_MAX LONG_MAX
 #else
