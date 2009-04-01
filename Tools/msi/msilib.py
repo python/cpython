@@ -5,7 +5,7 @@ import win32com.client.gencache
 import win32com.client
 import pythoncom, pywintypes
 from win32com.client import constants
-import re, string, os, sets, glob, subprocess, sys, _winreg, struct
+import re, string, os, sets, glob, subprocess, sys, winreg, struct
 
 try:
     basestring
@@ -387,9 +387,9 @@ class CAB:
                      (r"Software\Microsoft\Win32SDK\Directories", "Install Dir"),
                     ]:
             try:
-                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
-                dir = _winreg.QueryValueEx(key, v)[0]
-                _winreg.CloseKey(key)
+                key = winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
+                dir = winreg.QueryValueEx(key, v)[0]
+                winreg.CloseKey(key)
             except (WindowsError, IndexError):
                 continue
             cabarc = os.path.join(dir, r"Bin", "cabarc.exe")
