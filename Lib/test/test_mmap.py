@@ -359,14 +359,21 @@ class MmapTests(unittest.TestCase):
                 m.move(source, dest, size)
             except ValueError:
                 pass
-        self.assertRaises(ValueError, m.move, -1, -1, -1)
-        self.assertRaises(ValueError, m.move, -1, -1, 0)
-        self.assertRaises(ValueError, m.move, -1, 0, -1)
-        self.assertRaises(ValueError, m.move, 0, -1, -1)
-        self.assertRaises(ValueError, m.move, -1, 0, 0)
-        self.assertRaises(ValueError, m.move, 0, -1, 0)
-        self.assertRaises(ValueError, m.move, 0, 0, -1)
+
+        offsets = [(-1, -1, -1), (-1, -1, 0), (-1, 0, -1), (0, -1, -1),
+                   (-1, 0, 0), (0, -1, 0), (0, 0, -1)]
+        for source, dest, size in offsets:
+            self.assertRaises(ValueError, m.move, source, dest, size)
+
         m.close()
+
+        m = mmap.mmap(-1, 1) # single byte
+        self.assertRaises(ValueError, m.move, 0, 0, 2)
+        self.assertRaises(ValueError, m.move, 1, 0, 1)
+        self.assertRaises(ValueError, m.move, 0, 1, 1)
+        m.move(0, 0, 1)
+        m.move(0, 0, 0)
+
 
     def test_anonymous(self):
         # anonymous mmap.mmap(-1, PAGE)

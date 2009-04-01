@@ -609,23 +609,23 @@ mmap_seek_method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap_move_method(mmap_object *self, PyObject *args)
 {
-	unsigned long dest, src, count;
+	unsigned long dest, src, cnt;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "kkk:move", &dest, &src, &count) ||
+	if (!PyArg_ParseTuple(args, "kkk:move", &dest, &src, &cnt) ||
 	    !is_writeable(self)) {
 		return NULL;
 	} else {
 		/* bounds check the values */
-		unsigned long pos = src > dest ? src : dest;
-		if (self->size < pos || count > self->size - pos) {
+		if (cnt < 0 || (cnt + dest) < cnt || (cnt + src) < cnt ||
+		   src < 0 || src > self->size || (src + cnt) > self->size ||
+		   dest < 0 || dest > self->size || (dest + cnt) > self->size) {
 			PyErr_SetString(PyExc_ValueError,
-					"source or destination out of range");
+				"source, destination, or count out of range");
 			return NULL;
-		} else {
-			memmove(self->data+dest, self->data+src, count);
-			Py_INCREF(Py_None);
-			return Py_None;
 		}
+		memmove(self->data+dest, self->data+src, cnt);
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 }
 
