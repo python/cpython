@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define PyCF_MASK 0
+#define PyCF_MASK CO_FUTURE_BARRY_AS_BDFL
 #define PyCF_MASK_OBSOLETE 0
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
