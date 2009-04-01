@@ -836,6 +836,12 @@ object -- see :ref:`multiprocessing-managers`.
 .. class:: Event()
 
    A clone of :class:`threading.Event`.
+   This method returns the state of the internal semaphore on exit, so it
+   will always return ``True`` except if a timeout is given and the operation
+   times out.
+
+   .. versionchanged:: 2.7
+      Previously, the method always returned ``None``.
 
 .. class:: Lock()
 
