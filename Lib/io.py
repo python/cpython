@@ -66,6 +66,11 @@ import threading
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
+# for seek()
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
+
 # py3k has only new style classes
 __metaclass__ = type
 
