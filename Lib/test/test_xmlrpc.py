@@ -629,7 +629,11 @@ class CGIHandlerTestCase(unittest.TestCase):
         sys.stdin = open("xmldata.txt", "r")
         sys.stdout = open(test_support.TESTFN, "w")
 
-        self.cgi.handle_request()
+        os.environ['CONTENT_LENGTH'] = str(len(data))
+        try:
+            self.cgi.handle_request()
+        finally:
+            del os.environ['CONTENT_LENGTH']
 
         sys.stdin.close()
         sys.stdout.close()
