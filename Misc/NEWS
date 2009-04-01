@@ -1,4 +1,5 @@
-+++++++++++ Python News
++++++++++++
+Python News
 +++++++++++
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
@@ -714,6 +715,8 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #5635: Fix running test_sys with tracing enabled.
 
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
   that should cause a test to be skipped are now done using import_module 

@@ -221,6 +221,11 @@ class SysModuleTest(unittest.TestCase):
             sys.setdlopenflags(oldflags)
 
     def test_refcount(self):
+        # n here must be a global in order for this test to pass while
+        # tracing with a python function.  Tracing calls PyFrame_FastToLocals
+        # which will add a copy of any locals to the frame object, causing
+        # the reference count to increase by 2 instead of 1.
+        global n
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
