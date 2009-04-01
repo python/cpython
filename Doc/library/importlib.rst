@@ -388,6 +388,11 @@ an :term:`importer`.
 Example
 -------
 
+Below is an example meta path importer that uses a dict for back-end storage
+for source code. While not an optimal solution -- manipulations of
+:attr:`__path__` on packages does not influence import -- it does illustrate
+what little is required to implement an importer.
+
 .. testcode::
 
     """An importer where source is stored in a dict."""
