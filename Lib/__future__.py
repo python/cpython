@@ -70,6 +70,7 @@ CO_FUTURE_ABSOLUTE_IMPORT = 0x4000 # perform absolute imports by default
 CO_FUTURE_WITH_STATEMENT  = 0x8000   # with statement
 CO_FUTURE_PRINT_FUNCTION  = 0x10000   # print function
 CO_FUTURE_UNICODE_LITERALS = 0x20000 # unicode string literals
+CO_FUTURE_BARRY_AS_BDFL = 0x40000
 
 class _Feature:
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
@@ -126,3 +127,7 @@ print_function = _Feature((2, 6, 0, "alpha", 2),
 unicode_literals = _Feature((2, 6, 0, "alpha", 2),
                             (3, 0, 0, "alpha", 0),
                             CO_FUTURE_UNICODE_LITERALS)
+
+barry_as_FLUFL = _Feature((3, 1, 0, "alpha", 2),
+                         (3, 9, 0, "alpha", 0),
+                         CO_FUTURE_BARRY_AS_BDFL)

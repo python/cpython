@@ -52,10 +52,12 @@ typedef struct {
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
 #endif
 
+#define CO_FUTURE_BARRY_AS_BDFL  0x40000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
-/* #define PY_PARSER_REQUIRES_FUTURE_KEYWORD */
+#define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 

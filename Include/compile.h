@@ -26,6 +26,7 @@ typedef struct {
 #define FUTURE_WITH_STATEMENT "with_statement"
 #define FUTURE_PRINT_FUNCTION "print_function"
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
+#define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 
 struct _mod; /* Declare the existence of this type */
 PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,
