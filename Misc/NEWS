@@ -726,6 +726,8 @@ Extension Modules
   buffer.
 
 
+- Issue #5228: Make functools.partial objects can now be pickled.
+
 Tests
 -----
 

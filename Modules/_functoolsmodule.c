@@ -196,6 +196,53 @@ static PyGetSetDef partial_getsetlist[] = {
 	{NULL} /* Sentinel */
 };
 
+/* Pickle strategy:
+   __reduce__ by itself doesn't support getting kwargs in the unpickle
+   operation so we define a __setstate__ that replaces all the information
+   about the partial.  If we only replaced part of it someone would use
+   it as a hook to do stange things.
+ */
+
+PyObject *
+partial_reduce(partialobject *pto, PyObject *unused)
+{
+	return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn, 
+			     pto->args, pto->kw,
+			     pto->dict ? pto->dict : Py_None);
+}
+
+PyObject *
+partial_setstate(partialobject *pto, PyObject *args)
+{
+	PyObject *fn, *fnargs, *kw, *dict;
+	if (!PyArg_ParseTuple(args, "(OOOO):__setstate__", 
+			      &fn, &fnargs, &kw, &dict))
+		return NULL;
+	Py_XDECREF(pto->fn);
+	Py_XDECREF(pto->args);
+	Py_XDECREF(pto->kw);
+	Py_XDECREF(pto->dict);
+	pto->fn = fn;
+	pto->args = fnargs;
+	pto->kw = kw;
+	if (dict != Py_None) {
+	  pto->dict = dict;
+	  Py_INCREF(dict);
+	} else {
+	  pto->dict = NULL;
+	}
+	Py_INCREF(fn);
+	Py_INCREF(fnargs);
+	Py_INCREF(kw);
+	Py_RETURN_NONE;
+}
+
+static PyMethodDef partial_methods[] = {
+	{"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
+	{"__setstate__", (PyCFunction)partial_setstate, METH_VARARGS},
+	{NULL,		NULL}		/* sentinel */
+};
+
 static PyTypeObject partial_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"functools.partial",		/* tp_name */
@@ -226,7 +273,7 @@ static PyTypeObject partial_type = {
 	offsetof(partialobject, weakreflist),	/* tp_weaklistoffset */
 	0,				/* tp_iter */
 	0,				/* tp_iternext */
-	0,				/* tp_methods */
+	partial_methods,		/* tp_methods */
 	partial_memberlist,		/* tp_members */
 	partial_getsetlist,		/* tp_getset */
 	0,				/* tp_base */
