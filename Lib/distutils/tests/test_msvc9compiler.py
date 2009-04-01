@@ -48,8 +48,8 @@ class msvc9compilerTestCase(unittest.TestCase):
         v = Reg.get_value(path, "lfitalic")
         self.assert_(v in (0, 1))
 
-        import _winreg
-        HKCU = _winreg.HKEY_CURRENT_USER
+        import winreg
+        HKCU = winreg.HKEY_CURRENT_USER
         keys = Reg.read_keys(HKCU, 'xxxx')
         self.assertEquals(keys, None)
 

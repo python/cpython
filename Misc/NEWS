@@ -53,6 +53,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5624: Fix the _winreg module name still used in several modules.
+
 - Issue #5628: Fix io.TextIOWrapper.read() with a unreadable buffer.
 
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
