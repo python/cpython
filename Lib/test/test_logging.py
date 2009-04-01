@@ -910,30 +910,32 @@ class EncodingTest(BaseTest):
 
 
 class WarningsTest(BaseTest):
+
     def test_warnings(self):
         logging.captureWarnings(True)
-        warnings.filterwarnings("always", category=UserWarning)
-        try:
-            file = io.StringIO()
-            h = logging.StreamHandler(file)
-            logger = logging.getLogger("py.warnings")
-            logger.addHandler(h)
-            warnings.warn("I'm warning you...")
-            logger.removeHandler(h)
-            s = file.getvalue()
-            h.close()
-            self.assertTrue(s.find("UserWarning: I'm warning you...\n") > 0)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("always", category=UserWarning)
+            try:
+                file = io.StringIO()
+                h = logging.StreamHandler(file)
+                logger = logging.getLogger("py.warnings")
+                logger.addHandler(h)
+                warnings.warn("I'm warning you...")
+                logger.removeHandler(h)
+                s = file.getvalue()
+                h.close()
+                self.assertTrue(s.find("UserWarning: I'm warning you...\n") > 0)
 
-            #See if an explicit file uses the original implementation
-            file = io.StringIO()
-            warnings.showwarning("Explicit", UserWarning, "dummy.py", 42, file,
-                                 "Dummy line")
-            s = file.getvalue()
-            file.close()
-            self.assertEqual(s, "dummy.py:42: UserWarning: Explicit\n  Dummy line\n")
-        finally:
-            warnings.resetwarnings()
-            logging.captureWarnings(False)
+                #See if an explicit file uses the original implementation
+                file = io.StringIO()
+                warnings.showwarning("Explicit", UserWarning, "dummy.py", 42,
+                                        file, "Dummy line")
+                s = file.getvalue()
+                file.close()
+                self.assertEqual(s,
+                        "dummy.py:42: UserWarning: Explicit\n  Dummy line\n")
+            finally:
+                logging.captureWarnings(False)
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
