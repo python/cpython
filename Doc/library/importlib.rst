@@ -169,13 +169,11 @@ are also provided to help in implementing the core ABCs.
 
         An abstract method to return the bytes for the data located at *path*.
         Loaders that have a file-like storage back-end
-        that allows storing arbitrary data (e.g. a zip archive loader)
+        that allows storing arbitrary data
         can implement this abstract method to give direct access
         to the data stored. :exc:`IOError` is to be raised if the *path* cannot
         be found. The *path* is expected to be constructed using a module's
-        :attr:`__path__` attribute or an item from :attr:`__path__`.
-.. XXX What's the difference between the latter two?  (Maybe one is __file__?)
-.. XXX Could use a clarification so as not to depend on PEP 302.
+        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
 
 
 .. class:: InspectLoader
@@ -379,5 +377,11 @@ an :term:`importer`.
     set and has a value other than :keyword:`None` it will not be changed.
     Note that the module returned by the loader is what has the attribute
     set on and not the module found in :data:`sys.modules`.
+
+    Reliance on this decorator is discouraged when it is possible to set
+    :attr:`__package__` before the execution of the code is possible. By
+    setting it before the code for the module is executed it allows the
+    attribute to be used at the global level of the module during
+    initialization.
 
 .. XXX This whole chapter desperately needs examples...
