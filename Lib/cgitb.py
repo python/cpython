@@ -19,13 +19,19 @@ Alternatively, if you have caught an exception and want cgitb to display it
 for you, call cgitb.handler().  The optional argument to handler() is a
 3-item tuple (etype, evalue, etb) just like the value of sys.exc_info().
 The default handler displays output as HTML.
+
 """
-
-__author__ = 'Ka-Ping Yee'
-
-__version__ = '$Revision$'
-
+import inspect
+import keyword
+import linecache
+import os
+import pydoc
 import sys
+import tempfile
+import time
+import tokenize
+import traceback
+import types
 
 def reset():
     """Return a string that resets the CGI and browser to a known state."""
@@ -74,7 +80,6 @@ def lookup(name, frame, locals):
 
 def scanvars(reader, frame, locals):
     """Scan one logical line of Python and look up values of variables used."""
-    import tokenize, keyword
     vars, lasttoken, parent, prefix, value = [], None, None, '', __UNDEF__
     for ttype, token, start, end, line in tokenize.generate_tokens(reader):
         if ttype == tokenize.NEWLINE: break
@@ -96,8 +101,6 @@ def scanvars(reader, frame, locals):
 
 def html((etype, evalue, etb), context=5):
     """Return a nice HTML document describing a given traceback."""
-    import os, types, time, traceback, linecache, inspect, pydoc
-
     if type(etype) is types.ClassType:
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
@@ -173,7 +176,6 @@ function calls leading up to the error, in the order they occurred.</p>'''
             value = pydoc.html.repr(getattr(evalue, name))
             exception.append('\n<br>%s%s&nbsp;=\n%s' % (indent, name, value))
 
-    import traceback
     return head + ''.join(frames) + ''.join(exception) + '''
 
 
@@ -188,8 +190,6 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 def text((etype, evalue, etb), context=5):
     """Return a plain text document describing a given traceback."""
-    import os, types, time, traceback, linecache, inspect, pydoc
-
     if type(etype) is types.ClassType:
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
@@ -245,7 +245,6 @@ function calls leading up to the error, in the order they occurred.
             value = pydoc.text.repr(getattr(evalue, name))
             exception.append('\n%s%s = %s' % (" "*4, name, value))
 
-    import traceback
     return head + ''.join(frames) + ''.join(exception) + '''
 
 The above is a description of an error in a Python program.  Here is
@@ -278,7 +277,6 @@ class Hook:
         try:
             doc = formatter(info, self.context)
         except:                         # just in case something goes wrong
-            import traceback
             doc = ''.join(traceback.format_exception(*info))
             plain = True
 
@@ -292,7 +290,6 @@ class Hook:
             self.file.write('<p>A problem occurred in a Python script.\n')
 
         if self.logdir is not None:
-            import os, tempfile
             suffix = ['.txt', '.html'][self.format=="html"]
             (fd, path) = tempfile.mkstemp(suffix=suffix, dir=self.logdir)
             try:
