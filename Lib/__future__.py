@@ -55,6 +55,7 @@ all_feature_names = [
     "with_statement",
     "print_function",
     "unicode_literals",
+    "barry_as_FLUFL",
 ]
 
 __all__ = ["all_feature_names"] + all_feature_names
