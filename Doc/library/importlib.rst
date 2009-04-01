@@ -77,12 +77,12 @@ Functions
     ``pkg.mod``).
 
     The :func:`import_module` function acts as a simplifying wrapper around
-    :func:`__import__`. This means all semantics of the function are derived
-    from :func:`__import__`, including requiring the package from which an
-    import is occurring to have been previously imported (i.e., *package*
-    must already be imported).  The most important difference is that
-    :func:`import_module` returns the most nested package or module that
-    was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
+    :func:`importlib.__import__`. This means all semantics of the function are
+    derived from :func:`importlib.__import__`, including requiring the package
+    from which an import is occurring to have been previously imported
+    (i.e., *package* must already be imported). The most important difference
+    is that :func:`import_module` returns the most nested package or module
+    that was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
     top-level package or module (e.g. ``pkg``).
 
 
@@ -384,4 +384,95 @@ an :term:`importer`.
     attribute to be used at the global level of the module during
     initialization.
 
-.. XXX This whole chapter desperately needs examples...
+
+Example
+-------
+
+.. testcode::
+
+    """An importer where source is stored in a dict."""
+    from importlib import abc
+
+
+    class DictImporter(abc.Finder, abc.PyLoader):
+
+        """A meta path importer that stores source code in a dict.
+
+        The keys are the module names -- packages must end in ``.__init__``.
+        The values must be something that can be passed to 'bytes'.
+
+        """
+
+        def __init__(self, memory):
+            """Store the dict."""
+            self.memory = memory
+
+        def contains(self, name):
+            """See if a module or package is in the dict."""
+            if name in self.memory:
+                return name
+            package_name = '{}.__init__'.format(name)
+            if  package_name in self.memory:
+                return package_name
+            return False
+
+        __contains__ = contains  # Convenience.
+
+        def find_module(self, fullname, path=None):
+            """Find the module in the dict."""
+            if fullname in self:
+                return self
+            return None
+
+        def source_path(self, fullname):
+            """Return the module name if the module is in the dict."""
+            if not fullname in self:
+                raise ImportError
+            return fullname
+
+        def get_data(self, path):
+            """Return the bytes for the source.
+
+            The value found in the dict is passed through 'bytes' before being
+            returned.
+
+            """
+            name = self.contains(path)
+            if not name:
+                raise IOError
+            return bytes(self.memory[name])
+
+        def is_package(self, fullname):
+            """Tell if module is a package based on whether the dict contains the
+            name with ``.__init__`` appended to it."""
+            if fullname not in self:
+                raise ImportError
+            if fullname in self.memory:
+                return False
+            # If name is in this importer but not as it is then it must end in
+            # ``__init__``.
+            else:
+                return True
+
+.. testcode::
+    :hide:
+
+    import importlib
+    import sys
+
+
+    # Build the dict; keys of name, value of __package__.
+    names = {'_top_level': '', '_pkg.__init__': '_pkg', '_pkg.mod': '_pkg'}
+    source = {name: "name = {!r}".format(name).encode() for name in names}
+
+    # Register the meta path importer.
+    importer = DictImporter(source)
+    sys.meta_path.append(importer)
+
+    # Sanity check.
+    for name in names:
+        module = importlib.import_module(name)
+        assert module.__name__ == name
+        assert getattr(module, 'name') == name
+        assert module.__loader__ is importer
+        assert module.__package__ == names[name]
