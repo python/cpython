@@ -1316,7 +1316,7 @@ class ServerProxy:
                 transport = Transport(use_datetime=use_datetime)
         self.__transport = transport
 
-        self.__encoding = encoding
+        self.__encoding = encoding or 'utf-8'
         self.__verbose = verbose
         self.__allow_none = allow_none
 
@@ -1324,7 +1324,7 @@ class ServerProxy:
         # call a method on the remote server
 
         request = dumps(params, methodname, encoding=self.__encoding,
-                        allow_none=self.__allow_none)
+                        allow_none=self.__allow_none).encode(self.__encoding)
 
         response = self.__transport.request(
             self.__host,
