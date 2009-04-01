@@ -413,6 +413,41 @@ class _WarningsTests(BaseTest):
         finally:
             self.module.onceregistry = original_registry
 
+    def test_default_action(self):
+        # Replacing or removing defaultaction should be okay.
+        message = UserWarning("defaultaction test")
+        original = self.module.defaultaction
+        try:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                registry = {}
+                self.module.warn_explicit(message, UserWarning, "<test>", 42,
+                                            registry=registry)
+                self.assertEqual(w[-1].message, message)
+                self.assertEqual(len(w), 1)
+                self.assertEqual(len(registry), 1)
+                del w[:]
+                # Test removal.
+                del self.module.defaultaction
+                __warningregistry__ = {}
+                registry = {}
+                self.module.warn_explicit(message, UserWarning, "<test>", 43,
+                                            registry=registry)
+                self.assertEqual(w[-1].message, message)
+                self.assertEqual(len(w), 1)
+                self.assertEqual(len(registry), 1)
+                del w[:]
+                # Test setting.
+                self.module.defaultaction = "ignore"
+                __warningregistry__ = {}
+                registry = {}
+                self.module.warn_explicit(message, UserWarning, "<test>", 44,
+                                            registry=registry)
+                self.assertEqual(len(w), 0)
+        finally:
+            self.module.defaultaction = original
+
     def test_showwarning_missing(self):
         # Test that showwarning() missing is okay.
         text = 'del showwarning test'
