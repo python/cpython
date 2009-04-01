@@ -55,7 +55,8 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
 __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
            "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
-           "BufferedRandom", "TextIOBase", "TextIOWrapper"]
+           "BufferedRandom", "TextIOBase", "TextIOWrapper",
+           "SEEK_SET", "SEEK_CUR", "SEEK_END"]
 
 import os
 import abc
