@@ -11,6 +11,7 @@ import httplib
 import socket
 import StringIO
 import os
+import re
 from test import test_support
 
 try:
@@ -385,6 +386,21 @@ class SimpleServerTestCase(unittest.TestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    def test_nonascii(self):
+        start_string = 'P\N{LATIN SMALL LETTER Y WITH CIRCUMFLEX}t'
+        end_string = 'h\N{LATIN SMALL LETTER O WITH HORN}n'
+
+        try:
+            p = xmlrpclib.ServerProxy(URL)
+            self.assertEqual(p.add(start_string, end_string),
+                             start_string + end_string)
+        except (xmlrpclib.ProtocolError, socket.error) as e:
+            # ignore failures due to non-blocking socket unavailable errors.
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
+
+
     # [ch] The test 404 is causing lots of false alarms.
     def XXXtest_404(self):
         # send POST with httplib, it should return 404 header and
@@ -645,6 +661,18 @@ class CGIHandlerTestCase(unittest.TestCase):
 
         # start with 44th char so as not to get http header, we just need only xml
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, handle[44:])
+
+        # Also test the content-length returned  by handle_request
+        # Using the same test method inorder to avoid all the datapassing
+        # boilerplate code.
+        # Test for bug: http://bugs.python.org/issue5040
+
+        content = handle[handle.find("<?xml"):]
+
+        self.assertEquals(
+            int(re.search('Content-Length: (\d+)', handle).group(1)),
+            len(content))
+
 
         os.remove("xmldata.txt")
         os.remove(test_support.TESTFN)
