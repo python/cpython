@@ -892,6 +892,7 @@ _expectations = {
         test_fork1
         test_epoll
         test_dbm_gnu
+        test_dbm_ndbm
         test_grp
         test_ioctl
         test_largefile

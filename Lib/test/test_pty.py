@@ -1,6 +1,7 @@
+from test import support
+pty = support.import_module("pty") #skip if not supported
 import errno
 import fcntl
-import pty
 import os
 import sys
 import signal
