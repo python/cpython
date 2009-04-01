@@ -194,9 +194,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.cmdloop()
         self.forget()
 
-    def displayhook(self, item):
-        print item
-
     def default(self, line):
         if line[:1] == '!': line = line[1:]
         locals = self.curframe.f_locals
@@ -205,16 +202,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             code = compile(line + '\n', '<stdin>', 'single')
             save_stdout = sys.stdout
             save_stdin = sys.stdin
-            save_displayhook = sys.displayhook
             try:
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
-                sys.displayhook = self.displayhook
                 exec code in globals, locals
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
-                sys.displayhook = save_displayhook
         except:
             t, v = sys.exc_info()[:2]
             if type(t) == type(''):
