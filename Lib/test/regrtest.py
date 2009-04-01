@@ -404,8 +404,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         print("Using random seed", random_seed)
         random.shuffle(tests)
     if trace:
-        import trace
-        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
+        import trace, tempfile
+        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,
+                                         tempfile.gettempdir()],
                              trace=False, count=True)
     test_times = []
     support.verbose = verbose      # Tell tests to be moderately quiet

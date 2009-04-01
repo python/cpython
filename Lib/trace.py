@@ -48,6 +48,7 @@ Sample use, programmatically
   r.write_results(show_missing=True, coverdir="/tmp")
 """
 
+import io
 import linecache
 import os
 import re
@@ -224,6 +225,13 @@ class CoverageResults:
                 print(("Skipping counts file %r: %s"
                                       % (self.infile, err)), file=sys.stderr)
 
+    def is_ignored_filename(self, filename):
+        """Return True if the filename does not refer to a file
+        we want to have reported.
+        """
+        return (filename == "<string>" or
+                filename.startswith("<doctest "))
+
     def update(self, other):
         """Merge in the data from another CoverageResults"""
         counts = self.counts
@@ -257,7 +265,8 @@ class CoverageResults:
             print()
             print("calling relationships:")
             lastfile = lastcfile = ""
-            for ((pfile, pmod, pfunc), (cfile, cmod, cfunc)) in sorted(self.callers.keys()):
+            for ((pfile, pmod, pfunc), (cfile, cmod, cfunc)) \
+                    in sorted(self.callers.keys()):
                 if pfile != lastfile:
                     print()
                     print("***", pfile, "***")
@@ -279,10 +288,7 @@ class CoverageResults:
         sums = {}
 
         for filename, count in per_file.items():
-            # skip some "files" we don't care about...
-            if filename == "<string>":
-                continue
-            if filename.startswith("<doctest "):
+            if self.is_ignored_filename(filename):
                 continue
 
             if filename.endswith((".pyc", ".pyo")):
@@ -391,7 +397,7 @@ def find_lines(code, strs):
             linenos.update(find_lines(c, strs))
     return linenos
 
-def find_strings(filename):
+def find_strings(filename, encoding=None):
     """Return a dict of possible docstring positions.
 
     The dict maps line numbers to strings.  There is an entry for
@@ -402,7 +408,7 @@ def find_strings(filename):
     # If the first token is a string, then it's the module docstring.
     # Add this special case so that the test in the loop passes.
     prev_ttype = token.INDENT
-    f = open(filename)
+    f = open(filename, encoding=encoding)
     for ttype, tstr, start, end, line in tokenize.generate_tokens(f.readline):
         if ttype == token.STRING:
             if prev_ttype == token.INDENT:
@@ -417,13 +423,15 @@ def find_strings(filename):
 def find_executable_linenos(filename):
     """Return dict where keys are line numbers in the line number table."""
     try:
-        prog = open(filename, "rU").read()
+        with io.FileIO(filename, 'r') as file:
+            encoding, lines = tokenize.detect_encoding(file.readline)
+        prog = open(filename, "r", encoding=encoding).read()
     except IOError as err:
         print(("Not printing coverage data for %r: %s"
                               % (filename, err)), file=sys.stderr)
         return {}
     code = compile(prog, filename, "exec")
-    strs = find_strings(filename)
+    strs = find_strings(filename, encoding)
     return find_lines(code, strs)
 
 class Trace:
