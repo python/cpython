@@ -320,10 +320,9 @@ class MutableSet(Set):
             self.add(value)
         return self
 
-    def __iand__(self, c: Container):
-        for value in self:
-            if value not in c:
-                self.discard(value)
+    def __iand__(self, it: Iterable):
+        for value in (self - it):
+            self.discard(value)
         return self
 
     def __ixor__(self, it: Iterable):
