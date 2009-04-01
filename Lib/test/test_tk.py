@@ -6,9 +6,6 @@ import tkinter
 from tkinter.test import runtktests
 import unittest
 
-
-import tkinter
-
 try:
     tkinter.Button()
 except tkinter.TclError as msg:
