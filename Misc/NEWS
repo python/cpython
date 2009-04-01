@@ -92,6 +92,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5647: MutableSet.__iand__() no longer mutates self during iteration.
+
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
   popups on windows buildbots. Patch applied to work around this issue.
 
