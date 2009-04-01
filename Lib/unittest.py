@@ -334,7 +334,7 @@ class TestCase(object):
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
         # error message.
-        self.__type_equality_funcs = {}
+        self._type_equality_funcs = {}
         self.addTypeEqualityFunc(dict, self.assertDictEqual)
         self.addTypeEqualityFunc(list, self.assertListEqual)
         self.addTypeEqualityFunc(tuple, self.assertTupleEqual)
@@ -354,7 +354,7 @@ class TestCase(object):
                     msg= argument that raises self.failureException with a
                     useful error message when the two arguments are not equal.
         """
-        self.__type_equality_funcs[typeobj] = function
+        self._type_equality_funcs[typeobj] = function
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -516,8 +516,8 @@ class TestCase(object):
         # See the discussion in http://bugs.python.org/issue2578.
         #
         if type(first) is type(second):
-            return self.__type_equality_funcs.get(type(first),
-                                                  self._baseAssertEqual)
+            return self._type_equality_funcs.get(type(first),
+                                                 self._baseAssertEqual)
         return self._baseAssertEqual
 
     def _baseAssertEqual(self, first, second, msg=None):
@@ -576,7 +576,7 @@ class TestCase(object):
 
     # These fail* assertion method names are pending deprecation and will
     # be a DeprecationWarning in 3.2; http://bugs.python.org/issue2578
-    def __deprecate(original_func):
+    def _deprecate(original_func):
         def deprecated_func(*args, **kwargs):
             warnings.warn(
                 'Please use {0} instead.'.format(original_func.__name__),
@@ -584,13 +584,13 @@ class TestCase(object):
             return original_func(*args, **kwargs)
         return deprecated_func
 
-    failUnlessEqual = __deprecate(assertEqual)
-    failIfEqual = __deprecate(assertNotEqual)
-    failUnlessAlmostEqual = __deprecate(assertAlmostEqual)
-    failIfAlmostEqual = __deprecate(assertNotAlmostEqual)
-    failUnless = __deprecate(assertTrue)
-    failUnlessRaises = __deprecate(assertRaises)
-    failIf = __deprecate(assertFalse)
+    failUnlessEqual = _deprecate(assertEqual)
+    failIfEqual = _deprecate(assertNotEqual)
+    failUnlessAlmostEqual = _deprecate(assertAlmostEqual)
+    failIfAlmostEqual = _deprecate(assertNotAlmostEqual)
+    failUnless = _deprecate(assertTrue)
+    failUnlessRaises = _deprecate(assertRaises)
+    failIf = _deprecate(assertFalse)
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
@@ -1052,50 +1052,51 @@ class FunctionTestCase(TestCase):
 
     def __init__(self, testFunc, setUp=None, tearDown=None, description=None):
         super(FunctionTestCase, self).__init__()
-        self.__setUpFunc = setUp
-        self.__tearDownFunc = tearDown
-        self.__testFunc = testFunc
-        self.__description = description
+        self._setUpFunc = setUp
+        self._tearDownFunc = tearDown
+        self._testFunc = testFunc
+        self._description = description
 
     def setUp(self):
-        if self.__setUpFunc is not None:
-            self.__setUpFunc()
+        if self._setUpFunc is not None:
+            self._setUpFunc()
 
     def tearDown(self):
-        if self.__tearDownFunc is not None:
-            self.__tearDownFunc()
+        if self._tearDownFunc is not None:
+            self._tearDownFunc()
 
     def runTest(self):
-        self.__testFunc()
+        self._testFunc()
 
     def id(self):
-        return self.__testFunc.__name__
+        return self._testFunc.__name__
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
 
-        return self.__setUpFunc == other.__setUpFunc and \
-               self.__tearDownFunc == other.__tearDownFunc and \
-               self.__testFunc == other.__testFunc and \
-               self.__description == other.__description
+        return self._setUpFunc == other._setUpFunc and \
+               self._tearDownFunc == other._tearDownFunc and \
+               self._testFunc == other._testFunc and \
+               self._description == other._description
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((type(self), self.__setUpFunc, self.__tearDownFunc,
-                                           self.__testFunc, self.__description))
+        return hash((type(self), self._setUpFunc, self._tearDownFunc,
+                     self._testFunc, self._description))
 
     def __str__(self):
         return "%s (%s)" % (_strclass(self.__class__), self.__testFunc.__name__)
 
     def __repr__(self):
-        return "<%s testFunc=%s>" % (_strclass(self.__class__), self.__testFunc)
+        return "<%s testFunc=%s>" % (_strclass(self.__class__), self._testFunc)
 
     def shortDescription(self):
-        if self.__description is not None: return self.__description
-        doc = self.__testFunc.__doc__
+        if self._description is not None:
+            return self._description
+        doc = self._testFunc.__doc__
         return doc and doc.split("\n")[0].strip() or None
 
 
