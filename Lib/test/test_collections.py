@@ -311,6 +311,25 @@ class TestOneTrickPonyABCs(ABCTestCase):
             B.register(C)
             self.failUnless(issubclass(C, B))
 
+class WithSet(MutableSet):
+
+    def __init__(self, it=()):
+        self.data = set(it)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __contains__(self, item):
+        return item in self.data
+
+    def add(self, item):
+        self.data.add(item)
+
+    def discard(self, item):
+        self.data.discard(item)
 
 class TestCollectionABCs(ABCTestCase):
 
@@ -346,6 +365,12 @@ class TestCollectionABCs(ABCTestCase):
         self.failIf(issubclass(frozenset, MutableSet))
         self.validate_abstract_methods(MutableSet, '__contains__', '__iter__', '__len__',
             'add', 'discard')
+
+    def test_issue_5647(self):
+        # MutableSet.__iand__ mutated the set during iteration
+        s = WithSet('abcd')
+        s &= WithSet('cdef')            # This used to fail
+        self.assertEqual(set(s), set('cd'))
 
     def test_issue_4920(self):
         # MutableSet.pop() method did not work
