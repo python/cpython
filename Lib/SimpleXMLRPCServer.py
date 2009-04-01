@@ -580,7 +580,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
              'explain' : explain
             }
         print 'Status: %d %s' % (code, message)
-        print 'Content-Type: text/html'
+        print 'Content-Type: %s' % BaseHTTPServer.DEFAULT_ERROR_CONTENT_TYPE
         print 'Content-Length: %d' % len(response)
         print
         sys.stdout.write(response)
