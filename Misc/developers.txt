@@ -17,6 +17,8 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Ron DuPlain was given commit privileges at PyCon 2009 by BAC to work on 3to2.
+
 - Several developers of alternative Python implementations where
   given access for test suite and library adaptions by MvL:
   Allison Randal (Parrot), Michael Foord (IronPython),
