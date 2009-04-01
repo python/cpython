@@ -221,6 +221,19 @@ class EnUSNumberFormatting(BaseFormattingTest):
                 (self.sep, self.sep))
 
 
+class TestFormatPatternArg(unittest.TestCase):
+    # Test handling of pattern argument of format
+
+    def test_onlyOnePattern(self):
+        # Issue 2522: accept exactly one % pattern, and no extra chars.
+        self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
+        self.assertRaises(ValueError, locale.format, " %f", 'foo')
+        self.assertRaises(ValueError, locale.format, "%fg", 'foo')
+        self.assertRaises(ValueError, locale.format, "%^g", 'foo')
+
+
 class TestNumberFormatting(BaseLocalizedTest, EnUSNumberFormatting):
     # Test number formatting with a real English locale.
 
@@ -351,6 +364,7 @@ class TestMiscellaneous(unittest.TestCase):
 def test_main():
     tests = [
         TestMiscellaneous,
+        TestFormatPatternArg,
         TestEnUSNumberFormatting,
         TestCNumberFormatting,
         TestFrFRNumberFormatting,
