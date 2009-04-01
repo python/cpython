@@ -11,7 +11,11 @@
 
 """
 
-import sys, encodings, encodings.aliases
+import sys
+import encodings
+import encodings.aliases
+import re
+import collections
 from builtins import str as _builtin_str
 import functools
 
@@ -173,6 +177,9 @@ def _strip_padding(s, amount):
         amount -= 1
     return s[lpos:rpos+1]
 
+_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
+                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+
 def format(percent, value, grouping=False, monetary=False, *additional):
     """Returns the locale-aware substitution of a %? specifier
     (percent).
@@ -180,9 +187,13 @@ def format(percent, value, grouping=False, monetary=False, *additional):
     additional is for format strings which contain one or more
     '*' modifiers."""
     # this is only for one-percent-specifier strings and this should be checked
-    if percent[0] != '%':
-        raise ValueError("format() must be given exactly one %char "
-                         "format specifier")
+    match = _percent_re.match(percent)
+    if not match or len(match.group())!= len(percent):
+        raise ValueError(("format() must be given exactly one %%char "
+                         "format specifier, %s not valid") % repr(percent))
+    return _format(percent, value, grouping, monetary, *additional)
+
+def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
     else:
@@ -205,10 +216,6 @@ def format(percent, value, grouping=False, monetary=False, *additional):
         if seps:
             formatted = _strip_padding(formatted, seps)
     return formatted
-
-import re, collections
-_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
-                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
 def format_string(f, val, grouping=False):
     """Formats a string in the same way that the % formatting would use,

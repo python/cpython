@@ -284,6 +284,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2522: locale.format now checks its first argument to ensure it has
+  been passed only one pattern, avoiding mysterious errors where it appeared
+  that it was failing to do localization.
+
 - Issue #5583: Added optional Extensions in Distutils. Initial patch by Georg
   Brandl.
 
