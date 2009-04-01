@@ -590,7 +590,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
             # POST data is normally available through stdin
             try:
                 length = int(os.environ.get('CONTENT_LENGTH', None))
-            except ValueError:
+            except (ValueError, TypeError):
                 length = -1
             if request_text is None:
                 request_text = sys.stdin.read(length)
