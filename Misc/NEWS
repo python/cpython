@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4572: added SEEK_* symbolic constants to io module.
+
 - Issue #1665206 (partially): Move imports in cgitb to the top of the module
   instead of performing them in functions. Helps prevent import deadlocking in
   threads.
