@@ -1,6 +1,7 @@
 "Test posix functions"
 
 from test import support
+posix = support.import_module('posix') #skip if not supported
 
 import time
 import os
@@ -8,8 +9,6 @@ import pwd
 import shutil
 import unittest
 import warnings
-
-posix = support.import_module('posix')
 
 warnings.filterwarnings('ignore', '.* potential security risk .*',
                         RuntimeWarning)

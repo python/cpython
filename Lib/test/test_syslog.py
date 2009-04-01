@@ -1,7 +1,7 @@
 
-import syslog
-import unittest
 from test import support
+syslog = support.import_module("syslog") #skip if not supported
+import unittest
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way
 # to verify that the messages were really logged.
