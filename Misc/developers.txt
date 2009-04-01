@@ -256,10 +256,11 @@ Permissions Dropped after Loss of Contact
 Initials of Project Admins
 --------------------------
 
-GvR:  Guido van Rossum
-NCN:  Neal Norwitz
-RDH:  Raymond Hettinger
 TGP:  Tim Peters
+GFB:  Georg Brandl
+BAC:  Brett Cannon
+NCN:  Neal Norwitz
 DJG:  David Goodger
 MvL:  Martin v. Loewis
-GFB:  Georg Brandl
+GvR:  Guido van Rossum
+RDH:  Raymond Hettinger
