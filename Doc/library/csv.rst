@@ -351,14 +351,13 @@ Reader Objects
 Reader objects (:class:`DictReader` instances and objects returned by the
 :func:`reader` function) have the following public methods:
 
-
-.. method:: csvreader.next()
+.. method:: csvreader.__next__()
 
    Return the next row of the reader's iterable object as a list, parsed according
-   to the current dialect.
+   to the current dialect.  Usually you should call this as ``next(reader)``.
+
 
 Reader objects have the following public attributes:
-
 
 .. attribute:: csvreader.dialect
 
@@ -371,9 +370,7 @@ Reader objects have the following public attributes:
    number of records returned, as records can span multiple lines.
 
 
-
 DictReader objects have the following public attribute:
-
 
 .. attribute:: csvreader.fieldnames
 
