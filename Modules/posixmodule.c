@@ -269,6 +269,7 @@ extern int lstat(const char *, struct stat *);
 #include <process.h>
 #endif
 #include "osdefs.h"
+#include <malloc.h>
 #include <windows.h>
 #include <shellapi.h>	/* for ShellExecute() */
 #define popen	_popen
@@ -364,41 +365,15 @@ extern int lstat(const char *, struct stat *);
  * (all of this is to avoid globally modifying the CRT behaviour using
  * _set_invalid_parameter_handler() and _CrtSetReportMode())
  */
-#if _MSC_VER >= 1500 /* VS 2008 */
+/* The actual size of the structure is determined at runtime.
+ * Only the first items must be present.
+ */
 typedef struct {
         intptr_t osfhnd;
         char osfile;
-        char pipech;
-        int lockinitflag;
-        CRITICAL_SECTION lock;
-#ifndef _SAFECRT_IMPL
-        char textmode : 7;
-        char unicode : 1;
-        char pipech2[2];
-        __int64 startpos;
-        BOOL utf8translations;
-        char dbcsBuffer;
-        BOOL dbcsBufferUsed;
-#endif  /* _SAFECRT_IMPL */
-    }   ioinfo;
-#elif _MSC_VER >= 1400  /* VS 2005 */
-typedef struct {
-        intptr_t osfhnd;
-        char osfile;
-        char pipech;
-        int lockinitflag;
-        CRITICAL_SECTION lock;
-#ifndef _SAFECRT_IMPL
-        char textmode : 7;
-        char unicode : 1;
-        char pipech2[2];
-        __int64 startpos;
-        BOOL utf8translations;
-#endif  /* _SAFECRT_IMPL */
-    }   ioinfo;
-#endif
+} my_ioinfo;
 
-extern __declspec(dllimport) ioinfo * __pioinfo[];
+extern __declspec(dllimport) char * __pioinfo[];
 #define IOINFO_L2E 5
 #define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
 #define IOINFO_ARRAYS 64
@@ -412,6 +387,19 @@ _PyVerify_fd(int fd)
 {
 	const int i1 = fd >> IOINFO_L2E;
 	const int i2 = fd & ((1 << IOINFO_L2E) - 1);
+    
+	static int sizeof_ioinfo = 0;
+
+	/* Determine the actual size of the ioinfo structure, 
+	 * as used by the CRT loaded in memory
+	 */
+	if (sizeof_ioinfo == 0 && __pioinfo[0] != NULL) {
+		sizeof_ioinfo = _msize(__pioinfo[0]) / IOINFO_ARRAY_ELTS;
+	}
+	if (sizeof_ioinfo == 0) {
+		/* This should not happen... */
+		goto fail;
+	}
 
 	/* See that it isn't a special CLEAR fileno */
 	if (fd != _NO_CONSOLE_FILENO) {
@@ -420,10 +408,13 @@ _PyVerify_fd(int fd)
 		 */
 		if (0 <= i1 && i1 < IOINFO_ARRAYS && __pioinfo[i1] != NULL) {
 			/* finally, check that the file is open */
-			if (__pioinfo[i1][i2].osfile & FOPEN)
+			my_ioinfo* info = (my_ioinfo*)(__pioinfo[i1] + i2 * sizeof_ioinfo);
+			if (info->osfile & FOPEN) {
 				return 1;
+			}
 		}
 	}
+  fail:
 	errno = EBADF;
 	return 0;
 }
