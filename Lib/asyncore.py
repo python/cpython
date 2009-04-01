@@ -401,7 +401,7 @@ class dispatcher:
         sys.stderr.write('log: %s\n' % str(message))
 
     def log_info(self, message, type='info'):
-        if __debug__ or type not in self.ignore_log_types:
+        if type not in self.ignore_log_types:
             print '%s: %s' % (type, message)
 
     def handle_read_event(self):

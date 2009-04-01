@@ -298,6 +298,7 @@ class DispatcherTests(unittest.TestCase):
 
     def test_unhandled(self):
         d = asyncore.dispatcher()
+        d.ignore_log_types = ()
 
         # capture output of dispatcher.log_info() (to stdout via print)
         fp = StringIO()
@@ -313,7 +314,7 @@ class DispatcherTests(unittest.TestCase):
             sys.stdout = stdout
 
         lines = fp.getvalue().splitlines()
-        expected = ['warning: unhandled exception',
+        expected = ['warning: unhandled incoming priority event',
                     'warning: unhandled read event',
                     'warning: unhandled write event',
                     'warning: unhandled connect event',
