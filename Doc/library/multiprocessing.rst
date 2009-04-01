@@ -1705,6 +1705,12 @@ authentication* using the :mod:`hmac` module.
    *address* is the address to be used by the bound socket or named pipe of the
    listener object.
 
+   .. note::
+
+      If an address of '0.0.0.0' is used, the address will not be a connectable
+      end point on Windows. If you require a connectable end-point,
+      you should use '127.0.0.1'.
+
    *family* is the type of socket (or named pipe) to use.  This can be one of
    the strings ``'AF_INET'`` (for a TCP socket), ``'AF_UNIX'`` (for a Unix
    domain socket) or ``'AF_PIPE'`` (for a Windows named pipe).  Of these only
