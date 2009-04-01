@@ -2,6 +2,7 @@ import functools
 import unittest
 from test import support
 from weakref import proxy
+import pickle
 
 @staticmethod
 def PythonPartial(func, *args, **keywords):
@@ -19,6 +20,9 @@ def capture(*args, **kw):
     """capture all positional and keyword arguments"""
     return args, kw
 
+def signature(part):
+    """ return the signature of a partial object """
+    return (part.func, part.args, part.keywords, part.__dict__)
 
 class TestPartial(unittest.TestCase):
 
@@ -141,6 +145,12 @@ class TestPartial(unittest.TestCase):
         join = self.thetype(''.join)
         self.assertEqual(join(data), '0123456789')
 
+    def test_pickle(self):
+        f = self.thetype(signature, 'asdf', bar=True)
+        f.add_something_to__dict__ = True
+        f_copy = pickle.loads(pickle.dumps(f))
+        self.assertEqual(signature(f), signature(f_copy))
+
 class PartialSubclass(functools.partial):
     pass
 
@@ -148,10 +158,12 @@ class TestPartialSubclass(TestPartial):
 
     thetype = PartialSubclass
 
-
 class TestPythonPartial(TestPartial):
 
     thetype = PythonPartial
+
+    # the python version isn't picklable
+    def test_pickle(self): pass
 
 class TestUpdateWrapper(unittest.TestCase):
 
