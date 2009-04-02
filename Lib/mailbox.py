@@ -911,7 +911,7 @@ class MH(Mailbox):
                     _unlock_file(f)
         finally:
             f.close()
-        for name, key_list in self.get_sequences():
+        for name, key_list in self.get_sequences().iteritems():
             if key in key_list:
                 msg.add_sequence(name)
         return msg
