@@ -1621,8 +1621,12 @@ Notes:
    the output hour field if the ``%I`` directive is used to parse the hour.
 
 (3)
-   The range really is ``0`` to ``61``; this accounts for leap seconds and the
-   (very rare) double leap seconds.
+   The range really is ``0`` to ``61``; according to the Posix standard this
+   accounts for leap seconds and the (very rare) double leap seconds.
+   The :mod:`time` module may produce and does accept leap seconds since
+   it is based on the Posix standard, but the :mod:`datetime` module
+   does not accept leap seconds in :func:`strptime` input nor will it
+   produce them in :func:`strftime` output.
 
 (4)
    When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
