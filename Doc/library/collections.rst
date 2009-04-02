@@ -649,7 +649,7 @@ they add the ability to access fields by name instead of position index.
 
    If *rename* is true, invalid fieldnames are automatically replaced
    with positional names.  For example, ``['abc', 'def', 'ghi', 'abc']`` is
-   converted to ``['abc', '_2', 'ghi', '_4']``, eliminating the keyword
+   converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
    ``def`` and the duplicate fieldname ``abc``.
 
    If *verbose* is true, the class definition is printed just before being built.
