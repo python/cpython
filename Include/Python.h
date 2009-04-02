@@ -92,7 +92,7 @@
 #endif
 #include "rangeobject.h"
 #include "stringobject.h"
-/* #include "memoryobject.h" */
+#include "memoryobject.h"
 #include "bufferobject.h"
 #include "bytesobject.h"
 #include "bytearrayobject.h"

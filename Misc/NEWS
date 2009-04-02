@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #2396: the memoryview object was backported from Python 3.1.
+
 - Fix a problem in PyErr_NormalizeException that leads to "undetected errors"
   when hitting the recursion limit under certain circumstances.
 

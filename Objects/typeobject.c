@@ -2304,6 +2304,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		Py_TPFLAGS_BASETYPE;
 	if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
 		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+	if (base->tp_flags & Py_TPFLAGS_HAVE_NEWBUFFER)
+		type->tp_flags |= Py_TPFLAGS_HAVE_NEWBUFFER;
 
 	/* It's a new-style number unless it specifically inherits any
 	   old-style numeric behavior */
@@ -3596,6 +3598,8 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 	return 0;
 }
 
+#define BUFFER_FLAGS (Py_TPFLAGS_HAVE_GETCHARBUFFER | Py_TPFLAGS_HAVE_NEWBUFFER)
+
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
@@ -3603,9 +3607,9 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 
 	/* Special flag magic */
 	if (!type->tp_as_buffer && base->tp_as_buffer) {
-		type->tp_flags &= ~Py_TPFLAGS_HAVE_GETCHARBUFFER;
+		type->tp_flags &= ~BUFFER_FLAGS;
 		type->tp_flags |=
-			base->tp_flags & Py_TPFLAGS_HAVE_GETCHARBUFFER;
+			base->tp_flags & BUFFER_FLAGS;
 	}
 	if (!type->tp_as_sequence && base->tp_as_sequence) {
 		type->tp_flags &= ~Py_TPFLAGS_HAVE_SEQUENCE_IN;
