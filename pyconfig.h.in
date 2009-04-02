@@ -73,6 +73,9 @@
 /* Define if pthread_sigmask() does not work on your system. */
 #undef HAVE_BROKEN_PTHREAD_SIGMASK
 
+/* define to 1 if your sem_getvalue is broken. */
+#undef HAVE_BROKEN_SEM_GETVALUE
+
 /* Define this if you have the type _Bool. */
 #undef HAVE_C99_BOOL
 
@@ -503,6 +506,18 @@
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
+
+/* Define to 1 if you have the `sem_getvalue' function. */
+#undef HAVE_SEM_GETVALUE
+
+/* Define to 1 if you have the `sem_open' function. */
+#undef HAVE_SEM_OPEN
+
+/* Define to 1 if you have the `sem_timedwait' function. */
+#undef HAVE_SEM_TIMEDWAIT
+
+/* Define to 1 if you have the `sem_unlink' function. */
+#undef HAVE_SEM_UNLINK
 
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID

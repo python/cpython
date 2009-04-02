@@ -27,7 +27,7 @@
 #  include <sys/socket.h>
 #  include <sys/uio.h>
 #  include <arpa/inet.h>             /* htonl() and ntohl() */
-#  if HAVE_SEM_OPEN
+#  ifdef HAVE_SEM_OPEN
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif
