@@ -160,7 +160,6 @@ def expectedFailure(func):
         raise _UnexpectedSuccess
     return wrapper
 
-
 __unittest = 1
 
 class TestResult(object):
@@ -289,6 +288,16 @@ class _AssertRaisesContext(object):
         return True
 
 
+class _AssertWrapper(object):
+    """Wrap entries in the _type_equality_funcs registry to make them deep
+    copyable."""
+
+    def __init__(self, function):
+        self.function = function
+
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+
 
 class TestCase(object):
     """A class whose instances are single test cases.
@@ -361,7 +370,7 @@ class TestCase(object):
                     msg= argument that raises self.failureException with a
                     useful error message when the two arguments are not equal.
         """
-        self._type_equality_funcs[typeobj] = function
+        self._type_equality_funcs[typeobj] = _AssertWrapper(function)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -542,8 +551,10 @@ class TestCase(object):
         # See the discussion in http://bugs.python.org/issue2578.
         #
         if type(first) is type(second):
-            return self._type_equality_funcs.get(type(first),
-                                                 self._baseAssertEqual)
+            asserter = self._type_equality_funcs.get(type(first))
+            if asserter is not None:
+                return asserter.function
+
         return self._baseAssertEqual
 
     def _baseAssertEqual(self, first, second, msg=None):
