@@ -522,8 +522,7 @@ Here is an example session that shows how to ``POST`` requests::
 HTTPMessage Objects
 -------------------
 
-An :class:`http.client.HTTPMessage` instance holds the headers from an
-HTTP response.  It is implemented using the
-:class:`email.message.Message' class.
+An :class:`http.client.HTTPMessage` instance holds the headers from an HTTP
+response.  It is implemented using the :class:`email.message.Message` class.
 
-XXX Define the methods that clients can depend upon between versions.
+.. XXX Define the methods that clients can depend upon between versions.
