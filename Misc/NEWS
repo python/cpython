@@ -58,6 +58,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5640: Fix _multibytecodec so that CJK codecs don't repeat
+  error substitutions from non-strict codec error callbacks in
+  incrementalencoder and StreamWriter.
+
 - Issue #5656: Fix the coverage reporting when running the test suite with
   the -T argument.
 
