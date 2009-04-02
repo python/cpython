@@ -824,14 +824,18 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
 
 	if (!analyze_block(entry, temp_bound, temp_free, temp_global))
 		goto error;
-	success = PyNumber_InPlaceOr(child_free, temp_free) >= 0;
+	if (PyNumber_InPlaceOr(child_free, temp_free) < 0)
+		goto error;
 	Py_DECREF(child_free);
-	success = 1;
+	Py_DECREF(temp_bound);
+	Py_DECREF(temp_free);
+	Py_DECREF(temp_global);
+	return 1;
  error:
 	Py_XDECREF(temp_bound);
 	Py_XDECREF(temp_free);
 	Py_XDECREF(temp_global);
-	return success;
+	return 0;
 }
 
 static int
