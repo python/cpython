@@ -16,7 +16,7 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line[, temporary=0[, cond=None [, funcname=None]]])
+.. class:: Breakpoint(self, file, line, temporary=0, cond=None, funcname=None)
 
    This class implements temporary breakpoints, ignore counts, disabling and
    (re-)enabling, and conditionals.
@@ -50,7 +50,7 @@ The :mod:`bdb` module also defines two classes:
       Mark the breakpoint as disabled.
 
 
-   .. method:: pprint([out])
+   .. method:: bpprint(out=None)
 
       Print all the information about the breakpoint:
 
@@ -233,7 +233,7 @@ The :mod:`bdb` module also defines two classes:
    breakpoints.  These methods return a string containing an error message if
    something went wrong, or ``None`` if all is well.
 
-   .. method:: set_break(filename, lineno[, temporary=0[, cond[, funcname]]])
+   .. method:: set_break(filename, lineno, temporary=0, cond, funcname)
 
       Set a new breakpoint.  If the *lineno* line doesn't exist for the
       *filename* passed as argument, return an error message.  The *filename*
@@ -285,7 +285,7 @@ The :mod:`bdb` module also defines two classes:
       Get a list of records for a frame and all higher (calling) and lower
       frames, and the size of the higher part.
 
-   .. method:: format_stack_entry(frame_lineno, [lprefix=': '])
+   .. method:: format_stack_entry(frame_lineno, lprefix=': ')
 
       Return a string with information about a stack entry, identified by a
       ``(frame, lineno)`` tuple:
@@ -300,12 +300,12 @@ The :mod:`bdb` module also defines two classes:
    The following two methods can be called by clients to use a debugger to debug
    a :term:`statement`, given as a string.
 
-   .. method:: run(cmd, [globals, [locals]])
+   .. method:: run(cmd, globals=None, locals=None)
 
       Debug a statement executed via the :func:`exec` function.  *globals*
       defaults to :attr:`__main__.__dict__`, *locals* defaults to *globals*.
 
-   .. method:: runeval(expr, [globals, [locals]])
+   .. method:: runeval(expr, globals=None, locals=None)
 
       Debug an expression executed via the :func:`eval` function.  *globals* and
       *locals* have the same meaning as in :meth:`run`.

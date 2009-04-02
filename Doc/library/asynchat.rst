@@ -202,7 +202,7 @@ asynchat - Auxiliary Classes and Functions
 ------------------------------------------
 
 
-.. class:: simple_producer(data[, buffer_size=512])
+.. class:: simple_producer(data, buffer_size=512)
 
    A :class:`simple_producer` takes a chunk of data and an optional buffer
    size.  Repeated calls to its :meth:`more` method yield successive chunks of
@@ -215,7 +215,7 @@ asynchat - Auxiliary Classes and Functions
       empty string.
 
 
-.. class:: fifo([list=None])
+.. class:: fifo(list=None)
 
    Each channel maintains a :class:`fifo` holding data which has been pushed
    by the application but not yet popped for writing to the channel.  A

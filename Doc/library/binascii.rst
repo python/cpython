@@ -49,14 +49,14 @@ The :mod:`binascii` module defines the following functions:
    should be at most 57 to adhere to the base64 standard.
 
 
-.. function:: a2b_qp(string[, header])
+.. function:: a2b_qp(string, header=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
    data. More than one line may be passed at a time. If the optional argument
    *header* is present and true, underscores will be decoded as spaces.
 
 
-.. function:: b2a_qp(data[, quotetabs, istext, header])
+.. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
 
    Convert binary data to a line(s) of ASCII characters in quoted-printable
    encoding.  The return value is the converted line(s). If the optional argument

@@ -23,7 +23,7 @@ well as strings, but only using the Base64 standard alphabet.
 
 The modern interface provides:
 
-.. function:: b64encode(s[, altchars])
+.. function:: b64encode(s, altchars=None)
 
    Encode a string use Base64.
 
@@ -36,7 +36,7 @@ The modern interface provides:
    The encoded string is returned.
 
 
-.. function:: b64decode(s[, altchars])
+.. function:: b64decode(s, altchars=None)
 
    Decode a Base64 encoded string.
 
@@ -78,7 +78,7 @@ The modern interface provides:
    is returned.
 
 
-.. function:: b32decode(s[, casefold[, map01]])
+.. function:: b32decode(s, casefold=False, map01=None)
 
    Decode a Base32 encoded string.
 
@@ -105,7 +105,7 @@ The modern interface provides:
    *s* is the string to encode.  The encoded string is returned.
 
 
-.. function:: b16decode(s[, casefold])
+.. function:: b16decode(s, casefold=False)
 
    Decode a Base16 encoded string.
 
