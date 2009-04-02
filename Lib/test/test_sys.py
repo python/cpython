@@ -340,6 +340,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(sys.long_info), 2)
         self.assert_(sys.long_info.bits_per_digit % 5 == 0)
         self.assert_(sys.long_info.sizeof_digit >= 1)
+        self.assertEqual(type(sys.long_info.bits_per_digit), int)
+        self.assertEqual(type(sys.long_info.sizeof_digit), int)
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
         if test.test_support.have_unicode:
@@ -606,9 +608,9 @@ class SizeofTest(unittest.TestCase):
         check(1L, size(vh) + self.longdigit)
         check(-1L, size(vh) + self.longdigit)
         PyLong_BASE = 2**sys.long_info.bits_per_digit
-        check(PyLong_BASE, size(vh) + 2*self.longdigit)
-        check(PyLong_BASE**2-1, size(vh) + 2*self.longdigit)
-        check(PyLong_BASE**2, size(vh) + 3*self.longdigit)
+        check(long(PyLong_BASE), size(vh) + 2*self.longdigit)
+        check(long(PyLong_BASE**2-1), size(vh) + 2*self.longdigit)
+        check(long(PyLong_BASE**2), size(vh) + 3*self.longdigit)
         # module
         check(unittest, size(h + 'P'))
         # None
