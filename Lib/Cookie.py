@@ -477,7 +477,7 @@ class Morsel(dict):
         document.cookie = \"%s\";
         // end hiding -->
         </script>
-        """ % ( self.OutputString(attrs), )
+        """ % ( self.OutputString(attrs).replace('"',r'\"'), )
     # end js_output()
 
     def OutputString(self, attrs=None):
