@@ -112,7 +112,7 @@ class MixinBytesBufferCommonTests(object):
         self.assertEqual(b'abc   ', self.marshal(b'abc').ljust(6))
         self.assertEqual(b'abc', self.marshal(b'abc').ljust(3))
         self.assertEqual(b'abc', self.marshal(b'abc').ljust(2))
-        self.assertEqual(b'abc*******', self.marshal(b'abc').ljust(10, '*'))
+        self.assertEqual(b'abc*******', self.marshal(b'abc').ljust(10, b'*'))
         self.assertRaises(TypeError, self.marshal(b'abc').ljust)
 
     def test_rjust(self):
@@ -120,7 +120,7 @@ class MixinBytesBufferCommonTests(object):
         self.assertEqual(b'   abc', self.marshal(b'abc').rjust(6))
         self.assertEqual(b'abc', self.marshal(b'abc').rjust(3))
         self.assertEqual(b'abc', self.marshal(b'abc').rjust(2))
-        self.assertEqual(b'*******abc', self.marshal(b'abc').rjust(10, '*'))
+        self.assertEqual(b'*******abc', self.marshal(b'abc').rjust(10, b'*'))
         self.assertRaises(TypeError, self.marshal(b'abc').rjust)
 
     def test_center(self):
@@ -128,7 +128,7 @@ class MixinBytesBufferCommonTests(object):
         self.assertEqual(b' abc  ', self.marshal(b'abc').center(6))
         self.assertEqual(b'abc', self.marshal(b'abc').center(3))
         self.assertEqual(b'abc', self.marshal(b'abc').center(2))
-        self.assertEqual(b'***abc****', self.marshal(b'abc').center(10, '*'))
+        self.assertEqual(b'***abc****', self.marshal(b'abc').center(10, b'*'))
         self.assertRaises(TypeError, self.marshal(b'abc').center)
 
     def test_swapcase(self):
