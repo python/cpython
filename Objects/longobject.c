@@ -4092,8 +4092,10 @@ PyLong_GetInfo(void)
 	int_info = PyStructSequence_New(&Int_InfoType);
 	if (int_info == NULL)
 		return NULL;
-	PyStructSequence_SET_ITEM(int_info, field++, PyLong_FromLong(PyLong_SHIFT));
-	PyStructSequence_SET_ITEM(int_info, field++, PyLong_FromLong(sizeof(digit)));
+	PyStructSequence_SET_ITEM(int_info, field++,
+				  PyLong_FromLong(PyLong_SHIFT));
+	PyStructSequence_SET_ITEM(int_info, field++,
+				  PyLong_FromLong(sizeof(digit)));
 	if (PyErr_Occurred()) {
 		Py_CLEAR(int_info);
 		return NULL;
