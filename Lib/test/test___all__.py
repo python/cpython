@@ -75,6 +75,8 @@ class AllTest(unittest.TestCase):
         self.check_all("heapq")
         self.check_all("http.client")
         self.check_all("ihooks")
+        self.check_all("io")
+        self.check_all("_pyio")
         self.check_all("imaplib")
         self.check_all("imghdr")
         self.check_all("keyword")
