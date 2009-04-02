@@ -803,7 +803,6 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
 		    PyObject *global, PyObject* child_free)
 {
 	PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
-	int success = 0;
 
 	/* Copy the bound and global dictionaries.
 
