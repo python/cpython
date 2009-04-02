@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 2625: added missing items() call to the for loop in
+  mailbox.MH.get_message().
+
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
   popups on windows buildbots. Patch applied to work around this issue.
 
