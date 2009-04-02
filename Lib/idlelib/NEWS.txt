@@ -3,8 +3,11 @@ What's New in IDLE 2.7a0?
 
 *Release date: XX-XXX-2009*
 
+- Remove port spec from run.py and fix bug where subprocess fails to
+  extract port from command line when warnings are present.
+
 - Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle
-  mixed space/tab properly. Issue 5120, patch by Guilherme Polo.
+  mixed space/tab properly. Issue 5129, patch by Guilherme Polo.
   
 - Issue #3549: On MacOS the preferences menu was not present
 
