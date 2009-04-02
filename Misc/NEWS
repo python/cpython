@@ -692,6 +692,9 @@ Build
 C-API
 -----
 
+- Issue #1419652: Change the first argument to PyImport_AppendInittab() to
+  ``const char *`` as the string is stored beyond the call.
+
 - Some PyBytes_* aliases have been removed because they don't exist in 3.x.
 
 - Issue #5175: PyLong_AsUnsignedLongLong now raises OverflowError
