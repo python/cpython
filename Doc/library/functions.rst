@@ -680,6 +680,13 @@ available.  They are listed here in alphabetical order.
       Added support for the optional *key* argument.
 
 
+.. function:: memoryview(obj)
+   :noindex:
+
+   Return a "memory view" object created from the given argument.  See
+   :ref:`typememoryview` for more information.
+
+
 .. function:: min(iterable[, args...][key])
 
    With a single argument *iterable*, return the smallest item of a non-empty

@@ -320,6 +320,7 @@ OBJECT_OBJS=	\
 		Objects/listobject.o \
 		Objects/longobject.o \
 		Objects/dictobject.o \
+		Objects/memoryobject.o \
 		Objects/methodobject.o \
 		Objects/moduleobject.o \
 		Objects/object.o \
@@ -617,6 +618,7 @@ PYTHON_HEADERS= \
 		Include/longintrepr.h \
 		Include/longobject.h \
 		Include/marshal.h \
+		Include/memoryobject.h \
 		Include/metagrammar.h \
 		Include/methodobject.h \
 		Include/modsupport.h \

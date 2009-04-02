@@ -328,8 +328,8 @@ want a list of those, they are defined in the standard module
     'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float',
     'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
     'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
-    'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
-    'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
+    'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'memoryview',
+    'min', 'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
     'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
     'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
     'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
