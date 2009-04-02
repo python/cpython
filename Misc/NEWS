@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Fix a problem in PyErr_NormalizeException that leads to "undetected errors"
+  when hitting the recursion limit under certain circumstances.
+
 - Issue #1665206: Remove the last eager import in _warnings.c and make it lazy.
 
 - Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to
