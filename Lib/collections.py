@@ -174,7 +174,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             if (not all(c.isalnum() or c=='_' for c in name) or _iskeyword(name)
                 or not name or name[0].isdigit() or name.startswith('_')
                 or name in seen):
-                names[i] = '_%d' % (i+1)
+                names[i] = '_%d' % i
             seen.add(name)
         field_names = tuple(names)
     for name in (typename,) + field_names:

@@ -51,12 +51,12 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_name_fixer(self):
         for spec, renamed in [
-            [('efg', 'g%hi'),  ('efg', '_2')],                              # field with non-alpha char
-            [('abc', 'class'), ('abc', '_2')],                              # field has keyword
-            [('8efg', '9ghi'), ('_1', '_2')],                               # field starts with digit
-            [('abc', '_efg'), ('abc', '_2')],                               # field with leading underscore
-            [('abc', 'efg', 'efg', 'ghi'), ('abc', 'efg', '_3', 'ghi')],    # duplicate field
-            [('abc', '', 'x'), ('abc', '_2', 'x')],                         # fieldname is a space
+            [('efg', 'g%hi'),  ('efg', '_1')],                              # field with non-alpha char
+            [('abc', 'class'), ('abc', '_1')],                              # field has keyword
+            [('8efg', '9ghi'), ('_0', '_1')],                               # field starts with digit
+            [('abc', '_efg'), ('abc', '_1')],                               # field with leading underscore
+            [('abc', 'efg', 'efg', 'ghi'), ('abc', 'efg', '_2', 'ghi')],    # duplicate field
+            [('abc', '', 'x'), ('abc', '_1', 'x')],                         # fieldname is a space
         ]:
             self.assertEqual(namedtuple('NT', spec, rename=True)._fields, renamed)
 
