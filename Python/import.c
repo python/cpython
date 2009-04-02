@@ -3376,7 +3376,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
 /* Shorthand to add a single entry given a name and a function */
 
 int
-PyImport_AppendInittab(char *name, void (*initfunc)(void))
+PyImport_AppendInittab(const char *name, void (*initfunc)(void))
 {
 	struct _inittab newtab[2];
 
