@@ -200,7 +200,7 @@ Importing Modules
    tricks with this to provide a dynamically created collection of frozen modules.
 
 
-.. cfunction:: int PyImport_AppendInittab(char *name, PyObject* (*initfunc)(void))
+.. cfunction:: int PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 
    Add a single module to the existing table of built-in modules.  This is a
    convenience wrapper around :cfunc:`PyImport_ExtendInittab`, returning ``-1`` if
