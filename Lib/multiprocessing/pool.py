@@ -92,6 +92,9 @@ class Pool(object):
             except NotImplementedError:
                 processes = 1
 
+        if initializer is not None and not hasattr(initializer, '__call__'):
+            raise TypeError('initializer must be a callable')
+
         self._pool = []
         for i in range(processes):
             w = self.Process(
