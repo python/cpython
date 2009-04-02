@@ -54,6 +54,8 @@ class LoggingResult(unittest.TestResult):
 
 
 class TestEquality(object):
+    """Used as a mixin for TestCase"""
+
     # Check for a valid __eq__ implementation
     def test_eq(self):
         for obj_1, obj_2 in self.eq_pairs:
@@ -67,6 +69,8 @@ class TestEquality(object):
             self.failIfEqual(obj_2, obj_1)
 
 class TestHashing(object):
+    """Used as a mixin for TestCase"""
+
     # Check for a valid __hash__ implementation
     def test_hash(self):
         for obj_1, obj_2 in self.eq_pairs:
@@ -2835,6 +2839,172 @@ class Test_Assertions(TestCase):
             self.fail("assertRaises() didn't let exception pass through")
 
 
+class TestLongMessage(TestCase):
+    """Test that the individual asserts honour longMessage.
+    This actually tests all the message behaviour for
+    asserts that use longMessage."""
+
+    def setUp(self):
+        class TestableTestFalse(TestCase):
+            longMessage = False
+            failureException = self.failureException
+
+            def testTest(self):
+                pass
+
+        class TestableTestTrue(TestCase):
+            longMessage = True
+            failureException = self.failureException
+
+            def testTest(self):
+                pass
+
+        self.testableTrue = TestableTestTrue('testTest')
+        self.testableFalse = TestableTestFalse('testTest')
+
+    def testDefault(self):
+        self.assertFalse(TestCase.longMessage)
+
+    def test_formatMsg(self):
+        self.assertEquals(self.testableFalse._formatMessage(None, "foo"), "foo")
+        self.assertEquals(self.testableFalse._formatMessage("foo", "bar"), "foo")
+
+        self.assertEquals(self.testableTrue._formatMessage(None, "foo"), "foo")
+        self.assertEquals(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
+
+    def assertMessages(self, methodName, args, errors):
+        def getMethod(i):
+            useTestableFalse  = i < 2
+            if useTestableFalse:
+                test = self.testableFalse
+            else:
+                test = self.testableTrue
+            return getattr(test, methodName)
+
+        for i, expected_regexp in enumerate(errors):
+            testMethod = getMethod(i)
+            kwargs = {}
+            withMsg = i % 2
+            if withMsg:
+                kwargs = {"msg": "oops"}
+
+            with self.assertRaisesRegexp(self.failureException,
+                                         expected_regexp=expected_regexp):
+                testMethod(*args, **kwargs)
+
+    def testAssertTrue(self):
+        self.assertMessages('assertTrue', (False,),
+                            ["^False is not True$", "^oops$", "^False is not True$",
+                             "^False is not True : oops$"])
+
+    def testAssertFalse(self):
+        self.assertMessages('assertFalse', (True,),
+                            ["^True is not False$", "^oops$", "^True is not False$",
+                             "^True is not False : oops$"])
+
+    def testNotEqual(self):
+        self.assertMessages('assertNotEqual', (1, 1),
+                            ["^1 == 1$", "^oops$", "^1 == 1$",
+                             "^1 == 1 : oops$"])
+
+    def testAlmostEqual(self):
+        self.assertMessages('assertAlmostEqual', (1, 2),
+                            ["^1 != 2 within 7 places$", "^oops$",
+                             "^1 != 2 within 7 places$", "^1 != 2 within 7 places : oops$"])
+
+    def testNotAlmostEqual(self):
+        self.assertMessages('assertNotAlmostEqual', (1, 1),
+                            ["^1 == 1 within 7 places$", "^oops$",
+                             "^1 == 1 within 7 places$", "^1 == 1 within 7 places : oops$"])
+
+    def test_baseAssertEqual(self):
+        self.assertMessages('_baseAssertEqual', (1, 2),
+                            ["^1 != 2$", "^oops$", "^1 != 2$", "^1 != 2 : oops$"])
+
+    def testAssertSequenceEqual(self):
+        # Error messages are multiline so not testing on full message
+        # assertTupleEqual and assertListEqual delegate to this method
+        self.assertMessages('assertSequenceEqual', ([], [None]),
+                            ["\+ \[None\]$", "^oops$", r"\+ \[None\]$",
+                             r"\+ \[None\] : oops$"])
+
+    def testAssertSetEqual(self):
+        self.assertMessages('assertSetEqual', (set(), set([None])),
+                            ["None$", "^oops$", "None$",
+                             "None : oops$"])
+
+    def testAssertIn(self):
+        self.assertMessages('assertIn', (None, []),
+                            ['^None not found in \[\]$', "^oops$",
+                             '^None not found in \[\]$',
+                             '^None not found in \[\] : oops$'])
+
+    def testAssertNotIn(self):
+        self.assertMessages('assertNotIn', (None, [None]),
+                            ['^None unexpectedly found in \[None\]$', "^oops$",
+                             '^None unexpectedly found in \[None\]$',
+                             '^None unexpectedly found in \[None\] : oops$'])
+
+    def testAssertDictEqual(self):
+        self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
+                            [r"\+ \{'key': 'value'\}$", "^oops$",
+                             "\+ \{'key': 'value'\}$",
+                             "\+ \{'key': 'value'\} : oops$"])
+
+    def testAssertDictContainsSubset(self):
+        self.assertMessages('assertDictContainsSubset', ({'key': 'value'}, {}),
+                            ["^Missing: 'key'$", "^oops$",
+                             "^Missing: 'key'$",
+                             "^Missing: 'key' : oops$"])
+
+    def testAssertSameElements(self):
+        self.assertMessages('assertSameElements', ([], [None]),
+                            [r"\[None\]$", "^oops$",
+                             r"\[None\]$",
+                             r"\[None\] : oops$"])
+
+    def testAssertMultiLineEqual(self):
+        self.assertMessages('assertMultiLineEqual', ("", "foo"),
+                            [r"\+ foo$", "^oops$",
+                             r"\+ foo$",
+                             r"\+ foo : oops$"])
+
+    def testAssertLess(self):
+        self.assertMessages('assertLess', (2, 1),
+                            ["^2 not less than 1$", "^oops$",
+                             "^2 not less than 1$", "^2 not less than 1 : oops$"])
+
+    def testAssertLessEqual(self):
+        self.assertMessages('assertLessEqual', (2, 1),
+                            ["^2 not less than or equal to 1$", "^oops$",
+                             "^2 not less than or equal to 1$",
+                             "^2 not less than or equal to 1 : oops$"])
+
+    def testAssertGreater(self):
+        self.assertMessages('assertGreater', (1, 2),
+                            ["^1 not greater than 2$", "^oops$",
+                             "^1 not greater than 2$",
+                             "^1 not greater than 2 : oops$"])
+
+    def testAssertGreaterEqual(self):
+        self.assertMessages('assertGreaterEqual', (1, 2),
+                            ["^1 not greater than or equal to 2$", "^oops$",
+                             "^1 not greater than or equal to 2$",
+                             "^1 not greater than or equal to 2 : oops$"])
+
+    def testAssertIsNone(self):
+        self.assertMessages('assertIsNone', ('not None',),
+                            ["^'not None' is not None$", "^oops$",
+                             "^'not None' is not None$",
+                             "^'not None' is not None : oops$"])
+
+    def testAssertIsNotNone(self):
+        self.assertMessages('assertIsNotNone', (None,),
+                            ["^unexpectedly None$", "^oops$",
+                             "^unexpectedly None$",
+                             "^unexpectedly None : oops$"])
+
+
 ######################################################################
 ## Main
 ######################################################################
@@ -2842,7 +3012,7 @@ class Test_Assertions(TestCase):
 def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_TestSkipping, Test_Assertions)
+        Test_TestSkipping, Test_Assertions, TestLongMessage)
 
 if __name__ == "__main__":
     test_main()

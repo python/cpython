@@ -275,7 +275,7 @@ class _AssertRaisesContext(object):
             raise self.failureException(
                 "{0} not raised".format(exc_name))
         if not issubclass(exc_type, self.expected):
-            # let unexpexted exceptions pass through
+            # let unexpected exceptions pass through
             return False
         if self.expected_regex is None:
             return True
@@ -317,6 +317,13 @@ class TestCase(object):
     # exception will be deemed to have 'failed' rather than 'errored'
 
     failureException = AssertionError
+
+    # This attribute determines whether long messages (including repr of
+    # objects used in assert methods) will be printed on failure in *addition*
+    # to any explicit message passed.
+
+    longMessage = False
+
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
@@ -471,12 +478,31 @@ class TestCase(object):
     def assertFalse(self, expr, msg=None):
         "Fail the test if the expression is true."
         if expr:
+            msg = self._formatMessage(msg, "%r is not False" % expr)
             raise self.failureException(msg)
 
     def assertTrue(self, expr, msg=None):
         """Fail the test unless the expression is true."""
         if not expr:
+            msg = self._formatMessage(msg, "%r is not True" % expr)
             raise self.failureException(msg)
+
+    def _formatMessage(self, msg, standardMsg):
+        """Honour the longMessage attribute when generating failure messages.
+        If longMessage is False this means:
+        * Use only an explicit message if it is provided
+        * Otherwise use the standard message for the assert
+
+        If longMessage is True:
+        * Use the standard message
+        * If an explicit message is provided, plus ' : ' and the explicit message
+        """
+        if not self.longMessage:
+            return msg or standardMsg
+        if msg is None:
+            return standardMsg
+        return standardMsg + ' : ' + msg
+
 
     def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
         """Fail unless an exception of class excClass is thrown
@@ -523,7 +549,9 @@ class TestCase(object):
     def _baseAssertEqual(self, first, second, msg=None):
         """The default assertEqual implementation, not type specific."""
         if not first == second:
-            raise self.failureException(msg or '%r != %r' % (first, second))
+            standardMsg = '%r != %r' % (first, second)
+            msg = self._formatMessage(msg, standardMsg)
+            raise self.failureException(msg)
 
     def assertEqual(self, first, second, msg=None):
         """Fail if the two objects are unequal as determined by the '=='
@@ -536,8 +564,9 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by the '=='
            operator.
         """
-        if first == second:
-            raise self.failureException(msg or '%r == %r' % (first, second))
+        if not first != second:
+            msg = self._formatMessage(msg, '%r == %r' % (first, second))
+            raise self.failureException(msg)
 
     def assertAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are unequal as determined by their
@@ -548,8 +577,9 @@ class TestCase(object):
            as significant digits (measured from the most signficant digit).
         """
         if round(abs(second-first), places) != 0:
-            raise self.failureException(
-                  msg or '%r != %r within %r places' % (first, second, places))
+            standardMsg = '%r != %r within %r places' % (first, second, places)
+            msg = self._formatMessage(msg, standardMsg)
+            raise self.failureException(msg)
 
     def assertNotAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
@@ -560,8 +590,9 @@ class TestCase(object):
            as significant digits (measured from the most signficant digit).
         """
         if round(abs(second-first), places) == 0:
-            raise self.failureException(
-                  msg or '%r == %r within %r places' % (first, second, places))
+            standardMsg = '%r == %r within %r places' % (first, second, places)
+            msg = self._formatMessage(msg, standardMsg)
+            raise self.failureException(msg)
 
     # Synonyms for assertion methods
 
@@ -680,10 +711,10 @@ class TestCase(object):
                     except (TypeError, IndexError, NotImplementedError):
                         differing += ('Unable to index element %d '
                                       'of second %s\n' % (len1, seq_type_name))
-        if not msg:
-            msg = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                                          pprint.pformat(seq2).splitlines()))
-        self.fail(differing + msg)
+        standardMsg = differing + '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
+                                            pprint.pformat(seq2).splitlines()))
+        msg = self._formatMessage(msg, standardMsg)
+        self.fail(msg)
 
     def assertListEqual(self, list1, list2, msg=None):
         """A list-specific equality assertion.
@@ -739,9 +770,6 @@ class TestCase(object):
         if not (difference1 or difference2):
             return
 
-        if msg is not None:
-            self.fail(msg)
-
         lines = []
         if difference1:
             lines.append('Items in the first set but not the second:')
@@ -751,28 +779,31 @@ class TestCase(object):
             lines.append('Items in the second set but not the first:')
             for item in difference2:
                 lines.append(repr(item))
-        self.fail('\n'.join(lines))
 
-    def assertIn(self, a, b, msg=None):
-        """Just like self.assert_(a in b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%s" not found in "%s"' % (a, b)
-        self.assert_(a in b, msg)
+        standardMsg = '\n'.join(lines)
+        self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertNotIn(self, a, b, msg=None):
-        """Just like self.assert_(a not in b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%s" unexpectedly found in "%s"' % (a, b)
-        self.assert_(a not in b, msg)
+    def assertIn(self, member, container, msg=None):
+        """Just like self.assertTrue(a in b), but with a nicer default message."""
+        if member not in container:
+            standardMsg = '%r not found in %r' % (member, container)
+            self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertNotIn(self, member, container, msg=None):
+        """Just like self.assertTrue(a not in b), but with a nicer default message."""
+        if member in container:
+            standardMsg = '%r unexpectedly found in %r' % (member, container)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictEqual(self, d1, d2, msg=None):
         self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
         self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
 
         if d1 != d2:
-            self.fail(msg or ('\n' + '\n'.join(difflib.ndiff(
-                    pprint.pformat(d1).splitlines(),
-                    pprint.pformat(d2).splitlines()))))
+            standardMsg = ('\n' + '\n'.join(difflib.ndiff(
+                           pprint.pformat(d1).splitlines(),
+                           pprint.pformat(d2).splitlines())))
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictContainsSubset(self, expected, actual, msg=None):
         """Checks whether actual is a superset of expected."""
@@ -782,23 +813,20 @@ class TestCase(object):
             if key not in actual:
                 missing.append(key)
             elif value != actual[key]:
-                mismatched.append('%s, expected: %s, actual: %s' % (key, value,
-                                                                                                                        actual[key]))
+                mismatched.append('%s, expected: %s, actual: %s' % (key, value,                                                                                                       actual[key]))
 
         if not (missing or mismatched):
             return
 
-        missing_msg = mismatched_msg = ''
+        standardMsg = ''
         if missing:
-            missing_msg = 'Missing: %s' % ','.join(missing)
+            standardMsg = 'Missing: %r' % ','.join(missing)
         if mismatched:
-            mismatched_msg = 'Mismatched values: %s' % ','.join(mismatched)
+            if standardMsg:
+                standardMsg += '; '
+            standardMsg += 'Mismatched values: %s' % ','.join(mismatched)
 
-        if msg:
-            msg = '%s: %s; %s' % (msg, missing_msg, mismatched_msg)
-        else:
-            msg = '%s; %s' % (missing_msg, mismatched_msg)
-        self.fail(msg)
+        self.fail(self._formatMessage(msg, standardMsg))
 
     def assertSameElements(self, expected_seq, actual_seq, msg=None):
         """An unordered sequence specific comparison.
@@ -823,57 +851,59 @@ class TestCase(object):
             missing, unexpected = _SortedListDifference(expected, actual)
         errors = []
         if missing:
-            errors.append('Expected, but missing:\n    %r\n' % missing)
+            errors.append('Expected, but missing:\n    %r' % missing)
         if unexpected:
-            errors.append('Unexpected, but present:\n    %r\n' % unexpected)
+            errors.append('Unexpected, but present:\n    %r' % unexpected)
         if errors:
-            self.fail(msg or ''.join(errors))
+            standardMsg = '\n'.join(errors)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
-        self.assert_(isinstance(first, types.StringTypes), (
+        self.assert_(isinstance(first, basestring), (
                 'First argument is not a string'))
-        self.assert_(isinstance(second, types.StringTypes), (
+        self.assert_(isinstance(second, basestring), (
                 'Second argument is not a string'))
 
         if first != second:
-            raise self.failureException(
-                    msg or '\n' + ''.join(difflib.ndiff(first.splitlines(True),
-                                                                                            second.splitlines(True))))
+            standardMsg = '\n' + ''.join(difflib.ndiff(first.splitlines(True), second.splitlines(True)))
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertLess(self, a, b, msg=None):
-        """Just like self.assert_(a < b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%r" unexpectedly not less than "%r"' % (a, b)
-        self.assert_(a < b, msg)
+        """Just like self.assertTrue(a < b), but with a nicer default message."""
+        if not a < b:
+            standardMsg = '%r not less than %r' % (a, b)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertLessEqual(self, a, b, msg=None):
-        """Just like self.assert_(a <= b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%r" unexpectedly not less than or equal to "%r"' % (a, b)
-        self.assert_(a <= b, msg)
+        """Just like self.assertTrue(a <= b), but with a nicer default message."""
+        if not a <= b:
+            standardMsg = '%r not less than or equal to %r' % (a, b)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertGreater(self, a, b, msg=None):
-        """Just like self.assert_(a > b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%r" unexpectedly not greater than "%r"' % (a, b)
-        self.assert_(a > b, msg)
+        """Just like self.assertTrue(a > b), but with a nicer default message."""
+        if not a > b:
+            standardMsg = '%r not greater than %r' % (a, b)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertGreaterEqual(self, a, b, msg=None):
-        """Just like self.assert_(a >= b), but with a nicer default message."""
-        if msg is None:
-            msg = '"%r" unexpectedly not greater than or equal to "%r"' % (a, b)
-        self.assert_(a >= b, msg)
+        """Just like self.assertTrue(a >= b), but with a nicer default message."""
+        if not a >= b:
+            standardMsg = '%r not greater than or equal to %r' % (a, b)
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertIsNone(self, obj, msg=None):
-        """Same as self.assert_(obj is None), with a nicer default message."""
-        if msg is None:
-            msg = '"%s" unexpectedly not None' % obj
-        self.assert_(obj is None, msg)
+        """Same as self.assertTrue(obj is None), with a nicer default message."""
+        if obj is not None:
+            standardMsg = '%r is not None' % obj
+            self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertIsNotNone(self, obj, msg='unexpectedly None'):
+    def assertIsNotNone(self, obj, msg=None):
         """Included for symmetry with assertIsNone."""
-        self.assert_(obj is not None, msg)
+        if obj is None:
+            standardMsg = 'unexpectedly None'
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegexp(self, expected_exception, expected_regexp,
                            callable_obj=None, *args, **kwargs):
