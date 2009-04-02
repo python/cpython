@@ -158,7 +158,7 @@ It also provides the following decorators:
       multiple-inheritance.
 
 
-.. function:: abstractproperty(fget[, fset[, fdel[, doc]]])
+.. function:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
 
    A subclass of the built-in :func:`property`, indicating an abstract property.
 

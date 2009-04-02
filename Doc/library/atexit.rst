@@ -17,7 +17,7 @@ is killed by a signal, when a Python fatal internal error is detected, or when
 :func:`os._exit` is called.
 
 
-.. function:: register(func[, *args[, **kargs]])
+.. function:: register(func, *args, **kargs)
 
    Register *func* as a function to be executed at termination.  Any optional
    arguments that are to be passed to *func* must be passed as arguments to
@@ -48,7 +48,8 @@ is killed by a signal, when a Python fatal internal error is detected, or when
 .. seealso::
 
    Module :mod:`readline`
-      Useful example of :mod:`atexit` to read and write :mod:`readline` history files.
+      Useful example of :mod:`atexit` to read and write :mod:`readline` history
+      files.
 
 
 .. _atexit-example:

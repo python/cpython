@@ -37,7 +37,7 @@ frame size of 4 bytes (2\*2), and a second's worth occupies 2\*2\*44100 bytes
 Module :mod:`aifc` defines the following function:
 
 
-.. function:: open(file[, mode])
+.. function:: open(file, mode=None)
 
    Open an AIFF or AIFF-C file and return an object instance with methods that are
    described below.  The argument *file* is either a string naming a file or a file
