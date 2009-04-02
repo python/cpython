@@ -936,6 +936,12 @@ class TestMH(TestMailbox):
         self._box.remove(key1)
         self.assert_(self._box.get_sequences() == {'flagged':[key0]})
 
+    def test_issue2625(self):
+        msg0 = mailbox.MHMessage(self._template % 0)
+        msg0.add_sequence('foo')
+        key0 = self._box.add(msg0)
+        refmsg0 = self._box.get_message(key0)
+
     def test_pack(self):
         # Pack the contents of the mailbox
         msg0 = mailbox.MHMessage(self._template % 0)
