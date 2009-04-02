@@ -141,7 +141,7 @@ class PyLoaderTests(testing_abc.LoaderTests):
 
     def test_package(self):
         name = '<pkg>'
-        path = '/path/to/<pkg>/__init__'
+        path = '/path/to/{}/__init__'.format(name)
         mock = self.mocker({name: path})
         with util.uncache(name):
             module = mock.load_module(name)
