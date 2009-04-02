@@ -600,7 +600,7 @@ of each one.
 
 .. data:: U
           UNICODE
-   :index:
+   :noindex:
 
    Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
    dependent on the Unicode character properties database.
