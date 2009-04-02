@@ -475,11 +475,14 @@ class BaseManager(object):
         dispatch(conn, None, 'dummy')
         self._state.value = State.STARTED
 
-    def start(self):
+    def start(self, initializer=None, initargs=()):
         '''
         Spawn a server process for this manager object
         '''
         assert self._state.value == State.INITIAL
+
+        if initializer is not None and not hasattr(initializer, '__call__'):
+            raise TypeError('initializer must be a callable')
 
         # pipe over which we will retrieve address of server
         reader, writer = connection.Pipe(duplex=False)
@@ -488,7 +491,7 @@ class BaseManager(object):
         self._process = Process(
             target=type(self)._run_server,
             args=(self._registry, self._address, self._authkey,
-                  self._serializer, writer),
+                  self._serializer, writer, initializer, initargs),
             )
         ident = ':'.join(str(i) for i in self._process._identity)
         self._process.name = type(self).__name__  + '-' + ident
@@ -509,10 +512,14 @@ class BaseManager(object):
             )
 
     @classmethod
-    def _run_server(cls, registry, address, authkey, serializer, writer):
+    def _run_server(cls, registry, address, authkey, serializer, writer,
+                    initializer=None, initargs=()):
         '''
         Create a server, report its address and run it
         '''
+        if initializer is not None:
+            initializer(*initargs)
+
         # create server
         server = cls._Server(registry, address, authkey, serializer)
 
