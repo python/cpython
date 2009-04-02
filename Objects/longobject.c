@@ -3736,8 +3736,10 @@ PyLong_GetInfo(void)
 	long_info = PyStructSequence_New(&Long_InfoType);
 	if (long_info == NULL)
 		return NULL;
-	PyStructSequence_SET_ITEM(long_info, field++, PyLong_FromLong(PyLong_SHIFT));
-	PyStructSequence_SET_ITEM(long_info, field++, PyLong_FromLong(sizeof(digit)));
+	PyStructSequence_SET_ITEM(long_info, field++,
+				  PyInt_FromLong(PyLong_SHIFT));
+	PyStructSequence_SET_ITEM(long_info, field++,
+				  PyInt_FromLong(sizeof(digit)));
 	if (PyErr_Occurred()) {
 		Py_CLEAR(long_info);
 		return NULL;
