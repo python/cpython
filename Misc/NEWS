@@ -92,6 +92,35 @@ Core and Builtins
 Library
 -------
 
+- Issue 2625: added missing iteritems() call to the for loop in
+  mailbox.MH.get_message().
+
+- Issue 5585: Add the ability to call an initializer to mulitiprocessing.manager
+  so that users can install custonm handlers/etc.
+
+- Issue 3551: Patch multiprocessing to raise a proper exception if the size of the
+  object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES. Added docs
+  to note the limitation
+
+- unittest.assertNotEqual() now uses the inequality operator (!=) instead 
+  of the equality operator.
+  
+- Issue #5663: better failure messages for unittest asserts. Default assertTrue
+  and assertFalse messages are now useful. TestCase has a longMessage attribute.
+  This defaults to False, but if set to True useful error messages are shown in
+  addition to explicit messages passed to assert methods.
+  
+- Issue #3110: Add additional protect around SEM_VALUE_MAX for multiprocessing
+
+- In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on
+  printing out values.
+
+- Issue #4572: added SEEK_* symbolic constants to io module.
+
+- Issue #1665206 (partially): Move imports in cgitb to the top of the module
+  instead of performing them in functions. Helps prevent import deadlocking in
+  threads.
+
 - Issue #5647: MutableSet.__iand__() no longer mutates self during iteration.
 
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
