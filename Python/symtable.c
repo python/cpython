@@ -766,6 +766,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
 	if (PyNumber_InPlaceOr(newfree, allfree) < 0)
 		goto error;
+	Py_DECREF(newfree);
 
 	/* Check if any local variables must be converted to cell variables */
 	if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree,
@@ -824,6 +825,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
 	if (!analyze_block(entry, temp_bound, temp_free, temp_global))
 		goto error;
 	success = PyNumber_InPlaceOr(child_free, temp_free) >= 0;
+	Py_DECREF(child_free);
 	success = 1;
  error:
 	Py_XDECREF(temp_bound);
