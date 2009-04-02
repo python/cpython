@@ -45,12 +45,17 @@
  * Issue 3110 - Solaris does not define SEM_VALUE_MAX
  */
 #ifndef SEM_VALUE_MAX
-#  ifdef _SEM_VALUE_MAX
-#    define SEM_VALUE_MAX _SEM_VALUE_MAX
-#  else
-#    define SEM_VALUE_MAX INT_MAX
-#  endif
+	#if defined(HAVE_SYSCONF) && defined(_SC_SEM_VALUE_MAX)
+		# define SEM_VALUE_MAX sysconf(_SC_SEM_VALUE_MAX)
+	#elif defined(_SEM_VALUE_MAX)
+		# define SEM_VALUE_MAX _SEM_VALUE_MAX
+	#elif definef(_POSIX_SEM_VALUE_MAX)
+		# define SEM_VALUE_MAX _POSIX_SEM_VALUE_MAX
+	#else
+		# define SEM_VALUE_MAX INT_MAX
+	#endif
 #endif
+
 
 /*
  * Make sure Py_ssize_t available
