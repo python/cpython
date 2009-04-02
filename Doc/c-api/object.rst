@@ -66,8 +66,7 @@ Object Protocol
    ``o.attr_name = v``.
 
 
-.. cfunction:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject
-*value)
+.. cfunction:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
    Generic attribute setter function that is meant to be put into a type
    object's ``tp_setattro`` slot.  It looks for a data descriptor in the
