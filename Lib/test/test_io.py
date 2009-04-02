@@ -1996,13 +1996,13 @@ class MiscIOTest(unittest.TestCase):
     def test___all__(self):
         for name in self.io.__all__:
             obj = getattr(self.io, name, None)
-            self.assert_(obj is not None, name)
+            self.assertTrue(obj is not None, name)
             if name == "open":
                 continue
             elif "error" in name.lower():
-                self.assert_(issubclass(obj, Exception), name)
-            else:
-                self.assert_(issubclass(obj, self.IOBase), name)
+                self.assertTrue(issubclass(obj, Exception), name)
+            elif not name.startswith("SEEK_"):
+                self.assertTrue(issubclass(obj, self.IOBase))
 
     def test_attributes(self):
         f = self.open(support.TESTFN, "wb", buffering=0)
