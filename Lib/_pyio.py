@@ -14,6 +14,7 @@ except ImportError:
 
 import io
 from io import __all__
+from io import SEEK_SET, SEEK_CUR, SEEK_END
 
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
