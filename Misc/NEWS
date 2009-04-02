@@ -202,6 +202,14 @@ Core and Builtins
 Library
 -------
 
+- unittest.assertNotEqual() now uses the inequality operator (!=) instead 
+  of the equality operator.
+  
+- Issue #5663: better failure messages for unittest asserts. Default assertTrue
+  and assertFalse messages are now useful. TestCase has a longMessage attribute.
+  This defaults to False, but if set to True useful error messages are shown in
+  addition to explicit messages passed to assert methods.
+  
 - Issue #3110: Add additional protect around SEM_VALUE_MAX for multiprocessing
 
 - In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on

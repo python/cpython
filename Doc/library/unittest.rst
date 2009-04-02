@@ -1,4 +1,3 @@
-
 :mod:`unittest` --- Unit testing framework
 ==========================================
 
@@ -884,6 +883,25 @@ Test cases
       additional information, it must subclass this exception in order to "play
       fair" with the framework.  The initial value of this attribute is
       :exc:`AssertionError`.
+
+
+   .. attribute:: longMessage
+
+      If set to True then any explicit failure message you pass in to the
+      assert methods will be appended to the end of the normal failure message.
+      The normal messages contain useful information about the objects involved,
+      for example the message from assertEqual shows you the repr of the two
+      unequal objects. Setting this attribute to True allows you to have a
+      custom error message in addition to the normal one.
+
+      This attribute defaults to False, meaning that a custom message passed
+      to an assert method will silence the normal message.
+
+      The class setting can be overridden in individual tests by assigning an
+      instance attribute to True or False before calling the assert methods.
+
+      .. versionadded:: 2.7
+
 
    Testing frameworks can use the following methods to collect information on
    the test:
