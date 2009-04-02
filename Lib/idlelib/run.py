@@ -67,10 +67,13 @@ def main(del_exitfunc=False):
     global quitting
     global no_exitfunc
     no_exitfunc = del_exitfunc
-    port = 8833
     #time.sleep(15) # test subprocess not responding
-    if sys.argv[1:]:
-        port = int(sys.argv[1])
+    try:
+        assert(len(sys.argv) > 1)
+        port = int(sys.argv[-1])
+    except:
+        print>>sys.stderr, "IDLE Subprocess: no IP port passed in sys.argv."
+        return
     sys.argv[:] = [""]
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
