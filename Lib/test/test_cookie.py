@@ -51,17 +51,17 @@ class CookieTests(unittest.TestCase):
 
         self.assertEqual(C.output(['path']),
             'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
-        self.assertEqual(C.js_output(), """
+        self.assertEqual(C.js_output(), r"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme; Version=1";
+        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1";
         // end hiding -->
         </script>
         """)
-        self.assertEqual(C.js_output(['path']), """
+        self.assertEqual(C.js_output(['path']), r"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme";
+        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme";
         // end hiding -->
         </script>
         """)
