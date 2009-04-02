@@ -11,6 +11,7 @@ from test import test_support
 import unittest
 from unittest import TestCase
 import types
+from copy import deepcopy
 
 ### Support code
 ################################################################
@@ -2687,6 +2688,17 @@ test case
         self.failUnless(True)
         self.failUnlessRaises(TypeError, lambda _: 3.14 + u'spam')
         self.failIf(False)
+
+    def testDeepcopy(self):
+        # Issue: 5660
+        class TestableTest(TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+
+        # This shouldn't blow up
+        deepcopy(test)
 
 
 class Test_TestSkipping(TestCase):
