@@ -123,7 +123,9 @@ class PyLoaderTests(testing_abc.LoaderTests):
 
     def eq_attrs(self, ob, **kwargs):
         for attr, val in kwargs.items():
-            self.assertEqual(getattr(ob, attr), val)
+            found = getattr(ob, attr)
+            self.assertEqual(found, val,
+                    "{} attribute: {} != {}".format(attr, found, val))
 
     def test_module(self):
         name = '<module>'
