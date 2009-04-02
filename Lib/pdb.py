@@ -616,6 +616,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             self.curindex = self.curindex - 1
             self.curframe = self.stack[self.curindex][0]
+            self.curframe_locals = self.curframe.f_locals
             self.print_stack_entry(self.stack[self.curindex])
             self.lineno = None
     do_u = do_up
@@ -626,6 +627,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             self.curindex = self.curindex + 1
             self.curframe = self.stack[self.curindex][0]
+            self.curframe_locals = self.curframe.f_locals
             self.print_stack_entry(self.stack[self.curindex])
             self.lineno = None
     do_d = do_down
