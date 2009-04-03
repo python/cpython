@@ -11,6 +11,8 @@ What's New in Python 3.1 alpha 2?
 
 Core and Builtins
 -----------------
+- Implement PEP 378, Format Specifier for Thousands Separator, for
+  integers.
 
 - Issue #5666: Py_BuildValue's 'c' code should create byte strings.
 
