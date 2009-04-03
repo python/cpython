@@ -659,6 +659,9 @@
 			RelativePath="..\..\Modules\md5module.c">
 		</File>
 		<File
+			RelativePath="..\..\Objects\memoryobject.c">
+		</File>
+		<File
 			RelativePath="..\..\Parser\metagrammar.c">
 		</File>
 		<File

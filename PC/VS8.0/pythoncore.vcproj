@@ -1459,6 +1459,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Objects\memoryobject.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Objects\methodobject.c"
 				>
 			</File>

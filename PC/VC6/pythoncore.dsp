@@ -519,6 +519,10 @@ SOURCE=..\..\Modules\md5module.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\memoryobject.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Parser\metagrammar.c
 # End Source File
 # Begin Source File
