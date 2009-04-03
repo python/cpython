@@ -22,6 +22,7 @@
 #define STRINGLIB_RESIZE         PyUnicode_Resize
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_GROUPING       _PyUnicode_InsertThousandsGrouping
+#define STRINGLIB_GROUPING_LOCALE _PyUnicode_InsertThousandsGroupingLocale
 
 #if PY_VERSION_HEX < 0x03000000
 #define STRINGLIB_TOSTR          PyObject_Unicode

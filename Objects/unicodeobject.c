@@ -5635,6 +5635,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 #include "stringlib/partition.h"
 
 #define _Py_InsertThousandsGrouping _PyUnicode_InsertThousandsGrouping
+#define _Py_InsertThousandsGroupingLocale _PyUnicode_InsertThousandsGroupingLocale
 #include "stringlib/localeutil.h"
 
 /* helper macro to fixup start/end slice values */

@@ -24,5 +24,6 @@
 #define STRINGLIB_CMP            memcmp
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_GROUPING       _PyBytes_InsertThousandsGrouping
+#define STRINGLIB_GROUPING_LOCALE _PyBytes_InsertThousandsGroupingLocale
 #define STRINGLIB_TOASCII        PyObject_Repr
 #endif /* !STRINGLIB_STRINGDEFS_H */

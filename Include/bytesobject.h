@@ -91,12 +91,24 @@ PyAPI_FUNC(int) PyBytes_AsStringAndSize(
    into the string pointed to by buffer.  For the argument descriptions,
    see Objects/stringlib/localeutil.h */
 
-PyAPI_FUNC(int) _PyBytes_InsertThousandsGrouping(char *buffer,
+PyAPI_FUNC(int) _PyBytes_InsertThousandsGroupingLocale(char *buffer,
 						  Py_ssize_t n_buffer,
 						  Py_ssize_t n_digits,
 						  Py_ssize_t buf_size,
 						  Py_ssize_t *count,
 						  int append_zero_char);
+
+/* Using explicit passed-in values, insert the thousands grouping
+   into the string pointed to by buffer.  For the argument descriptions,
+   see Objects/stringlib/localeutil.h */
+PyAPI_FUNC(int) _PyBytes_InsertThousandsGrouping(char *buffer,
+						 Py_ssize_t n_buffer,
+						 Py_ssize_t n_digits,
+						 Py_ssize_t buf_size,
+						 Py_ssize_t *count,
+                                                 int append_zero_char,
+                                                 const char *grouping,
+                                                 const char *thousands_sep);
 
 /* Flags used by string formatting */
 #define F_LJUST (1<<0)

@@ -583,6 +583,7 @@ PyBytes_AsStringAndSize(register PyObject *obj,
 #include "stringlib/transmogrify.h"
 
 #define _Py_InsertThousandsGrouping _PyBytes_InsertThousandsGrouping
+#define _Py_InsertThousandsGroupingLocale _PyBytes_InsertThousandsGroupingLocale
 #include "stringlib/localeutil.h"
 
 PyObject *
