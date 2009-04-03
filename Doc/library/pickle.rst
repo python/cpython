@@ -334,8 +334,9 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    .. attribute:: memo
 
-      Dictionary holding previously unpickled objects to allow shared or
-      recursive objects to unpickled by reference as opposed to by value.
+      Dictionary-like object holding previously unpickled objects to allow
+      shared or recursive objects to unpickled by reference as opposed to
+      by value.
 
 
 .. _pickle-picklable:
