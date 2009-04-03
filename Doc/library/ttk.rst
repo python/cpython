@@ -1381,7 +1381,7 @@ initial cavity, each element is allocated a parcel. Valid
 options/values are:
 
  * side: whichside
-    Specifies which side of the cavity to place the the element; one of
+    Specifies which side of the cavity to place the element; one of
     top, right, bottom or left. If omitted, the element occupies the
     entire cavity.
 
