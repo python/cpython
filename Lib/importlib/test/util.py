@@ -11,10 +11,10 @@ def case_insensitive_tests(class_):
     file system."""
     if sys.platform not in ('win32', 'darwin', 'cygwin'):
         original_name = os.listdir('.')[0]
-        if name.upper() != name:
-            changed_name = name.upper()
+        if name.upper() != original_name:
+            changed_name = original_name.upper()
         else:
-            changed_name = name.lower()
+            changed_name = original_name.lower()
         if os.path.exists(changed_name):
             return class_
         return unittest.TestCase
