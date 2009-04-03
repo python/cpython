@@ -120,6 +120,7 @@ typedef struct {
     int alternate;
     STRINGLIB_CHAR sign;
     Py_ssize_t width;
+    int thousands_separators;
     Py_ssize_t precision;
     STRINGLIB_CHAR type;
 } InternalFormatSpec;
@@ -149,6 +150,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     format->alternate = 0;
     format->sign = '\0';
     format->width = -1;
+    format->thousands_separators = 0;
     format->precision = -1;
     format->type = default_type;
 
@@ -201,6 +203,12 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
         format->width = -1;
     }
 
+    /* Comma signifies add thousands separators */
+    if (end-ptr && ptr[0] == ',') {
+        format->thousands_separators = 1;
+        ++ptr;
+    }
+
     /* Parse field precision */
     if (end-ptr && ptr[0] == '.') {
         ++ptr;
@@ -228,6 +236,11 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     if (end-ptr == 1) {
         format->type = ptr[0];
         ++ptr;
+    }
+
+    if (format->type == 'n' && format->thousands_separators) {
+        PyErr_Format(PyExc_ValueError, "Cannot specify ',' with 'n'.");
+        return 0;
     }
 
     return 1;
@@ -630,8 +643,13 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     if (format->type == 'n')
             /* Compute how many additional chars we need to allocate
                to hold the thousands grouping. */
-            STRINGLIB_GROUPING(NULL, n_digits, n_digits,
+            STRINGLIB_GROUPING_LOCALE(NULL, n_digits, n_digits,
                                0, &n_grouping_chars, 0);
+    if (format->thousands_separators)
+            /* Compute how many additional chars we need to allocate
+               to hold the thousands grouping. */
+            STRINGLIB_GROUPING(NULL, n_digits, n_digits,
+                               0, &n_grouping_chars, 0, "\3", ",");
 
     /* Calculate the widths of the various leading and trailing parts */
     calc_number_widths(&spec, sign, n_prefix, n_digits + n_grouping_chars,
@@ -670,11 +688,22 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
                reserved enough space. */
             STRINGLIB_CHAR *pstart = p + n_leading_chars;
 #ifndef NDEBUG
-            int r =
+            int r;
 #endif
-                STRINGLIB_GROUPING(pstart, n_digits, n_digits,
+            if (format->type == 'n')
+#ifndef NDEBUG
+                r = 
+#endif
+                    STRINGLIB_GROUPING_LOCALE(pstart, n_digits, n_digits,
                            spec.n_total+n_grouping_chars-n_leading_chars,
                            NULL, 0);
+            else
+#ifndef NDEBUG
+                r =
+                    STRINGLIB_GROUPING(pstart, n_digits, n_digits,
+                           spec.n_total+n_grouping_chars-n_leading_chars,
+                           NULL, 0, "\3", ",");
+#endif
             assert(r);
     }
 

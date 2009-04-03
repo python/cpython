@@ -368,7 +368,7 @@ add_thousands_grouping(char* buffer, size_t buf_size)
 	/* At this point, p points just past the right-most character we
 	   want to format.  We need to add the grouping string for the
 	   characters between buffer and p. */
-	return _PyBytes_InsertThousandsGrouping(buffer, len, p-buffer,
+	return _PyBytes_InsertThousandsGroupingLocale(buffer, len, p-buffer,
 						buf_size, NULL, 1);
 }
 

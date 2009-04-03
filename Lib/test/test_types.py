@@ -338,6 +338,15 @@ class TypesTests(unittest.TestCase):
         test(123456, "#012X", '0X000001E240')
         test(-123456, "#012X", '-0X00001E240')
 
+        test(123, ',', '123')
+        test(-123, ',', '-123')
+        test(1234, ',', '1,234')
+        test(-1234, ',', '-1,234')
+        test(123456, ',', '123,456')
+        test(-123456, ',', '-123,456')
+        test(1234567, ',', '1,234,567')
+        test(-1234567, ',', '-1,234,567')
+
         # make sure these are errors
 
         # precision disallowed
@@ -347,6 +356,8 @@ class TypesTests(unittest.TestCase):
         # format spec must be string
         self.assertRaises(TypeError, 3 .__format__, None)
         self.assertRaises(TypeError, 3 .__format__, 0)
+        # can't have ',' with 'n'
+        self.assertRaises(ValueError, 3 .__format__, ",n")
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
