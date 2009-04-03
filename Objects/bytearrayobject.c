@@ -411,18 +411,18 @@ bytes_subscript(PyByteArrayObject *self, PyObject *index)
         }
         else {
             char *source_buf = PyByteArray_AS_STRING(self);
-            char *result_buf = (char *)PyMem_Malloc(slicelength);
+            char *result_buf;
             PyObject *result;
 
-            if (result_buf == NULL)
-                return PyErr_NoMemory();
+            result = PyByteArray_FromStringAndSize(NULL, slicelength);
+            if (result == NULL)
+                return NULL;
 
+            result_buf = PyByteArray_AS_STRING(result);
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
                      result_buf[i] = source_buf[cur];
             }
-            result = PyByteArray_FromStringAndSize(result_buf, slicelength);
-            PyMem_Free(result_buf);
             return result;
         }
     }
