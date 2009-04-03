@@ -92,11 +92,11 @@ def reindent(src, indent):
 
 def _template_func(setup, func):
     """Create a timer function. Used if the "statement" is a callable."""
-    def inner(_it, _timer):
+    def inner(_it, _timer, _func=func):
         setup()
         _t0 = _timer()
         for _i in _it:
-            func()
+            _func()
         _t1 = _timer()
         return _t1 - _t0
     return inner
