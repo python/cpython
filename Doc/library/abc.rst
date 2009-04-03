@@ -134,7 +134,7 @@ It also provides the following decorators:
    A class that has a metaclass derived from :class:`ABCMeta`
    cannot be instantiated unless all of its abstract methods and
    properties are overridden.
-   The abstract methods can be called using any of the the normal 'super' call
+   The abstract methods can be called using any of the normal 'super' call
    mechanisms.
 
    Dynamically adding abstract methods to a class, or attempting to modify the

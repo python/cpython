@@ -1674,7 +1674,7 @@ Some smaller changes made to the core Python language are:
   :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
   The old names are still supported in Python 2.6, but are gone in 3.0.
 
-* An obscure change: when you use the the :func:`locals` function inside a
+* An obscure change: when you use the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referenced in the
   :keyword:`class` statement  that aren't attributes of the class.)
