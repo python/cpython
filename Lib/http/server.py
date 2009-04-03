@@ -1082,10 +1082,12 @@ def test(HandlerClass = BaseHTTPRequestHandler,
 
     sa = httpd.socket.getsockname()
     print("Serving HTTP on", sa[0], "port", sa[1], "...")
-    httpd.serve_forever()
-
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received, exiting.")
+        httpd.server_close()
+        sys.exit(0)
 
 if __name__ == '__main__':
-    test(HandlerClass=BaseHTTPRequestHandler)
     test(HandlerClass=SimpleHTTPRequestHandler)
-    test(HandlerClass=CGIHTTPRequestHandler)
