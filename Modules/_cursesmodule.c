@@ -890,7 +890,7 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     PyErr_SetString(PyCursesError, "no input");
     return NULL;
   } else if (rtn<=255)
-    return Py_BuildValue("c", rtn);
+    return Py_BuildValue("C", rtn);
   else
 #if defined(__NetBSD__)
     return PyUnicode_FromString(unctrl(rtn));

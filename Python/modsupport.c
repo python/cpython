@@ -289,7 +289,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		{
 			char p[1];
 			p[0] = (char)va_arg(*p_va, int);
-			return PyUnicode_FromStringAndSize(p, 1);
+			return PyBytes_FromStringAndSize(p, 1);
 		}
 		case 'C':
 		{

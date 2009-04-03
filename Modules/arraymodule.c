@@ -1141,14 +1141,14 @@ array_reduce(arrayobject *array)
 				> PY_SSIZE_T_MAX / Py_SIZE(array)) {
 			return PyErr_NoMemory();
 		}
-		result = Py_BuildValue("O(cy#)O", 
+		result = Py_BuildValue("O(Cy#)O",
 			Py_TYPE(array), 
 			array->ob_descr->typecode,
 			array->ob_item,
 			Py_SIZE(array) * array->ob_descr->itemsize,
 			dict);
 	} else {
-		result = Py_BuildValue("O(c)O", 
+		result = Py_BuildValue("O(C)O",
 			Py_TYPE(array), 
 			array->ob_descr->typecode,
 			dict);
