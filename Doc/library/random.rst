@@ -254,6 +254,6 @@ Examples of basic usage::
 
 
    `Complementary-Multiply-with-Carry recipe
-   <http://code.activestate.com/recipes/576707/>`_ for a compatable alternative
-   random number generator with a long-period and comparatively simple update
+   <http://code.activestate.com/recipes/576707/>`_ for a compatible alternative
+   random number generator with a long period and comparatively simple update
    operations.
