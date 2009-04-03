@@ -96,7 +96,7 @@ In Python 3.0, there is only one integer type.  It is called :func:`int` on the
 Python level, but actually corresponds to 2.x's :func:`long` type.  In the
 C-API, ``PyInt_*`` functions are replaced by their ``PyLong_*`` neighbors.  The
 best course of action here is using the ``PyInt_*`` functions aliased to
-``PyLong_*`` found in :file:`intobject.h`.  The the abstract ``PyNumber_*`` APIs
+``PyLong_*`` found in :file:`intobject.h`.  The abstract ``PyNumber_*`` APIs
 can also be used in some cases. ::
 
    #include "Python.h"
