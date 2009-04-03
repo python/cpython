@@ -802,7 +802,7 @@ created.
 Asynchronous Notifications
 ==========================
 
-A mechanism is provided to make asynchronous notifications to the the main
+A mechanism is provided to make asynchronous notifications to the main
 interpreter thread.  These notifications take the form of a function
 pointer and a void argument.
 
