@@ -266,11 +266,6 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
-   .. method:: clear_memo()
-
-      Deprecated.  Use the :meth:`clear` method on :attr:`memo`, instead.
-      Clear the pickler's memo, useful when reusing picklers.
-
    .. attribute:: fast
 
       Deprecated. Enable fast mode if set to a true value.  The fast mode
@@ -280,12 +275,6 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       recurse infinitely.
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
-
-   .. attribute:: memo
-
-      Dictionary-like object holding previously pickled objects to allow
-      shared or recursive objects to pickled by reference as opposed to
-      by value.
 
 
 .. class:: Unpickler(file, [\*, encoding="ASCII", errors="strict"])
@@ -331,12 +320,6 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       Subclasses may override this to gain control over what type of objects and
       how they can be loaded, potentially reducing security risks. Refer to
       :ref:`pickle-restrict` for details.
-
-   .. attribute:: memo
-
-      Dictionary-like object holding previously unpickled objects to allow
-      shared or recursive objects to unpickled by reference as opposed to
-      by value.
 
 
 .. _pickle-picklable:
@@ -734,60 +717,6 @@ The following example reads the resulting pickled data. ::
        # have to specify it.
        data = pickle.load(f)
 
-
-Reusing Pickler Instances
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-It is possible to make multiple calls to the :meth:`dump` method of the same
-:class:`Pickler` instance.  These must then be matched to the same number of
-calls to the :meth:`load` method of the corresponding :class:`Unpickler`
-instance.  If the same object is pickled by multiple :meth:`dump` calls, the
-:meth:`load` will all yield references to the same object.
-
-Please note, this is intended for pickling multiple objects without intervening
-modifications to the objects or their parts.  If you modify an object and then
-pickle it again using the same :class:`Pickler` instance, the object is not
-pickled again --- a reference to it is pickled and the :class:`Unpickler` will
-return the old value, not the modified one. ::
-
-   import io
-   import pickle
-
-   data = {"hello": 0, "spam": 1}
-
-   # Create a binary file-like object to which the Pickler instance will
-   # write the pickles.
-   f = io.BytesIO()
-   p = pickle.Pickler(f)
-   p.dump(data)
-
-   # This second call appends a new pickle to the file. The modification we
-   # make is lost because objects are pickled by reference when seen again.
-   data["eggs"] = 2
-   p.dump(data)
-
-   # Now, we load the pickles saved in our file-like object.
-   f.seek(0)
-   u = pickle.Unpickler(f)
-   data1 = u.load()
-   data2 = u.load()
-
-   if data1 is data2:
-       print("data1 and data2 are the same object")
-   else:
-       print("data1 and data2 are not the same object")
-
-   if "eggs" in data2:
-       print("The modification was pickled.")
-   else:
-       print("The modification was not pickled.")
-
-Reusing a :class:`Pickler` instance like we shown can be a useful
-optimization. For example, a multi-process application could use this feature
-to reduce the size of the pickles transmitted across processes over time
-(assuming the pickles exchanged are containers sharing common immutable
-objects). However, you should take special care to regularly clear
-:attr:``Pickler.memo`` and :attr:``Unpickler.memo`` to avoid memory-leaks.
 
 .. XXX: Add examples showing how to optimize pickles for size (like using
 .. pickletools.optimize() or the gzip module).
