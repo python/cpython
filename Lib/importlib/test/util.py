@@ -10,7 +10,7 @@ def case_insensitive_tests(class_):
     """Class decorator that nullifies tests that require a case-insensitive
     file system."""
     if sys.platform not in ('win32', 'darwin', 'cygwin'):
-        original_name = os.path.listdir('.')[0]
+        original_name = os.listdir('.')[0]
         if name.upper() != name:
             changed_name = name.upper()
         else:
