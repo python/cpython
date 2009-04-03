@@ -951,19 +951,17 @@ string_subscript(PyBytesObject* self, PyObject* item)
 				slicelength);
 		}
 		else {
-			source_buf = PyBytes_AsString((PyObject*)self);
-			result_buf = (char *)PyMem_Malloc(slicelength);
-			if (result_buf == NULL)
-				return PyErr_NoMemory();
+			source_buf = PyBytes_AS_STRING(self);
+			result = PyBytes_FromStringAndSize(NULL, slicelength);
+			if (result == NULL)
+				return NULL;
 
+			result_buf = PyBytes_AS_STRING(result);
 			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
 				result_buf[i] = source_buf[cur];
 			}
 
-			result = PyBytes_FromStringAndSize(result_buf,
-							    slicelength);
-			PyMem_Free(result_buf);
 			return result;
 		}
 	}
