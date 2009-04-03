@@ -691,9 +691,9 @@ whichmodule(PyObject *global, PyObject *global_name)
 
     module_name = PyObject_GetAttr(global, module_str);
 
-    /* In some rare cases (e.g., random.getrandbits), __module__ can be
-       None. If it is so, then search sys.modules for the module of
-       global.  */
+    /* In some rare cases (e.g., bound methods of extension types),
+       __module__ can be None. If it is so, then search sys.modules
+       for the module of global.  */
     if (module_name == Py_None) {
         Py_DECREF(module_name);
         goto search;
@@ -4446,6 +4446,9 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     self->memo = PyDict_New();
     if (self->memo == NULL)
         return -1;
+
+    self->last_string = NULL;
+    self->arg = NULL;
 
     return 0;
 }
