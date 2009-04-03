@@ -3,16 +3,14 @@
 ===================================================
 
 .. module:: pickletools
-   :synopsis: Contains extensive comments about the pickle protocols and pickle-machine
-              opcodes, as well as some useful functions.
-
+   :synopsis: Contains extensive comments about the pickle protocols and pickle-machine opcodes, as well as some useful functions.
 
 This module contains various constants relating to the intimate details of the
-:mod:`pickle` module, some lengthy comments about the implementation, and a few
-useful functions for analyzing pickled data.  The contents of this module are
-useful for Python core developers who are working on the :mod:`pickle` and
-:mod:`cPickle` implementations; ordinary users of the :mod:`pickle` module
-probably won't find the :mod:`pickletools` module relevant.
+:mod:`pickle` module, some lengthy comments about the implementation, and a
+few useful functions for analyzing pickled data.  The contents of this module
+are useful for Python core developers who are working on the :mod:`pickle`;
+ordinary users of the :mod:`pickle` module probably won't find the
+:mod:`pickletools` module relevant.
 
 
 .. function:: dis(pickle[, out=None, memo=None, indentlevel=4])
@@ -23,7 +21,6 @@ probably won't find the :mod:`pickletools` module relevant.
    be used to perform disassemblies across multiple pickles created by the same
    pickler. Successive levels, indicated by ``MARK`` opcodes in the stream, are
    indented by *indentlevel* spaces.
-
 
 .. function:: genops(pickle)
 
