@@ -7,7 +7,6 @@
 :Date: |today|
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau, Tarek Ziade.
-.. OrderedDict
 
 .. $Id$
    Rules for maintenance:
@@ -106,6 +105,9 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
+* The :class:`bytearray` type's :meth:`translate` method will
+  now accept None as its first argument.  (Fixed by Georg Brandl;
+  :issue:`4759`.)
 
 .. ======================================================================
 
@@ -174,6 +176,12 @@ Several performance enhancements have been added:
   integer divisions and modulo operations.
   (Contributed by Mark Dickinson; :issue:`5512`.)
 
+* The implementation of ``%`` checks for the left-side operand being
+  a Python string and special-cases it; this results in a 1-3%
+  performance increase for applications that frequently use ``%``
+  with strings, such as templating libraries.
+  (Implemented by Collin Winter; :issue:`5176`.)
+
 * List comprehensions with an ``if`` condition are compiled into
   faster bytecode.  (Patch by Antoine Pitrou, back-ported to 2.7
   by Jeffrey Yasskin; :issue:`4715`.)
@@ -227,6 +235,18 @@ changes, or look through the Subversion logs for all the details.
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
+  The :class:`namedtuple` class now has an optional *rename* parameter.
+  If *rename* is True, field names that are invalid because they've
+  been repeated or that aren't legal Python identifiers will be
+  renamed to legal names that are derived from the field's
+  position within the list of fields:
+
+     >>> T=namedtuple('T', ['field1', '$illegal', 'for', 'field2'], rename=True)
+     >>> T._fields
+     ('field1', '_1', '_2', 'field2')
+
+  (Added by Raymond Hettinger; :issue:`1818`.)
+
 * In Distutils, :func:`distutils.sdist.add_defaults` now uses
   *package_dir* and *data_files* to create the MANIFEST file.
 
@@ -234,7 +254,7 @@ changes, or look through the Subversion logs for all the details.
   :file:`.pypirc` file when registering and uploading packages to PyPI. As long
   as the username is present in that file, the :mod:`distutils` package will
   prompt for the password if not present.  (Added by Tarek Ziade,
-  with the initial contribution by Nathan Van Gheem; :issue:`4394`.)
+  based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
 
 * New method: the :class:`Decimal` class gained a
   :meth:`from_float` class method that performs an exact conversion
@@ -308,7 +328,7 @@ changes, or look through the Subversion logs for all the details.
 
 * A new function in the :mod:`subprocess` module,
   :func:`check_output`, runs a command with a specified set of arguments
-  and returns the command's output as a string if the command runs without
+  and returns the command's output as a string when the command runs without
   error, or raises a :exc:`CalledProcessError` exception otherwise.
 
   ::
@@ -323,12 +343,25 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Gregory P. Smith.)
 
+* The ``sys.version_info`` value is now a named tuple, with attributes
+  named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
+  (Contributed by Ross Light; :issue:`4285`.)
+
 * The :mod:`unittest` module was enhanced in several ways.
   Test cases can raise the :exc:`SkipTest` exception to skip a test.
   (:issue:`1034053`.)
   It will now use 'x' for expected failures
   and 'u' for unexpected successes when run in its verbose mode.
   (Contributed by Benjamin Peterson.)
+
+  The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
+  return a context handler when called without providing a callable
+  object to run.  For example, you can write this::
+
+      with self.assertRaises(KeyError):
+          raise ValueError
+
+  (Implemented by Antoine Pitrou; :issue:`4444`.)
 
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
@@ -375,7 +408,7 @@ Changes to Python's build process and to the C API include:
   debugged doesn't hold the GIL; the macro will now acquire it before printing.
   (Contributed by Victor Stinner; :issue:`3632`.)
 
-* :cfunc:`Py_AddPendingCall` is now thread safe, letting any
+* :cfunc:`Py_AddPendingCall` is now thread-safe, letting any
   worker thread submit notifications to the main Python thread.  This
   is particularly useful for asynchronous IO operations.
   (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
