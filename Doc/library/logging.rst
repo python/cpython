@@ -2351,9 +2351,10 @@ needing to be done by its clients. It achieves this though using threading
 locks; there is one lock to serialize access to the module's shared data, and
 each handler also creates a lock to serialize access to its underlying I/O.
 
-Note that in Linux/Unix environments, threading APIs  may not be usable in
-asynchronous signal handlers. This may mean that you cannot use logging from
-within asynchronous signal handlers; please check your OS documentation.
+If you are implementing asynchronous signal handlers using the :mod:`signal`
+module, you may not be able to use logging from within such handlers. This is
+because lock implementations in the :mod:`threading` module are not always
+re-entrant, and so cannot be invoked from such signal handlers.
 
 Configuration
 -------------
