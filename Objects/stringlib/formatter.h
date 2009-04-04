@@ -692,7 +692,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 #endif
             if (format->type == 'n')
 #ifndef NDEBUG
-                r = 
+                r =
 #endif
                     STRINGLIB_GROUPING_LOCALE(pstart, n_digits, n_digits,
                            spec.n_total+n_grouping_chars-n_leading_chars,
@@ -700,10 +700,10 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
             else
 #ifndef NDEBUG
                 r =
+#endif
                     STRINGLIB_GROUPING(pstart, n_digits, n_digits,
                            spec.n_total+n_grouping_chars-n_leading_chars,
                            NULL, 0, "\3", ",");
-#endif
             assert(r);
     }
 
