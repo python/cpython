@@ -975,10 +975,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_bufferedio.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\_codecsmodule.c"
 				>
 			</File>
@@ -991,27 +987,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_fileio.c"
-				>
-			</File>
-                        <File
-                                RelativePath="..\Modules\_bytesio.c"
-                                >
-                        </File>
-			<File
 				RelativePath="..\Modules\_functoolsmodule.c"
 				>
 			</File>
 			<File
 				RelativePath="..\Modules\_heapqmodule.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\_iobase.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\_iomodule.h"
 				>
 			</File>
 			<File
@@ -1039,15 +1019,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_stringio.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\_struct.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\_textio.c"
 				>
 			</File>
 			<File
@@ -1088,10 +1060,6 @@
 			</File>
 			<File
 				RelativePath="..\Modules\itertoolsmodule.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\io.c"
 				>
 			</File>
 			<File
@@ -1170,6 +1138,42 @@
 				RelativePath="..\Modules\zlibmodule.c"
 				>
 			</File>
+			<Filter
+				Name="_io"
+				>
+				<File
+					RelativePath="..\Modules\_io\fileio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\bytesio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\stringio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\bufferedio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\iobase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\textio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\_iomodule.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\_iomodule.h"
+					>
+				</File>
+			</Filter>
 			<Filter
 				Name="zlib"
 				>

@@ -274,6 +274,32 @@
 	</References>
 	<Files>
 		<Filter
+			Name="_io"
+            Filter="">
+			<File
+				RelativePath="..\..\Modules\_io\fileio.c">
+			</File>
+			<File
+				RelativePath="..\..\Modules\_io\bytesio.c">
+			</File>
+			<File
+				RelativePath="..\..\Modules\_io\stringio.c">
+			</File>
+			<File
+			    RelativePath="..\..\Modules\_io\bufferedio.c">
+			</File>
+			<File
+				RelativePath="..\..\Modules\_io\iobase.c">
+			</File>
+			<File
+				RelativePath="..\..\Modules\_io\textio.c">
+			</File>
+			<File
+				RelativePath="..\..\Modules\_io\_iomodule.c">
+			</File>
+		</Filter>
+
+		<Filter
 			Name="zlib"
 			Filter="">
 			<File
@@ -362,16 +388,10 @@
 			RelativePath="..\..\Modules\cjkcodecs\_codecs_tw.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\_bytesio.c">
-		</File>
-		<File
 			RelativePath="..\..\Modules\_codecsmodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_csv.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\_fileio.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_functoolsmodule.c">
@@ -396,9 +416,6 @@
 		</File>
 		<File
 			RelativePath="..\..\Modules\_sre.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\_stringio.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_struct.c">
