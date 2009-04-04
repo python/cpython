@@ -232,6 +232,11 @@ Some smaller changes made to the core Python language are:
   (Suggested by Antoine Pitrou and Jesse Noller.  Implemented by
   Jack Diedrich; :issue:`5228`.)
 
+* Add :mod:`pydoc` help topics for symbols so that ``help('@')``
+  works as expected in the interactive environment.
+
+  (Contributed by David Laban; :issue:`4739`.)
+
 * The :mod:`unittest` module now supports skipping individual tests or classes
   of tests. And it supports marking a test as a expected failure, a test that
   is known to be broken, but shouldn't be counted as a failure on a
