@@ -59,6 +59,9 @@ Core and Builtins
 - Issue #5392: when a very low recursion limit was set, the interpreter would
   abort with a fatal error after the recursion limit was hit twice.
 
+- Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
+  short file names.
+
 Library
 -------
 
