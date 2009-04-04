@@ -461,10 +461,10 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        _max = max
         result = Counter()
         for elem in set(self) | set(other):
-            newcount = _max(self[elem], other[elem])
+            p, q = self[elem], other[elem]
+            newcount = q if p < q else p
             if newcount > 0:
                 result[elem] = newcount
         return result
@@ -478,12 +478,12 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        _min = min
         result = Counter()
         if len(self) < len(other):
             self, other = other, self
         for elem in filter(self.__contains__, other):
-            newcount = _min(self[elem], other[elem])
+            p, q = self[elem], other[elem]
+            newcount = p if p < q else q
             if newcount > 0:
                 result[elem] = newcount
         return result
