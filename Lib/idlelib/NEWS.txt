@@ -3,6 +3,10 @@ What's New in IDLE 3.1a1?
 
 *Release date: XX-XXX-XXXX*
 
+- Allow multiple IDLE GUI/subprocess pairs to exist simultaneously. Thanks to
+  David Scherer for suggesting the use of an ephemeral port for the GUI.
+  Patch 1529142 Weeble.
+
 - Remove port spec from run.py and fix bug where subprocess fails to
   extract port from command line when warnings are present.
 

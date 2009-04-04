@@ -34,7 +34,8 @@ from idlelib import Debugger
 from idlelib import RemoteDebugger
 from idlelib import macosxSupport
 
-LOCALHOST = '127.0.0.1'
+HOST = '127.0.0.1' # python execution server on localhost loopback
+PORT = 0  # someday pass in host, port for remote debug capability
 
 try:
     from signal import SIGTERM
@@ -339,17 +340,21 @@ class ModifiedInterpreter(InteractiveInterpreter):
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
         self.restarting = False
-        self.subprocess_arglist = self.build_subprocess_arglist()
+        self.subprocess_arglist = None
+        self.port = PORT
 
-    port = 8833
     rpcclt = None
     rpcpid = None
 
     def spawn_subprocess(self):
+        if self.subprocess_arglist == None:
+            self.subprocess_arglist = self.build_subprocess_arglist()
         args = self.subprocess_arglist
         self.rpcpid = os.spawnv(os.P_NOWAIT, sys.executable, args)
 
     def build_subprocess_arglist(self):
+        assert (self.port!=0), (
+            "Socket should have been assigned a port number.")
         w = ['-W' + s for s in sys.warnoptions]
         # Maybe IDLE is installed and is being accessed via sys.path,
         # or maybe it's not installed and the idle.py script is being
@@ -368,11 +373,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return [decorated_exec] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
-        # spawning first avoids passing a listening socket to the subprocess
-        self.spawn_subprocess()
-        #time.sleep(20) # test to simulate GUI not accepting connection
-        addr = (LOCALHOST, self.port)
-        # Idle starts listening for connection on localhost
+        addr = (HOST, self.port)
+        # GUI makes several attempts to acquire socket, listens for connection
         for i in range(3):
             time.sleep(i)
             try:
@@ -383,6 +385,18 @@ class ModifiedInterpreter(InteractiveInterpreter):
         else:
             self.display_port_binding_error()
             return None
+        # if PORT was 0, system will assign an 'ephemeral' port. Find it out:
+        self.port = self.rpcclt.listening_sock.getsockname()[1]
+        # if PORT was not 0, probably working with a remote execution server
+        if PORT != 0:
+            # To allow reconnection within the 2MSL wait (cf. Stevens TCP
+            # V1, 18.6),  set SO_REUSEADDR.  Note that this can be problematic
+            # on Windows since the implementation allows two active sockets on
+            # the same address!
+            self.rpcclt.listening_sock.setsockopt(socket.SOL_SOCKET,
+                                           socket.SO_REUSEADDR, 1)
+        self.spawn_subprocess()
+        #time.sleep(20) # test to simulate GUI not accepting connection
         # Accept the connection from the Python execution server
         self.rpcclt.listening_sock.settimeout(10)
         try:
@@ -734,13 +748,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def display_port_binding_error(self):
         tkMessageBox.showerror(
             "Port Binding Error",
-            "IDLE can't bind TCP/IP port 8833, which is necessary to "
-            "communicate with its Python execution server.  Either "
-            "no networking is installed on this computer or another "
-            "process (another IDLE?) is using the port.  Run IDLE with the -n "
-            "command line switch to start without a subprocess and refer to "
-            "Help/IDLE Help 'Running without a subprocess' for further "
-            "details.",
+            "IDLE can't bind to a TCP/IP port, which is necessary to "
+            "communicate with its Python execution server.  This might be "
+            "because no networking is installed on this computer.  "
+            "Run IDLE with the -n command line switch to start without a "
+            "subprocess and refer to Help/IDLE Help 'Running without a "
+            "subprocess' for further details.",
             master=self.tkconsole.text)
 
     def display_no_subprocess_error(self):
@@ -1285,7 +1298,7 @@ def main():
     global flist, root, use_subprocess
 
     use_subprocess = True
-    enable_shell = False
+    enable_shell = True
     enable_edit = False
     debug = False
     cmd = None
@@ -1306,6 +1319,7 @@ def main():
             enable_shell = True
         if o == '-e':
             enable_edit = True
+            enable_shell = False
         if o == '-h':
             sys.stdout.write(usage_msg)
             sys.exit()
@@ -1356,7 +1370,6 @@ def main():
     edit_start = idleConf.GetOption('main', 'General',
                                     'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
-    enable_shell = enable_shell or not edit_start
     # start editor and/or shell windows:
     root = Tk(className="Idle")
 
