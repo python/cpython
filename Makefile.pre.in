@@ -193,15 +193,16 @@ MODULE_OBJS=	\
 # Used of signalmodule.o is not available
 SIGNAL_OBJS=	@SIGNAL_OBJS@
 
-IO_H=		Modules/_iomodule.h
+IO_H=		Modules/_io/_iomodule.h
 
 IO_OBJS=	\
-		Modules/io.o \
-		Modules/_iobase.o \
-		Modules/_fileio.o \
-		Modules/_bufferedio.o \
-		Modules/_textio.o \
-		Modules/_bytesio.o
+		Modules/_io/_iomodule.o \
+		Modules/_io/iobase.o \
+		Modules/_io/fileio.o \
+		Modules/_io/bufferedio.o \
+		Modules/_io/textio.o \
+		Modules/_io/bytesio.o \
+		Modules/_io/stringio.o
 
 ##########################################################################
 # Grammar

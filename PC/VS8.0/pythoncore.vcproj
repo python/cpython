@@ -986,30 +986,38 @@
 				RelativePath="..\..\Modules\_csv.c"
 				>
 			</File>
-			<File
-				RelativePath="..\..\Modules\_fileio.c"
+			<Filter
+				Name="_io"
 				>
-			</File>
-                        <File
-                                RelativePath="..\..\Modules\_bytesio.c"
-                                >
-                        </File>
-                        <File
-                                RelativePath="..\..\Modules\_bufferedio.c"
-                                >
-                        </File>
-                        <File
-                                RelativePath="..\..\Modules\_iobase.c"
-                                >
-                        </File>
-                        <File
-                                RelativePath="..\..\Modules\_textio.c"
-                                >
-                        </File>
-                        <File
-                                RelativePath="..\..\Modules\io.c"
-                                >
-                        </File>                        
+				<File
+					RelativePath="..\..\Modules\_io\fileio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\bytesio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\stringio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\bufferedio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\iobase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\textio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\_iomodule.c"
+					>
+				</File>
+			</Filter>
 			<File
 				RelativePath="..\..\Modules\_functoolsmodule.c"
 				>
@@ -1040,10 +1048,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Modules\_sre.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\_stringio.c"
 				>
 			</File>
 			<File
