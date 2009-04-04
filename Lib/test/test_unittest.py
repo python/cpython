@@ -2392,8 +2392,6 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
             self.assertRaises(self.failureException, self.assertEqual, a, b,
                               msg='foo')
 
-    # The fact that dictionaries are unorderable breaks this test for them.
-    @unittest.expectedFailure
     def testEquality(self):
         self.assertListEqual([], [])
         self.assertTupleEqual((), ())
@@ -2459,6 +2457,8 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertSameElements([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
         self.assertRaises(self.failureException, self.assertSameElements,
                           [[1]], [[2]])
+        self.assertRaises(self.failureException, self.assertSameElements,
+                          [{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 2}])
 
     def testAssertSetEqual(self):
         set1 = set()

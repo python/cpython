@@ -858,9 +858,13 @@ class TestCase(object):
             # not hashable.
             expected = list(expected_seq)
             actual = list(actual_seq)
-            expected.sort()
-            actual.sort()
-            missing, unexpected = _SortedListDifference(expected, actual)
+            try:
+                expected.sort()
+                actual.sort()
+            except TypeError:
+                missing, unexpected = _UnorderableListDifference(expected, actual)
+            else:
+                missing, unexpected = _SortedListDifference(expected, actual)
         errors = []
         if missing:
             errors.append('Expected, but missing:\n    %r' % missing)
@@ -985,6 +989,22 @@ def _SortedListDifference(expected, actual):
             break
     return missing, unexpected
 
+def _UnorderableListDifference(expected, actual):
+    """Same behavior as _SortedListDifference but
+    for lists of unorderable items (like dicts).
+
+    As it does a linear search per item (remove) it
+    has O(n*n) performance."""
+    missing = []
+    while expected:
+        item = expected.pop()
+        try:
+            actual.remove(item)
+        except ValueError:
+            missing.append(item)
+
+    # anything left in actual is unexpected
+    return missing, actual
 
 class TestSuite(object):
     """A test suite is a composite test consisting of a number of TestCases.
