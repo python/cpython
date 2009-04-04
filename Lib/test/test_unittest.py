@@ -2608,11 +2608,11 @@ test case
 
     def testAssertNotRaisesRegexp(self):
         self.assertRaisesRegexp(
-                self.failureException, '^Exception not raised$',
+                self.failureException, '^Exception not raised by <lambda>$',
                 self.assertRaisesRegexp, Exception, re.compile('x'),
                 lambda: None)
         self.assertRaisesRegexp(
-                self.failureException, '^Exception not raised$',
+                self.failureException, '^Exception not raised by <lambda>$',
                 self.assertRaisesRegexp, Exception, 'x',
                 lambda: None)
 
