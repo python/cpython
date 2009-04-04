@@ -88,12 +88,12 @@ order.  The :mod:`collections` module's :meth:`namedtuple._asdict` method now
 returns a dictionary with the values appearing in the same order as the
 underlying tuple.count  The :mod:`json` module is being built-out with an
 *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
-Support was also builtin for third-party tools like PyYAML.
+Support was also added for third-party tools like PyYAML.
 
 .. seealso::
 
    :pep:`372` - Ordered Dictionaries
-      PEP written by Armin Roancher and Raymond D. Hettinger; implemented by
+      PEP written by Armin Ronacher and Raymond Hettinger; implemented by
       Raymond Hettinger
 
 PEP 378: Format Specifier for Thousands Separator
@@ -211,6 +211,48 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger.)
 
+* :class:`collections.deque` objects now have a read-only attribute
+  called *maxlen*.
+
+  (Contributed by Raymond Hettinger.)
+
+* :func:`collections.namedtuple` now supports a keyword argument
+  *rename* which lets invalid fieldnames be automatically converted to
+  positional names in the form _0, _1, etc.  This is useful when
+  the field names are being created by an external source such as a
+  CSV header, SQL field list, or user input.
+
+  (Contributed by Raymond Hettinger; :issue:`1818`.)
+
+* :func:`round`(x, n) now returns an integer if *x* is an integer.
+  Previously it returned a float.
+
+  (Contributed by Mark Dickinson; :issue:`4707`.)
+
+* The :func:`re.sub`, :func:`re.subn` and :func:`re.split` functions now
+  accept a flags parameter.
+
+  (Contributed by Gregory Smith.)
+
+* The :mod:`runpy` module which supports the ``-m`` command line switch
+  now supports the execution of packages by looking for and executing
+  a ``__main__`` submodule when a package name is supplied.
+
+  (Contributed by Andi Vajda; :issue:`4195`.)
+
+* The :mod:`pdb` module can now access and display source code loaded via
+  :mod:`zipimport` (or any other conformant :pep:`302` loader).
+
+  (Contributed by Alexander Belopolsky; :issue:`4201`.)
+
+*  :class:`functools.partial` objects can now be pickled.
+
+  (Suggested by Antoine Pitrou and Jesse Noller.  Implemented by
+  Jack Diedrich; :issue:`5228`.)
+
+XXX Brett Cannon's importlib package
+
+XXX New unittest assert methods
 
 .. ======================================================================
 
@@ -241,6 +283,19 @@ Major performance enhancements have been added:
   programs, depending on their particular use of datatypes.
 
   (Contributed by Antoine Pitrou, :issue:`4688`.)
+
+* Enabling a configure option named ``--with-computed-gotos``
+  on compilers that support it (notably: gcc, SunPro, icc), the bytecode
+  evaluation loop is compiled with a new dispatch mechanism which gives
+  speedups of up to 20%, depending on the system, on various benchmarks.
+
+  (Contributed by Antoine Pitrou and Jeffrey Yasskin along with a number
+  of other participants, :issue:`4753`).
+
+* The decoding of UTF-8, UTF-16 and LATIN-1 is now two to four times
+  faster.
+
+  (Contributed by Antoine Pitrou and Amaury Forgeot d'Arc, :issue:`4868`.)
 
 XXX The JSON module is getting a C extension for speed.
 
