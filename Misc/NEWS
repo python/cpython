@@ -204,6 +204,9 @@ Core and Builtins
 
 - The re.sub(), re.subn() and re.split() functions now accept a flags parameter.
 
+- Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
+  short file names.
+
 Library
 -------
 
