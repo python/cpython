@@ -6,6 +6,9 @@ What's New in IDLE 3.1a1?
 - Remove port spec from run.py and fix bug where subprocess fails to
   extract port from command line when warnings are present.
 
+- Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle
+  mixed space/tab properly. Issue 5120, patch by Guilherme Polo.
+
 - Issue #4815: Offer conversion to UTF-8 if source files have
   no encoding declaration and are not encoded in UTF-8.
 
