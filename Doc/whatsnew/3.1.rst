@@ -262,12 +262,6 @@ Major performance enhancements have been added:
 
   (Contributed by Amaury Forgeot d'Arc and Antoine Pitrou.)
 
-* A new configure flag, ``--with-computed-gotos``, enables a faster opcode
-  dispatch mechanism on compilers which support it. Speedups of up to 20%
-  have been observed, depending on the system and compiler.
-
-  (Contributed by Antoine Pitrou, :issue:`4753`.)
-
 * Add a heuristic so that tuples and dicts containing only untrackable objects
   are not tracked by the garbage collector. This can reduce the size of
   collections and therefore the garbage collection overhead on long-running
@@ -278,10 +272,11 @@ Major performance enhancements have been added:
 * Enabling a configure option named ``--with-computed-gotos``
   on compilers that support it (notably: gcc, SunPro, icc), the bytecode
   evaluation loop is compiled with a new dispatch mechanism which gives
-  speedups of up to 20%, depending on the system, on various benchmarks.
+  speedups of up to 20%, depending on the system, the compiler, and
+  the benchmark.
 
-  (Contributed by Antoine Pitrou and Jeffrey Yasskin along with a number
-  of other participants, :issue:`4753`).
+  (Contributed by Antoine Pitrou along with a number of other participants,
+  :issue:`4753`).
 
 * The decoding of UTF-8, UTF-16 and LATIN-1 is now two to four times
   faster.
