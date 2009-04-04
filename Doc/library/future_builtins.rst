@@ -54,7 +54,7 @@ Available builtins are:
 
    Works like the builtin :func:`oct`, but instead of :meth:`__oct__` it will
    use the :meth:`__index__` method on its argument to get an integer that is
-   then converted to hexadecimal.
+   then converted to octal.
 
 .. function:: zip(*iterables)
 
