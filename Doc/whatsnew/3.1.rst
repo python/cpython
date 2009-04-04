@@ -232,7 +232,7 @@ Some smaller changes made to the core Python language are:
 
 * The :mod:`unittest` module now supports skipping individual tests or classes
   of tests. And it supports marking a test as a expected failure, a test that
-  is known to be broken, but shouldn’t be counted as a failure on a
+  is known to be broken, but shouldn't be counted as a failure on a
   TestResult.
 
   (Contributed by Benjamin Peterson.)
@@ -262,7 +262,7 @@ Major performance enhancements have been added:
 
   (Contributed by Amaury Forgeot d'Arc and Antoine Pitrou.)
 
-* Add a heuristic so that tuples and dicts containing only untrackable objects
+* Added a heuristic so that tuples and dicts containing only untrackable objects
   are not tracked by the garbage collector. This can reduce the size of
   collections and therefore the garbage collection overhead on long-running
   programs, depending on their particular use of datatypes.
