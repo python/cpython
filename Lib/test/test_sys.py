@@ -177,6 +177,9 @@ class SysModuleTest(unittest.TestCase):
     def test_recursionlimit_fatalerror(self):
         # A fatal error occurs if a second recursion limit is hit when recovering
         # from a first one.
+        if os.name == "nt":
+            raise unittest.SkipTest(
+                "under Windows, test would generate a spurious crash dialog")
         code = textwrap.dedent("""
             import sys
 
