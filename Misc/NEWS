@@ -89,6 +89,9 @@ Core and Builtins
 - Issue #4509: Various issues surrounding resize of bytearray objects to
   which there are buffer exports.
 
+- Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
+  short file names.
+
 Library
 -------
 
