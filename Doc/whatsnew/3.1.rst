@@ -4,7 +4,7 @@
 
 .. XXX Add trademark info for Apple, Microsoft.
 
-:Author: No one so far
+:Author: Raymond Hettinger
 :Release: |release|
 :Date: |today|
 
@@ -66,6 +66,59 @@ This article explains the new features in Python 3.1, compared to 3.0.
 .. ======================================================================
 
 
+PEP 372: Ordered Dictionaries
+=============================
+
+Regular Python dictionaries iterate over key/value pairs in arbitrary order.
+Over the years, a number of authors have written alternative implementations
+that remember the order that the keys were originally inserted.  Based on
+the experiences from those implementations, the :mod:`collections` module
+now has an :class:`OrderedDict` class.
+
+The OrderedDict API is substantially the same as regular dictionaries
+but will iterate over keys and values in a guaranteed order depending on
+when a key was first inserted.  If a new entry overwrites an existing entry,
+the original insertion position is left unchanged.  Deleting an entry and
+reinserting it will move it to the end.
+
+The standard library now supports use of ordered dictionaries in several
+modules.  The :mod:`ConfigParser` modules uses them by default.  This lets
+configuration files be read, modified, and then written back in their original
+order.  The :mod:`collections` module's :meth:`namedtuple._asdict` method now
+returns a dictionary with the values appearing in the same order as the
+underlying tuple.count  The :mod:`json` module is being built-out with an
+*object_pairs_hook* to allow OrderedDicts to be built by the decoder.
+Support was also builtin for third-party tools like PyYAML.
+
+.. seealso::
+
+   :pep:`372` - Ordered Dictionaries
+      PEP written by Armin Roancher and Raymond D. Hettinger; implemented by
+      Raymond Hettinger
+
+PEP 378: Format Specifier for Thousands Separator
+=================================================
+
+The builtin :func:`format` function and the :meth:`str.format` method use
+a mini-language that now includes a simple, non-locale aware way to format
+a number with a thousands separator.  That provides a way to humanize a
+program's output, improving its professional appearance and readability::
+
+    >>> format(Decimal('1234567.89'), ',f')
+    '1,234,567.89'
+
+The currently supported types are :class:`int` and :class:`Decimal`.
+Support for :class:`float` is expected before the beta release.
+Discussions are underway about how to specify alternative separators
+like dots, spaces, apostrophes, or underscores.
+
+.. seealso::
+
+   :pep:`378` - Format Specifier for Thousands Separator
+      PEP written by Raymond Hettinger; implemented by Eric Smith and
+      Mark Dickinson.
+
+
 Other Language Changes
 ======================
 
@@ -107,8 +160,34 @@ Some smaller changes made to the core Python language are:
      >>> sys.int_info
      sys.int_info(bits_per_digit=30, sizeof_digit=4)
 
-
   (Contributed by Mark Dickinson; :issue:`4258`.)
+
+
+* Added a :class:`collections.Counter` class to support convenient
+  counting of unique items in a sequence or iterable::
+
+      >>> Counter(['red', 'blue', 'red', 'green', 'blue', 'blue'])
+      Counter({'blue': 3, 'red': 2, 'green': 1})
+
+  (Contributed by Raymond Hettinger; :issue:`1696199`.)
+
+* The :class:`gzip.GzipFile` and :class:`bz2.BZ2File` classs now support
+  the context manager protocol.
+
+  (Contributed by Jacques Frechet; :issue:`4272`.)
+
+* The :mod:`Decimal` module now supports two new methods to create a
+  decimal object that from a binary :class:`float`.  The conversion is
+  exact but can sometimes be surprising::
+
+      >>> Decimal.from_float(1.1)
+      Decimal('1.100000000000000088817841970012523233890533447265625')
+
+  The long decimal result shows the actual binary fraction being
+  stored for *1.1*.  The fraction has many digits because *1.1* cannot
+  be exactly represented in binary.
+
+  (Contributed by Raymond Hettinger and Mark Dickinson.)
 
 
 .. ======================================================================
@@ -134,5 +213,6 @@ Major performance enhancements have been added:
 
   (Contributed by Antoine Pitrou, :issue:`4753`.)
 
+XXX The JSON module is getting a C extension for speed.
 
 .. ======================================================================
