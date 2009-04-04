@@ -93,8 +93,8 @@ Support was also added for third-party tools like PyYAML.
 .. seealso::
 
    :pep:`372` - Ordered Dictionaries
-      PEP written by Armin Ronacher and Raymond Hettinger; implemented by
-      Raymond Hettinger
+      PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
+      written by Raymond Hettinger.
 
 PEP 378: Format Specifier for Thousands Separator
 =================================================
@@ -151,6 +151,13 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger; :issue:`1696199`.)
 
+* Add a new module, :mod:`ttk` for access to the Tk themed widget set. The
+  basic idea of ttk is to separate, to the extent possible, the code
+  implementing a widget's behavior from the code implementing its appearance.
+
+  (Contributed by Kevin Walzer and Guilherme Polo; :issue:`2618` and
+  :issue:`2983`.)
+
 * The :class:`gzip.GzipFile` and :class:`bz2.BZ2File` classs now support
   the context manager protocol.
 
@@ -188,11 +195,6 @@ Some smaller changes made to the core Python language are:
   an optional *step* argument and can accept any type of counting
   sequence including :class:`fractions.Fraction` and
   :class:`decimal.Decimal`.
-
-  (Contributed by Raymond Hettinger.)
-
-* :class:`collections.deque` objects now have a read-only attribute
-  called *maxlen*.
 
   (Contributed by Raymond Hettinger.)
 
