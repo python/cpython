@@ -513,7 +513,7 @@ class MmapTests(unittest.TestCase):
         # Test write_byte()
         for i in xrange(len(data)):
             self.assertEquals(m.tell(), i)
-            m.write_byte(data[i:i+1])
+            m.write_byte(data[i])
             self.assertEquals(m.tell(), i+1)
         self.assertRaises(ValueError, m.write_byte, "x")
         self.assertEquals(m[:], data)
@@ -521,7 +521,7 @@ class MmapTests(unittest.TestCase):
         m.seek(0)
         for i in xrange(len(data)):
             self.assertEquals(m.tell(), i)
-            self.assertEquals(m.read_byte(), data[i:i+1])
+            self.assertEquals(m.read_byte(), data[i])
             self.assertEquals(m.tell(), i+1)
         self.assertRaises(ValueError, m.read_byte)
         # Test read()
