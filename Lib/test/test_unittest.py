@@ -2393,7 +2393,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
                               msg='foo')
 
     # The fact that dictionaries are unorderable breaks this test for them.
-    @expectedFailure
+    @unittest.expectedFailure
     def testEquality(self):
         self.assertListEqual([], [])
         self.assertTupleEqual((), ())
