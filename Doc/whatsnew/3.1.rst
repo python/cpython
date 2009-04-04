@@ -239,7 +239,7 @@ Some smaller changes made to the core Python language are:
 
 * A new module, :mod:`importlib` was added.  It provides a complete, portable,
   pure Python reference implementation of the *import* statement and its
-  counterpart, the :func:`import__` function.  It represents a substantial
+  counterpart, the :func:`__import__` function.  It represents a substantial
   step forward in documenting and defining the actions that take place during
   imports.
 
