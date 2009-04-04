@@ -72,7 +72,8 @@ def main(del_exitfunc=False):
         assert(len(sys.argv) > 1)
         port = int(sys.argv[-1])
     except:
-        print>>sys.stderr, "IDLE Subprocess: no IP port passed in sys.argv."
+        print("IDLE Subprocess: no IP port passed in sys.argv.",
+              file=sys.__stderr__)
         return
     sys.argv[:] = [""]
     sockthread = threading.Thread(target=manage_socket,
