@@ -82,12 +82,12 @@ the original insertion position is left unchanged.  Deleting an entry and
 reinserting it will move it to the end.
 
 The standard library now supports use of ordered dictionaries in several
-modules.  The :mod:`ConfigParser` modules uses them by default.  This lets
+modules.  The :mod:`ConfigParser` module uses them by default.  This lets
 configuration files be read, modified, and then written back in their original
 order.  The :mod:`collections` module's :meth:`namedtuple._asdict` method now
-returns a dictionary with the values appearing in the same order as the
-underlying tuple.count  The :mod:`json` module is being built-out with an
-*object_pairs_hook* to allow OrderedDicts to be built by the decoder.
+returns an ordered dictionary with the values appearing in the same order as
+the underlying tuple indicies.  The :mod:`json` module is being built-out with
+an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
 Support was also added for third-party tools like PyYAML.
 
 .. seealso::
@@ -107,10 +107,12 @@ program's output, improving its professional appearance and readability::
     >>> format(Decimal('1234567.89'), ',f')
     '1,234,567.89'
 
-The currently supported types are :class:`int` and :class:`Decimal`.
+The currently supported types are :class:`int` and :class:`decimal.Decimal`.
 Support for :class:`float` is expected before the beta release.
 Discussions are underway about how to specify alternative separators
-like dots, spaces, apostrophes, or underscores.
+like dots, spaces, apostrophes, or underscores.  Locale-aware applications
+should use the existing *n* format specifier which already has some support
+for thousands separators.
 
 .. seealso::
 
@@ -138,30 +140,8 @@ Some smaller changes made to the core Python language are:
       >>> (n+1).bit_length()
       124
 
-  (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
-
-* Integers are now stored internally either in base 2**15 or in base
-  2**30, the base being determined at build time.  Previously, they
-  were always stored in base 2**15.  Using base 2**30 gives
-  significant performance improvements on 64-bit machines, but
-  benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base 2**30 on 64-bit machines and base 2**15
-  on 32-bit machines; on Unix, there's a new configure option
-  --enable-big-digits that can be used to override this default.
-
-  Apart from the performance improvements this change should be
-  invisible to end users, with one exception: for testing and
-  debugging purposes there's a new structseq ``sys.int_info`` that
-  provides information about the internal format, giving the number of
-  bits per digit and the size in bytes of the C type used to store
-  each digit::
-
-     >>> import sys
-     >>> sys.int_info
-     sys.int_info(bits_per_digit=30, sizeof_digit=4)
-
-  (Contributed by Mark Dickinson; :issue:`4258`.)
-
+  (Contributed by Fredrik Johansson, Victor Stinner, Raymond Hettinger,
+  and Mark Dickinson; :issue:`3439`.)
 
 * Added a :class:`collections.Counter` class to support convenient
   counting of unique items in a sequence or iterable::
@@ -224,7 +204,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger; :issue:`1818`.)
 
-* :func:`round`(x, n) now returns an integer if *x* is an integer.
+* ``round`(x, n)`` now returns an integer if *x* is an integer.
   Previously it returned a float.
 
   (Contributed by Mark Dickinson; :issue:`4707`.)
@@ -250,9 +230,20 @@ Some smaller changes made to the core Python language are:
   (Suggested by Antoine Pitrou and Jesse Noller.  Implemented by
   Jack Diedrich; :issue:`5228`.)
 
-XXX Brett Cannon's importlib package
+* The :mod:`unittest` module now supports skipping individual tests or classes
+  of tests. And it supports marking a test as a expected failure, a test that
+  is known to be broken, but shouldn’t be counted as a failure on a
+  TestResult.
 
-XXX New unittest assert methods
+  (Contributed by Benjamin Peterson.)
+
+* A new module, :mod:`importlib` was added.  It provides a complete, portable,
+  pure Python reference implementation of the *import* statement and its
+  counterpart, the :func:`import__` function.  It represents a substantial
+  step forward in documenting and defining the actions that take place during
+  imports.
+
+  (Contributed by Brett Cannon.)
 
 .. ======================================================================
 
@@ -297,6 +288,31 @@ Major performance enhancements have been added:
 
   (Contributed by Antoine Pitrou and Amaury Forgeot d'Arc, :issue:`4868`.)
 
-XXX The JSON module is getting a C extension for speed.
+* The :mod:`json` module is getting a C extension to substantially improve
+  its performance.  The code is expected to be added in-time for the beta
+  release.
+
+  (Contributed by Bob Ippolito.)
+
+* Integers are now stored internally either in base 2**15 or in base
+  2**30, the base being determined at build time.  Previously, they
+  were always stored in base 2**15.  Using base 2**30 gives
+  significant performance improvements on 64-bit machines, but
+  benchmark results on 32-bit machines have been mixed.  Therefore,
+  the default is to use base 2**30 on 64-bit machines and base 2**15
+  on 32-bit machines; on Unix, there's a new configure option
+  ``--enable-big-digits`` that can be used to override this default.
+
+  Apart from the performance improvements this change should be invisible to
+  end users, with one exception: for testing and debugging purposes there's a
+  new :class:`structseq` ``sys.int_info`` that provides information about the
+  internal format, giving the number of bits per digit and the size in bytes
+  of the C type used to store each digit::
+
+     >>> import sys
+     >>> sys.int_info
+     sys.int_info(bits_per_digit=30, sizeof_digit=4)
+
+  (Contributed by Mark Dickinson; :issue:`4258`.)
 
 .. ======================================================================
