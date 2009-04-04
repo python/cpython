@@ -1,4 +1,4 @@
-This is Python version 3.1 alpha 1
+This is Python version 3.1 alpha 2
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -11,10 +11,6 @@ Python 3.x is a new version of the language, which is incompatible with the
 especially how built-in objects like dictionaries and strings work, have
 changed considerably, and a lot of deprecated features have finally been
 removed.
-
-This is an ongoing project; the cleanup isn't expected to be complete
-until some time in 2008.  In particular there are plans to reorganize
-the standard library namespace.
 
 
 Release Schedule
