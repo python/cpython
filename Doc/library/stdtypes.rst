@@ -1928,6 +1928,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       .. versionadded:: 2.2
 
+   .. describe:: iter(d)
+
+      Return an iterator over the keys of the dictionary.  This is a shortcut
+      for :meth:`iterkeys`.
+
    .. method:: clear()
 
       Remove all items from the dictionary.
@@ -1980,6 +1985,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return an iterator over the dictionary's ``(key, value)`` pairs.  See the
       note for :meth:`dict.items`.
 
+      Using :meth:`iteritems` while adding or deleting entries in the dictionary
+      will raise a :exc:`RuntimeError`.
+
       .. versionadded:: 2.2
 
    .. method:: iterkeys()
@@ -1987,12 +1995,18 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return an iterator over the dictionary's keys.  See the note for
       :meth:`dict.items`.
 
+      Using :meth:`iterkeys` while adding or deleting entries in the dictionary
+      will raise a :exc:`RuntimeError`.
+
       .. versionadded:: 2.2
 
    .. method:: itervalues()
 
       Return an iterator over the dictionary's values.  See the note for
       :meth:`dict.items`.
+
+      Using :meth:`itervalues` while adding or deleting entries in the
+      dictionary will raise a :exc:`RuntimeError`.
 
       .. versionadded:: 2.2
 
