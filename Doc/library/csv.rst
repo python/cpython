@@ -33,14 +33,6 @@ The :mod:`csv` module's :class:`reader` and :class:`writer` objects read and
 write sequences.  Programmers can also read and write data in dictionary form
 using the :class:`DictReader` and :class:`DictWriter` classes.
 
-.. note::
-
-   This version of the :mod:`csv` module doesn't support Unicode input.  Also,
-   there are currently some issues regarding ASCII NUL characters.  Accordingly,
-   all input should be UTF-8 or printable ASCII to be safe; see the examples in
-   section :ref:`csv-examples`. These restrictions will be removed in the future.
-
-
 .. seealso::
 
    :pep:`305` - CSV File API
@@ -60,8 +52,8 @@ The :mod:`csv` module defines the following functions:
    Return a reader object which will iterate over lines in the given *csvfile*.
    *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
    string each time its :meth:`next` method is called --- file objects and list
-   objects are both suitable.   If *csvfile* is a file object, it must be opened
-   with the 'b' flag on platforms where that makes a difference.  An optional
+   objects are both suitable.   If *csvfile* is a file object, it should be opened
+   with ``newline=''``. [#]_  An optional
    *dialect* parameter can be given which is used to define a set of parameters
    specific to a particular CSV dialect.  It may be an instance of a subclass of
    the :class:`Dialect` class or one of the strings returned by the
@@ -71,20 +63,13 @@ The :mod:`csv` module defines the following functions:
    section :ref:`csv-fmt-params`.
 
    Each row read from the csv file is returned as a list of strings.  No
-   automatic data type conversion is performed.
-
-   The parser is quite strict with respect to multi-line quoted fields. Previously,
-   if a line ended within a quoted field without a terminating newline character, a
-   newline would be inserted into the returned field. This behavior caused problems
-   when reading files which contained carriage return characters within fields.
-   The behavior was changed to return the field without inserting newlines. As a
-   consequence, if newlines embedded within fields are important, the input should
-   be split into lines in a manner which preserves the newline characters.
+   automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC`` format
+   option is specified (in which case unquoted fields are transformed into floats).
 
    A short usage example::
 
       >>> import csv
-      >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
+      >>> spamReader = csv.reader(open('eggs.csv', newline=''), delimiter=' ', quotechar='|')
       >>> for row in spamReader:
       ...     print(', '.join(row))
       Spam, Spam, Spam, Spam, Spam, Baked Beans
@@ -95,8 +80,7 @@ The :mod:`csv` module defines the following functions:
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
-   :func:`write` method.  If *csvfile* is a file object, it must be opened with the
-   'b' flag on platforms where that makes a difference.  An optional *dialect*
+   :func:`write` method.  An optional *dialect*
    parameter can be given which is used to define a set of parameters specific to a
    particular CSV dialect.  It may be an instance of a subclass of the
    :class:`Dialect` class or one of the strings returned by the
@@ -270,7 +254,6 @@ The :mod:`csv` module defines the following exception:
 
    Raised by any of the functions when an error is detected.
 
-
 .. _csv-fmt-params:
 
 Dialects and Formatting Parameters
@@ -419,41 +402,52 @@ Examples
 The simplest example of reading a CSV file::
 
    import csv
-   reader = csv.reader(open("some.csv", "rb"))
+   reader = csv.reader(open("some.csv", newline=''))
    for row in reader:
        print(row)
 
 Reading a file with an alternate format::
 
    import csv
-   reader = csv.reader(open("passwd", "rb"), delimiter=':', quoting=csv.QUOTE_NONE)
+   reader = csv.reader(open("passwd"), delimiter=':', quoting=csv.QUOTE_NONE)
    for row in reader:
        print(row)
 
 The corresponding simplest possible writing example is::
 
    import csv
-   writer = csv.writer(open("some.csv", "wb"))
+   writer = csv.writer(open("some.csv", "w"))
    writer.writerows(someiterable)
+
+Since :func:`open` is used to open a CSV file for reading, the file
+will by default be decoded into unicode using the system default
+encoding (see :func:`locale.getpreferredencoding`).  To decode a file
+using a different encoding, use the ``encoding`` argument of open::
+
+    import csv
+    reader = csv.reader(open("some.csv", newline='', encoding='utf-8'))
+    for row in reader:
+        print(row)
+
+The same applies to writing in something other than the system default
+encoding: specify the encoding argument when opening the output file.
 
 Registering a new dialect::
 
    import csv
-
    csv.register_dialect('unixpwd', delimiter=':', quoting=csv.QUOTE_NONE)
-
-   reader = csv.reader(open("passwd", "rb"), 'unixpwd')
+   reader = csv.reader(open("passwd"), 'unixpwd')
 
 A slightly more advanced use of the reader --- catching and reporting errors::
 
    import csv, sys
    filename = "some.csv"
-   reader = csv.reader(open(filename, "rb"))
+   reader = csv.reader(open(filename, newline=''))
    try:
        for row in reader:
            print(row)
    except csv.Error as e:
-       sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
+       sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
 
 And while the module doesn't directly support parsing strings, it can easily be
 done::
@@ -462,94 +456,10 @@ done::
    for row in csv.reader(['one,two,three']):
        print(row)
 
-The :mod:`csv` module doesn't directly support reading and writing Unicode, but
-it is 8-bit-clean save for some problems with ASCII NUL characters.  So you can
-write functions or classes that handle the encoding and decoding for you as long
-as you avoid encodings like UTF-16 that use NULs.  UTF-8 is recommended.
 
-:func:`unicode_csv_reader` below is a :term:`generator` that wraps :class:`csv.reader`
-to handle Unicode CSV data (a list of Unicode strings).  :func:`utf_8_encoder`
-is a :term:`generator` that encodes the Unicode strings as UTF-8, one string (or row) at
-a time.  The encoded strings are parsed by the CSV reader, and
-:func:`unicode_csv_reader` decodes the UTF-8-encoded cells back into Unicode::
+.. rubric:: Footnotes
 
-   import csv
-
-   def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
-       # csv.py doesn't do Unicode; encode temporarily as UTF-8:
-       csv_reader = csv.reader(utf_8_encoder(unicode_csv_data),
-                               dialect=dialect, **kwargs)
-       for row in csv_reader:
-           # decode UTF-8 back to Unicode, cell by cell:
-           yield [unicode(cell, 'utf-8') for cell in row]
-
-   def utf_8_encoder(unicode_csv_data):
-       for line in unicode_csv_data:
-           yield line.encode('utf-8')
-
-For all other encodings the following :class:`UnicodeReader` and
-:class:`UnicodeWriter` classes can be used. They take an additional *encoding*
-parameter in their constructor and make sure that the data passes the real
-reader or writer encoded as UTF-8::
-
-   import csv, codecs, io
-
-   class UTF8Recoder:
-       """
-       Iterator that reads an encoded stream and reencodes the input to UTF-8
-       """
-       def __init__(self, f, encoding):
-           self.reader = codecs.getreader(encoding)(f)
-
-       def __iter__(self):
-           return self
-
-       def __next__(self):
-           return next(self.reader).encode("utf-8")
-
-   class UnicodeReader:
-       """
-       A CSV reader which will iterate over lines in the CSV file "f",
-       which is encoded in the given encoding.
-       """
-
-       def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-           f = UTF8Recoder(f, encoding)
-           self.reader = csv.reader(f, dialect=dialect, **kwds)
-
-       def __next__(self):
-           row = next(self.reader)
-           return [unicode(s, "utf-8") for s in row]
-
-       def __iter__(self):
-           return self
-
-   class UnicodeWriter:
-       """
-       A CSV writer which will write rows to CSV file "f",
-       which is encoded in the given encoding.
-       """
-
-       def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-           # Redirect output to a queue
-           self.queue = io.StringIO()
-           self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
-           self.stream = f
-           self.encoder = codecs.getincrementalencoder(encoding)()
-
-       def writerow(self, row):
-           self.writer.writerow([s.encode("utf-8") for s in row])
-           # Fetch UTF-8 output from the queue ...
-           data = self.queue.getvalue()
-           data = data.decode("utf-8")
-           # ... and reencode it into the target encoding
-           data = self.encoder.encode(data)
-           # write to the target stream
-           self.stream.write(data)
-           # empty queue
-           self.queue.truncate(0)
-
-       def writerows(self, rows):
-           for row in rows:
-               self.writerow(row)
-
+.. [#] If ``newline=''`` is not specified, newlines embedded inside quoted fields
+   will not be interpreted correctly.  It should always be safe to specify
+   ``newline=''``, since the csv module does its own universal newline handling
+   on input.
