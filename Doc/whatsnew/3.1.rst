@@ -189,6 +189,28 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger and Mark Dickinson.)
 
+* The fields in :func:`format` strings can now be automatically
+  numbered::
+
+    >>> 'Sir {} of {}'.format('Gallahad', 'Camelot')
+    'Sir Gallahad of Camelot'
+
+  Formerly, the string would have required numbered fields such as:
+  ``'Sir {0} of {1}'``.
+
+  (Contributed by Eric Smith; :issue:`5237`.)
+
+* The :mod:`itertools` module grew two new functions.  The
+  :func:`itertools.combinations_with_replacement` function is one of
+  four for generating combinatorics including permutations and Cartesian
+  products.  The :func:`itertools.compress` function mimics its namesake
+  from APL.  Also, the existing :func:`itertools.count` function now has
+  an optional *step* argument and can accept any type of counting
+  sequence including :class:`fractions.Fraction` and
+  :class:`decimal.Decimal`.
+
+  (Contributed by Raymond Hettinger.)
+
 
 .. ======================================================================
 
@@ -212,6 +234,13 @@ Major performance enhancements have been added:
   have been observed, depending on the system and compiler.
 
   (Contributed by Antoine Pitrou, :issue:`4753`.)
+
+* Add a heuristic so that tuples and dicts containing only untrackable objects
+  are not tracked by the garbage collector. This can reduce the size of
+  collections and therefore the garbage collection overhead on long-running
+  programs, depending on their particular use of datatypes.
+
+  (Contributed by Antoine Pitrou, :issue:`4688`.)
 
 XXX The JSON module is getting a C extension for speed.
 
