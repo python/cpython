@@ -132,6 +132,9 @@ class OrderedDict(dict, MutableMapping):
                    all(p==q for p, q in zip(self.items(), other.items()))
         return dict.__eq__(self, other)
 
+    def __ne__(self, other):
+        return not self == other
+
 
 
 ################################################################################
