@@ -204,7 +204,7 @@ mmap_read_byte_method(mmap_object *self,
 	if (self->pos < self->size) {
 	        char value = self->data[self->pos];
 		self->pos += 1;
-		return Py_BuildValue("c", value);
+		return Py_BuildValue("b", value);
 	} else {
 		PyErr_SetString(PyExc_ValueError, "read byte out of range");
 		return NULL;
@@ -264,7 +264,7 @@ mmap_gfind(mmap_object *self,
 	Py_ssize_t len;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, reverse ? "s#|nn:rfind" : "s#|nn:find",
+	if (!PyArg_ParseTuple(args, reverse ? "y#|nn:rfind" : "y#|nn:find",
 			      &needle, &len, &start, &end)) {
 		return NULL;
 	} else {
@@ -348,7 +348,7 @@ mmap_write_method(mmap_object *self,
 	char *data;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &length))
+	if (!PyArg_ParseTuple(args, "y#:write", &data, &length))
 		return(NULL);
 
 	if (!is_writable(self))
@@ -371,7 +371,7 @@ mmap_write_byte_method(mmap_object *self,
 	char value;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "c:write_byte", &value))
+	if (!PyArg_ParseTuple(args, "b:write_byte", &value))
 		return(NULL);
 
 	if (!is_writable(self))

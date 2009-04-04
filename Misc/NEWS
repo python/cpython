@@ -11,6 +11,7 @@ What's New in Python 3.1 alpha 2?
 
 Core and Builtins
 -----------------
+
 - Implement PEP 378, Format Specifier for Thousands Separator, for
   integers.
 
@@ -127,6 +128,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Issue #5391: mmap now deals exclusively with bytes.
 
 - Issue #5463: In struct module, remove deprecated overflow wrapping
   when packing an integer: struct.pack('=L', -1) now raises

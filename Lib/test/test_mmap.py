@@ -37,7 +37,7 @@ class MmapTests(unittest.TestCase):
         # Simple sanity checks
 
         tp = str(type(m))  # SF bug 128713:  segfaulted on Linux
-        self.assertEqual(m.find('foo'), PAGESIZE)
+        self.assertEqual(m.find(b'foo'), PAGESIZE)
 
         self.assertEqual(len(m), 2*PAGESIZE)
 
@@ -262,38 +262,38 @@ class MmapTests(unittest.TestCase):
 
     def test_find_end(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'w+')
-        data = 'one two ones'
+        f = open(TESTFN, 'wb+')
+        data = b'one two ones'
         n = len(data)
         f.write(data)
         f.flush()
         m = mmap.mmap(f.fileno(), n)
         f.close()
 
-        self.assertEqual(m.find('one'), 0)
-        self.assertEqual(m.find('ones'), 8)
-        self.assertEqual(m.find('one', 0, -1), 0)
-        self.assertEqual(m.find('one', 1), 8)
-        self.assertEqual(m.find('one', 1, -1), 8)
-        self.assertEqual(m.find('one', 1, -2), -1)
+        self.assertEqual(m.find(b'one'), 0)
+        self.assertEqual(m.find(b'ones'), 8)
+        self.assertEqual(m.find(b'one', 0, -1), 0)
+        self.assertEqual(m.find(b'one', 1), 8)
+        self.assertEqual(m.find(b'one', 1, -1), 8)
+        self.assertEqual(m.find(b'one', 1, -2), -1)
 
 
     def test_rfind(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'w+')
-        data = 'one two ones'
+        f = open(TESTFN, 'wb+')
+        data = b'one two ones'
         n = len(data)
         f.write(data)
         f.flush()
         m = mmap.mmap(f.fileno(), n)
         f.close()
 
-        self.assertEqual(m.rfind('one'), 8)
-        self.assertEqual(m.rfind('one '), 0)
-        self.assertEqual(m.rfind('one', 0, -1), 8)
-        self.assertEqual(m.rfind('one', 0, -2), 0)
-        self.assertEqual(m.rfind('one', 1, -1), 8)
-        self.assertEqual(m.rfind('one', 1, -2), -1)
+        self.assertEqual(m.rfind(b'one'), 8)
+        self.assertEqual(m.rfind(b'one '), 0)
+        self.assertEqual(m.rfind(b'one', 0, -1), 8)
+        self.assertEqual(m.rfind(b'one', 0, -2), 0)
+        self.assertEqual(m.rfind(b'one', 1, -1), 8)
+        self.assertEqual(m.rfind(b'one', 1, -2), -1)
 
 
     def test_double_close(self):
@@ -506,21 +506,15 @@ class MmapTests(unittest.TestCase):
         # Test write_byte()
         for i in range(len(data)):
             self.assertEquals(m.tell(), i)
-            m.write_byte(data[i:i+1])
+            m.write_byte(data[i])
             self.assertEquals(m.tell(), i+1)
-        self.assertRaises(ValueError, m.write_byte, b"x")
+        self.assertRaises(ValueError, m.write_byte, b"x"[0])
         self.assertEquals(m[:], data)
         # Test read_byte()
         m.seek(0)
         for i in range(len(data)):
             self.assertEquals(m.tell(), i)
-            # XXX: Disable this test for now because it's not clear
-            # which type of object m.read_byte returns. Currently, it
-            # returns 1-length str (unicode).
-            if 0:
-                self.assertEquals(m.read_byte(), data[i:i+1])
-            else:
-                m.read_byte()
+            self.assertEquals(m.read_byte(), data[i])
             self.assertEquals(m.tell(), i+1)
         self.assertRaises(ValueError, m.read_byte)
         # Test read()
