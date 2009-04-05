@@ -139,8 +139,12 @@ connection_sendbytes(ConnectionObject *self, PyObject *args)
 	res = conn_send_string(self, buffer + offset, size);
 
 	PyBuffer_Release(&pbuffer);
-	if (res < 0)
-		return mp_SetError(PyExc_IOError, res);
+	if (res < 0) {
+		if (PyErr_Occurred())
+			return NULL;
+		else
+			return mp_SetError(PyExc_IOError, res);
+	}
 
 	Py_RETURN_NONE;
 }

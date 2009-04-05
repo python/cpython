@@ -750,20 +750,22 @@ class _TestEvent(BaseTestCase):
 
         # Removed temporaily, due to API shear, this does not
         # work with threading._Event objects. is_set == isSet
-        #self.assertEqual(event.is_set(), False)
+        self.assertEqual(event.is_set(), False)
 
-        self.assertEqual(wait(0.0), None)
+        # Removed, threading.Event.wait() will return the value of the __flag
+        # instead of None. API Shear with the semaphore backed mp.Event
+        self.assertEqual(wait(0.0), False)
         self.assertTimingAlmostEqual(wait.elapsed, 0.0)
-        self.assertEqual(wait(TIMEOUT1), None)
+        self.assertEqual(wait(TIMEOUT1), False)
         self.assertTimingAlmostEqual(wait.elapsed, TIMEOUT1)
 
         event.set()
 
         # See note above on the API differences
-        # self.assertEqual(event.is_set(), True)
-        self.assertEqual(wait(), None)
+        self.assertEqual(event.is_set(), True)
+        self.assertEqual(wait(), True)
         self.assertTimingAlmostEqual(wait.elapsed, 0.0)
-        self.assertEqual(wait(TIMEOUT1), None)
+        self.assertEqual(wait(TIMEOUT1), True)
         self.assertTimingAlmostEqual(wait.elapsed, 0.0)
         # self.assertEqual(event.is_set(), True)
 
@@ -772,7 +774,7 @@ class _TestEvent(BaseTestCase):
         #self.assertEqual(event.is_set(), False)
 
         self.Process(target=self._test_event, args=(event,)).start()
-        self.assertEqual(wait(), None)
+        self.assertEqual(wait(), True)
 
 #
 #

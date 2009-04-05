@@ -301,5 +301,10 @@ class Event(object):
                 self._flag.release()
             else:
                 self._cond.wait(timeout)
+
+            if self._flag.acquire(False):
+                self._flag.release()
+                return True
+            return False
         finally:
             self._cond.release()

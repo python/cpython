@@ -8,6 +8,12 @@
 
 #include "multiprocessing.h"
 
+#ifdef SCM_RIGHTS
+	#define HAVE_FD_TRANSFER 1
+#else
+	#define HAVE_FD_TRANSFER 0
+#endif
+
 PyObject *create_win32_namespace(void);
 
 PyObject *pickle_dumps, *pickle_loads, *pickle_protocol;
@@ -257,7 +263,7 @@ PyInit__multiprocessing(void)
 	Py_INCREF(&ConnectionType);	
 	PyModule_AddObject(module, "Connection", (PyObject*)&ConnectionType);
 
-#if defined(MS_WINDOWS) || HAVE_SEM_OPEN
+#if defined(MS_WINDOWS) || defined(HAVE_SEM_OPEN)
 	/* Add SemLock type to module */
 	if (PyType_Ready(&SemLockType) < 0)
 		return NULL;
