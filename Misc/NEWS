@@ -314,65 +314,6 @@ Library
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
 
-Extension Modules
------------------
-
-- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
-
-Build
------
-
-- Link the shared python library with $(MODLIBS).
-
-
-What's New in Python 2.6.1
-==========================
-
-*Release date: 04-Dec-2008*
-
-Core and Builtins
------------------
-
-- Issue #3996: On Windows, the PyOS_CheckStack function would cause the
-  interpreter to abort ("Fatal Python error: Could not reset the stack!")
-  instead of throwing a MemoryError.
-
-- Issue #4367: Python would segfault during compiling when the unicodedata
-  module couldn't be imported and \N escapes were present.
-
-- Issue #4348: Some bytearray methods returned that didn't cause any change to
-  the bytearray, returned the same bytearray instead of a copy.
-
-- Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
-
-- Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
-
-- Issue #4048: The parser module now correctly validates relative imports.
-
-- Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
-  exec statement.
-
-- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
-  method does not return iterators for the 4th and 5th items.
-
-- Issue #4209: Enabling unicode_literals and the print_function in the same
-  __future__ import didn't work.
-
-- On windows, os.chdir given unicode was not working if GetCurrentDirectoryW
-  returned a path longer than MAX_PATH. (But It's doubtful this code path is
-  really executed because I cannot move to such directory on win2k)
-
-- Issue #4069: When set.remove(element) is used with a set element, the element
-  is temporarily replaced with an equivalent frozenset.  But the eventual
-  KeyError would always report the empty frozenset([]) as the missing key. Now
-  it correctly refers to the initial element.
-
-- Fixed C99 style comments in several files. Python is now C89 compatible
-  again.
-
-Library
--------
-
 - Issue #1885: distutils. When running sdist with --formats=tar,gztar
   the tar file was overriden by the gztar one.
 
@@ -439,6 +380,131 @@ Library
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
+- Issue #4730: Fixed the cPickle module to handle correctly astral characters
+  when protocol 0 is used.
+
+- Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
+
+- Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
+  module.
+
+- Issue #1149804: macostools.mkdirs now even works when another process
+  creates one of the needed subdirectories.
+
+Tools/Demos
+-----------
+
+- Issue #4677: add two list comprehension tests to pybench.
+
+Extension Modules
+-----------------
+
+- Issue #4301: Patch the logging module to add processName support, remove
+  _check_logger_class from multiprocessing.
+
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
+
+- Issue #4397: Fix occasional test_socket failure on OS X.
+
+- Issue #4279: Fix build of parsermodule under Cygwin.
+
+- Issue #4051: Prevent conflict of UNICODE macros in cPickle.
+
+- Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
+
+- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
+
+- Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
+  OpenBSD.
+
+Build
+-----
+
+- Link the shared python library with $(MODLIBS).
+
+- Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
+
+- Issue #4494: Fix build with Py_NO_ENABLE_SHARED on Windows.
+
+- Issue #4895: Use _strdup on Windows CE.
+
+- Issue #4472: "configure --enable-shared" now works on OSX
+
+- Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
+
+- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
+
+- Issue #4289: Remove Cancel button from AdvancedDlg.
+
+
+C-API
+-----
+
+- Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
+
+- Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
+  the GIL is released, or owned by another thread.
+
+Tests
+-----
+
+- Issue #5635: Fix running test_sys with tracing enabled.
+
+- regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
+  that should cause a test to be skipped are now done using import_module 
+  from test support, which does the conversion.
+
+- Issue #5083: New 'gui' resource for regrtest.
+
+
+What's New in Python 2.6.1
+==========================
+
+*Release date: 04-Dec-2008*
+
+Core and Builtins
+-----------------
+
+- Issue #3996: On Windows, the PyOS_CheckStack function would cause the
+  interpreter to abort ("Fatal Python error: Could not reset the stack!")
+  instead of throwing a MemoryError.
+
+- Issue #4367: Python would segfault during compiling when the unicodedata
+  module couldn't be imported and \N escapes were present.
+
+- Issue #4348: Some bytearray methods returned that didn't cause any change to
+  the bytearray, returned the same bytearray instead of a copy.
+
+- Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
+
+- Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
+
+- Issue #4048: The parser module now correctly validates relative imports.
+
+- Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
+  exec statement.
+
+- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
+  method does not return iterators for the 4th and 5th items.
+
+- Issue #4209: Enabling unicode_literals and the print_function in the same
+  __future__ import didn't work.
+
+- On windows, os.chdir given unicode was not working if GetCurrentDirectoryW
+  returned a path longer than MAX_PATH. (But It's doubtful this code path is
+  really executed because I cannot move to such directory on win2k)
+
+- Issue #4069: When set.remove(element) is used with a set element, the element
+  is temporarily replaced with an equivalent frozenset.  But the eventual
+  KeyError would always report the empty frozenset([]) as the missing key. Now
+  it correctly refers to the initial element.
+
+- Fixed C99 style comments in several files. Python is now C89 compatible
+  again.
+
+Library
+-------
+
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
 
@@ -463,38 +529,8 @@ Library
 - Issue #4014: Don't claim that Python has an Alpha release status, in addition
   to claiming it is Mature.
 
-- Issue #4730: Fixed the cPickle module to handle correctly astral characters
-  when protocol 0 is used.
-
-- Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
-
-- Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
-  module.
-
-- Issue #1149804: macostools.mkdirs now even works when another process
-  creates one of the needed subdirectories.
-
-Tools/Demos
------------
-
-- Issue #4677: add two list comprehension tests to pybench.
-
 Build
 -----
-
-- Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
-
-- Issue #4494: Fix build with Py_NO_ENABLE_SHARED on Windows.
-
-- Issue #4895: Use _strdup on Windows CE.
-
-- Issue #4472: "configure --enable-shared" now works on OSX
-
-- Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
-
-- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
-
-- Issue #4289: Remove Cancel button from AdvancedDlg.
 
 - Issue #1656675: Register a drop handler for .py* files on Windows.
 
@@ -511,45 +547,15 @@ Build
 C-API
 -----
 
-- Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
-
-- Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
-  the GIL is released, or owned by another thread.
-
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
 
 Extension Modules
 -----------------
 
-- Issue #4397: Fix occasional test_socket failure on OS X.
-
-- Issue #4279: Fix build of parsermodule under Cygwin.
-
-- Issue #4051: Prevent conflict of UNICODE macros in cPickle.
-
-- Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
-
-- Issue #1040026: Fix os.times result on systems where HZ is incorrect.
-
-- Issues #3167, #3682: Fix test_math failures for log, log10 on Solaris,
-  OpenBSD.
-
 - Issue #4365: Add crtassem.h constants to the msvcrt module.
 
 - Issue #4396: The parser module now correctly validates the with statement.
-
-
-Tests
------
-
-- Issue #5635: Fix running test_sys with tracing enabled.
-
-- regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
-  that should cause a test to be skipped are now done using import_module 
-  from test support, which does the conversion.
-
-- Issue #5083: New 'gui' resource for regrtest.
 
 
 What's New in Python 2.6 final
@@ -763,9 +769,6 @@ Library
 
 Extension Modules
 -----------------
-
-- Issue #4301: Patch the logging module to add processName support, remove
-  _check_logger_class from multiprocessing.
 
 - Issue #2975: When compiling several extension modules with Visual Studio 2008
   from the same python interpreter, some environment variables would grow
