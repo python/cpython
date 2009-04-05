@@ -210,6 +210,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 1726172: fix IndexError in the case of and empty response in ftplib.
+
 - Issue 2625: added missing iteritems() call to the for loop in
   mailbox.MH.get_message().
 
