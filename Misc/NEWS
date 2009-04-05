@@ -689,6 +689,9 @@ Library
 - Issue #999042: The Python compiler now handles explict global statements
   correctly (should be assigned using STORE_GLOBAL opcode).
 
+- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
+  new arguments introduced in 2.5.
+
 Tools/Demos
 -----------
 
