@@ -1,4 +1,3 @@
-
 :mod:`cmath` --- Mathematical functions for complex numbers
 ===========================================================
 

@@ -1,6 +1,5 @@
-
-:mod:`cgi` --- Common Gateway Interface support.
-================================================
+:mod:`cgi` --- Common Gateway Interface support
+===============================================
 
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.
@@ -220,7 +219,7 @@ A more convenient approach is to use the methods :meth:`getfirst` and
 :meth:`getlist` provided by this higher level interface.
 
 
-.. method:: FieldStorage.getfirst(name[, default])
+.. method:: FieldStorage.getfirst(name, default=None)
 
    This method always returns only one value associated with form field *name*.
    The method returns only the first value in case that more values were posted
@@ -255,19 +254,19 @@ These are useful if you want more control, or if you want to employ some of the
 algorithms implemented in this module in other circumstances.
 
 
-.. function:: parse(fp[, keep_blank_values[, strict_parsing]])
+.. function:: parse(fp=None, environ=os.environ, keep_blank_values=False, strict_parsing=False)
 
    Parse a query in the environment or from a file (the file defaults to
    ``sys.stdin``).  The *keep_blank_values* and *strict_parsing* parameters are
    passed to :func:`urllib.parse.parse_qs` unchanged.
 
 
-.. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False)
 
    This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
    instead. It is maintained here only for backward compatibility.
 
-.. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
 
    This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
    instead. It is maintained here only for backward compatibility.
@@ -319,7 +318,7 @@ algorithms implemented in this module in other circumstances.
    Print a list of useful (used by CGI) environment variables in HTML.
 
 
-.. function:: escape(s[, quote])
+.. function:: escape(s, quote=False)
 
    Convert the characters ``'&'``, ``'<'`` and ``'>'`` in string *s* to HTML-safe
    sequences.  Use this if you need to display text that might contain such

@@ -1,4 +1,3 @@
-
 :mod:`cmd` --- Support for line-oriented command interpreters
 =============================================================
 
@@ -13,7 +12,7 @@ tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
 
 
-.. class:: Cmd([completekey[, stdin[, stdout]]])
+.. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 
    A :class:`Cmd` instance or subclass instance is a line-oriented interpreter
    framework.  There is no good reason to instantiate :class:`Cmd` itself; rather,
@@ -42,7 +41,7 @@ Cmd Objects
 A :class:`Cmd` instance has the following methods:
 
 
-.. method:: Cmd.cmdloop([intro])
+.. method:: Cmd.cmdloop(intro=None)
 
    Repeatedly issue a prompt, accept input, parse an initial prefix off the
    received input, and dispatch to action methods, passing them the remainder of

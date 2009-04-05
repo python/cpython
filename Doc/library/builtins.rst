@@ -1,4 +1,3 @@
-
 :mod:`builtins` --- Built-in objects
 ====================================
 

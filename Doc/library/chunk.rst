@@ -1,4 +1,3 @@
-
 :mod:`chunk` --- Read IFF chunked data
 ======================================
 
@@ -51,7 +50,7 @@ new instance can be instantiated. At the end of the file, creating a new
 instance will fail with a :exc:`EOFError` exception.
 
 
-.. class:: Chunk(file[, align, bigendian, inclheader])
+.. class:: Chunk(file, align=True, bigendian=True, inclheader=False)
 
    Class which represents a chunk.  The *file* argument is expected to be a
    file-like object.  An instance of this class is specifically allowed.  The
@@ -94,7 +93,7 @@ instance will fail with a :exc:`EOFError` exception.
       Returns ``False``.
 
 
-   .. method:: seek(pos[, whence])
+   .. method:: seek(pos, whence=0)
 
       Set the chunk's current position.  The *whence* argument is optional and
       defaults to ``0`` (absolute file positioning); other values are ``1``
@@ -108,7 +107,7 @@ instance will fail with a :exc:`EOFError` exception.
       Return the current position into the chunk.
 
 
-   .. method:: read([size])
+   .. method:: read(size=-1)
 
       Read at most *size* bytes from the chunk (less if the read hits the end of
       the chunk before obtaining *size* bytes).  If the *size* argument is
