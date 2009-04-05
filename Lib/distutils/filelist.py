@@ -289,7 +289,8 @@ def glob_to_re(pattern):
     # character except the special characters.
     # XXX currently the "special characters" are just slash -- i.e. this is
     # Unix-only.
-    pattern_re = re.sub(r'(^|[^\\])\.', r'\1[^/]', pattern_re)
+    pattern_re = re.sub(r'((?<!\\)(\\\\)*)\.', r'\1[^/]', pattern_re)
+
     return pattern_re
 
 

@@ -187,6 +187,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
+  Initial fix by Wayne Davison.
+
 - Issue #4792: Prevent a segfault in _tkinter by using the
   guaranteed to be safe interp argument given to the PythonCmd in place of
   the Tcl interpreter taken from a PythonCmd_ClientData.
