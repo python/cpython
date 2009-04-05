@@ -1097,7 +1097,7 @@ bytes_dealloc(PyByteArrayObject *self)
 {
     if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
-			"deallocated bytearray object has exported buffers");
+                        "deallocated bytearray object has exported buffers");
         PyErr_Print();
     }
     if (self->ob_bytes != 0) {
@@ -2691,10 +2691,10 @@ bytes_extend(PyByteArrayObject *self, PyObject *arg)
 
     /* Try to determine the length of the argument. 32 is abitrary. */
     buf_size = _PyObject_LengthHint(arg, 32);
-	if (buf_size == -1) {
-		Py_DECREF(it);
-		return NULL;
-	}
+    if (buf_size == -1) {
+        Py_DECREF(it);
+        return NULL;
+    }
 
     bytes_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
     if (bytes_obj == NULL)
@@ -3143,10 +3143,10 @@ Returns the size of B in memory, in bytes");
 static PyObject *
 bytes_sizeof(PyByteArrayObject *self)
 {
-	Py_ssize_t res;
+    Py_ssize_t res;
 
-	res = sizeof(PyByteArrayObject) + self->ob_alloc * sizeof(char);
-	return PyInt_FromSsize_t(res);
+    res = sizeof(PyByteArrayObject) + self->ob_alloc * sizeof(char);
+    return PyInt_FromSsize_t(res);
 }
 
 static PySequenceMethods bytes_as_sequence = {
