@@ -394,12 +394,12 @@ Thread State and the Global Interpreter Lock
    single: lock, interpreter
 
 The Python interpreter is not fully thread safe.  In order to support
-multi-threaded Python programs, there's a global lock that must be held by the
-current thread before it can safely access Python objects. Without the lock,
-even the simplest operations could cause problems in a multi-threaded program:
-for example, when two threads simultaneously increment the reference count of
-the same object, the reference count could end up being incremented only once
-instead of twice.
+multi-threaded Python programs, there's a global lock, called the :dfn:`global
+interpreter lock` or :dfn:`GIL`, that must be held by the current thread before
+it can safely access Python objects. Without the lock, even the simplest
+operations could cause problems in a multi-threaded program: for example, when
+two threads simultaneously increment the reference count of the same object, the
+reference count could end up being incremented only once instead of twice.
 
 .. index:: single: setcheckinterval() (in module sys)
 
@@ -428,9 +428,9 @@ This is easy enough in most cases.  Most code manipulating the global
 interpreter lock has the following simple structure::
 
    Save the thread state in a local variable.
-   Release the interpreter lock.
+   Release the global interpreter lock.
    ...Do some blocking I/O operation...
-   Reacquire the interpreter lock.
+   Reacquire the global interpreter lock.
    Restore the thread state from the local variable.
 
 This is so common that a pair of macros exists to simplify it::
@@ -447,7 +447,7 @@ The :cmacro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :cmacro:`Py_END_ALLOW_THREADS` macro closes the
 block.  Another advantage of using these two macros is that when Python is
 compiled without thread support, they are defined empty, thus saving the thread
-state and lock manipulations.
+state and GIL manipulations.
 
 When thread support is enabled, the block above expands to the following code::
 
@@ -479,7 +479,7 @@ There are some subtle differences; in particular, :cfunc:`PyEval_RestoreThread`
 saves and restores the value of the  global variable :cdata:`errno`, since the
 lock manipulation does not guarantee that :cdata:`errno` is left alone.  Also,
 when thread support is disabled, :cfunc:`PyEval_SaveThread` and
-:cfunc:`PyEval_RestoreThread` don't manipulate the lock; in this case,
+:cfunc:`PyEval_RestoreThread` don't manipulate the GIL; in this case,
 :cfunc:`PyEval_ReleaseLock` and :cfunc:`PyEval_AcquireLock` are not available.
 This is done so that dynamically loaded extensions compiled with thread support
 enabled can be loaded by an interpreter that was compiled with disabled thread
@@ -562,16 +562,16 @@ supports the creation of additional interpreters (using
 
    .. index:: module: thread
 
-   When only the main thread exists, no lock operations are needed. This is a
+   When only the main thread exists, no GIL operations are needed. This is a
    common situation (most Python programs do not use threads), and the lock
-   operations slow the interpreter down a bit. Therefore, the lock is not created
-   initially.  This situation is equivalent to having acquired the lock:  when
-   there is only a single thread, all object accesses are safe.  Therefore, when
-   this function initializes the lock, it also acquires it.  Before the Python
-   :mod:`thread` module creates a new thread, knowing that either it has the lock
-   or the lock hasn't been created yet, it calls :cfunc:`PyEval_InitThreads`.  When
-   this call returns, it is guaranteed that the lock has been created and that the
-   calling thread has acquired it.
+   operations slow the interpreter down a bit. Therefore, the lock is not
+   created initially.  This situation is equivalent to having acquired the lock:
+   when there is only a single thread, all object accesses are safe.  Therefore,
+   when this function initializes the global interpreter lock, it also acquires
+   it.  Before the Python :mod:`thread` module creates a new thread, knowing
+   that either it has the lock or the lock hasn't been created yet, it calls
+   :cfunc:`PyEval_InitThreads`.  When this call returns, it is guaranteed that
+   the lock has been created and that the calling thread has acquired it.
 
    It is **not** safe to call this function when it is unknown which thread (if
    any) currently has the global interpreter lock.
@@ -582,7 +582,7 @@ supports the creation of additional interpreters (using
 .. cfunction:: int PyEval_ThreadsInitialized()
 
    Returns a non-zero value if :cfunc:`PyEval_InitThreads` has been called.  This
-   function can be called without holding the lock, and therefore can be used to
+   function can be called without holding the GIL, and therefore can be used to
    avoid calls to the locking API when running single-threaded.  This function is
    not available when thread support is disabled at compile time.
 
@@ -622,20 +622,20 @@ supports the creation of additional interpreters (using
 
 .. cfunction:: PyThreadState* PyEval_SaveThread()
 
-   Release the interpreter lock (if it has been created and thread support is
-   enabled) and reset the thread state to *NULL*, returning the previous thread
-   state (which is not *NULL*).  If the lock has been created, the current thread
-   must have acquired it.  (This function is available even when thread support is
-   disabled at compile time.)
+   Release the global interpreter lock (if it has been created and thread
+   support is enabled) and reset the thread state to *NULL*, returning the
+   previous thread state (which is not *NULL*).  If the lock has been created,
+   the current thread must have acquired it.  (This function is available even
+   when thread support is disabled at compile time.)
 
 
 .. cfunction:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the interpreter lock (if it has been created and thread support is
-   enabled) and set the thread state to *tstate*, which must not be *NULL*.  If the
-   lock has been created, the current thread must not have acquired it, otherwise
-   deadlock ensues.  (This function is available even when thread support is
-   disabled at compile time.)
+   Acquire the global interpreter lock (if it has been created and thread
+   support is enabled) and set the thread state to *tstate*, which must not be
+   *NULL*.  If the lock has been created, the current thread must not have
+   acquired it, otherwise deadlock ensues.  (This function is available even
+   when thread support is disabled at compile time.)
 
 
 .. cfunction:: void PyEval_ReInitThreads()
@@ -679,60 +679,61 @@ example usage in the Python source distribution.
    declaration.  It is a no-op when thread support is disabled at compile time.
 
 All of the following functions are only available when thread support is enabled
-at compile time, and must be called only when the interpreter lock has been
-created.
+at compile time, and must be called only when the global interpreter lock has
+been created.
 
 
 .. cfunction:: PyInterpreterState* PyInterpreterState_New()
 
-   Create a new interpreter state object.  The interpreter lock need not be held,
-   but may be held if it is necessary to serialize calls to this function.
+   Create a new interpreter state object.  The global interpreter lock need not
+   be held, but may be held if it is necessary to serialize calls to this
+   function.
 
 
 .. cfunction:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
-   Reset all information in an interpreter state object.  The interpreter lock must
-   be held.
+   Reset all information in an interpreter state object.  The global interpreter
+   lock must be held.
 
 
 .. cfunction:: void PyInterpreterState_Delete(PyInterpreterState *interp)
 
-   Destroy an interpreter state object.  The interpreter lock need not be held.
-   The interpreter state must have been reset with a previous call to
+   Destroy an interpreter state object.  The global interpreter lock need not be
+   held.  The interpreter state must have been reset with a previous call to
    :cfunc:`PyInterpreterState_Clear`.
 
 
 .. cfunction:: PyThreadState* PyThreadState_New(PyInterpreterState *interp)
 
-   Create a new thread state object belonging to the given interpreter object.  The
-   interpreter lock need not be held, but may be held if it is necessary to
-   serialize calls to this function.
+   Create a new thread state object belonging to the given interpreter object.
+   The global interpreter lock need not be held, but may be held if it is
+   necessary to serialize calls to this function.
 
 
 .. cfunction:: void PyThreadState_Clear(PyThreadState *tstate)
 
-   Reset all information in a thread state object.  The interpreter lock must be
-   held.
+   Reset all information in a thread state object.  The global interpreter lock
+   must be held.
 
 
 .. cfunction:: void PyThreadState_Delete(PyThreadState *tstate)
 
-   Destroy a thread state object.  The interpreter lock need not be held.  The
-   thread state must have been reset with a previous call to
+   Destroy a thread state object.  The global interpreter lock need not be held.
+   The thread state must have been reset with a previous call to
    :cfunc:`PyThreadState_Clear`.
 
 
 .. cfunction:: PyThreadState* PyThreadState_Get()
 
-   Return the current thread state.  The interpreter lock must be held.  When the
-   current thread state is *NULL*, this issues a fatal error (so that the caller
-   needn't check for *NULL*).
+   Return the current thread state.  The global interpreter lock must be held.
+   When the current thread state is *NULL*, this issues a fatal error (so that
+   the caller needn't check for *NULL*).
 
 
 .. cfunction:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
    Swap the current thread state with the thread state given by the argument
-   *tstate*, which may be *NULL*.  The interpreter lock must be held.
+   *tstate*, which may be *NULL*.  The global interpreter lock must be held.
 
 
 .. cfunction:: PyObject* PyThreadState_GetDict()
@@ -763,14 +764,15 @@ created.
 
 .. cfunction:: PyGILState_STATE PyGILState_Ensure()
 
-   Ensure that the current thread is ready to call the Python C API regardless of
-   the current state of Python, or of its thread lock. This may be called as many
-   times as desired by a thread as long as each call is matched with a call to
-   :cfunc:`PyGILState_Release`. In general, other thread-related APIs may be used
-   between :cfunc:`PyGILState_Ensure` and :cfunc:`PyGILState_Release` calls as long
-   as the thread state is restored to its previous state before the Release().  For
-   example, normal usage of the :cmacro:`Py_BEGIN_ALLOW_THREADS` and
-   :cmacro:`Py_END_ALLOW_THREADS` macros is acceptable.
+   Ensure that the current thread is ready to call the Python C API regardless
+   of the current state of Python, or of the global interpreter lock. This may
+   be called as many times as desired by a thread as long as each call is
+   matched with a call to :cfunc:`PyGILState_Release`. In general, other
+   thread-related APIs may be used between :cfunc:`PyGILState_Ensure` and
+   :cfunc:`PyGILState_Release` calls as long as the thread state is restored to
+   its previous state before the Release().  For example, normal usage of the
+   :cmacro:`Py_BEGIN_ALLOW_THREADS` and :cmacro:`Py_END_ALLOW_THREADS` macros is
+   acceptable.
 
    The return value is an opaque "handle" to the thread state when
    :cfunc:`PyGILState_Ensure` was called, and must be passed to
@@ -808,35 +810,34 @@ pointer and a void argument.
 
 .. index:: single: setcheckinterval() (in module sys)
 
-Every check interval, when the interpreter lock is released and reacquired,
-python will also call any such provided functions.  This can be used for
-example by asynchronous IO handlers.  The notification can be scheduled
-from a worker thread and the actual call than made at the earliest
-convenience by the main thread where it has possession of the global
-interpreter lock and can perform any Python API calls.
+Every check interval, when the global interpreter lock is released and
+reacquired, python will also call any such provided functions.  This can be used
+for example by asynchronous IO handlers.  The notification can be scheduled from
+a worker thread and the actual call than made at the earliest convenience by the
+main thread where it has possession of the global interpreter lock and can
+perform any Python API calls.
 
 .. cfunction:: void Py_AddPendingCall( int (*func)(void *, void *arg) )
 
    .. index:: single: Py_AddPendingCall()
 
-   Post a notification to the Python main thread.  If successful,
-   *func* will be called with the argument *arg* at the earliest
-   convenience.  *func* will be called having the global interpreter
-   lock held and can thus use the full Python API and can take any
-   action such as setting object attributes to signal IO completion.
-   It must return 0 on success, or -1 signalling an exception.
-   The notification function won't be interrupted to perform another
-   asynchronous notification recursively,
-   but it can still be interrupted to switch threads if the interpreter
-   lock is released, for example, if it calls back into python code.
+   Post a notification to the Python main thread.  If successful, *func* will be
+   called with the argument *arg* at the earliest convenience.  *func* will be
+   called having the global interpreter lock held and can thus use the full
+   Python API and can take any action such as setting object attributes to
+   signal IO completion.  It must return 0 on success, or -1 signalling an
+   exception.  The notification function won't be interrupted to perform another
+   asynchronous notification recursively, but it can still be interrupted to
+   switch threads if the global interpreter lock is released, for example, if it
+   calls back into python code.
 
    This function returns 0 on success in which case the notification has been
-   scheduled.  Otherwise, for example if the notification buffer is full,
-   it returns -1 without setting any exception.
+   scheduled.  Otherwise, for example if the notification buffer is full, it
+   returns -1 without setting any exception.
 
-   This function can be called on any thread, be it a Python thread or
-   some other system thread.  If it is a Python thread, it doesn't matter if
-   it holds the global interpreter lock or not.
+   This function can be called on any thread, be it a Python thread or some
+   other system thread.  If it is a Python thread, it doesn't matter if it holds
+   the global interpreter lock or not.
 
    .. versionadded:: 2.7
 
