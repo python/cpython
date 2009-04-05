@@ -656,7 +656,7 @@ ones inherited from :class:`ttk.Widget`.
 Platform-specific notes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-* On MacOS X, toplevel windows automatically include a built-in size grip
+* On Mac OS X, toplevel windows automatically include a built-in size grip
   by default. Adding a :class:`Sizegrip` is harmless, since the built-in
   grip will just mask the widget.
 
