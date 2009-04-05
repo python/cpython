@@ -212,6 +212,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 5693: TestSuite.__iter__ can now be consistently overridden in subclasses.
+
 - Issue 5694: removed spurious test output in Distutils (test_clean).
 
 - Issue 5471: Fix os.path.expanduser() for $HOME set to '/'.

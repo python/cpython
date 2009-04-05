@@ -806,6 +806,18 @@ class TestCase(object):
             standardMsg = '%r unexpectedly found in %r' % (member, container)
             self.fail(self._formatMessage(msg, standardMsg))
 
+    def assertIs(self, expr1, expr2, msg=None):
+        """Just like self.assertTrue(a is b), but with a nicer default message."""
+        if expr1 is not expr2:
+            standardMsg = '%r is not %r' % (expr1, expr2)
+            self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertIsNot(self, expr1, expr2, msg=None):
+        """Just like self.assertTrue(a is not b), but with a nicer default message."""
+        if expr1 is expr2:
+            standardMsg = 'unexpectedly identical: %r' % (expr1,)
+            self.fail(self._formatMessage(msg, standardMsg))
+
     def assertDictEqual(self, d1, d2, msg=None):
         self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
         self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
