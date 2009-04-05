@@ -458,6 +458,15 @@ Pickling and unpickling normal class instances
       For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
       value, the :meth:`__setstate__` method will not be called.
 
+.. note::
+
+   At unpickling time, some methods like :meth:`__getattr__`,
+   :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
+   instance.  In case those methods rely on some internal invariant being
+   true, the type should implement either :meth:`__getinitargs__` or
+   :meth:`__getnewargs__` to establish such an invariant; otherwise, neither
+   :meth:`__new__` nor :meth:`__init__` will be called.
+
 
 Pickling and unpickling extension types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
