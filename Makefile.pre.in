@@ -585,8 +585,7 @@ Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS) 
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
-				$(BYTESTR_DEPS) \
-				$(srcdir)/Objects/stringlib/formatter.h
+				$(BYTESTR_DEPS)
 
 $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
 	$(OPCODETARGETGEN) $(OPCODETARGETS_H)
@@ -594,7 +593,8 @@ $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
 Python/ceval.o: $(OPCODETARGETS_H)
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
-				$(BYTESTR_DEPS)
+				$(BYTESTR_DEPS) \
+				$(srcdir)/Objects/stringlib/formatter.h
 
 
 ############################################################################
