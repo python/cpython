@@ -1922,8 +1922,12 @@ class ModuleScanner:
             if key is None:
                 callback(None, modname, '')
             else:
-                loader = importer.find_module(modname)
-                if hasattr(loader,'get_source'):
+                try:
+                    loader = importer.find_module(modname)
+                except SyntaxError:
+                    # raised by tests for bad coding cookies or BOM
+                    continue
+                if hasattr(loader, 'get_source'):
                     try:
                         source = loader.get_source(modname)
                     except UnicodeDecodeError:
@@ -1932,7 +1936,7 @@ class ModuleScanner:
                         continue
                     import io
                     desc = source_synopsis(io.StringIO(source)) or ''
-                    if hasattr(loader,'get_filename'):
+                    if hasattr(loader, 'get_filename'):
                         path = loader.get_filename(modname)
                     else:
                         path = None
