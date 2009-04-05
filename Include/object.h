@@ -749,11 +749,13 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 	((PyObject*)(op))->ob_refcnt++)
 
 #define Py_DECREF(op)					\
-	if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA	\
-	    --((PyObject*)(op))->ob_refcnt != 0)		\
-		_Py_CHECK_REFCNT(op)			\
-	else						\
-		_Py_Dealloc((PyObject *)(op))
+	do {						\
+	    if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA	\
+		--((PyObject*)(op))->ob_refcnt != 0)	\
+		    _Py_CHECK_REFCNT(op)		\
+	    else					\
+		_Py_Dealloc((PyObject *)(op));		\
+        } while (0)
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementatons.
