@@ -8,6 +8,7 @@ from distutils.command.clean import clean
 from distutils.tests import support
 
 class cleanTestCase(support.TempdirManager,
+                    support.LoggingSilencer,
                     unittest.TestCase):
 
     def test_simple_run(self):
