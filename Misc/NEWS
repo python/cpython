@@ -432,11 +432,6 @@ Build
 
 - Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
 
-- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
-
-- Issue #4289: Remove Cancel button from AdvancedDlg.
-
-
 C-API
 -----
 
@@ -531,6 +526,10 @@ Library
 
 Build
 -----
+
+- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
+
+- Issue #4289: Remove Cancel button from AdvancedDlg.
 
 - Issue #1656675: Register a drop handler for .py* files on Windows.
 
