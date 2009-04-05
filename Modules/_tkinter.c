@@ -281,7 +281,7 @@ static PyObject *valInCmd;
 static PyObject *trbInCmd;
 
 #ifdef TKINTER_PROTECT_LOADTK
-static int tk_load_failed;
+static int tk_load_failed = 0;
 #endif
 
 
