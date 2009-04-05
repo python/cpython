@@ -231,16 +231,18 @@ The special characters are:
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
-   accessible via the symbolic group name *name*.  Group names must be valid Python
-   identifiers, and each group name must be defined only once within a regular
-   expression.  A symbolic group is also a numbered group, just as if the group
-   were not named.  So the group named 'id' in the example below can also be
-   referenced as the numbered group 1.
+   accessible within the rest of the regular expression via the symbolic group
+   name *name*.  Group names must be valid Python identifiers, and each group
+   name must be defined only once within a regular expression.  A symbolic group
+   is also a numbered group, just as if the group were not named.  So the group
+   named ``id`` in the example below can also be referenced as the numbered group
+   ``1``.
 
    For example, if the pattern is ``(?P<id>[a-zA-Z_]\w*)``, the group can be
    referenced by its name in arguments to methods of match objects, such as
-   ``m.group('id')`` or ``m.end('id')``, and also by name in pattern text (for
-   example, ``(?P=id)``) and replacement text (such as ``\g<id>``).
+   ``m.group('id')`` or ``m.end('id')``, and also by name in the regular
+   expression itself (using ``(?P=id)``) and replacement text given to
+   ``.sub()`` (using ``\g<id>``).
 
 ``(?P=name)``
    Matches whatever text was matched by the earlier group named *name*.
