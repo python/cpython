@@ -12,7 +12,7 @@ from distutils.errors import *
 from distutils.util import get_platform
 
 
-def show_formats ():
+def show_formats():
     """Print list of available formats (arguments to "--format" option).
     """
     from distutils.fancy_getopt import FancyGetopt
@@ -24,7 +24,7 @@ def show_formats ():
     pretty_printer.print_help("List of available distribution formats:")
 
 
-class bdist (Command):
+class bdist(Command):
 
     description = "create a built (binary) distribution"
 
@@ -50,35 +50,28 @@ class bdist (Command):
         ]
 
     # The following commands do not take a format option from bdist
-    no_format_option = ('bdist_rpm',
-                        #'bdist_sdux', 'bdist_pkgtool'
-                        )
+    no_format_option = ('bdist_rpm',)
 
     # This won't do in reality: will need to distinguish RPM-ish Linux,
     # Debian-ish Linux, Solaris, FreeBSD, ..., Windows, Mac OS.
-    default_format = { 'posix': 'gztar',
-                       'nt': 'zip',
-                       'os2': 'zip', }
+    default_format = {'posix': 'gztar',
+                      'nt': 'zip',
+                      'os2': 'zip'}
 
     # Establish the preferred order (for the --help-formats option).
     format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar',
-                       'wininst', 'zip',
-                       #'pkgtool', 'sdux'
-                       ]
+                       'wininst', 'zip', 'msi']
 
     # And the real information.
-    format_command = { 'rpm':   ('bdist_rpm',  "RPM distribution"),
-                       'zip':   ('bdist_dumb', "ZIP file"),
-                       'gztar': ('bdist_dumb', "gzip'ed tar file"),
-                       'bztar': ('bdist_dumb', "bzip2'ed tar file"),
-                       'ztar':  ('bdist_dumb', "compressed tar file"),
-                       'tar':   ('bdist_dumb', "tar file"),
-                       'wininst': ('bdist_wininst',
-                                   "Windows executable installer"),
-                       'zip':   ('bdist_dumb', "ZIP file"),
-                       #'pkgtool': ('bdist_pkgtool',
-                       #            "Solaris pkgtool distribution"),
-                       #'sdux':  ('bdist_sdux', "HP-UX swinstall depot"),
+    format_command = {'rpm':   ('bdist_rpm',  "RPM distribution"),
+                      'gztar': ('bdist_dumb', "gzip'ed tar file"),
+                      'bztar': ('bdist_dumb', "bzip2'ed tar file"),
+                      'ztar':  ('bdist_dumb', "compressed tar file"),
+                      'tar':   ('bdist_dumb', "tar file"),
+                      'wininst': ('bdist_wininst',
+                                  "Windows executable installer"),
+                      'zip':   ('bdist_dumb', "ZIP file"),
+                      'msi':   ('bdist_msi',  "Microsoft Installer")
                       }
 
 
@@ -88,9 +81,6 @@ class bdist (Command):
         self.formats = None
         self.dist_dir = None
         self.skip_build = 0
-
-    # initialize_options()
-
 
     def finalize_options (self):
         # have to finalize 'plat_name' before 'bdist_base'
@@ -120,10 +110,7 @@ class bdist (Command):
         if self.dist_dir is None:
             self.dist_dir = "dist"
 
-    # finalize_options()
-
     def run (self):
-
         # Figure out which sub-commands we need to run.
         commands = []
         for format in self.formats:
@@ -144,7 +131,3 @@ class bdist (Command):
             if cmd_name in commands[i+1:]:
                 sub_cmd.keep_temp = 1
             self.run_command(cmd_name)
-
-    # run()
-
-# class bdist
