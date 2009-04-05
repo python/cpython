@@ -70,7 +70,7 @@ Core and Builtins
 
 - Issue #4978: Passing keyword arguments as unicode strings is now allowed.
 
-- Issue 1242657: the __len__() and __length_hint__() calls in several tools
+- Issue #1242657: the __len__() and __length_hint__() calls in several tools
   were suppressing all exceptions.  These include list(), filter(), map(),
   zip(), and bytearray().
 
@@ -212,23 +212,23 @@ Core and Builtins
 Library
 -------
 
-- Issue 5693: TestSuite.__iter__ can now be consistently overridden in subclasses.
+- Issue #5693: TestSuite.__iter__ can now be consistently overridden in subclasses.
 
-- Issue 5694: removed spurious test output in Distutils (test_clean).
+- Issue #5694: removed spurious test output in Distutils (test_clean).
 
-- Issue 5471: Fix os.path.expanduser() for $HOME set to '/'.
+- Issue #5471: Fix os.path.expanduser() for $HOME set to '/'.
 
-- Issue 1326077: fix the formatting of SyntaxErrors by the traceback module.
+- Issue #1326077: fix the formatting of SyntaxErrors by the traceback module.
 
-- Issue 1726172: fix IndexError in the case of and empty response in ftplib.
+- Issue #1726172: fix IndexError in the case of and empty response in ftplib.
 
-- Issue 2625: added missing iteritems() call to the for loop in
+- Issue #2625: added missing iteritems() call to the for loop in
   mailbox.MH.get_message().
 
-- Issue 5585: Add the ability to call an initializer to mulitiprocessing.manager
+- Issue #5585: Add the ability to call an initializer to mulitiprocessing.manager
   so that users can install custonm handlers/etc.
 
-- Issue 3551: Patch multiprocessing to raise a proper exception if the size of the
+- Issue #3551: Patch multiprocessing to raise a proper exception if the size of the
   object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES. Added docs
   to note the limitation
 
@@ -445,12 +445,12 @@ Library
   inside its source path if it began with the same letters (e.g. "src" vs.
   "src.new").
 
-- Issue 4920:  Fixed .next() vs .__next__() issues in the ABCs for
+- Issue #4920:  Fixed .next() vs .__next__() issues in the ABCs for
   Iterator and MutableSet.
 
 - Added the ttk module. See issue #2983: Ttk support for Tkinter.
 
-- Issue 5021:  doctest.testfile() did not create __name__ and
+- Issue #5021:  doctest.testfile() did not create __name__ and
   collections.namedtuple() relied on __name__ being defined.
 
 - Backport importlib from Python 3.1. Only the import_module() function has
@@ -464,7 +464,7 @@ Library
 - Added a new itertools functions:  combinations_with_replacement()
   and compress().
 
-- Issue 5032:  added a step argument to itertools.count() and
+- Issue #5032:  added a step argument to itertools.count() and
   allowed non-integer arguments.
 
 - Fix and properly document the multiprocessing module's logging
@@ -549,7 +549,7 @@ Library
 - Fractions.from_float() no longer loses precision for integers too big to
   cast as floats.
 
-- Issue 4790: The nsmallest() and nlargest() functions in the heapq module
+- Issue #4790: The nsmallest() and nlargest() functions in the heapq module
   did unnecessary work in the common case where no key function was specified.
 
 - Issue #3767: Convert Tk object to string in tkColorChooser.
