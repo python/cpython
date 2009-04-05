@@ -210,6 +210,9 @@ Core and Builtins
 - Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
   to avoid compiler warnings.
 
+- Issue #5705: os.setuid() would not accept values > 2**31-1 but pwd.getpwnam()
+  returned them on 64bit platforms.
+
 Library
 -------
 
