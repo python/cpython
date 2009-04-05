@@ -998,7 +998,7 @@ class TestSuite(object):
         self.addTests(tests)
 
     def __repr__(self):
-        return "<%s tests=%s>" % (_strclass(self.__class__), self._tests)
+        return "<%s tests=%s>" % (_strclass(self.__class__), list(self))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -1016,7 +1016,7 @@ class TestSuite(object):
 
     def countTestCases(self):
         cases = 0
-        for test in self._tests:
+        for test in self:
             cases += test.countTestCases()
         return cases
 
@@ -1036,7 +1036,7 @@ class TestSuite(object):
             self.addTest(test)
 
     def run(self, result):
-        for test in self._tests:
+        for test in self:
             if result.shouldStop:
                 break
             test(result)
@@ -1047,7 +1047,7 @@ class TestSuite(object):
 
     def debug(self):
         """Run the tests without collecting errors in a TestResult"""
-        for test in self._tests:
+        for test in self:
             test.debug()
 
 
