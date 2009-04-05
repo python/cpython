@@ -46,15 +46,6 @@ the :mod:`os` module, but using them is of course a threat to portability!
    ``'ce'``, ``'java'``, ``'riscos'``.
 
 
-.. data:: path
-
-   The corresponding operating system dependent standard module for pathname
-   operations, such as :mod:`posixpath` or :mod:`ntpath`.  Thus, given the proper
-   imports, ``os.path.split(file)`` is equivalent to but more portable than
-   ``posixpath.split(file)``.  Note that this is also an importable module: it may
-   be imported directly as :mod:`os.path`.
-
-
 .. _os-procinfo:
 
 Process Parameters

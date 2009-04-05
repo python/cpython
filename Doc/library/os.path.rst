@@ -1,10 +1,8 @@
-
 :mod:`os.path` --- Common pathname manipulations
 ================================================
 
 .. module:: os.path
    :synopsis: Operations on pathnames.
-
 
 .. index:: single: path; operations
 
@@ -16,6 +14,22 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    On Windows, many of these functions do not properly support UNC pathnames.
    :func:`splitunc` and :func:`ismount` do handle them correctly.
+
+
+.. note::
+
+   Since different operating systems have different path name conventions, there
+   are several versions of this module in the standard library.  The
+   :mod:`os.path` module is always the path module suitable for the operating
+   system Python is running on, and therefore usable for local paths.  However,
+   you can also import and use the individual modules if you want to manipulate
+   a path that is *always* in one of the different formats.  They all have the
+   same interface:
+
+   * :mod:`posixpath` for UNIX-style paths
+   * :mod:`ntpath` for Windows paths
+   * :mod:`macpath` for old-style MacOS paths
+   * :mod:`os2emxpath` for OS/2 EMX paths
 
 
 .. function:: abspath(path)
