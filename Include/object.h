@@ -801,8 +801,8 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
         } while (0)
 
 /* Macros to use in case the object pointer may be NULL: */
-#define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
-#define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
+#define Py_XINCREF(op) do { if ((op) == NULL) ; else Py_INCREF(op); } while (0)
+#define Py_XDECREF(op) do { if ((op) == NULL) ; else Py_DECREF(op); } while (0)
 
 /*
 These are provided as conveniences to Python runtime embedders, so that

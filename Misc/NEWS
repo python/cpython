@@ -207,7 +207,8 @@ Core and Builtins
 - Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
   short file names.
 
-- Py_DECREF: Add `do { ... } while (0)' to avoid compiler warnings.
+- Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
+  to avoid compiler warnings.
 
 Library
 -------
