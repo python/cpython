@@ -308,6 +308,9 @@ Library
 - Issue #4861: ctypes.util.find_library(): Robustify. Fix library detection on
   biarch systems. Try to rely on ldconfig only, without using objdump and gcc.
 
+- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
+  new arguments introduced in 2.5.
+
 Extension Modules
 -----------------
 
@@ -467,9 +470,6 @@ Library
 
 - Issue #1149804: macostools.mkdirs now even works when another process
   creates one of the needed subdirectories.
-
-- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
-  new arguments introduced in 2.5.
 
 Tools/Demos
 -----------
