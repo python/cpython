@@ -221,7 +221,7 @@ class FTP:
     def voidresp(self):
         """Expect a response beginning with '2'."""
         resp = self.getresp()
-        if resp[0] != '2':
+        if resp[:1] != '2':
             raise error_reply, resp
         return resp
 
@@ -520,8 +520,6 @@ class FTP:
         resp = self.sendcmd('DELE ' + filename)
         if resp[:3] in ('250', '200'):
             return resp
-        elif resp[:1] == '5':
-            raise error_perm, resp
         else:
             raise error_reply, resp
 
