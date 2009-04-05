@@ -1,9 +1,9 @@
-
 :mod:`bz2` --- Compression compatible with :program:`bzip2`
 ===========================================================
 
 .. module:: bz2
-   :synopsis: Interface to compression and decompression routines compatible with bzip2.
+   :synopsis: Interface to compression and decompression routines
+              compatible with bzip2.
 .. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 .. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 
@@ -42,7 +42,7 @@ Here is a summary of the features offered by the bz2 module:
 Handling of compressed files is offered by the :class:`BZ2File` class.
 
 
-.. class:: BZ2File(filename[, mode[, buffering[, compresslevel]]])
+.. class:: BZ2File(filename, mode='r', buffering=0, compresslevel=9)
 
    Open a bz2 file. Mode can be either ``'r'`` or ``'w'``, for reading (default)
    or writing. When opened for writing, the file will be created if it doesn't
@@ -129,13 +129,12 @@ Sequential compression and decompression is done using the classes
 :class:`BZ2Compressor` and :class:`BZ2Decompressor`.
 
 
-.. class:: BZ2Compressor([compresslevel])
+.. class:: BZ2Compressor(compresslevel=9)
 
    Create a new compressor object. This object may be used to compress data
    sequentially. If you want to compress data in one shot, use the
    :func:`compress` function instead. The *compresslevel* parameter, if given,
    must be a number between ``1`` and ``9``; the default is ``9``.
-
 
    .. method:: compress(data)
 
@@ -157,7 +156,6 @@ Sequential compression and decompression is done using the classes
    sequentially. If you want to decompress data in one shot, use the
    :func:`decompress` function instead.
 
-
    .. method:: decompress(data)
 
       Provide more data to the decompressor object. It will return chunks of
@@ -174,7 +172,7 @@ One-shot compression and decompression is provided through the :func:`compress`
 and :func:`decompress` functions.
 
 
-.. function:: compress(data[, compresslevel])
+.. function:: compress(data, compresslevel=9)
 
    Compress *data* in one shot. If you want to compress data sequentially, use
    an instance of :class:`BZ2Compressor` instead. The *compresslevel* parameter,
