@@ -1067,8 +1067,8 @@ This module contains some utility functions for operating on individual files.
 
    .. warning::
 
-      Handles cross-device moves on Unix using :func:`copy_file`.   What about other
-      systems???
+      Handles cross-device moves on Unix using :func:`copy_file`.  What about
+      other systems?
 
 
 .. function:: write_file(filename, contents)
@@ -1108,17 +1108,17 @@ other utility module.
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
-   For MacOS X systems the OS version reflects the minimal version on which
+   For Mac OS X systems the OS version reflects the minimal version on which
    binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
    during the build of Python), not the OS version of the current system.
 
-   For universal binary builds on MacOS X the architecture value reflects
+   For universal binary builds on Mac OS X the architecture value reflects
    the univeral binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
    for 4-way universal binaries the architecture is ``universal``.
 
-   Examples of returned values on MacOS X:
+   Examples of returned values on Mac OS X:
 
    * ``macosx-10.3-ppc``
 

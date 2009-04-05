@@ -8,16 +8,6 @@ from test.test_support import run_unittest, is_jython, Error
 
 import traceback
 
-try:
-    raise KeyError
-except KeyError:
-    type_, value, tb = sys.exc_info()
-    file_ = StringIO()
-    traceback_print(tb, file_)
-    example_traceback = file_.getvalue()
-else:
-    raise Error("unable to create test traceback string")
-
 
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
@@ -162,9 +152,24 @@ def test():
 
 class TracebackFormatTests(unittest.TestCase):
 
-    def test_traceback_indentation(self):
+    def test_traceback_format(self):
+        try:
+            raise KeyError('blah')
+        except KeyError:
+            type_, value, tb = sys.exc_info()
+            traceback_fmt = 'Traceback (most recent call last):\n' + \
+                            ''.join(traceback.format_tb(tb))
+            file_ = StringIO()
+            traceback_print(tb, file_)
+            python_fmt  = file_.getvalue()
+        else:
+            raise Error("unable to create test traceback string")
+
+        # Make sure that Python and the traceback module format the same thing
+        self.assertEquals(traceback_fmt, python_fmt)
+
         # Make sure that the traceback is properly indented.
-        tb_lines = example_traceback.splitlines()
+        tb_lines = python_fmt.splitlines()
         self.assertEquals(len(tb_lines), 3)
         banner, location, source_line = tb_lines
         self.assert_(banner.startswith('Traceback'))
