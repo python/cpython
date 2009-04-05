@@ -80,7 +80,7 @@ The available formats for built distributions are:
 +-------------+------------------------------+---------+
 | ``tar``     | tar file (:file:`.tar`)      | \(3)    |
 +-------------+------------------------------+---------+
-| ``zip``     | zip file (:file:`.zip`)      | \(4)    |
+| ``zip``     | zip file (:file:`.zip`)      | (2),(4) |
 +-------------+------------------------------+---------+
 | ``rpm``     | RPM                          | \(5)    |
 +-------------+------------------------------+---------+
@@ -90,9 +90,12 @@ The available formats for built distributions are:
 +-------------+------------------------------+---------+
 | ``rpm``     | RPM                          | \(5)    |
 +-------------+------------------------------+---------+
-| ``wininst`` | self-extracting ZIP file for | (2),(4) |
+| ``wininst`` | self-extracting ZIP file for | \(4)    |
 |             | Windows                      |         |
 +-------------+------------------------------+---------+
+| ``msi``     | Microsoft Installer.         |         |
++-------------+------------------------------+---------+
+
 
 Notes:
 
@@ -101,8 +104,6 @@ Notes:
 
 (2)
    default on Windows
-
-   **\*\*** to-do! **\*\***
 
 (3)
    requires external utilities: :program:`tar` and possibly one of :program:`gzip`,
@@ -132,6 +133,8 @@ generates all the "dumb" archive formats (``tar``, ``ztar``, ``gztar``, and
 | :command:`bdist_rpm`     | rpm, srpm             |
 +--------------------------+-----------------------+
 | :command:`bdist_wininst` | wininst               |
++--------------------------+-----------------------+
+| :command:`bdist_msi`     | msi                   |
 +--------------------------+-----------------------+
 
 The following sections give details on the individual :command:`bdist_\*`
