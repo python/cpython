@@ -1050,8 +1050,8 @@ This module contains some utility functions for operating on individual files.
 
    .. warning::
 
-      Handles cross-device moves on Unix using :func:`copy_file`.   What about other
-      systems???
+      Handles cross-device moves on Unix using :func:`copy_file`.  What about
+      other systems?
 
 
 .. function:: write_file(filename, contents)
