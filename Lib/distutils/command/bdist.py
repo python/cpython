@@ -75,14 +75,14 @@ class bdist(Command):
                       }
 
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.bdist_base = None
         self.plat_name = None
         self.formats = None
         self.dist_dir = None
         self.skip_build = 0
 
-    def finalize_options (self):
+    def finalize_options(self):
         # have to finalize 'plat_name' before 'bdist_base'
         if self.plat_name is None:
             if self.skip_build:
@@ -110,7 +110,7 @@ class bdist(Command):
         if self.dist_dir is None:
             self.dist_dir = "dist"
 
-    def run (self):
+    def run(self):
         # Figure out which sub-commands we need to run.
         commands = []
         for format in self.formats:
