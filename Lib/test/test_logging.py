@@ -912,8 +912,8 @@ class EncodingTest(BaseTest):
 class WarningsTest(BaseTest):
 
     def test_warnings(self):
-        logging.captureWarnings(True)
         with warnings.catch_warnings():
+            logging.captureWarnings(True)
             warnings.filterwarnings("always", category=UserWarning)
             try:
                 file = cStringIO.StringIO()
