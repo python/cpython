@@ -15,8 +15,6 @@
    pair: HTTP; protocol
    single: URL
    single: httpd
-
-.. index::
    module: SimpleHTTPServer
    module: CGIHTTPServer
 
@@ -26,7 +24,8 @@ functioning Web servers. See the :mod:`SimpleHTTPServer` and
 :mod:`CGIHTTPServer` modules.
 
 The first class, :class:`HTTPServer`, is a :class:`SocketServer.TCPServer`
-subclass.  It creates and listens at the HTTP socket, dispatching the requests
+subclass, and therefore implements the :class:`SocketServer.BaseServer`
+interface.  It creates and listens at the HTTP socket, dispatching the requests
 to a handler.  Code to create and run the server looks like this::
 
    def run(server_class=BaseHTTPServer.HTTPServer,
@@ -269,12 +268,31 @@ to a handler.  Code to create and run the server looks like this::
       performed on the client's IP address.
 
 
+More examples
+-------------
+
+To create a server that doesn't run forever, but until some condition is
+fulfilled::
+
+   def run_while_true(server_class=BaseHTTPServer.HTTPServer,
+                      handler_class=BaseHTTPServer.BaseHTTPRequestHandler):
+       """
+       This assumes that keep_running() is a function of no arguments which
+       is tested initially and after each request.  If its return value
+       is true, the server continues.
+       """
+       server_address = ('', 8000)
+       httpd = server_class(server_address, handler_class)
+       while keep_running():
+           httpd.handle_request()
+
+
 .. seealso::
 
    Module :mod:`CGIHTTPServer`
       Extended request handler that supports CGI scripts.
 
    Module :mod:`SimpleHTTPServer`
-      Basic request handler that limits response to files actually under the document
-      root.
+      Basic request handler that limits response to files actually under the
+      document root.
 
