@@ -161,7 +161,7 @@ It also provides the following decorators:
       multiple-inheritance.
 
 
-.. function:: abstractproperty(fget[, fset[, fdel[, doc]]])
+.. function:: abstractproperty([fget[, fset[, fdel[, doc]]]])
 
    A subclass of the built-in :func:`property`, indicating an abstract property.
 
@@ -188,6 +188,7 @@ It also provides the following decorators:
           def getx(self): ...
           def setx(self, value): ...
           x = abstractproperty(getx, setx)
+
 
 .. rubric:: Footnotes
 

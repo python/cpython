@@ -38,6 +38,7 @@ the `Python Package Index <http://pypi.python.org/pypi>`_.
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    intro.rst
    functions.rst

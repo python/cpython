@@ -540,6 +540,10 @@ of each one.
 | :const:`VERBOSE`, :const:`X`    | Enable verbose REs, which can be organized |
 |                                 | more cleanly and understandably.           |
 +---------------------------------+--------------------------------------------+
+| :const:`UNICODE`, :const:`U`    | Makes several escapes like ``\w``, ``\b``, |
+|                                 | ``\s`` and ``\d`` dependent on the Unicode |
+|                                 | character database.                        |
++---------------------------------+--------------------------------------------+
 
 
 .. data:: I
@@ -592,6 +596,14 @@ of each one.
 
    Makes the ``'.'`` special character match any character at all, including a
    newline; without this flag, ``'.'`` will match anything *except* a newline.
+
+
+.. data:: U
+          UNICODE
+   :index:
+
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
+   dependent on the Unicode character properties database.
 
 
 .. data:: X
