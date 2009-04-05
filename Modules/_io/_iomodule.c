@@ -60,7 +60,7 @@ PyDoc_STRVAR(module_doc,
 "allowed to throw an IOError if they do not support a given operation.\n"
 "\n"
 "Extending IOBase is RawIOBase which deals simply with the reading and\n"
-"writing of raw bytes to a stream. FileIO subc lasses RawIOBase to provide\n"
+"writing of raw bytes to a stream. FileIO subclasses RawIOBase to provide\n"
 "an interface to OS files.\n"
 "\n"
 "BufferedIOBase deals with buffering on a raw byte stream (RawIOBase). Its\n"
