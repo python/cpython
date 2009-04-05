@@ -850,9 +850,14 @@ always available.
           __stderr__
 
    These objects contain the original values of ``stdin``, ``stderr`` and
-   ``stdout`` at the start of the program.  They are used during finalization, and
-   could be useful to restore the actual files to known working file objects in
-   case they have been overwritten with a broken object.
+   ``stdout`` at the start of the program.  They are used during finalization,
+   and could be useful to print to the actual standard stream no matter if the
+   ``sys.std*`` object has been redirected.
+
+   It can also be used to restore the actual files to known working file objects
+   in case they have been overwritten with a broken object.  However, the
+   preferred way to do this is to explicitly save the previous stream before
+   replacing it, and restore the saved object.
 
 
 .. data:: tracebacklimit

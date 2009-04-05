@@ -2653,9 +2653,24 @@ types, where they are relevant.  Some of these are not reported by the
    The name of the class or type.
 
 
+The following attributes are only supported by :term:`new-style class`\ es.
+
+.. attribute:: class.__mro__
+
+   This attribute is a tuple of classes that are considered when looking for
+   base classes during method resolution.
+
+
+.. method:: class.mro()
+
+   This method can be overridden by a metaclass to customize the method
+   resolution order for its instances.  It is called at class instantiation, and
+   its result is stored in :attr:`__mro__`.
+
+
 .. method:: class.__subclasses__
 
-   :term:`New-style class`\ es keep a list of weak references to their immediate
+   Each new-style class keeps a list of weak references to its immediate
    subclasses.  This method returns a list of all those references still alive.
    Example::
 
