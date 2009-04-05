@@ -23,6 +23,12 @@ conn_send_string(ConnectionObject *conn, char *string, size_t length)
 	Py_BEGIN_ALLOW_THREADS
 	ret = WriteFile(conn->handle, string, length, &amount_written, NULL);
 	Py_END_ALLOW_THREADS
+
+	if (ret == 0 && GetLastError() == ERROR_NO_SYSTEM_RESOURCES) {
+		PyErr_Format(PyExc_ValueError, "Cannnot send %" PY_FORMAT_SIZE_T "d bytes over connection", length);
+		return MP_STANDARD_ERROR;
+	}
+
 	return ret ? MP_SUCCESS : MP_STANDARD_ERROR;
 }
 

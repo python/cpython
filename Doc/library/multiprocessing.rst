@@ -708,7 +708,8 @@ Connection objects usually created using :func:`Pipe` -- see also
       Send an object to the other end of the connection which should be read
       using :meth:`recv`.
 
-      The object must be picklable.
+      The object must be picklable.  Very large pickles (approximately 32 MB+,
+      though it depends on the OS) may raise a ValueError exception.
 
    .. method:: recv()
 
@@ -740,7 +741,9 @@ Connection objects usually created using :func:`Pipe` -- see also
       complete message.
 
       If *offset* is given then data is read from that position in *buffer*.  If
-      *size* is given then that many bytes will be read from buffer.
+      *size* is given then that many bytes will be read from buffer.  Very large
+      buffers (approximately 32 MB+, though it depends on the OS) may raise a
+      ValueError exception
 
    .. method:: recv_bytes([maxlength])
 
@@ -834,6 +837,12 @@ object -- see :ref:`multiprocessing-managers`.
 .. class:: Event()
 
    A clone of :class:`threading.Event`.
+   This method returns the state of the internal semaphore on exit, so it
+   will always return ``True`` except if a timeout is given and the operation
+   times out.
+
+   .. versionchanged:: 2.7
+      Previously, the method always returned ``None``.
 
 .. class:: Lock()
 

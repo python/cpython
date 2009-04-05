@@ -2388,7 +2388,8 @@ AC_CHECK_FUNCS(alarm setitimer getitimer bind_textdomain_codeset chown \
  kill killpg lchmod lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
- select setegid seteuid setgid \
+ select sem_open sem_timedwait sem_getvalue sem_unlink setegid seteuid \
+ setgid \
  setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strlcpy \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
@@ -3108,6 +3109,33 @@ then
   [Define if arithmetic is subject to x87-style double rounding issue])
 fi
 
+# Multiprocessing check for broken sem_getvalue
+AC_MSG_CHECKING(for broken sem_getvalue)
+AC_TRY_RUN([
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+
+int main(void){
+  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  int count;
+  int res;
+  if(a==SEM_FAILED){
+    perror("sem_open");
+    return 1;
+
+  }
+  res = sem_getvalue(a, &count);
+  sem_close(a);
+  return res==-1 ? 1 : 0;
+}
+]
+,AC_MSG_RESULT(no),
+ AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1, define to 1 if your sem_getvalue is broken.)
+)
 
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
