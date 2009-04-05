@@ -212,6 +212,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 5471: Fix os.path.expanduser() for $HOME set to '/'.
+
 - Issue 1326077: fix the formatting of SyntaxErrors by the traceback module.
 
 - Issue 1726172: fix IndexError in the case of and empty response in ftplib.

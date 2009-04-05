@@ -262,7 +262,7 @@ def expanduser(path):
         except KeyError:
             return path
         userhome = pwent.pw_dir
-    userhome = userhome.rstrip('/')
+    userhome = userhome.rstrip('/') or userhome
     return userhome + path[i:]
 
 

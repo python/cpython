@@ -345,6 +345,11 @@ class PosixPathTest(unittest.TestCase):
             self.assert_(isinstance(posixpath.expanduser("~root/"), basestring))
             self.assert_(isinstance(posixpath.expanduser("~foo/"), basestring))
 
+            orig_home = os.environ['HOME']
+            os.environ['HOME'] = '/'
+            self.assertEqual(posixpath.expanduser("~"), "/")
+            os.environ['HOME'] = orig_home
+
         self.assertRaises(TypeError, posixpath.expanduser)
 
     def test_expandvars(self):
