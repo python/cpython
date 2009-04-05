@@ -912,10 +912,10 @@ class EncodingTest(BaseTest):
 class WarningsTest(BaseTest):
 
     def test_warnings(self):
-        logging.captureWarnings(True)
         with warnings.catch_warnings():
-            warnings.filterwarnings("always", category=UserWarning)
+            logging.captureWarnings(True)
             try:
+                warnings.filterwarnings("always", category=UserWarning)
                 file = io.StringIO()
                 h = logging.StreamHandler(file)
                 logger = logging.getLogger("py.warnings")
