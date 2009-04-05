@@ -331,11 +331,17 @@ void _PyObject_Dump(PyObject* op)
 	if (op == NULL)
 		fprintf(stderr, "NULL\n");
 	else {
+#ifdef WITH_THREAD
 		PyGILState_STATE gil;
+#endif
 		fprintf(stderr, "object  : ");
+#ifdef WITH_THREAD
 		gil = PyGILState_Ensure();
+#endif
 		(void)PyObject_Print(op, stderr, 0);
+#ifdef WITH_THREAD
 		PyGILState_Release(gil);
+#endif
 		/* XXX(twouters) cast refcount to long until %zd is
 		   universally available */
 		fprintf(stderr, "\n"

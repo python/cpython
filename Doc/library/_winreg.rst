@@ -252,9 +252,10 @@ This module offers the following functions:
    associated.  If this parameter is ``None`` or empty, the  function retrieves the
    value set by the :func:`SetValue` method  for the key identified by *key*.
 
-   Values in the registry have name, type, and data components. This  method
+   Values in the registry have name, type, and data components. This method
    retrieves the data for a key's first value that has a NULL name. But the
-   underlying API call doesn't return the type, Lame Lame Lame, DO NOT USE THIS!!!
+   underlying API call doesn't return the type, so always use
+   :func:`QueryValueEx` if possible.
 
 
 .. function:: QueryValueEx(key, value_name)

@@ -168,8 +168,9 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     self->detect_types = detect_types;
     self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
-
+#ifdef WITH_THREAD
     self->thread_ident = PyThread_get_thread_ident();
+#endif
     self->check_same_thread = check_same_thread;
 
     self->function_pinboard = PyDict_New();
@@ -585,9 +586,11 @@ void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value**
     PyObject* py_func;
     PyObject* py_retval = NULL;
 
+#ifdef WITH_THREAD
     PyGILState_STATE threadstate;
 
     threadstate = PyGILState_Ensure();
+#endif
 
     py_func = (PyObject*)sqlite3_user_data(context);
 
@@ -609,7 +612,9 @@ void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value**
         _sqlite3_result_error(context, "user-defined function raised exception", -1);
     }
 
+#ifdef WITH_THREAD
     PyGILState_Release(threadstate);
+#endif
 }
 
 static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_value** params)
@@ -620,9 +625,11 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     PyObject** aggregate_instance;
     PyObject* stepmethod = NULL;
 
+#ifdef WITH_THREAD
     PyGILState_STATE threadstate;
 
     threadstate = PyGILState_Ensure();
+#endif
 
     aggregate_class = (PyObject*)sqlite3_user_data(context);
 
@@ -669,7 +676,9 @@ error:
     Py_XDECREF(stepmethod);
     Py_XDECREF(function_result);
 
+#ifdef WITH_THREAD
     PyGILState_Release(threadstate);
+#endif
 }
 
 void _pysqlite_final_callback(sqlite3_context* context)
@@ -678,9 +687,11 @@ void _pysqlite_final_callback(sqlite3_context* context)
     PyObject** aggregate_instance;
     PyObject* aggregate_class;
 
+#ifdef WITH_THREAD
     PyGILState_STATE threadstate;
 
     threadstate = PyGILState_Ensure();
+#endif
 
     aggregate_class = (PyObject*)sqlite3_user_data(context);
 
@@ -708,7 +719,9 @@ error:
     Py_XDECREF(*aggregate_instance);
     Py_XDECREF(function_result);
 
+#ifdef WITH_THREAD
     PyGILState_Release(threadstate);
+#endif
 }
 
 void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self)
@@ -803,9 +816,11 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 {
     PyObject *ret;
     int rc;
+#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
 
     gilstate = PyGILState_Ensure();
+#endif
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
     if (!ret) {
@@ -825,7 +840,9 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
         Py_DECREF(ret);
     }
 
+#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
+#endif
     return rc;
 }
 
@@ -833,9 +850,11 @@ static int _progress_handler(void* user_arg)
 {
     int rc;
     PyObject *ret;
+#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
 
     gilstate = PyGILState_Ensure();
+#endif
     ret = PyObject_CallFunction((PyObject*)user_arg, "");
 
     if (!ret) {
@@ -852,7 +871,9 @@ static int _progress_handler(void* user_arg)
         Py_DECREF(ret);
     }
 
+#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
+#endif
     return rc;
 }
 
@@ -907,6 +928,7 @@ PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* self, Py
 
 int pysqlite_check_thread(pysqlite_Connection* self)
 {
+#ifdef WITH_THREAD
     if (self->check_same_thread) {
         if (PyThread_get_thread_ident() != self->thread_ident) {
             PyErr_Format(pysqlite_ProgrammingError,
@@ -917,7 +939,7 @@ int pysqlite_check_thread(pysqlite_Connection* self)
         }
 
     }
-
+#endif
     return 1;
 }
 
@@ -1139,12 +1161,14 @@ pysqlite_collation_callback(
     PyObject* callback = (PyObject*)context;
     PyObject* string1 = 0;
     PyObject* string2 = 0;
+#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
-
+#endif
     PyObject* retval = NULL;
     int result = 0;
-
+#ifdef WITH_THREAD
     gilstate = PyGILState_Ensure();
+#endif
 
     if (PyErr_Occurred()) {
         goto finally;
@@ -1173,9 +1197,9 @@ finally:
     Py_XDECREF(string1);
     Py_XDECREF(string2);
     Py_XDECREF(retval);
-
+#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-
+#endif
     return result;
 }
 
