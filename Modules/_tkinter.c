@@ -33,8 +33,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include <windows.h>
 #endif
 
-#include "tkinter.h"
-
 /* Allow using this code in Python 2.[12] */
 #ifndef PyDoc_STRVAR
 #define PyDoc_STRVAR(name,str) static char name[] = str
@@ -68,6 +66,8 @@ Copyright (C) 1994 Steen Lumholt.
 #include <tcl.h>
 #include <tk.h>
 #endif
+
+#include "tkinter.h"
 
 /* For Tcl 8.2 and 8.3, CONST* is not defined (except on Cygwin). */
 #ifndef CONST84_RETURN

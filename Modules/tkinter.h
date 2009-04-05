@@ -2,7 +2,9 @@
 #define TKINTER_H
 
 /* This header is used to share some macros between _tkinter.c and
- * tkappinit.c */
+ * tkappinit.c.
+ * Be sure to include tk.h before including this header so
+ * TK_VERSION_HEX is properly defined. */
 
 /* TK_RELEASE_LEVEL is always one of the following:
  *	TCL_ALPHA_RELEASE   0
