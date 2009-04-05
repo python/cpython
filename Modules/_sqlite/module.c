@@ -445,7 +445,9 @@ PyMODINIT_FUNC init_sqlite3(void)
      * threads have already been initialized.
      *  (see pybsddb-users mailing list post on 2002-08-07)
      */
+#ifdef WITH_THREAD
     PyEval_InitThreads();
+#endif
 
 error:
     if (PyErr_Occurred())
