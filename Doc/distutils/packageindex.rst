@@ -91,4 +91,3 @@ Or even with the section name::
 
    python setup.py register -r other
 
-

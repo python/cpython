@@ -61,7 +61,7 @@ PyDoc_STRVAR(lookup__doc__,
 "lookup(encoding) -> CodecInfo\n\
 \n\
 Looks up a codec tuple in the Python codec registry and returns\n\
-a tuple of function (or a CodecInfo object).");
+a CodecInfo object.");
 
 static
 PyObject *codec_lookup(PyObject *self, PyObject *args)

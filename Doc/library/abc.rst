@@ -153,7 +153,7 @@ It also provides the following decorators:
 
    .. note::
 
-      Unlike C++'s pure virtual functions, or Java abstract methods, these abstract
+      Unlike Java abstract methods, these abstract
       methods may have an implementation. This implementation can be
       called via the :func:`super` mechanism from the class that
       overrides it.  This could be useful as an end-point for a

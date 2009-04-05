@@ -611,7 +611,7 @@ of that class.
    Same as equivalent method in the :class:`Document` class.
 
 
-.. method:: Element.getElementsByTagNameNS(tagName)
+.. method:: Element.getElementsByTagNameNS(namespaceURI, localName)
 
    Same as equivalent method in the :class:`Document` class.
 

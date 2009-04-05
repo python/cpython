@@ -1093,7 +1093,7 @@ For example:
    string)`` or ``re.search(pattern, string)``.
 
 :func:`match` has an optional second parameter that gives an index in the string
-where the search is to start:
+where the search is to start::
 
    >>> pattern = re.compile("o")
    >>> pattern.match("dog")      # No match as "o" is not at the start of "dog."
