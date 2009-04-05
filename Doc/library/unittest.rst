@@ -859,6 +859,23 @@ Test cases
       .. versionadded:: 2.7
 
 
+   .. method:: assertIs(expr1, expr2[, msg])
+
+      This signals a test failure if *expr1* and *expr2* don't evaluate to the same
+      object.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: assertIsNot(expr1, expr2[, msg])
+
+      The inverse of the :meth:`assertIs` method.
+      This signals a test failure if *expr1* and *expr2* evaluate to the same
+      object.
+
+      .. versionadded:: 2.7
+
+
    .. method:: assertFalse(expr[, msg])
                failIf(expr[, msg])
 
