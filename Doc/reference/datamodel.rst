@@ -56,12 +56,13 @@ Objects are never explicitly destroyed; however, when they become unreachable
 they may be garbage-collected.  An implementation is allowed to postpone garbage
 collection or omit it altogether --- it is a matter of implementation quality
 how garbage collection is implemented, as long as no objects are collected that
-are still reachable.  (Implementation note: the current implementation uses a
+are still reachable.  (Implementation note: CPython currently uses a
 reference-counting scheme with (optional) delayed detection of cyclically linked
 garbage, which collects most objects as soon as they become unreachable, but is
 not guaranteed to collect garbage containing circular references.  See the
 documentation of the :mod:`gc` module for information on controlling the
-collection of cyclic garbage.)
+collection of cyclic garbage.  Other implementations act differently and CPython
+may change.)
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching

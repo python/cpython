@@ -185,6 +185,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the core and
       with user code.
 
+   finder
+      An object that tries to find the :term:`loader` for a module. It must
+      implement a method named :meth:`find_module`. See :pep:`302` for
+      details.
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more arguments which may be used in the execution of
@@ -288,6 +293,10 @@ Glossary
       fraction.  Integer division can be forced by using the ``//`` operator
       instead of the ``/`` operator.  See also :term:`__future__`.
 
+   importer
+      An object that both finds and loads a module; both a
+      :term:`finder` and :term:`loader` object.
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
@@ -367,6 +376,11 @@ Glossary
       even hex numbers (0x..) in the range from 0 to 255. The :keyword:`if`
       clause is optional.  If omitted, all elements in ``range(256)`` are
       processed.
+
+   loader
+      An object that loads a module. It must define a method named
+      :meth:`load_module`. A loader is typically returned by a
+      :term:`finder`. See :pep:`302` for details.
 
    mapping
       A container object (such as :class:`dict`) which supports arbitrary key

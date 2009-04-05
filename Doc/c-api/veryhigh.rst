@@ -36,6 +36,10 @@ the same library that the Python runtime is using.
    interpreter exits due to an exception, or ``2`` if the parameter list does not
    represent a valid Python command line.
 
+   Note that if an otherwise unhandled :exc:`SystemError` is raised, this
+   function will not return ``1``, but exit the process, as long as
+   ``Py_InspectFlag`` is not set.
+
 
 .. cfunction:: int PyRun_AnyFile(FILE *fp, const char *filename)
 
@@ -77,6 +81,10 @@ the same library that the Python runtime is using.
    is created.  Returns ``0`` on success or ``-1`` if an exception was raised.  If
    there was an error, there is no way to get the exception information. For the
    meaning of *flags*, see below.
+
+   Note that if an otherwise unhandled :exc:`SystemError` is raised, this
+   function will not return ``-1``, but exit the process, as long as
+   ``Py_InspectFlag`` is not set.
 
 
 .. cfunction:: int PyRun_SimpleFile(FILE *fp, const char *filename)
