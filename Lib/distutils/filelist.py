@@ -304,7 +304,7 @@ def findall (dir = os.curdir):
     return list
 
 
-def glob_to_re (pattern):
+def glob_to_re(pattern):
     """Translate a shell-like glob pattern to a regular expression; return
     a string containing the regex.  Differs from 'fnmatch.translate()' in
     that '*' does not match "special characters" (which are
@@ -319,7 +319,8 @@ def glob_to_re (pattern):
     # character except the special characters.
     # XXX currently the "special characters" are just slash -- i.e. this is
     # Unix-only.
-    pattern_re = re.sub(r'(^|[^\\])\.', r'\1[^/]', pattern_re)
+    pattern_re = re.sub(r'((?<!\\)(\\\\)*)\.', r'\1[^/]', pattern_re)
+
     return pattern_re
 
 # glob_to_re ()
