@@ -95,10 +95,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             rcFile.close()
 
         self.commands = {} # associates a command list to breakpoint numbers
-        self.commands_doprompt = {} # for each bp num, tells if the prompt must be disp. after execing the cmd list
-        self.commands_silent = {} # for each bp num, tells if the stack trace must be disp. after execing the cmd list
-        self.commands_defining = False # True while in the process of defining a command list
-        self.commands_bnum = None # The breakpoint number for which we are defining a list
+        self.commands_doprompt = {} # for each bp num, tells if the prompt
+                                    # must be disp. after execing the cmd list
+        self.commands_silent = {} # for each bp num, tells if the stack trace
+                                  # must be disp. after execing the cmd list
+        self.commands_defining = False # True while in the process of defining
+                                       # a command list
+        self.commands_bnum = None # The breakpoint number for which we are
+                                  # defining a list
 
     def reset(self):
         bdb.Bdb.reset(self)
@@ -114,6 +118,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.forget()
         self.stack, self.curindex = self.get_stack(f, t)
         self.curframe = self.stack[self.curindex][0]
+        # The f_locals dictionary is updated from the actual frame
+        # locals whenever the .f_locals accessor is called, so we
+        # cache it here to ensure that modifications are not overwritten.
+        self.curframe_locals = self.curframe.f_locals
         self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -192,21 +200,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.cmdloop()
         self.forget()
 
+    def displayhook(self, obj):
+        """Custom displayhook for the exec in default(), which prevents
+        assignment of the _ variable in the builtins.
+        """
+        print(repr(obj))
+
     def default(self, line):
         if line[:1] == '!': line = line[1:]
-        locals = self.curframe.f_locals
+        locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
             code = compile(line + '\n', '<stdin>', 'single')
             save_stdout = sys.stdout
             save_stdin = sys.stdin
+            save_displayhook = sys.displayhook
             try:
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
+                sys.displayhook = self.displayhook
                 exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
+                sys.displayhook = save_displayhook
         except:
             t, v = sys.exc_info()[:2]
             if type(t) == type(''):
@@ -349,7 +366,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe.f_locals)
+                                self.curframe_locals)
                 except:
                     func = arg
                 try:
@@ -597,6 +614,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             self.curindex = self.curindex - 1
             self.curframe = self.stack[self.curindex][0]
+            self.curframe_locals = self.curframe.f_locals
             self.print_stack_entry(self.stack[self.curindex])
             self.lineno = None
     do_u = do_up
@@ -607,6 +625,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             self.curindex = self.curindex + 1
             self.curframe = self.stack[self.curindex][0]
+            self.curframe_locals = self.curframe.f_locals
             self.print_stack_entry(self.stack[self.curindex])
             self.lineno = None
     do_d = do_down
@@ -670,7 +689,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_debug(self, arg):
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe.f_locals
+        locals = self.curframe_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         print("ENTERING RECURSIVE DEBUGGER", file=self.stdout)
@@ -694,9 +713,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
 
     def do_args(self, arg):
-        f = self.curframe
-        co = f.f_code
-        dict = f.f_locals
+        co = self.curframe.f_code
+        dict = self.curframe_locals
         n = co.co_argcount
         if co.co_flags & 4: n = n+1
         if co.co_flags & 8: n = n+1
@@ -708,16 +726,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_a = do_args
 
     def do_retval(self, arg):
-        if '__return__' in self.curframe.f_locals:
-            print(self.curframe.f_locals['__return__'], file=self.stdout)
+        if '__return__' in self.curframe_locals:
+            print(self.curframe_locals['__return__'], file=self.stdout)
         else:
             print('*** Not yet returned!', file=self.stdout)
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals,
-                        self.curframe.f_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe_locals)
         except:
             t, v = sys.exc_info()[:2]
             if isinstance(t, str):
@@ -788,7 +805,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_whatis(self, arg):
         try:
             value = eval(arg, self.curframe.f_globals,
-                            self.curframe.f_locals)
+                            self.curframe_locals)
         except:
             t, v = sys.exc_info()[:2]
             if type(t) == type(''):

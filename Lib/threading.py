@@ -375,6 +375,7 @@ class _Event(_Verbose):
         try:
             if not self._flag:
                 self._cond.wait(timeout)
+            return self._flag
         finally:
             self._cond.release()
 
@@ -450,9 +451,8 @@ class Thread(_Verbose):
             raise RuntimeError("thread already started")
         if __debug__:
             self._note("%s.start(): starting thread", self)
-        _active_limbo_lock.acquire()
-        _limbo[self] = self
-        _active_limbo_lock.release()
+        with _active_limbo_lock:
+            _limbo[self] = self
         _start_new_thread(self._bootstrap, ())
         self._started.wait()
 
@@ -485,14 +485,16 @@ class Thread(_Verbose):
                 return
             raise
 
+    def _set_ident(self):
+        self._ident = _get_ident()
+
     def _bootstrap_inner(self):
         try:
-            self._ident = _get_ident()
+            self._set_ident()
             self._started.set()
-            _active_limbo_lock.acquire()
-            _active[self._ident] = self
-            del _limbo[self]
-            _active_limbo_lock.release()
+            with _active_limbo_lock:
+                _active[self._ident] = self
+                del _limbo[self]
             if __debug__:
                 self._note("%s._bootstrap(): thread started", self)
 
@@ -721,9 +723,9 @@ class _MainThread(Thread):
     def __init__(self):
         Thread.__init__(self, name="MainThread")
         self._started.set()
-        _active_limbo_lock.acquire()
-        _active[_get_ident()] = self
-        _active_limbo_lock.release()
+        self._set_ident()
+        with _active_limbo_lock:
+            _active[self._ident] = self
 
     def _set_daemon(self):
         return False
@@ -768,9 +770,9 @@ class _DummyThread(Thread):
 
 
         self._started.set()
-        _active_limbo_lock.acquire()
-        _active[_get_ident()] = self
-        _active_limbo_lock.release()
+        self._set_ident()
+        with _active_limbo_lock:
+            _active[self._ident] = self
 
     def _set_daemon(self):
         return True
@@ -791,18 +793,14 @@ def current_thread():
 currentThread = current_thread
 
 def active_count():
-    _active_limbo_lock.acquire()
-    count = len(_active) + len(_limbo)
-    _active_limbo_lock.release()
-    return count
+    with _active_limbo_lock:
+        return len(_active) + len(_limbo)
 
 activeCount = active_count
 
 def enumerate():
-    _active_limbo_lock.acquire()
-    active = list(_active.values()) + list(_limbo.values())
-    _active_limbo_lock.release()
-    return active
+    with _active_limbo_lock:
+        return list(_active.values()) + list(_limbo.values())
 
 from _thread import stack_size
 

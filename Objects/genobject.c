@@ -304,7 +304,7 @@ PyDoc_STRVAR(gen__name__doc__,
 "Return the name of the generator's associated code object.");
 
 static PyGetSetDef gen_getsetlist[] = {
-	{"__name__", (getter)gen_get_name, NULL, NULL, gen__name__doc__},
+	{"__name__", (getter)gen_get_name, NULL, gen__name__doc__},
 	{NULL}
 };
 

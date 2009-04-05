@@ -207,7 +207,7 @@ loops that truncate the stream.
 
    Make an iterator that filters elements from *data* returning only those that
    have a corresponding element in *selectors* that evaluates to ``True``.
-   Stops when either the *data* or *selectors* iterables have been exhausted.
+   Stops when either the *data* or *selectors* iterables has been exhausted.
    Equivalent to::
 
        def compress(data, selectors):

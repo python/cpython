@@ -262,7 +262,7 @@ n(ext)
    full speed, only stopping at the next line in the current function.)
 
 unt(il)
-   Continue execution until the line with the the line number greater than the
+   Continue execution until the line with the line number greater than the
    current one is reached or when returning from current frame.
 
 r(eturn)

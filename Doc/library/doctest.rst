@@ -905,7 +905,7 @@ There are two main functions for creating :class:`unittest.TestSuite` instances
 from text files and modules with doctests:
 
 
-.. function:: DocFileSuite([module_relative][, package][, setUp][, tearDown][, globs][, optionflags][, parser][, encoding])
+.. function:: DocFileSuite(*paths, [module_relative][, package][, setUp][, tearDown][, globs][, optionflags][, parser][, encoding])
 
    Convert doctest tests from one or more text files to a
    :class:`unittest.TestSuite`.
@@ -923,32 +923,34 @@ from text files and modules with doctests:
    Optional argument *module_relative* specifies how the filenames in *paths*
    should be interpreted:
 
-   * If *module_relative* is ``True`` (the default), then each filename specifies
-     an OS-independent module-relative path.  By default, this path is relative to
-     the calling module's directory; but if the *package* argument is specified, then
-     it is relative to that package.  To ensure OS-independence, each filename should
-     use ``/`` characters to separate path segments, and may not be an absolute path
-     (i.e., it may not begin with ``/``).
+   * If *module_relative* is ``True`` (the default), then each filename in
+     *paths* specifies an OS-independent module-relative path.  By default, this
+     path is relative to the calling module's directory; but if the *package*
+     argument is specified, then it is relative to that package.  To ensure
+     OS-independence, each filename should use ``/`` characters to separate path
+     segments, and may not be an absolute path (i.e., it may not begin with
+     ``/``).
 
-   * If *module_relative* is ``False``, then each filename specifies an OS-specific
-     path.  The path may be absolute or relative; relative paths are resolved with
-     respect to the current working directory.
+   * If *module_relative* is ``False``, then each filename in *paths* specifies
+     an OS-specific path.  The path may be absolute or relative; relative paths
+     are resolved with respect to the current working directory.
 
-   Optional argument *package* is a Python package or the name of a Python package
-   whose directory should be used as the base directory for module-relative
-   filenames.  If no package is specified, then the calling module's directory is
-   used as the base directory for module-relative filenames.  It is an error to
-   specify *package* if *module_relative* is ``False``.
+   Optional argument *package* is a Python package or the name of a Python
+   package whose directory should be used as the base directory for
+   module-relative filenames in *paths*.  If no package is specified, then the
+   calling module's directory is used as the base directory for module-relative
+   filenames.  It is an error to specify *package* if *module_relative* is
+   ``False``.
 
-   Optional argument *setUp* specifies a set-up function for the test suite.  This
-   is called before running the tests in each file.  The *setUp* function will be
-   passed a :class:`DocTest` object.  The setUp function can access the test
-   globals as the *globs* attribute of the test passed.
-
-   Optional argument *tearDown* specifies a tear-down function for the test suite.
-   This is called after running the tests in each file.  The *tearDown* function
+   Optional argument *setUp* specifies a set-up function for the test suite.
+   This is called before running the tests in each file.  The *setUp* function
    will be passed a :class:`DocTest` object.  The setUp function can access the
    test globals as the *globs* attribute of the test passed.
+
+   Optional argument *tearDown* specifies a tear-down function for the test
+   suite.  This is called after running the tests in each file.  The *tearDown*
+   function will be passed a :class:`DocTest` object.  The setUp function can
+   access the test globals as the *globs* attribute of the test passed.
 
    Optional argument *globs* is a dictionary containing the initial global
    variables for the tests.  A new copy of this dictionary is created for each
@@ -956,12 +958,12 @@ from text files and modules with doctests:
 
    Optional argument *optionflags* specifies the default doctest options for the
    tests, created by or-ing together individual option flags.  See section
-   :ref:`doctest-options`. See function :func:`set_unittest_reportflags` below for
-   a better way to set reporting options.
+   :ref:`doctest-options`. See function :func:`set_unittest_reportflags` below
+   for a better way to set reporting options.
 
-   Optional argument *parser* specifies a :class:`DocTestParser` (or subclass) that
-   should be used to extract tests from the files.  It defaults to a normal parser
-   (i.e., ``DocTestParser()``).
+   Optional argument *parser* specifies a :class:`DocTestParser` (or subclass)
+   that should be used to extract tests from the files.  It defaults to a normal
+   parser (i.e., ``DocTestParser()``).
 
    Optional argument *encoding* specifies an encoding that should be used to
    convert the file to unicode.

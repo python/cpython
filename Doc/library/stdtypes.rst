@@ -1834,6 +1834,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Equivalent to ``not key in d``.
 
+   .. describe:: iter(d)
+
+      Return an iterator over the keys of the dictionary.  This is a shortcut
+      for :meth:`iterkeys`.
+
    .. method:: clear()
 
       Remove all items from the dictionary.
@@ -1930,6 +1935,9 @@ support membership tests:
    will directly correspond.  This allows the creation of ``(value, key)`` pairs
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
+
+   Iterating views while adding or deleting entries in the dictionary will raise
+   a :exc:`RuntimeError`.
 
 .. describe:: x in dictview
 
@@ -2666,10 +2674,26 @@ types, where they are relevant.  Some of these are not reported by the
    The name of the class or type.
 
 
+The following attributes are only supported by :term:`new-style class`\ es.
+
+.. attribute:: class.__mro__
+
+   This attribute is a tuple of classes that are considered when looking for
+   base classes during method resolution.
+
+
+.. method:: class.mro()
+
+   This method can be overridden by a metaclass to customize the method
+   resolution order for its instances.  It is called at class instantiation, and
+   its result is stored in :attr:`__mro__`.
+
+
 .. method:: class.__subclasses__
 
-   All classes keep a list of weak references to their immediate subclasses.
-   This method returns a list of all those references still alive.  Example::
+   Each new-style class keeps a list of weak references to its immediate
+   subclasses.  This method returns a list of all those references still alive.
+   Example::
 
       >>> int.__subclasses__()
       [<type 'bool'>]

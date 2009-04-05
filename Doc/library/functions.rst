@@ -1163,9 +1163,11 @@ are always available.  They are listed here in alphabetical order.
    Without arguments, return a dictionary corresponding to the current local symbol
    table.  With a module, class or class instance object as argument (or anything
    else that has a :attr:`__dict__` attribute), returns a dictionary corresponding
-   to the object's symbol table.  The returned dictionary should not be modified:
-   the effects on the corresponding symbol table are undefined. [#]_
+   to the object's symbol table.
 
+   .. warning::
+      The returned dictionary should not be modified:
+      the effects on the corresponding symbol table are undefined. [#]_
 
 .. function:: zip(*iterables)
 

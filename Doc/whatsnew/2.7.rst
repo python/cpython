@@ -6,7 +6,7 @@
 :Release: |release|
 :Date: |today|
 
-.. Fix accents on Kristjan Valur Jonsson, Fuerstenau.
+.. Fix accents on Kristjan Valur Jonsson, Fuerstenau, Tarek Ziade.
 
 .. $Id$
    Rules for maintenance:
@@ -55,12 +55,32 @@ No release schedule has been decided yet for 2.7.
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
 
+Python 3.1
+================
+
+Much as Python 2.6 incorporated features from Python 3.0,
+version 2.7 is influenced by features from 3.1.
+
+XXX mention importlib; anything else?
+
+One porting change: the :option:`-3` switch now automatically
+enables the :option:`-Qwarn` switch that causes warnings
+about using classic division with integers and long integers.
+
 .. ========================================================================
 .. Large, PEP-level features and changes should be described here.
-.. Should there be a new section here for 3k migration?
-.. Or perhaps a more general section describing module changes/deprecation?
 .. ========================================================================
 
+PEP 372: Adding an ordered dictionary to collections
+====================================================
+
+XXX write this
+
+Several modules will now use :class:`OrderedDict` by default.  The
+:mod:`ConfigParser` module uses :class:`OrderedDict` for the list
+of sections and the options within a section.
+The :meth:`namedtuple._asdict` method returns an :class:`OrderedDict`
+as well.
 
 
 Other Language Changes
@@ -85,30 +105,9 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
-
-* Integers are now stored internally either in base 2**15 or in base
-  2**30, the base being determined at build time.  Previously, they
-  were always stored in base 2**15.  Using base 2**30 gives
-  significant performance improvements on 64-bit machines, but
-  benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base 2**30 on 64-bit machines and base 2**15
-  on 32-bit machines; on Unix, there's a new configure option
-  --enable-big-digits that can be used to override this default.
-
-  Apart from the performance improvements this change should be
-  invisible to end users, with one exception: for testing and
-  debugging purposes there's a new structseq ``sys.long_info`` that
-  provides information about the internal format, giving the number of
-  bits per digit and the size in bytes of the C type used to store
-  each digit::
-
-     >>> import sys
-     >>> sys.long_info
-     sys.long_info(bits_per_digit=30, sizeof_digit=4)
-
-
-  (Contributed by Mark Dickinson; :issue:`4258`.)
-
+* The :class:`bytearray` type's :meth:`translate` method will
+  now accept None as its first argument.  (Fixed by Georg Brandl;
+  :issue:`4759`.)
 
 .. ======================================================================
 
@@ -116,7 +115,13 @@ Some smaller changes made to the core Python language are:
 Optimizations
 -------------
 
-A few performance enhancements have been added:
+Several performance enhancements have been added:
+
+.. * A new :program:`configure` option, :option:`--with-computed-gotos`,
+   compiles the main bytecode interpreter loop using a new dispatch
+   mechanism that gives speedups of up to 20%, depending on the system
+   and benchmark.  The new mechanism is only supported on certain
+   compilers, such as gcc, SunPro, and icc.
 
 * The garbage collector now performs better when many objects are
   being allocated without deallocating any.  A full garbage collection
@@ -129,18 +134,57 @@ A few performance enhancements have been added:
   (Suggested by Martin von Loewis and implemented by Antoine Pitrou;
   :issue:`4074`.)
 
-* The garbage collector tries to avoid tracking simple containers which
-  can't be part of a cycle. As of now, this is true for tuples and dicts
-  containing atomic types (such as ints, strings, etc.). Transitively, a dict
-  containing tuples of atomic types won't be tracked either. This helps bring
-  down the individual cost of each garbage collection, since it decreases the
-  number of objects to be considered and traversed by the collector.
-
-  To help diagnosing this optimization, a new function in the :mod:`gc`
-  module, :func:`is_tracked`, returns True if a given instance is tracked
-  by the garbage collector, False otherwise.
+* The garbage collector tries to avoid tracking simple containers
+  which can't be part of a cycle. In Python 2.7, this is now true for
+  tuples and dicts containing atomic types (such as ints, strings,
+  etc.). Transitively, a dict containing tuples of atomic types won't
+  be tracked either. This helps reduce the cost of each
+  garbage collection by decreasing the number of objects to be
+  considered and traversed by the collector.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
+* Integers are now stored internally either in base 2**15 or in base
+  2**30, the base being determined at build time.  Previously, they
+  were always stored in base 2**15.  Using base 2**30 gives
+  significant performance improvements on 64-bit machines, but
+  benchmark results on 32-bit machines have been mixed.  Therefore,
+  the default is to use base 2**30 on 64-bit machines and base 2**15
+  on 32-bit machines; on Unix, there's a new configure option
+  :option:`--enable-big-digits` that can be used to override this default.
+
+  Apart from the performance improvements this change should be
+  invisible to end users, with one exception: for testing and
+  debugging purposes there's a new structseq ``sys.long_info`` that
+  provides information about the internal format, giving the number of
+  bits per digit and the size in bytes of the C type used to store
+  each digit::
+
+     >>> import sys
+     >>> sys.long_info
+     sys.long_info(bits_per_digit=30, sizeof_digit=4)
+
+  (Contributed by Mark Dickinson; :issue:`4258`.)
+
+  Another set of changes made long objects a few bytes smaller: 2 bytes
+  smaller on 32-bit systems and 6 bytes on 64-bit.
+  (Contributed by Mark Dickinson; :issue:`5260`.)
+
+* The division algorithm for long integers has been made faster
+  by tightening the inner loop, doing shifts instead of multiplications,
+  and fixing an unnecessary extra iteration.
+  Various benchmarks show speedups of between 50% and 150% for long
+  integer divisions and modulo operations.
+  (Contributed by Mark Dickinson; :issue:`5512`.)
+
+* The implementation of ``%`` checks for the left-side operand being
+  a Python string and special-cases it; this results in a 1-3%
+  performance increase for applications that frequently use ``%``
+  with strings, such as templating libraries.
+  (Implemented by Collin Winter; :issue:`5176`.)
+
+* List comprehensions with an ``if`` condition are compiled into
+  faster bytecode.  (Patch by Antoine Pitrou, back-ported to 2.7
+  by Jeffrey Yasskin; :issue:`4715`.)
 
 .. ======================================================================
 
@@ -152,15 +196,6 @@ enhancements and bug fixes.  Here's a partial list of the most notable
 changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
-
-* In Distutils, distutils.sdist.add_defaults now uses package_dir and data_files
-  to feed MANIFEST.
-
-* It is not mandatory anymore to store clear text passwords in the
-  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
-  as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by tarek, with the initial
-  contribution of Nathan Van Gheem; :issue:`4394`.)
 
 * The :mod:`bz2` module's :class:`BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
@@ -200,13 +235,92 @@ changes, or look through the Subversion logs for all the details.
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
+  The :class:`namedtuple` class now has an optional *rename* parameter.
+  If *rename* is True, field names that are invalid because they've
+  been repeated or that aren't legal Python identifiers will be
+  renamed to legal names that are derived from the field's
+  position within the list of fields:
+
+     >>> T=namedtuple('T', ['field1', '$illegal', 'for', 'field2'], rename=True)
+     >>> T._fields
+     ('field1', '_1', '_2', 'field2')
+
+  (Added by Raymond Hettinger; :issue:`1818`.)
+
+* In Distutils, :func:`distutils.sdist.add_defaults` now uses
+  *package_dir* and *data_files* to create the MANIFEST file.
+
+  It is no longer mandatory to store clear-text passwords in the
+  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
+  as the username is present in that file, the :mod:`distutils` package will
+  prompt for the password if not present.  (Added by Tarek Ziade,
+  based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
+
+* New method: the :class:`Decimal` class gained a
+  :meth:`from_float` class method that performs an exact conversion
+  of a floating-point number to a :class:`Decimal`.
+  Note that this is an **exact** conversion that strives for the
+  closest decimal approximation to the floating-point representation's value;
+  the resulting decimal value will therefore still include the inaccuracy,
+  if any.
+  For example, ``Decimal.from_float(0.1)`` returns
+  ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
+  (Implemented by Raymond Hettinger; :issue:`4796`.)
+
+* A new function in the :mod:`gc` module, :func:`is_tracked`, returns
+  True if a given instance is tracked by the garbage collector, False
+  otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
+
 * The :mod:`gzip` module's :class:`GzipFile` now supports the context
   management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
+  It's now possible to override the modification time
+  recorded in a gzipped file by providing an optional timestamp to
+  the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
 
 * The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
   :issue:`4991`.)
+
+* New function: ``itertools.compress(*data*, *selectors*)`` takes two
+  iterators.  Elements of *data* are returned if the corresponding
+  value in *selectors* is True::
+
+    itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
+      A, C, E, F
+
+  New function: ``itertools.combinations_with_replacement(*iter*, *r*)``
+  returns all the possible *r*-length combinations of elements from the
+  iterable *iter*.  Unlike :func:`combinations`, individual elements
+  can be repeated in the generated combinations::
+
+    itertools.combinations_with_replacement('abc', 2) =>
+      ('a', 'a'), ('a', 'b'), ('a', 'c'),
+      ('b', 'b'), ('b', 'c'), ('c', 'c')
+
+  Note that elements are treated as unique depending on their position
+  in the input, not their actual values.
+
+  The :class:`itertools.count` function now has a *step* argument that
+  allows incrementing by values other than 1.  :func:`count` also
+  now allows keyword arguments, and using non-integer values such as
+  floats or :class:`Decimal` instances.  (Implemented by Raymond
+  Hettinger; :issue:`5032`.)
+
+  :func:`itertools.combinations` and :func:`itertools.product` were
+  previously raising :exc:`ValueError` for values of *r* larger than
+  the input iterable.  This was deemed a specification error, so they
+  now return an empty iterator.  (Fixed by Raymond Hettinger; :issue:`4816`.)
+
+* The :mod:`json` module was upgraded to version 2.0.9 of the
+  simplejson package, which includes a C extension that makes
+  encoding and decoding faster.
+  (Contributed by Bob Ippolito; :issue:`4136`.)
+
+  To support the new :class:`OrderedDict` type, :func:`json.load`
+  now has an optional *object_pairs_hook* parameter that will be called
+  with any object literal that decodes to a list of pairs.
+  (Contributed by Raymond Hettinger; :issue:`5381`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -214,7 +328,7 @@ changes, or look through the Subversion logs for all the details.
 
 * A new function in the :mod:`subprocess` module,
   :func:`check_output`, runs a command with a specified set of arguments
-  and returns the command's output as a string if the command runs without
+  and returns the command's output as a string when the command runs without
   error, or raises a :exc:`CalledProcessError` exception otherwise.
 
   ::
@@ -229,12 +343,40 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Gregory P. Smith.)
 
+* The ``sys.version_info`` value is now a named tuple, with attributes
+  named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
+  (Contributed by Ross Light; :issue:`4285`.)
+
+* The :mod:`unittest` module was enhanced in several ways.
+  Test cases can raise the :exc:`SkipTest` exception to skip a test.
+  (:issue:`1034053`.)
+  It will now use 'x' for expected failures
+  and 'u' for unexpected successes when run in its verbose mode.
+  (Contributed by Benjamin Peterson.)
+
+  The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
+  return a context handler when called without providing a callable
+  object to run.  For example, you can write this::
+
+      with self.assertRaises(KeyError):
+          raise ValueError
+
+  (Implemented by Antoine Pitrou; :issue:`4444`.)
+
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
+  :mod:`zipfile` now supports archiving empty directories and
+  extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
+
 .. ======================================================================
 .. whole new modules get described in subsections here
+
+importlib: Importing Modules
+------------------------------
+
+XXX write this
 
 ttk: Themed Widgets for Tk
 --------------------------
@@ -266,11 +408,16 @@ Changes to Python's build process and to the C API include:
   debugged doesn't hold the GIL; the macro will now acquire it before printing.
   (Contributed by Victor Stinner; :issue:`3632`.)
 
-* :cfunc:`Py_AddPendingCall` is now thread safe, letting any
+* :cfunc:`Py_AddPendingCall` is now thread-safe, letting any
   worker thread submit notifications to the main Python thread.  This
   is particularly useful for asynchronous IO operations.
   (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
 
+* The :program:`configure` script now checks for floating-point rounding bugs
+  on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
+  preprocessor definition.  No code currently uses this definition,
+  but it's available if anyone wishes to use it.
+  (Added by Mark Dickinson; :issue:`2937`.)
 
 .. ======================================================================
 
@@ -292,6 +439,28 @@ Port-Specific Changes: Windows
 
 Port-Specific Changes: Mac OS X
 -----------------------------------
+
+* The ``/Library/Python/2.7/site-packages`` is now appended to
+  ``sys.path``, in order to share added packages between the system
+  installation and a user-installed copy of the same version.
+  (Changed by Ronald Oussoren; :issue:`4865`.)
+
+
+Other Changes and Fixes
+=======================
+
+* When importing a module from a :file:`.pyc` or :file:`.pyo` file
+  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  attributes of all code objects if the original filename is obsolete,
+  which can happen if the file has been renamed, moved, or is accessed
+  through different paths.  (Patch by Ziga Seilnacht and Jean-Paul
+  Calderone; :issue:`1180193`.)
+
+* The :file:`regrtest.py` script now takes a :option:`--randseed=`
+  switch that takes an integer that will be used as the random seed
+  for the :option:`-r` option that executes tests in random order.
+  The :option:`-r` option also now reports the seed that was used
+  (Added by Collin Winter.)
 
 
 .. ======================================================================

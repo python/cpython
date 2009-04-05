@@ -241,7 +241,7 @@ definition with the same method name.
    T_OBJECT_EX     PyObject \*
    T_CHAR          char
    T_BYTE          char
-   T_UNBYTE        unsigned char
+   T_UBYTE         unsigned char
    T_UINT          unsigned int
    T_USHORT        unsigned short
    T_ULONG         unsigned long
