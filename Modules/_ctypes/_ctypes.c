@@ -599,13 +599,14 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 #else
 	address = (void *)ctypes_dlsym(handle, name);
 	if (!address) {
-		PyErr_Format(PyExc_ValueError,
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
+		PyErr_Format(PyExc_ValueError,
 			     "symbol '%s' not found (%s) ",
-			     name,
+			     name);
+#else
+		PyErr_SetString(PyExc_ValueError, ctypes_dlerror());
 #endif
-			     ctypes_dlerror());
 		return NULL;
 	}
 #endif
@@ -3283,13 +3284,14 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #else
 	address = (PPROC)ctypes_dlsym(handle, name);
 	if (!address) {
-		PyErr_Format(PyExc_AttributeError,
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
+		PyErr_Format(PyExc_AttributeError,
 			     "function '%s' not found (%s) ",
-			     name,
+			     name);
+#else
+		PyErr_SetString(PyExc_AttributeError, ctypes_dlerror());
 #endif
-			     ctypes_dlerror());
 		return NULL;
 	}
 #endif

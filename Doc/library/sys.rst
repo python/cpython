@@ -661,7 +661,9 @@ always available.
 .. data:: py3kwarning
 
    Bool containing the status of the Python 3.0 warning flag. It's ``True``
-   when Python is started with the -3 option.
+   when Python is started with the -3 option.  (This should be considered
+   read-only; setting it to a different value doesn't have an effect on
+   Python 3.0 warnings.)
 
    .. versionadded:: 2.6
 

@@ -21,8 +21,13 @@ The :mod:`dummy_threading` module is provided for situations where
    deprecation of the ``camelCase`` names and they remain fully supported in
    both Python 2.x and 3.x.
 
-This module defines the following functions and objects:
+.. note::
 
+   Starting with Python 2.5, several Thread methods raise :exc:`RuntimeError`
+   instead of :exc:`AssertionError` if called erroneously.
+
+
+This module defines the following functions and objects:
 
 .. function:: active_count()
               activeCount()

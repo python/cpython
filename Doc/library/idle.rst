@@ -253,6 +253,24 @@ Shell colors:
       black
 
 
+Startup
+-------
+
+Upon startup with the ``-s`` option, IDLE will execute the file referenced by
+the environment variables :envvar:`IDLESTARTUP` or :envvar:`PYTHONSTARTUP`.
+Idle first checks for ``IDLESTARTUP``; if ``IDLESTARTUP`` is present the file
+referenced is run.  If ``IDLESTARTUP`` is not present, Idle checks for
+``PYTHONSTARTUP``.  Files referenced by these environment variables are
+convenient places to store functions that are used frequently from the Idle
+shell, or for executing import statements to import common modules.
+
+In addition, ``Tk`` also loads a startup file if it is present.  Note that the
+Tk file is loaded unconditionally.  This additional file is ``.Idle.py`` and is
+looked for in the user's home directory.  Statements in this file will be
+executed in the Tk namespace, so this file is not useful for importing functions
+to be used from Idle's Python shell.
+
+
 Command line usage
 ^^^^^^^^^^^^^^^^^^
 

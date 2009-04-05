@@ -62,10 +62,9 @@ The constants defined in this module are:
 .. data:: lowercase
 
    A string containing all the characters that are considered lowercase letters.
-   On most systems this is the string ``'abcdefghijklmnopqrstuvwxyz'``.  Do not
-   change its definition --- the effect on the routines :func:`upper` and
-   :func:`swapcase` is undefined.  The specific value is locale-dependent, and will
-   be updated when :func:`locale.setlocale` is called.
+   On most systems this is the string ``'abcdefghijklmnopqrstuvwxyz'``.  The
+   specific value is locale-dependent, and will be updated when
+   :func:`locale.setlocale` is called.
 
 
 .. data:: octdigits
@@ -89,18 +88,16 @@ The constants defined in this module are:
 .. data:: uppercase
 
    A string containing all the characters that are considered uppercase letters.
-   On most systems this is the string ``'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.  Do not
-   change its definition --- the effect on the routines :func:`lower` and
-   :func:`swapcase` is undefined.  The specific value is locale-dependent, and will
-   be updated when :func:`locale.setlocale` is called.
+   On most systems this is the string ``'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.  The
+   specific value is locale-dependent, and will be updated when
+   :func:`locale.setlocale` is called.
 
 
 .. data:: whitespace
 
    A string containing all characters that are considered whitespace. On most
    systems this includes the characters space, tab, linefeed, return, formfeed, and
-   vertical tab.  Do not change its definition --- the effect on the routines
-   :func:`strip` and :func:`split` is undefined.
+   vertical tab.
 
 
 .. _new-string-formatting:
@@ -224,7 +221,7 @@ The grammar for a replacement field is as follows:
 
    .. productionlist:: sf
       replacement_field: "{" `field_name` ["!" `conversion`] [":" `format_spec`] "}"
-      field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" element_index "]")*
+      field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" `element_index` "]")*
       attribute_name: `identifier`
       element_index: `integer`
       conversion: "r" | "s"
@@ -599,7 +596,7 @@ They are not available as string methods.
 
       Don't use strings derived from :const:`lowercase` and :const:`uppercase` as
       arguments; in some locales, these don't have the same length.  For case
-      conversions, always use :func:`lower` and :func:`upper`.
+      conversions, always use :meth:`str.lower` and :meth:`str.upper`.
 
 
 Deprecated string functions
