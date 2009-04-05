@@ -347,13 +347,11 @@ The reverse operation is also possible::
 
    >>> x, y, z = t
 
-This is called, appropriately enough, *sequence unpacking*. Sequence unpacking
-requires the list of variables on the left to have the same number of elements
-as the length of the sequence.  Note that multiple assignment is really just a
-combination of tuple packing and sequence unpacking!
-
-There is a small bit of asymmetry here:  packing multiple values always creates
-a tuple, and unpacking works for any sequence.
+This is called, appropriately enough, *sequence unpacking* and works for any
+sequence on the right-hand side.  Sequence unpacking requires the list of
+variables on the left to have the same number of elements as the length of the
+sequence.  Note that multiple assignment is really just a combination of tuple
+packing and sequence unpacking.
 
 .. XXX Add a bit on the difference between tuples and lists.
 

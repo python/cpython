@@ -1050,8 +1050,8 @@ This module contains some utility functions for operating on individual files.
 
    .. warning::
 
-      Handles cross-device moves on Unix using :func:`copy_file`.   What about other
-      systems???
+      Handles cross-device moves on Unix using :func:`copy_file`.  What about
+      other systems?
 
 
 .. function:: write_file(filename, contents)
@@ -1091,17 +1091,17 @@ other utility module.
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
-   For MacOS X systems the OS version reflects the minimal version on which
+   For Mac OS X systems the OS version reflects the minimal version on which
    binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
    during the build of Python), not the OS version of the current system.
 
-   For universal binary builds on MacOS X the architecture value reflects
+   For universal binary builds on Mac OS X the architecture value reflects
    the univeral binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
    for 4-way universal binaries the architecture is ``universal``.
 
-   Examples of returned values on MacOS X:
+   Examples of returned values on Mac OS X:
 
    * ``macosx-10.3-ppc``
 
@@ -1758,8 +1758,16 @@ This module supplies the abstract base class :class:`Command`.
 .. module:: distutils.command.bdist_msi
    :synopsis: Build a binary distribution as a Windows MSI file
 
+.. class:: bdist_msi(Command)
 
-.. % todo
+   Builds a `Windows Installer`_ (.msi) binary package.
+
+   .. _Windows Installer: http://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
+
+   In most cases, the ``bdist_msi`` installer is a better choice than the
+   ``bdist_wininst`` installer, because it provides better support for
+   Win64 platforms, allows administrators to perform non-interactive
+   installations, and allows installation through group policies.
 
 
 :mod:`distutils.command.bdist_rpm` --- Build a binary distribution as a Redhat RPM and SRPM

@@ -2290,6 +2290,10 @@ needing to be done by its clients. It achieves this though using threading
 locks; there is one lock to serialize access to the module's shared data, and
 each handler also creates a lock to serialize access to its underlying I/O.
 
+If you are implementing asynchronous signal handlers using the :mod:`signal`
+module, you may not be able to use logging from within such handlers. This is
+because lock implementations in the :mod:`threading` module are not always
+re-entrant, and so cannot be invoked from such signal handlers.
 
 Configuration
 -------------

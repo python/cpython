@@ -12,6 +12,15 @@ AC_INIT(python, PYTHON_VERSION, http://www.python.org/python-bugs)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
+dnl Ensure that if prefix is specified, it does not end in a slash. If
+dnl it does, we get path names containing '//' which is both ugly and
+dnl can cause trouble.
+
+dnl Last slash shouldn't be stripped if prefix=/
+if test "$prefix" != "/"; then
+    prefix=`echo "$prefix" | sed -e 's/\/$//g'`
+fi    
+
 dnl This is for stuff that absolutely must end up in pyconfig.h.
 dnl Please use pyport.h instead, if possible.
 AH_TOP([

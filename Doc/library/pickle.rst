@@ -436,6 +436,14 @@ items are assigned to the new instance's dictionary.
 Refer to the section :ref:`pickle-state` for more information about how to use
 the methods :meth:`__getstate__` and :meth:`__setstate__`.
 
+.. note::
+   At unpickling time, some methods like :meth:`__getattr__`,
+   :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
+   instance.  In case those methods rely on some internal invariant being
+   true, the type should implement either :meth:`__getinitargs__` or
+   :meth:`__getnewargs__` to establish such an invariant; otherwise, neither
+   :meth:`__new__` nor :meth:`__init__` will be called.
+
 .. index::
    pair: copy; protocol
    single: __reduce__() (copy protocol)

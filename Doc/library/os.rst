@@ -51,15 +51,6 @@ the :mod:`os` module, but using them is of course a threat to portability!
    ``'ce'``, ``'java'``.
 
 
-.. data:: path
-
-   The corresponding operating system dependent standard module for pathname
-   operations, such as :mod:`posixpath` or :mod:`ntpath`.  Thus, given the proper
-   imports, ``os.path.split(file)`` is equivalent to but more portable than
-   ``posixpath.split(file)``.  Note that this is also an importable module: it may
-   be imported directly as :mod:`os.path`.
-
-
 .. _os-procinfo:
 
 Process Parameters
@@ -1491,7 +1482,9 @@ written in Python, such as a mail server's external command delivery program.
    which is used to define the environment variables for the new process (they are
    used instead of the current process' environment); the functions
    :func:`spawnl`, :func:`spawnlp`, :func:`spawnv`, and :func:`spawnvp` all cause
-   the new process to inherit the environment of the current process.
+   the new process to inherit the environment of the current process.  Note that
+   keys and values in the *env* dictionary must be strings; invalid keys or
+   values will cause the function to fail, with a return value of ``127``.
 
    As an example, the following calls to :func:`spawnlp` and :func:`spawnvpe` are
    equivalent::

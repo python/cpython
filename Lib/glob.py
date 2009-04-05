@@ -16,7 +16,7 @@ def glob(pathname):
     return list(iglob(pathname))
 
 def iglob(pathname):
-    """Return a list of paths matching a pathname pattern.
+    """Return an iterator which yields the paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la fnmatch.
 

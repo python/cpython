@@ -264,8 +264,8 @@ Number Protocol
 
 .. cfunction:: PyObject* PyNumber_ToBase(PyObject *n, int base)
 
-   Returns the the integer *n* converted to *base* as a string with a base
-   marker of ``'0b'``, ``'0o'``, or ``'0x'`` if appended applicable.  When
+   Returns the integer *n* converted to *base* as a string with a base
+   marker of ``'0b'``, ``'0o'``, or ``'0x'`` if applicable.  When
    *base* is not 2, 8, 10, or 16, the format is ``'x#num'`` where x is the
    base. If *n* is not an int object, it is converted with
    :cfunc:`PyNumber_Index` first.

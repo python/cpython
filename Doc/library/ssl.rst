@@ -293,7 +293,7 @@ SSLSocket Objects
    If there is no certificate for the peer on the other end of the
    connection, returns ``None``.
 
-   If the the parameter ``binary_form`` is :const:`False`, and a
+   If the parameter ``binary_form`` is :const:`False`, and a
    certificate was received from the peer, this method returns a
    :class:`dict` instance.  If the certificate was not validated, the
    dict is empty.  If the certificate was validated, it returns a dict

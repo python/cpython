@@ -11,6 +11,7 @@ For support, use the optik-users@lists.sourceforge.net mailing list
 __version__ = "1.5.3"
 
 __all__ = ['Option',
+           'make_option',
            'SUPPRESS_HELP',
            'SUPPRESS_USAGE',
            'Values',

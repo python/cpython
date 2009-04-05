@@ -225,10 +225,9 @@ the following::
    several lines of text just as you would do in C.
        Note that whitespace at the beginning of the line is significant.
 
-If we make the string literal a "raw" string, however, the ``\n`` sequences are
-not converted to newlines, but the backslash at the end of the line, and the
-newline character in the source, are both included in the string as data.  Thus,
-the example::
+If we make the string literal a "raw" string, ``\n`` sequences are not converted
+to newlines, but the backslash at the end of the line, and the newline character
+in the source, are both included in the string as data.  Thus, the example::
 
    hello = r"This is a rather long string containing\n\
    several lines of text much as you would do in C."
@@ -240,22 +239,12 @@ would print::
    This is a rather long string containing\n\
    several lines of text much as you would do in C.
 
-Or, strings can be surrounded in a pair of matching triple-quotes: ``"""`` or
-``'''``.  End of lines do not need to be escaped when using triple-quotes, but
-they will be included in the string. ::
-
-   print("""
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
-   """)
-
-produces the following output::
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
-
+The interpreter prints the result of string operations in the same way as they
+are typed for input: inside quotes, and with quotes and other funny characters
+escaped by backslashes, to show the precise value.  The string is enclosed in
+double quotes if the string contains a single quote and no double quotes, else
+it's enclosed in single quotes.  (The :func:`print` function, described later,
+can be used to write strings without quotes or escapes.)
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::

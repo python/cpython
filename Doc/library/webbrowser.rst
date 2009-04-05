@@ -55,6 +55,10 @@ The following functions are defined:
    under many window managers this will occur regardless of the setting of this
    variable).
 
+   Note that on some platforms, trying to open a filename using this function,
+   may work and start the operating system's associated program.  However, this
+   is neither supported nor portable.
+
 
 .. function:: open_new(url)
 

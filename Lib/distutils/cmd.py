@@ -333,7 +333,8 @@ class Command:
     # -- External world manipulation -----------------------------------
 
     def warn(self, msg):
-        log.warn("warning: %s: %s\n" % (self.get_command_name(), msg))
+        log.warn("warning: %s: %s\n" %
+                (self.get_command_name(), msg))
 
     def execute(self, func, args, msg=None, level=1):
         util.execute(func, args, msg, dry_run=self.dry_run)

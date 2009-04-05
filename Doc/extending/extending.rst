@@ -476,10 +476,10 @@ reference count of an object and are safe in the presence of *NULL* pointers
 (but note that *temp* will not be  *NULL* in this context).  More info on them
 in section :ref:`refcounts`.
 
-.. index:: single: PyEval_CallObject()
+.. index:: single: PyObject_CallObject()
 
 Later, when it is time to call the function, you call the C function
-:cfunc:`PyEval_CallObject`.  This function has two arguments, both pointers to
+:cfunc:`PyObject_CallObject`.  This function has two arguments, both pointers to
 arbitrary Python objects: the Python function, and the argument list.  The
 argument list must always be a tuple object, whose length is the number of
 arguments.  To call the Python function with no arguments, pass in NULL, or
@@ -495,16 +495,16 @@ or more format codes between parentheses.  For example::
    ...
    /* Time to call the callback */
    arglist = Py_BuildValue("(i)", arg);
-   result = PyEval_CallObject(my_callback, arglist);
+   result = PyObject_CallObject(my_callback, arglist);
    Py_DECREF(arglist);
 
-:cfunc:`PyEval_CallObject` returns a Python object pointer: this is the return
-value of the Python function.  :cfunc:`PyEval_CallObject` is
+:cfunc:`PyObject_CallObject` returns a Python object pointer: this is the return
+value of the Python function.  :cfunc:`PyObject_CallObject` is
 "reference-count-neutral" with respect to its arguments.  In the example a new
 tuple was created to serve as the argument list, which is :cfunc:`Py_DECREF`\
 -ed immediately after the call.
 
-The return value of :cfunc:`PyEval_CallObject` is "new": either it is a brand
+The return value of :cfunc:`PyObject_CallObject` is "new": either it is a brand
 new object, or it is an existing object whose reference count has been
 incremented.  So, unless you want to save it in a global variable, you should
 somehow :cfunc:`Py_DECREF` the result, even (especially!) if you are not
@@ -512,7 +512,7 @@ interested in its value.
 
 Before you do this, however, it is important to check that the return value
 isn't *NULL*.  If it is, the Python function terminated by raising an exception.
-If the C code that called :cfunc:`PyEval_CallObject` is called from Python, it
+If the C code that called :cfunc:`PyObject_CallObject` is called from Python, it
 should now return an error indication to its Python caller, so the interpreter
 can print a stack trace, or the calling Python code can handle the exception.
 If this is not possible or desirable, the exception should be cleared by calling
@@ -524,7 +524,7 @@ If this is not possible or desirable, the exception should be cleared by calling
    Py_DECREF(result);
 
 Depending on the desired interface to the Python callback function, you may also
-have to provide an argument list to :cfunc:`PyEval_CallObject`.  In some cases
+have to provide an argument list to :cfunc:`PyObject_CallObject`.  In some cases
 the argument list is also provided by the Python program, through the same
 interface that specified the callback function.  It can then be saved and used
 in the same manner as the function object.  In other cases, you may have to
@@ -535,7 +535,7 @@ event code, you might use the following code::
    PyObject *arglist;
    ...
    arglist = Py_BuildValue("(l)", eventcode);
-   result = PyEval_CallObject(my_callback, arglist);
+   result = PyObject_CallObject(my_callback, arglist);
    Py_DECREF(arglist);
    if (result == NULL)
        return NULL; /* Pass error back */
@@ -547,18 +547,19 @@ the error check!  Also note that strictly speaking this code is not complete:
 :cfunc:`Py_BuildValue` may run out of memory, and this should be checked.
 
 You may also call a function with keyword arguments by using
-:cfunc:`PyEval_CallObjectWithKeywords`.  As in the above example, we use
-:cfunc:`Py_BuildValue` to construct the dictionary. ::
+:cfunc:`PyObject_Call`, which supports arguments and keyword arguments.  As in
+the above example, we use :cfunc:`Py_BuildValue` to construct the dictionary. ::
 
    PyObject *dict;
    ...
    dict = Py_BuildValue("{s:i}", "name", val);
-   result = PyEval_CallObjectWithKeywords(my_callback, NULL, dict);
+   result = PyObject_Call(my_callback, NULL, dict);
    Py_DECREF(dict);
    if (result == NULL)
        return NULL; /* Pass error back */
    /* Here maybe use the result */
    Py_DECREF(result);
+
 
 .. _parsetuple:
 
