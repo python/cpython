@@ -5505,9 +5505,15 @@ Set the current process's user id.");
 static PyObject *
 posix_setuid(PyObject *self, PyObject *args)
 {
-	int uid;
-	if (!PyArg_ParseTuple(args, "i:setuid", &uid))
+	long uid_arg;
+	uid_t uid;
+	if (!PyArg_ParseTuple(args, "l:setuid", &uid_arg))
 		return NULL;
+	uid = uid_arg;
+	if (uid != uid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "user id too big");
+		return NULL;
+	}
 	if (setuid(uid) < 0)
 		return posix_error();
 	Py_INCREF(Py_None);
@@ -5524,10 +5530,16 @@ Set the current process's effective user id.");
 static PyObject *
 posix_seteuid (PyObject *self, PyObject *args)
 {
-	int euid;
-	if (!PyArg_ParseTuple(args, "i", &euid)) {
+	long euid_arg;
+	uid_t euid;
+	if (!PyArg_ParseTuple(args, "l", &euid_arg))
 		return NULL;
-	} else if (seteuid(euid) < 0) {
+	euid = euid_arg;
+	if (euid != euid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "user id too big");
+		return NULL;
+	}
+	if (seteuid(euid) < 0) {
 		return posix_error();
 	} else {
 		Py_INCREF(Py_None);
@@ -5544,10 +5556,16 @@ Set the current process's effective group id.");
 static PyObject *
 posix_setegid (PyObject *self, PyObject *args)
 {
-	int egid;
-	if (!PyArg_ParseTuple(args, "i", &egid)) {
+	long egid_arg;
+	gid_t egid;
+	if (!PyArg_ParseTuple(args, "l", &egid_arg))
 		return NULL;
-	} else if (setegid(egid) < 0) {
+	egid = egid_arg;
+	if (egid != egid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "group id too big");
+		return NULL;
+	}
+	if (setegid(egid) < 0) {
 		return posix_error();
 	} else {
 		Py_INCREF(Py_None);
@@ -5564,10 +5582,17 @@ Set the current process's real and effective user ids.");
 static PyObject *
 posix_setreuid (PyObject *self, PyObject *args)
 {
-	int ruid, euid;
-	if (!PyArg_ParseTuple(args, "ii", &ruid, &euid)) {
+	long ruid_arg, euid_arg;
+	uid_t ruid, euid;
+	if (!PyArg_ParseTuple(args, "ll", &ruid_arg, &euid_arg))
 		return NULL;
-	} else if (setreuid(ruid, euid) < 0) {
+	ruid = ruid_arg;
+	euid = euid_arg;
+	if (euid != euid_arg || ruid != ruid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "user id too big");
+		return NULL;
+	}
+	if (setreuid(ruid, euid) < 0) {
 		return posix_error();
 	} else {
 		Py_INCREF(Py_None);
@@ -5584,10 +5609,17 @@ Set the current process's real and effective group ids.");
 static PyObject *
 posix_setregid (PyObject *self, PyObject *args)
 {
-	int rgid, egid;
-	if (!PyArg_ParseTuple(args, "ii", &rgid, &egid)) {
+	long rgid_arg, egid_arg;
+	gid_t rgid, egid;
+	if (!PyArg_ParseTuple(args, "ll", &rgid_arg, &egid_arg))
 		return NULL;
-	} else if (setregid(rgid, egid) < 0) {
+	rgid = rgid_arg;
+	egid = egid_arg;
+	if (egid != egid_arg || rgid != rgid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "group id too big");
+		return NULL;
+	}
+	if (setregid(rgid, egid) < 0) {
 		return posix_error();
 	} else {
 		Py_INCREF(Py_None);
@@ -5604,9 +5636,15 @@ Set the current process's group id.");
 static PyObject *
 posix_setgid(PyObject *self, PyObject *args)
 {
-	int gid;
-	if (!PyArg_ParseTuple(args, "i:setgid", &gid))
+	long gid_arg;
+	gid_t gid;
+	if (!PyArg_ParseTuple(args, "l:setgid", &gid_arg))
 		return NULL;
+	gid = gid_arg;
+	if (gid != gid_arg) {
+		PyErr_SetString(PyExc_OverflowError, "group id too big");
+		return NULL;
+	}
 	if (setgid(gid) < 0)
 		return posix_error();
 	Py_INCREF(Py_None);
@@ -5654,7 +5692,7 @@ posix_setgroups(PyObject *self, PyObject *groups)
 					return NULL;
 				}
 				grouplist[i] = x;
-				/* read back the value to see if it fitted in gid_t */
+				/* read back to see if it fits in gid_t */
 				if (grouplist[i] != x) {
 					PyErr_SetString(PyExc_TypeError,
 							"group id too big");
