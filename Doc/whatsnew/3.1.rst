@@ -158,10 +158,14 @@ Some smaller changes made to the core Python language are:
   (Contributed by Kevin Walzer and Guilherme Polo; :issue:`2618` and
   :issue:`2983`.)
 
-* The :class:`gzip.GzipFile` and :class:`bz2.BZ2File` classs now support
-  the context manager protocol.
+* The :class:`gzip.GzipFile` and :class:`bz2.BZ2File` classes now support
+  the context manager protocol::
 
-  (Contributed by Jacques Frechet; :issue:`4272`.)
+        >>> # Automatically close file after writing
+        >>> with gzip.GzipFile(filename, "wb") as f:
+        ...     f.write(b"xxx")
+
+  (Contributed by Antoine Pitrou.)
 
 * The :mod:`Decimal` module now supports two new methods to create a
   decimal object that from a binary :class:`float`.  The conversion is
