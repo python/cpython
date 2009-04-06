@@ -167,8 +167,8 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Antoine Pitrou.)
 
-* The :mod:`decimal.Decimal` module now supports methods to creating a
-  decimal object that from a binary :class:`float`.  The conversion is
+* The :mod:`decimal.Decimal` module now supports methods for creating a
+  decimal object from a binary :class:`float`.  The conversion is
   exact but can sometimes be surprising::
 
       >>> Decimal.from_float(1.1)
