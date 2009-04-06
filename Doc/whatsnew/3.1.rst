@@ -151,7 +151,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger; :issue:`1696199`.)
 
-* Add a new module, :mod:`tkinter.ttk` for access to the Tk themed widget set.
+* Added a new module, :mod:`tkinter.ttk` for access to the Tk themed widget set.
   The basic idea of ttk is to separate, to the extent possible, the code
   implementing a widget's behavior from the code implementing its appearance.
 
@@ -167,7 +167,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Antoine Pitrou.)
 
-* The :mod:`decimal.Decimal` module now supports two new methods to create a
+* The :mod:`decimal.Decimal` module now supports methods to creating a
   decimal object that from a binary :class:`float`.  The conversion is
   exact but can sometimes be surprising::
 
