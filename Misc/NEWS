@@ -30,6 +30,29 @@ Core and Builtins
 Library
 -------
 
+- Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
+  Initial fix by Wayne Davison.
+
+- Issue #4792: Prevent a segfault in _tkinter by using the
+  guaranteed to be safe interp argument given to the PythonCmd in place of
+  the Tcl interpreter taken from a PythonCmd_ClientData.
+
+- Issue #5193: Guarantee that tkinter.Text.search returns a string.
+
+- Issue #5334: array.fromfile() failed to insert values when EOFError was
+  raised.
+
+- Issue #5385: Fixed mmap crash after resize failure on windows.
+
+- Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
+  import guess_extension`` was used.
+
+- Issue #1733986: Fixed mmap crash in accessing elements of second map object
+  with same tagname but larger size than first map. (Windows)
+
+- Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
+  overrun.
+
 - Issue 2625: added missing items() call to the for loop in
   mailbox.MH.get_message().
 
@@ -186,28 +209,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
-  Initial fix by Wayne Davison.
-
-- Issue #4792: Prevent a segfault in _tkinter by using the
-  guaranteed to be safe interp argument given to the PythonCmd in place of
-  the Tcl interpreter taken from a PythonCmd_ClientData.
-
-- Issue #5193: Guarantee that tkinter.Text.search returns a string.
-
-- Issue #5334: array.fromfile() failed to insert values when EOFError was raised.
-
-- Issue #5385: Fixed mmap crash after resize failure on windows.
-
-- Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
-  import guess_extension`` was used.
-
-- Issue #1733986: Fixed mmap crash in accessing elements of second map object
-  with same tagname but larger size than first map. (Windows)
-
-- Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
-  overrun.
 
 - Issue #4998: The memory saving effect of __slots__ had been lost on Fractions
   which inherited from numbers.py which did not have __slots__ defined.  The
