@@ -257,6 +257,7 @@ start=`current_time`
 # which will definitely fail with a conflict. 
 #CONFLICTED_FILE=commontex/boilerplate.tex
 #conflict_count=`grep -c "<<<" $CONFLICTED_FILE`
+make clean
 conflict_count=0
 if [ $conflict_count != 0 ]; then
     echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
