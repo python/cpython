@@ -194,7 +194,17 @@ Some smaller changes made to the core Python language are:
   from APL.  Also, the existing :func:`itertools.count` function now has
   an optional *step* argument and can accept any type of counting
   sequence including :class:`fractions.Fraction` and
-  :class:`decimal.Decimal`.
+  :class:`decimal.Decimal`::
+
+    >>> [p+q for p,q in combinations_with_replacement('LOVE', 2)]
+    ['LL', 'LO', 'LV', 'LE', 'OO', 'OV', 'OE', 'VV', 'VE', 'EE']
+
+    >>> list(compress(data=range(10), selectors=[0,0,1,1,0,1,0,1,0,0]))
+    [2, 3, 5, 7]
+
+    >>> c = count(start=Fraction(1,2), step=Fraction(1,6))
+    >>> next(c), next(c), next(c), next(c)
+    (Fraction(1, 2), Fraction(2, 3), Fraction(5, 6), Fraction(1, 1))
 
   (Contributed by Raymond Hettinger.)
 
@@ -206,8 +216,11 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger; :issue:`1818`.)
 
-* ``round`(x, n)`` now returns an integer if *x* is an integer.
-  Previously it returned a float.
+* ``round(x, n)`` now returns an integer if *x* is an integer.
+  Previously it returned a float::
+
+    >>> round(1123, -2)
+    1100
 
   (Contributed by Mark Dickinson; :issue:`4707`.)
 
@@ -240,7 +253,17 @@ Some smaller changes made to the core Python language are:
 * The :mod:`unittest` module now supports skipping individual tests or classes
   of tests. And it supports marking a test as a expected failure, a test that
   is known to be broken, but shouldn't be counted as a failure on a
-  TestResult.
+  TestResult::
+
+    class TestGizmo(unittest.TestCase):
+
+        @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+        def test_gizmo_on_windows(self):
+            ...
+
+        @unittest.expectedFailure
+        def test_gimzo_without_required_library(self):
+            ...
 
   (Contributed by Benjamin Peterson.)
 
