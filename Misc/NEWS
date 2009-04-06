@@ -97,6 +97,9 @@ Core and Builtins
 - Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
   short file names.
 
+- Issue #5705: os.setuid() would not accept values > 2**31-1 but pwd.getpwnam()
+  returned them on 64bit platforms.
+
 Library
 -------
 
