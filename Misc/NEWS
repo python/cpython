@@ -21,6 +21,12 @@ Library
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
 
+Extension Modules
+-----------------
+
+- Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
+  using Berkley-DB.
+
 
 What's New in Python 3.1 alpha 2?
 =================================
