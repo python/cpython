@@ -1564,13 +1564,13 @@ to remember the order that class members were defined::
     >>> A.members
     ('__module__', 'one', 'two', 'three', 'four')
 
-When the class definition for *A* get executed, the first step is calling the
-metaclass's :meth:`__prepare__` method which returns an empty
+When the class definition for *A* gets executed, the process begins with
+calling the metaclass's :meth:`__prepare__` method which returns an empty
 :class:`collections.OrderedDict`.  That mapping records the methods and
 attributes of *A* as they are defined within the body of the class statement.
-Once those definitions are executed, the ordered dict is fully populated, and
-then the metaclass's :meth:`__new__ ` method gets invoked. That method builds
-the new type and saves the keys for the ordered dictionary in an attribute
+Once those definitions are executed, the ordered dictionary is fully populated
+and the metaclass's :meth:`__new__ ` method gets invoked.  That method builds
+the new type and it saves the ordered dictionary keys in an attribute
 called *members*.
 
 
