@@ -1541,6 +1541,38 @@ explored including logging, interface checking, automatic delegation, automatic
 property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
+Here is an example of a metaclass that uses an :class:`OrderedDict` to
+remember the order that class members were defined::
+
+    class OrderedClass(type):
+
+         @classmethod
+         def __prepare__(metacls, name, bases, **kwds):
+            return collections.OrderedDict()
+
+         def __new__(cls, name, bases, classdict):
+            result = type.__new__(cls, name, bases, dict(classdict))
+            result.members = tuple(classdict)
+            return result
+
+    class A(metaclass=OrderedClass):
+        def one(self): pass
+        def two(self): pass
+        def three(self): pass
+        def four(self): pass
+
+    >>> A.members
+    ('__module__', 'one', 'two', 'three', 'four')
+
+When the class definition for *A* get executed, the first step is calling the
+metaclass's :meth:`__prepare__` method which returns an empty
+:class:`collections.OrderedDict`.  That mapping records the methods and
+attributes of *A* as they are defined within the body of the class statement.
+Once those definitions are executed, the ordered dict is fully populated, and
+then the metaclass's :meth:`__new__ ` method gets invoked. That method builds
+the new type and saves the keys for the ordered dictionary in an attribute
+called *members*.
+
 
 .. _callable-types:
 
