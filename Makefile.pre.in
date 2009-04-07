@@ -757,7 +757,7 @@ install:	altinstall
 
 # Install almost everything without disturbing previous versions
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall @FRAMEWORKALTINSTALLLAST@
+                oldsharedinstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
