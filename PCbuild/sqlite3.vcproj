@@ -82,7 +82,7 @@
 		<Configuration
 			Name="Debug|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\x64.vsprops;.\sqlite3.vsprops;.\debug.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\debug.vsprops;.\x64.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -204,7 +204,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\x64.vsprops;.\sqlite3.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -327,7 +327,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\x64.vsprops;.\sqlite3.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -449,7 +449,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\x64.vsprops;.\sqlite3.vsprops;.\pgupdate.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
