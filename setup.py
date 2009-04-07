@@ -5,7 +5,6 @@ __version__ = "$Revision$"
 
 import sys, os, imp, re, optparse
 from glob import glob
-from platform import machine as platform_machine
 
 from distutils import log
 from distutils import sysconfig
@@ -671,13 +670,6 @@ class PyBuildExt(build_ext):
             """
             if not (min_db_ver <= db_ver <= max_db_ver):
                 return False
-            # Use this function to filter out known bad configurations.
-            if (4, 6) == db_ver[:2]:
-                # BerkeleyDB 4.6.x is not stable on many architectures.
-                arch = platform_machine()
-                if arch not in ('i386', 'i486', 'i586', 'i686',
-                                'x86_64', 'ia64'):
-                    return False
             return True
 
         def gen_db_minor_ver_nums(major):
