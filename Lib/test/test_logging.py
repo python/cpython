@@ -914,8 +914,8 @@ class WarningsTest(BaseTest):
     def test_warnings(self):
         with warnings.catch_warnings():
             logging.captureWarnings(True)
-            warnings.filterwarnings("always", category=UserWarning)
             try:
+                warnings.filterwarnings("always", category=UserWarning)
                 file = cStringIO.StringIO()
                 h = logging.StreamHandler(file)
                 logger = logging.getLogger("py.warnings")
