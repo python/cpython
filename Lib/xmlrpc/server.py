@@ -159,7 +159,7 @@ class SimpleXMLRPCDispatcher:
     reason to instantiate this class directly.
     """
 
-    def __init__(self, allow_none, encoding):
+    def __init__(self, allow_none=False, encoding=None):
         self.funcs = {}
         self.instance = None
         self.allow_none = allow_none

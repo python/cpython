@@ -92,6 +92,9 @@ Library
 - Issue #4524: distutils build_script command failed with --with-suffix=3.
   Initial patch by Amaury Forgeot d'Arc.
 
+- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
+  new arguments introduced in 2.5.
+
 Build
 -----
 
