@@ -100,6 +100,9 @@ Build
 
 - Link the shared python library with $(MODLIBS).
 
+- Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
+  using Berkley-DB.
+
 
 What's New in Python 3.0.1?
 ===========================

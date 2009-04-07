@@ -5,6 +5,7 @@ __version__ = "$Revision$"
 
 import sys, os, imp, re, optparse
 from glob import glob
+from platform import machine as platform_machine
 
 from distutils import log
 from distutils import sysconfig
@@ -665,6 +666,49 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dbm/dumb.py provides
         # similar functionality (but slower of course) implemented in Python.
 
+        # Sleepycat^WOracle Berkeley DB interface.
+        #  http://www.oracle.com/database/berkeley-db/db/index.html
+        #
+        # This requires the Sleepycat^WOracle DB code. The supported versions
+        # are set below.  Visit the URL above to download
+        # a release.  Most open source OSes come with one or more
+        # versions of BerkeleyDB already installed.
+
+        max_db_ver = (4, 7)
+        min_db_ver = (3, 3)
+        db_setup_debug = False   # verbose debug prints from this script?
+
+        def allow_db_ver(db_ver):
+            """Returns a boolean if the given BerkeleyDB version is acceptable.
+
+            Args:
+              db_ver: A tuple of the version to verify.
+            """
+            if not (min_db_ver <= db_ver <= max_db_ver):
+                return False
+            # Use this function to filter out known bad configurations.
+            if (4, 6) == db_ver[:2]:
+                # BerkeleyDB 4.6.x is not stable on many architectures.
+                arch = platform_machine()
+                if arch not in ('i386', 'i486', 'i586', 'i686',
+                                'x86_64', 'ia64'):
+                    return False
+            return True
+
+        def gen_db_minor_ver_nums(major):
+            if major == 4:
+                for x in range(max_db_ver[1]+1):
+                    if allow_db_ver((4, x)):
+                        yield x
+            elif major == 3:
+                for x in (3,):
+                    if allow_db_ver((3, x)):
+                        yield x
+            else:
+                raise ValueError("unknown major BerkeleyDB version", major)
+
+        # construct a list of paths to look for the header file in on
+        # top of the normal inc_dirs.
         db_inc_paths = [
             '/usr/include/db4',
             '/usr/local/include/db4',
@@ -676,8 +720,124 @@ class PyBuildExt(build_ext):
             '/sw/include/db4',
             '/sw/include/db3',
         ]
+        # 4.x minor number specific paths
+        for x in gen_db_minor_ver_nums(4):
+            db_inc_paths.append('/usr/include/db4%d' % x)
+            db_inc_paths.append('/usr/include/db4.%d' % x)
+            db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
+            db_inc_paths.append('/usr/local/include/db4%d' % x)
+            db_inc_paths.append('/pkg/db-4.%d/include' % x)
+            db_inc_paths.append('/opt/db-4.%d/include' % x)
+            # MacPorts default (http://www.macports.org/)
+            db_inc_paths.append('/opt/local/include/db4%d' % x)
+        # 3.x minor number specific paths
+        for x in gen_db_minor_ver_nums(3):
+            db_inc_paths.append('/usr/include/db3%d' % x)
+            db_inc_paths.append('/usr/local/BerkeleyDB.3.%d/include' % x)
+            db_inc_paths.append('/usr/local/include/db3%d' % x)
+            db_inc_paths.append('/pkg/db-3.%d/include' % x)
+            db_inc_paths.append('/opt/db-3.%d/include' % x)
 
-        db_incs = None
+        # Add some common subdirectories for Sleepycat DB to the list,
+        # based on the standard include directories. This way DB3/4 gets
+        # picked up when it is installed in a non-standard prefix and
+        # the user has added that prefix into inc_dirs.
+        std_variants = []
+        for dn in inc_dirs:
+            std_variants.append(os.path.join(dn, 'db3'))
+            std_variants.append(os.path.join(dn, 'db4'))
+            for x in gen_db_minor_ver_nums(4):
+                std_variants.append(os.path.join(dn, "db4%d"%x))
+                std_variants.append(os.path.join(dn, "db4.%d"%x))
+            for x in gen_db_minor_ver_nums(3):
+                std_variants.append(os.path.join(dn, "db3%d"%x))
+                std_variants.append(os.path.join(dn, "db3.%d"%x))
+
+        db_inc_paths = std_variants + db_inc_paths
+        db_inc_paths = [p for p in db_inc_paths if os.path.exists(p)]
+
+        db_ver_inc_map = {}
+
+        class db_found(Exception): pass
+        try:
+            # See whether there is a Sleepycat header in the standard
+            # search path.
+            for d in inc_dirs + db_inc_paths:
+                f = os.path.join(d, "db.h")
+                if db_setup_debug: print("db: looking for db.h in", f)
+                if os.path.exists(f):
+                    f = open(f).read()
+                    m = re.search(r"#define\WDB_VERSION_MAJOR\W(\d+)", f)
+                    if m:
+                        db_major = int(m.group(1))
+                        m = re.search(r"#define\WDB_VERSION_MINOR\W(\d+)", f)
+                        db_minor = int(m.group(1))
+                        db_ver = (db_major, db_minor)
+
+                        # Avoid 4.6 prior to 4.6.21 due to a BerkeleyDB bug
+                        if db_ver == (4, 6):
+                            m = re.search(r"#define\WDB_VERSION_PATCH\W(\d+)", f)
+                            db_patch = int(m.group(1))
+                            if db_patch < 21:
+                                print("db.h:", db_ver, "patch", db_patch,
+                                      "being ignored (4.6.x must be >= 4.6.21)")
+                                continue
+
+                        if ( (db_ver not in db_ver_inc_map) and
+                            allow_db_ver(db_ver) ):
+                            # save the include directory with the db.h version
+                            # (first occurrence only)
+                            db_ver_inc_map[db_ver] = d
+                            if db_setup_debug:
+                                print("db.h: found", db_ver, "in", d)
+                        else:
+                            # we already found a header for this library version
+                            if db_setup_debug: print("db.h: ignoring", d)
+                    else:
+                        # ignore this header, it didn't contain a version number
+                        if db_setup_debug:
+                            print("db.h: no version number version in", d)
+
+            db_found_vers = list(db_ver_inc_map.keys())
+            db_found_vers.sort()
+
+            while db_found_vers:
+                db_ver = db_found_vers.pop()
+                db_incdir = db_ver_inc_map[db_ver]
+
+                # check lib directories parallel to the location of the header
+                db_dirs_to_check = [
+                    db_incdir.replace("include", 'lib64'),
+                    db_incdir.replace("include", 'lib'),
+                ]
+                db_dirs_to_check = list(filter(os.path.isdir, db_dirs_to_check))
+
+                # Look for a version specific db-X.Y before an ambiguoius dbX
+                # XXX should we -ever- look for a dbX name?  Do any
+                # systems really not name their library by version and
+                # symlink to more general names?
+                for dblib in (('db-%d.%d' % db_ver),
+                              ('db%d%d' % db_ver),
+                              ('db%d' % db_ver[0])):
+                    dblib_file = self.compiler.find_library_file(
+                                    db_dirs_to_check + lib_dirs, dblib )
+                    if dblib_file:
+                        dblib_dir = [ os.path.abspath(os.path.dirname(dblib_file)) ]
+                        raise db_found
+                    else:
+                        if db_setup_debug: print("db lib: ", dblib, "not found")
+
+        except db_found:
+            if db_setup_debug:
+                print("bsddb using BerkeleyDB lib:", db_ver, dblib)
+                print("bsddb lib dir:", dblib_dir, " inc dir:", db_incdir)
+            db_incs = [db_incdir]
+            dblibs = [dblib]
+        else:
+            if db_setup_debug: print("db: no appropriate library found")
+            db_incs = None
+            dblibs = []
+            dblib_dir = None
 
         # The sqlite interface
         sqlite_setup_debug = False   # verbose debug prints from this script?
