@@ -1,5 +1,4 @@
 #include "Python.h"
-#include <ctype.h>
 
 /* snprintf() wrappers.  If the platform has vsnprintf, we use it, else we
    emulate it in a half-hearted way.  Even if the platform has it, we wrap
