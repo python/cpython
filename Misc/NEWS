@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6.2
-==========================
+What's New in Python 2.6.2 rc 1
+===============================
 
-*Release date: XX-XXX-200X*
+*Release date: 06-Apr-2009*
 
 Core and Builtins
 -----------------
@@ -19,8 +19,8 @@ Core and Builtins
 
 - Issue #1665206: Remove the last eager import in _warnings.c and make it lazy.
 
-- Issue #4034: Fix weird attribute error messages of the traceback object. (As a
-  result traceback.__members__ no longer exists.)
+- Issue #4034: Fix weird attribute error messages of the traceback object. (As
+  a result traceback.__members__ no longer exists.)
 
 - Issue #5247: Improve error message when unknown format codes are
   used when using str.format() with str, unicode, long, int, and
@@ -137,8 +137,8 @@ Library
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
   popups on windows buildbots. Patch applied to work around this issue.
 
-- Issue #5632: Thread.ident was None for the main thread and threads not created
-  with the threading module.
+- Issue #5632: Thread.ident was None for the main thread and threads not
+  created with the threading module.
 
 - Issue #5400: Added patch for multiprocessing on netbsd compilation/support
 
@@ -186,8 +186,8 @@ Library
 
 - Issue #5179: Fixed subprocess handle leak on failure on windows.
 
-- Issue #4308: httplib.IncompleteRead's repr doesn't include all of the data all
-  ready received.
+- Issue #4308: httplib.IncompleteRead's repr doesn't include all of the data
+  all ready received.
 
 - Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
   import guess_extension`` was used.
@@ -217,11 +217,11 @@ Library
   function without argtypes (only occurs if HAVE_USABLE_WCHAR_T is false).
 
 - Issue #3321: _multiprocessing.Connection() doesn't check handle; added checks
-  for *nix machines for negative handles and large int handles. Without this check
-  it is possible to segfault the interpreter.
+  for *nix machines for negative handles and large int handles. Without this
+  check it is possible to segfault the interpreter.
 
-- Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying issue
-  in sharedctypes.py.
+- Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying
+  issue in sharedctypes.py.
 
 - Issue #3386: distutils.sysconfig.get_python_lib prefix argument was ignored
   under NT and OS2. Patch by Philip Jenvey.
