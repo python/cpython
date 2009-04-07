@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
+  new arguments introduced in 2.5.
+
 
 What's New in Python 3.1 alpha 2?
 =================================
