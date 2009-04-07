@@ -143,6 +143,30 @@ Some smaller changes made to the core Python language are:
   (Contributed by Fredrik Johansson, Victor Stinner, Raymond Hettinger,
   and Mark Dickinson; :issue:`3439`.)
 
+* The fields in :func:`format` strings can now be automatically
+  numbered::
+
+    >>> 'Sir {} of {}'.format('Gallahad', 'Camelot')
+    'Sir Gallahad of Camelot'
+
+  Formerly, the string would have required numbered fields such as:
+  ``'Sir {0} of {1}'``.
+
+  (Contributed by Eric Smith; :issue:`5237`.)
+
+* ``round(x, n)`` now returns an integer if *x* is an integer.
+  Previously it returned a float::
+
+    >>> round(1123, -2)
+    1100
+
+  (Contributed by Mark Dickinson; :issue:`4707`.)
+
+.. ======================================================================
+
+New, Improved, and Deprecated Modules
+=====================================
+
 * Added a :class:`collections.Counter` class to support convenient
   counting of unique items in a sequence or iterable::
 
@@ -180,17 +204,6 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Raymond Hettinger and Mark Dickinson.)
 
-* The fields in :func:`format` strings can now be automatically
-  numbered::
-
-    >>> 'Sir {} of {}'.format('Gallahad', 'Camelot')
-    'Sir Gallahad of Camelot'
-
-  Formerly, the string would have required numbered fields such as:
-  ``'Sir {0} of {1}'``.
-
-  (Contributed by Eric Smith; :issue:`5237`.)
-
 * The :mod:`itertools` module grew two new functions.  The
   :func:`itertools.combinations_with_replacement` function is one of
   four for generating combinatorics including permutations and Cartesian
@@ -219,14 +232,6 @@ Some smaller changes made to the core Python language are:
   CSV header, SQL field list, or user input.
 
   (Contributed by Raymond Hettinger; :issue:`1818`.)
-
-* ``round(x, n)`` now returns an integer if *x* is an integer.
-  Previously it returned a float::
-
-    >>> round(1123, -2)
-    1100
-
-  (Contributed by Mark Dickinson; :issue:`4707`.)
 
 * The :func:`re.sub`, :func:`re.subn` and :func:`re.split` functions now
   accept a flags parameter.
@@ -283,7 +288,7 @@ Some smaller changes made to the core Python language are:
 
 
 Optimizations
--------------
+=============
 
 Major performance enhancements have been added:
 
@@ -334,7 +339,7 @@ Major performance enhancements have been added:
 
   Apart from the performance improvements this change should be invisible to
   end users, with one exception: for testing and debugging purposes there's a
-  new :class:`structseq` ``sys.int_info`` that provides information about the
+  new :attr:`sys.int_info` that provides information about the
   internal format, giving the number of bits per digit and the size in bytes
   of the C type used to store each digit::
 
