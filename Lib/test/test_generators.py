@@ -1564,7 +1564,8 @@ Check some syntax errors for yield expressions:
 >>> f=lambda: (yield 1),(yield 2)
 Traceback (most recent call last):
   ...
-SyntaxError: 'yield' outside function (<doctest test.test_generators.__test__.coroutine[21]>, line 1)
+  File "<doctest test.test_generators.__test__.coroutine[21]>", line 1
+SyntaxError: 'yield' outside function
 
 >>> def f(): return lambda x=(yield): 1
 Traceback (most recent call last):
@@ -1574,17 +1575,20 @@ SyntaxError: 'return' with argument inside generator (<doctest test.test_generat
 >>> def f(): x = yield = y
 Traceback (most recent call last):
   ...
-SyntaxError: assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[23]>, line 1)
+  File "<doctest test.test_generators.__test__.coroutine[23]>", line 1
+SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression (<doctest test.test_generators.__test__.coroutine[24]>, line 1)
+  File "<doctest test.test_generators.__test__.coroutine[24]>", line 1
+SyntaxError: can't assign to yield expression
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: augmented assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[25]>, line 1)
+  File "<doctest test.test_generators.__test__.coroutine[25]>", line 1
+SyntaxError: augmented assignment to yield expression not possible
 
 
 Now check some throw() conditions:
