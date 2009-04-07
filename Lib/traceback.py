@@ -64,7 +64,7 @@ def print_tb(tb, limit=None, file=None):
         filename = co.co_filename
         name = co.co_name
         _print(file,
-               '  File "%s", line %d, in %s' % (filename, lineno, name))
+               '  File "%s", line %d, in %s' % (filename,lineno,name))
         linecache.checkcache(filename)
         line = linecache.getline(filename, lineno, f.f_globals)
         if line: _print(file, '    ' + line.strip())
@@ -124,8 +124,9 @@ def print_exception(etype, value, tb, limit=None, file=None):
         _print(file, 'Traceback (most recent call last):')
         print_tb(tb, limit, file)
     lines = format_exception_only(etype, value)
-    for line in lines:
-        _print(file, line, '')
+    for line in lines[:-1]:
+        _print(file, line, ' ')
+    _print(file, lines[-1], '')
 
 def format_exception(etype, value, tb, limit = None):
     """Format a stack trace and the exception information.
@@ -194,7 +195,7 @@ def format_exception_only(etype, value):
                 caretspace = ((c.isspace() and c or ' ') for c in caretspace)
                 # only three spaces to account for offset1 == pos 0
                 lines.append('   %s^\n' % ''.join(caretspace))
-        value = msg
+            value = msg
 
     lines.append(_format_final_exc_line(stype, value))
     return lines
