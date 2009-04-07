@@ -98,7 +98,7 @@ class GeneralTests(TestCase):
 
 def _read_setUp(self):
     # the blocking constant should be tuned!
-    self.blocking_timeout = 0.0
+    self.blocking_timeout = 0.1
     self.evt = threading.Event()
     self.dataq = Queue.Queue()
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
