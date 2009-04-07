@@ -1541,8 +1541,8 @@ explored including logging, interface checking, automatic delegation, automatic
 property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
-Here is an example of a metaclass that uses an :class:`OrderedDict` to
-remember the order that class members were defined::
+Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
+to remember the order that class members were defined::
 
     class OrderedClass(type):
 
