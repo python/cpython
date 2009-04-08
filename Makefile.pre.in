@@ -826,7 +826,8 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		json json/tests \
 		sqlite3 sqlite3/test \
 		logging bsddb bsddb/test csv importlib wsgiref \
-		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
+		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests
+		lib2to3/tests/data lib2to3/tests/data/fixes lib2to3/tests/data/fixers/myfixes \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		multiprocessing multiprocessing/dummy \
