@@ -228,7 +228,18 @@ New, Improved, and Deprecated Modules
   *rename* which lets invalid fieldnames be automatically converted to
   positional names in the form _0, _1, etc.  This is useful when
   the field names are being created by an external source such as a
-  CSV header, SQL field list, or user input.
+  CSV header, SQL field list, or user input::
+
+    >>> query = input('Enter a query: ')
+    Enter a query: SELECT region, dept, count(*) FROM main GROUPBY region, dept
+
+    >>> cursor.execute(query)
+    >>> query_fields = [desc[0] for desc in cursor.description]
+    >>> UserQuery = namedtuple('UserQuery', query_fields, rename=True)
+    >>> pprint.pprint([UserQuery(*row) for row in cursor])
+    [UserQuery(region='South', dept='Shipping', _2=185),
+     UserQuery(region='North', dept='Accounting', _2=37),
+     UserQuery(region='West', dept='Sales', _2=419)]
 
   (Contributed by Raymond Hettinger; :issue:`1818`.)
 
