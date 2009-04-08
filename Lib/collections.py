@@ -89,7 +89,7 @@ class OrderedDict(dict, MutableMapping):
             curr = curr.next
 
     def __reversed__(self):
-        'od.__iter__() <==> reversed(od)'
+        'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
         root = self.__root
         curr = root.prev
