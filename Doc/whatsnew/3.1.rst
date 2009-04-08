@@ -215,8 +215,8 @@ New, Improved, and Deprecated Modules
   the field names are being created by an external source such as a
   CSV header, SQL field list, or user input::
 
-    >>> query = input('Enter a query: ')
-    Enter a query: SELECT region, dept, count(*) FROM main GROUPBY region, dept
+    >>> query = input()
+    SELECT region, dept, count(*) FROM main GROUPBY region, dept
 
     >>> cursor.execute(query)
     >>> query_fields = [desc[0] for desc in cursor.description]
