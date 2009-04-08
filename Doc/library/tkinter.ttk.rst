@@ -9,13 +9,13 @@
 .. index:: single: ttk
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
-which has been introduced in Tk 8.5. If you do not have Python compiled against
-Tk 8.5 you may still use this module as long as you have Tile installed, but
-then you will miss some features provided by the new Tk, like anti-aliased font
-rendering under X11, window transparency (on X11 you will need a composition
-window manager) and others.
+introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this
+module can still be accessed if *Tile* has been installed.  The former
+method using Tk 8.5 provides additional benefits including anti-aliased font
+rendering under X11 and window transparency (requiring a composition
+window manager on X11).
 
-The basic idea of :mod:`tkinter.ttk` is to separate, to the extent possible,
+The basic idea for :mod:`tkinter.ttk` is to separate, to the extent possible,
 the code implementing a widget's behavior from the code implementing its
 appearance.
 
@@ -23,58 +23,55 @@ appearance.
 .. seealso::
 
    `Tk Widget Styling Support <http://www.tcl.tk/cgi-bin/tct/tip/48>`_
-      The document which brought up theming support for Tk
+      A document introducing theming support for Tk
 
 
 Using Ttk
 ---------
 
-Basically, to start using Ttk, you have to import its module::
+To start using Ttk, import its module::
 
    from tkinter import ttk
 
-But if you already have some code that does::
-
-   from tkinter import *
-
-You may optionally want to use::
+To override the basic Tk widgets, the import should follow the Tk import::
 
    from tkinter import *
    from tkinter.ttk import *
 
-And then several :mod:`tkinter.ttk` widgets (:class:`Button`,
+That code causes several :mod:`tkinter.ttk` widgets (:class:`Button`,
 :class:`Checkbutton`, :class:`Entry`, :class:`Frame`, :class:`Label`,
 :class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) will
-automatically substitute the Tk widgets.
+:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to
+automatically replace the Tk widgets.
 
-This has the direct benefit of using the new widgets which gives better
-look & feel across platforms, but you should be aware that they are not
-totally compatible. The main difference you will find out is that widget
-options such as "fg", "bg" and others related to widget styling are no
-longer present in Ttk widgets, instead you will have to use :class:`ttk.Style`
-to achieve the same (or better) styling.
+This has the direct benefit of using the new widgets which gives a better
+look and feel across platforms; however, the replacement widgets are not
+completely compatible. The main difference is that widget options such as
+"fg", "bg" and others related to widget styling are no
+longer present in Ttk widgets.  Instead, use  the :class:`ttk.Style` class
+for improved styling effects.
+
 
 .. seealso::
 
-   `Converting existing applications to use the Tile widgets <http://tktable.sourceforge.net/tile/doc/converting.txt>`_
-     A text which talks in Tcl terms about differences typically found when
-     moving applications to use the new widgets.
+   `Converting existing applications to use Tile widgets <http://tktable.sourceforge.net/tile/doc/converting.txt>`_
+     A monograph (using Tcl terminology) about differences typically
+     encountered when moving applications to use the new widgets.
 
 
 Ttk Widgets
 -----------
 
-Ttk comes with 17 widgets, where 11 of these already existed in tkinter:
+Ttk comes with 17 widgets, eleven of which already existed in tkinter:
 :class:`Button`, :class:`Checkbutton`, :class:`Entry`, :class:`Frame`,
 :class:`Label`, :class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`. The others 6 are
+:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`. The other six are
 new: :class:`Combobox`, :class:`Notebook`, :class:`Progressbar`,
 :class:`Separator`, :class:`Sizegrip` and :class:`Treeview`. And all them are
 subclasses of :class:`Widget`.
 
-Like it was told before, you will notice changes in look & feel as well in the
-styling code. To demonstrate the latter, a very simple example is shown below.
+Using the Ttk widgets gives the application an improved look and feel.
+As discussed above, there are differences in how the styling is coded.
 
 Tk code::
 
@@ -90,7 +87,7 @@ Ttk code::
    l1 = ttk.Label(text="Test", style="BW.TLabel")
    l2 = ttk.Label(text="Test", style="BW.TLabel")
 
-For more information about TtkStyling_ read the :class:`Style` class
+For more information about TtkStyling_, see the :class:`Style` class
 documentation.
 
 Widget
@@ -554,10 +551,10 @@ Progressbar
 -----------
 
 The :class:`ttk.Progressbar` widget shows the status of a long-running
-operation. It can operate in two modes: determinate mode shows the amount
-completed relative to the total amount of work to be done, and indeterminate
-mode provides an animated display to let the user know that something is
-happening.
+operation. It can operate in two modes:  1) the determinate mode which shows the
+amount completed relative to the total amount of work to be done and 2) the
+indeterminate mode which provides an animated display to let the user know that
+work is progressing.
 
 
 Options
@@ -1164,7 +1161,7 @@ option. If you don't know the class name of a widget, use the method
       the value for that option.
 
       For example, to change every default button to be a flat button with
-      some padding and a different background color you could do::
+      some padding and a different background color::
 
          from tkinter import ttk
          import tkinter
@@ -1186,7 +1183,7 @@ option. If you don't know the class name of a widget, use the method
 
       Each key in *kw* is an option and each value should be a list or a
       tuple (usually) containing statespecs grouped in tuples, lists, or
-      something else of your preference. A statespec is a compound of one
+      some other preference. A statespec is a compound of one
       or more states and then a value.
 
       An example may make it more understandable::
@@ -1208,9 +1205,9 @@ option. If you don't know the class name of a widget, use the method
 
 
       Note that the order of the (states, value) sequences for an option does
-      matter, if you changed the order to ``[('active', 'blue'), ('pressed',
-      'red')]`` in the foreground option, for example, you would get a blue
-      foreground when the widget were in active or pressed states.
+      matter, if the order is changed to ``[('active', 'blue'), ('pressed',
+      'red')]`` in the foreground option, for example, the result would be a
+      blue foreground when the widget were in active or pressed states.
 
 
    .. method:: lookup(style, option[, state=None[, default=None]])
@@ -1221,7 +1218,7 @@ option. If you don't know the class name of a widget, use the method
       states. If the *default* argument is set, it is used as a fallback value
       in case no specification for option is found.
 
-      To check what font a Button uses by default, you would do::
+      To check what font a Button uses by default::
 
          from tkinter import ttk
 
