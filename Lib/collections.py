@@ -126,7 +126,7 @@ class OrderedDict(dict, MutableMapping):
         '''
         if not self:
             raise KeyError('dictionary is empty')
-        key = next(reversed(self)) if last else next(iter(self))
+        key = next(reversed(self) if last else iter(self))
         value = self.pop(key)
         return key, value
 
