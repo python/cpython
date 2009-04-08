@@ -1653,9 +1653,11 @@ def main():
           ext_modules=[Extension('_struct', ['_struct.c'])],
 
           # Scripts to install
-          scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
-                     'Tools/scripts/2to3',
-                     'Lib/smtpd.py']
+          # Commented out because we don't want them to override the 2.x
+          # ones. See #1590.
+          #scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
+          #           'Tools/scripts/2to3',
+          #           'Lib/smtpd.py']
         )
 
 # --install-platlib
