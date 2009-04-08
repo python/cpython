@@ -179,8 +179,7 @@ New, Improved, and Deprecated Modules
   The basic idea of ttk is to separate, to the extent possible, the code
   implementing a widget's behavior from the code implementing its appearance.
 
-  (Contributed by Kevin Walzer and Guilherme Polo; :issue:`2618` and
-  :issue:`2983`.)
+  (Contributed by Guilherme Polo; :issue:`2983`.)
 
 * The :class:`gzip.GzipFile` and :class:`bz2.BZ2File` classes now support
   the context manager protocol::
