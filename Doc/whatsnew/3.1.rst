@@ -2,8 +2,6 @@
   What's New In Python 3.1
 ****************************
 
-.. XXX Add trademark info for Apple, Microsoft.
-
 :Author: Raymond Hettinger
 :Release: |release|
 :Date: |today|
@@ -17,8 +15,7 @@
 
    * The maintainer will go through Misc/NEWS periodically and add
    changes; it's therefore more important to add your changes to
-   Misc/NEWS than to this file.  (Note: I didn't get to this for 3.0.
-   GvR.)
+   Misc/NEWS than to this file.
 
    * This is not a complete list of every single change; completeness
    is the purpose of Misc/NEWS.  Some changes I consider too small
@@ -39,8 +36,7 @@
    necessary (especially when a final release is some months away).
 
    * Credit the author of a patch or bugfix.   Just the name is
-   sufficient; the e-mail address isn't necessary.  (Due to time
-   constraints I haven't managed to do this for 3.0.  GvR.)
+   sufficient; the e-mail address isn't necessary.
 
    * It's helpful to add the bug/patch number as a comment:
 
@@ -50,20 +46,9 @@
    (Contributed by P.Y. Developer.)
 
    This saves the maintainer the effort of going through the SVN log
-   when researching a change.  (Again, I didn't get to this for 3.0.
-   GvR.)
+   when researching a change.
 
 This article explains the new features in Python 3.1, compared to 3.0.
-
-.. Compare with previous release in 2 - 3 sentences here.
-.. add hyperlink when the documentation becomes available online.
-
-.. ======================================================================
-.. Large, PEP-level features and changes should be described here.
-.. Should there be a new section here for 3k migration?
-.. Or perhaps a more general section describing module changes/deprecation?
-.. sets module deprecated
-.. ======================================================================
 
 
 PEP 372: Ordered Dictionaries
@@ -95,6 +80,7 @@ Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_
    :pep:`372` - Ordered Dictionaries
       PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
       written by Raymond Hettinger.
+
 
 PEP 378: Format Specifier for Thousands Separator
 =================================================
@@ -162,7 +148,6 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Mark Dickinson; :issue:`4707`.)
 
-.. ======================================================================
 
 New, Improved, and Deprecated Modules
 =====================================
@@ -294,8 +279,6 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Brett Cannon.)
 
-.. ======================================================================
-
 
 Optimizations
 =============
@@ -359,4 +342,3 @@ Major performance enhancements have been added:
 
   (Contributed by Mark Dickinson; :issue:`4258`.)
 
-.. ======================================================================
