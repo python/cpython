@@ -287,6 +287,10 @@ th {
     background-color: #ede;
 }
 
+th.head {
+    text-align: center;    
+}
+
 /* -- other body styles ----------------------------------------------------- */
 
 dl {
