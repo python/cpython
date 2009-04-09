@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+  platforms. Initial patch by Paul Moore.
+
 - Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
   Initial fix by Wayne Davison.
 
