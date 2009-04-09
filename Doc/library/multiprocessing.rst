@@ -841,7 +841,7 @@ object -- see :ref:`multiprocessing-managers`.
    will always return ``True`` except if a timeout is given and the operation
    times out.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       Previously, the method always returned ``None``.
 
 .. class:: Lock()

@@ -687,7 +687,7 @@ An event object manages an internal flag that can be set to true with the
    This method returns the internal flag on exit, so it will always return
    ``True`` except if a timeout is given and the operation times out.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       Previously, the method always returned ``None``.
 
 

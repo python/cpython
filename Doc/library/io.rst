@@ -279,7 +279,7 @@ I/O Base Classes
 
       Return the new absolute position.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
          The ``SEEK_*`` constants
 
    .. method:: seekable()
