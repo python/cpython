@@ -690,7 +690,7 @@ Test cases
                assertLessEqual(first, second, msg=None)
 
       Test that *first* is respectively >, >=, < or <= than *second* depending
-      on the method name.  If not, the test will fail with the nice explanation
+      on the method name.  If not, the test will fail with an explanation
       or with the explanation given by *msg*::
 
          >>> self.assertGreaterEqual(3, 4)
@@ -723,7 +723,7 @@ Test cases
    .. method:: assertIn(first, second, msg=None)
                assertNotIn(first, second, msg=None)
 
-      Tests that *first* is or is not in *second* with a nice explanitory error
+      Tests that *first* is or is not in *second* with an explanatory error
       message as appropriate.
 
       If specified *msg* will be used as the error message on failure.
@@ -767,7 +767,7 @@ Test cases
 
    .. method:: assertDictContainsSubset(expected, actual, msg=None)
 
-      Tests whether the key value pairs in dictionary *actual* are a
+      Tests whether the key/value pairs in dictionary *actual* are a
       superset of those in *expected*.  If not, an error message listing
       the missing keys and mismatched values is generated.
 
@@ -969,12 +969,12 @@ Test cases
       been asked to compare are exactly *typeobj* (not subclasses).
       *function* must take two positional arguments and a third msg=None
       keyword argument just as :meth:`assertEqual` does.  It must raise
-      self.failureException when inequality between the first two
+      ``self.failureException`` when inequality between the first two
       parameters is detected.
 
       One good use of custom equality checking functions for a type
-      is to raise self.failureException with an error message useful
-      for debugging the by explaining the inequalities in detail.
+      is to raise ``self.failureException`` with an error message useful
+      for debugging the problem by explaining the inequalities in detail.
 
       .. versionadded:: 2.7
 

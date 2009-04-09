@@ -239,7 +239,7 @@ Library
   mailbox.MH.get_message().
 
 - Issue #5585: Add the ability to call an initializer to mulitiprocessing.manager
-  so that users can install custonm handlers/etc.
+  so that users can install custom handlers/etc.
 
 - Issue #3551: Patch multiprocessing to raise a proper exception if the size of the
   object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES. Added docs
