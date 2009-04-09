@@ -216,6 +216,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+  platforms. Initial patch by Paul Moore.
+
 - Issue #4998: The memory saving effect of __slots__ had been lost on Fractions
   which inherited from numbers.py which did not have __slots__ defined.  The
   numbers hierarchy now has its own __slots__ declarations.
