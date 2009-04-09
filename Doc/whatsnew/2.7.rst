@@ -322,6 +322,12 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
+* The :mod:`multiprocessing` module's :class:`Manager*` classes
+  can now be passed a callable that will be called whenever
+  a subprocess is started, along with a set of arguments that will be
+  passed to the callable.
+  (Contributed by lekma; :issue:`5585`.)
+
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
   (Contributed by David Laban; :issue:`4739`.)
@@ -348,20 +354,81 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Ross Light; :issue:`4285`.)
 
 * The :mod:`unittest` module was enhanced in several ways.
-  Test cases can raise the :exc:`SkipTest` exception to skip a test.
-  (:issue:`1034053`.)
-  It will now use 'x' for expected failures
+  The progress messages will now print 'x' for expected failures
   and 'u' for unexpected successes when run in its verbose mode.
   (Contributed by Benjamin Peterson.)
+  Test cases can raise the :exc:`SkipTest` exception to skip a test.
+  (:issue:`1034053`.)
+
+  The error messages for :meth:`assertEqual`,
+  :meth:`assertTrue`, and :meth:`assertFalse`
+  failures now provide more information.  If you set the
+  :attr:`longMessage` attribute of your :class:`TestCase` classes to
+  true, both the standard error message and any additional message you
+  provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
 
   The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
   return a context handler when called without providing a callable
   object to run.  For example, you can write this::
 
-      with self.assertRaises(KeyError):
-          raise ValueError
+    with self.assertRaises(KeyError):
+        raise ValueError
 
   (Implemented by Antoine Pitrou; :issue:`4444`.)
+
+  A number of new methods were added that provide more specialized
+  tests.  Many of these methods were written by Google engineers
+  for use in their test suites; Gregory P. Smith, Michael Foord, and
+  GvR worked on merging them into Python's version of :mod:`unittest`.
+
+  * :meth:`assertIsNone` and :meth:`assertIsNotNone` take one
+    expression and verify that the result is or is not ``None``.
+
+  * :meth:`assertIs` and :meth:`assertIsNot` take two values and check
+    whether the two values evaluate to the same object or not.
+    (Added by Michael Foord; :issue:`2578`.)
+
+  * :meth:`assertGreater`, :meth:`assertGreaterEqual`,
+    :meth:`assertLess`, and :meth:`assertLessEqual` compare
+    two quantities.
+
+  * :meth:`assertMultiLineEqual` compares two strings, and if they're
+    not equal, displays a helpful comparison that highlights the
+    differences in the two strings.
+
+  * :meth:`assertRegexpMatches` checks whether its first argument is a
+    string matching a regular expression provided as its second argument.
+
+  * :meth:`assertRaisesRegexp` checks whether a particular exception
+    is raised, and then also checks that the string representation of
+    the exception matches the provided regular expression.
+
+  * :meth:`assertIn` and :meth:`assertNotIn` tests whether
+    *first* is or is not in  *second*.
+
+  * :meth:`assertSameElements` tests whether two provided sequences
+    contain the same elements.
+
+  * :meth:`assertSetEqual` compares whether two sets are equal, and
+    only reports the differences between the sets in case of error.
+
+  * Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
+    compare the specified types and explain the differences.
+    More generally, :meth:`assertSequenceEqual` compares two sequences
+    and can optionally check whether both sequences are of a
+    particular type.
+
+  * :meth:`assertDictEqual` compares two dictionaries and reports the
+    differences.  :meth:`assertDictContainsSubset` checks whether
+    all of the key/value pairs in *first* are found in *second*.
+
+  * A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
+    function.  The :meth:`assertEqual` method will use the function
+    when both of the objects being compared are of the specified type.
+    This function should compare the two objects and raise an
+    exception if they don't match; it's a good idea for the function
+    to provide additional information about why the two objects are
+    matching, much as the new sequence comparison methods do.
 
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
