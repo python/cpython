@@ -611,7 +611,7 @@ Test cases
       Signal a test failure if *expr* is false; the explanation for the error
       will be *msg* if given, otherwise it will be :const:`None`.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failUnless`.
 
 
@@ -630,10 +630,10 @@ Test cases
       registers :meth:`addTypeEqualityFunc` the type specific equality function
       will be called in order to generate a more useful default error message.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.1
          Added the automatic calling of type specific equality function.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failUnlessEqual`.
 
 
@@ -647,7 +647,7 @@ Test cases
       default value for *msg* can be computed to include representations of both
       *first* and *second*.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failIfEqual`.
 
 
@@ -663,7 +663,7 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failUnlessAlmostEqual`.
 
 
@@ -679,7 +679,7 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failIfAlmostEqual`.
 
 
@@ -695,7 +695,7 @@ Test cases
          >>> self.assertGreaterEqual(3, 4)
          AssertionError: "3" unexpectedly not greater than or equal to "4"
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertMultiLineEqual(self, first, second, msg=None)
@@ -706,7 +706,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertRegexpMatches(text, regexp[, msg=None]):
@@ -716,7 +716,7 @@ Test cases
       a regular expression object or a string containing a regular expression
       suitable for use by :func:`re.search`.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertIn(first, second, msg=None)
@@ -727,7 +727,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertSameElements(expected, actual, msg=None)
@@ -738,7 +738,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertSetEqual(set1, set2, msg=None)
@@ -751,7 +751,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertDictEqual(expected, actual, msg=None)
@@ -761,7 +761,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertDictContainsSubset(expected, actual, msg=None)
@@ -772,7 +772,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertListEqual(list1, list2, msg=None)
@@ -784,7 +784,7 @@ Test cases
 
       If specified *msg* will be used as the error message on failure.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertSequenceEqual(seq1, seq2, msg=None, seq_type=None)
@@ -799,7 +799,7 @@ Test cases
       This method is used to implement :meth:`assertListEqual` and
       :meth:`assertTupleEqual`.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertRaises(exception[, callable, ...])
@@ -821,7 +821,7 @@ Test cases
       .. versionchanged:: 3.1
          Added the ability to use :meth:`assertRaises` as a context manager.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failUnlessRaises`.
 
 
@@ -840,14 +840,14 @@ Test cases
          with self.assertRaisesRegexp(ValueError, 'literal'):
             int('XYZ')
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertIsNone(expr[, msg])
 
       This signals a test failure if *expr* is not None.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertIsNotNone(expr[, msg])
@@ -855,7 +855,7 @@ Test cases
       The inverse of the :meth:`assertIsNone` method.
       This signals a test failure if *expr* is None.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertFalse(expr[, msg])
@@ -865,7 +865,7 @@ Test cases
       This signals a test failure if *expr* is true, with *msg* or :const:`None`
       for the error message.
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.1
          :meth:`failIf`.
 
 
@@ -899,7 +899,7 @@ Test cases
       The class setting can be overridden in individual tests by assigning an
       instance attribute to True or False before calling the assert methods.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    Testing frameworks can use the following methods to collect information on
@@ -936,7 +936,7 @@ Test cases
       returns the first line of the test method's docstring, if available,
       along with the method name.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.1
 
          In earlier versions this only returned the first line of the test
          method's docstring, if available or the :const:`None`.  That led to
@@ -958,7 +958,7 @@ Test cases
       is to raise self.failureException with an error message useful
       for debugging the by explaining the inequalities in detail.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
 .. class:: FunctionTestCase(testFunc[, setUp[, tearDown[, description]]])

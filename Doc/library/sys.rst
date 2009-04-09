@@ -833,7 +833,7 @@ always available.
    so ``sys.version_info[0]`` is equivalent to ``sys.version_info.major``
    and so on.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       Added named component attributes
 
 .. data:: warnoptions

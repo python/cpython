@@ -233,6 +233,16 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Gregory Smith.)
 
+* The :mod:`logging` module now implements a simple :class:`NullHandler`
+  class for applications that are not using logging but are calling
+  library code that does.  Setting-up a null handler will suppress
+  spurious warnings like "No handlers could be found for logger X.Y.Z"::
+
+    >>> h = logging.NullHandler()
+    >>> logging.getLogger("foo").addHandler(h)
+
+  (Contributed by Vinay Sajip; issue:`4384`).
+
 * The :mod:`runpy` module which supports the ``-m`` command line switch
   now supports the execution of packages by looking for and executing
   a ``__main__`` submodule when a package name is supplied.
@@ -269,7 +279,30 @@ New, Improved, and Deprecated Modules
         def test_gimzo_without_required_library(self):
             ...
 
-  (Contributed by Benjamin Peterson.)
+  Also, tests for exceptions have been builtout to work with context managers::
+
+      def test_division_by_zero(self):
+          with self.assertRaises(ZeroDivisionError):
+              x / 0
+
+  In addition, several new assertion methods were added including
+  :func:`assertSetEqual`, :func:`assertDictEqual`,
+  :func:`assertDictContainsSubset`, :func:`assertListEqual`,
+  :func:`assertTupleEqual`, :func:`assertSequenceEqual`,
+  :func:`assertRaisesRegexp`, :func:`assertIsNone`,
+  and :func:`assertIsNotNot`.
+
+  (Contributed by Benjamin Peterson and Antoine Pitrou.)
+
+* The :mod:`io` module has three new constants for :meth:`seek`:
+  method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
+
+* The :attr:`sys.version_info` tuple is now a named tuple::
+
+    >>> sys.version_info
+    sys.version_info(major=3, minor=1, micro=0, releaselevel='alpha', serial=2)
+
+  (Contributed by Ross Light; :issue:`4285`.)
 
 * A new module, :mod:`importlib` was added.  It provides a complete, portable,
   pure Python reference implementation of the *import* statement and its
@@ -319,7 +352,13 @@ Major performance enhancements have been added:
   its performance.  The code is expected to be added in-time for the beta
   release.
 
-  (Contributed by Bob Ippolito.)
+  (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou;
+  :issue:`4136`.)
+
+Build and C API Changes
+=======================
+
+Changes to Python's build process and to the C API include:
 
 * Integers are now stored internally either in base 2**15 or in base
   2**30, the base being determined at build time.  Previously, they
@@ -342,3 +381,11 @@ Major performance enhancements have been added:
 
   (Contributed by Mark Dickinson; :issue:`4258`.)
 
+* The :cfunc:`PyLong_AsUnsignedLongLong()` function now handles a negative
+  *pylong* by raising :exc:`OverflowError` instead of :exc:`TypeError`.
+
+  (Contributed by Mark Dickinson and Lisandro Dalcrin; :issue:`5175`.)
+
+* Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
+
+  (Contributed by Mark Dickinson; :issue;`4910`.)
