@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #2170: refactored xml.dom.minidom.normalize, increasing both
+  its clarity and its speed.
+
 - Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
   to avoid compiler warnings.
 
