@@ -337,6 +337,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+  platforms. Initial patch by Paul Moore.
+
 - Issue #5095: Added bdist_msi to the list of bdist supported formats.
   Initial fix by Steven Bethard.
 
