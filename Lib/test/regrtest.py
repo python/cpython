@@ -122,6 +122,10 @@ resources to test.  Currently only the following are defined:
 
     gui -       Run tests that require a running GUI.
 
+    xpickle -   Test pickle and cPickle against Python 2.4, 2.5 and 2.6 to
+                test backwards compatibility. These tests take a long time
+                to run.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -175,7 +179,8 @@ if sys.platform == 'darwin':
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui')
+                  'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui',
+                  'xpickle')
 
 
 def usage(code, msg=''):
