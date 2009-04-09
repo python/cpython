@@ -262,10 +262,11 @@ table.docutils {
 
 table.docutils td, table.docutils th {
     padding: 1px 8px 1px 5px;
-    border-top: 0;
+    border-top: 1px solid #b9b;
     border-left: 0;
     border-right: 0;
     border-bottom: 1px solid #aaa;
+    background-color: #eef;    
 }
 
 table.field-list td, table.field-list th {
@@ -274,6 +275,10 @@ table.field-list td, table.field-list th {
 
 table.footnote td, table.footnote th {
     border: 0 !important;
+}
+
+table.docutils th {
+    background-color: #ede;
 }
 
 th {
