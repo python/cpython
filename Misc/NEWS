@@ -216,6 +216,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+  platforms. Initial patch by Paul Moore.
+
 - Issue #2254: Fix CGIHTTPServer information disclosure.  Relative paths are
   now collapsed within the url properly before looking in cgi_directories.
 
