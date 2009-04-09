@@ -175,7 +175,7 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Antoine Pitrou.)
 
-* The :mod:`decimal.Decimal` module now supports methods for creating a
+* The :mod:`decimal` module now supports methods for creating a
   decimal object from a binary :class:`float`.  The conversion is
   exact but can sometimes be surprising::
 
