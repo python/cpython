@@ -294,7 +294,7 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
-* The :mod:`io` module has three new constants for :meth:`seek`:
+* The :mod:`io` module has three new constants for the :meth:`seek`
   method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
 
 * The :attr:`sys.version_info` tuple is now a named tuple::
@@ -388,4 +388,4 @@ Changes to Python's build process and to the C API include:
 
 * Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
 
-  (Contributed by Mark Dickinson; :issue;`4910`.)
+  (Contributed by Mark Dickinson; :issue:`4910`.)
