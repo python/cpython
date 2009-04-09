@@ -875,6 +875,10 @@ Equality tests between :class:`OrderedDict` objects and other
 This allows :class:`OrderedDict` objects to be substituted anywhere a
 regular dictionary is used.
 
+The :class:`OrderedDict` constructor and :meth:`update` method both accept
+keyword arguments, but their order is lost because Python's function call
+semantics pass-in keyword arguments using a regular unordered dictionary.
+
 .. seealso::
 
    `Equivalent OrderedDict recipe <http://code.activestate.com/recipes/576693/>`_
