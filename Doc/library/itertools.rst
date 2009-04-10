@@ -36,32 +36,32 @@ operator can be mapped across two vectors to form an efficient dot-product:
 
 **Infinite Iterators:**
 
-    ==================  =================       =================================================
-    Iterator            Arguments               Results
-    ==================  =================       =================================================
-    :func:`count`       start                   start, start+1, start+2, ...
-    :func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...
-    :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times
-    ==================  =================       =================================================
+==================  =================       =================================================               =========================================
+Iterator            Arguments               Results                                                         Example
+==================  =================       =================================================               =========================================
+:func:`count`       start, [step]           start, start+step, start+2*step, ...                            ``count(10) --> 10 11 12 13 14 ...``
+:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') --> A B C D A B C D ...``
+:func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) --> 10 10 10``
+==================  =================       =================================================               =========================================
 
 **Iterators terminating on the shortest input sequence:**
 
-    ====================    ============================    =================================================
-    Iterator                Arguments                       Results
-    ====================    ============================    =================================================
-    :func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...
-    :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails
-    :func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
-    :func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True
-    :func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False
-    :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]
-    :func:`imap`            func, p, q, ...                 func(p0, q0), func(p1, q1), ...
-    :func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...
-    :func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
-    :func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails
-    :func:`izip`            p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
-    :func:`izip_longest`    p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
-    ====================    ============================    =================================================
+====================    ============================    =================================================   =============================================================
+Iterator                Arguments                       Results                                             Example
+====================    ============================    =================================================   =============================================================
+:func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
+:func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
+:func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+:func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True            ``ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9``
+:func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False           ``ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
+:func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`imap`            func, p, q, ...                 func(p0, q0), func(p1, q1), ...                     ``imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000``
+:func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
+:func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
+:func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
+:func:`izip`            p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``izip('ABCD', 'xy') --> Ax By``
+:func:`izip_longest`    p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
+====================    ============================    =================================================   =============================================================
 
 **Combinatoric generators:**
 
