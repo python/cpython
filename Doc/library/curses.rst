@@ -531,7 +531,7 @@ The module :mod:`curses` defines the following functions:
    capability, or is canceled or absent from the terminal description.
 
 
-.. function:: tparm(str[,...])
+.. function:: tparm(str[, ...])
 
    Instantiates the string *str* with the supplied parameters, where  *str* should
    be a parameterized string obtained from the terminfo  database.  E.g.

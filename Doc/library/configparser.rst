@@ -56,7 +56,7 @@ dictionary type is passed that sorts its keys, the sections will be sorted on
 write-back, as will be the keys within each section.
 
 
-.. class:: RawConfigParser([defaults[, dict_type]])
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict)
 
    The basic configuration object.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it will
@@ -68,7 +68,7 @@ write-back, as will be the keys within each section.
       The default *dict_type* is :class:`collections.OrderedDict`.
 
 
-.. class:: ConfigParser([defaults[, dict_type]])
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict)
 
    Derived class of :class:`RawConfigParser` that implements the magical
    interpolation feature and adds optional arguments to the :meth:`get` and
@@ -87,7 +87,7 @@ write-back, as will be the keys within each section.
       The default *dict_type* is :class:`collections.OrderedDict`.
 
 
-.. class:: SafeConfigParser([defaults[, dict_type]])
+.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict)
 
    Derived class of :class:`ConfigParser` that implements a more-sane variant of
    the magical interpolation feature.  This implementation is more predictable as
@@ -228,7 +228,7 @@ RawConfigParser Objects
       config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
 
 
-.. method:: RawConfigParser.readfp(fp[, filename])
+.. method:: RawConfigParser.readfp(fp, filename=None)
 
    Read and parse configuration data from the file or file-like object in *fp*
    (only the :meth:`readline` method is used).  If *filename* is omitted and *fp*
@@ -315,7 +315,7 @@ The :class:`ConfigParser` class extends some methods of the
 :class:`RawConfigParser` interface, adding some optional arguments.
 
 
-.. method:: ConfigParser.get(section, option[, raw[, vars]])
+.. method:: ConfigParser.get(section, option, raw=False, vars=None)
 
    Get an *option* value for the named *section*.  All the ``'%'`` interpolations
    are expanded in the return values, based on the defaults passed into the
@@ -323,7 +323,7 @@ The :class:`ConfigParser` class extends some methods of the
    is true.
 
 
-.. method:: ConfigParser.items(section[, raw[, vars]])
+.. method:: ConfigParser.items(section, raw=False, vars=None)
 
    Return a list of ``(name, value)`` pairs for each option in the given *section*.
    Optional arguments have the same meaning as for the :meth:`get` method.

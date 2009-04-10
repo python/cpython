@@ -20,7 +20,7 @@ sys.path``.  Printing lists of the files compiled can be disabled with the
 expression argument.  All files that match the expression will be skipped.
 
 
-.. function:: compile_dir(dir[, maxlevels[, ddir[, force[,  rx[, quiet]]]]])
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.  The *maxlevels* parameter is used to limit the depth of
@@ -36,7 +36,7 @@ expression argument.  All files that match the expression will be skipped.
    operation.
 
 
-.. function:: compile_path([skip_curdir[, maxlevels[, force]]])
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. If
    *skip_curdir* is true (the default), the current directory is not included in

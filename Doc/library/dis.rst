@@ -30,22 +30,23 @@ the following command can be used to get the disassembly of :func:`myfunc`::
 The :mod:`dis` module defines the following functions and constants:
 
 
-.. function:: dis([bytesource])
+.. function:: dis(x=None)
 
-   Disassemble the *bytesource* object. *bytesource* can denote either a module, a
+   Disassemble the *x* object. *x* can denote either a module, a
    class, a method, a function, or a code object.   For a module, it disassembles
    all functions.  For a class, it disassembles all methods.  For a single code
    sequence, it prints one line per bytecode instruction.  If no object is
    provided, it disassembles the last traceback.
 
 
-.. function:: distb([tb])
+.. function:: distb(tb=None)
 
    Disassembles the top-of-stack function of a traceback, using the last traceback
    if none was passed.  The instruction causing the exception is indicated.
 
 
-.. function:: disassemble(code[, lasti])
+.. function:: disassemble(code, lasti=-1)
+              disco(code, lasti=-1)
 
    Disassembles a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -60,12 +61,6 @@ The :mod:`dis` module defines the following functions and constants:
 
    The parameter interpretation recognizes local and global variable names,
    constant values, branch targets, and compare operators.
-
-
-.. function:: disco(code[, lasti])
-
-   A synonym for :func:`disassemble`.  It is more convenient to type, and kept
-   for compatibility with earlier Python releases.
 
 
 .. function:: findlinestarts(code)
