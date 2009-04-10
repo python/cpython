@@ -60,17 +60,17 @@ Iterator                Arguments                       Results                 
 
 **Combinatoric generators:**
 
-    ==============================================   ====================       =============================================================
-    Iterator                                         Arguments                  Results
-    ==============================================   ====================       =============================================================
-    :func:`product`                                  p, q, ... [repeat=1]       cartesian product, equivalent to a nested for-loop
-    :func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
-    :func:`combinations`                             p[, r]                     r-length tuples, in sorted order, no repeated elements
-    |
-    ``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-    ``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
-    ``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
-    ==============================================   ====================       =============================================================
+==============================================   ====================       =============================================================
+Iterator                                         Arguments                  Results
+==============================================   ====================       =============================================================
+:func:`product`                                  p, q, ... [repeat=1]       cartesian product, equivalent to a nested for-loop
+:func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
+:func:`combinations`                             p[, r]                     r-length tuples, in sorted order, no repeated elements
+|
+``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
+``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
+``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
+==============================================   ====================       =============================================================
 
 
 .. _itertools-functions:
