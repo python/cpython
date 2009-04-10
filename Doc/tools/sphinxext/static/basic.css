@@ -256,16 +256,12 @@ div.body p.centered {
 /* -- tables ---------------------------------------------------------------- */
 
 table.docutils {
-    border: 0;
+    border: 0 solid #dce;
     border-collapse: collapse;
 }
 
 table.docutils td, table.docutils th {
     padding: 1px 8px 1px 5px;
-    border-top: 1px solid #b9b;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 1px solid #aaa;
     background-color: #eef;    
 }
 
@@ -278,13 +274,13 @@ table.footnote td, table.footnote th {
 }
 
 table.docutils th {
+    border-top: 1px solid #cac;    
     background-color: #ede;
 }
 
 th {
     text-align: left;
     padding-right: 5px;
-    background-color: #ede;
 }
 
 th.head {
