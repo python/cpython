@@ -753,7 +753,7 @@ introduction to these two functions, see sections :ref:`doctest-simple-testmod`
 and :ref:`doctest-simple-testfile`.
 
 
-.. function:: testfile(filename[, module_relative][, name][, package][, globs][, verbose][, report][, optionflags][, extraglobs][, raise_on_error][, parser][, encoding])
+.. function:: testfile(filename, module_relative=True, name=None, package=None, globs=None, verbose=None, report=True, optionflags=0, extraglobs=None, raise_on_error=False, parser=DocTestParser(), encoding=None)
 
    All arguments except *filename* are optional, and should be specified in keyword
    form.
@@ -822,7 +822,7 @@ and :ref:`doctest-simple-testfile`.
    convert the file to unicode.
 
 
-.. function:: testmod([m][, name][, globs][, verbose][, report][, optionflags][, extraglobs][, raise_on_error][, exclude_empty])
+.. function:: testmod(m=None, name=None, globs=None, verbose=None, report=True, optionflags=0, extraglobs=None, raise_on_error=False, exclude_empty=False)
 
    All arguments are optional, and all except for *m* should be specified in
    keyword form.
@@ -860,7 +860,7 @@ This function is provided for backward compatibility.  There are no plans to
 deprecate it, but it's rarely useful:
 
 
-.. function:: run_docstring_examples(f, globs[, verbose][, name][, compileflags][, optionflags])
+.. function:: run_docstring_examples(f, globs, verbose=False, name="NoName", compileflags=None, optionflags=0)
 
    Test examples associated with object *f*; for example, *f* may be a module,
    function, or class object.
@@ -905,7 +905,7 @@ There are two main functions for creating :class:`unittest.TestSuite` instances
 from text files and modules with doctests:
 
 
-.. function:: DocFileSuite(*paths, [module_relative][, package][, setUp][, tearDown][, globs][, optionflags][, parser][, encoding])
+.. function:: DocFileSuite(*paths, module_relative=True, package=None, setUp=None, tearDown=None, globs=None, optionflags=0, parser=DocTestParser(), encoding=None)
 
    Convert doctest tests from one or more text files to a
    :class:`unittest.TestSuite`.
@@ -972,7 +972,7 @@ from text files and modules with doctests:
    from a text file using :func:`DocFileSuite`.
 
 
-.. function:: DocTestSuite([module][, globs][, extraglobs][, test_finder][, setUp][, tearDown][, checker])
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 
@@ -1158,7 +1158,7 @@ Example Objects
 ^^^^^^^^^^^^^^^
 
 
-.. class:: Example(source, want[, exc_msg][, lineno][, indent][, options])
+.. class:: Example(source, want, exc_msg=None, lineno=0, indent=0, options=None)
 
    A single interactive example, consisting of a Python statement and its expected
    output.  The constructor arguments are used to initialize the member variables
@@ -1220,7 +1220,7 @@ DocTestFinder objects
 ^^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: DocTestFinder([verbose][, parser][, recurse][, exclude_empty])
+.. class:: DocTestFinder(verbose=False, parser=DocTestParser(), recurse=True, exclude_empty=True)
 
    A processing class used to extract the :class:`DocTest`\ s that are relevant to
    a given object, from its docstring and the docstrings of its contained objects.
@@ -1306,14 +1306,14 @@ DocTestParser objects
       information.
 
 
-   .. method:: get_examples(string[, name])
+   .. method:: get_examples(string, name='<string>')
 
       Extract all doctest examples from the given string, and return them as a list
       of :class:`Example` objects.  Line numbers are 0-based.  The optional argument
       *name* is a name identifying this string, and is only used for error messages.
 
 
-   .. method:: parse(string[, name])
+   .. method:: parse(string, name='<string>')
 
       Divide the given string into examples and intervening text, and return them as
       a list of alternating :class:`Example`\ s and strings. Line numbers for the
@@ -1327,7 +1327,7 @@ DocTestRunner objects
 ^^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: DocTestRunner([checker][, verbose][, optionflags])
+.. class:: DocTestRunner(checker=None, verbose=None, optionflags=0)
 
    A processing class used to execute and verify the interactive examples in a
    :class:`DocTest`.
@@ -1409,7 +1409,7 @@ DocTestRunner objects
       output function that was passed to :meth:`DocTestRunner.run`.
 
 
-   .. method:: run(test[, compileflags][, out][, clear_globs])
+   .. method:: run(test, compileflags=None, out=None, clear_globs=True)
 
       Run the examples in *test* (a :class:`DocTest` object), and display the
       results using the writer function *out*.
@@ -1428,7 +1428,7 @@ DocTestRunner objects
       :meth:`DocTestRunner.report_\*` methods.
 
 
-   .. method:: summarize([verbose])
+   .. method:: summarize(verbose=None)
 
       Print a summary of all the test cases that have been run by this DocTestRunner,
       and return a :term:`named tuple` ``TestResults(failed, attempted)``.
@@ -1592,7 +1592,7 @@ code under the debugger:
    converted to code, and the rest placed in comments.
 
 
-.. function:: debug(module, name[, pm])
+.. function:: debug(module, name, pm=False)
 
    Debug the doctests for an object.
 
@@ -1613,7 +1613,7 @@ code under the debugger:
    passing an appropriate :func:`exec` call to :func:`pdb.run`.
 
 
-.. function:: debug_src(src[, pm][, globs])
+.. function:: debug_src(src, pm=False, globs=None)
 
    Debug the doctests in a string.
 
@@ -1633,7 +1633,7 @@ the source code, and especially :class:`DebugRunner`'s docstring (which is a
 doctest!) for more details:
 
 
-.. class:: DebugRunner([checker][, verbose][, optionflags])
+.. class:: DebugRunner(checker=None, verbose=None, optionflags=0)
 
    A subclass of :class:`DocTestRunner` that raises an exception as soon as a
    failure is encountered.  If an unexpected exception occurs, an

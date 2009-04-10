@@ -24,7 +24,7 @@ instances.
    hence not valid as a constructor), raises :exc:`TypeError`.
 
 
-.. function:: pickle(type, function[, constructor])
+.. function:: pickle(type, function, constructor=None)
 
    Declares that *function* should be used as a "reduction" function for objects
    of type *type*.  *function* should return either a string or a tuple

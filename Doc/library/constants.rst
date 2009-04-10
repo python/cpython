@@ -61,8 +61,8 @@ if the :option:`-S` command-line option is given) adds several constants to the
 built-in namespace.  They are useful for the interactive interpreter shell and
 should not be used in programs.
 
-.. data:: quit([code=None])
-          exit([code=None])
+.. data:: quit(code=None)
+          exit(code=None)
 
    Objects that when printed, print a message like "Use quit() or Ctrl-D
    (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the

@@ -128,7 +128,7 @@ A :class:`timedelta` object represents a duration, the difference between two
 dates or times.
 
 
-.. class:: timedelta([days[, seconds[, microseconds[, milliseconds[, minutes[, hours[, weeks]]]]]]])
+.. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
    All arguments are optional and default to ``0``.  Arguments may be integers
    or floats, and may be positive or negative.
@@ -570,7 +570,7 @@ both directions; like a time object, :class:`datetime` assumes there are exactly
 Constructor:
 
 
-.. class:: datetime(year, month, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]])
+.. class:: datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
    The year, month and day arguments are required.  *tzinfo* may be ``None``, or an
    instance of a :class:`tzinfo` subclass.  The remaining arguments may be integers,
@@ -596,7 +596,7 @@ Other constructors, all class methods:
    :meth:`fromtimestamp`.
 
 
-.. method:: datetime.now([tz])
+.. method:: datetime.now(tz=None)
 
    Return the current local date and time.  If optional argument *tz* is ``None``
    or not specified, this is like :meth:`today`, but, if possible, supplies more
@@ -617,7 +617,7 @@ Other constructors, all class methods:
    :class:`datetime` object. See also :meth:`now`.
 
 
-.. method:: datetime.fromtimestamp(timestamp[, tz])
+.. method:: datetime.fromtimestamp(timestamp, tz=None)
 
    Return the local date and time corresponding to the POSIX timestamp, such as is
    returned by :func:`time.time`. If optional argument *tz* is ``None`` or not
@@ -947,7 +947,7 @@ Instance methods:
    ``self.date().isocalendar()``.
 
 
-.. method:: datetime.isoformat([sep])
+.. method:: datetime.isoformat(sep='T')
 
    Return a string representing the date and time in ISO 8601 format,
    YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
@@ -1101,7 +1101,7 @@ A time object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.
 
 
-.. class:: time(hour[, minute[, second[, microsecond[, tzinfo]]]])
+.. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
    All arguments are optional.  *tzinfo* may be ``None``, or an instance of a
    :class:`tzinfo` subclass.  The remaining arguments may be integers, in the

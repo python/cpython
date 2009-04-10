@@ -47,7 +47,7 @@ Module Contents
 The :mod:`csv` module defines the following functions:
 
 
-.. function:: reader(csvfile[, dialect='excel'][, fmtparam])
+.. function:: reader(csvfile, dialect='excel', **fmtparams)
 
    Return a reader object which will iterate over lines in the given *csvfile*.
    *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
@@ -57,7 +57,7 @@ The :mod:`csv` module defines the following functions:
    *dialect* parameter can be given which is used to define a set of parameters
    specific to a particular CSV dialect.  It may be an instance of a subclass of
    the :class:`Dialect` class or one of the strings returned by the
-   :func:`list_dialects` function.  The other optional *fmtparam* keyword arguments
+   :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
    dialect.  For full details about the dialect and formatting parameters, see
    section :ref:`csv-fmt-params`.
@@ -76,7 +76,7 @@ The :mod:`csv` module defines the following functions:
       Spam, Lovely Spam, Wonderful Spam
 
 
-.. function:: writer(csvfile[, dialect='excel'][, fmtparam])
+.. function:: writer(csvfile, dialect='excel', **fmtparams)
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
@@ -84,7 +84,7 @@ The :mod:`csv` module defines the following functions:
    parameter can be given which is used to define a set of parameters specific to a
    particular CSV dialect.  It may be an instance of a subclass of the
    :class:`Dialect` class or one of the strings returned by the
-   :func:`list_dialects` function.  The other optional *fmtparam* keyword arguments
+   :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
    dialect.  For full details about the dialect and formatting parameters, see
    section :ref:`csv-fmt-params`. To make it
@@ -103,11 +103,11 @@ The :mod:`csv` module defines the following functions:
       >>> spamWriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
-.. function:: register_dialect(name[, dialect][, fmtparam])
+.. function:: register_dialect(name[, dialect], **fmtparams)
 
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
-   by *fmtparam* keyword arguments, or both, with keyword arguments overriding
+   by *fmtparams* keyword arguments, or both, with keyword arguments overriding
    parameters of the dialect. For full details about the dialect and formatting
    parameters, see section :ref:`csv-fmt-params`.
 
@@ -137,7 +137,7 @@ The :mod:`csv` module defines the following functions:
 
 The :mod:`csv` module defines the following classes:
 
-.. class:: DictReader(csvfile[, fieldnames=None[, restkey=None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
+.. class:: DictReader(csvfile, fieldnames=None, restkey=None, restval=None, dialect='excel', *args, **kwds)
 
    Create an object which operates like a regular reader but maps the information
    read into a dict whose keys are given by the optional  *fieldnames* parameter.
@@ -151,7 +151,7 @@ The :mod:`csv` module defines the following classes:
    arguments are passed to the underlying :class:`reader` instance.
 
 
-.. class:: DictWriter(csvfile, fieldnames[, restval=''[, extrasaction='raise'[, dialect='excel'[, *args, **kwds]]]])
+.. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', dialect='excel', *args, **kwds)
 
    Create an object which operates like a regular writer but maps dictionaries onto
    output rows.  The *fieldnames* parameter identifies the order in which values in
@@ -195,7 +195,7 @@ The :mod:`csv` module defines the following classes:
 
    The :class:`Sniffer` class provides two methods:
 
-   .. method:: sniff(sample[, delimiters=None])
+   .. method:: sniff(sample, delimiters=None)
 
       Analyze the given *sample* and return a :class:`Dialect` subclass
       reflecting the parameters found.  If the optional *delimiters* parameter

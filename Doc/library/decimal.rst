@@ -305,7 +305,7 @@ Decimal objects
 ---------------
 
 
-.. class:: Decimal([value [, context]])
+.. class:: Decimal(value="0", context=None)
 
    Construct a new :class:`Decimal` object based from *value*.
 

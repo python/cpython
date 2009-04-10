@@ -30,7 +30,7 @@
    name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag='r', mode=0o666)
 
    Open the database file *filename* and return a corresponding object.
 
@@ -121,7 +121,7 @@ supported.
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename, [flag, [mode]])
+.. function:: open(filename[, flag[, mode]])
 
    Open a ``gdbm`` database and return a :class:`gdbm` object.  The *filename*
    argument is the name of the database file.

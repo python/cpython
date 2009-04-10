@@ -26,7 +26,7 @@ of doing them both.
 
 To do just the former:
 
-.. function:: compile_command(source[, filename[, symbol]])
+.. function:: compile_command(source, filename="<input>", symbol="single")
 
    Tries to compile *source*, which should be a string of Python code and return a
    code object if *source* is valid Python code. In that case, the filename

@@ -286,7 +286,7 @@ counts, but the output will exclude results with counts of zero or less.
 :class:`deque` objects
 ----------------------
 
-.. class:: deque([iterable[, maxlen]])
+.. class:: deque([iterable, [maxlen]])
 
    Returns a new deque object initialized left-to-right (using :meth:`append`) with
    data from *iterable*.  If *iterable* is not specified, the new deque is empty.
@@ -605,7 +605,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, [verbose], [rename])
+.. function:: namedtuple(typename, field_names, verbose=False, rename=False)
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
    create tuple-like objects that have fields accessible by attribute lookup as
