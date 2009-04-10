@@ -36,49 +36,49 @@ operator can be mapped across two vectors to form an efficient dot-product:
 
 **Infinite Iterators:**
 
-    ==================  =================       =================================================
-    Iterator            Arguments               Results
-    ==================  =================       =================================================
-    :func:`count`       start, [step]           start, start+step, start+2*step, ...
-    :func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...
-    :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times
-    ==================  =================       =================================================
+==================  =================       =================================================               =========================================
+Iterator            Arguments               Results                                                         Example
+==================  =================       =================================================               =========================================
+:func:`count`       start, [step]           start, start+step, start+2*step, ...                            ``count(10) --> 10 11 12 13 14 ...``
+:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') --> A B C D A B C D ...``
+:func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) --> 10 10 10``
+==================  =================       =================================================               =========================================
 
 **Iterators terminating on the shortest input sequence:**
 
-    ====================    ============================    =================================================
-    Iterator                Arguments                       Results
-    ====================    ============================    =================================================
-    :func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...
-    :func:`compress`        data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...
-    :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails
-    :func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
-    :func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True
-    :func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False
-    :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]
-    :func:`imap`            func, p, q, ...                 func(p0, q0), func(p1, q1), ...
-    :func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...
-    :func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
-    :func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails
-    :func:`izip`            p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
-    :func:`izip_longest`    p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...
-    ====================    ============================    =================================================
+====================    ============================    =================================================   =============================================================
+Iterator                Arguments                       Results                                             Example
+====================    ============================    =================================================   =============================================================
+:func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
+:func:`compress`        data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
+:func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
+:func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+:func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True            ``ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9``
+:func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False           ``ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
+:func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`imap`            func, p, q, ...                 func(p0, q0), func(p1, q1), ...                     ``imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000``
+:func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
+:func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
+:func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
+:func:`izip`            p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``izip('ABCD', 'xy') --> Ax By``
+:func:`izip_longest`    p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
+====================    ============================    =================================================   =============================================================
 
 **Combinatoric generators:**
 
-    ==============================================   ====================       =============================================================
-    Iterator                                         Arguments                  Results
-    ==============================================   ====================       =============================================================
-    :func:`product`                                  p, q, ... [repeat=1]       cartesian product, equivalent to a nested for-loop
-    :func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
-    :func:`combinations`                             p[, r]                     r-length tuples, in sorted order, no repeated elements
-    :func:`combinations_with_replacement`            p[, r]                     r-length tuples, in sorted order, with repeated elements
-    |
-    ``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-    ``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
-    ``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
-    ``combinations_with_replacement('ABCD', 2)``                                ``AA AB AC AD BB BC BD CC CD DD``
-    ==============================================   ====================       =============================================================
+==============================================   ====================       =============================================================
+Iterator                                         Arguments                  Results
+==============================================   ====================       =============================================================
+:func:`product`                                  p, q, ... [repeat=1]       cartesian product, equivalent to a nested for-loop
+:func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
+:func:`combinations`                             p[, r]                     r-length tuples, in sorted order, no repeated elements
+:func:`combinations_with_replacement`            p[, r]                     r-length tuples, in sorted order, with repeated elements
+|
+``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
+``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
+``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
+``combinations_with_replacement('ABCD', 2)``                                ``AA AB AC AD BB BC BD CC CD DD``
+==============================================   ====================       =============================================================
 
 
 .. _itertools-functions:
@@ -639,43 +639,6 @@ loops that truncate the stream.
    :func:`list` instead of :func:`tee`.
 
    .. versionadded:: 2.4
-
-
-.. _itertools-example:
-
-Examples
---------
-
-The following examples show common uses for each tool and demonstrate ways they
-can be combined.
-
-.. doctest::
-
-   >>> # Show a dictionary sorted and grouped by value
-   >>> from operator import itemgetter
-   >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
-   >>> di = sorted(d.iteritems(), key=itemgetter(1))
-   >>> for k, g in groupby(di, key=itemgetter(1)):
-   ...     print k, map(itemgetter(0), g)
-   ...
-   1 ['a', 'c', 'e']
-   2 ['b', 'd', 'f']
-   3 ['g']
-
-   >>> # Find runs of consecutive numbers using groupby.  The key to the solution
-   >>> # is differencing with a range so that consecutive numbers all appear in
-   >>> # same group.
-   >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
-   >>> for k, g in groupby(enumerate(data), lambda (i,x):i-x):
-   ...     print map(itemgetter(1), g)
-   ...
-   [1]
-   [4, 5, 6]
-   [10]
-   [15, 16, 17, 18]
-   [22]
-   [25, 26, 27, 28]
-
 
 
 .. _itertools-recipes:
