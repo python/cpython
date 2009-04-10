@@ -414,9 +414,10 @@ class HTMLDoc(Doc):
 
     def page(self, title, contents):
         """Format an HTML page."""
-        return '''
+        return '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head><body bgcolor="#f0f0f8">
 %s
 </body></html>''' % (title, contents)
@@ -1510,7 +1511,7 @@ def writedoc(thing, forceload=0):
     try:
         object, name = resolve(thing, forceload)
         page = html.page(describe(object), html.document(object, name))
-        file = open(name + '.html', 'w')
+        file = open(name + '.html', 'w', encoding='utf-8')
         file.write(page)
         file.close()
         print('wrote', name + '.html')
