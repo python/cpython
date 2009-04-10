@@ -1177,6 +1177,7 @@ not bother to return a value of the same type as its argument, so e.g., ``not
 
 
 .. _lambdas:
+.. _lambda:
 
 Lambdas
 =======
@@ -1200,8 +1201,6 @@ behaves like a function object defined with ::
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
 functions created with lambda forms cannot contain statements.
-
-.. _lambda:
 
 
 .. _exprlists:
