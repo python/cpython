@@ -1,0 +1,421 @@
+/**
+ * Sphinx stylesheet -- basic theme
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ */
+
+/* -- main layout ----------------------------------------------------------- */
+
+div.documentwrapper {
+    float: left;
+    width: 100%;
+}
+
+div.bodywrapper {
+    margin: 0 0 0 230px;
+}
+
+div.clearer {
+    clear: both;
+}
+
+/* -- relbar ---------------------------------------------------------------- */
+
+div.related {
+    width: 100%;
+    font-size: 90%;
+}
+
+div.related h3 {
+    display: none;
+}
+
+div.related ul {
+    margin: 0;
+    padding: 0 0 0 10px;
+    list-style: none;
+}
+
+div.related li {
+    display: inline;
+}
+
+div.related li.right {
+    float: right;
+    margin-right: 5px;
+}
+
+/* -- sidebar --------------------------------------------------------------- */
+
+div.sphinxsidebarwrapper {
+    padding: 10px 5px 0 10px;
+}
+
+div.sphinxsidebar {
+    float: left;
+    width: 230px;
+    margin-left: -100%;
+    font-size: 90%;
+}
+
+div.sphinxsidebar ul {
+    list-style: none;
+}
+
+div.sphinxsidebar ul ul,
+div.sphinxsidebar ul.want-points {
+    margin-left: 20px;
+    list-style: square;
+}
+
+div.sphinxsidebar ul ul {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+div.sphinxsidebar form {
+    margin-top: 10px;
+}
+
+div.sphinxsidebar input {
+    border: 1px solid #98dbcc;
+    font-family: sans-serif;
+    font-size: 1em;
+}
+
+img {
+    border: 0;
+}
+
+/* -- search page ----------------------------------------------------------- */
+
+ul.search {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+
+ul.search li {
+    padding: 5px 0 5px 20px;
+    background-image: url(file.png);
+    background-repeat: no-repeat;
+    background-position: 0 7px;
+}
+
+ul.search li a {
+    font-weight: bold;
+}
+
+ul.search li div.context {
+    color: #888;
+    margin: 2px 0 0 30px;
+    text-align: left;
+}
+
+ul.keywordmatches li.goodmatch a {
+    font-weight: bold;
+}
+
+/* -- index page ------------------------------------------------------------ */
+
+table.contentstable {
+    width: 90%;
+}
+
+table.contentstable p.biglink {
+    line-height: 150%;
+}
+
+a.biglink {
+    font-size: 1.3em;
+}
+
+span.linkdescr {
+    font-style: italic;
+    padding-top: 5px;
+    font-size: 90%;
+}
+
+/* -- general index --------------------------------------------------------- */
+
+table.indextable td {
+    text-align: left;
+    vertical-align: top;
+}
+
+table.indextable dl, table.indextable dd {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+table.indextable tr.pcap {
+    height: 10px;
+}
+
+table.indextable tr.cap {
+    margin-top: 10px;
+    background-color: #f2f2f2;
+}
+
+img.toggler {
+    margin-right: 3px;
+    margin-top: 3px;
+    cursor: pointer;
+}
+
+/* -- general body styles --------------------------------------------------- */
+
+a.headerlink {
+    visibility: hidden;
+}
+
+h1:hover > a.headerlink,
+h2:hover > a.headerlink,
+h3:hover > a.headerlink,
+h4:hover > a.headerlink,
+h5:hover > a.headerlink,
+h6:hover > a.headerlink,
+dt:hover > a.headerlink {
+    visibility: visible;
+}
+
+div.body p.caption {
+    text-align: inherit;
+}
+
+div.body td {
+    text-align: left;
+}
+
+.field-list ul {
+    padding-left: 1em;
+}
+
+.first {
+    margin-top: 0 !important;
+}
+
+p.rubric {
+    margin-top: 30px;
+    font-weight: bold;
+}
+
+/* -- sidebars -------------------------------------------------------------- */
+
+div.sidebar {
+    margin: 0 0 0.5em 1em;
+    border: 1px solid #ddb;
+    padding: 7px 7px 0 7px;
+    background-color: #ffe;
+    width: 40%;
+    float: right;
+}
+
+p.sidebar-title {
+    font-weight: bold;
+}
+
+/* -- topics ---------------------------------------------------------------- */
+
+div.topic {
+    border: 1px solid #ccc;
+    padding: 7px 7px 0 7px;
+    margin: 10px 0 10px 0;
+}
+
+p.topic-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* -- admonitions ----------------------------------------------------------- */
+
+div.admonition {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 7px;
+}
+
+div.admonition dt {
+    font-weight: bold;
+}
+
+div.admonition dl {
+    margin-bottom: 0;
+}
+
+p.admonition-title {
+    margin: 0px 10px 5px 0px;
+    font-weight: bold;
+}
+
+div.body p.centered {
+    text-align: center;
+    margin-top: 25px;
+}
+
+/* -- tables ---------------------------------------------------------------- */
+
+table.docutils {
+    border: 0 solid #dce;
+    border-collapse: collapse;
+}
+
+table.docutils td, table.docutils th {
+    padding: 2px 5px 2px 5px;
+    border-left: 0;    
+    background-color: #eef;    
+}
+
+table.field-list td, table.field-list th {
+    border: 0 !important;
+}
+
+table.footnote td, table.footnote th {
+    border: 0 !important;
+}
+
+table.docutils th {
+    border-top: 1px solid #cac;    
+    background-color: #ede;
+}
+
+th {
+    text-align: left;
+    padding-right: 5px;
+}
+
+th.head {
+    text-align: center;    
+}
+
+/* -- other body styles ----------------------------------------------------- */
+
+dl {
+    margin-bottom: 15px;
+}
+
+dd p {
+    margin-top: 0px;
+}
+
+dd ul, dd table {
+    margin-bottom: 10px;
+}
+
+dd {
+    margin-top: 3px;
+    margin-bottom: 10px;
+    margin-left: 30px;
+}
+
+dt:target, .highlight {
+    background-color: #fbe54e;
+}
+
+dl.glossary dt {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.field-list ul {
+    margin: 0;
+    padding-left: 1em;
+}
+
+.field-list p {
+    margin: 0;
+}
+
+.refcount {
+    color: #060;
+}
+
+.optional {
+    font-size: 1.3em;
+}
+
+.versionmodified {
+    font-style: italic;
+}
+
+.system-message {
+    background-color: #fda;
+    padding: 5px;
+    border: 3px solid red;
+}
+
+.footnote:target  {
+    background-color: #ffa
+}
+
+/* -- code displays --------------------------------------------------------- */
+
+pre {
+    overflow: auto;
+}
+
+td.linenos pre {
+    padding: 5px 0px;
+    border: 0;
+    background-color: transparent;
+    color: #aaa;
+}
+
+table.highlighttable {
+    margin-left: 0.5em;
+}
+
+table.highlighttable td {
+    padding: 0 0.5em 0 0.5em;
+}
+
+tt.descname {
+    background-color: transparent;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+tt.descclassname {
+    background-color: transparent;
+}
+
+tt.xref, a tt {
+    background-color: transparent;
+    font-weight: bold;
+}
+
+h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
+    background-color: transparent;
+}
+
+/* -- math display ---------------------------------------------------------- */
+
+img.math {
+    vertical-align: middle;
+}
+
+div.math p {
+    text-align: center;
+}
+
+span.eqno {
+    float: right;
+}
+
+/* -- printout stylesheet --------------------------------------------------- */
+
+@media print {
+    div.document,
+    div.documentwrapper,
+    div.bodywrapper {
+        margin: 0;
+        width: 100%;
+    }
+
+    div.sphinxsidebar,
+    div.related,
+    div.footer,
+    #top-link {
+        display: none;
+    }
+}
