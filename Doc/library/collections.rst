@@ -16,7 +16,7 @@
    __name__ = '<doctest>'
 
 This module implements high-performance container datatypes.  Currently,
-there are three datatypes, :class:`Counter`, :class:`deque`, :class:`OrderedDict` and
+there are four datatypes, :class:`Counter`, :class:`deque`, :class:`OrderedDict` and
 :class:`defaultdict`, and one datatype factory function, :func:`namedtuple`.
 
 The specialized containers provided in this module provide alternatives
