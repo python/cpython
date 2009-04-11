@@ -279,7 +279,15 @@ finally:
 	tstate = PyThreadState_GET();
 	if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
 	    --tstate->recursion_depth;
-	    PyErr_SetObject(PyExc_RuntimeError, PyExc_RecursionErrorInst);
+	    /* throw away the old exception... */
+	    Py_DECREF(*exc);
+	    Py_DECREF(*val);
+	    /* ... and use the recursion error instead */
+	    *exc = PyExc_RuntimeError;
+	    *val = PyExc_RecursionErrorInst;
+	    Py_INCREF(*exc);
+	    Py_INCREF(*val);
+	    /* just keeping the old traceback */
 	    return;
 	}
 	PyErr_NormalizeException(exc, val, tb);
