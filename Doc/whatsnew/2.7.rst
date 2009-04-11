@@ -88,22 +88,21 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* The string :method:`format` method now supports automatic numbering
-  of the replacement fields.  This makes using :meth:`format`
-  more closely resemble using ``%s`` formatting::
+* :meth:`str.format` method now supports automatic numbering of the replacement
+  fields.  This makes using :meth:`str.format` more closely resemble using
+  ``%s`` formatting::
 
     >>> '{}:{}:{}'.format(2009, 04, 'Sunday')
     '2009:4:Sunday'
     >>> '{}:{}:{day}'.format(2009, 4, day='Sunday')
     '2009:4:Sunday'
 
-  The auto-numbering takes the fields from left to right, so the first
-  ``{...}`` specifier will use the first argument to :meth:`format`,
-  the next specifier will use the next argument, and so on.  You can't
-  mix auto-numbering and explicit numbering -- either number all of
-  your specifier fields or none of them -- but you can mix
-  auto-numbering and named fields, as in the second example above.
-  (Contributed by XXX; :issue`5237`.)
+  The auto-numbering takes the fields from left to right, so the first ``{...}``
+  specifier will use the first argument to :meth:`str.format`, the next
+  specifier will use the next argument, and so on.  You can't mix auto-numbering
+  and explicit numbering -- either number all of your specifier fields or none
+  of them -- but you can mix auto-numbering and named fields, as in the second
+  example above.  (Contributed by XXX; :issue`5237`.)
 
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
