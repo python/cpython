@@ -118,7 +118,7 @@ Basic Usage
    file-like object).
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
-   of a basic type (:class:`str`, :class:`unicode`, :class:`int`, :class:`long`,
+   of a basic type (:class:`str`, :class:`unicode`, :class:`int`,
    :class:`float`, :class:`bool`, ``None``) will be skipped instead of raising a
    :exc:`TypeError`.
 
@@ -232,7 +232,7 @@ Encoders and decoders
    +---------------+-------------------+
    | string        | unicode           |
    +---------------+-------------------+
-   | number (int)  | int, long         |
+   | number (int)  | int               |
    +---------------+-------------------+
    | number (real) | float             |
    +---------------+-------------------+
@@ -304,7 +304,7 @@ Encoders and decoders
    +-------------------+---------------+
    | str, unicode      | string        |
    +-------------------+---------------+
-   | int, long, float  | number        |
+   | int, float        | number        |
    +-------------------+---------------+
    | True              | true          |
    +-------------------+---------------+
@@ -319,7 +319,7 @@ Encoders and decoders
    (to raise :exc:`TypeError`).
 
    If *skipkeys* is ``False`` (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not str, int, long, float or None.  If
+   attempt encoding of keys that are not str, int, float or None.  If
    *skipkeys* is ``True``, such items are simply skipped.
 
    If *ensure_ascii* is ``True`` (the default), the output is guaranteed to be
