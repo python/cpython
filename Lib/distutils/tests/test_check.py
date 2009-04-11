@@ -85,6 +85,13 @@ class CheckTestCase(support.LoggingSilencer,
         cmd.check_restructuredtext()
         self.assertEquals(cmd._warnings, 0)
 
+    def test_check_all(self):
+
+        metadata = {'url': 'xxx', 'author': 'xxx'}
+        self.assertRaises(DistutilsSetupError, self._run,
+                          {}, **{'strict': 1,
+                                 'restructuredtext': 1})
+
 def test_suite():
     return unittest.makeSuite(CheckTestCase)
 
