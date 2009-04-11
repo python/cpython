@@ -239,7 +239,7 @@ Buffer related functions
       | :cmacro:`PyBUF_FULL`         | This is equivalent to ``(PyBUF_INDIRECT |         |
       |                              | PyBUF_FORMAT | PyBUF_WRITABLE)``.                 |
       +------------------------------+---------------------------------------------------+
-      | :cmacro:`PyBUF_FULL_RO``     | This is equivalent to ``(PyBUF_INDIRECT |         |
+      | :cmacro:`PyBUF_FULL_RO`      | This is equivalent to ``(PyBUF_INDIRECT |         |
       |                              | PyBUF_FORMAT)``.                                  |
       +------------------------------+---------------------------------------------------+
       | :cmacro:`PyBUF_CONTIG`       | This is equivalent to ``(PyBUF_ND |               |

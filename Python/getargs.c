@@ -1147,7 +1147,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			if ((Py_ssize_t)strlen(ptr) != size) {
 				Py_DECREF(s);
 				return converterr(
-					"(encoded string without NULL bytes)",
+					"encoded string without NULL bytes",
 					arg, msgbuf, bufsize);
 			}
 			*buffer = PyMem_NEW(char, size + 1);
