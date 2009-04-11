@@ -48,6 +48,8 @@ library/hotshot,,:lineno,"ncalls  tottime  percall  cumtime  percall filename:li
 library/httplib,,:port,host:port
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
 library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
+library/itertools,,:stop,elements from seq[start:stop:step]
+library/itertools,,:step,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
 library/logging,,:And,
 library/logging,,:package1,

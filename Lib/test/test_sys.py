@@ -344,6 +344,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(sys.int_info), 2)
         self.assert_(sys.int_info.bits_per_digit % 5 == 0)
         self.assert_(sys.int_info.sizeof_digit >= 1)
+        self.assertEqual(type(sys.int_info.bits_per_digit), int)
+        self.assertEqual(type(sys.int_info.sizeof_digit), int)
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxsize, int))
         self.assert_(isinstance(sys.maxunicode, int))
@@ -622,9 +624,9 @@ class SizeofTest(unittest.TestCase):
         check(1, size(vh) + self.longdigit)
         check(-1, size(vh) + self.longdigit)
         PyLong_BASE = 2**sys.int_info.bits_per_digit
-        check(PyLong_BASE, size(vh) + 2*self.longdigit)
-        check(PyLong_BASE**2-1, size(vh) + 2*self.longdigit)
-        check(PyLong_BASE**2, size(vh) + 3*self.longdigit)
+        check(int(PyLong_BASE), size(vh) + 2*self.longdigit)
+        check(int(PyLong_BASE**2-1), size(vh) + 2*self.longdigit)
+        check(int(PyLong_BASE**2), size(vh) + 3*self.longdigit)
         # memory
         check(memoryview(b''), size(h + 'P PP2P2i7P'))
         # module
