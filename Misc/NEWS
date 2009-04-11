@@ -47,6 +47,9 @@ Core and Builtins
 - Issue #5499: The 'c' code for argument parsing functions now only accepts a
   byte, and the 'C' code only accepts a unicode character.
 
+- Fix a problem in PyErr_NormalizeException that leads to "undetected errors"
+  when hitting the recursion limit under certain circumstances.
+
 - Issue #1665206: Remove the last eager import in _warnings.c and make it lazy.
 
 - Fix a segfault when running test_exceptions with coverage, caused by
