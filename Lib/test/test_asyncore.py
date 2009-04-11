@@ -115,12 +115,24 @@ class HelperFunctionTests(unittest.TestCase):
         def test_readwrite(self):
             # Check that correct methods are called by readwrite()
 
+            attributes = ('read', 'expt', 'write', 'closed', 'error_handled')
+
+            expected = (
+                (select.POLLIN, 'read'),
+                (select.POLLPRI, 'expt'),
+                (select.POLLOUT, 'write'),
+                (select.POLLERR, 'closed'),
+                (select.POLLHUP, 'closed'),
+                (select.POLLNVAL, 'closed'),
+                )
+
             class testobj:
                 def __init__(self):
                     self.read = False
                     self.write = False
                     self.closed = False
                     self.expt = False
+                    self.error_handled = False
 
                 def handle_read_event(self):
                     self.read = True
@@ -137,11 +149,15 @@ class HelperFunctionTests(unittest.TestCase):
                 def handle_error(self):
                     self.error_handled = True
 
-            for flag in (select.POLLIN, select.POLLPRI):
+            for flag, expectedattr in expected:
                 tobj = testobj()
-                self.assertEqual(tobj.read, False)
+                self.assertEqual(getattr(tobj, expectedattr), False)
                 asyncore.readwrite(tobj, flag)
-                self.assertEqual(tobj.read, True)
+
+                # Only the attribute modified by the routine we expect to be
+                # called should be True.
+                for attr in attributes:
+                    self.assertEqual(getattr(tobj, attr), attr==expectedattr)
 
                 # check that ExitNow exceptions in the object handler method
                 # bubbles all the way up through asyncore readwrite call
@@ -151,40 +167,7 @@ class HelperFunctionTests(unittest.TestCase):
                 # check that an exception other than ExitNow in the object handler
                 # method causes the handle_error method to get called
                 tr2 = crashingdummy()
-                asyncore.readwrite(tr2, flag)
-                self.assertEqual(tr2.error_handled, True)
-
-            tobj = testobj()
-            self.assertEqual(tobj.write, False)
-            asyncore.readwrite(tobj, select.POLLOUT)
-            self.assertEqual(tobj.write, True)
-
-            # check that ExitNow exceptions in the object handler method
-            # bubbles all the way up through asyncore readwrite call
-            tr1 = exitingdummy()
-            self.assertRaises(asyncore.ExitNow, asyncore.readwrite, tr1,
-                              select.POLLOUT)
-
-            # check that an exception other than ExitNow in the object handler
-            # method causes the handle_error method to get called
-            tr2 = crashingdummy()
-            asyncore.readwrite(tr2, select.POLLOUT)
-            self.assertEqual(tr2.error_handled, True)
-
-            for flag in (select.POLLERR, select.POLLHUP, select.POLLNVAL):
-                tobj = testobj()
-                self.assertEqual((tobj.expt, tobj.closed)[flag == select.POLLHUP], False)
-                asyncore.readwrite(tobj, flag)
-                self.assertEqual((tobj.expt, tobj.closed)[flag == select.POLLHUP], True)
-
-                # check that ExitNow exceptions in the object handler method
-                # bubbles all the way up through asyncore readwrite calls
-                tr1 = exitingdummy()
-                self.assertRaises(asyncore.ExitNow, asyncore.readwrite, tr1, flag)
-
-                # check that an exception other than ExitNow in the object handler
-                # method causes the handle_error method to get called
-                tr2 = crashingdummy()
+                self.assertEqual(tr2.error_handled, False)
                 asyncore.readwrite(tr2, flag)
                 self.assertEqual(tr2.error_handled, True)
 
