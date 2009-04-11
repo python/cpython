@@ -21,6 +21,7 @@ PURIFY.README	Information for Purify users
 pymemcompat.h	Memory interface compatibility file.
 python.man	UNIX man page for the python interpreter
 python-mode.el	Emacs mode for editing Python programs
+python-wing.wpr Wing IDE project file
 README		The file you're reading now
 README.valgrind	Information for Valgrind users, see valgrind-python.supp
 RFD		Request For Discussion about a Python newsgroup

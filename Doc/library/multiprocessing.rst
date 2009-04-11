@@ -1128,9 +1128,10 @@ their parent process exits.  The manager classes are defined in the
    ``current_process().authkey``.  Otherwise *authkey* is used and it
    must be a string.
 
-   .. method:: start()
+   .. method:: start([initializer[, initargs]])
 
-      Start a subprocess to start the manager.
+      Start a subprocess to start the manager.  If *initializer* is not ``None``
+      then the subprocess will call ``initializer(*initargs)`` when it starts.
 
    .. method:: serve_forever()
 
