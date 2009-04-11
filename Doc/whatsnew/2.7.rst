@@ -106,7 +106,7 @@ Some smaller changes made to the core Python language are:
   (Contributed by XXX; :issue`5237`.)
 
 * The :func:`int` and :func:`long` types gained a ``bit_length``
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  method that returns the number of bits necessary to represent
+  method that returns the number of bits necessary to represent
   its argument in binary::
 
       >>> n = 37
@@ -282,7 +282,7 @@ changes, or look through the Subversion logs for all the details.
   setting the *optional* option setting to true.  If this optional is
   supplied, failure to build the extension will not abort the build
   process, but instead simply not install the failing extension.
-  (Contributed by XXX; :issue:`5583`.)
+  (Contributed by Georg Brandl; :issue:`5583`.)
 
 * New method: the :class:`Decimal` class gained a
   :meth:`from_float` class method that performs an exact conversion
