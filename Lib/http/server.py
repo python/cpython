@@ -773,6 +773,46 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 # Utilities for CGIHTTPRequestHandler
 
+# TODO(gregory.p.smith): Move this into an appropriate library.
+def _url_collapse_path_split(path):
+    """
+    Given a URL path, remove extra '/'s and '.' path elements and collapse
+    any '..' references.
+
+    Implements something akin to RFC-2396 5.2 step 6 to parse relative paths.
+
+    Returns: A tuple of (head, tail) where tail is everything after the final /
+    and head is everything before it.  Head will always start with a '/' and,
+    if it contains anything else, never have a trailing '/'.
+
+    Raises: IndexError if too many '..' occur within the path.
+    """
+    # Similar to os.path.split(os.path.normpath(path)) but specific to URL
+    # path semantics rather than local operating system semantics.
+    path_parts = []
+    for part in path.split('/'):
+        if part == '.':
+            path_parts.append('')
+        else:
+            path_parts.append(part)
+    # Filter out blank non trailing parts before consuming the '..'.
+    path_parts = [part for part in path_parts[:-1] if part] + path_parts[-1:]
+    if path_parts:
+        tail_part = path_parts.pop()
+    else:
+        tail_part = ''
+    head_parts = []
+    for part in path_parts:
+        if part == '..':
+            head_parts.pop()
+        else:
+            head_parts.append(part)
+    if tail_part and tail_part == '..':
+        head_parts.pop()
+        tail_part = ''
+    return ('/' + '/'.join(head_parts), tail_part)
+
+
 nobody = None
 
 def nobody_uid():
@@ -839,24 +879,20 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
     def is_cgi(self):
         """Test whether self.path corresponds to a CGI script.
 
-        Return a tuple (dir, rest) if self.path requires running a
-        CGI script, None if not.  Note that rest begins with a
-        slash if it is not empty.
+        Returns True and updates the cgi_info attribute to the tuple
+        (dir, rest) if self.path requires running a CGI script.
+        Returns False otherwise.
 
-        The default implementation tests whether the path
-        begins with one of the strings in the list
-        self.cgi_directories (and the next character is a '/'
-        or the end of the string).
+        The default implementation tests whether the normalized url
+        path begins with one of the strings in self.cgi_directories
+        (and the next character is a '/' or the end of the string).
 
         """
 
-        path = self.path
-
-        for x in self.cgi_directories:
-            i = len(x)
-            if path[:i] == x and (not path[i:] or path[i] == '/'):
-                self.cgi_info = path[:i], path[i+1:]
-                return True
+        splitpath = _url_collapse_path_split(self.path)
+        if splitpath[0] in self.cgi_directories:
+            self.cgi_info = splitpath
+            return True
         return False
 
     cgi_directories = ['/cgi-bin', '/htbin']

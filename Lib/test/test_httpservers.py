@@ -6,6 +6,7 @@ Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 
 from http.server import BaseHTTPRequestHandler, HTTPServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
+from http import server
 
 import os
 import sys
@@ -316,6 +317,45 @@ class CGIHTTPServerTestCase(BaseTestCase):
         finally:
             BaseTestCase.tearDown(self)
 
+    def test_url_collapse_path_split(self):
+        test_vectors = {
+            '': ('/', ''),
+            '..': IndexError,
+            '/.//..': IndexError,
+            '/': ('/', ''),
+            '//': ('/', ''),
+            '/\\': ('/', '\\'),
+            '/.//': ('/', ''),
+            'cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
+            '/cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
+            'a': ('/', 'a'),
+            '/a': ('/', 'a'),
+            '//a': ('/', 'a'),
+            './a': ('/', 'a'),
+            './C:/': ('/C:', ''),
+            '/a/b': ('/a', 'b'),
+            '/a/b/': ('/a/b', ''),
+            '/a/b/c/..': ('/a/b', ''),
+            '/a/b/c/../d': ('/a/b', 'd'),
+            '/a/b/c/../d/e/../f': ('/a/b/d', 'f'),
+            '/a/b/c/../d/e/../../f': ('/a/b', 'f'),
+            '/a/b/c/../d/e/.././././..//f': ('/a/b', 'f'),
+            '../a/b/c/../d/e/.././././..//f': IndexError,
+            '/a/b/c/../d/e/../../../f': ('/a', 'f'),
+            '/a/b/c/../d/e/../../../../f': ('/', 'f'),
+            '/a/b/c/../d/e/../../../../../f': IndexError,
+            '/a/b/c/../d/e/../../../../f/..': ('/', ''),
+        }
+        for path, expected in test_vectors.items():
+            if isinstance(expected, type) and issubclass(expected, Exception):
+                self.assertRaises(expected,
+                                  server._url_collapse_path_split, path)
+            else:
+                actual = server._url_collapse_path_split(path)
+                self.assertEquals(expected, actual,
+                                  msg='path = %r\nGot:    %r\nWanted: %r' % (
+                                  path, actual, expected))
+
     def test_headers_and_content(self):
         res = self.request('/cgi-bin/file1.py')
         self.assertEquals((b'Hello World\n', 'text/html', 200), \
@@ -339,6 +379,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
                    base64.b64encode(b'username:pass')}
         res = self.request('/cgi-bin/file1.py', 'GET', headers=headers)
         self.assertEquals((b'Hello World\n', 'text/html', 200), \
+             (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_no_leading_slash(self):
+        # http://bugs.python.org/issue2254
+        res = self.request('cgi-bin/file1.py')
+        self.assertEquals((b'Hello World\n', 'text/html', 200),
              (res.read(), res.getheader('Content-type'), res.status))
 
 
