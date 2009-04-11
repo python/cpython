@@ -7,23 +7,8 @@ import sys
 
 # We do a bit of trickery here to be able to test both the C implementation
 # and the Python implementation of the module.
-
-# Make it impossible to import the C implementation anymore.
-sys.modules['_heapq'] = 0
-# We must also handle the case that heapq was imported before.
-if 'heapq' in sys.modules:
-    del sys.modules['heapq']
-
-# Now we can import the module and get the pure Python implementation.
-import heapq as py_heapq
-
-# Restore everything to normal.
-del sys.modules['_heapq']
-del sys.modules['heapq']
-
-# This is now the module with the C implementation.
 import heapq as c_heapq
-
+py_heapq = support.import_fresh_module('heapq', ['_heapq'])
 
 class TestHeap(unittest.TestCase):
     module = None
@@ -194,6 +179,13 @@ class TestHeap(unittest.TestCase):
 class TestHeapPython(TestHeap):
     module = py_heapq
 
+    # As an early adopter, we sanity check the
+    # test.support.import_fresh_module utility function
+    def test_pure_python(self):
+        self.assertFalse(sys.modules['heapq'] is self.module)
+        self.assertTrue(hasattr(self.module.heapify, '__code__'))
+
+
 class TestHeapC(TestHeap):
     module = c_heapq
 
@@ -218,6 +210,12 @@ class TestHeapC(TestHeap):
         target = sorted(data, reverse=True)
         self.assertEqual(hsort(data, LT), target)
         self.assertRaises(TypeError, data, LE)
+
+    # As an early adopter, we sanity check the
+    # test.support.import_fresh_module utility function
+    def test_accelerated(self):
+        self.assertTrue(sys.modules['heapq'] is self.module)
+        self.assertFalse(hasattr(self.module.heapify, '__code__'))
 
 
 #==============================================================================

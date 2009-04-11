@@ -322,6 +322,30 @@ The :mod:`test.support` module defines the following functions:
       assert s.getvalue() == "hello"
 
 
+.. function:: import_module(name, deprecated=False)
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is :const:`True`.
+
+   .. versionadded:: 3.1
+
+
+.. function:: import_fresh_module(name, blocked_names=None, deprecated=False)
+
+   This function imports and returns a fresh copy of the named Python module. The
+   ``sys.modules`` cache is bypassed temporarily, and the ability to import the
+   modules named in *blocked_names* is suppressed for the duration of the import.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is :const:`True`.
+
+   .. versionadded:: 3.1
+
+
 The :mod:`test.support` module defines the following classes:
 
 .. class:: TransientResource(exc[, **kwargs])
