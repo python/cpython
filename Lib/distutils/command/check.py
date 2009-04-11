@@ -65,7 +65,7 @@ class check(Command):
         if self.metadata:
             self.check_metadata()
         if self.restructuredtext:
-            if docutils:
+            if HAS_DOCUTILS:
                 self.check_restructuredtext()
             elif self.strict:
                 raise DistutilsSetupError('The docutils package is needed.')
