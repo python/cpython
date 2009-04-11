@@ -41,22 +41,63 @@ class ResourceDenied(unittest.SkipTest):
     and unexpected skips.
     """
 
+@contextlib.contextmanager
+def _ignore_deprecated_imports(ignore=True):
+    """Context manager to suppress package and module deprecation
+    warnings when importing them.
+
+    If ignore is False, this context manager has no effect."""
+    if ignore:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", ".+ (module|package)",
+                                    DeprecationWarning)
+            yield
+    else:
+        yield
+
+
 def import_module(name, deprecated=False):
     """Import and return the module to be tested, raising SkipTest if
     it is not available.
 
     If deprecated is True, any module or package deprecation messages
     will be suppressed."""
-    with warnings.catch_warnings():
-        if deprecated:
-            warnings.filterwarnings("ignore", ".+ (module|package)",
-                                    DeprecationWarning)
+    with _ignore_deprecated_imports(deprecated):
         try:
-            module = importlib.import_module(name)
+            return importlib.import_module(name)
         except ImportError as msg:
             raise unittest.SkipTest(str(msg))
-        else:
-            return module
+
+
+def import_fresh_module(name, blocked_names=None, deprecated=False):
+    """Imports and returns a module, deliberately bypassing the sys.modules cache
+    and importing a fresh copy of the module. Once the import is complete,
+    the sys.modules cache is restored to its original state.
+
+    Importing of modules named in blocked_names is prevented while the fresh import
+    takes place.
+
+    If deprecated is True, any module or package deprecation messages
+    will be suppressed."""
+    # NOTE: test_heapq and test_warnings include extra sanity checks to make
+    # sure that this utility function is working as expected
+    with _ignore_deprecated_imports(deprecated):
+        if blocked_names is None:
+            blocked_names = ()
+        orig_modules = {}
+        if name in sys.modules:
+            orig_modules[name] = sys.modules[name]
+            del sys.modules[name]
+        try:
+            for blocked in blocked_names:
+                orig_modules[blocked] = sys.modules[blocked]
+                sys.modules[blocked] = 0
+            py_module = importlib.import_module(name)
+        finally:
+            for blocked, module in orig_modules.items():
+                sys.modules[blocked] = module
+        return py_module
+
 
 def get_attribute(obj, name):
     """Get an attribute, raising SkipTest if AttributeError is raised."""
