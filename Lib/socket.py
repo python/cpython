@@ -45,6 +45,8 @@ the setsockopt() and getsockopt() methods.
 
 import _socket
 from _socket import *
+from functools import partial
+from new import instancemethod
 
 try:
     import _ssl
@@ -213,11 +215,15 @@ class _socketobject(object):
     type = property(lambda self: self._sock.type, doc="the socket type")
     proto = property(lambda self: self._sock.proto, doc="the socket protocol")
 
-    _s = ("def %s(self, *args): return self._sock.%s(*args)\n\n"
-          "%s.__doc__ = _realsocket.%s.__doc__\n")
-    for _m in _socketmethods:
-        exec _s % (_m, _m, _m, _m)
-    del _m, _s
+def meth(name,self,*args):
+    return getattr(self._sock,name)(*args)
+
+for _m in _socketmethods:
+    p = partial(meth,_m)
+    p.__name__ = _m
+    p.__doc__ = getattr(_realsocket,_m).__doc__
+    m = instancemethod(p,None,_socketobject)
+    setattr(_socketobject,_m,m)
 
 socket = SocketType = _socketobject
 
