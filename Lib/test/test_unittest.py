@@ -2311,6 +2311,16 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         # from this TestCase instance but since its a local nothing else
         # will ever notice that.
 
+    def testAssertIs(self):
+        thing = object()
+        self.assertIs(thing, thing)
+        self.assertRaises(self.failureException, self.assertIs, thing, object())
+
+    def testAssertIsNot(self):
+        thing = object()
+        self.assertIsNot(thing, object())
+        self.assertRaises(self.failureException, self.assertIsNot, thing, thing)
+
     def testAssertIn(self):
         animals = {'monkey': 'banana', 'cow': 'grass', 'seal': 'fish'}
 
@@ -2454,6 +2464,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
 
         # Test that sequences of unhashable objects can be tested for sameness:
         self.assertSameElements([[1, 2], [3, 4]], [[3, 4], [1, 2]])
+
         self.assertSameElements([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
         self.assertRaises(self.failureException, self.assertSameElements,
                           [[1]], [[2]])
@@ -2987,6 +2998,18 @@ class TestLongMessage(TestCase):
                             ["^unexpectedly None$", "^oops$",
                              "^unexpectedly None$",
                              "^unexpectedly None : oops$"])
+
+    def testAssertIs(self):
+        self.assertMessages('assertIs', (None, 'foo'),
+                            ["^None is not 'foo'$", "^oops$",
+                             "^None is not 'foo'$",
+                             "^None is not 'foo' : oops$"])
+
+    def testAssertIsNot(self):
+        self.assertMessages('assertIsNot', (None, None),
+                            ["^unexpectedly identical: None$", "^oops$",
+                             "^unexpectedly identical: None$",
+                             "^unexpectedly identical: None : oops$"])
 
 
 ######################################################################

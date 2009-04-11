@@ -88,6 +88,23 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* The string :method:`format` method now supports automatic numbering
+  of the replacement fields.  This makes using :meth:`format`
+  more closely resemble using ``%s`` formatting::
+
+    >>> '{}:{}:{}'.format(2009, 04, 'Sunday')
+    '2009:4:Sunday'
+    >>> '{}:{}:{day}'.format(2009, 4, day='Sunday')
+    '2009:4:Sunday'
+
+  The auto-numbering takes the fields from left to right, so the first
+  ``{...}`` specifier will use the first argument to :meth:`format`,
+  the next specifier will use the next argument, and so on.  You can't
+  mix auto-numbering and explicit numbering -- either number all of
+  your specifier fields or none of them -- but you can mix
+  auto-numbering and named fields, as in the second example above.
+  (Contributed by XXX; :issue`5237`.)
+
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
   its argument in binary::
@@ -106,7 +123,7 @@ Some smaller changes made to the core Python language are:
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
 * The :class:`bytearray` type's :meth:`translate` method will
-  now accept None as its first argument.  (Fixed by Georg Brandl;
+  now accept ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
 
 .. ======================================================================
@@ -201,7 +218,7 @@ changes, or look through the Subversion logs for all the details.
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
 
-* A new :class:`Counter` class in the :mod:`collections` module is
+* New class: the :class:`Counter` class in the :mod:`collections` module is
   useful for tallying data.  :class:`Counter` instances behave mostly
   like dictionaries but return zero for missing keys instead of
   raising a :exc:`KeyError`::
@@ -236,7 +253,7 @@ changes, or look through the Subversion logs for all the details.
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
   The :class:`namedtuple` class now has an optional *rename* parameter.
-  If *rename* is True, field names that are invalid because they've
+  If *rename* is true, field names that are invalid because they've
   been repeated or that aren't legal Python identifiers will be
   renamed to legal names that are derived from the field's
   position within the list of fields:
@@ -247,14 +264,25 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
+  The :class:`deque` data type now exposes its maximum length as the
+  read-only :attr:`maxlen` attribute.  (Added by Raymond Hettinger.)
+
 * In Distutils, :func:`distutils.sdist.add_defaults` now uses
   *package_dir* and *data_files* to create the MANIFEST file.
+  :mod:`distutils.sysconfig` will now read the :envvar:`AR`
+  environment variable.
 
   It is no longer mandatory to store clear-text passwords in the
   :file:`.pypirc` file when registering and uploading packages to PyPI. As long
   as the username is present in that file, the :mod:`distutils` package will
   prompt for the password if not present.  (Added by Tarek Ziade,
   based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
+
+  A Distutils setup can now specify that a C extension is optional by
+  setting the *optional* option setting to true.  If this optional is
+  supplied, failure to build the extension will not abort the build
+  process, but instead simply not install the failing extension.
+  (Contributed by Georg Brandl; :issue:`5583`.)
 
 * New method: the :class:`Decimal` class gained a
   :meth:`from_float` class method that performs an exact conversion
@@ -267,8 +295,8 @@ changes, or look through the Subversion logs for all the details.
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
 
-* A new function in the :mod:`gc` module, :func:`is_tracked`, returns
-  True if a given instance is tracked by the garbage collector, False
+* New function: the :mod:`gc` module's :func:`is_tracked` returns
+  true if a given instance is tracked by the garbage collector, false
   otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
 
 * The :mod:`gzip` module's :class:`GzipFile` now supports the context
@@ -284,7 +312,7 @@ changes, or look through the Subversion logs for all the details.
 
 * New function: ``itertools.compress(*data*, *selectors*)`` takes two
   iterators.  Elements of *data* are returned if the corresponding
-  value in *selectors* is True::
+  value in *selectors* is true::
 
     itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
       A, C, E, F
@@ -322,12 +350,22 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
+* The :mod:`multiprocessing` module's :class:`Manager*` classes
+  can now be passed a callable that will be called whenever
+  a subprocess is started, along with a set of arguments that will be
+  passed to the callable.
+  (Contributed by lekma; :issue:`5585`.)
+
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
   (Contributed by David Laban; :issue:`4739`.)
 
-* A new function in the :mod:`subprocess` module,
-  :func:`check_output`, runs a command with a specified set of arguments
+* The :mod:`re` module's :func:`split`, :func:`sub`, and :func:`subn`
+  now accept an optional *flags* argument, for consistency with the
+  other functions in the module.  (Added by Gregory P. Smith.)
+
+* New function: the :mod:`subprocess` module's
+  :func:`check_output` runs a command with a specified set of arguments
   and returns the command's output as a string when the command runs without
   error, or raises a :exc:`CalledProcessError` exception otherwise.
 
@@ -343,25 +381,98 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Gregory P. Smith.)
 
+* New function: :func:`is_declared_global` in the :mod:`symtable` module
+  returns true for variables that are explicitly declared to be global,
+  false for ones that are implicitly global.
+  (Contributed by Jeremy Hylton.)
+
 * The ``sys.version_info`` value is now a named tuple, with attributes
   named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
   (Contributed by Ross Light; :issue:`4285`.)
 
+* The :mod:`threading` module's :meth:`Event.wait` method now returns
+  the internal flag on exit.  This means the method will usually
+  return true because :meth:`wait` is supposed to block until the
+  internal flag becomes true.  The return value will only be false if
+  a timeout was provided and the operation timed out.
+  (Contributed by XXX; :issue:`1674032`.)
+
 * The :mod:`unittest` module was enhanced in several ways.
+  The progress messages will now show 'x' for expected failures
+  and 'u' for unexpected successes when run in verbose mode.
+  (Contributed by Benjamin Peterson.)
   Test cases can raise the :exc:`SkipTest` exception to skip a test.
   (:issue:`1034053`.)
-  It will now use 'x' for expected failures
-  and 'u' for unexpected successes when run in its verbose mode.
-  (Contributed by Benjamin Peterson.)
+
+  The error messages for :meth:`assertEqual`,
+  :meth:`assertTrue`, and :meth:`assertFalse`
+  failures now provide more information.  If you set the
+  :attr:`longMessage` attribute of your :class:`TestCase` classes to
+  true, both the standard error message and any additional message you
+  provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
 
   The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
   return a context handler when called without providing a callable
   object to run.  For example, you can write this::
 
-      with self.assertRaises(KeyError):
-          raise ValueError
+    with self.assertRaises(KeyError):
+        raise ValueError
 
   (Implemented by Antoine Pitrou; :issue:`4444`.)
+
+  A number of new methods were added that provide more specialized
+  tests.  Many of these methods were written by Google engineers
+  for use in their test suites; Gregory P. Smith, Michael Foord, and
+  GvR worked on merging them into Python's version of :mod:`unittest`.
+
+  * :meth:`assertIsNone` and :meth:`assertIsNotNone` take one
+    expression and verify that the result is or is not ``None``.
+
+  * :meth:`assertIs` and :meth:`assertIsNot` take two values and check
+    whether the two values evaluate to the same object or not.
+    (Added by Michael Foord; :issue:`2578`.)
+
+  * :meth:`assertGreater`, :meth:`assertGreaterEqual`,
+    :meth:`assertLess`, and :meth:`assertLessEqual` compare
+    two quantities.
+
+  * :meth:`assertMultiLineEqual` compares two strings, and if they're
+    not equal, displays a helpful comparison that highlights the
+    differences in the two strings.
+
+  * :meth:`assertRegexpMatches` checks whether its first argument is a
+    string matching a regular expression provided as its second argument.
+
+  * :meth:`assertRaisesRegexp` checks whether a particular exception
+    is raised, and then also checks that the string representation of
+    the exception matches the provided regular expression.
+
+  * :meth:`assertIn` and :meth:`assertNotIn` tests whether
+    *first* is or is not in  *second*.
+
+  * :meth:`assertSameElements` tests whether two provided sequences
+    contain the same elements.
+
+  * :meth:`assertSetEqual` compares whether two sets are equal, and
+    only reports the differences between the sets in case of error.
+
+  * Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
+    compare the specified types and explain the differences.
+    More generally, :meth:`assertSequenceEqual` compares two sequences
+    and can optionally check whether both sequences are of a
+    particular type.
+
+  * :meth:`assertDictEqual` compares two dictionaries and reports the
+    differences.  :meth:`assertDictContainsSubset` checks whether
+    all of the key/value pairs in *first* are found in *second*.
+
+  * A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
+    function.  The :meth:`assertEqual` method will use the function
+    when both of the objects being compared are of the specified type.
+    This function should compare the two objects and raise an
+    exception if they don't match; it's a good idea for the function
+    to provide additional information about why the two objects are
+    matching, much as the new sequence comparison methods do.
 
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
@@ -376,7 +487,37 @@ changes, or look through the Subversion logs for all the details.
 importlib: Importing Modules
 ------------------------------
 
-XXX write this
+Python 3.1 includes the :mod:`importlib` package, a re-implementation
+of the logic underlying Python's :keyword:`import` statement.
+:mod:`importlib` is useful for implementors of Python interpreters and
+to user who wish to write new importers that can participate in the
+import process.  Python 2.7 doesn't contain the complete
+:mod:`importlib` package, but instead has a tiny subset that contains
+a single function, :func:`import_module`.
+
+``import_module(*name*, *package*=None)`` imports a module.  *name* is
+a string containing the module or package's name.  It's possible to do
+relative imports by providing a string that begins with a ``.``
+character, such as ``..utils.errors``.  For relative imports, the
+*package* argument must be provided and is the name of the package that
+will be used as the anchor for
+the relative import.  :func:`import_module` both inserts the imported
+module into ``sys.modules`` and returns the module object.
+
+Here are some examples::
+
+    >>> from importlib import import_module
+    >>> anydbm = import_module('anydbm')  # Standard absolute import
+    >>> anydbm
+    <module 'anydbm' from '/p/python/Lib/anydbm.py'>
+    >>> # Relative import
+    >>> sysconfig = import_module('..sysconfig', 'distutils.command')
+    >>> sysconfig
+    <module 'distutils.sysconfig' from '/p/python/Lib/distutils/sysconfig.pyc'>
+
+:mod:`importlib` was implemented by Brett Cannon and introduced in
+Python 3.1.
+
 
 ttk: Themed Widgets for Tk
 --------------------------

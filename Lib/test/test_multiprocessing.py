@@ -1832,7 +1832,37 @@ class OtherTest(unittest.TestCase):
                           multiprocessing.connection.answer_challenge,
                           _FakeConnection(), b'abc')
 
-testcases_other = [OtherTest, TestInvalidHandle]
+#
+# Test Manager.start()/Pool.__init__() initializer feature - see issue 5585
+#
+
+def initializer(ns):
+    ns.test += 1
+
+class TestInitializers(unittest.TestCase):
+    def setUp(self):
+        self.mgr = multiprocessing.Manager()
+        self.ns = self.mgr.Namespace()
+        self.ns.test = 0
+
+    def tearDown(self):
+        self.mgr.shutdown()
+
+    def test_manager_initializer(self):
+        m = multiprocessing.managers.SyncManager()
+        self.assertRaises(TypeError, m.start, 1)
+        m.start(initializer, (self.ns,))
+        self.assertEqual(self.ns.test, 1)
+        m.shutdown()
+
+    def test_pool_initializer(self):
+        self.assertRaises(TypeError, multiprocessing.Pool, initializer=1)
+        p = multiprocessing.Pool(1, initializer, (self.ns,))
+        p.close()
+        p.join()
+        self.assertEqual(self.ns.test, 1)
+
+testcases_other = [OtherTest, TestInvalidHandle, TestInitializers]
 
 #
 #

@@ -807,6 +807,18 @@ class TestCase(object):
             standardMsg = '%r unexpectedly found in %r' % (member, container)
             self.fail(self._formatMessage(msg, standardMsg))
 
+    def assertIs(self, expr1, expr2, msg=None):
+        """Just like self.assertTrue(a is b), but with a nicer default message."""
+        if expr1 is not expr2:
+            standardMsg = '%r is not %r' % (expr1, expr2)
+            self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertIsNot(self, expr1, expr2, msg=None):
+        """Just like self.assertTrue(a is not b), but with a nicer default message."""
+        if expr1 is expr2:
+            standardMsg = 'unexpectedly identical: %r' % (expr1,)
+            self.fail(self._formatMessage(msg, standardMsg))
+
     def assertDictEqual(self, d1, d2, msg=None):
         self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
         self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
@@ -1020,7 +1032,7 @@ class TestSuite(object):
         self.addTests(tests)
 
     def __repr__(self):
-        return "<%s tests=%s>" % (_strclass(self.__class__), self._tests)
+        return "<%s tests=%s>" % (_strclass(self.__class__), list(self))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -1035,7 +1047,7 @@ class TestSuite(object):
 
     def countTestCases(self):
         cases = 0
-        for test in self._tests:
+        for test in self:
             cases += test.countTestCases()
         return cases
 
@@ -1055,7 +1067,7 @@ class TestSuite(object):
             self.addTest(test)
 
     def run(self, result):
-        for test in self._tests:
+        for test in self:
             if result.shouldStop:
                 break
             test(result)
@@ -1066,7 +1078,7 @@ class TestSuite(object):
 
     def debug(self):
         """Run the tests without collecting errors in a TestResult"""
-        for test in self._tests:
+        for test in self:
             test.debug()
 
 

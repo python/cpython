@@ -27,8 +27,9 @@ try:
             self.messages.append((level, message, children, kwargs))
 
     HAS_DOCUTILS = True
-except ImportError:
-    # docutils is not installed
+except Exception:
+    # Catch all exceptions because exceptions besides ImportError probably
+    # indicate that docutils is not ported to Py3k.
     HAS_DOCUTILS = False
 
 class check(Command):
