@@ -102,7 +102,7 @@ Some smaller changes made to the core Python language are:
   specifier will use the next argument, and so on.  You can't mix auto-numbering
   and explicit numbering -- either number all of your specifier fields or none
   of them -- but you can mix auto-numbering and named fields, as in the second
-  example above.  (Contributed by XXX; :issue`5237`.)
+  example above.  (Contributed by Eric Smith; :issue`5237`.)
 
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
