@@ -7738,8 +7738,10 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
     Py_ssize_t nchars;
     size_t nbytes;
 
-    if (len < 0)
-        len = 0;
+    if (len < 1) {
+        Py_INCREF(unicode_empty);
+        return (PyObject *)unicode_empty;
+    }
 
     if (len == 1 && PyUnicode_CheckExact(str)) {
         /* no repeat, return original string */
@@ -7751,7 +7753,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
      * needed doesn't overflow size_t
      */
     nchars = len * str->length;
-    if (len && nchars / len != str->length) {
+    if (nchars / len != str->length) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;
@@ -7768,14 +7770,11 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
 
     p = u->str;
 
-    if (str->length == 1 && len > 0) {
+    if (str->length == 1) {
         Py_UNICODE_FILL(p, str->str[0], len);
     } else {
-        Py_ssize_t done = 0; /* number of characters copied this far */
-        if (done < nchars) {
-            Py_UNICODE_COPY(p, str->str, str->length);
-            done = str->length;
-        }
+        Py_ssize_t done = str->length; /* number of characters copied this far */
+        Py_UNICODE_COPY(p, str->str, str->length);
         while (done < nchars) {
             Py_ssize_t n = (done <= nchars-done) ? done : nchars-done;
             Py_UNICODE_COPY(p+done, p, n);
