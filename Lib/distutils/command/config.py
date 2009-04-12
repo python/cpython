@@ -198,9 +198,8 @@ class config(Command):
         preprocesses an empty file -- which can be useful to determine the
         symbols the preprocessor and compiler set by default.
         """
-
         self._check_compiler()
-        (src, out) = self._preprocess(body, headers, include_dirs, lang)
+        src, out = self._preprocess(body, headers, include_dirs, lang)
 
         if isinstance(pattern, str):
             pattern = re.compile(pattern)
