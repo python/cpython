@@ -68,10 +68,12 @@ def _strerror(err):
 class ExitNow(Exception):
     pass
 
+_reraised_exceptions = (ExitNow, KeyboardInterrupt, SystemExit)
+
 def read(obj):
     try:
         obj.handle_read_event()
-    except (ExitNow, KeyboardInterrupt, SystemExit):
+    except _reraised_exceptions:
         raise
     except:
         obj.handle_error()
@@ -79,7 +81,7 @@ def read(obj):
 def write(obj):
     try:
         obj.handle_write_event()
-    except (ExitNow, KeyboardInterrupt, SystemExit):
+    except _reraised_exceptions:
         raise
     except:
         obj.handle_error()
@@ -87,22 +89,22 @@ def write(obj):
 def _exception(obj):
     try:
         obj.handle_expt_event()
-    except (ExitNow, KeyboardInterrupt, SystemExit):
+    except _reraised_exceptions:
         raise
     except:
         obj.handle_error()
 
 def readwrite(obj, flags):
     try:
-        if flags & (select.POLLIN | select.POLLPRI):
+        if flags & select.POLLIN:
             obj.handle_read_event()
         if flags & select.POLLOUT:
             obj.handle_write_event()
-        if flags & (select.POLLERR | select.POLLNVAL):
-            obj.handle_expt_event()
-        if flags & select.POLLHUP:
+        if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
             obj.handle_close()
-    except (ExitNow, KeyboardInterrupt, SystemExit):
+        if flags & select.POLLPRI:
+            obj.handle_expt_event()
+    except _reraised_exceptions:
         raise
     except:
         obj.handle_error()
@@ -210,6 +212,7 @@ class dispatcher:
     accepting = False
     closing = False
     addr = None
+    ignore_log_types = frozenset(['warning'])
 
     def __init__(self, sock=None, map=None):
         if map is None:
@@ -397,7 +400,7 @@ class dispatcher:
         sys.stderr.write('log: %s\n' % str(message))
 
     def log_info(self, message, type='info'):
-        if __debug__ or type != 'info':
+        if type not in self.ignore_log_types:
             print('%s: %s' % (type, message))
 
     def handle_read_event(self):
@@ -431,22 +434,17 @@ class dispatcher:
         self.handle_write()
 
     def handle_expt_event(self):
-        # if the handle_expt is the same default worthless method,
-        # we'll not even bother calling it, we'll instead generate
-        # a useful error
-        x = True
-        try:
-            y1 = self.handle_expt.__func__
-            y2 = dispatcher.handle_expt
-            x = y1 is y2
-        except AttributeError:
-            pass
-
-        if x:
-            err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-            msg = _strerror(err)
-
-            raise socket.error(err, msg)
+        # handle_expt_event() is called if there might be an error on the
+        # socket, or if there is OOB data
+        # check for the error condition first
+        err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        if err != 0:
+            # we can get here when select.select() says that there is an
+            # exceptional condition on the socket
+            # since there is an error, we'll go ahead and close the socket
+            # like we would in a subclassed handle_read() that received no
+            # data
+            self.handle_close()
         else:
             self.handle_expt()
 
@@ -471,7 +469,7 @@ class dispatcher:
         self.handle_close()
 
     def handle_expt(self):
-        self.log_info('unhandled exception', 'warning')
+        self.log_info('unhandled incoming priority event', 'warning')
 
     def handle_read(self):
         self.log_info('unhandled read event', 'warning')
@@ -552,7 +550,7 @@ def close_all(map=None, ignore_all=False):
                 pass
             elif not ignore_all:
                 raise
-        except (ExitNow, KeyboardInterrupt, SystemExit):
+        except _reraised_exceptions:
             raise
         except:
             if not ignore_all:
