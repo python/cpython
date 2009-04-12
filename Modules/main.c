@@ -432,6 +432,10 @@ Py_Main(int argc, char **argv)
 		return 0;
 	}
 
+	if (Py_Py3kWarningFlag && !Py_TabcheckFlag)
+		/* -3 implies -t (but not -tt) */
+		Py_TabcheckFlag = 1;
+
 	if (!Py_InspectFlag &&
 	    (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
 		Py_InspectFlag = 1;
