@@ -405,7 +405,8 @@ def parse(file):
     try:
         return parser.parse(tokens)
     except ASDLSyntaxError:
-        output(sys.exc_info()[1])
+        err = sys.exc_info()[1]
+        output(str(err))
         lines = buf.split("\n")
         output(lines[err.lineno - 1]) # lines starts at 0, files at 1
 
@@ -422,6 +423,8 @@ if __name__ == "__main__":
     for file in files:
         output(file)
         mod = parse(file)
+        if not mod:
+            break
         output("module", mod.name)
         output(len(mod.dfns), "definitions")
         if not check(mod):
