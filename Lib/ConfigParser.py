@@ -614,7 +614,6 @@ class SafeConfigParser(ConfigParser):
         return ''.join(L)
 
     _interpvar_re = re.compile(r"%\(([^)]+)\)s")
-    _badpercent_re = re.compile(r"%[^%]|%$")
 
     def _interpolate_some(self, option, accum, rest, section, map, depth):
         if depth > MAX_INTERPOLATION_DEPTH:
@@ -661,9 +660,10 @@ class SafeConfigParser(ConfigParser):
         # check for bad percent signs:
         # first, replace all "good" interpolations
         tmp_value = self._interpvar_re.sub('', value)
+        tmp_value = tmp_value.replace('%%', '')
         # then, check if there's a lone percent sign left
-        m = self._badpercent_re.search(tmp_value)
-        if m:
+        percent_index = tmp_value.find('%')
+        if percent_index != -1:
             raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, m.start()))
+                             "position %d" % (value, percent_index))
         ConfigParser.set(self, section, option, value)
