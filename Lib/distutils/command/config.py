@@ -336,11 +336,16 @@ class config(Command):
 
 
 def dump_file(filename, head=None):
-    if head is None:
-        print(filename + ":")
-    else:
-        print(head)
+    """Dumps a file content into log.info.
 
+    If head is not None, will be dumped before the file content.
+    """
+    if head is None:
+        log.info('%s' % filename)
+    else:
+        log.info(head)
     file = open(filename)
-    sys.stdout.write(file.read())
-    file.close()
+    try:
+        log.info(file.read())
+    finally:
+        file.close()
