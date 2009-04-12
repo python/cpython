@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5704: the "-3" command-line option now implies "-t".
+
 - Issue #2170: refactored xml.dom.minidom.normalize, increasing both
   its clarity and its speed.
 
