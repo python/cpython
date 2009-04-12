@@ -548,12 +548,8 @@ rule:
   delimiter), and it should appear last in the regular expression.
 
 
-String functions
+Helper functions
 ----------------
-
-The following functions are available to operate on string objects.
-They are not available as string methods.
-
 
 .. function:: capwords(s)
 
@@ -568,3 +564,6 @@ They are not available as string methods.
    Return a translation table suitable for passing to :meth:`bytes.translate`,
    that will map each character in *from* into the character at the same
    position in *to*; *from* and *to* must have the same length.
+
+   .. deprecated:: 3.1
+      Use the :meth:`bytes.maketrans` static method instead.

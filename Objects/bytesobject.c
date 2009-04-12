@@ -1950,6 +1950,12 @@ string_translate(PyBytesObject *self, PyObject *args)
 }
 
 
+static PyObject *
+string_maketrans(PyObject *null, PyObject *args)
+{
+	return _Py_bytes_maketrans(args);
+}
+
 #define FORWARD 1
 #define REVERSE -1
 
@@ -2851,6 +2857,8 @@ string_methods[] = {
 	{"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
 	{"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
 	{"lstrip", (PyCFunction)string_lstrip, METH_VARARGS, lstrip__doc__},
+	{"maketrans", (PyCFunction)string_maketrans, METH_VARARGS|METH_STATIC,
+	 _Py_maketrans__doc__},
 	{"partition", (PyCFunction)string_partition, METH_O, partition__doc__},
 	{"replace", (PyCFunction)string_replace, METH_VARARGS, replace__doc__},
 	{"rfind", (PyCFunction)string_rfind, METH_VARARGS, rfind__doc__},

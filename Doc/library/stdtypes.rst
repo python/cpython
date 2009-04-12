@@ -479,7 +479,7 @@ debugging, and in numerical work.
    exponent.
 
 
-.. method:: float.fromhex(s)
+.. classmethod:: float.fromhex(s)
 
    Class method to return the float represented by a hexadecimal
    string *s*.  The string *s* may have leading and trailing
@@ -967,7 +967,7 @@ functions based on regular expressions.
       'example.com'
 
 
-.. method:: str.maketrans(x[, y[, z]])
+.. staticmethod:: str.maketrans(x[, y[, z]])
 
    This static method returns a translation table usable for :meth:`str.translate`.
 
@@ -1514,8 +1514,8 @@ Wherever one of these methods needs to interpret the bytes as characters
 
 The bytes and bytearray types have an additional class method:
 
-.. method:: bytes.fromhex(string)
-            bytearray.fromhex(string)
+.. classmethod:: bytes.fromhex(string)
+                 bytearray.fromhex(string)
 
    This :class:`bytes` class method returns a bytes or bytearray object,
    decoding the given string object.  The string must contain two hexadecimal
@@ -1524,7 +1524,9 @@ The bytes and bytearray types have an additional class method:
    >>> bytes.fromhex('f0 f1f2  ')
    b'\xf0\xf1\xf2'
 
-The translate method differs in semantics from the version available on strings:
+
+The maketrans and translate methods differ in semantics from the versions
+available on strings:
 
 .. method:: bytes.translate(table[, delete])
 
@@ -1533,14 +1535,23 @@ The translate method differs in semantics from the version available on strings:
    mapped through the given translation table, which must be a bytes object of
    length 256.
 
-   You can use the :func:`string.maketrans` helper function to create a
-   translation table.
+   You can use the :func:`bytes.maketrans` method to create a translation table.
 
    Set the *table* argument to ``None`` for translations that only delete
    characters::
 
       >>> b'read this short text'.translate(None, b'aeiou')
       b'rd ths shrt txt'
+
+
+.. staticmethod:: bytes.maketrans(from, to)
+
+   This static method returns a translation table usable for
+   :meth:`bytes.translate` that will map each character in *from* into the
+   character at the same position in *to*; *from* and *to* must be bytes objects
+   and have the same length.
+
+   .. versionadded:: 3.1
 
 
 .. _types-set:
@@ -1847,7 +1858,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a shallow copy of the dictionary.
 
-   .. method:: fromkeys(seq[, value])
+   .. classmethod:: fromkeys(seq[, value])
 
       Create a new dictionary with keys from *seq* and values set to *value*.
 
