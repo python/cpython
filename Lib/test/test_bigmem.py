@@ -418,18 +418,15 @@ class BaseStrTest:
     @bigmemtest(minsize=_2G, memuse=2)
     def test_translate(self, size):
         _ = self.from_latin1
-        trans = {
-            ord(_('.')): _('-'),
-            ord(_('a')): _('!'),
-            ord(_('Z')): _('$'),
-        }
         SUBSTR = _('aZz.z.Aaz.')
-        if not isinstance(SUBSTR, str):
-            # Workaround the inexistence of bytes.maketrans()
-            chars = bytearray(range(256))
-            for k, v in trans.items():
-                chars[k] = ord(v)
-            trans = chars
+        if isinstance(SUBSTR, str):
+            trans = {
+                ord(_('.')): _('-'),
+                ord(_('a')): _('!'),
+                ord(_('Z')): _('$'),
+            }
+        else:
+            trans = bytes.maketrans(b'.aZ', b'-!$')
         sublen = len(SUBSTR)
         repeats = size // sublen + 2
         s = SUBSTR * repeats

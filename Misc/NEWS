@@ -12,6 +12,11 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- The string.maketrans() function is deprecated; there is a new static method
+  maketrans() on the bytes and bytearray classes.  This removes confusion about
+  the types string.maketrans() is supposed to work with, and mirrors the
+  methods available on the str class.
+
 - Issue #2170: refactored xml.dom.minidom.normalize, increasing both
   its clarity and its speed.
 

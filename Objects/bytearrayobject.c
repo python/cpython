@@ -1451,6 +1451,13 @@ done:
 }
 
 
+static PyObject *
+bytes_maketrans(PyObject *null, PyObject *args)
+{
+	return _Py_bytes_maketrans(args);
+}
+
+
 #define FORWARD 1
 #define REVERSE -1
 
@@ -3131,6 +3138,8 @@ bytes_methods[] = {
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
+    {"maketrans", (PyCFunction)bytes_maketrans, METH_VARARGS|METH_STATIC,
+     _Py_maketrans__doc__},
     {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
     {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
     {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
