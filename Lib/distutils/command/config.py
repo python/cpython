@@ -11,7 +11,7 @@ this header file lives".
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, re
 
 from distutils.core import Command
 from distutils.errors import DistutilsExecError
@@ -81,7 +81,7 @@ class config(Command):
         elif isinstance(self.library_dirs, str):
             self.library_dirs = self.library_dirs.split(os.pathsep)
 
-    def run (self):
+    def run(self):
         pass
 
 
@@ -156,7 +156,7 @@ class config(Command):
         if not filenames:
             filenames = self.temp_files
             self.temp_files = []
-        log.info("removing: %s", string.join(filenames))
+        log.info("removing: %s", ' '.join(filenames))
         for filename in filenames:
             try:
                 os.remove(filename)
@@ -308,7 +308,7 @@ class config(Command):
         else:
             body.append("  %s;" % func)
         body.append("}")
-        body = string.join(body, "\n") + "\n"
+        body = "\n".join(body) + "\n"
 
         return self.try_link(body, headers, include_dirs,
                              libraries, library_dirs)

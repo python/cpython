@@ -60,6 +60,24 @@ class ConfigTestCase(support.LoggingSilencer,
         self.assertEquals(cmd.libraries, ['one'])
         self.assertEquals(cmd.library_dirs, ['three', 'four'])
 
+    def test_clean(self):
+        # _clean removes files
+        tmp_dir = self.mkdtemp()
+        f1 = os.path.join(tmp_dir, 'one')
+        f2 = os.path.join(tmp_dir, 'two')
+
+        self.write_file(f1, 'xxx')
+        self.write_file(f2, 'xxx')
+
+        for f in (f1, f2):
+            self.assert_(os.path.exists(f))
+
+        pkg_dir, dist = self.create_dist()
+        cmd = config(dist)
+        cmd._clean(f1, f2)
+
+        for f in (f1, f2):
+            self.assert_(not os.path.exists(f))
 
 def test_suite():
     return unittest.makeSuite(ConfigTestCase)
