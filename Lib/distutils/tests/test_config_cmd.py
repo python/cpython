@@ -46,6 +46,21 @@ class ConfigTestCase(support.LoggingSilencer,
         match = cmd.search_cpp(pattern='command', body='// xxx')
         self.assertEquals(match, 1)
 
+    def test_finalize_options(self):
+        # finalize_options does a bit of transformation
+        # on options
+        pkg_dir, dist = self.create_dist()
+        cmd = config(dist)
+        cmd.include_dirs = 'one%stwo' % os.pathsep
+        cmd.libraries = 'one'
+        cmd.library_dirs = 'three%sfour' % os.pathsep
+        cmd.ensure_finalized()
+
+        self.assertEquals(cmd.include_dirs, ['one', 'two'])
+        self.assertEquals(cmd.libraries, ['one'])
+        self.assertEquals(cmd.library_dirs, ['three', 'four'])
+
+
 def test_suite():
     return unittest.makeSuite(ConfigTestCase)
 
