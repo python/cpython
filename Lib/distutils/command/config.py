@@ -354,13 +354,17 @@ class config (Command):
 
 # class config
 
+def dump_file(filename, head=None):
+    """Dumps a file content into log.info.
 
-def dump_file (filename, head=None):
+    If head is not None, will be dumped before the file content.
+    """
     if head is None:
-        print filename + ":"
+        log.info('%s' % filename)
     else:
-        print head
-
+        log.info(head)
     file = open(filename)
-    sys.stdout.write(file.read())
-    file.close()
+    try:
+        log.info(file.read())
+    finally:
+        file.close()
