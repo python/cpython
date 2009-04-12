@@ -53,8 +53,6 @@ class config(Command):
         self.compiler = None
         self.cc = None
         self.include_dirs = None
-        #self.define = None
-        #self.undef = None
         self.libraries = None
         self.library_dirs = None
 
@@ -136,8 +134,8 @@ class config(Command):
         self.compiler.compile([src], include_dirs=include_dirs)
         return (src, obj)
 
-    def _link(self, body, headers, include_dirs, libraries,
-              library_dirs, lang):
+    def _link(self, body, headers, include_dirs, libraries, library_dirs,
+              lang):
         (src, obj) = self._compile(body, headers, include_dirs, lang)
         prog = os.path.splitext(os.path.basename(src))[0]
         self.compiler.link_executable([obj], prog,
@@ -191,8 +189,8 @@ class config(Command):
         self._clean()
         return ok
 
-    def search_cpp(self, pattern, body=None, headers=None,
-                   include_dirs=None, lang="c"):
+    def search_cpp(self, pattern, body=None, headers=None, include_dirs=None,
+                   lang="c"):
         """Construct a source file (just like 'try_cpp()'), run it through
         the preprocessor, and return true if any line of the output matches
         'pattern'.  'pattern' should either be a compiled regex object or a
@@ -237,8 +235,8 @@ class config(Command):
         self._clean()
         return ok
 
-    def try_link(self, body, headers=None, include_dirs=None,
-                 libraries=None, library_dirs=None, lang="c"):
+    def try_link(self, body, headers=None, include_dirs=None, libraries=None,
+                 library_dirs=None, lang="c"):
         """Try to compile and link a source file, built from 'body' and
         'headers', to executable form.  Return true on success, false
         otherwise.
@@ -256,8 +254,8 @@ class config(Command):
         self._clean()
         return ok
 
-    def try_run(self, body, headers=None, include_dirs=None,
-                libraries=None, library_dirs=None, lang="c"):
+    def try_run(self, body, headers=None, include_dirs=None, libraries=None,
+                library_dirs=None, lang="c"):
         """Try to compile, link to an executable, and run a program
         built from 'body' and 'headers'.  Return true on success, false
         otherwise.
