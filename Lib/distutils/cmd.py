@@ -46,7 +46,7 @@ class Command:
 
     # -- Creation/initialization methods -------------------------------
 
-    def __init__ (self, dist):
+    def __init__(self, dist):
         """Create and initialize a new Command object.  Most importantly,
         invokes the 'initialize_options()' method, which is the real
         initializer and depends on the actual command being
@@ -93,12 +93,8 @@ class Command:
         # always calls 'finalize_options()', to respect/update it.
         self.finalized = 0
 
-    # __init__ ()
-
-
     # XXX A more explicit way to customize dry_run would be better.
-
-    def __getattr__ (self, attr):
+    def __getattr__(self, attr):
         if attr == 'dry_run':
             myval = getattr(self, "_" + attr)
             if myval is None:
@@ -108,12 +104,10 @@ class Command:
         else:
             raise AttributeError, attr
 
-
-    def ensure_finalized (self):
+    def ensure_finalized(self):
         if not self.finalized:
             self.finalize_options()
         self.finalized = 1
-
 
     # Subclasses must define:
     #   initialize_options()
@@ -128,7 +122,7 @@ class Command:
     #     run the command: do whatever it is we're here to do,
     #     controlled by the command's various option values
 
-    def initialize_options (self):
+    def initialize_options(self):
         """Set default values for all the options that this command
         supports.  Note that these defaults may be overridden by other
         commands, by the setup script, by config files, or by the
@@ -141,7 +135,7 @@ class Command:
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
 
-    def finalize_options (self):
+    def finalize_options(self):
         """Set final values for all the options that this command supports.
         This is always called as late as possible, ie.  after any option
         assignments from the command-line or from other commands have been
@@ -170,7 +164,7 @@ class Command:
             self.announce(indent + "%s = %s" % (option, value),
                           level=log.INFO)
 
-    def run (self):
+    def run(self):
         """A command's raison d'etre: carry out the action it exists to
         perform, controlled by the options initialized in
         'initialize_options()', customized by other commands, the setup
@@ -180,17 +174,16 @@ class Command:
 
         This method must be implemented by all command classes.
         """
-
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
 
-    def announce (self, msg, level=1):
+    def announce(self, msg, level=1):
         """If the current verbosity level is of greater than or equal to
         'level' print 'msg' to stdout.
         """
         log.log(level, msg)
 
-    def debug_print (self, msg):
+    def debug_print(self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
         DISTUTILS_DEBUG environment variable) flag is true.
         """
@@ -198,7 +191,6 @@ class Command:
         if DEBUG:
             print msg
             sys.stdout.flush()
-
 
 
     # -- Option validation methods -------------------------------------
@@ -279,14 +271,13 @@ class Command:
 
     # -- Convenience methods for commands ------------------------------
 
-    def get_command_name (self):
+    def get_command_name(self):
         if hasattr(self, 'command_name'):
             return self.command_name
         else:
             return self.__class__.__name__
 
-
-    def set_undefined_options (self, src_cmd, *option_pairs):
+    def set_undefined_options(self, src_cmd, *option_pairs):
         """Set the values of any "undefined" options from corresponding
         option values in some other command object.  "Undefined" here means
         "is None", which is the convention used to indicate that an option
@@ -311,7 +302,7 @@ class Command:
                         getattr(src_cmd_obj, src_option))
 
 
-    def get_finalized_command (self, command, create=1):
+    def get_finalized_command(self, command, create=1):
         """Wrapper around Distribution's 'get_command_obj()' method: find
         (create if necessary and 'create' is true) the command object for
         'command', call its 'ensure_finalized()' method, and return the
@@ -323,19 +314,18 @@ class Command:
 
     # XXX rename to 'get_reinitialized_command()'? (should do the
     # same in dist.py, if so)
-    def reinitialize_command (self, command, reinit_subcommands=0):
+    def reinitialize_command(self, command, reinit_subcommands=0):
         return self.distribution.reinitialize_command(
             command, reinit_subcommands)
 
-    def run_command (self, command):
+    def run_command(self, command):
         """Run some other command: uses the 'run_command()' method of
         Distribution, which creates and finalizes the command object if
         necessary and then invokes its 'run()' method.
         """
         self.distribution.run_command(command)
 
-
-    def get_sub_commands (self):
+    def get_sub_commands(self):
         """Determine the sub-commands that are relevant in the current
         distribution (ie., that need to be run).  This is based on the
         'sub_commands' class attribute: each tuple in that list may include
@@ -351,19 +341,17 @@ class Command:
 
     # -- External world manipulation -----------------------------------
 
-    def warn (self, msg):
+    def warn(self, msg):
         log.warn("warning: %s: %s\n" %
                 (self.get_command_name(), msg))
 
-    def execute (self, func, args, msg=None, level=1):
+    def execute(self, func, args, msg=None, level=1):
         util.execute(func, args, msg, dry_run=self.dry_run)
 
-
-    def mkpath (self, name, mode=0777):
+    def mkpath(self, name, mode=0777):
         dir_util.mkpath(name, mode, dry_run=self.dry_run)
 
-
-    def copy_file (self, infile, outfile,
+    def copy_file(self, infile, outfile,
                    preserve_mode=1, preserve_times=1, link=None, level=1):
         """Copy a file respecting verbose, dry-run and force flags.  (The
         former two default to whatever is in the Distribution object, and
@@ -376,8 +364,7 @@ class Command:
             link,
             dry_run=self.dry_run)
 
-
-    def copy_tree (self, infile, outfile,
+    def copy_tree(self, infile, outfile,
                    preserve_mode=1, preserve_times=1, preserve_symlinks=0,
                    level=1):
         """Copy an entire directory tree respecting verbose, dry-run,
@@ -402,7 +389,6 @@ class Command:
                       root_dir=None, base_dir=None):
         return archive_util.make_archive(
             base_name, format, root_dir, base_dir, dry_run=self.dry_run)
-
 
     def make_file(self, infiles, outfile, func, args,
                   exec_msg=None, skip_msg=None, level=1):
@@ -438,17 +424,12 @@ class Command:
         else:
             log.debug(skip_msg)
 
-    # make_file ()
-
-# class Command
-
-
 # XXX 'install_misc' class not currently used -- it was the base class for
 # both 'install_scripts' and 'install_data', but they outgrew it.  It might
 # still be useful for 'install_headers', though, so I'm keeping it around
 # for the time being.
 
-class install_misc (Command):
+class install_misc(Command):
     """Common base class for installing some files in a subdirectory.
     Currently used by install_data and install_scripts.
     """
@@ -459,10 +440,10 @@ class install_misc (Command):
         self.install_dir = None
         self.outfiles = []
 
-    def _install_dir_from (self, dirname):
+    def _install_dir_from(self, dirname):
         self.set_undefined_options('install', (dirname, 'install_dir'))
 
-    def _copy_files (self, filelist):
+    def _copy_files(self, filelist):
         self.outfiles = []
         if not filelist:
             return
@@ -471,5 +452,5 @@ class install_misc (Command):
             self.copy_file(f, self.install_dir)
             self.outfiles.append(os.path.join(self.install_dir, f))
 
-    def get_outputs (self):
+    def get_outputs(self):
         return self.outfiles
