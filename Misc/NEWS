@@ -30,6 +30,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #1161031: fix readwrite select flag handling: POLLPRI now
+  results in a handle_expt_event call, not handle_read_event, and POLLERR
+  and POLLNVAL now call handle_close, not handle_expt_event.  Also,
+  dispatcher now has an 'ignore_log_types' attribute for suppressing
+  log messages, which is set to 'warning' by default.
+
 - Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
   Initial fix by Wayne Davison.
 
