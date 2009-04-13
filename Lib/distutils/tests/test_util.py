@@ -5,6 +5,7 @@
 import os
 import sys
 import unittest
+from copy import copy
 
 from distutils.errors import DistutilsPlatformError
 
@@ -17,6 +18,7 @@ from distutils.util import strtobool
 from distutils.util import rfc822_escape
 
 from distutils import util # used to patch _environ_checked
+from distutils.sysconfig import get_config_vars, _config_vars
 
 class utilTestCase(unittest.TestCase):
 
@@ -30,6 +32,7 @@ class utilTestCase(unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
+        self._config_vars = copy(_config_vars)
 
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -42,7 +45,7 @@ class utilTestCase(unittest.TestCase):
         os.uname = self._get_uname
 
     def tearDown(self):
-        # getting back tne environment
+        # getting back the environment
         os.name = self.name
         sys.platform = self.platform
         sys.version = self.version
@@ -55,6 +58,7 @@ class utilTestCase(unittest.TestCase):
             os.uname = self.uname
         else:
             del os.uname
+        _config_vars = copy(self._config_vars)
 
     def _set_uname(self, uname):
         self._uname = uname
@@ -96,7 +100,33 @@ class utilTestCase(unittest.TestCase):
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
+        get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
+                                       '-fwrapv -O3 -Wall -Wstrict-prototypes')
+
         self.assertEquals(get_platform(), 'macosx-10.3-i386')
+
+        # macbook with fat binaries (fat, universal or fat64)
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
+        get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
+                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                       '-fno-strict-aliasing -fno-common '
+                                       '-dynamic -DNDEBUG -g -O3')
+
+        self.assertEquals(get_platform(), 'macosx-10.4-fat')
+
+        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch i386 -isysroot '
+                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                       '-fno-strict-aliasing -fno-common '
+                                       '-dynamic -DNDEBUG -g -O3')
+
+        self.assertEquals(get_platform(), 'macosx-10.4-universal')
+
+        get_config_vars()['CFLAGS'] = ('-arch x86_64 -isysroot '
+                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                       '-fno-strict-aliasing -fno-common '
+                                       '-dynamic -DNDEBUG -g -O3')
+
+        self.assertEquals(get_platform(), 'macosx-10.4-fat64')
 
         # linux debian sarge
         os.name = 'posix'
