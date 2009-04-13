@@ -1,5 +1,6 @@
 """Tests for distutils.cmd."""
 import unittest
+import os
 
 from distutils.cmd import Command
 from distutils.dist import Distribution
@@ -61,6 +62,45 @@ class CommandTestCase(unittest.TestCase):
         wanted = ["command options for 'MyCmd':", '  option1 = 1',
                   '  option2 = 1']
         self.assertEquals(msgs, wanted)
+
+    def test_ensure_string(self):
+        cmd = self.cmd
+        cmd.option1 = 'ok'
+        cmd.ensure_string('option1')
+
+        cmd.option2 = None
+        cmd.ensure_string('option2', 'xxx')
+        self.assert_(hasattr(cmd, 'option2'))
+
+        cmd.option3 = 1
+        self.assertRaises(DistutilsOptionError, cmd.ensure_string, 'option3')
+
+    def test_ensure_string_list(self):
+        cmd = self.cmd
+        cmd.option1 = 'ok,dok'
+        cmd.ensure_string_list('option1')
+        self.assertEquals(cmd.option1, ['ok', 'dok'])
+
+        cmd.option2 = ['xxx', 'www']
+        cmd.ensure_string_list('option2')
+
+        cmd.option3 = ['ok', 2]
+        self.assertRaises(DistutilsOptionError, cmd.ensure_string_list,
+                          'option3')
+
+    def test_ensure_filename(self):
+        cmd = self.cmd
+        cmd.option1 = __file__
+        cmd.ensure_filename('option1')
+        cmd.option2 = 'xxx'
+        self.assertRaises(DistutilsOptionError, cmd.ensure_filename, 'option2')
+
+    def test_ensure_dirname(self):
+        cmd = self.cmd
+        cmd.option1 = os.path.dirname(__file__)
+        cmd.ensure_dirname('option1')
+        cmd.option2 = 'xxx'
+        self.assertRaises(DistutilsOptionError, cmd.ensure_dirname, 'option2')
 
 def test_suite():
     return unittest.makeSuite(CommandTestCase)
