@@ -5,18 +5,18 @@
    :synopsis: Encoders for email message payloads.
 
 
-When creating :class:`Message` objects from scratch, you often need to encode
-the payloads for transport through compliant mail servers. This is especially
-true for :mimetype:`image/\*` and :mimetype:`text/\*` type messages containing
-binary data.
+When creating :class:`~email.message.Message` objects from scratch, you often
+need to encode the payloads for transport through compliant mail servers. This
+is especially true for :mimetype:`image/\*` and :mimetype:`text/\*` type messages
+containing binary data.
 
 The :mod:`email` package provides some convenient encodings in its
 :mod:`encoders` module.  These encoders are actually used by the
-:class:`MIMEAudio` and :class:`MIMEImage` class constructors to provide default
-encodings.  All encoder functions take exactly one argument, the message object
-to encode.  They usually extract the payload, encode it, and reset the payload
-to this newly encoded value.  They should also set the
-:mailheader:`Content-Transfer-Encoding` header as appropriate.
+:class:`~email.mime.audio.MIMEAudio` and :class:`~email.mime.image.MIMEImage`
+class constructors to provide default encodings.  All encoder functions take
+exactly one argument, the message object to encode.  They usually extract the
+payload, encode it, and reset the payload to this newly encoded value.  They
+should also set the :mailheader:`Content-Transfer-Encoding` header as appropriate.
 
 Here are the encoding functions provided:
 
