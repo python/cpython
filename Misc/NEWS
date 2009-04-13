@@ -12,12 +12,6 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
-- Issue #1161031: fix readwrite select flag handling: POLLPRI now
-  results in a handle_expt_event call, not handle_read_event, and POLLERR
-  and POLLNVAL now call handle_close, not handle_expt_event.  Also,
-  dispatcher now has an 'ignore_log_types' attribute for suppressing
-  log messages, which is set to 'warning' by default.
-
 - The string.maketrans() function is deprecated; there is a new static method
   maketrans() on the bytes and bytearray classes.  This removes confusion about
   the types string.maketrans() is supposed to work with, and mirrors the
@@ -31,6 +25,12 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #1161031: fix readwrite select flag handling: POLLPRI now
+  results in a handle_expt_event call, not handle_read_event, and POLLERR
+  and POLLNVAL now call handle_close, not handle_expt_event.  Also,
+  dispatcher now has an 'ignore_log_types' attribute for suppressing
+  log messages, which is set to 'warning' by default.
 
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
