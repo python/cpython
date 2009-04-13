@@ -373,13 +373,13 @@ Here are the methods of the :class:`Message` class:
 
       If your application doesn't care whether the parameter was encoded as in
       :rfc:`2231`, you can collapse the parameter value by calling
-      :func:`email.Utils.collapse_rfc2231_value`, passing in the return value
+      :func:`email.utils.collapse_rfc2231_value`, passing in the return value
       from :meth:`get_param`.  This will return a suitably decoded Unicode
       string whn the value is a tuple, or the original string unquoted if it
       isn't.  For example::
 
          rawparam = msg.get_param('foo')
-         param = email.Utils.collapse_rfc2231_value(rawparam)
+         param = email.utils.collapse_rfc2231_value(rawparam)
 
       In any case, the parameter value (either the returned string, or the
       ``VALUE`` item in the 3-tuple) is always unquoted, unless *unquote* is set
