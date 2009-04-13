@@ -968,7 +968,7 @@ format_int_or_long(PyObject* obj,
         tmp = PyNumber_Float(obj);
         if (tmp == NULL)
             goto done;
-        result = format_float_internal(obj, &format);
+        result = format_float_internal(tmp, &format);
         break;
 
     default:
