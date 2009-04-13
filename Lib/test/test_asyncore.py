@@ -272,10 +272,7 @@ class DispatcherTests(unittest.TestCase):
             sys.stdout = stdout
 
         lines = fp.getvalue().splitlines()
-        if __debug__:
-            expected = ['EGGS: %s' % l1, 'info: %s' % l2, 'SPAM: %s' % l3]
-        else:
-            expected = ['EGGS: %s' % l1, 'SPAM: %s' % l3]
+        expected = ['EGGS: %s' % l1, 'info: %s' % l2, 'SPAM: %s' % l3]
 
         self.assertEquals(lines, expected)
 
