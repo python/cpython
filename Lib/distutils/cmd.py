@@ -93,9 +93,8 @@ class Command:
         # always calls 'finalize_options()', to respect/update it.
         self.finalized = 0
 
-
     # XXX A more explicit way to customize dry_run would be better.
-    def __getattr__ (self, attr):
+    def __getattr__(self, attr):
         if attr == 'dry_run':
             myval = getattr(self, "_" + attr)
             if myval is None:
@@ -105,7 +104,7 @@ class Command:
         else:
             raise AttributeError(attr)
 
-    def ensure_finalized (self):
+    def ensure_finalized(self):
         if not self.finalized:
             self.finalize_options()
         self.finalized = 1
@@ -175,7 +174,6 @@ class Command:
 
         This method must be implemented by all command classes.
         """
-
         raise RuntimeError("abstract method -- subclass %s must override"
                            % self.__class__)
 
@@ -351,7 +349,7 @@ class Command:
                                    preserve_times, not self.force, link,
                                    dry_run=self.dry_run)
 
-    def copy_tree (self, infile, outfile, preserve_mode=1, preserve_times=1,
+    def copy_tree(self, infile, outfile, preserve_mode=1, preserve_times=1,
                    preserve_symlinks=0, level=1):
         """Copy an entire directory tree respecting verbose, dry-run,
         and force flags.
@@ -372,7 +370,6 @@ class Command:
     def make_archive(self, base_name, format, root_dir=None, base_dir=None):
         return archive_util.make_archive(base_name, format, root_dir, base_dir,
                                          dry_run=self.dry_run)
-
 
     def make_file(self, infiles, outfile, func, args,
                   exec_msg=None, skip_msg=None, level=1):
@@ -406,7 +403,6 @@ class Command:
         else:
             log.debug(skip_msg)
 
-
 # XXX 'install_misc' class not currently used -- it was the base class for
 # both 'install_scripts' and 'install_data', but they outgrew it.  It might
 # still be useful for 'install_headers', though, so I'm keeping it around
@@ -423,10 +419,10 @@ class install_misc(Command):
         self.install_dir = None
         self.outfiles = []
 
-    def _install_dir_from (self, dirname):
+    def _install_dir_from(self, dirname):
         self.set_undefined_options('install', (dirname, 'install_dir'))
 
-    def _copy_files (self, filelist):
+    def _copy_files(self, filelist):
         self.outfiles = []
         if not filelist:
             return
@@ -435,5 +431,5 @@ class install_misc(Command):
             self.copy_file(f, self.install_dir)
             self.outfiles.append(os.path.join(self.install_dir, f))
 
-    def get_outputs (self):
+    def get_outputs(self):
         return self.outfiles
