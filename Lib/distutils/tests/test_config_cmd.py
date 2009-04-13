@@ -1,6 +1,7 @@
 """Tests for distutils.command.config."""
 import unittest
 import os
+import sys
 
 from distutils.command.config import dump_file, config
 from distutils.tests import support
@@ -36,6 +37,8 @@ class ConfigTestCase(support.LoggingSilencer,
         self.assertEquals(len(self._logs), numlines+1)
 
     def test_search_cpp(self):
+        if sys.platform == 'win32':
+            return
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
 
