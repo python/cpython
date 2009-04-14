@@ -1438,7 +1438,7 @@ class TextIOWrapper(TextIOBase):
     def close(self):
         try:
             self.flush()
-        except:
+        except IOError:
             pass  # If flush() fails, just give up
         self.buffer.close()
 
