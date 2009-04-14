@@ -103,7 +103,7 @@ for thousands separators.
 .. seealso::
 
    :pep:`378` - Format Specifier for Thousands Separator
-      PEP written by Raymond Hettinger; implemented by Eric Smith and
+      PEP written by Raymond Hettinger and implemented by Eric Smith and
       Mark Dickinson.
 
 
@@ -279,7 +279,8 @@ New, Improved, and Deprecated Modules
         def test_gimzo_without_required_library(self):
             ...
 
-  Also, tests for exceptions have been builtout to work with context managers::
+  Also, tests for exceptions have been builtout to work with context managers
+  using the :keyword:`with` statement::
 
       def test_division_by_zero(self):
           with self.assertRaises(ZeroDivisionError):
@@ -305,7 +306,7 @@ New, Improved, and Deprecated Modules
   (Contributed by Ross Light; :issue:`4285`.)
 
 * A new module, :mod:`importlib` was added.  It provides a complete, portable,
-  pure Python reference implementation of the *import* statement and its
+  pure Python reference implementation of the :keyword:`import` statement and its
   counterpart, the :func:`__import__` function.  It represents a substantial
   step forward in documenting and defining the actions that take place during
   imports.
