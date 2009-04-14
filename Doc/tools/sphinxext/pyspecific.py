@@ -5,7 +5,7 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008 by Georg Brandl.
+    :copyright: 2008, 2009 by Georg Brandl.
     :license: Python license.
 """
 
@@ -57,7 +57,11 @@ from docutils.utils import new_document
 try:
     from sphinx.builders import Builder
 except ImportError:
+    # using Sphinx < 0.6, which has a different package layout
     from sphinx.builder import Builder
+    # monkey-patch toctree directive to accept (and ignore) the :numbered: flag
+    from sphinx.directives.other import toctree_directive
+    toctree_directive.options['numbered'] = toctree_directive.options['glob']
 
 try:
     from sphinx.writers.text import TextWriter
