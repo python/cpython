@@ -67,7 +67,7 @@ the original insertion position is left unchanged.  Deleting an entry and
 reinserting it will move it to the end.
 
 The standard library now supports use of ordered dictionaries in several
-modules.  The :mod:`ConfigParser` module uses them by default.  This lets
+modules.  The :mod:`configparser` module uses them by default.  This lets
 configuration files be read, modified, and then written back in their original
 order.  The :mod:`collections` module's :meth:`namedtuple._asdict` method now
 returns an ordered dictionary with the values appearing in the same order as
