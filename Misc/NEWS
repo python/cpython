@@ -16,6 +16,8 @@ Core and Builtins
   imp.find_module() were converted to UTF-8 while the path is
   converted to the default filesystem encoding, causing nonsense.
 
+- Issue #5759: float() didn't call __float__ on str subclasses.
+
 - Issue #5392: when a very low recursion limit was set, the interpreter would
   abort with a fatal error after the recursion limit was hit twice.
 
