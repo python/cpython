@@ -34,3 +34,7 @@ in this chapter is:
       Operating system interfaces, including functions to work with files at a lower
       level than the built-in file object.
 
+   Module :mod:`io`
+      Python's framework for dealing with I/O including reading and writing
+      files.
+
