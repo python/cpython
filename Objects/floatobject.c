@@ -1630,7 +1630,9 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return float_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
 		return NULL;
-	if (PyString_Check(x))
+	/* If it's a string, but not a string subclass, use
+	   PyFloat_FromString. */
+	if (PyString_CheckExact(x))
 		return PyFloat_FromString(x, NULL);
 	return PyNumber_Float(x);
 }
