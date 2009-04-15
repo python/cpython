@@ -97,6 +97,13 @@ This module defines one class called :class:`Popen`:
    variables for the new process; these are used instead of inheriting the current
    process' environment, which is the default behavior.
 
+   .. warning::
+
+      When replacing the environment you must provide any variables
+      required for the program to execute.  On Windows, in order to run
+      a side-by-side assembly the specified *env* must include a valid
+      :envvar:`SystemRoot`.
+
    If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
    opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
    end-of-line convention, ``'\r'``, the old Macintosh convention or ``'\r\n'``, the
