@@ -12,6 +12,8 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5759: float() didn't call __float__ on str subclasses.
+
 - The string.maketrans() function is deprecated; there is a new static method
   maketrans() on the bytes and bytearray classes.  This removes confusion about
   the types string.maketrans() is supposed to work with, and mirrors the
