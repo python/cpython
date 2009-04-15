@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5759: float() didn't call __float__ on str subclasses.
+
 - Issue #5704: the "-3" command-line option now implies "-t".
 
 - Issue #2170: refactored xml.dom.minidom.normalize, increasing both
