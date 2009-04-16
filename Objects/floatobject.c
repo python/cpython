@@ -197,8 +197,7 @@ PyFloat_FromString(PyObject *v)
 	sp = s;
 	/* We don't care about overflow or underflow.  If the platform supports
 	 * them, infinities and signed zeroes (on underflow) are fine.
-	 * However, strtod can return 0 for denormalized numbers, where atof
-	 * does not.  So (alas!) we special-case a zero result.  Note that
+	 * However, strtod can return 0 for denormalized numbers.  Note that
 	 * whether strtod sets errno on underflow is not defined, so we can't
 	 * key off errno.
          */
@@ -259,14 +258,6 @@ PyFloat_FromString(PyObject *v)
 				"null byte in argument for float()");
 		goto error;
 	}
-	if (x == 0.0) {
-		/* See above -- may have been strtod being anal
-		   about denorms. */
-		PyFPE_START_PROTECT("atof", goto error)
-		x = PyOS_ascii_atof(s);
-		PyFPE_END_PROTECT(x)
-		errno = 0;    /* whether atof ever set errno is undefined */
-	}
 	result = PyFloat_FromDouble(x);
   error:
 	if (s_buffer)
@@ -320,72 +311,6 @@ PyFloat_AsDouble(PyObject *op)
 	return val;
 }
 
-/* Methods */
-
-static void
-format_double(char *buf, size_t buflen, double ob_fval, int precision)
-{
-	register char *cp;
-	char format[32];
-	int i;
-
-	/* Subroutine for float_repr, float_str and float_print.
-	   We want float numbers to be recognizable as such,
-	   i.e., they should contain a decimal point or an exponent.
-	   However, %g may print the number as an integer;
-	   in such cases, we append ".0" to the string. */
-
-	PyOS_snprintf(format, 32, "%%.%ig", precision);
-	PyOS_ascii_formatd(buf, buflen, format, ob_fval);
-	cp = buf;
-	if (*cp == '-')
-		cp++;
-	for (; *cp != '\0'; cp++) {
-		/* Any non-digit means it's not an integer;
-		   this takes care of NAN and INF as well. */
-		if (!isdigit(Py_CHARMASK(*cp)))
-			break;
-	}
-	if (*cp == '\0') {
-		*cp++ = '.';
-		*cp++ = '0';
-		*cp++ = '\0';
-		return;
-	}
-	/* Checking the next three chars should be more than enough to
-	 * detect inf or nan, even on Windows. We check for inf or nan
-	 * at last because they are rare cases.
-	 */
-	for (i=0; *cp != '\0' && i<3; cp++, i++) {
-		if (isdigit(Py_CHARMASK(*cp)) || *cp == '.')
-			continue;
-		/* found something that is neither a digit nor point
-		 * it might be a NaN or INF
-		 */
-#ifdef Py_NAN
-		if (Py_IS_NAN(ob_fval)) {
-			strcpy(buf, "nan");
-		}
-                else
-#endif
-		if (Py_IS_INFINITY(ob_fval)) {
-			cp = buf;
-			if (*cp == '-')
-				cp++;
-			strcpy(cp, "inf");
-		}
-		break;
-	}
-
-}
-
-static void
-format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
-{
-	assert(PyFloat_Check(v));
-	format_double(buf, buflen, PyFloat_AS_DOUBLE(v), precision);
-}
-
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl.  If conversion to double raises an exception, obj is
    set to NULL, and the function invoking this macro returns NULL.  If
@@ -397,6 +322,8 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 		dbl = PyFloat_AS_DOUBLE(obj);		\
 	else if (convert_to_double(&(obj), &(dbl)) < 0)	\
 		return obj;
+
+/* Methods */
 
 static int
 convert_to_double(PyObject **v, double *dbl)
@@ -418,38 +345,30 @@ convert_to_double(PyObject **v, double *dbl)
 	return 0;
 }
 
-/* Precisions used by repr() and str(), respectively.
-
-   The repr() precision (17 significant decimal digits) is the minimal number
-   that is guaranteed to have enough precision so that if the number is read
-   back in the exact same binary value is recreated.  This is true for IEEE
-   floating point by design, and also happens to work for all other modern
-   hardware.
-
-   The str() precision is chosen so that in most cases, the rounding noise
-   created by various operations is suppressed, while giving plenty of
-   precision for practical use.
-
-*/
-
-#define PREC_REPR	17
-#define PREC_STR	12
+static PyObject *
+float_str_or_repr(PyFloatObject *v, char format_code)
+{
+    PyObject *result;
+    char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
+                                      format_code, 0, Py_DTSF_ADD_DOT_0,
+                                      NULL);
+    if (!buf)
+        return PyErr_NoMemory();
+    result = PyUnicode_FromString(buf);
+    PyMem_Free(buf);
+    return result;
+}
 
 static PyObject *
 float_repr(PyFloatObject *v)
 {
-	char buf[100];
-	format_float(buf, sizeof(buf), v, PREC_REPR);
-
-	return PyUnicode_FromString(buf);
+    return float_str_or_repr(v, 'r');
 }
 
 static PyObject *
 float_str(PyFloatObject *v)
 {
-	char buf[100];
-	format_float(buf, sizeof(buf), v, PREC_STR);
-	return PyUnicode_FromString(buf);
+    return float_str_or_repr(v, 's');
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
@@ -1980,15 +1899,21 @@ PyFloat_Fini(void)
 			     i++, p++) {
 				if (PyFloat_CheckExact(p) &&
 				    Py_REFCNT(p) != 0) {
-					char buf[100];
-					format_float(buf, sizeof(buf), p, PREC_STR);
-					/* XXX(twouters) cast refcount to
-					   long until %zd is universally
-					   available
-					 */
-					fprintf(stderr,
+					char *buf = PyOS_double_to_string(
+						PyFloat_AS_DOUBLE(p), 'r',
+						0, 0, NULL);
+					if (buf) {
+						/* XXX(twouters) cast
+						   refcount to long
+						   until %zd is
+						   universally
+						   available
+						*/
+						fprintf(stderr,
 			     "#   <float at %p, refcnt=%ld, val=%s>\n",
 						p, (long)Py_REFCNT(p), buf);
+						PyMem_Free(buf);
+					}
 				}
 			}
 			list = list->next;
@@ -2231,14 +2156,6 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
 		}
 		return 0;
 	}
-}
-
-/* Should only be used by marshal. */
-int
-_PyFloat_Repr(double x, char *p, size_t len)
-{
-	format_double(p, len, x, PREC_REPR);
-	return (int)strlen(p);
 }
 
 double

@@ -562,6 +562,7 @@ PyBytes_AsStringAndSize(register PyObject *obj,
 /* -------------------------------------------------------------------- */
 /* Methods */
 
+#include "stringlib/stringdefs.h"
 #define STRINGLIB_CHAR char
 
 #define STRINGLIB_CMP memcmp

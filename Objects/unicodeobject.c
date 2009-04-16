@@ -8792,42 +8792,13 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
     return NULL;
 }
 
-static Py_ssize_t
-strtounicode(Py_UNICODE *buffer, const char *charbuffer)
+static void
+strtounicode(Py_UNICODE *buffer, const char *charbuffer, Py_ssize_t len)
 {
     register Py_ssize_t i;
-    Py_ssize_t len = strlen(charbuffer);
     for (i = len - 1; i >= 0; i--)
         buffer[i] = (Py_UNICODE) charbuffer[i];
-
-    return len;
 }
-
-static int
-doubletounicode(Py_UNICODE *buffer, size_t len, const char *format, double x)
-{
-    Py_ssize_t result;
-
-    PyOS_ascii_formatd((char *)buffer, len, format, x);
-    result = strtounicode(buffer, (char *)buffer);
-    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
-}
-
-#if 0
-static int
-longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
-{
-    Py_ssize_t result;
-
-    PyOS_snprintf((char *)buffer, len, format, x);
-    result = strtounicode(buffer, (char *)buffer);
-    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
-}
-#endif
-
-/* XXX To save some code duplication, formatfloat/long/int could have been
-   shared with stringobject.c, converting from 8-bit to Unicode after the
-   formatting is done. */
 
 static int
 formatfloat(Py_UNICODE *buf,
@@ -8837,54 +8808,59 @@ formatfloat(Py_UNICODE *buf,
             int type,
             PyObject *v)
 {
-    /* fmt = '%#.' + `prec` + `type`
-       worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
-    char fmt[20];
+    /* eric.smith: To minimize disturbances in PyUnicode_Format (the
+       only caller of this routine), I'm going to keep the existing
+       API to this function. That means that we'll allocate memory and
+       then copy back into the supplied buffer. But that's better than
+       all of the changes that would be required in PyUnicode_Format
+       because it does lots of memory management tricks. */
+
+    char* p = NULL;
+    int result = -1;
     double x;
+    Py_ssize_t len;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
-        return -1;
+        goto done;
     if (prec < 0)
         prec = 6;
+
     /* make sure that the decimal representation of precision really does
        need at most 10 digits: platforms with sizeof(int) == 8 exist! */
     if (prec > 0x7fffffffL) {
         PyErr_SetString(PyExc_OverflowError,
                         "outrageously large precision "
                         "for formatted float");
-        return -1;
+        goto done;
     }
 
     if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
-    /* Worst case length calc to ensure no buffer overrun:
 
-       'g' formats:
-       fmt = %#.<prec>g
-       buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-       for any double rep.)
-       len = 1 + prec + 1 + 2 + 5 = 9 + prec
-
-       'f' formats:
-       buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
-       len = 1 + 50 + 1 + prec = 52 + prec
-
-       If prec=0 the effective precision is 1 (the leading digit is
-       always given), therefore increase the length by one.
-
-    */
     if (((type == 'g' || type == 'G') &&
          buflen <= (size_t)10 + (size_t)prec) ||
-        (type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
+        ((type == 'f' || type == 'F') &&
+         buflen <= (size_t)53 + (size_t)prec)) {
         PyErr_SetString(PyExc_OverflowError,
                         "formatted float is too long (precision too large?)");
-        return -1;
+        goto done;
     }
-    PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
-                  (flags&F_ALT) ? "#" : "",
-                  prec, type);
-    return doubletounicode(buf, buflen, fmt, x);
+
+    p = PyOS_double_to_string(x, type, prec,
+                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    len = strlen(p);
+    if (len+1 >= buflen) {
+        /* Caller supplied buffer is not large enough. */
+        PyErr_NoMemory();
+        goto done;
+    }
+    strtounicode(buf, p, len);
+    result = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
+
+done:
+    PyMem_Free(p);
+    return result;
 }
 
 static PyObject*
@@ -8902,84 +8878,6 @@ formatlong(PyObject *val, int flags, int prec, int type)
     Py_DECREF(str);
     return result;
 }
-
-#if 0
-static int
-formatint(Py_UNICODE *buf,
-          size_t buflen,
-          int flags,
-          int prec,
-          int type,
-          PyObject *v)
-{
-    /* fmt = '%#.' + `prec` + 'l' + `type`
-     * worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
-     *                     + 1 + 1
-     *                   = 24
-     */
-    char fmt[64]; /* plenty big enough! */
-    char *sign;
-    long x;
-
-    x = PyLong_AsLong(v);
-    if (x == -1 && PyErr_Occurred())
-        return -1;
-    if (x < 0 && type == 'u') {
-        type = 'd';
-    }
-    if (x < 0 && (type == 'x' || type == 'X' || type == 'o'))
-        sign = "-";
-    else
-        sign = "";
-    if (prec < 0)
-        prec = 1;
-
-    /* buf = '+'/'-'/'' + '0'/'0x'/'' + '[0-9]'*max(prec, len(x in octal))
-     * worst case buf = '-0x' + [0-9]*prec, where prec >= 11
-     */
-    if (buflen <= 14 || buflen <= (size_t)3 + (size_t)prec) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "formatted integer is too long (precision too large?)");
-        return -1;
-    }
-
-    if ((flags & F_ALT) &&
-        (type == 'x' || type == 'X' || type == 'o')) {
-        /* When converting under %#o, %#x or %#X, there are a number
-         * of issues that cause pain:
-         * - for %#o, we want a different base marker than C
-         * - when 0 is being converted, the C standard leaves off
-         *   the '0x' or '0X', which is inconsistent with other
-         *   %#x/%#X conversions and inconsistent with Python's
-         *   hex() function
-         * - there are platforms that violate the standard and
-         *   convert 0 with the '0x' or '0X'
-         *   (Metrowerks, Compaq Tru64)
-         * - there are platforms that give '0x' when converting
-         *   under %#X, but convert 0 in accordance with the
-         *   standard (OS/2 EMX)
-         *
-         * We can achieve the desired consistency by inserting our
-         * own '0x' or '0X' prefix, and substituting %x/%X in place
-         * of %#x/%#X.
-         *
-         * Note that this is the same approach as used in
-         * formatint() in stringobject.c
-         */
-        PyOS_snprintf(fmt, sizeof(fmt), "%s0%c%%.%dl%c",
-                      sign, type, prec, type);
-    }
-    else {
-        PyOS_snprintf(fmt, sizeof(fmt), "%s%%%s.%dl%c",
-                      sign, (flags&F_ALT) ? "#" : "",
-                      prec, type);
-    }
-    if (sign[0])
-        return longtounicode(buf, buflen, fmt, -x);
-    else
-        return longtounicode(buf, buflen, fmt, x);
-}
-#endif
 
 static int
 formatchar(Py_UNICODE *buf,
@@ -9359,8 +9257,6 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 'F':
             case 'g':
             case 'G':
-                if (c == 'F')
-                    c = 'f';
                 pbuf = formatbuf;
                 len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
                                   flags, prec, c, v);

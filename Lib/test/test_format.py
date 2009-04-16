@@ -220,6 +220,11 @@ class FormatTest(unittest.TestCase):
         testformat("%a", "\u0378", "'\\u0378'")  # non printable
         testformat("%r", "\u0374", "'\u0374'")   # printable
         testformat("%a", "\u0374", "'\\u0374'")  # printable
+
+        # alternate float formatting
+        testformat('%g', 1.1, '1.1')
+        testformat('%#g', 1.1, '1.10000')
+
         # Test exception for unknown format characters
         if verbose:
             print('Testing exceptions')
