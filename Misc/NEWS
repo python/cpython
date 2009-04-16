@@ -14,9 +14,8 @@ Core and Builtins
 
 - Issue #5772: format(1e100, '<') produces '1e+100', not '1.0e+100'.
 
-- Issue #5515: str.format() presentation type 'n' with commas no
-  longer works poorly with leading zeros when formatting ints and
-  floats.
+- Issue #5515: str.format() type 'n' combined with commas and leading
+  zeros no longer gives odd results with ints and floats.
 
 - Implement PEP 378, Format Specifier for Thousands Separator, for
   floats.
