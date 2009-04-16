@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5768: Fixed bug in Unicode output logic and test case for same.
+
 - Issue #1161031: fix readwrite select flag handling: POLLPRI now
   results in a handle_expt_event call, not handle_read_event, and POLLERR
   and POLLNVAL now call handle_close, not handle_expt_event.  Also,
@@ -126,7 +128,7 @@ Library
 - Issue #5741: don't disallow "%%" (which is an escape for "%") when setting
   a value in SafeConfigParser.
 
-- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows
   platforms. Initial patch by Paul Moore.
 
 - Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
@@ -171,7 +173,7 @@ Library
 - Issue #5261: Patch multiprocessing's semaphore.c to support context
   manager use: "with multiprocessing.Lock()" works now.
 
-- Issue #5177: Multiprocessing's SocketListener class now uses 
+- Issue #5177: Multiprocessing's SocketListener class now uses
   socket.SO_REUSEADDR on all connections so that the user no longer needs
   to wait 120 seconds for the socket to expire.
 
@@ -469,7 +471,7 @@ Tests
 - Issue #5635: Fix running test_sys with tracing enabled.
 
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
-  that should cause a test to be skipped are now done using import_module 
+  that should cause a test to be skipped are now done using import_module
   from test support, which does the conversion.
 
 - Issue #5083: New 'gui' resource for regrtest.
