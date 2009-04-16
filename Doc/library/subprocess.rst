@@ -102,12 +102,14 @@ This module defines one class called :class:`Popen`:
    variables for the new process; these are used instead of inheriting the current
    process' environment, which is the default behavior.
 
-   .. warning::
+   .. note::
 
-      When replacing the environment you must provide any variables
-      required for the program to execute.  On Windows, in order to run
-      a side-by-side assembly the specified *env* must include a valid
+      If specified, *env* must provide any variables required
+      for the program to execute.  On Windows, in order to run a
+      `side-by-side assembly`_ the specified *env* **must** include a valid
       :envvar:`SystemRoot`.
+
+   .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
    If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
    opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
