@@ -17,7 +17,8 @@ available.  They are listed here in alphabetical order.
 
 .. function:: all(iterable)
 
-   Return True if all elements of the *iterable* are true. Equivalent to::
+   Return True if all elements of the *iterable* are true (or if the iterable
+   is empty).  Equivalent to::
 
       def all(iterable):
           for element in iterable:
@@ -30,7 +31,8 @@ available.  They are listed here in alphabetical order.
 
 .. function:: any(iterable)
 
-   Return True if any element of the *iterable* is true. Equivalent to::
+   Return True if any element of the *iterable* is true.  If the iterable
+   is empty, return False.  Equivalent to::
 
       def any(iterable):
           for element in iterable:
