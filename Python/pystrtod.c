@@ -895,58 +895,50 @@ format_float_short(double d, char format_code,
 
 
 PyAPI_FUNC(char *) PyOS_double_to_string(double val,
-                                         char format_code,
-                                         int precision,
-                                         int flags,
+					 char format_code,
+					 int precision,
+					 int flags,
 					 int *type)
 {
-	char lc_format_code = format_code;
-	char** float_strings = lc_float_strings;
-	int mode = 0;
+	char **float_strings = lc_float_strings;
+	int mode;
 
-	/* Validate format_code, and map upper and lower case */
+	/* Validate format_code, and map upper and lower case. Compute the
+	   mode and make any adjustments as needed. */
 	switch (format_code) {
-	case 'e':          /* exponent */
-	case 'f':          /* fixed */
-	case 'g':          /* general */
-	case 'r':          /* repr format */
-	case 's':          /* str format */
-		break;
+	/* exponent */
 	case 'E':
-		lc_format_code = 'e';
-		break;
-	case 'F':
-		lc_format_code = 'f';
-		break;
-	case 'G':
-		lc_format_code = 'g';
-		break;
-	default:
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-
-	if (format_code != lc_format_code)
 		float_strings = uc_float_strings;
-
-	/* From the format code, compute the mode and make any adjustments as
-	   needed. */
-	switch (lc_format_code) {
+		format_code = 'e';
+		/* Fall through. */
 	case 'e':
 		mode = 2;
 		precision++;
 		break;
+
+	/* fixed */
+	case 'F':
+		float_strings = uc_float_strings;
+		format_code = 'f';
+		/* Fall through. */
 	case 'f':
 		mode = 3;
 		break;
+
+	/* general */
+	case 'G':
+		float_strings = uc_float_strings;
+		format_code = 'g';
+		/* Fall through. */
 	case 'g':
 		mode = 2;
 		/* precision 0 makes no sense for 'g' format; interpret as 1 */
 		if (precision == 0)
 			precision = 1;
 		break;
+
+	/* repr format */
 	case 'r':
-		/* "repr" pseudo-mode */
 		mode = 0;
 		/* Supplied precision is unused, must be 0. */
 		if (precision != 0) {
@@ -954,6 +946,8 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 			return NULL;
 		}
 		break;
+
+	/* str format */
 	case 's':
 		mode = 2;
 		/* Supplied precision is unused, must be 0. */
@@ -963,9 +957,13 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		}
 		precision = 12;
 		break;
+
+	default:
+		PyErr_BadInternalCall();
+		return NULL;
 	}
 
-	return format_float_short(val, lc_format_code, mode, precision,
+	return format_float_short(val, format_code, mode, precision,
 				  flags & Py_DTSF_SIGN,
 				  flags & Py_DTSF_ADD_DOT_0,
 				  flags & Py_DTSF_ALT,
