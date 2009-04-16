@@ -764,11 +764,11 @@ class StreamHandler(Handler):
                 stream.write(fs % msg)
             else:
                 try:
-                    if (isinstance(msg, unicode) or
-                        getattr(stream, 'encoding', None) is None):
-                        stream.write(fs % msg)
+                    if (isinstance(msg, unicode) and
+                        getattr(stream, 'encoding', None)):
+                        stream.write(fs.decode(stream.encoding) % msg)
                     else:
-                        stream.write(fs % msg.encode(stream.encoding))
+                        stream.write(fs % msg)
                 except UnicodeError:
                     stream.write(fs % msg.encode("UTF-8"))
             self.flush()
