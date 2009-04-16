@@ -223,6 +223,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5768: Fixed bug in Unicode output logic and test case for same.
+
 - Issue #1161031: fix readwrite select flag handling: POLLPRI now
   results in a handle_expt_event call, not handle_read_event, and POLLERR
   and POLLNVAL now call handle_close, not handle_expt_event.  Also,
@@ -236,7 +238,7 @@ Library
 
 - Issue #5732: added a new command in Distutils: check.
 
-- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows
   platforms. Initial patch by Paul Moore.
 
 - Issue #2254: Fix CGIHTTPServer information disclosure.  Relative paths are
@@ -268,14 +270,14 @@ Library
   object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES. Added docs
   to note the limitation
 
-- unittest.assertNotEqual() now uses the inequality operator (!=) instead 
+- unittest.assertNotEqual() now uses the inequality operator (!=) instead
   of the equality operator.
-  
+
 - Issue #5663: better failure messages for unittest asserts. Default assertTrue
   and assertFalse messages are now useful. TestCase has a longMessage attribute.
   This defaults to False, but if set to True useful error messages are shown in
   addition to explicit messages passed to assert methods.
-  
+
 - Issue #3110: Add additional protect around SEM_VALUE_MAX for multiprocessing
 
 - In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on
@@ -311,7 +313,7 @@ Library
 - Issue #5261: Patch multiprocessing's semaphore.c to support context
   manager use: "with multiprocessing.Lock()" works now.
 
-- Issue #5177: Multiprocessing's SocketListener class now uses 
+- Issue #5177: Multiprocessing's SocketListener class now uses
   socket.SO_REUSEADDR on all connections so that the user no longer needs
   to wait 120 seconds for the socket to expire.
 
@@ -824,7 +826,7 @@ Tests
 - Issue #5635: Fix running test_sys with tracing enabled.
 
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
-  that should cause a test to be skipped are now done using import_module 
+  that should cause a test to be skipped are now done using import_module
   from test support, which does the conversion.
 
 - Issue #5083: New 'gui' resource for regrtest.
