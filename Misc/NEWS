@@ -12,6 +12,15 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5772: format(1e100, '<') produces '1e+100', not '1.0e+100'.
+
+- Issue #5515: str.format() presentation type 'n' with commas no
+  longer works poorly with leading zeros when formatting ints and
+  floats.
+
+- Implement PEP 378, Format Specifier for Thousands Separator, for
+  floats.
+
 - The repr function switches to exponential notation at 1e16, not 1e17
   as it did before.  This change applies to both 'short' and legacy
   float repr styles.  For the new repr style, it avoids misleading

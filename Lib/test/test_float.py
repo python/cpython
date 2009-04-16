@@ -1,6 +1,7 @@
 
 import unittest, struct
 import os
+import sys
 from test import support
 import math
 from math import isinf, isnan, copysign, ldexp
@@ -9,6 +10,10 @@ import random, fractions
 
 INF = float("inf")
 NAN = float("nan")
+
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
 
 class GeneralFloatCases(unittest.TestCase):
 
@@ -24,6 +29,10 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+-3.14")
         self.assertRaises(ValueError, float, "-+3.14")
         self.assertRaises(ValueError, float, "--3.14")
+        self.assertRaises(ValueError, float, ".nan")
+        self.assertRaises(ValueError, float, "+.inf")
+        self.assertRaises(ValueError, float, ".")
+        self.assertRaises(ValueError, float, "-.")
         self.assertEqual(float(b"  \u0663.\u0661\u0664  ".decode('raw-unicode-escape')), 3.14)
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
@@ -315,6 +324,73 @@ class ReprTestCase(unittest.TestCase):
             v = eval(line)
             self.assertEqual(v, eval(repr(v)))
         floats_file.close()
+
+class FormatTestCase(unittest.TestCase):
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_format_testfile(self):
+        for line in open(format_testfile):
+            if line.startswith('--'):
+                continue
+            line = line.strip()
+            if not line:
+                continue
+
+            lhs, rhs = map(str.strip, line.split('->'))
+            fmt, arg = lhs.split()
+            self.assertEqual(fmt % float(arg), rhs)
+            self.assertEqual(fmt % -float(arg), '-' + rhs)
+
+    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
+                         "applies only when using short float repr style")
+    def test_short_repr(self):
+        # test short float repr introduced in Python 3.1.  One aspect
+        # of this repr is that we get some degree of str -> float ->
+        # str roundtripping.  In particular, for any numeric string
+        # containing 15 or fewer significant digits, those exact same
+        # digits (modulo trailing zeros) should appear in the output.
+        # No more repr(0.03) -> "0.029999999999999999"!
+
+        test_strings = [
+            # output always includes *either* a decimal point and at
+            # least one digit after that point, or an exponent.
+            '0.0',
+            '1.0',
+            '0.01',
+            '0.02',
+            '0.03',
+            '0.04',
+            '0.05',
+            '1.23456789',
+            '10.0',
+            '100.0',
+            # values >= 1e16 get an exponent...
+            '1000000000000000.0',
+            '9999999999999990.0',
+            '1e+16',
+            '1e+17',
+            # ... and so do values < 1e-4
+            '0.001',
+            '0.001001',
+            '0.00010000000000001',
+            '0.0001',
+            '9.999999999999e-05',
+            '1e-05',
+            # values designed to provoke failure if the FPU rounding
+            # precision isn't set correctly
+            '8.72293771110361e+25',
+            '7.47005307342313e+26',
+            '2.86438000439698e+28',
+            '8.89142905246179e+28',
+            '3.08578087079232e+35',
+            ]
+
+        for s in test_strings:
+            negs = '-'+s
+            self.assertEqual(s, repr(float(s)))
+            self.assertEqual(negs, repr(float(negs)))
+
+
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan

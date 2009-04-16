@@ -1,6 +1,8 @@
 /* implements the string, long, and float formatters.  that is,
    string.__format__, etc. */
 
+#include <locale.h>
+
 /* Before including this, you must include either:
    stringlib/unicodedefs.h
    stringlib/stringdefs.h
@@ -12,8 +14,6 @@
    to be whatever you want the public names of these functions to
    be.  These are the only non-static functions defined here.
 */
-
-#define ALLOW_PARENS_FOR_SIGN 0
 
 /* Raises an exception about an unknown presentation type for this
  * type. */
@@ -104,9 +104,6 @@ is_sign_element(STRINGLIB_CHAR c)
 {
     switch (c) {
     case ' ': case '+': case '-':
-#if ALLOW_PARENS_FOR_SIGN
-    case '(':
-#endif
         return 1;
     default:
         return 0;
@@ -143,7 +140,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     /* end-ptr is used throughout this code to specify the length of
        the input string */
 
-    Py_ssize_t specified_width;
+    Py_ssize_t consumed;
 
     format->fill_char = '\0';
     format->align = '\0';
@@ -170,11 +167,6 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     if (end-ptr >= 1 && is_sign_element(ptr[0])) {
         format->sign = ptr[0];
         ++ptr;
-#if ALLOW_PARENS_FOR_SIGN
-        if (end-ptr >= 1 && ptr[0] == ')') {
-            ++ptr;
-        }
-#endif
     }
 
     /* If the next character is #, we're in alternate mode.  This only
@@ -193,15 +185,17 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
         ++ptr;
     }
 
-    /* XXX add error checking */
-    specified_width = get_integer(&ptr, end, &format->width);
+    consumed = get_integer(&ptr, end, &format->width);
+    if (consumed == -1)
+        /* Overflow error. Exception already set. */
+        return 0;
 
-    /* if specified_width is 0, we didn't consume any characters for
-       the width. in that case, reset the width to -1, because
-       get_integer() will have set it to zero */
-    if (specified_width == 0) {
+    /* If consumed is 0, we didn't consume any characters for the
+       width. In that case, reset the width to -1, because
+       get_integer() will have set it to zero. -1 is how we record
+       that the width wasn't specified. */
+    if (consumed == 0)
         format->width = -1;
-    }
 
     /* Comma signifies add thousands separators */
     if (end-ptr && ptr[0] == ',') {
@@ -213,11 +207,13 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     if (end-ptr && ptr[0] == '.') {
         ++ptr;
 
-        /* XXX add error checking */
-        specified_width = get_integer(&ptr, end, &format->precision);
+        consumed = get_integer(&ptr, end, &format->precision);
+        if (consumed == -1)
+            /* Overflow error. Exception already set. */
+            return 0;
 
-        /* not having a precision after a dot is an error */
-        if (specified_width == 0) {
+        /* Not having a precision after a dot is an error. */
+        if (consumed == 0) {
             PyErr_Format(PyExc_ValueError,
                          "Format specifier missing precision");
             return 0;
@@ -225,10 +221,10 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 
     }
 
-    /* Finally, parse the type field */
+    /* Finally, parse the type field. */
 
     if (end-ptr > 1) {
-        /* invalid conversion spec */
+        /* More than one char remain, invalid conversion spec. */
         PyErr_Format(PyExc_ValueError, "Invalid conversion specification");
         return 0;
     }
@@ -238,9 +234,27 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
         ++ptr;
     }
 
-    if (format->type == 'n' && format->thousands_separators) {
-        PyErr_Format(PyExc_ValueError, "Cannot specify ',' with 'n'.");
-        return 0;
+    /* Do as much validating as we can, just by looking at the format
+       specifier.  Do not take into account what type of formatting
+       we're doing (int, float, string). */
+
+    if (format->thousands_separators) {
+        switch (format->type) {
+        case 'd':
+        case 'e':
+        case 'f':
+        case 'g':
+        case 'E':
+        case 'G':
+        case '%':
+        case 'F':
+            /* These are allowed. See PEP 378.*/
+            break;
+        default:
+            PyErr_Format(PyExc_ValueError,
+                         "Cannot specify ',' with '%c'.", format->type);
+            return 0;
+        }
     }
 
     return 1;
@@ -251,6 +265,20 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 /*********** common routines for numeric formatting *********************/
 /************************************************************************/
 
+/* Locale type codes. */
+#define LT_CURRENT_LOCALE 0
+#define LT_DEFAULT_LOCALE 1
+#define LT_NO_LOCALE 2
+
+/* Locale info needed for formatting integers and the part of floats
+   before and including the decimal. Note that locales only support
+   8-bit chars, not unicode. */
+typedef struct {
+    char *decimal_point;
+    char *thousands_sep;
+    char *grouping;
+} LocaleInfo;
+
 /* describes the layout for an integer, see the comment in
    calc_number_widths() for details */
 typedef struct {
@@ -258,38 +286,84 @@ typedef struct {
     Py_ssize_t n_prefix;
     Py_ssize_t n_spadding;
     Py_ssize_t n_rpadding;
-    char lsign;
-    Py_ssize_t n_lsign;
-    char rsign;
-    Py_ssize_t n_rsign;
-    Py_ssize_t n_total; /* just a convenience, it's derivable from the
-                           other fields */
+    char sign;
+    Py_ssize_t n_sign;      /* number of digits needed for sign (0/1) */
+    Py_ssize_t n_grouped_digits; /* Space taken up by the digits, including
+                                    any grouping chars. */
+    Py_ssize_t n_decimal;   /* 0 if only an integer */
+    Py_ssize_t n_remainder; /* Digits in decimal and/or exponent part,
+                               excluding the decimal itself, if
+                               present. */
+
+    /* These 2 are not the widths of fields, but are needed by
+       STRINGLIB_GROUPING. */
+    Py_ssize_t n_digits;    /* The number of digits before a decimal
+                               or exponent. */
+    Py_ssize_t n_min_width; /* The min_width we used when we computed
+                               the n_grouped_digits width. */
 } NumberFieldWidths;
+
+/* Given a number of the form:
+   digits[remainder]
+   where ptr points to the start and end points to the end, find where
+    the integer part ends. This could be a decimal, an exponent, both,
+    or neither.
+   If a decimal point is present, set *has_decimal and increment
+    remainder beyond it.
+   Results are undefined (but shouldn't crash) for improperly
+    formatted strings.
+*/
+static void
+parse_number(STRINGLIB_CHAR *ptr, Py_ssize_t len,
+             Py_ssize_t *n_remainder, int *has_decimal)
+{
+    STRINGLIB_CHAR *end = ptr + len;
+    STRINGLIB_CHAR *remainder;
+
+    while (ptr<end && isdigit(*ptr))
+        ++ptr;
+    remainder = ptr;
+
+    /* Does remainder start with a decimal point? */
+    *has_decimal = ptr<end && *remainder == '.';
+
+    /* Skip the decimal point. */
+    if (*has_decimal)
+        remainder++;
+
+    *n_remainder = end - remainder;
+}
 
 /* not all fields of format are used.  for example, precision is
    unused.  should this take discrete params in order to be more clear
    about what it does?  or is passing a single format parameter easier
    and more efficient enough to justify a little obfuscation? */
-static void
-calc_number_widths(NumberFieldWidths *spec, STRINGLIB_CHAR actual_sign,
-                   Py_ssize_t n_prefix, Py_ssize_t n_digits,
+static Py_ssize_t
+calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
+                   STRINGLIB_CHAR sign_char, STRINGLIB_CHAR *number,
+                   Py_ssize_t n_number, Py_ssize_t n_remainder,
+                   int has_decimal, const LocaleInfo *locale,
                    const InternalFormatSpec *format)
 {
+    Py_ssize_t n_non_digit_non_padding;
+    Py_ssize_t n_padding;
+
+    spec->n_digits = n_number - n_remainder - (has_decimal?1:0);
     spec->n_lpadding = 0;
-    spec->n_prefix = 0;
+    spec->n_prefix = n_prefix;
+    spec->n_decimal = has_decimal ? strlen(locale->decimal_point) : 0;
+    spec->n_remainder = n_remainder;
     spec->n_spadding = 0;
     spec->n_rpadding = 0;
-    spec->lsign = '\0';
-    spec->n_lsign = 0;
-    spec->rsign = '\0';
-    spec->n_rsign = 0;
+    spec->sign = '\0';
+    spec->n_sign = 0;
 
     /* the output will look like:
-       |                                                                    |
-       | <lpadding> <lsign> <prefix> <spadding> <digits> <rsign> <rpadding> |
-       |                                                                    |
+       |                                                                                         |
+       | <lpadding> <sign> <prefix> <spadding> <grouped_digits> <decimal> <remainder> <rpadding> |
+       |                                                                                         |
 
-       lsign and rsign are computed from format->sign and the actual
+       sign is computed from format->sign and the actual
        sign of the number
 
        prefix is given (it's for the '0x' prefix)
@@ -304,108 +378,191 @@ calc_number_widths(NumberFieldWidths *spec, STRINGLIB_CHAR actual_sign,
     */
 
     /* compute the various parts we're going to write */
-    if (format->sign == '+') {
+    switch (format->sign) {
+    case '+':
         /* always put a + or - */
-        spec->n_lsign = 1;
-        spec->lsign = (actual_sign == '-' ? '-' : '+');
-    }
-#if ALLOW_PARENS_FOR_SIGN
-    else if (format->sign == '(') {
-        if (actual_sign == '-') {
-            spec->n_lsign = 1;
-            spec->lsign = '(';
-            spec->n_rsign = 1;
-            spec->rsign = ')';
-        }
-    }
-#endif
-    else if (format->sign == ' ') {
-        spec->n_lsign = 1;
-        spec->lsign = (actual_sign == '-' ? '-' : ' ');
-    }
-    else {
-        /* non specified, or the default (-) */
-        if (actual_sign == '-') {
-            spec->n_lsign = 1;
-            spec->lsign = '-';
+        spec->n_sign = 1;
+        spec->sign = (sign_char == '-' ? '-' : '+');
+        break;
+    case ' ':
+        spec->n_sign = 1;
+        spec->sign = (sign_char == '-' ? '-' : ' ');
+        break;
+    default:
+        /* Not specified, or the default (-) */
+        if (sign_char == '-') {
+            spec->n_sign = 1;
+            spec->sign = '-';
         }
     }
 
-    spec->n_prefix = n_prefix;
+    /* The number of chars used for non-digits and non-padding. */
+    n_non_digit_non_padding = spec->n_sign + spec->n_prefix + spec->n_decimal +
+        spec->n_remainder;
 
-    /* now the number of padding characters */
-    if (format->width == -1) {
-        /* no padding at all, nothing to do */
-    }
-    else {
-        /* see if any padding is needed */
-        if (spec->n_lsign + n_digits + spec->n_rsign +
-                spec->n_prefix >= format->width) {
-            /* no padding needed, we're already bigger than the
-               requested width */
+    /* min_width can go negative, that's okay. format->width == -1 means
+       we don't care. */
+    if (format->fill_char == '0')
+        spec->n_min_width = format->width - n_non_digit_non_padding;
+    else
+        spec->n_min_width = 0;
+
+    if (spec->n_digits == 0)
+        /* This case only occurs when using 'c' formatting, we need
+           to special case it because the grouping code always wants
+           to have at least one character. */
+        spec->n_grouped_digits = 0;
+    else
+        spec->n_grouped_digits = STRINGLIB_GROUPING(NULL, 0, NULL,
+                                                    spec->n_digits,
+                                                    spec->n_min_width,
+                                                    locale->grouping,
+                                                    locale->thousands_sep);
+
+    /* Given the desired width and the total of digit and non-digit
+       space we consume, see if we need any padding. format->width can
+       be negative (meaning no padding), but this code still works in
+       that case. */
+    n_padding = format->width -
+                        (n_non_digit_non_padding + spec->n_grouped_digits);
+    if (n_padding > 0) {
+        /* Some padding is needed. Determine if it's left, space, or right. */
+        switch (format->align) {
+        case '<':
+            spec->n_rpadding = n_padding;
+            break;
+        case '^':
+            spec->n_lpadding = n_padding / 2;
+            spec->n_rpadding = n_padding - spec->n_lpadding;
+            break;
+        case '=':
+            spec->n_spadding = n_padding;
+            break;
+        default:
+            /* Handles '>', plus catch-all just in case. */
+            spec->n_lpadding = n_padding;
+            break;
         }
-        else {
-            /* determine which of left, space, or right padding is
-               needed */
-            Py_ssize_t padding = format->width -
-                                    (spec->n_lsign + spec->n_prefix +
-                                     n_digits + spec->n_rsign);
-            if (format->align == '<')
-                spec->n_rpadding = padding;
-            else if (format->align == '>')
-                spec->n_lpadding = padding;
-            else if (format->align == '^') {
-                spec->n_lpadding = padding / 2;
-                spec->n_rpadding = padding - spec->n_lpadding;
-            }
-            else if (format->align == '=')
-                spec->n_spadding = padding;
-            else
-                spec->n_lpadding = padding;
-        }
     }
-    spec->n_total = spec->n_lpadding + spec->n_lsign + spec->n_prefix +
-            spec->n_spadding + n_digits + spec->n_rsign + spec->n_rpadding;
+    return spec->n_lpadding + spec->n_sign + spec->n_prefix +
+        spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +
+        spec->n_remainder + spec->n_rpadding;
 }
 
-/* fill in the non-digit parts of a numbers's string representation,
-   as determined in calc_number_widths().  returns the pointer to
-   where the digits go. */
-static STRINGLIB_CHAR *
-fill_non_digits(STRINGLIB_CHAR *p_buf, const NumberFieldWidths *spec,
-                STRINGLIB_CHAR *prefix, Py_ssize_t n_digits,
-                STRINGLIB_CHAR fill_char)
+/* Fill in the digit parts of a numbers's string representation,
+   as determined in calc_number_widths().
+   No error checking, since we know the buffer is the correct size. */
+static void
+fill_number(STRINGLIB_CHAR *buf, const NumberFieldWidths *spec,
+            STRINGLIB_CHAR *digits, Py_ssize_t n_digits,
+            STRINGLIB_CHAR *prefix, STRINGLIB_CHAR fill_char,
+            LocaleInfo *locale, int toupper)
 {
-    STRINGLIB_CHAR *p_digits;
+    /* Used to keep track of digits, decimal, and remainder. */
+    STRINGLIB_CHAR *p = digits;
+
+#ifndef NDEBUG
+    Py_ssize_t r;
+#endif
 
     if (spec->n_lpadding) {
-        STRINGLIB_FILL(p_buf, fill_char, spec->n_lpadding);
-        p_buf += spec->n_lpadding;
+        STRINGLIB_FILL(buf, fill_char, spec->n_lpadding);
+        buf += spec->n_lpadding;
     }
-    if (spec->n_lsign == 1) {
-        *p_buf++ = spec->lsign;
+    if (spec->n_sign == 1) {
+        *buf++ = spec->sign;
     }
     if (spec->n_prefix) {
-        memmove(p_buf,
+        memmove(buf,
                 prefix,
                 spec->n_prefix * sizeof(STRINGLIB_CHAR));
-        p_buf += spec->n_prefix;
+        if (toupper) {
+            Py_ssize_t t;
+            for (t = 0; t < spec->n_prefix; ++t)
+                buf[t] = STRINGLIB_TOUPPER(buf[t]);
+        }
+        buf += spec->n_prefix;
     }
     if (spec->n_spadding) {
-        STRINGLIB_FILL(p_buf, fill_char, spec->n_spadding);
-        p_buf += spec->n_spadding;
+        STRINGLIB_FILL(buf, fill_char, spec->n_spadding);
+        buf += spec->n_spadding;
     }
-    p_digits = p_buf;
-    p_buf += n_digits;
-    if (spec->n_rsign == 1) {
-        *p_buf++ = spec->rsign;
+
+    /* Only for type 'c' special case, it has no digits. */
+    if (spec->n_digits != 0) {
+        /* Fill the digits with InsertThousandsGrouping. */
+#ifndef NDEBUG
+        r =
+#endif
+            STRINGLIB_GROUPING(buf, spec->n_grouped_digits, digits,
+                               spec->n_digits, spec->n_min_width,
+                               locale->grouping, locale->thousands_sep);
+#ifndef NDEBUG
+        assert(r == spec->n_grouped_digits);
+#endif
+        p += spec->n_digits;
     }
+    if (toupper) {
+        Py_ssize_t t;
+        for (t = 0; t < spec->n_grouped_digits; ++t)
+            buf[t] = STRINGLIB_TOUPPER(buf[t]);
+    }
+    buf += spec->n_grouped_digits;
+
+    if (spec->n_decimal) {
+        Py_ssize_t t;
+        for (t = 0; t < spec->n_decimal; ++t)
+            buf[t] = locale->decimal_point[t];
+        buf += spec->n_decimal;
+        p += 1;
+    }
+
+    if (spec->n_remainder) {
+        memcpy(buf, p, spec->n_remainder * sizeof(STRINGLIB_CHAR));
+        buf += spec->n_remainder;
+        p += spec->n_remainder;
+    }
+
     if (spec->n_rpadding) {
-        STRINGLIB_FILL(p_buf, fill_char, spec->n_rpadding);
-        p_buf += spec->n_rpadding;
+        STRINGLIB_FILL(buf, fill_char, spec->n_rpadding);
+        buf += spec->n_rpadding;
     }
-    return p_digits;
 }
+
+static char no_grouping[1] = {CHAR_MAX};
+
+/* Find the decimal point character(s?), thousands_separator(s?), and
+   grouping description, either for the current locale if type is
+   LT_CURRENT_LOCALE, a hard-coded locale if LT_DEFAULT_LOCALE, or
+   none if LT_NO_LOCALE. */
+static void
+get_locale_info(int type, LocaleInfo *locale_info)
+{
+    switch (type) {
+    case LT_CURRENT_LOCALE: {
+        struct lconv *locale_data = localeconv();
+        locale_info->decimal_point = locale_data->decimal_point;
+        locale_info->thousands_sep = locale_data->thousands_sep;
+        locale_info->grouping = locale_data->grouping;
+        break;
+    }
+    case LT_DEFAULT_LOCALE:
+        locale_info->decimal_point = ".";
+        locale_info->thousands_sep = ",";
+        locale_info->grouping = "\3"; /* Group every 3 characters,
+                                         trailing 0 means repeat
+                                         infinitely. */
+        break;
+    case LT_NO_LOCALE:
+        locale_info->decimal_point = ".";
+        locale_info->thousands_sep = "";
+        locale_info->grouping = no_grouping;
+        break;
+    default:
+        assert(0);
+    }
+}
+
 #endif /* FORMAT_FLOAT || FORMAT_LONG */
 
 /************************************************************************/
@@ -523,18 +680,20 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     PyObject *tmp = NULL;
     STRINGLIB_CHAR *pnumeric_chars;
     STRINGLIB_CHAR numeric_char;
-    STRINGLIB_CHAR sign = '\0';
-    STRINGLIB_CHAR *p;
+    STRINGLIB_CHAR sign_char = '\0';
     Py_ssize_t n_digits;       /* count of digits need from the computed
                                   string */
-    Py_ssize_t n_leading_chars;
-    Py_ssize_t n_grouping_chars = 0; /* Count of additional chars to
-                                        allocate, used for 'n'
-                                        formatting. */
+    Py_ssize_t n_remainder = 0; /* Used only for 'c' formatting, which
+                                   produces non-digits */
     Py_ssize_t n_prefix = 0;   /* Count of prefix chars, (e.g., '0x') */
+    Py_ssize_t n_total;
     STRINGLIB_CHAR *prefix = NULL;
     NumberFieldWidths spec;
     long x;
+
+    /* Locale settings, either from the actual locale or
+       from a hard-code pseudo-locale */
+    LocaleInfo locale;
 
     /* no precision allowed on integers */
     if (format->precision != -1) {
@@ -543,13 +702,20 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
     }
 
-
     /* special case for character formatting */
     if (format->type == 'c') {
         /* error to specify a sign */
         if (format->sign != '\0') {
             PyErr_SetString(PyExc_ValueError,
                             "Sign not allowed with integer"
+                            " format specifier 'c'");
+            goto done;
+        }
+
+        /* Error to specify a comma. */
+        if (format->thousands_separators) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Thousands separators not allowed with integer"
                             " format specifier 'c'");
             goto done;
         }
@@ -578,6 +744,13 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         numeric_char = (STRINGLIB_CHAR)x;
         pnumeric_chars = &numeric_char;
         n_digits = 1;
+
+        /* As a sort-of hack, we tell calc_number_widths that we only
+           have "remainder" characters. calc_number_widths thinks
+           these are characters that don't get formatted, only copied
+           into the output string. We do this for 'c' formatting,
+           because the characters are likely to be non-digits. */
+        n_remainder = 1;
     }
     else {
         int base;
@@ -629,8 +802,8 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* Is a sign character present in the output?  If so, remember it
            and skip it */
-        sign = pnumeric_chars[0];
-        if (sign == '-') {
+        if (pnumeric_chars[0] == '-') {
+            sign_char = pnumeric_chars[0];
             ++prefix;
             ++leading_chars_to_skip;
         }
@@ -640,86 +813,26 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         pnumeric_chars += leading_chars_to_skip;
     }
 
-    if (format->type == 'n')
-            /* Compute how many additional chars we need to allocate
-               to hold the thousands grouping. */
-            STRINGLIB_GROUPING_LOCALE(NULL, n_digits, n_digits,
-                               0, &n_grouping_chars, 0);
-    if (format->thousands_separators)
-            /* Compute how many additional chars we need to allocate
-               to hold the thousands grouping. */
-            STRINGLIB_GROUPING(NULL, n_digits, n_digits,
-                               0, &n_grouping_chars, 0, "\3", ",");
+    /* Determine the grouping, separator, and decimal point, if any. */
+    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                    (format->thousands_separators ?
+                     LT_DEFAULT_LOCALE :
+                     LT_NO_LOCALE),
+                    &locale);
 
-    /* Calculate the widths of the various leading and trailing parts */
-    calc_number_widths(&spec, sign, n_prefix, n_digits + n_grouping_chars,
-                       format);
+    /* Calculate how much memory we'll need. */
+    n_total = calc_number_widths(&spec, n_prefix, sign_char, pnumeric_chars,
+                       n_digits, n_remainder, 0, &locale, format);
 
-    /* Allocate a new string to hold the result */
-    result = STRINGLIB_NEW(NULL, spec.n_total);
+    /* Allocate the memory. */
+    result = STRINGLIB_NEW(NULL, n_total);
     if (!result)
         goto done;
-    p = STRINGLIB_STR(result);
 
-    /* XXX There is too much magic here regarding the internals of
-       spec and the location of the prefix and digits.  It would be
-       better if calc_number_widths returned a number of logical
-       offsets into the buffer, and those were used.  Maybe in a
-       future code cleanup. */
-
-    /* Fill in the digit parts */
-    n_leading_chars = spec.n_lpadding + spec.n_lsign +
-            spec.n_prefix + spec.n_spadding;
-    memmove(p + n_leading_chars,
-            pnumeric_chars,
-            n_digits * sizeof(STRINGLIB_CHAR));
-
-    /* If type is 'X', convert the filled in digits to uppercase */
-    if (format->type == 'X') {
-        Py_ssize_t t;
-        for (t = 0; t < n_digits; ++t)
-            p[t + n_leading_chars] = STRINGLIB_TOUPPER(p[t + n_leading_chars]);
-    }
-
-    /* Insert the grouping, if any, after the uppercasing of the digits, so
-       we can ensure that grouping chars won't be affected. */
-    if (n_grouping_chars) {
-            /* We know this can't fail, since we've already
-               reserved enough space. */
-            STRINGLIB_CHAR *pstart = p + n_leading_chars;
-#ifndef NDEBUG
-            int r;
-#endif
-            if (format->type == 'n')
-#ifndef NDEBUG
-                r =
-#endif
-                    STRINGLIB_GROUPING_LOCALE(pstart, n_digits, n_digits,
-                           spec.n_total+n_grouping_chars-n_leading_chars,
-                           NULL, 0);
-            else
-#ifndef NDEBUG
-                r =
-#endif
-                    STRINGLIB_GROUPING(pstart, n_digits, n_digits,
-                           spec.n_total+n_grouping_chars-n_leading_chars,
-                           NULL, 0, "\3", ",");
-            assert(r);
-    }
-
-    /* Fill in the non-digit parts (padding, sign, etc.) */
-    fill_non_digits(p, &spec, prefix, n_digits + n_grouping_chars,
-                    format->fill_char == '\0' ? ' ' : format->fill_char);
-
-    /* If type is 'X', uppercase the prefix.  This has to be done after the
-       prefix is filled in by fill_non_digits */
-    if (format->type == 'X') {
-        Py_ssize_t t;
-        for (t = 0; t < n_prefix; ++t)
-            p[t + spec.n_lpadding + spec.n_lsign] =
-                    STRINGLIB_TOUPPER(p[t + spec.n_lpadding + spec.n_lsign]);
-    }
-
+    /* Populate the memory. */
+    fill_number(STRINGLIB_STR(result), &spec, pnumeric_chars, n_digits,
+                prefix, format->fill_char == '\0' ? ' ' : format->fill_char,
+                &locale, format->type == 'X');
 
 done:
     Py_XDECREF(tmp);
@@ -733,64 +846,45 @@ done:
 
 #ifdef FORMAT_FLOAT
 #if STRINGLIB_IS_UNICODE
-/* taken from unicodeobject.c */
-static Py_ssize_t
-strtounicode(Py_UNICODE *buffer, const char *charbuffer)
+static void
+strtounicode(Py_UNICODE *buffer, const char *charbuffer, Py_ssize_t len)
 {
-    register Py_ssize_t i;
-    Py_ssize_t len = strlen(charbuffer);
-    for (i = len - 1; i >= 0; --i)
-        buffer[i] = (Py_UNICODE) charbuffer[i];
-
-    return len;
+    Py_ssize_t i;
+    for (i = 0; i < len; ++i)
+        buffer[i] = (Py_UNICODE)charbuffer[i];
 }
 #endif
-
-/* see FORMATBUFLEN in unicodeobject.c */
-#define FLOAT_FORMATBUFLEN 120
 
 /* much of this is taken from unicodeobject.c */
 static PyObject *
 format_float_internal(PyObject *value,
                       const InternalFormatSpec *format)
 {
-    /* fmt = '%.' + `prec` + `type` + '%%'
-       worst case length = 2 + 10 (len of INT_MAX) + 1 + 2 = 15 (use 20)*/
-    char fmt[20];
-
-    /* taken from unicodeobject.c */
-    /* Worst case length calc to ensure no buffer overrun:
-
-       'g' formats:
-         fmt = %#.<prec>g
-         buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-            for any double rep.)
-         len = 1 + prec + 1 + 2 + 5 = 9 + prec
-
-       'f' formats:
-         buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
-         len = 1 + 50 + 1 + prec = 52 + prec
-
-       If prec=0 the effective precision is 1 (the leading digit is
-       always given), therefore increase the length by one.
-
-    */
-    char charbuf[FLOAT_FORMATBUFLEN];
+    char *buf = NULL;       /* buffer returned from PyOS_double_to_string */
     Py_ssize_t n_digits;
-    double x;
+    Py_ssize_t n_remainder;
+    Py_ssize_t n_total;
+    int has_decimal;
+    double val;
     Py_ssize_t precision = format->precision;
-    PyObject *result = NULL;
-    STRINGLIB_CHAR sign;
-    char* trailing = "";
+    STRINGLIB_CHAR type = format->type;
+    int add_pct = 0;
     STRINGLIB_CHAR *p;
     NumberFieldWidths spec;
-    STRINGLIB_CHAR type = format->type;
+    int flags = 0;
+    PyObject *result = NULL;
+    STRINGLIB_CHAR sign_char = '\0';
+    int float_type; /* Used to see if we have a nan, inf, or regular float. */
 
 #if STRINGLIB_IS_UNICODE
-    Py_UNICODE unicodebuf[FLOAT_FORMATBUFLEN];
+    Py_UNICODE *unicode_tmp = NULL;
 #endif
 
-    /* alternate is not allowed on floats. */
+    /* Locale settings, either from the actual locale or
+       from a hard-code pseudo-locale */
+    LocaleInfo locale;
+
+    /* Alternate is not allowed on floats. */
     if (format->alternate) {
         PyErr_SetString(PyExc_ValueError,
                         "Alternate form (#) not allowed in float format "
@@ -798,84 +892,106 @@ format_float_internal(PyObject *value,
         goto done;
     }
 
-    /* first, do the conversion as 8-bit chars, using the platform's
-       snprintf.  then, if needed, convert to unicode. */
+    if (type == '\0') {
+        /* Omitted type specifier. This is like 'g' but with at least
+           one digit after the decimal point. */
+        type = 'g';
+        flags |= Py_DTSF_ADD_DOT_0;
+    }
+
+    if (type == 'n')
+        /* 'n' is the same as 'g', except for the locale used to
+           format the result. We take care of that later. */
+        type = 'g';
 
     /* 'F' is the same as 'f', per the PEP */
     if (type == 'F')
         type = 'f';
 
-    x = PyFloat_AsDouble(value);
-
-    if (x == -1.0 && PyErr_Occurred())
+    val = PyFloat_AsDouble(value);
+    if (val == -1.0 && PyErr_Occurred())
         goto done;
 
     if (type == '%') {
         type = 'f';
-        x *= 100;
-        trailing = "%";
+        val *= 100;
+        add_pct = 1;
     }
 
     if (precision < 0)
         precision = 6;
-    if (type == 'f' && fabs(x) >= 1e50)
+    if ((type == 'f' || type == 'F') && fabs(val) >= 1e50)
         type = 'g';
 
-    /* cast "type", because if we're in unicode we need to pass a
-       8-bit char.  this is safe, because we've restricted what "type"
-       can be */
-    PyOS_snprintf(fmt, sizeof(fmt), "%%.%" PY_FORMAT_SIZE_T "d%c", precision,
-                  (char)type);
+    /* Cast "type", because if we're in unicode we need to pass a
+       8-bit char. This is safe, because we've restricted what "type"
+       can be. */
+    buf = PyOS_double_to_string(val, (char)type, precision, flags,
+                                &float_type);
+    if (buf == NULL)
+        goto done;
+    n_digits = strlen(buf);
 
-    /* do the actual formatting */
-    PyOS_ascii_formatd(charbuf, sizeof(charbuf), fmt, x);
+    if (add_pct) {
+        /* We know that buf has a trailing zero (since we just called
+           strlen() on it), and we don't use that fact any more. So we
+           can just write over the trailing zero. */
+        buf[n_digits] = '%';
+        n_digits += 1;
+    }
 
-    /* adding trailing to fmt with PyOS_snprintf doesn't work, not
-       sure why.  we'll just concatentate it here, no harm done.  we
-       know we can't have a buffer overflow from the fmt size
-       analysis */
-    strcat(charbuf, trailing);
-
-    /* rather than duplicate the code for snprintf for both unicode
-       and 8 bit strings, we just use the 8 bit version and then
-       convert to unicode in a separate code path.  that's probably
-       the lesser of 2 evils. */
+    /* Since there is no unicode version of PyOS_double_to_string,
+       just use the 8 bit version and then convert to unicode. */
 #if STRINGLIB_IS_UNICODE
-    n_digits = strtounicode(unicodebuf, charbuf);
-    p = unicodebuf;
+    unicode_tmp = (Py_UNICODE*)PyMem_Malloc((n_digits)*sizeof(Py_UNICODE));
+    if (unicode_tmp == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    strtounicode(unicode_tmp, buf, n_digits);
+    p = unicode_tmp;
 #else
-    /* compute the length.  I believe this is done because the return
-       value from snprintf above is unreliable */
-    n_digits = strlen(charbuf);
-    p = charbuf;
+    p = buf;
 #endif
 
-    /* is a sign character present in the output?  if so, remember it
+    /* Is a sign character present in the output?  If so, remember it
        and skip it */
-    sign = p[0];
-    if (sign == '-') {
+    if (*p == '-') {
+        sign_char = *p;
         ++p;
         --n_digits;
     }
 
-    calc_number_widths(&spec, sign, 0, n_digits, format);
+    /* Determine if we have any "remainder" (after the digits, might include
+       decimal or exponent or both (or neither)) */
+    parse_number(p, n_digits, &n_remainder, &has_decimal);
 
-    /* allocate a string with enough space */
-    result = STRINGLIB_NEW(NULL, spec.n_total);
+    /* Determine the grouping, separator, and decimal point, if any. */
+    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                    (format->thousands_separators ?
+                     LT_DEFAULT_LOCALE :
+                     LT_NO_LOCALE),
+                    &locale);
+
+    /* Calculate how much memory we'll need. */
+    n_total = calc_number_widths(&spec, 0, sign_char, p, n_digits,
+                                 n_remainder, has_decimal, &locale, format);
+
+    /* Allocate the memory. */
+    result = STRINGLIB_NEW(NULL, n_total);
     if (result == NULL)
         goto done;
 
-    /* Fill in the non-digit parts (padding, sign, etc.) */
-    fill_non_digits(STRINGLIB_STR(result), &spec, NULL, n_digits,
-                    format->fill_char == '\0' ? ' ' : format->fill_char);
-
-    /* fill in the digit parts */
-    memmove(STRINGLIB_STR(result) +
-               (spec.n_lpadding + spec.n_lsign + spec.n_spadding),
-            p,
-            n_digits * sizeof(STRINGLIB_CHAR));
+    /* Populate the memory. */
+    fill_number(STRINGLIB_STR(result), &spec, p, n_digits, NULL,
+                format->fill_char == '\0' ? ' ' : format->fill_char, &locale,
+                0);
 
 done:
+    PyMem_Free(buf);
+#if STRINGLIB_IS_UNICODE
+    PyMem_Free(unicode_tmp);
+#endif
     return result;
 }
 #endif /* FORMAT_FLOAT */
@@ -1056,11 +1172,7 @@ FORMAT_FLOAT(PyObject *obj,
 
     /* type conversion? */
     switch (format.type) {
-    case '\0':
-        /* 'Z' means like 'g', but with at least one decimal.  See
-           PyOS_ascii_formatd */
-        format.type = 'Z';
-        /* Deliberate fall through to the next case statement */
+    case '\0': /* No format code: like 'g', but with at least one decimal. */
     case 'e':
     case 'E':
     case 'f':

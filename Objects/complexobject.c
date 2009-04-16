@@ -14,22 +14,6 @@
 
 #ifndef WITHOUT_COMPLEX
 
-/* Precisions used by repr() and str(), respectively.
-
-   The repr() precision (17 significant decimal digits) is the minimal number
-   that is guaranteed to have enough precision so that if the number is read
-   back in the exact same binary value is recreated.  This is true for IEEE
-   floating point by design, and also happens to work for all other modern
-   hardware.
-
-   The str() precision is chosen so that in most cases, the rounding noise
-   created by various operations is suppressed, while giving plenty of
-   precision for practical use.
-*/
-
-#define PREC_REPR	17
-#define PREC_STR	12
-
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
@@ -345,71 +329,114 @@ complex_dealloc(PyObject *op)
 }
 
 
-static void
-complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
+static PyObject *
+complex_format(PyComplexObject *v, char format_code)
 {
-	char format[32];
-	if (v->cval.real == 0.) {
-		if (!Py_IS_FINITE(v->cval.imag)) {
-			if (Py_IS_NAN(v->cval.imag))
-				strncpy(buf, "nan*j", 6);
-			else if (copysign(1, v->cval.imag) == 1)
-				strncpy(buf, "inf*j", 6);
-			else
-				strncpy(buf, "-inf*j", 7);
-		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-			PyOS_ascii_formatd(buf, bufsz - 1, format, v->cval.imag);
-			strncat(buf, "j", 1);
-		}
-	} else {
-		char re[64], im[64];
-		/* Format imaginary part with sign, real part without */
-		if (!Py_IS_FINITE(v->cval.real)) {
-			if (Py_IS_NAN(v->cval.real))
-				strncpy(re, "nan", 4);
-			/* else if (copysign(1, v->cval.real) == 1) */
-			else if (v->cval.real > 0)
-				strncpy(re, "inf", 4);
-			else
-				strncpy(re, "-inf", 5);
-		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-			PyOS_ascii_formatd(re, sizeof(re), format, v->cval.real);
-		}
-		if (!Py_IS_FINITE(v->cval.imag)) {
-			if (Py_IS_NAN(v->cval.imag))
-				strncpy(im, "+nan*", 6);
-			/* else if (copysign(1, v->cval.imag) == 1) */
-			else if (v->cval.imag > 0)
-				strncpy(im, "+inf*", 6);
-			else
-				strncpy(im, "-inf*", 6);
-		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%+.%ig", precision);
-			PyOS_ascii_formatd(im, sizeof(im), format, v->cval.imag);
-		}
-		PyOS_snprintf(buf, bufsz, "(%s%sj)", re, im);
-	}
+    PyObject *result = NULL;
+    Py_ssize_t len;
+
+    /* If these are non-NULL, they'll need to be freed. */
+    char *pre = NULL;
+    char *pim = NULL;
+    char *buf = NULL;
+
+    /* These do not need to be freed. They're either aliases for pim
+       and pre, or pointers to constants. */
+    char *re = NULL;
+    char *im = NULL;
+    char *lead = "";
+    char *tail = "";
+
+
+    if (v->cval.real == 0.) {
+        re = "";
+        if (!Py_IS_FINITE(v->cval.imag)) {
+            if (Py_IS_NAN(v->cval.imag))
+                im = "nan*";
+            else if (copysign(1, v->cval.imag) == 1)
+                im = "inf*";
+            else
+                im = "-inf*";
+        }
+        else {
+            pim = PyOS_double_to_string(v->cval.imag, format_code,
+                                        0, 0, NULL);
+            if (!pim) {
+                PyErr_NoMemory();
+                goto done;
+            }
+            im = pim;
+        }
+    } else {
+        /* Format imaginary part with sign, real part without */
+        if (!Py_IS_FINITE(v->cval.real)) {
+            if (Py_IS_NAN(v->cval.real))
+                re = "nan";
+            /* else if (copysign(1, v->cval.real) == 1) */
+            else if (v->cval.real > 0)
+                re = "inf";
+            else
+                re = "-inf";
+        }
+        else {
+            pre = PyOS_double_to_string(v->cval.real, format_code,
+                                        0, 0, NULL);
+            if (!pre) {
+                PyErr_NoMemory();
+                goto done;
+            }
+            re = pre;
+        }
+
+        if (!Py_IS_FINITE(v->cval.imag)) {
+            if (Py_IS_NAN(v->cval.imag))
+                im = "+nan*";
+            /* else if (copysign(1, v->cval.imag) == 1) */
+            else if (v->cval.imag > 0)
+                im = "+inf*";
+            else
+                im = "-inf*";
+        }
+        else {
+            pim = PyOS_double_to_string(v->cval.imag, format_code,
+                                        0, Py_DTSF_SIGN, NULL);
+            if (!pim) {
+                PyErr_NoMemory();
+                goto done;
+            }
+            im = pim;
+        }
+        lead = "(";
+        tail = ")";
+    }
+    /* Alloc the final buffer. Add one for the "j" in the format string, and
+       one for the trailing zero. */
+    len = strlen(lead) + strlen(re) + strlen(im) + strlen(tail) + 2;
+    buf = PyMem_Malloc(len);
+    if (!buf) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    PyOS_snprintf(buf, len, "%s%s%sj%s", lead, re, im, tail);
+    result = PyUnicode_FromString(buf);
+done:
+    PyMem_Free(pim);
+    PyMem_Free(pre);
+    PyMem_Free(buf);
+
+    return result;
 }
 
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v, PREC_REPR);
-	return PyUnicode_FromString(buf);
+    return complex_format(v, 'r');
 }
 
 static PyObject *
 complex_str(PyComplexObject *v)
 {
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v, PREC_STR);
-	return PyUnicode_FromString(buf);
+    return complex_format(v, 's');
 }
 
 static long

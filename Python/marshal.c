@@ -236,12 +236,15 @@ w_object(PyObject *v, WFILE *p)
 			w_string((char*)buf, 8, p);
 		}
 		else {
-			char buf[256]; /* Plenty to format any double */
-			n = _PyFloat_Repr(PyFloat_AS_DOUBLE(v),
-					  buf, sizeof(buf));
+			char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
+                                                          'r', 0, 0, NULL);
+			if (!buf)
+                            return;
+			n = strlen(buf);
 			w_byte(TYPE_FLOAT, p);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
+			PyMem_Free(buf);
 		}
 	}
 #ifndef WITHOUT_COMPLEX
@@ -263,17 +266,24 @@ w_object(PyObject *v, WFILE *p)
 			w_string((char*)buf, 8, p);
 		}
 		else {
-			char buf[256]; /* Plenty to format any double */
+			char *buf;
 			w_byte(TYPE_COMPLEX, p);
-			n = _PyFloat_Repr(PyComplex_RealAsDouble(v),
-					  buf, sizeof(buf));
+			buf = PyOS_double_to_string(PyComplex_RealAsDouble(v),
+                                                    'r', 0, 0, NULL);
+			if (!buf)
+                            return;
 			n = strlen(buf);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
-			n = _PyFloat_Repr(PyComplex_ImagAsDouble(v),
-					  buf, sizeof(buf));
+			PyMem_Free(buf);
+			buf = PyOS_double_to_string(PyComplex_ImagAsDouble(v),
+                                                    'r', 0, 0, NULL);
+			if (!buf)
+                            return;
+			n = strlen(buf);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
+			PyMem_Free(buf);
 		}
 	}
 #endif
