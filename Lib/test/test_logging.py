@@ -893,6 +893,7 @@ class EncodingTest(BaseTest):
         message = u'\u0434\u043e \u0441\u0432\u0438\u0434\u0430\u043d\u0438\u044f'
         #Ensure it's written in a Cyrillic encoding
         writer_class = codecs.getwriter('cp1251')
+        writer_class.encoding = 'cp1251'
         stream = cStringIO.StringIO()
         writer = writer_class(stream, 'strict')
         handler = logging.StreamHandler(writer)
