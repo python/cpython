@@ -351,7 +351,6 @@ struct tagPyCArgObject {
 };
 
 extern PyTypeObject PyCArg_Type;
-extern PyCArgObject *new_CArgObject(void);
 #define PyCArg_CheckExact(v)	    ((v)->ob_type == &PyCArg_Type)
 extern PyCArgObject *new_CArgObject(void);
 
