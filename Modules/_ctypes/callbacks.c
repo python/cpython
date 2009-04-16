@@ -463,17 +463,6 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 	return NULL;
 }
 
-/****************************************************************************
- *
- * callback objects: initialization
- */
-
-void init_callbacks_in_module(PyObject *m)
-{
-	if (PyType_Ready((PyTypeObject *)&PyType_Type) < 0)
-		return;
-}
-
 #ifdef MS_WIN32
 
 static void LoadPython(void)
