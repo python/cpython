@@ -5606,11 +5606,6 @@ init_ctypes(void)
 		Py_INCREF(PyExc_ArgError);
 		PyModule_AddObject(m, "ArgumentError", PyExc_ArgError);
 	}
-	/*************************************************
-	 *
-	 * Others...
-	 */
-	init_callbacks_in_module(m);
 }
 
 /*****************************************************************
