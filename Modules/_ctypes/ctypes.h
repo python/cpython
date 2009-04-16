@@ -148,8 +148,6 @@ extern PyTypeObject StructType_Type;
 extern PyObject *
 CreateArrayType(PyObject *itemtype, Py_ssize_t length);
 
-extern void init_callbacks_in_module(PyObject *m);
-
 extern PyMethodDef module_methods[];
 
 extern CThunkObject *AllocFunctionCallback(PyObject *callable,
@@ -312,7 +310,6 @@ struct tagPyCArgObject {
 };
 
 extern PyTypeObject PyCArg_Type;
-extern PyCArgObject *new_CArgObject(void);
 #define PyCArg_CheckExact(v)	    ((v)->ob_type == &PyCArg_Type)
 extern PyCArgObject *new_CArgObject(void);
 
