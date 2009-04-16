@@ -3065,12 +3065,176 @@ else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT(default LIBC="$LIBC")])
 
-# ************************************
-# * Check for mathematical functions *
-# ************************************
+# **************************************************
+# * Check for various properties of floating point *
+# **************************************************
 
-LIBS_SAVE=$LIBS
-LIBS="$LIBS $LIBM"
+AC_MSG_CHECKING(whether C doubles are little-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_little_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_little_endian_double=yes,
+ac_cv_little_endian_double=no,
+ac_cv_little_endian_double=no)])
+AC_MSG_RESULT($ac_cv_little_endian_double)
+if test "$ac_cv_little_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the least significant byte first])
+fi
+
+AC_MSG_CHECKING(whether C doubles are big-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_big_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_big_endian_double=yes,
+ac_cv_big_endian_double=no,
+ac_cv_big_endian_double=no)])
+AC_MSG_RESULT($ac_cv_big_endian_double)
+if test "$ac_cv_big_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_BIG_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the most significant byte first])
+fi
+
+# Some ARM platforms use a mixed-endian representation for doubles.
+# While Python doesn't currently have full support for these platforms
+# (see e.g., issue 1762561), we can at least make sure that float <-> string
+# conversions work.
+AC_MSG_CHECKING(whether C doubles are ARM mixed-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_mixed_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_mixed_endian_double=yes,
+ac_cv_mixed_endian_double=no,
+ac_cv_mixed_endian_double=no)])
+AC_MSG_RESULT($ac_cv_mixed_endian_double)
+if test "$ac_cv_mixed_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   in ARM mixed-endian order (byte order 45670123)])
+fi
+
+# David Gay's code in Python/dtoa.c requires that the FPU uses 53-bit
+# rounding; this is a particular problem on x86, where the x87 FPU has
+# a default rounding precision of 64 bits.  For gcc/x86, we try to fix
+# this by:
+#
+#   (1) using the SSE2 instruction set when available (it usually is
+#       on modern machines)
+#   (2) using inline assembler to get and set the x87 FPU control word
+#       otherwise.
+#
+# On AMD64 (aka x86-64), gcc automatically enables use of SSE2
+# instructions, so we don't bother trying to detect.
+
+if test "$GCC" = yes && test -n "`$CC -dM -E - </dev/null | grep i386`"
+then
+    # determine whether we're already using the SSE2 instruction set for math
+    # (e.g., this is true by default on OS X/x86)
+    AC_MSG_CHECKING(whether SSE2 instructions are already enabled for math)
+    if test -n "`$CC -dM -E - </dev/null | grep __SSE2_MATH__`"
+    then
+        ac_sse2_enabled=yes
+    else
+        ac_sse2_enabled=no
+    fi
+    AC_MSG_RESULT($ac_sse2_enabled)
+
+    # if we're not using SSE2 already, we need to either enable it
+    # (when available), or use inline assembler to get and set the
+    # 387 control word.
+    if test $ac_sse2_enabled = no
+    then
+        # Check cpuid for SSE2 availability.  Bits 25 and 26 of edx tell
+        # us about SSE and SSE2 respectively.
+        AC_MSG_CHECKING(whether SSE2 instructions are available on this CPU)
+        AC_TRY_RUN([
+            int main() {
+                unsigned int ax, bx, cx, dx, func;
+                func = 1U;
+                __asm__ __volatile__ (
+                    "pushl %%ebx\n\t"  /* don't clobber ebx */
+                    "cpuid\n\t"
+                    "movl %%ebx, %1\n\t"
+                    "popl %%ebx"
+                    : "=a" (ax), "=r" (bx), "=c" (cx), "=d" (dx)
+                    : "a" (func)
+                    : "cc" );
+                if ((dx & (1U << 25)) && (dx & (1U << 26)))
+                    return 0;
+                else
+                    return 1;
+            }
+        ],
+        ac_cv_cpu_has_sse2=yes,
+        ac_cv_cpu_has_sse2=no,
+        ac_cv_cpu_has_sse2=no)
+        AC_MSG_RESULT($ac_cv_cpu_has_sse2)
+
+        # determine whether gcc accepts options to turn on SSE2
+        AC_MSG_CHECKING(whether $CC accepts -msse2 -mfpmath=sse)
+        ac_save_cc="$CC"
+        CC="$CC -msse2 -mfpmath=sse"
+        AC_TRY_RUN([int main() { return 0; }],
+        ac_cv_msse2_ok=yes,
+        ac_cv_msse2_ok=no,
+        ac_cv_msse2_ok=no)
+        CC="$ac_save_cc"
+        AC_MSG_RESULT($ac_cv_msse2_ok)
+
+        if test $ac_cv_cpu_has_sse2 = yes && test $ac_cv_msse2_ok = yes
+        then
+            BASECFLAGS="$BASECFLAGS -msse2 -mfpmath=sse"
+        else
+            # SSE2 doesn't appear to be available.  Check that it's okay
+            # to use gcc inline assembler to get and set x87 control word
+            AC_DEFINE(USING_X87_FPU, 1,
+            [Define on x86 hardware if the x87 FPU is being used
+             for floating-point arithmetic])
+            AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set x87 control word)
+            AC_TRY_COMPILE([], [
+              unsigned short cw;
+              __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
+              __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
+            ],
+            [have_gcc_asm_for_x87=yes], [have_gcc_asm_for_x87=no])
+            AC_MSG_RESULT($have_gcc_asm_for_x87)
+            if test "$have_gcc_asm_for_x87" = yes
+            then
+                AC_DEFINE(HAVE_GCC_ASM_FOR_X87, 1,
+                [Define if we can use gcc inline assembler to get and set x87 control word])
+            fi
+        fi
+    fi
+fi
 
 # Detect whether system arithmetic is subject to x87-style double
 # rounding issues.  The result of this test has little meaning on non
@@ -3078,7 +3242,9 @@ LIBS="$LIBS $LIBM"
 # mode is round-to-nearest and double rounding issues are present, and
 # 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
 AC_MSG_CHECKING(for x87-style double rounding)
-AC_CACHE_VAL(ac_cv_x87_double_rounding, [
+# $BASECFLAGS may affect the result
+ac_save_cc="$CC"
+CC="$CC $BASECFLAGS"
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <math.h>
@@ -3101,13 +3267,21 @@ int main() {
 ],
 ac_cv_x87_double_rounding=no,
 ac_cv_x87_double_rounding=yes,
-ac_cv_x87_double_rounding=no)])
+ac_cv_x87_double_rounding=no)
+CC="$ac_save_cc"
 AC_MSG_RESULT($ac_cv_x87_double_rounding)
 if test "$ac_cv_x87_double_rounding" = yes
 then
   AC_DEFINE(X87_DOUBLE_ROUNDING, 1,
   [Define if arithmetic is subject to x87-style double rounding issue])
 fi
+
+# ************************************
+# * Check for mathematical functions *
+# ************************************
+
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
 
 # Multiprocessing check for broken sem_getvalue
 AC_MSG_CHECKING(for broken sem_getvalue)

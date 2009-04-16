@@ -118,6 +118,7 @@
 
 #include "pystrtod.h"
 #include "pystrcmp.h"
+#include "dtoa.h"
 
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);

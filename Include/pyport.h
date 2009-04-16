@@ -465,6 +465,53 @@ extern "C" {
 			errno = 0;					\
 	} while(0)
 
+/* The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c require that
+   the FPU is using 53-bit precision.  Here are macros that force this.  See
+   Python/pystrtod.c for an example of their use. */
+
+#ifdef USING_X87_FPU
+#define _Py_SET_53BIT_PRECISION_HEADER				\
+	unsigned short old_387controlword, new_387controlword
+#define _Py_SET_53BIT_PRECISION_START					\
+	do {								\
+		old_387controlword = _Py_get_387controlword();		\
+		new_387controlword = (old_387controlword & ~0x0f00) | 0x0200; \
+		if (new_387controlword != old_387controlword)		\
+			_Py_set_387controlword(new_387controlword);	\
+	} while (0)
+#define _Py_SET_53BIT_PRECISION_END				\
+	if (new_387controlword != old_387controlword)		\
+		_Py_set_387controlword(old_387controlword)
+#else
+#define _Py_SET_53BIT_PRECISION_HEADER
+#define _Py_SET_53BIT_PRECISION_START
+#define _Py_SET_53BIT_PRECISION_END
+#endif
+
+/* If we can't guarantee 53-bit precision, don't use the code
+   in Python/dtoa.c, but fall back to standard code.  This
+   means that repr of a float will be long (17 sig digits).
+
+   Realistically, there are two things that could go wrong:
+
+   (1) doubles aren't IEEE 754 doubles, or
+   (2) we're on x86 with the rounding precision set to 64-bits
+       (extended precision), and we don't know how to change
+       the rounding precision.
+ */
+
+#if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
+    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
+    !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
+#define PY_NO_SHORT_FLOAT_REPR
+#endif
+
+/* double rounding is symptomatic of use of extended precision on x86 */
+#ifdef X87_DOUBLE_ROUNDING
+#define PY_NO_SHORT_FLOAT_REPR
+#endif
+
+
 /* Py_DEPRECATED(version)
  * Declare a variable, type, or function deprecated.
  * Usage:
