@@ -12,6 +12,45 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- The repr function switches to exponential notation at 1e16, not 1e17
+  as it did before.  This change applies to both 'short' and legacy
+  float repr styles.  For the new repr style, it avoids misleading
+  output in some cases: an example is repr(2e16+8), which gives
+  '2.000000000000001e+16'; without this change it would have produced
+  '20000000000000010.0' instead.
+
+- Similarly, the str function switches to exponential notation at
+  1e11, not 1e12.  This avoids printing 13 significant digits in
+  situations where only 12 of them are correct.  Example problem
+  value: str(1e11 + 0.5).  (This minor issue has existed in 2.x for a
+  long time.)
+
+- On x86, SSE2 instructions for floating-point are automatically
+  detected and, where possible, enabled on platforms using the gcc
+  compiler.  As a consequence, some arithmetic operations may have
+  different (more accurate!) results on some platforms, and
+  cross-platform consistency of Python arithmetic should be improved.
+  This applies particularly to Linux/x86.
+
+- Issue #1580: On most platforms, use a 'short' float repr: for a
+  finite float x, repr(x) now outputs a string based on the shortest
+  sequence of decimal digits that rounds to x.  Previous behaviour was
+  to output 17 significant digits and then strip trailing zeros.
+
+  There's a new sys attribute sys.float_repr_style, which takes
+  the value 'short' to indicate that we're using short float repr,
+  and 'legacy' if the short float repr isn't available for one
+  reason or another.
+
+  The float repr change involves incorporating David Gay's 'perfect
+  rounding' code into the Python core (it's in Python/dtoa.c).  As a
+  secondary consequence, all string-to-float and float-to-string
+  conversions (including all float formatting operations) will be
+  correctly rounded on these platforms.
+
+  See issue 1580 discussions for details of platforms for which
+  this change does not apply.
+
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
 - The string.maketrans() function is deprecated; there is a new static method

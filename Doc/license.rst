@@ -657,3 +657,35 @@ The :mod:`select` and contains the following notice for the kqueue interface::
   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
   SUCH DAMAGE.
+
+
+strtod and dtoa
+---------------
+
+The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
+strtod for conversion of C doubles to and from strings, is derived
+from the file of the same name by David M. Gay, currently available
+from http://www.netlib.org/fp/.  The original file, as retrieved on
+March 16, 2009, contains the following copyright and licensing
+notice::
+
+   /****************************************************************
+    *
+    * The author of this software is David M. Gay.
+    *
+    * Copyright (c) 1991, 2000, 2001 by Lucent Technologies.
+    *
+    * Permission to use, copy, modify, and distribute this software for any
+    * purpose without fee is hereby granted, provided that this entire notice
+    * is included in all copies of any software which is or includes a copy
+    * or modification of this software and in all copies of the supporting
+    * documentation for such software.
+    *
+    * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+    * WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR LUCENT MAKES ANY
+    * REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
+    * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+    *
+    ***************************************************************/
+
+

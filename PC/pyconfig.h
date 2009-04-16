@@ -752,4 +752,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
    socket handles greater than FD_SETSIZE */
 #define Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
 
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored with the
+   least significant byte first */
+#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1
+
 #endif /* !Py_CONFIG_H */

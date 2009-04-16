@@ -1025,6 +1025,7 @@ platform -- platform identifier\n\
 executable -- pathname of this Python interpreter\n\
 prefix -- prefix used to find the Python library\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
+float_repr_style -- string indicating the style of repr() output for floats\n\
 "
 )
 #ifdef MS_WINDOWS
@@ -1427,6 +1428,15 @@ _PySys_Init(void)
 	/* prevent user from creating new instances */
 	FlagsType.tp_init = NULL;
 	FlagsType.tp_new = NULL;
+
+	/* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
+#ifndef PY_NO_SHORT_FLOAT_REPR
+	SET_SYS_FROM_STRING("float_repr_style",
+			    PyUnicode_FromString("short"));
+#else
+	SET_SYS_FROM_STRING("float_repr_style",
+			    PyUnicode_FromString("legacy"));
+#endif
 
 #undef SET_SYS_FROM_STRING
 	if (PyErr_Occurred())
