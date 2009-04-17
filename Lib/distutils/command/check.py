@@ -73,7 +73,7 @@ class check(Command):
 
         # let's raise an error in strict mode, if we have at least
         # one warning
-        if self.strict and self._warnings > 1:
+        if self.strict and self._warnings > 0:
             raise DistutilsSetupError('Please correct your package.')
 
     def check_metadata(self):
