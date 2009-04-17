@@ -485,6 +485,50 @@ PyOS_ascii_formatd(char       *buffer,
 
 /* The fallback code to use if _Py_dg_dtoa is not available. */
 
+/* Remove trailing zeros after the decimal point from a numeric string; also
+   remove the decimal point if all digits following it are zero.  The numeric
+   string must end in '\0', and should not have any leading or trailing
+   whitespace.  Assumes that the decimal point is '.'. */
+Py_LOCAL_INLINE(void)
+remove_trailing_zeros(char *buffer)
+{
+	char *old_fraction_end, *new_fraction_end, *end, *p;
+
+	p = buffer;
+	if (*p == '-' || *p == '+')
+		/* Skip leading sign, if present */
+		++p;
+	while (isdigit(Py_CHARMASK(*p)))
+		++p;
+
+	/* if there's no decimal point there's nothing to do */
+	if (*p++ != '.')
+		return;
+
+	/* scan any digits after the point */
+	while (isdigit(Py_CHARMASK(*p)))
+		++p;
+	old_fraction_end = p;
+
+	/* scan up to ending '\0' */
+	while (*p != '\0')
+		p++;
+	/* +1 to make sure that we move the null byte as well */
+	end = p+1;
+
+	/* scan back from fraction_end, looking for removable zeros */
+	p = old_fraction_end;
+	while (*(p-1) == '0')
+		--p;
+	/* and remove point if we've got that far */
+	if (*(p-1) == '.')
+		--p;
+	new_fraction_end = p;
+
+	memmove(new_fraction_end, old_fraction_end, end-old_fraction_end);
+}
+
+
 PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
@@ -498,6 +542,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 	char *p;
 	int t;
 	int upper = 0;
+	int strip_trailing_zeros = 0;
 
 	/* Validate format_code, and map upper and lower case */
 	switch (format_code) {
@@ -532,8 +577,17 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 			PyErr_BadInternalCall();
 			return NULL;
 		}
-		precision = 12;
-		format_code = 'g';
+		/* switch to exponential notation at 1e11, or 1e12 if we're
+		   not adding a .0 */
+		if (fabs(val) >= (flags & Py_DTSF_ADD_DOT_0 ? 1e11 : 1e12)) {
+			precision = 11;
+			format_code = 'e';
+			strip_trailing_zeros = 1;
+		}
+		else {
+			precision = 12;
+			format_code = 'g';
+		}
 		break;
 	default:
 		PyErr_BadInternalCall();
@@ -554,11 +608,14 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		t = Py_DTST_FINITE;
 
 
-		if (flags & Py_DTSF_ADD_DOT_0)
+		if ((flags & Py_DTSF_ADD_DOT_0) && (format_code != 'e'))
 			format_code = 'Z';
 
 		PyOS_snprintf(format, 32, "%%%s.%i%c", (flags & Py_DTSF_ALT ? "#" : ""), precision, format_code);
 		PyOS_ascii_formatd(buf, sizeof(buf), format, val);
+		/* remove trailing zeros if necessary */
+		if (strip_trailing_zeros)
+			remove_trailing_zeros(buf);
 	}
 
 	len = strlen(buf);
@@ -671,7 +728,7 @@ format_float_short(double d, char format_code,
 	assert(digits_end != NULL && digits_end >= digits);
 	digits_len = digits_end - digits;
 
-	if (digits_len && !isdigit(digits[0])) {
+	if (digits_len && !isdigit(Py_CHARMASK(digits[0]))) {
 		/* Infinities and nans here; adapt Gay's output,
 		   so convert Infinity to inf and NaN to nan, and
 		   ignore sign of nan. Then return. */
