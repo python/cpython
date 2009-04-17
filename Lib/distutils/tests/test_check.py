@@ -72,17 +72,16 @@ class CheckTestCase(support.LoggingSilencer,
         self.assertEquals(cmd._warnings, 1)
 
         # let's see if we have an error with strict=1
-        cmd = check(dist)
-        cmd.initialize_options()
-        cmd.strict = 1
-        cmd.ensure_finalized()
-        self.assertRaises(DistutilsSetupError, cmd.run)
+        metadata = {'url': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': 'xxx',
+                    'long_description': broken_rest}
+        self.assertRaises(DistutilsSetupError, self._run, metadata,
+                          **{'strict': 1, 'restructuredtext': 1})
 
         # and non-broken rest
-        rest = 'title\n=====\n\ntest'
-        pkg_info, dist = self.create_dist(long_description=rest)
-        cmd = check(dist)
-        cmd.check_restructuredtext()
+        metadata['long_description'] = 'title\n=====\n\ntest'
+        cmd = self._run(metadata, strict=1, restructuredtext=1)
         self.assertEquals(cmd._warnings, 0)
 
     def test_check_all(self):
