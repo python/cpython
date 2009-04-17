@@ -431,3 +431,32 @@ Changes to Python's build process and to the C API include:
 * Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
+
+Porting to Python 3.1
+=====================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code:
+
+* The new floating point string representations can break existing doctests.
+  For example::
+
+    def e():
+        '''Compute the base of natural logarithms.
+
+        >>> e()
+        2.7182818284590451
+
+        '''
+        return sum(1/math.factorial(x) for x in reversed(range(30)))
+
+    doctest.testmod()
+
+    **********************************************************************
+    Failed example:
+        e()
+    Expected:
+        2.7182818284590451
+    Got:
+        2.718281828459045
+    **********************************************************************
