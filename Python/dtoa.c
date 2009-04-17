@@ -409,7 +409,7 @@ multadd(Bigint *b, int m, int a)       /* multiply by m and add a */
 #ifdef ULLong
         y = *x * (ULLong)m + carry;
         carry = y >> 32;
-        *x++ = y & FFFFFFFF;
+        *x++ = (ULong)(y & FFFFFFFF);
 #else
         xi = *x;
         y = (xi & 0xffff) * m + carry;
@@ -616,7 +616,7 @@ mult(Bigint *a, Bigint *b)
             do {
                 z = *x++ * (ULLong)y + *xc + carry;
                 carry = z >> 32;
-                *xc++ = z & FFFFFFFF;
+                *xc++ = (ULong)(z & FFFFFFFF);
             }
             while(x < xae);
             *xc = (ULong)carry;
@@ -846,13 +846,13 @@ diff(Bigint *a, Bigint *b)
     do {
         y = (ULLong)*xa++ - *xb++ - borrow;
         borrow = y >> 32 & (ULong)1;
-        *xc++ = y & FFFFFFFF;
+        *xc++ = (ULong)(y & FFFFFFFF);
     }
     while(xb < xbe);
     while(xa < xae) {
         y = *xa++ - borrow;
         borrow = y >> 32 & (ULong)1;
-        *xc++ = y & FFFFFFFF;
+        *xc++ = (ULong)(y & FFFFFFFF);
     }
 #else
     do {
@@ -1097,7 +1097,7 @@ quorem(Bigint *b, Bigint *S)
             carry = ys >> 32;
             y = *bx - (ys & FFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
-            *bx++ = y & FFFFFFFF;
+            *bx++ = (ULong)(y & FFFFFFFF);
 #else
             si = *sx++;
             ys = (si & 0xffff) * q + carry;
@@ -1130,7 +1130,7 @@ quorem(Bigint *b, Bigint *S)
             carry = ys >> 32;
             y = *bx - (ys & FFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
-            *bx++ = y & FFFFFFFF;
+            *bx++ = (ULong)(y & FFFFFFFF);
 #else
             si = *sx++;
             ys = (si & 0xffff) + carry;
