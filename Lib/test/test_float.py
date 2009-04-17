@@ -313,19 +313,6 @@ class FormatTestCase(unittest.TestCase):
                 self.assertRaises(ValueError, format, 1e-100, format_spec)
                 self.assertRaises(ValueError, format, -1e-100, format_spec)
 
-class ReprTestCase(unittest.TestCase):
-    def test_repr(self):
-        floats_file = open(os.path.join(os.path.split(__file__)[0],
-                           'floating_points.txt'))
-        for line in floats_file:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            v = eval(line)
-            self.assertEqual(v, eval(repr(v)))
-        floats_file.close()
-
-class FormatTestCase(unittest.TestCase):
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
     def test_format_testfile(self):
@@ -340,6 +327,18 @@ class FormatTestCase(unittest.TestCase):
             fmt, arg = lhs.split()
             self.assertEqual(fmt % float(arg), rhs)
             self.assertEqual(fmt % -float(arg), '-' + rhs)
+
+class ReprTestCase(unittest.TestCase):
+    def test_repr(self):
+        floats_file = open(os.path.join(os.path.split(__file__)[0],
+                           'floating_points.txt'))
+        for line in floats_file:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            v = eval(line)
+            self.assertEqual(v, eval(repr(v)))
+        floats_file.close()
 
     @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
                          "applies only when using short float repr style")
@@ -389,8 +388,6 @@ class FormatTestCase(unittest.TestCase):
             negs = '-'+s
             self.assertEqual(s, repr(float(s)))
             self.assertEqual(negs, repr(float(negs)))
-
-
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan
