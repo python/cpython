@@ -93,8 +93,8 @@ program's output, improving its professional appearance and readability::
     >>> format(Decimal('1234567.89'), ',f')
     '1,234,567.89'
 
-The currently supported types are :class:`int` and :class:`decimal.Decimal`.
-Support for :class:`float` is expected before the beta release.
+The supported types are :class:`int`, :class:`float` and :class:`decimal.Decimal`.
+
 Discussions are underway about how to specify alternative separators
 like dots, spaces, apostrophes, or underscores.  Locale-aware applications
 should use the existing *n* format specifier which already has some support
