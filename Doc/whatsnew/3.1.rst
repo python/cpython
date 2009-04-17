@@ -150,7 +150,7 @@ Some smaller changes made to the core Python language are:
 
 * Python now uses David Gay's algorithm for finding the shortest floating
   point representation that doesn't change its value.  This should help
-  mitigate the some of the confusion surrounding binary floating point
+  mitigate some of the confusion surrounding binary floating point
   numbers.
 
   The significance is easily seen with a number like ``1.1`` which does not
