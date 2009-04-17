@@ -21,7 +21,11 @@
  * This is dtoa.c by David M. Gay, downloaded from
  * http://www.netlib.org/fp/dtoa.c on April 15, 2009 and modified for
  * inclusion into the Python core by Mark E. T. Dickinson and Eric V. Smith.
- * The major modifications are as follows:
+ *
+ * Please remember to check http://www.netlib.org/fp regularly (and especially
+ * before any Python release) for bugfixes and updates.
+ *
+ * The major modifications from Gay's original code are as follows:
  *
  *  0. The original code has been specialized to Python's needs by removing
  *     many of the #ifdef'd sections.  In particular, code to support VAX and
@@ -52,6 +56,10 @@
  *
  *  5. The code has been reformatted to better fit with Python's
  *     C style guide (PEP 7).
+ *
+ *  6. A bug in the memory allocation has been fixed: to avoid FREEing memory
+ *     that hasn't been MALLOC'ed, private_mem should only be used when k <=
+ *     Kmax.
  *
  ***************************************************************/
 
@@ -342,7 +350,7 @@ Balloc(int k)
         x = 1 << k;
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
-        if (pmem_next - private_mem + len <= PRIVATE_mem) {
+        if (k <= Kmax && pmem_next - private_mem + len <= PRIVATE_mem) {
             rv = (Bigint*)pmem_next;
             pmem_next += len;
         }
