@@ -90,6 +90,10 @@ a mini-language that now includes a simple, non-locale aware way to format
 a number with a thousands separator.  That provides a way to humanize a
 program's output, improving its professional appearance and readability::
 
+    >>> format(1234567, ',d')
+    '1,234,567'
+    >>> format(1234567.89, ',.2f')
+    '1,234,567.89'
     >>> format(Decimal('1234567.89'), ',f')
     '1,234,567.89'
 
