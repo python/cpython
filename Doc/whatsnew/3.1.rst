@@ -155,7 +155,7 @@ Some smaller changes made to the core Python language are:
 
   The significance is easily seen with a number like ``1.1`` which does not
   have an exact equivalent in binary floating point.  Since there is no exact
-  equivalent, an expression like ``float("1.1")`` evaluates to the nearest
+  equivalent, an expression like ``float('1.1')`` evaluates to the nearest
   representable value which is ``0x1.199999999999ap+0`` in hex or
   ``1.100000000000000088817841970012523233890533447265625`` in decimal. That
   nearest value was and still is used in subsequent floating point
@@ -163,16 +163,16 @@ Some smaller changes made to the core Python language are:
 
   What is new is how the number gets displayed.  Formerly, Python used a
   simple approach.  The value of ``repr(1.1)`` was computed as ``format(1.1,
-  '.17g')`` which evaluates to ``'1.1000000000000001'``. The advantage of
+  '.17g')`` which evaluated to ``'1.1000000000000001'``. The advantage of
   using 17 digits was that it relied on IEEE-754 guarantees to assure that
   ``eval(repr(1.1))`` would round-trip exactly to its original value.  The
   disadvantage is that many people found the output to be confusing (mistaking
   intrinsic limitations of binary floating point representation as being a
   problem with Python itself).
 
-  The new algorithm for ``repr(1.1)`` is smarter and returns ``1.1``.
+  The new algorithm for ``repr(1.1)`` is smarter and returns ``'1.1'``.
   Effectively, it searches all equivalent string representations (ones that
-  get stored as the same underlying float value) and returns the shortest
+  get stored with the same underlying float value) and returns the shortest
   representation.
 
   The new algorithm tends to emit cleaner representations when possible, but
