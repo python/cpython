@@ -22,6 +22,10 @@ functions and constants
 extern double copysign(double, double);
 #endif
 
+#ifndef HAVE_ROUND
+extern double round(double);
+#endif
+
 #ifndef HAVE_ACOSH
 extern double acosh(double);
 #endif
