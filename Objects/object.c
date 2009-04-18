@@ -2087,7 +2087,7 @@ _Py_ReadyTypes(void)
 		Py_FatalError("Can't initalize complex type");
 
 	if (PyType_Ready(&PyFloat_Type) < 0)
-		Py_FatalError("Can't initalize float type");
+		Py_FatalError("Can't initialize float type");
 
 	if (PyType_Ready(&PyBuffer_Type) < 0)
 		Py_FatalError("Can't initialize buffer type");
@@ -2108,13 +2108,13 @@ _Py_ReadyTypes(void)
 		Py_FatalError("Can't initialize memoryview type");
 
 	if (PyType_Ready(&PyTuple_Type) < 0)
-		Py_FatalError("Can't initalize tuple type");
+		Py_FatalError("Can't initialize tuple type");
 
 	if (PyType_Ready(&PyEnum_Type) < 0)
-		Py_FatalError("Can't initalize enumerate type");
+		Py_FatalError("Can't initialize enumerate type");
 
 	if (PyType_Ready(&PyReversed_Type) < 0)
-		Py_FatalError("Can't initalize reversed type");
+		Py_FatalError("Can't initialize reversed type");
 }
 
 
