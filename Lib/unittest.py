@@ -265,7 +265,7 @@ class _AssertRaisesContext(object):
     def __enter__(self):
         pass
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, tb):
         if exc_type is None:
             try:
                 exc_name = self.expected.__name__
@@ -1141,7 +1141,7 @@ class FunctionTestCase(TestCase):
                      self._testFunc, self._description))
 
     def __str__(self):
-        return "%s (%s)" % (_strclass(self.__class__), self.__testFunc.__name__)
+        return "%s (%s)" % (_strclass(self.__class__), self._testFunc.__name__)
 
     def __repr__(self):
         return "<%s testFunc=%s>" % (_strclass(self.__class__), self._testFunc)
