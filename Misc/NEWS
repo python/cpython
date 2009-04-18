@@ -31,13 +31,6 @@ Core and Builtins
   value: str(1e11 + 0.5).  (This minor issue has existed in 2.x for a
   long time.)
 
-- On x86, SSE2 instructions for floating-point are automatically
-  detected and, where possible, enabled on platforms using the gcc
-  compiler.  As a consequence, some arithmetic operations may have
-  different (more accurate!) results on some platforms, and
-  cross-platform consistency of Python arithmetic should be improved.
-  This applies particularly to Linux/x86.
-
 - Issue #1580: On most platforms, use a 'short' float repr: for a
   finite float x, repr(x) now outputs a string based on the shortest
   sequence of decimal digits that rounds to x.  Previous behaviour was
