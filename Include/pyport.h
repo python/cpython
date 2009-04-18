@@ -506,8 +506,10 @@ extern "C" {
 #define PY_NO_SHORT_FLOAT_REPR
 #endif
 
-/* double rounding is symptomatic of use of extended precision on x86 */
-#ifdef X87_DOUBLE_ROUNDING
+/* double rounding is symptomatic of use of extended precision on x86.  If
+   we're seeing double rounding, and we don't have any mechanism available for
+   changing the FPU rounding precision, then don't use Python/dtoa.c. */
+#if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_GCC_ASM_FOR_X87)
 #define PY_NO_SHORT_FLOAT_REPR
 #endif
 
