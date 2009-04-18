@@ -469,7 +469,7 @@ extern "C" {
    the FPU is using 53-bit precision.  Here are macros that force this.  See
    Python/pystrtod.c for an example of their use. */
 
-#ifdef USING_X87_FPU
+#ifdef HAVE_GCC_ASM_FOR_X87
 #define _Py_SET_53BIT_PRECISION_HEADER				\
 	unsigned short old_387controlword, new_387controlword
 #define _Py_SET_53BIT_PRECISION_START					\

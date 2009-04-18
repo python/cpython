@@ -13,8 +13,7 @@ double _Py_force_double(double x)
 }
 #endif
 
-#ifdef USING_X87_FPU
-#  ifdef HAVE_GCC_ASM_FOR_X87
+#ifdef HAVE_GCC_ASM_FOR_X87
 
 /* inline assembly for getting and setting the 387 FPU control word on
    gcc/x86 */
@@ -29,9 +28,6 @@ void _Py_set_387controlword(unsigned short cw) {
     __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
 }
 
-#  else
-#    error "Unable to get and set x87 control word"
-#  endif
 #endif
 
 
