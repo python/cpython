@@ -504,6 +504,9 @@
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK
 
+/* Define to 1 if you have the `round' function. */
+#undef HAVE_ROUND
+
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
 
