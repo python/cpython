@@ -456,7 +456,7 @@ static PyTypeObject PyClassMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
-static PyTypeObject PyMemberDescr_Type = {
+PyTypeObject PyMemberDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"member_descriptor",
 	sizeof(PyMemberDescrObject),
@@ -493,7 +493,7 @@ static PyTypeObject PyMemberDescr_Type = {
 	(descrsetfunc)member_set,		/* tp_descr_set */
 };
 
-static PyTypeObject PyGetSetDescr_Type = {
+PyTypeObject PyGetSetDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"getset_descriptor",
 	sizeof(PyGetSetDescrObject),
@@ -819,7 +819,7 @@ proxy_richcompare(proxyobject *v, PyObject *w, int op)
 	return PyObject_RichCompare(v->dict, w, op);
 }
 
-static PyTypeObject proxytype = {
+PyTypeObject PyDictProxy_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dictproxy",				/* tp_name */
 	sizeof(proxyobject),			/* tp_basicsize */
@@ -862,7 +862,7 @@ PyDictProxy_New(PyObject *dict)
 {
 	proxyobject *pp;
 
-	pp = PyObject_GC_New(proxyobject, &proxytype);
+	pp = PyObject_GC_New(proxyobject, &PyDictProxy_Type);
 	if (pp != NULL) {
 		Py_INCREF(dict);
 		pp->dict = dict;
