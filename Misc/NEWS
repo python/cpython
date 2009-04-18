@@ -12,9 +12,12 @@ What's New in Python 2.6.3
 Core and Builtins
 -----------------
 
+- Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
+  some builtin types.
+
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
-Library
+Librar
 -------
 
 - Issue #5768: Fixed bug in Unicode output logic and test case for same.
