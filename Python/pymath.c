@@ -35,7 +35,7 @@ double hypot(double x, double y)
 #endif /* HAVE_HYPOT */
 
 #ifndef HAVE_COPYSIGN
-static double
+double
 copysign(double x, double y)
 {
 	/* use atan2 to distinguish -0. from 0. */
