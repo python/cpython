@@ -2081,10 +2081,7 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 		number /= f;
 	else
 		number *= f;
-	if (number >= 0.0)
-		number = floor(number + 0.5);
-	else
-		number = ceil(number - 0.5);
+	number = round(number);
 	if (ndigits < 0)
 		number *= f;
 	else
