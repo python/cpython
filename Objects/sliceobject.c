@@ -22,7 +22,7 @@ ellipsis_repr(PyObject *op)
 	return PyString_FromString("Ellipsis");
 }
 
-static PyTypeObject PyEllipsis_Type = {
+PyTypeObject PyEllipsis_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"ellipsis",			/* tp_name */
 	0,				/* tp_basicsize */

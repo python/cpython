@@ -25,6 +25,7 @@ typedef struct {
 } PySliceObject;
 
 PyAPI_DATA(PyTypeObject) PySlice_Type;
+PyAPI_DATA(PyTypeObject) PyEllipsis_Type;
 
 #define PySlice_Check(op) (Py_TYPE(op) == &PySlice_Type)
 
