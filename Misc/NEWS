@@ -18,6 +18,9 @@ Core and Builtins
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
+- Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
+  some builtin types.
+
 - Issue #5392: when a very low recursion limit was set, the interpreter would
   abort with a fatal error after the recursion limit was hit twice.
 
