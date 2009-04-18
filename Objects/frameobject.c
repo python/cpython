@@ -577,7 +577,9 @@ static PyObject *builtin_object;
 int _PyFrame_Init()
 {
 	builtin_object = PyUnicode_InternFromString("__builtins__");
-	return (builtin_object != NULL);
+	if (builtin_object == NULL)
+		return 0;
+	return 1;
 }
 
 PyFrameObject *

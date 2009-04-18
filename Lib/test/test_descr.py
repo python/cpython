@@ -1,3 +1,4 @@
+import builtins
 import types
 import unittest
 import warnings
@@ -3585,6 +3586,17 @@ order (MRO) for bases """
             pass
         else:
             self.fail("shouldn't be able to create inheritance cycles")
+
+    def test_builtin_bases(self):
+        # Make sure all the builtin types can have their base queried without
+        # segfaulting. See issue #5787.
+        builtin_types = [tp for tp in builtins.__dict__.values()
+                         if isinstance(tp, type)]
+        for tp in builtin_types:
+            object.__getattribute__(tp, "__bases__")
+            if tp is not object:
+                self.assertEqual(len(tp.__bases__), 1, tp)
+
 
     def test_mutable_bases_with_failing_mro(self):
         # Testing mutable bases with failing mro...

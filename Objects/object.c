@@ -1479,31 +1479,85 @@ void
 _Py_ReadyTypes(void)
 {
 	if (PyType_Ready(&PyType_Type) < 0)
-		Py_FatalError("Can't initialize 'type'");
+		Py_FatalError("Can't initialize type type");
 
 	if (PyType_Ready(&_PyWeakref_RefType) < 0)
-		Py_FatalError("Can't initialize 'weakref'");
+		Py_FatalError("Can't initialize weakref type");
 
 	if (PyType_Ready(&PyBool_Type) < 0)
-		Py_FatalError("Can't initialize 'bool'");
+		Py_FatalError("Can't initialize bool type");
 
 	if (PyType_Ready(&PyByteArray_Type) < 0)
-		Py_FatalError("Can't initialize 'bytes'");
+		Py_FatalError("Can't initialize bytearray");
 
 	if (PyType_Ready(&PyBytes_Type) < 0)
 		Py_FatalError("Can't initialize 'str'");
 
 	if (PyType_Ready(&PyList_Type) < 0)
-		Py_FatalError("Can't initialize 'list'");
+		Py_FatalError("Can't initialize list");
 
 	if (PyType_Ready(&PyNone_Type) < 0)
-		Py_FatalError("Can't initialize type(None)");
+		Py_FatalError("Can't initialize None type");
 
 	if (PyType_Ready(Py_Ellipsis->ob_type) < 0)
 		Py_FatalError("Can't initialize type(Ellipsis)");
 
 	if (PyType_Ready(&PyNotImplemented_Type) < 0)
-		Py_FatalError("Can't initialize type(NotImplemented)");
+		Py_FatalError("Can't initialize NotImplemented type");
+
+	if (PyType_Ready(&PyTraceBack_Type) < 0)
+		Py_FatalError("Can't initialize traceback type");
+
+	if (PyType_Ready(&PySuper_Type) < 0)
+		Py_FatalError("Can't initialize super type");
+
+	if (PyType_Ready(&PyBaseObject_Type) < 0)
+		Py_FatalError("Can't initialize object type");
+
+	if (PyType_Ready(&PyRange_Type) < 0)
+		Py_FatalError("Can't initialize range type");
+
+	if (PyType_Ready(&PyDict_Type) < 0)
+		Py_FatalError("Can't initialize dict type");
+
+	if (PyType_Ready(&PySet_Type) < 0)
+		Py_FatalError("Can't initialize set type");
+
+	if (PyType_Ready(&PyUnicode_Type) < 0)
+		Py_FatalError("Can't initialize str type");
+
+	if (PyType_Ready(&PySlice_Type) < 0)
+		Py_FatalError("Can't initialize slice type");
+
+	if (PyType_Ready(&PyStaticMethod_Type) < 0)
+		Py_FatalError("Can't initialize static method type");
+
+	if (PyType_Ready(&PyComplex_Type) < 0)
+		Py_FatalError("Can't initialize complex type");
+
+	if (PyType_Ready(&PyFloat_Type) < 0)
+		Py_FatalError("Can't initialize float type");
+
+	if (PyType_Ready(&PyLong_Type) < 0)
+		Py_FatalError("Can't initialize int type");
+
+	if (PyType_Ready(&PyFrozenSet_Type) < 0)
+		Py_FatalError("Can't initialize frozenset type");
+
+	if (PyType_Ready(&PyProperty_Type) < 0)
+		Py_FatalError("Can't initialize property type");
+
+	if (PyType_Ready(&PyMemoryView_Type) < 0)
+		Py_FatalError("Can't initialize memoryview type");
+
+	if (PyType_Ready(&PyTuple_Type) < 0)
+		Py_FatalError("Can't initialize tuple type");
+
+	if (PyType_Ready(&PyEnum_Type) < 0)
+		Py_FatalError("Can't initialize enumerate type");
+
+	if (PyType_Ready(&PyReversed_Type) < 0)
+		Py_FatalError("Can't initialize reversed type");
 
 	if (PyType_Ready(&PyCode_Type) < 0)
 		Py_FatalError("Can't initialize 'code'");
