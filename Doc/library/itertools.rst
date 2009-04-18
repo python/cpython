@@ -702,11 +702,6 @@ which incur interpreter overhead.
                pending -= 1
                nexts = cycle(islice(nexts, pending))
 
-   def powerset(iterable):
-       "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-       s = list(iterable)
-       return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
    def compress(data, selectors):
        "compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F"
        return (d for d, s in izip(data, selectors) if s)
