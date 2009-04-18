@@ -15,11 +15,6 @@
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-/* ascii character tests (as opposed to locale tests) */
-#define ISSPACE(c)  ((c) == ' ' || (c) == '\f' || (c) == '\n' || \
-                     (c) == '\r' || (c) == '\t' || (c) == '\v')
-#define ISDIGIT(c)  ((c) >= '0' && (c) <= '9')
-
 #ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>
 #endif
@@ -193,7 +188,7 @@ PyFloat_FromString(PyObject *v)
 	}
 
 	last = s + len;
-	while (*s && ISSPACE(Py_CHARMASK(*s)))
+	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (*s == '\0') {
 		PyErr_SetString(PyExc_ValueError, "empty string for float()");
@@ -250,7 +245,7 @@ PyFloat_FromString(PyObject *v)
 	}
 	/* Since end != s, the platform made *some* kind of sense out
 	   of the input.  Trust it. */
-	while (*end && ISSPACE(Py_CHARMASK(*end)))
+	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
 		PyOS_snprintf(buffer, sizeof(buffer),
@@ -1280,7 +1275,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	 ********************/
 
 	/* leading whitespace and optional sign */
-	while (ISSPACE(Py_CHARMASK(*s)))
+	while (isspace(Py_CHARMASK(*s)))
 		s++;
 	if (*s == '-') {
 		s++;
@@ -1304,7 +1299,6 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	s_store = s;
 	if (*s == '0') {
 		s++;
-		if (*s == 'x' || *s == 'X')
 		if (tolower(*s) == (int)'x')
 			s++;
 		else
@@ -1351,7 +1345,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		exp = 0;
 
 	/* optional trailing whitespace leading to the end of the string */
-	while (ISSPACE(Py_CHARMASK(*s)))
+	while (isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s != s_end)
 		goto parse_error;
