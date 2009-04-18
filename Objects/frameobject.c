@@ -606,14 +606,6 @@ int _PyFrame_Init()
 	builtin_object = PyString_InternFromString("__builtins__");
 	if (builtin_object == NULL)
 		return 0;
-	/* 
-	   Traceback objects are not created the normal way (through calling the
-	   type), so PyType_Ready has to be called here.
-	*/
-	if (PyType_Ready(&PyTraceBack_Type)) {
-		Py_DECREF(builtin_object);
-		return 0;
-	}
 	return 1;
 }
 
