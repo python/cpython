@@ -35,8 +35,9 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None, encoding=None, errors=None,
-         newline=None, closefd=True):
+def open(file: (str, bytes), mode: str = "r", buffering: int = None,
+         encoding: str = None, errors: str = None,
+         newline: str = None, closefd: bool = True) -> "IOBase":
 
     r"""Open file and return a stream.  Raise IOError upon failure.
 
