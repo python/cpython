@@ -67,7 +67,7 @@ _getbytevalue(PyObject* arg, int *value)
 }
 
 static Py_ssize_t
-bytes_buffer_getreadbuf(PyByteArrayObject *self, Py_ssize_t index, const void **ptr)
+bytearray_buffer_getreadbuf(PyByteArrayObject *self, Py_ssize_t index, const void **ptr)
 {
     if ( index != 0 ) {
         PyErr_SetString(PyExc_SystemError,
@@ -79,7 +79,7 @@ bytes_buffer_getreadbuf(PyByteArrayObject *self, Py_ssize_t index, const void **
 }
 
 static Py_ssize_t
-bytes_buffer_getwritebuf(PyByteArrayObject *self, Py_ssize_t index, const void **ptr)
+bytearray_buffer_getwritebuf(PyByteArrayObject *self, Py_ssize_t index, const void **ptr)
 {
     if ( index != 0 ) {
         PyErr_SetString(PyExc_SystemError,
@@ -91,7 +91,7 @@ bytes_buffer_getwritebuf(PyByteArrayObject *self, Py_ssize_t index, const void *
 }
 
 static Py_ssize_t
-bytes_buffer_getsegcount(PyByteArrayObject *self, Py_ssize_t *lenp)
+bytearray_buffer_getsegcount(PyByteArrayObject *self, Py_ssize_t *lenp)
 {
     if ( lenp )
         *lenp = Py_SIZE(self);
@@ -99,7 +99,7 @@ bytes_buffer_getsegcount(PyByteArrayObject *self, Py_ssize_t *lenp)
 }
 
 static Py_ssize_t
-bytes_buffer_getcharbuf(PyByteArrayObject *self, Py_ssize_t index, const char **ptr)
+bytearray_buffer_getcharbuf(PyByteArrayObject *self, Py_ssize_t index, const char **ptr)
 {
     if ( index != 0 ) {
         PyErr_SetString(PyExc_SystemError,
@@ -111,7 +111,7 @@ bytes_buffer_getcharbuf(PyByteArrayObject *self, Py_ssize_t index, const char **
 }
 
 static int
-bytes_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
+bytearray_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
 {
         int ret;
         void *ptr;
@@ -131,7 +131,7 @@ bytes_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
 }
 
 static void
-bytes_releasebuffer(PyByteArrayObject *obj, Py_buffer *view)
+bytearray_releasebuffer(PyByteArrayObject *obj, Py_buffer *view)
 {
         obj->ob_exports--;
 }
@@ -319,13 +319,13 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 /* Functions stuffed into the type object */
 
 static Py_ssize_t
-bytes_length(PyByteArrayObject *self)
+bytearray_length(PyByteArrayObject *self)
 {
     return Py_SIZE(self);
 }
 
 static PyObject *
-bytes_iconcat(PyByteArrayObject *self, PyObject *other)
+bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
 {
     Py_ssize_t mysize;
     Py_ssize_t size;
@@ -358,7 +358,7 @@ bytes_iconcat(PyByteArrayObject *self, PyObject *other)
 }
 
 static PyObject *
-bytes_repeat(PyByteArrayObject *self, Py_ssize_t count)
+bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
 {
     PyByteArrayObject *result;
     Py_ssize_t mysize;
@@ -384,7 +384,7 @@ bytes_repeat(PyByteArrayObject *self, Py_ssize_t count)
 }
 
 static PyObject *
-bytes_irepeat(PyByteArrayObject *self, Py_ssize_t count)
+bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 {
     Py_ssize_t mysize;
     Py_ssize_t size;
@@ -415,7 +415,7 @@ bytes_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 }
 
 static PyObject *
-bytes_getitem(PyByteArrayObject *self, Py_ssize_t i)
+bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 {
     if (i < 0)
         i += Py_SIZE(self);
@@ -427,7 +427,7 @@ bytes_getitem(PyByteArrayObject *self, Py_ssize_t i)
 }
 
 static PyObject *
-bytes_subscript(PyByteArrayObject *self, PyObject *index)
+bytearray_subscript(PyByteArrayObject *self, PyObject *index)
 {
     if (PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
@@ -482,7 +482,7 @@ bytes_subscript(PyByteArrayObject *self, PyObject *index)
 }
 
 static int
-bytes_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
+bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
                PyObject *values)
 {
     Py_ssize_t avail, needed;
@@ -497,7 +497,7 @@ bytes_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
         values = PyByteArray_FromObject(values);
         if (values == NULL)
             return -1;
-        err = bytes_setslice(self, lo, hi, values);
+        err = bytearray_setslice(self, lo, hi, values);
         Py_DECREF(values);
         return err;
     }
@@ -572,7 +572,7 @@ bytes_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
 }
 
 static int
-bytes_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
+bytearray_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
 {
     int ival;
 
@@ -585,7 +585,7 @@ bytes_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
     }
 
     if (value == NULL)
-        return bytes_setslice(self, i, i+1, NULL);
+        return bytearray_setslice(self, i, i+1, NULL);
 
     if (!_getbytevalue(value, &ival))
         return -1;
@@ -595,7 +595,7 @@ bytes_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
 }
 
 static int
-bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
+bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
 {
     Py_ssize_t start, stop, step, slicelen, needed;
     char *bytes;
@@ -651,7 +651,7 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
         values = PyByteArray_FromObject(values);
         if (values == NULL)
             return -1;
-        err = bytes_ass_subscript(self, index, values);
+        err = bytearray_ass_subscript(self, index, values);
         Py_DECREF(values);
         return err;
     }
@@ -752,7 +752,7 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
 }
 
 static int
-bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
+bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"source", "encoding", "errors", 0};
     PyObject *arg = NULL;
@@ -795,7 +795,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
             encoded = arg;
             Py_INCREF(arg);
         }
-        new = bytes_iconcat(self, arg);
+        new = bytearray_iconcat(self, arg);
         Py_DECREF(encoded);
         if (new == NULL)
             return -1;
@@ -816,7 +816,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         if (encoded == NULL)
             return -1;
         assert(PyBytes_Check(encoded));
-        new = bytes_iconcat(self, encoded);
+        new = bytearray_iconcat(self, encoded);
         Py_DECREF(encoded);
         if (new == NULL)
             return -1;
@@ -917,7 +917,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 /* Mostly copied from string_repr, but without the
    "smart quote" functionality. */
 static PyObject *
-bytes_repr(PyByteArrayObject *self)
+bytearray_repr(PyByteArrayObject *self)
 {
     static const char *hexdigits = "0123456789abcdef";
     const char *quote_prefix = "bytearray(b";
@@ -1002,7 +1002,7 @@ bytes_repr(PyByteArrayObject *self)
 }
 
 static PyObject *
-bytes_str(PyObject *op)
+bytearray_str(PyObject *op)
 {
 #if 0
     if (Py_BytesWarningFlag) {
@@ -1010,13 +1010,13 @@ bytes_str(PyObject *op)
                  "str() on a bytearray instance", 1))
             return NULL;
     }
-    return bytes_repr((PyByteArrayObject*)op);
+    return bytearray_repr((PyByteArrayObject*)op);
 #endif
     return PyBytes_FromStringAndSize(((PyByteArrayObject*)op)->ob_bytes, Py_SIZE(op));
 }
 
 static PyObject *
-bytes_richcompare(PyObject *self, PyObject *other, int op)
+bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
@@ -1093,7 +1093,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static void
-bytes_dealloc(PyByteArrayObject *self)
+bytearray_dealloc(PyByteArrayObject *self)
 {
     if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
@@ -1148,7 +1148,7 @@ _adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 
 
 Py_LOCAL_INLINE(Py_ssize_t)
-bytes_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
+bytearray_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
 {
     PyObject *subobj;
     Py_buffer subbuf;
@@ -1182,9 +1182,9 @@ arguments start and end are interpreted as in slice notation.\n\
 Return -1 on failure.");
 
 static PyObject *
-bytes_find(PyByteArrayObject *self, PyObject *args)
+bytearray_find(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, +1);
+    Py_ssize_t result = bytearray_find_internal(self, args, +1);
     if (result == -2)
         return NULL;
     return PyInt_FromSsize_t(result);
@@ -1198,7 +1198,7 @@ bytes B[start:end].  Optional arguments start and end are interpreted\n\
 as in slice notation.");
 
 static PyObject *
-bytes_count(PyByteArrayObject *self, PyObject *args)
+bytearray_count(PyByteArrayObject *self, PyObject *args)
 {
     PyObject *sub_obj;
     const char *str = PyByteArray_AS_STRING(self);
@@ -1229,9 +1229,9 @@ PyDoc_STRVAR(index__doc__,
 Like B.find() but raise ValueError when the subsection is not found.");
 
 static PyObject *
-bytes_index(PyByteArrayObject *self, PyObject *args)
+bytearray_index(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, +1);
+    Py_ssize_t result = bytearray_find_internal(self, args, +1);
     if (result == -2)
         return NULL;
     if (result == -1) {
@@ -1253,9 +1253,9 @@ arguments start and end are interpreted as in slice notation.\n\
 Return -1 on failure.");
 
 static PyObject *
-bytes_rfind(PyByteArrayObject *self, PyObject *args)
+bytearray_rfind(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, -1);
+    Py_ssize_t result = bytearray_find_internal(self, args, -1);
     if (result == -2)
         return NULL;
     return PyInt_FromSsize_t(result);
@@ -1268,9 +1268,9 @@ PyDoc_STRVAR(rindex__doc__,
 Like B.rfind() but raise ValueError when the subsection is not found.");
 
 static PyObject *
-bytes_rindex(PyByteArrayObject *self, PyObject *args)
+bytearray_rindex(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, -1);
+    Py_ssize_t result = bytearray_find_internal(self, args, -1);
     if (result == -2)
         return NULL;
     if (result == -1) {
@@ -1283,7 +1283,7 @@ bytes_rindex(PyByteArrayObject *self, PyObject *args)
 
 
 static int
-bytes_contains(PyObject *self, PyObject *arg)
+bytearray_contains(PyObject *self, PyObject *arg)
 {
     Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred()) {
@@ -1311,7 +1311,7 @@ bytes_contains(PyObject *self, PyObject *arg)
  * -1 on error, 0 if not found and 1 if found.
  */
 Py_LOCAL(int)
-_bytes_tailmatch(PyByteArrayObject *self, PyObject *substr, Py_ssize_t start,
+_bytearray_tailmatch(PyByteArrayObject *self, PyObject *substr, Py_ssize_t start,
                  Py_ssize_t end, int direction)
 {
     Py_ssize_t len = PyByteArray_GET_SIZE(self);
@@ -1358,7 +1358,7 @@ With optional end, stop comparing B at that position.\n\
 prefix can also be a tuple of strings to try.");
 
 static PyObject *
-bytes_startswith(PyByteArrayObject *self, PyObject *args)
+bytearray_startswith(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
@@ -1371,7 +1371,7 @@ bytes_startswith(PyByteArrayObject *self, PyObject *args)
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
         for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            result = _bytes_tailmatch(self,
+            result = _bytearray_tailmatch(self,
                                       PyTuple_GET_ITEM(subobj, i),
                                       start, end, -1);
             if (result == -1)
@@ -1382,7 +1382,7 @@ bytes_startswith(PyByteArrayObject *self, PyObject *args)
         }
         Py_RETURN_FALSE;
     }
-    result = _bytes_tailmatch(self, subobj, start, end, -1);
+    result = _bytearray_tailmatch(self, subobj, start, end, -1);
     if (result == -1)
         return NULL;
     else
@@ -1398,7 +1398,7 @@ With optional end, stop comparing B at that position.\n\
 suffix can also be a tuple of strings to try.");
 
 static PyObject *
-bytes_endswith(PyByteArrayObject *self, PyObject *args)
+bytearray_endswith(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
@@ -1411,7 +1411,7 @@ bytes_endswith(PyByteArrayObject *self, PyObject *args)
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
         for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            result = _bytes_tailmatch(self,
+            result = _bytearray_tailmatch(self,
                                       PyTuple_GET_ITEM(subobj, i),
                                       start, end, +1);
             if (result == -1)
@@ -1422,7 +1422,7 @@ bytes_endswith(PyByteArrayObject *self, PyObject *args)
         }
         Py_RETURN_FALSE;
     }
-    result = _bytes_tailmatch(self, subobj, start, end, +1);
+    result = _bytearray_tailmatch(self, subobj, start, end, +1);
     if (result == -1)
         return NULL;
     else
@@ -1439,7 +1439,7 @@ characters have been mapped through the given translation\n\
 table, which must be a bytes object of length 256.");
 
 static PyObject *
-bytes_translate(PyByteArrayObject *self, PyObject *args)
+bytearray_translate(PyByteArrayObject *self, PyObject *args)
 {
     register char *input, *output;
     register const char *table;
@@ -2127,7 +2127,7 @@ old replaced by new.  If the optional argument count is\n\
 given, only the first count occurrences are replaced.");
 
 static PyObject *
-bytes_replace(PyByteArrayObject *self, PyObject *args)
+bytearray_replace(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t count = -1;
     PyObject *from, *to, *res;
@@ -2278,7 +2278,7 @@ If sep is not given, B is split on ASCII whitespace characters\n\
 If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
-bytes_split(PyByteArrayObject *self, PyObject *args)
+bytearray_split(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t len = PyByteArray_GET_SIZE(self), n, i, j;
     Py_ssize_t maxsplit = -1, count = 0;
@@ -2385,7 +2385,7 @@ the separator itself, and the part after it.  If the separator is not\n\
 found, returns B and two empty bytearray objects.");
 
 static PyObject *
-bytes_partition(PyByteArrayObject *self, PyObject *sep_obj)
+bytearray_partition(PyByteArrayObject *self, PyObject *sep_obj)
 {
     PyObject *bytesep, *result;
 
@@ -2413,7 +2413,7 @@ part after it.  If the separator is not found, returns two empty\n\
 bytearray objects and B.");
 
 static PyObject *
-bytes_rpartition(PyByteArrayObject *self, PyObject *sep_obj)
+bytearray_rpartition(PyByteArrayObject *self, PyObject *sep_obj)
 {
     PyObject *bytesep, *result;
 
@@ -2516,7 +2516,7 @@ If sep is not given, B is split on ASCII whitespace characters\n\
 If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
-bytes_rsplit(PyByteArrayObject *self, PyObject *args)
+bytearray_rsplit(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t len = PyByteArray_GET_SIZE(self), n, i, j;
     Py_ssize_t maxsplit = -1, count = 0;
@@ -2585,7 +2585,7 @@ PyDoc_STRVAR(reverse__doc__,
 \n\
 Reverse the order of the values in B in place.");
 static PyObject *
-bytes_reverse(PyByteArrayObject *self, PyObject *unused)
+bytearray_reverse(PyByteArrayObject *self, PyObject *unused)
 {
     char swap, *head, *tail;
     Py_ssize_t i, j, n = Py_SIZE(self);
@@ -2607,7 +2607,7 @@ PyDoc_STRVAR(insert__doc__,
 \n\
 Insert a single item into the bytearray before the given index.");
 static PyObject *
-bytes_insert(PyByteArrayObject *self, PyObject *args)
+bytearray_insert(PyByteArrayObject *self, PyObject *args)
 {
     PyObject *value;
     int ival;
@@ -2644,7 +2644,7 @@ PyDoc_STRVAR(append__doc__,
 \n\
 Append a single item to the end of B.");
 static PyObject *
-bytes_append(PyByteArrayObject *self, PyObject *arg)
+bytearray_append(PyByteArrayObject *self, PyObject *arg)
 {
     int value;
     Py_ssize_t n = Py_SIZE(self);
@@ -2670,16 +2670,16 @@ PyDoc_STRVAR(extend__doc__,
 Append all the elements from the iterator or sequence to the\n\
 end of B.");
 static PyObject *
-bytes_extend(PyByteArrayObject *self, PyObject *arg)
+bytearray_extend(PyByteArrayObject *self, PyObject *arg)
 {
-    PyObject *it, *item, *bytes_obj;
+    PyObject *it, *item, *bytearray_obj;
     Py_ssize_t buf_size = 0, len = 0;
     int value;
     char *buf;
 
-    /* bytes_setslice code only accepts something supporting PEP 3118. */
+    /* bytearray_setslice code only accepts something supporting PEP 3118. */
     if (PyObject_CheckBuffer(arg)) {
-        if (bytes_setslice(self, Py_SIZE(self), Py_SIZE(self), arg) == -1)
+        if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), arg) == -1)
             return NULL;
 
         Py_RETURN_NONE;
@@ -2696,16 +2696,16 @@ bytes_extend(PyByteArrayObject *self, PyObject *arg)
         return NULL;
     }
 
-    bytes_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
-    if (bytes_obj == NULL)
+    bytearray_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
+    if (bytearray_obj == NULL)
         return NULL;
-    buf = PyByteArray_AS_STRING(bytes_obj);
+    buf = PyByteArray_AS_STRING(bytearray_obj);
 
     while ((item = PyIter_Next(it)) != NULL) {
         if (! _getbytevalue(item, &value)) {
             Py_DECREF(item);
             Py_DECREF(it);
-            Py_DECREF(bytes_obj);
+            Py_DECREF(bytearray_obj);
             return NULL;
         }
         buf[len++] = value;
@@ -2713,27 +2713,27 @@ bytes_extend(PyByteArrayObject *self, PyObject *arg)
 
         if (len >= buf_size) {
             buf_size = len + (len >> 1) + 1;
-            if (PyByteArray_Resize((PyObject *)bytes_obj, buf_size) < 0) {
+            if (PyByteArray_Resize((PyObject *)bytearray_obj, buf_size) < 0) {
                 Py_DECREF(it);
-                Py_DECREF(bytes_obj);
+                Py_DECREF(bytearray_obj);
                 return NULL;
             }
             /* Recompute the `buf' pointer, since the resizing operation may
                have invalidated it. */
-            buf = PyByteArray_AS_STRING(bytes_obj);
+            buf = PyByteArray_AS_STRING(bytearray_obj);
         }
     }
     Py_DECREF(it);
 
     /* Resize down to exact size. */
-    if (PyByteArray_Resize((PyObject *)bytes_obj, len) < 0) {
-        Py_DECREF(bytes_obj);
+    if (PyByteArray_Resize((PyObject *)bytearray_obj, len) < 0) {
+        Py_DECREF(bytearray_obj);
         return NULL;
     }
 
-    if (bytes_setslice(self, Py_SIZE(self), Py_SIZE(self), bytes_obj) == -1)
+    if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), bytearray_obj) == -1)
         return NULL;
-    Py_DECREF(bytes_obj);
+    Py_DECREF(bytearray_obj);
 
     Py_RETURN_NONE;
 }
@@ -2744,7 +2744,7 @@ PyDoc_STRVAR(pop__doc__,
 Remove and return a single item from B. If no index\n\
 argument is given, will pop the last value.");
 static PyObject *
-bytes_pop(PyByteArrayObject *self, PyObject *args)
+bytearray_pop(PyByteArrayObject *self, PyObject *args)
 {
     int value;
     Py_ssize_t where = -1, n = Py_SIZE(self);
@@ -2779,7 +2779,7 @@ PyDoc_STRVAR(remove__doc__,
 \n\
 Remove the first occurance of a value in B.");
 static PyObject *
-bytes_remove(PyByteArrayObject *self, PyObject *arg)
+bytearray_remove(PyByteArrayObject *self, PyObject *arg)
 {
     int value;
     Py_ssize_t where, n = Py_SIZE(self);
@@ -2833,7 +2833,7 @@ PyDoc_STRVAR(strip__doc__,
 Strip leading and trailing bytes contained in the argument.\n\
 If the argument is omitted, strip ASCII whitespace.");
 static PyObject *
-bytes_strip(PyByteArrayObject *self, PyObject *args)
+bytearray_strip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
@@ -2869,7 +2869,7 @@ PyDoc_STRVAR(lstrip__doc__,
 Strip leading bytes contained in the argument.\n\
 If the argument is omitted, strip leading ASCII whitespace.");
 static PyObject *
-bytes_lstrip(PyByteArrayObject *self, PyObject *args)
+bytearray_lstrip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
@@ -2902,7 +2902,7 @@ PyDoc_STRVAR(rstrip__doc__,
 Strip trailing bytes contained in the argument.\n\
 If the argument is omitted, strip trailing ASCII whitespace.");
 static PyObject *
-bytes_rstrip(PyByteArrayObject *self, PyObject *args)
+bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
@@ -2940,7 +2940,7 @@ as well as any other name registered with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
-bytes_decode(PyObject *self, PyObject *args)
+bytearray_decode(PyObject *self, PyObject *args)
 {
     const char *encoding = NULL;
     const char *errors = NULL;
@@ -2964,7 +2964,7 @@ PyDoc_STRVAR(alloc_doc,
 Returns the number of bytes actually allocated.");
 
 static PyObject *
-bytes_alloc(PyByteArrayObject *self)
+bytearray_alloc(PyByteArrayObject *self)
 {
     return PyInt_FromSsize_t(self->ob_alloc);
 }
@@ -2975,7 +2975,7 @@ PyDoc_STRVAR(join_doc,
 Concatenates any number of bytearray objects, with B in between each pair.");
 
 static PyObject *
-bytes_join(PyByteArrayObject *self, PyObject *it)
+bytearray_join(PyByteArrayObject *self, PyObject *it)
 {
     PyObject *seq;
     Py_ssize_t mysize = Py_SIZE(self);
@@ -3066,7 +3066,7 @@ hex_digit_to_int(char c)
 }
 
 static PyObject *
-bytes_fromhex(PyObject *cls, PyObject *args)
+bytearray_fromhex(PyObject *cls, PyObject *args)
 {
     PyObject *newbytes;
     char *buf;
@@ -3109,7 +3109,7 @@ bytes_fromhex(PyObject *cls, PyObject *args)
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-bytes_reduce(PyByteArrayObject *self)
+bytearray_reduce(PyByteArrayObject *self)
 {
     PyObject *latin1, *dict;
     if (self->ob_bytes)
@@ -3141,7 +3141,7 @@ PyDoc_STRVAR(sizeof_doc,
  \n\
 Returns the size of B in memory, in bytes");
 static PyObject *
-bytes_sizeof(PyByteArrayObject *self)
+bytearray_sizeof(PyByteArrayObject *self)
 {
     Py_ssize_t res;
 
@@ -3149,54 +3149,54 @@ bytes_sizeof(PyByteArrayObject *self)
     return PyInt_FromSsize_t(res);
 }
 
-static PySequenceMethods bytes_as_sequence = {
-    (lenfunc)bytes_length,              /* sq_length */
+static PySequenceMethods bytearray_as_sequence = {
+    (lenfunc)bytearray_length,              /* sq_length */
     (binaryfunc)PyByteArray_Concat,         /* sq_concat */
-    (ssizeargfunc)bytes_repeat,         /* sq_repeat */
-    (ssizeargfunc)bytes_getitem,        /* sq_item */
-    0,                                  /* sq_slice */
-    (ssizeobjargproc)bytes_setitem,     /* sq_ass_item */
-    0,                                  /* sq_ass_slice */
-    (objobjproc)bytes_contains,         /* sq_contains */
-    (binaryfunc)bytes_iconcat,          /* sq_inplace_concat */
-    (ssizeargfunc)bytes_irepeat,        /* sq_inplace_repeat */
+    (ssizeargfunc)bytearray_repeat,         /* sq_repeat */
+    (ssizeargfunc)bytearray_getitem,        /* sq_item */
+    0,                                      /* sq_slice */
+    (ssizeobjargproc)bytearray_setitem,     /* sq_ass_item */
+    0,                                      /* sq_ass_slice */
+    (objobjproc)bytearray_contains,         /* sq_contains */
+    (binaryfunc)bytearray_iconcat,          /* sq_inplace_concat */
+    (ssizeargfunc)bytearray_irepeat,        /* sq_inplace_repeat */
 };
 
-static PyMappingMethods bytes_as_mapping = {
-    (lenfunc)bytes_length,
-    (binaryfunc)bytes_subscript,
-    (objobjargproc)bytes_ass_subscript,
+static PyMappingMethods bytearray_as_mapping = {
+    (lenfunc)bytearray_length,
+    (binaryfunc)bytearray_subscript,
+    (objobjargproc)bytearray_ass_subscript,
 };
 
-static PyBufferProcs bytes_as_buffer = {
-    (readbufferproc)bytes_buffer_getreadbuf,
-    (writebufferproc)bytes_buffer_getwritebuf,
-    (segcountproc)bytes_buffer_getsegcount,
-    (charbufferproc)bytes_buffer_getcharbuf,
-    (getbufferproc)bytes_getbuffer,
-    (releasebufferproc)bytes_releasebuffer,
+static PyBufferProcs bytearray_as_buffer = {
+    (readbufferproc)bytearray_buffer_getreadbuf,
+    (writebufferproc)bytearray_buffer_getwritebuf,
+    (segcountproc)bytearray_buffer_getsegcount,
+    (charbufferproc)bytearray_buffer_getcharbuf,
+    (getbufferproc)bytearray_getbuffer,
+    (releasebufferproc)bytearray_releasebuffer,
 };
 
 static PyMethodDef
-bytes_methods[] = {
-    {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
-    {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
-    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS, sizeof_doc},
-    {"append", (PyCFunction)bytes_append, METH_O, append__doc__},
+bytearray_methods[] = {
+    {"__alloc__", (PyCFunction)bytearray_alloc, METH_NOARGS, alloc_doc},
+    {"__reduce__", (PyCFunction)bytearray_reduce, METH_NOARGS, reduce_doc},
+    {"__sizeof__", (PyCFunction)bytearray_sizeof, METH_NOARGS, sizeof_doc},
+    {"append", (PyCFunction)bytearray_append, METH_O, append__doc__},
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
-    {"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
-    {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
-    {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS, endswith__doc__},
+    {"count", (PyCFunction)bytearray_count, METH_VARARGS, count__doc__},
+    {"decode", (PyCFunction)bytearray_decode, METH_VARARGS, decode_doc},
+    {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS, endswith__doc__},
     {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
      expandtabs__doc__},
-    {"extend", (PyCFunction)bytes_extend, METH_O, extend__doc__},
-    {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
-    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
+    {"extend", (PyCFunction)bytearray_extend, METH_O, extend__doc__},
+    {"find", (PyCFunction)bytearray_find, METH_VARARGS, find__doc__},
+    {"fromhex", (PyCFunction)bytearray_fromhex, METH_VARARGS|METH_CLASS,
      fromhex_doc},
-    {"index", (PyCFunction)bytes_index, METH_VARARGS, index__doc__},
-    {"insert", (PyCFunction)bytes_insert, METH_VARARGS, insert__doc__},
+    {"index", (PyCFunction)bytearray_index, METH_VARARGS, index__doc__},
+    {"insert", (PyCFunction)bytearray_insert, METH_VARARGS, insert__doc__},
     {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
     {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
@@ -3211,38 +3211,38 @@ bytes_methods[] = {
      _Py_istitle__doc__},
     {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
-    {"join", (PyCFunction)bytes_join, METH_O, join_doc},
+    {"join", (PyCFunction)bytearray_join, METH_O, join_doc},
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
-    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
-    {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
-    {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
-    {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
-    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, replace__doc__},
-    {"reverse", (PyCFunction)bytes_reverse, METH_NOARGS, reverse__doc__},
-    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, rfind__doc__},
-    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, rindex__doc__},
+    {"lstrip", (PyCFunction)bytearray_lstrip, METH_VARARGS, lstrip__doc__},
+    {"partition", (PyCFunction)bytearray_partition, METH_O, partition__doc__},
+    {"pop", (PyCFunction)bytearray_pop, METH_VARARGS, pop__doc__},
+    {"remove", (PyCFunction)bytearray_remove, METH_O, remove__doc__},
+    {"replace", (PyCFunction)bytearray_replace, METH_VARARGS, replace__doc__},
+    {"reverse", (PyCFunction)bytearray_reverse, METH_NOARGS, reverse__doc__},
+    {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, rfind__doc__},
+    {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, rindex__doc__},
     {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
-    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, rpartition__doc__},
-    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS, rsplit__doc__},
-    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
-    {"split", (PyCFunction)bytes_split, METH_VARARGS, split__doc__},
+    {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, rpartition__doc__},
+    {"rsplit", (PyCFunction)bytearray_rsplit, METH_VARARGS, rsplit__doc__},
+    {"rstrip", (PyCFunction)bytearray_rstrip, METH_VARARGS, rstrip__doc__},
+    {"split", (PyCFunction)bytearray_split, METH_VARARGS, split__doc__},
     {"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
      splitlines__doc__},
-    {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS ,
+    {"startswith", (PyCFunction)bytearray_startswith, METH_VARARGS ,
      startswith__doc__},
-    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, strip__doc__},
+    {"strip", (PyCFunction)bytearray_strip, METH_VARARGS, strip__doc__},
     {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
-    {"translate", (PyCFunction)bytes_translate, METH_VARARGS,
+    {"translate", (PyCFunction)bytearray_translate, METH_VARARGS,
      translate__doc__},
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
     {NULL}
 };
 
-PyDoc_STRVAR(bytes_doc,
+PyDoc_STRVAR(bytearray_doc,
 "bytearray(iterable_of_ints) -> bytearray.\n\
 bytearray(string, encoding[, errors]) -> bytearray.\n\
 bytearray(bytes_or_bytearray) -> mutable copy of bytes_or_bytearray.\n\
@@ -3259,38 +3259,38 @@ bytearray(int) -> bytearray.\n\
 Construct a zero-initialized bytearray of the given length.");
 
 
-static PyObject *bytes_iter(PyObject *seq);
+static PyObject *bytearray_iter(PyObject *seq);
 
 PyTypeObject PyByteArray_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytearray",
     sizeof(PyByteArrayObject),
     0,
-    (destructor)bytes_dealloc,          /* tp_dealloc */
+    (destructor)bytearray_dealloc,       /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     0,                                  /* tp_compare */
-    (reprfunc)bytes_repr,               /* tp_repr */
+    (reprfunc)bytearray_repr,           /* tp_repr */
     0,                                  /* tp_as_number */
-    &bytes_as_sequence,                 /* tp_as_sequence */
-    &bytes_as_mapping,                  /* tp_as_mapping */
+    &bytearray_as_sequence,             /* tp_as_sequence */
+    &bytearray_as_mapping,              /* tp_as_mapping */
     0,                                  /* tp_hash */
     0,                                  /* tp_call */
-    bytes_str,                          /* tp_str */
+    bytearray_str,                      /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
-    &bytes_as_buffer,                   /* tp_as_buffer */
+    &bytearray_as_buffer,               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
     Py_TPFLAGS_HAVE_NEWBUFFER,          /* tp_flags */
-    bytes_doc,                          /* tp_doc */
+    bytearray_doc,                      /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
-    (richcmpfunc)bytes_richcompare,     /* tp_richcompare */
+    (richcmpfunc)bytearray_richcompare, /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
-    bytes_iter,                         /* tp_iter */
+    bytearray_iter,                     /* tp_iter */
     0,                                  /* tp_iternext */
-    bytes_methods,                      /* tp_methods */
+    bytearray_methods,                  /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
@@ -3298,7 +3298,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytes_init,               /* tp_init */
+    (initproc)bytearray_init,           /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Del,                       /* tp_free */
@@ -3313,7 +3313,7 @@ typedef struct {
 } bytesiterobject;
 
 static void
-bytesiter_dealloc(bytesiterobject *it)
+bytearrayiter_dealloc(bytesiterobject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
@@ -3321,14 +3321,14 @@ bytesiter_dealloc(bytesiterobject *it)
 }
 
 static int
-bytesiter_traverse(bytesiterobject *it, visitproc visit, void *arg)
+bytearrayiter_traverse(bytesiterobject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-bytesiter_next(bytesiterobject *it)
+bytearrayiter_next(bytesiterobject *it)
 {
     PyByteArrayObject *seq;
     PyObject *item;
@@ -3353,7 +3353,7 @@ bytesiter_next(bytesiterobject *it)
 }
 
 static PyObject *
-bytesiter_length_hint(bytesiterobject *it)
+bytesarrayiter_length_hint(bytesiterobject *it)
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -3364,8 +3364,8 @@ bytesiter_length_hint(bytesiterobject *it)
 PyDoc_STRVAR(length_hint_doc,
     "Private method returning an estimate of len(list(it)).");
 
-static PyMethodDef bytesiter_methods[] = {
-    {"__length_hint__", (PyCFunction)bytesiter_length_hint, METH_NOARGS,
+static PyMethodDef bytearrayiter_methods[] = {
+    {"__length_hint__", (PyCFunction)bytesarrayiter_length_hint, METH_NOARGS,
      length_hint_doc},
     {NULL, NULL} /* sentinel */
 };
@@ -3376,7 +3376,7 @@ PyTypeObject PyByteArrayIter_Type = {
     sizeof(bytesiterobject),           /* tp_basicsize */
     0,                                 /* tp_itemsize */
     /* methods */
-    (destructor)bytesiter_dealloc,     /* tp_dealloc */
+    (destructor)bytearrayiter_dealloc, /* tp_dealloc */
     0,                                 /* tp_print */
     0,                                 /* tp_getattr */
     0,                                 /* tp_setattr */
@@ -3393,18 +3393,18 @@ PyTypeObject PyByteArrayIter_Type = {
     0,                                 /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                 /* tp_doc */
-    (traverseproc)bytesiter_traverse,  /* tp_traverse */
+    (traverseproc)bytearrayiter_traverse,  /* tp_traverse */
     0,                                 /* tp_clear */
     0,                                 /* tp_richcompare */
     0,                                 /* tp_weaklistoffset */
     PyObject_SelfIter,                 /* tp_iter */
-    (iternextfunc)bytesiter_next,      /* tp_iternext */
-    bytesiter_methods,                 /* tp_methods */
+    (iternextfunc)bytearrayiter_next,  /* tp_iternext */
+    bytearrayiter_methods,             /* tp_methods */
     0,
 };
 
 static PyObject *
-bytes_iter(PyObject *seq)
+bytearray_iter(PyObject *seq)
 {
     bytesiterobject *it;
 
