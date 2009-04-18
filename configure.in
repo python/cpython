@@ -3214,34 +3214,6 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-# Multiprocessing check for broken sem_getvalue
-AC_MSG_CHECKING(for broken sem_getvalue)
-AC_TRY_RUN([
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
-
-int main(void){
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
-
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  return res==-1 ? 1 : 0;
-}
-]
-,AC_MSG_RESULT(no),
- AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1, define to 1 if your sem_getvalue is broken.)
-)
-
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
 AC_MSG_CHECKING(whether tanh preserves the sign of zero)
@@ -3272,6 +3244,34 @@ AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite hypot log1p round])
 AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 LIBS=$LIBS_SAVE
+
+# Multiprocessing check for broken sem_getvalue
+AC_MSG_CHECKING(for broken sem_getvalue)
+AC_TRY_RUN([
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+
+int main(void){
+  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  int count;
+  int res;
+  if(a==SEM_FAILED){
+    perror("sem_open");
+    return 1;
+
+  }
+  res = sem_getvalue(a, &count);
+  sem_close(a);
+  return res==-1 ? 1 : 0;
+}
+]
+,AC_MSG_RESULT(no),
+ AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1, define to 1 if your sem_getvalue is broken.)
+)
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
