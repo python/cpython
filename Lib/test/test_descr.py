@@ -3811,31 +3811,6 @@ order (MRO) for bases """
         self.assertEqual(e.a, 2)
         self.assertEqual(C2.__subclasses__(), [D])
 
-        # stuff that shouldn't:
-        class L(list):
-            pass
-
-        try:
-            L.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't turn list subclass into dict subclass")
-
-        try:
-            list.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't be able to assign to list.__bases__")
-
-        try:
-            D.__bases__ = (C2, list)
-        except TypeError:
-            pass
-        else:
-            assert 0, "best_base calculation found wanting"
-
         try:
             del D.__bases__
         except (TypeError, AttributeError):
@@ -3905,6 +3880,36 @@ order (MRO) for bases """
             object.__getattribute__(tp, "__bases__")
             if tp is not object:
                 self.assertEqual(len(tp.__bases__), 1, tp)
+
+        class L(list):
+            pass
+
+        class C(object):
+            pass
+
+        class D(C):
+            pass
+
+        try:
+            L.__bases__ = (dict,)
+        except TypeError:
+            pass
+        else:
+            self.fail("shouldn't turn list subclass into dict subclass")
+
+        try:
+            list.__bases__ = (dict,)
+        except TypeError:
+            pass
+        else:
+            self.fail("shouldn't be able to assign to list.__bases__")
+
+        try:
+            D.__bases__ = (C, list)
+        except TypeError:
+            pass
+        else:
+            assert 0, "best_base calculation found wanting"
 
 
     def test_mutable_bases_with_failing_mro(self):
