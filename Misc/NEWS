@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1869: fix a couple of minor round() issues.  round(5e15+1)
+    was giving 5e15+2; round(-0.0) was losing the sign of the zero.
+
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
 - Issue #5704: the "-3" command-line option now implies "-t".

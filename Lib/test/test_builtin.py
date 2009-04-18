@@ -1224,6 +1224,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(-5.5), -6)
         self.assertEqual(round(-6.5), -7)
 
+        # Issue #1869: integral floats should remain unchanged
+        self.assertEqual(round(5e15+1), 5e15+1)
+
         # Check behavior on ints
         self.assertEqual(round(0), 0)
         self.assertEqual(round(8), 8)
