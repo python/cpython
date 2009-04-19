@@ -1051,13 +1051,11 @@ class PyBufferedWriterTest(BufferedWriterTest):
 
 class BufferedRWPairTest(unittest.TestCase):
 
-    def test_basic(self):
-        r = self.MockRawIO(())
-        w = self.MockRawIO()
-        pair = self.tp(r, w)
+    def test_constructor(self):
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
         self.assertFalse(pair.closed)
 
-    def test_max_buffer_size_deprecation(self):
+    def test_constructor_max_buffer_size_deprecation(self):
         with support.check_warnings() as w:
             warnings.simplefilter("always", DeprecationWarning)
             self.tp(self.MockRawIO(), self.MockRawIO(), 8, 12)
@@ -1067,7 +1065,100 @@ class BufferedRWPairTest(unittest.TestCase):
             self.assertEqual(str(warning.message),
                              "max_buffer_size is deprecated")
 
-        # XXX More Tests
+    def test_constructor_with_not_readable(self):
+        class NotReadable(MockRawIO):
+            def readable(self):
+                return False
+
+        self.assertRaises(IOError, self.tp, NotReadable(), self.MockRawIO())
+
+    def test_constructor_with_not_writeable(self):
+        class NotWriteable(MockRawIO):
+            def writable(self):
+                return False
+
+        self.assertRaises(IOError, self.tp, self.MockRawIO(), NotWriteable())
+
+    def test_read(self):
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+
+        self.assertEqual(pair.read(3), b"abc")
+        self.assertEqual(pair.read(1), b"d")
+        self.assertEqual(pair.read(), b"ef")
+
+    def test_read1(self):
+        # .read1() is delegated to the underlying reader object, so this test
+        # can be shallow.
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+
+        self.assertEqual(pair.read1(3), b"abc")
+
+    def test_readinto(self):
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+
+        data = bytearray(5)
+        self.assertEqual(pair.readinto(data), 5)
+        self.assertEqual(data, b"abcde")
+
+    def test_write(self):
+        w = self.MockRawIO()
+        pair = self.tp(self.MockRawIO(), w)
+
+        pair.write(b"abc")
+        pair.flush()
+        pair.write(b"def")
+        pair.flush()
+        self.assertEqual(w._write_stack, [b"abc", b"def"])
+
+    def test_peek(self):
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+
+        self.assertTrue(pair.peek(3).startswith(b"abc"))
+        self.assertEqual(pair.read(3), b"abc")
+
+    def test_readable(self):
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
+        self.assertTrue(pair.readable())
+
+    def test_writeable(self):
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
+        self.assertTrue(pair.writable())
+
+    def test_seekable(self):
+        # BufferedRWPairs are never seekable, even if their readers and writers
+        # are.
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
+        self.assertFalse(pair.seekable())
+
+    # .flush() is delegated to the underlying writer object and has been
+    # tested in the test_write method.
+
+    def test_close_and_closed(self):
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
+        self.assertFalse(pair.closed)
+        pair.close()
+        self.assertTrue(pair.closed)
+
+    def test_isatty(self):
+        class SelectableIsAtty(MockRawIO):
+            def __init__(self, isatty):
+                MockRawIO.__init__(self)
+                self._isatty = isatty
+
+            def isatty(self):
+                return self._isatty
+
+        pair = self.tp(SelectableIsAtty(False), SelectableIsAtty(False))
+        self.assertFalse(pair.isatty())
+
+        pair = self.tp(SelectableIsAtty(True), SelectableIsAtty(False))
+        self.assertTrue(pair.isatty())
+
+        pair = self.tp(SelectableIsAtty(False), SelectableIsAtty(True))
+        self.assertTrue(pair.isatty())
+
+        pair = self.tp(SelectableIsAtty(True), SelectableIsAtty(True))
+        self.assertTrue(pair.isatty())
 
 class CBufferedRWPairTest(BufferedRWPairTest):
     tp = io.BufferedRWPair

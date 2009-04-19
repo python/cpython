@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5734: BufferedRWPair was poorly tested and had several glaring
+  bugs. Patch by Brian Quinlan.
+
 - Issue #1161031: fix readwrite select flag handling: POLLPRI now
   results in a handle_expt_event call, not handle_read_event, and POLLERR
   and POLLNVAL now call handle_close, not handle_expt_event.  Also,

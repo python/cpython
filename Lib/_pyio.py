@@ -839,7 +839,9 @@ class BufferedReader(_BufferedIOMixin):
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         """Create a new buffered reader using the given readable raw IO object.
         """
-        raw._checkReadable()
+        if not raw.readable():
+            raise IOError('"raw" argument must be readable.')
+
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
             raise ValueError("invalid buffer size")
@@ -970,7 +972,9 @@ class BufferedWriter(_BufferedIOMixin):
 
     def __init__(self, raw,
                  buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
-        raw._checkWritable()
+        if not raw.writable():
+            raise IOError('"raw" argument must be writable.')
+
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
             raise ValueError("invalid buffer size")
@@ -1076,8 +1080,13 @@ class BufferedRWPair(BufferedIOBase):
         """
         if max_buffer_size is not None:
             warnings.warn("max_buffer_size is deprecated", DeprecationWarning, 2)
-        reader._checkReadable()
-        writer._checkWritable()
+
+        if not reader.readable():
+            raise IOError('"reader" argument must be readable.')
+
+        if not writer.writable():
+            raise IOError('"writer" argument must be writable.')
+
         self.reader = BufferedReader(reader, buffer_size)
         self.writer = BufferedWriter(writer, buffer_size)
 
