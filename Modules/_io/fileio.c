@@ -987,7 +987,7 @@ static PyGetSetDef fileio_getsetlist[] = {
 	{"closefd", (getter)get_closefd, NULL, 
 		"True if the file descriptor will be closed"},
 	{"mode", (getter)get_mode, NULL, "String giving the file mode"},
-	{0},
+	{NULL},
 };
 
 PyTypeObject PyFileIO_Type = {

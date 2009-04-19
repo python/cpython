@@ -723,7 +723,7 @@ static PyGetSetDef stringio_getset[] = {
     {"encoding",       (getter)stringio_encoding,       NULL, NULL},
     {"errors",         (getter)stringio_errors,         NULL, NULL},
     {"line_buffering", (getter)stringio_line_buffering, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 PyTypeObject PyStringIO_Type = {

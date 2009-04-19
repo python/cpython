@@ -700,7 +700,7 @@ static PyMethodDef IOBase_methods[] = {
 
 static PyGetSetDef IOBase_getset[] = {
     {"closed", (getter)IOBase_closed_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 

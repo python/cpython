@@ -102,7 +102,7 @@ static PyMethodDef TextIOBase_methods[] = {
 static PyGetSetDef TextIOBase_getset[] = {
     {"encoding", (getter)TextIOBase_encoding_get, NULL, TextIOBase_encoding_doc},
     {"newlines", (getter)TextIOBase_newlines_get, NULL, TextIOBase_newlines_doc},
-    {0}
+    {NULL}
 };
 
 PyTypeObject PyTextIOBase_Type = {
@@ -534,12 +534,12 @@ static PyMethodDef IncrementalNewlineDecoder_methods[] = {
     {"getstate", (PyCFunction)IncrementalNewlineDecoder_getstate, METH_NOARGS},
     {"setstate", (PyCFunction)IncrementalNewlineDecoder_setstate, METH_O},
     {"reset", (PyCFunction)IncrementalNewlineDecoder_reset, METH_NOARGS},
-    {0}
+    {NULL}
 };
 
 static PyGetSetDef IncrementalNewlineDecoder_getset[] = {
     {"newlines", (getter)IncrementalNewlineDecoder_newlines_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 PyTypeObject PyIncrementalNewlineDecoder_Type = {
@@ -2374,7 +2374,7 @@ static PyGetSetDef TextIOWrapper_getset[] = {
     {"newlines", (getter)TextIOWrapper_newlines_get, NULL, NULL},
     {"_CHUNK_SIZE", (getter)TextIOWrapper_chunk_size_get,
                     (setter)TextIOWrapper_chunk_size_set, NULL},
-    {0}
+    {NULL}
 };
 
 PyTypeObject PyTextIOWrapper_Type = {
