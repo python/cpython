@@ -2052,10 +2052,10 @@ _Py_ReadyTypes(void)
 		Py_FatalError("Can't initialize str type");
 
 	if (PyType_Ready(&PyByteArray_Type) < 0)
-		Py_FatalError("Can't initialize bytearray");
+		Py_FatalError("Can't initialize bytearray type");
 
 	if (PyType_Ready(&PyList_Type) < 0)
-		Py_FatalError("Can't initialize list");
+		Py_FatalError("Can't initialize list type");
 
 	if (PyType_Ready(&PyNone_Type) < 0)
 		Py_FatalError("Can't initialize None type");
