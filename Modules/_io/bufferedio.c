@@ -1846,7 +1846,7 @@ typedef struct {
 
 static int
 BufferedRWPair_init(BufferedRWPairObject *self, PyObject *args,
-                     PyObject *kwds)
+                    PyObject *kwds)
 {
     PyObject *reader, *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
@@ -1865,29 +1865,18 @@ BufferedRWPair_init(BufferedRWPairObject *self, PyObject *args,
     if (_PyIOBase_checkWritable(writer, Py_True) == NULL)
         return -1;
 
-    args = Py_BuildValue("(n)", buffer_size);
-    if (args == NULL) {
-        Py_CLEAR(self->reader);
-        return -1;
-    }
-    self->reader = (BufferedObject *)PyType_GenericNew(
-            &PyBufferedReader_Type, args, NULL);
-    Py_DECREF(args);
+    self->reader = (BufferedObject *) PyObject_CallFunction(
+            (PyObject *) &PyBufferedReader_Type, "On", reader, buffer_size);
     if (self->reader == NULL)
         return -1;
 
-    args = Py_BuildValue("(n)", buffer_size);
-    if (args == NULL) {
-        Py_CLEAR(self->reader);
-        return -1;
-    }
-    self->writer = (BufferedObject *)PyType_GenericNew(
-            &PyBufferedWriter_Type, args, NULL);
-    Py_DECREF(args);
+    self->writer = (BufferedObject *) PyObject_CallFunction(
+            (PyObject *) &PyBufferedWriter_Type, "On", writer, buffer_size);
     if (self->writer == NULL) {
         Py_CLEAR(self->reader);
         return -1;
     }
+
     return 0;
 }
 
@@ -1952,6 +1941,12 @@ BufferedRWPair_read1(BufferedRWPairObject *self, PyObject *args)
 }
 
 static PyObject *
+BufferedRWPair_readinto(BufferedRWPairObject *self, PyObject *args)
+{
+    return _forward_call(self->reader, "readinto", args);
+}
+
+static PyObject *
 BufferedRWPair_write(BufferedRWPairObject *self, PyObject *args)
 {
     return _forward_call(self->writer, "write", args);
@@ -2000,12 +1995,17 @@ BufferedRWPair_isatty(BufferedRWPairObject *self, PyObject *args)
     return _forward_call(self->reader, "isatty", args);
 }
 
+static PyObject *
+BufferedRWPair_closed_get(BufferedRWPairObject *self, void *context)
+{
+    return PyObject_GetAttr((PyObject *) self->writer, _PyIO_str_closed);
+}
 
 static PyMethodDef BufferedRWPair_methods[] = {
     {"read", (PyCFunction)BufferedRWPair_read, METH_VARARGS},
     {"peek", (PyCFunction)BufferedRWPair_peek, METH_VARARGS},
     {"read1", (PyCFunction)BufferedRWPair_read1, METH_VARARGS},
-    {"readinto", (PyCFunction)Buffered_readinto, METH_VARARGS},
+    {"readinto", (PyCFunction)BufferedRWPair_readinto, METH_VARARGS},
 
     {"write", (PyCFunction)BufferedRWPair_write, METH_VARARGS},
     {"flush", (PyCFunction)BufferedRWPair_flush, METH_NOARGS},
@@ -2017,6 +2017,11 @@ static PyMethodDef BufferedRWPair_methods[] = {
     {"isatty", (PyCFunction)BufferedRWPair_isatty, METH_NOARGS},
 
     {NULL, NULL}
+};
+
+static PyGetSetDef BufferedRWPair_getset[] = {
+    {"closed", (getter)BufferedRWPair_closed_get, NULL, NULL},
+    {0}
 };
 
 PyTypeObject PyBufferedRWPair_Type = {
@@ -2050,7 +2055,7 @@ PyTypeObject PyBufferedRWPair_Type = {
     0,                          /* tp_iternext */
     BufferedRWPair_methods,     /* tp_methods */
     0,                          /* tp_members */
-    0,                          /* tp_getset */
+    BufferedRWPair_getset,      /* tp_getset */
     0,                          /* tp_base */
     0,                          /* tp_dict */
     0,                          /* tp_descr_get */
