@@ -87,6 +87,11 @@ Library
 Extension Modules
 -----------------
 
+- Issue #5463: In struct module, remove deprecated float coercion
+  for integer type codes: struct.pack('L', 0.3) should now raise
+  an error.  The _PY_STRUCT_FLOAT_COERCE constant has been removed.
+  The version number has been bumped to 0.3.
+
 - Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
   using Berkley-DB.
 
