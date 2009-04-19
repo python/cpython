@@ -789,7 +789,6 @@ bininstall:	altbininstall
 	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON); \
 	else true; \
 	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)3)
 	-rm -f $(DESTDIR)$(BINDIR)/python-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
 
@@ -816,6 +815,7 @@ altbininstall:	$(BUILDPYTHON)
 		fi; \
 	else	true; \
 	fi
+	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)3)
 
 # Install the manual page
 maninstall:
