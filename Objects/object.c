@@ -2039,6 +2039,12 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&_PyWeakref_RefType) < 0)
 		Py_FatalError("Can't initialize weakref type");
 
+	if (PyType_Ready(&_PyWeakref_CallableProxyType) < 0)
+		Py_FatalError("Can't initialize callable weakref proxy type");
+
+	if (PyType_Ready(&_PyWeakref_ProxyType) < 0)
+		Py_FatalError("Can't initialize weakref proxy type");
+
 	if (PyType_Ready(&PyBool_Type) < 0)
 		Py_FatalError("Can't initialize bool type");
 
