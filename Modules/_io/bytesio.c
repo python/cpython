@@ -684,7 +684,7 @@ bytesio_clear(BytesIOObject *self)
 static PyGetSetDef bytesio_getsetlist[] = {
     {"closed",  (getter)bytesio_get_closed, NULL,
      "True if the file is closed."},
-    {0},            /* sentinel */
+    {NULL},            /* sentinel */
 };
 
 static struct PyMethodDef bytesio_methods[] = {

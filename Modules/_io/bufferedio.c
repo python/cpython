@@ -1414,7 +1414,7 @@ static PyGetSetDef BufferedReader_getset[] = {
     {"closed", (getter)BufferedIOMixin_closed_get, NULL, NULL},
     {"name", (getter)BufferedIOMixin_name_get, NULL, NULL},
     {"mode", (getter)BufferedIOMixin_mode_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 
@@ -1768,7 +1768,7 @@ static PyGetSetDef BufferedWriter_getset[] = {
     {"closed", (getter)BufferedIOMixin_closed_get, NULL, NULL},
     {"name", (getter)BufferedIOMixin_name_get, NULL, NULL},
     {"mode", (getter)BufferedIOMixin_mode_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 
@@ -2021,7 +2021,7 @@ static PyMethodDef BufferedRWPair_methods[] = {
 
 static PyGetSetDef BufferedRWPair_getset[] = {
     {"closed", (getter)BufferedRWPair_closed_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 PyTypeObject PyBufferedRWPair_Type = {
@@ -2157,7 +2157,7 @@ static PyGetSetDef BufferedRandom_getset[] = {
     {"closed", (getter)BufferedIOMixin_closed_get, NULL, NULL},
     {"name", (getter)BufferedIOMixin_name_get, NULL, NULL},
     {"mode", (getter)BufferedIOMixin_mode_get, NULL, NULL},
-    {0}
+    {NULL}
 };
 
 
