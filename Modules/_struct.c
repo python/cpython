@@ -12,17 +12,6 @@
 
 static PyTypeObject PyStructType;
 
-/* If PY_STRUCT_FLOAT_COERCE is defined, the struct module will allow float
-   arguments for integer formats with a warning for backwards
-   compatibility. */
-
-#define PY_STRUCT_FLOAT_COERCE 1
-
-#ifdef PY_STRUCT_FLOAT_COERCE
-#define FLOAT_COERCE "integer argument expected, got float"
-#endif
-
-
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
 	char format;
@@ -100,58 +89,40 @@ typedef struct { char c; _Bool x; } s_bool;
 #pragma options align=reset
 #endif
 
-/* Helper to get a PyLongObject by hook or by crook.  Caller should decref. */
+/* Helper to get a PyLongObject.  Caller should decref. */
 
 static PyObject *
 get_pylong(PyObject *v)
 {
-	PyNumberMethods *m;
-
 	assert(v != NULL);
-	if (PyLong_Check(v)) {
-		Py_INCREF(v);
-		return v;
+	if (!PyLong_Check(v)) {
+		PyErr_SetString(StructError,
+				"required argument is not an integer");
+		return NULL;
 	}
-	m = Py_TYPE(v)->tp_as_number;
-	if (m != NULL && m->nb_int != NULL) {
-		v = m->nb_int(v);
-		if (v == NULL)
-			return NULL;
-		if (PyLong_Check(v))
-			return v;
-		Py_DECREF(v);
-	}
-	PyErr_SetString(StructError,
-			"cannot convert argument to long");
-	return NULL;
+
+	Py_INCREF(v);
+	return v;
 }
 
-/* Helper routine to get a Python integer and raise the appropriate error
-   if it isn't one */
+/* Helper routine to get a C long and raise the appropriate error if it isn't
+   one */
 
 static int
 get_long(PyObject *v, long *p)
 {
-	long x = PyLong_AsLong(v);
+	long x;
+
+	if (!PyLong_Check(v)) {
+		PyErr_SetString(StructError,
+				"required argument is not an integer");
+		return -1;
+	}
+	x = PyLong_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
-#ifdef PY_STRUCT_FLOAT_COERCE
-		if (PyFloat_Check(v)) {
-			PyObject *o;
-			int res;
-			PyErr_Clear();
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
-				return -1;
-			o = PyNumber_Long(v);
-			if (o == NULL)
-				return -1;
-			res = get_long(o, p);
-			Py_DECREF(o);
-			return res;
-		}
-#endif
-		if (PyErr_ExceptionMatches(PyExc_TypeError))
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
-					"required argument is not an integer");
+					"argument out of range");
 		return -1;
 	}
 	*p = x;
@@ -164,20 +135,21 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-	if (PyLong_Check(v)) {
-		unsigned long x = PyLong_AsUnsignedLong(v);
-		if (x == (unsigned long)(-1) && PyErr_Occurred())
-			return -1;
-		*p = x;
-		return 0;
-	}
-	if (get_long(v, (long *)p) < 0)
-		return -1;
-	if (((long)*p) < 0) {
+	unsigned long x;
+
+	if (!PyLong_Check(v)) {
 		PyErr_SetString(StructError,
-				"unsigned argument is < 0");
+				"required argument is not an integer");
 		return -1;
 	}
+	x = PyLong_AsUnsignedLong(v);
+	if (x == (unsigned long)-1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
+		return -1;
+	}
+	*p = x;
 	return 0;
 }
 
@@ -189,15 +161,18 @@ static int
 get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
 	PY_LONG_LONG x;
-
-	v = get_pylong(v);
-	if (v == NULL)
+	if (!PyLong_Check(v)) {
+		PyErr_SetString(StructError,
+				"required argument is not an integer");
 		return -1;
-	assert(PyLong_Check(v));
+	}
 	x = PyLong_AsLongLong(v);
-	Py_DECREF(v);
-	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred())
+	if (x == -1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
 		return -1;
+	}
 	*p = x;
 	return 0;
 }
@@ -208,15 +183,18 @@ static int
 get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
 	unsigned PY_LONG_LONG x;
-
-	v = get_pylong(v);
-	if (v == NULL)
+	if (!PyLong_Check(v)) {
+		PyErr_SetString(StructError,
+				"required argument is not an integer");
 		return -1;
-	assert(PyLong_Check(v));
+	}
 	x = PyLong_AsUnsignedLongLong(v);
-	Py_DECREF(v);
-	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred())
+	if (x == -1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
 		return -1;
+	}
 	*p = x;
 	return 0;
 }
@@ -1962,7 +1940,7 @@ PyInit__struct(void)
 {
 	PyObject *ver, *m;
 
-	ver = PyBytes_FromString("0.2");
+	ver = PyBytes_FromString("0.3");
 	if (ver == NULL)
 		return NULL;
 
@@ -2028,9 +2006,5 @@ PyInit__struct(void)
 
 	PyModule_AddObject(m, "__version__", ver);
 
-#ifdef PY_STRUCT_FLOAT_COERCE
-	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
-#endif
 	return m;
-
 }
