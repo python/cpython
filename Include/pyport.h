@@ -465,11 +465,33 @@ extern "C" {
 			errno = 0;					\
 	} while(0)
 
-/* The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c require that
-   the FPU is using 53-bit precision.  Here are macros that force this.  See
-   Python/pystrtod.c for an example of their use. */
+/*  The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c (which are
+ *  required to support the short float repr introduced in Python 3.1) require
+ *  that the floating-point unit that's being used for arithmetic operations
+ *  on C doubles is set to use 53-bit precision.  It also requires that the
+ *  FPU rounding mode is round-half-to-even, but that's less often an issue.
+ *
+ *  If your FPU isn't already set to 53-bit precision/round-half-to-even, and
+ *  you want to make use of _Py_dg_strtod and _Py_dg_dtoa, then you should
+ *
+ *     #define HAVE_PY_SET_53BIT_PRECISION 1
+ *
+ *  and also give appropriate definitions for the following three macros:
+ *
+ *    _PY_SET_53BIT_PRECISION_START : store original FPU settings, and
+ *        set FPU to 53-bit precision/round-half-to-even
+ *    _PY_SET_53BIT_PRECISION_END : restore original FPU settings
+ *    _PY_SET_53BIT_PRECISION_HEADER : any variable declarations needed to
+ *        use the two macros above.
+ *
+ * The macros are designed to be used within a single C function: see
+ * Python/pystrtod.c for an example of their use.
+ */
 
+/* get and set x87 control word for gcc/x86 */
 #ifdef HAVE_GCC_ASM_FOR_X87
+#define HAVE_PY_SET_53BIT_PRECISION 1
+/* _Py_get/set_387controlword functions are defined in Python/pymath.c */
 #define _Py_SET_53BIT_PRECISION_HEADER				\
 	unsigned short old_387controlword, new_387controlword
 #define _Py_SET_53BIT_PRECISION_START					\
@@ -482,7 +504,10 @@ extern "C" {
 #define _Py_SET_53BIT_PRECISION_END				\
 	if (new_387controlword != old_387controlword)		\
 		_Py_set_387controlword(old_387controlword)
-#else
+#endif
+
+/* default definitions are empty */
+#ifndef HAVE_PY_SET_53BIT_PRECISION
 #define _Py_SET_53BIT_PRECISION_HEADER
 #define _Py_SET_53BIT_PRECISION_START
 #define _Py_SET_53BIT_PRECISION_END
@@ -509,7 +534,7 @@ extern "C" {
 /* double rounding is symptomatic of use of extended precision on x86.  If
    we're seeing double rounding, and we don't have any mechanism available for
    changing the FPU rounding precision, then don't use Python/dtoa.c. */
-#if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_GCC_ASM_FOR_X87)
+#if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_PY_SET_53BIT_PRECISION)
 #define PY_NO_SHORT_FLOAT_REPR
 #endif
 
