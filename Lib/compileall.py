@@ -57,7 +57,7 @@ def compile_dir(dir, maxlevels=10, ddir=None,
             if tail == '.py':
                 if not force:
                     try:
-                        mtime = os.stat(fullname).st_mtime
+                        mtime = int(os.stat(fullname).st_mtime)
                         expect = struct.pack('<4sl', imp.get_magic(), mtime)
                         cfile = fullname + (__debug__ and 'c' or 'o')
                         with open(cfile, 'rb') as chandle:
