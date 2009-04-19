@@ -73,6 +73,18 @@
 #define DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 #endif /* __BIG_ENDIAN */
 
+	/* 
+	 * The definition in pyconfig.h is only valid on the OS release
+	 * where configure ran on and not necessarily for all systems where
+	 * the executable can be used on. 
+	 * 
+	 * Specifically: OSX 10.4 has limited supported for '%zd', while
+	 * 10.5 has full support for '%zd'. A binary built on 10.5 won't
+	 * work properly on 10.4 unless we surpress the definition
+	 * of PY_FORMAT_SIZE_T
+	 */
+#undef	PY_FORMAT_SIZE_T
+
 
 #endif /* defined(_APPLE__) */
 
