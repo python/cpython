@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include <ctype.h>
+#include <float.h>
 
 static PyObject *int_int(PyIntObject *v);
 
@@ -928,11 +929,77 @@ int_long(PyIntObject *v)
 	return PyLong_FromLong((v -> ob_ival));
 }
 
+static const unsigned char BitLengthTable[32] = {
+	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
+static int
+bits_in_ulong(unsigned long d)
+{
+	int d_bits = 0;
+	while (d >= 32) {
+		d_bits += 6;
+		d >>= 6;
+	}
+	d_bits += (int)BitLengthTable[d];
+	return d_bits;
+}
+
+#if 8*SIZEOF_LONG-1 <= DBL_MANT_DIG
+/* Every Python int can be exactly represented as a float. */
+
 static PyObject *
 int_float(PyIntObject *v)
 {
 	return PyFloat_FromDouble((double)(v -> ob_ival));
 }
+
+#else
+/* Here not all Python ints are exactly representable as floats, so we may
+   have to round.  We do this manually, since the C standards don't specify
+   whether converting an integer to a float rounds up or down */
+
+static PyObject *
+int_float(PyIntObject *v)
+{
+	unsigned long abs_ival, lsb;
+	int round_up;
+
+	if (v->ob_ival < 0)
+		abs_ival = 0U-(unsigned long)v->ob_ival;
+	else
+		abs_ival = (unsigned long)v->ob_ival;
+	if (abs_ival < (1L << DBL_MANT_DIG))
+		/* small integer;  no need to round */
+		return PyFloat_FromDouble((double)v->ob_ival);
+
+	/* Round abs_ival to MANT_DIG significant bits, using the
+	   round-half-to-even rule.  abs_ival & lsb picks out the 'rounding'
+	   bit: the first bit after the most significant MANT_DIG bits of
+	   abs_ival.  We round up if this bit is set, provided that either:
+
+	     (1) abs_ival isn't exactly halfway between two floats, in which
+	     case at least one of the bits following the rounding bit must be
+	     set; i.e., abs_ival & lsb-1 != 0, or:
+
+	     (2) the resulting rounded value has least significant bit 0; or
+	     in other words the bit above the rounding bit is set (this is the
+	     'to-even' bit of round-half-to-even); i.e., abs_ival & 2*lsb != 0
+
+	   The condition "(1) or (2)" equates to abs_ival & 3*lsb-1 != 0. */
+
+	lsb = 1L << (bits_in_ulong(abs_ival)-DBL_MANT_DIG-1);
+	round_up = (abs_ival & lsb) && (abs_ival & (3*lsb-1));
+	abs_ival &= -2*lsb;
+	if (round_up)
+		abs_ival += 2*lsb;
+	return PyFloat_FromDouble(v->ob_ival < 0 ?
+				  -(double)abs_ival :
+				  (double)abs_ival);
+}
+
+#endif
 
 static PyObject *
 int_oct(PyIntObject *v)
@@ -1139,16 +1206,10 @@ int__format__(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static const unsigned char BitLengthTable[32] = {
-	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-};
-
 static PyObject *
 int_bit_length(PyIntObject *v)
 {
 	unsigned long n;
-	long r = 0;
 
 	if (v->ob_ival < 0)
 		/* avoid undefined behaviour when v->ob_ival == -LONG_MAX-1 */
@@ -1156,12 +1217,7 @@ int_bit_length(PyIntObject *v)
 	else
 		n = (unsigned long)v->ob_ival;
 
-	while (n >= 32) {
-		r += 6;
-		n >>= 6;
-	}
-	r += (long)(BitLengthTable[n]);
-	return PyInt_FromLong(r);
+	return PyInt_FromLong(bits_in_ulong(n));
 }
 
 PyDoc_STRVAR(int_bit_length_doc,

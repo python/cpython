@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #3166: Make long -> float (and int -> float) conversions
+  correctly rounded.
+
 - Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
   some builtin types.
 
