@@ -5,6 +5,7 @@ from distutils.command.bdist_wininst import bdist_wininst
 from distutils.tests import support
 
 class BuildWinInstTestCase(support.TempdirManager,
+                           support.LoggingSilencer,
                            unittest.TestCase):
 
     def test_get_exe_bytes(self):
