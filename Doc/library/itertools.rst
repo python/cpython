@@ -433,7 +433,7 @@ loops that truncate the stream.
           # izip('ABCD', 'xy') --> Ax By
           iterables = map(iter, iterables)
           while iterables:
-              yield yield tuple(map(next, iterables))
+              yield tuple(map(next, iterables))
 
    .. versionchanged:: 2.4
       When no iterables are specified, returns a zero length iterator instead of
