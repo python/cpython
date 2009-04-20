@@ -681,7 +681,7 @@ class LongTest(unittest.TestCase):
         # behaviour near extremes of floating-point range
         long_dbl_max = long(DBL_MAX)
         top_power = 2**DBL_MAX_EXP
-        halfway = (long_dbl_max + top_power)/2
+        halfway = (long_dbl_max + top_power)//2
         self.assertEqual(float(long_dbl_max), DBL_MAX)
         self.assertEqual(float(long_dbl_max+1), DBL_MAX)
         self.assertEqual(float(halfway-1), DBL_MAX)
