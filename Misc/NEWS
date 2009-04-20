@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #3166: Make long -> float (and int -> float) conversions
+  correctly rounded.
+
 - Issue #1869 (and many duplicates): make round(x, n) correctly
   rounded for a float x, by using the decimal <-> binary conversions
   from Python/dtoa.c.  As a consequence, (e.g.) round(x, 2) now

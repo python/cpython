@@ -620,6 +620,65 @@ class LongTest(unittest.TestCase):
                             else:
                                 self.assertRaises(TypeError, pow,longx, longy, int(z))
 
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_float_conversion(self):
+        import sys
+        DBL_MAX = sys.float_info.max
+        DBL_MAX_EXP = sys.float_info.max_exp
+        DBL_MANT_DIG = sys.float_info.mant_dig
+
+        exact_values = [0, 1, 2,
+                         2**53-3,
+                         2**53-2,
+                         2**53-1,
+                         2**53,
+                         2**53+2,
+                         2**54-4,
+                         2**54-2,
+                         2**54,
+                         2**54+4]
+        for x in exact_values:
+            self.assertEqual(float(x), x)
+            self.assertEqual(float(-x), -x)
+
+        # test round-half-even
+        for x, y in [(1, 0), (2, 2), (3, 4), (4, 4), (5, 4), (6, 6), (7, 8)]:
+            for p in range(15):
+                self.assertEqual(int(float(2**p*(2**53+x))), 2**p*(2**53+y))
+
+        for x, y in [(0, 0), (1, 0), (2, 0), (3, 4), (4, 4), (5, 4), (6, 8),
+                     (7, 8), (8, 8), (9, 8), (10, 8), (11, 12), (12, 12),
+                     (13, 12), (14, 16), (15, 16)]:
+            for p in range(15):
+                self.assertEqual(int(float(2**p*(2**54+x))), 2**p*(2**54+y))
+
+        # behaviour near extremes of floating-point range
+        int_dbl_max = int(DBL_MAX)
+        top_power = 2**DBL_MAX_EXP
+        halfway = (int_dbl_max + top_power)//2
+        self.assertEqual(float(int_dbl_max), DBL_MAX)
+        self.assertEqual(float(int_dbl_max+1), DBL_MAX)
+        self.assertEqual(float(halfway-1), DBL_MAX)
+        self.assertRaises(OverflowError, float, halfway)
+        self.assertEqual(float(1-halfway), -DBL_MAX)
+        self.assertRaises(OverflowError, float, -halfway)
+        self.assertRaises(OverflowError, float, top_power-1)
+        self.assertRaises(OverflowError, float, top_power)
+        self.assertRaises(OverflowError, float, top_power+1)
+        self.assertRaises(OverflowError, float, 2*top_power-1)
+        self.assertRaises(OverflowError, float, 2*top_power)
+        self.assertRaises(OverflowError, float, top_power*top_power)
+
+        for p in range(100):
+            x = 2**p * (2**53 + 1) + 1
+            y = 2**p * (2**53 + 2)
+            self.assertEqual(int(float(x)), y)
+
+            x = 2**p * (2**53 + 1)
+            y = 2**p * 2**53
+            self.assertEqual(int(float(x)), y)
+
     def test_float_overflow(self):
         import math
 
