@@ -18,7 +18,8 @@ from distutils.util import strtobool
 from distutils.util import rfc822_escape
 
 from distutils import util # used to patch _environ_checked
-from distutils.sysconfig import get_config_vars, _config_vars
+from distutils.sysconfig import get_config_vars
+from distutils import sysconfig
 
 class utilTestCase(unittest.TestCase):
 
@@ -32,7 +33,7 @@ class utilTestCase(unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
-        self._config_vars = copy(_config_vars)
+        self._config_vars = copy(sysconfig._config_vars)
 
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -58,7 +59,7 @@ class utilTestCase(unittest.TestCase):
             os.uname = self.uname
         else:
             del os.uname
-        _config_vars = copy(self._config_vars)
+        sysconfig._config_vars = copy(self._config_vars)
 
     def _set_uname(self, uname):
         self._uname = uname
