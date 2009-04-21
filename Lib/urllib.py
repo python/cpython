@@ -176,6 +176,9 @@ class URLopener:
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
         fullurl = unwrap(toBytes(fullurl))
+        # percent encode url, fixing lame server errors for e.g, like space
+        # within url paths.
+        fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]")
         if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
             fp = open(filename, 'rb')
