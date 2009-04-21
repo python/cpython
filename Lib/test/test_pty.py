@@ -1,10 +1,14 @@
+from test.test_support import verbose, run_unittest, import_module
+
+#Skip these tests if either fcntl or termios is not available
+fcntl = import_module('fcntl')
+import_module('termios')
+
 import errno
-import fcntl
 import pty
 import os
 import sys
 import signal
-from test.test_support import verbose, run_unittest
 import unittest
 
 TEST_STRING_1 = "I wish to buy a fish license.\n"

@@ -2,6 +2,8 @@
 
 from test import test_support
 
+# Skip these tests if there is no posix module.
+posix = test_support.import_module('posix')
 
 import time
 import os
@@ -10,7 +12,6 @@ import shutil
 import unittest
 import warnings
 
-posix = test_support.import_module('posix')
 
 warnings.filterwarnings('ignore', '.* potential security risk .*',
                         RuntimeWarning)
