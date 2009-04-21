@@ -17,7 +17,7 @@
 This is an implementation of decimal floating point arithmetic based on
 the General Decimal Arithmetic Specification:
 
-    www2.hursley.ibm.com/decimal/decarith.html
+    http://speleotrove.com/decimal/decarith.html
 
 and IEEE standard 854-1987:
 
@@ -129,6 +129,8 @@ __all__ = [
     # Functions for manipulating contexts
     'setcontext', 'getcontext', 'localcontext'
 ]
+
+__version__ = '1.70'    # Highest version of the spec this complies with
 
 import copy as _copy
 import math as _math
