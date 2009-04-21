@@ -164,7 +164,8 @@ WHITESPACE = re.compile(r'\s*', FLAGS)
 
 
 def JSONObject(match, context, _w=WHITESPACE.match):
-    pairs = {}
+    pairs = []
+    pairs_append = pairs.append
     s = match.string
     end = _w(s, match.end()).end()
     nextchar = s[end:end + 1]
@@ -187,7 +188,7 @@ def JSONObject(match, context, _w=WHITESPACE.match):
             value, end = next(iterscan(s, idx=end, context=context))
         except StopIteration:
             raise ValueError(errmsg("Expecting object", s, end))
-        pairs[key] = value
+        pairs_append((key, value))
         end = _w(s, end).end()
         nextchar = s[end:end + 1]
         end += 1
@@ -200,6 +201,11 @@ def JSONObject(match, context, _w=WHITESPACE.match):
         end += 1
         if nextchar != '"':
             raise ValueError(errmsg("Expecting property name", s, end - 1))
+    object_pairs_hook = getattr(context, 'object_pairs_hook', None)
+    if object_pairs_hook is not None:
+        result = object_pairs_hook(pairs)
+        return result, end
+    pairs = dict(pairs)
     object_hook = getattr(context, 'object_hook', None)
     if object_hook is not None:
         pairs = object_hook(pairs)
@@ -278,7 +284,8 @@ class JSONDecoder(object):
     __all__ = ['__init__', 'decode', 'raw_decode']
 
     def __init__(self, encoding=None, object_hook=None, parse_float=None,
-            parse_int=None, parse_constant=None, strict=True):
+            parse_int=None, parse_constant=None, strict=True,
+            object_pairs_hook=None):
         """``encoding`` determines the encoding used to interpret any ``str``
         objects decoded by this instance (utf-8 by default).  It has no
         effect when decoding ``unicode`` objects.
@@ -309,6 +316,7 @@ class JSONDecoder(object):
         """
         self.encoding = encoding
         self.object_hook = object_hook
+        self.object_pairs_hook = object_pairs_hook
         self.parse_float = parse_float
         self.parse_int = parse_int
         self.parse_constant = parse_constant
