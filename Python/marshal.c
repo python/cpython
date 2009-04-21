@@ -47,9 +47,14 @@
 #define TYPE_SET		'<'
 #define TYPE_FROZENSET  	'>'
 
+#define WFERR_OK 0
+#define WFERR_UNMARSHALLABLE 1
+#define WFERR_NESTEDTOODEEP 2
+#define WFERR_NOMEMORY 3
+
 typedef struct {
 	FILE *fp;
-	int error;
+	int error;  /* see WFERR_* values */
 	int depth;
 	/* If fp == NULL, the following are valid: */
 	PyObject *str;
@@ -182,7 +187,7 @@ w_object(PyObject *v, WFILE *p)
 	p->depth++;
 
 	if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
-		p->error = 2;
+		p->error = WFERR_NESTEDTOODEEP;
 	}
 	else if (v == NULL) {
 		w_byte(TYPE_NULL, p);
@@ -229,7 +234,7 @@ w_object(PyObject *v, WFILE *p)
 			unsigned char buf[8];
 			if (_PyFloat_Pack8(PyFloat_AsDouble(v), 
 					   buf, 1) < 0) {
-				p->error = 1;
+				p->error = WFERR_UNMARSHALLABLE;
 				return;
 			}
 			w_byte(TYPE_BINARY_FLOAT, p);
@@ -238,8 +243,10 @@ w_object(PyObject *v, WFILE *p)
 		else {
 			char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
                                                           'g', 17, 0, NULL);
-			if (!buf)
-                            return;
+			if (!buf) {
+				p->error = WFERR_NOMEMORY;
+				return;
+			}
 			n = strlen(buf);
 			w_byte(TYPE_FLOAT, p);
 			w_byte((int)n, p);
@@ -253,14 +260,14 @@ w_object(PyObject *v, WFILE *p)
 			unsigned char buf[8];
 			if (_PyFloat_Pack8(PyComplex_RealAsDouble(v),
 					   buf, 1) < 0) {
-				p->error = 1;
+				p->error = WFERR_UNMARSHALLABLE;
 				return;
 			}
 			w_byte(TYPE_BINARY_COMPLEX, p);
 			w_string((char*)buf, 8, p);
 			if (_PyFloat_Pack8(PyComplex_ImagAsDouble(v), 
 					   buf, 1) < 0) {
-				p->error = 1;
+				p->error = WFERR_UNMARSHALLABLE;
 				return;
 			}
 			w_string((char*)buf, 8, p);
@@ -270,16 +277,20 @@ w_object(PyObject *v, WFILE *p)
 			w_byte(TYPE_COMPLEX, p);
 			buf = PyOS_double_to_string(PyComplex_RealAsDouble(v),
                                                     'g', 17, 0, NULL);
-			if (!buf)
-                            return;
+			if (!buf) {
+				p->error = WFERR_NOMEMORY;
+				return;
+			}
 			n = strlen(buf);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
 			PyMem_Free(buf);
 			buf = PyOS_double_to_string(PyComplex_ImagAsDouble(v),
                                                     'g', 17, 0, NULL);
-			if (!buf)
-                            return;
+			if (!buf) {
+				p->error = WFERR_NOMEMORY;
+				return;
+			}
 			n = strlen(buf);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
@@ -293,7 +304,7 @@ w_object(PyObject *v, WFILE *p)
 		if (n > INT_MAX) {
 			/* huge strings are not supported */
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		w_long((long)n, p);
@@ -304,14 +315,14 @@ w_object(PyObject *v, WFILE *p)
 		utf8 = PyUnicode_AsUTF8String(v);
 		if (utf8 == NULL) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		w_byte(TYPE_UNICODE, p);
 		n = PyBytes_GET_SIZE(utf8);
 		if (n > INT_MAX) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		w_long((long)n, p);
@@ -356,14 +367,14 @@ w_object(PyObject *v, WFILE *p)
 		n = PyObject_Size(v);
 		if (n == -1) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		w_long((long)n, p);
 		it = PyObject_GetIter(v);
 		if (it == NULL) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		while ((value = PyIter_Next(it)) != NULL) {
@@ -373,7 +384,7 @@ w_object(PyObject *v, WFILE *p)
 		Py_DECREF(it);
 		if (PyErr_Occurred()) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 	}
@@ -403,14 +414,14 @@ w_object(PyObject *v, WFILE *p)
                 Py_buffer view;
 		if ((*pb->bf_getbuffer)(v, &view, PyBUF_SIMPLE) != 0) {
                         w_byte(TYPE_UNKNOWN, p);
-                        p->error = 1;
+                        p->error = WFERR_UNMARSHALLABLE;
                 }
 		w_byte(TYPE_STRING, p);
                 n = view.len;
                 s = view.buf;                        
 		if (n > INT_MAX) {
 			p->depth--;
-			p->error = 1;
+			p->error = WFERR_UNMARSHALLABLE;
 			return;
 		}
 		w_long((long)n, p);
@@ -420,7 +431,7 @@ w_object(PyObject *v, WFILE *p)
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);
-		p->error = 1;
+		p->error = WFERR_UNMARSHALLABLE;
 	}
 	p->depth--;
 }
@@ -431,7 +442,7 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
 	WFILE wf;
 	wf.fp = fp;
-	wf.error = 0;
+	wf.error = WFERR_OK;
 	wf.depth = 0;
 	wf.strings = NULL;
 	wf.version = version;
@@ -443,7 +454,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
 	WFILE wf;
 	wf.fp = fp;
-	wf.error = 0;
+	wf.error = WFERR_OK;
 	wf.depth = 0;
 	wf.strings = (version > 0) ? PyDict_New() : NULL;
 	wf.version = version;
@@ -1143,7 +1154,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 		return NULL;
 	wf.ptr = PyBytes_AS_STRING((PyBytesObject *)wf.str);
 	wf.end = wf.ptr + PyBytes_Size(wf.str);
-	wf.error = 0;
+	wf.error = WFERR_OK;
 	wf.depth = 0;
 	wf.version = version;
 	wf.strings = (version > 0) ? PyDict_New() : NULL;
@@ -1160,11 +1171,14 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 		if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
 			return NULL;
 	}
-	if (wf.error) {
+	if (wf.error != WFERR_OK) {
 		Py_XDECREF(wf.str);
-		PyErr_SetString(PyExc_ValueError,
-				(wf.error==1)?"unmarshallable object"
-				:"object too deeply nested to marshal");
+                if (wf.error == WFERR_NOMEMORY)
+                    PyErr_NoMemory();
+                else
+                    PyErr_SetString(PyExc_ValueError,
+                      (wf.error==WFERR_UNMARSHALLABLE)?"unmarshallable object"
+                       :"object too deeply nested to marshal");
 		return NULL;
 	}
 	if (wf.str != NULL) {
