@@ -1,7 +1,9 @@
 "Test posix functions"
 
 from test import support
-posix = support.import_module('posix') #skip if not supported
+
+# Skip these tests if there is no posix module.
+posix = support.import_module('posix')
 
 import time
 import os
