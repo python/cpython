@@ -98,6 +98,15 @@ Extension Modules
 - Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
   using Berkley-DB.
 
+Tests
+-----
+
+- Issue #5354: New test support function import_fresh_module() makes
+  it easy to import both normal and optimised versions of modules.
+  test_heapq and test_warnings have been adjusted to use it, tests for
+  other modules with both C and Python implementations in the stdlib
+  can be adjusted to use it over time.
+
 
 What's New in Python 3.1 alpha 2?
 =================================

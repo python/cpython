@@ -10,14 +10,8 @@ from test import warning_tests
 
 import warnings as original_warnings
 
-py_warnings = support.import_fresh_module('warnings', ['_warnings'])
-# XXX (ncoghlan 20090412):
-# Something in Py3k doesn't like sharing the same instance of
-# _warnings between original_warnings and c_warnings
-# Will leave issue 5354 open until I understand why 3.x breaks
-# without the next line, while 2.x doesn't care
-del sys.modules['_warnings']
-c_warnings = support.import_fresh_module('warnings')
+py_warnings = support.import_fresh_module('warnings', blocked=['_warnings'])
+c_warnings = support.import_fresh_module('warnings', fresh=['_warnings'])
 
 @contextmanager
 def warnings_state(module):
