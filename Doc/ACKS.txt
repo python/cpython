@@ -156,6 +156,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Paul Prescod
    * Eric S. Raymond
    * Edward K. Ream
+   * Terry J. Reedy
    * Sean Reifschneider
    * Bernhard Reiter
    * Armin Rigo
