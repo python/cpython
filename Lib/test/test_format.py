@@ -232,6 +232,10 @@ class FormatTest(unittest.TestCase):
         testboth("%o", -042L, "-42")
         testboth("%o", float(042), "42")
 
+        # alternate float formatting
+        testformat('%g', 1.1, '1.1')
+        testformat('%#g', 1.1, '1.10000')
+
         # Test exception for unknown format characters
         if verbose:
             print 'Testing exceptions'

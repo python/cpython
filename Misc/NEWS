@@ -12,6 +12,15 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Implement PEP 378, Format Specifier for Thousands Separator, for
+  floats, ints, and longs.
+
+- Issue #5515: 'n' formatting for ints, longs, and floats handles
+  leading zero formatting poorly.
+
+- Issue #5772: For float.__format__, don't add a trailing ".0" if
+  we're using no type code and we have an exponent.
+
 - Issue #3166: Make long -> float (and int -> float) conversions
   correctly rounded.
 
