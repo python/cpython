@@ -25,21 +25,18 @@ another rational number, or from a string.
    :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and
    returns an :class:`Fraction` instance with the same value.  The
-   last version of the constructor expects a string
-   instance in one of two possible forms.  The first form is::
+   last version of the constructor expects a string instance.  The
+   usual form for this string is::
 
       [sign] numerator ['/' denominator]
 
    where the optional ``sign`` may be either '+' or '-' and
    ``numerator`` and ``denominator`` (if present) are strings of
-   decimal digits.  The second permitted form is that of a number
-   containing a decimal point::
-
-      [sign] integer '.' [fraction] | [sign] '.' fraction
-
-   where ``integer`` and ``fraction`` are strings of digits.  In
-   either form the input string may also have leading and/or trailing
-   whitespace.  Here are some examples::
+   decimal digits.  In addition, any string that represents a finite
+   value and is accepted by the :class:`float` constructor is also
+   accepted by the :class:`Fraction` constructor.  In either form the
+   input string may also have leading and/or trailing whitespace.
+   Here are some examples::
 
       >>> from fractions import Fraction
       >>> Fraction(16, -10)
@@ -57,6 +54,8 @@ another rational number, or from a string.
       Fraction(1414213, 1000000)
       >>> Fraction('-.125')
       Fraction(-1, 8)
+      >>> Fraction('7e-6')
+      Fraction(7, 1000000)
 
 
    The :class:`Fraction` class inherits from the abstract base class
