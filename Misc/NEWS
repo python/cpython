@@ -75,6 +75,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5812: Fraction('1e6') is valid: more generally, any string
+  that's valid for float() is now valid for Fraction(), with the
+  exception of strings representing NaNs and infinities.
+
 - Issue #5734: BufferedRWPair was poorly tested and had several glaring
   bugs. Patch by Brian Quinlan.
 

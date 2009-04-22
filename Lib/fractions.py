@@ -28,13 +28,14 @@ _RATIONAL_FORMAT = re.compile(r"""
     (?P<sign>[-+]?)            # an optional sign, then
     (?=\d|\.\d)                # lookahead for digit or .digit
     (?P<num>\d*)               # numerator (possibly empty)
-    (?:                        # followed by an optional
-       /(?P<denom>\d+)         # / and denominator
+    (?:                        # followed by
+       (?:/(?P<denom>\d+))?    # an optional denominator
     |                          # or
-       \.(?P<decimal>\d*)      # decimal point and fractional part
-    )?
+       (?:\.(?P<decimal>\d*))? # an optional fractional part
+       (?:E(?P<exp>[-+]?\d+))? # and optional exponent
+    )
     \s*\Z                      # and optional whitespace to finish
-""", re.VERBOSE)
+""", re.VERBOSE | re.IGNORECASE)
 
 
 class Fraction(numbers.Rational):
@@ -65,22 +66,28 @@ class Fraction(numbers.Rational):
         if not isinstance(numerator, int) and denominator == 1:
             if isinstance(numerator, str):
                 # Handle construction from strings.
-                input = numerator
-                m = _RATIONAL_FORMAT.match(input)
+                m = _RATIONAL_FORMAT.match(numerator)
                 if m is None:
-                    raise ValueError('Invalid literal for Fraction: %r' % input)
-                numerator = m.group('num')
-                decimal = m.group('decimal')
-                if decimal:
-                    # The literal is a decimal number.
-                    numerator = int(numerator + decimal)
-                    denominator = 10**len(decimal)
+                    raise ValueError('Invalid literal for Fraction: %r' %
+                                     numerator)
+                numerator = int(m.group('num') or '0')
+                denom = m.group('denom')
+                if denom:
+                    denominator = int(denom)
                 else:
-                    # The literal is an integer or fraction.
-                    numerator = int(numerator)
-                    # Default denominator to 1.
-                    denominator = int(m.group('denom') or 1)
-
+                    denominator = 1
+                    decimal = m.group('decimal')
+                    if decimal:
+                        scale = 10**len(decimal)
+                        numerator = numerator * scale + int(decimal)
+                        denominator *= scale
+                    exp = m.group('exp')
+                    if exp:
+                        exp = int(exp)
+                        if exp >= 0:
+                            numerator *= 10**exp
+                        else:
+                            denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
 
