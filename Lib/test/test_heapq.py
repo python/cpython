@@ -8,7 +8,7 @@ import sys
 # We do a bit of trickery here to be able to test both the C implementation
 # and the Python implementation of the module.
 import heapq as c_heapq
-py_heapq = test_support.import_fresh_module('heapq', ['_heapq'])
+py_heapq = test_support.import_fresh_module('heapq', blocked=['_heapq'])
 
 class TestHeap(unittest.TestCase):
     module = None

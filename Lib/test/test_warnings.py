@@ -10,8 +10,8 @@ import warning_tests
 
 import warnings as original_warnings
 
-py_warnings = test_support.import_fresh_module('warnings', ['_warnings'])
-c_warnings = test_support.import_fresh_module('warnings')
+py_warnings = test_support.import_fresh_module('warnings', blocked=['_warnings'])
+c_warnings = test_support.import_fresh_module('warnings', fresh=['_warnings'])
 
 @contextmanager
 def warnings_state(module):
