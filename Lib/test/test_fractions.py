@@ -80,6 +80,11 @@ class FractionTest(unittest.TestCase):
         self.assertEquals((-16, 5), _components(F(u" -3.2 ")))
         self.assertEquals((-3, 1), _components(F(u" -3. ")))
         self.assertEquals((3, 5), _components(F(u" .6 ")))
+        self.assertEquals((1, 3125), _components(F("32.e-5")))
+        self.assertEquals((1000000, 1), _components(F("1E+06")))
+        self.assertEquals((-12300, 1), _components(F("-1.23e4")))
+        self.assertEquals((0, 1), _components(F(" .0e+0\t")))
+        self.assertEquals((0, 1), _components(F("-0.000e0")))
 
 
         self.assertRaisesMessage(
@@ -88,6 +93,9 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '3/'",
             F, "3/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '/2'",
+            F, "/2")
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '3 /2'",
             F, "3 /2")
@@ -103,10 +111,6 @@ class FractionTest(unittest.TestCase):
             # Avoid treating '.' as a regex special character.
             ValueError, "Invalid literal for Fraction: '3a2'",
             F, "3a2")
-        self.assertRaisesMessage(
-            # Only parse ordinary decimals, not scientific form.
-            ValueError, "Invalid literal for Fraction: '3.2e4'",
-            F, "3.2e4")
         self.assertRaisesMessage(
             # Don't accept combinations of decimals and fractions.
             ValueError, "Invalid literal for Fraction: '3/7.2'",
