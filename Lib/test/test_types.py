@@ -405,6 +405,9 @@ class TypesTests(unittest.TestCase):
         test(123456, "#012X", '0X000001E240')
         test(-123456, "#012X", '-0X00001E240')
 
+        # issue 5782, commas with no specifier type
+        test(1234, '010,', '00,001,234')
+
         # make sure these are errors
 
         # precision disallowed
@@ -631,6 +634,9 @@ class TypesTests(unittest.TestCase):
         test(-1234., '013f', '-01234.000000')
         test(-1234.12341234, '013f', '-01234.123412')
         test(-123456.12341234, '011.2f', '-0123456.12')
+
+        # issue 5782, commas with no specifier type
+        test(1.2, '010,.2', '0,000,001.2')
 
         # 0 padding with commas
         test(1234., '011,f', '1,234.000000')
