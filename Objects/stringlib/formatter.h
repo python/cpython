@@ -248,6 +248,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
         case 'G':
         case '%':
         case 'F':
+        case '\0':
             /* These are allowed. See PEP 378.*/
             break;
         default:
