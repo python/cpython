@@ -113,6 +113,9 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(1.5e-101.__format__('e'), '1.500000e-101')
         self.assertEqual('%e' % 1.5e-101, '1.500000e-101')
 
+        self.assertEqual('%g' % 1.0, '1')
+        self.assertEqual('%#g' % 1.0, '1.00000')
+
     def test_normal_integers(self):
         # Ensure the first 256 integers are shared
         a = 256
@@ -412,6 +415,9 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(TypeError, 3 .__format__, None)
         self.assertRaises(TypeError, 3 .__format__, 0)
 
+        # can't have ',' with 'c'
+        self.assertRaises(ValueError, 3 .__format__, ",c")
+
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
@@ -609,11 +615,37 @@ class TypesTests(unittest.TestCase):
         # a totaly empty format specifier means something else.
         # So, just use a sign flag
         test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1.0e+200')
+        test(1e200, '+', '+1e+200')
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
 
-        # % formatting
+        test(1.1e200, '+g', '+1.1e+200')
+        test(1.1e200, '+', '+1.1e+200')
+
+        # 0 padding
+        test(1234., '010f', '1234.000000')
+        test(1234., '011f', '1234.000000')
+        test(1234., '012f', '01234.000000')
+        test(-1234., '011f', '-1234.000000')
+        test(-1234., '012f', '-1234.000000')
+        test(-1234., '013f', '-01234.000000')
+        test(-1234.12341234, '013f', '-01234.123412')
+        test(-123456.12341234, '011.2f', '-0123456.12')
+
+        # 0 padding with commas
+        test(1234., '011,f', '1,234.000000')
+        test(1234., '012,f', '1,234.000000')
+        test(1234., '013,f', '01,234.000000')
+        test(-1234., '012,f', '-1,234.000000')
+        test(-1234., '013,f', '-1,234.000000')
+        test(-1234., '014,f', '-01,234.000000')
+        test(-12345., '015,f', '-012,345.000000')
+        test(-123456., '016,f', '-0,123,456.000000')
+        test(-123456., '017,f', '-0,123,456.000000')
+        test(-123456.12341234, '017,f', '-0,123,456.123412')
+        test(-123456.12341234, '013,.2f', '-0,123,456.12')
+
+         # % formatting
         test(-1.0, '%', '-100.000000%')
 
         # format spec must be string
@@ -637,6 +669,24 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(ValueError, format, 0.0, '#')
         self.assertRaises(ValueError, format, 0.0, '#20f')
 
+    def test_format_spec_errors(self):
+        # int, float, and string all share the same format spec
+        # mini-language parser.
+
+        # Check that we can't ask for too many digits. This is
+        # probably a CPython specific test. It tries to put the width
+        # into a C long.
+        self.assertRaises(ValueError, format, 0, '1'*10000 + 'd')
+
+        # Similar with the precision.
+        self.assertRaises(ValueError, format, 0, '.' + '1'*10000 + 'd')
+
+        # And may as well test both.
+        self.assertRaises(ValueError, format, 0, '1'*1000 + '.' + '1'*10000 + 'd')
+
+        # Make sure commas aren't allowed with various type codes
+        for code in 'xXobns':
+            self.assertRaises(ValueError, format, 0, ',' + code)
 
 def test_main():
     run_unittest(TypesTests)
