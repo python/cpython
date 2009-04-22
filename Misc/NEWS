@@ -241,6 +241,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5812: Fraction('1e6') is valid: more generally, any string
+  that's valid for float() is now valid for Fraction(), with the
+  exception of strings representing NaNs and infinities.
+
 - Issue #5795: Fixed test_distutils failure on Debian ppc.
 
 - Issue #5768: Fixed bug in Unicode output logic and test case for same.
