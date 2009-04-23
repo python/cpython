@@ -3,6 +3,9 @@ What's New in IDLE 2.7a0?
 
 *Release date: XX-XXX-2009*
 
+- Windows: Version string for the .chm help file changed, file not being
+  accessed  Patch 5783 Guilherme Polo
+
 - Allow multiple IDLE GUI/subprocess pairs to exist simultaneously. Thanks to
   David Scherer for suggesting the use of an ephemeral port for the GUI.
   Patch 1529142 Weeble.
