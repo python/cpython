@@ -630,8 +630,9 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 	}
 	p = result;
 
-	/* Never add sign for nan/inf, even if asked. */
-	if (flags & Py_DTSF_SIGN && buf[0] != '-' && t == Py_DTST_FINITE)
+	/* Add sign when requested.  It's convenient (esp. when formatting
+	 complex numbers) to include a sign even for inf and nan. */
+	if (flags & Py_DTSF_SIGN && buf[0] != '-')
 		*p++ = '+';
 
 	strcpy(p, buf);
@@ -733,6 +734,10 @@ format_float_short(double d, char format_code,
 		   so convert Infinity to inf and NaN to nan, and
 		   ignore sign of nan. Then return. */
 
+		/* ignore the actual sign of a nan */
+		if (digits[0] == 'n' || digits[0] == 'N')
+			sign = 0;
+
 		/* We only need 5 bytes to hold the result "+inf\0" . */
 		bufsize = 5; /* Used later in an assert. */
 		buf = (char *)PyMem_Malloc(bufsize);
@@ -742,13 +747,13 @@ format_float_short(double d, char format_code,
 		}
 		p = buf;
 
+		if (sign == 1) {
+			*p++ = '-';
+		}
+		else if (always_add_sign) {
+			*p++ = '+';
+		}
 		if (digits[0] == 'i' || digits[0] == 'I') {
-			if (sign == 1) {
-				*p++ = '-';
-			}
-			else if (always_add_sign) {
-				*p++ = '+';
-			}
 			strncpy(p, float_strings[OFS_INF], 3);
 			p += 3;
 
@@ -756,8 +761,6 @@ format_float_short(double d, char format_code,
 				*type = Py_DTST_INFINITE;
 		}
 		else if (digits[0] == 'n' || digits[0] == 'N') {
-			/* note that we *never* add a sign for a nan,
-			   even if one has explicitly been requested */
 			strncpy(p, float_strings[OFS_NAN], 3);
 			p += 3;
 

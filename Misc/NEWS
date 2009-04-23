@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5816: complex(repr(z)) now recovers z exactly, even when
+  z involves nans, infs or negative zeros.
+
 - Issue #3166: Make long -> float (and int -> float) conversions
   correctly rounded.
 
