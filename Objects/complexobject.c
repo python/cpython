@@ -332,99 +332,64 @@ complex_dealloc(PyObject *op)
 static PyObject *
 complex_format(PyComplexObject *v, char format_code)
 {
-    PyObject *result = NULL;
-    Py_ssize_t len;
+	PyObject *result = NULL;
+	Py_ssize_t len;
 
-    /* If these are non-NULL, they'll need to be freed. */
-    char *pre = NULL;
-    char *pim = NULL;
-    char *buf = NULL;
+	/* If these are non-NULL, they'll need to be freed. */
+	char *pre = NULL;
+	char *im = NULL;
+	char *buf = NULL;
 
-    /* These do not need to be freed. They're either aliases for pim
-       and pre, or pointers to constants. */
-    char *re = NULL;
-    char *im = NULL;
-    char *lead = "";
-    char *tail = "";
+	/* These do not need to be freed. re is either an alias
+	   for pre or a pointer to a constant.  lead and tail
+	   are pointers to constants. */
+	char *re = NULL;
+	char *lead = "";
+	char *tail = "";
 
+	if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
+		re = "";
+		im = PyOS_double_to_string(v->cval.imag, format_code,
+					   0, 0, NULL);
+		if (!im) {
+			PyErr_NoMemory();
+			goto done;
+		}
+	} else {
+		/* Format imaginary part with sign, real part without */
+		pre = PyOS_double_to_string(v->cval.real, format_code,
+					    0, 0, NULL);
+		if (!pre) {
+			PyErr_NoMemory();
+			goto done;
+		}
+		re = pre;
 
-    if (v->cval.real == 0.) {
-        re = "";
-        if (!Py_IS_FINITE(v->cval.imag)) {
-            if (Py_IS_NAN(v->cval.imag))
-                im = "nan*";
-            else if (copysign(1, v->cval.imag) == 1)
-                im = "inf*";
-            else
-                im = "-inf*";
-        }
-        else {
-            pim = PyOS_double_to_string(v->cval.imag, format_code,
-                                        0, 0, NULL);
-            if (!pim) {
-                PyErr_NoMemory();
-                goto done;
-            }
-            im = pim;
-        }
-    } else {
-        /* Format imaginary part with sign, real part without */
-        if (!Py_IS_FINITE(v->cval.real)) {
-            if (Py_IS_NAN(v->cval.real))
-                re = "nan";
-            /* else if (copysign(1, v->cval.real) == 1) */
-            else if (v->cval.real > 0)
-                re = "inf";
-            else
-                re = "-inf";
-        }
-        else {
-            pre = PyOS_double_to_string(v->cval.real, format_code,
-                                        0, 0, NULL);
-            if (!pre) {
-                PyErr_NoMemory();
-                goto done;
-            }
-            re = pre;
-        }
+		im = PyOS_double_to_string(v->cval.imag, format_code,
+					   0, Py_DTSF_SIGN, NULL);
+		if (!im) {
+			PyErr_NoMemory();
+			goto done;
+		}
+		lead = "(";
+		tail = ")";
+	}
+	/* Alloc the final buffer. Add one for the "j" in the format string,
+	   and one for the trailing zero. */
+	len = strlen(lead) + strlen(re) + strlen(im) + strlen(tail) + 2;
+	buf = PyMem_Malloc(len);
+	if (!buf) {
+		PyErr_NoMemory();
+		goto done;
+	}
+	PyOS_snprintf(buf, len, "%s%s%sj%s", lead, re, im, tail);
+	result = PyUnicode_FromString(buf);
+  done:
+	PyMem_Free(im);
+	PyMem_Free(pre);
+	PyMem_Free(buf);
 
-        if (!Py_IS_FINITE(v->cval.imag)) {
-            if (Py_IS_NAN(v->cval.imag))
-                im = "+nan*";
-            /* else if (copysign(1, v->cval.imag) == 1) */
-            else if (v->cval.imag > 0)
-                im = "+inf*";
-            else
-                im = "-inf*";
-        }
-        else {
-            pim = PyOS_double_to_string(v->cval.imag, format_code,
-                                        0, Py_DTSF_SIGN, NULL);
-            if (!pim) {
-                PyErr_NoMemory();
-                goto done;
-            }
-            im = pim;
-        }
-        lead = "(";
-        tail = ")";
-    }
-    /* Alloc the final buffer. Add one for the "j" in the format string, and
-       one for the trailing zero. */
-    len = strlen(lead) + strlen(re) + strlen(im) + strlen(tail) + 2;
-    buf = PyMem_Malloc(len);
-    if (!buf) {
-        PyErr_NoMemory();
-        goto done;
-    }
-    PyOS_snprintf(buf, len, "%s%s%sj%s", lead, re, im, tail);
-    result = PyUnicode_FromString(buf);
-done:
-    PyMem_Free(pim);
-    PyMem_Free(pre);
-    PyMem_Free(buf);
-
-    return result;
+	return result;
 }
 
 static PyObject *
@@ -757,11 +722,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	const char *s, *start;
 	char *end;
 	double x=0.0, y=0.0, z;
-	int got_re=0, got_im=0, got_bracket=0, done=0;
-	int digit_or_dot;
-	int sw_error=0;
-	int sign;
-	char buffer[256]; /* For errors */
+	int got_bracket=0;
 	char s_buffer[256];
 	Py_ssize_t len;
 
@@ -785,16 +746,13 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		return NULL;
 	}
 
+	errno = 0;
+
 	/* position on first nonblank */
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is an empty string");
-		return NULL;
-	}
-	if (s[0] == '(') {
+	if (*s == '(') {
 		/* Skip over possible bracket from repr(). */
 		got_bracket = 1;
 		s++;
@@ -802,120 +760,50 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			s++;
 	}
 
-	z = -1.0;
-	sign = 1;
-	do {
-
-		switch (*s) {
-
-		case '\0':
-			if (s-start != len) {
-				PyErr_SetString(
-					PyExc_ValueError,
-					"complex() arg contains a null byte");
-				return NULL;
-			}
-			if(!done) sw_error=1;
-			break;
-
-		case ')':
-			if (!got_bracket || !(got_re || got_im)) {
-				sw_error=1;
-				break;
-			}
-			got_bracket=0;
-			done=1;
-			s++;
-			while (*s && isspace(Py_CHARMASK(*s)))
-				s++;
-			if (*s) sw_error=1;
-			break;
-
-		case '-':
-			sign = -1;
-				/* Fallthrough */
-		case '+':
-			if (done)  sw_error=1;
-			s++;
-			if  (  *s=='\0'||*s=='+'||*s=='-'||*s==')'||
-			       isspace(Py_CHARMASK(*s))  )  sw_error=1;
-			break;
-
-		case 'J':
-		case 'j':
-			if (got_im || done) {
-				sw_error = 1;
-				break;
-			}
-			if  (z<0.0) {
-				y=sign;
-			}
-			else{
-				y=sign*z;
-			}
-			got_im=1;
-			s++;
-			if  (*s!='+' && *s!='-' )
-				done=1;
-			break;
-
-		default:
-			if (isspace(Py_CHARMASK(*s))) {
-				while (*s && isspace(Py_CHARMASK(*s)))
-					s++;
-				if (*s && *s != ')')
-					sw_error=1;
-				else
-					done = 1;
-				break;
-			}
-			digit_or_dot =
-				(*s=='.' || isdigit(Py_CHARMASK(*s)));
-			if  (done||!digit_or_dot) {
-				sw_error=1;
-				break;
-			}
-			errno = 0;
-			PyFPE_START_PROTECT("strtod", return 0)
-				z = PyOS_ascii_strtod(s, &end) ;
-			PyFPE_END_PROTECT(z)
-				if (errno != 0) {
-					PyOS_snprintf(buffer, sizeof(buffer),
-					  "float() out of range: %.150s", s);
-					PyErr_SetString(
-						PyExc_ValueError,
-						buffer);
-					return NULL;
-				}
-			s=end;
-			if  (*s=='J' || *s=='j') {
-
-				break;
-			}
-			if  (got_re) {
-				sw_error=1;
-				break;
-			}
-
-				/* accept a real part */
-			x=sign*z;
-			got_re=1;
-			if  (got_im)  done=1;
-			z = -1.0;
-			sign = 1;
-			break;
-
-		}  /* end of switch  */
-
-	} while (s - start < len && !sw_error);
-
-	if (sw_error || got_bracket) {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is a malformed string");
-		return NULL;
+	/* get float---might be real or imaginary part */
+	z = PyOS_ascii_strtod(s, &end);
+	if (end == s)
+		goto error;
+	s = end;
+	if (*s == '+' || *s == '-') {
+		/* we've got a real part *and* an imaginary part */
+		x = z;
+		y = PyOS_ascii_strtod(s, &end);
+		if (end == s || !(*end == 'j' || *end == 'J'))
+			goto error;
+		s = ++end;
 	}
+	else if (*s == 'j' || *s == 'J') {
+		/* no real part; z was the imaginary part */
+		s++;
+		y = z;
+	}
+	else
+		/* no imaginary part */
+		x = z;
+
+	/* trailing whitespace and closing bracket */
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (got_bracket && *s == ')') {
+		got_bracket = 0;
+		s++;
+		while (*s && isspace(Py_CHARMASK(*s)))
+		       s++;
+	}
+	/* we should now be at the end of the string */
+	if (s-start != len || got_bracket)
+		goto error;
 
 	return complex_subtype_from_doubles(type, x, y);
+
+  error:
+	/* check for PyOS_ascii_strtod failure due to lack of memory */
+	if (errno == ENOMEM)
+		return PyErr_NoMemory();
+	PyErr_SetString(PyExc_ValueError,
+			"complex() arg is a malformed string");
+	return NULL;
 }
 
 static PyObject *
