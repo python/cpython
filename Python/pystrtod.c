@@ -544,8 +544,9 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 	}
 	p = result;
 
-	/* Never add sign for nan/inf, even if asked. */
-	if (flags & Py_DTSF_SIGN && buf[0] != '-' && t == Py_DTST_FINITE)
+	/* Add sign when requested.  It's convenient (esp. when formatting
+	 complex numbers) to include a sign even for inf and nan. */
+	if (flags & Py_DTSF_SIGN && buf[0] != '-')
 		*p++ = '+';
 
 	strcpy(p, buf);

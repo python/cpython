@@ -9,7 +9,7 @@ warnings.filterwarnings(
 )
 
 from random import random
-from math import atan2
+from math import atan2, isnan, copysign
 
 INF = float("inf")
 NAN = float("nan")
@@ -43,6 +43,29 @@ class ComplexTest(unittest.TestCase):
             return abs(y) < eps
         # check that relative difference < eps
         self.assert_(abs((x-y)/y) < eps)
+
+    def assertFloatsAreIdentical(self, x, y):
+        """assert that floats x and y are identical, in the sense that:
+        (1) both x and y are nans, or
+        (2) both x and y are infinities, with the same sign, or
+        (3) both x and y are zeros, with the same sign, or
+        (4) x and y are both finite and nonzero, and x == y
+
+        """
+        msg = 'floats {!r} and {!r} are not identical'
+
+        if isnan(x) or isnan(y):
+            if isnan(x) and isnan(y):
+                return
+        elif x == y:
+            if x != 0.0:
+                return
+            # both zero; check that signs match
+            elif copysign(1.0, x) == copysign(1.0, y):
+                return
+            else:
+                msg += ': zeros have different signs'
+        self.fail(msg.format(x, y))
 
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close\""""
@@ -220,6 +243,17 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex("+1"), +1)
         self.assertAlmostEqual(complex("(1+2j)"), 1+2j)
         self.assertAlmostEqual(complex("(1.3+2.2j)"), 1.3+2.2j)
+        self.assertAlmostEqual(complex("3.14+1J"), 3.14+1j)
+        self.assertAlmostEqual(complex(" ( +3.14-6J )"), 3.14-6j)
+        self.assertAlmostEqual(complex(" ( +3.14-J )"), 3.14-1j)
+        self.assertAlmostEqual(complex(" ( +3.14+j )"), 3.14+1j)
+        self.assertAlmostEqual(complex("J"), 1j)
+        self.assertAlmostEqual(complex("( j )"), 1j)
+        self.assertAlmostEqual(complex("+J"), 1j)
+        self.assertAlmostEqual(complex("( -j)"), -1j)
+        self.assertAlmostEqual(complex('1e-500'), 0.0 + 0.0j)
+        self.assertAlmostEqual(complex('-1e-500j'), 0.0 - 0.0j)
+        self.assertAlmostEqual(complex('-1e-500+1e-500j'), -0.0 + 0.0j)
 
         class complex2(complex): pass
         self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
@@ -247,7 +281,6 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, "1", "1")
         self.assertRaises(TypeError, complex, 1, "1")
 
-        self.assertEqual(complex("  3.14+J  "), 3.14+1j)
         if test_support.have_unicode:
             self.assertEqual(complex(unicode("  3.14+J  ")), 3.14+1j)
 
@@ -275,6 +308,14 @@ class ComplexTest(unittest.TestCase):
         if test_support.have_unicode:
             self.assertRaises(ValueError, complex, unicode("1"*500))
             self.assertRaises(ValueError, complex, unicode("x"))
+        self.assertRaises(ValueError, complex, "1j+2")
+        self.assertRaises(ValueError, complex, "1e1ej")
+        self.assertRaises(ValueError, complex, "1e++1ej")
+        self.assertRaises(ValueError, complex, ")1+2j(")
+        # the following three are accepted by Python 2.6
+        self.assertRaises(ValueError, complex, "1..1j")
+        self.assertRaises(ValueError, complex, "1.11.1j")
+        self.assertRaises(ValueError, complex, "1e1.1j")
 
         class EvilExc(Exception):
             pass
@@ -339,17 +380,17 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(-6j,complex(repr(-6j)))
         self.assertEqual(6j,complex(repr(6j)))
 
-        self.assertEqual(repr(complex(1., INF)), "(1+inf*j)")
-        self.assertEqual(repr(complex(1., -INF)), "(1-inf*j)")
+        self.assertEqual(repr(complex(1., INF)), "(1+infj)")
+        self.assertEqual(repr(complex(1., -INF)), "(1-infj)")
         self.assertEqual(repr(complex(INF, 1)), "(inf+1j)")
-        self.assertEqual(repr(complex(-INF, INF)), "(-inf+inf*j)")
+        self.assertEqual(repr(complex(-INF, INF)), "(-inf+infj)")
         self.assertEqual(repr(complex(NAN, 1)), "(nan+1j)")
-        self.assertEqual(repr(complex(1, NAN)), "(1+nan*j)")
-        self.assertEqual(repr(complex(NAN, NAN)), "(nan+nan*j)")
+        self.assertEqual(repr(complex(1, NAN)), "(1+nanj)")
+        self.assertEqual(repr(complex(NAN, NAN)), "(nan+nanj)")
 
-        self.assertEqual(repr(complex(0, INF)), "inf*j")
-        self.assertEqual(repr(complex(0, -INF)), "-inf*j")
-        self.assertEqual(repr(complex(0, NAN)), "nan*j")
+        self.assertEqual(repr(complex(0, INF)), "infj")
+        self.assertEqual(repr(complex(0, -INF)), "-infj")
+        self.assertEqual(repr(complex(0, NAN)), "nanj")
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
@@ -387,6 +428,21 @@ class ComplexTest(unittest.TestCase):
             z1, z2 = 0j, -0j
             self.assertEquals(atan2(z1.imag, -1.), atan2(0., -1.))
             self.assertEquals(atan2(z2.imag, -1.), atan2(-0., -1.))
+
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_repr_roundtrip(self):
+        # complex(repr(z)) should recover z exactly, even for complex numbers
+        # involving an infinity, nan, or negative zero
+        vals = [0.0, 1e-200, 0.0123, 3.1415, 1e50, INF, NAN]
+        vals += [-v for v in vals]
+        for x in vals:
+            for y in vals:
+                z = complex(x, y)
+                roundtrip = complex(repr(z))
+                self.assertFloatsAreIdentical(z.real, roundtrip.real)
+                self.assertFloatsAreIdentical(z.imag, roundtrip.imag)
+
 
 def test_main():
     test_support.run_unittest(ComplexTest)
