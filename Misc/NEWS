@@ -17,8 +17,10 @@ Core and Builtins
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
-Librar
+Library
 -------
+
+- Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5768: Fixed bug in Unicode output logic and test case for same.
 

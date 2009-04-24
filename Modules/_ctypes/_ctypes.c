@@ -1952,7 +1952,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			ml = &c_void_p_method;
 			stgdict->flags |= TYPEFLAG_ISPOINTER;
 			break;
-		case 'u':
+		case 's':
 		case 'X':
 		case 'O':
 			ml = NULL;
