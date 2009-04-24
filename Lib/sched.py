@@ -33,7 +33,13 @@ from collections import namedtuple
 
 __all__ = ["scheduler"]
 
-Event = namedtuple('Event', 'time, priority, action, argument')
+class Event(namedtuple('Event', 'time, priority, action, argument')):
+    def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
+    def __ne__(s, o): return (s.time, s.priority) != (o.time, o.priority)
+    def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
+    def __le__(s, o): return (s.time, s.priority) <= (o.time, o.priority)
+    def __gt__(s, o): return (s.time, s.priority) >  (o.time, o.priority)
+    def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
 
 class scheduler:
     def __init__(self, timefunc, delayfunc):
