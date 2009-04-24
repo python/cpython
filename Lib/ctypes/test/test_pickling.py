@@ -66,6 +66,11 @@ class PickleTest(unittest.TestCase):
             ]:
             self.assertRaises(ValueError, lambda: self.dumps(item))
 
+    def test_wchar(self):
+        pickle.dumps(c_char("x"))
+        # Issue 5049
+        pickle.dumps(c_wchar(u"x"))
+
 class PickleTest_1(PickleTest):
     def dumps(self, item):
         return pickle.dumps(item, 1)
