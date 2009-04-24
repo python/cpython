@@ -78,7 +78,7 @@ nearest approximate binary fraction.  For example, the numbers ``0.1`` and
 ``0.10000000000000001`` and
 ``0.1000000000000000055511151231257827021181583404541015625`` are all
 approximated by ``3602879701896397 / 2 ** 55``.  Since all of these decimal
-values share the same approximation, any one of them could be displayed and
+values share the same approximation, any one of them could be displayed
 while still preserving the invariant ``eval(repr(x)) == x``.
 
 Historically, the Python prompt and built-in :func:`repr` function would chose
