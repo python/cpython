@@ -400,6 +400,7 @@ class IOTest(unittest.TestCase):
         f = MyFileIO(support.TESTFN, "wb")
         f.write(b"xxx")
         del f
+        support.gc_collect()
         self.assertEqual(record, [1, 2, 3])
         with open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"xxx")
@@ -431,6 +432,7 @@ class IOTest(unittest.TestCase):
                 super().flush()
         f = MyIO()
         del f
+        support.gc_collect()
         self.assertEqual(record, [1, 2, 3])
 
     def test_IOBase_destructor(self):
@@ -493,7 +495,7 @@ class IOTest(unittest.TestCase):
         f.f = f
         wr = weakref.ref(f)
         del f
-        gc.collect()
+        support.gc_collect()
         self.assert_(wr() is None, wr)
         with open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
@@ -564,6 +566,7 @@ class CommonBufferedTests:
         bufio = MyBufferedIO(rawio)
         writable = bufio.writable()
         del bufio
+        support.gc_collect()
         if writable:
             self.assertEqual(record, [1, 2, 3])
         else:
@@ -921,6 +924,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         bufio = self.tp(writer, 8)
         bufio.write(b"abc")
         del bufio
+        support.gc_collect()
         self.assertEquals(b"abc", writer._write_stack[0])
 
     def test_truncate(self):
@@ -1033,7 +1037,7 @@ class CBufferedWriterTest(BufferedWriterTest):
         f.x = f
         wr = weakref.ref(f)
         del f
-        gc.collect()
+        support.gc_collect()
         self.assert_(wr() is None, wr)
         with open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"123xxx")
@@ -1631,6 +1635,7 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(b, encoding="ascii")
         t.write("abc")
         del t
+        support.gc_collect()
         self.assertEquals([b"abc"], l)
 
     def test_override_destructor(self):
@@ -1653,6 +1658,7 @@ class TextIOWrapperTest(unittest.TestCase):
         b = self.BytesIO()
         t = MyTextIO(b, encoding="ascii")
         del t
+        support.gc_collect()
         self.assertEqual(record, [1, 2, 3])
 
     def test_error_through_destructor(self):
@@ -1948,7 +1954,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t.x = t
         wr = weakref.ref(t)
         del t
-        gc.collect()
+        support.gc_collect()
         self.assert_(wr() is None, wr)
         with open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"456def")
@@ -2172,7 +2178,7 @@ class MiscIOTest(unittest.TestCase):
         b.c = c
         wr = weakref.ref(c)
         del c, b
-        gc.collect()
+        support.gc_collect()
         self.assert_(wr() is None, wr)
 
     def test_abcs(self):
