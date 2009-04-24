@@ -505,6 +505,8 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if limit is None:
             limit = -1
+        elif not isinstance(limit, int):
+            raise TypeError("limit must be an integer")
         res = bytearray()
         while limit < 0 or len(res) < limit:
             b = self.read(nreadahead())
@@ -1752,6 +1754,8 @@ class TextIOWrapper(TextIOBase):
         self._checkClosed()
         if limit is None:
             limit = -1
+        elif not isinstance(limit, int):
+            raise TypeError("limit must be an integer")
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
