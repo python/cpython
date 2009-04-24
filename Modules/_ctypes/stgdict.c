@@ -17,7 +17,7 @@
  * PyDict_SetItem() (ma_lookup is NULL)
  */
 static int
-StgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
+PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 {
 	if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
 		return -1;
@@ -28,7 +28,7 @@ StgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-StgDict_clear(StgDictObject *self)
+PyCStgDict_clear(StgDictObject *self)
 {
 	Py_CLEAR(self->proto);
 	Py_CLEAR(self->argtypes);
@@ -39,9 +39,9 @@ StgDict_clear(StgDictObject *self)
 }
 
 static void
-StgDict_dealloc(StgDictObject *self)
+PyCStgDict_dealloc(StgDictObject *self)
 {
-	StgDict_clear(self);
+	PyCStgDict_clear(self);
 	PyMem_Free(self->format);
 	PyMem_Free(self->shape);
 	PyMem_Free(self->ffi_type_pointer.elements);
@@ -49,12 +49,12 @@ StgDict_dealloc(StgDictObject *self)
 }
 
 int
-StgDict_clone(StgDictObject *dst, StgDictObject *src)
+PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
 {
 	char *d, *s;
 	Py_ssize_t size;
 
-	StgDict_clear(dst);
+	PyCStgDict_clear(dst);
 	PyMem_Free(dst->ffi_type_pointer.elements);
 	PyMem_Free(dst->format);
 	dst->format = NULL;
@@ -102,12 +102,12 @@ StgDict_clone(StgDictObject *dst, StgDictObject *src)
 	return 0;
 }
 
-PyTypeObject StgDict_Type = {
+PyTypeObject PyCStgDict_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"StgDict",
 	sizeof(StgDictObject),
 	0,
-	(destructor)StgDict_dealloc,		/* tp_dealloc */
+	(destructor)PyCStgDict_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
@@ -138,7 +138,7 @@ PyTypeObject StgDict_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	(initproc)StgDict_init,			/* tp_init */
+	(initproc)PyCStgDict_init,			/* tp_init */
 	0,					/* tp_alloc */
 	0,					/* tp_new */
 	0,					/* tp_free */
@@ -153,7 +153,7 @@ PyType_stgdict(PyObject *obj)
 	if (!PyType_Check(obj))
 		return NULL;
 	type = (PyTypeObject *)obj;
-	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
+	if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
 		return NULL;
 	return (StgDictObject *)type->tp_dict;
 }
@@ -167,7 +167,7 @@ StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
 	PyTypeObject *type = self->ob_type;
-	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
+	if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
 		return NULL;
 	return (StgDictObject *)type->tp_dict;
 }
@@ -207,7 +207,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		if (Py_TYPE(fdescr) != &CField_Type) {
+		if (Py_TYPE(fdescr) != &PyCField_Type) {
 			PyErr_SetString(PyExc_TypeError, "unexpected type");
 			Py_DECREF(fdescr);
 			Py_DECREF(fieldlist);
@@ -224,13 +224,13 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			}
 			continue;
 		}
- 		new_descr = (CFieldObject *)PyObject_CallObject((PyObject *)&CField_Type, NULL);
+ 		new_descr = (CFieldObject *)PyObject_CallObject((PyObject *)&PyCField_Type, NULL);
 		if (new_descr == NULL) {
 			Py_DECREF(fdescr);
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		assert(Py_TYPE(new_descr) == &CField_Type);
+		assert(Py_TYPE(new_descr) == &PyCField_Type);
  		new_descr->size = fdescr->size;
  		new_descr->offset = fdescr->offset + offset;
  		new_descr->index = fdescr->index + index;
@@ -278,7 +278,7 @@ MakeAnonFields(PyObject *type)
 			Py_DECREF(anon_names);
 			return -1;
 		}
-		assert(Py_TYPE(descr) == &CField_Type);
+		assert(Py_TYPE(descr) == &PyCField_Type);
 		descr->anonymous = 1;
 
 		/* descr is in the field descriptor. */
@@ -301,7 +301,7 @@ MakeAnonFields(PyObject *type)
   and create an StgDictObject.  Used for Structure and Union subclasses.
 */
 int
-StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
+PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
 	StgDictObject *stgdict, *basedict;
 	Py_ssize_t len, offset, size, align, i;
@@ -410,12 +410,12 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 
 	assert(stgdict->format == NULL);
 	if (isStruct && !isPacked) {
-		stgdict->format = alloc_format_string(NULL, "T{");
+		stgdict->format = _ctypes_alloc_format_string(NULL, "T{");
 	} else {
 		/* PEP3118 doesn't support union, or packed structures (well,
 		   only standard packing, but we dont support the pep for
 		   that). Use 'B' for bytes. */
-		stgdict->format = alloc_format_string(NULL, "B");
+		stgdict->format = _ctypes_alloc_format_string(NULL, "B");
 	}
 
 #define realdict ((PyObject *)&stgdict->dict)
@@ -456,9 +456,9 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 			case FFI_TYPE_SINT8:
 			case FFI_TYPE_SINT16:
 			case FFI_TYPE_SINT32:
-				if (dict->getfunc != getentry("c")->getfunc
+				if (dict->getfunc != _ctypes_get_fielddesc("c")->getfunc
 #ifdef CTYPES_UNICODE
-				    && dict->getfunc != getentry("u")->getfunc
+				    && dict->getfunc != _ctypes_get_fielddesc("u")->getfunc
 #endif
 					)
 					break;
@@ -488,7 +488,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 			sprintf(buf, "%s:%s:", fieldfmt, fieldname);
 
 			ptr = stgdict->format;
-			stgdict->format = alloc_format_string(stgdict->format, buf);
+			stgdict->format = _ctypes_alloc_format_string(stgdict->format, buf);
 			PyMem_Free(ptr);
 
 			if (stgdict->format == NULL) {
@@ -497,7 +497,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 			}
 		}
 		if (isStruct) {
-			prop = CField_FromDesc(desc, i,
+			prop = PyCField_FromDesc(desc, i,
 					       &field_size, bitsize, &bitofs,
 					       &size, &offset, &align,
 					       pack, big_endian);
@@ -505,7 +505,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 			size = 0;
 			offset = 0;
 			align = 0;
-			prop = CField_FromDesc(desc, i,
+			prop = PyCField_FromDesc(desc, i,
 					       &field_size, bitsize, &bitofs,
 					       &size, &offset, &align,
 					       pack, big_endian);
@@ -529,7 +529,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 
 	if (isStruct && !isPacked) {
 		char *ptr = stgdict->format;
-		stgdict->format = alloc_format_string(stgdict->format, "}");
+		stgdict->format = _ctypes_alloc_format_string(stgdict->format, "}");
 		PyMem_Free(ptr);
 		if (stgdict->format == NULL)
 			return -1;

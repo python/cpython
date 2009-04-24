@@ -77,6 +77,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #3102:  All global symbols that the _ctypes extension defines
+  are now prefixed with 'Py' or '_ctypes'.
+
+- Issue #5041: ctypes does now allow pickling wide character.
+
 - Issue #5812: For the two-argument form of the Fraction constructor,
   Fraction(m, n), m and n are permitted to be arbitrary Rational
   instances.
@@ -429,8 +434,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5795: Fixed test_distutils failure on Debian ppc.
 
