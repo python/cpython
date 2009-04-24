@@ -230,6 +230,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5041: ctypes does now allow pickling wide character.
+
 - Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
   platforms. Initial patch by Paul Moore.
 
