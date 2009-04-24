@@ -56,7 +56,7 @@ class Fraction(Rational):
     __slots__ = ('_numerator', '_denominator')
 
     # We're immutable, so use __new__ not __init__
-    def __new__(cls, numerator=0, denominator=1):
+    def __new__(cls, numerator=0, denominator=None):
         """Constructs a Fraction.
 
         Takes a string like '3/2' or '1.5', another Fraction, or a
@@ -65,8 +65,13 @@ class Fraction(Rational):
         """
         self = super(Fraction, cls).__new__(cls)
 
-        if type(numerator) not in (int, long) and denominator == 1:
-            if isinstance(numerator, basestring):
+        if denominator is None:
+            if isinstance(numerator, Rational):
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
+
+            elif isinstance(numerator, basestring):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
                 if m is None:
@@ -93,18 +98,22 @@ class Fraction(Rational):
                 if m.group('sign') == '-':
                     numerator = -numerator
 
-            elif isinstance(numerator, Rational):
-                # Handle copies from other rationals. Integrals get
-                # caught here too, but it doesn't matter because
-                # denominator is already 1.
-                other_rational = numerator
-                numerator = other_rational.numerator
-                denominator = other_rational.denominator
+            else:
+                raise TypeError("argument should be a string "
+                                "or a Rational instance")
+
+        elif (isinstance(numerator, Rational) and
+            isinstance(denominator, Rational)):
+            numerator, denominator = (
+                numerator.numerator * denominator.denominator,
+                denominator.numerator * numerator.denominator
+                )
+        else:
+            raise TypeError("both arguments should be "
+                            "Rational instances")
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
-        numerator = operator.index(numerator)
-        denominator = operator.index(denominator)
         g = gcd(numerator, denominator)
         self._numerator = numerator // g
         self._denominator = denominator // g
