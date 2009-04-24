@@ -60,13 +60,19 @@ class FractionTest(unittest.TestCase):
         self.assertEquals((7, 15), _components(F(7, 15)))
         self.assertEquals((10**23, 1), _components(F(10**23)))
 
+        self.assertEquals((3, 77), _components(F(F(3, 7), 11)))
+        self.assertEquals((-9, 5), _components(F(2, F(-10, 9))))
+        self.assertEquals((2486, 2485), _components(F(F(22, 7), F(355, 113))))
+
         self.assertRaisesMessage(ZeroDivisionError, "Fraction(12, 0)",
                                  F, 12, 0)
         self.assertRaises(TypeError, F, 1.5)
         self.assertRaises(TypeError, F, 1.5 + 3j)
 
-        self.assertRaises(TypeError, F, F(1, 2), 3)
         self.assertRaises(TypeError, F, "3/2", 3)
+        self.assertRaises(TypeError, F, 3, 0j)
+        self.assertRaises(TypeError, F, 3, 1j)
+
 
     def testFromString(self):
         self.assertEquals((5, 1), _components(F("5")))

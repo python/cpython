@@ -244,6 +244,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5812: For the two-argument form of the Fraction constructor,
+  Fraction(m, n), m and n are permitted to be arbitrary Rational
+  instances.
+
 - Issue #5812: Fraction('1e6') is valid: more generally, any string
   that's valid for float() is now valid for Fraction(), with the
   exception of strings representing NaNs and infinities.
