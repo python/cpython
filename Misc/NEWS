@@ -244,6 +244,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5041: ctypes does now allow pickling wide character.
+
 - Issue #5812: For the two-argument form of the Fraction constructor,
   Fraction(m, n), m and n are permitted to be arbitrary Rational
   instances.
