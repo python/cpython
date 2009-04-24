@@ -319,7 +319,7 @@ class IOTest(unittest.TestCase):
         f.close()
 
     def test_readline(self):
-        f = io.open(support.TESTFN, "wb")
+        f = self.open(support.TESTFN, "wb")
         f.write(b"abc\ndef\nxyzzy\nfoo\x00bar\nanother line")
         f.close()
         f = self.open(support.TESTFN, "rb")
@@ -329,7 +329,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.readline(4), b"zzy\n")
         self.assertEqual(f.readline(), b"foo\x00bar\n")
         self.assertEqual(f.readline(), b"another line")
+        self.assertRaises(TypeError, f.readline, 5.3)
         f.close()
+        f = self.open(support.TESTFN, "r")
+        self.assertRaises(TypeError, f.readline, 5.3)
 
     def test_raw_bytes_io(self):
         f = self.BytesIO()
