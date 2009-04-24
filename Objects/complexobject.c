@@ -760,49 +760,108 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			s++;
 	}
 
-	/* get float---might be real or imaginary part */
+	/* a valid complex string usually takes one of the three forms:
+
+	     <float>                  - real part only
+	     <float>j                 - imaginary part only
+	     <float><signed-float>j   - real and imaginary parts
+
+	   where <float> represents any numeric string that's accepted by the
+	   float constructor (including 'nan', 'inf', 'infinity', etc.), and
+	   <signed-float> is any string of the form <float> whose first
+	   character is '+' or '-'.
+
+	   For backwards compatibility, the extra forms
+
+	     <float><sign>j
+	     <sign>j
+	     j
+
+	   are also accepted, though support for these forms may be removed from
+	   a future version of Python.
+	*/
+
+	/* first look for forms starting with <float> */
 	z = PyOS_ascii_strtod(s, &end);
-	if (end == s)
-		goto error;
-	s = end;
-	if (*s == '+' || *s == '-') {
-		/* we've got a real part *and* an imaginary part */
-		x = z;
-		y = PyOS_ascii_strtod(s, &end);
-		if (end == s || !(*end == 'j' || *end == 'J'))
-			goto error;
-		s = ++end;
+	if (end == s && errno == ENOMEM)
+		return PyErr_NoMemory();
+	if (errno == ERANGE && fabs(z) >= 1.0)
+		goto overflow;
+
+	if (end != s) {
+		/* all 4 forms starting with <float> land here */
+		s = end;
+		if (*s == '+' || *s == '-') {
+			/* <float><signed-float>j | <float><sign>j */
+			x = z;
+			y = PyOS_ascii_strtod(s, &end);
+			if (end == s && errno == ENOMEM)
+				return PyErr_NoMemory();
+			if (errno == ERANGE && fabs(z) >= 1.0)
+				goto overflow;
+			if (end != s)
+				/* <float><signed-float>j */
+				s = end;
+			else {
+				/* <float><sign>j */
+				y = *s == '+' ? 1.0 : -1.0;
+				s++;
+			}
+			if (!(*s == 'j' || *s == 'J'))
+				goto parse_error;
+			s++;
+		}
+		else if (*s == 'j' || *s == 'J') {
+			/* <float>j */
+			s++;
+			y = z;
+		}
+		else
+			/* <float> */
+			x = z;
 	}
-	else if (*s == 'j' || *s == 'J') {
-		/* no real part; z was the imaginary part */
+	else {
+		/* not starting with <float>; must be <sign>j or j */
+		if (*s == '+' || *s == '-') {
+			/* <sign>j */
+			y = *s == '+' ? 1.0 : -1.0;
+			s++;
+		}
+		else
+			/* j */
+			y = 1.0;
+		if (!(*s == 'j' || *s == 'J'))
+			goto parse_error;
 		s++;
-		y = z;
 	}
-	else
-		/* no imaginary part */
-		x = z;
 
 	/* trailing whitespace and closing bracket */
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (got_bracket && *s == ')') {
-		got_bracket = 0;
+	if (got_bracket) {
+		/* if there was an opening parenthesis, then the corresponding
+		   closing parenthesis should be right here */
+		if (*s != ')')
+			goto parse_error;
 		s++;
 		while (*s && isspace(Py_CHARMASK(*s)))
-		       s++;
+			s++;
 	}
+
 	/* we should now be at the end of the string */
-	if (s-start != len || got_bracket)
-		goto error;
+	if (s-start != len)
+		goto parse_error;
 
 	return complex_subtype_from_doubles(type, x, y);
 
-  error:
-	/* check for PyOS_ascii_strtod failure due to lack of memory */
-	if (errno == ENOMEM)
-		return PyErr_NoMemory();
+  parse_error:
 	PyErr_SetString(PyExc_ValueError,
 			"complex() arg is a malformed string");
+	return NULL;
+
+  overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"complex() arg overflow");
 	return NULL;
 }
 
