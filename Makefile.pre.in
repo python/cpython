@@ -1143,8 +1143,8 @@ pycremoval:
 clean: pycremoval
 	find . -name '*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
-	find $(srcdir)/build -name 'fficonfig.h' -exec rm -f {} ';' || true
-	find $(srcdir)/build -name 'fficonfig.py' -exec rm -f {} ';' || true
+	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
+	find build -name 'fficonfig.py' -exec rm -f {} ';' || true
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
