@@ -22,7 +22,7 @@ CThunkObject_dealloc(PyObject *_self)
 	Py_XDECREF(self->callable);
 	Py_XDECREF(self->restype);
 	if (self->pcl)
-		FreeClosure(self->pcl);
+		_ctypes_free_closure(self->pcl);
 	PyObject_Del(self);
 }
 
@@ -46,7 +46,7 @@ CThunkObject_clear(PyObject *_self)
 	return 0;
 }
 
-PyTypeObject CThunk_Type = {
+PyTypeObject PyCThunk_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.CThunkObject",
 	sizeof(CThunkObject),			/* tp_basicsize */
@@ -97,7 +97,7 @@ PrintError(char *msg, ...)
 
 
 /* after code that pyrex generates */
-void _AddTraceback(char *funcname, char *filename, int lineno)
+void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
 {
 	PyObject *py_srcfile = 0;
 	PyObject *py_funcname = 0;
@@ -227,7 +227,7 @@ static void _CallPythonObject(void *mem,
 			goto Done;
 		}
 
-		if (dict && dict->getfunc && !IsSimpleSubType(cnv)) {
+		if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
 			PyObject *v = dict->getfunc(*pArgs, dict->size);
 			if (!v) {
 				PrintError("create argument %d:\n", i);
@@ -241,7 +241,7 @@ static void _CallPythonObject(void *mem,
 			   BTW, the same problem occurrs when they are pushed as parameters
 			*/
 		} else if (dict) {
-			/* Hm, shouldn't we use CData_AtAddress() or something like that instead? */
+			/* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
 			CDataObject *obj = (CDataObject *)PyObject_CallFunctionObjArgs(cnv, NULL);
 			if (!obj) {
 				PrintError("create argument %d:\n", i);
@@ -272,10 +272,10 @@ static void _CallPythonObject(void *mem,
 	}
 
 #define CHECK(what, x) \
-if (x == NULL) _AddTraceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
+if (x == NULL) _ctypes_add_traceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
 
 	if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
-		error_object = get_error_object(&space);
+		error_object = _ctypes_get_errobj(&space);
 		if (error_object == NULL)
 			goto Done;
 		if (flags & FUNCFLAG_USE_ERRNO) {
@@ -332,7 +332,7 @@ if (x == NULL) _AddTraceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_P
 			PyErr_WriteUnraisable(callable);
 		else if (keep == Py_None) /* Nothing to keep */
 			Py_DECREF(keep);
-		else if (setfunc != getentry("O")->setfunc) {
+		else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
 			if (-1 == PyErr_Warn(PyExc_RuntimeWarning,
 					     "memory leak in callback function."))
 				PyErr_WriteUnraisable(callable);
@@ -367,7 +367,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 	CThunkObject *p;
 	int i;
 
-	p = PyObject_NewVar(CThunkObject, &CThunk_Type, nArgs);
+	p = PyObject_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
 	if (p == NULL) {
 		PyErr_NoMemory();
 		return NULL;
@@ -385,7 +385,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 	return p;
 }
 
-CThunkObject *AllocFunctionCallback(PyObject *callable,
+CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 				    PyObject *converters,
 				    PyObject *restype,
 				    int flags)
@@ -402,7 +402,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 
 	assert(CThunk_CheckExact(p));
 
-	p->pcl = MallocClosure();
+	p->pcl = _ctypes_alloc_closure();
 	if (p->pcl == NULL) {
 		PyErr_NoMemory();
 		goto error;
@@ -413,7 +413,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 		PyObject *cnv = PySequence_GetItem(converters, i);
 		if (cnv == NULL)
 			goto error;
-		p->atypes[i] = GetType(cnv);
+		p->atypes[i] = _ctypes_get_ffi_type(cnv);
 		Py_DECREF(cnv);
 	}
 	p->atypes[i] = NULL;
@@ -441,7 +441,7 @@ CThunkObject *AllocFunctionCallback(PyObject *callable,
 #endif
 	result = ffi_prep_cif(&p->cif, cc,
 			      Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
-			      GetType(restype),
+			      _ctypes_get_ffi_type(restype),
 			      &p->atypes[0]);
 	if (result != FFI_OK) {
 		PyErr_Format(PyExc_RuntimeError,
