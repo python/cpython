@@ -227,6 +227,15 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex("(1.3+2.2j)"), 1.3+2.2j)
         self.assertAlmostEqual(complex("3.14+1J"), 3.14+1j)
         self.assertAlmostEqual(complex(" ( +3.14-6J )"), 3.14-6j)
+        self.assertAlmostEqual(complex(" ( +3.14-J )"), 3.14-1j)
+        self.assertAlmostEqual(complex(" ( +3.14+j )"), 3.14+1j)
+        self.assertAlmostEqual(complex("J"), 1j)
+        self.assertAlmostEqual(complex("( j )"), 1j)
+        self.assertAlmostEqual(complex("+J"), 1j)
+        self.assertAlmostEqual(complex("( -j)"), -1j)
+        self.assertAlmostEqual(complex('1e-500'), 0.0 + 0.0j)
+        self.assertAlmostEqual(complex('-1e-500j'), 0.0 - 0.0j)
+        self.assertAlmostEqual(complex('-1e-500+1e-500j'), -0.0 + 0.0j)
 
         class complex2(complex): pass
         self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
@@ -277,11 +286,14 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, "(1+2j)123")
         self.assertRaises(ValueError, complex, "1"*500)
         self.assertRaises(ValueError, complex, "x")
-        self.assertRaises(ValueError, complex, "J")
         self.assertRaises(ValueError, complex, "1j+2")
         self.assertRaises(ValueError, complex, "1e1ej")
         self.assertRaises(ValueError, complex, "1e++1ej")
         self.assertRaises(ValueError, complex, ")1+2j(")
+        # the following three are accepted by Python 2.6
+        self.assertRaises(ValueError, complex, "1..1j")
+        self.assertRaises(ValueError, complex, "1.11.1j")
+        self.assertRaises(ValueError, complex, "1e1.1j")
 
         class EvilExc(Exception):
             pass
