@@ -430,7 +430,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #5795: Fixed test_distutils failure on Debian ppc.
+- Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5607: fixed Distutils test_get_platform for Mac OS X fat binaries.
 
