@@ -244,6 +244,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3102:  All global symbols that the _ctypes extension defines
+  are now prefixed with 'Py' or '_ctypes'.
+
 - Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5812: For the two-argument form of the Fraction constructor,
