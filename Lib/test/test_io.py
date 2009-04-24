@@ -291,48 +291,42 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.read(2), b"x")
 
     def test_raw_file_io(self):
-        f = self.open(support.TESTFN, "wb", buffering=0)
-        self.assertEqual(f.readable(), False)
-        self.assertEqual(f.writable(), True)
-        self.assertEqual(f.seekable(), True)
-        self.write_ops(f)
-        f.close()
-        f = self.open(support.TESTFN, "rb", buffering=0)
-        self.assertEqual(f.readable(), True)
-        self.assertEqual(f.writable(), False)
-        self.assertEqual(f.seekable(), True)
-        self.read_ops(f)
-        f.close()
+        with self.open(support.TESTFN, "wb", buffering=0) as f:
+            self.assertEqual(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            self.assertEqual(f.seekable(), True)
+            self.write_ops(f)
+        with self.open(support.TESTFN, "rb", buffering=0) as f:
+            self.assertEqual(f.readable(), True)
+            self.assertEqual(f.writable(), False)
+            self.assertEqual(f.seekable(), True)
+            self.read_ops(f)
 
     def test_buffered_file_io(self):
-        f = self.open(support.TESTFN, "wb")
-        self.assertEqual(f.readable(), False)
-        self.assertEqual(f.writable(), True)
-        self.assertEqual(f.seekable(), True)
-        self.write_ops(f)
-        f.close()
-        f = self.open(support.TESTFN, "rb")
-        self.assertEqual(f.readable(), True)
-        self.assertEqual(f.writable(), False)
-        self.assertEqual(f.seekable(), True)
-        self.read_ops(f, True)
-        f.close()
+        with self.open(support.TESTFN, "wb") as f:
+            self.assertEqual(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            self.assertEqual(f.seekable(), True)
+            self.write_ops(f)
+        with self.open(support.TESTFN, "rb") as f:
+            self.assertEqual(f.readable(), True)
+            self.assertEqual(f.writable(), False)
+            self.assertEqual(f.seekable(), True)
+            self.read_ops(f, True)
 
     def test_readline(self):
-        f = self.open(support.TESTFN, "wb")
-        f.write(b"abc\ndef\nxyzzy\nfoo\x00bar\nanother line")
-        f.close()
-        f = self.open(support.TESTFN, "rb")
-        self.assertEqual(f.readline(), b"abc\n")
-        self.assertEqual(f.readline(10), b"def\n")
-        self.assertEqual(f.readline(2), b"xy")
-        self.assertEqual(f.readline(4), b"zzy\n")
-        self.assertEqual(f.readline(), b"foo\x00bar\n")
-        self.assertEqual(f.readline(), b"another line")
-        self.assertRaises(TypeError, f.readline, 5.3)
-        f.close()
-        f = self.open(support.TESTFN, "r")
-        self.assertRaises(TypeError, f.readline, 5.3)
+        with self.open(support.TESTFN, "wb") as f:
+            f.write(b"abc\ndef\nxyzzy\nfoo\x00bar\nanother line")
+        with self.open(support.TESTFN, "rb") as f:
+            self.assertEqual(f.readline(), b"abc\n")
+            self.assertEqual(f.readline(10), b"def\n")
+            self.assertEqual(f.readline(2), b"xy")
+            self.assertEqual(f.readline(4), b"zzy\n")
+            self.assertEqual(f.readline(), b"foo\x00bar\n")
+            self.assertEqual(f.readline(), b"another line")
+            self.assertRaises(TypeError, f.readline, 5.3)
+        with self.open(support.TESTFN, "r") as f:
+            self.assertRaises(TypeError, f.readline, 5.3)
 
     def test_raw_bytes_io(self):
         f = self.BytesIO()
@@ -407,8 +401,8 @@ class IOTest(unittest.TestCase):
         f.write(b"xxx")
         del f
         self.assertEqual(record, [1, 2, 3])
-        f = open(support.TESTFN, "rb")
-        self.assertEqual(f.read(), b"xxx")
+        with open(support.TESTFN, "rb") as f:
+            self.assertEqual(f.read(), b"xxx")
 
     def _check_base_destructor(self, base):
         record = []
@@ -452,22 +446,18 @@ class IOTest(unittest.TestCase):
         self._check_base_destructor(self.TextIOBase)
 
     def test_close_flushes(self):
-        f = self.open(support.TESTFN, "wb")
-        f.write(b"xxx")
-        f.close()
-        f = self.open(support.TESTFN, "rb")
-        self.assertEqual(f.read(), b"xxx")
-        f.close()
+        with self.open(support.TESTFN, "wb") as f:
+            f.write(b"xxx")
+        with self.open(support.TESTFN, "rb") as f:
+            self.assertEqual(f.read(), b"xxx")
 
     def test_array_writes(self):
         a = array.array('i', range(10))
         n = len(a.tostring())
-        f = self.open(support.TESTFN, "wb", 0)
-        self.assertEqual(f.write(a), n)
-        f.close()
-        f = self.open(support.TESTFN, "wb")
-        self.assertEqual(f.write(a), n)
-        f.close()
+        with self.open(support.TESTFN, "wb", 0) as f:
+            self.assertEqual(f.write(a), n)
+        with self.open(support.TESTFN, "wb") as f:
+            self.assertEqual(f.write(a), n)
 
     def test_closefd(self):
         self.assertRaises(ValueError, self.open, support.TESTFN, 'w',
@@ -792,7 +782,7 @@ class CBufferedReaderTest(BufferedReaderTest):
         f.f = f
         wr = weakref.ref(f)
         del f
-        gc.collect()
+        support.gc_collect()
         self.assert_(wr() is None, wr)
 
 class PyBufferedReaderTest(BufferedReaderTest):
