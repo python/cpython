@@ -371,7 +371,7 @@ class MathTests(unittest.TestCase):
 
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
-    @unittest.skipUnless(not HAVE_DOUBLE_ROUNDING,
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "fsum is not exact on machines with double rounding")
     def testFsum(self):
         # math.fsum relies on exact rounding for correct operation.
