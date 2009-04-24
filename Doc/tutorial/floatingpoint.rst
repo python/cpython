@@ -48,32 +48,43 @@ decimal value 0.1 cannot be represented exactly as a base 2 fraction.  In base
 
    0.0001100110011001100110011001100110011001100110011...
 
-Stop at any finite number of bits, and you get an approximation.  This is why
-you see things like::
+Stop at any finite number of bits, and you get an approximation.  On most
+machines today, floats are approximated using a binary fraction with
+the numerator using the first 53 bits following the most significant bit and
+with the denominator as a power of two.  In the case of 1/10, the binary fraction
+is ``3602879701896397 / 2 ** 55`` which is close to but not exactly
+equal to the true value of 1/10.
 
-   >>> 0.1
-   0.10000000000000001
-
-On most machines today, that is what you'll see if you enter 0.1 at a Python
-prompt.  You may not, though, because the number of bits used by the hardware to
-store floating-point values can vary across machines, and Python only prints a
-decimal approximation to the true decimal value of the binary approximation
-stored by the machine.  On most machines, if Python were to print the true
-decimal value of the binary approximation stored for 0.1, it would have to
-display ::
+Many users are not aware of the approximation because of the way values are
+displayed.  Python only prints a decimal approximation to the true decimal
+value of the binary approximation stored by the machine.  On most machines, if
+Python were to print the true decimal value of the binary approximation stored
+for 0.1, it would have to display ::
 
    >>> 0.1
    0.1000000000000000055511151231257827021181583404541015625
 
-instead!  The Python prompt uses the built-in :func:`repr` function to obtain a
-string version of everything it displays.  For floats, ``repr(float)`` rounds
-the true decimal value to 17 significant digits, giving ::
+That is more digits than most people find useful, so Python keeps the number
+of digits manageable by displaying a rounded value instead ::
 
-   0.10000000000000001
+   >>> 1 / 10
+   0.1
 
-``repr(float)`` produces 17 significant digits because it turns out that's
-enough (on most machines) so that ``eval(repr(x)) == x`` exactly for all finite
-floats *x*, but rounding to 16 digits is not enough to make that true.
+Just remember, even though the printed result looks like the exact value
+of 1/10, the actual stored value is the nearest representable binary fraction.
+
+Interestingly, there are many different decimal numbers that share the same
+nearest approximate binary fraction.  For example, the numbers ``0.1`` and
+``0.10000000000000001`` and
+``0.1000000000000000055511151231257827021181583404541015625`` are all
+approximated by ``3602879701896397 / 2 ** 55``.  Since all of these decimal
+values share the same approximation, any one of them could be displayed and
+while still preserving the invariant ``eval(repr(x)) == x``.
+
+Historically, the Python prompt and built-in :func:`repr` function would chose
+the one with 17 significant digits, ``0.10000000000000001``, Starting with
+Python 3.1, Python (on most systems) is now able to choose the shortest of
+these and simply display ``0.1``.
 
 Note that this is in the very nature of binary floating-point: this is not a bug
 in Python, and it is not a bug in your code either.  You'll see the same kind of
@@ -85,23 +96,28 @@ Python's built-in :func:`str` function produces only 12 significant digits, and
 you may wish to use that instead.  It's unusual for ``eval(str(x))`` to
 reproduce *x*, but the output may be more pleasant to look at::
 
-   >>> print(str(0.1))
-   0.1
+   >>> str(math.pi)
+   '3.14159265359'
 
-It's important to realize that this is, in a real sense, an illusion: the value
-in the machine is not exactly 1/10, you're simply rounding the *display* of the
-true machine value.
+   >>> repr(math.pi)
+   '3.141592653589793'
+
+   >>> format(math.pi, '.2f')
+   '3.14'
+
+It's important to realize that this is, in a real sense, an illusion: you're
+simply rounding the *display* of the true machine value.
 
 Other surprises follow from this one.  For example, after seeing ::
 
-   >>> 0.1
-   0.10000000000000001
+   >>> format(0.1, '.17g')
+   '0.10000000000000001'
 
 you may be tempted to use the :func:`round` function to chop it back to the
 single digit you expect.  But that makes no difference::
 
-   >>> round(0.1, 1)
-   0.10000000000000001
+   >>> format(round(0.1, 1), '.17g')
+   '0.10000000000000001'
 
 The problem is that the binary floating-point value stored for "0.1" was already
 the best possible binary approximation to 1/10, so trying to round it again
@@ -115,7 +131,7 @@ Another consequence is that since 0.1 is not exactly 1/10, summing ten values of
    ...     sum += 0.1
    ...
    >>> sum
-   0.99999999999999989
+   0.9999999999999999
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
@@ -191,10 +207,7 @@ floating-point representation is assumed.
 :dfn:`Representation error` refers to the fact that some (most, actually)
 decimal fractions cannot be represented exactly as binary (base 2) fractions.
 This is the chief reason why Python (or Perl, C, C++, Java, Fortran, and many
-others) often won't display the exact decimal number you expect::
-
-   >>> 0.1
-   0.10000000000000001
+others) often won't display the exact decimal number you expect.
 
 Why is that?  1/10 is not exactly representable as a binary fraction. Almost all
 machines today (November 2000) use IEEE-754 floating point arithmetic, and
@@ -237,6 +250,10 @@ that over 2\*\*56, or ::
 
    7205759403792794 / 72057594037927936
 
+Dividing both the numerator and denominator by two reduces the fraction to::
+
+   3602879701896397 / 36028797018963968
+
 Note that since we rounded up, this is actually a little bit larger than 1/10;
 if we had not rounded up, the quotient would have been a little bit smaller than
 1/10.  But in no case can it be *exactly* 1/10!
@@ -244,14 +261,14 @@ if we had not rounded up, the quotient would have been a little bit smaller than
 So the computer never "sees" 1/10:  what it sees is the exact fraction given
 above, the best 754 double approximation it can get::
 
-   >>> .1 * 2**56
-   7205759403792794.0
+   >>> 0.1 * 2 ** 55
+   3602879701896397.0
 
-If we multiply that fraction by 10\*\*30, we can see the (truncated) value of
-its 30 most significant decimal digits::
+If we multiply that fraction by 10\*\*60, we can see the value of out to
+60 decimal digits::
 
-   >>> 7205759403792794 * 10**30 / 2**56
-   100000000000000005551115123125
+   >>> 3602879701896397 * 10 ** 60 // 2 ** 55
+   1000000000000000055511151231257827021181583404541015625
 
 meaning that the exact number stored in the computer is approximately equal to
 the decimal value 0.100000000000000005551115123125.  Rounding that to 17
@@ -259,4 +276,12 @@ significant digits gives the 0.10000000000000001 that Python displays (well,
 will display on any 754-conforming platform that does best-possible input and
 output conversions in its C library --- yours may not!).
 
+The :mod:`fractions` and :mod:`decimal` modules make these calculations
+easy::
 
+   >>> from decimal import Decimal
+   >>> from fractions import Fraction
+   >>> print(Fraction.from_float(0.1))
+   3602879701896397/36028797018963968
+   >>> print(Decimal.from_float(0.1))
+   0.1000000000000000055511151231257827021181583404541015625
