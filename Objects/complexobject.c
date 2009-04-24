@@ -1027,7 +1027,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
   overflow:
 	PyErr_SetString(PyExc_OverflowError,
 			"complex() arg overflow");
-
+	return NULL;
 }
 
 static PyObject *
