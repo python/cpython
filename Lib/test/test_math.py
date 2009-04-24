@@ -13,6 +13,11 @@ NAN = float('nan')
 INF = float('inf')
 NINF = float('-inf')
 
+# detect evidence of double-rounding: fsum is not always correctly
+# rounded on machines that suffer from double rounding.
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
+
 # locate file with test values
 if __name__ == '__main__':
     file = sys.argv[0]
@@ -364,6 +369,10 @@ class MathTests(unittest.TestCase):
         self.assertEquals(math.frexp(NINF)[0], NINF)
         self.assert_(math.isnan(math.frexp(NAN)[0]))
 
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    @unittest.skipUnless(not HAVE_DOUBLE_ROUNDING,
+                         "fsum is not exact on machines with double rounding")
     def testFsum(self):
         # math.fsum relies on exact rounding for correct operation.
         # There's a known problem with IA32 floating-point that causes
@@ -372,14 +381,6 @@ class MathTests(unittest.TestCase):
         # 754 platforms, and on IEEE 754 platforms that exhibit the
         # problem described in issue #2937, we simply skip the whole
         # test.
-
-        if not float.__getformat__("double").startswith("IEEE"):
-            return
-
-        # on IEEE 754 compliant machines, both of the expressions
-        # below should round to 10000000000000002.0.
-        if 1e16+2.0 != 1e16+2.9999:
-            return
 
         # Python version of math.fsum, for comparison.  Uses a
         # different algorithm based on frexp, ldexp and integer
