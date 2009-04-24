@@ -353,83 +353,95 @@ complex_dealloc(PyObject *op)
 }
 
 
-static void
-complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
+static PyObject *
+complex_format(PyComplexObject *v, char format_code)
 {
-	char format[32];
-	if (v->cval.real == 0.) {
-		if (!Py_IS_FINITE(v->cval.imag)) {
-			if (Py_IS_NAN(v->cval.imag))
-				strncpy(buf, "nan*j", 6);
-			else if (copysign(1, v->cval.imag) == 1)
-				strncpy(buf, "inf*j", 6);
-			else
-				strncpy(buf, "-inf*j", 7);
-		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-			PyOS_ascii_formatd(buf, bufsz - 1, format, v->cval.imag);
-			strncat(buf, "j", 1);
+	PyObject *result = NULL;
+	Py_ssize_t len;
+
+	/* If these are non-NULL, they'll need to be freed. */
+	char *pre = NULL;
+	char *im = NULL;
+	char *buf = NULL;
+
+	/* These do not need to be freed. re is either an alias
+	   for pre or a pointer to a constant.  lead and tail
+	   are pointers to constants. */
+	char *re = NULL;
+	char *lead = "";
+	char *tail = "";
+
+	if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
+		re = "";
+		im = PyOS_double_to_string(v->cval.imag, format_code,
+					   0, 0, NULL);
+		if (!im) {
+			PyErr_NoMemory();
+			goto done;
 		}
 	} else {
-		char re[64], im[64];
 		/* Format imaginary part with sign, real part without */
-		if (!Py_IS_FINITE(v->cval.real)) {
-			if (Py_IS_NAN(v->cval.real))
-				strncpy(re, "nan", 4);
-			/* else if (copysign(1, v->cval.real) == 1) */
-			else if (v->cval.real > 0)
-				strncpy(re, "inf", 4);
-			else
-				strncpy(re, "-inf", 5);
+		pre = PyOS_double_to_string(v->cval.real, format_code,
+					    0, 0, NULL);
+		if (!pre) {
+			PyErr_NoMemory();
+			goto done;
 		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%.%ig", precision);
-			PyOS_ascii_formatd(re, sizeof(re), format, v->cval.real);
+		re = pre;
+
+		im = PyOS_double_to_string(v->cval.imag, format_code,
+					   0, Py_DTSF_SIGN, NULL);
+		if (!im) {
+			PyErr_NoMemory();
+			goto done;
 		}
-		if (!Py_IS_FINITE(v->cval.imag)) {
-			if (Py_IS_NAN(v->cval.imag))
-				strncpy(im, "+nan*", 6);
-			/* else if (copysign(1, v->cval.imag) == 1) */
-			else if (v->cval.imag > 0)
-				strncpy(im, "+inf*", 6);
-			else
-				strncpy(im, "-inf*", 6);
-		}
-		else {
-			PyOS_snprintf(format, sizeof(format), "%%+.%ig", precision);
-			PyOS_ascii_formatd(im, sizeof(im), format, v->cval.imag);
-		}
-		PyOS_snprintf(buf, bufsz, "(%s%sj)", re, im);
+		lead = "(";
+		tail = ")";
 	}
+	/* Alloc the final buffer. Add one for the "j" in the format string,
+	   and one for the trailing zero. */
+	len = strlen(lead) + strlen(re) + strlen(im) + strlen(tail) + 2;
+	buf = PyMem_Malloc(len);
+	if (!buf) {
+		PyErr_NoMemory();
+		goto done;
+	}
+	PyOS_snprintf(buf, len, "%s%s%sj%s", lead, re, im, tail);
+	result = PyString_FromString(buf);
+  done:
+	PyMem_Free(im);
+	PyMem_Free(pre);
+	PyMem_Free(buf);
+
+	return result;
 }
 
 static int
 complex_print(PyComplexObject *v, FILE *fp, int flags)
 {
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v,
-		       (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
+	PyObject *formatv;
+	char *buf;
+	formatv = complex_format(v, (flags & Py_PRINT_RAW) ? 's' : 'r');
+	if (formatv == NULL)
+		return -1;
+	buf = PyString_AS_STRING(formatv);
 	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
 	Py_END_ALLOW_THREADS
+	Py_DECREF(formatv);
 	return 0;
 }
 
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v, PREC_REPR);
-	return PyString_FromString(buf);
+	return complex_format(v, 'r');
 }
 
 static PyObject *
 complex_str(PyComplexObject *v)
 {
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v, PREC_STR);
-	return PyString_FromString(buf);
+	return complex_format(v, 's');
 }
 
 static long
@@ -867,11 +879,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	const char *s, *start;
 	char *end;
 	double x=0.0, y=0.0, z;
-	int got_re=0, got_im=0, got_bracket=0, done=0;
-	int digit_or_dot;
-	int sw_error=0;
-	int sign;
-	char buffer[256]; /* For errors */
+	int got_bracket=0;
 #ifdef Py_USING_UNICODE
 	char s_buffer[256];
 #endif
@@ -903,16 +911,13 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		return NULL;
 	}
 
+	errno = 0;
+
 	/* position on first nonblank */
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is an empty string");
-		return NULL;
-	}
-	if (s[0] == '(') {
+	if (*s == '(') {
 		/* Skip over possible bracket from repr(). */
 		got_bracket = 1;
 		s++;
@@ -920,120 +925,109 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			s++;
 	}
 
-	z = -1.0;
-	sign = 1;
-	do {
+	/* a valid complex string usually takes one of the three forms:
 
-		switch (*s) {
+	     <float>                  - real part only
+	     <float>j                 - imaginary part only
+	     <float><signed-float>j   - real and imaginary parts
 
-		case '\0':
-			if (s-start != len) {
-				PyErr_SetString(
-					PyExc_ValueError,
-					"complex() arg contains a null byte");
-				return NULL;
-			}
-			if(!done) sw_error=1;
-			break;
+	   where <float> represents any numeric string that's accepted by the
+	   float constructor (including 'nan', 'inf', 'infinity', etc.), and
+	   <signed-float> is any string of the form <float> whose first
+	   character is '+' or '-'.
 
-		case ')':
-			if (!got_bracket || !(got_re || got_im)) {
-				sw_error=1;
-				break;
-			}
-			got_bracket=0;
-			done=1;
-			s++;
-			while (*s && isspace(Py_CHARMASK(*s)))
+	   For backwards compatibility, the extra forms
+
+	     <float><sign>j
+	     <sign>j
+	     j
+
+	   are also accepted, though support for these forms may be removed from
+	   a future version of Python.
+	*/
+
+	/* first look for forms starting with <float> */
+	z = PyOS_ascii_strtod(s, &end);
+	if (end == s && errno == ENOMEM)
+		return PyErr_NoMemory();
+	if (errno == ERANGE && fabs(z) >= 1.0)
+		goto overflow;
+
+	if (end != s) {
+		/* all 4 forms starting with <float> land here */
+		s = end;
+		if (*s == '+' || *s == '-') {
+			/* <float><signed-float>j | <float><sign>j */
+			x = z;
+			y = PyOS_ascii_strtod(s, &end);
+			if (end == s && errno == ENOMEM)
+				return PyErr_NoMemory();
+			if (errno == ERANGE && fabs(z) >= 1.0)
+				goto overflow;
+			if (end != s)
+				/* <float><signed-float>j */
+				s = end;
+			else {
+				/* <float><sign>j */
+				y = *s == '+' ? 1.0 : -1.0;
 				s++;
-			if (*s) sw_error=1;
-			break;
-
-		case '-':
-			sign = -1;
-				/* Fallthrough */
-		case '+':
-			if (done)  sw_error=1;
+			}
+			if (!(*s == 'j' || *s == 'J'))
+				goto parse_error;
 			s++;
-			if  (  *s=='\0'||*s=='+'||*s=='-'||*s==')'||
-			       isspace(Py_CHARMASK(*s))  )  sw_error=1;
-			break;
-
-		case 'J':
-		case 'j':
-			if (got_im || done) {
-				sw_error = 1;
-				break;
-			}
-			if  (z<0.0) {
-				y=sign;
-			}
-			else{
-				y=sign*z;
-			}
-			got_im=1;
+		}
+		else if (*s == 'j' || *s == 'J') {
+			/* <float>j */
 			s++;
-			if  (*s!='+' && *s!='-' )
-				done=1;
-			break;
-
-		default:
-			if (isspace(Py_CHARMASK(*s))) {
-				while (*s && isspace(Py_CHARMASK(*s)))
-					s++;
-				if (*s && *s != ')')
-					sw_error=1;
-				else
-					done = 1;
-				break;
-			}
-			digit_or_dot =
-				(*s=='.' || isdigit(Py_CHARMASK(*s)));
-			if  (done||!digit_or_dot) {
-				sw_error=1;
-				break;
-			}
-			errno = 0;
-			PyFPE_START_PROTECT("strtod", return 0)
-				z = PyOS_ascii_strtod(s, &end) ;
-			PyFPE_END_PROTECT(z)
-				if (errno != 0) {
-					PyOS_snprintf(buffer, sizeof(buffer),
-					  "float() out of range: %.150s", s);
-					PyErr_SetString(
-						PyExc_ValueError,
-						buffer);
-					return NULL;
-				}
-			s=end;
-			if  (*s=='J' || *s=='j') {
-
-				break;
-			}
-			if  (got_re) {
-				sw_error=1;
-				break;
-			}
-
-				/* accept a real part */
-			x=sign*z;
-			got_re=1;
-			if  (got_im)  done=1;
-			z = -1.0;
-			sign = 1;
-			break;
-
-		}  /* end of switch  */
-
-	} while (s - start < len && !sw_error);
-
-	if (sw_error || got_bracket) {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is a malformed string");
-		return NULL;
+			y = z;
+		}
+		else
+			/* <float> */
+			x = z;
+	}
+	else {
+		/* not starting with <float>; must be <sign>j or j */
+		if (*s == '+' || *s == '-') {
+			/* <sign>j */
+			y = *s == '+' ? 1.0 : -1.0;
+			s++;
+		}
+		else
+			/* j */
+			y = 1.0;
+		if (!(*s == 'j' || *s == 'J'))
+			goto parse_error;
+		s++;
 	}
 
+	/* trailing whitespace and closing bracket */
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (got_bracket) {
+		/* if there was an opening parenthesis, then the corresponding
+		   closing parenthesis should be right here */
+		if (*s != ')')
+			goto parse_error;
+		s++;
+		while (*s && isspace(Py_CHARMASK(*s)))
+			s++;
+	}
+
+	/* we should now be at the end of the string */
+	if (s-start != len)
+		goto parse_error;
+
 	return complex_subtype_from_doubles(type, x, y);
+
+  parse_error:
+	PyErr_SetString(PyExc_ValueError,
+			"complex() arg is a malformed string");
+	return NULL;
+
+  overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"complex() arg overflow");
+
 }
 
 static PyObject *

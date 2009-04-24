@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5816: complex(repr(z)) now recovers z exactly, even when
+  z involves nans, infs or negative zeros.
+
 - Implement PEP 378, Format Specifier for Thousands Separator, for
   floats, ints, and longs.
 
