@@ -432,16 +432,32 @@ class ComplexTest(unittest.TestCase):
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
     def test_repr_roundtrip(self):
-        # complex(repr(z)) should recover z exactly, even for complex numbers
-        # involving an infinity, nan, or negative zero
-        vals = [0.0, 1e-200, 0.0123, 3.1415, 1e50, INF, NAN]
+        vals = [0.0, 1e-500, 1e-315, 1e-200, 0.0123, 3.1415, 1e50, INF, NAN]
         vals += [-v for v in vals]
+
+        # complex(repr(z)) should recover z exactly, even for complex
+        # numbers involving an infinity, nan, or negative zero
         for x in vals:
             for y in vals:
                 z = complex(x, y)
                 roundtrip = complex(repr(z))
                 self.assertFloatsAreIdentical(z.real, roundtrip.real)
                 self.assertFloatsAreIdentical(z.imag, roundtrip.imag)
+
+        # if we predefine some constants, then eval(repr(z)) should
+        # also work, except that it might change the sign of zeros
+        inf, nan = float('inf'), float('nan')
+        infj, nanj = complex(0.0, inf), complex(0.0, nan)
+        for x in vals:
+            for y in vals:
+                z = complex(x, y)
+                roundtrip = eval(repr(z))
+                # adding 0.0 has no effect beside changing -0.0 to 0.0
+                self.assertFloatsAreIdentical(0.0 + z.real,
+                                              0.0 + roundtrip.real)
+                self.assertFloatsAreIdentical(0.0 + z.imag,
+                                              0.0 + roundtrip.imag)
+
 
 
 def test_main():

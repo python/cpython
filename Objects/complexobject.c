@@ -962,7 +962,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			y = PyOS_ascii_strtod(s, &end);
 			if (end == s && errno == ENOMEM)
 				return PyErr_NoMemory();
-			if (errno == ERANGE && fabs(z) >= 1.0)
+			if (errno == ERANGE && fabs(y) >= 1.0)
 				goto overflow;
 			if (end != s)
 				/* <float><signed-float>j */
