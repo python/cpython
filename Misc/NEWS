@@ -76,6 +76,11 @@ Core and Builtins
 - Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
   to avoid compiler warnings.
 
+Installation
+------------
+
+- Issue #5756: Install idle and pydoc with a 3 suffix.
+
 Library
 -------
 
