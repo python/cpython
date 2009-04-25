@@ -68,7 +68,24 @@ These macros are used in the definition of :ctype:`PyObject` and
    Note that :cmacro:`PyObject_HEAD` is part of the expansion, and that its own
    expansion varies depending on the definition of :cmacro:`Py_TRACE_REFS`.
 
-PyObject_HEAD_INIT
+
+.. cmacro:: PyObject_HEAD_INIT(type)
+
+   This is a macro which expands to initialization values for a new
+   :ctype:`PyObject` type.  This macro expands to::
+
+      _PyObject_EXTRA_INIT
+      1, type,
+
+
+.. cmacro:: PyVarObject_HEAD_INIT(type, size)
+
+   This is a macro which expands to initialization values for a new
+   :ctype:`PyVarObject` type, including the :attr:`ob_size` field.
+   This macro expands to::
+
+      _PyObject_EXTRA_INIT
+      1, type, size,
 
 
 .. ctype:: PyCFunction
