@@ -246,6 +246,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4951: Fixed failure in test_httpservers.
+
 - Issue #3102:  All global symbols that the _ctypes extension defines
   are now prefixed with 'Py' or '_ctypes'.
 
