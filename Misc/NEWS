@@ -12,6 +12,8 @@ What's New in Python 2.6.3
 Core and Builtins
 -----------------
 
+- Issue #5829: complex('1e-500') no longer raises an exception
+
 - Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
   some builtin types.
 

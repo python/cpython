@@ -995,16 +995,16 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			}
 			errno = 0;
 			PyFPE_START_PROTECT("strtod", return 0)
-				z = PyOS_ascii_strtod(s, &end) ;
+			z = PyOS_ascii_strtod(s, &end) ;
 			PyFPE_END_PROTECT(z)
-				if (errno != 0) {
-					PyOS_snprintf(buffer, sizeof(buffer),
-					  "float() out of range: %.150s", s);
-					PyErr_SetString(
-						PyExc_ValueError,
-						buffer);
-					return NULL;
-				}
+			if (errno == ERANGE && fabs(z) >= 1.0) {
+				PyOS_snprintf(buffer, sizeof(buffer),
+					"float() out of range: %.150s", s);
+				PyErr_SetString(
+					PyExc_ValueError,
+					buffer);
+				return NULL;
+			}
 			s=end;
 			if  (*s=='J' || *s=='j') {
 
