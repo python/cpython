@@ -875,6 +875,10 @@ Tests
 
 - Issue #5083: New 'gui' resource for regrtest.
 
+- Issue #5837: Certain sequences of calls to set() and unset() for
+  support.EnvironmentVarGuard objects restored the environment variables
+  incorrectly on __exit__.
+
 
 What's New in Python 2.6 final
 ==============================

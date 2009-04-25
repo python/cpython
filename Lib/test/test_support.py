@@ -532,30 +532,32 @@ class EnvironmentVarGuard(object):
     a context manager."""
 
     def __init__(self):
-        self._environ = os.environ
-        self._unset = set()
-        self._reset = dict()
+        self._changed = {}
 
     def set(self, envvar, value):
-        if envvar not in self._environ:
-            self._unset.add(envvar)
-        else:
-            self._reset[envvar] = self._environ[envvar]
-        self._environ[envvar] = value
+        # Remember the initial value on the first access
+        if envvar not in self._changed:
+            self._changed[envvar] = os.environ.get(envvar)
+        os.environ[envvar] = value
 
     def unset(self, envvar):
-        if envvar in self._environ:
-            self._reset[envvar] = self._environ[envvar]
-            del self._environ[envvar]
+        # Remember the initial value on the first access
+        if envvar not in self._changed:
+            self._changed[envvar] = os.environ.get(envvar)
+        if envvar in os.environ:
+            del os.environ[envvar]
 
     def __enter__(self):
         return self
 
     def __exit__(self, *ignore_exc):
-        for envvar, value in self._reset.iteritems():
-            self._environ[envvar] = value
-        for unset in self._unset:
-            del self._environ[unset]
+        for (k, v) in self._changed.items():
+            if v is None:
+                if k in os.environ:
+                    del os.environ[k]
+            else:
+                os.environ[k] = v
+
 
 class TransientResource(object):
 
