@@ -332,7 +332,7 @@ New, Improved, and Deprecated Modules
   :func:`assertDictContainsSubset`, :func:`assertListEqual`,
   :func:`assertTupleEqual`, :func:`assertSequenceEqual`,
   :func:`assertRaisesRegexp`, :func:`assertIsNone`,
-  and :func:`assertIsNotNot`.
+  and :func:`assertIsNotNone`.
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
