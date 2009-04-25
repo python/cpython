@@ -1652,13 +1652,7 @@ def main():
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_struct', ['_struct.c'])],
 
-          # Scripts to install
-          # Commented out because we don't want them to override the 2.x
-          # ones. See #1590.
-          scripts = []
-          #scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
-          #           'Tools/scripts/2to3',
-          #           'Lib/smtpd.py']
+          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3"]
         )
 
 # --install-platlib
