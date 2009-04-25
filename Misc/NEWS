@@ -239,6 +239,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5810: Fixed Distutils test_build_scripts so it uses 
+  sysconfig.get_config_vars.
+
 - Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
