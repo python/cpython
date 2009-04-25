@@ -376,12 +376,22 @@ could be used to pass around structured data in its native, in-memory format.
    then the new buffer's contents extend to the length of the *base* object's
    exported buffer data.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *offset* and *size*. This
+      might require changes in your code for properly supporting 64-bit
+      systems.
+
 
 .. cfunction:: PyObject* PyBuffer_FromReadWriteObject(PyObject *base, Py_ssize_t offset, Py_ssize_t size)
 
    Return a new writable buffer object.  Parameters and exceptions are similar to
    those for :cfunc:`PyBuffer_FromObject`.  If the *base* object does not export
    the writeable buffer protocol, then :exc:`TypeError` is raised.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *offset* and *size*. This
+      might require changes in your code for properly supporting 64-bit
+      systems.
 
 
 .. cfunction:: PyObject* PyBuffer_FromMemory(void *ptr, Py_ssize_t size)
@@ -393,10 +403,18 @@ could be used to pass around structured data in its native, in-memory format.
    :const:`Py_END_OF_BUFFER` may *not* be passed for the *size* parameter;
    :exc:`ValueError` will be raised in that case.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyBuffer_FromReadWriteMemory(void *ptr, Py_ssize_t size)
 
    Similar to :cfunc:`PyBuffer_FromMemory`, but the returned buffer is writable.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyBuffer_New(Py_ssize_t size)
@@ -405,3 +423,7 @@ could be used to pass around structured data in its native, in-memory format.
    *size* bytes.  :exc:`ValueError` is returned if *size* is not zero or positive.
    Note that the memory buffer (as returned by :cfunc:`PyObject_AsWriteBuffer`) is
    not specifically aligned.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.

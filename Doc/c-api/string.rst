@@ -60,6 +60,10 @@ called with a non-string parameter.
    *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of the
    string are uninitialized.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *len*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyString_FromFormat(const char *format, ...)
 
@@ -134,6 +138,10 @@ called with a non-string parameter.
 
    Return the length of the string in string object *string*.
 
+   .. versionchanged:: 2.5
+      This function returned an :ctype:`int` type. This might require changes
+      in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: Py_ssize_t PyString_GET_SIZE(PyObject *string)
 
@@ -202,6 +210,9 @@ called with a non-string parameter.
    fails, the original string object at *\*string* is deallocated, *\*string* is
    set to *NULL*, a memory exception is set, and ``-1`` is returned.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *newsize*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 .. cfunction:: PyObject* PyString_Format(PyObject *format, PyObject *args)
 
