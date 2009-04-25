@@ -13,10 +13,26 @@ What's New in IDLE 3.0.1?
   user configuration of source encoding; all according to
   PEP 3120.
 
+What's New in IDLE 2.7? (UNRELEASED, but merged into 3.0 releases above.)
+=======================
+
+*Release date: XX-XXX-2009*
+
 - Issue #3549: On MacOS the preferences menu was not present
 
-- Issue #2665: On Windows, an IDLE installation upgraded from an old version
-  would not start if a custom theme was defined.
+What's New in IDLE 3.0 final?
+=============================
+
+*Release date: 03-Dec-2008*
+
+- IDLE would print a "Unhandled server exception!" message when internal
+  debugging is enabled.
+
+- Issue #4455: IDLE failed to display the windows list when two windows have
+  the same title.
+
+- Issue #4383: When IDLE cannot make the connection to its subprocess, it would
+  fail to properly display the error message.
 
 
 What's New in IDLE 3.0a3?
@@ -33,6 +49,8 @@ What's New in IDLE 3.0a3?
 
 - Shell was not colorizing due to bug introduced at r57998,  Bug 1586.
 
+- Issue #1585: IDLE uses non-existent xrange() function.
+
 
 What's New in IDLE 3.0a2?
 =========================
@@ -46,7 +64,7 @@ What's New in IDLE 3.0a2?
 What's New in IDLE 3.0a1?
 =========================
 
-*Release date: 31-AUG-2007*
+*Release date: 31-Aug-2007*
 
 - IDLE converted to Python 3000 syntax.
 
@@ -59,18 +77,29 @@ What's New in IDLE 3.0a1?
 - atexit call replaces sys.exitfunc.  The functionality of delete-exitfunc flag
   in config-main.cfg remains unchanged: if set, registered exit functions will
   be cleared before IDLE exits.
-  
 
-What's New in IDLE 2.6a1?
-=========================
 
-*Release date: XX-XXX-200X*  UNRELEASED, but merged into 3.0
+What's New in IDLE 2.6 final?
+=============================
+
+*Release date: 01-Oct-2008*, merged into 3.0 releases detailed above (3.0rc2)
+
+- Issue #2665: On Windows, an IDLE installation upgraded from an old version
+  would not start if a custom theme was defined.
+
+- Home / Control-A toggles between left margin and end of leading white
+  space.  issue1196903, patch by Jeff Shute.
+
+- Improved AutoCompleteWindow logic.  issue2062, patch by Tal Einat.
+
+- Autocompletion of filenames now support alternate separators, e.g. the
+  '/' char on Windows.  issue2061 Patch by Tal Einat.
 
 - Configured selection highlighting colors were ignored; updating highlighting
   in the config dialog would cause non-Python files to be colored as if they
   were Python source; improve use of ColorDelagator.  Patch 1334. Tal Einat.
 
-- ScriptBinding event handlers weren't returning 'break'. Patch 2050, Tal Einat.
+- ScriptBinding event handlers weren't returning 'break'. Patch 2050, Tal Einat
 
 - There was an error on exit if no sys.exitfunc was defined. Issue 1647.
 
