@@ -147,6 +147,10 @@ called with a non-string parameter.
 
    Macro form of :cfunc:`PyString_Size` but without error checking.
 
+   .. versionchanged:: 2.5
+      This macro returned an :ctype:`int` type. This might require changes in
+      your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: char* PyString_AsString(PyObject *string)
 
@@ -181,6 +185,10 @@ called with a non-string parameter.
    *string* is a Unicode object, this function computes the default encoding of
    *string* and operates on that.  If *string* is not a string object at all,
    :cfunc:`PyString_AsStringAndSize` returns ``-1`` and raises :exc:`TypeError`.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int *` type for *length*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: void PyString_Concat(PyObject **string, PyObject *newpart)
@@ -261,6 +269,10 @@ called with a non-string parameter.
 
       This function is not available in 3.x and does not have a PyBytes alias.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyString_AsDecodedObject(PyObject *str, const char *encoding, const char *errors)
 
@@ -286,6 +298,10 @@ called with a non-string parameter.
    .. note::
 
       This function is not available in 3.x and does not have a PyBytes alias.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)
