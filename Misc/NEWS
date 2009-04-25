@@ -119,6 +119,13 @@ Build
 - Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
   using Berkley-DB.
 
+Tests
+-----
+
+- Issue #5837: Certain sequences of calls to set() and unset() for
+  support.EnvironmentVarGuard objects restored the environment variables
+  incorrectly on __exit__.
+
 
 What's New in Python 3.0.1?
 ===========================
