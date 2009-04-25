@@ -90,7 +90,7 @@ class BuildScriptsTestCase(support.TempdirManager,
         # On linux-g++-32 with command line `./configure --enable-ipv6
         # --with-suffix=3`, python is compiled okay but the build scripts
         # failed when writing the name of the executable
-        old = sysconfig._config_vars.get('VERSION')
+        old = sysconfig.get_config_vars().get('VERSION')
         sysconfig._config_vars['VERSION'] = 4
         try:
             cmd.run()
