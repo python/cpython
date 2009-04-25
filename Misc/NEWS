@@ -773,6 +773,10 @@ Library
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
 
+- Issue #5828 (Invalid behavior of unicode.lower): Fixed bogus logic in
+  makeunicodedata.py and regenerated the Unicode database (This fixes
+  u'\u1d79'.lower() == '\x00').
+
 Tools/Demos
 -----------
 
