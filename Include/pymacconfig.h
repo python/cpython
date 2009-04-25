@@ -20,6 +20,9 @@
 # undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
 # undef DOUBLE_IS_BIG_ENDIAN_IEEE754
 # undef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
+/* we don't ever need to play with the x87 control word on OS X/Intel, so just
+   pretend that we can't, to avoid problems on Intel+PPC builds */
+# undef HAVE_GCC_ASM_FOR_X87
 
 #    undef VA_LIST_IS_ARRAY
 #    if defined(__LP64__) && defined(__x86_64__)
