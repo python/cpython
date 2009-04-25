@@ -23,6 +23,10 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
 
    .. versionadded:: 1.6
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int *` type for *buffer_len*. This might
+      require changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
 
@@ -33,6 +37,10 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    :exc:`TypeError` on error.
 
    .. versionadded:: 1.6
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int *` type for *buffer_len*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int PyObject_CheckReadBuffer(PyObject *o)
@@ -51,4 +59,8 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    buffer length.  Returns ``-1`` and sets a :exc:`TypeError` on error.
 
    .. versionadded:: 1.6
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int *` type for *buffer_len*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
