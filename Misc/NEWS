@@ -12,6 +12,8 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5829: complex('1e-500') no longer raises an exception
+
 - Issue #5604: non-ASCII characters in module name passed to
   imp.find_module() were converted to UTF-8 while the path is
   converted to the default filesystem encoding, causing nonsense.
