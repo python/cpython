@@ -342,7 +342,6 @@ static void
 format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 {
 	register char *cp;
-	char format[32];
 	int i;
 
 	/* Subroutine for float_repr and float_print.
@@ -352,8 +351,8 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 	   in such cases, we append ".0" to the string. */
 
 	assert(PyFloat_Check(v));
-	PyOS_snprintf(format, 32, "%%.%ig", precision);
-	PyOS_ascii_formatd(buf, buflen, format, v->ob_fval);
+	_PyOS_double_to_string(buf, buflen, v->ob_fval, 'g', precision,
+                               0, NULL);
 	cp = buf;
 	if (*cp == '-')
 		cp++;

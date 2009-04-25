@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5835: Deprecate PyOS_ascii_formatd and replace it with
+  _PyOS_double_to_string or PyOS_double_to_string.
+
 - Issue #5283: Setting __class__ in __del__ caused a segfault.
 
 - Issue #5816: complex(repr(z)) now recovers z exactly, even when
