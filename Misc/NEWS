@@ -246,6 +246,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5810: Fixed Distutils test_build_scripts so it uses 
+  sysconfig.get_config_vars.
+
 - Issue #4951: Fixed failure in test_httpservers.
 
 - Issue #3102:  All global symbols that the _ctypes extension defines
