@@ -32,6 +32,13 @@ Library
   dispatcher now has an 'ignore_log_types' attribute for suppressing
   log messages, which is set to 'warning' by default.
 
+Tests
+-----
+
+- Issue #5837: Certain sequences of calls to set() and unset() for
+  support.EnvironmentVarGuard objects restored the environment variables
+  incorrectly on __exit__.
+
 
 What's New in Python 2.6.2 rc 1
 ===============================
