@@ -11,6 +11,10 @@ Allocating Objects on the Heap
 
 .. cfunction:: PyVarObject* _PyObject_NewVar(PyTypeObject *type, Py_ssize_t size)
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: void _PyObject_Del(PyObject *op)
 

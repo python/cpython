@@ -49,6 +49,10 @@ List Objects
       :cfunc:`PySequence_SetItem`  or expose the object to Python code before setting
       all items to a real object with :cfunc:`PyList_SetItem`.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: Py_ssize_t PyList_Size(PyObject *list)
 
@@ -56,6 +60,10 @@ List Objects
 
    Return the length of the list object in *list*; this is equivalent to
    ``len(list)`` on a list object.
+
+   .. versionchanged:: 2.5
+      This function returned an :ctype:`int`. This might require changes in
+      your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: Py_ssize_t PyList_GET_SIZE(PyObject *list)
@@ -68,6 +76,10 @@ List Objects
    Return the object at position *pos* in the list pointed to by *p*.  The position
    must be positive, indexing from the end of the list is not supported.  If *pos*
    is out of bounds, return *NULL* and set an :exc:`IndexError` exception.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *index*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
@@ -84,6 +96,10 @@ List Objects
 
       This function "steals" a reference to *item* and discards a reference to an item
       already in the list at the affected position.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *index*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: void PyList_SET_ITEM(PyObject *list, Py_ssize_t i, PyObject *o)
@@ -104,6 +120,10 @@ List Objects
    if successful; return ``-1`` and set an exception if unsuccessful.  Analogous to
    ``list.insert(index, item)``.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *index*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PyList_Append(PyObject *list, PyObject *item)
 
@@ -118,6 +138,10 @@ List Objects
    and *high*.  Return *NULL* and set an exception if unsuccessful. Analogous to
    ``list[low:high]``.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *low* and *high*. This might
+      require changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PyList_SetSlice(PyObject *list, Py_ssize_t low, Py_ssize_t high, PyObject *itemlist)
 
@@ -125,6 +149,10 @@ List Objects
    Analogous to ``list[low:high] = itemlist``. The *itemlist* may be *NULL*,
    indicating the assignment of an empty list (slice deletion). Return ``0`` on
    success, ``-1`` on failure.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *low* and *high*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int PyList_Sort(PyObject *list)
