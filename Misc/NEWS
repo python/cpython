@@ -16,6 +16,8 @@ Core and Builtins
   imp.find_module() were converted to UTF-8 while the path is
   converted to the default filesystem encoding, causing nonsense.
 
+- Issue #5283: Setting __class__ in __del__ caused a segfault.
+
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
 - Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
