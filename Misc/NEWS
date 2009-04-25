@@ -124,6 +124,10 @@ Tests
   other modules with both C and Python implementations in the stdlib
   can be adjusted to use it over time.
 
+- Issue #5837: Certain sequences of calls to set() and unset() for
+  support.EnvironmentVarGuard objects restored the environment variables
+  incorrectly on __exit__.
+
 
 What's New in Python 3.1 alpha 2?
 =================================
