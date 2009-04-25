@@ -746,20 +746,20 @@ memtest:	all platform
 		-$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
-# Install everything
-fullinstall:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
+# Install everything, and install Python 3 to "python"
+fullinstall:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall @FRAMEWORKINSTALLLAST@
 
-# "make install" is an alias for "make altinstall" since we never want to
-# overwrite Python 2.x.
+# "make install" is an alias for "make altinstall" since we don't want to
+# overwrite Python 2.x by default.
 install:	altinstall
 		@echo "* Note: not installed as 'python'."
 		@echo "* Use 'make fullinstall' to install as 'python'."
 		@echo "* However, 'make fullinstall' is discouraged,"
 		@echo "* as it will clobber your Python 2.x installation."
 
-# Install almost everything without disturbing previous versions
+# Install almost everything without disturbing 2.x versions
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall @FRAMEWORKALTINSTALLLAST@
+                sharedinstall oldsharedinstall maninstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -785,10 +785,11 @@ $(DESTSHARED):
 
 # Install the interpreter (by creating a hard link to python$(VERSION))
 bininstall:	altbininstall
-	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON); \
-	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON); \
+	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE); \
+	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE); \
 	else true; \
 	fi
+	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)$(EXE))
 	-rm -f $(DESTDIR)$(BINDIR)/python-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
 
@@ -815,7 +816,13 @@ altbininstall:	$(BUILDPYTHON)
 		fi; \
 	else	true; \
 	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)3)
+	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE); \
+	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE); \
+	else true; \
+	fi
+	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)3$(EXE))
+	-rm -f $(DESTDIR)$(BINDIR)/python3-config
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
 
 # Install the manual page
 maninstall:
