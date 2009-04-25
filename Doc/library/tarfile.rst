@@ -384,8 +384,9 @@ object, see :ref:`tarinfo-objects` for details.
 
    .. note::
 
-      The file-like object is read-only and provides the following methods:
-      :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`seek`, :meth:`tell`.
+      The file-like object is read-only.  It provides the methods
+      :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`seek`, :meth:`tell`,
+      and :meth:`close`, and also supports iteration over its lines.
 
 
 .. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None)
