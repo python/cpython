@@ -146,7 +146,7 @@ Dictionary Objects
 
 .. cfunction:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
-   Iterate over all key-value pairs in the dictionary *p*.  The :ctype:`int`
+   Iterate over all key-value pairs in the dictionary *p*.  The :ctype:`Py_ssize_t`
    referred to by *ppos* must be initialized to ``0`` prior to the first call
    to this function to start the iteration; the function returns true for each
    pair in the dictionary, and false once all pairs have been reported.  The
