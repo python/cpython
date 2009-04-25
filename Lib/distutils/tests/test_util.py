@@ -29,7 +29,7 @@ class utilTestCase(unittest.TestCase):
         self.platform = sys.platform
         self.version = sys.version
         self.sep = os.sep
-        self.environ = os.environ
+        self.environ = dict(os.environ)
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
@@ -51,7 +51,10 @@ class utilTestCase(unittest.TestCase):
         sys.platform = self.platform
         sys.version = self.version
         os.sep = self.sep
-        os.environ = self.environ
+        for k, v in self.environ.items():
+            os.environ[k] = v
+        for k in set(os.environ) - set(self.environ):
+            del os.environ[k]
         os.path.join = self.join
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
