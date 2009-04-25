@@ -220,6 +220,9 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex("+1"), +1)
         self.assertAlmostEqual(complex("(1+2j)"), 1+2j)
         self.assertAlmostEqual(complex("(1.3+2.2j)"), 1.3+2.2j)
+        self.assertAlmostEqual(complex("1E-500"), 1e-500+0j)
+        self.assertAlmostEqual(complex("1e-500J"), 1e-500j)
+        self.assertAlmostEqual(complex("+1e-315-1e-400j"), 1e-315-1e-400j)
 
         class complex2(complex): pass
         self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
