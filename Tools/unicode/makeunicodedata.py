@@ -383,33 +383,32 @@ def makeunicodetype(unicode, trace):
                 flags |= XID_CONTINUE_MASK
             # use delta predictor for upper/lower/title if it fits
             if record[12]:
-                upper = int(record[12], 16) - char
-                if  -32768 <= upper <= 32767 and delta:
-                    upper = upper & 0xffff
-                else:
-                    upper += char
-                    delta = False
+                upper = int(record[12], 16)
             else:
-                upper = 0
+                upper = char
             if record[13]:
-                lower = int(record[13], 16) - char
-                if -32768 <= lower <= 32767 and delta:
-                    lower = lower & 0xffff
-                else:
-                    lower += char
-                    delta = False
+                lower = int(record[13], 16)
             else:
-                lower = 0
+                lower = char
             if record[14]:
-                title = int(record[14], 16) - char
-                if -32768 <= lower <= 32767 and delta:
-                    title = title & 0xffff
-                else:
-                    title += char
-                    delta = False
+                title = int(record[14], 16)
             else:
-                title = 0
-            if not delta:
+                # UCD.html says that a missing title char means that
+                # it defaults to the uppercase character, not to the
+                # character itself. Apparently, in the current UCD (5.x)
+                # this feature is never used
+                title = upper
+            upper_d = upper - char
+            lower_d = lower - char
+            title_d = title - char
+            if -32768 <= upper_d <= 32767 and \
+               -32768 <= lower_d <= 32767 and \
+               -32768 <= title_d <= 32767:
+                # use deltas
+                upper = upper_d & 0xffff
+                lower = lower_d & 0xffff
+                title = title_d & 0xffff
+            else:
                 flags |= NODELTA_MASK
             # decimal digit, integer digit
             decimal = 0
