@@ -43,6 +43,11 @@ Slice Objects
    incorporate the source of :cfunc:`PySlice_GetIndicesEx`, suitably renamed,
    in the source of your extension.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *length* and an
+      :ctype:`int *` type for *start*, *stop*, and *step*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PySlice_GetIndicesEx(PySliceObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
 
@@ -55,3 +60,9 @@ Slice Objects
    Returns 0 on success and -1 on error with exception set.
 
    .. versionadded:: 2.3
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *length* and an
+      :ctype:`int *` type for *start*, *stop*, *step*, and *slicelength*. This
+      might require changes in your code for properly supporting 64-bit
+      systems.
