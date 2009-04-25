@@ -4332,9 +4332,6 @@ Py_LOCAL_INLINE(int)
 formatfloat(char *buf, size_t buflen, int flags,
             int prec, int type, PyObject *v)
 {
-	/* fmt = '%#.' + `prec` + `type`
-	   worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
-	char fmt[20];
 	double x;
 	x = PyFloat_AsDouble(v);
 	if (x == -1.0 && PyErr_Occurred()) {
@@ -4378,10 +4375,8 @@ formatfloat(char *buf, size_t buflen, int flags,
 			"formatted float is too long (precision too large?)");
 		return -1;
 	}
-	PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
-		      (flags&F_ALT) ? "#" : "",
-		      prec, type);
-	PyOS_ascii_formatd(buf, buflen, fmt, x);
+	_PyOS_double_to_string(buf, buflen, x, type, prec,
+                            (flags&F_ALT)?Py_DTSF_ALT:0, NULL);
 	return (int)strlen(buf);
 }
 

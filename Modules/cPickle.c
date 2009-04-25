@@ -1166,7 +1166,8 @@ save_float(Picklerobject *self, PyObject *args)
 	else {
 		char c_str[250];
 		c_str[0] = FLOAT;
-		PyOS_ascii_formatd(c_str + 1, sizeof(c_str) - 2, "%.17g", x);
+		_PyOS_double_to_string(c_str + 1, sizeof(c_str) - 2, x, 'g',
+                                       17, 0, NULL);
 		/* Extend the formatted string with a newline character */
 		strcat(c_str, "\n");
 

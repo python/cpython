@@ -8,7 +8,17 @@ extern "C" {
 
 PyAPI_FUNC(double) PyOS_ascii_strtod(const char *str, char **ptr);
 PyAPI_FUNC(double) PyOS_ascii_atof(const char *str);
-PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, size_t buf_len,  const char *format, double d);
+
+/* Deprecated in 2.7 and 3.1. Will disappear in 2.8 (if it exists) and 3.2 */
+PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, size_t buf_len,
+                                      const char *format, double d);
+
+/* Use PyOS_double_to_string instead. It's the same, except it allocates
+   the appropriately sized buffer and returns it. This function will go
+   away in Python 2.8 and 3.2. */
+PyAPI_FUNC(void) _PyOS_double_to_string(char *buf, size_t buf_len, double val,
+                                        char format_code, int precision,
+                                        int flags, int* type);
 
 /* The caller is responsible for calling PyMem_Free to free the buffer
    that's is returned. */

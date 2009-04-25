@@ -236,6 +236,25 @@ change_decimal_from_locale_to_dot(char* buffer)
 }
 
 
+Py_LOCAL_INLINE(void)
+ensure_sign(char* buffer, size_t buf_size)
+{
+	Py_ssize_t len;
+
+	if (buffer[0] == '-')
+		/* Already have a sign. */
+		return;
+
+	/* Include the trailing 0 byte. */
+	len = strlen(buffer)+1;
+	if (len >= buf_size+1)
+		/* No room for the sign, don't do anything. */
+		return;
+
+	memmove(buffer+1, buffer, len);
+	buffer[0] = '+';
+}
+
 /* From the C99 standard, section 7.19.6:
 The exponent always contains at least two digits, and only as many more digits
 as necessary to represent the exponent.
@@ -363,7 +382,7 @@ ensure_decimal_point(char* buffer, size_t buf_size)
 #define FLOAT_FORMATBUFLEN 120
 
 /**
- * PyOS_ascii_formatd:
+ * _PyOS_ascii_formatd:
  * @buffer: A buffer to place the resulting string in
  * @buf_size: The length of the buffer.
  * @format: The printf()-style format to use for the
@@ -380,7 +399,8 @@ ensure_decimal_point(char* buffer, size_t buf_size)
  *
  * Return value: The pointer to the buffer with the converted string.
  **/
-char *
+/* DEPRECATED, will be deleted in 2.8 and 3.2 */
+PyAPI_FUNC(char *)
 PyOS_ascii_formatd(char       *buffer, 
 		   size_t      buf_size, 
 		   const char *format, 
@@ -392,6 +412,11 @@ PyOS_ascii_formatd(char       *buffer,
 	/* Issue 2264: code 'Z' requires copying the format.  'Z' is 'g', but
 	   also with at least one character past the decimal. */
 	char tmp_format[FLOAT_FORMATBUFLEN];
+
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "PyOS_ascii_formatd is deprecated, "
+			 "use PyOS_double_to_string instead", 1) < 0)
+		return NULL;
 
 	/* The last character in the format string must be the format char */
 	format_char = format[format_len - 1];
@@ -456,19 +481,21 @@ PyOS_ascii_formatd(char       *buffer,
 	return buffer;
 }
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
-                                         char format_code,
-                                         int precision,
-                                         int flags,
-                                         int *type)
+PyAPI_FUNC(void)
+_PyOS_double_to_string(char *buf, size_t buf_len, double val,
+		    char format_code, int precision,
+		    int flags, int *ptype)
 {
-	char buf[128];
 	char format[32];
-	Py_ssize_t len;
-	char *result;
-	char *p;
 	int t;
 	int upper = 0;
+
+	if (buf_len < 1) {
+		assert(0);
+		/* There's no way to signal this error. Just return. */
+		return;
+	}
+	buf[0] = 0;
 
 	/* Validate format_code, and map upper and lower case */
 	switch (format_code) {
@@ -490,25 +517,29 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		break;
 	case 'r':          /* repr format */
 		/* Supplied precision is unused, must be 0. */
-		if (precision != 0) {
-			PyErr_BadInternalCall();
-			return NULL;
-		}
+		if (precision != 0)
+			return;
 		precision = 17;
 		format_code = 'g';
 		break;
 	case 's':          /* str format */
 		/* Supplied precision is unused, must be 0. */
-		if (precision != 0) {
-			PyErr_BadInternalCall();
-			return NULL;
-		}
+		if (precision != 0)
+			return;
 		precision = 12;
 		format_code = 'g';
 		break;
 	default:
-		PyErr_BadInternalCall();
-		return NULL;
+		assert(0);
+		return;
+	}
+
+	/* Check for buf too small to fit "-inf". Other buffer too small
+	   conditions are dealt with when converting or formatting finite
+	   numbers. */
+	if (buf_len < 5) {
+		assert(0);
+		return;
 	}
 
 	/* Handle nan and inf. */
@@ -524,41 +555,74 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 	} else {
 		t = Py_DTST_FINITE;
 
+		/* Build the format string. */
+		PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
+			      (flags & Py_DTSF_ALT ? "#" : ""), precision,
+			      format_code);
 
+		/* Have PyOS_snprintf do the hard work. */
+		PyOS_snprintf(buf, buf_len, format, val);
+
+		/* Do various fixups on the return string */
+
+		/* Get the current locale, and find the decimal point string.
+		   Convert that string back to a dot. */
+		change_decimal_from_locale_to_dot(buf);
+
+		/* If an exponent exists, ensure that the exponent is at least
+		   MIN_EXPONENT_DIGITS digits, providing the buffer is large
+		   enough for the extra zeros.  Also, if there are more than
+		   MIN_EXPONENT_DIGITS, remove as many zeros as possible until
+		   we get back to MIN_EXPONENT_DIGITS */
+		ensure_minumim_exponent_length(buf, buf_len);
+
+		/* Possibly make sure we have at least one character after the
+		   decimal point (and make sure we have a decimal point). */
 		if (flags & Py_DTSF_ADD_DOT_0)
-			format_code = 'Z';
-
-		PyOS_snprintf(format, 32, "%%%s.%i%c", (flags & Py_DTSF_ALT ? "#" : ""), precision, format_code);
-		PyOS_ascii_formatd(buf, sizeof(buf), format, val);
+			ensure_decimal_point(buf, buf_len);
 	}
 
-	len = strlen(buf);
+	/* Add the sign if asked and the result isn't negative. */
+	if (flags & Py_DTSF_SIGN && buf[0] != '-')
+		ensure_sign(buf, buf_len);
 
-	/* Add 1 for the trailing 0 byte.
-	   Add 1 because we might need to make room for the sign.
-	   */
-	result = PyMem_Malloc(len + 2);
+	if (upper) {
+		/* Convert to upper case. */
+		char *p;
+		for (p = buf; *p; p++)
+			*p = toupper(*p);
+	}
+
+	if (ptype)
+		*ptype = t;
+}
+
+
+PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+                                         char format_code,
+                                         int precision,
+                                         int flags,
+                                         int *ptype)
+{
+	char buf[128];
+	Py_ssize_t len;
+	char *result;
+
+	_PyOS_double_to_string(buf, sizeof(buf), val, format_code, precision,
+			       flags, ptype);
+	len = strlen(buf);
+	if (len == 0) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+
+	/* Add 1 for the trailing 0 byte. */
+	result = PyMem_Malloc(len + 1);
 	if (result == NULL) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	p = result;
+	strcpy(result, buf);
 
-	/* Add sign when requested.  It's convenient (esp. when formatting
-	 complex numbers) to include a sign even for inf and nan. */
-	if (flags & Py_DTSF_SIGN && buf[0] != '-')
-		*p++ = '+';
-
-	strcpy(p, buf);
-
-	if (upper) {
-		/* Convert to upper case. */
-		char *p1;
-		for (p1 = p; *p1; p1++)
-			*p1 = toupper(*p1);
-	}
-
-	if (type)
-		*type = t;
 	return result;
 }

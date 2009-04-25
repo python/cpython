@@ -8245,11 +8245,13 @@ strtounicode(Py_UNICODE *buffer, const char *charbuffer)
 }
 
 static int
-doubletounicode(Py_UNICODE *buffer, size_t len, const char *format, double x)
+doubletounicode(Py_UNICODE *buffer, size_t len, int format_code,
+                int precision, int flags, double x)
 {
     Py_ssize_t result;
 
-    PyOS_ascii_formatd((char *)buffer, len, format, x);
+    _PyOS_double_to_string((char *)buffer, len, x, format_code, precision,
+                           flags, NULL);
     result = strtounicode(buffer, (char *)buffer);
     return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
@@ -8276,9 +8278,6 @@ formatfloat(Py_UNICODE *buf,
             int type,
             PyObject *v)
 {
-    /* fmt = '%#.' + `prec` + `type`
-       worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
-    char fmt[20];
     double x;
 
     x = PyFloat_AsDouble(v);
@@ -8320,10 +8319,8 @@ formatfloat(Py_UNICODE *buf,
                         "formatted float is too long (precision too large?)");
         return -1;
     }
-    PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
-                  (flags&F_ALT) ? "#" : "",
-                  prec, type);
-    return doubletounicode(buf, buflen, fmt, x);
+    return doubletounicode(buf, buflen, type, prec,
+                           (flags&F_ALT)?Py_DTSF_ALT:0, x);
 }
 
 static PyObject*
