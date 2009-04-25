@@ -1,7 +1,22 @@
-What's New in IDLE 2.6a3?
-=========================
+What's New in IDLE 2.6.3rc1?
+============================
 
-*Release date: XX-XXX-2008*
+*Release date: XX-XXX-2009*
+
+- Windows: Version string for the .chm help file changed, file not being
+  accessed  Patch 5783 Guilherme Polo
+
+What's New in IDLE 2.6.2rc1?
+============================
+
+*Release date: 06-Apr-2009*
+
+- Issue #3549: On MacOS the preferences menu was not present
+
+What's New in IDLE 2.6?
+=======================
+
+*Release date: 01-Oct-2008*
 
 - Issue #2665: On Windows, an IDLE installation upgraded from an old version
   would not start if a custom theme was defined.
@@ -23,7 +38,7 @@ What's New in IDLE 2.6a1?
   in the config dialog would cause non-Python files to be colored as if they
   were Python source; improve use of ColorDelagator.  Patch 1334. Tal Einat.
 
-- ScriptBinding event handlers weren't returning 'break'. Patch 2050, Tal Einat.
+- ScriptBinding event handlers weren't returning 'break'. Patch 2050, Tal Einat
 
 - There was an error on exit if no sys.exitfunc was defined. Issue 1647.
 
