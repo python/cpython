@@ -34,6 +34,10 @@ Library
   dispatcher now has an 'ignore_log_types' attribute for suppressing
   log messages, which is set to 'warning' by default.
 
+- Issue #5828 (Invalid behavior of unicode.lower): Fixed bogus logic in
+  makeunicodedata.py and regenerated the Unicode database (This fixes
+  u'\u1d79'.lower() == '\x00').
+
 Tests
 -----
 

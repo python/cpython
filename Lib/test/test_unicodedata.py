@@ -20,7 +20,7 @@ encoding = 'utf-8'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'aef99984a58c8e1e5363a3175f2ff9608599a93e'
+    expectedchecksum = 'b7db9b5f1d804976fa921d2009cbef6f025620c1'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -257,6 +257,19 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # the upper-case mapping: as delta, or as absolute value
         self.assert_(u"a".upper()==u'A')
         self.assert_(u"\u1d79".upper()==u'\ua77d')
+        self.assert_(u".".upper()==u".")
+
+    def test_bug_5828(self):
+        self.assertEqual(u"\u1d79".lower(), u"\u1d79")
+        # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
+        self.assertEqual(
+            [
+                c for c in range(sys.maxunicode+1)
+                if u"\x00" in unichr(c).lower()+unichr(c).upper()+unichr(c).title()
+            ],
+            [0]
+        )
+
 
 def test_main():
     test.test_support.run_unittest(
