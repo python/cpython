@@ -72,8 +72,8 @@ List Objects
    Macro form of :cfunc:`PyList_Size` without error checking.
 
    .. versionchanged:: 2.5
-      This function returned an :ctype:`int`. This might require changes in
-      your code for properly supporting 64-bit systems.
+      This macro returned an :ctype:`int`. This might require changes in your
+      code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
@@ -93,8 +93,8 @@ List Objects
    Macro form of :cfunc:`PyList_GetItem` without error checking.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` for *i*. This might require changes
-      in your code for properly supporting 64-bit systems.
+      This macro used an :ctype:`int` for *i*. This might require changes in
+      your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
@@ -119,13 +119,13 @@ List Objects
 
    .. note::
 
-      This function "steals" a reference to *item*, and, unlike
+      This macro "steals" a reference to *item*, and, unlike
       :cfunc:`PyList_SetItem`, does *not* discard a reference to any item that
       it being replaced; any reference in *list* at position *i* will be
       leaked.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` for *i*. This might require
+      This macro used an :ctype:`int` for *i*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
