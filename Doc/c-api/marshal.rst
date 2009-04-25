@@ -94,3 +94,7 @@ written using these routines?
    containing *len* bytes pointed to by *string*.  On error, sets the
    appropriate exception (:exc:`EOFError` or :exc:`TypeError`) and returns
    *NULL*.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *len*. This might require
+      changes in your code for properly supporting 64-bit systems.
