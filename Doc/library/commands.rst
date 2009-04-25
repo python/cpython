@@ -5,6 +5,12 @@
 .. module:: commands
    :platform: Unix
    :synopsis: Utility functions for running external commands.
+   :deprecated:
+
+.. deprecated:: 2.6
+   The :mod:`commands` module has been removed in Python 3.0.  Use the
+   :mod:`subprocess` module instead.
+
 .. sectionauthor:: Sue Williams <sbw@provis.com>
 
 
