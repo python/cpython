@@ -189,6 +189,16 @@ Since the representation is exact, it is useful for reliably porting values
 across different versions of Python (platform independence) and exchanging
 data with other languages that support the same format (such as Java and C99).
 
+Another helpful tool is the :func:`math.fsum` function which helps mitigate
+loss-of-precision during summation.  It tracks "lost digits" as values are
+added onto a running total.  That can make a difference in overall accuracy
+so that the errors do not accumulate to the point where they affect the
+final total:
+
+   >>> sum([0.1] * 10) == 1.0
+   False
+   >>> math.fsum([0.1] * 10) == 1.0
+   True
 
 .. _tut-fp-error:
 
