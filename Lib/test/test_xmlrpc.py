@@ -604,25 +604,25 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.cgi = None
 
     def test_cgi_get(self):
-        os.environ['REQUEST_METHOD'] = 'GET'
-        # if the method is GET and no request_text is given, it runs handle_get
-        # get sysout output
-        tmp = sys.stdout
-        sys.stdout = open(test_support.TESTFN, "w")
-        self.cgi.handle_request()
-        sys.stdout.close()
-        sys.stdout = tmp
+        with test_support.EnvironmentVarGuard() as env:
+            env.set('REQUEST_METHOD', 'GET')
+            # if the method is GET and no request_text is given, it runs handle_get
+            # get sysout output
+            tmp = sys.stdout
+            sys.stdout = open(test_support.TESTFN, "w")
+            self.cgi.handle_request()
+            sys.stdout.close()
+            sys.stdout = tmp
 
-        # parse Status header
-        handle = open(test_support.TESTFN, "r").read()
-        status = handle.split()[1]
-        message = ' '.join(handle.split()[2:4])
+            # parse Status header
+            handle = open(test_support.TESTFN, "r").read()
+            status = handle.split()[1]
+            message = ' '.join(handle.split()[2:4])
 
-        self.assertEqual(status, '400')
-        self.assertEqual(message, 'Bad Request')
+            self.assertEqual(status, '400')
+            self.assertEqual(message, 'Bad Request')
 
-        os.remove(test_support.TESTFN)
-        os.environ['REQUEST_METHOD'] = ''
+            os.remove(test_support.TESTFN)
 
     def test_cgi_xmlrpc_response(self):
         data = """<?xml version='1.0'?>
@@ -645,11 +645,9 @@ class CGIHandlerTestCase(unittest.TestCase):
         sys.stdin = open("xmldata.txt", "r")
         sys.stdout = open(test_support.TESTFN, "w")
 
-        os.environ['CONTENT_LENGTH'] = str(len(data))
-        try:
+        with test_support.EnvironmentVarGuard() as env:
+            env.set('CONTENT_LENGTH', str(len(data)))
             self.cgi.handle_request()
-        finally:
-            del os.environ['CONTENT_LENGTH']
 
         sys.stdin.close()
         sys.stdout.close()
