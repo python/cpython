@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #4971: Fix titlecase for characters that are their own
+  titlecase, but not their own uppercase.
+
 - Issue #5283: Setting __class__ in __del__ caused a segfault.
 
 - Issue #5816: complex(repr(z)) now recovers z exactly, even when
