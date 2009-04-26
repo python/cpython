@@ -94,6 +94,10 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 	decimal_point_pos = NULL;
 
+	/* Set errno to zero, so that we can distinguish zero results
+	   and underflows */
+	errno = 0;
+
 	/* We process any leading whitespace and the optional sign manually,
 	   then pass the remainder to the system strtod.  This ensures that
 	   the result of an underflow has the correct sign. (bug #1725)  */
@@ -107,27 +111,53 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	if (*p == '-') {
 		negate = 1;
 		p++;
-	} else if (*p == '+') {
+	}
+	else if (*p == '+') {
 		p++;
 	}
 
-	/* What's left should begin with a digit, a decimal point, or one of
-	   the letters i, I, n, N. It should not begin with 0x or 0X */
-	if ((!ISDIGIT(*p) &&
-	     *p != '.' && *p != 'i' && *p != 'I' && *p != 'n' && *p != 'N')
-	    ||
-	    (*p == '0' && (p[1] == 'x' || p[1] == 'X')))
-	{
-		if (endptr)
-			*endptr = (char*)nptr;
-		errno = EINVAL;
-		return val;
+	/* Parse infinities and nans */
+	if (*p == 'i' || *p == 'I') {
+		if (PyOS_strnicmp(p, "inf", 3) == 0) {
+			val = Py_HUGE_VAL;
+			if (PyOS_strnicmp(p+3, "inity", 5) == 0)
+				fail_pos = (char *)p+8;
+			else
+				fail_pos = (char *)p+3;
+			goto got_val;
+		}
+		else
+			goto invalid_string;
 	}
-	digits_pos = p;
+#ifdef Py_NAN
+	if (*p == 'n' || *p == 'N') {
+		if (PyOS_strnicmp(p, "nan", 3) == 0) {
+			val = Py_NAN;
+			fail_pos = (char *)p+3;
+			goto got_val;
+		}
+		else
+			goto invalid_string;
+	}
+#endif
 
-	if (decimal_point[0] != '.' || 
+	/* Some platform strtods accept hex floats; Python shouldn't (at the
+	   moment), so we check explicitly for strings starting with '0x'. */
+	if (*p == '0' && (*(p+1) == 'x' || *(p+1) == 'X'))
+		goto invalid_string;
+
+	/* Check that what's left begins with a digit or decimal point */
+	if (!ISDIGIT(*p) && *p != '.')
+		goto invalid_string;
+
+	digits_pos = p;
+	if (decimal_point[0] != '.' ||
 	    decimal_point[1] != 0)
 	{
+		/* Look for a '.' in the input; if present, it'll need to be
+		   swapped for the current locale's decimal point before we
+		   call strtod.  On the other hand, if we find the current
+		   locale's decimal point then the input is invalid. */
 		while (ISDIGIT(*p))
 			p++;
 
@@ -135,6 +165,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		{
 			decimal_point_pos = p++;
 
+			/* locate end of number */
 			while (ISDIGIT(*p))
 				p++;
 
@@ -147,27 +178,16 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 			end = p;
 		}
 		else if (strncmp(p, decimal_point, decimal_point_len) == 0)
-		{
 			/* Python bug #1417699 */
-			if (endptr)
-				*endptr = (char*)nptr;
-			errno = EINVAL;
-			return val;
-		}
+			goto invalid_string;
 		/* For the other cases, we need not convert the decimal
 		   point */
 	}
 
-	/* Set errno to zero, so that we can distinguish zero results
-	   and underflows */
-	errno = 0;
-
-	if (decimal_point_pos)
-	{
+	if (decimal_point_pos) {
 		char *copy, *c;
-
-		/* We need to convert the '.' to the locale specific decimal
-		   point */
+		/* Create a copy of the input, with the '.' converted to the
+		   locale-specific decimal point */
 		copy = (char *)PyMem_MALLOC(end - digits_pos +
 					    1 + decimal_point_len);
 		if (copy == NULL) {
@@ -208,8 +228,9 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	}
 
 	if (fail_pos == digits_pos)
-		fail_pos = (char *)nptr;
+		goto invalid_string;
 
+  got_val:
 	if (negate && fail_pos != nptr)
 		val = -val;
 
@@ -217,6 +238,12 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		*endptr = fail_pos;
 
 	return val;
+
+  invalid_string:
+	if (endptr)
+		*endptr = (char*)nptr;
+	errno = EINVAL;
+	return -1.0;
 }
 
 #endif

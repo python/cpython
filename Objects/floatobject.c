@@ -162,7 +162,7 @@ PyFloat_FromDouble(double fval)
 PyObject *
 PyFloat_FromString(PyObject *v)
 {
-	const char *s, *last, *end, *sp;
+	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* for errors */
 	char *s_buffer = NULL;
@@ -186,76 +186,40 @@ PyFloat_FromString(PyObject *v)
 				"float() argument must be a string or a number");
 		return NULL;
 	}
-
 	last = s + len;
+
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (*s == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for float()");
-		goto error;
-	}
-	sp = s;
-	/* We don't care about overflow or underflow.  If the platform supports
-	 * them, infinities and signed zeroes (on underflow) are fine.
-	 * However, strtod can return 0 for denormalized numbers.  Note that
-	 * whether strtod sets errno on underflow is not defined, so we can't
-	 * key off errno.
-         */
+	/* We don't care about overflow or underflow.  If the platform
+	 * supports them, infinities and signed zeroes (on underflow) are
+	 * fine. */
+	errno = 0;
 	PyFPE_START_PROTECT("strtod", goto error)
 	x = PyOS_ascii_strtod(s, (char **)&end);
 	PyFPE_END_PROTECT(x)
-	errno = 0;
-	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
-	   byte at the end of the string, when the input is inf(inity). */
-	if (end > last)
-		end = last;
-	/* Check for inf and nan. This is done late because it rarely happens. */
 	if (end == s) {
-		char *p = (char*)sp;
-		int sign = 1;
-
-		if (*p == '-') {
-			sign = -1;
-			p++;
+		if (errno == ENOMEM)
+			PyErr_NoMemory();
+		else {
+			PyOS_snprintf(buffer, sizeof(buffer),
+				"invalid literal for float(): %.200s", s);
+			PyErr_SetString(PyExc_ValueError, buffer);
 		}
-		if (*p == '+') {
-			p++;
-		}
-		if (PyOS_strnicmp(p, "inf", 4) == 0) {
-			if (s_buffer != NULL)
-				PyMem_FREE(s_buffer);
-			Py_RETURN_INF(sign);
-		}
-		if (PyOS_strnicmp(p, "infinity", 9) == 0) {
-			if (s_buffer != NULL)
-				PyMem_FREE(s_buffer);
-			Py_RETURN_INF(sign);
-		}
-#ifdef Py_NAN
-		if(PyOS_strnicmp(p, "nan", 4) == 0) {
-			if (s_buffer != NULL)
-				PyMem_FREE(s_buffer);
-			Py_RETURN_NAN;
-		}
-#endif
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
 		goto error;
 	}
 	/* Since end != s, the platform made *some* kind of sense out
 	   of the input.  Trust it. */
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
-	if (*end != '\0') {
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		goto error;
-	}
-	else if (end != last) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
+	if (end != last) {
+		if (*end == '\0')
+			PyErr_SetString(PyExc_ValueError,
+					"null byte in argument for float()");
+		else {
+			PyOS_snprintf(buffer, sizeof(buffer),
+				"invalid literal for float(): %.200s", s);
+			PyErr_SetString(PyExc_ValueError, buffer);
+		}
 		goto error;
 	}
 	result = PyFloat_FromDouble(x);
