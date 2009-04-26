@@ -20,7 +20,7 @@ encoding = 'utf-8'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'b7db9b5f1d804976fa921d2009cbef6f025620c1'
+    expectedchecksum = '6ec65b65835614ec00634c674bba0e50cd32c189'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -271,6 +271,11 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             [0]
         )
 
+    def test_buf_4971(self):
+        # LETTER DZ WITH CARON: DZ, Dz, dz
+        self.assertEqual("\u01c4".title(), "\u01c5")
+        self.assertEqual("\u01c5".title(), "\u01c5")
+        self.assertEqual("\u01c6".title(), "\u01c5")
 
 def test_main():
     test.support.run_unittest(
