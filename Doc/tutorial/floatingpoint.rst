@@ -108,23 +108,8 @@ reproduce *x*, but the output may be more pleasant to look at::
 It's important to realize that this is, in a real sense, an illusion: you're
 simply rounding the *display* of the true machine value.
 
-Other surprises follow from this one.  For example, after seeing ::
-
-   >>> format(0.1, '.17g')
-   '0.10000000000000001'
-
-you may be tempted to use the :func:`round` function to chop it back to the
-single digit you expect.  But that makes no difference::
-
-   >>> format(round(0.1, 1), '.17g')
-   '0.10000000000000001'
-
-The problem is that the binary floating-point value stored for "0.1" was already
-the best possible binary approximation to 1/10, so trying to round it again
-can't make it better:  it was already as good as it gets.
-
-Another consequence is that since 0.1 is not exactly 1/10, summing ten values of
-0.1 may not yield exactly 1.0, either::
+One illusion may beget another.  For example, since 0.1 is not exactly 1/10,
+summing ten values of 0.1 may not yield exactly 1.0, either::
 
    >>> sum = 0.0
    >>> for i in range(10):
