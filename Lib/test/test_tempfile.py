@@ -149,13 +149,11 @@ class test__candidate_tempdir_list(TC):
         # _candidate_tempdir_list contains the expected directories
 
         # Make sure the interesting environment variables are all set.
-        added = []
-        try:
+        with test_support.EnvironmentVarGuard() as env:
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname:
-                    os.environ[envname] = os.path.abspath(envname)
-                    added.append(envname)
+                    env.set(envname, os.path.abspath(envname))
 
             cand = tempfile._candidate_tempdir_list()
 
@@ -173,9 +171,6 @@ class test__candidate_tempdir_list(TC):
 
             # Not practical to try to verify the presence of OS-specific
             # paths in this list.
-        finally:
-            for p in added:
-                del os.environ[p]
 
 test_classes.append(test__candidate_tempdir_list)
 
