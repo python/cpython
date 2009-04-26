@@ -65,7 +65,7 @@ The following functions provide locale-independent string to number conversions.
    See the Unix man page :manpage:`strtod(2)` for details.
 
 
-.. cfunction:: char * PyOS_ascii_formatd(char *buffer, size_t buf_len, const char *format, double d)
+.. cfunction:: char* PyOS_ascii_formatd(char *buffer, size_t buf_len, const char *format, double d)
 
    Convert a :ctype:`double` to a string using the ``'.'`` as the decimal
    separator. *format* is a :cfunc:`printf`\ -style format string specifying the
@@ -80,38 +80,39 @@ The following functions provide locale-independent string to number conversions.
       This function is removed in Python 2.7 and 3.1.  Use :func:`PyOS_double_to_string`
       instead.
 
-.. cfunction:: char * PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
+
+.. cfunction:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
 
    Convert a :ctype:`double` *val* to a string using supplied
    *format_code*, *precision*, and *flags*.
 
-   *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
-   ``'g'``, ``'G'``, ``'s'``, or ``'r'``. For ``'s'`` and ``'r'``, the
-   supplied *precision* must be 0 and is ignored. These specify the
-   standards :func:`str` and :func:`repr` formats, respectively.
+   *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+   ``'G'``, ``'s'``, or ``'r'``.  For ``'s'`` and ``'r'``, the supplied
+   *precision* must be 0 and is ignored.  These specify the standard
+   :func:`str` and :func:`repr` formats, respectively.
 
    *flags* can be zero or more of the values *Py_DTSF_SIGN*,
-   *Py_DTSF_ADD_DOT_0*, or *Py_DTSF_ALT*, and-ed together.
+   *Py_DTSF_ADD_DOT_0*, or *Py_DTSF_ALT*, or-ed together:
 
-       *Py_DTSF_SIGN* means always precede the returned string with a
-       sign character, even if *val* is non-negative.
+   * *Py_DTSF_SIGN* means to always precede the returned string with a sign
+     character, even if *val* is non-negative.
 
-       *Py_DTSF_ADD_DOT_0* means ensure that the returned string will
-       not look like an integer.
+   * *Py_DTSF_ADD_DOT_0* means to ensure that the returned string will not look
+     like an integer.
 
-       *Py_DTSF_ALT* means apply "alternate" formatting rules. See the
-       documentation for the :func:`PyOS_snprintf` ``'#'`` specifier
-       for details.
+   * *Py_DTSF_ALT* means to apply "alternate" formatting rules.  See the
+     documentation for the :cfunc:`PyOS_snprintf` ``'#'`` specifier for
+     details.
 
-   If *ptype* is non-NULL, then the value it points to will be set to
-   one of *Py_DTST_FINITE*, *Py_DTST_INFINITE*, or *Py_DTST_NAN*,
-   signifying that *val* is a finite number, an infinite number, or
-   not a number, respectively.
+   If *ptype* is non-NULL, then the value it points to will be set to one of
+   *Py_DTST_FINITE*, *Py_DTST_INFINITE*, or *Py_DTST_NAN*, signifying that
+   *val* is a finite number, an infinite number, or not a number, respectively.
 
-   The return value is a pointer to *buffer* with the converted string or NULL if
-   the conversion failed.
+   The return value is a pointer to *buffer* with the converted string or
+   *NULL* if the conversion failed.
 
    .. versionadded:: 2.7
+
 
 .. cfunction:: double PyOS_ascii_atof(const char *nptr)
 
@@ -122,7 +123,7 @@ The following functions provide locale-independent string to number conversions.
    See the Unix man page :manpage:`atof(2)` for details.
 
 
-.. cfunction:: char * PyOS_stricmp(char *s1, char *s2)
+.. cfunction:: char* PyOS_stricmp(char *s1, char *s2)
 
    Case insensitive comparison of strings. The function works almost
    identically to :cfunc:`strcmp` except that it ignores the case.
@@ -130,7 +131,7 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 2.6
 
 
-.. cfunction:: char * PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
+.. cfunction:: char* PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
    identically to :cfunc:`strncmp` except that it ignores the case.
