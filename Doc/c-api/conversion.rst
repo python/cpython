@@ -73,6 +73,43 @@ The following functions provide locale-independent string to number conversions.
    The return value is a pointer to *buffer* with the converted string or NULL if
    the conversion failed.
 
+   .. deprecated:: 3.1
+     Use :cfunc:`PyOS_double_to_string` instead.
+
+
+.. cfunction:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
+
+   Convert a :ctype:`double` *val* to a string using supplied
+   *format_code*, *precision*, and *flags*.
+
+   *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+   ``'G'``, ``'s'``, or ``'r'``.  For ``'s'`` and ``'r'``, the supplied
+   *precision* must be 0 and is ignored.  These specify the standard
+   :func:`str` and :func:`repr` formats, respectively.
+
+   *flags* can be zero or more of the values *Py_DTSF_SIGN*,
+   *Py_DTSF_ADD_DOT_0*, or *Py_DTSF_ALT*, or-ed together:
+
+   * *Py_DTSF_SIGN* means to always precede the returned string with a sign
+     character, even if *val* is non-negative.
+
+   * *Py_DTSF_ADD_DOT_0* means to ensure that the returned string will not look
+     like an integer.
+
+   * *Py_DTSF_ALT* means to apply "alternate" formatting rules.  See the
+     documentation for the :cfunc:`PyOS_snprintf` ``'#'`` specifier for
+     details.
+
+   If *ptype* is non-NULL, then the value it points to will be set to one of
+   *Py_DTST_FINITE*, *Py_DTST_INFINITE*, or *Py_DTST_NAN*, signifying that
+   *val* is a finite number, an infinite number, or not a number, respectively.
+
+   The return value is a pointer to *buffer* with the converted string or
+   *NULL* if the conversion failed. The caller is responsible for freeing the
+   returned string by calling :cfunc:`PyMem_Free`.
+
+   .. versionadded:: 3.1
+
 
 .. cfunction:: double PyOS_ascii_atof(const char *nptr)
 

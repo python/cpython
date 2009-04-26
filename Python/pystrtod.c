@@ -433,7 +433,7 @@ ensure_decimal_point(char* buffer, size_t buf_size)
  * Return value: The pointer to the buffer with the converted string.
  **/
 char *
-PyOS_ascii_formatd(char       *buffer, 
+_PyOS_ascii_formatd(char       *buffer, 
 		   size_t      buf_size, 
 		   const char *format, 
 		   double      d)
@@ -506,6 +506,20 @@ PyOS_ascii_formatd(char       *buffer,
 		ensure_decimal_point(buffer, buf_size);
 
 	return buffer;
+}
+
+char *
+PyOS_ascii_formatd(char       *buffer, 
+		   size_t      buf_size, 
+		   const char *format, 
+		   double      d)
+{
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "PyOS_ascii_formatd is deprecated, "
+			 "use PyOS_double_to_string instead", 1) < 0)
+		return NULL;
+
+	return _PyOS_ascii_formatd(buffer, buf_size, format, d);
 }
 
 #ifdef PY_NO_SHORT_FLOAT_REPR
@@ -638,8 +652,10 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		if ((flags & Py_DTSF_ADD_DOT_0) && (format_code != 'e'))
 			format_code = 'Z';
 
-		PyOS_snprintf(format, 32, "%%%s.%i%c", (flags & Py_DTSF_ALT ? "#" : ""), precision, format_code);
-		PyOS_ascii_formatd(buf, sizeof(buf), format, val);
+		PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
+			      (flags & Py_DTSF_ALT ? "#" : ""), precision,
+			      format_code);
+		_PyOS_ascii_formatd(buf, sizeof(buf), format, val);
 		/* remove trailing zeros if necessary */
 		if (strip_trailing_zeros)
 			remove_trailing_zeros(buf);
