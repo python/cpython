@@ -304,6 +304,10 @@ is considered sufficient for this determination.
    and mapping protocols, the sequence length is returned.  On error, ``-1`` is
    returned.  This is the equivalent to the Python expression ``len(o)``.
 
+   .. versionchanged:: 2.5
+      These functions returned an :ctype:`int` type. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyObject_GetItem(PyObject *o, PyObject *key)
 

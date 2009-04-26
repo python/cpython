@@ -66,6 +66,10 @@ Type Objects
 
    XXX: Document.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *nitems*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 

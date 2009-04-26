@@ -15,8 +15,8 @@ Buffer Objects
 
 Python objects implemented in C can export a "buffer interface."  These
 functions can be used by an object to expose its data in a raw, byte-oriented
-format. Clients of the object can use the buffer interface to access the object
-data directly, without needing to copy it first.
+format. Clients of the object can use the buffer interface to access the
+object data directly, without needing to copy it first.
 
 Two examples of objects that support the buffer interface are bytes and
 arrays. The bytes object exposes the character contents in the buffer
@@ -61,9 +61,9 @@ could be used to pass around structured data in its native, in-memory format.
    .. cmember:: const char *format
       :noindex:
 
-      A *NULL* terminated string in :mod:`struct` module style syntax giving the
-      contents of the elements available through the buffer.  If this is *NULL*,
-      ``"B"`` (unsigned bytes) is assumed.
+      A *NULL* terminated string in :mod:`struct` module style syntax giving
+      the contents of the elements available through the buffer.  If this is
+      *NULL*, ``"B"`` (unsigned bytes) is assumed.
 
    .. cmember:: int ndim
 
@@ -113,11 +113,11 @@ could be used to pass around structured data in its native, in-memory format.
    .. cmember:: Py_ssize_t itemsize
 
       This is a storage for the itemsize (in bytes) of each element of the
-      shared memory. It is technically un-necessary as it can be obtained using
-      :cfunc:`PyBuffer_SizeFromFormat`, however an exporter may know this
-      information without parsing the format string and it is necessary to know
-      the itemsize for proper interpretation of striding. Therefore, storing it
-      is more convenient and faster.
+      shared memory. It is technically un-necessary as it can be obtained
+      using :cfunc:`PyBuffer_SizeFromFormat`, however an exporter may know
+      this information without parsing the format string and it is necessary
+      to know the itemsize for proper interpretation of striding. Therefore,
+      storing it is more convenient and faster.
 
    .. cmember:: void *internal
 
@@ -140,20 +140,20 @@ Buffer related functions
 .. cfunction:: int PyObject_GetBuffer(PyObject *obj, PyObject *view, int flags)
 
       Export *obj* into a :ctype:`Py_buffer`, *view*.  These arguments must
-      never be *NULL*.  The *flags* argument is a bit field indicating what kind
-      of buffer the caller is prepared to deal with and therefore what kind of
-      buffer the exporter is allowed to return.  The buffer interface allows for
-      complicated memory sharing possibilities, but some caller may not be able
-      to handle all the complexibity but may want to see if the exporter will
-      let them take a simpler view to its memory.
+      never be *NULL*.  The *flags* argument is a bit field indicating what
+      kind of buffer the caller is prepared to deal with and therefore what
+      kind of buffer the exporter is allowed to return.  The buffer interface
+      allows for complicated memory sharing possibilities, but some caller may
+      not be able to handle all the complexibity but may want to see if the
+      exporter will let them take a simpler view to its memory.
 
       Some exporters may not be able to share memory in every possible way and
       may need to raise errors to signal to some consumers that something is
       just not possible. These errors should be a :exc:`BufferError` unless
-      there is another error that is actually causing the problem. The exporter
-      can use flags information to simplify how much of the :cdata:`Py_buffer`
-      structure is filled in with non-default values and/or raise an error if
-      the object can't support a simpler view of its memory.
+      there is another error that is actually causing the problem. The
+      exporter can use flags information to simplify how much of the
+      :cdata:`Py_buffer` structure is filled in with non-default values and/or
+      raise an error if the object can't support a simpler view of its memory.
 
       0 is returned on success and -1 on error.
 
@@ -264,16 +264,16 @@ Buffer related functions
 
 .. cfunction:: int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran)
 
-   Copy *len* bytes of data pointed to by the contiguous chunk of memory pointed
-   to by *buf* into the buffer exported by obj.  The buffer must of course be
-   writable.  Return 0 on success and return -1 and raise an error on failure.
-   If the object does not have a writable buffer, then an error is raised.  If
-   *fortran* is ``'F'``, then if the object is multi-dimensional, then the data
-   will be copied into the array in Fortran-style (first dimension varies the
-   fastest).  If *fortran* is ``'C'``, then the data will be copied into the
-   array in C-style (last dimension varies the fastest).  If *fortran* is
-   ``'A'``, then it does not matter and the copy will be made in whatever way is
-   more efficient.
+   Copy *len* bytes of data pointed to by the contiguous chunk of memory
+   pointed to by *buf* into the buffer exported by obj.  The buffer must of
+   course be writable.  Return 0 on success and return -1 and raise an error
+   on failure.  If the object does not have a writable buffer, then an error
+   is raised.  If *fortran* is ``'F'``, then if the object is
+   multi-dimensional, then the data will be copied into the array in
+   Fortran-style (first dimension varies the fastest).  If *fortran* is
+   ``'C'``, then the data will be copied into the array in C-style (last
+   dimension varies the fastest).  If *fortran* is ``'A'``, then it does not
+   matter and the copy will be made in whatever way is more efficient.
 
 
 .. cfunction:: int PyBuffer_IsContiguous(Py_buffer *view, char fortran)
