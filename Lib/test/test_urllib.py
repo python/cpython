@@ -117,27 +117,19 @@ class urlopen_FileTests(unittest.TestCase):
 class ProxyTests(unittest.TestCase):
 
     def setUp(self):
-        # Save all proxy related env vars
-        self._saved_environ = dict([(k, v) for k, v in os.environ.items()
-                                    if k.lower().find('proxy') >= 0])
-        # Delete all proxy related env vars
-        for k in self._saved_environ:
-            del os.environ[k]
+        # Records changes to env vars
+        self.env = support.EnvironmentVarGuard()
 
     def tearDown(self):
         # Restore all proxy related env vars
-        for k, v in self._saved_environ.items():
-            os.environ[k] = v
+        self.env.__exit__()
+        del self.env
 
     def test_getproxies_environment_keep_no_proxies(self):
-        try:
-            os.environ['NO_PROXY'] = 'localhost'
-            proxies = urllib.request.getproxies_environment()
-            # getproxies_environment use lowered case truncated (no '_proxy') keys
-            self.assertEquals('localhost', proxies['no'])
-        finally:
-            # The old value will be restored by tearDown, if applicable.
-            del os.environ['NO_PROXY']
+        self.env.set('NO_PROXY', 'localhost')
+        proxies = urllib.request.getproxies_environment()
+        # getproxies_environment use lowered case truncated (no '_proxy') keys
+        self.assertEquals('localhost', proxies['no'])
 
 
 class urlopen_HttpTests(unittest.TestCase):

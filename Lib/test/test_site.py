@@ -5,7 +5,7 @@ executing have not been removed.
 
 """
 import unittest
-from test.support import TestSkipped, run_unittest, TESTFN
+from test.support import TestSkipped, run_unittest, TESTFN, EnvironmentVarGuard
 import builtins
 import os
 import sys

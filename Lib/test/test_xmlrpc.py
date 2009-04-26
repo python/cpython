@@ -544,25 +544,25 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.cgi = None
 
     def test_cgi_get(self):
-        os.environ['REQUEST_METHOD'] = 'GET'
-        # if the method is GET and no request_text is given, it runs handle_get
-        # get sysout output
-        tmp = sys.stdout
-        sys.stdout = open(support.TESTFN, "w")
-        self.cgi.handle_request()
-        sys.stdout.close()
-        sys.stdout = tmp
+        with support.EnvironmentVarGuard() as env:
+            env.set('REQUEST_METHOD', 'GET')
+            # if the method is GET and no request_text is given, it runs handle_get
+            # get sysout output
+            tmp = sys.stdout
+            sys.stdout = open(support.TESTFN, "w")
+            self.cgi.handle_request()
+            sys.stdout.close()
+            sys.stdout = tmp
 
-        # parse Status header
-        handle = open(support.TESTFN, "r").read()
-        status = handle.split()[1]
-        message = ' '.join(handle.split()[2:4])
+            # parse Status header
+            handle = open(support.TESTFN, "r").read()
+            status = handle.split()[1]
+            message = ' '.join(handle.split()[2:4])
 
-        self.assertEqual(status, '400')
-        self.assertEqual(message, 'Bad Request')
+            self.assertEqual(status, '400')
+            self.assertEqual(message, 'Bad Request')
 
-        os.remove(support.TESTFN)
-        os.environ['REQUEST_METHOD'] = ''
+            os.remove(support.TESTFN)
 
     def test_cgi_xmlrpc_response(self):
         data = """<?xml version='1.0'?>
