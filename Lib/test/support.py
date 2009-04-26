@@ -804,8 +804,8 @@ def _parse_guards(guards):
     # Returns a tuple ({platform_name: run_me}, default_value)
     if not guards:
         return ({'cpython': True}, False)
-    is_true = guards.values()[0]
-    assert guards.values() == [is_true] * len(guards)   # all True or all False
+    is_true = list(guards.values())[0]
+    assert list(guards.values()) == [is_true] * len(guards)   # all True or all False
     return (guards, not is_true)
 
 # Use the following check to guard CPython's implementation-specific tests --
