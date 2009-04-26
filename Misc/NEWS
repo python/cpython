@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4971: Fix titlecase for characters that are their own
+  titlecase, but not their own uppercase.
+
 - Issue #5835: Deprecate PyOS_ascii_formatd and replace it with
   _PyOS_double_to_string or PyOS_double_to_string.
 
