@@ -37,6 +37,10 @@ Tuple Objects
 
    Return a new tuple object of size *len*, or *NULL* on failure.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *len*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
@@ -44,10 +48,18 @@ Tuple Objects
    are initialized to the subsequent *n* C arguments pointing to Python objects.
    ``PyTuple_Pack(2, a, b)`` is equivalent to ``Py_BuildValue("(OO)", a, b)``.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *n*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
+
+   .. versionchanged:: 2.5
+      This function returned an :ctype:`int` type. This might require changes
+      in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
@@ -61,6 +73,10 @@ Tuple Objects
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
    out of bounds, return *NULL* and sets an :exc:`IndexError` exception.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *pos*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
@@ -72,6 +88,10 @@ Tuple Objects
    Take a slice of the tuple pointed to by *p* from *low* to *high* and return it
    as a new tuple.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *low* and *high*. This might
+      require changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
 
@@ -81,6 +101,10 @@ Tuple Objects
    .. note::
 
       This function "steals" a reference to *o*.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *pos*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -105,6 +129,11 @@ Tuple Objects
    this function. If the object referenced by ``*p`` is replaced, the original
    ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to *NULL*, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *newsize*. This might
+      require changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: int PyTuple_ClearFreeList(void)
 

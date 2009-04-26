@@ -100,6 +100,10 @@ All integers are implemented as "long" integer objects of arbitrary size.
    string is first encoded to a byte string using :cfunc:`PyUnicode_EncodeDecimal`
    and then converted using :cfunc:`PyLong_FromString`.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *length*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyLong_FromVoidPtr(void *p)
 

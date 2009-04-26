@@ -278,10 +278,10 @@ variable(s) whose address should be passed.
 
 ``w#`` (read-write character buffer) [char \*, int]
    Like ``s#``, but accepts any object which implements the read-write buffer
-   interface.  The :ctype:`char \*` variable is set to point to the first byte of
-   the buffer, and the :ctype:`int` is set to the length of the buffer.  Only
-   single-segment buffer objects are accepted; :exc:`TypeError` is raised for all
-   others.
+   interface.  The :ctype:`char \*` variable is set to point to the first byte
+   of the buffer, and the :ctype:`int` is set to the length of the buffer.
+   Only single-segment buffer objects are accepted; :exc:`TypeError` is raised
+   for all others.
 
 ``(items)`` (tuple) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units
@@ -405,6 +405,10 @@ and the following format units are left untouched.
    this call to :cfunc:`PyArg_ParseTuple`::
 
       PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *min* and *max*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* Py_BuildValue(const char *format, ...)
