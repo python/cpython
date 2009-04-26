@@ -177,7 +177,7 @@ still supported but now *officially* useless:  if pend is not NULL,
 PyObject *
 PyFloat_FromString(PyObject *v, char **pend)
 {
-	const char *s, *last, *end, *sp;
+	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* for errors */
 #ifdef Py_USING_UNICODE
@@ -212,80 +212,41 @@ PyFloat_FromString(PyObject *v, char **pend)
 				"float() argument must be a string or a number");
 		return NULL;
 	}
-
 	last = s + len;
+
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (*s == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for float()");
-		return NULL;
-	}
-	sp = s;
-	/* We don't care about overflow or underflow.  If the platform supports
-	 * them, infinities and signed zeroes (on underflow) are fine.
-	 * However, strtod can return 0 for denormalized numbers, where atof
-	 * does not.  So (alas!) we special-case a zero result.  Note that
-	 * whether strtod sets errno on underflow is not defined, so we can't
-	 * key off errno.
-         */
+	/* We don't care about overflow or underflow.  If the platform
+	 * supports them, infinities and signed zeroes (on underflow) are
+	 * fine. */
+	errno = 0;
 	PyFPE_START_PROTECT("strtod", return NULL)
 	x = PyOS_ascii_strtod(s, (char **)&end);
 	PyFPE_END_PROTECT(x)
-	errno = 0;
-	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
-	   byte at the end of the string, when the input is inf(inity). */
-	if (end > last)
-		end = last;
-	/* Check for inf and nan. This is done late because it rarely happens. */
 	if (end == s) {
-		char *p = (char*)sp;
-		int sign = 1;
-
-		if (*p == '-') {
-			sign = -1;
-			p++;
+		if (errno == ENOMEM)
+			PyErr_NoMemory();
+		else {
+			PyOS_snprintf(buffer, sizeof(buffer),
+				"invalid literal for float(): %.200s", s);
+			PyErr_SetString(PyExc_ValueError, buffer);
 		}
-		if (*p == '+') {
-			p++;
-		}
-		if (PyOS_strnicmp(p, "inf", 4) == 0) {
-			Py_RETURN_INF(sign);
-		}
-		if (PyOS_strnicmp(p, "infinity", 9) == 0) {
-			Py_RETURN_INF(sign);
-		}
-#ifdef Py_NAN
-		if(PyOS_strnicmp(p, "nan", 4) == 0) {
-			Py_RETURN_NAN;
-		}
-#endif
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
 	/* Since end != s, the platform made *some* kind of sense out
 	   of the input.  Trust it. */
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
-	if (*end != '\0') {
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
+	if (end != last) {
+		if (*end == '\0')
+			PyErr_SetString(PyExc_ValueError,
+					"null byte in argument for float()");
+		else {
+			PyOS_snprintf(buffer, sizeof(buffer),
+				"invalid literal for float(): %.200s", s);
+			PyErr_SetString(PyExc_ValueError, buffer);
+		}
 		return NULL;
-	}
-	else if (end != last) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
-		return NULL;
-	}
-	if (x == 0.0) {
-		/* See above -- may have been strtod being anal
-		   about denorms. */
-		PyFPE_START_PROTECT("atof", return NULL)
-		x = PyOS_ascii_atof(s);
-		PyFPE_END_PROTECT(x)
-		errno = 0;    /* whether atof ever set errno is undefined */
 	}
 	return PyFloat_FromDouble(x);
 }
