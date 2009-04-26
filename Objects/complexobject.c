@@ -911,8 +911,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		return NULL;
 	}
 
-	errno = 0;
-
 	/* position on first nonblank */
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
@@ -947,6 +945,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	*/
 
 	/* first look for forms starting with <float> */
+	errno = 0;
 	z = PyOS_ascii_strtod(s, &end);
 	if (end == s && errno == ENOMEM)
 		return PyErr_NoMemory();
@@ -959,6 +958,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		if (*s == '+' || *s == '-') {
 			/* <float><signed-float>j | <float><sign>j */
 			x = z;
+			errno = 0;
 			y = PyOS_ascii_strtod(s, &end);
 			if (end == s && errno == ENOMEM)
 				return PyErr_NoMemory();
