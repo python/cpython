@@ -109,14 +109,24 @@ It's important to realize that this is, in a real sense, an illusion: you're
 simply rounding the *display* of the true machine value.
 
 One illusion may beget another.  For example, since 0.1 is not exactly 1/10,
-summing ten values of 0.1 may not yield exactly 1.0, either::
+summing three values of 0.1 may not yield exactly 0.3, either::
 
-   >>> sum = 0.0
-   >>> for i in range(10):
-   ...     sum += 0.1
-   ...
-   >>> sum
-   0.9999999999999999
+   >>> .1 + .1 + .1 == .3
+   False
+
+Also, since the 0.1 cannot get any closer to the exact value of 1/10 and
+0.3 cannot get any closer to the exact value of 3/10, then pre-rounding with
+:func:`round` function cannot help::
+
+   >>> round(.1, 1) + round(.1, 1) + round(.1, 1) == round(.3, 1)
+   False
+
+Though the numbers cannot be made closer to their intended exact values,
+the :func:`round` function can be useful for post-rounding so that results
+have inexact values that are comparable to one another::
+
+    >>> round(.1 + .1 + .1, 1) == round(.3, 1)
+    True
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
