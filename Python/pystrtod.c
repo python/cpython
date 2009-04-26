@@ -229,7 +229,7 @@ as necessary to represent the exponent.
 /* Ensure that any exponent, if present, is at least MIN_EXPONENT_DIGITS
    in length. */
 Py_LOCAL_INLINE(void)
-ensure_minumim_exponent_length(char* buffer, size_t buf_size)
+ensure_minimum_exponent_length(char* buffer, size_t buf_size)
 {
 	char *p = strpbrk(buffer, "eE");
 	if (p && (*(p + 1) == '-' || *(p + 1) == '+')) {
@@ -468,7 +468,7 @@ PyOS_ascii_formatd(char       *buffer,
 	   for the extra zeros.  Also, if there are more than
 	   MIN_EXPONENT_DIGITS, remove as many zeros as possible until we get
 	   back to MIN_EXPONENT_DIGITS */
-	ensure_minumim_exponent_length(buffer, buf_size);
+	ensure_minimum_exponent_length(buffer, buf_size);
 
 	/* If format_char is 'Z', make sure we have at least one character
 	   after the decimal point (and make sure we have a decimal point). */
