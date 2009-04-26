@@ -1448,15 +1448,9 @@ class TestHelp(BaseTest):
         # we must restore its original value -- otherwise, this test
         # screws things up for other tests when it's part of the Python
         # test suite.
-        orig_columns = os.environ.get('COLUMNS')
-        os.environ['COLUMNS'] = str(columns)
-        try:
+        with test_support.EnvironmentVarGuard() as env:
+            env.set('COLUMNS', str(columns))
             return InterceptingOptionParser(option_list=options)
-        finally:
-            if orig_columns is None:
-                del os.environ['COLUMNS']
-            else:
-                os.environ['COLUMNS'] = orig_columns
 
     def assertHelpEquals(self, expected_output):
         save_argv = sys.argv[:]
@@ -1479,16 +1473,10 @@ class TestHelp(BaseTest):
         self.assertHelpEquals(_expected_help_long_opts_first)
 
     def test_help_title_formatter(self):
-        save = os.environ.get("COLUMNS")
-        try:
-            os.environ["COLUMNS"] = "80"
+        with test_support.EnvironmentVarGuard() as env:
+            env.set("COLUMNS", "80")
             self.parser.formatter = TitledHelpFormatter()
             self.assertHelpEquals(_expected_help_title_formatter)
-        finally:
-            if save is not None:
-                os.environ["COLUMNS"] = save
-            else:
-                del os.environ["COLUMNS"]
 
     def test_wrap_columns(self):
         # Ensure that wrapping respects $COLUMNS environment variable.
