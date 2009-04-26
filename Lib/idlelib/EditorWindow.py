@@ -24,6 +24,16 @@ from idlelib import macosxSupport
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 
+def _sphinx_version():
+    "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
+    major, minor, micro, level, serial = sys.version_info
+    release = '%s%s' % (major, minor)
+    if micro:
+        release += '%s' % micro
+    if level != 'final':
+        release += '%s%s' % (level[0], serial)
+    return release
+
 def _find_module(fullname, path=None):
     """Version of imp.find_module() that handles hierarchical module names"""
 
@@ -66,15 +76,13 @@ class EditorWindow(object):
                                            'Doc', 'index.html')
             elif sys.platform[:3] == 'win':
                 chmfile = os.path.join(sys.prefix, 'Doc',
-                                       'Python%d%d.chm' % sys.version_info[:2])
+                                       'Python%s.chm' % _sphinx_version())
                 if os.path.isfile(chmfile):
                     dochome = chmfile
-
             elif macosxSupport.runningAsOSXApp():
                 # documentation is stored inside the python framework
                 dochome = os.path.join(sys.prefix,
                         'Resources/English.lproj/Documentation/index.html')
-
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
