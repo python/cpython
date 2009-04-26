@@ -489,13 +489,13 @@ thread could immediately acquire the lock and store its own thread state in the
 global variable). Conversely, when acquiring the lock and restoring the thread
 state, the lock must be acquired before storing the thread state pointer.
 
-Why am I going on with so much detail about this?  Because when threads are
-created from C, they don't have the global interpreter lock, nor is there a
-thread state data structure for them.  Such threads must bootstrap themselves
-into existence, by first creating a thread state data structure, then acquiring
-the lock, and finally storing their thread state pointer, before they can start
-using the Python/C API.  When they are done, they should reset the thread state
-pointer, release the lock, and finally free their thread state data structure.
+It is important to note that when threads are created from C, they don't have
+the global interpreter lock, nor is there a thread state data structure for
+them.  Such threads must bootstrap themselves into existence, by first
+creating a thread state data structure, then acquiring the lock, and finally
+storing their thread state pointer, before they can start using the Python/C
+API.  When they are done, they should reset the thread state pointer, release
+the lock, and finally free their thread state data structure.
 
 Threads can take advantage of the :cfunc:`PyGILState_\*` functions to do all of
 the above automatically.  The typical idiom for calling into Python from a C
