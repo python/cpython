@@ -12,6 +12,9 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #4971: Fix titlecase for characters that are their own
+  titlecase, but not their own uppercase.
+
 - Issue #5829: complex('1e-500') no longer raises an exception
 
 - Issue #5604: non-ASCII characters in module name passed to

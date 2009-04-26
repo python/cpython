@@ -79,12 +79,7 @@ int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)
 Py_UNICODE _PyUnicode_ToTitlecase(register Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-    int delta;
-
-    if (ctype->title)
-        delta = ctype->title;
-    else
-	delta = ctype->upper;
+    int delta = ctype->title;
 
     if (ctype->flags & NODELTA_MASK)
 	return delta;
