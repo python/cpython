@@ -270,7 +270,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             [0]
         )
 
-    def test_buf_4971(self):
+    def test_bug_4971(self):
         # LETTER DZ WITH CARON: DZ, Dz, dz
         self.assertEqual(u"\u01c4".title(), u"\u01c5")
         self.assertEqual(u"\u01c5".title(), u"\u01c5")
