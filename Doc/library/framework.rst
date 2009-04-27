@@ -16,9 +16,9 @@ often be done on various different levels, i.e. to handle clicks in a single
 dialog window in a non-standard way it is not necessary to override the complete
 event handling.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 Work on the :mod:`FrameWork` has pretty much stopped, now that :mod:`PyObjC` is
 available for full Cocoa access from Python, and the documentation describes

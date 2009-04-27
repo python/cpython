@@ -20,9 +20,8 @@ Miscellaneous useful utilities
 Some of these are very old and/or not very robust; marked with "hmm."
 
 :mod:`ihooks`
-   --- Import hook support (for :mod:`rexec`; may become obsolete).
-
-   .. warning:: The :mod:`ihooks` module has been removed in Python 3.0.
+   --- Import hook support (for :mod:`rexec`; may become obsolete).  Removed in
+   Python 3.x.
 
 
 Platform specific modules
@@ -47,27 +46,19 @@ Multimedia
 ==========
 
 :mod:`audiodev`
-   --- Platform-independent API for playing audio data.
-
-   .. warning:: The :mod:`audiodev` module has been removed in 3.0.
+   --- Platform-independent API for playing audio data.  Removed in Python 3.x.
 
 :mod:`linuxaudiodev`
    --- Play audio data on the Linux audio device.  Replaced in Python 2.3 by the
-   :mod:`ossaudiodev` module.
-
-   .. warning:: The :mod:`linuxaudiodev` module has been removed in Python 3.0.
+   :mod:`ossaudiodev` module.  Removed in Python 3.x.
 
 :mod:`sunaudio`
    --- Interpret Sun audio headers (may become obsolete or a tool/demo).
-
-   .. warning:: The :mod:`sunaudio` module has been removed in Python 3.0.
+   Removed in Python 3.x.
 
 :mod:`toaiff`
    --- Convert "arbitrary" sound files to AIFF files; should probably become a tool
-   or demo.  Requires the external program :program:`sox`.
-
-
-   .. warning:: The :mod:`toaiff` module has been removed in 3.0.
+   or demo.  Requires the external program :program:`sox`.  Removed in Python 3.x.
 
 
 .. _undoc-mac-modules:
@@ -239,9 +230,8 @@ extensions.
    \envvar{PYTHONPATH}.
 
 :mod:`timing`
-   --- Measure time intervals to high resolution (use :func:`time.clock` instead).
-
-   .. warning:: The :mod:`timing` module has been removed in Python 3.0.
+   --- Measure time intervals to high resolution (use :func:`time.clock`
+   instead).  Removed in Python 3.x.
 
 
 SGI-specific Extension modules
@@ -255,6 +245,4 @@ of reality.
 
 :mod:`sv`
    --- Interface to the "simple video" board on SGI Indigo (obsolete hardware).
-
-   .. warning:: The :mod:`sv` module has been removed in Python 3.0.
-
+   Removed in Python 3.x.
