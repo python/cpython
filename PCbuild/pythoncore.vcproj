@@ -851,6 +851,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\pyctype.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\pydebug.h"
 				>
 			</File>
@@ -1740,6 +1744,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\pyarena.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\pyctype.c"
 				>
 			</File>
 			<File
