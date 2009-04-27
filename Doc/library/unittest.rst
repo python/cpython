@@ -608,7 +608,7 @@ Test cases
                assert_(expr[, msg])
                failUnless(expr[, msg])
 
-      Signal a test failure if *expr* is false; the explanation for the error
+      Signal a test failure if *expr* is false; the explanation for the failure
       will be *msg* if given, otherwise it will be :const:`None`.
 
       .. deprecated:: 3.1
