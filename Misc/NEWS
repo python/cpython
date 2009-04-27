@@ -252,7 +252,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #5810: Fixed Distutils test_build_scripts so it uses 
+- Issue #5854: Updated __all__ to include some missing names and remove some
+  names which should not be exported.
+
+- Issue #5810: Fixed Distutils test_build_scripts so it uses
   sysconfig.get_config_vars.
 
 - Issue #4951: Fixed failure in test_httpservers.
