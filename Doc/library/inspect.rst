@@ -455,7 +455,7 @@ six items: the frame object, the filename, the line number of the current line,
 the function name, a list of lines of context from the source code, and the
 index of the current line within that list.
 
-.. warning::
+.. note::
 
    Keeping references to frame objects, as found in the first element of the frame
    records these functions return, can cause your program to create reference

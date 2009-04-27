@@ -359,7 +359,7 @@ are always available.  They are listed here in alphabetical order.
       global and local dictionary, respectively, which may be useful to pass around
       for use as the second and third argument to :func:`exec`.
 
-   .. warning::
+   .. note::
 
       The default *locals* act as described for function :func:`locals` below:
       modifications to the default *locals* dictionary should not be attempted.
@@ -591,7 +591,7 @@ are always available.  They are listed here in alphabetical order.
 
    Update and return a dictionary representing the current local symbol table.
 
-   .. warning::
+   .. note::
 
       The contents of this dictionary should not be modified; changes may not affect
       the values of local variables used by the interpreter.
@@ -1166,7 +1166,7 @@ are always available.  They are listed here in alphabetical order.
    else that has a :attr:`__dict__` attribute), returns a dictionary corresponding
    to the object's symbol table.
 
-   .. warning::
+   .. note::
       The returned dictionary should not be modified:
       the effects on the corresponding symbol table are undefined. [#]_
 

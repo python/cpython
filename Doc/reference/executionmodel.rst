@@ -222,7 +222,7 @@ selected depending on the class of the instance: it must reference the class of
 the instance or a base class thereof.  The instance can be received by the
 handler and can carry additional information about the exceptional condition.
 
-.. warning::
+.. note::
 
    Exception messages are not part of the Python API.  Their contents may change
    from one version of Python to the next without warning and should not be

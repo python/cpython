@@ -1,4 +1,3 @@
-
 :mod:`aifc` --- Read and write AIFF and AIFC files
 ==================================================
 
@@ -16,10 +15,11 @@ AIFF is Audio Interchange File Format, a format for storing digital audio
 samples in a file.  AIFF-C is a newer version of the format that includes the
 ability to compress the audio data.
 
-.. warning::
+.. note::
 
    Some operations may only work under IRIX; these will raise :exc:`ImportError`
-   when attempting to import the :mod:`cl` module, which is only available on IRIX.
+   when attempting to import the :mod:`cl` module, which is only available on
+   IRIX.
 
 Audio files have a number of parameters that describe the audio data. The
 sampling rate or frame rate is the number of times per second the sound is

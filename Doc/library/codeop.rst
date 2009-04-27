@@ -42,7 +42,7 @@ To do just the former:
    (``'single'``, the default) or as an :term:`expression` (``'eval'``).  Any
    other value will cause :exc:`ValueError` to  be raised.
 
-   .. warning::
+   .. note::
 
       It is possible (but not likely) that the parser stops parsing with a
       successful outcome before reaching the end of the source; in this case,
