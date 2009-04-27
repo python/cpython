@@ -955,7 +955,6 @@ Test cases
       along with the method name.
 
       .. versionchanged:: 2.7
-
          In earlier versions this only returned the first line of the test
          method's docstring, if available or the :const:`None`.  That led to
          undesirable behavior of not printing the test name when someone was
@@ -1046,6 +1045,20 @@ Grouping tests
 
       Return the number of tests represented by this test object, including all
       individual tests and sub-suites.
+
+
+   .. method:: __iter__()
+
+      Tests grouped by a :class:`TestSuite` are always accessed by iteration.
+      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      that this method maybe called several times on a single suite
+      (for example when counting tests or comparing for equality)
+      so the tests returned must be the same for repeated iterations.
+
+      .. versionchanged:: 2.7
+         In earlier versions the :class:`TestSuite` accessed tests directly rather
+         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         for providing tests.
 
    In the typical usage of a :class:`TestSuite` object, the :meth:`run` method
    is invoked by a :class:`TestRunner` rather than by the end-user test harness.
@@ -1194,7 +1207,6 @@ Loading and running tests
       unexpected exception.
 
       .. versionchanged:: 2.2
-
          Contains formatted tracebacks instead of :func:`sys.exc_info` results.
 
 
@@ -1206,7 +1218,6 @@ Loading and running tests
       :meth:`TestCase.assert\*` methods.
 
       .. versionchanged:: 2.2
-
          Contains formatted tracebacks instead of :func:`sys.exc_info` results.
 
    .. attribute:: skipped
@@ -1345,6 +1356,12 @@ Loading and running tests
    A basic test runner implementation which prints results on standard error.  It
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
+
+   .. method:: _makeResult()
+
+      This method returns the instance of ``TestResult`` used by :meth:`run`.
+      It is not intended to be called directly, but can be overridden in
+      subclasses to provide a custom ``TestResult``.
 
 
 .. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader]]]]])
