@@ -14,7 +14,7 @@ interpreter.
 .. index:: object: traceback
 
 The module uses traceback objects --- this is the object type that is stored in
-the ``sys.last_traceback`` variable and returned as the third item from
+the :data:`sys.last_traceback` variable and returned as the third item from
 :func:`sys.exc_info`.
 
 The module defines the following functions:
@@ -55,7 +55,8 @@ The module defines the following functions:
 .. function:: print_last([limit[, file[, chain]]])
 
    This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file)``.
+   sys.last_traceback, limit, file)``.  In general it will work only after
+   an exception has reached an interactive prompt (see :data:`sys.last_type`).
 
 
 .. function:: print_stack([f[, limit[, file]]])
@@ -157,7 +158,9 @@ module. ::
 
 
 The following example demonstrates the different ways to print and format the
-exception and traceback::
+exception and traceback:
+
+.. testcode::
 
    import sys, traceback
 
@@ -190,27 +193,27 @@ exception and traceback::
        print("*** format_tb:")
        print(repr(traceback.format_tb(exceptionTraceback)))
        print("*** tb_lineno:", traceback.tb_lineno(exceptionTraceback))
-   print("*** print_last:")
-   traceback.print_last()
 
+The output for the example would look similar to this:
 
-The output for the example would look similar to this::
+.. testoutput::
+   :options: +NORMALIZE_WHITESPACE
 
    *** print_tb:
-     File "<doctest>", line 9, in <module>
+     File "<doctest...>", line 10, in <module>
        lumberjack()
    *** print_exception:
    Traceback (most recent call last):
-     File "<doctest>", line 9, in <module>
+     File "<doctest...>", line 10, in <module>
        lumberjack()
-     File "<doctest>", line 3, in lumberjack
+     File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
-     File "<doctest>", line 9, in <module>
+     File "<doctest...>", line 10, in <module>
        lumberjack()
-     File "<doctest>", line 3, in lumberjack
+     File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
    IndexError: tuple index out of range
    *** format_exc, first and last line:
@@ -218,26 +221,19 @@ The output for the example would look similar to this::
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest>", line 9, in <module>\n    lumberjack()\n',
-    '  File "<doctest>", line 3, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest>", line 6, in bright_side_of_death\n    return tuple()[0]\n',
+    '  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
+    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
-   [('<doctest>', 9, '<module>', 'lumberjack()'),
-    ('<doctest>', 3, 'lumberjack', 'bright_side_of_death()'),
-    ('<doctest>', 6, 'bright_side_of_death', 'return tuple()[0]')]
+   [('<doctest...>', 10, '<module>', 'lumberjack()'),
+    ('<doctest...>', 4, 'lumberjack', 'bright_side_of_death()'),
+    (u'<doctest...>', 7, 'bright_side_of_death', 'return tuple()[0]')]
    *** format_tb:
-   ['  File "<doctest>", line 9, in <module>\n    lumberjack()\n',
-    '  File "<doctest>", line 3, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest>", line 6, in bright_side_of_death\n    return tuple()[0]\n']
-   *** tb_lineno: 2
-   *** print_last:
-   Traceback (most recent call last):
-     File "<doctest>", line 9, in <module>
-       lumberjack()
-     File "<doctest>", line 3, in lumberjack
-       bright_side_of_death()
-   IndexError: tuple index out of range
+   ['  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
+    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n']
+   *** tb_lineno: 10
 
 
 The following example shows the different ways to print and format the stack::
@@ -266,7 +262,10 @@ The following example shows the different ways to print and format the stack::
     '  File "<doctest>", line 8, in lumberstack\n    print(repr(traceback.format_stack()))\n']
 
 
-This last example demonstrates the final few formatting functions::
+This last example demonstrates the final few formatting functions:
+
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
 
    >>> import traceback
    >>> traceback.format_list([('spam.py', 3, '<module>', 'spam.eggs()'),
