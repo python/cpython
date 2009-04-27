@@ -665,8 +665,8 @@ class SafeConfigParser(ConfigParser):
             raise TypeError("option values must be strings")
         # check for bad percent signs:
         # first, replace all "good" interpolations
-        tmp_value = self._interpvar_re.sub('', value)
-        tmp_value = tmp_value.replace('%%', '')
+        tmp_value = value.replace('%%', '')
+        tmp_value = self._interpvar_re.sub('', tmp_value)
         # then, check if there's a lone percent sign left
         percent_index = tmp_value.find('%')
         if percent_index != -1:
