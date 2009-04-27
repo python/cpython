@@ -269,10 +269,10 @@ The following example shows the different ways to print and format the stack::
 This last example demonstrates the final few formatting functions::
 
    >>> import traceback
-   >>> format_list([('spam.py', 3, '<module>', 'spam.eggs()'),
-   ...              ('eggs.py', 42, 'eggs', 'return "bacon"')])
+   >>> traceback.format_list([('spam.py', 3, '<module>', 'spam.eggs()'),
+   ...                        ('eggs.py', 42, 'eggs', 'return "bacon"')])
    ['  File "spam.py", line 3, in <module>\n    spam.eggs()\n',
     '  File "eggs.py", line 42, in eggs\n    return "bacon"\n']
-   >>> theError = IndexError('tuple indx out of range')
-   >>> traceback.format_exception_only(type(theError), theError)
+   >>> an_error = IndexError('tuple index out of range')
+   >>> traceback.format_exception_only(type(an_error), an_error)
    ['IndexError: tuple index out of range\n']
