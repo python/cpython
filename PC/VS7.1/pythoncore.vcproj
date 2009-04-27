@@ -722,6 +722,9 @@
 			RelativePath="..\..\Python\pyarena.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\pyctype.c">
+		</File>
+		<File
 			RelativePath="..\..\Python\pyfpe.c">
 		</File>
 		<File

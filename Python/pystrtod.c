@@ -3,12 +3,6 @@
 #include <Python.h>
 #include <locale.h>
 
-/* ascii character tests (as opposed to locale tests) */
-#define ISSPACE(c)  ((c) == ' ' || (c) == '\f' || (c) == '\n' || \
-                     (c) == '\r' || (c) == '\t' || (c) == '\v')
-#define ISDIGIT(c)  ((c) >= '0' && (c) <= '9')
-
-
 /**
  * PyOS_ascii_strtod:
  * @nptr:    the string to convert to a numeric value.
@@ -81,7 +75,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 	p = nptr;
 	/* Skip leading space */
-	while (ISSPACE(*p))
+	while (Py_ISSPACE(*p))
 		p++;
 
 	/* Process leading sign, if present */
@@ -124,7 +118,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		goto invalid_string;
 
 	/* Check that what's left begins with a digit or decimal point */
-	if (!ISDIGIT(*p) && *p != '.')
+	if (!Py_ISDIGIT(*p) && *p != '.')
 		goto invalid_string;
 
 	digits_pos = p;
@@ -135,7 +129,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		   swapped for the current locale's decimal point before we
 		   call strtod.  On the other hand, if we find the current
 		   locale's decimal point then the input is invalid. */
-		while (ISDIGIT(*p))
+		while (Py_ISDIGIT(*p))
 			p++;
 
 		if (*p == '.')
@@ -143,14 +137,14 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 			decimal_point_pos = p++;
 
 			/* locate end of number */
-			while (ISDIGIT(*p))
+			while (Py_ISDIGIT(*p))
 				p++;
 
 			if (*p == 'e' || *p == 'E')
 				p++;
 			if (*p == '+' || *p == '-')
 				p++;
-			while (ISDIGIT(*p))
+			while (Py_ISDIGIT(*p))
 				p++;
 			end = p;
 		}
@@ -244,7 +238,7 @@ change_decimal_from_locale_to_dot(char* buffer)
 
 		if (*buffer == '+' || *buffer == '-')
 			buffer++;
-		while (isdigit(Py_CHARMASK(*buffer)))
+		while (Py_ISDIGIT(*buffer))
 			buffer++;
 		if (strncmp(buffer, decimal_point, decimal_point_len) == 0) {
 			*buffer = '.';
@@ -306,7 +300,7 @@ ensure_minimum_exponent_length(char* buffer, size_t buf_size)
 
 		/* Find the end of the exponent, keeping track of leading
 		   zeros. */
-		while (*p && isdigit(Py_CHARMASK(*p))) {
+		while (*p && Py_ISDIGIT(*p)) {
 			if (in_leading_zeros && *p == '0')
 				++leading_zero_cnt;
 			if (*p != '0')
@@ -369,11 +363,11 @@ ensure_decimal_point(char* buffer, size_t buf_size)
 		/* Skip leading sign, if present.  I think this could only
 		   ever be '-', but it can't hurt to check for both. */
 		++p;
-	while (*p && isdigit(Py_CHARMASK(*p)))
+	while (*p && Py_ISDIGIT(*p))
 		++p;
 
 	if (*p == '.') {
-		if (isdigit(Py_CHARMASK(*(p+1)))) {
+		if (Py_ISDIGIT(*(p+1))) {
 			/* Nothing to do, we already have a decimal
 			   point and a digit after it */
 		}

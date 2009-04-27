@@ -2244,16 +2244,16 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 
     for (i = j = 0; i < len; ) {
         /* find a token */
-        while (i < len && ISSPACE(s[i]))
+        while (i < len && Py_ISSPACE(s[i]))
             i++;
         j = i;
-        while (i < len && !ISSPACE(s[i]))
+        while (i < len && !Py_ISSPACE(s[i]))
             i++;
         if (j < i) {
             if (maxcount-- <= 0)
                 break;
             SPLIT_ADD(s, j, i);
-            while (i < len && ISSPACE(s[i]))
+            while (i < len && Py_ISSPACE(s[i]))
                 i++;
             j = i;
         }
@@ -2478,16 +2478,16 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 
     for (i = j = len - 1; i >= 0; ) {
         /* find a token */
-        while (i >= 0 && ISSPACE(s[i]))
+        while (i >= 0 && Py_ISSPACE(s[i]))
             i--;
         j = i;
-        while (i >= 0 && !ISSPACE(s[i]))
+        while (i >= 0 && !Py_ISSPACE(s[i]))
             i--;
         if (j > i) {
             if (maxcount-- <= 0)
                 break;
             SPLIT_ADD(s, i + 1, j + 1);
-            while (i >= 0 && ISSPACE(s[i]))
+            while (i >= 0 && Py_ISSPACE(s[i]))
                 i--;
             j = i;
         }
@@ -3054,11 +3054,11 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef').");
 static int
 hex_digit_to_int(char c)
 {
-    if (ISDIGIT(c))
+    if (Py_ISDIGIT(c))
         return c - '0';
     else {
-        if (ISUPPER(c))
-            c = TOLOWER(c);
+        if (Py_ISUPPER(c))
+            c = Py_TOLOWER(c);
         if (c >= 'a' && c <= 'f')
             return c - 'a' + 10;
     }

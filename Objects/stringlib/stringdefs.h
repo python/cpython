@@ -6,15 +6,6 @@
    compiled as unicode. */
 #define STRINGLIB_IS_UNICODE     0
 
-/* _tolower and _toupper are defined by SUSv2, but they're not ISO C */
-/* This needs to be cleaned up. See issue 5793. */
-#ifndef _tolower
-#define _tolower tolower
-#endif
-#ifndef _toupper
-#define _toupper toupper
-#endif
-
 #define STRINGLIB_OBJECT         PyStringObject
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"
@@ -22,8 +13,8 @@
 #define STRINGLIB_EMPTY          nullstring
 #define STRINGLIB_ISDECIMAL(x)   ((x >= '0') && (x <= '9'))
 #define STRINGLIB_TODECIMAL(x)   (STRINGLIB_ISDECIMAL(x) ? (x - '0') : -1)
-#define STRINGLIB_TOUPPER(x)     _toupper(Py_CHARMASK(x))
-#define STRINGLIB_TOLOWER(x)     _tolower(Py_CHARMASK(x))
+#define STRINGLIB_TOUPPER        Py_TOUPPER
+#define STRINGLIB_TOLOWER        Py_TOLOWER
 #define STRINGLIB_FILL           memset
 #define STRINGLIB_STR            PyString_AS_STRING
 #define STRINGLIB_LEN            PyString_GET_SIZE
