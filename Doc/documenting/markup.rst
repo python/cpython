@@ -594,11 +594,11 @@ units as well as normal text:
 
 .. describe:: warning
 
-   An important bit of information about an API that a user should be very aware
-   of when using whatever bit of API the warning pertains to.  The content of
-   the directive should be written in complete sentences and include all
-   appropriate punctuation. This differs from ``note`` in that it is recommended
-   over ``note`` for information regarding security.
+   An important bit of information about an API that a user should be aware of
+   when using whatever bit of API the warning pertains to.  The content of the
+   directive should be written in complete sentences and include all appropriate
+   punctuation.  This should only be chosen over ``note`` for information
+   regarding the possibility of crashes, data loss, or security implications.
 
 .. describe:: versionadded
 

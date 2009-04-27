@@ -321,10 +321,10 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`communicate` rather than :meth:`.stdin.write`,
-   :meth:`.stdout.read` or :meth:`.stderr.read` to avoid deadlocks due
-   to any of the other OS pipe buffers filling up and blocking the child
-   process.
+   Use :meth:`communicate` rather than :attr:`.stdin.write <stdin>`,
+   :attr:`.stdout.read <stdout>` or :attr:`.stderr.read <stderr>` to avoid
+   deadlocks due to any of the other OS pipe buffers filling up and blocking the
+   child process.
 
 
 .. attribute:: Popen.stdin

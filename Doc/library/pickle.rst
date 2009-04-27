@@ -66,8 +66,8 @@ The :mod:`pickle` module differs from :mod:`marshal` several significant ways:
 .. warning::
 
    The :mod:`pickle` module is not intended to be secure against erroneous or
-   maliciously constructed data.  Never unpickle data received from an untrusted or
-   unauthenticated source.
+   maliciously constructed data.  Never unpickle data received from an untrusted
+   or unauthenticated source.
 
 Note that serialization is a more primitive notion than persistence; although
 :mod:`pickle` reads and writes file objects, it does not handle the issue of
@@ -437,6 +437,7 @@ Refer to the section :ref:`pickle-state` for more information about how to use
 the methods :meth:`__getstate__` and :meth:`__setstate__`.
 
 .. note::
+
    At unpickling time, some methods like :meth:`__getattr__`,
    :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
    instance.  In case those methods rely on some internal invariant being

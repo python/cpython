@@ -1085,7 +1085,7 @@ Loading and running tests
       creates an instance of the class for each test method defined for the
       class.
 
-      .. warning::
+      .. note::
 
          While using a hierarchy of :class:`TestCase`\ -derived classes can be
          convenient in sharing fixtures and helper functions, defining test

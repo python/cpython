@@ -377,7 +377,7 @@ descriptions are taken from the corresponding description in the GNU C library.
 
    Return name of the n-th day of the week.
 
-   .. warning::
+   .. note::
 
       This follows the US convention of :const:`DAY_1` being Sunday, not the
       international convention (ISO 8601) that Monday is the first day of the week.
@@ -413,7 +413,7 @@ descriptions are taken from the corresponding description in the GNU C library.
    Return a regular expression that can be used with the regex function to
    recognize a positive response to a yes/no question.
 
-   .. warning::
+   .. note::
 
       The expression is in the syntax suitable for the :cfunc:`regex` function from
       the C library, which might differ from the syntax used in :mod:`re`.

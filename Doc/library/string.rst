@@ -1,4 +1,3 @@
-
 :mod:`string` --- Common string operations
 ==========================================
 

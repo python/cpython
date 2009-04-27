@@ -21,10 +21,10 @@ structure similar to what you would find on Microsoft Windows INI files.  You
 can use this to write Python programs which can be customized by end users
 easily.
 
-.. warning::
+.. note::
 
-   This library does *not* interpret or write the value-type prefixes used in the
-   Windows Registry extended version of INI syntax.
+   This library does *not* interpret or write the value-type prefixes used in
+   the Windows Registry extended version of INI syntax.
 
 The configuration file consists of sections, led by a ``[section]`` header and
 followed by ``name: value`` entries, with continuations in the style of
