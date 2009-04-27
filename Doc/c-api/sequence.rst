@@ -178,6 +178,10 @@ Sequence Protocol
    Return the *i*th element of *o*, assuming that *o* was returned by
    :cfunc:`PySequence_Fast`, *o* is not *NULL*, and that *i* is within bounds.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *i*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject** PySequence_Fast_ITEMS(PyObject *o)
 
@@ -195,6 +199,10 @@ Sequence Protocol
    :cfunc:`PySequence_GetItem` but without checking that
    :cfunc:`PySequence_Check(o)` is true and without adjustment for negative
    indices.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *i*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: Py_ssize_t PySequence_Fast_GET_SIZE(PyObject *o)

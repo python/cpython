@@ -30,6 +30,10 @@ Allocating Objects on the Heap
    This does everything :cfunc:`PyObject_Init` does, and also initializes the
    length information for a variable-size object.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: TYPE* PyObject_New(TYPE, PyTypeObject *type)
 
@@ -50,6 +54,10 @@ Allocating Objects on the Heap
    able to determine their size at construction time.  Embedding the array of
    fields into the same allocation decreases the number of allocations,
    improving the memory management efficiency.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: void PyObject_Del(PyObject *op)
