@@ -34,6 +34,7 @@ UNIDATA_VERSION = "5.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
+DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
 
 old_versions = ["3.2.0"]
 
@@ -66,7 +67,8 @@ def maketables(trace=0):
     version = ""
     unicode = UnicodeData(UNICODE_DATA % version,
                           COMPOSITION_EXCLUSIONS % version,
-                          EASTASIAN_WIDTH % version)
+                          EASTASIAN_WIDTH % version,
+                          DERIVEDNORMALIZATION_PROPS % version)
 
     print len(filter(None, unicode.table)), "characters"
 
@@ -87,7 +89,7 @@ def maketables(trace=0):
 
 def makeunicodedata(unicode, trace):
 
-    dummy = (0, 0, 0, 0, 0)
+    dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
     index = [0] * len(unicode.chars)
@@ -107,8 +109,10 @@ def makeunicodedata(unicode, trace):
             bidirectional = BIDIRECTIONAL_NAMES.index(record[4])
             mirrored = record[9] == "Y"
             eastasianwidth = EASTASIANWIDTH_NAMES.index(record[15])
+            normalizationquickcheck = record[16]
             item = (
-                category, combining, bidirectional, mirrored, eastasianwidth
+                category, combining, bidirectional, mirrored, eastasianwidth,
+                normalizationquickcheck
                 )
             # add entry to index and item tables
             i = cache.get(item)
@@ -222,7 +226,7 @@ def makeunicodedata(unicode, trace):
     print >>fp, \
           "const _PyUnicode_DatabaseRecord _PyUnicode_Database_Records[] = {"
     for item in table:
-        print >>fp, "    {%d, %d, %d, %d, %d}," % item
+        print >>fp, "    {%d, %d, %d, %d, %d, %d}," % item
     print >>fp, "};"
     print >>fp
 
@@ -698,7 +702,8 @@ import sys
 
 class UnicodeData:
 
-    def __init__(self, filename, exclusions, eastasianwidth, expand=1):
+    def __init__(self, filename, exclusions, eastasianwidth,
+                 derivednormalizationprops=None, expand=1):
         self.changed = []
         file = open(filename)
         table = [None] * 0x110000
@@ -761,6 +766,28 @@ class UnicodeData:
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(widths[i])
+        if derivednormalizationprops:
+            quickchecks = [0] * 0x110000 # default is Yes
+            qc_order = 'NFD_QC NFKD_QC NFC_QC NFKC_QC'.split()
+            for s in open(derivednormalizationprops):
+                if '#' in s:
+                    s = s[:s.index('#')]
+                s = [i.strip() for i in s.split(';')]
+                if len(s) < 2 or s[1] not in qc_order:
+                    continue
+                quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
+                quickcheck_shift = qc_order.index(s[1])*2
+                quickcheck <<= quickcheck_shift
+                if '..' not in s[0]:
+                    first = last = int(s[0], 16)
+                else:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                for char in range(first, last+1):
+                    assert not (quickchecks[char]>>quickcheck_shift)&3
+                    quickchecks[char] |= quickcheck
+            for i in range(0, 0x110000):
+                if table[i] is not None:
+                    table[i].append(quickchecks[i])
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
