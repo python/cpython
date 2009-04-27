@@ -424,6 +424,10 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
 
         self.assertEqual(cf.get('sect', "option1"), "foo")
 
+        # bug #5741: double percents are *not* malformed
+        cf.set("sect", "option2", "foo%%bar")
+        self.assertEqual(cf.get("sect", "option2"), "foo%bar")
+
     def test_set_nonstring_types(self):
         cf = self.fromstring("[sect]\n"
                              "option1=foo\n")
