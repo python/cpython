@@ -209,7 +209,7 @@ PyLong_FromLong(long ival)
 		return (PyObject*)v;
 	}
 
-#if PyLONG_SHIFT==15
+#if PyLong_SHIFT==15
 	/* 2 digits */
 	if (!(abs_ival >> 2*PyLong_SHIFT)) {
 		v = _PyLong_New(2);
