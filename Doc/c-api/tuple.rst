@@ -67,6 +67,10 @@ Tuple Objects
    Return the size of the tuple *p*, which must be non-*NULL* and point to a tuple;
    no error checking is performed.
 
+   .. versionchanged:: 2.5
+      This function returned an :ctype:`int` type. This might require changes
+      in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
@@ -81,6 +85,10 @@ Tuple Objects
 .. cfunction:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
    Like :cfunc:`PyTuple_GetItem`, but does no checking of its arguments.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *pos*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
@@ -115,6 +123,10 @@ Tuple Objects
    .. note::
 
       This function "steals" a reference to *o*.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *pos*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
