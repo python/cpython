@@ -27,6 +27,7 @@ typedef struct {
     const unsigned char mirrored;	/* true if mirrored in bidir mode */
     const unsigned char east_asian_width;	/* index into
 						   _PyUnicode_EastAsianWidth */
+    const unsigned char normalization_quick_check; /* see is_normalized() */
 } _PyUnicode_DatabaseRecord;
 
 typedef struct change_record {
@@ -722,7 +723,39 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
         PyUnicode_Resize(&result, o - PyUnicode_AS_UNICODE(result));
     return result;
 }
-		
+
+/* Return 1 if the input is certainly normalized, 0 if it might not be. */
+static int
+is_normalized(PyObject *self, PyObject *input, int nfc, int k)
+{
+    Py_UNICODE *i, *end;
+    unsigned char prev_combining = 0, quickcheck_mask;
+
+    /* An older version of the database is requested, quickchecks must be
+       disabled. */
+    if (self && UCD_Check(self))
+        return 0;
+
+    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No,
+       as described in http://unicode.org/reports/tr15/#Annex8. */
+    quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
+
+    i = PyUnicode_AS_UNICODE(input);
+    end = i + PyUnicode_GET_SIZE(input);
+    while (i < end) {
+        const _PyUnicode_DatabaseRecord *record = _getrecord_ex(*i++);
+        unsigned char combining = record->combining;
+        unsigned char quickcheck = record->normalization_quick_check;
+
+        if (quickcheck & quickcheck_mask)
+            return 0; /* this string might need normalization */
+        if (combining && prev_combining > combining)
+            return 0; /* non-canonical sort order, not normalized */
+        prev_combining = combining;
+    }
+    return 1; /* certainly normalized */
+}
+
 PyDoc_STRVAR(unicodedata_normalize__doc__,
 "normalize(form, unistr)\n\
 \n\
@@ -746,14 +779,34 @@ unicodedata_normalize(PyObject *self, PyObject *args)
         return input;
     }
 
-    if (strcmp(form, "NFC") == 0)
+    if (strcmp(form, "NFC") == 0) {
+        if (is_normalized(self, input, 1, 0)) {
+            Py_INCREF(input);
+            return input;
+        }
         return nfc_nfkc(self, input, 0);
-    if (strcmp(form, "NFKC") == 0)
+    }
+    if (strcmp(form, "NFKC") == 0) {
+        if (is_normalized(self, input, 1, 1)) {
+            Py_INCREF(input);
+            return input;
+        }
         return nfc_nfkc(self, input, 1);
-    if (strcmp(form, "NFD") == 0)
+    }
+    if (strcmp(form, "NFD") == 0) {
+        if (is_normalized(self, input, 0, 0)) {
+            Py_INCREF(input);
+            return input;
+        }
         return nfd_nfkd(self, input, 0);
-    if (strcmp(form, "NFKD") == 0)
+    }
+    if (strcmp(form, "NFKD") == 0) {
+        if (is_normalized(self, input, 0, 1)) {
+            Py_INCREF(input);
+            return input;
+        }
         return nfd_nfkd(self, input, 1);
+    }
     PyErr_SetString(PyExc_ValueError, "invalid normalization form");
     return NULL;
 }
