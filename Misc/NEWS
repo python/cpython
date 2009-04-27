@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5853: calling a function of the mimetypes module from several threads
+  at once could hit the recursion limit if the mimetypes database hadn't been
+  initialized before.
+
 - Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5768: Fixed bug in Unicode output logic and test case for same.
