@@ -92,6 +92,10 @@ Installation
 Library
 -------
 
+- Issue #5853: calling a function of the mimetypes module from several threads
+  at once could hit the recursion limit if the mimetypes database hadn't been
+  initialized before.
+
 - Issue #5854: Updated __all__ to include some missing names and remove some
   names which should not be exported.
 
