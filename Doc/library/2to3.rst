@@ -354,7 +354,7 @@ and off individually.  They are described here in more detail.
 .. moduleauthor:: Collin Winter
 
 
-.. warning::
+.. note::
 
    The :mod:`lib2to3` API should be considered unstable and may change
    drastically in the future.

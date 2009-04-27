@@ -231,7 +231,7 @@ Exceptions can also be identified by strings, in which case the
 :keyword:`except` clause is selected by object identity.  An arbitrary value can
 be raised along with the identifying string which can be passed to the handler.
 
-.. warning::
+.. note::
 
    Messages to exceptions are not part of the Python API.  Their contents may
    change from one version of Python to the next without warning and should not be
