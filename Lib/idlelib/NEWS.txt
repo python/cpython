@@ -3,6 +3,9 @@ What's New in IDLE 3.1b1?
 
 *Release date: XX-XXX-09*
 
+- Use of 'filter' in keybindingDialog.py was causing custom key assignment to
+  fail.  Patch 5707 amaury.forgeotdarc.
+
 
 What's New in IDLE 3.1a1?
 =========================
