@@ -64,10 +64,6 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is not inherited by subtypes.
 
-   .. versionchanged:: 2.5
-      This field used to be an :ctype:`int` type. This might require changes
-      in your code for properly supporting 64-bit systems.
-
 
 .. cmember:: PyTypeObject* PyObject.ob_type
 

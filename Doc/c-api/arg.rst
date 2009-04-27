@@ -406,10 +406,6 @@ and the following format units are left untouched.
 
       PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
 
-   .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *min* and *max*. This might
-      require changes in your code for properly supporting 64-bit systems.
-
 
 .. cfunction:: PyObject* Py_BuildValue(const char *format, ...)
 

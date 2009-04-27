@@ -454,9 +454,6 @@ way.  From the PyXML setup script::
           scripts=['scripts/xmlproc_parse', 'scripts/xmlproc_val']
           )
 
-.. versionchanged:: 2.7
-    All the scripts will also be added to the ``MANIFEST``
-    file if no template is provided. See :ref:`manifest`.
 
 .. _distutils-installing-package-data:
 
@@ -501,11 +498,6 @@ The corresponding call to :func:`setup` might be::
           )
 
 
-.. versionchanged:: 2.7
-    All the files that match ``package_data`` will be added to the ``MANIFEST``
-    file if no template is provided. See :ref:`manifest`.
-
-
 .. _distutils-additional-files:
 
 Installing Additional Files
@@ -541,11 +533,6 @@ without specifying a target directory, but this is not recommended, and the
 :command:`install` command will print a warning in this case. To install data
 files directly in the target directory, an empty string should be given as the
 directory.
-
-.. versionchanged:: 2.7
-    All the files that match ``data_files`` will be added to the ``MANIFEST``
-    file if no template is provided. See :ref:`manifest`.
-
 
 
 .. _meta-data:
