@@ -89,6 +89,9 @@ Installation
 Library
 -------
 
+- Issue #5854: Updated __all__ to include some missing names and remove some
+  names which should not be exported.
+
 - Issue #3102:  All global symbols that the _ctypes extension defines
   are now prefixed with 'Py' or '_ctypes'.
 
@@ -455,7 +458,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #5810: Fixed Distutils test_build_scripts so it uses 
+- Issue #5810: Fixed Distutils test_build_scripts so it uses
   sysconfig.get_config_vars.
 
 - Issue #4951: Fixed failure in test_httpservers.
@@ -466,7 +469,7 @@ Library
 
 - Issue #5732: added a new command in Distutils: check.
 
-- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows 
+- Issue #5731: Distutils bdist_wininst no longer worked on non-Windows
   platforms. Initial patch by Paul Moore.
 
 - Issue #5095: Added bdist_msi to the list of bdist supported formats.
@@ -931,7 +934,7 @@ Tests
 -----
 
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
-  that should cause a test to be skipped are now done using import_module 
+  that should cause a test to be skipped are now done using import_module
   from test support, which does the conversion.
 
 - Issue #5083: New 'gui' resource for regrtest.
