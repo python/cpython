@@ -149,7 +149,7 @@ class test__candidate_tempdir_list(TC):
         # _candidate_tempdir_list contains the expected directories
 
         # Make sure the interesting environment variables are all set.
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname:

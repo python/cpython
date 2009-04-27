@@ -1448,7 +1448,7 @@ class TestHelp(BaseTest):
         # we must restore its original value -- otherwise, this test
         # screws things up for other tests when it's part of the Python
         # test suite.
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             env.set('COLUMNS', str(columns))
             return InterceptingOptionParser(option_list=options)
 
@@ -1473,7 +1473,7 @@ class TestHelp(BaseTest):
         self.assertHelpEquals(_expected_help_long_opts_first)
 
     def test_help_title_formatter(self):
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             env.set("COLUMNS", "80")
             self.parser.formatter = TitledHelpFormatter()
             self.assertHelpEquals(_expected_help_title_formatter)
