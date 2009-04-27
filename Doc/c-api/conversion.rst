@@ -63,7 +63,7 @@ The following functions provide locale-independent string to number conversions.
    See the Unix man page :manpage:`strtod(2)` for details.
 
 
-.. cfunction:: char * PyOS_ascii_formatd(char *buffer, size_t buf_len, const char *format, double d)
+.. cfunction:: char* PyOS_ascii_formatd(char *buffer, size_t buf_len, const char *format, double d)
 
    Convert a :ctype:`double` to a string using the ``'.'`` as the decimal
    separator. *format* is a :cfunc:`printf`\ -style format string specifying the
@@ -118,13 +118,13 @@ The following functions provide locale-independent string to number conversions.
    See the Unix man page :manpage:`atof(2)` for details.
 
 
-.. cfunction:: char * PyOS_stricmp(char *s1, char *s2)
+.. cfunction:: char* PyOS_stricmp(char *s1, char *s2)
 
    Case insensitive comparison of strings. The function works almost
    identically to :cfunc:`strcmp` except that it ignores the case.
 
 
-.. cfunction:: char * PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
+.. cfunction:: char* PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
    identically to :cfunc:`strncmp` except that it ignores the case.
