@@ -537,12 +537,12 @@ needs to wake up one consumer thread.
 
 .. method:: Condition.notify()
 
-   Wake up a thread waiting on this condition, if any. Wait until notified or until
-   a timeout occurs. If the calling thread has not acquired the lock when this
-   method is called, a :exc:`RuntimeError` is raised.
+   Wake up a thread waiting on this condition, if any.  If the calling thread
+   has not acquired the lock when this method is called, a :exc:`RuntimeError`
+   is raised.
 
-   This method wakes up one of the threads waiting for the condition variable, if
-   any are waiting; it is a no-op if no threads are waiting.
+   This method wakes up one of the threads waiting for the condition variable,
+   if any are waiting; it is a no-op if no threads are waiting.
 
    The current implementation wakes up exactly one thread, if any are waiting.
    However, it's not safe to rely on this behavior.  A future, optimized

@@ -135,7 +135,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 					  "be integer, not '%.200s'", key);
 	}
 
-	return type_error("'%.200s' object is unsubscriptable", o);
+	return type_error("'%.200s' object is not subscriptable", o);
 }
 
 int
