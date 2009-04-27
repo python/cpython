@@ -349,6 +349,7 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/mysnprintf.c \
 		Python/mystrtoul.c \
 		Python/pyarena.c \
+		Python/pyctype.c \
 		Python/pyfpe.c \
 		Python/pystate.c \
 		Python/pystrtod.c \

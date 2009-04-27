@@ -603,6 +603,10 @@ SOURCE=..\..\Python\pyarena.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\pyctype.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\pyfpe.c
 # End Source File
 # Begin Source File

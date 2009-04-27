@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5793: Rationalize isdigit / isalpha / tolower, etc. Includes
+  new Py_ISDIGIT / Py_ISALPHA / Py_TOLOWER, etc. in pctypes.h.
+
 - Issue #5835: Deprecate PyOS_ascii_formatd.
 
 - Issue #4971: Fix titlecase for characters that are their own
