@@ -68,9 +68,9 @@ The module provides the following classes:
    formatted file that contains your private key. *cert_file* is a PEM formatted
    certificate chain file.
 
-   .. warning::
+   .. note::
 
-      This does not do any certificate verification!
+      This does not do any certificate verification.
 
    .. versionadded:: 2.0
 

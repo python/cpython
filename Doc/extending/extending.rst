@@ -47,7 +47,7 @@ The first line of our file can be::
 which pulls in the Python API (you can add a comment describing the purpose of
 the module and a copyright notice if you like).
 
-.. warning::
+.. note::
 
    Since Python may define some pre-processor definitions which affect the standard
    headers on some systems, you *must* include :file:`Python.h` before any standard

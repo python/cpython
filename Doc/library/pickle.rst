@@ -77,8 +77,8 @@ The :mod:`pickle` module differs from :mod:`marshal` several significant ways:
 .. warning::
 
    The :mod:`pickle` module is not intended to be secure against erroneous or
-   maliciously constructed data.  Never unpickle data received from an untrusted or
-   unauthenticated source.
+   maliciously constructed data.  Never unpickle data received from an untrusted
+   or unauthenticated source.
 
 Note that serialization is a more primitive notion than persistence; although
 :mod:`pickle` reads and writes file objects, it does not handle the issue of
@@ -453,7 +453,7 @@ Pickling and unpickling normal class instances
    :meth:`__getstate__` and :meth:`__setstate__`, the state object needn't be a
    dictionary and these methods can do what they want. [#]_
 
-   .. warning::
+   .. note::
 
       For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
       value, the :meth:`__setstate__` method will not be called.
