@@ -28,6 +28,7 @@ help:
 	@echo "  coverage  to check documentation coverage for library and C API"
 	@echo "  dist      to create a \"dist\" directory with archived docs for download"
 
+# Note: if you update versions here, do the same in make.bat and README.txt
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
 	  echo "Checking out Sphinx..."; \
@@ -101,8 +102,8 @@ doctest: build
 
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
-	@echo "Building finished; now copy build/pydoc-topics/pydoc_topics.py " \
-	      "into the Lib/ directory"
+	@echo "Building finished; now copy build/pydoc-topics/topics.py " \
+	      "to Lib/pydoc_data/topics.py"
 
 htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
@@ -132,7 +133,7 @@ dist:
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
 	rm -r dist/python-$(DISTVERSION)-docs-text
 	rm dist/python-$(DISTVERSION)-docs-text.tar
-	
+
 	# archive the A4 latex
 	-rm -r build/latex
 	make latex PAPER=a4
