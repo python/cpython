@@ -869,9 +869,7 @@ tarballs or zipfiles.
    prefix of all files and directories in the archive.  *root_dir* and *base_dir*
    both default to the current directory.  Returns the name of the archive file.
 
-   .. warning::
-
-      This should be changed to support bz2 files
+   .. XXX This should be changed to support bz2 files.
 
 
 .. function:: make_tarball(base_name, base_dir[, compress='gzip', verbose=0, dry_run=0])
@@ -884,9 +882,7 @@ tarballs or zipfiles.
    possibly plus the appropriate compression extension (:file:`.gz`, :file:`.bz2`
    or :file:`.Z`).  Return the output filename.
 
-   .. warning::
-
-      This should be replaced with calls to the :mod:`tarfile` module.
+   .. XXX This should be replaced with calls to the :mod:`tarfile` module.
 
 
 .. function:: make_zipfile(base_name, base_dir[, verbose=0, dry_run=0])
@@ -1329,10 +1325,8 @@ provides the following additional features:
 
    Wraps *text* to less than *width* wide.
 
-   .. warning::
-
-      Should be replaced with :mod:`textwrap` (which is available  in Python 2.3 and
-      later).
+   .. XXX Should be replaced with :mod:`textwrap` (which is available in Python
+      2.3 and later).
 
 
 .. class:: FancyGetopt([option_table=None])
@@ -1381,8 +1375,8 @@ The :class:`FancyGetopt` class provides the following methods:
 ================================================
 
 .. module:: distutils.filelist
-   :synopsis: The FileList class, used for poking about the file system and building lists of
-              files.
+   :synopsis: The FileList class, used for poking about the file system and
+              building lists of files.
 
 
 This module provides the :class:`FileList` class, used for poking about the
@@ -1396,13 +1390,8 @@ filesystem and building lists of files.
    :synopsis: A simple logging mechanism, 282-style
 
 
-.. warning::
+.. XXX Should be replaced with standard :mod:`logging` module.
 
-   Should be replaced with standard :mod:`logging` module.
-
-.. % \subsubsection{\module{} --- }
-.. % \declaremodule{standard}{distutils.magic}
-.. % \modulesynopsis{ }
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
