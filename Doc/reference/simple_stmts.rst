@@ -897,6 +897,11 @@ for the rest of the interpreter session.  If an interpreter is started with the
 a future statement, it will be in effect in the interactive session started
 after the script is executed.
 
+.. seealso::
+
+   :pep:`236` - Back to the __future__
+      The original proposal for the __future__ mechanism.
+
 
 .. _global:
 
