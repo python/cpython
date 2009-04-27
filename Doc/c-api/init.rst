@@ -419,10 +419,9 @@ the I/O is waiting for the I/O operation to complete.
 The Python interpreter needs to keep some bookkeeping information separate per
 thread --- for this it uses a data structure called :ctype:`PyThreadState`.
 There's one global variable, however: the pointer to the current
-:ctype:`PyThreadState` structure.  While most thread packages have a way to
-store "per-thread global data," Python's internal platform independent thread
-abstraction doesn't support this yet.  Therefore, the current thread state must
-be manipulated explicitly.
+:ctype:`PyThreadState` structure.  Before the addition of :dfn:`thread-local
+storage` (:dfn:`TLS`) the current thread state had to be manipulated
+explicitly.
 
 This is easy enough in most cases.  Most code manipulating the global
 interpreter lock has the following simple structure::
