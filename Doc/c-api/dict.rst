@@ -140,10 +140,6 @@ Dictionary Objects
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.
 
-   .. versionchanged:: 2.5
-      This function returned an :ctype:`int` type.  This might require changes
-      in your code for properly supporting 64-bit systems.
-
 
 .. cfunction:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
@@ -189,10 +185,6 @@ Dictionary Objects
           }
           Py_DECREF(o);
       }
-
-   .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *ppos*. This might require
-      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int PyDict_Merge(PyObject *a, PyObject *b, int override)

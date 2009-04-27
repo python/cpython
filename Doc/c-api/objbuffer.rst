@@ -14,10 +14,6 @@ Buffer Protocol
    and *buffer_len* to the buffer length.  Returns ``-1`` and sets a
    :exc:`TypeError` on error.
 
-   .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
-      require changes in your code for properly supporting 64-bit systems.
-
 
 .. cfunction:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
 
@@ -26,10 +22,6 @@ Buffer Protocol
    interface.  On success, returns ``0``, sets *buffer* to the memory location
    and *buffer_len* to the buffer length.  Returns ``-1`` and sets a
    :exc:`TypeError` on error.
-
-   .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
-      require changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: int PyObject_CheckReadBuffer(PyObject *o)
@@ -44,8 +36,4 @@ Buffer Protocol
    support the single-segment, character buffer interface.  On success,
    returns ``0``, sets *buffer* to the memory location and *buffer_len* to the
    buffer length.  Returns ``-1`` and sets a :exc:`TypeError` on error.
-
-   .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
-      require changes in your code for properly supporting 64-bit systems.
 

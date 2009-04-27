@@ -21,10 +21,6 @@ Mapping Protocol
    objects that do not provide mapping protocol, this is equivalent to the Python
    expression ``len(o)``.
 
-   .. versionchanged:: 2.5
-      These functions returned an :ctype:`int` type. This might require
-      changes in your code for properly supporting 64-bit systems.
-
 
 .. cfunction:: int PyMapping_DelItemString(PyObject *o, char *key)
 
