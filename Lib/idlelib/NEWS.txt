@@ -30,6 +30,9 @@ What's New in IDLE 2.7? (UNRELEASED, but merged into 3.1 releases above.)
 
 *Release date: XX-XXX-2009*
 
+- OutputWindow/PyShell right click menu "Go to file/line" wasn't working with
+  file paths containing spaces.  Bug 5559.
+
 - Windows: Version string for the .chm help file changed, file not being
   accessed  Patch 5783 Guilherme Polo
 
