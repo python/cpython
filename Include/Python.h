@@ -116,6 +116,7 @@
 #include "compile.h"
 #include "eval.h"
 
+#include "pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "dtoa.h"

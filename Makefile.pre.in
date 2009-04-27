@@ -294,6 +294,7 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/peephole.o \
 		Python/pyarena.o \
+		Python/pyctype.o \
 		Python/pyfpe.o \
 		Python/pymath.o \
 		Python/pystate.o \
@@ -653,6 +654,7 @@ PYTHON_HEADERS= \
 		Include/pgen.h \
 		Include/pgenheaders.h \
 		Include/pyarena.h \
+		Include/pyctype.h \
 		Include/pydebug.h \
 		Include/pyerrors.h \
 		Include/pyfpe.h \
