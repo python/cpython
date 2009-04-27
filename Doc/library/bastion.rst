@@ -15,7 +15,7 @@
 .. versionchanged:: 2.3
    Disabled module.
 
-.. warning::
+.. note::
 
    The documentation has been left in place to help in reading old code that uses
    the module.

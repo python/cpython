@@ -1,4 +1,3 @@
-
 :mod:`binhex` --- Encode and decode binhex4 files
 =================================================
 
@@ -11,9 +10,9 @@ representation of Macintosh files in ASCII.  On the Macintosh, both forks of a
 file and the finder information are encoded (or decoded), on other platforms
 only the data fork is handled.
 
-.. warning::
+.. note::
 
-   In 3.0, special Macintosh support is removed.
+   In Python 3.x, special Macintosh support has been removed.
 
 
 The :mod:`binhex` module defines the following functions:
