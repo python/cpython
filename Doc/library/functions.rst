@@ -676,38 +676,39 @@ are always available.  They are listed here in alphabetical order.
    *closefd* is set to ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
-   opened.  It defaults to ``'r'`` which means open for reading in text mode.
-   Other common values are ``'w'`` for writing (truncating the file if it
-   already exists), and ``'a'`` for appending (which on *some* Unix systems,
-   means that *all* writes append to the end of the file regardless of the
-   current seek position).  In text mode, if *encoding* is not specified the
-   encoding used is platform dependent. (For reading and writing raw bytes use
-   binary mode and leave *encoding* unspecified.)  The available modes are:
+   opened.  The available modes are:
 
    ========= ===============================================================
    Character Meaning
    --------- ---------------------------------------------------------------
    ``'r'``   open for reading (default)
-   ``'w'``   open for writing, truncating the file first
+   ``'w'``   open for writing, truncating the file first if it exists
    ``'a'``   open for writing, appending to the end of the file if it exists
-   ``'b'``   binary mode
+   ========= ===============================================================
+
+   Several characters can be appended that modify the given mode:
+
+   ========= ===============================================================
    ``'t'``   text mode (default)
-   ``'+'``   open a disk file for updating (reading and writing)
+   ``'b'``   binary mode
+   ``'+'``   open for updating (reading and writing)
    ``'U'``   universal newline mode (for backwards compatibility; should
              not be used in new code)
    ========= ===============================================================
 
-   The default mode is ``'rt'`` (open for reading text).  For binary random
-   access, the mode ``'w+b'`` opens and truncates the file to 0 bytes, while
-   ``'r+b'`` opens the file without truncation.
+   The mode ``'w+'`` opens and truncates the file to 0 bytes, while ``'r+'``
+   opens the file without truncation.  On *some* Unix systems, append mode means
+   that *all* writes append to the end of the file regardless of the current
+   seek position.
 
    Python distinguishes between files opened in binary and text modes, even when
    the underlying operating system doesn't.  Files opened in binary mode
    (including ``'b'`` in the *mode* argument) return contents as ``bytes``
    objects without any decoding.  In text mode (the default, or when ``'t'`` is
    included in the *mode* argument), the contents of the file are returned as
-   strings, the bytes having been first decoded using a platform-dependent
-   encoding or using the specified *encoding* if given.
+   strings, the bytes having been first decoded using the specified *encoding*.
+   If *encoding* is not specified, a platform-dependent default encoding is
+   used, see below.
 
    *buffering* is an optional integer used to set the buffering policy.  By
    default full buffering is on.  Pass 0 to switch buffering off (only allowed
