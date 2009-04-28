@@ -260,7 +260,7 @@ change_decimal_from_locale_to_dot(char* buffer)
 Py_LOCAL_INLINE(void)
 ensure_sign(char* buffer, size_t buf_size)
 {
-	Py_ssize_t len;
+	size_t len;
 
 	if (buffer[0] == '-')
 		/* Already have a sign. */
