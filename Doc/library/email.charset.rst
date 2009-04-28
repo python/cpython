@@ -163,8 +163,8 @@ Import this class from the :mod:`email.charset` module.
       charset to the output charset automatically.  This is not useful for
       multibyte character sets, which have line length issues (multibyte
       characters must be split on a character, not a byte boundary); use the
-      higher-level :class:`Header` class to deal with these issues (see
-      :mod:`email.header`).  *convert* defaults to ``False``.
+      higher-level :class:`~email.header.Header` class to deal with these issues
+      (see :mod:`email.header`).  *convert* defaults to ``False``.
 
       The type of encoding (base64 or quoted-printable) will be based on the
       *header_encoding* attribute.

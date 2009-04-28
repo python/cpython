@@ -21,10 +21,10 @@ in its :mod:`email.header` and :mod:`email.charset` modules.
 
 If you want to include non-ASCII characters in your email headers, say in the
 :mailheader:`Subject` or :mailheader:`To` fields, you should use the
-:class:`Header` class and assign the field in the :class:`Message` object to an
-instance of :class:`Header` instead of using a string for the header value.
-Import the :class:`Header` class from the :mod:`email.header` module.  For
-example::
+:class:`Header` class and assign the field in the :class:`~email.message.Message`
+object to an instance of :class:`Header` instead of using a string for the header
+value.  Import the :class:`Header` class from the :mod:`email.header` module.
+For example::
 
    >>> from email.message import Message
    >>> from email.header import Header
@@ -39,9 +39,9 @@ example::
 Notice here how we wanted the :mailheader:`Subject` field to contain a non-ASCII
 character?  We did this by creating a :class:`Header` instance and passing in
 the character set that the byte string was encoded in.  When the subsequent
-:class:`Message` instance was flattened, the :mailheader:`Subject` field was
-properly :rfc:`2047` encoded.  MIME-aware mail readers would show this header
-using the embedded ISO-8859-1 character.
+:class:`~email.message.Message` instance was flattened, the :mailheader:`Subject`
+field was properly :rfc:`2047` encoded.  MIME-aware mail readers would show this
+header using the embedded ISO-8859-1 character.
 
 .. versionadded:: 2.2.2
 
@@ -83,10 +83,11 @@ Here is the :class:`Header` class description:
 
       Append the string *s* to the MIME header.
 
-      Optional *charset*, if given, should be a :class:`Charset` instance (see
-      :mod:`email.charset`) or the name of a character set, which will be
-      converted to a :class:`Charset` instance.  A value of ``None`` (the
-      default) means that the *charset* given in the constructor is used.
+      Optional *charset*, if given, should be a :class:`~email.charset.Charset`
+      instance (see :mod:`email.charset`) or the name of a character set, which
+      will be converted to a :class:`~email.charset.Charset` instance.  A value
+      of ``None`` (the default) means that the *charset* given in the constructor
+      is used.
 
       *s* may be a byte string or a Unicode string.  If it is a byte string
       (i.e.  ``isinstance(s, str)`` is true), then *charset* is the encoding of
