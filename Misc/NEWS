@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4305: ctypes should now build again on mipsel-linux-gnu
+
 - Issue #5853: calling a function of the mimetypes module from several threads
   at once could hit the recursion limit if the mimetypes database hadn't been
   initialized before.
