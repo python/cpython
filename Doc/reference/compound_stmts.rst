@@ -178,7 +178,7 @@ function :func:`range` returns a sequence of integers suitable to emulate the
 effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
 ``[0, 1, 2]``.
 
-.. warning::
+.. note::
 
    .. index::
       single: loop; over mutable sequence

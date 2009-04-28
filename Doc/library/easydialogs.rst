@@ -16,9 +16,9 @@ resource used for the dialog, provided that the dialog items correspond (both
 type and item number) to those in the default :const:`DLOG` resource. See source
 code for details.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 
 The :mod:`EasyDialogs` module defines the following functions:

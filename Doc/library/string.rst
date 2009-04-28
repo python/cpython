@@ -592,7 +592,7 @@ They are not available as string methods.
    map each character in *from* into the character at the same position in *to*;
    *from* and *to* must have the same length.
 
-   .. warning::
+   .. note::
 
       Don't use strings derived from :const:`lowercase` and :const:`uppercase` as
       arguments; in some locales, these don't have the same length.  For case

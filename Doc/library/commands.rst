@@ -16,11 +16,12 @@ The :mod:`subprocess` module provides more powerful facilities for spawning new
 processes and retrieving their results.  Using the :mod:`subprocess` module is
 preferable to using the :mod:`commands` module.
 
-.. warning::
+.. note::
 
-   In 3.x, :func:`getstatus` and two undocumented functions (:func:`mk2arg` and
-   :func:`mkarg`) have been removed.  Also, :func:`getstatusoutput` and
-   :func:`getoutput` have been moved to the :mod:`subprocess` module.
+   In Python 3.x, :func:`getstatus` and two undocumented functions
+   (:func:`mk2arg` and :func:`mkarg`) have been removed.  Also,
+   :func:`getstatusoutput` and :func:`getoutput` have been moved to the
+   :mod:`subprocess` module.
 
 The :mod:`commands` module defines the following functions:
 

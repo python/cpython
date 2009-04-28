@@ -13,9 +13,9 @@
 The :mod:`ColorPicker` module provides access to the standard color picker
 dialog.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 
 .. function:: GetColor(prompt, rgb)

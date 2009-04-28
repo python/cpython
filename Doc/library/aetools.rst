@@ -22,9 +22,9 @@ The :mod:`aetools` module itself uses the AppleEvent support provided by the
 manager, see section :ref:`osx-gui-scripts` for details. This restriction may be
 lifted in future releases.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 
 The :mod:`aetools` module defines the following functions:

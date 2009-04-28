@@ -1,4 +1,3 @@
-
 :mod:`gl` --- *Graphics Library* interface
 ==========================================
 
@@ -17,9 +16,9 @@ available only on Silicon Graphics machines.
 
 .. warning::
 
-   Some illegal calls to the GL library cause the Python interpreter to dump core.
-   In particular, the use of most GL calls is unsafe before the first window is
-   opened.
+   Some illegal calls to the GL library cause the Python interpreter to dump
+   core.  In particular, the use of most GL calls is unsafe before the first
+   window is opened.
 
 The module is too large to document here in its entirety, but the following
 should help you to get started. The parameter conventions for the C functions

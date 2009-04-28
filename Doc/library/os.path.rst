@@ -10,7 +10,7 @@ This module implements some useful functions on pathnames. To read or
 write files see :func:`open`, and for accessing the filesystem see the
 :mod:`os` module.
 
-.. warning::
+.. note::
 
    On Windows, many of these functions do not properly support UNC pathnames.
    :func:`splitunc` and :func:`ismount` do handle them correctly.
@@ -317,7 +317,7 @@ write files see :func:`open`, and for accessing the filesystem see the
       identify them with ``os.path.islink(file)`` and ``os.path.isdir(file)``, and
       invoke :func:`walk` as necessary.
 
-   .. warning::
+   .. note::
 
       This function is deprecated and has been removed in 3.0 in favor of
       :func:`os.walk`.

@@ -351,7 +351,7 @@ Miscellaneous options
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
-   .. warning:: The line numbers in error messages will be off by one!
+   .. note:: The line numbers in error messages will be off by one.
 
 
 .. cmdoption:: -3

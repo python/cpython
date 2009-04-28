@@ -44,7 +44,7 @@ This implies inclusion of the following standard headers: ``<stdio.h>``,
 ``<string.h>``, ``<errno.h>``, ``<limits.h>``, and ``<stdlib.h>`` (if
 available).
 
-.. warning::
+.. note::
 
    Since Python may define some pre-processor definitions which affect the standard
    headers on some systems, you *must* include :file:`Python.h` before any standard
