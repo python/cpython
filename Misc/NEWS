@@ -92,6 +92,8 @@ Installation
 Library
 -------
 
+- Issue #4305: ctypes should now build again on mipsel-linux-gnu
+
 - Issue #1734234: Massively speedup ``unicodedata.normalize()`` when the
   string is already in normalized form, by performing a quick check beforehand.
   Original patch by Rauli Ruohonen.
