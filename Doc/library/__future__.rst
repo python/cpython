@@ -58,3 +58,7 @@ attribute on :class:`_Feature` instances.
 
 No feature description will ever be deleted from :mod:`__future__`.
 
+.. seealso::
+
+   :ref:`future`
+      How the compiler treats future imports.

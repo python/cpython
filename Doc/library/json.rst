@@ -174,7 +174,7 @@ Basic Usage
    If the contents of *fp* are encoded with an ASCII based encoding other than
    UTF-8 (e.g. latin-1), then an appropriate *encoding* name must be specified.
    Encodings that are not ASCII based (such as UCS-2) are not allowed, and
-   should be wrapped with ``codecs.getreader(fp)(encoding)``, or simply decoded
+   should be wrapped with ``codecs.getreader(encoding)(fp)``, or simply decoded
    to a :class:`unicode` object and passed to :func:`loads`.
 
    *object_hook* is an optional function that will be called with the result of
