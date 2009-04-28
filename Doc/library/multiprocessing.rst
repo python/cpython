@@ -42,11 +42,17 @@ Windows.
         >>> p.map(f, [1,2,3])
         Process PoolWorker-1:
         Process PoolWorker-2:
+        Process PoolWorker-3:
         Traceback (most recent call last):
         Traceback (most recent call last):
+        Traceback (most recent call last):
         AttributeError: 'module' object has no attribute 'f'
         AttributeError: 'module' object has no attribute 'f'
         AttributeError: 'module' object has no attribute 'f'
+
+    (If you try this it will actually output three full tracebacks
+    interleaved in a semi-random fashion, and then you may have to
+    stop the master process somehow.)
 
 
 The :class:`Process` class
@@ -418,7 +424,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    :attr:`exit_code` methods should only be called by the process that created
    the process object.
 
-   Example usage of some of the methods of :class:`Process`::
+   Example usage of some of the methods of :class:`Process`:
+
+   .. doctest::
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
@@ -428,6 +436,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> print p, p.is_alive()
        <Process(Process-1, started)> True
        >>> p.terminate()
+       >>> time.sleep(0.1)
        >>> print p, p.is_alive()
        <Process(Process-1, stopped[SIGTERM])> False
        >>> p.exitcode == -signal.SIGTERM
@@ -669,7 +678,7 @@ Miscellaneous
           freeze_support()
           Process(target=f).start()
 
-   If the ``freeze_support()`` line is missed out then trying to run the frozen
+   If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
    If the module is being run normally by the Python interpreter then
@@ -683,7 +692,7 @@ Miscellaneous
 
       setExecutable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
-    before they can create child processes.  (Windows only)
+   before they can create child processes.  (Windows only)
 
 
 .. note::
@@ -763,8 +772,8 @@ Connection objects usually created using :func:`Pipe` -- see also
 
       *buffer* must be an object satisfying the writable buffer interface.  If
       *offset* is given then the message will be written into the buffer from
-      *that position.  Offset must be a non-negative integer less than the
-      *length of *buffer* (in bytes).
+      that position.  Offset must be a non-negative integer less than the
+      length of *buffer* (in bytes).
 
       If the buffer is too short then a :exc:`BufferTooShort` exception is
       raised and the complete message is available as ``e.args[0]`` where ``e``
@@ -772,6 +781,8 @@ Connection objects usually created using :func:`Pipe` -- see also
 
 
 For example:
+
+.. doctest::
 
     >>> from multiprocessing import Pipe
     >>> a, b = Pipe()
@@ -859,8 +870,9 @@ object -- see :ref:`multiprocessing-managers`.
    specifies a timeout in seconds.  If *block* is ``False`` then *timeout* is
    ignored.
 
-   Note that on OS/X ``sem_timedwait`` is unsupported, so timeout arguments
-   for these will be ignored.
+.. note::
+   On OS/X ``sem_timedwait`` is unsupported, so timeout arguments for the
+   aforementioned :meth:`acquire` methods will be ignored on OS/X.
 
 .. note::
 
@@ -1057,7 +1069,7 @@ process::
        lock = Lock()
 
        n = Value('i', 7)
-       x = Value(ctypes.c_double, 1.0/3.0, lock=False)
+       x = Value(c_double, 1.0/3.0, lock=False)
        s = Array('c', 'hello world', lock=lock)
        A = Array(Point, [(1.875,-6.25), (-5.75,2.0), (2.375,9.5)], lock=lock)
 
@@ -1138,21 +1150,21 @@ their parent process exits.  The manager classes are defined in the
 
       Returns a :class:`Server` object which represents the actual server under
       the control of the Manager. The :class:`Server` object supports the
-      :meth:`serve_forever` method:
+      :meth:`serve_forever` method::
 
       >>> from multiprocessing.managers import BaseManager
-      >>> m = BaseManager(address=('', 50000), authkey='abc'))
-      >>> server = m.get_server()
-      >>> s.serve_forever()
+      >>> manager = BaseManager(address=('', 50000), authkey='abc')
+      >>> server = manager.get_server()
+      >>> server.serve_forever()
 
-      :class:`Server` additionally have an :attr:`address` attribute.
+      :class:`Server` additionally has an :attr:`address` attribute.
 
    .. method:: connect()
 
-      Connect a local manager object to a remote manager process:
+      Connect a local manager object to a remote manager process::
 
       >>> from multiprocessing.managers import BaseManager
-      >>> m = BaseManager(address='127.0.0.1', authkey='abc))
+      >>> m = BaseManager(address=('127.0.0.1', 5000), authkey='abc')
       >>> m.connect()
 
    .. method:: shutdown()
@@ -1280,7 +1292,9 @@ A namespace object has no public methods, but does have writable attributes.
 Its representation shows the values of its attributes.
 
 However, when using a proxy for a namespace object, an attribute beginning with
-``'_'`` will be an attribute of the proxy and not an attribute of the referent::
+``'_'`` will be an attribute of the proxy and not an attribute of the referent:
+
+.. doctest::
 
    >>> manager = multiprocessing.Manager()
    >>> Global = manager.Namespace()
@@ -1332,17 +1346,15 @@ remote clients can access::
    >>> import Queue
    >>> queue = Queue.Queue()
    >>> class QueueManager(BaseManager): pass
-   ...
    >>> QueueManager.register('get_queue', callable=lambda:queue)
    >>> m = QueueManager(address=('', 50000), authkey='abracadabra')
    >>> s = m.get_server()
-   >>> s.serveForever()
+   >>> s.serve_forever()
 
 One client can access the server as follows::
 
    >>> from multiprocessing.managers import BaseManager
    >>> class QueueManager(BaseManager): pass
-   ...
    >>> QueueManager.register('get_queue')
    >>> m = QueueManager(address=('foo.bar.org', 50000), authkey='abracadabra')
    >>> m.connect()
@@ -1353,10 +1365,10 @@ Another client can also use it::
 
    >>> from multiprocessing.managers import BaseManager
    >>> class QueueManager(BaseManager): pass
-   ...
-   >>> QueueManager.register('getQueue')
-   >>> m = QueueManager.from_address(address=('foo.bar.org', 50000), authkey='abracadabra')
-   >>> queue = m.getQueue()
+   >>> QueueManager.register('get_queue')
+   >>> m = QueueManager(address=('foo.bar.org', 50000), authkey='abracadabra')
+   >>> m.connect()
+   >>> queue = m.get_queue()
    >>> queue.get()
    'hello'
 
@@ -1392,7 +1404,9 @@ proxy.  Multiple proxy objects may have the same referent.
 A proxy object has methods which invoke corresponding methods of its referent
 (although not every method of the referent will necessarily be available through
 the proxy).  A proxy can usually be used in most of the same ways that its
-referent can::
+referent can:
+
+.. doctest::
 
    >>> from multiprocessing import Manager
    >>> manager = Manager()
@@ -1400,7 +1414,7 @@ referent can::
    >>> print l
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
    >>> print repr(l)
-   <ListProxy object, typeid 'list' at 0xb799974c>
+   <ListProxy object, typeid 'list' at 0x...>
    >>> l[4]
    16
    >>> l[2:5]
@@ -1413,7 +1427,9 @@ the proxy.
 An important feature of proxy objects is that they are picklable so they can be
 passed between processes.  Note, however, that if a proxy is sent to the
 corresponding manager's process then unpickling it will produce the referent
-itself.  This means, for example, that one shared object can contain a second::
+itself.  This means, for example, that one shared object can contain a second:
+
+.. doctest::
 
    >>> a = manager.list()
    >>> b = manager.list()
@@ -1427,12 +1443,14 @@ itself.  This means, for example, that one shared object can contain a second::
 .. note::
 
    The proxy types in :mod:`multiprocessing` do nothing to support comparisons
-   by value.  So, for instance, ::
+   by value.  So, for instance, we have:
 
-       manager.list([1,2,3]) == [1,2,3]
+   .. doctest::
 
-   will return ``False``.  One should just use a copy of the referent instead
-   when making comparisons.
+       >>> manager.list([1,2,3]) == [1,2,3]
+       False
+
+   One should just use a copy of the referent instead when making comparisons.
 
 .. class:: BaseProxy
 
@@ -1464,7 +1482,9 @@ itself.  This means, for example, that one shared object can contain a second::
       Note in particular that an exception will be raised if *methodname* has
       not been *exposed*
 
-      An example of the usage of :meth:`_callmethod`::
+      An example of the usage of :meth:`_callmethod`:
+
+      .. doctest::
 
          >>> l = manager.list(range(10))
          >>> l._callmethod('__len__')
@@ -1887,12 +1907,12 @@ Below is an example session with logging turned on::
     >>> logger.warning('doomed')
     [WARNING/MainProcess] doomed
     >>> m = multiprocessing.Manager()
-    [INFO/SyncManager-1] child process calling self.run()
-    [INFO/SyncManager-1] created temp directory /.../pymp-Wh47O_
-    [INFO/SyncManager-1] manager serving at '/.../listener-lWsERs'
+    [INFO/SyncManager-...] child process calling self.run()
+    [INFO/SyncManager-...] created temp directory /.../pymp-...
+    [INFO/SyncManager-...] manager serving at '/.../listener-...'
     >>> del m
     [INFO/MainProcess] sending shutdown message to manager
-    [INFO/SyncManager-1] manager exiting with exitcode 0
+    [INFO/SyncManager-...] manager exiting with exitcode 0
 
 In addition to having these two logging functions, the multiprocessing also
 exposes two additional logging level attributes. These are  :const:`SUBWARNING`
@@ -1919,18 +1939,18 @@ with :const:`SUBDEBUG` enabled::
     >>> logger.warning('doomed')
     [WARNING/MainProcess] doomed
     >>> m = multiprocessing.Manager()
-    [INFO/SyncManager-1] child process calling self.run()
-    [INFO/SyncManager-1] created temp directory /.../pymp-djGBXN
-    [INFO/SyncManager-1] manager serving at '/.../pymp-djGBXN/listener-knBYGe'
+    [INFO/SyncManager-...] child process calling self.run()
+    [INFO/SyncManager-...] created temp directory /.../pymp-...
+    [INFO/SyncManager-...] manager serving at '/.../pymp-djGBXN/listener-...'
     >>> del m
     [SUBDEBUG/MainProcess] finalizer calling ...
     [INFO/MainProcess] sending shutdown message to manager
-    [DEBUG/SyncManager-1] manager received shutdown message
-    [SUBDEBUG/SyncManager-1] calling <Finalize object, callback=unlink, ...
-    [SUBDEBUG/SyncManager-1] finalizer calling <built-in function unlink> ...
-    [SUBDEBUG/SyncManager-1] calling <Finalize object, dead>
-    [SUBDEBUG/SyncManager-1] finalizer calling <function rmtree at 0x5aa730> ...
-    [INFO/SyncManager-1] manager exiting with exitcode 0
+    [DEBUG/SyncManager-...] manager received shutdown message
+    [SUBDEBUG/SyncManager-...] calling <Finalize object, callback=unlink, ...
+    [SUBDEBUG/SyncManager-...] finalizer calling <built-in function unlink> ...
+    [SUBDEBUG/SyncManager-...] calling <Finalize object, dead>
+    [SUBDEBUG/SyncManager-...] finalizer calling <function rmtree at 0x5aa730> ...
+    [INFO/SyncManager-...] manager exiting with exitcode 0
 
 The :mod:`multiprocessing.dummy` module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
