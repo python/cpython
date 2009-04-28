@@ -1244,9 +1244,9 @@ Window control
 
 .. function:: screensize(canvwidth=None, canvheight=None, bg=None)
 
-   :param canvwidth: positive integer, new width of canvas in pixels
-   :param canvheight: positive integer, new height of canvas in pixels
-   :param bg: colorstring or color-tupel, new background color
+   :param canvwidth: positive integer, new width of canvas in pixels :param
+   canvheight: positive integer, new height of canvas in pixels :param bg:
+   colorstring or color-tuple, new background color
 
    If no arguments are given, return current (canvaswidth, canvasheight).  Else
    resize the canvas the turtles are drawing on.  Do not alter the drawing

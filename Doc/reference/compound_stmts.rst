@@ -1,4 +1,3 @@
-
 .. _compound:
 
 *******************
@@ -195,12 +194,10 @@ effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
    inserts an item in the sequence before the current item, the current item will
    be treated again the next time through the loop. This can lead to nasty bugs
    that can be avoided by making a temporary copy using a slice of the whole
-   sequence, e.g.,
+   sequence, e.g., ::
 
-::
-
-   for x in a[:]:
-       if x < 0: a.remove(x)
+      for x in a[:]:
+          if x < 0: a.remove(x)
 
 
 .. _try:

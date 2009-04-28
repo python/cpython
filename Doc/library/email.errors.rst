@@ -17,8 +17,8 @@ The following exception classes are defined in the :mod:`email.errors` module:
 
 .. exception:: MessageParseError()
 
-   This is the base class for exceptions thrown by the :class:`Parser` class.  It
-   is derived from :exc:`MessageError`.
+   This is the base class for exceptions thrown by the :class:`~email.parser.Parser`
+   class.  It is derived from :exc:`MessageError`.
 
 
 .. exception:: HeaderParseError()
@@ -55,11 +55,12 @@ The following exception classes are defined in the :mod:`email.errors` module:
    Since :meth:`Message.add_payload` is deprecated, this exception is rarely raised
    in practice.  However the exception may also be raised if the :meth:`attach`
    method is called on an instance of a class derived from
-   :class:`MIMENonMultipart` (e.g. :class:`MIMEImage`).
+   :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
+   :class:`~email.mime.image.MIMEImage`).
 
-Here's the list of the defects that the :class:`FeedParser` can find while
-parsing messages.  Note that the defects are added to the message where the
-problem was found, so for example, if a message nested inside a
+Here's the list of the defects that the :class:`~email.mime.parser.FeedParser`
+can find while parsing messages.  Note that the defects are added to the message
+where the problem was found, so for example, if a message nested inside a
 :mimetype:`multipart/alternative` had a malformed header, that nested message
 object would have a defect, but the containing messages would not.
 
