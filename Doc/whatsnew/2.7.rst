@@ -220,21 +220,24 @@ changes, or look through the Subversion logs for all the details.
 * New class: the :class:`Counter` class in the :mod:`collections` module is
   useful for tallying data.  :class:`Counter` instances behave mostly
   like dictionaries but return zero for missing keys instead of
-  raising a :exc:`KeyError`::
+  raising a :exc:`KeyError`:
 
-    >>> from collections import Counter
-    >>> c=Counter()
-    >>> for letter in 'here is a sample of english text':
-    ...   c[letter] += 1
-    ...
-    >>> c
-    Counter({' ': 6, 'e': 5, 's': 3, 'a': 2, 'i': 2, 'h': 2,
-    'l': 2, 't': 2, 'g': 1, 'f': 1, 'm': 1, 'o': 1, 'n': 1,
-    'p': 1, 'r': 1, 'x': 1})
-    >>> c['e']
-    5
-    >>> c['z']
-    0
+  .. doctest::
+     :options: +NORMALIZE_WHITESPACE
+
+     >>> from collections import Counter
+     >>> c = Counter()
+     >>> for letter in 'here is a sample of english text':
+     ...   c[letter] += 1
+     ...
+     >>> c
+     Counter({' ': 6, 'e': 5, 's': 3, 'a': 2, 'i': 2, 'h': 2,
+     'l': 2, 't': 2, 'g': 1, 'f': 1, 'm': 1, 'o': 1, 'n': 1,
+     'p': 1, 'r': 1, 'x': 1})
+     >>> c['e']
+     5
+     >>> c['z']
+     0
 
   There are two additional :class:`Counter` methods: :meth:`most_common`
   returns the N most common elements and their counts, and :meth:`elements`
@@ -247,7 +250,7 @@ changes, or look through the Subversion logs for all the details.
        'a', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
        'e', 'e', 'e', 'e', 'e', 'g', 'f', 'i', 'i',
        'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
-       's', 's', 'r', 't', 't', 'x']
+       's', 's', 'r', 't', 't', 'x'
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
@@ -257,7 +260,8 @@ changes, or look through the Subversion logs for all the details.
   renamed to legal names that are derived from the field's
   position within the list of fields:
 
-     >>> T=namedtuple('T', ['field1', '$illegal', 'for', 'field2'], rename=True)
+     >>> from collections import namedtuple
+     >>> T = namedtuple('T', ['field1', '$illegal', 'for', 'field2'], rename=True)
      >>> T._fields
      ('field1', '_1', '_2', 'field2')
 
