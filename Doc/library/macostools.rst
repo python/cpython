@@ -13,9 +13,9 @@ Macintosh. All file parameters can be specified as pathnames, :class:`FSRef` or
 :class:`FSSpec` objects.  This module expects a filesystem which supports forked
 files, so it should not be used on UFS partitions.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.0.
 
 The :mod:`macostools` module defines the following functions:
 

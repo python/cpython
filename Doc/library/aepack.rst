@@ -14,9 +14,9 @@ variables to AppleEvent descriptors and back (unpacking). Within Python the
 AppleEvent descriptor is handled by Python objects of built-in type
 :class:`AEDesc`, defined in module :mod:`Carbon.AE`.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 
 The :mod:`aepack` module defines the following functions:

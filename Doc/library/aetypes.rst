@@ -31,9 +31,9 @@ application for which you have not generated the stub package this module also
 contains object specifiers for a number of common OSA classes such as
 ``Document``, ``Window``, ``Character``, etc.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 
 

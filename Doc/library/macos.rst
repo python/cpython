@@ -11,9 +11,9 @@ This module provides access to MacOS specific functionality in the Python
 interpreter, such as how the interpreter eventloop functions and the like. Use
 with care.
 
-.. warning::
+.. note::
 
-   This module is removed in 3.0.
+   This module has been removed in Python 3.x.
 
 Note the capitalization of the module name; this is a historical artifact.
 
