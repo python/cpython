@@ -299,63 +299,6 @@ PyFloat_AsDouble(PyObject *op)
 
 /* Methods */
 
-static void
-format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
-{
-	register char *cp;
-	int i;
-
-	/* Subroutine for float_repr and float_print.
-	   We want float numbers to be recognizable as such,
-	   i.e., they should contain a decimal point or an exponent.
-	   However, %g may print the number as an integer;
-	   in such cases, we append ".0" to the string. */
-
-	assert(PyFloat_Check(v));
-	_PyOS_double_to_string(buf, buflen, v->ob_fval, 'g', precision,
-                               0, NULL);
-	cp = buf;
-	if (*cp == '-')
-		cp++;
-	for (; *cp != '\0'; cp++) {
-		/* Any non-digit means it's not an integer;
-		   this takes care of NAN and INF as well. */
-		if (!isdigit(Py_CHARMASK(*cp)))
-			break;
-	}
-	if (*cp == '\0') {
-		*cp++ = '.';
-		*cp++ = '0';
-		*cp++ = '\0';
-		return;
-	}
-	/* Checking the next three chars should be more than enough to
-	 * detect inf or nan, even on Windows. We check for inf or nan
-	 * at last because they are rare cases.
-	 */
-	for (i=0; *cp != '\0' && i<3; cp++, i++) {
-		if (isdigit(Py_CHARMASK(*cp)) || *cp == '.')
-			continue;
-		/* found something that is neither a digit nor point
-		 * it might be a NaN or INF
-		 */
-#ifdef Py_NAN
-		if (Py_IS_NAN(v->ob_fval)) {
-			strcpy(buf, "nan");
-		}
-                else
-#endif
-		if (Py_IS_INFINITY(v->ob_fval)) {
-			cp = buf;
-			if (*cp == '-')
-				cp++;
-			strcpy(cp, "inf");
-		}
-		break;
-	}
-
-}
-
 /* XXX PyFloat_AsStringEx should not be a public API function (for one
    XXX thing, its signature passes a buffer without a length; for another,
    XXX it isn't useful outside this file).
@@ -363,7 +306,8 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 void
 PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 {
-	format_float(buf, 100, v, precision);
+	_PyOS_double_to_string(buf, 100, v->ob_fval, 'g', precision,
+			       Py_DTSF_ADD_DOT_0, NULL);
 }
 
 /* Macro and helper that convert PyObject obj to a C double and store
@@ -402,36 +346,21 @@ convert_to_double(PyObject **v, double *dbl)
 	return 0;
 }
 
-/* Precisions used by repr() and str(), respectively.
-
-   The repr() precision (17 significant decimal digits) is the minimal number
-   that is guaranteed to have enough precision so that if the number is read
-   back in the exact same binary value is recreated.  This is true for IEEE
-   floating point by design, and also happens to work for all other modern
-   hardware.
-
-   The str() precision is chosen so that in most cases, the rounding noise
-   created by various operations is suppressed, while giving plenty of
-   precision for practical use.
-
-*/
-
-#define PREC_REPR	17
-#define PREC_STR	12
-
 /* XXX PyFloat_AsString and PyFloat_AsReprString should be deprecated:
    XXX they pass a char buffer without passing a length.
 */
 void
 PyFloat_AsString(char *buf, PyFloatObject *v)
 {
-	format_float(buf, 100, v, PREC_STR);
+	_PyOS_double_to_string(buf, 100, v->ob_fval, 's', 0,
+			       Py_DTSF_ADD_DOT_0, NULL);
 }
 
 void
 PyFloat_AsReprString(char *buf, PyFloatObject *v)
 {
-	format_float(buf, 100, v, PREC_REPR);
+	_PyOS_double_to_string(buf, 100, v->ob_fval, 'r', 0,
+			       Py_DTSF_ADD_DOT_0, NULL);
 }
 
 /* ARGSUSED */
@@ -439,8 +368,9 @@ static int
 float_print(PyFloatObject *v, FILE *fp, int flags)
 {
 	char buf[100];
-	format_float(buf, sizeof(buf), v,
-		     (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
+	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
+			       (flags & Py_PRINT_RAW) ? 's' : 'r',
+			       0, Py_DTSF_ADD_DOT_0, NULL);
 	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
 	Py_END_ALLOW_THREADS
@@ -451,8 +381,8 @@ static PyObject *
 float_repr(PyFloatObject *v)
 {
 	char buf[100];
-	format_float(buf, sizeof(buf), v, PREC_REPR);
-
+	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 'r', 0,
+			       Py_DTSF_ADD_DOT_0, NULL);
 	return PyString_FromString(buf);
 }
 
@@ -460,7 +390,8 @@ static PyObject *
 float_str(PyFloatObject *v)
 {
 	char buf[100];
-	format_float(buf, sizeof(buf), v, PREC_STR);
+	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 's', 0,
+			       Py_DTSF_ADD_DOT_0, NULL);
 	return PyString_FromString(buf);
 }
 
