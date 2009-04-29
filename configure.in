@@ -1933,10 +1933,8 @@ else
       AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
     fi
   done
-  AC_MSG_RESULT($with_dbmliborder)
-fi],
-[AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
-])
+fi])
+AC_MSG_RESULT($with_dbmliborder)
 
 # Determine if signalmodule should be used.
 AC_SUBST(USE_SIGNAL_MODULE)
