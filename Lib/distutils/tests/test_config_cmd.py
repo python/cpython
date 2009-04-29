@@ -46,7 +46,7 @@ class ConfigTestCase(support.LoggingSilencer,
         match = cmd.search_cpp(pattern='xxx', body='// xxx')
         self.assertEquals(match, 0)
 
-        match = cmd.search_cpp(pattern='command', body='// xxx')
+        match = cmd.search_cpp(pattern='_configtest', body='// xxx')
         self.assertEquals(match, 1)
 
     def test_finalize_options(self):
