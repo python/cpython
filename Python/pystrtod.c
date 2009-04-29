@@ -595,6 +595,20 @@ PyOS_ascii_formatd(char       *buffer,
 	return buffer;
 }
 
+/* Precisions used by repr() and str(), respectively.
+
+   The repr() precision (17 significant decimal digits) is the minimal number
+   that is guaranteed to have enough precision so that if the number is read
+   back in the exact same binary value is recreated.  This is true for IEEE
+   floating point by design, and also happens to work for all other modern
+   hardware.
+
+   The str() precision (12 significant decimal digits) is chosen so that in
+   most cases, the rounding noise created by various operations is suppressed,
+   while giving plenty of precision for practical use.
+
+*/
+
 PyAPI_FUNC(void)
 _PyOS_double_to_string(char *buf, size_t buf_len, double val,
 		    char format_code, int precision,
