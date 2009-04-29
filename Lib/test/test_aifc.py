@@ -35,8 +35,6 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(f.getsampwidth(), 2)
         self.assertEqual(f.getframerate(), 48000)
         self.assertEqual(f.getnframes(), 14400)
-        # XXX: are the next two correct?  The docs say/imply they are supposed
-        # to be strings.
         self.assertEqual(f.getcomptype(), b'NONE')
         self.assertEqual(f.getcompname(), b'not compressed')
         self.assertEqual(
