@@ -1000,39 +1000,68 @@ class PyBuildExt(build_ext):
 
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
-            if find_file("ndbm.h", inc_dirs, []) is not None:
-                # Some systems have -lndbm, others don't
-                if self.compiler.find_library_file(lib_dirs, 'ndbm'):
-                    ndbm_libs = ['ndbm']
-                else:
-                    ndbm_libs = []
-                exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       define_macros=[('HAVE_NDBM_H',None)],
-                                       libraries = ndbm_libs ) )
-            elif self.compiler.find_library_file(lib_dirs, 'gdbm'):
-                gdbm_libs = ['gdbm']
-                if self.compiler.find_library_file(lib_dirs, 'gdbm_compat'):
-                    gdbm_libs.append('gdbm_compat')
-                if find_file("gdbm/ndbm.h", inc_dirs, []) is not None:
-                    exts.append( Extension(
-                        'dbm', ['dbmmodule.c'],
-                        define_macros=[('HAVE_GDBM_NDBM_H',None)],
-                        libraries = gdbm_libs ) )
-                elif find_file("gdbm-ndbm.h", inc_dirs, []) is not None:
-                    exts.append( Extension(
-                        'dbm', ['dbmmodule.c'],
-                        define_macros=[('HAVE_GDBM_DASH_NDBM_H',None)],
-                        libraries = gdbm_libs ) )
-                else:
-                    missing.append('dbm')
-            elif db_incs is not None:
-                exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       library_dirs=dblib_dir,
-                                       runtime_library_dirs=dblib_dir,
-                                       include_dirs=db_incs,
-                                       define_macros=[('HAVE_BERKDB_H',None),
-                                                      ('DB_DBM_HSEARCH',None)],
-                                       libraries=dblibs))
+            config_args = sysconfig.get_config_var("CONFIG_ARGS")
+            dbm_args = [arg.split('=')[-1] for arg in args.split()
+                        if arg.startswith('--with-dbmliborder=')]
+            if dbm_args:
+                dbm_order = "ndbm:gdbm:bdb".split(":")
+            else:
+                dbm_order = dbm_args.split(":")
+            dbmext = None
+            for cand in dbm_order:
+                if cand == "ndbm":
+                    if find_file("ndbm.h", inc_dirs, []) is not None:
+                        # Some systems have -lndbm, others don't
+                        if self.compiler.find_library_file(lib_dirs, 'ndbm'):
+                            ndbm_libs = ['ndbm']
+                        else:
+                            ndbm_libs = []
+                        print "building dbm using ndbm"
+                        dbmext = Extension('dbm', ['dbmmodule.c'],
+                                           define_macros=[
+                                               ('HAVE_NDBM_H',None),
+                                               ],
+                                           libraries=ndbm_libs)
+                        break
+
+                elif cand == "gdbm":
+                    if self.compiler.find_library_file(lib_dirs, 'gdbm'):
+                        gdbm_libs = ['gdbm']
+                        if self.compiler.find_library_file(lib_dirs, 'gdbm_compat'):
+                            gdbm_libs.append('gdbm_compat')
+                        if find_file("gdbm/ndbm.h", inc_dirs, []) is not None:
+                            print "building dbm using gdbm"
+                            dbmext = Extension(
+                                'dbm', ['dbmmodule.c'],
+                                define_macros=[
+                                    ('HAVE_GDBM_NDBM_H', None),
+                                    ],
+                                libraries = gdbm_libs)
+                            break
+                        if find_file("gdbm-ndbm.h", inc_dirs, []) is not None:
+                            print "building dbm using gdbm"
+                            dbmext = Extension(
+                                'dbm', ['dbmmodule.c'],
+                                define_macros=[
+                                    ('HAVE_GDBM_DASH_NDBM_H', None),
+                                    ],
+                                libraries = gdbm_libs)
+                            break
+                elif cand == "bdb":
+                    if db_incs is not None:
+                        print "building dbm using bdb"
+                        dbmext = Extension('dbm', ['dbmmodule.c'],
+                                           library_dirs=dblib_dir,
+                                           runtime_library_dirs=dblib_dir,
+                                           include_dirs=db_incs,
+                                           define_macros=[
+                                               ('HAVE_BERKDB_H', None),
+                                               ('DB_DBM_HSEARCH', None),
+                                               ],
+                                           libraries=dblibs)
+                        break
+            if dbmext is not None:
+                exts.append(dbmext)
             else:
                 missing.append('dbm')
 

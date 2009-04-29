@@ -1068,6 +1068,9 @@ Modules/getpath.o.
 --with-system-ffi:  Build the _ctypes extension module using an ffi
         library installed on the system.
 
+--with-dbmliborder=db1:db2:...:  Specify the order that backends for the
+	dbm extension are checked. Valid value is a colon separated string
+	with the backend names `ndbm', `gdbm' and `bdb'.
 
 Building for multiple architectures (using the VPATH feature)
 -------------------------------------------------------------
