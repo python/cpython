@@ -12,6 +12,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5864: Fix empty format code formatting for floats so that it
+  never gives more than the requested number of significant digits.
+
 - Issue #5793: Rationalize isdigit / isalpha / tolower, etc. Includes
   new Py_ISDIGIT / Py_ISALPHA / Py_TOLOWER, etc. in pctypes.h.
 

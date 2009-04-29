@@ -328,6 +328,11 @@ class FormatTestCase(unittest.TestCase):
             self.assertEqual(fmt % float(arg), rhs)
             self.assertEqual(fmt % -float(arg), '-' + rhs)
 
+    def test_issue5864(self):
+        self.assertEquals(format(123.456, '.4'), '123.5')
+        self.assertEquals(format(1234.56, '.4'), '1.235e+03')
+        self.assertEquals(format(12345.6, '.4'), '1.235e+04')
+
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
         floats_file = open(os.path.join(os.path.split(__file__)[0],
