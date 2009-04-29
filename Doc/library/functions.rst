@@ -96,7 +96,7 @@ are always available.  They are listed here in alphabetical order.
    :class:`bytearray` -- it has the same non-mutating methods and the same
    indexing and slicing behavior.
 
-   Accordingly, constructor arguments are interpreted as for :func:`buffer`.
+   Accordingly, constructor arguments are interpreted as for :func:`bytearray`.
 
    Bytes objects can also be created with literals, see :ref:`strings`.
 
