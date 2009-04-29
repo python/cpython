@@ -27,7 +27,12 @@ The primary entry point is a :term:`generator`:
    column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of
    ints specifying the row and column where the token ends in the source; and
    the line on which the token was found. The line passed (the last tuple item)
-   is the *logical* line; continuation lines are included.
+   is the *logical* line; continuation lines are included.  The 5 tuple is
+   returned as a :term:`named tuple` with the field names:
+   ``type string start end line``.
+
+   .. versionchanged:: 3.1
+      Added support for named tuples.
 
    :func:`tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
