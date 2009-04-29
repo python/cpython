@@ -2089,7 +2089,7 @@ class MiscIOTest(unittest.TestCase):
             self.assertTrue(obj is not None, name)
             if name == "open":
                 continue
-            elif "error" in name.lower():
+            elif "error" in name.lower() or name == "UnsupportedOperation":
                 self.assertTrue(issubclass(obj, Exception), name)
             elif not name.startswith("SEEK_"):
                 self.assertTrue(issubclass(obj, self.IOBase))
