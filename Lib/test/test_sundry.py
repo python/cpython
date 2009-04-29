@@ -11,7 +11,6 @@ class TestUntestedModules(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             import CGIHTTPServer
-            import aifc
             import audiodev
             import bdb
             import cgitb

@@ -144,9 +144,6 @@ class Error(Exception):
 
 _AIFC_version = 0xA2805140L     # Version 1 of AIFF-C
 
-_skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
-      'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
-
 def _read_long(file):
     try:
         return struct.unpack('>l', file.read(4))[0]
@@ -314,10 +311,6 @@ class Aifc_read:
                 self._version = _read_ulong(chunk)
             elif chunkname == 'MARK':
                 self._readmark(chunk)
-            elif chunkname in _skiplist:
-                pass
-            else:
-                raise Error, 'unrecognized chunk type '+chunk.chunkname
             chunk.skip()
         if not self._comm_chunk_read or not self._ssnd_chunk:
             raise Error, 'COMM chunk and/or SSND chunk missing'
