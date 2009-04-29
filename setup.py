@@ -1000,13 +1000,14 @@ class PyBuildExt(build_ext):
 
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
-            config_args = sysconfig.get_config_var("CONFIG_ARGS")
-            dbm_args = [arg.split('=')[-1] for arg in args.split()
+            config_args = [arg.strip("'")
+                           for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
+            dbm_args = [arg.split('=')[-1] for arg in config_args
                         if arg.startswith('--with-dbmliborder=')]
             if dbm_args:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
+                dbm_order = dbm_args[-1].split(":")
             else:
-                dbm_order = dbm_args.split(":")
+                dbm_order = "ndbm:gdbm:bdb".split(":")
             dbmext = None
             for cand in dbm_order:
                 if cand == "ndbm":

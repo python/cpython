@@ -1921,7 +1921,7 @@ AC_MSG_RESULT($with_system_ffi)
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
-            AC_HELP_STRING(--with-dbmliborder=db1:db2:..., order to check db backends for dbm),
+            AC_HELP_STRING([--with-dbmliborder=db1:db2:...], [order to check db backends for dbm. Valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [
 if test x$with_dbmliborder = xyes
 then
