@@ -15,6 +15,36 @@ class AIFCTest(unittest.TestCase):
         f = aifc.open(self.sndfilepath)
         f.close()
 
+    def test_params(self):
+        f = aifc.open(self.sndfilepath)
+        self.assertEqual(f.getnchannels(), 2)
+        self.assertEqual(f.getsampwidth(), 2)
+        self.assertEqual(f.getframerate(), 48000)
+        self.assertEqual(f.getnframes(), 14400)
+        self.assertEqual(f.getcomptype(), 'NONE')
+        self.assertEqual(f.getcompname(), 'not compressed')
+        self.assertEqual(f.getparams(), (2, 2, 48000, 14400, 'NONE', 'not compressed'))
+        f.close()
+
+    def test_read(self):
+        f = aifc.open(self.sndfilepath)
+        self.assertEqual(f.tell(), 0)
+        self.assertEqual(f.readframes(2), '\x00\x00\x00\x00\x0b\xd4\x0b\xd4')
+        f.rewind()
+        pos0 = f.tell()
+        self.assertEqual(pos0, 0)
+        self.assertEqual(f.readframes(2), '\x00\x00\x00\x00\x0b\xd4\x0b\xd4')
+        pos2 = f.tell()
+        self.assertEqual(pos2, 2)
+        self.assertEqual(f.readframes(2), '\x17t\x17t"\xad"\xad')
+        f.setpos(pos2)
+        self.assertEqual(f.readframes(2), '\x17t\x17t"\xad"\xad')
+        f.setpos(pos0)
+        self.assertEqual(f.readframes(2), '\x00\x00\x00\x00\x0b\xd4\x0b\xd4')
+        f.close()
+
+    #XXX Need more tests!
+
 
 def test_main():
     run_unittest(AIFCTest)
