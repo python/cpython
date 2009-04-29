@@ -10,6 +10,10 @@ import random, fractions
 INF = float("inf")
 NAN = float("nan")
 
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
+
 class GeneralFloatCases(unittest.TestCase):
 
     def test_float(self):
@@ -252,6 +256,21 @@ class IEEEFormatTestCase(unittest.TestCase):
             self.assertEquals(math.atan2(-1e-1000, -1), math.atan2(-0.0, -1))
             self.assertEquals(math.atan2(float('-1e-1000'), -1),
                               math.atan2(-0.0, -1))
+
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_format_testfile(self):
+        for line in open(format_testfile):
+            if line.startswith('--'):
+                continue
+            line = line.strip()
+            if not line:
+                continue
+
+            lhs, rhs = map(str.strip, line.split('->'))
+            fmt, arg = lhs.split()
+            self.assertEqual(fmt % float(arg), rhs)
+            self.assertEqual(fmt % -float(arg), '-' + rhs)
 
     def test_issue5864(self):
         self.assertEquals(format(123.456, '.4'), '123.5')
