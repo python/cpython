@@ -53,7 +53,7 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
            "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
            "BufferedRandom", "TextIOBase", "TextIOWrapper",
-           "SEEK_SET", "SEEK_CUR", "SEEK_END"]
+           "UnsupportedOperation", "SEEK_SET", "SEEK_CUR", "SEEK_END"]
 
 
 import _io
