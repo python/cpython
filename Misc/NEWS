@@ -814,6 +814,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #4587: Add configure option --with-dbmliborder=db1:db2:... to specify
+  the order that backends for the dbm extension are checked. 
+
 - Link the shared python library with $(MODLIBS).
 
 - Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
