@@ -9,28 +9,29 @@ There are a large number of structures which are used in the definition of
 object types for Python.  This section describes these structures and how they
 are used.
 
-All Python objects ultimately share a small number of fields at the beginning of
-the object's representation in memory.  These are represented by the
-:ctype:`PyObject` and :ctype:`PyVarObject` types, which are defined, in turn, by
-the expansions of some macros also used, whether directly or indirectly, in the
-definition of all other Python objects.
+All Python objects ultimately share a small number of fields at the beginning
+of the object's representation in memory.  These are represented by the
+:ctype:`PyObject` and :ctype:`PyVarObject` types, which are defined, in turn,
+by the expansions of some macros also used, whether directly or indirectly, in
+the definition of all other Python objects.
 
 
 .. ctype:: PyObject
 
-   All object types are extensions of this type.  This is a type which contains the
-   information Python needs to treat a pointer to an object as an object.  In a
-   normal "release" build, it contains only the object's reference count and a
-   pointer to the corresponding type object.  It corresponds to the fields defined
-   by the expansion of the ``PyObject_HEAD`` macro.
+   All object types are extensions of this type.  This is a type which
+   contains the information Python needs to treat a pointer to an object as an
+   object.  In a normal "release" build, it contains only the object's
+   reference count and a pointer to the corresponding type object.  It
+   corresponds to the fields defined by the expansion of the ``PyObject_HEAD``
+   macro.
 
 
 .. ctype:: PyVarObject
 
-   This is an extension of :ctype:`PyObject` that adds the :attr:`ob_size` field.
-   This is only used for objects that have some notion of *length*.  This type does
-   not often appear in the Python/C API.  It corresponds to the fields defined by
-   the expansion of the ``PyObject_VAR_HEAD`` macro.
+   This is an extension of :ctype:`PyObject` that adds the :attr:`ob_size`
+   field.  This is only used for objects that have some notion of *length*.
+   This type does not often appear in the Python/C API.  It corresponds to the
+   fields defined by the expansion of the ``PyObject_VAR_HEAD`` macro.
 
 These macros are used in the definition of :ctype:`PyObject` and
 :ctype:`PyVarObject`:
@@ -40,9 +41,9 @@ These macros are used in the definition of :ctype:`PyObject` and
 
    This is a macro which expands to the declarations of the fields of the
    :ctype:`PyObject` type; it is used when declaring new types which represent
-   objects without a varying length.  The specific fields it expands to depend on
-   the definition of :cmacro:`Py_TRACE_REFS`.  By default, that macro is not
-   defined, and :cmacro:`PyObject_HEAD` expands to::
+   objects without a varying length.  The specific fields it expands to depend
+   on the definition of :cmacro:`Py_TRACE_REFS`.  By default, that macro is
+   not defined, and :cmacro:`PyObject_HEAD` expands to::
 
       Py_ssize_t ob_refcnt;
       PyTypeObject *ob_type;
@@ -57,9 +58,9 @@ These macros are used in the definition of :ctype:`PyObject` and
 .. cmacro:: PyObject_VAR_HEAD
 
    This is a macro which expands to the declarations of the fields of the
-   :ctype:`PyVarObject` type; it is used when declaring new types which represent
-   objects with a length that varies from instance to instance.  This macro always
-   expands to::
+   :ctype:`PyVarObject` type; it is used when declaring new types which
+   represent objects with a length that varies from instance to instance.
+   This macro always expands to::
 
       PyObject_HEAD
       Py_ssize_t ob_size;
@@ -67,16 +68,34 @@ These macros are used in the definition of :ctype:`PyObject` and
    Note that :cmacro:`PyObject_HEAD` is part of the expansion, and that its own
    expansion varies depending on the definition of :cmacro:`Py_TRACE_REFS`.
 
-PyObject_HEAD_INIT
+
+.. cmacro:: PyObject_HEAD_INIT(type)
+
+   This is a macro which expands to initialization values for a new
+   :ctype:`PyObject` type.  This macro expands to::
+
+      _PyObject_EXTRA_INIT
+      1, type,
+
+
+.. cmacro:: PyVarObject_HEAD_INIT(type, size)
+
+   This is a macro which expands to initialization values for a new
+   :ctype:`PyVarObject` type, including the :attr:`ob_size` field.
+   This macro expands to::
+
+      _PyObject_EXTRA_INIT
+      1, type, size,
 
 
 .. ctype:: PyCFunction
 
-   Type of the functions used to implement most Python callables in C. Functions of
-   this type take two :ctype:`PyObject\*` parameters and return one such value.  If
-   the return value is *NULL*, an exception shall have been set.  If not *NULL*,
-   the return value is interpreted as the return value of the function as exposed
-   in Python.  The function must return a new reference.
+   Type of the functions used to implement most Python callables in C.
+   Functions of this type take two :ctype:`PyObject\*` parameters and return
+   one such value.  If the return value is *NULL*, an exception shall have
+   been set.  If not *NULL*, the return value is interpreted as the return
+   value of the function as exposed in Python.  The function must return a new
+   reference.
 
 
 .. ctype:: PyMethodDef
@@ -117,20 +136,21 @@ convention flags can be combined with a binding flag.
 .. data:: METH_VARARGS
 
    This is the typical calling convention, where the methods have the type
-   :ctype:`PyCFunction`. The function expects two :ctype:`PyObject\*` values.  The
-   first one is the *self* object for methods; for module functions, it has the
-   value given to :cfunc:`Py_InitModule4` (or *NULL* if :cfunc:`Py_InitModule` was
-   used).  The second parameter (often called *args*) is a tuple object
-   representing all arguments. This parameter is typically processed using
-   :cfunc:`PyArg_ParseTuple` or :cfunc:`PyArg_UnpackTuple`.
+   :ctype:`PyCFunction`. The function expects two :ctype:`PyObject\*` values.
+   The first one is the *self* object for methods; for module functions, it
+   has the value given to :cfunc:`Py_InitModule4` (or *NULL* if
+   :cfunc:`Py_InitModule` was used).  The second parameter (often called
+   *args*) is a tuple object representing all arguments. This parameter is
+   typically processed using :cfunc:`PyArg_ParseTuple` or
+   :cfunc:`PyArg_UnpackTuple`.
 
 
 .. data:: METH_KEYWORDS
 
-   Methods with these flags must be of type :ctype:`PyCFunctionWithKeywords`.  The
-   function expects three parameters: *self*, *args*, and a dictionary of all the
-   keyword arguments.  The flag is typically combined with :const:`METH_VARARGS`,
-   and the parameters are typically processed using
+   Methods with these flags must be of type :ctype:`PyCFunctionWithKeywords`.
+   The function expects three parameters: *self*, *args*, and a dictionary of
+   all the keyword arguments.  The flag is typically combined with
+   :const:`METH_VARARGS`, and the parameters are typically processed using
    :cfunc:`PyArg_ParseTupleAndKeywords`.
 
 
@@ -139,8 +159,8 @@ convention flags can be combined with a binding flag.
    Methods without parameters don't need to check whether arguments are given if
    they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
    :ctype:`PyCFunction`.  When used with object methods, the first parameter is
-   typically named ``self`` and will hold a reference to the object instance.  In
-   all cases the second parameter will be *NULL*.
+   typically named ``self`` and will hold a reference to the object instance.
+   In all cases the second parameter will be *NULL*.
 
 
 .. data:: METH_O
@@ -154,11 +174,11 @@ convention flags can be combined with a binding flag.
 .. data:: METH_OLDARGS
 
    This calling convention is deprecated.  The method must be of type
-   :ctype:`PyCFunction`.  The second argument is *NULL* if no arguments are given,
-   a single object if exactly one argument is given, and a tuple of objects if more
-   than one argument is given.  There is no way for a function using this
-   convention to distinguish between a call with multiple arguments and a call with
-   a tuple as the only argument.
+   :ctype:`PyCFunction`.  The second argument is *NULL* if no arguments are
+   given, a single object if exactly one argument is given, and a tuple of
+   objects if more than one argument is given.  There is no way for a function
+   using this convention to distinguish between a call with multiple arguments
+   and a call with a tuple as the only argument.
 
 These two constants are not used to indicate the calling convention but the
 binding when use with methods of classes.  These may not be used for functions
@@ -170,9 +190,10 @@ method.
 
    .. index:: builtin: classmethod
 
-   The method will be passed the type object as the first parameter rather than an
-   instance of the type.  This is used to create *class methods*, similar to what
-   is created when using the :func:`classmethod` built-in function.
+   The method will be passed the type object as the first parameter rather
+   than an instance of the type.  This is used to create *class methods*,
+   similar to what is created when using the :func:`classmethod` built-in
+   function.
 
    .. versionadded:: 2.3
 
@@ -181,9 +202,9 @@ method.
 
    .. index:: builtin: staticmethod
 
-   The method will be passed *NULL* as the first parameter rather than an instance
-   of the type.  This is used to create *static methods*, similar to what is
-   created when using the :func:`staticmethod` built-in function.
+   The method will be passed *NULL* as the first parameter rather than an
+   instance of the type.  This is used to create *static methods*, similar to
+   what is created when using the :func:`staticmethod` built-in function.
 
    .. versionadded:: 2.3
 
@@ -195,12 +216,13 @@ definition with the same method name.
 
    The method will be loaded in place of existing definitions.  Without
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
-   wrappers are loaded before the method table, the existence of a *sq_contains*
-   slot, for example, would generate a wrapped method named :meth:`__contains__`
-   and preclude the loading of a corresponding PyCFunction with the same name.
-   With the flag defined, the PyCFunction will be loaded in place of the wrapper
-   object and will co-exist with the slot.  This is helpful because calls to
-   PyCFunctions are optimized more than wrapper object calls.
+   wrappers are loaded before the method table, the existence of a
+   *sq_contains* slot, for example, would generate a wrapped method named
+   :meth:`__contains__` and preclude the loading of a corresponding
+   PyCFunction with the same name.  With the flag defined, the PyCFunction
+   will be loaded in place of the wrapper object and will co-exist with the
+   slot.  This is helpful because calls to PyCFunctions are optimized more
+   than wrapper object calls.
 
    .. versionadded:: 2.4
 
@@ -269,6 +291,7 @@ definition with the same method name.
 
 .. cfunction:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
 
-   Return a bound method object for an extension type implemented in C.  This can
-   be useful in the implementation of a :attr:`tp_getattro` or :attr:`tp_getattr`
-   handler that does not use the :cfunc:`PyObject_GenericGetAttr` function.
+   Return a bound method object for an extension type implemented in C.  This
+   can be useful in the implementation of a :attr:`tp_getattro` or
+   :attr:`tp_getattr` handler that does not use the
+   :cfunc:`PyObject_GenericGetAttr` function.

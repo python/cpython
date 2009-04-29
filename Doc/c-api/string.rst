@@ -58,6 +58,10 @@ called with a non-string parameter.
    *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of the
    string are uninitialized.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *len*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyString_FromFormat(const char *format, ...)
 
@@ -132,10 +136,18 @@ called with a non-string parameter.
 
    Return the length of the string in string object *string*.
 
+   .. versionchanged:: 2.5
+      This function returned an :ctype:`int` type. This might require changes
+      in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: Py_ssize_t PyString_GET_SIZE(PyObject *string)
 
    Macro form of :cfunc:`PyString_Size` but without error checking.
+
+   .. versionchanged:: 2.5
+      This macro returned an :ctype:`int` type. This might require changes in
+      your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: char* PyString_AsString(PyObject *string)
@@ -172,6 +184,10 @@ called with a non-string parameter.
    *string* and operates on that.  If *string* is not a string object at all,
    :cfunc:`PyString_AsStringAndSize` returns ``-1`` and raises :exc:`TypeError`.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int *` type for *length*. This might
+      require changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: void PyString_Concat(PyObject **string, PyObject *newpart)
 
@@ -200,6 +216,9 @@ called with a non-string parameter.
    fails, the original string object at *\*string* is deallocated, *\*string* is
    set to *NULL*, a memory exception is set, and ``-1`` is returned.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *newsize*. This might
+      require changes in your code for properly supporting 64-bit systems.
 
 .. cfunction:: PyObject* PyString_Format(PyObject *format, PyObject *args)
 
@@ -236,6 +255,10 @@ called with a non-string parameter.
    The codec to be used is looked up using the Python codec registry.  Return
    *NULL* if an exception was raised by the codec.
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyString_AsDecodedObject(PyObject *str, const char *encoding, const char *errors)
 
@@ -253,6 +276,10 @@ called with a non-string parameter.
    have the same meaning as the parameters of the same name in the string
    :meth:`encode` method. The codec to be used is looked up using the Python codec
    registry.  Return *NULL* if an exception was raised by the codec.
+
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` type for *size*. This might require
+      changes in your code for properly supporting 64-bit systems.
 
 
 .. cfunction:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)

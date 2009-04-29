@@ -106,6 +106,10 @@ Long Integer Objects
 
    .. versionadded:: 1.6
 
+   .. versionchanged:: 2.5
+      This function used an :ctype:`int` for *length*. This might require
+      changes in your code for properly supporting 64-bit systems.
+
 
 .. cfunction:: PyObject* PyLong_FromVoidPtr(void *p)
 
