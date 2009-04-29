@@ -473,6 +473,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
+
 - Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive 
   anymore.
 
