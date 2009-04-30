@@ -27,7 +27,7 @@ class AIFCTest(unittest.TestCase):
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
-        f = aifc.open(self.sndfilepath)
+        self.f = aifc.open(self.sndfilepath)
 
     def test_params(self):
         f = self.f = aifc.open(self.sndfilepath)
