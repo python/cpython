@@ -838,6 +838,41 @@ complex_getnewargs(PyComplexObject *v)
 	return Py_BuildValue("(dd)", c.real, c.imag);
 }
 
+PyDoc_STRVAR(complex__format__doc,
+"complex.__format__() -> str\n"
+"\n"
+"Converts to a string according to format_spec.");
+
+static PyObject *
+complex__format__(PyObject* self, PyObject* args)
+{
+    PyObject *format_spec;
+
+    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+        return NULL;
+    if (PyBytes_Check(format_spec))
+        return _PyComplex_FormatAdvanced(self,
+                                         PyBytes_AS_STRING(format_spec),
+                                         PyBytes_GET_SIZE(format_spec));
+    if (PyUnicode_Check(format_spec)) {
+        /* Convert format_spec to a str */
+        PyObject *result;
+        PyObject *str_spec = PyObject_Str(format_spec);
+
+        if (str_spec == NULL)
+            return NULL;
+
+        result = _PyComplex_FormatAdvanced(self,
+                                           PyBytes_AS_STRING(str_spec),
+                                           PyBytes_GET_SIZE(str_spec));
+
+        Py_DECREF(str_spec);
+        return result;
+    }
+    PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
+    return NULL;
+}
+
 #if 0
 static PyObject *
 complex_is_finite(PyObject *self)
@@ -862,6 +897,8 @@ static PyMethodDef complex_methods[] = {
 	 complex_is_finite_doc},
 #endif
 	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
+	{"__format__",          (PyCFunction)complex__format__,
+                                           METH_VARARGS, complex__format__doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

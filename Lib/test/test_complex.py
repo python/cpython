@@ -458,7 +458,66 @@ class ComplexTest(unittest.TestCase):
                 self.assertFloatsAreIdentical(0.0 + z.imag,
                                               0.0 + roundtrip.imag)
 
+    def test_format(self):
+        # empty format string is same as str()
+        self.assertEqual(format(1+3j, ''), str(1+3j))
+        self.assertEqual(format(1.5+3.5j, ''), str(1.5+3.5j))
+        self.assertEqual(format(3j, ''), str(3j))
+        self.assertEqual(format(3.2j, ''), str(3.2j))
+        self.assertEqual(format(3+0j, ''), str(3+0j))
+        self.assertEqual(format(3.2+0j, ''), str(3.2+0j))
 
+        self.assertEqual(format(1+3j, 'g'), '1+3j')
+        self.assertEqual(format(3j, 'g'), '0+3j')
+        self.assertEqual(format(1.5+3.5j, 'g'), '1.5+3.5j')
+
+        self.assertEqual(format(1.5+3.5j, '+g'), '+1.5+3.5j')
+        self.assertEqual(format(1.5-3.5j, '+g'), '+1.5-3.5j')
+        self.assertEqual(format(1.5-3.5j, '-g'), '1.5-3.5j')
+        self.assertEqual(format(1.5+3.5j, ' g'), ' 1.5+3.5j')
+        self.assertEqual(format(1.5-3.5j, ' g'), ' 1.5-3.5j')
+        self.assertEqual(format(-1.5+3.5j, ' g'), '-1.5+3.5j')
+        self.assertEqual(format(-1.5-3.5j, ' g'), '-1.5-3.5j')
+
+        self.assertEqual(format(-1.5-3.5e-20j, 'g'), '-1.5-3.5e-20j')
+        self.assertEqual(format(-1.5-3.5j, 'f'), '-1.500000-3.500000j')
+        self.assertEqual(format(-1.5-3.5j, 'F'), '-1.500000-3.500000j')
+        self.assertEqual(format(-1.5-3.5j, 'e'), '-1.500000e+00-3.500000e+00j')
+        self.assertEqual(format(-1.5-3.5j, '.2e'), '-1.50e+00-3.50e+00j')
+        self.assertEqual(format(-1.5-3.5j, '.2E'), '-1.50E+00-3.50E+00j')
+        self.assertEqual(format(-1.5e10-3.5e5j, '.2G'), '-1.5E+10-3.5E+05j')
+
+        self.assertEqual(format(1.5+3j, '<20g'),  '1.5+3j              ')
+        self.assertEqual(format(1.5+3j, '*<20g'), '1.5+3j**************')
+        self.assertEqual(format(1.5+3j, '>20g'),  '              1.5+3j')
+        self.assertEqual(format(1.5+3j, '^20g'),  '       1.5+3j       ')
+        self.assertEqual(format(1.5+3j, '<20'),   '(1.5+3j)            ')
+        self.assertEqual(format(1.5+3j, '>20'),   '            (1.5+3j)')
+        self.assertEqual(format(1.5+3j, '^20'),   '      (1.5+3j)      ')
+        self.assertEqual(format(1.123-3.123j, '^20.2'), '     (1.1-3.1j)     ')
+
+        self.assertEqual(format(1.5+3j, '<20.2f'), '1.50+3.00j          ')
+        self.assertEqual(format(1.5e20+3j, '<20.2f'), '150000000000000000000.00+3.00j')
+        self.assertEqual(format(1.5e20+3j, '>40.2f'), '          150000000000000000000.00+3.00j')
+        self.assertEqual(format(1.5e20+3j, '^40,.2f'), '  150,000,000,000,000,000,000.00+3.00j  ')
+        self.assertEqual(format(1.5e21+3j, '^40,.2f'), ' 1,500,000,000,000,000,000,000.00+3.00j ')
+        self.assertEqual(format(1.5e21+3000j, ',.2f'), '1,500,000,000,000,000,000,000.00+3,000.00j')
+
+        # alternate is invalid
+        self.assertRaises(ValueError, (1.5+0.5j).__format__, '#f')
+
+        # zero padding is invalid
+        self.assertRaises(ValueError, (1.5+0.5j).__format__, '010f')
+
+        # '=' alignment is invalid
+        self.assertRaises(ValueError, (1.5+3j).__format__, '=20')
+
+        # integer presentation types are an error
+        for t in 'bcdoxX':
+            self.assertRaises(ValueError, (1.5+0.5j).__format__, t)
+
+        # make sure everything works in ''.format()
+        self.assertEqual('*{0:.3f}*'.format(3.14159+2.71828j), '*3.142+2.718j*')
 
 def test_main():
     test_support.run_unittest(ComplexTest)
