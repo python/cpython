@@ -690,6 +690,8 @@ class Aifc_write:
               self._datalength != self._datawritten or \
               self._marklength:
             self._patchheader()
+        # Prevent ref cycles
+        self._convert = None
         self._file.flush()
         self._file = None
 
