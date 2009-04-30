@@ -681,6 +681,23 @@ complex_getnewargs(PyComplexObject *v)
 	return Py_BuildValue("(dd)", c.real, c.imag);
 }
 
+PyDoc_STRVAR(complex__format__doc,
+"complex.__format__() -> str\n"
+"\n"
+"Converts to a string according to format_spec.");
+
+static PyObject *
+complex__format__(PyObject* self, PyObject* args)
+{
+    PyObject *format_spec;
+
+    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
+        return NULL;
+    return _PyComplex_FormatAdvanced(self,
+                                     PyUnicode_AS_UNICODE(format_spec),
+                                     PyUnicode_GET_SIZE(format_spec));
+}
+
 #if 0
 static PyObject *
 complex_is_finite(PyObject *self)
@@ -705,6 +722,8 @@ static PyMethodDef complex_methods[] = {
 	 complex_is_finite_doc},
 #endif
 	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
+	{"__format__",          (PyCFunction)complex__format__,
+                                           METH_VARARGS, complex__format__doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
