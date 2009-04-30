@@ -54,6 +54,12 @@ PyAPI_FUNC(double) PyComplex_RealAsDouble(PyObject *op);
 PyAPI_FUNC(double) PyComplex_ImagAsDouble(PyObject *op);
 PyAPI_FUNC(Py_complex) PyComplex_AsCComplex(PyObject *op);
 
+/* Format the object based on the format_spec, as defined in PEP 3101
+   (Advanced String Formatting). */
+PyAPI_FUNC(PyObject *) _PyComplex_FormatAdvanced(PyObject *obj,
+                                                 Py_UNICODE *format_spec,
+                                                 Py_ssize_t format_spec_len);
+
 #ifdef __cplusplus
 }
 #endif
