@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1588: Add complex.__format__. For example, 
+  format(complex(1, 2./3), '.5') now produces a sensible result.
+
 - Issue #5864: Fix empty format code formatting for floats so that it
   never gives more than the requested number of significant digits.
 
@@ -45,7 +48,7 @@ Core and Builtins
   some builtin types.
 
 - Issue #1869: fix a couple of minor round() issues.  round(5e15+1)
-    was giving 5e15+2; round(-0.0) was losing the sign of the zero.
+  was giving 5e15+2; round(-0.0) was losing the sign of the zero.
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
 

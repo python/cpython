@@ -9,9 +9,9 @@
 
 #define FORMAT_STRING _PyUnicode_FormatAdvanced
 
-/* don't define FORMAT_LONG and FORMAT_FLOAT, since we can live
-   with only the string versions of those.  The builtin format()
-   will convert them to unicode. */
+/* don't define FORMAT_LONG, FORMAT_FLOAT, and FORMAT_COMPLEX, since
+   we can live with only the string versions of those.  The builtin
+   format() will convert them to unicode. */
 
 #include "../Objects/stringlib/formatter.h"
 

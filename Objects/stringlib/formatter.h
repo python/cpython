@@ -11,6 +11,7 @@
    FORMAT_STRING
    FORMAT_LONG
    FORMAT_FLOAT
+   FORMAT_COMPLEX
    to be whatever you want the public names of these functions to
    be.  These are the only non-static functions defined here.
 */
@@ -261,7 +262,54 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     return 1;
 }
 
-#if defined FORMAT_FLOAT || defined FORMAT_LONG
+/* Calculate the padding needed. */
+static void
+calc_padding(Py_ssize_t nchars, Py_ssize_t width, STRINGLIB_CHAR align,
+             Py_ssize_t *n_lpadding, Py_ssize_t *n_rpadding,
+             Py_ssize_t *n_total)
+{
+    if (width >= 0) {
+        if (nchars > width)
+            *n_total = nchars;
+        else
+            *n_total = width;
+    }
+    else {
+        /* not specified, use all of the chars and no more */
+        *n_total = nchars;
+    }
+
+    /* figure out how much leading space we need, based on the
+       aligning */
+    if (align == '>')
+        *n_lpadding = *n_total - nchars;
+    else if (align == '^')
+        *n_lpadding = (*n_total - nchars) / 2;
+    else
+        *n_lpadding = 0;
+
+    *n_rpadding = *n_total - nchars - *n_lpadding;
+}
+
+/* Do the padding, and return a pointer to where the caller-supplied
+   content goes. */
+static STRINGLIB_CHAR *
+fill_padding(STRINGLIB_CHAR *p, Py_ssize_t nchars, STRINGLIB_CHAR fill_char,
+             Py_ssize_t n_lpadding, Py_ssize_t n_rpadding)
+{
+    /* Pad on left. */
+    if (n_lpadding)
+        STRINGLIB_FILL(p, fill_char, n_lpadding);
+
+    /* Pad on right. */
+    if (n_rpadding)
+        STRINGLIB_FILL(p + nchars + n_lpadding, fill_char, n_rpadding);
+
+    /* Pointer to the user content. */
+    return p + n_lpadding;
+}
+
+#if defined FORMAT_FLOAT || defined FORMAT_LONG || defined FORMAT_COMPLEX
 /************************************************************************/
 /*********** common routines for numeric formatting *********************/
 /************************************************************************/
@@ -303,6 +351,7 @@ typedef struct {
     Py_ssize_t n_min_width; /* The min_width we used when we computed
                                the n_grouped_digits width. */
 } NumberFieldWidths;
+
 
 /* Given a number of the form:
    digits[remainder]
@@ -564,7 +613,7 @@ get_locale_info(int type, LocaleInfo *locale_info)
     }
 }
 
-#endif /* FORMAT_FLOAT || FORMAT_LONG */
+#endif /* FORMAT_FLOAT || FORMAT_LONG || FORMAT_COMPLEX */
 
 /************************************************************************/
 /*********** string formatting ******************************************/
@@ -573,10 +622,10 @@ get_locale_info(int type, LocaleInfo *locale_info)
 static PyObject *
 format_string_internal(PyObject *value, const InternalFormatSpec *format)
 {
-    Py_ssize_t width; /* total field width */
     Py_ssize_t lpad;
-    STRINGLIB_CHAR *dst;
-    STRINGLIB_CHAR *src = STRINGLIB_STR(value);
+    Py_ssize_t rpad;
+    Py_ssize_t total;
+    STRINGLIB_CHAR *p;
     Py_ssize_t len = STRINGLIB_LEN(value);
     PyObject *result = NULL;
 
@@ -609,56 +658,20 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
         len = format->precision;
     }
 
-    if (format->width >= 0) {
-        width = format->width;
-
-        /* but use at least len characters */
-        if (len > width) {
-            width = len;
-        }
-    }
-    else {
-        /* not specified, use all of the chars and no more */
-        width = len;
-    }
+    calc_padding(len, format->width, format->align, &lpad, &rpad, &total);
 
     /* allocate the resulting string */
-    result = STRINGLIB_NEW(NULL, width);
+    result = STRINGLIB_NEW(NULL, total);
     if (result == NULL)
         goto done;
 
-    /* now write into that space */
-    dst = STRINGLIB_STR(result);
+    /* Write into that space. First the padding. */
+    p = fill_padding(STRINGLIB_STR(result), len,
+                     format->fill_char=='\0'?' ':format->fill_char,
+                     lpad, rpad);
 
-    /* figure out how much leading space we need, based on the
-       aligning */
-    if (format->align == '>')
-        lpad = width - len;
-    else if (format->align == '^')
-        lpad = (width - len) / 2;
-    else
-        lpad = 0;
-
-    /* if right aligning, increment the destination allow space on the
-       left */
-    memcpy(dst + lpad, src, len * sizeof(STRINGLIB_CHAR));
-
-    /* do any padding */
-    if (width > len) {
-        STRINGLIB_CHAR fill_char = format->fill_char;
-        if (fill_char == '\0') {
-            /* use the default, if not specified */
-            fill_char = ' ';
-        }
-
-        /* pad on left */
-        if (lpad)
-            STRINGLIB_FILL(dst, fill_char, lpad);
-
-        /* pad on right */
-        if (width - len - lpad)
-            STRINGLIB_FILL(dst + len + lpad, fill_char, width - len - lpad);
-    }
+    /* Then the source string. */
+    memcpy(p, STRINGLIB_STR(value), len * sizeof(STRINGLIB_CHAR));
 
 done:
     return result;
@@ -998,6 +1011,231 @@ done:
 #endif /* FORMAT_FLOAT */
 
 /************************************************************************/
+/*********** complex formatting *****************************************/
+/************************************************************************/
+
+#ifdef FORMAT_COMPLEX
+
+static PyObject *
+format_complex_internal(PyObject *value,
+                        const InternalFormatSpec *format)
+{
+    double re;
+    double im;
+    char *re_buf = NULL;       /* buffer returned from PyOS_double_to_string */
+    char *im_buf = NULL;       /* buffer returned from PyOS_double_to_string */
+
+    InternalFormatSpec tmp_format = *format;
+    Py_ssize_t n_re_digits;
+    Py_ssize_t n_im_digits;
+    Py_ssize_t n_re_remainder;
+    Py_ssize_t n_im_remainder;
+    Py_ssize_t n_re_total;
+    Py_ssize_t n_im_total;
+    int re_has_decimal;
+    int im_has_decimal;
+    Py_ssize_t precision = format->precision;
+    STRINGLIB_CHAR type = format->type;
+    STRINGLIB_CHAR *p_re;
+    STRINGLIB_CHAR *p_im;
+    NumberFieldWidths re_spec;
+    NumberFieldWidths im_spec;
+    int flags = 0;
+    PyObject *result = NULL;
+    STRINGLIB_CHAR *p;
+    STRINGLIB_CHAR re_sign_char = '\0';
+    STRINGLIB_CHAR im_sign_char = '\0';
+    int re_float_type; /* Used to see if we have a nan, inf, or regular float. */
+    int im_float_type;
+    int add_parens = 0;
+    int skip_re = 0;
+    Py_ssize_t lpad;
+    Py_ssize_t rpad;
+    Py_ssize_t total;
+
+#if STRINGLIB_IS_UNICODE
+    Py_UNICODE *re_unicode_tmp = NULL;
+    Py_UNICODE *im_unicode_tmp = NULL;
+#endif
+
+    /* Locale settings, either from the actual locale or
+       from a hard-code pseudo-locale */
+    LocaleInfo locale;
+
+    /* Alternate is not allowed on complex. */
+    if (format->alternate) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Alternate form (#) not allowed in complex format "
+                        "specifier");
+        goto done;
+    }
+
+    /* Neither is zero pading. */
+    if (format->fill_char == '0') {
+        PyErr_SetString(PyExc_ValueError,
+                        "Zero padding is not allowed in complex format "
+                        "specifier");
+        goto done;
+    }
+
+    /* Neither is '=' alignment . */
+    if (format->align == '=') {
+        PyErr_SetString(PyExc_ValueError,
+                        "'=' alignment flag is not allowed in complex format "
+                        "specifier");
+        goto done;
+    }
+
+    re = PyComplex_RealAsDouble(value);
+    if (re == -1.0 && PyErr_Occurred())
+        goto done;
+    im = PyComplex_ImagAsDouble(value);
+    if (im == -1.0 && PyErr_Occurred())
+        goto done;
+
+    if (type == '\0') {
+        /* Omitted type specifier. Should be like str(self). */
+        type = 'g';
+        add_parens = 1;
+        if (re == 0.0)
+            skip_re = 1;
+    }
+
+    if (type == 'n')
+        /* 'n' is the same as 'g', except for the locale used to
+           format the result. We take care of that later. */
+        type = 'g';
+
+    /* 'F' is the same as 'f', per the PEP */
+    if (type == 'F')
+        type = 'f';
+
+    if (precision < 0)
+        precision = 6;
+
+    /* Cast "type", because if we're in unicode we need to pass a
+       8-bit char. This is safe, because we've restricted what "type"
+       can be. */
+    re_buf = PyOS_double_to_string(re, (char)type, precision, flags,
+                                   &re_float_type);
+    if (re_buf == NULL)
+        goto done;
+    im_buf = PyOS_double_to_string(im, (char)type, precision, flags,
+                                   &im_float_type);
+    if (im_buf == NULL)
+        goto done;
+
+    n_re_digits = strlen(re_buf);
+    n_im_digits = strlen(im_buf);
+
+    /* Since there is no unicode version of PyOS_double_to_string,
+       just use the 8 bit version and then convert to unicode. */
+#if STRINGLIB_IS_UNICODE
+    re_unicode_tmp = (Py_UNICODE*)PyMem_Malloc((n_re_digits)*sizeof(Py_UNICODE));
+    if (re_unicode_tmp == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    strtounicode(re_unicode_tmp, re_buf, n_re_digits);
+    p_re = re_unicode_tmp;
+
+    im_unicode_tmp = (Py_UNICODE*)PyMem_Malloc((n_im_digits)*sizeof(Py_UNICODE));
+    if (im_unicode_tmp == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    strtounicode(im_unicode_tmp, im_buf, n_im_digits);
+    p_im = im_unicode_tmp;
+#else
+    p_re = re_buf;
+    p_im = im_buf;
+#endif
+
+    /* Is a sign character present in the output?  If so, remember it
+       and skip it */
+    if (*p_re == '-') {
+        re_sign_char = *p_re;
+        ++p_re;
+        --n_re_digits;
+    }
+    if (*p_im == '-') {
+        im_sign_char = *p_im;
+        ++p_im;
+        --n_im_digits;
+    }
+
+    /* Determine if we have any "remainder" (after the digits, might include
+       decimal or exponent or both (or neither)) */
+    parse_number(p_re, n_re_digits, &n_re_remainder, &re_has_decimal);
+    parse_number(p_im, n_im_digits, &n_im_remainder, &im_has_decimal);
+
+    /* Determine the grouping, separator, and decimal point, if any. */
+    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                    (format->thousands_separators ?
+                     LT_DEFAULT_LOCALE :
+                     LT_NO_LOCALE),
+                    &locale);
+
+    /* Turn off any padding. We'll do it later after we've composed
+       the numbers without padding. */
+    tmp_format.fill_char = '\0';
+    tmp_format.align = '\0';
+    tmp_format.width = -1;
+
+    /* Calculate how much memory we'll need. */
+    n_re_total = calc_number_widths(&re_spec, 0, re_sign_char, p_re,
+                                    n_re_digits, n_re_remainder,
+                                    re_has_decimal, &locale, &tmp_format);
+
+    /* Same formatting, but always include a sign. */
+    tmp_format.sign = '+';
+    n_im_total = calc_number_widths(&im_spec, 0, im_sign_char, p_im,
+                                    n_im_digits, n_im_remainder,
+                                    im_has_decimal, &locale, &tmp_format);
+
+    if (skip_re)
+        n_re_total = 0;
+
+    /* Add 1 for the 'j', and optionally 2 for parens. */
+    calc_padding(n_re_total + n_im_total + 1 + add_parens * 2,
+                 format->width, format->align, &lpad, &rpad, &total);
+
+    result = STRINGLIB_NEW(NULL, total);
+    if (result == NULL)
+        goto done;
+
+    /* Populate the memory. First, the padding. */
+    p = fill_padding(STRINGLIB_STR(result),
+                     n_re_total + n_im_total + 1 + add_parens * 2,
+                     format->fill_char=='\0' ? ' ' : format->fill_char,
+                     lpad, rpad);
+
+    if (add_parens)
+        *p++ = '(';
+
+    if (!skip_re) {
+        fill_number(p, &re_spec, p_re, n_re_digits, NULL, 0, &locale, 0);
+        p += n_re_total;
+    }
+    fill_number(p, &im_spec, p_im, n_im_digits, NULL, 0, &locale, 0);
+    p += n_im_total;
+    *p++ = 'j';
+
+    if (add_parens)
+        *p++ = ')';
+
+done:
+    PyMem_Free(re_buf);
+    PyMem_Free(im_buf);
+#if STRINGLIB_IS_UNICODE
+    PyMem_Free(re_unicode_tmp);
+    PyMem_Free(im_unicode_tmp);
+#endif
+    return result;
+}
+#endif /* FORMAT_COMPLEX */
+
+/************************************************************************/
 /*********** built in formatters ****************************************/
 /************************************************************************/
 PyObject *
@@ -1196,3 +1434,50 @@ done:
     return result;
 }
 #endif /* FORMAT_FLOAT */
+
+#ifdef FORMAT_COMPLEX
+PyObject *
+FORMAT_COMPLEX(PyObject *obj,
+               STRINGLIB_CHAR *format_spec,
+               Py_ssize_t format_spec_len)
+{
+    PyObject *result = NULL;
+    InternalFormatSpec format;
+
+    /* check for the special case of zero length format spec, make
+       it equivalent to str(obj) */
+    if (format_spec_len == 0) {
+        result = STRINGLIB_TOSTR(obj);
+        goto done;
+    }
+
+    /* parse the format_spec */
+    if (!parse_internal_render_format_spec(format_spec,
+                                           format_spec_len,
+                                           &format, '\0'))
+        goto done;
+
+    /* type conversion? */
+    switch (format.type) {
+    case '\0': /* No format code: like 'g', but with at least one decimal. */
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case 'n':
+        /* no conversion, already a complex.  do the formatting */
+        result = format_complex_internal(obj, &format);
+        break;
+
+    default:
+        /* unknown */
+        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        goto done;
+    }
+
+done:
+    return result;
+}
+#endif /* FORMAT_COMPLEX */
