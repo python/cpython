@@ -153,7 +153,7 @@ class test__candidate_tempdir_list(TC):
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname:
-                    env.set(envname, os.path.abspath(envname))
+                    env[envname] = os.path.abspath(envname)
 
             cand = tempfile._candidate_tempdir_list()
 

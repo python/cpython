@@ -1,7 +1,7 @@
 # test_getopt.py
 # David Goodger <dgoodger@bigfoot.com> 2000-08-19
 
-from test.test_support import verbose, run_doctest, run_unittest
+from test.test_support import verbose, run_doctest, run_unittest, EnvironmentVarGuard
 import unittest
 
 import getopt
@@ -11,15 +11,13 @@ sentinel = object()
 
 class GetoptTests(unittest.TestCase):
     def setUp(self):
-        self.old_posixly_correct = os.environ.get("POSIXLY_CORRECT", sentinel)
-        if self.old_posixly_correct is not sentinel:
-            del os.environ["POSIXLY_CORRECT"]
+        self.env = EnvironmentVarGuard()
+        if "POSIXLY_CORRECT" in self.env:
+            del self.env["POSIXLY_CORRECT"]
 
     def tearDown(self):
-        if self.old_posixly_correct is sentinel:
-            os.environ.pop("POSIXLY_CORRECT", None)
-        else:
-            os.environ["POSIXLY_CORRECT"] = self.old_posixly_correct
+        self.env.__exit__()
+        del self.env
 
     def assertError(self, *args, **kwargs):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)
@@ -135,7 +133,7 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2'])
 
         # Posix style via POSIXLY_CORRECT
-        os.environ["POSIXLY_CORRECT"] = "1"
+        self.env["POSIXLY_CORRECT"] = "1"
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
         self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2'])

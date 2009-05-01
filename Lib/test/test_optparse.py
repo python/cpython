@@ -1465,7 +1465,7 @@ class TestHelp(BaseTest):
         # screws things up for other tests when it's part of the Python
         # test suite.
         with test_support.EnvironmentVarGuard() as env:
-            env.set('COLUMNS', str(columns))
+            env['COLUMNS'] = str(columns)
             return InterceptingOptionParser(option_list=options)
 
     def assertHelpEquals(self, expected_output):
@@ -1494,7 +1494,7 @@ class TestHelp(BaseTest):
 
     def test_help_title_formatter(self):
         with test_support.EnvironmentVarGuard() as env:
-            env.set("COLUMNS", "80")
+            env["COLUMNS"] = "80"
             self.parser.formatter = TitledHelpFormatter()
             self.assertHelpEquals(_expected_help_title_formatter)
 
