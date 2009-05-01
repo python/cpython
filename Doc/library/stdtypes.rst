@@ -1321,9 +1321,9 @@ that ``'\0'`` is the end of the string.
 
 .. XXX Examples?
 
-For safety reasons, floating point precisions are clipped to 50; ``%f``
-conversions for numbers whose absolute value is over 1e50 are replaced by ``%g``
-conversions. [#]_  All other errors raise exceptions.
+.. versionchanged:: 3.1
+   ``%f`` conversions for numbers whose absolute value is over 1e50 are no
+   longer replaced by ``%g`` conversions.
 
 .. index::
    module: string
@@ -2722,10 +2722,6 @@ The following attributes are only supported by :term:`new-style class`\ es.
 
 .. [#] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-
-.. [#] These numbers are fairly arbitrary.  They are intended to avoid printing endless
-   strings of meaningless digits without hampering correct use and without having
-   to know the exact precision of floating point values on a particular machine.
 
 .. [#] The advantage of leaving the newline on is that returning an empty string is
    then an unambiguous EOF indication.  It is also possible (in cases where it

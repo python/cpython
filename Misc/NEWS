@@ -12,8 +12,10 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
-- Issue #5859: Remove length restrictions for float formatting:
-  '%.67f' % 12.34 and '%.120e' % 12.34 no longer raise an exception.
+- Issue #5859: Remove switch from '%f' to '%g'-style formatting for
+  floats with absolute value over 1e50.  Also remove length
+  restrictions for float formatting: '%.67f' % 12.34 and '%.120e' %
+  12.34 no longer raise an exception.
 
 - Issue #1588: Add complex.__format__. For example, 
   format(complex(1, 2./3), '.5') now produces a sensible result.
