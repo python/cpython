@@ -181,7 +181,10 @@ $makexp $expfile "$objfile" $objs
 # Perform the link.
 #echo $CC $CCOPT $CCARGS
 $CC $CCOPT $CCARGS
+retval=$?
 
 # Delete the module's export list file.
 # Comment this line if you need it.
 rm -f $expfile
+
+exit $retval
