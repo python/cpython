@@ -526,6 +526,12 @@ class PyIOTest(IOTest):
 class CommonBufferedTests:
     # Tests common to BufferedReader, BufferedWriter and BufferedRandom
 
+    def test_detach(self):
+        raw = self.MockRawIO()
+        buf = self.tp(raw)
+        self.assertIs(buf.detach(), raw)
+        self.assertRaises(ValueError, buf.detach)
+
     def test_fileno(self):
         rawio = self.MockRawIO()
         bufio = self.tp(rawio)
@@ -811,6 +817,14 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         bufio.flush()
         self.assertEquals(b"".join(rawio._write_stack), b"abcghi")
 
+    def test_detach_flush(self):
+        raw = self.MockRawIO()
+        buf = self.tp(raw)
+        buf.write(b"howdy!")
+        self.assertFalse(raw._write_stack)
+        buf.detach()
+        self.assertEqual(raw._write_stack, [b"howdy!"])
+
     def test_write(self):
         # Write to the buffered IO but don't overflow the buffer.
         writer = self.MockRawIO()
@@ -1051,6 +1065,10 @@ class BufferedRWPairTest(unittest.TestCase):
     def test_constructor(self):
         pair = self.tp(self.MockRawIO(), self.MockRawIO())
         self.assertFalse(pair.closed)
+
+    def test_detach(self):
+        pair = self.tp(self.MockRawIO(), self.MockRawIO())
+        self.assertRaises(self.UnsupportedOperation, pair.detach)
 
     def test_constructor_max_buffer_size_deprecation(self):
         with support.check_warnings() as w:
@@ -1479,6 +1497,19 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEquals("\xe9\n", t.readline())
         self.assertRaises(TypeError, t.__init__, b, newline=42)
         self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
+
+    def test_detach(self):
+        r = self.BytesIO()
+        b = self.BufferedWriter(r)
+        t = self.TextIOWrapper(b)
+        self.assertIs(t.detach(), b)
+
+        t = self.TextIOWrapper(b, encoding="ascii")
+        t.write("howdy")
+        self.assertFalse(r.getvalue())
+        t.detach()
+        self.assertEqual(r.getvalue(), b"howdy")
+        self.assertRaises(ValueError, t.detach)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))

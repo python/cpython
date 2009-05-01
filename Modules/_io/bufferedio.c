@@ -73,6 +73,18 @@ BufferedIOBase_unsupported(const char *message)
     return NULL;
 }
 
+PyDoc_STRVAR(BufferedIOBase_detach_doc,
+    "Disconnect this buffer from its underlying raw stream and return it.\n"
+    "\n"
+    "After the raw stream has been detached, the buffer is in an unusable\n"
+    "state.\n");
+
+static PyObject *
+BufferedIOBase_detach(PyObject *self)
+{
+    return BufferedIOBase_unsupported("detach");
+}
+
 PyDoc_STRVAR(BufferedIOBase_read_doc,
     "Read and return up to n bytes.\n"
     "\n"
@@ -127,6 +139,7 @@ BufferedIOBase_write(PyObject *self, PyObject *args)
 
 
 static PyMethodDef BufferedIOBase_methods[] = {
+    {"detach", (PyCFunction)BufferedIOBase_detach, METH_NOARGS, BufferedIOBase_detach_doc},
     {"read", BufferedIOBase_read, METH_VARARGS, BufferedIOBase_read_doc},
     {"read1", BufferedIOBase_read1, METH_VARARGS, BufferedIOBase_read1_doc},
     {"readinto", BufferedIOBase_readinto, METH_VARARGS, NULL},
@@ -181,6 +194,7 @@ typedef struct {
 
     PyObject *raw;
     int ok;    /* Initialized? */
+    int detached;
     int readable;
     int writable;
     
@@ -260,15 +274,25 @@ typedef struct {
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
+        if (self->detached) { \
+            PyErr_SetString(PyExc_ValueError, \
+                 "raw stream has been detached"); \
+        } else { \
+            PyErr_SetString(PyExc_ValueError, \
+                "I/O operation on uninitialized object"); \
+        } \
         return NULL; \
     }
 
 #define CHECK_INITIALIZED_INT(self) \
     if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
+        if (self->detached) { \
+            PyErr_SetString(PyExc_ValueError, \
+                 "raw stream has been detached"); \
+        } else { \
+            PyErr_SetString(PyExc_ValueError, \
+                "I/O operation on uninitialized object"); \
+        } \
         return -1; \
     }
 
@@ -428,6 +452,24 @@ BufferedIOMixin_close(BufferedObject *self, PyObject *args)
 end:
     LEAVE_BUFFERED(self)
     return res;
+}
+
+/* detach */
+
+static PyObject *
+BufferedIOMixin_detach(BufferedObject *self, PyObject *args)
+{
+    PyObject *raw, *res;
+    CHECK_INITIALIZED(self)
+    res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+    if (res == NULL)
+        return NULL;
+    Py_DECREF(res);
+    raw = self->raw;
+    self->raw = NULL;
+    self->detached = 1;
+    self->ok = 0;
+    return raw;
 }
 
 /* Inquiries */
@@ -1101,6 +1143,7 @@ BufferedReader_init(BufferedObject *self, PyObject *args, PyObject *kwds)
     PyObject *raw;
 
     self->ok = 0;
+    self->detached = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedReader", kwlist,
                                      &raw, &buffer_size)) {
@@ -1387,6 +1430,7 @@ _BufferedReader_peek_unlocked(BufferedObject *self, Py_ssize_t n)
 
 static PyMethodDef BufferedReader_methods[] = {
     /* BufferedIOMixin methods */
+    {"detach", (PyCFunction)BufferedIOMixin_detach, METH_NOARGS},
     {"flush", (PyCFunction)BufferedIOMixin_flush, METH_NOARGS},
     {"close", (PyCFunction)BufferedIOMixin_close, METH_NOARGS},
     {"seekable", (PyCFunction)BufferedIOMixin_seekable, METH_NOARGS},
@@ -1499,6 +1543,7 @@ BufferedWriter_init(BufferedObject *self, PyObject *args, PyObject *kwds)
     PyObject *raw;
 
     self->ok = 0;
+    self->detached = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|nn:BufferedReader", kwlist,
                                      &raw, &buffer_size, &max_buffer_size)) {
@@ -1745,6 +1790,7 @@ error:
 static PyMethodDef BufferedWriter_methods[] = {
     /* BufferedIOMixin methods */
     {"close", (PyCFunction)BufferedIOMixin_close, METH_NOARGS},
+    {"detach", (PyCFunction)BufferedIOMixin_detach, METH_NOARGS},
     {"seekable", (PyCFunction)BufferedIOMixin_seekable, METH_NOARGS},
     {"readable", (PyCFunction)BufferedIOMixin_readable, METH_NOARGS},
     {"writable", (PyCFunction)BufferedIOMixin_writable, METH_NOARGS},
@@ -2089,6 +2135,7 @@ BufferedRandom_init(BufferedObject *self, PyObject *args, PyObject *kwds)
     PyObject *raw;
 
     self->ok = 0;
+    self->detached = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|nn:BufferedReader", kwlist,
                                      &raw, &buffer_size, &max_buffer_size)) {
@@ -2128,6 +2175,7 @@ BufferedRandom_init(BufferedObject *self, PyObject *args, PyObject *kwds)
 static PyMethodDef BufferedRandom_methods[] = {
     /* BufferedIOMixin methods */
     {"close", (PyCFunction)BufferedIOMixin_close, METH_NOARGS},
+    {"detach", (PyCFunction)BufferedIOMixin_detach, METH_NOARGS},
     {"seekable", (PyCFunction)BufferedIOMixin_seekable, METH_NOARGS},
     {"readable", (PyCFunction)BufferedIOMixin_readable, METH_NOARGS},
     {"writable", (PyCFunction)BufferedIOMixin_writable, METH_NOARGS},

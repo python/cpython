@@ -12,6 +12,10 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5883: In the io module, the BufferedIOBase and TextIOBase ABCs have
+  received a new method, detach().  detach() disconnects the underlying stream
+  from the buffer or text IO and returns it.
+
 - Issue #5859: Remove switch from '%f' to '%g'-style formatting for
   floats with absolute value over 1e50.  Also remove length
   restrictions for float formatting: '%.67f' % 12.34 and '%.120e' %

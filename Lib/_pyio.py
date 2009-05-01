@@ -642,6 +642,15 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("write")
 
+    def detach(self) -> None:
+        """
+        Separate the underlying raw stream from the buffer and return it.
+
+        After the raw stream has been detached, the buffer is in an unusable
+        state.
+        """
+        self._unsupported("detach")
+
 io.BufferedIOBase.register(BufferedIOBase)
 
 
@@ -689,12 +698,20 @@ class _BufferedIOMixin(BufferedIOBase):
         self.raw.flush()
 
     def close(self):
-        if not self.closed:
+        if not self.closed and self.raw is not None:
             try:
                 self.flush()
             except IOError:
                 pass  # If flush() fails, just give up
             self.raw.close()
+
+    def detach(self):
+        if self.raw is None:
+            raise ValueError("raw stream already detached")
+        self.flush()
+        raw = self.raw
+        self.raw = None
+        return raw
 
     ### Inquiries ###
 
@@ -1236,6 +1253,15 @@ class TextIOBase(IOBase):
         """
         self._unsupported("readline")
 
+    def detach(self) -> None:
+        """
+        Separate the underlying buffer from the TextIOBase and return it.
+
+        After the underlying buffer has been detached, the TextIO is in an
+        unusable state.
+        """
+        self._unsupported("detach")
+
     @property
     def encoding(self):
         """Subclasses should override."""
@@ -1448,11 +1474,12 @@ class TextIOWrapper(TextIOBase):
         self._telling = self._seekable
 
     def close(self):
-        try:
-            self.flush()
-        except IOError:
-            pass  # If flush() fails, just give up
-        self.buffer.close()
+        if self.buffer is not None:
+            try:
+                self.flush()
+            except IOError:
+                pass  # If flush() fails, just give up
+            self.buffer.close()
 
     @property
     def closed(self):
@@ -1646,6 +1673,14 @@ class TextIOWrapper(TextIOBase):
             pos = self.tell()
         self.seek(pos)
         return self.buffer.truncate()
+
+    def detach(self):
+        if self.buffer is None:
+            raise ValueError("buffer is already detached")
+        self.flush()
+        buffer = self.buffer
+        self.buffer = None
+        return buffer
 
     def seek(self, cookie, whence=0):
         if self.closed:
@@ -1865,3 +1900,7 @@ class StringIO(TextIOWrapper):
     @property
     def encoding(self):
         return None
+
+    def detach(self):
+        # This doesn't make sense on StringIO.
+        self._unsupported("detach")
