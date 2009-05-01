@@ -8,6 +8,7 @@
 .. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
 .. moduleauthor:: Antoine Pitrou <solipsis@pitrou.net>
 .. moduleauthor:: Amaury Forgeot d'Arc <amauryfa@gmail.com>
+.. moduleauthor:: Benjamin Peterson <benjamin@python.org>
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
 The :mod:`io` module provides the Python interfaces to stream handling.  The
