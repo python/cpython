@@ -346,18 +346,17 @@ class PosixPathTest(unittest.TestCase):
             self.assert_(isinstance(posixpath.expanduser("~foo/"), basestring))
 
             with test_support.EnvironmentVarGuard() as env:
-                env.set('HOME', '/')
+                env['HOME'] = '/'
                 self.assertEqual(posixpath.expanduser("~"), "/")
 
         self.assertRaises(TypeError, posixpath.expanduser)
 
     def test_expandvars(self):
-        oldenv = os.environ.copy()
-        try:
-            os.environ.clear()
-            os.environ["foo"] = "bar"
-            os.environ["{foo"] = "baz1"
-            os.environ["{foo}"] = "baz2"
+        with test_support.EnvironmentVarGuard() as env:
+            env.clear()
+            env["foo"] = "bar"
+            env["{foo"] = "baz1"
+            env["{foo}"] = "baz2"
             self.assertEqual(posixpath.expandvars("foo"), "foo")
             self.assertEqual(posixpath.expandvars("$foo bar"), "bar bar")
             self.assertEqual(posixpath.expandvars("${foo}bar"), "barbar")
@@ -370,9 +369,6 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.expandvars("${{foo}}"), "baz1}")
             self.assertEqual(posixpath.expandvars("$foo$foo"), "barbar")
             self.assertEqual(posixpath.expandvars("$bar$bar"), "$bar$bar")
-        finally:
-            os.environ.clear()
-            os.environ.update(oldenv)
 
         self.assertRaises(TypeError, posixpath.expandvars)
 

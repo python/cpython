@@ -401,9 +401,14 @@ The :mod:`test.test_support` module defines the following classes:
 .. class:: EnvironmentVarGuard()
 
    Class used to temporarily set or unset environment variables.  Instances can be
-   used as a context manager.
+   used as a context manager and have a complete dictionary interface for
+   querying/modifying the underlying ``os.environ``. After exit from the context
+   manager all changes to environment variables done through this instance will
+   be rolled back.
 
    .. versionadded:: 2.6
+   .. versionchanged:: 2.7
+      Added dictionary interface.
 
 
 .. method:: EnvironmentVarGuard.set(envvar, value)
@@ -414,6 +419,7 @@ The :mod:`test.test_support` module defines the following classes:
 .. method:: EnvironmentVarGuard.unset(envvar)
 
    Temporarily unset the environment variable ``envvar``.
+
 
 .. class:: WarningsRecorder()
 

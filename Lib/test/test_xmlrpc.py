@@ -605,7 +605,7 @@ class CGIHandlerTestCase(unittest.TestCase):
 
     def test_cgi_get(self):
         with test_support.EnvironmentVarGuard() as env:
-            env.set('REQUEST_METHOD', 'GET')
+            env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
             tmp = sys.stdout
@@ -646,7 +646,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         sys.stdout = open(test_support.TESTFN, "w")
 
         with test_support.EnvironmentVarGuard() as env:
-            env.set('CONTENT_LENGTH', str(len(data)))
+            env['CONTENT_LENGTH'] = str(len(data))
             self.cgi.handle_request()
 
         sys.stdin.close()
