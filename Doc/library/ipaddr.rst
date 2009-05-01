@@ -58,85 +58,85 @@ both IPv4 and IPv6.
 
    The following properties are available on all IP address objects:
 
-   .. attr:: broadcast
+   .. attribute:: broadcast
 
       Integer representation of the broadcast address.  Read only.
 
-   .. attr:: broadcast_ext
+   .. attribute:: broadcast_ext
 
       Dotted decimal or colon string version of the broadcast address.  Read
       only.
 
-   .. attr:: hostmask
+   .. attribute:: hostmask
 
       Integer representation of the hostmask.  Read only.
 
-   .. attr:: hostmask_ext
+   .. attribute:: hostmask_ext
 
       Dotted decimal or colon string version of the hostmask.  Read only.
 
-   .. attr:: ip
+   .. attribute:: ip
 
       Integer representation of the IP address.  Read only.
 
-   .. attr:: ip_ext
+   .. attribute:: ip_ext
 
       Dotted decimal or colon string version of the IP address.  Read only.
 
-   .. attr:: ip_ext_full
+   .. attribute:: ip_ext_full
 
       Canonical string version of the IP address.  Read only.
 
-   .. attr:: is_loopback
+   .. attribute:: is_loopback
 
       True if the address is a loopback address as defined in IPv4 :rfc:`3330`
       or IPv6 :rfc:`2373` section 2.5.3.
 
-   .. attr:: is_link_local
+   .. attribute:: is_link_local
 
       True if the address is a link-local address as defined in IPv4 :rfc:`3927`
       or IPv6 :rfc:`4291`.
 
-   .. attr:: is_multicast
+   .. attribute:: is_multicast
 
       True if the address is reserved for multicast use.  See IPv4 :rfc:`3171`
       or IPv6 :rfc:`2373` section 2.7 for details.
 
-   .. attr:: is_private
+   .. attribute:: is_private
 
       True if the address is reserved for private networks as defined in IPv4
       :rfc:`1918` or IPv6 :rfc:`4193`.
 
-   .. attr:: netmask
+   .. attribute:: netmask
 
       Integer representation of the netmask.  Read only.
 
-   .. attr:: netmask_ext
+   .. attribute:: netmask_ext
 
       Dotted decimal or colon string version of the netmask.  Read only.
 
-   .. attr:: network
+   .. attribute:: network
 
       Integer representation of the network.  Read only.
 
-   .. attr:: network_ext
+   .. attribute:: network_ext
 
       Dotted decimal or colon string version of the network.  Read only.
 
-   .. attr:: numhosts
+   .. attribute:: numhosts
 
       Number of hosts in the current subnet.  Read only.
 
-   .. attr:: packed
+   .. attribute:: packed
 
       The packed network byte order representation of this network address.
       Read only.
 
-   .. attr:: prefixlen
+   .. attribute:: prefixlen
 
       A property to get and set the prefix length.  Readable and writeable.
 
-   .. attr:: version
+   .. attribute:: version
 
       Integer IP version number.  Read only.
 
@@ -269,7 +269,7 @@ both IPv4 and IPv6.
       .netmask_ext: 64
       .prefixlen: 64
 
-   .. attr:: is_site_local
+   .. attribute:: is_site_local
 
       True if the address was reserved as site-local in :rfc:`3513` section
       2.5.6.
@@ -280,7 +280,7 @@ both IPv4 and IPv6.
          Use :data:`is_private` to test if this address is in the space of
          unique local addresses as defined by :rfc:`4193`.
 
-   .. attr:: is_unspecified
+   .. attribute:: is_unspecified
 
       True if this is the unspecified address as defined in :rfc:`2373` section
       2.5.2.
