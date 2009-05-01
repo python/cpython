@@ -538,10 +538,25 @@ class TypesTests(unittest.TestCase):
         test(-1.0, ' f', '-1.000000')
         test( 1.0, '+f', '+1.000000')
         test(-1.0, '+f', '-1.000000')
-        test(1.1234e90, 'f', '1.1234e+90')
-        test(1.1234e90, 'F', '1.1234e+90')
-        test(1.1234e200, 'f', '1.1234e+200')
-        test(1.1234e200, 'F', '1.1234e+200')
+
+        # Python versions <= 3.0 switched from 'f' to 'g' formatting for
+        # values larger than 1e50.  No longer.
+        f = 1.1234e90
+        for fmt in 'f', 'F':
+            # don't do a direct equality check, since on some
+            # platforms only the first few digits of dtoa
+            # will be reliable
+            result = f.__format__(fmt)
+            self.assertEqual(len(result), 98)
+            self.assertEqual(result[-7], '.')
+            self.assert_(result[:12] in ('112340000000', '112339999999'))
+        f = 1.1234e200
+        for fmt in 'f', 'F':
+            result = f.__format__(fmt)
+            self.assertEqual(len(result), 208)
+            self.assertEqual(result[-7], '.')
+            self.assert_(result[:12] in ('112340000000', '112339999999'))
+
 
         test( 1.0, 'e', '1.000000e+00')
         test(-1.0, 'e', '-1.000000e+00')

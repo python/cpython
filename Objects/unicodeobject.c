@@ -8808,9 +8808,6 @@ formatfloat(PyObject *v, int flags, int prec, int type)
     if (prec < 0)
         prec = 6;
 
-    if (type == 'f' && fabs(x) >= 1e50)
-        type = 'g';
-
     p = PyOS_double_to_string(x, type, prec,
                               (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
     if (p == NULL)

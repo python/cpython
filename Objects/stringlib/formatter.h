@@ -934,8 +934,6 @@ format_float_internal(PyObject *value,
 
     if (precision < 0)
         precision = 6;
-    if ((type == 'f' || type == 'F') && fabs(val) >= 1e50)
-        type = 'g';
 
     /* Cast "type", because if we're in unicode we need to pass a
        8-bit char. This is safe, because we've restricted what "type"
