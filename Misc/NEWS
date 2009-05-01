@@ -892,6 +892,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
+  linker, rather than always exit successfully. Patch by Floris Bruynooghe.
+
 - Issue #4587: Add configure option --with-dbmliborder=db1:db2:... to specify
   the order that backends for the dbm extension are checked. 
 
