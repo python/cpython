@@ -35,6 +35,7 @@ is currently supported on most popular platforms.  Here is an overview:
    smtpd.rst
    telnetlib.rst
    uuid.rst
+   ipaddr.rst
    urlparse.rst
    socketserver.rst
    basehttpserver.rst
