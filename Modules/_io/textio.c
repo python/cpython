@@ -28,6 +28,19 @@ _unsupported(const char *message)
     return NULL;
 }
 
+PyDoc_STRVAR(TextIOBase_detach_doc,
+    "Separate the underlying buffer from the TextIOBase and return it.\n"
+    "\n"
+    "After the underlying buffer has been detached, the TextIO is in an\n"
+    "unusable state.\n"
+    );
+
+static PyObject *
+TextIOBase_detach(PyObject *self)
+{
+    return _unsupported("detach");
+}
+
 PyDoc_STRVAR(TextIOBase_read_doc,
     "Read at most n characters from stream.\n"
     "\n"
@@ -93,6 +106,7 @@ TextIOBase_newlines_get(PyObject *self, void *context)
 
 
 static PyMethodDef TextIOBase_methods[] = {
+    {"detach", (PyCFunction)TextIOBase_detach, METH_NOARGS, TextIOBase_detach_doc},
     {"read", TextIOBase_read, METH_VARARGS, TextIOBase_read_doc},
     {"readline", TextIOBase_readline, METH_VARARGS, TextIOBase_readline_doc},
     {"write", TextIOBase_write, METH_VARARGS, TextIOBase_write_doc},
@@ -616,6 +630,7 @@ typedef struct
 {
     PyObject_HEAD
     int ok; /* initialized? */
+    int detached;
     Py_ssize_t chunk_size;
     PyObject *buffer;
     PyObject *encoding;
@@ -759,6 +774,7 @@ TextIOWrapper_init(PyTextIOWrapperObject *self, PyObject *args, PyObject *kwds)
     int r;
 
     self->ok = 0;
+    self->detached = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|zzzi:fileio",
                                      kwlist, &buffer, &encoding, &errors,
                                      &newline, &line_buffering))
@@ -1059,18 +1075,44 @@ TextIOWrapper_closed_get(PyTextIOWrapperObject *self, void *context);
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
+        if (self->detached) { \
+            PyErr_SetString(PyExc_ValueError, \
+                 "underlying buffer has been detached"); \
+        } else {                                   \
+            PyErr_SetString(PyExc_ValueError, \
+                "I/O operation on uninitialized object"); \
+        } \
         return NULL; \
     }
 
 #define CHECK_INITIALIZED_INT(self) \
     if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
+        if (self->detached) { \
+            PyErr_SetString(PyExc_ValueError, \
+                 "underlying buffer has been detached"); \
+        } else {                                   \
+            PyErr_SetString(PyExc_ValueError, \
+                "I/O operation on uninitialized object"); \
+        } \
         return -1; \
     }
 
+
+static PyObject *
+TextIOWrapper_detach(PyTextIOWrapperObject *self)
+{
+    PyObject *buffer, *res;
+    CHECK_INITIALIZED(self);
+    res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+    if (res == NULL)
+        return NULL;
+    Py_DECREF(res);
+    buffer = self->buffer;
+    self->buffer = NULL;
+    self->detached = 1;
+    self->ok = 0;
+    return buffer;
+}
 
 Py_LOCAL_INLINE(const Py_UNICODE *)
 findchar(const Py_UNICODE *s, Py_ssize_t size, Py_UNICODE ch)
@@ -2341,6 +2383,7 @@ TextIOWrapper_chunk_size_set(PyTextIOWrapperObject *self,
 }
 
 static PyMethodDef TextIOWrapper_methods[] = {
+    {"detach", (PyCFunction)TextIOWrapper_detach, METH_NOARGS},
     {"write", (PyCFunction)TextIOWrapper_write, METH_VARARGS},
     {"read", (PyCFunction)TextIOWrapper_read, METH_VARARGS},
     {"readline", (PyCFunction)TextIOWrapper_readline, METH_VARARGS},

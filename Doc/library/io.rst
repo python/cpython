@@ -361,6 +361,17 @@ I/O Base Classes
    :class:`BufferedIOBase` provides or overrides these methods in addition to
    those from :class:`IOBase`:
 
+   .. method:: detach()
+
+      Separate the underlying raw stream from the buffer and return it.
+
+      After the raw stream has been detached, the buffer is in an unusable
+      state.
+
+      Some buffers, like :class:`BytesIO`, do not have the concept of a single
+      raw stream to return from this method.  They raise
+      :exc:`UnsupportedOperation`.
+
    .. method:: read([n])
 
       Read and return up to *n* bytes.  If the argument is omitted, ``None``, or
@@ -547,7 +558,9 @@ Buffered Streams
 
    *max_buffer_size* is unused and deprecated.
 
-   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods.
+   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
+   except for :meth:`~BufferedIOBase.detach`, which raises
+   :exc:`UnsupportedOperation`.
 
 
 .. class:: BufferedRandom(raw[, buffer_size[, max_buffer_size]])
@@ -587,6 +600,17 @@ Text I/O
 
       A string, a tuple of strings, or ``None``, indicating the newlines
       translated so far.
+
+   .. method:: detach()
+
+      Separate the underlying buffer from the :class:`TextIOBase` and return it.
+
+      After the underlying buffer has been detached, the :class:`TextIOBase` is
+      in an unusable state.
+
+      Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
+      have the concept of an underlying buffer and calling this method will
+      raise :exc:`UnsupportedOperation`.
 
    .. method:: read(n)
 

@@ -57,6 +57,10 @@ class MemorySeekTestMixin:
 
 class MemoryTestMixin:
 
+    def test_detach(self):
+        buf = self.ioclass()
+        self.assertRaises(self.UnsupportedOperation, buf.detach)
+
     def write_ops(self, f, t):
         self.assertEqual(f.write(t("blah.")), 5)
         self.assertEqual(f.seek(0), 0)
@@ -336,6 +340,9 @@ class MemoryTestMixin:
 
 
 class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
+
+    UnsupportedOperation = pyio.UnsupportedOperation
+
     @staticmethod
     def buftype(s):
         return s.encode("ascii")
@@ -413,6 +420,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
     buftype = str
     ioclass = pyio.StringIO
+    UnsupportedOperation = pyio.UnsupportedOperation
     EOF = ""
 
     # TextIO-specific behaviour.
@@ -518,9 +526,11 @@ class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
 class CBytesIOTest(PyBytesIOTest):
     ioclass = io.BytesIO
+    UnsupportedOperation = io.UnsupportedOperation
 
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
+    UnsupportedOperation = io.UnsupportedOperation
 
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
