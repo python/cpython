@@ -34,7 +34,7 @@ typedef struct {
 typedef enum {
     ANS_INIT,
     ANS_AUTO,
-    ANS_MANUAL,
+    ANS_MANUAL
 } AutoNumberState;   /* Keep track if we're auto-numbering fields */
 
 /* Keeps track of our auto-numbering state, and which number field we're on */
