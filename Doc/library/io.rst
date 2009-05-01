@@ -373,6 +373,8 @@ I/O Base Classes
       raw stream to return from this method.  They raise
       :exc:`UnsupportedOperation`.
 
+      .. versionadded:: 3.1
+
    .. method:: read([n])
 
       Read and return up to *n* bytes.  If the argument is omitted, ``None``, or
@@ -612,6 +614,8 @@ Text I/O
       Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
       have the concept of an underlying buffer and calling this method will
       raise :exc:`UnsupportedOperation`.
+
+      .. versionadded:: 3.1
 
    .. method:: read(n)
 
