@@ -220,18 +220,12 @@ msvcrt_putch(PyObject *self, PyObject *args)
 static PyObject *
 msvcrt_putwch(PyObject *self, PyObject *args)
 {
-	Py_UNICODE *ch;
-	int size;
+	int ch;
 
-	if (!PyArg_ParseTuple(args, "u#:putwch", &ch, &size))
+	if (!PyArg_ParseTuple(args, "C:putwch", &ch))
 		return NULL;
 
-	if (size == 0) {
-		PyErr_SetString(PyExc_ValueError,
-			"Expected unicode string of length 1");
-		return NULL;
-	}
-	_putwch(*ch);
+	_putwch(ch);
 	Py_RETURN_NONE;
 
 }
@@ -255,12 +249,12 @@ msvcrt_ungetch(PyObject *self, PyObject *args)
 static PyObject *
 msvcrt_ungetwch(PyObject *self, PyObject *args)
 {
-	Py_UNICODE ch;
+	int ch;
 
-	if (!PyArg_ParseTuple(args, "u:ungetwch", &ch))
+	if (!PyArg_ParseTuple(args, "C:ungetwch", &ch))
 		return NULL;
 
-	if (_ungetch(ch) == EOF)
+	if (_ungetwch(ch) == WEOF)
 		return PyErr_SetFromErrno(PyExc_IOError);
 	Py_INCREF(Py_None);
 	return Py_None;
