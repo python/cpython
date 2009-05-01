@@ -49,6 +49,12 @@ Library
   makeunicodedata.py and regenerated the Unicode database (This fixes
   u'\u1d79'.lower() == '\x00').
 
+Build
+-----
+
+- Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
+  linker, rather than always exit successfully. Patch by Floris Bruynooghe.
+
 Tests
 -----
 
