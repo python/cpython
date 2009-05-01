@@ -107,6 +107,9 @@ Installation
 Library
 -------
 
+- Issue #3959: The ipaddr module has been added to the standard library.
+  Contributed by Google.
+
 - Issue #3002: ``shutil.copyfile()`` and ``shutil.copytree()`` now raise an
   error when a named pipe is encountered, rather than blocking infinitely.
 
