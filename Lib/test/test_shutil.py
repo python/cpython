@@ -9,6 +9,7 @@ import os
 import os.path
 from test import support
 from test.support import TESTFN
+TESTFN2 = TESTFN + "2"
 
 class TestShutil(unittest.TestCase):
     def test_rmtree_errors(self):
@@ -225,6 +226,38 @@ class TestShutil(unittest.TestCase):
                 self.assertRaises(OSError, shutil.rmtree, dst)
             finally:
                 shutil.rmtree(TESTFN, ignore_errors=True)
+
+    if hasattr(os, "mkfifo"):
+        # Issue #3002: copyfile and copytree block indefinitely on named pipes
+        def test_copyfile_named_pipe(self):
+            os.mkfifo(TESTFN)
+            try:
+                self.assertRaises(shutil.SpecialFileError,
+                                  shutil.copyfile, TESTFN, TESTFN2)
+                self.assertRaises(shutil.SpecialFileError,
+                                  shutil.copyfile, __file__, TESTFN)
+            finally:
+                os.remove(TESTFN)
+
+        def test_copytree_named_pipe(self):
+            os.mkdir(TESTFN)
+            try:
+                subdir = os.path.join(TESTFN, "subdir")
+                os.mkdir(subdir)
+                pipe = os.path.join(subdir, "mypipe")
+                os.mkfifo(pipe)
+                try:
+                    shutil.copytree(TESTFN, TESTFN2)
+                except shutil.Error as e:
+                    errors = e.args[0]
+                    self.assertEqual(len(errors), 1)
+                    src, dst, error_msg = errors[0]
+                    self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
+                else:
+                    self.fail("shutil.Error should have been raised")
+            finally:
+                shutil.rmtree(TESTFN, ignore_errors=True)
+                shutil.rmtree(TESTFN2, ignore_errors=True)
 
 
 class TestMove(unittest.TestCase):

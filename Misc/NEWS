@@ -107,6 +107,9 @@ Installation
 Library
 -------
 
+- Issue #3002: ``shutil.copyfile()`` and ``shutil.copytree()`` now raise an
+  error when a named pipe is encountered, rather than blocking infinitely.
+
 - Issue #5857: tokenize.tokenize() now returns named tuples.
 
 - Issue #4305: ctypes should now build again on mipsel-linux-gnu
