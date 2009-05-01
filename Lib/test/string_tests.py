@@ -1105,14 +1105,7 @@ class MixinStrUnicodeUserStringTest:
             value = 0.01
             for x in range(60):
                 value = value * 3.141592655 / 3.0 * 10.0
-                # The formatfloat() code in stringobject.c and
-                # unicodeobject.c uses a 120 byte buffer and switches from
-                # 'f' formatting to 'g' at precision 50, so we expect
-                # OverflowErrors for the ranges x < 50 and prec >= 67.
-                if x < 50 and prec >= 67:
-                    self.checkraises(OverflowError, format, "__mod__", value)
-                else:
-                    self.checkcall(format, "__mod__", value)
+                self.checkcall(format, "__mod__", value)
 
     def test_inplace_rewrites(self):
         # Check that strings don't copy and modify cached single-character strings

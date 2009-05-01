@@ -8792,73 +8792,30 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
     return NULL;
 }
 
-static void
-strtounicode(Py_UNICODE *buffer, const char *charbuffer, Py_ssize_t len)
-{
-    register Py_ssize_t i;
-    for (i = len - 1; i >= 0; i--)
-        buffer[i] = (Py_UNICODE) charbuffer[i];
-}
+/* Returns a new reference to a PyUnicode object, or NULL on failure. */
 
-static int
-formatfloat(Py_UNICODE *buf,
-            size_t buflen,
-            int flags,
-            int prec,
-            int type,
-            PyObject *v)
+static PyObject *
+formatfloat(PyObject *v, int flags, int prec, int type)
 {
-    /* eric.smith: To minimize disturbances in PyUnicode_Format (the
-       only caller of this routine), I'm going to keep the existing
-       API to this function. That means that we'll allocate memory and
-       then copy back into the supplied buffer. But that's better than
-       all of the changes that would be required in PyUnicode_Format
-       because it does lots of memory management tricks. */
-
-    char* p = NULL;
-    int result = -1;
+    char *p;
+    PyObject *result;
     double x;
-    Py_ssize_t len;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
-        goto done;
+        return NULL;
+
     if (prec < 0)
         prec = 6;
-
-    /* make sure that the decimal representation of precision really does
-       need at most 10 digits: platforms with sizeof(int) == 8 exist! */
-    if (prec > 0x7fffffffL) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "outrageously large precision "
-                        "for formatted float");
-        goto done;
-    }
 
     if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
 
-    if (((type == 'g' || type == 'G') &&
-         buflen <= (size_t)10 + (size_t)prec) ||
-        ((type == 'f' || type == 'F') &&
-         buflen <= (size_t)53 + (size_t)prec)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "formatted float is too long (precision too large?)");
-        goto done;
-    }
-
     p = PyOS_double_to_string(x, type, prec,
                               (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
-    len = strlen(p);
-    if (len+1 >= buflen) {
-        /* Caller supplied buffer is not large enough. */
-        PyErr_NoMemory();
-        goto done;
-    }
-    strtounicode(buf, p, len);
-    result = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
-
-done:
+    if (p == NULL)
+        return NULL;
+    result = PyUnicode_FromStringAndSize(p, strlen(p));
     PyMem_Free(p);
     return result;
 }
@@ -8940,14 +8897,9 @@ formatchar(Py_UNICODE *buf,
 }
 
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
-
-   FORMATBUFLEN is the length of the buffer in which the floats, ints, &
-   chars are formatted. XXX This is a magic number. Each formatting
-   routine does bounds checking to ensure no overflow, but a better
-   solution may be to malloc a buffer of appropriate size for each
-   format. For now, the current solution is sufficient.
+   FORMATBUFLEN is the length of the buffer in which chars are formatted.
 */
-#define FORMATBUFLEN (size_t)120
+#define FORMATBUFLEN (size_t)10
 
 PyObject *PyUnicode_Format(PyObject *format,
                            PyObject *args)
@@ -9012,7 +8964,7 @@ PyObject *PyUnicode_Format(PyObject *format,
             Py_UNICODE *pbuf;
             Py_UNICODE sign;
             Py_ssize_t len;
-            Py_UNICODE formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
+            Py_UNICODE formatbuf[FORMATBUFLEN]; /* For formatchar() */
 
             fmt++;
             if (*fmt == '(') {
@@ -9257,11 +9209,11 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 'F':
             case 'g':
             case 'G':
-                pbuf = formatbuf;
-                len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
-                                  flags, prec, c, v);
-                if (len < 0)
+                temp = formatfloat(v, flags, prec, c);
+                if (!temp)
                     goto onError;
+                pbuf = PyUnicode_AS_UNICODE(temp);
+                len = PyUnicode_GET_SIZE(temp);
                 sign = 1;
                 if (flags & F_ZERO)
                     fill = '0';

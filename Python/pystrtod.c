@@ -620,12 +620,10 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                                          int flags,
                                          int *type)
 {
-	char buf[128];
 	char format[32];
-	Py_ssize_t len;
-	char *result;
-	char *p;
-	int t;
+	Py_ssize_t bufsize;
+	char *buf;
+	int t, exp;
 	int upper = 0;
 
 	/* Validate format_code, and map upper and lower case */
@@ -669,6 +667,61 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		return NULL;
 	}
 
+	/* Here's a quick-and-dirty calculation to figure out how big a buffer
+	   we need.  In general, for a finite float we need:
+
+	     1 byte for each digit of the decimal significand, and
+
+	     1 for a possible sign
+	     1 for a possible decimal point
+	     2 for a possible [eE][+-]
+	     1 for each digit of the exponent;  if we allow 19 digits
+	       total then we're safe up to exponents of 2**63.
+	     1 for the trailing nul byte
+
+	   This gives a total of 24 + the number of digits in the significand,
+	   and the number of digits in the significand is:
+
+	     for 'g' format: at most precision, except possibly
+	       when precision == 0, when it's 1.
+	     for 'e' format: precision+1
+	     for 'f' format: precision digits after the point, at least 1
+	       before.  To figure out how many digits appear before the point
+	       we have to examine the size of the number.  If fabs(val) < 1.0
+	       then there will be only one digit before the point.  If
+	       fabs(val) >= 1.0, then there are at most
+
+	         1+floor(log10(ceiling(fabs(val))))
+
+	       digits before the point (where the 'ceiling' allows for the
+	       possibility that the rounding rounds the integer part of val
+	       up).  A safe upper bound for the above quantity is
+	       1+floor(exp/3), where exp is the unique integer such that 0.5
+	       <= fabs(val)/2**exp < 1.0.  This exp can be obtained from
+	       frexp.
+
+	   So we allow room for precision+1 digits for all formats, plus an
+	   extra floor(exp/3) digits for 'f' format.
+
+	*/
+
+	if (Py_IS_NAN(val) || Py_IS_INFINITY(val))
+		/* 3 for 'inf'/'nan', 1 for sign, 1 for '\0' */
+		bufsize = 5;
+	else {
+		bufsize = 25 + precision;
+		if (format_code == 'f' && fabs(val) >= 1.0) {
+			frexp(val, &exp);
+			bufsize += exp/3;
+		}
+	}
+
+	buf = PyMem_Malloc(bufsize);
+	if (buf == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
 	/* Handle nan and inf. */
 	if (Py_IS_NAN(val)) {
 		strcpy(buf, "nan");
@@ -687,38 +740,29 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 		PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
 			      (flags & Py_DTSF_ALT ? "#" : ""), precision,
 			      format_code);
-		_PyOS_ascii_formatd(buf, sizeof(buf), format, val, precision);
+		_PyOS_ascii_formatd(buf, bufsize, format, val, precision);
 	}
-
-	len = strlen(buf);
-
-	/* Add 1 for the trailing 0 byte.
-	   Add 1 because we might need to make room for the sign.
-	   */
-	result = PyMem_Malloc(len + 2);
-	if (result == NULL) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-	p = result;
 
 	/* Add sign when requested.  It's convenient (esp. when formatting
 	 complex numbers) to include a sign even for inf and nan. */
-	if (flags & Py_DTSF_SIGN && buf[0] != '-')
-		*p++ = '+';
-
-	strcpy(p, buf);
-
+	if (flags & Py_DTSF_SIGN && buf[0] != '-') {
+		size_t len = strlen(buf);
+		/* the bufsize calculations above should ensure that we've got
+		   space to add a sign */
+		assert((size_t)bufsize >= len+2);
+		memmove(buf+1, buf, len+1);
+		buf[0] = '+';
+	}
 	if (upper) {
 		/* Convert to upper case. */
 		char *p1;
-		for (p1 = p; *p1; p1++)
+		for (p1 = buf; *p1; p1++)
 			*p1 = Py_TOUPPER(*p1);
 	}
 
 	if (type)
 		*type = t;
-	return result;
+	return buf;
 }
 
 #else
