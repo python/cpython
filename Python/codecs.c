@@ -748,7 +748,10 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
 }
 
-PyObject *PyCodec_SurrogateErrors(PyObject *exc)
+/* This handler is declared static until someone demonstrates
+   a need to call it directly. */
+static PyObject *
+PyCodec_SurrogateErrors(PyObject *exc)
 {
     PyObject *restuple;
     PyObject *object;
