@@ -938,6 +938,20 @@ class AbstractPickleTests(unittest.TestCase):
                              "Failed protocol %d: %r != %r"
                              % (proto, obj, loaded))
 
+    def test_attribute_name_interning(self):
+        # Test that attribute names of pickled objects are interned when
+        # unpickling.
+        for proto in protocols:
+            x = C()
+            x.foo = 42
+            x.bar = "hello"
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            x_keys = sorted(x.__dict__)
+            y_keys = sorted(y.__dict__)
+            for x_key, y_key in zip(x_keys, y_keys):
+                self.assertIs(x_key, y_key)
+
 
 # Test classes for reduce_ex
 

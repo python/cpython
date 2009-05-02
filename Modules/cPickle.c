@@ -4473,8 +4473,16 @@ load_build(Unpicklerobject *self)
 
 		i = 0;
 		while (PyDict_Next(state, &i, &d_key, &d_value)) {
-			if (PyObject_SetItem(dict, d_key, d_value) < 0)
+			/* normally the keys for instance attributes are
+			   interned.  we should try to do that here. */
+			Py_INCREF(d_key);
+			if (PyString_CheckExact(d_key))
+				PyString_InternInPlace(&d_key);
+			if (PyObject_SetItem(dict, d_key, d_value) < 0) {
+				Py_DECREF(d_key);
 				goto finally;
+			}
+			Py_DECREF(d_key);
 		}
 		Py_DECREF(dict);
 	}
