@@ -3085,8 +3085,9 @@ class Test_TestProgram(TestCase):
 
     def test_NonExit(self):
         program = unittest.main(exit=False,
-                                   testRunner=unittest.TextTestRunner(stream=StringIO()),
-                                   testLoader=self.FooBarLoader())
+                                argv=["foobar"],
+                                testRunner=unittest.TextTestRunner(stream=StringIO()),
+                                testLoader=self.FooBarLoader())
         self.assertTrue(hasattr(program, 'result'))
 
 
@@ -3094,6 +3095,7 @@ class Test_TestProgram(TestCase):
         self.assertRaises(
             SystemExit,
             unittest.main,
+            argv=["foobar"],
             testRunner=unittest.TextTestRunner(stream=StringIO()),
             exit=True,
             testLoader=self.FooBarLoader())
@@ -3103,6 +3105,7 @@ class Test_TestProgram(TestCase):
         self.assertRaises(
             SystemExit,
             unittest.main,
+            argv=["foobar"],
             testRunner=unittest.TextTestRunner(stream=StringIO()),
             testLoader=self.FooBarLoader())
 
