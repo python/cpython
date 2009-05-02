@@ -4020,6 +4020,8 @@ load_build(UnpicklerObject *self)
     /* Set inst.__dict__ from the state dict (if any). */
     if (state != Py_None) {
         PyObject *dict;
+        PyObject *d_key, *d_value;
+        Py_ssize_t i;
 
         if (!PyDict_Check(state)) {
             PyErr_SetString(UnpicklingError, "state is not a dictionary");
@@ -4029,7 +4031,19 @@ load_build(UnpicklerObject *self)
         if (dict == NULL)
             goto error;
 
-        PyDict_Update(dict, state);
+        i = 0;
+        while (PyDict_Next(state, &i, &d_key, &d_value)) {
+            /* normally the keys for instance attributes are
+               interned.  we should try to do that here. */
+            Py_INCREF(d_key);
+            if (PyUnicode_CheckExact(d_key))
+                PyUnicode_InternInPlace(&d_key);
+            if (PyObject_SetItem(dict, d_key, d_value) < 0) {
+                Py_DECREF(d_key);
+                goto error;
+            }
+            Py_DECREF(d_key);
+        }
         Py_DECREF(dict);
     }
 

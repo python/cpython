@@ -109,6 +109,10 @@ Installation
 Library
 -------
 
+- Issue #5084: unpickling now interns the attribute names of pickled objects,
+  saving memory and avoiding growth in size of subsequent pickles. Proposal
+  and original patch by Jake McGuire.
+
 - The json module now works exclusively with str and not bytes.
 
 - Issue #3959: The ipaddr module has been added to the standard library.
