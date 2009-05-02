@@ -1,4 +1,3 @@
-
 :mod:`ipaddr` --- IP address manipulation library
 =================================================
 
@@ -19,125 +18,125 @@ both IPv4 and IPv6.
 
 .. function:: IP(ipaddr)
 
-   Take an IP string or int and return an object of the correct type.
-   Returns an :class:`IPv4` or :class:`IPv6` object.
+   Take an IP string or int and return an object of the correct type.  Returns
+   an :class:`IPv4` or :class:`IPv6` object.
 
-   The ``ipaddr`` parameter must be a string or integer representing the IP
-   address.  Either IPv4 or IPv6 addresses may be supplied.  Integers less
-   than 2**32 will be considered to be IPv4.
+   The *ipaddr* parameter must be a string or integer representing the IP
+   address.  Either IPv4 or IPv6 addresses may be supplied.  Integers less than
+   2**32 will be considered to be IPv4.
 
-   Raises :exc:`ValueError` if the ipaddr passed is not either an IPv4 or an
+   Raises :exc:`ValueError` if the *ipaddr* passed is not either an IPv4 or an
    IPv6 address.
 
 
 .. function:: collapse_address_list(addresses)
 
-   Collapses a sequence of :class:`IPv4` or :class:`IPv6` objects into
-   the most concise representation.  Returns a list of :class:`IPv4`
-   or :class:`IPv6` objects.
+   Collapse a sequence of :class:`IPv4` or :class:`IPv6` objects into the most
+   concise representation.  Returns a list of :class:`IPv4` or :class:`IPv6`
+   objects.
 
-Example usage::
+   Example usage::
 
-   >>> collapse_address_list([IPv4('1.1.0.0/24'), IPv4('1.1.1.0/24')])
-   [IPv4('1.1.0.0/23')]
+      >>> collapse_address_list([IPv4('1.1.0.0/24'), IPv4('1.1.1.0/24')])
+      [IPv4('1.1.0.0/23')]
 
 
 .. class:: BaseIP()
 
    A generic IP address object.  This base class defines the API and contains
    common code.  Most authors should either use the :func:`IP` function or
-   create :class:`IPv4` or :class:`IPv6` objects directly rather than using
-   this base class.
-
+   create :class:`IPv4` or :class:`IPv6` objects directly rather than using this
+   base class.
 
    IP address objects support the following python operators:
    ``=``, ``!=``, ``<``, ``>``, ``<=``, ``>=``, and ``in``.
 
-   An IP address object may be used as a sequence index or as a hash key
-   and can be converted back to an integer representation using ``int()``.
-   It may also be used as a sequence that yeilds the string
-   representation of every IP address within the object's subnet.
-
+   An IP address object may be used as a sequence index or as a hash key and can
+   be converted back to an integer representation using :func:`int`.  It may
+   also be used as a sequence that yields the string representation of every IP
+   address within the object's subnet.
 
    The following properties are available on all IP address objects:
 
-   .. data:: broadcast
+   .. attribute:: broadcast
 
       Integer representation of the broadcast address.  Read only.
 
-   .. data:: broadcast_ext
+   .. attribute:: broadcast_ext
 
-      Dotted decimal or colon string version of the broadcast address.  Read only.
+      Dotted decimal or colon string version of the broadcast address.  Read
+      only.
 
-   .. data:: hostmask
+   .. attribute:: hostmask
 
       Integer representation of the hostmask.  Read only.
 
-   .. data:: hostmask_ext
+   .. attribute:: hostmask_ext
 
       Dotted decimal or colon string version of the hostmask.  Read only.
 
-   .. data:: ip
+   .. attribute:: ip
 
       Integer representation of the IP address.  Read only.
 
-   .. data:: ip_ext
+   .. attribute:: ip_ext
 
       Dotted decimal or colon string version of the IP address.  Read only.
 
-   .. data:: ip_ext_full
+   .. attribute:: ip_ext_full
 
       Canonical string version of the IP address.  Read only.
 
-   .. data:: is_loopback
+   .. attribute:: is_loopback
 
       True if the address is a loopback address as defined in IPv4 :rfc:`3330`
       or IPv6 :rfc:`2373` section 2.5.3.
 
-   .. data:: is_link_local
+   .. attribute:: is_link_local
 
       True if the address is a link-local address as defined in IPv4 :rfc:`3927`
       or IPv6 :rfc:`4291`.
 
-   .. data:: is_multicast
+   .. attribute:: is_multicast
 
-      True if the address is reserved for multicast use.
-      See IPv4 :rfc:`3171` or IPv6 :rfc:`2373` section 2.7 for details.
+      True if the address is reserved for multicast use.  See IPv4 :rfc:`3171`
+      or IPv6 :rfc:`2373` section 2.7 for details.
 
-   .. data:: is_private
+   .. attribute:: is_private
 
-      True if the address is reserved for private networks as defined in
-      IPv4 :rfc:`1918` or IPv6 :rfc:`4193`.
+      True if the address is reserved for private networks as defined in IPv4
+      :rfc:`1918` or IPv6 :rfc:`4193`.
 
-   .. data:: netmask
+   .. attribute:: netmask
 
       Integer representation of the netmask.  Read only.
 
-   .. data:: netmask_ext
+   .. attribute:: netmask_ext
 
       Dotted decimal or colon string version of the netmask.  Read only.
 
-   .. data:: network
+   .. attribute:: network
 
       Integer representation of the network.  Read only.
 
-   .. data:: network_ext
+   .. attribute:: network_ext
 
       Dotted decimal or colon string version of the network.  Read only.
 
-   .. data:: numhosts
+   .. attribute:: numhosts
 
       Number of hosts in the current subnet.  Read only.
 
-   .. data:: packed
+   .. attribute:: packed
 
-      The packed network byte order representation of this network address.  Read only.
+      The packed network byte order representation of this network address.
+      Read only.
 
-   .. data:: prefixlen
+   .. attribute:: prefixlen
 
       A property to get and set the prefix length.  Readable and writeable.
 
-   .. data:: version
+   .. attribute:: version
 
       Integer IP version number.  Read only.
 
@@ -146,23 +145,23 @@ Example usage::
 
    .. method:: address_exclude(other)
 
-      Remove an address from within a larger block.
-      Returns a sorted list of IP address objects representing networks.
+      Remove an address from within a larger block.  Returns a sorted list of IP
+      address objects representing networks.
 
-   Examples::
+      Examples::
 
-      >>> addr1 = IP('10.1.1.0/24')
-      >>> addr2 = IP('10.1.1.0/26')
-      >>> addr1.address_exclude(addr2)
-      [IP('10.1.1.64/26'), IP('10.1.1.128/25')]
+         >>> addr1 = IP('10.1.1.0/24')
+         >>> addr2 = IP('10.1.1.0/26')
+         >>> addr1.address_exclude(addr2)
+         [IP('10.1.1.64/26'), IP('10.1.1.128/25')]
 
-      >>> addr1 = IP('::1/32')
-      >>> addr2 = IP('::1/128')
-      >>> addr1.address_exclude(addr2)
-      [IP('::0/128'), IP('::2/127'), IP('::4/126'), IP('::8/125'),
-       ... IP('0:0:8000::/33')]
+         >>> addr1 = IP('::1/32')
+         >>> addr2 = IP('::1/128')
+         >>> addr1.address_exclude(addr2)
+         [IP('::0/128'), IP('::2/127'), IP('::4/126'), IP('::8/125'),
+          ... IP('0:0:8000::/33')]
 
-      Raises :exc:`ValueError` if `other` is not completely contained by self.
+      Raises :exc:`ValueError` if *other* is not completely contained by *self*.
 
 
    .. method:: compare_networks(other)
@@ -170,9 +169,9 @@ Example usage::
       Compare this IP object's network to another IP network.
       Returns -1, 0 or 1.
 
-      This compares the integer representation of the network addresses.
-      The host bits are not considered by this method.
-      If you want to compare host bits, you can use ``host_a.ip < host_b.ip``.
+      This compares the integer representation of the network addresses.  The
+      host bits are not considered by this method.  If you want to compare host
+      bits, you can use ``host_a.ip < host_b.ip``.
 
       If the IP versions of self and other are the same, returns:
 
@@ -204,14 +203,14 @@ Example usage::
 
       Returns a list of subnets which when joined make up the current subnet.
 
-      The optional ``prefixlen_diff`` argument specifies how many bits the prefix
-      length should be increased by.  Given a /24 network and prefixlen_diff=3,
-      for example, 8 subnets of size /27 will be returned.
+      The optional *prefixlen_diff* argument specifies how many bits the prefix
+      length should be increased by.  Given a /24 network and
+      ``prefixlen_diff=3``, for example, 8 subnets of size /27 will be returned.
 
       If called on a host IP address rather than a network, a list containing
       the host itself will be returned.
 
-      Raises :exc:`PrefixlenDiffInvalidError` if the prefixlen_diff is out of
+      Raises :exc:`PrefixlenDiffInvalidError` if the *prefixlen_diff* is out of
       range.
 
 
@@ -220,9 +219,10 @@ Example usage::
       Returns a single IP object representing the supernet containing the
       current network.
 
-      The optional ``prefixlen_diff`` argument specifies how many bits the prefix
-      length should be decreased by.  Given a /24 network and prefixlen_diff=3,
-      for example, a supernet with a 21 bit netmask is returned.
+      The optional *prefixlen_diff* argument specifies how many bits the prefix
+      length should be decreased by.  Given a /24 network and
+      ``prefixlen_diff=3``, for example, a supernet with a 21 bit netmask is
+      returned.
 
       Raises :exc:`PrefixlenDiffInvalidError` if the prefixlen_diff is out of
       range.
@@ -269,9 +269,10 @@ Example usage::
       .netmask_ext: 64
       .prefixlen: 64
 
-   .. data:: is_site_local
+   .. attribute:: is_site_local
 
-      True if the address was reserved as site-local in :rfc:`3513` section 2.5.6.
+      True if the address was reserved as site-local in :rfc:`3513` section
+      2.5.6.
 
       .. note::
 
@@ -279,9 +280,10 @@ Example usage::
          Use :data:`is_private` to test if this address is in the space of
          unique local addresses as defined by :rfc:`4193`.
 
-   .. data:: is_unspecified
+   .. attribute:: is_unspecified
 
-      True if this is the unspecified address as defined in :rfc:`2373` section 2.5.2.
+      True if this is the unspecified address as defined in :rfc:`2373` section
+      2.5.2.
 
 
 The following exceptions are defined by this module:
@@ -316,12 +318,12 @@ The following exceptions are defined by this module:
 
 .. exception:: PrefixlenDiffInvalidError
 
-   Raised when :meth:`BaseIP.subnet` or :meth:`BaseIP.supernet` is called with a bad
-   ``prefixlen_diff``.
+   Raised when :meth:`BaseIP.subnet` or :meth:`BaseIP.supernet` is called with a
+   bad ``prefixlen_diff``.
 
 
 .. seealso::
 
    http://code.google.com/p/ipaddr-py/
-      The original source of this module and a place to download it as
-      a package for use on earlier versions of Python.
+      The original source of this module and a place to download it as a package
+      for use on earlier versions of Python.
