@@ -263,9 +263,6 @@ class BaseIP(object):
     def __int__(self):
         return self.ip
 
-    def __hex__(self):
-        return hex(int(self))
-
     def address_exclude(self, other):
         """Remove an address from a larger block.
 
@@ -572,7 +569,7 @@ class IPv4(BaseIP):
         self._version = 4
 
         # Efficient constructor from integer.
-        if isinstance(ipaddr, int) or isinstance(ipaddr, int):
+        if isinstance(ipaddr, int):
             self.ip = ipaddr
             self._prefixlen = 32
             self.netmask = self._ALL_ONES
@@ -580,7 +577,8 @@ class IPv4(BaseIP):
                 raise IPv4IpValidationError(ipaddr)
             return
 
-        if isinstance(ipaddr, bytes) and len(ipaddr) == 4:
+        # Constructing from a packed address
+        if isinstance(ipaddr, (bytes, bytearray)) and len(ipaddr) == 4:
             self.ip = struct.unpack('!I', ipaddr)[0]
             self._prefixlen = 32
             self.netmask = self._ALL_ONES
@@ -909,7 +907,7 @@ class IPv6(BaseIP):
         self._version = 6
 
         # Efficient constructor from integer.
-        if isinstance(ipaddr, int) or isinstance(ipaddr, int):
+        if isinstance(ipaddr, int):
             self.ip = ipaddr
             self._prefixlen = 128
             self.netmask = self._ALL_ONES
@@ -917,7 +915,8 @@ class IPv6(BaseIP):
                 raise IPv6IpValidationError(ipaddr)
             return
 
-        if isinstance(ipaddr, bytes) and len(ipaddr) == 16:
+        # Constructing from a packed address
+        if isinstance(ipaddr, (bytes, bytearray)) and len(ipaddr) == 16:
             tmp = struct.unpack('!QQ', ipaddr)
             self.ip = (tmp[0] << 64) | tmp[1]
             self._prefixlen = 128
