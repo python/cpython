@@ -978,6 +978,36 @@ Test cases
       .. versionadded:: 2.7
 
 
+   .. method:: addCleanup(function[, *args[, **kwargs]])
+
+      Add a function to be called after :meth:`tearDown` to cleanup resources
+      used during the test. Functions will be called in reverse order to the
+      order they are added (LIFO). They are called with any arguments and
+      keyword arguments passed into :meth:`addCleanup` when they are
+      added.
+
+      If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
+      then any cleanup functions added will still be called.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: doCleanups()
+
+      This method is called uncoditionally after :meth:`tearDown`, or
+      after :meth:`setUp` if :meth:`setUp` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanup`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDown` then you can call :meth:`doCleanups`
+      yourself.
+
+      :meth:`doCleanups` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 2.7
+
+
 .. class:: FunctionTestCase(testFunc[, setUp[, tearDown[, description]]])
 
    This class implements the portion of the :class:`TestCase` interface which

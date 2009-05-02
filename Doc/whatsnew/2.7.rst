@@ -452,6 +452,13 @@ changes, or look through the Subversion logs for all the details.
 
   (Implemented by Antoine Pitrou; :issue:`4444`.)
 
+  The methods :meth:`addCleanup` and :meth:`doCleanups` were added.
+  :meth:`addCleanup` allows you to add cleanup functions that
+  will be called unconditionally (after :meth:`setUp` if
+  :meth:`setUp` fails, otherwise after :meth:`tearDown`). This allows
+  for much simpler resource allocation and deallocation during tests.
+  :issue:`5679`
+
   A number of new methods were added that provide more specialized
   tests.  Many of these methods were written by Google engineers
   for use in their test suites; Gregory P. Smith, Michael Foord, and

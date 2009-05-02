@@ -340,12 +340,14 @@ class TestCase(object):
            not have a method with the specified name.
         """
         self._testMethodName = methodName
+        self._result = None
         try:
             testMethod = getattr(self, methodName)
         except AttributeError:
             raise ValueError("no such test method in %s: %s" % \
                   (self.__class__, methodName))
         self._testMethodDoc = testMethod.__doc__
+        self._cleanups = []
 
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
@@ -371,6 +373,14 @@ class TestCase(object):
                     useful error message when the two arguments are not equal.
         """
         self._type_equality_funcs[typeobj] = _AssertWrapper(function)
+
+    def addCleanup(self, function, *args, **kwargs):
+        """Add a function, with arguments, to be called when the test is
+        completed. Functions added are called on a LIFO basis and are
+        called after tearDown on test failure or success.
+
+        Cleanup items are called even if setUp fails (unlike tearDown)."""
+        self._cleanups.append((function, args, kwargs))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -429,43 +439,59 @@ class TestCase(object):
     def run(self, result=None):
         if result is None:
             result = self.defaultTestResult()
+        self._result = result
         result.startTest(self)
         testMethod = getattr(self, self._testMethodName)
         try:
-            try:
-                self.setUp()
-            except SkipTest as e:
-                result.addSkip(self, str(e))
-                return
-            except Exception:
-                result.addError(self, sys.exc_info())
-                return
-
             success = False
             try:
-                testMethod()
-            except self.failureException:
-                result.addFailure(self, sys.exc_info())
-            except _ExpectedFailure as e:
-                result.addExpectedFailure(self, e.exc_info)
-            except _UnexpectedSuccess:
-                result.addUnexpectedSuccess(self)
+                self.setUp()
             except SkipTest as e:
                 result.addSkip(self, str(e))
             except Exception:
                 result.addError(self, sys.exc_info())
             else:
-                success = True
+                try:
+                    testMethod()
+                except self.failureException:
+                    result.addFailure(self, sys.exc_info())
+                except _ExpectedFailure as e:
+                    result.addExpectedFailure(self, e.exc_info)
+                except _UnexpectedSuccess:
+                    result.addUnexpectedSuccess(self)
+                except SkipTest as e:
+                    result.addSkip(self, str(e))
+                except Exception:
+                    result.addError(self, sys.exc_info())
+                else:
+                    success = True
 
-            try:
-                self.tearDown()
-            except Exception:
-                result.addError(self, sys.exc_info())
-                success = False
+                try:
+                    self.tearDown()
+                except Exception:
+                    result.addError(self, sys.exc_info())
+                    success = False
+
+            cleanUpSuccess = self.doCleanups()
+            success = success and cleanUpSuccess
             if success:
                 result.addSuccess(self)
         finally:
             result.stopTest(self)
+
+    def doCleanups(self):
+        """Execute all cleanup functions. Normally called for you after
+        tearDown."""
+        result = self._result
+        ok = True
+        while self._cleanups:
+            function, args, kwargs = self._cleanups.pop(-1)
+            try:
+                function(*args, **kwargs)
+            except Exception:
+                ok = False
+                result.addError(self, sys.exc_info())
+        return ok
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -1537,6 +1563,10 @@ Examples:
 
 main = TestProgram
 
+
+##############################################################################
+# Executing this module from the command line
+##############################################################################
 
 if __name__ == "__main__":
     main(module=None)
