@@ -1195,7 +1195,15 @@ class _Unpickler:
         if isinstance(state, tuple) and len(state) == 2:
             state, slotstate = state
         if state:
-            inst.__dict__.update(state)
+            d = inst.__dict__
+            intern = sys.intern
+            try:
+                for k, v in state.items():
+                    d[intern(k)] = v
+            # keys in state don't have to be strings
+            # don't blow up, but don't go out of our way
+            except TypeError:
+                d.update(state)
         if slotstate:
             for k, v in slotstate.items():
                 setattr(inst, k, v)
