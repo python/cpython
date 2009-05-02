@@ -22,12 +22,6 @@ import unittest
 
 import ipaddr
 
-# Compatibility function to cast str to bytes objects
-if ipaddr._compat_has_real_bytes:
-    _cb = lambda bytestr: bytes(bytestr, 'charmap')
-else:
-    _cb = str
-
 class IpaddrUnitTest(unittest.TestCase):
 
     def setUp(self):
@@ -99,26 +93,25 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddr.IP(self.ipv4.ip).version, 4)
         self.assertEqual(ipaddr.IP(self.ipv6.ip).version, 6)
 
-    if ipaddr._compat_has_real_bytes: # on python3+
-        def testIpFromPacked(self):
-            ip = ipaddr.IP
+    def testIpFromPacked(self):
+        ip = ipaddr.IP
 
-            self.assertEqual(self.ipv4.ip,
-                             ip(_cb('\x01\x02\x03\x04')).ip)
-            self.assertEqual(ip('255.254.253.252'),
-                             ip(_cb('\xff\xfe\xfd\xfc')))
-            self.assertRaises(ValueError, ipaddr.IP, _cb('\x00' * 3))
-            self.assertRaises(ValueError, ipaddr.IP, _cb('\x00' * 5))
-            self.assertEqual(self.ipv6.ip,
-                             ip(_cb('\x20\x01\x06\x58\x02\x2a\xca\xfe'
-                               '\x02\x00\x00\x00\x00\x00\x00\x01')).ip)
-            self.assertEqual(ip('ffff:2:3:4:ffff::'),
-                             ip(_cb('\xff\xff\x00\x02\x00\x03\x00\x04' +
-                                   '\xff\xff' + '\x00' * 6)))
-            self.assertEqual(ip('::'),
-                             ip(_cb('\x00' * 16)))
-            self.assertRaises(ValueError, ip, _cb('\x00' * 15))
-            self.assertRaises(ValueError, ip, _cb('\x00' * 17))
+        self.assertEqual(self.ipv4.ip,
+                         ip(b'\x01\x02\x03\x04').ip)
+        self.assertEqual(ip('255.254.253.252'),
+                         ip(b'\xff\xfe\xfd\xfc'))
+        self.assertRaises(ValueError, ipaddr.IP, b'\x00' * 3)
+        self.assertRaises(ValueError, ipaddr.IP, b'\x00' * 5)
+        self.assertEqual(self.ipv6.ip,
+                         ip(b'\x20\x01\x06\x58\x02\x2a\xca\xfe'
+                           b'\x02\x00\x00\x00\x00\x00\x00\x01').ip)
+        self.assertEqual(ip('ffff:2:3:4:ffff::'),
+                         ip(b'\xff\xff\x00\x02\x00\x03\x00\x04' +
+                               b'\xff\xff' + b'\x00' * 6))
+        self.assertEqual(ip('::'),
+                         ip(b'\x00' * 16))
+        self.assertRaises(ValueError, ip, b'\x00' * 15)
+        self.assertRaises(ValueError, ip, b'\x00' * 17)
 
     def testGetIp(self):
         self.assertEqual(self.ipv4.ip, 16909060)
@@ -404,17 +397,17 @@ class IpaddrUnitTest(unittest.TestCase):
 
     def testPacked(self):
         self.assertEqual(self.ipv4.packed,
-                         _cb('\x01\x02\x03\x04'))
+                         b'\x01\x02\x03\x04')
         self.assertEqual(ipaddr.IPv4('255.254.253.252').packed,
-                         _cb('\xff\xfe\xfd\xfc'))
+                         b'\xff\xfe\xfd\xfc')
         self.assertEqual(self.ipv6.packed,
-                         _cb('\x20\x01\x06\x58\x02\x2a\xca\xfe'
-                             '\x02\x00\x00\x00\x00\x00\x00\x01'))
+                         b'\x20\x01\x06\x58\x02\x2a\xca\xfe' +
+                         b'\x02\x00\x00\x00\x00\x00\x00\x01')
         self.assertEqual(ipaddr.IPv6('ffff:2:3:4:ffff::').packed,
-                         _cb('\xff\xff\x00\x02\x00\x03\x00\x04\xff\xff'
-                            + '\x00' * 6))
+                         b'\xff\xff\x00\x02\x00\x03\x00\x04\xff\xff'
+                            + b'\x00' * 6)
         self.assertEqual(ipaddr.IPv6('::1:0:0:0:0').packed,
-                         _cb('\x00' * 6 + '\x00\x01' + '\x00' * 8))
+                         b'\x00' * 6 + b'\x00\x01' + b'\x00' * 8)
 
     def testIpStrFromPrefixlen(self):
         ipv4 = ipaddr.IPv4('1.2.3.4/24')
