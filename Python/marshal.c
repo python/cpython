@@ -312,7 +312,9 @@ w_object(PyObject *v, WFILE *p)
 	}
 	else if (PyUnicode_CheckExact(v)) {
 	        PyObject *utf8;
-		utf8 = PyUnicode_AsUTF8String(v);
+		utf8 = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(v),
+					    PyUnicode_GET_SIZE(v),
+					    "surrogates");
 		if (utf8 == NULL) {
 			p->depth--;
 			p->error = WFERR_UNMARSHALLABLE;
@@ -810,7 +812,7 @@ r_object(RFILE *p)
 			retval = NULL;
 			break;
 		}
-		v = PyUnicode_DecodeUTF8(buffer, n, NULL);
+		v = PyUnicode_DecodeUTF8(buffer, n, "surrogates");
 		PyMem_DEL(buffer);
 		retval = v;
 		break;

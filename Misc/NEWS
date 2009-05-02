@@ -12,6 +12,8 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #3672: Reject surrogates in utf-8 codec; add surrogates error handler.
+
 - Issue #5883: In the io module, the BufferedIOBase and TextIOBase ABCs have
   received a new method, detach().  detach() disconnects the underlying stream
   from the buffer or text IO and returns it.

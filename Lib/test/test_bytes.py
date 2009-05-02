@@ -169,13 +169,13 @@ class BaseBytesTest(unittest.TestCase):
                     self.assertEqual(b[start:stop:step], self.type2test(L[start:stop:step]))
 
     def test_encoding(self):
-        sample = "Hello world\n\u1234\u5678\u9abc\udef0"
+        sample = "Hello world\n\u1234\u5678\u9abc"
         for enc in ("utf8", "utf16"):
             b = self.type2test(sample, enc)
             self.assertEqual(b, self.type2test(sample.encode(enc)))
         self.assertRaises(UnicodeEncodeError, self.type2test, sample, "latin1")
         b = self.type2test(sample, "latin1", "ignore")
-        self.assertEqual(b, self.type2test(sample[:-4], "utf-8"))
+        self.assertEqual(b, self.type2test(sample[:-3], "utf-8"))
 
     def test_decode(self):
         sample = "Hello world\n\u1234\u5678\u9abc\def0\def0"
