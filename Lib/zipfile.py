@@ -952,7 +952,9 @@ class ZipFile:
         """
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
-        if targetpath[-1:] in (os.path.sep, os.path.altsep):
+        # Don't strip it if it is a drive.
+        if targetpath[-1:] in (os.path.sep, os.path.altsep) and \
+                not (len(targetpath) > 1 and targetpath[-2] == ":"):
             targetpath = targetpath[:-1]
 
         # don't include leading "/" from file name if present
