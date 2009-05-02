@@ -935,6 +935,12 @@ format_float_internal(PyObject *value,
     if (precision < 0)
         precision = 6;
 
+#if PY_VERSION_HEX < 0x03010000
+    /* 3.1 no longer converts large 'f' to 'g'. */
+    if ((type == 'f' || type == 'F') && fabs(val) >= 1e50)
+        type = 'g';
+#endif
+
     /* Cast "type", because if we're in unicode we need to pass a
        8-bit char. This is safe, because we've restricted what "type"
        can be. */
