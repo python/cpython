@@ -886,10 +886,10 @@ class UnicodeTest(
         self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
         self.assertEqual('\ud800\udc02'.encode('utf-8'), b'\xf0\x90\x80\x82')
         self.assertEqual('\ud84d\udc56'.encode('utf-8'), b'\xf0\xa3\x91\x96')
-        self.assertEqual('\ud800'.encode('utf-8'), b'\xed\xa0\x80')
-        self.assertEqual('\udc00'.encode('utf-8'), b'\xed\xb0\x80')
+        self.assertEqual('\ud800'.encode('utf-8', 'surrogates'), b'\xed\xa0\x80')
+        self.assertEqual('\udc00'.encode('utf-8', 'surrogates'), b'\xed\xb0\x80')
         self.assertEqual(
-            ('\ud800\udc02'*1000).encode('utf-8'),
+            ('\ud800\udc02'*1000).encode('utf-8', 'surrogates'),
             b'\xf0\x90\x80\x82'*1000
         )
         self.assertEqual(

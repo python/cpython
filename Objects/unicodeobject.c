@@ -154,6 +154,11 @@ const unsigned char _Py_ascii_whitespace[] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
+static PyObject *unicode_encode_call_errorhandler(const char *errors,
+       PyObject **errorHandler,const char *encoding, const char *reason,
+       const Py_UNICODE *unicode, Py_ssize_t size, PyObject **exceptionObject,
+       Py_ssize_t startpos, Py_ssize_t endpos, Py_ssize_t *newpos);
+
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -2214,14 +2219,7 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
                 goto utf8Error;
             }
             ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            if (ch < 0x0800) {
-                /* Note: UTF-8 encodings of surrogates are considered
-                   legal UTF-8 sequences;
-
-                   XXX For wide builds (UCS-4) we should probably try
-                   to recombine the surrogates into a single code
-                   unit.
-                */
+            if (ch < 0x0800 || (ch >= 0xd800 && ch <= 0xDFFF)) {
                 errmsg = "illegal encoding";
                 startinpos = s-starts;
                 endinpos = startinpos+3;
@@ -2328,6 +2326,8 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     Py_ssize_t nallocated;      /* number of result bytes allocated */
     Py_ssize_t nneeded;            /* number of result bytes needed */
     char stackbuf[MAX_SHORT_UNICHARS * 4];
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
 
     assert(s != NULL);
     assert(size >= 0);
@@ -2367,6 +2367,7 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
         else {
             /* Encode UCS2 Unicode ordinals */
             if (ch < 0x10000) {
+#ifndef Py_UNICODE_WIDE
                 /* Special case: check for high surrogate */
                 if (0xD800 <= ch && ch <= 0xDBFF && i != size) {
                     Py_UCS4 ch2 = s[i];
@@ -2378,6 +2379,36 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                         goto encodeUCS4;
                     }
                     /* Fall through: handles isolated high surrogates */
+                }
+#endif
+                if (ch >= 0xd800 && ch <= 0xdfff) {
+                    Py_ssize_t newpos;
+                    PyObject *rep;
+                    char *prep;
+                    int k;
+                    rep = unicode_encode_call_errorhandler
+                        (errors, &errorHandler, "utf-8", "surrogates not allowed", 
+                         s, size, &exc, i-1, i, &newpos);
+                    if (!rep)
+                        goto error;
+                    /* Implementation limitations: only support error handler that return
+                       bytes, and only support up to four replacement bytes. */
+                    if (!PyBytes_Check(rep)) {
+                        PyErr_SetString(PyExc_TypeError, "error handler should have returned bytes");
+                        Py_DECREF(rep);
+                        goto error;
+                    }
+                    if (PyBytes_Size(rep) > 4) {
+                        PyErr_SetString(PyExc_TypeError, "error handler returned too many bytes");
+                        Py_DECREF(rep);
+                        goto error;
+                    }
+                    prep = PyBytes_AsString(rep);
+                    for(k = PyBytes_Size(rep); k > 0; k--)
+                        *p++ = *prep++;
+                    Py_DECREF(rep);
+                    continue;
+                    
                 }
                 *p++ = (char)(0xe0 | (ch >> 12));
                 *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
@@ -2405,7 +2436,14 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
         assert(nneeded <= nallocated);
         _PyBytes_Resize(&result, nneeded);
     }
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
     return result;
+ error:
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    Py_XDECREF(result);
+    return NULL;
 
 #undef MAX_SHORT_UNICHARS
 }
@@ -3897,7 +3935,7 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
                                                   Py_ssize_t startpos, Py_ssize_t endpos,
                                                   Py_ssize_t *newpos)
 {
-    static char *argparse = "O!n;encoding error handler must return (str, int) tuple";
+    static char *argparse = "On;encoding error handler must return (str/bytes, int) tuple";
 
     PyObject *restuple;
     PyObject *resunicode;
@@ -3918,12 +3956,17 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
-        PyErr_SetString(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[3]);
         Py_DECREF(restuple);
         return NULL;
     }
-    if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type,
+    if (!PyArg_ParseTuple(restuple, argparse,
                           &resunicode, newpos)) {
+        Py_DECREF(restuple);
+        return NULL;
+    }
+    if (!PyUnicode_Check(resunicode) && !PyBytes_Check(resunicode)) {
+        PyErr_SetString(PyExc_TypeError, &argparse[3]);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -4064,6 +4107,12 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
                                                               collstart-startp, collend-startp, &newpos);
                 if (repunicode == NULL)
                     goto onError;
+                if (!PyUnicode_Check(repunicode)) {
+                    /* Implementation limitation: byte results not supported yet. */
+                    PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
+                    Py_DECREF(repunicode);
+                    goto onError;
+                }
                 /* need more space? (at least enough for what we
                    have+the replacement+the rest of the string, so
                    we won't have to check space for encodable characters) */
@@ -5027,6 +5076,12 @@ int charmap_encoding_error(
                                                       collstartpos, collendpos, &newpos);
         if (repunicode == NULL)
             return -1;
+        if (!PyUnicode_Check(repunicode)) {
+            /* Implementation limitation: byte results not supported yet. */
+            PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
+            Py_DECREF(repunicode);
+            return -1;
+        }
         /* generate replacement  */
         repsize = PyUnicode_GET_SIZE(repunicode);
         for (uni2 = PyUnicode_AS_UNICODE(repunicode); repsize-->0; ++uni2) {
@@ -5588,6 +5643,12 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
                                                           collstart-s, collend-s, &newpos);
             if (repunicode == NULL)
                 goto onError;
+            if (!PyUnicode_Check(repunicode)) {
+                /* Implementation limitation: byte results not supported yet. */
+                PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
+                Py_DECREF(repunicode);
+                goto onError;
+            }
             /* generate replacement  */
             repsize = PyUnicode_GET_SIZE(repunicode);
             for (uni2 = PyUnicode_AS_UNICODE(repunicode); repsize-->0; ++uni2) {

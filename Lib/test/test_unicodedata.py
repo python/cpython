@@ -13,6 +13,7 @@ import subprocess
 import test.support
 
 encoding = 'utf-8'
+errors = 'surrogates'
 
 
 ### Run tests
@@ -61,7 +62,7 @@ class UnicodeMethodsTest(unittest.TestCase):
                 (char + 'ABC').title(),
 
                 ]
-            h.update(''.join(data).encode(encoding))
+            h.update(''.join(data).encode(encoding, errors))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 

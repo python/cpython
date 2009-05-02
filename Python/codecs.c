@@ -748,6 +748,85 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
 }
 
+PyObject *PyCodec_SurrogateErrors(PyObject *exc)
+{
+    PyObject *restuple;
+    PyObject *object;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    PyObject *res;
+    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+	Py_UNICODE *p;
+	Py_UNICODE *startp;
+	char *outp;
+	if (PyUnicodeEncodeError_GetStart(exc, &start))
+	    return NULL;
+	if (PyUnicodeEncodeError_GetEnd(exc, &end))
+	    return NULL;
+	if (!(object = PyUnicodeEncodeError_GetObject(exc)))
+	    return NULL;
+	startp = PyUnicode_AS_UNICODE(object);
+	res = PyBytes_FromStringAndSize(NULL, 3*(end-start));
+	if (!res) {
+	    Py_DECREF(object);
+	    return NULL;
+	}
+	outp = PyBytes_AsString(res);
+	for (p = startp+start; p < startp+end; p++) {
+	    Py_UNICODE ch = *p;
+	    if (ch < 0xd800 || ch > 0xdfff) {
+		/* Not a surrogate, fail with original exception */
+		PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+		Py_DECREF(res);
+		Py_DECREF(object);
+		return NULL;
+	    }
+	    *outp++ = (char)(0xe0 | (ch >> 12));
+	    *outp++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+	    *outp++ = (char)(0x80 | (ch & 0x3f));
+	}
+	restuple = Py_BuildValue("(On)", res, end);
+	Py_DECREF(res);
+	Py_DECREF(object);
+	return restuple;
+    }
+    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+	unsigned char *p;
+	Py_UNICODE ch = 0;
+	if (PyUnicodeDecodeError_GetStart(exc, &start))
+	    return NULL;
+	if (!(object = PyUnicodeDecodeError_GetObject(exc)))
+	    return NULL;
+	if (!(p = (unsigned char*)PyBytes_AsString(object))) {
+	    Py_DECREF(object);
+	    return NULL;
+	}
+	/* Try decoding a single surrogate character. If
+	   there are more, let the codec call us again. */
+	p += start;
+	if ((p[0] & 0xf0) == 0xe0 || 
+	    (p[1] & 0xc0) == 0x80 ||
+	    (p[2] & 0xc0) == 0x80) {
+	    /* it's a three-byte code */
+	    ch = ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6) + (p[2] & 0x3f);
+	    if (ch < 0xd800 || ch > 0xdfff)
+		/* it's not a surrogate - fail */
+		ch = 0;
+	}
+	Py_DECREF(object);
+	if (ch == 0) {
+	    PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+	    return NULL;
+	}
+	return Py_BuildValue("(u#n)", &ch, 1, start+3);
+    }
+    else {
+	wrong_exception_type(exc);
+	return NULL;
+    }
+}
+
+	
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_StrictErrors(exc);
@@ -775,6 +854,11 @@ static PyObject *xmlcharrefreplace_errors(PyObject *self, PyObject *exc)
 static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_BackslashReplaceErrors(exc);
+}
+
+static PyObject *surrogates_errors(PyObject *self, PyObject *exc)
+{
+    return PyCodec_SurrogateErrors(exc);
 }
 
 static int _PyCodecRegistry_Init(void)
@@ -821,6 +905,14 @@ static int _PyCodecRegistry_Init(void)
 	    {
 		"backslashreplace_errors",
 		backslashreplace_errors,
+		METH_O
+	    }
+	},
+	{
+	    "surrogates",
+	    {
+		"surrogates",
+		surrogates_errors,
 		METH_O
 	    }
 	}
