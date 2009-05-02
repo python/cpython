@@ -359,6 +359,17 @@ Library
 - unittest.assertNotEqual() now uses the inequality operator (!=) instead
   of the equality operator.
 
+- Issue #5679: The methods unittest.TestCase.addCleanup and doCleanups were added.
+  addCleanup allows you to add cleanup functions that will be called
+  unconditionally (after setUp if setUp fails, otherwise after tearDown). This
+  allows for much simpler resource allocation and deallocation during tests.
+
+- Issue #3379: unittest.main now takes an optional exit argument. If False main
+  doesn't call sys.exit allowing it to be used from the interactive interpreter.
+
+- Issue #5728: unittest.TestResult has new startTestRun and stopTestRun methods;
+  called immediately before and after a test run.
+
 - Issue #5663: better failure messages for unittest asserts. Default assertTrue
   and assertFalse messages are now useful. TestCase has a longMessage attribute.
   This defaults to False, but if set to True useful error messages are shown in

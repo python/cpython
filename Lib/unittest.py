@@ -186,9 +186,21 @@ class TestResult(object):
         "Called when the given test is about to be run"
         self.testsRun = self.testsRun + 1
 
+    def startTestRun(self):
+        """Called once before any tests are executed.
+
+        See startTest for a method called before each test.
+        """
+
     def stopTest(self, test):
         "Called when the given test has been run"
         pass
+
+    def stopTestRun(self):
+        """Called once after all tests are executed.
+
+        See stopTest for a method called after each test.
+        """
 
     def addError(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
@@ -437,8 +449,13 @@ class TestCase(object):
                (_strclass(self.__class__), self._testMethodName)
 
     def run(self, result=None):
+        orig_result = result
         if result is None:
             result = self.defaultTestResult()
+            startTestRun = getattr(result, 'startTestRun', None)
+            if startTestRun is not None:
+                startTestRun()
+
         self._result = result
         result.startTest(self)
         testMethod = getattr(self, self._testMethodName)
@@ -478,6 +495,10 @@ class TestCase(object):
                 result.addSuccess(self)
         finally:
             result.stopTest(self)
+            if orig_result is None:
+                stopTestRun = getattr(result, 'stopTestRun', None)
+                if stopTestRun is not None:
+                    stopTestRun()
 
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
@@ -1433,7 +1454,15 @@ class TextTestRunner(object):
         "Run the given test case or test suite."
         result = self._makeResult()
         startTime = time.time()
-        test(result)
+        startTestRun = getattr(result, 'startTestRun', None)
+        if startTestRun is not None:
+            startTestRun()
+        try:
+            test(result)
+        finally:
+            stopTestRun = getattr(result, 'stopTestRun', None)
+            if stopTestRun is not None:
+                stopTestRun()
         stopTime = time.time()
         timeTaken = stopTime - startTime
         result.printErrors()
