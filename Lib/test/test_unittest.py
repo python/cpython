@@ -9,9 +9,10 @@ Still need testing:
 import re
 from test import test_support
 import unittest
-from unittest import TestCase
+from unittest import TestCase, TestProgram
 import types
 from copy import deepcopy
+from cStringIO import StringIO
 
 ### Support code
 ################################################################
@@ -3040,6 +3041,73 @@ class TestLongMessage(TestCase):
                              "^unexpectedly identical: None : oops$"])
 
 
+class Test_TestProgram(TestCase):
+
+    # Horrible white box test
+    def testNoExit(self):
+        result = object()
+        test = object()
+
+        class FakeRunner(object):
+            def run(self, test):
+                self.test = test
+                return result
+
+        runner = FakeRunner()
+
+        try:
+            oldParseArgs = TestProgram.parseArgs
+            TestProgram.parseArgs = lambda *args: None
+            TestProgram.test = test
+
+            program = TestProgram(testRunner=runner, exit=False)
+
+            self.assertEqual(program.result, result)
+            self.assertEqual(runner.test, test)
+
+        finally:
+            TestProgram.parseArgs = oldParseArgs
+            del TestProgram.test
+
+
+    class FooBar(unittest.TestCase):
+        def testPass(self):
+            assert True
+        def testFail(self):
+            assert False
+
+    class FooBarLoader(unittest.TestLoader):
+        """Test loader that returns a suite containing FooBar."""
+        def loadTestsFromModule(self, module):
+            return self.suiteClass(
+                [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
+
+
+    def test_NonExit(self):
+        program = unittest.main(exit=False,
+                                   testRunner=unittest.TextTestRunner(stream=StringIO()),
+                                   testLoader=self.FooBarLoader())
+        self.assertTrue(hasattr(program, 'result'))
+
+
+    def test_Exit(self):
+        self.assertRaises(
+            SystemExit,
+            unittest.main,
+            testRunner=unittest.TextTestRunner(stream=StringIO()),
+            exit=True,
+            testLoader=self.FooBarLoader())
+
+
+    def test_ExitAsDefault(self):
+        self.assertRaises(
+            SystemExit,
+            unittest.main,
+            testRunner=unittest.TextTestRunner(stream=StringIO()),
+            testLoader=self.FooBarLoader())
+
+
+
 ######################################################################
 ## Main
 ######################################################################
@@ -3047,7 +3115,8 @@ class TestLongMessage(TestCase):
 def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_TestSkipping, Test_Assertions, TestLongMessage)
+        Test_TestSkipping, Test_Assertions, TestLongMessage,
+        Test_TestProgram)
 
 if __name__ == "__main__":
     test_main()

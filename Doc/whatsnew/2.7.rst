@@ -477,6 +477,10 @@ changes, or look through the Subversion logs for all the details.
     to provide additional information about why the two objects are
     matching, much as the new sequence comparison methods do.
 
+  :func:`unittest.main` now takes an optional ``exit`` argument.
+  If False ``main`` doesn't call :func:`sys.exit` allowing it to
+  be used from the interactive interpreter. :issue:`3379`.
+
 * The :func:`is_zipfile` function in the :mod:`zipfile` module will now
   accept a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
