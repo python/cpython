@@ -3832,8 +3832,13 @@ long_getnewargs(PyLongObject *v)
 }
 
 static PyObject *
-long_getN(PyLongObject *v, void *context) {
-	return PyLong_FromLong((Py_intptr_t)context);
+long_get0(PyLongObject *v, void *context) {
+	return PyLong_FromLong(0L);
+}
+
+static PyObject *
+long_get1(PyLongObject *v, void *context) {
+	return PyLong_FromLong(1L);
 }
 
 static PyObject *
@@ -4091,22 +4096,22 @@ static PyMethodDef long_methods[] = {
 };
 
 static PyGetSetDef long_getset[] = {
-    {"real", 
+    {"real",
      (getter)long_long, (setter)NULL,
      "the real part of a complex number",
      NULL},
-    {"imag", 
-     (getter)long_getN, (setter)NULL,
+    {"imag",
+     (getter)long_get0, (setter)NULL,
      "the imaginary part of a complex number",
-     (void*)0},
-    {"numerator", 
+     NULL},
+    {"numerator",
      (getter)long_long, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
-    {"denominator", 
-     (getter)long_getN, (setter)NULL,
+    {"denominator",
+     (getter)long_get1, (setter)NULL,
      "the denominator of a rational number in lowest terms",
-     (void*)1},
+     NULL},
     {NULL}  /* Sentinel */
 };
 
