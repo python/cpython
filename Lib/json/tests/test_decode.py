@@ -32,3 +32,10 @@ class TestDecode(TestCase):
                                     object_pairs_hook = OrderedDict,
                                     object_hook = lambda x: None),
                          OrderedDict(p))
+
+    def test_decoder_optimizations(self):
+        # Several optimizations were made that skip over calls to
+        # the whitespace regex, so this test is designed to try and
+        # exercise the uncommon cases. The array cases are already covered.
+        rval = json.loads('{   "key"    :    "value"    ,  "k":"v"    }')
+        self.assertEquals(rval, {"key":"value", "k":"v"})

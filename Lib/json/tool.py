@@ -2,11 +2,11 @@ r"""Command-line tool to validate and pretty-print JSON
 
 Usage::
 
-    $ echo '{"json":"obj"}' | python -mjson.tool
+    $ echo '{"json":"obj"}' | python -m json.tool
     {
         "json": "obj"
     }
-    $ echo '{ 1.2:3.4}' | python -mjson.tool
+    $ echo '{ 1.2:3.4}' | python -m json.tool
     Expecting property name: line 1 column 2 (char 2)
 
 """
@@ -24,7 +24,7 @@ def main():
         infile = open(sys.argv[1], 'rb')
         outfile = open(sys.argv[2], 'wb')
     else:
-        raise SystemExit("{0} [infile [outfile]]".format(sys.argv[0]))
+        raise SystemExit(sys.argv[0] + " [infile [outfile]]")
     try:
         obj = json.load(infile)
     except ValueError as e:

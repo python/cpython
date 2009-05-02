@@ -4,20 +4,8 @@ import json
 from collections import OrderedDict
 
 class TestUnicode(TestCase):
-    def test_encoding1(self):
-        encoder = json.JSONEncoder(encoding='utf-8')
-        u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
-        s = u.encode('utf-8')
-        ju = encoder.encode(u)
-        js = encoder.encode(s)
-        self.assertEquals(ju, js)
-
-    def test_encoding2(self):
-        u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
-        s = u.encode('utf-8')
-        ju = json.dumps(u, encoding='utf-8')
-        js = json.dumps(s, encoding='utf-8')
-        self.assertEquals(ju, js)
+    # test_encoding1 and test_encoding2 from 2.x are irrelevant (only str
+    # is supported as input, not bytes).
 
     def test_encoding3(self):
         u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
@@ -52,8 +40,22 @@ class TestUnicode(TestCase):
     def test_unicode_decode(self):
         for i in range(0, 0xd7ff):
             u = chr(i)
-            js = '"\\u{0:04x}"'.format(i)
-            self.assertEquals(json.loads(js), u)
+            s = '"\\u{0:04x}"'.format(i)
+            self.assertEquals(json.loads(s), u)
+
+    def test_unicode_preservation(self):
+        self.assertEquals(type(json.loads('""')), str)
+        self.assertEquals(type(json.loads('"a"')), str)
+        self.assertEquals(type(json.loads('["a"]')[0]), str)
+
+    def test_bytes_encode(self):
+        self.assertRaises(TypeError, json.dumps, b"hi")
+        self.assertRaises(TypeError, json.dumps, [b"hi"])
+
+    def test_bytes_decode(self):
+        self.assertRaises(TypeError, json.loads, b'"hi"')
+        self.assertRaises(TypeError, json.loads, b'["hi"]')
+
 
     def test_object_pairs_hook_with_unicode(self):
         s = '{"xkd":1, "kcw":2, "art":3, "hxm":4, "qrt":5, "pad":6, "hoy":7}'

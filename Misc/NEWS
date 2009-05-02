@@ -107,6 +107,8 @@ Installation
 Library
 -------
 
+- The json module now works exclusively with str and not bytes.
+
 - Issue #3959: The ipaddr module has been added to the standard library.
   Contributed by Google.
 
