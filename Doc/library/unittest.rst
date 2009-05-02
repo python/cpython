@@ -1364,7 +1364,7 @@ Loading and running tests
       subclasses to provide a custom ``TestResult``.
 
 
-.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader]]]]])
+.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit]]]]]])
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1374,4 +1374,18 @@ Loading and running tests
           unittest.main()
 
    The *testRunner* argument can either be a test runner class or an already
-   created instance of it.
+   created instance of it. By default ``main`` calls :func:`sys.exit` with
+   an exit code indicating success or failure of the tests run.
+
+   ``main`` supports being used from the interactive interpreter by passing in the
+   argument ``exit=False``. This displays the result on standard output without
+   calling :func:`sys.exit`::
+
+      >>> from unittest import main
+      >>> main(module='test_module', exit=False)
+
+   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
+   This stores the result of the tests run as the ``result`` attribute.
+
+   .. versionchanged:: 2.7
+      The ``exit`` parameter was added.

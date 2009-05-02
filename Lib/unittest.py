@@ -1015,7 +1015,7 @@ class TestSuite(object):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return self._tests == other._tests
+        return list(self) == list(other)
 
     def __ne__(self, other):
         return not self == other
@@ -1469,7 +1469,7 @@ Examples:
 """
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=TextTestRunner,
-                 testLoader=defaultTestLoader):
+                 testLoader=defaultTestLoader, exit=True):
         if isinstance(module, basestring):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -1478,6 +1478,8 @@ Examples:
             self.module = module
         if argv is None:
             argv = sys.argv
+
+        self.exit = exit
         self.verbosity = 1
         self.defaultTest = defaultTest
         self.testRunner = testRunner
@@ -1529,15 +1531,12 @@ Examples:
         else:
             # it is assumed to be a TestRunner instance
             testRunner = self.testRunner
-        result = testRunner.run(self.test)
-        sys.exit(not result.wasSuccessful())
+        self.result = testRunner.run(self.test)
+        if self.exit:
+            sys.exit(not self.result.wasSuccessful())
 
 main = TestProgram
 
-
-##############################################################################
-# Executing this module from the command line
-##############################################################################
 
 if __name__ == "__main__":
     main(module=None)
