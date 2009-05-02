@@ -1318,6 +1318,20 @@ Loading and running tests
       The default implementation does nothing.
 
 
+   .. method:: startTestRun(test)
+
+      Called once before any tests are executed.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: stopTestRun(test)
+
+      Called once before any tests are executed.
+
+      .. versionadded:: 2.7
+
+
    .. method:: addError(test, err)
 
       Called when the test case *test* raises an unexpected exception *err* is a
