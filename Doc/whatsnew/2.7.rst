@@ -121,6 +121,31 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
+* Conversions from long integers and regular integers to floating
+  point now round differently, returning the floating-point number
+  closest to the number.  This doesn't matter for small integers that
+  can be converted exactly, but for large numbers that will
+  unavoidably lose precision, Python 2.7 will now approximate more
+  closely.  For example, Python 2.6 computed the following::
+
+    >>> n = 295147905179352891391
+    >>> float(n)
+    2.9514790517935283e+20
+    >>> n - long(float(n))
+    65535L
+
+  Python 2.7's floating-point result is larger, but much closer to the
+  true value::
+
+    >>> n = 295147905179352891391
+    >>> float(n)
+    2.9514790517935289e+20
+    >>> n-long(float(n)
+    ... )
+    -1L
+
+  (Implemented by Mark Dickinson; :issue:`3166`.)
+
 * The :class:`bytearray` type's :meth:`translate` method will
   now accept ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
@@ -297,6 +322,10 @@ changes, or look through the Subversion logs for all the details.
   For example, ``Decimal.from_float(0.1)`` returns
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
+
+* The :class:`Fraction` class will now accept two rational numbers
+  as arguments to its constructor.
+  (Implemented by Mark Dickinson; :issue:`5812`.)
 
 * New function: the :mod:`gc` module's :func:`is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
@@ -561,6 +590,10 @@ Changes to Python's build process and to the C API include:
   is particularly useful for asynchronous IO operations.
   (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
 
+* Global symbols defined by the :mod:`ctypes` module are now prefixed
+  with ``Py`, or with ``_ctypes``.  (Implemented by Thomas
+  Heller; :issue:`3102`.)
+
 * The :program:`configure` script now checks for floating-point rounding bugs
   on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
@@ -599,10 +632,10 @@ Other Changes and Fixes
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
-  attributes of all code objects if the original filename is obsolete,
-  which can happen if the file has been renamed, moved, or is accessed
-  through different paths.  (Patch by Ziga Seilnacht and Jean-Paul
-  Calderone; :issue:`1180193`.)
+  attributes of the resulting code objects are overwritten when the
+  original filename is obsolete.  This can happen if the file has been
+  renamed, moved, or is accessed through different paths.  (Patch by
+  Ziga Seilnacht and Jean-Paul Calderone; :issue:`1180193`.)
 
 * The :file:`regrtest.py` script now takes a :option:`--randseed=`
   switch that takes an integer that will be used as the random seed
