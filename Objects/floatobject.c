@@ -188,7 +188,7 @@ PyFloat_FromString(PyObject *v)
 	}
 	last = s + len;
 
-	while (*s && isspace(Py_CHARMASK(*s)))
+	while (Py_ISSPACE(*s))
 		s++;
 	/* We don't care about overflow or underflow.  If the platform
 	 * supports them, infinities and signed zeroes (on underflow) are
@@ -196,7 +196,7 @@ PyFloat_FromString(PyObject *v)
 	x = PyOS_string_to_double(s, (char **)&end, NULL);
 	if (x == -1.0 && PyErr_Occurred())
 		goto error;
-	while (*end && isspace(Py_CHARMASK(*end)))
+	while (Py_ISSPACE(*end))
 		end++;
 	if (end == last)
 		result = PyFloat_FromDouble(x);
@@ -1223,7 +1223,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	 ********************/
 
 	/* leading whitespace and optional sign */
-	while (isspace(Py_CHARMASK(*s)))
+	while (Py_ISSPACE(*s))
 		s++;
 	if (*s == '-') {
 		s++;
@@ -1247,7 +1247,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	s_store = s;
 	if (*s == '0') {
 		s++;
-		if (tolower(*s) == (int)'x')
+		if (*s == 'x' || *s == 'X')
 			s++;
 		else
 			s = s_store;
@@ -1277,7 +1277,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		goto insane_length_error;
 
 	/* [p <exponent>] */
-	if (tolower(*s) == (int)'p') {
+	if (*s == 'p' || *s == 'P') {
 		s++;
 		exp_start = s;
 		if (*s == '-' || *s == '+')
@@ -1293,7 +1293,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		exp = 0;
 
 	/* optional trailing whitespace leading to the end of the string */
-	while (isspace(Py_CHARMASK(*s)))
+	while (Py_ISSPACE(*s))
 		s++;
 	if (s != s_end)
 		goto parse_error;
