@@ -258,6 +258,11 @@ Core and Builtins
 - Issue #5705: os.setuid() would not accept values > 2**31-1 but pwd.getpwnam()
   returned them on 64bit platforms.
 
+- Issue #5108: Handle %s like %S and %R in PyUnicode_FromFormatV(): Call
+  PyUnicode_DecodeUTF8() once, remember the result and output it in a second
+  step. This avoids problems with counting UTF-8 bytes that ignores the effect
+  of using the replace error handler in PyUnicode_DecodeUTF8().
+
 Library
 -------
 
