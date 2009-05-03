@@ -681,7 +681,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
          if (*f == '%') {
              if (*(f+1)=='%')
                  continue;
-             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A')
+             if (*(f+1)=='S' || *(f+1)=='R')
                  ++callcount;
              while (isdigit((unsigned)*f))
                  width = (width*10) + *f++ - '0';
