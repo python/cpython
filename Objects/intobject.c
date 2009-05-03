@@ -1104,8 +1104,13 @@ int_getnewargs(PyIntObject *v)
 }
 
 static PyObject *
-int_getN(PyIntObject *v, void *context) {
-	return PyInt_FromLong((Py_intptr_t)context);
+int_get0(PyIntObject *v, void *context) {
+	return PyInt_FromLong(0L);
+}
+
+static PyObject *
+int_get1(PyIntObject *v, void *context) {
+	return PyInt_FromLong(1L);
 }
 
 /* Convert an integer to the given base.  Returns a string.
@@ -1254,22 +1259,22 @@ static PyMethodDef int_methods[] = {
 };
 
 static PyGetSetDef int_getset[] = {
-	{"real", 
+	{"real",
 	 (getter)int_int, (setter)NULL,
 	 "the real part of a complex number",
 	 NULL},
-	{"imag", 
-	 (getter)int_getN, (setter)NULL,
+	{"imag",
+	 (getter)int_get0, (setter)NULL,
 	 "the imaginary part of a complex number",
-	 (void*)0},
-	{"numerator", 
+	 NULL},
+	{"numerator",
 	 (getter)int_int, (setter)NULL,
 	 "the numerator of a rational number in lowest terms",
 	 NULL},
-	{"denominator", 
-	 (getter)int_getN, (setter)NULL,
+	{"denominator",
+	 (getter)int_get1, (setter)NULL,
 	 "the denominator of a rational number in lowest terms",
-	 (void*)1},
+	 NULL},
 	{NULL}  /* Sentinel */
 };
 
