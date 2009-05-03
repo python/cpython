@@ -499,6 +499,11 @@ Core and Builtins
 
 - The re.sub(), re.subn() and re.split() functions now accept a flags parameter.
 
+- Issue #5108: Handle %s like %S, %R and %A in PyUnicode_FromFormatV(): Call
+  PyUnicode_DecodeUTF8() once, remember the result and output it in a second
+  step. This avoids problems with counting UTF-8 bytes that ignores the effect
+  of using the replace error handler in PyUnicode_DecodeUTF8().
+
 Library
 -------
 
