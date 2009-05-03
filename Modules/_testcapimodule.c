@@ -1045,6 +1045,54 @@ test_with_docstring(PyObject *self)
 	Py_RETURN_NONE;
 }
 
+/* Test PyOS_string_to_double. */
+static PyObject *
+test_string_to_double(PyObject *self) {
+	double result;
+	char *msg;
+
+#define CHECK_STRING(STR, expected)				\
+	result = PyOS_string_to_double(STR, NULL, NULL);	\
+	if (result == -1.0 && PyErr_Occurred())			\
+		return NULL;					\
+	if (result != expected) {				\
+		msg = "conversion of " STR " to float failed";	\
+		goto fail;					\
+	}
+
+#define CHECK_INVALID(STR)						\
+	result = PyOS_string_to_double(STR, NULL, NULL);		\
+	if (result == -1.0 && PyErr_Occurred()) {			\
+		if (PyErr_ExceptionMatches(PyExc_ValueError))		\
+			PyErr_Clear();					\
+		else							\
+			return NULL;					\
+	}								\
+	else {								\
+		msg = "conversion of " STR " didn't raise ValueError";	\
+		goto fail;						\
+	}
+
+	CHECK_STRING("0.1", 0.1);
+	CHECK_STRING("1.234", 1.234);
+	CHECK_STRING("-1.35", -1.35);
+	CHECK_STRING(".1e01", 1.0);
+	CHECK_STRING("2.e-2", 0.02);
+
+	CHECK_INVALID(" 0.1");
+	CHECK_INVALID("\t\n-3");
+	CHECK_INVALID(".123 ");
+	CHECK_INVALID("3\n");
+	CHECK_INVALID("123abc");
+
+	Py_RETURN_NONE;
+  fail:
+	return raiseTestError("test_string_to_double", msg);
+#undef CHECK_STRING
+#undef CHECK_INVALID
+}
+
+
 #ifdef HAVE_GETTIMEOFDAY
 /* Profiling of integer performance */
 static void print_delta(int test, struct timeval *s, struct timeval *e)
@@ -1223,6 +1271,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
+	{"test_string_to_double", (PyCFunction)test_string_to_double, METH_NOARGS},
 	{"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
 	 PyDoc_STR("This is a pretty normal docstring.")},
 

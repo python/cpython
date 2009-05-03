@@ -2971,20 +2971,20 @@ load_float(UnpicklerObject *self)
         return bad_readline();
 
     errno = 0;
-    d = PyOS_ascii_strtod(s, &endptr);
-
-    if ((errno == ERANGE && !(fabs(d) <= 1.0)) ||
-        (endptr[0] != '\n') || (endptr[1] != '\0')) {
+    d = PyOS_string_to_double(s, &endptr, PyExc_OverflowError);
+    if (d == -1.0 && PyErr_Occurred())
+        return -1;
+    if ((endptr[0] != '\n') || (endptr[1] != '\0')) {
         PyErr_SetString(PyExc_ValueError, "could not convert string to float");
         return -1;
     }
-
-    if ((value = PyFloat_FromDouble(d)) == NULL)
+    value = PyFloat_FromDouble(d);
+    if (value == NULL)
         return -1;
 
     PDATA_PUSH(self->stack, value, -1);
     return 0;
-}
+    }
 
 static int
 load_binfloat(UnpicklerObject *self)

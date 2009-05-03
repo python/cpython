@@ -193,36 +193,20 @@ PyFloat_FromString(PyObject *v)
 	/* We don't care about overflow or underflow.  If the platform
 	 * supports them, infinities and signed zeroes (on underflow) are
 	 * fine. */
-	errno = 0;
-	PyFPE_START_PROTECT("strtod", goto error)
-	x = PyOS_ascii_strtod(s, (char **)&end);
-	PyFPE_END_PROTECT(x)
-	if (end == s) {
-		if (errno == ENOMEM)
-			PyErr_NoMemory();
-		else {
-			PyOS_snprintf(buffer, sizeof(buffer),
-				"invalid literal for float(): %.200s", s);
-			PyErr_SetString(PyExc_ValueError, buffer);
-		}
+	x = PyOS_string_to_double(s, (char **)&end, NULL);
+	if (x == -1.0 && PyErr_Occurred())
 		goto error;
-	}
-	/* Since end != s, the platform made *some* kind of sense out
-	   of the input.  Trust it. */
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
-	if (end != last) {
-		if (*end == '\0')
-			PyErr_SetString(PyExc_ValueError,
-					"null byte in argument for float()");
-		else {
-			PyOS_snprintf(buffer, sizeof(buffer),
-				"invalid literal for float(): %.200s", s);
-			PyErr_SetString(PyExc_ValueError, buffer);
-		}
-		goto error;
+	if (end == last)
+		result = PyFloat_FromDouble(x);
+	else {
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for float(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		result = NULL;
 	}
-	result = PyFloat_FromDouble(x);
+
   error:
 	if (s_buffer)
 		PyMem_FREE(s_buffer);

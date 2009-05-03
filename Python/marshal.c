@@ -670,18 +670,17 @@ r_object(RFILE *p)
 		{
 			char buf[256];
 			double dx;
+			retval = NULL;
 			n = r_byte(p);
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				retval = NULL;
 				break;
 			}
 			buf[n] = '\0';
-			retval = NULL;
-			PyFPE_START_PROTECT("atof", break)
-			dx = PyOS_ascii_atof(buf);
-			PyFPE_END_PROTECT(dx)
+			dx = PyOS_string_to_double(buf, NULL, NULL);
+			if (dx == -1.0 && PyErr_Occurred())
+				break;
 			retval = PyFloat_FromDouble(dx);
 			break;
 		}
@@ -710,29 +709,27 @@ r_object(RFILE *p)
 		{
 			char buf[256];
 			Py_complex c;
-			n = r_byte(p);
-			if (n == EOF || r_string(buf, (int)n, p) != n) {
-				PyErr_SetString(PyExc_EOFError,
-					"EOF read where object expected");
-				retval = NULL;
-				break;
-			}
-			buf[n] = '\0';
 			retval = NULL;
-			PyFPE_START_PROTECT("atof", break;)
-			c.real = PyOS_ascii_atof(buf);
-			PyFPE_END_PROTECT(c)
 			n = r_byte(p);
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				retval = NULL;
 				break;
 			}
 			buf[n] = '\0';
-			PyFPE_START_PROTECT("atof", break)
-			c.imag = PyOS_ascii_atof(buf);
-			PyFPE_END_PROTECT(c)
+			c.real = PyOS_string_to_double(buf, NULL, NULL);
+			if (c.real == -1.0 && PyErr_Occurred())
+				break;
+			n = r_byte(p);
+			if (n == EOF || r_string(buf, (int)n, p) != n) {
+				PyErr_SetString(PyExc_EOFError,
+					"EOF read where object expected");
+				break;
+			}
+			buf[n] = '\0';
+			c.imag = PyOS_string_to_double(buf, NULL, NULL);
+			if (c.imag == -1.0 && PyErr_Occurred())
+				break;
 			retval = PyComplex_FromCComplex(c);
 			break;
 		}

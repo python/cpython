@@ -35,7 +35,7 @@
 #ifndef PY_NO_SHORT_FLOAT_REPR
 
 double
-PyOS_ascii_strtod(const char *nptr, char **endptr)
+_PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
 	double result;
 	_Py_SET_53BIT_PRECISION_HEADER;
@@ -64,7 +64,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 */
 
 double
-PyOS_ascii_strtod(const char *nptr, char **endptr)
+_PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
 	char *fail_pos;
 	double val = -1.0;
@@ -92,15 +92,10 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	   and underflows */
 	errno = 0;
 
-	/* We process any leading whitespace and the optional sign manually,
-	   then pass the remainder to the system strtod.  This ensures that
-	   the result of an underflow has the correct sign. (bug #1725)  */
-
+	/* We process the optional sign manually, then pass the remainder to
+	   the system strtod.  This ensures that the result of an underflow
+	   has the correct sign. (bug #1725)  */
 	p = nptr;
-	/* Skip leading space */
-	while (Py_ISSPACE(*p))
-		p++;
-
 	/* Process leading sign, if present */
 	if (*p == '-') {
 		negate = 1;
@@ -185,8 +180,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		copy = (char *)PyMem_MALLOC(end - digits_pos +
 					    1 + decimal_point_len);
 		if (copy == NULL) {
-			if (endptr)
-				*endptr = (char *)nptr;
+			*endptr = (char *)nptr;
 			errno = ENOMEM;
 			return val;
 		}
@@ -227,20 +221,47 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
   got_val:
 	if (negate && fail_pos != nptr)
 		val = -val;
-
-	if (endptr)
-		*endptr = fail_pos;
+	*endptr = fail_pos;
 
 	return val;
 
   invalid_string:
-	if (endptr)
-		*endptr = (char*)nptr;
+	*endptr = (char*)nptr;
 	errno = EINVAL;
 	return -1.0;
 }
 
 #endif
+
+/* PyOS_ascii_strtod is DEPRECATED in Python 3.1 */
+
+double
+PyOS_ascii_strtod(const char *nptr, char **endptr)
+{
+	char *fail_pos;
+	const char *p;
+	double x;
+
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "PyOS_ascii_strtod and PyOS_ascii_atof are "
+			 "deprecated.  Use PyOS_string_to_double "
+			 "instead.", 1) < 0)
+		return -1.0;
+
+	/* _PyOS_ascii_strtod already does everything that we want,
+	   except that it doesn't parse leading whitespace */
+	p = nptr;
+	while (Py_ISSPACE(*p))
+		p++;
+	x = _PyOS_ascii_strtod(p, &fail_pos);
+	if (fail_pos == p)
+		fail_pos = (char *)nptr;
+	if (endptr)
+		*endptr = (char *)fail_pos;
+	return x;
+}
+
+/* PyOS_ascii_strtod is DEPRECATED in Python 3.1 */
 
 double
 PyOS_ascii_atof(const char *nptr)
@@ -248,6 +269,68 @@ PyOS_ascii_atof(const char *nptr)
 	return PyOS_ascii_strtod(nptr, NULL);
 }
 
+/* PyOS_string_to_double is the recommended replacement for the deprecated
+   PyOS_ascii_strtod and PyOS_ascii_atof functions.  It converts a
+   null-terminated byte string s (interpreted as a string of ASCII characters)
+   to a float.  The string should not have leading or trailing whitespace (in
+   contrast, PyOS_ascii_strtod allows leading whitespace but not trailing
+   whitespace).  The conversion is independent of the current locale.
+
+   If endptr is NULL, try to convert the whole string.  Raise ValueError and
+   return -1.0 if the string is not a valid representation of a floating-point
+   number.
+
+   If endptr is non-NULL, try to convert as much of the string as possible.
+   If no initial segment of the string is the valid representation of a
+   floating-point number then *endptr is set to point to the beginning of the
+   string, -1.0 is returned and again ValueError is raised.
+
+   On overflow (e.g., when trying to convert '1e500' on an IEEE 754 machine),
+   if overflow_exception is NULL then +-Py_HUGE_VAL is returned, and no Python
+   exception is raised.  Otherwise, overflow_exception should point to a
+   a Python exception, this exception will be raised, -1.0 will be returned,
+   and *endptr will point just past the end of the converted value.
+
+   If any other failure occurs (for example lack of memory), -1.0 is returned
+   and the appropriate Python exception will have been set.
+*/
+
+double
+PyOS_string_to_double(const char *s,
+		      char **endptr,
+		      PyObject *overflow_exception)
+{
+	double x, result=-1.0;
+	char *fail_pos;
+
+	errno = 0;
+	PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
+	x = _PyOS_ascii_strtod(s, &fail_pos);
+	PyFPE_END_PROTECT(x)
+
+	if (errno == ENOMEM) {
+		PyErr_NoMemory();
+		fail_pos = (char *)s;
+	}
+	else if (!endptr && (fail_pos == s || *fail_pos != '\0'))
+		PyErr_Format(PyExc_ValueError,
+			      "could not convert string to float: "
+			      "%.200s", s);
+	else if (fail_pos == s)
+		PyErr_Format(PyExc_ValueError,
+			      "could not convert string to float: "
+			      "%.200s", s);
+	else if (errno == ERANGE && fabs(x) >= 1.0 && overflow_exception)
+		PyErr_Format(overflow_exception,
+			      "value too large to convert to float: "
+			      "%.200s", s);
+	else
+		result = x;
+
+	if (endptr != NULL)
+		*endptr = fail_pos;
+	return result;
+}
 
 /* Given a string that may have a decimal point in the current
    locale, change it back to a dot.  Since the string cannot get
