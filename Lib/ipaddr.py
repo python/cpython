@@ -26,6 +26,7 @@ __version__ = '1.0.2'
 
 import struct
 
+
 class Error(Exception):
 
     """Base class for exceptions."""
@@ -540,6 +541,7 @@ class IPv4(BaseIP):
 
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = 0xffffffff
+    _version = 4
 
     def __init__(self, ipaddr):
         """Instantiate a new IPv4 object.
@@ -569,7 +571,6 @@ class IPv4(BaseIP):
 
         """
         BaseIP.__init__(self)
-        self._version = 4
 
         # Efficient constructor from integer.
         if isinstance(ipaddr, int) or isinstance(ipaddr, long):
@@ -711,9 +712,10 @@ class IPv4(BaseIP):
             A boolean, True if the address is reserved per RFC 1918.
 
         """
-        return (self in IPv4('10.0.0.0/8') or
-                self in IPv4('172.16.0.0/12') or
-                self in IPv4('192.168.0.0/16'))
+        for network in _IPV4_RFC1918_NETWORKS:
+            if self in network:
+                return True
+        return False
 
     @property
     def is_multicast(self):
@@ -724,7 +726,7 @@ class IPv4(BaseIP):
             See RFC 3171 for details.
 
         """
-        return self in IPv4('224.0.0.0/4')
+        return self in _IPV4_RFC3171_MULTICAST
 
     @property
     def is_loopback(self):
@@ -734,7 +736,7 @@ class IPv4(BaseIP):
             A boolean, True if the address is a loopback per RFC 3330.
 
         """
-        return self in IPv4('127.0.0.0/8')
+        return self in _IPV4_RFC3330_LOOPBACK
 
     @property
     def is_link_local(self):
@@ -744,7 +746,7 @@ class IPv4(BaseIP):
             A boolean, True if the address is link-local per RFC 3927.
 
         """
-        return self in IPv4('169.254.0.0/16')
+        return self in _IPV4_RFC3927_LINK_LOCAL
 
     @property
     def version(self):
@@ -873,6 +875,7 @@ class IPv6(BaseIP):
     """
 
     _ALL_ONES = (2**128) - 1
+    _version = 6
 
     def __init__(self, ipaddr):
         """Instantiate a new IPv6 object.
@@ -900,7 +903,6 @@ class IPv6(BaseIP):
 
         """
         BaseIP.__init__(self)
-        self._version = 6
 
         # Efficient constructor from integer.
         if isinstance(ipaddr, long) or isinstance(ipaddr, int):
@@ -1032,7 +1034,7 @@ class IPv6(BaseIP):
             See RFC 2373 2.7 for details.
 
         """
-        return self in IPv6('ff00::/8')
+        return self in _IPV6_RFC2373_MULTICAST
 
     @property
     def is_unspecified(self):
@@ -1043,7 +1045,7 @@ class IPv6(BaseIP):
             RFC 2373 2.5.2.
 
         """
-        return self == IPv6('::')
+        return self == _IPV6_RFC2373_UNSPECIFIED
 
     @property
     def is_loopback(self):
@@ -1054,7 +1056,7 @@ class IPv6(BaseIP):
             RFC 2373 2.5.3.
 
         """
-        return self == IPv6('::1')
+        return self == _IPV6_RFC2373_LOOPBACK
 
     @property
     def is_link_local(self):
@@ -1064,7 +1066,7 @@ class IPv6(BaseIP):
             A boolean, True if the address is reserved per RFC 4291.
 
         """
-        return self in IPv6('fe80::/10')
+        return self in _IPV6_RFC4291_LINK_LOCAL
 
     @property
     def is_site_local(self):
@@ -1078,7 +1080,7 @@ class IPv6(BaseIP):
             A boolean, True if the address is reserved per RFC 3513 2.5.6.
 
         """
-        return self in IPv6('fec0::/10')
+        return self in _IPV6_RFC3513_SITE_LOCAL
 
     @property
     def is_private(self):
@@ -1088,7 +1090,7 @@ class IPv6(BaseIP):
             A boolean, True if the address is reserved per RFC 4193.
 
         """
-        return self in IPv6('fc00::/7')
+        return self in _IPV6_RFC4193_PRIVATE
 
     @property
     def version(self):
@@ -1335,3 +1337,20 @@ class IPv6(BaseIP):
 
         """
         return self.prefixlen
+
+
+# IPv4 constants.
+_IPV4_RFC1918_NETWORKS = (IPv4('10.0.0.0/8'),
+                          IPv4('172.16.0.0/12'),
+                          IPv4('192.168.0.0/16'))
+_IPV4_RFC3171_MULTICAST = IPv4('224.0.0.0/4')
+_IPV4_RFC3330_LOOPBACK = IPv4('127.0.0.0/8')
+_IPV4_RFC3927_LINK_LOCAL = IPv4('169.254.0.0/16')
+
+# IPv6 constants.
+_IPV6_RFC2373_MULTICAST = IPv6('ff00::/8')
+_IPV6_RFC2373_UNSPECIFIED = IPv6('::')
+_IPV6_RFC2373_LOOPBACK = IPv6('::1')
+_IPV6_RFC4291_LINK_LOCAL = IPv6('fe80::/10')
+_IPV6_RFC3513_SITE_LOCAL = IPv6('fec0::/10')  # Deprecated by RFC3879.
+_IPV6_RFC4193_PRIVATE = IPv6('fc00::/7')
