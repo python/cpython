@@ -40,6 +40,19 @@
    correctly rounded results.
 */
 
+/* Case-insensitive string match used for nan and inf detection; t should be
+   lower-case.  Returns 1 for a successful match, 0 otherwise. */
+
+static int
+case_insensitive_match(const char *s, const char *t)
+{
+	while(*t && Py_TOLOWER(*s) == *t) {
+		s++;
+		t++;
+	}
+	return *t ? 0 : 1;
+}
+
 double
 PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
@@ -89,9 +102,9 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 	/* Parse infinities and nans */
 	if (*p == 'i' || *p == 'I') {
-		if (PyOS_strnicmp(p, "inf", 3) == 0) {
+		if (case_insensitive_match(p+1, "nf")) {
 			val = Py_HUGE_VAL;
-			if (PyOS_strnicmp(p+3, "inity", 5) == 0)
+			if (case_insensitive_match(p+3, "inity"))
 				fail_pos = (char *)p+8;
 			else
 				fail_pos = (char *)p+3;
@@ -102,7 +115,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	}
 #ifdef Py_NAN
 	if (*p == 'n' || *p == 'N') {
-		if (PyOS_strnicmp(p, "nan", 3) == 0) {
+		if (case_insensitive_match(p+1, "an")) {
 			val = Py_NAN;
 			fail_pos = (char *)p+3;
 			goto got_val;
