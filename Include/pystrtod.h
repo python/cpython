@@ -9,6 +9,9 @@ extern "C" {
 PyAPI_FUNC(double) PyOS_ascii_strtod(const char *str, char **ptr);
 PyAPI_FUNC(double) PyOS_ascii_atof(const char *str);
 PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, size_t buf_len,  const char *format, double d);
+PyAPI_FUNC(double) PyOS_string_to_double(const char *str,
+                                         char **endptr,
+                                         PyObject *overflow_exception);
 
 /* The caller is responsible for calling PyMem_Free to free the buffer
    that's is returned. */

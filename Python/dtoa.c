@@ -61,6 +61,9 @@
  *     that hasn't been MALLOC'ed, private_mem should only be used when k <=
  *     Kmax.
  *
+ *  7. _Py_dg_strtod has been modified so that it doesn't accept strings with
+ *     leading whitespace.
+ *
  ***************************************************************/
 
 /* Please send bug reports for the original dtoa.c code to David M. Gay (dmg
@@ -1355,6 +1358,7 @@ _Py_dg_strtod(const char *s00, char **se)
             /* no break */
         case 0:
             goto ret0;
+        /* modify original dtoa.c so that it doesn't accept leading whitespace
         case '\t':
         case '\n':
         case '\v':
@@ -1362,6 +1366,7 @@ _Py_dg_strtod(const char *s00, char **se)
         case '\r':
         case ' ':
             continue;
+        */
         default:
             goto break2;
         }
