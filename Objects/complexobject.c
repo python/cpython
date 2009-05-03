@@ -950,13 +950,13 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 
 	/* position on first nonblank */
 	start = s;
-	while (*s && isspace(Py_CHARMASK(*s)))
+	while (Py_ISSPACE(*s))
 		s++;
 	if (*s == '(') {
 		/* Skip over possible bracket from repr(). */
 		got_bracket = 1;
 		s++;
-		while (*s && isspace(Py_CHARMASK(*s)))
+		while (Py_ISSPACE(*s))
 			s++;
 	}
 
@@ -1038,7 +1038,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	}
 
 	/* trailing whitespace and closing bracket */
-	while (*s && isspace(Py_CHARMASK(*s)))
+	while (Py_ISSPACE(*s))
 		s++;
 	if (got_bracket) {
 		/* if there was an opening parenthesis, then the corresponding
@@ -1046,7 +1046,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		if (*s != ')')
 			goto parse_error;
 		s++;
-		while (*s && isspace(Py_CHARMASK(*s)))
+		while (Py_ISSPACE(*s))
 			s++;
 	}
 
