@@ -354,6 +354,12 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Brett Cannon.)
 
+* A new module, :mod:`ipaddr` has been added to the standard library.
+  It provides classes to represent, verify and manipulate IPv4 and IPv6
+  host and network addresses.
+
+  (Contributed by Google, :issue:`3959`.)
+
 
 Optimizations
 =============
