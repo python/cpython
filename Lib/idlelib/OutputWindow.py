@@ -60,10 +60,12 @@ class OutputWindow(EditorWindow):
     ]
 
     file_line_pats = [
+        # order of patterns matters
         r'file "([^"]*)", line (\d+)',
         r'([^\s]+)\((\d+)\)',
-        r'([^\s]+):\s*(\d+):',
-        r'^\s*(\S+.*?):\s*(\d+):',  # Win path with spaces, trim leading spaces
+        r'^(\s*\S.*?):\s*(\d+):',  # Win filename, maybe starting with spaces
+        r'([^\s]+):\s*(\d+):',     # filename or path, ltrim
+        r'^\s*(\S.*?):\s*(\d+):',  # Win abs path with embedded spaces, ltrim
     ]
 
     file_line_progs = None
