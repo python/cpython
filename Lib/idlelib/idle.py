@@ -1,21 +1,11 @@
-try:
-    import idlelib.PyShell
-except ImportError:
-    # IDLE is not installed, but maybe PyShell is on sys.path:
-    try:
-        import PyShell
-    except ImportError:
-        raise
-    else:
-        import os
-        idledir = os.path.dirname(os.path.abspath(PyShell.__file__))
-        if idledir != os.getcwd():
-            # We're not in the IDLE directory, help the subprocess find run.py
-            pypath = os.environ.get('PYTHONPATH', '')
-            if pypath:
-                os.environ['PYTHONPATH'] = pypath + ':' + idledir
-            else:
-                os.environ['PYTHONPATH'] = idledir
-        PyShell.main()
-else:
-    idlelib.PyShell.main()
+import os.path
+import sys
+
+# If we are working on a development version of IDLE, we need to prepend the
+# parent of this idlelib dir to sys.path.  Otherwise, importing idlelib gets
+# the version installed with the Python used to call this module:
+idlelib_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, idlelib_dir)
+
+import idlelib.PyShell
+idlelib.PyShell.main()
