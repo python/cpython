@@ -39,6 +39,11 @@ Core and Builtins
 - Issue #5249: time.strftime returned malformed string when format string
   contained non ascii character on windows.
 
+- Issue #5108: Handle %s like %S, %R and %A in PyUnicode_FromFormatV(): Call
+  PyUnicode_DecodeUTF8() once, remember the result and output it in a second
+  step. This avoids problems with counting UTF-8 bytes that ignores the effect
+  of using the replace error handler in PyUnicode_DecodeUTF8().
+
 Library
 -------
 

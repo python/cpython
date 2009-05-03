@@ -654,16 +654,26 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     count = vargs;
 #endif
 #endif
-    /* step 1: count the number of %S/%R/%A format specifications
-     * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII() for
-     * these objects once during step 3 and put the result in
-     an array) */
+    /* step 1: count the number of %S/%R/%A/%s format specifications
+     * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII()/
+     * PyUnicode_DecodeUTF8() for these objects once during step 3 and put the
+     * result in an array) */
     for (f = format; *f; f++) {
-        if (*f == '%' && (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A'))
-            ++callcount;
+         if (*f == '%') {
+             if (*(f+1)=='%')
+                 continue;
+             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A')
+                 ++callcount;
+             while (ISDIGIT((unsigned)*f))
+                 width = (width*10) + *f++ - '0';
+             while (*++f && *f != '%' && !ISALPHA((unsigned)*f))
+                 ;
+             if (*f == 's')
+                 ++callcount;
+         }
     }
     /* step 2: allocate memory for the results of
-     * PyObject_Str()/PyObject_Repr() calls */
+     * PyObject_Str()/PyObject_Repr()/PyUnicode_DecodeUTF8() calls */
     if (callcount) {
         callresults = PyObject_Malloc(sizeof(PyObject *)*callcount);
         if (!callresults) {
@@ -712,35 +722,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 's':
             {
                 /* UTF-8 */
-                unsigned char*s;
-                s = va_arg(count, unsigned char*);
-                while (*s) {
-                    if (*s < 128) {
-                        n++; s++;
-                    } else if (*s < 0xc0) {
-                        /* invalid UTF-8 */
-                        n++; s++;
-                    } else if (*s < 0xc0) {
-                        n++;
-                        s++; if(!*s)break;
-                        s++;
-                    } else if (*s < 0xe0) {
-                        n++;
-                        s++; if(!*s)break;
-                        s++; if(!*s)break;
-                        s++;
-                    } else {
-#ifdef Py_UNICODE_WIDE
-                        n++;
-#else
-                        n+=2;
-#endif
-                        s++; if(!*s)break;
-                        s++; if(!*s)break;
-                        s++; if(!*s)break;
-                        s++;
-                    }
-                }
+                unsigned char *s = va_arg(count, unsigned char*);
+                PyObject *str = PyUnicode_DecodeUTF8(s, strlen(s), "replace");
+                if (!str)
+                    goto fail;
+                n += PyUnicode_GET_SIZE(str);
+                /* Remember the str and switch to the next slot */
+                *callresult++ = str;
                 break;
             }
             case 'U':
@@ -909,19 +897,15 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 break;
             case 's':
             {
-                /* Parameter must be UTF-8 encoded.
-                   In case of encoding errors, use
-                   the replacement character. */
-                PyObject *u;
-                p = va_arg(vargs, char*);
-                u = PyUnicode_DecodeUTF8(p, strlen(p),
-                                         "replace");
-                if (!u)
-                    goto fail;
-                Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(u),
-                                PyUnicode_GET_SIZE(u));
-                s += PyUnicode_GET_SIZE(u);
-                Py_DECREF(u);
+                /* unused, since we already have the result */
+                (void) va_arg(vargs, char *);
+                Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(*callresult),
+                                PyUnicode_GET_SIZE(*callresult));
+                s += PyUnicode_GET_SIZE(*callresult);
+                /* We're done with the unicode()/repr() => forget it */
+                Py_DECREF(*callresult);
+                /* switch to next unicode()/repr() result */
+                ++callresult;
                 break;
             }
             case 'U':
