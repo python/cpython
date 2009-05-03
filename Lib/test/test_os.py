@@ -656,6 +656,48 @@ if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
         pass
 
+    class PosixUidGidTests(unittest.TestCase):
+        if hasattr(os, 'setuid'):
+            def test_setuid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.setuid, 0)
+                self.assertRaises(OverflowError, os.setuid, 1<<32)
+
+        if hasattr(os, 'setgid'):
+            def test_setgid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.setgid, 0)
+                self.assertRaises(OverflowError, os.setgid, 1<<32)
+
+        if hasattr(os, 'seteuid'):
+            def test_seteuid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.seteuid, 0)
+                self.assertRaises(OverflowError, os.seteuid, 1<<32)
+
+        if hasattr(os, 'setegid'):
+            def test_setegid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.setegid, 0)
+                self.assertRaises(OverflowError, os.setegid, 1<<32)
+
+        if hasattr(os, 'setreuid'):
+            def test_setreuid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.setreuid, 0, 0)
+                self.assertRaises(OverflowError, os.setreuid, 1<<32, 0)
+                self.assertRaises(OverflowError, os.setreuid, 0, 1<<32)
+
+        if hasattr(os, 'setregid'):
+            def test_setregid(self):
+                if os.getuid() != 0:
+                    self.assertRaises(os.error, os.setregid, 0, 0)
+                self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
+                self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
+else:
+    class PosixUidGidTests(unittest.TestCase):
+        pass
+
 def test_main():
     support.run_unittest(
         FileTests,
@@ -666,7 +708,8 @@ def test_main():
         DevNullTests,
         URandomTests,
         ExecTests,
-        Win32ErrorTests
+        Win32ErrorTests,
+        PosixUidGidTests
     )
 
 if __name__ == "__main__":
