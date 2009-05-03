@@ -718,7 +718,7 @@ _PyOS_double_to_string(char *buf, size_t buf_len, double val,
 		/* Convert to upper case. */
 		char *p;
 		for (p = buf; *p; p++)
-			*p = toupper(*p);
+			*p = Py_TOUPPER(*p);
 	}
 
 	if (ptype)
