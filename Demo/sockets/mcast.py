@@ -1,93 +1,87 @@
+#!/usr/bin/env python
+#
 # Send/receive UDP multicast packets.
 # Requires that your OS kernel supports IP multicast.
-# This is built-in on SGI, still optional for most other vendors.
 #
 # Usage:
-#   mcast -s (sender)
-#   mcast -b (sender, using broadcast instead multicast)
-#   mcast    (receivers)
+#   mcast -s (sender, IPv4)
+#   mcast -s -6 (sender, IPv6)
+#   mcast    (receivers, IPv4)
+#   mcast  -6  (receivers, IPv6)
 
 MYPORT = 8123
-MYGROUP = '225.0.0.250'
+MYGROUP_4 = '225.0.0.250'
+MYGROUP_6 = 'ff15:7079:7468:6f6e:6465:6d6f:6d63:6173'
+MYTTL = 1 # Increase to reach other networks
 
-import sys
+import ipaddr
 import time
 import struct
-from socket import *
+import socket
+import sys
 
-
-# Main program
 def main():
-    flags = sys.argv[1:]
-    #
-    if flags:
-        sender(flags[0])
-    else:
-        receiver()
+    group = MYGROUP_6 if "-6" in sys.argv[1:] else MYGROUP_4
 
-
-# Sender subroutine (only one per local area network)
-def sender(flag):
-    s = socket(AF_INET, SOCK_DGRAM)
-    if flag == '-b':
-        s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        mygroup = '<broadcast>'
+    if "-s" in sys.argv[1:]:
+        sender(group)
     else:
-        mygroup = MYGROUP
-        ttl = struct.pack('b', 1)               # Time-to-live
-        s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
-    while 1:
+        receiver(group)
+
+def _sockfam(ip):
+    """Returns the family argument of socket.socket"""
+    if ip.version == 4:
+        return socket.AF_INET
+    elif ip.version == 6:
+        return socket.AF_INET6
+    else:
+        raise ValueError('IPv' + ip.version + ' is not supported')
+
+def sender(group):
+    group_ip = ipaddr.IP(group)
+
+    s = socket.socket(_sockfam(group_ip), socket.SOCK_DGRAM)
+
+    # Set Time-to-live (optional)
+    ttl_bin = struct.pack('@i', MYTTL)
+    if group_ip.version == 4:
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl_bin)
+    else:
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
+
+    while True:
         data = repr(time.time())
-##              data = data + (1400 - len(data)) * '\0'
-        s.sendto(data, (mygroup, MYPORT))
+        s.sendto(data + '\0', (group_ip.ip_ext_full, MYPORT))
         time.sleep(1)
 
 
-# Receiver subroutine (as many as you like)
-def receiver():
-    # Open and initialize the socket
-    s = openmcastsock(MYGROUP, MYPORT)
-    #
-    # Loop, printing any data we receive
-    while 1:
-        data, sender = s.recvfrom(1500)
-        while data[-1:] == '\0': data = data[:-1] # Strip trailing \0's
-        print sender, ':', repr(data)
+def receiver(group):
+    group_ip = ipaddr.IP(group)
 
-
-# Open a UDP socket, bind it to a port and select a multicast group
-def openmcastsock(group, port):
-    # Import modules used only here
-    import string
-    import struct
-    #
     # Create a socket
-    s = socket(AF_INET, SOCK_DGRAM)
-    #
+    s = socket.socket(_sockfam(group_ip), socket.SOCK_DGRAM)
+
     # Allow multiple copies of this program on one machine
     # (not strictly needed)
-    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    #
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     # Bind it to the port
-    s.bind(('', port))
-    #
-    # Look up multicast group address in name server
-    # (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
-    group = gethostbyname(group)
-    #
-    # Construct binary group address
-    bytes = map(int, string.split(group, "."))
-    grpaddr = 0
-    for byte in bytes: grpaddr = (grpaddr << 8) | byte
-    #
-    # Construct struct mreq from grpaddr and ifaddr
-    ifaddr = INADDR_ANY
-    mreq = struct.pack('ll', htonl(grpaddr), htonl(ifaddr))
-    #
-    # Add group membership
-    s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
-    #
-    return s
+    s.bind(('', MYPORT))
+
+    # Join group
+    if group_ip.version == 4: # IPv4
+        mreq = group_ip.packed + struct.pack('=I', socket.INADDR_ANY)
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+    else:
+        mreq = group_ip.packed + struct.pack('@I', 0)
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+
+    # Loop, printing any data we receive
+    while True:
+        data, sender = s.recvfrom(1500)
+        while data[-1:] == '\0': data = data[:-1] # Strip trailing \0's
+        print (str(sender) + '  ' + repr(data))
 
 
-main()
+if __name__ == '__main__':
+    main()

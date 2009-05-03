@@ -5,17 +5,10 @@ echosvr.py		About the simplest TCP server possible.
 finger.py		Client for the 'finger' protocol.
 ftp.py			A very simple ftp client.
 gopher.py		A simple gopher client.
+mcast.py		IPv4/v6 multicast example
 radio.py		Receive time broadcasts from broadcast.py.
 telnet.py		Client for the 'telnet' protocol.
 throughput.py		Client and server to measure TCP throughput.
 unixclient.py		Unix socket example, client side
 unixserver.py		Unix socket example, server side
 udpecho.py		Client and server for the UDP echo protocol.
-
-The following file is only relevant on SGI machines (or other systems
-that support multicast):
-
-mcast.py		A Python translation of
-			/usr/people/4Dgifts/examples/network/mcast.c
-			(Note that IN.py is in ../../lib/sgi.)
-
