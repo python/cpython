@@ -20,18 +20,15 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
     #define ENTER_HASHLIB(obj) \
-        if ((obj)->lock) \
-        { \
-            if (!PyThread_acquire_lock((obj)->lock, 0)) \
-            { \
+        if ((obj)->lock) { \
+            if (!PyThread_acquire_lock((obj)->lock, 0)) { \
                 Py_BEGIN_ALLOW_THREADS \
                 PyThread_acquire_lock((obj)->lock, 1); \
                 Py_END_ALLOW_THREADS \
             } \
         }
     #define LEAVE_HASHLIB(obj) \
-        if ((obj)->lock) \
-        { \
+        if ((obj)->lock) { \
             PyThread_release_lock((obj)->lock); \
         }
 #else
@@ -230,14 +227,12 @@ EVP_update(EVPobject *self, PyObject *args)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view, NULL);
 
 #ifdef WITH_THREAD
-    if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE)
-    {
+    if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
         /* fail? lock = NULL and we fail over to non-threaded code. */
     }
 
-    if (self->lock != NULL)
-    {
+    if (self->lock != NULL) {
         Py_BEGIN_ALLOW_THREADS
         PyThread_acquire_lock(self->lock, 1);
         EVP_hash(self, view.buf, view.len);
@@ -352,14 +347,13 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (data_obj) {
-        if (view.len >= HASHLIB_GIL_MINSIZE)
-        {
+        if (view.len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
             EVP_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
         } else {
             EVP_hash(self, view.buf, view.len);
-        }        
+        }
         PyBuffer_Release(&view);
     }
 
@@ -450,8 +444,7 @@ EVPnew(PyObject *name_obj,
     }
 
     if (cp && len) {
-        if (len >= HASHLIB_GIL_MINSIZE)
-        {
+        if (len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
             EVP_hash(self, cp, len);
             Py_END_ALLOW_THREADS
