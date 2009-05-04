@@ -1,6 +1,7 @@
 from test.support import verbose, run_unittest
-from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
-                    localeconv, Error)
+import _locale
+from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, nl_langinfo,
+                     localeconv, Error)
 import unittest
 from platform import uname
 
@@ -24,6 +25,10 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
 # Dict formatted as ``<locale> : (<decimal_point>, <thousands_sep>)``.  If a
 # value is not known, use '' .
 known_numerics = {'fr_FR' : (',', ''), 'en_US':('.', ',')}
+
+def needs_radix_and_thousands(func):
+    return unittest.skipUnless(hasattr(_locale, "RADIXCHAR"),
+                               "needs RADIXCHAR and THOUSEP")(func)
 
 class _LocaleTests(unittest.TestCase):
 
@@ -53,6 +58,7 @@ class _LocaleTests(unittest.TestCase):
                                     calc_type, data_type, set_locale,
                                     used_locale))
 
+    @needs_radix_and_thousands
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         for loc in candidate_locales:
@@ -61,10 +67,11 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_CTYPE, loc)
             except Error:
                 continue
-            for li, lc in ((RADIXCHAR, "decimal_point"),
-                            (THOUSEP, "thousands_sep")):
+            for li, lc in ((_locale.RADIXCHAR, "decimal_point"),
+                            (_locale.THOUSEP, "thousands_sep")):
                 self.numeric_tester('nl_langinfo', nl_langinfo(li), lc, loc)
 
+    @needs_radix_and_thousands
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         for loc in candidate_locales:
@@ -73,10 +80,11 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_CTYPE, loc)
             except Error:
                 continue
-            for li, lc in ((RADIXCHAR, "decimal_point"),
-                            (THOUSEP, "thousands_sep")):
+            for li, lc in ((_locale.RADIXCHAR, "decimal_point"),
+                            (_locale.THOUSEP, "thousands_sep")):
                 self.numeric_tester('localeconv', localeconv()[lc], lc, loc)
 
+    @needs_radix_and_thousands
     def test_lc_numeric_basic(self):
         # Test nl_langinfo against localeconv
         for loc in candidate_locales:
@@ -85,8 +93,8 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_CTYPE, loc)
             except Error:
                 continue
-            for li, lc in ((RADIXCHAR, "decimal_point"),
-                            (THOUSEP, "thousands_sep")):
+            for li, lc in ((_locale.RADIXCHAR, "decimal_point"),
+                            (_locale.THOUSEP, "thousands_sep")):
                 nl_radixchar = nl_langinfo(li)
                 li_radixchar = localeconv()[lc]
                 try:
