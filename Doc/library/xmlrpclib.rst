@@ -160,7 +160,7 @@ grouped under the reserved :attr:`system` member:
 .. method:: ServerProxy.system.methodSignature(name)
 
    This method takes one parameter, the name of a method implemented by the XML-RPC
-   server.It returns an array of possible signatures for this method. A signature
+   server. It returns an array of possible signatures for this method. A signature
    is an array of types. The first of these types is the return type of the method,
    the rest are parameters.
 
@@ -174,7 +174,7 @@ grouped under the reserved :attr:`system` member:
 
    If no signature is defined for the method, a non-array value is returned. In
    Python this means that the type of the returned  value will be something other
-   that list.
+   than list.
 
 
 .. method:: ServerProxy.system.methodHelp(name)
