@@ -21,9 +21,10 @@ both IPv4 and IPv6.
    Take an IP string or int and return an object of the correct type.  Returns
    an :class:`IPv4` or :class:`IPv6` object.
 
-   The *ipaddr* parameter must be a string or integer representing the IP
-   address.  Either IPv4 or IPv6 addresses may be supplied.  Integers less than
-   2**32 will be considered to be IPv4.
+   The *ipaddr* parameter must be a string, bytes or integer representing the
+   IP address in ascii, network byte order or as a number respectively.  Either
+   IPv4 or IPv6 addresses may be supplied.  Integers less than 2**32 will be
+   considered to be IPv4.
 
    Raises :exc:`ValueError` if the *ipaddr* passed is not either an IPv4 or an
    IPv6 address.
