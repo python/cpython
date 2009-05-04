@@ -800,14 +800,14 @@ functions based on regular expressions.
 
 .. method:: str.encode([encoding[, errors]])
 
-   Return an encoded version of the string.  Default encoding is the current
-   default string encoding.  *errors* may be given to set a different error
-   handling scheme.  The default for *errors* is ``'strict'``, meaning that
-   encoding errors raise a :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and
-   any other name registered via :func:`codecs.register_error`, see section
-   :ref:`codec-base-classes`. For a list of possible encodings, see section
-   :ref:`standard-encodings`.
+   Return an encoded version of the string as a bytes object.  Default encoding
+   is the current default string encoding.  *errors* may be given to set a
+   different error handling scheme.  The default for *errors* is ``'strict'``,
+   meaning that encoding errors raise a :exc:`UnicodeError`.  Other possible
+   values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
+   ``'backslashreplace'`` and any other name registered via
+   :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
+   list of possible encodings, see section :ref:`standard-encodings`.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -1510,6 +1510,18 @@ Wherever one of these methods needs to interpret the bytes as characters
 
       a = b"abc"
       b = a.replace(b"a", b"f")
+
+
+.. method:: bytes.decode([encoding[, errors]])
+            bytearray.decode([encoding[, errors]])
+
+   Return a string decoded from the given bytes.  Default encoding is the
+   current default string encoding.  *errors* may be given to set a different
+   error handling scheme.  The default for *errors* is ``'strict'``, meaning
+   that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
+   ``'ignore'``, ``'replace'`` and any other name registered via
+   :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
+   list of possible encodings, see section :ref:`standard-encodings`.
 
 
 The bytes and bytearray types have an additional class method:

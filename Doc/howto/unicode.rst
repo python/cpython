@@ -234,7 +234,7 @@ The String Type
 
 Since Python 3.0, the language features a ``str`` type that contain Unicode
 characters, meaning any string created using ``"unicode rocks!"``, ``'unicode
-rocks!``, or the triple-quoted string syntax is stored as Unicode.
+rocks!'``, or the triple-quoted string syntax is stored as Unicode.
 
 To insert a Unicode character that is not part ASCII, e.g., any letters with
 accents, one can use escape sequences in their string literals as such::
