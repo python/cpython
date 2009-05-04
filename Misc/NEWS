@@ -269,6 +269,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
+  extracting a file to the root directory.
+
 - Issue #5913: os.listdir() should fail for empty path on windows.
 
 - Issue #5084: unpickling now interns the attribute names of pickled objects,
