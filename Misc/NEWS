@@ -12,6 +12,10 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5724: (See also issue #4575.) Fix Py_IS_INFINITY macro to
+  work correctly on x87 FPUs: it now forces its argument to double
+  before testing for infinity.
+
 - Issue #4971: Fix titlecase for characters that are their own
   titlecase, but not their own uppercase.
 

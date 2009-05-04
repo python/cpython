@@ -116,6 +116,18 @@
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define to 1 if you have the declaration of `isfinite', and to 0 if you
+   don't. */
+#undef HAVE_DECL_ISFINITE
+
+/* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
+   */
+#undef HAVE_DECL_ISINF
+
+/* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
+   */
+#undef HAVE_DECL_ISNAN
+
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
@@ -315,12 +327,6 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
-
-/* Define to 1 if you have the `isinf' function. */
-#undef HAVE_ISINF
-
-/* Define to 1 if you have the `isnan' function. */
-#undef HAVE_ISNAN
 
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
@@ -983,6 +989,9 @@
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
+
+/* Define if arithmetic is subject to x87-style double rounding issue */
+#undef X87_DOUBLE_ROUNDING
 
 /* Define to 1 if on AIX 3.
    System headers sometimes define this.

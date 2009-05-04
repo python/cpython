@@ -3056,6 +3056,44 @@ fi],
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
+# Detect whether system arithmetic is subject to x87-style double
+# rounding issues.  The result of this test has little meaning on non
+# IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
+# mode is round-to-nearest and double rounding issues are present, and
+# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+AC_MSG_CHECKING(for x87-style double rounding)
+AC_CACHE_VAL(ac_cv_x87_double_rounding, [
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <math.h>
+int main() {
+    volatile double x, y, z;
+    /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
+    x = 0.99999999999999989; /* 1-2**-53 */
+    y = 1./x;
+    if (y != 1.)
+        exit(0);
+    /* 1e16+2.99999 -> 1e16+2. (correct), 1e16+4. (double rounding) */
+    x = 1e16;
+    y = 2.99999;
+    z = x + y;
+    if (z != 1e16+4.)
+        exit(0);
+    /* both tests show evidence of double rounding */
+    exit(1);
+}
+],
+ac_cv_x87_double_rounding=no,
+ac_cv_x87_double_rounding=yes,
+ac_cv_x87_double_rounding=no)])
+AC_MSG_RESULT($ac_cv_x87_double_rounding)
+if test "$ac_cv_x87_double_rounding" = yes
+then
+  AC_DEFINE(X87_DOUBLE_ROUNDING, 1,
+  [Define if arithmetic is subject to x87-style double rounding issue])
+fi
+
+
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
 AC_MSG_CHECKING(whether tanh preserves the sign of zero)
@@ -3082,7 +3120,8 @@ then
   [Define if tanh(-0.) is -0., or if platform doesn't have signed zeros])
 fi
 
-AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite hypot isinf isnan log1p])
+AC_CHECK_FUNCS([acosh asinh atanh copysign expm1 finite hypot log1p])
+AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 LIBS=$LIBS_SAVE
 

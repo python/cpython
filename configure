@@ -21214,6 +21214,94 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
+# Detect whether system arithmetic is subject to x87-style double
+# rounding issues.  The result of this test has little meaning on non
+# IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
+# mode is round-to-nearest and double rounding issues are present, and
+# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+{ echo "$as_me:$LINENO: checking for x87-style double rounding" >&5
+echo $ECHO_N "checking for x87-style double rounding... $ECHO_C" >&6; }
+if test "${ac_cv_x87_double_rounding+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+if test "$cross_compiling" = yes; then
+  ac_cv_x87_double_rounding=no
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <math.h>
+int main() {
+    volatile double x, y, z;
+    /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
+    x = 0.99999999999999989; /* 1-2**-53 */
+    y = 1./x;
+    if (y != 1.)
+        exit(0);
+    /* 1e16+2.99999 -> 1e16+2. (correct), 1e16+4. (double rounding) */
+    x = 1e16;
+    y = 2.99999;
+    z = x + y;
+    if (z != 1e16+4.)
+        exit(0);
+    /* both tests show evidence of double rounding */
+    exit(1);
+}
+
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_x87_double_rounding=no
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+ac_cv_x87_double_rounding=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+fi
+
+{ echo "$as_me:$LINENO: result: $ac_cv_x87_double_rounding" >&5
+echo "${ECHO_T}$ac_cv_x87_double_rounding" >&6; }
+if test "$ac_cv_x87_double_rounding" = yes
+then
+
+cat >>confdefs.h <<\_ACEOF
+#define X87_DOUBLE_ROUNDING 1
+_ACEOF
+
+fi
+
+
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
 { echo "$as_me:$LINENO: checking whether tanh preserves the sign of zero" >&5
@@ -21298,9 +21386,7 @@ fi
 
 
 
-
-
-for ac_func in acosh asinh atanh copysign expm1 finite hypot isinf isnan log1p
+for ac_func in acosh asinh atanh copysign expm1 finite hypot log1p
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -21392,6 +21478,209 @@ _ACEOF
 
 fi
 done
+
+{ echo "$as_me:$LINENO: checking whether isinf is declared" >&5
+echo $ECHO_N "checking whether isinf is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl_isinf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <math.h>
+
+int
+main ()
+{
+#ifndef isinf
+  (void) isinf;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_have_decl_isinf=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl_isinf=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl_isinf" >&5
+echo "${ECHO_T}$ac_cv_have_decl_isinf" >&6; }
+if test $ac_cv_have_decl_isinf = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISINF 1
+_ACEOF
+
+
+else
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISINF 0
+_ACEOF
+
+
+fi
+{ echo "$as_me:$LINENO: checking whether isnan is declared" >&5
+echo $ECHO_N "checking whether isnan is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl_isnan+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <math.h>
+
+int
+main ()
+{
+#ifndef isnan
+  (void) isnan;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_have_decl_isnan=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl_isnan=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl_isnan" >&5
+echo "${ECHO_T}$ac_cv_have_decl_isnan" >&6; }
+if test $ac_cv_have_decl_isnan = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISNAN 1
+_ACEOF
+
+
+else
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISNAN 0
+_ACEOF
+
+
+fi
+{ echo "$as_me:$LINENO: checking whether isfinite is declared" >&5
+echo $ECHO_N "checking whether isfinite is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl_isfinite+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <math.h>
+
+int
+main ()
+{
+#ifndef isfinite
+  (void) isfinite;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_have_decl_isfinite=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl_isfinite=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl_isfinite" >&5
+echo "${ECHO_T}$ac_cv_have_decl_isfinite" >&6; }
+if test $ac_cv_have_decl_isfinite = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISFINITE 1
+_ACEOF
+
+
+else
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_ISFINITE 0
+_ACEOF
+
+
+fi
+
 
 
 LIBS=$LIBS_SAVE
