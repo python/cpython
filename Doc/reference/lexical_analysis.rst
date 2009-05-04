@@ -328,7 +328,9 @@ Keywords
 
 The following identifiers are used as reserved words, or *keywords* of the
 language, and cannot be used as ordinary identifiers.  They must be spelled
-exactly as written here::
+exactly as written here:
+
+.. sourcecode:: text
 
    False      class      finally    is         return
    None       continue   for        lambda     try
