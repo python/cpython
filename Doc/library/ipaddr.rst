@@ -7,7 +7,7 @@
 .. sectionauthor:: Gregory P. Smith <greg@krypto.org>
 
 
-.. versionadded:: 2.7
+.. versionadded:: 3.1
 
 .. index::
    single: IP address, IPv4, IPv6, netmask
