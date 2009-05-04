@@ -281,12 +281,6 @@ static PyGetSetDef EVP_getseters[] = {
      (getter)EVP_get_block_size, NULL,
      NULL,
      NULL},
-    /* the old md5 and sha modules support 'digest_size' as in PEP 247.
-     * the old sha module also supported 'digestsize'.  ugh. */
-    {"digestsize",
-     (getter)EVP_get_digest_size, NULL,
-     NULL,
-     NULL},
     {NULL}  /* Sentinel */
 };
 

@@ -599,9 +599,6 @@ static PyGetSetDef SHA_getseters[] = {
 
 static PyMemberDef SHA_members[] = {
     {"digest_size", T_INT, offsetof(SHAobject, digestsize), READONLY, NULL},
-    /* the old md5 and sha modules support 'digest_size' as in PEP 247.
-     * the old sha module also supported 'digestsize'.  ugh. */
-    {"digestsize", T_INT, offsetof(SHAobject, digestsize), READONLY, NULL},
     {NULL}  /* Sentinel */
 };
 
