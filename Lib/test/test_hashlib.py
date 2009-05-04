@@ -2,11 +2,16 @@
 #
 # $Id$
 #
-#  Copyright (C) 2005   Gregory P. Smith (greg@krypto.org)
+#  Copyright (C) 2005-2009   Gregory P. Smith (greg@krypto.org)
 #  Licensed to PSF under a Contributor Agreement.
 #
 
 import hashlib
+from io import StringIO
+try:
+    import threading
+except ImportError:
+    threading = None
 import unittest
 from test import support
 from test.support import _4G, precisionbigmemtest
@@ -223,6 +228,45 @@ class HashLibTestCase(unittest.TestCase):
 
         m = hashlib.md5(b'x' * gil_minsize)
         self.assertEquals(m.hexdigest(), 'cfb767f225d58469c5de3632a8803958')
+
+    def test_threaded_hashing(self):
+        if not threading:
+            raise unittest.SkipTest('No threading module.')
+
+        # Updating the same hash object from several threads at once
+        # using data chunk sizes containing the same byte sequences.
+        #
+        # If the internal locks are working to prevent multiple
+        # updates on the same object from running at once, the resulting
+        # hash will be the same as doing it single threaded upfront.
+        hasher = hashlib.sha1()
+        num_threads = 5
+        smallest_data = b'swineflu'
+        data = smallest_data*200000
+        expected_hash = hashlib.sha1(data*num_threads).hexdigest()
+
+        def hash_in_chunks(chunk_size, event):
+            index = 0
+            while index < len(data):
+                hasher.update(data[index:index+chunk_size])
+                index += chunk_size
+            event.set()
+
+        events = []
+        for threadnum in range(num_threads):
+            chunk_size = len(data) // (10**threadnum)
+            assert chunk_size > 0
+            assert chunk_size % len(smallest_data) == 0
+            event = threading.Event()
+            events.append(event)
+            threading.Thread(target=hash_in_chunks,
+                             args=(chunk_size, event)).start()
+
+        for event in events:
+            event.wait()
+
+        self.assertEqual(expected_hash, hasher.hexdigest())
+
 
 def test_main():
     support.run_unittest(HashLibTestCase)
