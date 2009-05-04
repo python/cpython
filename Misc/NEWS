@@ -266,6 +266,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5913: os.listdir() should fail for empty path on windows.
+
 - Issue #5084: unpickling now interns the attribute names of pickled objects,
   saving memory and avoiding growth in size of subsequent pickles. Proposal
   and original patch by Jake McGuire.
