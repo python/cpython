@@ -867,19 +867,31 @@ class UnicodeTest(
             ('+?', b'+-?'),
             (r'\\?', b'+AFwAXA?'),
             (r'\\\?', b'+AFwAXABc?'),
-            (r'++--', b'+-+---')
+            (r'++--', b'+-+---'),
+            ('\U000abcde', b'+2m/c3g-'),                  # surrogate pairs
+            ('/', b'/'),
         ]
 
         for (x, y) in utfTests:
             self.assertEqual(x.encode('utf-7'), y)
 
-        # surrogates not supported
+        # Unpaired surrogates not supported
         self.assertRaises(UnicodeError, str, b'+3ADYAA-', 'utf-7')
 
-        self.assertEqual(str(b'+3ADYAA-', 'utf-7', 'replace'), '\ufffd')
+        self.assertEqual(str(b'+3ADYAA-', 'utf-7', 'replace'), '\ufffd\ufffd')
 
         # Issue #2242: crash on some Windows/MSVC versions
-        self.assertRaises(UnicodeDecodeError, b'+\xc1'.decode, 'utf-7')
+        self.assertEqual(b'+\xc1'.decode('utf-7'), '\xc1')
+
+        # Direct encoded characters
+        set_d = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'(),-./:?"
+        # Optional direct characters
+        set_o = '!"#$%&*;<=>@[]^_`{|}'
+        for c in set_d:
+            self.assertEqual(c.encode('utf7'), c.encode('ascii'))
+            self.assertEqual(c.encode('ascii').decode('utf7'), c)
+        for c in set_o:
+            self.assertEqual(c.encode('ascii').decode('utf7'), c)
 
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')
