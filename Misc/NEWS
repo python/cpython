@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5890: in subclasses of 'property' the __doc__ attribute was
+  shadowed by classtype's, even if it was None.  property now
+  inserts the __doc__ into the subclass instance __dict__.
+
 - Issue #4426: The UTF-7 decoder was too strict and didn't accept some legal
   sequences. Patch by Nick Barnes and Victor Stinner.
 
