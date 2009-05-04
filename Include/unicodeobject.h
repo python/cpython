@@ -740,10 +740,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF7Stateful(
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
     const Py_UNICODE *data, 	/* Unicode char buffer */
     Py_ssize_t length,	 		/* number of Py_UNICODE chars to encode */
-    int encodeSetO,             /* force the encoder to encode characters in
-                                   Set O, as described in RFC2152 */
-    int encodeWhiteSpace,       /* force the encoder to encode space, tab,
-                                   carriage return and linefeed characters */
+    int base64SetO,		/* Encode RFC2152 Set O characters in base64 */
+    int base64WhiteSpace,	/* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors		/* error handling */
     );
 
