@@ -2183,7 +2183,6 @@ posix_listdir(PyObject *self, PyObject *args)
 		if (PyArg_ParseTuple(args, "U:listdir", &po)) {
 			WIN32_FIND_DATAW wFileData;
 			Py_UNICODE *wnamebuf;
-			Py_UNICODE wch;
 			/* Overallocate for \\*.*\0 */
 			len = PyUnicode_GET_SIZE(po);
 			wnamebuf = malloc((len + 5) * sizeof(wchar_t));
@@ -2192,10 +2191,12 @@ posix_listdir(PyObject *self, PyObject *args)
 				return NULL;
 			}
 			wcscpy(wnamebuf, PyUnicode_AS_UNICODE(po));
-			wch = len > 0 ? wnamebuf[len-1] : '\0';
-			if (wch != L'/' && wch != L'\\' && wch != L':')
-				wnamebuf[len++] = L'\\';
-			wcscpy(wnamebuf + len, L"*.*");
+			if (len > 0) {
+				Py_UNICODE wch = wnamebuf[len-1];
+				if (wch != L'/' && wch != L'\\' && wch != L':')
+					wnamebuf[len++] = L'\\';
+				wcscpy(wnamebuf + len, L"*.*");
+			}
 			if ((d = PyList_New(0)) == NULL) {
 				free(wnamebuf);
 				return NULL;
@@ -2266,8 +2267,8 @@ posix_listdir(PyObject *self, PyObject *args)
 		char ch = namebuf[len-1];
 		if (ch != SEP && ch != ALTSEP && ch != ':')
 			namebuf[len++] = '/';
+		strcpy(namebuf + len, "*.*");
 	}
-	strcpy(namebuf + len, "*.*");
 
 	if ((d = PyList_New(0)) == NULL)
 		return NULL;
