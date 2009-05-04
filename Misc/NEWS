@@ -905,6 +905,9 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4751: For hashlib algorithms provided by OpenSSL, the Python
+  GIL is now released during computation on data lengths >= 2048 bytes.
+
 - Issue #3745: Fix hashlib to always reject unicode and non buffer-api
   supporting objects as input no matter how it was compiled (built in
   implementations or external openssl library).
