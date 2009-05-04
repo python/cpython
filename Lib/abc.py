@@ -10,7 +10,7 @@ def abstractmethod(funcobj):
     Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
     instantiated unless all of its abstract methods are overridden.
-    The abstract methods can be called using any of the the normal
+    The abstract methods can be called using any of the normal
     'super' call mechanisms.
 
     Usage:
@@ -31,7 +31,7 @@ class abstractproperty(property):
     Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
     instantiated unless all of its abstract properties are overridden.
-    The abstract properties can be called using any of the the normal
+    The abstract properties can be called using any of the normal
     'super' call mechanisms.
 
     Usage:
