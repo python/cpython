@@ -58,6 +58,10 @@
 /* Define to 1 if you have the <bluetooth.h> header file. */
 #undef HAVE_BLUETOOTH_H
 
+/* Define if mbstowcs(NULL, "text", 0) does not return the number of wide
+   chars that would be converted. */
+#undef HAVE_BROKEN_MBSTOWCS
+
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
@@ -357,7 +361,7 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `readline' library (-lreadline). */
+/* Define if you have the readline library (-lreadline). */
 #undef HAVE_LIBREADLINE
 
 /* Define to 1 if you have the `resolv' library (-lresolv). */
@@ -799,10 +803,6 @@
 
 /* Define to 1 if you have the `wcsxfrm' function. */
 #undef HAVE_WCSXFRM
-
-/* Define if mbstowcs(NULL, "text", 0) does not return the number of 
-   wide chars that would be converted */
-#undef HAVE_BROKEN_MBSTOWCS
 
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
