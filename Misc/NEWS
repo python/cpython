@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4426: The UTF-7 decoder was too strict and didn't accept some legal
+  sequences. Patch by Nick Barnes and Victor Stinner.
+
 - Issue #1588: Add complex.__format__. For example, 
   format(complex(1, 2./3), '.5') now produces a sensible result.
 
