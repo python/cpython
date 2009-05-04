@@ -176,6 +176,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #5881: Remove old undocumented compatibility interfaces in hashlib and
+  pwd.
+
 - Issue #5463: In struct module, remove deprecated float coercion
   for integer type codes: struct.pack('L', 0.3) should now raise
   an error.  The _PY_STRUCT_FLOAT_COERCE constant has been removed.
