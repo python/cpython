@@ -1,7 +1,7 @@
 /* Module that wraps all OpenSSL hash algorithms */
 
 /*
- * Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
+ * Copyright (C) 2005-2009   Gregory P. Smith (greg@krypto.org)
  * Licensed to PSF under a Contributor Agreement.
  *
  * Derived from a skeleton of shamodule.c containing work performed by:
@@ -17,25 +17,49 @@
 #include "structmember.h"
 #include "hashlib.h"
 
+#ifdef WITH_THREAD
+#include "pythread.h"
+    #define ENTER_HASHLIB(obj) \
+        if ((obj)->lock) \
+        { \
+            if (!PyThread_acquire_lock((obj)->lock, 0)) \
+            { \
+                Py_BEGIN_ALLOW_THREADS \
+                PyThread_acquire_lock((obj)->lock, 1); \
+                Py_END_ALLOW_THREADS \
+            } \
+        }
+    #define LEAVE_HASHLIB(obj) \
+        if ((obj)->lock) \
+        { \
+            PyThread_release_lock((obj)->lock); \
+        }
+#else
+    #define ENTER_HASHLIB(obj)
+    #define LEAVE_HASHLIB(obj)
+#endif
+
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 
 #define MUNCH_SIZE INT_MAX
 
+/* TODO(gps): We should probably make this a module or EVPobject attribute
+ * to allow the user to optimize based on the platform they're using. */
+#define HASHLIB_GIL_MINSIZE 2048
 
 #ifndef HASH_OBJ_CONSTRUCTOR
 #define HASH_OBJ_CONSTRUCTOR 0
 #endif
 
+
 typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          ctx;    /* OpenSSL message digest context */
-    /*
-     * TODO investigate performance impact of including a lock for this object
-     * here and releasing the Python GIL while hash updates are in progress.
-     * (perhaps only release GIL if input length will take long to process?)
-     */
+#ifdef WITH_THREAD
+    PyThread_type_lock  lock;   /* OpenSSL context lock */
+#endif
 } EVPobject;
 
 
@@ -64,25 +88,56 @@ newEVPobject(PyObject *name)
     if (retval != NULL) {
         Py_INCREF(name);
         retval->name = name;
+#ifdef WITH_THREAD
+        retval->lock = NULL;
+#endif
     }
 
     return retval;
 }
 
+static void
+EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
+{
+    unsigned int process;
+    const unsigned char *cp = (const unsigned char *)vp;
+    while (0 < len)
+    {
+        if (len > (Py_ssize_t)MUNCH_SIZE)
+            process = MUNCH_SIZE;
+        else
+            process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
+        EVP_DigestUpdate(&self->ctx, (const void*)cp, process);
+        len -= process;
+        cp += process;
+    }
+}
+
 /* Internal methods for a hash object */
 
 static void
-EVP_dealloc(PyObject *ptr)
+EVP_dealloc(EVPobject *self)
 {
-    EVP_MD_CTX_cleanup(&((EVPobject *)ptr)->ctx);
-    Py_XDECREF(((EVPobject *)ptr)->name);
-    PyObject_Del(ptr);
+#ifdef WITH_THREAD
+    if (self->lock != NULL)
+        PyThread_free_lock(self->lock);
+#endif
+    EVP_MD_CTX_cleanup(&self->ctx);
+    Py_XDECREF(self->name);
+    PyObject_Del(self);
 }
 
+static void locked_EVP_MD_CTX_copy(EVP_MD_CTX *new_ctx_p, EVPobject *self)
+{
+    ENTER_HASHLIB(self);
+    EVP_MD_CTX_copy(new_ctx_p, &self->ctx);
+    LEAVE_HASHLIB(self);
+}
 
 /* External methods for a hash object */
 
 PyDoc_STRVAR(EVP_copy__doc__, "Return a copy of the hash object.");
+
 
 static PyObject *
 EVP_copy(EVPobject *self, PyObject *unused)
@@ -92,7 +147,7 @@ EVP_copy(EVPobject *self, PyObject *unused)
     if ( (newobj = newEVPobject(self->name))==NULL)
         return NULL;
 
-    EVP_MD_CTX_copy(&newobj->ctx, &self->ctx);
+    locked_EVP_MD_CTX_copy(&newobj->ctx, self);
     return (PyObject *)newobj;
 }
 
@@ -107,7 +162,7 @@ EVP_digest(EVPobject *self, PyObject *unused)
     PyObject *retval;
     unsigned int digest_size;
 
-    EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
+    locked_EVP_MD_CTX_copy(&temp_ctx, self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -129,7 +184,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     unsigned int i, j, digest_size;
 
     /* Get the raw (binary) digest value */
-    EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
+    locked_EVP_MD_CTX_copy(&temp_ctx, self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -174,19 +229,26 @@ EVP_update(EVPobject *self, PyObject *args)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view, NULL);
 
-    if (view.len > 0 && view.len <= MUNCH_SIZE) {
-        EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
-                         Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
-    } else {
-        Py_ssize_t len = view.len;
-        unsigned char *cp = (unsigned char *)view.buf;
-        while (len > 0) {
-            unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-            EVP_DigestUpdate(&self->ctx, cp, process);
-            len -= process;
-            cp += process;
-        }
+#ifdef WITH_THREAD
+    if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE)
+    {
+        self->lock = PyThread_allocate_lock();
+        /* fail? lock = NULL and we fail over to non-threaded code. */
     }
+
+    if (self->lock != NULL)
+    {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        EVP_hash(self, view.buf, view.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        EVP_hash(self, view.buf, view.len);
+    }
+#else
+    EVP_hash(self, view.buf, view.len);
+#endif
 
     PyBuffer_Release(&view);
 
@@ -205,13 +267,17 @@ static PyMethodDef EVP_methods[] = {
 static PyObject *
 EVP_get_block_size(EVPobject *self, void *closure)
 {
-    return PyInt_FromLong(EVP_MD_CTX_block_size(&((EVPobject *)self)->ctx));
+    long block_size;
+    block_size = EVP_MD_CTX_block_size(&self->ctx);
+    return PyLong_FromLong(block_size);
 }
 
 static PyObject *
 EVP_get_digest_size(EVPobject *self, void *closure)
 {
-    return PyInt_FromLong(EVP_MD_CTX_size(&((EVPobject *)self)->ctx));
+    long size;
+    size = EVP_MD_CTX_size(&self->ctx);
+    return PyLong_FromLong(size);
 }
 
 static PyMemberDef EVP_members[] = {
@@ -286,19 +352,14 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (data_obj) {
-        if (view.len > 0 && view.len <= MUNCH_SIZE) {
-            EVP_DigestUpdate(&self->ctx, (unsigned char*)view.buf,
-                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+        if (view.len >= HASHLIB_GIL_MINSIZE)
+        {
+            Py_BEGIN_ALLOW_THREADS
+            EVP_hash(self, view.buf, view.len);
+            Py_END_ALLOW_THREADS
         } else {
-            Py_ssize_t len = view.len;
-            unsigned char *cp = (unsigned char*)view.buf;
-            while (len > 0) {
-                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-                EVP_DigestUpdate(&self->ctx, cp, process);
-                len -= process;
-                cp += process;
-            }
-        }
+            EVP_hash(self, view.buf, view.len);
+        }        
         PyBuffer_Release(&view);
     }
 
@@ -329,7 +390,7 @@ static PyTypeObject EVPtype = {
     sizeof(EVPobject),	/*tp_basicsize*/
     0,			/*tp_itemsize*/
     /* methods */
-    EVP_dealloc,	/*tp_dealloc*/
+    (destructor)EVP_dealloc,	/*tp_dealloc*/
     0,			/*tp_print*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -389,17 +450,13 @@ EVPnew(PyObject *name_obj,
     }
 
     if (cp && len) {
-        if (len > 0 && len <= MUNCH_SIZE) {
-            EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                              unsigned int));
+        if (len >= HASHLIB_GIL_MINSIZE)
+        {
+            Py_BEGIN_ALLOW_THREADS
+            EVP_hash(self, cp, len);
+            Py_END_ALLOW_THREADS
         } else {
-            Py_ssize_t offset = 0;
-            while (len > 0) {
-                unsigned int process = len > MUNCH_SIZE ? MUNCH_SIZE : len;
-                EVP_DigestUpdate(&self->ctx, cp + offset, process);
-                len -= process;
-                offset += process;
-            }
+            EVP_hash(self, cp, len);
         }
     }
 
