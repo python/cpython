@@ -1,7 +1,7 @@
 /* Module that wraps all OpenSSL hash algorithms */
 
 /*
- * Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
+ * Copyright (C) 2005-2009   Gregory P. Smith (greg@krypto.org)
  * Licensed to PSF under a Contributor Agreement.
  *
  * Derived from a skeleton of shamodule.c containing work performed by:
@@ -17,21 +17,8 @@
 #include "structmember.h"
 #include "hashlib.h"
 
-/* EVP is the preferred interface to hashing in OpenSSL */
-#include <openssl/evp.h>
-
-#define MUNCH_SIZE INT_MAX
-
-
-#ifndef HASH_OBJ_CONSTRUCTOR
-#define HASH_OBJ_CONSTRUCTOR 0
-#endif
-
-#define HASHLIB_GIL_MINSIZE 2048
-
 #ifdef WITH_THREAD
-    #include "pythread.h"
-
+#include "pythread.h"
     #define ENTER_HASHLIB(obj) \
         if ((obj)->lock) { \
             if (!PyThread_acquire_lock((obj)->lock, 0)) { \
@@ -48,6 +35,20 @@
     #define ENTER_HASHLIB(obj)
     #define LEAVE_HASHLIB(obj)
 #endif
+
+/* EVP is the preferred interface to hashing in OpenSSL */
+#include <openssl/evp.h>
+
+#define MUNCH_SIZE INT_MAX
+
+/* TODO(gps): We should probably make this a module or EVPobject attribute
+ * to allow the user to optimize based on the platform they're using. */
+#define HASHLIB_GIL_MINSIZE 2048
+
+#ifndef HASH_OBJ_CONSTRUCTOR
+#define HASH_OBJ_CONSTRUCTOR 0
+#endif
+
 
 typedef struct {
     PyObject_HEAD
@@ -122,10 +123,17 @@ EVP_dealloc(EVPobject *self)
     PyObject_Del(self);
 }
 
+static void locked_EVP_MD_CTX_copy(EVP_MD_CTX *new_ctx_p, EVPobject *self)
+{
+    ENTER_HASHLIB(self);
+    EVP_MD_CTX_copy(new_ctx_p, &self->ctx);
+    LEAVE_HASHLIB(self);
+}
 
 /* External methods for a hash object */
 
 PyDoc_STRVAR(EVP_copy__doc__, "Return a copy of the hash object.");
+
 
 static PyObject *
 EVP_copy(EVPobject *self, PyObject *unused)
@@ -135,9 +143,7 @@ EVP_copy(EVPobject *self, PyObject *unused)
     if ( (newobj = newEVPobject(self->name))==NULL)
         return NULL;
 
-    ENTER_HASHLIB(self);
-    EVP_MD_CTX_copy(&newobj->ctx, &self->ctx);
-    LEAVE_HASHLIB(self);
+    locked_EVP_MD_CTX_copy(&newobj->ctx, self);
     return (PyObject *)newobj;
 }
 
@@ -152,9 +158,7 @@ EVP_digest(EVPobject *self, PyObject *unused)
     PyObject *retval;
     unsigned int digest_size;
 
-    ENTER_HASHLIB(self);
-    EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
-    LEAVE_HASHLIB(self);
+    locked_EVP_MD_CTX_copy(&temp_ctx, self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -176,9 +180,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     unsigned int i, j, digest_size;
 
     /* Get the raw (binary) digest value */
-    ENTER_HASHLIB(self);
-    EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
-    LEAVE_HASHLIB(self);
+    locked_EVP_MD_CTX_copy(&temp_ctx, self);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
@@ -221,11 +223,7 @@ EVP_update(EVPobject *self, PyObject *args)
 #ifdef WITH_THREAD
     if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
-        if (self->lock == NULL) {
-            PyBuffer_Release(&view);
-            PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
-            return NULL;
-        }
+        /* fail? lock = NULL and we fail over to non-threaded code. */
     }
 
     if (self->lock != NULL) {
@@ -257,9 +255,7 @@ static PyObject *
 EVP_get_block_size(EVPobject *self, void *closure)
 {
     long block_size;
-    ENTER_HASHLIB(self);
     block_size = EVP_MD_CTX_block_size(&self->ctx);
-    LEAVE_HASHLIB(self);
     return PyLong_FromLong(block_size);
 }
 
@@ -267,9 +263,7 @@ static PyObject *
 EVP_get_digest_size(EVPobject *self, void *closure)
 {
     long size;
-    ENTER_HASHLIB(self);
     size = EVP_MD_CTX_size(&self->ctx);
-    LEAVE_HASHLIB(self);
     return PyLong_FromLong(size);
 }
 
