@@ -118,6 +118,9 @@ Installation
 Library
 -------
 
+- Issue #5923: Update the ``turtle`` module to version 1.1, add two new
+  turtle demos in Demo/turtle.
+
 - Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
   extracting a file to the root directory.
 
