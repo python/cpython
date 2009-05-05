@@ -746,16 +746,13 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 			PyErr_BadInternalCall();
 			return NULL;
 		}
+		/* The repr() precision (17 significant decimal digits) is the
+		   minimal number that is guaranteed to have enough precision
+		   so that if the number is read back in the exact same binary
+		   value is recreated.  This is true for IEEE floating point
+		   by design, and also happens to work for all other modern
+		   hardware. */
 		precision = 17;
-		format_code = 'g';
-		break;
-	case 's':          /* str format */
-		/* Supplied precision is unused, must be 0. */
-		if (precision != 0) {
-			PyErr_BadInternalCall();
-			return NULL;
-		}
-		precision = 12;
 		format_code = 'g';
 		break;
 	default:
@@ -889,18 +886,19 @@ static char *uc_float_strings[] = {
 
    Arguments:
      d is the double to be converted
-     format_code is one of 'e', 'f', 'g', 'r' or 's'.  'e', 'f' and 'g'
-       correspond to '%e', '%f' and '%g';  'r' and 's' correspond
-       to repr and str.
+     format_code is one of 'e', 'f', 'g', 'r'.  'e', 'f' and 'g'
+       correspond to '%e', '%f' and '%g';  'r' corresponds to repr.
      mode is one of '0', '2' or '3', and is completely determined by
-       format_code: 'e', 'g' and 's' use mode 2; 'f' mode 3, 'r' mode 0.
+       format_code: 'e' and 'g' use mode 2; 'f' mode 3, 'r' mode 0.
      precision is the desired precision
      always_add_sign is nonzero if a '+' sign should be included for positive
        numbers
      add_dot_0_if_integer is nonzero if integers in non-exponential form
-       should have ".0" added.  Only applies to format codes 'r', 's', and 'g'.
+       should have ".0" added.  Only applies to format codes 'r' and 'g'.
      use_alt_formatting is nonzero if alternative formatting should be
-       used.  Only applies to format codes 'e', 'f' and 'g'.
+       used.  Only applies to format codes 'e', 'f' and 'g'.  For code 'g',
+       at most one of use_alt_formatting and add_dot_0_if_integer should
+       be nonzero.
      type, if non-NULL, will be set to one of these constants to identify
        the type of the 'd' argument:
          Py_DTST_FINITE
@@ -1039,13 +1037,6 @@ format_float_short(double d, char format_code,
 		   For example, repr(2e16+8) would give 20000000000000010.0;
 		   the true value is 20000000000000008.0. */
 		if (decpt <= -4 || decpt > 16)
-			use_exp = 1;
-		break;
-	case 's':
-		/* if we're forcing a digit after the point, convert to
-		   exponential format at 1e11.  If not, convert at 1e12. */
-		if (decpt <= -4 || decpt >
-		    (add_dot_0_if_integer ? precision-1 : precision))
 			use_exp = 1;
 		break;
 	default:
@@ -1218,17 +1209,6 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 			PyErr_BadInternalCall();
 			return NULL;
 		}
-		break;
-
-	/* str format */
-	case 's':
-		mode = 2;
-		/* Supplied precision is unused, must be 0. */
-		if (precision != 0) {
-			PyErr_BadInternalCall();
-			return NULL;
-		}
-		precision = 12;
 		break;
 
 	default:

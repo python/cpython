@@ -294,11 +294,12 @@ convert_to_double(PyObject **v, double *dbl)
 }
 
 static PyObject *
-float_str_or_repr(PyFloatObject *v, char format_code)
+float_str_or_repr(PyFloatObject *v, int precision, char format_code)
 {
     PyObject *result;
     char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
-                                      format_code, 0, Py_DTSF_ADD_DOT_0,
+                                      format_code, precision,
+                                      Py_DTSF_ADD_DOT_0,
                                       NULL);
     if (!buf)
         return PyErr_NoMemory();
@@ -310,13 +311,13 @@ float_str_or_repr(PyFloatObject *v, char format_code)
 static PyObject *
 float_repr(PyFloatObject *v)
 {
-    return float_str_or_repr(v, 'r');
+    return float_str_or_repr(v, 0, 'r');
 }
 
 static PyObject *
 float_str(PyFloatObject *v)
 {
-    return float_str_or_repr(v, 's');
+    return float_str_or_repr(v, PyFloat_STR_PRECISION, 'g');
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,

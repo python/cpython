@@ -12,6 +12,15 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5920: For float.__format__, change the behavior with the
+  empty presentation type (that is, not one of 'e', 'f', 'g', or 'n')
+  to be like 'g' but with at least one decimal point and with a
+  default precision of 12. Previously, the behavior the same but with
+  a default precision of 6.  This more closely matches str(), and
+  reduces surprises when adding alignment flags to the empty
+  presentation type. This also affects the new complex.__format__ in
+  the same way.
+
 - Implement PEP 383, Non-decodable Bytes in System Character Interfaces.
 
 - Issue #5890: in subclasses of 'property' the __doc__ attribute was
