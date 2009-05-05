@@ -12,6 +12,10 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5890: in subclasses of 'property' the __doc__ attribute was
+  shadowed by classtype's, even if it was None.  property now
+  inserts the __doc__ into the subclass instance __dict__.
+
 - Issue #5724: (See also issue #4575.) Fix Py_IS_INFINITY macro to
   work correctly on x87 FPUs: it now forces its argument to double
   before testing for infinity.
