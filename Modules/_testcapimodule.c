@@ -227,6 +227,13 @@ test_lazy_hash_inheritance(PyObject* self)
 	long hash;
 
 	type = &_HashInheritanceTester_Type;
+
+        if (type->tp_dict != NULL)
+            /* The type has already been initialized. This probably means -R
+             is being used. */
+            Py_RETURN_NONE;
+
+
 	obj = PyObject_New(PyObject, type);
 	if (obj == NULL) {
 		PyErr_Clear();
@@ -269,6 +276,8 @@ test_lazy_hash_inheritance(PyObject* self)
 		Py_DECREF(obj);
 		return NULL;
 	}
+
+        Py_DECREF(obj);
 
 	Py_RETURN_NONE;
 }
