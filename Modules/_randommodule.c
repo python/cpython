@@ -355,7 +355,7 @@ random_setstate(RandomObject *self, PyObject *state)
 
 	for (i=0; i<N ; i++) {
 		element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
-		if (element == -1 && PyErr_Occurred())
+		if (element == (unsigned long)-1 && PyErr_Occurred())
 			return NULL;
 		self->state[i] = element & 0xffffffffUL; /* Make sure we get sane state */
 	}
