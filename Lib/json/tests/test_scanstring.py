@@ -102,3 +102,6 @@ class TestScanString(TestCase):
         self.assertEquals(
             scanstring('["Bad value", truth]', 2, True),
             ('Bad value', 12))
+
+    def test_overflow(self):
+        self.assertRaises(OverflowError, json.decoder.scanstring, b"xxx", sys.maxsize+1)
