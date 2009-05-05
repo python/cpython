@@ -700,6 +700,7 @@ if sys.platform != 'win32':
                 self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
                 self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
 
+    @unittest.skipIf(sys.platform == 'darwin', "tests don't apply to OS X")
     class Pep383Tests(unittest.TestCase):
         filenames = [b'foo\xf6bar', 'foo\xf6bar'.encode("utf-8")]
 
