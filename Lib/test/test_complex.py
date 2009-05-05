@@ -467,6 +467,16 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(3+0j, ''), str(3+0j))
         self.assertEqual(format(3.2+0j, ''), str(3.2+0j))
 
+        # empty presentation type should still be analogous to str,
+        # even when format string is nonempty (issue #5920).
+        self.assertEqual(format(3.2+0j, '-'), str(3.2+0j))
+        self.assertEqual(format(3.2+0j, '<'), str(3.2+0j))
+        z = 4/7. - 100j/7.
+        self.assertEqual(format(z, ''), str(z))
+        self.assertEqual(format(z, '-'), str(z))
+        self.assertEqual(format(z, '<'), str(z))
+        self.assertEqual(format(z, '10'), str(z))
+
         self.assertEqual(format(1+3j, 'g'), '1+3j')
         self.assertEqual(format(3j, 'g'), '0+3j')
         self.assertEqual(format(1.5+3.5j, 'g'), '1.5+3.5j')

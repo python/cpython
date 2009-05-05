@@ -881,6 +881,7 @@ format_float_internal(PyObject *value,
     int has_decimal;
     double val;
     Py_ssize_t precision = format->precision;
+    Py_ssize_t default_precision = 6;
     STRINGLIB_CHAR type = format->type;
     int add_pct = 0;
     STRINGLIB_CHAR *p;
@@ -907,9 +908,10 @@ format_float_internal(PyObject *value,
     }
 
     if (type == '\0') {
-        /* Omitted type specifier. This is like 'g' but with at least
-           one digit after the decimal point. */
+        /* Omitted type specifier. This is like 'g' but with at least one
+           digit after the decimal point, and different default precision.*/
         type = 'g';
+        default_precision = PyFloat_STR_PRECISION;
         flags |= Py_DTSF_ADD_DOT_0;
     }
 
@@ -933,7 +935,7 @@ format_float_internal(PyObject *value,
     }
 
     if (precision < 0)
-        precision = 6;
+        precision = default_precision;
 
 #if PY_VERSION_HEX < 0x03010000
     /* 3.1 no longer converts large 'f' to 'g'. */
@@ -1039,6 +1041,7 @@ format_complex_internal(PyObject *value,
     int re_has_decimal;
     int im_has_decimal;
     Py_ssize_t precision = format->precision;
+    Py_ssize_t default_precision = 6;
     STRINGLIB_CHAR type = format->type;
     STRINGLIB_CHAR *p_re;
     STRINGLIB_CHAR *p_im;
@@ -1100,6 +1103,7 @@ format_complex_internal(PyObject *value,
     if (type == '\0') {
         /* Omitted type specifier. Should be like str(self). */
         type = 'g';
+        default_precision = PyFloat_STR_PRECISION;
         add_parens = 1;
         if (re == 0.0)
             skip_re = 1;
@@ -1115,7 +1119,7 @@ format_complex_internal(PyObject *value,
         type = 'f';
 
     if (precision < 0)
-        precision = 6;
+        precision = default_precision;
 
     /* Cast "type", because if we're in unicode we need to pass a
        8-bit char. This is safe, because we've restricted what "type"

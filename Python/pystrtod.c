@@ -660,14 +660,13 @@ _PyOS_double_to_string(char *buf, size_t buf_len, double val,
 		/* Supplied precision is unused, must be 0. */
 		if (precision != 0)
 			return;
+		/* The repr() precision (17 significant decimal digits) is the
+		   minimal number that is guaranteed to have enough precision
+		   so that if the number is read back in the exact same binary
+		   value is recreated.  This is true for IEEE floating point
+		   by design, and also happens to work for all other modern
+		   hardware. */
 		precision = 17;
-		format_code = 'g';
-		break;
-	case 's':          /* str format */
-		/* Supplied precision is unused, must be 0. */
-		if (precision != 0)
-			return;
-		precision = 12;
 		format_code = 'g';
 		break;
 	default:

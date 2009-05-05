@@ -352,7 +352,7 @@ convert_to_double(PyObject **v, double *dbl)
 void
 PyFloat_AsString(char *buf, PyFloatObject *v)
 {
-	_PyOS_double_to_string(buf, 100, v->ob_fval, 's', 0,
+	_PyOS_double_to_string(buf, 100, v->ob_fval, 'g', PyFloat_STR_PRECISION,
 			       Py_DTSF_ADD_DOT_0, NULL);
 }
 
@@ -368,9 +368,13 @@ static int
 float_print(PyFloatObject *v, FILE *fp, int flags)
 {
 	char buf[100];
-	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
-			       (flags & Py_PRINT_RAW) ? 's' : 'r',
-			       0, Py_DTSF_ADD_DOT_0, NULL);
+        if (flags & Py_PRINT_RAW)
+            _PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
+                                   'g', PyFloat_STR_PRECISION,
+                                   Py_DTSF_ADD_DOT_0, NULL);
+        else
+            _PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
+                                   'r', 0, Py_DTSF_ADD_DOT_0, NULL);
 	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
 	Py_END_ALLOW_THREADS
@@ -390,7 +394,8 @@ static PyObject *
 float_str(PyFloatObject *v)
 {
 	char buf[100];
-	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 's', 0,
+	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 'g',
+                               PyFloat_STR_PRECISION,
 			       Py_DTSF_ADD_DOT_0, NULL);
 	return PyString_FromString(buf);
 }
