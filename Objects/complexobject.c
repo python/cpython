@@ -354,7 +354,7 @@ complex_dealloc(PyObject *op)
 
 
 static PyObject *
-complex_format(PyComplexObject *v, char format_code)
+complex_format(PyComplexObject *v, int precision, char format_code)
 {
 	PyObject *result = NULL;
 	Py_ssize_t len;
@@ -374,7 +374,7 @@ complex_format(PyComplexObject *v, char format_code)
 	if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
 		re = "";
 		im = PyOS_double_to_string(v->cval.imag, format_code,
-					   0, 0, NULL);
+					   precision, 0, NULL);
 		if (!im) {
 			PyErr_NoMemory();
 			goto done;
@@ -382,7 +382,7 @@ complex_format(PyComplexObject *v, char format_code)
 	} else {
 		/* Format imaginary part with sign, real part without */
 		pre = PyOS_double_to_string(v->cval.real, format_code,
-					    0, 0, NULL);
+					    precision, 0, NULL);
 		if (!pre) {
 			PyErr_NoMemory();
 			goto done;
@@ -390,7 +390,7 @@ complex_format(PyComplexObject *v, char format_code)
 		re = pre;
 
 		im = PyOS_double_to_string(v->cval.imag, format_code,
-					   0, Py_DTSF_SIGN, NULL);
+					   precision, Py_DTSF_SIGN, NULL);
 		if (!im) {
 			PyErr_NoMemory();
 			goto done;
@@ -421,7 +421,10 @@ complex_print(PyComplexObject *v, FILE *fp, int flags)
 {
 	PyObject *formatv;
 	char *buf;
-	formatv = complex_format(v, (flags & Py_PRINT_RAW) ? 's' : 'r');
+        if (flags & Py_PRINT_RAW)
+            formatv = complex_format(v, PyFloat_STR_PRECISION, 'g');
+        else
+            formatv = complex_format(v, 0, 'r');
 	if (formatv == NULL)
 		return -1;
 	buf = PyString_AS_STRING(formatv);
@@ -435,13 +438,13 @@ complex_print(PyComplexObject *v, FILE *fp, int flags)
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
-	return complex_format(v, 'r');
+    return complex_format(v, 0, 'r');
 }
 
 static PyObject *
 complex_str(PyComplexObject *v)
 {
-	return complex_format(v, 's');
+    return complex_format(v, PyFloat_STR_PRECISION, 'g');
 }
 
 static long

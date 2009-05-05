@@ -86,10 +86,10 @@ The following functions provide locale-independent string to number conversions.
    Convert a :ctype:`double` *val* to a string using supplied
    *format_code*, *precision*, and *flags*.
 
-   *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
-   ``'G'``, ``'s'``, or ``'r'``.  For ``'s'`` and ``'r'``, the supplied
-   *precision* must be 0 and is ignored.  These specify the standard
-   :func:`str` and :func:`repr` formats, respectively.
+   *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
+   ``'g'``, ``'G'`` or ``'r'``.  For ``'r'``, the supplied *precision*
+   must be 0 and is ignored.  The ``'r'`` format code specifies the
+   standard :func:`repr` format.
 
    *flags* can be zero or more of the values *Py_DTSF_SIGN*,
    *Py_DTSF_ADD_DOT_0*, or *Py_DTSF_ALT*, or-ed together:
