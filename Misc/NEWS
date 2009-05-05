@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4875: On win32, ctypes.util.find_library does no longer
+  return directories.
+
 - Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
 
 - Issue #4305: ctypes should now build again on mipsel-linux-gnu
