@@ -1,5 +1,6 @@
 """Debugger basics"""
 
+import fnmatch
 import sys
 import os
 import types
@@ -19,7 +20,8 @@ class Bdb:
     The standard debugger class (pdb.Pdb) is an example.
     """
 
-    def __init__(self):
+    def __init__(self, skip=None):
+        self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
 
@@ -94,9 +96,18 @@ class Bdb:
     # methods, but they may if they want to redefine the
     # definition of stopping and breakpoints.
 
+    def is_skipped_module(self, module_name):
+        for pattern in self.skip:
+            if fnmatch.fnmatch(module_name, pattern):
+                return True
+        return False
+
     def stop_here(self, frame):
         # (CT) stopframe may now also be None, see dispatch_call.
         # (CT) the former test for None is therefore removed from here.
+        if self.skip and \
+               self.is_skipped_module(frame.f_globals.get('__name__')):
+            return False
         if frame is self.stopframe:
             return frame.f_lineno >= self.stoplineno
         while frame is not None and frame is not self.stopframe:

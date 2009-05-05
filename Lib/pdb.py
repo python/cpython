@@ -58,8 +58,8 @@ line_prefix = '\n-> '   # Probably a better default
 
 class Pdb(bdb.Bdb, cmd.Cmd):
 
-    def __init__(self, completekey='tab', stdin=None, stdout=None):
-        bdb.Bdb.__init__(self)
+    def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None):
+        bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         if stdout:
             self.use_rawinput = 0

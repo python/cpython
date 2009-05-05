@@ -273,6 +273,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5142: Add the ability to skip modules while stepping to pdb.
+
 - Issue #1309567: Fix linecache behavior of stripping subdirectories when
   looking for files given by a relative filename.
 
