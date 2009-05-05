@@ -1928,7 +1928,7 @@ posix_lchmod(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O&i:lchmod", PyUnicode_FSConverter,
 	                      &opath, &i))
 		return NULL;
-	path = bytes2str(opath, 1)
+	path = bytes2str(opath, 1);
 	Py_BEGIN_ALLOW_THREADS
 	res = lchmod(path, i);
 	Py_END_ALLOW_THREADS
