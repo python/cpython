@@ -1011,7 +1011,6 @@ def add_files(db):
             lib.glob("*.uue")
             lib.glob("*.pem")
             lib.glob("*.pck")
-            lib.add_file("readme.txt", src="README")
             lib.add_file("zipdir.zip")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
