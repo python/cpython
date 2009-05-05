@@ -6,6 +6,11 @@
    :synopsis: Turtle graphics for Tk
 .. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
 
+.. testsetup:: default
+
+   from turtle import *
+   turtle = Turtle()
+
 Introduction
 ============
 
@@ -220,14 +225,16 @@ Turtle motion
    Move the turtle forward by the specified *distance*, in the direction the
    turtle is headed.
 
-   >>> turtle.position()
-   (0.00, 0.00)
-   >>> turtle.forward(25)
-   >>> turtle.position()
-   (25.00,0.00)
-   >>> turtle.forward(-75)
-   >>> turtle.position()
-   (-50.00,0.00)
+   .. doctest::
+
+      >>> turtle.position()
+      (0.00,0.00)
+      >>> turtle.forward(25)
+      >>> turtle.position()
+      (25.00,0.00)
+      >>> turtle.forward(-75)
+      >>> turtle.position()
+      (-50.00,0.00)
 
 
 .. function:: back(distance)
@@ -239,11 +246,18 @@ Turtle motion
    Move the turtle backward by *distance*, opposite to the direction the
    turtle is headed.  Do not change the turtle's heading.
 
-   >>> turtle.position()
-   (0.00, 0.00)
-   >>> turtle.backward(30)
-   >>> turtle.position()
-   (-30.00, 0.00)
+   .. doctest::
+      :hide:
+
+      >>> turtle.goto(0, 0)
+
+   .. doctest::
+
+      >>> turtle.position()
+      (0.00,0.00)
+      >>> turtle.backward(30)
+      >>> turtle.position()
+      (-30.00,0.00)
 
 
 .. function:: right(angle)
@@ -255,11 +269,18 @@ Turtle motion
    can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
    orientation depends on the turtle mode, see :func:`mode`.
 
-   >>> turtle.heading()
-   22.0
-   >>> turtle.right(45)
-   >>> turtle.heading()
-   337.0
+   .. doctest::
+      :hide:
+
+      >>> turtle.setheading(22)
+
+   .. doctest::
+
+      >>> turtle.heading()
+      22.0
+      >>> turtle.right(45)
+      >>> turtle.heading()
+      337.0
 
 
 .. function:: left(angle)
@@ -271,37 +292,52 @@ Turtle motion
    can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
    orientation depends on the turtle mode, see :func:`mode`.
 
-   >>> turtle.heading()
-   22.0
-   >>> turtle.left(45)
-   >>> turtle.heading()
-   67.0
+   .. doctest::
+      :hide:
+
+      >>> turtle.setheading(22)
+
+   .. doctest::
+
+      >>> turtle.heading()
+      22.0
+      >>> turtle.left(45)
+      >>> turtle.heading()
+      67.0
+
 
 .. function:: goto(x, y=None)
               setpos(x, y=None)
               setposition(x, y=None)
 
-    :param x: a number or a pair/vector of numbers
-    :param y: a number or ``None``
+   :param x: a number or a pair/vector of numbers
+   :param y: a number or ``None``
 
-    If *y* is ``None``, *x* must be a pair of coordinates or a :class:`Vec2D`
-    (e.g. as returned by :func:`pos`).
+   If *y* is ``None``, *x* must be a pair of coordinates or a :class:`Vec2D`
+   (e.g. as returned by :func:`pos`).
 
-    Move turtle to an absolute position.  If the pen is down, draw line.  Do
-    not change the turtle's orientation.
+   Move turtle to an absolute position.  If the pen is down, draw line.  Do
+   not change the turtle's orientation.
 
-    >>> tp = turtle.pos()
-    >>> tp
-    (0.00, 0.00)
-    >>> turtle.setpos(60,30)
-    >>> turtle.pos()
-    (60.00,30.00)
-    >>> turtle.setpos((20,80))
-    >>> turtle.pos()
-    (20.00,80.00)
-    >>> turtle.setpos(tp)
-    >>> turtle.pos()
-    (0.00,0.00)
+   .. doctest::
+      :hide:
+
+      >>> turtle.goto(0, 0)
+
+   .. doctest::
+
+       >>> tp = turtle.pos()
+       >>> tp
+       (0.00,0.00)
+       >>> turtle.setpos(60,30)
+       >>> turtle.pos()
+       (60.00,30.00)
+       >>> turtle.setpos((20,80))
+       >>> turtle.pos()
+       (20.00,80.00)
+       >>> turtle.setpos(tp)
+       >>> turtle.pos()
+       (0.00,0.00)
 
 
 .. function:: setx(x)
@@ -311,11 +347,18 @@ Turtle motion
    Set the turtle's first coordinate to *x*, leave second coordinate
    unchanged.
 
-   >>> turtle.position()
-   (0.00, 240.00)
-   >>> turtle.setx(10)
-   >>> turtle.position()
-   (10.00, 240.00)
+   .. doctest::
+      :hide:
+
+      >>> turtle.goto(0, 240)
+
+   .. doctest::
+
+      >>> turtle.position()
+      (0.00,240.00)
+      >>> turtle.setx(10)
+      >>> turtle.position()
+      (10.00,240.00)
 
 
 .. function:: sety(y)
@@ -324,11 +367,18 @@ Turtle motion
 
    Set the turtle's second coordinate to *y*, leave first coordinate unchanged.
 
-   >>> turtle.position()
-   (0.00, 40.00)
-   >>> turtle.sety(-10)
-   >>> turtle.position()
-   (0.00, -10.00)
+   .. doctest::
+      :hide:
+
+      >>> turtle.goto(0, 40)
+
+   .. doctest::
+
+      >>> turtle.position()
+      (0.00,40.00)
+      >>> turtle.sety(-10)
+      >>> turtle.position()
+      (0.00,-10.00)
 
 
 .. function:: setheading(to_angle)
@@ -348,15 +398,35 @@ Turtle motion
     270 - south             270 - west
    =================== ====================
 
-   >>> turtle.setheading(90)
-   >>> turtle.heading()
-   90
+   .. doctest::
+
+      >>> turtle.setheading(90)
+      >>> turtle.heading()
+      90.0
 
 
 .. function:: home()
 
    Move turtle to the origin -- coordinates (0,0) -- and set its heading to
    its start-orientation (which depends on the mode, see :func:`mode`).
+
+   .. doctest::
+      :hide:
+
+      >>> turtle.setheading(90)
+      >>> turtle.goto(0, -10)
+
+   .. doctest::
+
+      >>> turtle.heading()
+      90.0
+      >>> turtle.position()
+      (0.00,-10.00)
+      >>> turtle.home()
+      >>> turtle.position()
+      (0.00,0.00)
+      >>> turtle.heading()
+      0.0
 
 
 .. function:: circle(radius, extent=None, steps=None)
@@ -377,8 +447,23 @@ Turtle motion
    determines the number of steps to use.  If not given, it will be
    calculated automatically.  May be used to draw regular polygons.
 
-   >>> turtle.circle(50)
-   >>> turtle.circle(120, 180)  # draw a semicircle
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.position()
+      (0.00,0.00)
+      >>> turtle.heading()
+      0.0
+      >>> turtle.circle(50)
+      >>> turtle.position()
+      (-0.00,0.00)
+      >>> turtle.heading()
+      0.0
+      >>> turtle.circle(120, 180)  # draw a semicircle
+      >>> turtle.position()
+      (0.00,240.00)
+      >>> turtle.heading()
+      180.0
 
 
 .. function:: dot(size=None, *color)
@@ -389,8 +474,16 @@ Turtle motion
    Draw a circular dot with diameter *size*, using *color*.  If *size* is
    not given, the maximum of pensize+4 and 2*pensize is used.
 
-   >>> turtle.dot()
-   >>> turtle.fd(50); turtle.dot(20, "blue"); turtle.fd(50)
+
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.dot()
+      >>> turtle.fd(50); turtle.dot(20, "blue"); turtle.fd(50)
+      >>> turtle.position()
+      (100.00,-0.00)
+      >>> turtle.heading()
+      0.0
 
 
 .. function:: stamp()
@@ -399,10 +492,12 @@ Turtle motion
    position.  Return a stamp_id for that stamp, which can be used to delete
    it by calling ``clearstamp(stamp_id)``.
 
-   >>> turtle.color("blue")
-   >>> turtle.stamp()
-   13
-   >>> turtle.fd(50)
+   .. doctest::
+
+      >>> turtle.color("blue")
+      >>> turtle.stamp()
+      11
+      >>> turtle.fd(50)
 
 
 .. function:: clearstamp(stampid)
@@ -412,10 +507,18 @@ Turtle motion
 
    Delete stamp with given *stampid*.
 
-   >>> turtle.color("blue")
-   >>> astamp = turtle.stamp()
-   >>> turtle.fd(50)
-   >>> turtle.clearstamp(astamp)
+   .. doctest::
+
+      >>> turtle.position()
+      (150.00,-0.00)
+      >>> turtle.color("blue")
+      >>> astamp = turtle.stamp()
+      >>> turtle.fd(50)
+      >>> turtle.position()
+      (200.00,-0.00)
+      >>> turtle.clearstamp(astamp)
+      >>> turtle.position()
+      (200.00,-0.00)
 
 
 .. function:: clearstamps(n=None)
@@ -426,11 +529,21 @@ Turtle motion
    all stamps, if *n* > 0 delete first *n* stamps, else if *n* < 0 delete
    last *n* stamps.
 
-   >>> for i in range(8):
-   ...     turtle.stamp(); turtle.fd(30)
-   >>> turtle.clearstamps(2)
-   >>> turtle.clearstamps(-2)
-   >>> turtle.clearstamps()
+   .. doctest::
+
+      >>> for i in range(8):
+      ...     turtle.stamp(); turtle.fd(30)
+      13
+      14
+      15
+      16
+      17
+      18
+      19
+      20
+      >>> turtle.clearstamps(2)
+      >>> turtle.clearstamps(-2)
+      >>> turtle.clearstamps()
 
 
 .. function:: undo()
@@ -438,11 +551,13 @@ Turtle motion
    Undo (repeatedly) the last turtle action(s).  Number of available
    undo actions is determined by the size of the undobuffer.
 
-   >>> for i in range(4):
-   ...     turtle.fd(50); turtle.lt(80)
-   ...
-   >>> for i in range(8):
-   ...     turtle.undo()
+   .. doctest::
+
+      >>> for i in range(4):
+      ...     turtle.fd(50); turtle.lt(80)
+      ...
+      >>> for i in range(8):
+      ...     turtle.undo()
 
 
 .. function:: speed(speed=None)
@@ -468,7 +583,16 @@ Turtle motion
    place. forward/back makes turtle jump and likewise left/right make the
    turtle turn instantly.
 
-   >>> turtle.speed(3)
+   .. doctest::
+
+      >>> turtle.speed()
+      3
+      >>> turtle.speed('normal')
+      >>> turtle.speed()
+      6
+      >>> turtle.speed(9)
+      >>> turtle.speed()
+      9
 
 
 Tell Turtle's state
@@ -479,8 +603,10 @@ Tell Turtle's state
 
    Return the turtle's current location (x,y) (as a :class:`Vec2D` vector).
 
-   >>> turtle.pos()
-   (0.00, 240.00)
+   .. doctest::
+
+      >>> turtle.pos()
+      (440.00,-0.00)
 
 
 .. function:: towards(x, y=None)
@@ -492,32 +618,41 @@ Tell Turtle's state
    by (x,y), the vector or the other turtle.  This depends on the turtle's start
    orientation which depends on the mode - "standard"/"world" or "logo").
 
-   >>> turtle.pos()
-   (10.00, 10.00)
-   >>> turtle.towards(0,0)
-   225.0
+   .. doctest::
+
+      >>> turtle.goto(10, 10)
+      >>> turtle.towards(0,0)
+      225.0
 
 
 .. function:: xcor()
 
    Return the turtle's x coordinate.
 
-   >>> reset()
-   >>> turtle.left(60)
-   >>> turtle.forward(100)
-   >>> print turtle.xcor()
-   50.0
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.left(50)
+      >>> turtle.forward(100)
+      >>> turtle.pos()
+      (64.28,76.60)
+      >>> print turtle.xcor()
+      64.2787609687
 
 
 .. function:: ycor()
 
    Return the turtle's y coordinate.
 
-   >>> reset()
-   >>> turtle.left(60)
-   >>> turtle.forward(100)
-   >>> print turtle.ycor()
-   86.6025403784
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.left(60)
+      >>> turtle.forward(100)
+      >>> print turtle.pos()
+      (50.00,86.60)
+      >>> print turtle.ycor()
+      86.6025403784
 
 
 .. function:: heading()
@@ -525,9 +660,12 @@ Tell Turtle's state
    Return the turtle's current heading (value depends on the turtle mode, see
    :func:`mode`).
 
-   >>> turtle.left(67)
-   >>> turtle.heading()
-   67.0
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.left(67)
+      >>> turtle.heading()
+      67.0
 
 
 .. function:: distance(x, y=None)
@@ -538,14 +676,17 @@ Tell Turtle's state
    Return the distance from the turtle to (x,y), the given vector, or the given
    other turtle, in turtle step units.
 
-   >>> turtle.pos()
-   (0.00, 0.00)
-   >>> turtle.distance(30,40)
-   50.0
-   >>> joe = Turtle()
-   >>> joe.forward(77)
-   >>> turtle.distance(joe)
-   77.0
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.distance(30,40)
+      50.0
+      >>> turtle.distance((30,40))
+      50.0
+      >>> joe = Turtle()
+      >>> joe.forward(77)
+      >>> turtle.distance(joe)
+      77.0
 
 
 Settings for measurement
@@ -558,12 +699,18 @@ Settings for measurement
    Set angle measurement units, i.e. set number of "degrees" for a full circle.
    Default value is 360 degrees.
 
-   >>> turtle.left(90)
-   >>> turtle.heading()
-   90
-   >>> turtle.degrees(400.0)  # angle measurement in gon
-   >>> turtle.heading()
-   100
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.left(90)
+      >>> turtle.heading()
+      90.0
+      >>> turtle.degrees(400.0)  # angle measurement in gon
+      >>> turtle.heading()
+      100.0
+      >>> turtle.degrees(360)
+      >>> turtle.heading()
+      90.0
 
 
 .. function:: radians()
@@ -571,11 +718,20 @@ Settings for measurement
    Set the angle measurement units to radians.  Equivalent to
    ``degrees(2*math.pi)``.
 
-   >>> turtle.heading()
-   90
-   >>> turtle.radians()
-   >>> turtle.heading()
-   1.5707963267948966
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.left(90)
+      >>> turtle.heading()
+      90.0
+      >>> turtle.radians()
+      >>> turtle.heading()
+      1.5707963267948966
+
+   .. doctest::
+      :hide:
+
+      >>> turtle.degrees(360)
 
 
 Pen control
@@ -607,9 +763,11 @@ Drawing state
    "auto" and turtleshape is a polygon, that polygon is drawn with the same line
    thickness.  If no argument is given, the current pensize is returned.
 
-   >>> turtle.pensize()
-   1
-   >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
+   .. doctest::
+
+      >>> turtle.pensize()
+      1
+      >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
 
 
 .. function:: pen(pen=None, **pendict)
@@ -631,40 +789,45 @@ Drawing state
    * "outline": positive number
    * "tilt": number
 
-   This dicionary can be used as argument for a subsequent call to :func:`pen`
+   This dictionary can be used as argument for a subsequent call to :func:`pen`
    to restore the former pen-state.  Moreover one or more of these attributes
    can be provided as keyword-arguments.  This can be used to set several pen
    attributes in one statement.
 
-   >>> turtle.pen(fillcolor="black", pencolor="red", pensize=10)
-   >>> turtle.pen()
-   {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
-   'pencolor': 'red', 'pendown': True, 'fillcolor': 'black',
-   'stretchfactor': (1,1), 'speed': 3}
-   >>> penstate=turtle.pen()
-   >>> turtle.color("yellow","")
-   >>> turtle.penup()
-   >>> turtle.pen()
-   {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
-   'pencolor': 'yellow', 'pendown': False, 'fillcolor': '',
-   'stretchfactor': (1,1), 'speed': 3}
-   >>> p.pen(penstate, fillcolor="green")
-   >>> p.pen()
-   {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
-   'pencolor': 'red', 'pendown': True, 'fillcolor': 'green',
-   'stretchfactor': (1,1), 'speed': 3}
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
+      >>> turtle.pen(fillcolor="black", pencolor="red", pensize=10)
+      >>> sorted(turtle.pen().items())
+      [('fillcolor', 'black'), ('outline', 1), ('pencolor', 'red'),
+       ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
+       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+      >>> penstate=turtle.pen()
+      >>> turtle.color("yellow", "")
+      >>> turtle.penup()
+      >>> sorted(turtle.pen().items())
+      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow'),
+       ('pendown', False), ('pensize', 10), ('resizemode', 'noresize'),
+       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+      >>> turtle.pen(penstate, fillcolor="green")
+      >>> sorted(turtle.pen().items())
+      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red'),
+       ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
+       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
 
 
 .. function:: isdown()
 
    Return ``True`` if pen is down, ``False`` if it's up.
 
-   >>> turtle.penup()
-   >>> turtle.isdown()
-   False
-   >>> turtle.pendown()
-   >>> turtle.isdown()
-   True
+   .. doctest::
+
+      >>> turtle.penup()
+      >>> turtle.isdown()
+      False
+      >>> turtle.pendown()
+      >>> turtle.isdown()
+      True
 
 
 Color control
@@ -677,8 +840,8 @@ Color control
    Four input formats are allowed:
 
    ``pencolor()``
-      Return the current pencolor as color specification string, possibly in
-      hex-number format (see example).  May be used as input to another
+      Return the current pencolor as color specification string or
+      as a tuple (see example).  May be used as input to another
       color/pencolor/fillcolor call.
 
    ``pencolor(colorstring)``
@@ -697,11 +860,25 @@ Color control
     If turtleshape is a polygon, the outline of that polygon is drawn with the
     newly set pencolor.
 
-    >>> turtle.pencolor("brown")
-    >>> tup = (0.2, 0.8, 0.55)
-    >>> turtle.pencolor(tup)
-    >>> turtle.pencolor()
-    "#33cc8c"
+   .. doctest::
+
+       >>> colormode()
+       1.0
+       >>> turtle.pencolor()
+       'red'
+       >>> turtle.pencolor("brown")
+       >>> turtle.pencolor()
+       'brown'
+       >>> tup = (0.2, 0.8, 0.55)
+       >>> turtle.pencolor(tup)
+       >>> turtle.pencolor()
+       (0.20000000000000001, 0.80000000000000004, 0.5490196078431373)
+       >>> colormode(255)
+       >>> turtle.pencolor()
+       (51, 204, 140)
+       >>> turtle.pencolor('#32c18f')
+       >>> turtle.pencolor()
+       (50, 193, 143)
 
 
 .. function:: fillcolor(*args)
@@ -711,8 +888,8 @@ Color control
    Four input formats are allowed:
 
    ``fillcolor()``
-      Return the current fillcolor as color specification string, possibly in
-      hex-number format (see example).  May be used as input to another
+      Return the current fillcolor as color specification string, possibly
+      in tuple format (see example).  May be used as input to another
       color/pencolor/fillcolor call.
 
    ``fillcolor(colorstring)``
@@ -731,10 +908,20 @@ Color control
     If turtleshape is a polygon, the interior of that polygon is drawn
     with the newly set fillcolor.
 
-    >>> turtle.fillcolor("violet")
-    >>> col = turtle.pencolor()
-    >>> turtle.fillcolor(col)
-    >>> turtle.fillcolor(0, .5, 0)
+   .. doctest::
+
+       >>> turtle.fillcolor("violet")
+       >>> turtle.fillcolor()
+       'violet'
+       >>> col = turtle.pencolor()
+       >>> col
+       (50, 193, 143)
+       >>> turtle.fillcolor(col)
+       >>> turtle.fillcolor()
+       (50, 193, 143)
+       >>> turtle.fillcolor('#ffffff')
+       >>> turtle.fillcolor()
+       (255, 255, 255)
 
 
 .. function:: color(*args)
@@ -746,7 +933,7 @@ Color control
 
    ``color()``
       Return the current pencolor and the current fillcolor as a pair of color
-      specification strings as returned by :func:`pencolor` and
+      specification strings or tuples as returned by :func:`pencolor` and
       :func:`fillcolor`.
 
    ``color(colorstring)``, ``color((r,g,b))``, ``color(r,g,b)``
@@ -760,13 +947,14 @@ Color control
     If turtleshape is a polygon, outline and interior of that polygon is drawn
     with the newly set colors.
 
-    >>> turtle.color("red", "green")
-    >>> turtle.color()
-    ("red", "green")
-    >>> colormode(255)
-    >>> color((40, 80, 120), (160, 200, 240))
-    >>> color()
-    ("#285078", "#a0c8f0")
+   .. doctest::
+
+       >>> turtle.color("red", "green")
+       >>> turtle.color()
+       ('red', 'green')
+       >>> color("#285078", "#a0c8f0")
+       >>> color()
+       ((40, 80, 120), (160, 200, 240))
 
 
 See also: Screen method :func:`colormode`.
@@ -775,30 +963,40 @@ See also: Screen method :func:`colormode`.
 Filling
 ~~~~~~~
 
+.. doctest::
+   :hide:
+
+   >>> turtle.home()
+
 .. function:: filling()
 
    Return fillstate (``True`` if filling, ``False`` else).
 
-   >>> turtle.begin_fill()
-   >>> if turtle.filling():
-   ...    turtle.pensize(5)
-   else:
-   ...    turtle.pensize(3)
+   .. doctest::
+
+       >>> turtle.begin_fill()
+       >>> if turtle.filling():
+       ...    turtle.pensize(5)
+       ... else:
+       ...    turtle.pensize(3)
+
 
 
 .. function:: begin_fill()
 
    To be called just before drawing a shape to be filled.
 
-   >>> turtle.color("black", "red")
-   >>> turtle.begin_fill()
-   >>> turtle.circle(60)
-   >>> turtle.end_fill()
-
 
 .. function:: end_fill()
 
    Fill the shape drawn after the last call to :func:`begin_fill`.
+
+   .. doctest::
+
+      >>> turtle.color("black", "red")
+      >>> turtle.begin_fill()
+      >>> turtle.circle(80)
+      >>> turtle.end_fill()
 
 
 More drawing control
@@ -809,15 +1007,19 @@ More drawing control
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
 
-   >>> turtle.position()
-   (0.00,-22.00)
-   >>> turtle.heading()
-   100.0
-   >>> turtle.reset()
-   >>> turtle.position()
-   (0.00,0.00)
-   >>> turtle.heading()
-   0.0
+   .. doctest::
+
+      >>> turtle.goto(0,-22)
+      >>> turtle.left(100)
+      >>> turtle.position()
+      (0.00,-22.00)
+      >>> turtle.heading()
+      100.0
+      >>> turtle.reset()
+      >>> turtle.position()
+      (0.00,0.00)
+      >>> turtle.heading()
+      0.0
 
 
 .. function:: clear()
@@ -848,15 +1050,6 @@ Turtle state
 Visibility
 ~~~~~~~~~~
 
-.. function:: showturtle()
-              st()
-
-   Make the turtle visible.
-
-   >>> turtle.hideturtle()
-   >>> turtle.showturtle()
-
-
 .. function:: hideturtle()
               ht()
 
@@ -864,7 +1057,19 @@ Visibility
    middle of doing some complex drawing, because hiding the turtle speeds up the
    drawing observably.
 
-   >>> turtle.hideturtle()
+   .. doctest::
+
+      >>> turtle.hideturtle()
+
+
+.. function:: showturtle()
+              st()
+
+   Make the turtle visible.
+
+   .. doctest::
+
+      >>> turtle.showturtle()
 
 
 .. function:: isvisible()
@@ -872,8 +1077,11 @@ Visibility
    Return True if the Turtle is shown, False if it's hidden.
 
    >>> turtle.hideturtle()
-   >>> print turtle.isvisible():
+   >>> turtle.isvisible()
    False
+   >>> turtle.showturtle()
+   >>> turtle.isvisible()
+   True
 
 
 Appearance
@@ -889,11 +1097,13 @@ Appearance
    "turtle", "circle", "square", "triangle", "classic".  To learn about how to
    deal with shapes see Screen method :func:`register_shape`.
 
-   >>> turtle.shape()
-   "arrow"
-   >>> turtle.shape("turtle")
-   >>> turtle.shape()
-   "turtle"
+   .. doctest::
+
+      >>> turtle.shape()
+      'classic'
+      >>> turtle.shape("turtle")
+      >>> turtle.shape()
+      'turtle'
 
 
 .. function:: resizemode(rmode=None)
@@ -912,9 +1122,13 @@ Appearance
 
    resizemode("user") is called by :func:`shapesize` when used with arguments.
 
-   >>> turtle.resizemode("noresize")
-   >>> turtle.resizemode()
-   "noresize"
+   .. doctest::
+
+      >>> turtle.resizemode()
+      'noresize'
+      >>> turtle.resizemode("auto")
+      >>> turtle.resizemode()
+      'auto'
 
 
 .. function:: shapesize(stretch_wid=None, stretch_len=None, outline=None)
@@ -930,9 +1144,17 @@ Appearance
    stretchfactor in direction of its orientation, *outline* determines the width
    of the shapes's outline.
 
-   >>> turtle.resizemode("user")
-   >>> turtle.shapesize(5, 5, 12)
-   >>> turtle.shapesize(outline=8)
+   .. doctest::
+
+      >>> turtle.shapesize()
+      (1, 1, 1)
+      >>> turtle.resizemode("user")
+      >>> turtle.shapesize(5, 5, 12)
+      >>> turtle.shapesize()
+      (5, 5, 12)
+      >>> turtle.shapesize(outline=8)
+      >>> turtle.shapesize()
+      (5, 5, 8)
 
 
 .. function:: tilt(angle)
@@ -942,12 +1164,15 @@ Appearance
    Rotate the turtleshape by *angle* from its current tilt-angle, but do *not*
    change the turtle's heading (direction of movement).
 
-   >>> turtle.shape("circle")
-   >>> turtle.shapesize(5,2)
-   >>> turtle.tilt(30)
-   >>> turtle.fd(50)
-   >>> turtle.tilt(30)
-   >>> turtle.fd(50)
+   .. doctest::
+
+      >>> turtle.reset()
+      >>> turtle.shape("circle")
+      >>> turtle.shapesize(5,2)
+      >>> turtle.tilt(30)
+      >>> turtle.fd(50)
+      >>> turtle.tilt(30)
+      >>> turtle.fd(50)
 
 
 .. function:: settiltangle(angle)
@@ -958,14 +1183,15 @@ Appearance
    regardless of its current tilt-angle.  *Do not* change the turtle's heading
    (direction of movement).
 
-   >>> turtle.shape("circle")
-   >>> turtle.shapesize(5,2)
-   >>> turtle.settiltangle(45)
-   >>> stamp()
-   >>> turtle.fd(50)
-   >>> turtle.settiltangle(-45)
-   >>> stamp()
-   >>> turtle.fd(50)
+   .. doctest::
+
+      >>> turtle.reset()
+      >>> turtle.shape("circle")
+      >>> turtle.shapesize(5,2)
+      >>> turtle.settiltangle(45)
+      >>> turtle.fd(50)
+      >>> turtle.settiltangle(-45)
+      >>> turtle.fd(50)
 
 
 .. function:: tiltangle()
@@ -973,11 +1199,14 @@ Appearance
    Return the current tilt-angle, i.e. the angle between the orientation of the
    turtleshape and the heading of the turtle (its direction of movement).
 
-   >>> turtle.shape("circle")
-   >>> turtle.shapesize(5,2)
-   >>> turtle.tilt(45)
-   >>> turtle.tiltangle()
-   45
+   .. doctest::
+
+      >>> turtle.reset()
+      >>> turtle.shape("circle")
+      >>> turtle.shapesize(5,2)
+      >>> turtle.tilt(45)
+      >>> turtle.tiltangle()
+      45.0
 
 
 Using events
@@ -995,11 +1224,13 @@ Using events
    existing bindings are removed.  Example for the anonymous turtle, i.e. the
    procedural way:
 
-   >>> def turn(x, y):
-   ...     left(180)
-   ...
-   >>> onclick(turn)  # Now clicking into the turtle will turn it.
-   >>> onclick(None)  # event-binding will be removed
+   .. doctest::
+
+      >>> def turn(x, y):
+      ...     left(180)
+      ...
+      >>> onclick(turn)  # Now clicking into the turtle will turn it.
+      >>> onclick(None)  # event-binding will be removed
 
 
 .. function:: onrelease(fun, btn=1, add=None)
@@ -1013,15 +1244,17 @@ Using events
    Bind *fun* to mouse-button-release events on this turtle.  If *fun* is
    ``None``, existing bindings are removed.
 
-   >>> class MyTurtle(Turtle):
-   ...     def glow(self,x,y):
-   ...         self.fillcolor("red")
-   ...     def unglow(self,x,y):
-   ...         self.fillcolor("")
-   ...
-   >>> turtle = MyTurtle()
-   >>> turtle.onclick(turtle.glow)     # clicking on turtle turns fillcolor red,
-   >>> turtle.onrelease(turtle.unglow) # releasing turns it to transparent.
+   .. doctest::
+
+      >>> class MyTurtle(Turtle):
+      ...     def glow(self,x,y):
+      ...         self.fillcolor("red")
+      ...     def unglow(self,x,y):
+      ...         self.fillcolor("")
+      ...
+      >>> turtle = MyTurtle()
+      >>> turtle.onclick(turtle.glow)     # clicking on turtle turns fillcolor red,
+      >>> turtle.onrelease(turtle.unglow) # releasing turns it to transparent.
 
 
 .. function:: ondrag(fun, btn=1, add=None)
@@ -1038,9 +1271,12 @@ Using events
    Remark: Every sequence of mouse-move-events on a turtle is preceded by a
    mouse-click event on that turtle.
 
-   >>> turtle.ondrag(turtle.goto)
-   # Subsequently, clicking and dragging the Turtle will move it across
-   # the screen thereby producing handdrawings (if pen is down).
+   .. doctest::
+
+      >>> turtle.ondrag(turtle.goto)
+
+   Subsequently, clicking and dragging the Turtle will move it across
+   the screen thereby producing handdrawings (if pen is down).
 
 
 Special Turtle methods
@@ -1062,8 +1298,18 @@ Special Turtle methods
 
    Return the last recorded polygon.
 
-   >>> p = turtle.get_poly()
-   >>> turtle.register_shape("myFavouriteShape", p)
+   .. doctest::
+
+      >>> turtle.home()
+      >>> turtle.begin_poly()
+      >>> turtle.fd(100)
+      >>> turtle.left(20)
+      >>> turtle.fd(30)
+      >>> turtle.left(60)
+      >>> turtle.fd(50)
+      >>> turtle.end_poly()
+      >>> p = turtle.get_poly()
+      >>> register_shape("myFavouriteShape", p)
 
 
 .. function:: clone()
@@ -1071,8 +1317,10 @@ Special Turtle methods
    Create and return a clone of the turtle with same position, heading and
    turtle properties.
 
-   >>> mick = Turtle()
-   >>> joe = mick.clone()
+   .. doctest::
+
+      >>> mick = Turtle()
+      >>> joe = mick.clone()
 
 
 .. function:: getturtle()
@@ -1080,12 +1328,12 @@ Special Turtle methods
    Return the Turtle object itself.  Only reasonable use: as a function to
    return the "anonymous turtle":
 
-   >>> pet = getturtle()
-   >>> pet.fd(50)
-   >>> pet
-   <turtle.Turtle object at 0x01417350>
-   >>> turtles()
-   [<turtle.Turtle object at 0x01417350>]
+   .. doctest::
+
+      >>> pet = getturtle()
+      >>> pet.fd(50)
+      >>> pet
+      <turtle.Turtle object at 0x...>
 
 
 .. function:: getscreen()
@@ -1093,10 +1341,12 @@ Special Turtle methods
    Return the :class:`TurtleScreen` object the turtle is drawing on.
    TurtleScreen methods can then be called for that object.
 
-   >>> ts = turtle.getscreen()
-   >>> ts
-   <turtle.Screen object at 0x01417710>
-   >>> ts.bgcolor("pink")
+   .. doctest::
+
+      >>> ts = turtle.getscreen()
+      >>> ts
+      <turtle._Screen object at 0x...>
+      >>> ts.bgcolor("pink")
 
 
 .. function:: setundobuffer(size)
@@ -1108,15 +1358,20 @@ Special Turtle methods
    that can be undone by the :func:`undo` method/function.  If *size* is
    ``None``, the undobuffer is disabled.
 
-   >>> turtle.setundobuffer(42)
+   .. doctest::
+
+      >>> turtle.setundobuffer(42)
 
 
 .. function:: undobufferentries()
 
    Return number of entries in the undobuffer.
 
-   >>> while undobufferentries():
-   ...     undo()
+   .. doctest::
+
+      >>> while undobufferentries():
+      ...     undo()
+
 
 
 .. _compoundshapes:
@@ -1134,16 +1389,20 @@ below:
 
    For example:
 
-   >>> s = Shape("compound")
-   >>> poly1 = ((0,0),(10,-5),(0,10),(-10,-5))
-   >>> s.addcomponent(poly1, "red", "blue")
-   >>> poly2 = ((0,0),(10,-5),(-10,-5))
-   >>> s.addcomponent(poly2, "blue", "red")
+   .. doctest::
+
+      >>> s = Shape("compound")
+      >>> poly1 = ((0,0),(10,-5),(0,10),(-10,-5))
+      >>> s.addcomponent(poly1, "red", "blue")
+      >>> poly2 = ((0,0),(10,-5),(-10,-5))
+      >>> s.addcomponent(poly2, "blue", "red")
 
 3. Now add the Shape to the Screen's shapelist and use it:
 
-   >>> register_shape("myshape", s)
-   >>> shape("myshape")
+   .. doctest::
+
+      >>> register_shape("myshape", s)
+      >>> shape("myshape")
 
 
 .. note::
@@ -1159,6 +1418,10 @@ Methods of TurtleScreen/Screen and corresponding functions
 Most of the examples in this section refer to a TurtleScreen instance called
 ``screen``.
 
+.. doctest::
+   :hide:
+
+   >>> screen = Screen()
 
 Window control
 --------------
@@ -1170,12 +1433,14 @@ Window control
 
    Set or return background color of the TurtleScreen.
 
-   >>> screen.bgcolor("orange")
-   >>> screen.bgcolor()
-   "orange"
-   >>> screen.bgcolor(0.5,0,0.5)
-   >>> screen.bgcolor()
-   "#800080"
+   .. doctest::
+
+      >>> screen.bgcolor("orange")
+      >>> screen.bgcolor()
+      'orange'
+      >>> screen.bgcolor("#800080")
+      >>> screen.bgcolor()
+      (128, 0, 128)
 
 
 .. function:: bgpic(picname=None)
@@ -1185,13 +1450,13 @@ Window control
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
    ``"nopic"``, delete background image, if present.  If *picname* is ``None``,
-   return the filename of the current backgroundimage.
+   return the filename of the current backgroundimage. ::
 
-   >>> screen.bgpic()
-   "nopic"
-   >>> screen.bgpic("landscape.gif")
-   >>> screen.bgpic()
-   "landscape.gif"
+       >>> screen.bgpic()
+       'nopic'
+       >>> screen.bgpic("landscape.gif")
+       >>> screen.bgpic()
+       "landscape.gif"
 
 
 .. function:: clear()
@@ -1230,8 +1495,13 @@ Window control
    method, one can make visible those parts of a drawing which were outside the
    canvas before.
 
-      >>> turtle.screensize(2000,1500)
-      # e.g. to search for an erroneously escaped turtle ;-)
+      >>> screen.screensize()
+      (400, 300)
+      >>> screen.screensize(2000,1500)
+      >>> screen.screensize()
+      (2000, 1500)
+
+   e.g. to search for an erroneously escaped turtle ;-)
 
 
 .. function:: setworldcoordinates(llx, lly, urx, ury)
@@ -1248,13 +1518,22 @@ Window control
    **ATTENTION**: in user-defined coordinate systems angles may appear
    distorted.
 
-   >>> screen.reset()
-   >>> screen.setworldcoordinates(-50,-7.5,50,7.5)
-   >>> for _ in range(72):
-   ...     left(10)
-   ...
-   >>> for _ in range(8):
-   ...     left(45); fd(2)   # a regular octagon
+   .. doctest::
+
+      >>> screen.reset()
+      >>> screen.setworldcoordinates(-50,-7.5,50,7.5)
+      >>> for _ in range(72):
+      ...     left(10)
+      ...
+      >>> for _ in range(8):
+      ...     left(45); fd(2)   # a regular octagon
+
+   .. doctest::
+      :hide:
+
+      >>> screen.reset()
+      >>> for t in turtles():
+      ...      t.reset()
 
 
 Animation control
@@ -1270,9 +1549,13 @@ Animation control
 
    Optional argument:
 
-   >>> screen.delay(15)
-   >>> screen.delay()
-   15
+   .. doctest::
+
+      >>> screen.delay()
+      10
+      >>> screen.delay(5)
+      >>> screen.delay()
+      5
 
 
 .. function:: tracer(n=None, delay=None)
@@ -1285,12 +1568,14 @@ Animation control
    used to accelerate the drawing of complex graphics.)  Second argument sets
    delay value (see :func:`delay`).
 
-   >>> screen.tracer(8, 25)
-   >>> dist = 2
-   >>> for i in range(200):
-   ...     fd(dist)
-   ...     rt(90)
-   ...     dist += 2
+   .. doctest::
+
+      >>> screen.tracer(8, 25)
+      >>> dist = 2
+      >>> for i in range(200):
+      ...     fd(dist)
+      ...     rt(90)
+      ...     dist += 2
 
 
 .. function:: update()
@@ -1318,12 +1603,14 @@ Using screen events
    are removed. Remark: in order to be able to register key-events, TurtleScreen
    must have the focus. (See method :func:`listen`.)
 
-   >>> def f():
-   ...     fd(50)
-   ...     lt(60)
-   ...
-   >>> screen.onkey(f, "Up")
-   >>> screen.listen()
+   .. doctest::
+
+      >>> def f():
+      ...     fd(50)
+      ...     lt(60)
+      ...
+      >>> screen.onkey(f, "Up")
+      >>> screen.listen()
 
 
 .. function:: onclick(fun, btn=1, add=None)
@@ -1341,10 +1628,11 @@ Using screen events
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
    named turtle:
 
-   >>> screen.onclick(turtle.goto)
-   # Subsequently clicking into the TurtleScreen will
-   # make the turtle move to the clicked point.
-   >>> screen.onclick(None)  # remove event binding again
+   .. doctest::
+
+      >>> screen.onclick(turtle.goto) # Subsequently clicking into the TurtleScreen will
+      >>>                             # make the turtle move to the clicked point.
+      >>> screen.onclick(None)        # remove event binding again
 
    .. note::
       This TurtleScreen method is available as a global function only under the
@@ -1359,14 +1647,16 @@ Using screen events
 
    Install a timer that calls *fun* after *t* milliseconds.
 
-   >>> running = True
-   >>> def f():
-           if running:
-               fd(50)
-               lt(60)
-               screen.ontimer(f, 250)
-   >>> f()   ### makes the turtle marching around
-   >>> running = False
+   .. doctest::
+
+      >>> running = True
+      >>> def f():
+      ...     if running:
+      ...         fd(50)
+      ...         lt(60)
+      ...         screen.ontimer(f, 250)
+      >>> f()   ### makes the turtle march around
+      >>> running = False
 
 
 Settings and special methods
@@ -1391,9 +1681,11 @@ Settings and special methods
       "logo"        upward    (north)         clockwise
    ============ ========================= ===================
 
-   >>> mode("logo")   # resets turtle heading to north
-   >>> mode()
-   "logo"
+   .. doctest::
+
+      >>> mode("logo")   # resets turtle heading to north
+      >>> mode()
+      'logo'
 
 
 .. function:: colormode(cmode=None)
@@ -1403,10 +1695,19 @@ Settings and special methods
    Return the colormode or set it to 1.0 or 255.  Subsequently *r*, *g*, *b*
    values of color triples have to be in the range 0..\ *cmode*.
 
-   >>> screen.colormode()
-   1.0
-   >>> screen.colormode(255)
-   >>> turtle.pencolor(240,160,80)
+   .. doctest::
+
+      >>> screen.colormode(1)
+      >>> turtle.pencolor(240, 160, 80)
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: bad color sequence: (240, 160, 80)
+      >>> screen.colormode()
+      1.0
+      >>> screen.colormode(255)
+      >>> screen.colormode()
+      255
+      >>> turtle.pencolor(240,160,80)
 
 
 .. function:: getcanvas()
@@ -1414,17 +1715,21 @@ Settings and special methods
    Return the Canvas of this TurtleScreen.  Useful for insiders who know what to
    do with a Tkinter Canvas.
 
-   >>> cv = screen.getcanvas()
-   >>> cv
-   <turtle.ScrolledCanvas instance at 0x010742D8>
+   .. doctest::
+
+      >>> cv = screen.getcanvas()
+      >>> cv
+      <turtle.ScrolledCanvas instance at 0x...>
 
 
 .. function:: getshapes()
 
    Return a list of names of all currently available turtle shapes.
 
-   >>> screen.getshapes()
-   ["arrow", "blank", "circle", ..., "turtle"]
+   .. doctest::
+
+      >>> screen.getshapes()
+      ['arrow', 'blank', 'circle', ..., 'turtle']
 
 
 .. function:: register_shape(name, shape=None)
@@ -1433,7 +1738,9 @@ Settings and special methods
    There are three different ways to call this function:
 
    (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
-       corresponding image shape.
+       corresponding image shape. ::
+
+       >>> screen.register_shape("turtle.gif")
 
        .. note::
           Image shapes *do not* rotate when turning the turtle, so they do not
@@ -1442,38 +1749,41 @@ Settings and special methods
    (2) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
 
+       .. doctest::
+
+          >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
+
    (3) *name* is an arbitrary string and shape is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
 
-   >>> screen.register_shape("turtle.gif")
-   >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
-
 
 .. function:: turtles()
 
    Return the list of turtles on the screen.
 
-   >>> for turtle in screen.turtles()
-   ...     turtle.color("red")
+   .. doctest::
+
+      >>> for turtle in screen.turtles():
+      ...     turtle.color("red")
 
 
 .. function:: window_height()
 
-   Return the height of the turtle window.
+   Return the height of the turtle window. ::
 
-   >>> screen.window_height()
-   480
+       >>> screen.window_height()
+       480
 
 
 .. function:: window_width()
 
-   Return the width of the turtle window.
+   Return the width of the turtle window. ::
 
-   >>> screen.window_width()
-   640
+       >>> screen.window_width()
+       640
 
 
 .. _screenspecific:
@@ -1515,10 +1825,12 @@ Methods specific to Screen, not inherited from TurtleScreen
                   edge of the screen, if negative from the bottom edge, if None,
                   center window vertically
 
-   >>> screen.setup (width=200, height=200, startx=0, starty=0)
-   # sets window to 200x200 pixels, in upper left of screen
-   >>> screen.setup(width=.75, height=0.5, startx=None, starty=None)
-   # sets window to 75% of screen by 50% of screen and centers
+   .. doctest::
+
+      >>> screen.setup (width=200, height=200, startx=0, starty=0)
+      >>>              # sets window to 200x200 pixels, in upper left of screen
+      >>> screen.setup(width=.75, height=0.5, startx=None, starty=None)
+      >>>              # sets window to 75% of screen by 50% of screen and centers
 
 
 .. function:: title(titlestring)
@@ -1528,7 +1840,9 @@ Methods specific to Screen, not inherited from TurtleScreen
 
    Set title of turtle window to *titlestring*.
 
-   >>> screen.title("Welcome to the turtle zoo!")
+   .. doctest::
+
+      >>> screen.title("Welcome to the turtle zoo!")
 
 
 The public classes of the module :mod:`turtle`
@@ -1541,14 +1855,14 @@ The public classes of the module :mod:`turtle`
    :param canvas: a :class:`Tkinter.Canvas`, a :class:`ScrolledCanvas` or a
                   :class:`TurtleScreen`
 
-    Create a turtle.  The turtle has all methods described above as "methods of
-    Turtle/RawTurtle".
+   Create a turtle.  The turtle has all methods described above as "methods of
+   Turtle/RawTurtle".
 
 
 .. class:: Turtle()
 
-    Subclass of RawTurtle, has the same interface but draws on a default
-    :class:`Screen` object created automatically when needed for the first time.
+   Subclass of RawTurtle, has the same interface but draws on a default
+   :class:`Screen` object created automatically when needed for the first time.
 
 
 .. class:: TurtleScreen(cv)
@@ -1596,10 +1910,12 @@ The public classes of the module :mod:`turtle`
 
       Example:
 
-      >>> poly = ((0,0),(10,-5),(0,10),(-10,-5))
-      >>> s = Shape("compound")
-      >>> s.addcomponent(poly, "red", "blue")
-      # .. add more components and then use register_shape()
+      .. doctest::
+
+         >>> poly = ((0,0),(10,-5),(0,10),(-10,-5))
+         >>> s = Shape("compound")
+         >>> s.addcomponent(poly, "red", "blue")
+         >>> # ... add more components and then use register_shape()
 
       See :ref:`compoundshapes`.
 
@@ -1888,3 +2204,22 @@ Changes since Python 2.6
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
 
+
+.. doctest::
+   :hide:
+
+   >>> for turtle in turtles():
+   ...      turtle.reset()
+   >>> turtle.penup()
+   >>> turtle.goto(-200,25)
+   >>> turtle.pendown()
+   >>> turtle.write("No one expects the Spanish Inquisition!",
+   ...      font=("Arial", 20, "normal"))
+   >>> turtle.penup()
+   >>> turtle.goto(-100,-50)
+   >>> turtle.pendown()
+   >>> turtle.write("Our two chief Turtles are...",
+   ...      font=("Arial", 16, "normal"))
+   >>> turtle.penup()
+   >>> turtle.goto(-450,-75)
+   >>> turtle.write(str(turtles()))
