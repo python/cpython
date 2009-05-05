@@ -3404,6 +3404,18 @@ class Test_itertools_imports(FixerTestCase):
         a = "from itertools import bar as bang"
         self.check(b, a)
 
+        b = "from itertools import izip as _zip, imap, bar"
+        a = "from itertools import bar"
+        self.check(b, a)
+
+        b = "from itertools import imap as _map"
+        a = ""
+        self.check(b, a)
+
+        b = "from itertools import imap as _map, izip as _zip"
+        a = ""
+        self.check(b, a)
+
         s = "from itertools import bar as bang"
         self.unchanged(s)
 
