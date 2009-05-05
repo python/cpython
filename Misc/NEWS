@@ -273,6 +273,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1309567: Fix linecache behavior of stripping subdirectories when
+  looking for files given by a relative filename.
+
 - Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
   extracting a file to the root directory.
 
