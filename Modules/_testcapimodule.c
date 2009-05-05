@@ -228,10 +228,10 @@ test_lazy_hash_inheritance(PyObject* self)
 
 	type = &_HashInheritanceTester_Type;
 
-        if (type->tp_dict != NULL)
-            /* The type has already been initialized. This probably means -R
-             is being used. */
-            Py_RETURN_NONE;
+	if (type->tp_dict != NULL)
+		/* The type has already been initialized. This probably means
+		   -R is being used. */
+		Py_RETURN_NONE;
 
 
 	obj = PyObject_New(PyObject, type);
@@ -277,7 +277,7 @@ test_lazy_hash_inheritance(PyObject* self)
 		return NULL;
 	}
 
-        Py_DECREF(obj);
+	Py_DECREF(obj);
 
 	Py_RETURN_NONE;
 }
