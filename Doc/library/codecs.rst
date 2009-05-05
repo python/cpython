@@ -322,6 +322,8 @@ and implemented by all standard Python codecs:
 | ``'backslashreplace'``  | Replace with backslashed escape sequences     |
 |                         | (only for encoding).                          |
 +-------------------------+-----------------------------------------------+
+| ``'utf8b'``             | Replace byte with surrogate U+DCxx.           |
++-------------------------+-----------------------------------------------+
 
 In addition, the following error handlers are specific to a single codec:
 
@@ -333,7 +335,7 @@ In addition, the following error handlers are specific to a single codec:
 +------------------+---------+--------------------------------------------+
 
 .. versionadded:: 3.1
-   The ``'surrogates'`` error handler.
+   The ``'utf8b'`` and ``'surrogates'`` error handlers.
 
 The set of allowed values can be extended via :meth:`register_error`.
 

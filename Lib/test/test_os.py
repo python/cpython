@@ -7,6 +7,7 @@ import errno
 import unittest
 import warnings
 import sys
+import shutil
 from test import support
 
 # Tests creating TESTFN
@@ -698,8 +699,43 @@ if sys.platform != 'win32':
                     self.assertRaises(os.error, os.setregid, 0, 0)
                 self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
                 self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
+
+    class Pep383Tests(unittest.TestCase):
+        filenames = [b'foo\xf6bar', 'foo\xf6bar'.encode("utf-8")]
+
+        def setUp(self):
+            self.fsencoding = sys.getfilesystemencoding()
+            sys.setfilesystemencoding("utf-8")
+            self.dir = support.TESTFN
+            self.bdir = self.dir.encode("utf-8", "utf8b")
+            os.mkdir(self.dir)
+            self.unicodefn = []
+            for fn in self.filenames:
+                f = open(os.path.join(self.bdir, fn), "w")
+                f.close()
+                self.unicodefn.append(fn.decode("utf-8", "utf8b"))
+
+        def tearDown(self):
+            shutil.rmtree(self.dir)
+            sys.setfilesystemencoding(self.fsencoding)
+
+        def test_listdir(self):
+            expected = set(self.unicodefn)
+            found = set(os.listdir(support.TESTFN))
+            self.assertEquals(found, expected)
+
+        def test_open(self):
+            for fn in self.unicodefn:
+                f = open(os.path.join(self.dir, fn))
+                f.close()
+
+        def test_stat(self):
+            for fn in self.unicodefn:
+                os.stat(os.path.join(self.dir, fn))
 else:
     class PosixUidGidTests(unittest.TestCase):
+        pass
+    class Pep383Tests(unittest.TestCase):
         pass
 
 def test_main():
@@ -714,7 +750,8 @@ def test_main():
         ExecTests,
         Win32ErrorTests,
         TestInvalidFD,
-        PosixUidGidTests
+        PosixUidGidTests,
+        Pep383Tests
     )
 
 if __name__ == "__main__":

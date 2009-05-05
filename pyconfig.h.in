@@ -419,6 +419,9 @@
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
+/* Define to 1 if you have the `mbrtowc' function. */
+#undef HAVE_MBRTOWC
+
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 

@@ -12,6 +12,8 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Implement PEP 383, Non-decodable Bytes in System Character Interfaces.
+
 - Issue #5890: in subclasses of 'property' the __doc__ attribute was
   shadowed by classtype's, even if it was None.  property now
   inserts the __doc__ into the subclass instance __dict__.
