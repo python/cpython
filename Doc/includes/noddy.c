@@ -6,7 +6,7 @@ typedef struct {
 } noddy_NoddyObject;
 
 static PyTypeObject noddy_NoddyType = {
-    PyObject_HEAD_INIT(NULL)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "noddy.Noddy",             /* tp_name */
     sizeof(noddy_NoddyObject), /* tp_basicsize */
     0,                         /* tp_itemsize */

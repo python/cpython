@@ -123,7 +123,7 @@ static PyMethodDef Noddy_methods[] = {
 };
 
 static PyTypeObject NoddyType = {
-    PyObject_HEAD_INIT(NULL)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "noddy.Noddy",             /* tp_name */
     sizeof(Noddy),             /* tp_basicsize */
     0,                         /* tp_itemsize */
