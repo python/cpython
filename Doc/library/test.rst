@@ -389,7 +389,7 @@ The :mod:`test.support` module defines the following classes:
    manager all changes to environment variables done through this instance will
    be rolled back.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       Added dictionary interface.
 
 .. method:: EnvironmentVarGuard.set(envvar, value)

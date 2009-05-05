@@ -863,7 +863,7 @@ Test cases
       This signals a test failure if *expr1* and *expr2* don't evaluate to the same
       object.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertIsNot(expr1, expr2[, msg])
@@ -872,7 +872,7 @@ Test cases
       This signals a test failure if *expr1* and *expr2* evaluate to the same
       object.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: assertFalse(expr[, msg])

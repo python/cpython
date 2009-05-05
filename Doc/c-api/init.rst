@@ -824,8 +824,7 @@ perform any Python API calls.
    other system thread.  If it is a Python thread, it doesn't matter if it holds
    the global interpreter lock or not.
 
-   .. versionadded:: 2.7
-
+   .. versionadded:: 3.1
 
 
 .. _profiling:

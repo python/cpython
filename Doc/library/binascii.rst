@@ -123,10 +123,6 @@ The :mod:`binascii` module defines the following functions:
    return value is the correct 32bit binary representation
    regardless of sign.
 
-.. versionchanged:: 3.0
-   The return value is unsigned and in the range [0, 2**32-1]
-   regardless of platform.
-
 
 .. function:: b2a_hex(data)
               hexlify(data)

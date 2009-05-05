@@ -105,7 +105,7 @@ A hash object has the following methods:
    concatenation of all the arguments: ``m.update(a); m.update(b)`` is
    equivalent to ``m.update(a+b)``.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
 
       The Python GIL is released to allow other threads to run while
       hash updates on data larger than 2048 bytes is taking place when
