@@ -51,10 +51,6 @@ The available exception and functions in this module are:
    return value is the correct 32bit binary representation
    regardless of sign.
 
-.. versionchanged:: 3.0
-   The return value is unsigned and in the range [0, 2**32-1]
-   regardless of platform.
-
 
 .. function:: compress(string[, level])
 
@@ -95,10 +91,6 @@ The available exception and functions in this module are:
    the checksum in packed binary format this is not necessary as the
    return value is the correct 32bit binary representation
    regardless of sign.
-
-.. versionchanged:: 3.0
-   The return value is unsigned and in the range [0, 2**32-1]
-   regardless of platform.
 
 
 .. function:: decompress(string[, wbits[, bufsize]])
