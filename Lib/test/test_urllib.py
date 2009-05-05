@@ -837,6 +837,18 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user', 'a\vb'),urllib.parse.splitpasswd('user:a\vb'))
         self.assertEqual(('user', 'a:b'),urllib.parse.splitpasswd('user:a:b'))
 
+
+class URLopener_Tests(unittest.TestCase):
+    """Testcase to test the open method of URLopener class."""
+
+    def test_quoted_open(self):
+        class DummyURLopener(urllib.request.URLopener):
+            def open_spam(self, url):
+                return url
+
+        self.assertEqual(DummyURLopener().open(
+            'spam://example/ /'),'//example/%20/')
+
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
 # Everywhere else they work ok, but on those machines, someteimes
@@ -928,6 +940,7 @@ def test_main():
         urlencode_Tests,
         Pathname_Tests,
         Utility_Tests,
+        URLopener_Tests,
         #FTPWrapperTests,
     )
 
