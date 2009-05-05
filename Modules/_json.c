@@ -133,9 +133,9 @@ _convertPyInt_AsSsize_t(PyObject *o, Py_ssize_t *size_ptr)
 {
     /* PyObject to Py_ssize_t converter */
     *size_ptr = PyLong_AsSsize_t(o);
-    if (*size_ptr == -1 && PyErr_Occurred());
-        return 1;
-    return 0;
+    if (*size_ptr == -1 && PyErr_Occurred())
+        return 0;
+    return 1;
 }
 
 static PyObject *
