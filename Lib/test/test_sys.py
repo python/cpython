@@ -644,7 +644,7 @@ class SizeofTest(unittest.TestCase):
             def delx(self): del self.__x
             x = property(getx, setx, delx, "")
             check(x, size(h + '4Pi'))
-        # PyCObject
+        # PyCapsule
         # XXX
         # rangeiterator
         check(iter(range(1)), size(h + '4l'))

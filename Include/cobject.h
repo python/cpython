@@ -1,10 +1,8 @@
 
-/* C objects to be exported from one extension module to another.
+/* 
  
-   C objects are used for communication between extension modules.
-   They provide a way for an extension module to export a C interface
-   to other extension modules, so that extension modules can use the
-   Python import mechanism to link to one another.
+The CObject module is now *deprecated* as of Python 3.1.
+Please use the Capsule API instead; see "pycapsule.h".
 
 */
 

@@ -6,6 +6,18 @@
 #endif
 #include "ctypes.h"
 
+
+#define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
+
+static void pymem_destructor(PyObject *ptr)
+{
+	void *p = PyCapsule_GetPointer(ptr, CTYPES_CFIELD_CAPSULE_NAME_PYMEM);
+	if (p) {
+		PyMem_Free(p);
+	}
+}
+
+
 /******************************************************************/
 /*
   PyCField_Type
@@ -1477,7 +1489,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 			return PyErr_NoMemory();
 		}
 		memset(buffer, 0, size);
-		keep = PyCObject_FromVoidPtr(buffer, PyMem_Free);
+		keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);
 		if (!keep) {
 			Py_DECREF(value);
 			PyMem_Free(buffer);

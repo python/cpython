@@ -209,6 +209,19 @@ EXPORTS
   "PyInstance_Type"
   "PyMethod_Type"
 
+; From python26_s.lib(capsule)
+  "PyCapsule_GetContext"
+  "PyCapsule_GetDestructor"
+  "PyCapsule_GetName"
+  "PyCapsule_GetPointer"
+  "PyCapsule_Import"
+  "PyCapsule_IsValid"
+  "PyCapsule_New"
+  "PyCapsule_SetContext"
+  "PyCapsule_SetDestructor"
+  "PyCapsule_SetName"
+  "PyCapsule_SetPointer"
+
 ; From python26_s.lib(cobject)
   "PyCObject_FromVoidPtr"
   "PyCObject_FromVoidPtrAndDesc"

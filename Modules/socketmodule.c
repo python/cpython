@@ -4146,6 +4146,14 @@ PySocketModule_APIObject PySocketModuleAPI =
         NULL
 };
 
+PySocketModule_APIObject *
+PySocketModule_ImportModuleAndAPI(void)
+{
+	void *api;
+	api = PyCapsule_Import(PySocket_CAPSULE_NAME, 1);;
+	return (PySocketModule_APIObject *)api;
+}
+
 
 /* Initialize the _socket module.
 
@@ -4231,7 +4239,7 @@ PyInit__socket(void)
 
 	/* Export C API */
 	if (PyModule_AddObject(m, PySocket_CAPI_NAME,
-	       PyCObject_FromVoidPtr((void *)&PySocketModuleAPI, NULL)
+	       PyCapsule_New(&PySocketModuleAPI, PySocket_CAPSULE_NAME, NULL)
 				 ) != 0)
 		return NULL;
 

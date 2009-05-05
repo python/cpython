@@ -71,6 +71,8 @@ enum py_ssl_version {
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
+static PySocketModule_APIObject PySocketModule;
+
 #if defined(HAVE_POLL_H)
 #include <poll.h>
 #elif defined(HAVE_SYS_POLL_H)
@@ -1626,6 +1628,7 @@ PyMODINIT_FUNC
 PyInit__ssl(void)
 {
 	PyObject *m, *d;
+        PySocketModule_APIObject *socket_api;
 
 	if (PyType_Ready(&PySSL_Type) < 0)
 		return NULL;
@@ -1636,8 +1639,10 @@ PyInit__ssl(void)
 	d = PyModule_GetDict(m);
 
 	/* Load _socket module and its C API */
-	if (PySocketModule_ImportModuleAndAPI())
+        socket_api = PySocketModule_ImportModuleAndAPI();
+	if (!socket_api)
 		return NULL;
+        PySocketModule = *socket_api;
 
 	/* Init OpenSSL */
 	SSL_load_error_strings();

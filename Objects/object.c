@@ -1716,9 +1716,12 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #endif
 
-
 /* Hack to force loading of cobject.o */
 PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
+
+
+/* Hack to force loading of pycapsule.o */
+PyTypeObject *_PyCapsule_hack = &PyCapsule_Type;
 
 
 /* Hack to force loading of abstract.o */
