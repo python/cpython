@@ -60,6 +60,22 @@ class PropertyDocSub(PropertyDocBase):
         """The decorator does not use this doc string"""
         return self._spam
 
+class PropertySubNewGetter(BaseClass):
+    @BaseClass.spam.getter
+    def spam(self):
+        """new docstring"""
+        return 5
+
+class PropertyNewGetter(object):
+    @property
+    def spam(self):
+        """original docstring"""
+        return 1
+    @spam.getter
+    def spam(self):
+        """new docstring"""
+        return 8
+
 class PropertyTests(unittest.TestCase):
     def test_property_decorator_baseclass(self):
         # see #1620
@@ -91,8 +107,106 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.__class__.spam.__doc__, "spam spam spam")
         self.assertEqual(sub.__class__.spam.__doc__, "spam spam spam")
 
+    def test_property_getter_doc_override(self):
+        newgettersub = PropertySubNewGetter()
+        self.assertEqual(newgettersub.spam, 5)
+        self.assertEqual(newgettersub.__class__.spam.__doc__, "new docstring")
+        newgetter = PropertyNewGetter()
+        self.assertEqual(newgetter.spam, 8)
+        self.assertEqual(newgetter.__class__.spam.__doc__, "new docstring")
+
+
+# Issue 5890: subclasses of property do not preserve method __doc__ strings
+class PropertySub(property):
+    """This is a subclass of property"""
+
+class PropertySubSlots(property):
+    """This is a subclass of property that defines __slots__"""
+    __slots__ = ()
+
+class PropertySubclassTests(unittest.TestCase):
+
+    def test_docstring_copy(self):
+        class Foo(object):
+            @PropertySub
+            def spam(self):
+                """spam wrapped in property subclass"""
+                return 1
+        self.assertEqual(
+            Foo.spam.__doc__,
+            "spam wrapped in property subclass")
+
+    def test_slots_docstring_copy_exception(self):
+        try:
+            class Foo(object):
+                @PropertySubSlots
+                def spam(self):
+                    """Trying to copy this docstring will raise an exception"""
+                    return 1
+        except AttributeError:
+            pass
+        else:
+            raise Exception("AttributeError not raised")
+
+    def test_property_setter_copies_getter_docstring(self):
+        class Foo(object):
+            def __init__(self): self._spam = 1
+            @PropertySub
+            def spam(self):
+                """spam wrapped in property subclass"""
+                return self._spam
+            @spam.setter
+            def spam(self, value):
+                """this docstring is ignored"""
+                self._spam = value
+        foo = Foo()
+        self.assertEqual(foo.spam, 1)
+        foo.spam = 2
+        self.assertEqual(foo.spam, 2)
+        self.assertEqual(
+            Foo.spam.__doc__,
+            "spam wrapped in property subclass")
+        class FooSub(Foo):
+            @Foo.spam.setter
+            def spam(self, value):
+                """another ignored docstring"""
+                self._spam = 'eggs'
+        foosub = FooSub()
+        self.assertEqual(foosub.spam, 1)
+        foosub.spam = 7
+        self.assertEqual(foosub.spam, 'eggs')
+        self.assertEqual(
+            FooSub.spam.__doc__,
+            "spam wrapped in property subclass")
+
+    def test_property_new_getter_new_docstring(self):
+
+        class Foo(object):
+            @PropertySub
+            def spam(self):
+                """a docstring"""
+                return 1
+            @spam.getter
+            def spam(self):
+                """a new docstring"""
+                return 2
+        self.assertEqual(Foo.spam.__doc__, "a new docstring")
+        class FooBase(object):
+            @PropertySub
+            def spam(self):
+                """a docstring"""
+                return 1
+        class Foo2(FooBase):
+            @FooBase.spam.getter
+            def spam(self):
+                """a new docstring"""
+                return 2
+        self.assertEqual(Foo.spam.__doc__, "a new docstring")
+
+
+
 def test_main():
-    run_unittest(PropertyTests)
+    run_unittest(PropertyTests, PropertySubclassTests)
 
 if __name__ == '__main__':
     test_main()
