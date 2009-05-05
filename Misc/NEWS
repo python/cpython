@@ -863,6 +863,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #5847: Remove -n switch on "Edit with IDLE" menu item.
+
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 

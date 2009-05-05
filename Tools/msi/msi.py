@@ -1187,10 +1187,10 @@ def add_registry(db):
     if have_tcl:
         tcl_verbs=[
              ("py.IDLE", -1, pat % (testprefix, "", ewi), "",
-              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
+              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -e "%1"',
               "REGISTRY.tcl"),
              ("pyw.IDLE", -1, pat % (testprefix, "NoCon", ewi), "",
-              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
+              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -e "%1"',
               "REGISTRY.tcl"),
         ]
     add_data(db, "Registry",
