@@ -118,6 +118,9 @@ Installation
 Library
 -------
 
+- Issue #1309567: Fix linecache behavior of stripping subdirectories when
+  looking for files given by a relative filename.
+
 - Issue #5923: Update the ``turtle`` module to version 1.1, add two new
   turtle demos in Demo/turtle.
 

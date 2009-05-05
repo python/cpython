@@ -80,7 +80,7 @@ def updatecache(filename, module_globals=None):
     try:
         stat = os.stat(fullname)
     except os.error as msg:
-        basename = os.path.split(filename)[1]
+        basename = filename
 
         # Try for a __loader__, if available
         if module_globals and '__loader__' in module_globals:
@@ -104,7 +104,10 @@ def updatecache(filename, module_globals=None):
                     )
                     return cache[filename][2]
 
-        # Try looking through the module search path.
+        # Try looking through the module search path, which is only useful
+        # when handling a relative filename.
+        if os.path.isabs(filename):
+            return []
 
         for dirname in sys.path:
             try:
