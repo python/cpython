@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4875: On win32, ctypes.util.find_library does no longer
+  return directories.
+
 - Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
   extracting a file to the root directory.
 
