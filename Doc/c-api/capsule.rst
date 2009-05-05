@@ -34,7 +34,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    Return true if its argument is a :ctype:`PyCapsule`.
 
 
-.. cfunction:: PyObject* PyCapsule_New(void* pointer, const char* name, PyCapsule_Destructor destructor)
+.. cfunction:: PyObject* PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
 
    Create a :ctype:`PyCapsule` encapsulating the *pointer*.  The *pointer*
    argument may not be *NULL*.
@@ -46,16 +46,16 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    free it inside the *destructor*.)
 
    If the *destructor* argument is not *NULL*, it will be called with the
-   capsule when it is destroyed.
+   capsule as its argument when it is destroyed.
 
    If this capsule will be stored as an attribute of a module, the *name* should
    be specified as ``modulename.attributename``.  This will enable other modules
    to import the capsule using :cfunc:`PyCapsule_Import`.
 
 
-.. cfunction:: void* PyCapsule_GetPointer(PyObject* capsule, const char* name)
+.. cfunction:: void* PyCapsule_GetPointer(PyObject *capsule, const char *name)
 
-   Retrieve the *pointer* stored in the capsule. On failure, set an exception
+   Retrieve the *pointer* stored in the capsule.  On failure, set an exception
    and return *NULL*.
 
    The *name* parameter must compare exactly to the name stored in the capsule.
@@ -64,7 +64,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    names.
 
 
-.. cfunction:: PyCapsule_Destructor PyCapsule_GetDestructor(PyObject* capsule)
+.. cfunction:: PyCapsule_Destructor PyCapsule_GetDestructor(PyObject *capsule)
 
    Return the current destructor stored in the capsule.  On failure, set an
    exception and return *NULL*.
@@ -74,7 +74,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    :cfunc:`PyErr_Occurred` to disambugate.
 
 
-.. cfunction:: void* PyCapsule_GetContext(PyObject* capsule)
+.. cfunction:: void* PyCapsule_GetContext(PyObject *capsule)
 
    Return the current context stored in the capsule.  On failure, set an
    exception and return *NULL*.
@@ -84,7 +84,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    :cfunc:`PyErr_Occurred` to disambugate.
 
 
-.. cfunction:: const char* PyCapsule_GetName(PyObject* capsule)
+.. cfunction:: const char* PyCapsule_GetName(PyObject *capsule)
 
    Return the current name stored in the capsule.  On failure, set an exception
    and return *NULL*.
@@ -94,9 +94,9 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    :cfunc:`PyErr_Occurred` to disambugate.
 
 
-.. cfunction:: void* PyCapsule_Import(const char* name, int no_block)
+.. cfunction:: void* PyCapsule_Import(const char *name, int no_block)
 
-   Import a pointer to a C object from a ``capsule`` attribute in a module.  The
+   Import a pointer to a C object from a capsule attribute in a module.  The
    *name* parameter should specify the full name to the attribute, as in
    ``module.attribute``.  The *name* stored in the capsule must match this
    string exactly.  If *no_block* is true, import the module without blocking
@@ -107,10 +107,10 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    exception and return *NULL*.  However, if :cfunc:`PyCapsule_Import` failed to
    import the module, and *no_block* was true, no exception is set.
 
-.. cfunction:: int PyCapsule_IsValid(PyObject* capsule, const char* name)
+.. cfunction:: int PyCapsule_IsValid(PyObject *capsule, const char *name)
 
    Determines whether or not *capsule* is a valid capsule.  A valid capsule is
-   non-*NULL*, passes :cfunc:`PyCapsule_CheckExact`, has a non-NULL pointer
+   non-*NULL*, passes :cfunc:`PyCapsule_CheckExact`, has a non-*NULL* pointer
    stored in it, and its internal name matches the *name* parameter.  (See
    :cfunc:`PyCapsule_GetPointer` for information on how capsule names are
    compared.)
@@ -122,20 +122,19 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    Return a nonzero value if the object is valid and matches the name passed in.
    Return 0 otherwise.  This function will not fail.
 
-.. cfunction:: int PyCapsule_SetContext(PyObject* capsule, void* context)
+.. cfunction:: int PyCapsule_SetContext(PyObject *capsule, void *context)
 
    Set the context pointer inside *capsule* to *context*.
 
-   Return 0 on success.
-   Return nonzero and set an exception on failure.
+   Return 0 on success.  Return nonzero and set an exception on failure.
 
-.. cfunction:: int PyCapsule_SetDestructor(PyObject* capsule, PyCapsule_Destructor destructor)
+.. cfunction:: int PyCapsule_SetDestructor(PyObject *capsule, PyCapsule_Destructor destructor)
 
    Set the destructor inside *capsule* to *destructor*.
 
    Return 0 on success.  Return nonzero and set an exception on failure.
 
-.. cfunction:: int PyCapsule_SetName(PyObject* capsule, const char* name)
+.. cfunction:: int PyCapsule_SetName(PyObject *capsule, const char *name)
 
    Set the name inside *capsule* to *name*.  If non-*NULL*, the name must
    outlive the capsule.  If the previous *name* stored in the capsule was not
@@ -143,10 +142,9 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    Return 0 on success.  Return nonzero and set an exception on failure.
 
-.. cfunction:: int PyCapsule_SetPointer(PyObject* capsule, void* pointer)
+.. cfunction:: int PyCapsule_SetPointer(PyObject *capsule, void *pointer)
 
    Set the void pointer inside *capsule* to *pointer*.  The pointer may not be
    *NULL*.
 
    Return 0 on success.  Return nonzero and set an exception on failure.
-
