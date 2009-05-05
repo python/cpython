@@ -158,10 +158,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.interaction(frame, None)
 
     def bp_commands(self,frame):
-        """ Call every command that was set for the current active breakpoint (if there is one)
-        Returns True if the normal interaction function must be called, False otherwise """
-        #self.currentbp is set in bdb.py in bdb.break_here if a breakpoint was hit
-        if getattr(self,"currentbp",False) and self.currentbp in self.commands:
+        """Call every command that was set for the current active breakpoint
+        (if there is one).
+
+        Returns True if the normal interaction function must be called,
+        False otherwise."""
+        # self.currentbp is set in bdb in Bdb.break_here if a breakpoint was hit
+        if getattr(self, "currentbp", False) and \
+               self.currentbp in self.commands:
             currentbp = self.currentbp
             self.currentbp = 0
             lastcmd_back = self.lastcmd
@@ -289,7 +293,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = getattr(self, 'do_' + cmd)
         except AttributeError:
             func = self.default
-        if func.func_name in self.commands_resuming : # one of the resuming commands.
+        # one of the resuming commands
+        if func.func_name in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False
             self.cmdqueue = []
             return 1
@@ -302,15 +307,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_h = cmd.Cmd.do_help
 
     def do_commands(self, arg):
-        """Defines a list of commands associated to a breakpoint
-        Those commands will be executed whenever the breakpoint causes the program to stop execution."""
+        """Defines a list of commands associated to a breakpoint.
+
+        Those commands will be executed whenever the breakpoint causes
+        the program to stop execution."""
         if not arg:
             bnum = len(bdb.Breakpoint.bpbynumber)-1
         else:
             try:
                 bnum = int(arg)
             except:
-                print >>self.stdout, "Usage : commands [bnum]\n        ...\n        end"
+                print >>self.stdout, "Usage : commands [bnum]\n        ..." \
+                                     "\n        end"
                 return
         self.commands_bnum = bnum
         self.commands[bnum] = []
@@ -648,8 +656,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_n = do_next
 
     def do_run(self, arg):
-        """Restart program by raising an exception to be caught in the main debugger
-        loop. If arguments were given, set them in sys.argv."""
+        """Restart program by raising an exception to be caught in the main
+        debugger loop.  If arguments were given, set them in sys.argv."""
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
@@ -786,7 +794,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             for lineno in range(first, last+1):
-                line = linecache.getline(filename, lineno, self.curframe.f_globals)
+                line = linecache.getline(filename, lineno,
+                                         self.curframe.f_globals)
                 if not line:
                     print >>self.stdout, '[EOF]'
                     break
@@ -950,8 +959,8 @@ a linenumber was used instead of either filename:lineno or
 breakpoint numbers."""
 
     def help_tbreak(self):
-        print >>self.stdout, """tbreak  same arguments as break, but breakpoint is
-removed when first hit."""
+        print >>self.stdout, """tbreak  same arguments as break, but breakpoint
+is removed when first hit."""
 
     def help_enable(self):
         print >>self.stdout, """enable bpnumber [bpnumber ...]
@@ -1097,7 +1106,7 @@ Prints the type of the argument."""
 Handles the receipt of EOF as a command."""
 
     def help_alias(self):
-        print >>self.stdout, """alias [name [command [parameter parameter ...] ]]
+        print >>self.stdout, """alias [name [command [parameter parameter ...]]]
 Creates an alias called 'name' the executes 'command'.  The command
 must *not* be enclosed in quotes.  Replaceable parameters are
 indicated by %1, %2, and so on, while %* is replaced by all the
@@ -1284,8 +1293,8 @@ def main():
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
-    # changed by the user from the command line. There is a "restart" command which
-    # allows explicit specification of command line arguments.
+    # changed by the user from the command line. There is a "restart" command
+    # which allows explicit specification of command line arguments.
     pdb = Pdb()
     while 1:
         try:
@@ -1306,7 +1315,8 @@ def main():
             print "Running 'cont' or 'step' will restart the program"
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            print "Post mortem debugger finished. The "+mainpyfile+" will be restarted"
+            print "Post mortem debugger finished. The " + mainpyfile + \
+                  " will be restarted"
 
 
 # When invoked as main program, invoke the debugger on a script
