@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2005, 2006 Martin v. LÃ¶wis
+# Copyright (C) 2005, 2006 Martin v. Löwis
 # Licensed to PSF under a Contributor Agreement.
 # The bdist_wininst command proper
 # based on bdist_wininst
@@ -117,6 +117,12 @@ class bdist_msi(Command):
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
                        'skip-build']
 
+    all_versions = ['2.0', '2.1', '2.2', '2.3', '2.4',
+                    '2.5', '2.6', '2.7', '2.8', '2.9',
+                    '3.0', '3.1', '3.2', '3.3', '3.4',
+                    '3.5', '3.6', '3.7', '3.8', '3.9']
+    other_version = 'X'
+
     def initialize_options(self):
         self.bdist_dir = None
         self.plat_name = None
@@ -128,6 +134,7 @@ class bdist_msi(Command):
         self.skip_build = 0
         self.install_script = None
         self.pre_install_script = None
+        self.versions = None
 
     def finalize_options(self):
         if self.bdist_dir is None:
@@ -135,13 +142,14 @@ class bdist_msi(Command):
             self.bdist_dir = os.path.join(bdist_base, 'msi')
         short_version = get_python_version()
         if self.target_version:
+            self.versions = [self.target_version]
             if not self.skip_build and self.distribution.has_ext_modules()\
                and self.target_version != short_version:
                 raise DistutilsOptionError(
                       "target version can only be %s, or the '--skip_build'"
                       " option must be specified" % (short_version,))
         else:
-            self.target_version = short_version
+            self.versions = list(self.all_versions)
 
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'),
@@ -222,8 +230,11 @@ class bdist_msi(Command):
         # Prefix ProductName with Python x.y, so that
         # it sorts together with the other Python packages
         # in Add-Remove-Programs (APR)
-        product_name = "Python %s %s" % (self.target_version,
-                       self.distribution.get_fullname())
+        fullname = self.distribution.get_fullname()
+        if self.target_version:
+            product_name = "Python %s %s" % (self.target_version, fullname)
+        else:
+            product_name = "Python %s" % (fullname)
         self.db = msilib.init_database(installer_name, schema,
                 product_name, msilib.gen_uuid(),
                 sversion, author)
@@ -244,7 +255,8 @@ class bdist_msi(Command):
         self.db.Commit()
 
         if hasattr(self.distribution, 'dist_files'):
-            self.distribution.dist_files.append(('bdist_msi', self.target_version, fullname))
+            tup = 'bdist_msi', self.target_version or 'any', fullname
+            self.distribution.dist_files.append(tup)
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
@@ -252,66 +264,121 @@ class bdist_msi(Command):
     def add_files(self):
         db = self.db
         cab = msilib.CAB("distfiles")
-        f = Feature(db, "default", "Default Feature", "Everything", 1, directory="TARGETDIR")
-        f.set_current()
         rootdir = os.path.abspath(self.bdist_dir)
+
         root = Directory(db, cab, None, rootdir, "TARGETDIR", "SourceDir")
+        f = Feature(db, "Python", "Python", "Everything",
+                    0, 1, directory="TARGETDIR")
+
+        items = [(f, root, '')]
+        for version in self.versions + [self.other_version]:
+            target = "TARGETDIR" + version
+            name = default = "Python" + version
+            desc = "Everything"
+            if version is self.other_version:
+                title = "Python from another location"
+                level = 2
+            else:
+                title = "Python %s from registry" % version
+                level = 1
+            f = Feature(db, name, title, desc, 1, level, directory=target)
+            dir = Directory(db, cab, root, rootdir, target, default)
+            items.append((f, dir, version))
         db.Commit()
-        todo = [root]
-        while todo:
-            dir = todo.pop()
-            for file in os.listdir(dir.absolute):
-                afile = os.path.join(dir.absolute, file)
-                if os.path.isdir(afile):
-                    newdir = Directory(db, cab, dir, file, file, "%s|%s" % (dir.make_short(file), file))
-                    todo.append(newdir)
-                else:
-                    key = dir.add_file(file)
-                    if file==self.install_script:
-                        if self.install_script_key:
-                            raise DistutilsOptionError(
-                                  "Multiple files with name %s" % file)
-                        self.install_script_key = '[#%s]' % key
+
+        seen = {}
+        for feature, dir, version in items:
+            todo = [dir]
+            while todo:
+                dir = todo.pop()
+                for file in os.listdir(dir.absolute):
+                    afile = os.path.join(dir.absolute, file)
+                    if os.path.isdir(afile):
+                        short = "%s|%s" % (dir.make_short(file), file)
+                        default = file + version
+                        newdir = Directory(db, cab, dir, file, default, short)
+                        todo.append(newdir)
+                    else:
+                        if not dir.component:
+                            dir.start_component(dir.logical, feature, 0)
+                        if afile not in seen:
+                            key = seen[afile] = dir.add_file(file)
+                            if file==self.install_script:
+                                if self.install_script_key:
+                                    raise DistutilsOptionError(
+                                          "Multiple files with name %s" % file)
+                                self.install_script_key = '[#%s]' % key
+                        else:
+                            key = seen[afile]
+                            add_data(self.db, "DuplicateFile",
+                                [(key + version, dir.component, key, None, dir.logical)])
+
 
         cab.commit(db)
 
     def add_find_python(self):
         """Adds code to the installer to compute the location of Python.
-        Properties PYTHON.MACHINE, PYTHON.USER, PYTHONDIR and PYTHON will be set
-        in both the execute and UI sequences; PYTHONDIR will be set from
-        PYTHON.USER if defined, else from PYTHON.MACHINE.
-        PYTHON is PYTHONDIR\python.exe"""
-        install_path = r"SOFTWARE\Python\PythonCore\%s\InstallPath" % self.target_version
-        add_data(self.db, "RegLocator",
-                [("python.machine", 2, install_path, None, 2),
-                 ("python.user", 1, install_path, None, 2)])
-        add_data(self.db, "AppSearch",
-                [("PYTHON.MACHINE", "python.machine"),
-                 ("PYTHON.USER", "python.user")])
-        add_data(self.db, "CustomAction",
-                [("PythonFromMachine", 51+256, "PYTHONDIR", "[PYTHON.MACHINE]"),
-                 ("PythonFromUser", 51+256, "PYTHONDIR", "[PYTHON.USER]"),
-                 ("PythonExe", 51+256, "PYTHON", "[PYTHONDIR]\\python.exe"),
-                 ("InitialTargetDir", 51+256, "TARGETDIR", "[PYTHONDIR]")])
-        add_data(self.db, "InstallExecuteSequence",
-                [("PythonFromMachine", "PYTHON.MACHINE", 401),
-                 ("PythonFromUser", "PYTHON.USER", 402),
-                 ("PythonExe", None, 403),
-                 ("InitialTargetDir", 'TARGETDIR=""', 404),
-                ])
-        add_data(self.db, "InstallUISequence",
-                [("PythonFromMachine", "PYTHON.MACHINE", 401),
-                 ("PythonFromUser", "PYTHON.USER", 402),
-                 ("PythonExe", None, 403),
-                 ("InitialTargetDir", 'TARGETDIR=""', 404),
-                ])
+
+        Properties PYTHON.MACHINE.X.Y and PYTHON.USER.X.Y will be set from the
+        registry for each version of Python.
+
+        Properties TARGETDIRX.Y will be set from PYTHON.USER.X.Y if defined,
+        else from PYTHON.MACHINE.X.Y.
+
+        Properties PYTHONX.Y will be set to TARGETDIRX.Y\\python.exe"""
+
+        start = 402
+        for ver in self.versions:
+            install_path = r"SOFTWARE\Python\PythonCore\%s\InstallPath" % ver
+            machine_reg = "python.machine." + ver
+            user_reg = "python.user." + ver
+            machine_prop = "PYTHON.MACHINE." + ver
+            user_prop = "PYTHON.USER." + ver
+            machine_action = "PythonFromMachine" + ver
+            user_action = "PythonFromUser" + ver
+            exe_action = "PythonExe" + ver
+            target_dir_prop = "TARGETDIR" + ver
+            exe_prop = "PYTHON" + ver
+            add_data(self.db, "RegLocator",
+                    [(machine_reg, 2, install_path, None, 2),
+                     (user_reg, 1, install_path, None, 2)])
+            add_data(self.db, "AppSearch",
+                    [(machine_prop, machine_reg),
+                     (user_prop, user_reg)])
+            add_data(self.db, "CustomAction",
+                    [(machine_action, 51+256, target_dir_prop, "[" + machine_prop + "]"),
+                     (user_action, 51+256, target_dir_prop, "[" + user_prop + "]"),
+                     (exe_action, 51+256, exe_prop, "[" + target_dir_prop + "]\\python.exe"),
+                    ])
+            add_data(self.db, "InstallExecuteSequence",
+                    [(machine_action, machine_prop, start),
+                     (user_action, user_prop, start + 1),
+                     (exe_action, None, start + 2),
+                    ])
+            add_data(self.db, "InstallUISequence",
+                    [(machine_action, machine_prop, start),
+                     (user_action, user_prop, start + 1),
+                     (exe_action, None, start + 2),
+                    ])
+            add_data(self.db, "Condition",
+                    [("Python" + ver, 0, "NOT TARGETDIR" + ver)])
+            start += 4
+            assert start < 500
 
     def add_scripts(self):
         if self.install_script:
-            add_data(self.db, "CustomAction",
-                    [("install_script", 50, "PYTHON", self.install_script_key)])
-            add_data(self.db, "InstallExecuteSequence",
-                    [("install_script", "NOT Installed", 6800)])
+            start = 6800
+            for ver in self.versions + [self.other_version]:
+                install_action = "install_script." + ver
+                exe_prop = "PYTHON" + ver
+                add_data(self.db, "CustomAction",
+                        [(install_action, 50, exe_prop, self.install_script_key)])
+                add_data(self.db, "InstallExecuteSequence",
+                        [(install_action, "&Python%s=3" % ver, start)])
+                start += 1
+        # XXX pre-install scripts are currently refused in finalize_options()
+        #     but if this feature is completed, it will also need to add
+        #     entries for each version as the above code does
         if self.pre_install_script:
             scriptfn = os.path.join(self.bdist_dir, "preinstall.bat")
             f = open(scriptfn, "w")
@@ -375,7 +442,7 @@ class bdist_msi(Command):
                  [("PrepareDlg", "Not Privileged or Windows9x or Installed", 140),
                   ("WhichUsersDlg", "Privileged and not Windows9x and not Installed", 141),
                   # In the user interface, assume all-users installation if privileged.
-                  ("SelectDirectoryDlg", "Not Installed", 1230),
+                  ("SelectFeaturesDlg", "Not Installed", 1230),
                   # XXX no support for resume installations yet
                   #("ResumeDlg", "Installed AND (RESUME OR Preselected)", 1240),
                   ("MaintenanceTypeDlg", "Installed AND NOT RESUME AND NOT Preselected", 1250),
@@ -498,33 +565,49 @@ class bdist_msi(Command):
         c.event("SpawnDialog", "CancelDlg")
 
         #####################################################################
-        # Target directory selection
-        seldlg = PyDialog(db, "SelectDirectoryDlg", x, y, w, h, modal, title,
+        # Feature (Python directory) selection
+        seldlg = PyDialog(db, "SelectFeaturesDlg", x, y, w, h, modal, title,
                         "Next", "Next", "Cancel")
-        seldlg.title("Select Destination Directory")
+        seldlg.title("Select Python Installations")
 
-        version = sys.version[:3]+" "
-        seldlg.text("Hint", 15, 30, 300, 40, 3,
-                "The destination directory should contain a Python %sinstallation" % version)
+        seldlg.text("Hint", 15, 30, 300, 20, 3,
+                    "Select the Python locations where %s should be installed."
+                    % self.distribution.get_fullname())
 
         seldlg.back("< Back", None, active=0)
         c = seldlg.next("Next >", "Cancel")
-        c.event("SetTargetPath", "TARGETDIR", ordering=1)
-        c.event("SpawnWaitDialog", "WaitForCostingDlg", ordering=2)
-        c.event("EndDialog", "Return", ordering=3)
-
-        c = seldlg.cancel("Cancel", "DirectoryCombo")
+        order = 1
+        c.event("[TARGETDIR]", "[SourceDir]", ordering=order)
+        for version in self.versions + [self.other_version]:
+            order += 1
+            c.event("[TARGETDIR]", "[TARGETDIR%s]" % version,
+                    "FEATURE_SELECTED AND &Python%s=3" % version,
+                    ordering=order)
+        c.event("SpawnWaitDialog", "WaitForCostingDlg", ordering=order + 1)
+        c.event("EndDialog", "Return", ordering=order + 2)
+        c = seldlg.cancel("Cancel", "Features")
         c.event("SpawnDialog", "CancelDlg")
 
-        seldlg.control("DirectoryCombo", "DirectoryCombo", 15, 70, 272, 80, 393219,
-                       "TARGETDIR", None, "DirectoryList", None)
-        seldlg.control("DirectoryList", "DirectoryList", 15, 90, 308, 136, 3, "TARGETDIR",
-                       None, "PathEdit", None)
-        seldlg.control("PathEdit", "PathEdit", 15, 230, 306, 16, 3, "TARGETDIR", None, "Next", None)
-        c = seldlg.pushbutton("Up", 306, 70, 18, 18, 3, "Up", None)
-        c.event("DirectoryListUp", "0")
-        c = seldlg.pushbutton("NewDir", 324, 70, 30, 18, 3, "New", None)
-        c.event("DirectoryListNew", "0")
+        c = seldlg.control("Features", "SelectionTree", 15, 60, 300, 120, 3,
+                           "FEATURE", None, "PathEdit", None)
+        c.event("[FEATURE_SELECTED]", "1")
+        ver = self.other_version
+        install_other_cond = "FEATURE_SELECTED AND &Python%s=3" % ver
+        dont_install_other_cond = "FEATURE_SELECTED AND &Python%s<>3" % ver
+
+        c = seldlg.text("Other", 15, 200, 300, 15, 3,
+                        "Provide an alternate Python location")
+        c.condition("Enable", install_other_cond)
+        c.condition("Show", install_other_cond)
+        c.condition("Disable", dont_install_other_cond)
+        c.condition("Hide", dont_install_other_cond)
+
+        c = seldlg.control("PathEdit", "PathEdit", 15, 215, 300, 16, 1,
+                           "TARGETDIR" + ver, None, "Next", None)
+        c.condition("Enable", install_other_cond)
+        c.condition("Show", install_other_cond)
+        c.condition("Disable", dont_install_other_cond)
+        c.condition("Hide", dont_install_other_cond)
 
         #####################################################################
         # Disk cost
@@ -640,7 +723,10 @@ class bdist_msi(Command):
 
     def get_installer_filename(self, fullname):
         # Factored out to allow overriding in subclasses
-        base_name = "%s.%s-py%s.msi" % (fullname, self.plat_name,
-                                        self.target_version)
+        if self.target_version:
+            base_name = "%s.%s-py%s.msi" % (fullname, self.plat_name,
+                                            self.target_version)
+        else:
+            base_name = "%s.%s.msi" % (fullname, self.plat_name)
         installer_name = os.path.join(self.dist_dir, base_name)
         return installer_name
