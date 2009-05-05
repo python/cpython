@@ -107,3 +107,6 @@ class TestScanString(TestCase):
                           "xxx")
         self.assertRaises(UnicodeDecodeError,
                           json.encoder.encode_basestring_ascii, b"xx\xff")
+
+    def test_overflow(self):
+        self.assertRaises(OverflowError, json.decoder.scanstring, b"xxx", sys.maxsize+1)
