@@ -49,12 +49,12 @@ if os.name == "nt":
         # See MSDN for the REAL search order.
         for directory in os.environ['PATH'].split(os.pathsep):
             fname = os.path.join(directory, name)
-            if os.path.exists(fname):
+            if os.path.isfile(fname):
                 return fname
             if fname.lower().endswith(".dll"):
                 continue
             fname = fname + ".dll"
-            if os.path.exists(fname):
+            if os.path.isfile(fname):
                 return fname
         return None
 

@@ -127,6 +127,9 @@ Installation
 Library
 -------
 
+- Issue #4875: On win32, ctypes.util.find_library does no longer
+  return directories.
+
 - Issue #5142: Add the ability to skip modules while stepping to pdb.
 
 - Issue #1309567: Fix linecache behavior of stripping subdirectories when
