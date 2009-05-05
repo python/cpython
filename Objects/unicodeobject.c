@@ -791,7 +791,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 's':
             {
                 /* UTF-8 */
-                unsigned char *s = va_arg(count, unsigned char*);
+                const char *s = va_arg(count, const char*);
                 PyObject *str = PyUnicode_DecodeUTF8(s, strlen(s), "replace");
                 if (!str)
                     goto fail;
