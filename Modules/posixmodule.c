@@ -1981,7 +1981,7 @@ posix_lchflags(PyObject *self, PyObject *args)
 	unsigned long flags;
 	int res;
 	if (!PyArg_ParseTuple(args, "O&k:lchflags",
-			      PyUnicode_FSConverter, &path, &flags))
+			      PyUnicode_FSConverter, &opath, &flags))
 		return NULL;
 	path = bytes2str(opath, 1);
 	Py_BEGIN_ALLOW_THREADS
