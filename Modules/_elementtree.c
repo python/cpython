@@ -2809,7 +2809,7 @@ PyInit__elementtree(void)
 
 #if defined(USE_PYEXPAT_CAPI)
     /* link against pyexpat, if possible */
-    capi = PyCObject_Import("pyexpat", "expat_CAPI");
+    capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
     if (capi &&
         strcmp(capi->magic, PyExpat_CAPI_MAGIC) == 0 &&
         capi->size <= sizeof(*expat_capi) &&

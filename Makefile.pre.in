@@ -344,6 +344,7 @@ OBJECT_OBJS=	\
 		Objects/moduleobject.o \
 		Objects/object.o \
 		Objects/obmalloc.o \
+		Objects/capsule.o \
 		Objects/rangeobject.o \
                 Objects/setobject.o \
 		Objects/sliceobject.o \
@@ -654,6 +655,7 @@ PYTHON_HEADERS= \
 		Include/pgen.h \
 		Include/pgenheaders.h \
 		Include/pyarena.h \
+		Include/pycapsule.h \
 		Include/pyctype.h \
 		Include/pydebug.h \
 		Include/pyerrors.h \

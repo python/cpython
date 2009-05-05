@@ -78,6 +78,16 @@
 #define DONT_USE_SEH
 #endif
 
+#define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
+
+static void pymem_destructor(PyObject *ptr)
+{
+	void *p = PyCapsule_GetPointer(ptr, CTYPES_CAPSULE_NAME_PYMEM);
+	if (p) {
+		PyMem_Free(p);
+	}
+}
+
 /*
   ctypes maintains thread-local storage that has space for two error numbers:
   private copies of the system 'errno' value and, on Windows, the system error code
@@ -136,7 +146,7 @@ _ctypes_get_errobj(int **pspace)
 		if (space == NULL)
 			return NULL;
 		memset(space, 0, sizeof(int) * 2);
-		errobj = PyCObject_FromVoidPtr(space, PyMem_Free);
+		errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
 		if (errobj == NULL)
 			return NULL;
 		if (-1 == PyDict_SetItem(dict, error_object_name,
@@ -145,7 +155,7 @@ _ctypes_get_errobj(int **pspace)
 			return NULL;
 		}
 	}
-	*pspace = (int *)PyCObject_AsVoidPtr(errobj);
+	*pspace = (int *)PyCapsule_GetPointer(errobj, CTYPES_CAPSULE_NAME_PYMEM);
 	return errobj;
 }
 
@@ -658,7 +668,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 			return -1;
 		}
 		memset(pa->value.p, 0, size);
-		pa->keep = PyCObject_FromVoidPtr(pa->value.p, PyMem_Free);
+		pa->keep = PyCapsule_New(pa->value.p, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
 		if (!pa->keep) {
 			PyMem_Free(pa->value.p);
 			return -1;

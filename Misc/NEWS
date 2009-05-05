@@ -226,6 +226,11 @@ Tests
   support.EnvironmentVarGuard objects restored the environment variables
   incorrectly on __exit__.
 
+C-API
+-----
+
+- Issue #5630: A replacement PyCObject API, PyCapsule, has been added.
+
 
 What's New in Python 3.1 alpha 2?
 =================================
