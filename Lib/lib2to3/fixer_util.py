@@ -226,7 +226,7 @@ def is_probably_builtin(node):
     """
     Check that something isn't an attribute or function name etc.
     """
-    prev = node.get_prev_sibling()
+    prev = node.prev_sibling
     if prev is not None and prev.type == token.DOT:
         # Attribute lookup.
         return False
