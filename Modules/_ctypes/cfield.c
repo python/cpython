@@ -372,7 +372,7 @@ get_ulong(PyObject *v, unsigned long *p)
 		return -1;
 	}
 	x = PyInt_AsUnsignedLongMask(v);
-	if (x == -1 && PyErr_Occurred())
+	if (x == (unsigned long)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
 	return 0;
@@ -410,7 +410,7 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
  		return -1;
  	}
 	x = PyInt_AsUnsignedLongLongMask(v);
-	if (x == -1 && PyErr_Occurred())
+	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
 	return 0;
