@@ -25,11 +25,11 @@ The following cases will be converted:
 from .. import pytree
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Assign, Attr, Name, is_tuple, is_list
+from ..fixer_util import Assign, Attr, Name, is_tuple, is_list, syms
 
 def find_excepts(nodes):
     for i, n in enumerate(nodes):
-        if isinstance(n, pytree.Node):
+        if n.type == syms.except_clause:
             if n.children[0].value == 'except':
                 yield (n, nodes[i+2])
 
