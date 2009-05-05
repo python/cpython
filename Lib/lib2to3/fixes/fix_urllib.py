@@ -12,7 +12,7 @@ from ..fixer_util import Name, Comma, FromImport, Newline, attr_chain
 MAPPING = {'urllib':  [
                 ('urllib.request',
                     ['URLOpener', 'FancyURLOpener', 'urlretrieve',
-                     '_urlopener', 'urlcleanup']),
+                     '_urlopener', 'urlopen', 'urlcleanup']),
                 ('urllib.parse',
                     ['quote', 'quote_plus', 'unquote', 'unquote_plus',
                      'urlencode', 'pathname2url', 'url2pathname', 'splitattr',
