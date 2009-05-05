@@ -1530,6 +1530,53 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
     }
 }
 
+/* Convert the argument to a bytes object, according to the file
+   system encoding */
+
+int
+PyUnicode_FSConverter(PyObject* arg, void* addr)
+{
+    PyObject *output = NULL;
+    Py_ssize_t size;
+    void *data;
+    if (PyBytes_Check(arg) || PyByteArray_Check(arg)) {
+        output = arg;
+        Py_INCREF(output);
+    }
+    else {
+        arg = PyUnicode_FromObject(arg);
+        if (!arg)
+            return 0;
+        output = PyUnicode_AsEncodedObject(arg, 
+                                           Py_FileSystemDefaultEncoding,
+                                           "utf8b");
+        Py_DECREF(arg);
+        if (!output)
+            return 0;
+        if (!PyBytes_Check(output)) {
+            Py_DECREF(output);
+            PyErr_SetString(PyExc_TypeError, "encoder failed to return bytes");
+            return 0;
+        }
+    }
+    if (PyBytes_Check(output)) {
+         size = PyBytes_GET_SIZE(output);
+         data = PyBytes_AS_STRING(output);
+    } 
+    else {
+         size = PyByteArray_GET_SIZE(output);
+         data = PyByteArray_AS_STRING(output);
+    }
+    if (size != strlen(data)) {
+        PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+        Py_DECREF(output);
+        return 0;
+    }
+    *(PyObject**)addr = output;
+    return 1;
+}
+
+
 char*
 _PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
 {
@@ -4154,11 +4201,22 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
                                                               collstart-startp, collend-startp, &newpos);
                 if (repunicode == NULL)
                     goto onError;
-                if (!PyUnicode_Check(repunicode)) {
-                    /* Implementation limitation: byte results not supported yet. */
-                    PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
+                if (PyBytes_Check(repunicode)) {
+                    /* Directly copy bytes result to output. */
+                    repsize = PyBytes_Size(repunicode);
+                    if (repsize > 1) {
+                        /* Make room for all additional bytes. */
+                        if (_PyBytes_Resize(&res, ressize+repsize-1)) {
+                            Py_DECREF(repunicode);
+                            goto onError;
+                        }
+                        ressize += repsize-1;
+                    }
+                    memcpy(str, PyBytes_AsString(repunicode), repsize);
+                    str += repsize;
+                    p = startp + newpos;
                     Py_DECREF(repunicode);
-                    goto onError;
+                    break;
                 }
                 /* need more space? (at least enough for what we
                    have+the replacement+the rest of the string, so
@@ -5123,11 +5181,24 @@ int charmap_encoding_error(
                                                       collstartpos, collendpos, &newpos);
         if (repunicode == NULL)
             return -1;
-        if (!PyUnicode_Check(repunicode)) {
-            /* Implementation limitation: byte results not supported yet. */
-            PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
+        if (PyBytes_Check(repunicode)) {
+            /* Directly copy bytes result to output. */
+            Py_ssize_t outsize = PyBytes_Size(*res);
+            Py_ssize_t requiredsize;
+            repsize = PyBytes_Size(repunicode);
+            requiredsize = *respos + repsize;
+            if (requiredsize > outsize)
+                /* Make room for all additional bytes. */
+                if (charmapencode_resize(res, respos, requiredsize)) {
+                    Py_DECREF(repunicode);
+                    return -1;
+                }
+            memcpy(PyBytes_AsString(*res) + *respos,
+                   PyBytes_AsString(repunicode),  repsize);
+            *respos += repsize;
+            *inpos = newpos;
             Py_DECREF(repunicode);
-            return -1;
+            break;
         }
         /* generate replacement  */
         repsize = PyUnicode_GET_SIZE(repunicode);
@@ -5691,7 +5762,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
             if (repunicode == NULL)
                 goto onError;
             if (!PyUnicode_Check(repunicode)) {
-                /* Implementation limitation: byte results not supported yet. */
+                /* Byte results not supported, since they have no decimal property. */
                 PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
                 Py_DECREF(repunicode);
                 goto onError;

@@ -829,6 +829,82 @@ PyCodec_SurrogateErrors(PyObject *exc)
     }
 }
 
+static PyObject *
+PyCodec_UTF8bErrors(PyObject *exc)
+{
+    PyObject *restuple;
+    PyObject *object;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    PyObject *res;
+    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+	Py_UNICODE *p;
+	Py_UNICODE *startp;
+	char *outp;
+	if (PyUnicodeEncodeError_GetStart(exc, &start))
+	    return NULL;
+	if (PyUnicodeEncodeError_GetEnd(exc, &end))
+	    return NULL;
+	if (!(object = PyUnicodeEncodeError_GetObject(exc)))
+	    return NULL;
+	startp = PyUnicode_AS_UNICODE(object);
+	res = PyBytes_FromStringAndSize(NULL, end-start);
+	if (!res) {
+	    Py_DECREF(object);
+	    return NULL;
+	}
+	outp = PyBytes_AsString(res);
+	for (p = startp+start; p < startp+end; p++) {
+	    Py_UNICODE ch = *p;
+	    if (ch < 0xdc80 || ch > 0xdcff) {
+		/* Not a UTF-8b surrogate, fail with original exception */
+		PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+		Py_DECREF(res);
+		Py_DECREF(object);
+		return NULL;
+	    }
+	    *outp++ = ch - 0xdc00;
+	}
+	restuple = Py_BuildValue("(On)", res, end);
+	Py_DECREF(res);
+	Py_DECREF(object);
+	return restuple;
+    }
+    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+	unsigned char *p;
+	Py_UNICODE ch[4]; /* decode up to 4 bad bytes. */
+	int consumed = 0;
+	if (PyUnicodeDecodeError_GetStart(exc, &start))
+	    return NULL;
+	if (PyUnicodeDecodeError_GetEnd(exc, &end))
+	    return NULL;
+	if (!(object = PyUnicodeDecodeError_GetObject(exc)))
+	    return NULL;
+	if (!(p = (unsigned char*)PyBytes_AsString(object))) {
+	    Py_DECREF(object);
+	    return NULL;
+	}
+	while (consumed < 4 && consumed < end-start) {
+	    /* Refuse to escape ASCII bytes. */
+	    if (p[start+consumed] < 128)
+		break;
+	    ch[consumed] = 0xdc00 + p[start+consumed];
+	    consumed++;
+	}
+	Py_DECREF(object);
+	if (!consumed) {
+	    /* codec complained about ASCII byte. */
+	    PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+	    return NULL;
+	}	    
+	return Py_BuildValue("(u#n)", ch, consumed, start+consumed);
+    }
+    else {
+	wrong_exception_type(exc);
+	return NULL;
+    }
+}
+
 	
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
@@ -862,6 +938,11 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
 static PyObject *surrogates_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_SurrogateErrors(exc);
+}
+
+static PyObject *utf8b_errors(PyObject *self, PyObject *exc)
+{
+    return PyCodec_UTF8bErrors(exc);
 }
 
 static int _PyCodecRegistry_Init(void)
@@ -916,6 +997,14 @@ static int _PyCodecRegistry_Init(void)
 	    {
 		"surrogates",
 		surrogates_errors,
+		METH_O
+	    }
+	},
+	{
+	    "utf8b",
+	    {
+		"utf8b",
+		utf8b_errors,
 		METH_O
 	    }
 	}

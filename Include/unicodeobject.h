@@ -198,6 +198,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromStringAndSize PyUnicodeUCS2_FromStringAndSize
 # define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
+# define PyUnicode_FSConverter PyUnicodeUCS2_FSConverter
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
@@ -296,6 +297,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromStringAndSize PyUnicodeUCS4_FromStringAndSize
 # define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
+# define PyUnicode_FSConverter PyUnicodeUCS4_FSConverter
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
@@ -692,25 +694,6 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
     PyObject *unicode,
     const char *errors);
-
-/* Decode a null-terminated string using Py_FileSystemDefaultEncoding.
-
-   If the encoding is supported by one of the built-in codecs (i.e., UTF-8,
-   UTF-16, UTF-32, Latin-1 or MBCS), otherwise fallback to UTF-8 and replace
-   invalid characters with '?'.
-
-   The function is intended to be used for paths and file names only
-   during bootstrapping process where the codecs are not set up.
-*/
-
-PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
-    const char *s               /* encoded string */
-    );
-
-PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
-    const char *s,               /* encoded string */
-    Py_ssize_t size              /* size */
-    );
 
 /* Returns a pointer to the default encoding (normally, UTF-8) of the
    Unicode object unicode and the size of the encoded representation
@@ -1250,6 +1233,33 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_ssize_t length,		/* Number of Py_UNICODE chars to encode */
     char *output,		/* Output buffer; must have size >= length */
     const char *errors		/* error handling */
+    );
+
+/* --- File system encoding ---------------------------------------------- */
+
+/* ParseTuple converter which converts a Unicode object into the file
+   system encoding, using the PEP 383 error handler; bytes objects are
+   output as-is. */
+
+PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
+
+/* Decode a null-terminated string using Py_FileSystemDefaultEncoding.
+
+   If the encoding is supported by one of the built-in codecs (i.e., UTF-8,
+   UTF-16, UTF-32, Latin-1 or MBCS), otherwise fallback to UTF-8 and replace
+   invalid characters with '?'.
+
+   The function is intended to be used for paths and file names only
+   during bootstrapping process where the codecs are not set up.
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
+    const char *s               /* encoded string */
+    );
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
+    const char *s,               /* encoded string */
+    Py_ssize_t size              /* size */
     );
 
 /* --- Methods & Slots ----------------------------------------------------
