@@ -779,6 +779,14 @@ class UnicodeTest(
                 return '\u1234'
         self.assertEqual('%s' % Wrapper(), '\u1234')
 
+        # issue 3382
+        NAN = float('nan')
+        INF = float('inf')
+        self.assertEqual('%f' % NAN, 'nan')
+        self.assertEqual('%F' % NAN, 'NAN')
+        self.assertEqual('%f' % INF, 'inf')
+        self.assertEqual('%F' % INF, 'INF')
+
     @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
         # should not format with a comma, but always with C locale

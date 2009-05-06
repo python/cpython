@@ -507,6 +507,24 @@ class ComplexTest(unittest.TestCase):
         # make sure everything works in ''.format()
         self.assertEqual('*{0:.3f}*'.format(3.14159+2.71828j), '*3.142+2.718j*')
 
+        # issue 3382
+        self.assertEqual(format(complex(NAN, NAN), 'f'), 'nan+nanj')
+        self.assertEqual(format(complex(1, NAN), 'f'), '1.000000+nanj')
+        self.assertEqual(format(complex(NAN, 1), 'f'), 'nan+1.000000j')
+        self.assertEqual(format(complex(NAN, -1), 'f'), 'nan-1.000000j')
+        self.assertEqual(format(complex(NAN, NAN), 'F'), 'NAN+NANj')
+        self.assertEqual(format(complex(1, NAN), 'F'), '1.000000+NANj')
+        self.assertEqual(format(complex(NAN, 1), 'F'), 'NAN+1.000000j')
+        self.assertEqual(format(complex(NAN, -1), 'F'), 'NAN-1.000000j')
+        self.assertEqual(format(complex(INF, INF), 'f'), 'inf+infj')
+        self.assertEqual(format(complex(1, INF), 'f'), '1.000000+infj')
+        self.assertEqual(format(complex(INF, 1), 'f'), 'inf+1.000000j')
+        self.assertEqual(format(complex(INF, -1), 'f'), 'inf-1.000000j')
+        self.assertEqual(format(complex(INF, INF), 'F'), 'INF+INFj')
+        self.assertEqual(format(complex(1, INF), 'F'), '1.000000+INFj')
+        self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
+        self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
+
 def test_main():
     support.run_unittest(ComplexTest)
 

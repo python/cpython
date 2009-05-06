@@ -920,10 +920,6 @@ format_float_internal(PyObject *value,
            format the result. We take care of that later. */
         type = 'g';
 
-    /* 'F' is the same as 'f', per the PEP */
-    if (type == 'F')
-        type = 'f';
-
     val = PyFloat_AsDouble(value);
     if (val == -1.0 && PyErr_Occurred())
         goto done;
@@ -939,8 +935,15 @@ format_float_internal(PyObject *value,
 
 #if PY_VERSION_HEX < 0x03010000
     /* 3.1 no longer converts large 'f' to 'g'. */
-    if ((type == 'f' || type == 'F') && fabs(val) >= 1e50)
-        type = 'g';
+    if (fabs(val) >= 1e50)
+        switch (type) {
+        case 'f':
+            type = 'g';
+            break;
+        case 'F':
+            type = 'G';
+            break;
+        }
 #endif
 
     /* Cast "type", because if we're in unicode we need to pass a
@@ -1113,10 +1116,6 @@ format_complex_internal(PyObject *value,
         /* 'n' is the same as 'g', except for the locale used to
            format the result. We take care of that later. */
         type = 'g';
-
-    /* 'F' is the same as 'f', per the PEP */
-    if (type == 'F')
-        type = 'f';
 
     if (precision < 0)
         precision = default_precision;
