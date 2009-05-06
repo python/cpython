@@ -9,10 +9,22 @@
 typedef void (*destructor1)(void *);
 typedef void (*destructor2)(void *, void*);
 
+
+static int deprecation_exception(void)
+{
+    return PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+             "The CObject API is deprecated as of Python 3.1.  "
+             "Please convert to using the Capsule API.", 1);
+}
+
 PyObject *
 PyCObject_FromVoidPtr(void *cobj, void (*destr)(void *))
 {
     PyCObject *self;
+
+    if (deprecation_exception()) {
+        return NULL;
+    }
 
     self = PyObject_NEW(PyCObject, &PyCObject_Type);
     if (self == NULL)
@@ -29,6 +41,10 @@ PyCObject_FromVoidPtrAndDesc(void *cobj, void *desc,
                              void (*destr)(void *, void *))
 {
     PyCObject *self;
+
+    if (deprecation_exception()) {
+        return NULL;
+    }
 
     if (!desc) {
         PyErr_SetString(PyExc_TypeError,
