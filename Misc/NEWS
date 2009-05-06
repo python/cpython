@@ -127,6 +127,9 @@ Core and Builtins
 - Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
   to avoid compiler warnings.
 
+- Issue #3739: The unicode-internal encoder now reports the number of characters
+  consumed like any other encoder (instead of the number of bytes).
+
 Installation
 ------------
 
