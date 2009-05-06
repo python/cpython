@@ -16,7 +16,7 @@ __revision__ = "$Id$"
 # two modules, mainly because a number of subtle details changed in the
 # cut 'n paste.  Sigh.
 
-import os, string
+import os
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler
@@ -87,8 +87,7 @@ class build_clib (Command):
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
         if isinstance(self.include_dirs, str):
-            self.include_dirs = string.split(self.include_dirs,
-                                             os.pathsep)
+            self.include_dirs = self.include_dirs.split(os.pathsep)
 
         # XXX same as for build_ext -- what about 'self.define' and
         # 'self.undef' ?
