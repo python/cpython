@@ -4146,14 +4146,6 @@ PySocketModule_APIObject PySocketModuleAPI =
         NULL
 };
 
-PySocketModule_APIObject *
-PySocketModule_ImportModuleAndAPI(void)
-{
-	void *api;
-	api = PyCapsule_Import(PySocket_CAPSULE_NAME, 1);;
-	return (PySocketModule_APIObject *)api;
-}
-
 
 /* Initialize the _socket module.
 

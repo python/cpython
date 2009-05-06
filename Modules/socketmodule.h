@@ -190,38 +190,9 @@ typedef struct {
         PyObject *error;
 } PySocketModule_APIObject;
 
-/* XXX The net effect of the following appears to be to define a function
-   XXX named PySocketModule_APIObject in _ssl.c.  It's unclear why it isn't
-   XXX defined there directly. 
+#define PySocketModule_ImportModuleAndAPI() PyCapsule_Import(PySocket_CAPSULE_NAME, 1)
 
-   >>> It's defined here because other modules might also want to use
-   >>> the C API.
-
-*/
-#ifndef PySocket_BUILDING_SOCKET
-
-/* --- C API ----------------------------------------------------*/
-
-/* Interfacestructure to C API for other modules.
-   Call PySocketModule_ImportModuleAndAPI() to initialize this
-   structure. After that usage is simple:
-
-   if (!PyArg_ParseTuple(args, "O!|zz:ssl",
-                         &PySocketModule.Sock_Type, (PyObject*)&Sock,
-	 		 &key_file, &cert_file))
- 	 return NULL;
-   ...
-*/
-
-/* You *must* call this before using any of the functions in
-   PySocketModule and check its outcome; otherwise all accesses will
-   result in a segfault. Returns 0 on success. */
-
-PyAPI_FUNC(PySocketModule_APIObject *) PySocketModule_ImportModuleAndAPI(void);
-
-#endif /* !PySocket_BUILDING_SOCKET */
-
-#ifdef __cplusplus
+#ifdef __cpluplus
 }
 #endif
 #endif /* !Py__SOCKET_H */
