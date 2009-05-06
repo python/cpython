@@ -472,6 +472,9 @@
 			RelativePath="..\..\Objects\bytesobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Objects\capsule.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\cellobject.c">
 		</File>
 		<File
