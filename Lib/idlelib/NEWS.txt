@@ -30,6 +30,9 @@ What's New in IDLE 2.7? (UNRELEASED, but merged into 3.1 releases above.)
 
 *Release date: XX-XXX-2009*
 
+- idle.py modified and simplified to better support developing experimental
+  versions of IDLE which are not installed in the standard location.
+
 - OutputWindow/PyShell right click menu "Go to file/line" wasn't working with
   file paths containing spaces.  Bug 5559.
 
