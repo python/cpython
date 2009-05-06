@@ -17,7 +17,6 @@ __revision__ = "$Id$"
 # cut 'n paste.  Sigh.
 
 import os, string
-from types import *
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler
@@ -52,7 +51,7 @@ class build_clib (Command):
          "list available compilers", show_compilers),
         ]
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.build_clib = None
         self.build_temp = None
 
@@ -67,11 +66,8 @@ class build_clib (Command):
         self.force = 0
         self.compiler = None
 
-    # initialize_options()
 
-
-    def finalize_options (self):
-
+    def finalize_options(self):
         # This might be confusing: both build-clib and build-temp default
         # to build-temp as defined by the "build" command.  This is because
         # I think that C libraries are really just temporary build
@@ -97,11 +93,7 @@ class build_clib (Command):
         # XXX same as for build_ext -- what about 'self.define' and
         # 'self.undef' ?
 
-    # finalize_options()
-
-
-    def run (self):
-
+    def run(self):
         if not self.libraries:
             return
 
@@ -123,8 +115,6 @@ class build_clib (Command):
                 self.compiler.undefine_macro(macro)
 
         self.build_libraries(self.libraries)
-
-    # run()
 
 
     def check_library_list(self, libraries):
@@ -163,10 +153,9 @@ class build_clib (Command):
                       "second element of each tuple in 'libraries' " + \
                       "must be a dictionary (build info)"
 
-    def get_library_names (self):
+    def get_library_names(self):
         # Assume the library list is valid -- 'check_library_list()' is
         # called from 'finalize_options()', so it should be!
-
         if not self.libraries:
             return None
 
@@ -175,10 +164,8 @@ class build_clib (Command):
             lib_names.append(lib_name)
         return lib_names
 
-    # get_library_names ()
 
-
-    def get_source_files (self):
+    def get_source_files(self):
         self.check_library_list(self.libraries)
         filenames = []
         for (lib_name, build_info) in self.libraries:
@@ -191,13 +178,9 @@ class build_clib (Command):
                        "a list of source filenames") % lib_name
 
             filenames.extend(sources)
-
         return filenames
-    # get_source_files ()
-
 
     def build_libraries (self, libraries):
-
         for (lib_name, build_info) in libraries:
             sources = build_info.get('sources')
             if sources is None or type(sources) not in (ListType, TupleType):
@@ -226,9 +209,3 @@ class build_clib (Command):
             self.compiler.create_static_lib(objects, lib_name,
                                             output_dir=self.build_clib,
                                             debug=self.debug)
-
-        # for libraries
-
-    # build_libraries ()
-
-# class build_lib
