@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5940: distutils.command.build_clib.check_library_list was not doing 
+  the right type checkings anymore.
+
 - Issue #4875: On win32, ctypes.util.find_library does no longer
   return directories.
 

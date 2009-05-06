@@ -118,13 +118,15 @@ class build_clib(Command):
 
 
     def check_library_list(self, libraries):
-        """Ensure that the list of libraries (presumably provided as a
-           command option 'libraries') is valid, i.e. it is a list of
-           2-tuples, where the tuples are (library_name, build_info_dict).
-           Raise DistutilsSetupError if the structure is invalid anywhere;
-           just returns otherwise."""
-        # Yechh, blecch, ackk: this is ripped straight out of build_ext.py,
-        # with only names changed to protect the innocent!
+        """Ensure that the list of libraries is valid.
+
+        `library` is presumably provided as a command option 'libraries'.
+        This method checks that it is a list of 2-tuples, where the tuples
+        are (library_name, build_info_dict).
+
+        Raise DistutilsSetupError if the structure is invalid anywhere;
+        just returns otherwise.
+        """
         if not isinstance(libraries, list):
             raise DistutilsSetupError(
                   "'libraries' option must be a list of tuples")
@@ -134,15 +136,18 @@ class build_clib(Command):
                 raise DistutilsSetupError(
                       "each element of 'libraries' must a 2-tuple")
 
-            if isinstance(lib[0], str):
+            name, build_info = lib
+
+            if not isinstance(name, str):
                 raise DistutilsSetupError(
                       "first element of each tuple in 'libraries' "
                       "must be a string (the library name)")
-            if '/' in lib[0] or (os.sep != '/' and os.sep in lib[0]):
+
+            if '/' in name or (os.sep != '/' and os.sep in name):
                 raise DistutilsSetupError("bad library name '%s': "
                        "may not contain directory separators" % lib[0])
 
-            if not isinstance(lib[1], dict):
+            if not isinstance(build_info, dict):
                 raise DistutilsSetupError(
                       "second element of each tuple in 'libraries' "
                       "must be a dictionary (build info)")
