@@ -127,43 +127,41 @@ class build_clib (Command):
     # run()
 
 
-    def check_library_list (self, libraries):
-        """Ensure that the list of libraries (presumably provided as a
-           command option 'libraries') is valid, i.e. it is a list of
-           2-tuples, where the tuples are (library_name, build_info_dict).
-           Raise DistutilsSetupError if the structure is invalid anywhere;
-           just returns otherwise."""
+    def check_library_list(self, libraries):
+        """Ensure that the list of libraries is valid.
 
-        # Yechh, blecch, ackk: this is ripped straight out of build_ext.py,
-        # with only names changed to protect the innocent!
+        `library` is presumably provided as a command option 'libraries'.
+        This method checks that it is a list of 2-tuples, where the tuples
+        are (library_name, build_info_dict).
 
-        if type(libraries) is not ListType:
+        Raise DistutilsSetupError if the structure is invalid anywhere;
+        just returns otherwise.
+        """
+        if not isinstance(libraries, list):
             raise DistutilsSetupError, \
                   "'libraries' option must be a list of tuples"
 
         for lib in libraries:
-            if type(lib) is not TupleType and len(lib) != 2:
+            if not isinstance(lib, tuple) and len(lib) != 2:
                 raise DistutilsSetupError, \
                       "each element of 'libraries' must a 2-tuple"
 
-            if type(lib[0]) is not StringType:
+            name, build_info = lib
+
+            if not isinstance(name, str):
                 raise DistutilsSetupError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"
-            if '/' in lib[0] or (os.sep != '/' and os.sep in lib[0]):
+            if '/' in name or (os.sep != '/' and os.sep in name):
                 raise DistutilsSetupError, \
                       ("bad library name '%s': " +
                        "may not contain directory separators") % \
                       lib[0]
 
-            if type(lib[1]) is not DictionaryType:
+            if not isinstance(build_info, dict):
                 raise DistutilsSetupError, \
                       "second element of each tuple in 'libraries' " + \
                       "must be a dictionary (build info)"
-        # for lib
-
-    # check_library_list ()
-
 
     def get_library_names (self):
         # Assume the library list is valid -- 'check_library_list()' is
