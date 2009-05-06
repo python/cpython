@@ -86,7 +86,7 @@ class build_clib (Command):
 
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        if type(self.include_dirs) is StringType:
+        if isinstance(self.include_dirs, str):
             self.include_dirs = string.split(self.include_dirs,
                                              os.pathsep)
 
@@ -170,8 +170,7 @@ class build_clib (Command):
         filenames = []
         for (lib_name, build_info) in self.libraries:
             sources = build_info.get('sources')
-            if (sources is None or
-                type(sources) not in (ListType, TupleType) ):
+            if sources is None or not isinstance(sources, (list, tuple)):
                 raise DistutilsSetupError, \
                       ("in 'libraries' option (library '%s'), "
                        "'sources' must be present and must be "
@@ -183,7 +182,7 @@ class build_clib (Command):
     def build_libraries (self, libraries):
         for (lib_name, build_info) in libraries:
             sources = build_info.get('sources')
-            if sources is None or type(sources) not in (ListType, TupleType):
+            if sources is None or not isinstance(sources, (list, tuple)):
                 raise DistutilsSetupError, \
                       ("in 'libraries' option (library '%s'), " +
                        "'sources' must be present and must be " +
