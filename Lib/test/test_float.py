@@ -320,6 +320,12 @@ class FormatTestCase(unittest.TestCase):
                 self.assertRaises(ValueError, format, 1e-100, format_spec)
                 self.assertRaises(ValueError, format, -1e-100, format_spec)
 
+        # issue 3382
+        self.assertEqual(format(NAN, 'f'), 'nan')
+        self.assertEqual(format(NAN, 'F'), 'NAN')
+        self.assertEqual(format(INF, 'f'), 'inf')
+        self.assertEqual(format(INF, 'F'), 'INF')
+
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
     def test_format_testfile(self):

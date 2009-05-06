@@ -415,7 +415,8 @@ The available presentation types for floating point and decimal values are:
    | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
    |         | number.                                                  |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'``.                            |
+   | ``'F'`` | Fixed point. Same as ``'f'``, but converts ``nan`` to    |
+   |         | ``NAN`` and ``inf`` to ``INF``.                          |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format. This prints the number as a fixed-point  |
    |         | number, unless the number is too large, in which case    |

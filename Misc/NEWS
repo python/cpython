@@ -12,6 +12,10 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #3382: float.__format__, complex.__format__, and %-formatting
+  no longer map 'F' to 'f'. Because of issue #5859 (below), this only
+  affects nan -> NAN and inf -> INF.
+
 - Issue #5799: ntpath (ie, os.path on Windows) fully supports UNC pathnames
   in all operations, including splitdrive, split, etc.  splitunc() now issues
   a PendingDeprecation warning.
@@ -45,7 +49,7 @@ Core and Builtins
   restrictions for float formatting: '%.67f' % 12.34 and '%.120e' %
   12.34 no longer raise an exception.
 
-- Issue #1588: Add complex.__format__. For example, 
+- Issue #1588: Add complex.__format__. For example,
   format(complex(1, 2./3), '.5') now produces a sensible result.
 
 - Issue #5864: Fix empty format code formatting for floats so that it
