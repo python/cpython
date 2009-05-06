@@ -564,7 +564,10 @@ else:
             according to the system configuration."""
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)
-                setlocale(LC_CTYPE, "")
+                try:
+                    setlocale(LC_CTYPE, "")
+                except:
+                    pass
                 result = nl_langinfo(CODESET)
                 setlocale(LC_CTYPE, oldloc)
                 return result
