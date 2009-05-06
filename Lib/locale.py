@@ -555,7 +555,7 @@ else:
                 oldloc = setlocale(LC_CTYPE)
                 try:
                     setlocale(LC_CTYPE, "")
-                except:
+                except Error:
                     pass
                 result = nl_langinfo(CODESET)
                 setlocale(LC_CTYPE, oldloc)
