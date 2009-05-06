@@ -39,6 +39,63 @@ class BuildCLibTestCase(support.TempdirManager,
         libs = [('name', {}), ('name', {'ok': 'good'})]
         cmd.check_library_list(libs)
 
+    def test_get_source_files(self):
+        pkg_dir, dist = self.create_dist()
+        cmd = build_clib(dist)
+
+        # "in 'libraries' option 'sources' must be present and must be
+        # a list of source filenames
+        cmd.libraries = [('name', {})]
+        self.assertRaises(DistutilsSetupError, cmd.get_source_files)
+
+        cmd.libraries = [('name', {'sources': 1})]
+        self.assertRaises(DistutilsSetupError, cmd.get_source_files)
+
+        cmd.libraries = [('name', {'sources': ['a', 'b']})]
+        self.assertEquals(cmd.get_source_files(), ['a', 'b'])
+
+        cmd.libraries = [('name', {'sources': ('a', 'b')})]
+        self.assertEquals(cmd.get_source_files(), ['a', 'b'])
+
+        cmd.libraries = [('name', {'sources': ('a', 'b')}),
+                         ('name2', {'sources': ['c', 'd']})]
+        self.assertEquals(cmd.get_source_files(), ['a', 'b', 'c', 'd'])
+
+    def test_build_libraries(self):
+
+        pkg_dir, dist = self.create_dist()
+        cmd = build_clib(dist)
+        class FakeCompiler:
+            def compile(*args, **kw):
+                pass
+            create_static_lib = compile
+
+        cmd.compiler = FakeCompiler()
+
+        # build_libraries is also doing a bit of typoe checking
+        lib = [('name', {'sources': 'notvalid'})]
+        self.assertRaises(DistutilsSetupError, cmd.build_libraries, lib)
+
+        lib = [('name', {'sources': list()})]
+        cmd.build_libraries(lib)
+
+        lib = [('name', {'sources': tuple()})]
+        cmd.build_libraries(lib)
+
+    def test_finalize_options(self):
+        pkg_dir, dist = self.create_dist()
+        cmd = build_clib(dist)
+
+        cmd.include_dirs = 'one-dir'
+        cmd.finalize_options()
+        self.assertEquals(cmd.include_dirs, ['one-dir'])
+
+        cmd.include_dirs = None
+        cmd.finalize_options()
+        self.assertEquals(cmd.include_dirs, [])
+
+        cmd.distribution.libraries = 'WONTWORK'
+        self.assertRaises(DistutilsSetupError, cmd.finalize_options)
 
 def test_suite():
     return unittest.makeSuite(BuildCLibTestCase)
