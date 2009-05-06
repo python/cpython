@@ -23,10 +23,6 @@ applications should use string objects to access all files.
    their parameters.  The result is an object of the same type, if a path or
    file name is returned.
 
-.. note::
-
-   On Windows, many of these functions do not properly support UNC pathnames.
-   :func:`splitunc` and :func:`ismount` do handle them correctly.
 
 .. note::
 
@@ -266,9 +262,19 @@ applications should use string objects to access all files.
 .. function:: splitdrive(path)
 
    Split the pathname *path* into a pair ``(drive, tail)`` where *drive* is either
-   a drive specification or the empty string.  On systems which do not use drive
+   a mount point or the empty string.  On systems which do not use drive
    specifications, *drive* will always be the empty string.  In all cases, ``drive
    + tail`` will be the same as *path*.
+
+   On Windows, splits a pathname into drive/UNC sharepoint and relative path.
+
+   If the path contains a drive letter, drive will contain everything
+   up to and including the colon.
+   e.g. ``splitdrive("c:/dir")`` returns ``("c:", "/dir")``
+
+   If the path contains a UNC path, drive will contain the host name
+   and share, up to but not including the fourth separator.
+   e.g. ``splitdrive("//host/computer/dir")`` returns ``("//host/computer", "/dir")``
 
 
 .. function:: splitext(path)
@@ -280,6 +286,9 @@ applications should use string objects to access all files.
 
 
 .. function:: splitunc(path)
+
+   .. deprecated:: 3.1
+      Use *splitdrive* instead.
 
    Split the pathname *path* into a pair ``(unc, rest)`` so that *unc* is the UNC
    mount point (such as ``r'\\host\mount'``), if present, and *rest* the rest of

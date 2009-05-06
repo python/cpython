@@ -12,6 +12,10 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5799: ntpath (ie, os.path on Windows) fully supports UNC pathnames
+  in all operations, including splitdrive, split, etc.  splitunc() now issues
+  a PendingDeprecation warning.
+
 - Issue #5920: For float.__format__, change the behavior with the
   empty presentation type (that is, not one of 'e', 'f', 'g', or 'n')
   to be like 'g' but with at least one decimal point and with a

@@ -34,6 +34,12 @@ elif 'os2' in sys.builtin_module_names:
     altsep = '/'
 devnull = 'nul'
 
+def _get_empty(path):
+    if isinstance(path, bytes):
+        return b''
+    else:
+        return ''
+
 def _get_sep(path):
     if isinstance(path, bytes):
         return b'\\'
@@ -76,9 +82,9 @@ def normcase(s):
 
 
 # Return whether a path is absolute.
-# Trivial in Posix, harder on the Mac or MS-DOS.
-# For DOS it is absolute if it starts with a slash or backslash (current
-# volume), or if a pathname after the volume letter and colon / UNC resource
+# Trivial in Posix, harder on Windows.
+# For Windows it is absolute if it starts with a slash or backslash (current
+# volume), or if a pathname after the volume-letter-and-colon or UNC-resource
 # starts with a slash or backslash.
 
 def isabs(s):
@@ -104,22 +110,40 @@ def join(a, *p):
 
         elif isabs(b):
             # This probably wipes out path so far.  However, it's more
-            # complicated if path begins with a drive letter:
+            # complicated if path begins with a drive letter.  You get a+b
+            # (minus redundant slashes) in these four cases:
             #     1. join('c:', '/a') == 'c:/a'
-            #     2. join('c:/', '/a') == 'c:/a'
-            # But
-            #     3. join('c:/a', '/b') == '/b'
-            #     4. join('c:', 'd:/') = 'd:/'
-            #     5. join('c:/', 'd:/') = 'd:/'
-            if path[1:2] != colon or b[1:2] == colon:
-                # Path doesn't start with a drive letter, or cases 4 and 5.
-                b_wins = 1
+            #     2. join('//computer/share', '/a') == '//computer/share/a'
+            #     3. join('c:/', '/a') == 'c:/a'
+            #     4. join('//computer/share/', '/a') == '//computer/share/a'
+            # But b wins in all of these cases:
+            #     5. join('c:/a', '/b') == '/b'
+            #     6. join('//computer/share/a', '/b') == '/b'
+            #     7. join('c:', 'd:/') == 'd:/'
+            #     8. join('c:', '//computer/share/') == '//computer/share/'
+            #     9. join('//computer/share', 'd:/') == 'd:/'
+            #    10. join('//computer/share', '//computer/share/') == '//computer/share/'
+            #    11. join('c:/', 'd:/') == 'd:/'
+            #    12. join('c:/', '//computer/share/') == '//computer/share/'
+            #    13. join('//computer/share/', 'd:/') == 'd:/'
+            #    14. join('//computer/share/', '//computer/share/') == '//computer/share/'
+            b_prefix, b_rest = splitdrive(b)
 
-            # Else path has a drive letter, and b doesn't but is absolute.
-            elif len(path) > 3 or (len(path) == 3 and
-                                   path[-1:] not in seps):
-                # case 3
+            # if b has a prefix, it always wins.
+            if b_prefix:
                 b_wins = 1
+            else:
+                # b doesn't have a prefix.
+                # but isabs(b) returned true.
+                # and therefore b_rest[0] must be a slash.
+                # (but let's check that.)
+                assert(b_rest and b_rest[0] in seps)
+
+                # so, b still wins if path has a rest that's more than a sep.
+                # you get a+b if path_rest is empty or only has a sep.
+                # (see cases 1-4 for times when b loses.)
+                path_rest = splitdrive(path)[1]
+                b_wins = path_rest and path_rest not in seps
 
         if b_wins:
             path = b
@@ -152,22 +176,64 @@ def join(a, *p):
 # colon) and the path specification.
 # It is always true that drivespec + pathspec == p
 def splitdrive(p):
-    """Split a pathname into drive and path specifiers. Returns a 2-tuple
-"(drive,path)";  either part may be empty"""
-    if p[1:2] == _get_colon(p):
-        return p[0:2], p[2:]
-    return p[:0], p
+    """Split a pathname into drive/UNC sharepoint and relative path specifiers.
+    Returns a 2-tuple (drive_or_unc, path); either part may be empty.
+
+    If you assign
+        result = splitdrive(p)
+    It is always true that:
+        result[0] + result[1] == p
+
+    If the path contained a drive letter, drive_or_unc will contain everything
+    up to and including the colon.  e.g. splitdrive("c:/dir") returns ("c:", "/dir")
+
+    If the path contained a UNC path, the drive_or_unc will contain the host name
+    and share up to but not including the fourth directory separator character.
+    e.g. splitdrive("//host/computer/dir") returns ("//host/computer", "/dir")
+
+    Paths cannot contain both a drive letter and a UNC path.
+
+    """
+    empty = _get_empty(p)
+    if len(p) > 1:
+        sep = _get_sep(p)
+        normp = normcase(p)
+        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
+            # is a UNC path:
+            # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
+            # \\machine\mountpoint\directory\etc\...
+            #           directory ^^^^^^^^^^^^^^^
+            index = normp.find(sep, 2)
+            if index == -1:
+                return empty, p
+            index2 = normp.find(sep, index + 1)
+            # a UNC path can't have two slashes in a row
+            # (after the initial two)
+            if index2 == index + 1:
+                return empty, p
+            if index2 == -1:
+                index2 = len(p)
+            return p[:index2], p[index2:]
+        if normp[1:2] == _get_colon(p):
+            return p[:2], p[2:]
+    return empty, p
 
 
 # Parse UNC paths
 def splitunc(p):
-    """Split a pathname into UNC mount point and relative path specifiers.
+    """Deprecated since Python 3.1.  Please use splitdrive() instead;
+    it now handles UNC paths.
+
+    Split a pathname into UNC mount point and relative path specifiers.
 
     Return a 2-tuple (unc, rest); either part may be empty.
     If unc is not empty, it has the form '//host/mount' (or similar
     using backslashes).  unc+rest is always the input path.
     Paths containing drive letters never have an UNC part.
     """
+    import warnings
+    warnings.warn("ntpath.splitunc is deprecated, use ntpath.splitdrive instead",
+                  PendingDeprecationWarning)
     sep = _get_sep(p)
     if not p[1:2]:
         return p[:0], p # Drive letter present
@@ -256,12 +322,11 @@ lexists = exists
 
 def ismount(path):
     """Test whether a path is a mount point (defined as root of drive)"""
-    unc, rest = splitunc(path)
     seps = _get_bothseps(path)
-    if unc:
-        return rest in p[:0] + seps
-    p = splitdrive(path)[1]
-    return len(p) == 1 and p[0] in seps
+    root, rest = splitdrive(path)
+    if root and root[0] in seps:
+        return (not rest) or (rest in seps)
+    return rest in seps
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -445,25 +510,12 @@ def normpath(path):
     dotdot = _get_dot(path) * 2
     path = path.replace(_get_altsep(path), sep)
     prefix, path = splitdrive(path)
-    # We need to be careful here. If the prefix is empty, and the path starts
-    # with a backslash, it could either be an absolute path on the current
-    # drive (\dir1\dir2\file) or a UNC filename (\\server\mount\dir1\file). It
-    # is therefore imperative NOT to collapse multiple backslashes blindly in
-    # that case.
-    # The code below preserves multiple backslashes when there is no drive
-    # letter. This means that the invalid filename \\\a\b is preserved
-    # unchanged, where a\\\b is normalised to a\b. It's not clear that there
-    # is any better behaviour for such edge cases.
-    if not prefix:
-        # No drive letter - preserve initial backslashes
-        while path[:1] == sep:
-            prefix = prefix + sep
-            path = path[1:]
-    else:
-        # We have a drive letter - collapse initial backslashes
-        if path.startswith(sep):
-            prefix = prefix + sep
-            path = path.lstrip(sep)
+
+    # collapse initial backslashes
+    if path.startswith(sep):
+        prefix = prefix + sep
+        path = path.lstrip(sep)
+
     comps = path.split(sep)
     i = 0
     while i < len(comps):
@@ -528,22 +580,23 @@ def relpath(path, start=curdir):
 
     if not path:
         raise ValueError("no path specified")
-    start_list = abspath(start).split(sep)
-    path_list = abspath(path).split(sep)
-    if start_list[0].lower() != path_list[0].lower():
-        unc_path, rest = splitunc(path)
-        unc_start, rest = splitunc(start)
-        if bool(unc_path) ^ bool(unc_start):
-            raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
-                                                                % (path, start))
-        else:
-            raise ValueError("path is on drive %s, start on drive %s"
-                                                % (path_list[0], start_list[0]))
+
+    start_abs = abspath(normpath(start))
+    path_abs = abspath(normpath(path))
+    start_drive, start_rest = splitdrive(start_abs)
+    path_drive, path_rest = splitdrive(path_abs)
+    if start_drive != path_drive:
+        error = "path is on mount '{0}', start on mount '{1}'".format(
+            path_drive, start_drive)
+        raise ValueError(error)
+
+    start_list = [x for x in start_rest.split(sep) if x]
+    path_list = [x for x in path_rest.split(sep) if x]
     # Work out how much of the filepath is shared by start and path.
-    for i in range(min(len(start_list), len(path_list))):
-        if start_list[i].lower() != path_list[i].lower():
+    i = 0
+    for e1, e2 in zip(start_list, path_list):
+        if e1 != e2:
             break
-    else:
         i += 1
 
     if isinstance(path, bytes):
