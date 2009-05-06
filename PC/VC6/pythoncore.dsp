@@ -273,6 +273,10 @@ SOURCE=..\..\Objects\bytesobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\capsule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Objects\cellobject.c
 # End Source File
 # Begin Source File
