@@ -279,6 +279,9 @@ Core and Builtins
   step. This avoids problems with counting UTF-8 bytes that ignores the effect
   of using the replace error handler in PyUnicode_DecodeUTF8().
 
+- Issue #3739: The unicode-internal encoder now reports the number of characters
+  consumed like any other encoder (instead of the number of bytes).
+
 Library
 -------
 
