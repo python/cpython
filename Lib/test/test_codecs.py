@@ -872,6 +872,12 @@ class UnicodeInternalTest(unittest.TestCase):
                               "UnicodeInternalTest")
             self.assertEquals(("ab", 12), ignored)
 
+    def test_encode_length(self):
+        # Issue 3739
+        encoder = codecs.getencoder("unicode_internal")
+        self.assertEquals(encoder("a")[1], 1)
+        self.assertEquals(encoder("\xe9\u0142")[1], 2)
+
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
     # 3.1 Map to nothing.
@@ -1317,8 +1323,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name = "latin_1"
             self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
             (b, size) = codecs.getencoder(encoding)(s)
-            if encoding != "unicode_internal":
-                self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
+            self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
             (chars, size) = codecs.getdecoder(encoding)(b)
             self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
 
