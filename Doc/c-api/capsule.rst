@@ -71,7 +71,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    It is legal for a capsule to have a *NULL* destructor.  This makes a *NULL*
    return code somewhat ambiguous; use :cfunc:`PyCapsule_IsValid` or
-   :cfunc:`PyErr_Occurred` to disambugate.
+   :cfunc:`PyErr_Occurred` to disambiguate.
 
 
 .. cfunction:: void* PyCapsule_GetContext(PyObject *capsule)
@@ -81,7 +81,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    It is legal for a capsule to have a *NULL* context.  This makes a *NULL*
    return code somewhat ambiguous; use :cfunc:`PyCapsule_IsValid` or
-   :cfunc:`PyErr_Occurred` to disambugate.
+   :cfunc:`PyErr_Occurred` to disambiguate.
 
 
 .. cfunction:: const char* PyCapsule_GetName(PyObject *capsule)
@@ -91,7 +91,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    It is legal for a capsule to have a *NULL* name.  This makes a *NULL* return
    code somewhat ambiguous; use :cfunc:`PyCapsule_IsValid` or
-   :cfunc:`PyErr_Occurred` to disambugate.
+   :cfunc:`PyErr_Occurred` to disambiguate.
 
 
 .. cfunction:: void* PyCapsule_Import(const char *name, int no_block)
