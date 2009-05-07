@@ -347,7 +347,7 @@ class Aifc_read:
         if self._decomp:
             self._decomp.CloseDecompressor()
             self._decomp = None
-        self._file = None
+        self._file.close()
 
     def tell(self):
         return self._soundpos
@@ -734,8 +734,7 @@ class Aifc_write:
             self._comp = None
         # Prevent ref cycles
         self._convert = None
-        self._file.flush()
-        self._file = None
+        self._file.close()
 
     #
     # Internal methods.
