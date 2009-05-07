@@ -282,10 +282,11 @@ class Aifc_read:
         self._convert = None
         self._markers = []
         self._soundpos = 0
-        self._file = Chunk(file)
-        if self._file.getname() != 'FORM':
+        self._file = file
+        chunk = Chunk(file)
+        if chunk.getname() != 'FORM':
             raise Error, 'file does not start with FORM id'
-        formdata = self._file.read(4)
+        formdata = chunk.read(4)
         if formdata == 'AIFF':
             self._aifc = 0
         elif formdata == 'AIFC':
