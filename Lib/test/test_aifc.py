@@ -94,6 +94,21 @@ class AIFCTest(unittest.TestCase):
         # XXX: this test fails, not sure if it should succeed or not
         # self.assertEqual(f.readframes(5), fout.readframes(5))
 
+    def test_close(self):
+        class Wrapfile(object):
+            def __init__(self, file):
+                self.file = open(file, 'rb')
+                self.closed = False
+            def close(self):
+                self.file.close()
+                self.closed = True
+            def __getattr__(self, attr): return getattr(self.file, attr)
+        testfile = Wrapfile(self.sndfilepath)
+        f = self.f = aifc.open(testfile)
+        self.assertEqual(testfile.closed, False)
+        f.close()
+        self.assertEqual(testfile.closed, True)
+
 
 def test_main():
     run_unittest(AIFCTest)
