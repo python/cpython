@@ -48,7 +48,7 @@ class AIFCTest(unittest.TestCase):
     def test_close(self):
         class Wrapfile(object):
             def __init__(self, file):
-                self.file = open(file)
+                self.file = open(file, 'rb')
                 self.closed = False
             def close(self):
                 self.file.close()
