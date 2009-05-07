@@ -112,9 +112,6 @@ Here are the methods of the :class:`Message` class:
       *decode* flag is ``True``, then ``None`` is returned.  The default for
       *decode* is ``False``.
 
-      To pass a value for the decode flag to a non-multipart message, specify
-      ``None`` as the value of *i*.
-
 
    .. method:: set_payload(payload[, charset])
 
