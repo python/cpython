@@ -24,6 +24,9 @@ What's New in Python 3.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #5914: Add new C API function PyOS_string_to_double, and
+  deprecate PyOS_ascii_strtod and PyOS_ascii_atof.
+
 - Issue #3382: float.__format__, complex.__format__, and %-formatting
   no longer map 'F' to 'f'. Because of issue #5859 (below), this only
   affects nan -> NAN and inf -> INF.
