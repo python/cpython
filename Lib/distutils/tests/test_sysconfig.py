@@ -11,11 +11,15 @@ from test.test_support import TESTFN
 class SysconfigTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.old_AR = os.environ.get('AR')
+        self.old_flags = [('AR', os.environ.get('AR')),
+                          ('ARFLAGS', os.environ.get('ARFLAGS'))]
 
     def tearDown(self):
-        if self.old_AR is not None:
-            os.environ['AR'] = self.old_AR
+        for name, value in self.old_flags:
+            if value is not None:
+                os.environ[name] = value
+            elif name in os.environ:
+                del os.environ[name]
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
