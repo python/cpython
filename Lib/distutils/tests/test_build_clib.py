@@ -1,9 +1,12 @@
 """Tests for distutils.command.build_clib."""
 import unittest
+import os
+import sys
 
 from distutils.command.build_clib import build_clib
 from distutils.errors import DistutilsSetupError
 from distutils.tests import support
+from distutils.spawn import find_executable
 
 class BuildCLibTestCase(support.TempdirManager,
                         support.LoggingSilencer,
@@ -96,6 +99,43 @@ class BuildCLibTestCase(support.TempdirManager,
 
         cmd.distribution.libraries = 'WONTWORK'
         self.assertRaises(DistutilsSetupError, cmd.finalize_options)
+
+    def test_run(self):
+        # can't test on windows
+        if sys.platform == 'win32':
+            return
+
+        pkg_dir, dist = self.create_dist()
+        cmd = build_clib(dist)
+
+        foo_c = os.path.join(pkg_dir, 'foo.c')
+        self.write_file(foo_c, 'int main(void) { return 1;}')
+        cmd.libraries = [('foo', {'sources': [foo_c]})]
+
+        build_temp = os.path.join(pkg_dir, 'build')
+        os.mkdir(build_temp)
+        cmd.build_temp = build_temp
+        cmd.build_clib = build_temp
+
+        # before we run the command, we want to make sure
+        # all commands are present on the system
+        # by creating a compiler and checking its executables
+        from distutils.ccompiler import new_compiler
+        from distutils.sysconfig import customize_compiler
+
+        compiler = new_compiler()
+        customize_compiler(compiler)
+        for ccmd in compiler.executables.values():
+            if ccmd is None:
+                continue
+            if find_executable(ccmd[0]) is None:
+                return # can't test
+
+        # this should work
+        cmd.run()
+
+        # let's check the result
+        self.assert_('libfoo.a' in os.listdir(build_temp))
 
 def test_suite():
     return unittest.makeSuite(BuildCLibTestCase)
