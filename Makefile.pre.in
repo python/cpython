@@ -67,6 +67,7 @@ LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
+ARFLAGS=	@ARFLAGS@
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
@@ -422,12 +423,12 @@ sharedmods: $(BUILDPYTHON)
 # avoid long command lines, same as LIBRARY_OBJS
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
-	$(AR) cr $@ Modules/getbuildinfo.o
-	$(AR) cr $@ $(PARSER_OBJS)
-	$(AR) cr $@ $(OBJECT_OBJS)
-	$(AR) cr $@ $(PYTHON_OBJS)
-	$(AR) cr $@ $(MODULE_OBJS) $(SIGNAL_OBJS)
-	$(AR) cr $@ $(MODOBJS)
+	$(AR) $(ARFLAGS) $@ Modules/getbuildinfo.o
+	$(AR) $(ARFLAGS) $@ $(PARSER_OBJS)
+	$(AR) $(ARFLAGS) $@ $(OBJECT_OBJS)
+	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS)
+	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS) $(SIGNAL_OBJS)
+	$(AR) $(ARFLAGS) $@ $(MODOBJS)
 	$(RANLIB) $@
 
 libpython$(VERSION).so: $(LIBRARY_OBJS)

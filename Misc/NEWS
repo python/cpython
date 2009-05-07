@@ -581,6 +581,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5941: Distutils build_clib command was not working anymore because
+  of an incomplete costumization of the archiver command. Added ARFLAGS in the
+  Makefile besides AR and make Distutils use it. Original patch by David
+  Cournapeau.
+
 - Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
 
 - Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive 
