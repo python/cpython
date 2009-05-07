@@ -22,12 +22,12 @@ from distutils.errors import *
 from distutils.sysconfig import customize_compiler
 from distutils import log
 
-def show_compilers ():
+def show_compilers():
     from distutils.ccompiler import show_compilers
     show_compilers()
 
 
-class build_clib (Command):
+class build_clib(Command):
 
     description = "build C/C++ libraries used by Python extensions"
 
@@ -178,7 +178,7 @@ class build_clib (Command):
             filenames.extend(sources)
         return filenames
 
-    def build_libraries (self, libraries):
+    def build_libraries(self, libraries):
         for (lib_name, build_info) in libraries:
             sources = build_info.get('sources')
             if sources is None or not isinstance(sources, (list, tuple)):
