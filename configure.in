@@ -726,6 +726,13 @@ AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 
+# tweak ARFLAGS only if the user didn't set it on the command line
+AC_SUBST(ARFLAGS)
+if test -z "$ARFLAGS"
+then
+        ARFLAGS="rc"
+fi
+
 AC_SUBST(SVNVERSION)
 AC_CHECK_PROG(SVNVERSION, svnversion, found, not-found)
 if test $SVNVERSION = found

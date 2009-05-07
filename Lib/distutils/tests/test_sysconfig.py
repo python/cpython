@@ -49,7 +49,8 @@ class SysconfigTestCase(unittest.TestCase):
         if get_default_compiler() != 'unix':
             return
 
-        os.environ['AR'] = 'xxx'
+        os.environ['AR'] = 'my_ar'
+        os.environ['ARFLAGS'] = '-arflags'
 
         # make sure AR gets caught
         class compiler:
@@ -60,7 +61,7 @@ class SysconfigTestCase(unittest.TestCase):
 
         comp = compiler()
         sysconfig.customize_compiler(comp)
-        self.assertEquals(comp.exes['archiver'], 'xxx')
+        self.assertEquals(comp.exes['archiver'], 'my_ar -arflags')
 
 
 def test_suite():
