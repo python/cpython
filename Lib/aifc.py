@@ -331,7 +331,7 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        self._file = None
+        self._file.close()
 
     def tell(self):
         return self._soundpos
@@ -692,8 +692,7 @@ class Aifc_write:
             self._patchheader()
         # Prevent ref cycles
         self._convert = None
-        self._file.flush()
-        self._file = None
+        self._file.close()
 
     #
     # Internal methods.
