@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5955: aifc's close method did not close the file it wrapped,
+  now it does.  This also means getfp method now returns the real fp.
+
 - Issue #5940: distutils.command.build_clib.check_library_list was not doing 
   the right type checkings anymore.
 

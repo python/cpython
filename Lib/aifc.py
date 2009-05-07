@@ -281,10 +281,11 @@ class Aifc_read:
         self._convert = None
         self._markers = []
         self._soundpos = 0
-        self._file = Chunk(file)
-        if self._file.getname() != b'FORM':
+        self._file = file
+        chunk = Chunk(file)
+        if chunk.getname() != b'FORM':
             raise Error('file does not start with FORM id')
-        formdata = self._file.read(4)
+        formdata = chunk.read(4)
         if formdata == b'AIFF':
             self._aifc = 0
         elif formdata == b'AIFC':
@@ -331,7 +332,7 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        self._file = None
+        self._file.close()
 
     def tell(self):
         return self._soundpos
@@ -690,8 +691,7 @@ class Aifc_write:
               self._datalength != self._datawritten or \
               self._marklength:
             self._patchheader()
-        self._file.flush()
-        self._file = None
+        self._file.close()
 
     #
     # Internal methods.
