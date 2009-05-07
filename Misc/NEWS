@@ -285,6 +285,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 5955: aifc's close method did not close the file it wrapped,
+  now it does.  This also means getfp method now returns the real fp.
+
 - Issue #4875: On win32, ctypes.util.find_library does no longer
   return directories.
 
