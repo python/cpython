@@ -169,7 +169,7 @@ For example::
    class is similar to bags or multisets in other languages.
 
    Elements are counted from an *iterable* or initialized from another
-   *mapping* (or counter)::
+   *mapping* (or counter):
 
         >>> c = Counter()                           # a new, empty counter
         >>> c = Counter('gallahad')                 # a new counter from an iterable
@@ -177,7 +177,7 @@ For example::
         >>> c = Counter(cats=4, dogs=8)             # a new counter from keyword args
 
    Counter objects have a dictionary interface except that they return a zero
-   count for missing items instead of raising a :exc:`KeyError`::
+   count for missing items instead of raising a :exc:`KeyError`:
 
         >>> c = Counter(['eggs', 'ham'])
         >>> c['bacon']                              # count of a missing element is zero
@@ -210,7 +210,7 @@ For example::
       Return a list of the *n* most common elements and their counts from the
       most common to the least.  If *n* is not specified, :func:`most_common`
       returns *all* elements in the counter.  Elements with equal counts are
-      ordered arbitrarily::
+      ordered arbitrarily:
 
             >>> Counter('abracadabra').most_common(3)
             [('a', 5), ('r', 2), ('b', 2)]

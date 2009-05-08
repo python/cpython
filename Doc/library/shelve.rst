@@ -1,4 +1,3 @@
-
 :mod:`shelve` --- Python object persistence
 ===========================================
 
@@ -35,7 +34,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    accessed entries are written back (there is no way to determine which accessed
    entries are mutable, nor which ones were actually mutated).
 
-Shelve objects support all methods supported by dictionaries.  This eases the
+Shelf objects support all methods supported by dictionaries.  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
 One additional method is supported:

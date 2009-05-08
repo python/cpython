@@ -954,7 +954,6 @@ Test cases
       along with the method name.
 
       .. versionchanged:: 3.1
-
          In earlier versions this only returned the first line of the test
          method's docstring, if available or the :const:`None`.  That led to
          undesirable behavior of not printing the test name when someone was
@@ -976,6 +975,36 @@ Test cases
       for debugging the problem by explaining the inequalities in detail.
 
       .. versionadded:: 3.1
+
+
+   .. method:: addCleanup(function[, *args[, **kwargs]])
+
+      Add a function to be called after :meth:`tearDown` to cleanup resources
+      used during the test. Functions will be called in reverse order to the
+      order they are added (LIFO). They are called with any arguments and
+      keyword arguments passed into :meth:`addCleanup` when they are
+      added.
+
+      If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
+      then any cleanup functions added will still be called.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: doCleanups()
+
+      This method is called uncoditionally after :meth:`tearDown`, or
+      after :meth:`setUp` if :meth:`setUp` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanup`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDown` then you can call :meth:`doCleanups`
+      yourself.
+
+      :meth:`doCleanups` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 2.7
 
 
 .. class:: FunctionTestCase(testFunc[, setUp[, tearDown[, description]]])
@@ -1045,6 +1074,20 @@ Grouping tests
 
       Return the number of tests represented by this test object, including all
       individual tests and sub-suites.
+
+
+   .. method:: __iter__()
+
+      Tests grouped by a :class:`TestSuite` are always accessed by iteration.
+      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      that this method maybe called several times on a single suite
+      (for example when counting tests or comparing for equality)
+      so the tests returned must be the same for repeated iterations.
+
+      .. versionchanged:: 2.7
+         In earlier versions the :class:`TestSuite` accessed tests directly rather
+         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         for providing tests.
 
    In the typical usage of a :class:`TestSuite` object, the :meth:`run` method
    is invoked by a :class:`TestRunner` rather than by the end-user test harness.
@@ -1190,7 +1233,6 @@ Loading and running tests
       holding formatted tracebacks. Each tuple represents a test which raised an
       unexpected exception.
 
-
    .. attribute:: failures
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
@@ -1266,6 +1308,20 @@ Loading and running tests
       The default implementation does nothing.
 
 
+   .. method:: startTestRun(test)
+
+      Called once before any tests are executed.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: stopTestRun(test)
+
+      Called once before any tests are executed.
+
+      .. versionadded:: 2.7
+
+
    .. method:: addError(test, err)
 
       Called when the test case *test* raises an unexpected exception *err* is a
@@ -1335,8 +1391,14 @@ Loading and running tests
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
 
+   .. method:: _makeResult()
 
-.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader]]]]])
+      This method returns the instance of ``TestResult`` used by :meth:`run`.
+      It is not intended to be called directly, but can be overridden in
+      subclasses to provide a custom ``TestResult``.
+
+
+.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit]]]]]])
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1346,4 +1408,18 @@ Loading and running tests
           unittest.main()
 
    The *testRunner* argument can either be a test runner class or an already
-   created instance of it.
+   created instance of it. By default ``main`` calls :func:`sys.exit` with
+   an exit code indicating success or failure of the tests run.
+
+   ``main`` supports being used from the interactive interpreter by passing in the
+   argument ``exit=False``. This displays the result on standard output without
+   calling :func:`sys.exit`::
+
+      >>> from unittest import main
+      >>> main(module='test_module', exit=False)
+
+   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
+   This stores the result of the tests run as the ``result`` attribute.
+
+   .. versionchanged:: 2.7
+      The ``exit`` parameter was added.

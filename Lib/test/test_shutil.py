@@ -46,9 +46,23 @@ class TestShutil(unittest.TestCase):
             shutil.rmtree(TESTFN)
 
     def check_args_to_onerror(self, func, arg, exc):
+        # test_rmtree_errors deliberately runs rmtree
+        # on a directory that is chmod 400, which will fail.
+        # This function is run when shutil.rmtree fails.
+        # 99.9% of the time it initially fails to remove
+        # a file in the directory, so the first time through
+        # func is os.remove.
+        # However, some Linux machines running ZFS on
+        # FUSE experienced a failure earlier in the process
+        # at os.listdir.  The first failure may legally
+        # be either.
         if self.errorState == 0:
-            self.assertEqual(func, os.remove)
-            self.assertEqual(arg, self.childpath)
+            if func is os.remove:
+                self.assertEqual(arg, self.childpath)
+            else:
+                self.assertIs(func, os.listdir,
+                              "func must be either os.remove or os.listdir")
+                self.assertEqual(arg, TESTFN)
             self.failUnless(issubclass(exc[0], OSError))
             self.errorState = 1
         else:
