@@ -1,0 +1,207 @@
+This file contains the diffs between the files in the libffi
+subdirectory and the 'official' source files from
+ftp://sourceware.org/pub/libffi/libffi-3.0.5.tar.gz
+
+Index: libffi/aclocal.m4
+===================================================================
+--- libffi/aclocal.m4	(working copy)
++++ libffi/aclocal.m4	(revision 72475)
+@@ -1155,7 +1155,7 @@
+    test -n "$_LT_AC_TAGVAR(runpath_var, $1)" || \
+    test "X$_LT_AC_TAGVAR(hardcode_automatic, $1)" = "Xyes" ; then
+ 
+-  # We can hardcode non-existant directories.
++  # We can hardcode non-existent directories.
+   if test "$_LT_AC_TAGVAR(hardcode_direct, $1)" != no &&
+      # If the only mechanism to avoid hardcoding is shlibpath_var, we
+      # have to relink, otherwise we might link with an installed library
+Index: libffi/configure.ac
+===================================================================
+--- libffi/configure.ac	(working copy)
++++ libffi/configure.ac	(revision 72475)
+@@ -1,4 +1,7 @@
+ dnl Process this with autoconf to create configure
++#
++# file from libffi - slightly patched for ctypes
++#
+ 
+ AC_PREREQ(2.59)
+ 
+@@ -83,6 +86,9 @@
+   i?86-*-solaris2.1[[0-9]]*)
+ 	TARGET=X86_64; TARGETDIR=x86
+ 	;;
++  i*86-*-nto-qnx*) 
++        TARGET=X86; TARGETDIR=x86
++        ;;
+   i?86-*-*)
+ 	TARGET=X86; TARGETDIR=x86
+ 	;;
+@@ -100,10 +106,10 @@
+ 	;;
+ 
+   mips-sgi-irix5.* | mips-sgi-irix6.*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+   mips*-*-linux*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_LINUX; TARGETDIR=mips
+ 	;;
+ 
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -156,7 +162,7 @@
+   AC_MSG_ERROR(["libffi has not been ported to $host."])
+ fi
+ 
+-AM_CONDITIONAL(MIPS, test x$TARGET = xMIPS)
++AM_CONDITIONAL(MIPS,[expr x$TARGET : 'xMIPS' > /dev/null])
+ AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
+ AM_CONDITIONAL(X86, test x$TARGET = xX86)
+ AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
+@@ -360,6 +366,10 @@
+ 
+ AC_CONFIG_LINKS(include/ffitarget.h:src/$TARGETDIR/ffitarget.h)
+ 
+-AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
++AC_CONFIG_FILES(include/ffi.h)
+ 
++AC_CONFIG_LINKS(include/ffi_common.h:include/ffi_common.h)
++
++AC_CONFIG_FILES(fficonfig.py)
++
+ AC_OUTPUT
+Index: libffi/configure
+===================================================================
+--- libffi/configure	(working copy)
++++ libffi/configure	(revision 72475)
+@@ -9546,7 +9546,7 @@
+    test -n "$runpath_var" || \
+    test "X$hardcode_automatic" = "Xyes" ; then
+ 
+-  # We can hardcode non-existant directories.
++  # We can hardcode non-existent directories.
+   if test "$hardcode_direct" != no &&
+      # If the only mechanism to avoid hardcoding is shlibpath_var, we
+      # have to relink, otherwise we might link with an installed library
+@@ -13514,7 +13514,7 @@
+    test -n "$runpath_var_CXX" || \
+    test "X$hardcode_automatic_CXX" = "Xyes" ; then
+ 
+-  # We can hardcode non-existant directories.
++  # We can hardcode non-existent directories.
+   if test "$hardcode_direct_CXX" != no &&
+      # If the only mechanism to avoid hardcoding is shlibpath_var, we
+      # have to relink, otherwise we might link with an installed library
+@@ -16117,7 +16117,7 @@
+    test -n "$runpath_var_F77" || \
+    test "X$hardcode_automatic_F77" = "Xyes" ; then
+ 
+-  # We can hardcode non-existant directories.
++  # We can hardcode non-existent directories.
+   if test "$hardcode_direct_F77" != no &&
+      # If the only mechanism to avoid hardcoding is shlibpath_var, we
+      # have to relink, otherwise we might link with an installed library
+@@ -18720,7 +18720,7 @@
+    test -n "$runpath_var_GCJ" || \
+    test "X$hardcode_automatic_GCJ" = "Xyes" ; then
+ 
+-  # We can hardcode non-existant directories.
++  # We can hardcode non-existent directories.
+   if test "$hardcode_direct_GCJ" != no &&
+      # If the only mechanism to avoid hardcoding is shlibpath_var, we
+      # have to relink, otherwise we might link with an installed library
+@@ -20406,6 +20406,9 @@
+   i?86-*-solaris2.1[0-9]*)
+ 	TARGET=X86_64; TARGETDIR=x86
+ 	;;
++  i*86-*-nto-qnx*)
++        TARGET=X86; TARGETDIR=x86
++        ;;
+   i?86-*-*)
+ 	TARGET=X86; TARGETDIR=x86
+ 	;;
+@@ -20423,10 +20426,10 @@
+ 	;;
+ 
+   mips-sgi-irix5.* | mips-sgi-irix6.*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+   mips*-*-linux*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_LINUX; TARGETDIR=mips
+ 	;;
+ 
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -20481,7 +20484,7 @@
+    { (exit 1); exit 1; }; }
+ fi
+ 
+- if test x$TARGET = xMIPS; then
++ if expr x$TARGET : 'xMIPS' > /dev/null; then
+   MIPS_TRUE=
+   MIPS_FALSE='#'
+ else
+@@ -22712,9 +22715,15 @@
+ ac_config_links="$ac_config_links include/ffitarget.h:src/$TARGETDIR/ffitarget.h"
+ 
+ 
+-ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
++ac_config_files="$ac_config_files include/ffi.h"
+ 
+ 
++ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
++
++
++ac_config_files="$ac_config_files fficonfig.py"
++
++
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -23498,12 +23507,9 @@
+     "include") CONFIG_COMMANDS="$CONFIG_COMMANDS include" ;;
+     "src") CONFIG_COMMANDS="$CONFIG_COMMANDS src" ;;
+     "include/ffitarget.h") CONFIG_LINKS="$CONFIG_LINKS include/ffitarget.h:src/$TARGETDIR/ffitarget.h" ;;
+-    "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
+     "include/ffi.h") CONFIG_FILES="$CONFIG_FILES include/ffi.h" ;;
+-    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+-    "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
+-    "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
+-    "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
++    "include/ffi_common.h") CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
++    "fficonfig.py") CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
+ 
+   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
+ echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
+Index: libffi/src/x86/ffi.c
+===================================================================
+--- libffi/src/x86/ffi.c	(working copy)
++++ libffi/src/x86/ffi.c	(revision 72475)
+@@ -388,10 +388,10 @@
+     return FFI_BAD_ABI;
+   }
+ 
+-  // we currently don't support certain kinds of arguments for raw
++  /* we currently don't support certain kinds of arguments for raw
+   // closures.  This should be implemented by a separate assembly language
+   // routine, since it would require argument processing, something we
+-  // don't do now for performance.
++  // don't do now for performance. */
+ 
+   for (i = cif->nargs-1; i >= 0; i--)
+     {
+Index: libffi/src/x86/ffi64.c
+===================================================================
+--- libffi/src/x86/ffi64.c	(working copy)
++++ libffi/src/x86/ffi64.c	(revision 72475)
+@@ -52,7 +52,7 @@
+ /* Register class used for passing given 64bit part of the argument.
+    These represent classes as documented by the PS ABI, with the exception
+    of SSESF, SSEDF classes, that are basically SSE class, just gcc will
+-   use SF or DFmode move instead of DImode to avoid reformating penalties.
++   use SF or DFmode move instead of DImode to avoid reformatting penalties.
+ 
+    Similary we play games with INTEGERSI_CLASS to use cheaper SImode moves
+    whenever possible (upper half does contain padding).  */
