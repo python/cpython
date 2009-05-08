@@ -474,12 +474,6 @@ PyObject_Bytes(PyObject *v)
 	PyObject *result, *func;
 	static PyObject *bytesstring = NULL;
 
-	if (bytesstring == NULL) {
-		bytesstring = PyUnicode_InternFromString("__bytes__");
-		if (bytesstring == NULL)
-			return NULL;
-	}
-
 	if (v == NULL)
 		return PyBytes_FromString("<NULL>");
 
@@ -488,10 +482,10 @@ PyObject_Bytes(PyObject *v)
 		return v;
 	}
 
-        /* Doesn't create a reference */
-	func = _PyType_Lookup(Py_TYPE(v), bytesstring);
+	func = _PyObject_LookupSpecial(v, "__bytes__", &bytesstring);
 	if (func != NULL) {
             result = PyObject_CallFunctionObjArgs(func, v, NULL);
+	    Py_DECREF(func);
             if (result == NULL)
 		return NULL;
             if (!PyBytes_Check(result)) {
@@ -503,7 +497,6 @@ PyObject_Bytes(PyObject *v)
             }
             return result;
 	}
-        PyErr_Clear();
 	return PyBytes_FromObject(v);
 }
 
