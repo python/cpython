@@ -1665,6 +1665,58 @@ order (MRO) for bases """
         self.assertEqual(E().foo, C.foo) # i.e., unbound
         self.assert_(repr(C.foo.__get__(C(1))).startswith("<bound method "))
 
+    def test_special_method_lookup(self):
+        # The lookup of special methods bypasses __getattr__ and
+        # __getattribute__, but they still can be descriptors.
+
+        def run_context(manager):
+            with manager:
+                pass
+        def iden(self):
+            return self
+        def hello(self):
+            return "hello"
+
+        # It would be nice to have every special method tested here, but I'm
+        # only listing the ones I can remember outside of typeobject.c, since it
+        # does it right.
+        specials = [
+            ("__unicode__", unicode, hello),
+            # These two fail because the compiler generates LOAD_ATTR to look
+            # them up.  We'd have to add a new opcode to fix this, and it's
+            # probably not worth it.
+            # ("__enter__", run_context, iden),
+            # ("__exit__", run_context, iden),
+            ]
+
+        class Checker(object):
+            def __getattr__(self, attr, test=self):
+                test.fail("__getattr__ called with {0}".format(attr))
+            def __getattribute__(self, attr, test=self):
+                test.fail("__getattribute__ called with {0}".format(attr))
+        class SpecialDescr(object):
+            def __init__(self, impl):
+                self.impl = impl
+            def __get__(self, obj, owner):
+                record.append(1)
+                return self
+            def __call__(self, *args):
+                return self.impl(*args)
+
+
+        for name, runner, meth_impl in specials:
+            class X(Checker):
+                pass
+            setattr(X, name, staticmethod(meth_impl))
+            runner(X())
+
+            record = []
+            class X(Checker):
+                pass
+            setattr(X, name, SpecialDescr(meth_impl))
+            runner(X())
+            self.assertEqual(record, [1], name)
+
     def test_specials(self):
         # Testing special operators...
         # Test operators like __hash__ for which a built-in default exists
