@@ -228,7 +228,7 @@ The output for the example would look similar to this:
    *** extract_tb:
    [('<doctest...>', 10, '<module>', 'lumberjack()'),
     ('<doctest...>', 4, 'lumberjack', 'bright_side_of_death()'),
-    (u'<doctest...>', 7, 'bright_side_of_death', 'return tuple()[0]')]
+    ('<doctest...>', 7, 'bright_side_of_death', 'return tuple()[0]')]
    *** format_tb:
    ['  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
     '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',

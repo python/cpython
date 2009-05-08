@@ -264,7 +264,7 @@ performing string substitutions. ::
    >>> import re
    >>> p = re.compile('ab*')
    >>> p
-   <re.RegexObject instance at 80b4150>
+   <_sre.SRE_Pattern object at 80b4150>
 
 :func:`re.compile` also accepts an optional *flags* argument, used to enable
 various special features and syntax variations.  We'll go over the available

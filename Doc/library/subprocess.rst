@@ -174,13 +174,13 @@ This module also defines four shortcut functions:
    :attr:`returncode`
    attribute and output in the :attr:`output` attribute.
 
-   The arguments are the same as for the :class:`Popen` constructor.  Example:
+   The arguments are the same as for the :class:`Popen` constructor.  Example::
 
       >>> subprocess.check_output(["ls", "-l", "/dev/null"])
       'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
    The stdout argument is not allowed as it is used internally.
-   To capture standard error in the result, use stderr=subprocess.STDOUT.
+   To capture standard error in the result, use ``stderr=subprocess.STDOUT``::
 
       >>> subprocess.check_output(
               ["/bin/sh", "-c", "ls non_existent_file ; exit 0"],

@@ -756,7 +756,7 @@ class StreamHandler(Handler):
         The record is then written to the stream with a trailing newline.  If
         exception information is present, it is formatted using
         traceback.print_exception and appended to the stream.  If the stream
-        has an 'encoding' attribute, it is used to encode the message before
+        has an 'encoding' attribute, it is used to determine how to do the
         output to the stream.
         """
         try:
@@ -767,11 +767,21 @@ class StreamHandler(Handler):
                 stream.write(fs % msg)
             else:
                 try:
-                    if (isinstance(msg, unicode) or
-                        getattr(stream, 'encoding', None) is None):
-                        stream.write(fs % msg)
+                    if (isinstance(msg, unicode) and
+                        getattr(stream, 'encoding', None)):
+                        fs = fs.decode(stream.encoding)
+                        try:
+                            stream.write(fs % msg)
+                        except UnicodeEncodeError:
+                            #Printing to terminals sometimes fails. For example,
+                            #with an encoding of 'cp1251', the above write will
+                            #work if written to a stream opened or wrapped by
+                            #the codecs module, but fail when writing to a
+                            #terminal even when the codepage is set to cp1251.
+                            #An extra encoding step seems to be needed.
+                            stream.write((fs % msg).encode(stream.encoding))
                     else:
-                        stream.write(fs % msg.encode(stream.encoding))
+                        stream.write(fs % msg)
                 except UnicodeError:
                     stream.write(fs % msg.encode("UTF-8"))
             self.flush()
