@@ -1125,6 +1125,8 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
      when the _PyType_Lookup() call fails;
 
    - lookup_method() always raises an exception upon errors.
+
+   - _PyObject_LookupSpecial() exported for the benefit of other places.
 */
 
 static PyObject *
@@ -1155,6 +1157,12 @@ lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
 	if (res == NULL && !PyErr_Occurred())
 		PyErr_SetObject(PyExc_AttributeError, *attrobj);
 	return res;
+}
+
+PyObject *
+_PyObject_LookupSpecial(PyObject *self, char *attrstr, PyObject **attrobj)
+{
+	return lookup_maybe(self, attrstr, attrobj);
 }
 
 /* A variation of PyObject_CallMethod that uses lookup_method()
