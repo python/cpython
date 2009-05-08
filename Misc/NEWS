@@ -876,6 +876,8 @@ Library
   makeunicodedata.py and regenerated the Unicode database (This fixes
   u'\u1d79'.lower() == '\x00').
 
+- Windows locale mapping updated to Vista.
+
 Tools/Demos
 -----------
 
