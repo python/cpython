@@ -506,7 +506,7 @@ PyObject_Unicode(PyObject *v)
 		func = _PyObject_LookupSpecial(v, "__unicode__", &unicodestr);
 		if (func != NULL) {
 			unicode_method_found = 1;
-			res = PyObject_CallFunctionObjArgs(func, v, NULL);
+			res = PyObject_CallFunctionObjArgs(func, NULL);
 			Py_DECREF(func);
 		}
 	}
