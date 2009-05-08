@@ -458,6 +458,8 @@ Library
   protocol numbers are supplied outside the allowed 0-65536 range on bind()
   and getservbyport().
 
+- Windows locale mapping updated to Vista.
+
 Tools/Demos
 -----------
 
