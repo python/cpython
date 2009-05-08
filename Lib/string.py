@@ -51,7 +51,7 @@ def maketrans(frm: bytes, to: bytes) -> bytes:
     """
     import warnings
     warnings.warn("string.maketrans is deprecated, use bytes.maketrans instead",
-                  DeprecationWarning)
+                  DeprecationWarning, 2)
     if len(frm) != len(to):
         raise ValueError("maketrans arguments must have same length")
     if not (isinstance(frm, bytes) and isinstance(to, bytes)):
