@@ -1572,15 +1572,13 @@ order (MRO) for bases """
                 self.impl = impl
             def __get__(self, obj, owner):
                 record.append(1)
-                return self
-            def __call__(self, *args):
-                return self.impl(*args)
+                return self.impl.__get__(obj, owner)
 
 
         for name, runner, meth_impl in specials:
             class X(Checker):
                 pass
-            setattr(X, name, staticmethod(meth_impl))
+            setattr(X, name, meth_impl)
             runner(X())
 
             record = []
