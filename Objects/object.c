@@ -484,7 +484,7 @@ PyObject_Bytes(PyObject *v)
 
 	func = _PyObject_LookupSpecial(v, "__bytes__", &bytesstring);
 	if (func != NULL) {
-            result = PyObject_CallFunctionObjArgs(func, v, NULL);
+            result = PyObject_CallFunctionObjArgs(func, NULL);
 	    Py_DECREF(func);
             if (result == NULL)
 		return NULL;
