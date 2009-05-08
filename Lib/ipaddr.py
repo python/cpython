@@ -209,6 +209,7 @@ class BaseIP(object):
                 raise IndexError
             return self._string_from_ip_int(self.network + n)
         else:
+            n += 1
             if self.broadcast + n < self.network:
                 raise IndexError
             return self._string_from_ip_int(self.broadcast + n)

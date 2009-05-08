@@ -254,6 +254,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv6[5],
                          '2001:658:22a:cafe::5')
 
+    def test_getitem(self):
+        # http://code.google.com/p/ipaddr-py/issues/detail?id=15
+        addr = ipaddr.IPv4('172.31.255.128/255.255.255.240')
+        self.assertEqual(28, addr.prefixlen)
+        addr_list = list(addr)
+        self.assertEqual('172.31.255.128', addr_list[0])
+        self.assertEqual('172.31.255.128', addr[0])
+        self.assertEqual('172.31.255.143', addr_list[-1])
+        self.assertEqual('172.31.255.143', addr[-1])
+        self.assertEqual(addr_list[-1], addr[-1])
+
     def test_equals(self):
         self.assertTrue(self.ipv4 == ipaddr.IPv4('1.2.3.4/24'))
         self.assertFalse(self.ipv4 == ipaddr.IPv4('1.2.3.4/23'))
