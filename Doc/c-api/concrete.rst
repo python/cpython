@@ -105,3 +105,4 @@ Other Objects
    gen.rst
    datetime.rst
    set.rst
+   code.rst

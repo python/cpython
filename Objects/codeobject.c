@@ -107,6 +107,52 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	return co;
 }
 
+PyCodeObject *
+PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
+{
+	static PyObject *emptystring = NULL;
+	static PyObject *nulltuple = NULL;
+	PyObject *filename_ob = NULL;
+	PyObject *funcname_ob = NULL;
+	PyCodeObject *result = NULL;
+	if (emptystring == NULL) {
+		emptystring = PyString_FromString("");
+		if (emptystring == NULL)
+			goto failed;
+	}
+	if (nulltuple == NULL) {
+		nulltuple = PyTuple_New(0);
+		if (nulltuple == NULL)
+			goto failed;
+	}
+	funcname_ob = PyString_FromString(funcname);
+	if (funcname_ob == NULL)
+		goto failed;
+	filename_ob = PyString_FromString(filename);
+	if (filename_ob == NULL)
+		goto failed;
+
+	result = PyCode_New(0,			/* argcount */
+			    0,			/* nlocals */
+			    0,			/* stacksize */
+			    0,			/* flags */
+			    emptystring,	/* code */
+			    nulltuple,		/* consts */
+			    nulltuple,		/* names */
+			    nulltuple,		/* varnames */
+			    nulltuple,		/* freevars */
+			    nulltuple,		/* cellvars */
+			    filename_ob,	/* filename */
+			    funcname_ob,	/* name */
+			    firstlineno,	/* firstlineno */
+			    emptystring		/* lnotab */
+			    );
+
+failed:
+	Py_XDECREF(funcname_ob);
+	Py_XDECREF(filename_ob);
+	return result;
+}
 
 #define OFF(x) offsetof(PyCodeObject, x)
 
