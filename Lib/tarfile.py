@@ -1591,7 +1591,8 @@ class TarFile(object):
         return self.format == USTAR_FORMAT
     def _setposix(self, value):
         import warnings
-        warnings.warn("use the format attribute instead", DeprecationWarning)
+        warnings.warn("use the format attribute instead", DeprecationWarning,
+                      2)
         if value:
             self.format = USTAR_FORMAT
         else:
