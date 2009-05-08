@@ -988,6 +988,21 @@ traceback_print(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+/* To test that the result of PyCode_NewEmpty has the right members. */
+static PyObject *
+code_newempty(PyObject *self, PyObject *args)
+{
+	const char *filename;
+	const char *funcname;
+        int firstlineno;
+
+	if (!PyArg_ParseTuple(args, "ssi:code_newempty",
+			      &filename, &funcname, &firstlineno))
+		return NULL;
+
+	return (PyObject *)PyCode_NewEmpty(filename, funcname, firstlineno);
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -1033,6 +1048,7 @@ static PyMethodDef TestMethods[] = {
 	{"_pending_threadfunc",	pending_threadfunc,		 METH_VARARGS},
 #endif
 	{"traceback_print", traceback_print, 	         METH_VARARGS},
+	{"code_newempty", code_newempty, 	         METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 

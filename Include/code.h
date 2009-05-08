@@ -70,6 +70,11 @@ PyAPI_FUNC(PyCodeObject *) PyCode_New(
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
         /* same as struct above */
+
+/* Creates a new empty code object with the specified source location. */
+PyAPI_FUNC(PyCodeObject *)
+PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
+
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */

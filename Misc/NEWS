@@ -927,6 +927,9 @@ Build
 C-API
 -----
 
+- Issue #5959: Add a PyCode_NewEmpty() function to create a new empty code
+  object at a specified file, function, and line number.
+
 - Issue #1419652: Change the first argument to PyImport_AppendInittab() to
   ``const char *`` as the string is stored beyond the call.
 

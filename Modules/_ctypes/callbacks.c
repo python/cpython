@@ -99,40 +99,13 @@ PrintError(char *msg, ...)
 /* after code that pyrex generates */
 void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
 {
-	PyObject *py_srcfile = 0;
-	PyObject *py_funcname = 0;
 	PyObject *py_globals = 0;
-	PyObject *empty_tuple = 0;
-	PyObject *empty_string = 0;
 	PyCodeObject *py_code = 0;
 	PyFrameObject *py_frame = 0;
-    
-	py_srcfile = PyString_FromString(filename);
-	if (!py_srcfile) goto bad;
-	py_funcname = PyString_FromString(funcname);
-	if (!py_funcname) goto bad;
+
 	py_globals = PyDict_New();
 	if (!py_globals) goto bad;
-	empty_tuple = PyTuple_New(0);
-	if (!empty_tuple) goto bad;
-	empty_string = PyString_FromString("");
-	if (!empty_string) goto bad;
-	py_code = PyCode_New(
-		0,            /*int argcount,*/
-		0,            /*int nlocals,*/
-		0,            /*int stacksize,*/
-		0,            /*int flags,*/
-		empty_string, /*PyObject *code,*/
-		empty_tuple,  /*PyObject *consts,*/
-		empty_tuple,  /*PyObject *names,*/
-		empty_tuple,  /*PyObject *varnames,*/
-		empty_tuple,  /*PyObject *freevars,*/
-		empty_tuple,  /*PyObject *cellvars,*/
-		py_srcfile,   /*PyObject *filename,*/
-		py_funcname,  /*PyObject *name,*/
-		lineno,   /*int firstlineno,*/
-		empty_string  /*PyObject *lnotab*/
-		);
+	py_code = PyCode_NewEmpty(filename, funcname, lineno);
 	if (!py_code) goto bad;
 	py_frame = PyFrame_New(
 		PyThreadState_Get(), /*PyThreadState *tstate,*/
@@ -145,10 +118,6 @@ void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
 	PyTraceBack_Here(py_frame);
   bad:
 	Py_XDECREF(py_globals);
-	Py_XDECREF(py_srcfile);
-	Py_XDECREF(py_funcname);
-	Py_XDECREF(empty_tuple);
-	Py_XDECREF(empty_string);
 	Py_XDECREF(py_code);
 	Py_XDECREF(py_frame);
 }
