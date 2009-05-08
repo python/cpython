@@ -163,13 +163,13 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
 def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument."""
     warn("cgi.parse_qs is deprecated, use urllib.parse.parse_qs instead",
-            DeprecationWarning)
+         DeprecationWarning, 2)
     return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing)
 
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument."""
     warn("cgi.parse_qsl is deprecated, use urllib.parse.parse_qsl instead",
-            DeprecationWarning)
+         DeprecationWarning, 2)
     return urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing)
 
 def parse_multipart(fp, pdict):
