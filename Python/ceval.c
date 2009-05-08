@@ -2698,7 +2698,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		default:
 			fprintf(stderr,
 				"XXX lineno: %d, opcode: %d\n",
-				PyCode_Addr2Line(f->f_code, f->f_lasti),
+				PyFrame_GetLineNumber(f),
 				opcode);
 			PyErr_SetString(PyExc_SystemError, "unknown opcode");
 			why = WHY_EXCEPTION;

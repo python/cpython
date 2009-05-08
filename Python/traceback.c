@@ -96,8 +96,7 @@ newtracebackobject(PyTracebackObject *next, PyFrameObject *frame)
 		Py_XINCREF(frame);
 		tb->tb_frame = frame;
 		tb->tb_lasti = frame->f_lasti;
-		tb->tb_lineno = PyCode_Addr2Line(frame->f_code, 
-						 frame->f_lasti);
+		tb->tb_lineno = PyFrame_GetLineNumber(frame);
 		PyObject_GC_Track(tb);
 	}
 	return tb;

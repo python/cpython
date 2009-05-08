@@ -454,7 +454,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         globals = f->f_globals;
-        *lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+        *lineno = PyFrame_GetLineNumber(f);
     }
 
     *module = NULL;

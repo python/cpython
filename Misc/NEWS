@@ -927,6 +927,9 @@ Build
 C-API
 -----
 
+- Issue #5954: Add a PyFrame_GetLineNumber() function to replace most uses of
+  PyCode_Addr2Line().
+
 - Issue #5959: Add a PyCode_NewEmpty() function to create a new empty code
   object at a specified file, function, and line number.
 
