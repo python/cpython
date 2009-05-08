@@ -166,12 +166,10 @@ resource_setrlimit(PyObject *self, PyObject *args)
 	    return NULL;
 #else
 	/* The limits are probably bigger than a long */
-	rl.rlim_cur = PyLong_Check(curobj) ?
-		PyLong_AsLongLong(curobj) : PyLong_AsLong(curobj);
+	rl.rlim_cur = PyLong_AsLongLong(curobj);
 	if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
 	    return NULL;
-	rl.rlim_max = PyLong_Check(maxobj) ?
-		PyLong_AsLongLong(maxobj) : PyLong_AsLong(maxobj);
+	rl.rlim_max = PyLong_AsLongLong(maxobj);
 	if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
 	    return NULL;
 #endif
