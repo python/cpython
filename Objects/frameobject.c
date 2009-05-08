@@ -60,17 +60,19 @@ frame_getlocals(PyFrameObject *f, void *closure)
 	return f->f_locals;
 }
 
+int
+PyFrame_GetLineNumber(PyFrameObject *f)
+{
+	if (f->f_trace)
+		return f->f_lineno;
+	else
+		return PyCode_Addr2Line(f->f_code, f->f_lasti);
+}
+
 static PyObject *
 frame_getlineno(PyFrameObject *f, void *closure)
 {
-	int lineno;
-
-	if (f->f_trace)
-		lineno = f->f_lineno;
-	else
-		lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
-
-	return PyInt_FromLong(lineno);
+	return PyInt_FromLong(PyFrame_GetLineNumber(f));
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
@@ -351,16 +353,14 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
+	PyObject* old_value;
+
 	/* We rely on f_lineno being accurate when f_trace is set. */
+	f->f_lineno = PyFrame_GetLineNumber(f);
 
-	PyObject* old_value = f->f_trace;
-
+	old_value = f->f_trace;
 	Py_XINCREF(v);
 	f->f_trace = v;
-
-	if (v != NULL)
-		f->f_lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
-
 	Py_XDECREF(old_value);
 
 	return 0;
