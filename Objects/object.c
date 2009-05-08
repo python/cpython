@@ -488,12 +488,6 @@ PyObject_Unicode(PyObject *v)
 		return v;
 	}
 
-	/* Try the __unicode__ method */
-	if (unicodestr == NULL) {
-		unicodestr= PyString_InternFromString("__unicode__");
-		if (unicodestr == NULL)
-			return NULL;
-	}
 	if (PyInstance_Check(v)) {
 		/* We're an instance of a classic class */
 		/* Try __unicode__ from the instance -- alas we have no type */
@@ -508,15 +502,12 @@ PyObject_Unicode(PyObject *v)
 		}
 	}
 	else {
-		/* Not a classic class instance, try __unicode__ from type */
-		/* _PyType_Lookup doesn't create a reference */
-		func = _PyType_Lookup(Py_TYPE(v), unicodestr);
+		/* Not a classic class instance, try __unicode__. */
+		func = _PyObject_LookupSpecial(v, "__unicode__", &unicodestr);
 		if (func != NULL) {
 			unicode_method_found = 1;
 			res = PyObject_CallFunctionObjArgs(func, v, NULL);
-		}
-		else {
-			PyErr_Clear();
+			Py_DECREF(func);
 		}
 	}
 
