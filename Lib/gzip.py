@@ -124,7 +124,7 @@ class GzipFile:
     @property
     def filename(self):
         import warnings
-        warnings.warn("use the name attribute", DeprecationWarning)
+        warnings.warn("use the name attribute", DeprecationWarning, 2)
         if self.mode == WRITE and self.name[-3:] != ".gz":
             return self.name + ".gz"
         return self.name

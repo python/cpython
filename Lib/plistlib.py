@@ -114,7 +114,8 @@ def writePlistToString(rootObject):
 def readPlistFromResource(path, restype='plst', resid=0):
     """Read plst resource from the resource fork of path.
     """
-    warnings.warnpy3k("In 3.x, readPlistFromResource is removed.")
+    warnings.warnpy3k("In 3.x, readPlistFromResource is removed.",
+                      stacklevel=2)
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdPerm
     from Carbon import Res
@@ -129,7 +130,7 @@ def readPlistFromResource(path, restype='plst', resid=0):
 def writePlistToResource(rootObject, path, restype='plst', resid=0):
     """Write 'rootObject' as a plst resource to the resource fork of path.
     """
-    warnings.warnpy3k("In 3.x, writePlistToResource is removed.")
+    warnings.warnpy3k("In 3.x, writePlistToResource is removed.", stacklevel=2)
     from Carbon.File import FSRef, FSGetResourceForkName
     from Carbon.Files import fsRdWrPerm
     from Carbon import Res
@@ -300,13 +301,13 @@ class _InternalDict(dict):
             raise AttributeError, attr
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning)
+             "notation instead", PendingDeprecationWarning, 2)
         return value
 
     def __setattr__(self, attr, value):
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning)
+             "notation instead", PendingDeprecationWarning, 2)
         self[attr] = value
 
     def __delattr__(self, attr):
@@ -316,14 +317,14 @@ class _InternalDict(dict):
             raise AttributeError, attr
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning)
+             "notation instead", PendingDeprecationWarning, 2)
 
 class Dict(_InternalDict):
 
     def __init__(self, **kwargs):
         from warnings import warn
         warn("The plistlib.Dict class is deprecated, use builtin dict instead",
-             PendingDeprecationWarning)
+             PendingDeprecationWarning, 2)
         super(Dict, self).__init__(**kwargs)
 
 
@@ -336,7 +337,7 @@ class Plist(_InternalDict):
     def __init__(self, **kwargs):
         from warnings import warn
         warn("The Plist class is deprecated, use the readPlist() and "
-             "writePlist() functions instead", PendingDeprecationWarning)
+             "writePlist() functions instead", PendingDeprecationWarning, 2)
         super(Plist, self).__init__(**kwargs)
 
     def fromFile(cls, pathOrFile):
