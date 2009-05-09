@@ -28,7 +28,7 @@ Core and Builtins
 - Issue #4426: The UTF-7 decoder was too strict and didn't accept some legal
   sequences. Patch by Nick Barnes and Victor Stinner.
 
-- Issue #1588: Add complex.__format__. For example, 
+- Issue #1588: Add complex.__format__. For example,
   format(complex(1, 2./3), '.5') now produces a sensible result.
 
 - Issue #5864: Fix empty format code formatting for floats so that it
@@ -285,9 +285,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #5971: StreamHandler.handleError now swallows IOErrors which occur when
+  trying to print a traceback.
+
 - Issue #5976: Fixed Distutils test_check_environ.
 
-- Issue #5900: Ensure RUNPATH is added to extension modules with RPATH if GNU 
+- Issue #5900: Ensure RUNPATH is added to extension modules with RPATH if GNU
   ld is used. Original patch by Floris Bruynooghe.
 
 - Issue #5941: Distutils build_clib command was not working anymore because
@@ -323,7 +326,7 @@ Library
 
 - Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
 
-- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive 
+- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive
   anymore.
 
 - Issue #4305: ctypes should now build again on mipsel-linux-gnu
@@ -899,7 +902,7 @@ Build
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
 - Issue #4587: Add configure option --with-dbmliborder=db1:db2:... to specify
-  the order that backends for the dbm extension are checked. 
+  the order that backends for the dbm extension are checked.
 
 - Link the shared python library with $(MODLIBS).
 
