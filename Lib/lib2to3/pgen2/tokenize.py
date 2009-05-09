@@ -30,6 +30,7 @@ __credits__ = \
     'GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro'
 
 import string, re
+from codecs import BOM_UTF8, lookup
 from lib2to3.pgen2.token import *
 
 from . import token
@@ -227,6 +228,75 @@ class Untokenizer:
                 toks_append(indents[-1])
                 startline = False
             toks_append(tokval)
+
+cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
+
+def detect_encoding(readline):
+    """
+    The detect_encoding() function is used to detect the encoding that should
+    be used to decode a Python source file. It requires one argment, readline,
+    in the same way as the tokenize() generator.
+
+    It will call readline a maximum of twice, and return the encoding used
+    (as a string) and a list of any lines (left as bytes) it has read
+    in.
+
+    It detects the encoding from the presence of a utf-8 bom or an encoding
+    cookie as specified in pep-0263. If both a bom and a cookie are present,
+    but disagree, a SyntaxError will be raised. If the encoding cookie is an
+    invalid charset, raise a SyntaxError.
+
+    If no encoding is specified, then the default of 'utf-8' will be returned.
+    """
+    bom_found = False
+    encoding = None
+    def read_or_stop():
+        try:
+            return readline()
+        except StopIteration:
+            return b''
+
+    def find_cookie(line):
+        try:
+            line_string = line.decode('ascii')
+        except UnicodeDecodeError:
+            return None
+
+        matches = cookie_re.findall(line_string)
+        if not matches:
+            return None
+        encoding = matches[0]
+        try:
+            codec = lookup(encoding)
+        except LookupError:
+            # This behaviour mimics the Python interpreter
+            raise SyntaxError("unknown encoding: " + encoding)
+
+        if bom_found and codec.name != 'utf-8':
+            # This behaviour mimics the Python interpreter
+            raise SyntaxError('encoding problem: utf-8')
+        return encoding
+
+    first = read_or_stop()
+    if first.startswith(BOM_UTF8):
+        bom_found = True
+        first = first[3:]
+    if not first:
+        return 'utf-8', []
+
+    encoding = find_cookie(first)
+    if encoding:
+        return encoding, [first]
+
+    second = read_or_stop()
+    if not second:
+        return 'utf-8', [first]
+
+    encoding = find_cookie(second)
+    if encoding:
+        return encoding, [first, second]
+
+    return 'utf-8', [first, second]
 
 def untokenize(iterable):
     """Transform tokens back into Python source code.

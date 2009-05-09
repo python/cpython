@@ -65,5 +65,5 @@ class FixRenames(fixer_base.BaseFix):
         #import_mod = results.get("module")
 
         if mod_name and attr_name:
-            new_attr = LOOKUP[(mod_name.value, attr_name.value)]
+            new_attr = str(LOOKUP[(mod_name.value, attr_name.value)])
             attr_name.replace(Name(new_attr, prefix=attr_name.get_prefix()))
