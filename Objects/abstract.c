@@ -75,7 +75,7 @@ Py_ssize_t
 _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
 	static PyObject *hintstrobj = NULL;
-	PyObject *ro;
+	PyObject *ro, *hintmeth;
 	Py_ssize_t rv;
 
 	/* try o.__len__() */
@@ -89,20 +89,15 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 		PyErr_Clear();
 	}
 
-	/* cache a hashed version of the attribute string */
-	if (hintstrobj == NULL) {
-		hintstrobj = PyUnicode_InternFromString("__length_hint__");
-		if (hintstrobj == NULL)
-			return -1;
-	}
-
 	/* try o.__length_hint__() */
-	ro = PyObject_CallMethodObjArgs(o, hintstrobj, NULL);
+        hintmeth = _PyObject_LookupSpecial(o, "__length_hint__", &hintstrobj);
+	if (hintmeth == NULL)
+		return defaultvalue;
+	ro = PyObject_CallFunctionObjArgs(hintmeth, NULL);
+	Py_DECREF(hintmeth);
 	if (ro == NULL) {
-		if (!PyErr_ExceptionMatches(PyExc_TypeError) &&
-			!PyErr_ExceptionMatches(PyExc_AttributeError))
-				return -1;
-		PyErr_Clear();
+		if (!PyErr_ExceptionMatches(PyExc_TypeError))
+			return -1;
 		return defaultvalue;
 	}
 	rv = PyLong_Check(ro) ? PyLong_AsSsize_t(ro) : defaultvalue;
