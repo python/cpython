@@ -273,8 +273,9 @@ class UnixCCompiler(CCompiler):
         # Linkers on different platforms need different options to
         # specify that directories need to be added to the list of
         # directories searched for dependencies when a dynamic library
-        # is sought.  GCC has to be told to pass the -R option through
-        # to the linker, whereas other compilers just know this.
+        # is sought.  GCC on GNU systems (Linux, FreeBSD, ...) has to
+        # be told to pass the -R option through to the linker, whereas
+        # other compilers and gcc on other systems just know this.
         # Other compilers may need something slightly different.  At
         # this time, there's no way to determine this information from
         # the configuration data stored in the Python installation, so
@@ -287,10 +288,23 @@ class UnixCCompiler(CCompiler):
             return "+s -L" + dir
         elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
             return ["-rpath", dir]
-        elif compiler[:3] == "gcc" or compiler[:3] == "g++":
-            return "-Wl,-R" + dir
         else:
-            return "-R" + dir
+            if compiler[:3] == "gcc" or compiler[:3] == "g++":
+                # gcc on non-GNU systems does not need -Wl, but can
+                # use it anyway.  Since distutils has always passed in
+                # -Wl whenever gcc was used in the past it is probably
+                # safest to keep doing so.
+                if sysconfig.get_config_var("GNULD") == "yes":
+                    # GNU ld needs an extra option to get a RUNPATH
+                    # instead of just an RPATH.
+                    return "-Wl,--enable-new-dtags,-R" + dir
+                else:
+                    return "-Wl,-R" + dir
+            else:
+                # No idea how --enable-new-dtags would be passed on to
+                # ld if this system was using GNU ld.  Don't know if a
+                # system like this even exists.
+                return "-R" + dir
 
     def library_option(self, lib):
         return "-l" + lib

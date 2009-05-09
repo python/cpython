@@ -695,6 +695,7 @@ LDLIBRARYDIR
 INSTSONAME
 RUNSHARED
 LINKCC
+GNULD
 RANLIB
 AR
 ARFLAGS
@@ -3997,6 +3998,27 @@ then
 fi
 { echo "$as_me:$LINENO: result: $LINKCC" >&5
 echo "${ECHO_T}$LINKCC" >&6; }
+
+# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
+# make sure we default having it set to "no": this is used by
+# distutils.unixccompiler to know if it should add --enable-new-dtags
+# to linker command lines, and failing to detect GNU ld simply results
+# in the same bahaviour as before.
+
+{ echo "$as_me:$LINENO: checking for GNU ld" >&5
+echo $ECHO_N "checking for GNU ld... $ECHO_C" >&6; }
+ac_prog=ld
+if test "$GCC" = yes; then
+       ac_prog=`$CC -print-prog-name=ld`
+fi
+case `"$ac_prog" -V 2>&1 < /dev/null` in
+      *GNU*)
+          GNULD=yes;;
+      *)
+          GNULD=no;;
+esac
+{ echo "$as_me:$LINENO: result: $GNULD" >&5
+echo "${ECHO_T}$GNULD" >&6; }
 
 { echo "$as_me:$LINENO: checking for --enable-shared" >&5
 echo $ECHO_N "checking for --enable-shared... $ECHO_C" >&6; }
@@ -26042,6 +26064,7 @@ LDLIBRARYDIR!$LDLIBRARYDIR$ac_delim
 INSTSONAME!$INSTSONAME$ac_delim
 RUNSHARED!$RUNSHARED$ac_delim
 LINKCC!$LINKCC$ac_delim
+GNULD!$GNULD$ac_delim
 RANLIB!$RANLIB$ac_delim
 AR!$AR$ac_delim
 ARFLAGS!$ARFLAGS$ac_delim
@@ -26059,7 +26082,6 @@ SO!$SO$ac_delim
 LDSHARED!$LDSHARED$ac_delim
 BLDSHARED!$BLDSHARED$ac_delim
 CCSHARED!$CCSHARED$ac_delim
-LINKFORSHARED!$LINKFORSHARED$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -26101,6 +26123,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LINKFORSHARED!$LINKFORSHARED$ac_delim
 CFLAGSFORSHARED!$CFLAGSFORSHARED$ac_delim
 SHLIBS!$SHLIBS$ac_delim
 USE_SIGNAL_MODULE!$USE_SIGNAL_MODULE$ac_delim
@@ -26126,7 +26149,7 @@ SRCDIRS!$SRCDIRS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 23; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
