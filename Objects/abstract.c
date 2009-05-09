@@ -83,9 +83,8 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 	if (rv >= 0)
 		return rv;
 	if (PyErr_Occurred()) {
-		if (!PyErr_ExceptionMatches(PyExc_TypeError) &&
-			!PyErr_ExceptionMatches(PyExc_AttributeError))
-				return -1;
+		if (!PyErr_ExceptionMatches(PyExc_TypeError))
+			return -1;
 		PyErr_Clear();
 	}
 
