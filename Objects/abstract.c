@@ -107,6 +107,8 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 		PyErr_Clear();
 	}
 
+	if (PyInstance_Check(o))
+		return defaultvalue;
 	/* try o.__length_hint__() */
         hintmeth = _PyObject_LookupSpecial(o, "__length_hint__", &hintstrobj);
 	if (hintmeth == NULL)
