@@ -1216,6 +1216,7 @@ lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
 PyObject *
 _PyObject_LookupSpecial(PyObject *self, char *attrstr, PyObject **attrobj)
 {
+	assert(!PyInstance_Check(self));
 	return lookup_maybe(self, attrstr, attrobj);
 }
 
