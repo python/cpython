@@ -98,6 +98,7 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 	if (ro == NULL) {
 		if (!PyErr_ExceptionMatches(PyExc_TypeError))
 			return -1;
+		PyErr_Clear();
 		return defaultvalue;
 	}
 	rv = PyLong_Check(ro) ? PyLong_AsSsize_t(ro) : defaultvalue;
