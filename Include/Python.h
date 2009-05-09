@@ -113,6 +113,7 @@
 #include "import.h"
 
 #include "abstract.h"
+#include "bltinmodule.h"
 
 #include "compile.h"
 #include "eval.h"

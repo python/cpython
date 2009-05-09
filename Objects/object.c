@@ -1595,6 +1595,15 @@ _Py_ReadyTypes(void)
 
 	if (PyType_Ready(&PyMemberDescr_Type) < 0)
 		Py_FatalError("Can't initialize member descriptor type");
+
+	if (PyType_Ready(&PyFilter_Type) < 0)
+		Py_FatalError("Can't initialize filter type");
+
+	if (PyType_Ready(&PyMap_Type) < 0)
+		Py_FatalError("Can't initialize map type");
+
+	if (PyType_Ready(&PyZip_Type) < 0)
+		Py_FatalError("Can't initialize zip type");
 }
 
 

@@ -612,6 +612,7 @@ PYTHON_HEADERS= \
 		Include/abstract.h \
 		Include/asdl.h \
 		Include/ast.h \
+                Include/bltinmodule.h \
 		Include/bitset.h \
 		Include/boolobject.h \
 		Include/bytes_methods.h \
