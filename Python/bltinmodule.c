@@ -317,8 +317,6 @@ typedef struct {
 	PyObject *it;
 } filterobject;
 
-PyTypeObject PyFilter_Type;
-
 static PyObject *
 filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -912,8 +910,6 @@ typedef struct {
 	PyObject *iters;
 	PyObject *func;
 } mapobject;
-
-PyTypeObject PyMap_Type;
 
 static PyObject *
 map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2030,8 +2026,6 @@ typedef struct {
 	PyObject *ittuple;		/* tuple of iterators */
 	PyObject *result;
 } zipobject;
-
-PyTypeObject PyZip_Type;
 
 static PyObject *
 zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
