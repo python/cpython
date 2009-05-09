@@ -15,4 +15,4 @@ class FixStandarderror(fixer_base.BaseFix):
               """
 
     def transform(self, node, results):
-        return Name("Exception", prefix=node.get_prefix())
+        return Name(u"Exception", prefix=node.get_prefix())

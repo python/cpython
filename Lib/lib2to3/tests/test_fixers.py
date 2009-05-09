@@ -25,7 +25,7 @@ class FixerTestCase(support.TestCase):
         options = {"print_function" : False}
         self.refactor = support.get_refactorer(fix_list, options)
         self.fixer_log = []
-        self.filename = "<string>"
+        self.filename = u"<string>"
 
         for fixer in chain(self.refactor.pre_order,
                            self.refactor.post_order):
@@ -35,7 +35,7 @@ class FixerTestCase(support.TestCase):
         before = support.reformat(before)
         after = support.reformat(after)
         tree = self.refactor.refactor_string(before, self.filename)
-        self.failUnlessEqual(after, str(tree))
+        self.failUnlessEqual(after, unicode(tree))
         return tree
 
     def check(self, before, after, ignore_warnings=False):

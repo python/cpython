@@ -30,7 +30,7 @@ from ..fixer_util import Assign, Attr, Name, is_tuple, is_list, syms
 def find_excepts(nodes):
     for i, n in enumerate(nodes):
         if n.type == syms.except_clause:
-            if n.children[0].value == 'except':
+            if n.children[0].value == u'except':
                 yield (n, nodes[i+2])
 
 class FixExcept(fixer_base.BaseFix):
@@ -52,13 +52,13 @@ class FixExcept(fixer_base.BaseFix):
         for except_clause, e_suite in find_excepts(try_cleanup):
             if len(except_clause.children) == 4:
                 (E, comma, N) = except_clause.children[1:4]
-                comma.replace(Name("as", prefix=" "))
+                comma.replace(Name(u"as", prefix=u" "))
 
                 if N.type != token.NAME:
                     # Generate a new N for the except clause
-                    new_N = Name(self.new_name(), prefix=" ")
+                    new_N = Name(self.new_name(), prefix=u" ")
                     target = N.clone()
-                    target.set_prefix("")
+                    target.set_prefix(u"")
                     N.replace(new_N)
                     new_N = new_N.clone()
 
@@ -74,7 +74,7 @@ class FixExcept(fixer_base.BaseFix):
                     # The assignment is different if old_N is a tuple or list
                     # In that case, the assignment is old_N = new_N.args
                     if is_tuple(N) or is_list(N):
-                        assign = Assign(target, Attr(new_N, Name('args')))
+                        assign = Assign(target, Attr(new_N, Name(u'args')))
                     else:
                         assign = Assign(target, new_N)
 
@@ -82,10 +82,10 @@ class FixExcept(fixer_base.BaseFix):
                     for child in reversed(suite_stmts[:i]):
                         e_suite.insert_child(0, child)
                     e_suite.insert_child(i, assign)
-                elif N.get_prefix() == "":
+                elif N.get_prefix() == u"":
                     # No space after a comma is legal; no space after "as",
                     # not so much.
-                    N.set_prefix(" ")
+                    N.set_prefix(u" ")
 
         #TODO(cwinter) fix this when children becomes a smart list
         children = [c.clone() for c in node.children[:3]] + try_cleanup + tail

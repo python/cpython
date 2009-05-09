@@ -56,7 +56,7 @@ class FixTypes(fixer_base.BaseFix):
     PATTERN = '|'.join(_pats)
 
     def transform(self, node, results):
-        new_value = _TYPE_MAPPING.get(results["name"].value)
+        new_value = unicode(_TYPE_MAPPING.get(results["name"].value))
         if new_value:
             return Name(new_value, prefix=node.get_prefix())
         return None

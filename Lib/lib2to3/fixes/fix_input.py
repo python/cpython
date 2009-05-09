@@ -22,5 +22,5 @@ class FixInput(fixer_base.BaseFix):
             return
 
         new = node.clone()
-        new.set_prefix("")
-        return Call(Name("eval"), [new], prefix=node.get_prefix())
+        new.set_prefix(u"")
+        return Call(Name(u"eval"), [new], prefix=node.get_prefix())

@@ -27,7 +27,7 @@ class FixItertools(fixer_base.BaseFix):
     def transform(self, node, results):
         prefix = None
         func = results['func'][0]
-        if 'it' in results and func.value != 'ifilterfalse':
+        if 'it' in results and func.value != u'ifilterfalse':
             dot, it = (results['dot'], results['it'])
             # Remove the 'itertools'
             prefix = it.get_prefix()

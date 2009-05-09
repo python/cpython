@@ -56,7 +56,7 @@ class FixRaise(fixer_base.BaseFix):
 
         if "val" not in results:
             # One-argument raise
-            new = pytree.Node(syms.raise_stmt, [Name("raise"), exc])
+            new = pytree.Node(syms.raise_stmt, [Name(u"raise"), exc])
             new.set_prefix(node.get_prefix())
             return new
 
@@ -64,19 +64,19 @@ class FixRaise(fixer_base.BaseFix):
         if is_tuple(val):
             args = [c.clone() for c in val.children[1:-1]]
         else:
-            val.set_prefix("")
+            val.set_prefix(u"")
             args = [val]
 
         if "tb" in results:
             tb = results["tb"].clone()
-            tb.set_prefix("")
+            tb.set_prefix(u"")
 
             e = Call(exc, args)
-            with_tb = Attr(e, Name('with_traceback')) + [ArgList([tb])]
-            new = pytree.Node(syms.simple_stmt, [Name("raise")] + with_tb)
+            with_tb = Attr(e, Name(u'with_traceback')) + [ArgList([tb])]
+            new = pytree.Node(syms.simple_stmt, [Name(u"raise")] + with_tb)
             new.set_prefix(node.get_prefix())
             return new
         else:
             return pytree.Node(syms.raise_stmt,
-                               [Name("raise"), Call(exc, args)],
+                               [Name(u"raise"), Call(exc, args)],
                                prefix=node.get_prefix())

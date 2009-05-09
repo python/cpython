@@ -24,12 +24,12 @@ class FixItertoolsImports(fixer_base.BaseFix):
                 assert child.type == syms.import_as_name
                 name_node = child.children[0]
             member_name = name_node.value
-            if member_name in ('imap', 'izip', 'ifilter'):
+            if member_name in (u'imap', u'izip', u'ifilter'):
                 child.value = None
                 child.remove()
-            elif member_name == 'ifilterfalse':
+            elif member_name == u'ifilterfalse':
                 node.changed()
-                name_node.value = 'filterfalse'
+                name_node.value = u'filterfalse'
 
         # Make sure the import statement is still sane
         children = imports.children[:] or [imports]

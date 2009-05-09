@@ -9,12 +9,9 @@ import os.path
 import re
 from textwrap import dedent
 
-#sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
 # Local imports
-from .. import pytree
-from .. import refactor
-from ..pgen2 import driver
+from lib2to3 import pytree, refactor
+from lib2to3.pgen2 import driver
 
 test_dir = os.path.dirname(__file__)
 proj_dir = os.path.normpath(os.path.join(test_dir, ".."))
@@ -25,19 +22,13 @@ driver = driver.Driver(grammar, convert=pytree.convert)
 def parse_string(string):
     return driver.parse_string(reformat(string), debug=True)
 
-# Python 2.3's TestSuite is not iter()-able
-if sys.version_info < (2, 4):
-    def TestSuite_iter(self):
-        return iter(self._tests)
-    unittest.TestSuite.__iter__ = TestSuite_iter
-
 def run_all_tests(test_mod=None, tests=None):
     if tests is None:
         tests = unittest.TestLoader().loadTestsFromModule(test_mod)
     unittest.TextTestRunner(verbosity=2).run(tests)
 
 def reformat(string):
-    return dedent(string) + "\n\n"
+    return dedent(string) + u"\n\n"
 
 def get_refactorer(fixers=None, options=None):
     """

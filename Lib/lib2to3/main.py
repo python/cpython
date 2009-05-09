@@ -23,7 +23,7 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         self.errors.append((msg, args, kwargs))
         self.logger.error(msg, *args, **kwargs)
 
-    def write_file(self, new_text, filename, old_text):
+    def write_file(self, new_text, filename, old_text, encoding):
         if not self.nobackups:
             # Make backup
             backup = filename + ".bak"
@@ -37,8 +37,8 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             except os.error, err:
                 self.log_message("Can't rename %s to %s", filename, backup)
         # Actually write the new file
-        super(StdoutRefactoringTool, self).write_file(new_text,
-                                                      filename, old_text)
+        write = super(StdoutRefactoringTool, self).write_file
+        write(new_text, filename, old_text, encoding)
         if not self.nobackups:
             shutil.copymode(backup, filename)
 

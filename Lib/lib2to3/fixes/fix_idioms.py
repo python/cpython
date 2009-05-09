@@ -105,14 +105,14 @@ class FixIdioms(fixer_base.BaseFix):
         T.set_prefix(" ")
         test = Call(Name("isinstance"), [x, Comma(), T])
         if "n" in results:
-            test.set_prefix(" ")
-            test = Node(syms.not_test, [Name("not"), test])
+            test.set_prefix(u" ")
+            test = Node(syms.not_test, [Name(u"not"), test])
         test.set_prefix(node.get_prefix())
         return test
 
     def transform_while(self, node, results):
         one = results["while"]
-        one.replace(Name("True", prefix=one.get_prefix()))
+        one.replace(Name(u"True", prefix=one.get_prefix()))
 
     def transform_sort(self, node, results):
         sort_stmt = results["sort"]
@@ -121,11 +121,11 @@ class FixIdioms(fixer_base.BaseFix):
         simple_expr = results.get("expr")
 
         if list_call:
-            list_call.replace(Name("sorted", prefix=list_call.get_prefix()))
+            list_call.replace(Name(u"sorted", prefix=list_call.get_prefix()))
         elif simple_expr:
             new = simple_expr.clone()
-            new.set_prefix("")
-            simple_expr.replace(Call(Name("sorted"), [new],
+            new.set_prefix(u"")
+            simple_expr.replace(Call(Name(u"sorted"), [new],
                                      prefix=simple_expr.get_prefix()))
         else:
             raise RuntimeError("should not have reached here")

@@ -15,4 +15,4 @@ class FixGetcwdu(fixer_base.BaseFix):
 
     def transform(self, node, results):
         name = results["name"]
-        name.replace(Name("getcwd", prefix=name.get_prefix()))
+        name.replace(Name(u"getcwd", prefix=name.get_prefix()))

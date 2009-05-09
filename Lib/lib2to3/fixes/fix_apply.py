@@ -46,12 +46,12 @@ class FixApply(fixer_base.BaseFix):
         if kwds is not None:
             kwds = kwds.clone()
             kwds.set_prefix("")
-        l_newargs = [pytree.Leaf(token.STAR, "*"), args]
+        l_newargs = [pytree.Leaf(token.STAR, u"*"), args]
         if kwds is not None:
             l_newargs.extend([Comma(),
-                              pytree.Leaf(token.DOUBLESTAR, "**"),
+                              pytree.Leaf(token.DOUBLESTAR, u"**"),
                               kwds])
-            l_newargs[-2].set_prefix(" ") # that's the ** token
+            l_newargs[-2].set_prefix(u" ") # that's the ** token
         # XXX Sometimes we could be cleverer, e.g. apply(f, (x, y) + t)
         # can be translated into f(x, y, *t) instead of f(*(x, y) + t)
         #new = pytree.Node(syms.power, (func, ArgList(l_newargs)))

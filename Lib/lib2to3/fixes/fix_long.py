@@ -13,7 +13,7 @@ class FixLong(fixer_base.BaseFix):
 
     PATTERN = "'long'"
 
-    static_int = Name("int")
+    static_int = Name(u"int")
 
     def transform(self, node, results):
         if is_probably_builtin(node):
