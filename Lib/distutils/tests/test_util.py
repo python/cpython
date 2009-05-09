@@ -214,12 +214,17 @@ class utilTestCase(unittest.TestCase):
 
         # posix without HOME
         if os.name == 'posix':  # this test won't run on windows
-            os.environ = {}
-            check_environ()
-
-            import pwd
-            self.assertEquals(os.environ['HOME'],
-                              pwd.getpwuid(os.getuid())[5])
+            old_home = os.environ.get('HOME')
+            try:
+                check_environ()
+                import pwd
+                self.assertEquals(os.environ['HOME'],
+                                  pwd.getpwuid(os.getuid())[5])
+            finally:
+                if old_home is not None:
+                    os.environ['HOME'] = old_home
+                else:
+                    del os.environ['HOME']
         else:
             check_environ()
 

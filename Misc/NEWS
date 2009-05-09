@@ -285,6 +285,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5976: Fixed Distutils test_check_environ.
+
 - Issue #5900: Ensure RUNPATH is added to extension modules with RPATH if GNU 
   ld is used. Original patch by Floris Bruynooghe.
 
