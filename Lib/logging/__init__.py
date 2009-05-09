@@ -720,8 +720,12 @@ class Handler(Filterer):
         """
         if raiseExceptions:
             ei = sys.exc_info()
-            traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
-            del ei
+            try:
+                traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
+            except IOError:
+                pass    # see issue 5971
+            finally:
+                del ei
 
 class StreamHandler(Handler):
     """
