@@ -1,4 +1,5 @@
 import __builtin__
+import sys
 import types
 import unittest
 import warnings
@@ -1678,13 +1679,20 @@ order (MRO) for bases """
             return "hello"
         def empty_seq(self):
             return []
+        def zero(self):
+            return 0
+        def stop(self):
+            raise StopIteration
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
         # does it right.
         specials = [
-            ("__unicode__", unicode, hello),
-            ("__reversed__", reversed, empty_seq),
+            ("__unicode__", unicode, hello, {}),
+            ("__reversed__", reversed, empty_seq, {}),
+            ("__length_hint__", list, zero,
+             {"__iter__" : iden, "next" : stop}),
+            ("__sizeof__", sys.getsizeof, zero, {}),
             # These two fail because the compiler generates LOAD_ATTR to look
             # them up.  We'd have to add a new opcode to fix this, and it's
             # probably not worth it.
@@ -1705,15 +1713,19 @@ order (MRO) for bases """
                 return self.impl.__get__(obj, owner)
 
 
-        for name, runner, meth_impl in specials:
+        for name, runner, meth_impl, env in specials:
             class X(Checker):
                 pass
+            for attr, obj in env.iteritems():
+                setattr(X, attr, obj)
             setattr(X, name, meth_impl)
             runner(X())
 
             record = []
             class X(Checker):
                 pass
+            for attr, obj in env.iteritems():
+                setattr(X, attr, obj)
             setattr(X, name, SpecialDescr(meth_impl))
             runner(X())
             self.assertEqual(record, [1], name)

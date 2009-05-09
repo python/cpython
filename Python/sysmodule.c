@@ -643,20 +643,13 @@ static PyObject *
 sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *res = NULL;
-	static PyObject *str__sizeof__, *gc_head_size = NULL;
+	static PyObject *str__sizeof__ = NULL, *gc_head_size = NULL;
 	static char *kwlist[] = {"object", "default", 0};
 	PyObject *o, *dflt = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
 					 kwlist, &o, &dflt))
 		return NULL;
-
-	/* Initialize static variable needed by _PyType_Lookup */
-	if (str__sizeof__ == NULL) {
-		str__sizeof__ = PyString_InternFromString("__sizeof__");
-		if (str__sizeof__ == NULL)
-			return NULL;
-	}
 
         /* Initialize static variable for GC head size */
 	if (gc_head_size == NULL) {
@@ -674,14 +667,16 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 		res = PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
 	/* all other objects */
 	else {
-		PyObject *method = _PyType_Lookup(Py_TYPE(o),
-						  str__sizeof__);
+		PyObject *method = _PyObject_LookupSpecial(o, "__sizeof__",
+							   &str__sizeof__);
 		if (method == NULL)
 			PyErr_Format(PyExc_TypeError,
 				     "Type %.100s doesn't define __sizeof__",
 				     Py_TYPE(o)->tp_name);
-		else
-			res = PyObject_CallFunctionObjArgs(method, o, NULL);
+		else {
+			res = PyObject_CallFunctionObjArgs(method, NULL);
+			Py_DECREF(method);
+		}
 	}
 	
 	/* Has a default value been given? */
