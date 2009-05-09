@@ -14,9 +14,9 @@ class FixNe(fixer_base.BaseFix):
 
     def match(self, node):
         # Override
-        return node.type == token.NOTEQUAL and node.value == "<>"
+        return node.type == token.NOTEQUAL and node.value == u"<>"
 
     def transform(self, node, results):
-        new = pytree.Leaf(token.NOTEQUAL, "!=")
+        new = pytree.Leaf(token.NOTEQUAL, u"!=")
         new.set_prefix(node.get_prefix())
         return new

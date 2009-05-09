@@ -113,7 +113,7 @@ def find_metas(cls_node):
                 # Check if the expr_node is a simple assignment.
                 left_node = expr_node.children[0]
                 if isinstance(left_node, Leaf) and \
-                        left_node.value == '__metaclass__':
+                        left_node.value == u'__metaclass__':
                     # We found a assignment to __metaclass__.
                     fixup_simple_stmt(node, i, simple_node)
                     remove_trailing_newline(simple_node)
@@ -182,9 +182,9 @@ class FixMetaclass(fixer_base.BaseFix):
             # Node(classdef, ['class', 'name', ':', suite])
             #                 0        1       2    3
             arglist = Node(syms.arglist, [])
-            node.insert_child(2, Leaf(token.RPAR, ')'))
+            node.insert_child(2, Leaf(token.RPAR, u')'))
             node.insert_child(2, arglist)
-            node.insert_child(2, Leaf(token.LPAR, '('))
+            node.insert_child(2, Leaf(token.LPAR, u'('))
         else:
             raise ValueError("Unexpected class definition")
 
@@ -194,16 +194,16 @@ class FixMetaclass(fixer_base.BaseFix):
         orig_meta_prefix = meta_txt.get_prefix()
 
         if arglist.children:
-            arglist.append_child(Leaf(token.COMMA, ','))
-            meta_txt.set_prefix(' ')
+            arglist.append_child(Leaf(token.COMMA, u','))
+            meta_txt.set_prefix(u' ')
         else:
-            meta_txt.set_prefix('')
+            meta_txt.set_prefix(u'')
 
         # compact the expression "metaclass = Meta" -> "metaclass=Meta"
         expr_stmt = last_metaclass.children[0]
         assert expr_stmt.type == syms.expr_stmt
-        expr_stmt.children[1].set_prefix('')
-        expr_stmt.children[2].set_prefix('')
+        expr_stmt.children[1].set_prefix(u'')
+        expr_stmt.children[2].set_prefix(u'')
 
         arglist.append_child(last_metaclass)
 
@@ -213,15 +213,15 @@ class FixMetaclass(fixer_base.BaseFix):
         if not suite.children:
             # one-liner that was just __metaclass_
             suite.remove()
-            pass_leaf = Leaf(text_type, 'pass')
+            pass_leaf = Leaf(text_type, u'pass')
             pass_leaf.set_prefix(orig_meta_prefix)
             node.append_child(pass_leaf)
-            node.append_child(Leaf(token.NEWLINE, '\n'))
+            node.append_child(Leaf(token.NEWLINE, u'\n'))
 
         elif len(suite.children) > 1 and \
                  (suite.children[-2].type == token.INDENT and
                   suite.children[-1].type == token.DEDENT):
             # there was only one line in the class body and it was __metaclass__
-            pass_leaf = Leaf(text_type, 'pass')
+            pass_leaf = Leaf(text_type, u'pass')
             suite.insert_child(-1, pass_leaf)
-            suite.insert_child(-1, Leaf(token.NEWLINE, '\n'))
+            suite.insert_child(-1, Leaf(token.NEWLINE, u'\n'))

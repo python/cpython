@@ -133,7 +133,7 @@ class PatternCompiler(object):
         assert len(nodes) >= 1
         node = nodes[0]
         if node.type == token.STRING:
-            value = literals.evalString(node.value)
+            value = unicode(literals.evalString(node.value))
             return pytree.LeafPattern(content=value)
         elif node.type == token.NAME:
             value = node.value

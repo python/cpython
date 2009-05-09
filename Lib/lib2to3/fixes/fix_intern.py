@@ -34,11 +34,11 @@ class FixIntern(fixer_base.BaseFix):
         if after:
             after = [n.clone() for n in after]
         new = pytree.Node(syms.power,
-                          Attr(Name("sys"), Name("intern")) +
+                          Attr(Name(u"sys"), Name(u"intern")) +
                           [pytree.Node(syms.trailer,
                                        [results["lpar"].clone(),
                                         newarglist,
                                         results["rpar"].clone()])] + after)
         new.set_prefix(node.get_prefix())
-        touch_import(None, 'sys', node)
+        touch_import(None, u'sys', node)
         return new

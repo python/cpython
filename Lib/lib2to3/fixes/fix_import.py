@@ -54,7 +54,7 @@ class FixImport(fixer_base.BaseFix):
             while not hasattr(imp, 'value'):
                 imp = imp.children[0]
             if self.probably_a_local_import(imp.value):
-                imp.value = "." + imp.value
+                imp.value = u"." + imp.value
                 imp.changed()
                 return node
         else:

@@ -27,5 +27,5 @@ class FixCallable(fixer_base.BaseFix):
     def transform(self, node, results):
         func = results["func"]
 
-        args = [func.clone(), String(', '), String("'__call__'")]
-        return Call(Name("hasattr"), args, prefix=node.get_prefix())
+        args = [func.clone(), String(u', '), String(u"'__call__'")]
+        return Call(Name(u"hasattr"), args, prefix=node.get_prefix())

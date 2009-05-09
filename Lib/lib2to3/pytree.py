@@ -213,8 +213,12 @@ class Base(object):
         """
         next_sib = self.next_sibling
         if next_sib is None:
-            return ""
+            return u""
         return next_sib.get_prefix()
+
+    if sys.version_info < (3, 0):
+        def __str__(self):
+            return unicode(self).encode("ascii")
 
 
 class Node(Base):
@@ -245,13 +249,16 @@ class Node(Base):
                                type_repr(self.type),
                                self.children)
 
-    def __str__(self):
+    def __unicode__(self):
         """
         Return a pretty string representation.
 
         This reproduces the input source exactly.
         """
-        return "".join(map(str, self.children))
+        return u"".join(map(unicode, self.children))
+
+    if sys.version_info > (3, 0):
+        __str__ = __unicode__
 
     def _eq(self, other):
         """Compare two nodes for equality."""
@@ -353,13 +360,16 @@ class Leaf(Base):
                                self.type,
                                self.value)
 
-    def __str__(self):
+    def __unicode__(self):
         """
         Return a pretty string representation.
 
         This reproduces the input source exactly.
         """
-        return self.prefix + str(self.value)
+        return self.prefix + unicode(self.value)
+
+    if sys.version_info > (3, 0):
+        __str__ = __unicode__
 
     def _eq(self, other):
         """Compare two nodes for equality."""

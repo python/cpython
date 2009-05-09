@@ -91,10 +91,10 @@ class FixHasKey(fixer_base.BaseFix):
             before = before[0]
         else:
             before = pytree.Node(syms.power, before)
-        before.set_prefix(" ")
-        n_op = Name("in", prefix=" ")
+        before.set_prefix(u" ")
+        n_op = Name(u"in", prefix=u" ")
         if negation:
-            n_not = Name("not", prefix=" ")
+            n_not = Name(u"not", prefix=u" ")
             n_op = pytree.Node(syms.comp_op, (n_not, n_op))
         new = pytree.Node(syms.comparison, (arg, n_op, before))
         if after:

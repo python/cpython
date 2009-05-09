@@ -16,6 +16,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 __all__ = ["Driver", "load_grammar"]
 
 # Python imports
+import codecs
 import os
 import logging
 import sys
@@ -41,7 +42,7 @@ class Driver(object):
         lineno = 1
         column = 0
         type = value = start = end = line_text = None
-        prefix = ""
+        prefix = u""
         for quintuple in tokens:
             type, value, start, end, line_text = quintuple
             if start != (lineno, column):
@@ -90,9 +91,9 @@ class Driver(object):
         """Parse a stream and return the syntax tree."""
         return self.parse_stream_raw(stream, debug)
 
-    def parse_file(self, filename, debug=False):
+    def parse_file(self, filename, encoding=None, debug=False):
         """Parse a file and return the syntax tree."""
-        stream = open(filename)
+        stream = codecs.open(filename, "r", encoding)
         try:
             return self.parse_stream(stream, debug)
         finally:

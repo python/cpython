@@ -55,7 +55,7 @@ class FixTupleParams(fixer_base.BaseFix):
         else:
             start = 0
             indent = "; "
-            end = pytree.Leaf(token.INDENT, "")
+            end = pytree.Leaf(token.INDENT, u"")
 
         # We need access to self for new_name(), and making this a method
         #  doesn't feel right. Closing over self and new_lines makes the
@@ -63,10 +63,10 @@ class FixTupleParams(fixer_base.BaseFix):
         def handle_tuple(tuple_arg, add_prefix=False):
             n = Name(self.new_name())
             arg = tuple_arg.clone()
-            arg.set_prefix("")
+            arg.set_prefix(u"")
             stmt = Assign(arg, n.clone())
             if add_prefix:
-                n.set_prefix(" ")
+                n.set_prefix(u" ")
             tuple_arg.replace(n)
             new_lines.append(pytree.Node(syms.simple_stmt,
                                          [stmt, end.clone()]))
@@ -91,7 +91,7 @@ class FixTupleParams(fixer_base.BaseFix):
         # TODO(cwinter) suite-cleanup
         after = start
         if start == 0:
-            new_lines[0].set_prefix(" ")
+            new_lines[0].set_prefix(u" ")
         elif is_docstring(suite[0].children[start]):
             new_lines[0].set_prefix(indent)
             after = start + 1
@@ -109,7 +109,7 @@ class FixTupleParams(fixer_base.BaseFix):
         # Replace lambda ((((x)))): x  with lambda x: x
         if inner.type == token.NAME:
             inner = inner.clone()
-            inner.set_prefix(" ")
+            inner.set_prefix(u" ")
             args.replace(inner)
             return
 
@@ -117,7 +117,7 @@ class FixTupleParams(fixer_base.BaseFix):
         to_index = map_to_index(params)
         tup_name = self.new_name(tuple_name(params))
 
-        new_param = Name(tup_name, prefix=" ")
+        new_param = Name(tup_name, prefix=u" ")
         args.replace(new_param.clone())
         for n in body.post_order():
             if n.type == token.NAME and n.value in to_index:
@@ -166,4 +166,4 @@ def tuple_name(param_list):
             l.append(tuple_name(obj))
         else:
             l.append(obj)
-    return "_".join(l)
+    return u"_".join(l)

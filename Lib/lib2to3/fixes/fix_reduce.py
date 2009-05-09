@@ -30,4 +30,4 @@ class FixReduce(fixer_base.BaseFix):
     """
 
     def transform(self, node, results):
-        touch_import('functools', 'reduce', node)
+        touch_import(u'functools', u'reduce', node)

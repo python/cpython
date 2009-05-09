@@ -14,9 +14,9 @@ from .support import driver, test_dir
 
 # Python imports
 import os
-import os.path
 
 # Local imports
+from lib2to3.pgen2 import tokenize
 from ..pgen2.parse import ParseError
 
 
@@ -150,12 +150,24 @@ class TestParserIdempotency(support.TestCase):
     def test_all_project_files(self):
         for filepath in support.all_project_files():
             print "Parsing %s..." % filepath
-            tree = driver.parse_file(filepath, debug=True)
-            if diff(filepath, tree):
+            with open(filepath, "rb") as fp:
+                encoding = tokenize.detect_encoding(fp.readline)[0]
+                fp.seek(0)
+                source = fp.read()
+                if encoding:
+                    source = source.decode(encoding)
+            tree = driver.parse_string(source)
+            new = unicode(tree)
+            if encoding:
+                new = new.encode(encoding)
+            if diff(filepath, new):
                 self.fail("Idempotency failed: %s" % filepath)
 
 
 class TestLiterals(GrammarTest):
+
+    def validate(self, s):
+        driver.parse_string(support.dedent(s) + "\n\n")
 
     def test_multiline_bytes_literals(self):
         s = """
@@ -185,10 +197,10 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-def diff(fn, tree):
+def diff(fn, result):
     f = open("@", "w")
     try:
-        f.write(str(tree))
+        f.write(result)
     finally:
         f.close()
     try:

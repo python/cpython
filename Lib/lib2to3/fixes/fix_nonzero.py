@@ -16,5 +16,5 @@ class FixNonzero(fixer_base.BaseFix):
 
     def transform(self, node, results):
         name = results["name"]
-        new = Name("__bool__", prefix=name.get_prefix())
+        new = Name(u"__bool__", prefix=name.get_prefix())
         name.replace(new)
