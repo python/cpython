@@ -222,7 +222,8 @@ static PyObject *
 reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	Py_ssize_t n;
-	PyObject *seq;
+	PyObject *seq, *reversed_meth;
+	static PyObject *reversed_cache = NULL;
 	reversedobject *ro;
 
 	if (type == &PyReversed_Type && !_PyArg_NoKeywords("reversed()", kwds))
@@ -231,8 +232,12 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_UnpackTuple(args, "reversed", 1, 1, &seq) )
 		return NULL;
 
-	if (PyObject_HasAttrString(seq, "__reversed__"))
-		return PyObject_CallMethod(seq, "__reversed__", NULL);
+	reversed_meth = _PyObject_LookupSpecial(seq, "__reversed__", &reversed_cache);
+	if (reversed_meth != NULL) {
+		PyObject *res = PyObject_CallFunctionObjArgs(reversed_meth, NULL);
+		Py_DECREF(reversed_meth);
+		return res;
+	}
 
 	if (!PySequence_Check(seq)) {
 		PyErr_SetString(PyExc_TypeError,
