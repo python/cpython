@@ -1676,12 +1676,15 @@ order (MRO) for bases """
             return self
         def hello(self):
             return "hello"
+        def empty_seq(self):
+            return []
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
         # does it right.
         specials = [
             ("__unicode__", unicode, hello),
+            ("__reversed__", reversed, empty_seq),
             # These two fail because the compiler generates LOAD_ATTR to look
             # them up.  We'd have to add a new opcode to fix this, and it's
             # probably not worth it.
