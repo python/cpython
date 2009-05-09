@@ -647,6 +647,25 @@ then
 fi
 AC_MSG_RESULT($LINKCC)
 
+# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
+# make sure we default having it set to "no": this is used by
+# distutils.unixccompiler to know if it should add --enable-new-dtags
+# to linker command lines, and failing to detect GNU ld simply results
+# in the same bahaviour as before.
+AC_SUBST(GNULD)
+AC_MSG_CHECKING(for GNU ld)
+ac_prog=ld
+if test "$GCC" = yes; then
+       ac_prog=`$CC -print-prog-name=ld`
+fi
+case `"$ac_prog" -V 2>&1 < /dev/null` in
+      *GNU*)
+          GNULD=yes;;
+      *)
+          GNULD=no;;
+esac
+AC_MSG_RESULT($GNULD)
+
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
               AC_HELP_STRING(--enable-shared, disable/enable building shared python library))

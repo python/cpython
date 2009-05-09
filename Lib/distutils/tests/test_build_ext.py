@@ -125,7 +125,7 @@ class BuildExtTestCase(support.TempdirManager,
         dist = Distribution({'name': 'xx'})
         cmd = build_ext(dist)
 
-        # making sure the suer option is there
+        # making sure the user option is there
         options = [name for name, short, lable in
                    cmd.user_options]
         self.assert_('user' in options)
@@ -145,6 +145,7 @@ class BuildExtTestCase(support.TempdirManager,
         # see if include_dirs and library_dirs
         # were set
         self.assert_(lib in cmd.library_dirs)
+        self.assert_(lib in cmd.rpath)
         self.assert_(incl in cmd.include_dirs)
 
     def test_optional_extension(self):
