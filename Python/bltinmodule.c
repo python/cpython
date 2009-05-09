@@ -2383,8 +2383,10 @@ builtin_zip(PyObject *self, PyObject *args)
 	len = -1;	/* unknown */
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
-		Py_ssize_t thislen = _PyObject_LengthHint(item, -1);
+		Py_ssize_t thislen = _PyObject_LengthHint(item, -2);
 		if (thislen < 0) {
+			if (thislen == -1)
+				return NULL;
 			len = -1;
 			break;
 		}
