@@ -141,6 +141,12 @@ class TestReversed(unittest.TestCase):
         # don't allow keyword arguments
         self.assertRaises(TypeError, reversed, [], a=1)
 
+    def test_class_class(self):
+        class A:
+            def __reversed__(self):
+                return [2, 1]
+        self.assertEqual(list(reversed(A())), [2, 1])
+
     def test_xrange_optimization(self):
         x = xrange(1)
         self.assertEqual(type(reversed(x)), type(iter(x)))
