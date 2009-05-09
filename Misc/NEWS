@@ -581,6 +581,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5976: Fixed Distutils test_check_environ.
+
 - Issue #5941: Distutils build_clib command was not working anymore because
   of an incomplete costumization of the archiver command. Added ARFLAGS in the
   Makefile besides AR and make Distutils use it. Original patch by David
