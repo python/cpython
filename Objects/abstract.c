@@ -116,7 +116,8 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 	ro = PyObject_CallFunctionObjArgs(hintmeth, NULL);
 	Py_DECREF(hintmeth);
 	if (ro == NULL) {
-		if (!PyErr_ExceptionMatches(PyExc_TypeError))
+		if (!PyErr_ExceptionMatches(PyExc_TypeError) &&
+		    !PyErr_ExceptionMatches(PyExc_AttributeError))
 			return -1;
 		return defaultvalue;
 	}
