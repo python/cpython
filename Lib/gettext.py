@@ -467,7 +467,6 @@ def translation(domain, localedir=None, languages=None,
         if fallback:
             return NullTranslations()
         raise IOError(ENOENT, 'No translation file found for domain', domain)
-    # TBD: do we need to worry about the file pointer getting collected?
     # Avoid opening, reading, and parsing the .mo file after it's been done
     # once.
     result = None
@@ -475,7 +474,8 @@ def translation(domain, localedir=None, languages=None,
         key = os.path.abspath(mofile)
         t = _translations.get(key)
         if t is None:
-            t = _translations.setdefault(key, class_(open(mofile, 'rb')))
+            with open(mofile, 'rb') as fp:
+                t = _translations.setdefault(key, class_(fp))
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
         # cached object.
