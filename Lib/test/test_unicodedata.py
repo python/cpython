@@ -13,7 +13,7 @@ import subprocess
 import test.support
 
 encoding = 'utf-8'
-errors = 'surrogates'
+errors = 'surrogatepass'
 
 
 ### Run tests
