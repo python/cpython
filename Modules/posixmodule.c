@@ -784,13 +784,16 @@ posix_2str(PyObject *args,
 	   char *format,
 	   int (*func)(const char *, const char *))
 {
-	PyObject *opath1, *opath2;
+	PyObject *opath1 = NULL, *opath2 = NULL;
 	char *path1, *path2;
 	int res;
 	if (!PyArg_ParseTuple(args, format,
 	                      PyUnicode_FSConverter, &opath1,
-	                      PyUnicode_FSConverter, &opath2))
+	                      PyUnicode_FSConverter, &opath2)) {
+		Py_XDECREF(opath1);
+		Py_XDECREF(opath2);
 		return NULL;
+	}
 	path1 = bytes2str(opath1, 1);
 	path2 = bytes2str(opath2, 1);
 	Py_BEGIN_ALLOW_THREADS
