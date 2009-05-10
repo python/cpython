@@ -136,7 +136,7 @@ class build_ext (Command):
         self.swig_opts = None
         self.user = None
 
-    def finalize_options (self):
+    def finalize_options(self):
         from distutils import sysconfig
 
         self.set_undefined_options('build',
@@ -153,15 +153,14 @@ class build_ext (Command):
 
         self.extensions = self.distribution.ext_modules
 
-
         # Make sure Python's include directories (for Python.h, pyconfig.h,
         # etc.) are in the include search path.
         py_include = sysconfig.get_python_inc()
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        if type(self.include_dirs) is StringType:
-            self.include_dirs = string.split(self.include_dirs, os.pathsep)
+        if isinstance(self.include_dirs, str):
+            self.include_dirs = self.include_dirs.split(os.pathsep)
 
         # Put the Python "system" include dir at the end, so that
         # any local include dirs take precedence.
@@ -169,7 +168,7 @@ class build_ext (Command):
         if plat_py_include != py_include:
             self.include_dirs.append(plat_py_include)
 
-        if type(self.libraries) is StringType:
+        if isinstance(self.libraries, str):
             self.libraries = [self.libraries]
 
         # Life is easier if we're not forever checking for None, so
@@ -260,14 +259,14 @@ class build_ext (Command):
         # symbols can be separated with commas.
 
         if self.define:
-            defines = string.split(self.define, ',')
+            defines = self.define.split(',')
             self.define = map(lambda symbol: (symbol, '1'), defines)
 
         # The option for macros to undefine is also a string from the
         # option parsing, but has to be a list.  Multiple symbols can also
         # be separated with commas here.
         if self.undef:
-            self.undef = string.split(self.undef, ',')
+            self.undef = self.undef.split(',')
 
         if self.swig_opts is None:
             self.swig_opts = []
@@ -284,11 +283,7 @@ class build_ext (Command):
                 self.library_dirs.append(user_lib)
                 self.rpath.append(user_lib)
 
-    # finalize_options ()
-
-
-    def run (self):
-
+    def run(self):
         from distutils.ccompiler import new_compiler
 
         # 'self.extensions', as supplied by setup.py, is a list of
@@ -335,7 +330,7 @@ class build_ext (Command):
             self.compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
             # 'define' option is a list of (name,value) tuples
-            for (name,value) in self.define:
+            for (name, value) in self.define:
                 self.compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
@@ -352,10 +347,7 @@ class build_ext (Command):
         # Now actually compile and link everything.
         self.build_extensions()
 
-    # run ()
-
-
-    def check_extensions_list (self, extensions):
+    def check_extensions_list(self, extensions):
         """Ensure that the list of extensions (presumably provided as a
         command option 'extensions') is valid, i.e. it is a list of
         Extension objects.  We also support the old-style list of 2-tuples,
@@ -365,32 +357,33 @@ class build_ext (Command):
         Raise DistutilsSetupError if the structure is invalid anywhere;
         just returns otherwise.
         """
-        if type(extensions) is not ListType:
+        if not isinstance(extensions, list):
             raise DistutilsSetupError, \
                   "'ext_modules' option must be a list of Extension instances"
 
-        for i in range(len(extensions)):
-            ext = extensions[i]
+        for i, ext in enumerate(extensions):
             if isinstance(ext, Extension):
                 continue                # OK! (assume type-checking done
                                         # by Extension constructor)
 
-            (ext_name, build_info) = ext
-            log.warn(("old-style (ext_name, build_info) tuple found in "
-                      "ext_modules for extension '%s'"
-                      "-- please convert to Extension instance" % ext_name))
-            if type(ext) is not TupleType and len(ext) != 2:
+            if not isinstance(ext, tuple) or len(ext) != 2:
                 raise DistutilsSetupError, \
                       ("each element of 'ext_modules' option must be an "
                        "Extension instance or 2-tuple")
 
-            if not (type(ext_name) is StringType and
+            ext_name, build_info = ext
+
+            log.warn(("old-style (ext_name, build_info) tuple found in "
+                      "ext_modules for extension '%s'"
+                      "-- please convert to Extension instance" % ext_name))
+
+            if not (isinstance(ext_name, str) and
                     extension_name_re.match(ext_name)):
                 raise DistutilsSetupError, \
                       ("first element of each tuple in 'ext_modules' "
                        "must be the extension name (a string)")
 
-            if type(build_info) is not DictionaryType:
+            if not isinstance(build_info, dict):
                 raise DistutilsSetupError, \
                       ("second element of each tuple in 'ext_modules' "
                        "must be a dictionary (build info)")
@@ -401,11 +394,8 @@ class build_ext (Command):
 
             # Easy stuff: one-to-one mapping from dict elements to
             # instance attributes.
-            for key in ('include_dirs',
-                        'library_dirs',
-                        'libraries',
-                        'extra_objects',
-                        'extra_compile_args',
+            for key in ('include_dirs', 'library_dirs', 'libraries',
+                        'extra_objects', 'extra_compile_args',
                         'extra_link_args'):
                 val = build_info.get(key)
                 if val is not None:
@@ -424,8 +414,7 @@ class build_ext (Command):
                 ext.define_macros = []
                 ext.undef_macros = []
                 for macro in macros:
-                    if not (type(macro) is TupleType and
-                            1 <= len(macro) <= 2):
+                    if not (isinstance(macro, tuple) and len(macro) in (1, 2)):
                         raise DistutilsSetupError, \
                               ("'macros' element of build info dict "
                                "must be 1- or 2-tuple")
@@ -436,12 +425,7 @@ class build_ext (Command):
 
             extensions[i] = ext
 
-        # for extensions
-
-    # check_extensions_list ()
-
-
-    def get_source_files (self):
+    def get_source_files(self):
         self.check_extensions_list(self.extensions)
         filenames = []
 
@@ -451,9 +435,7 @@ class build_ext (Command):
 
         return filenames
 
-
-    def get_outputs (self):
-
+    def get_outputs(self):
         # Sanity check the 'extensions' list -- can't assume this is being
         # done in the same run as a 'build_extensions()' call (in fact, we
         # can probably assume that it *isn't*!).
@@ -468,8 +450,6 @@ class build_ext (Command):
             outputs.append(os.path.join(self.build_lib,
                                         self.get_ext_filename(fullname)))
         return outputs
-
-    # get_outputs ()
 
     def build_extensions(self):
         # First, sanity-check the 'extensions' list
