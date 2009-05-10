@@ -7,6 +7,9 @@ from io import StringIO
 from distutils.core import Extension, Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
+from distutils.tests.support import TempdirManager
+from distutils.tests.support import LoggingSilencer
+from distutils.errors import DistutilsSetupError
 
 import unittest
 from test import support
@@ -15,10 +18,13 @@ from test import support
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
-class BuildExtTestCase(unittest.TestCase):
+class BuildExtTestCase(TempdirManager,
+                       LoggingSilencer,
+                       unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
+        super(BuildExtTestCase, self).setUp()
         self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
         self.sys_path = sys.path[:]
         sys.path.append(self.tmp_dir)
@@ -74,6 +80,7 @@ class BuildExtTestCase(unittest.TestCase):
         sys.path = self.sys_path
         # XXX on Windows the test leaves a directory with xx module in TEMP
         shutil.rmtree(self.tmp_dir, os.name == 'nt' or sys.platform == 'cygwin')
+        super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
@@ -95,6 +102,130 @@ class BuildExtTestCase(unittest.TestCase):
 
         # make sur we get some lobrary dirs under solaris
         self.assert_(len(cmd.library_dirs) > 0)
+
+    def test_finalize_options(self):
+        # Make sure Python's include directories (for Python.h, pyconfig.h,
+        # etc.) are in the include search path.
+        modules = [Extension('foo', ['xxx'])]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = build_ext(dist)
+        cmd.finalize_options()
+
+        from distutils import sysconfig
+        py_include = sysconfig.get_python_inc()
+        self.assert_(py_include in cmd.include_dirs)
+
+        plat_py_include = sysconfig.get_python_inc(plat_specific=1)
+        self.assert_(plat_py_include in cmd.include_dirs)
+
+        # make sure cmd.libraries is turned into a list
+        # if it's a string
+        cmd = build_ext(dist)
+        cmd.libraries = 'my_lib'
+        cmd.finalize_options()
+        self.assertEquals(cmd.libraries, ['my_lib'])
+
+        # make sure cmd.library_dirs is turned into a list
+        # if it's a string
+        cmd = build_ext(dist)
+        cmd.library_dirs = 'my_lib_dir'
+        cmd.finalize_options()
+        self.assertEquals(cmd.library_dirs, ['my_lib_dir'])
+
+        # make sure rpath is turned into a list
+        # if it's a list of os.pathsep's paths
+        cmd = build_ext(dist)
+        cmd.rpath = os.pathsep.join(['one', 'two'])
+        cmd.finalize_options()
+        self.assertEquals(cmd.rpath, ['one', 'two'])
+
+        # XXX more tests to perform for win32
+
+        # make sure define is turned into 2-tuples
+        # strings if they are ','-separated strings
+        cmd = build_ext(dist)
+        cmd.define = 'one,two'
+        cmd.finalize_options()
+        self.assertEquals(cmd.define, [('one', '1'), ('two', '1')])
+
+        # make sure undef is turned into a list of
+        # strings if they are ','-separated strings
+        cmd = build_ext(dist)
+        cmd.undef = 'one,two'
+        cmd.finalize_options()
+        self.assertEquals(cmd.undef, ['one', 'two'])
+
+        # make sure swig_opts is turned into a list
+        cmd = build_ext(dist)
+        cmd.swig_opts = None
+        cmd.finalize_options()
+        self.assertEquals(cmd.swig_opts, [])
+
+        cmd = build_ext(dist)
+        cmd.swig_opts = '1 2'
+        cmd.finalize_options()
+        self.assertEquals(cmd.swig_opts, ['1', '2'])
+
+    def test_check_extensions_list(self):
+        dist = Distribution()
+        cmd = build_ext(dist)
+        cmd.finalize_options()
+
+        #'extensions' option must be a list of Extension instances
+        self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, 'foo')
+
+        # each element of 'ext_modules' option must be an
+        # Extension instance or 2-tuple
+        exts = [('bar', 'foo', 'bar'), 'foo']
+        self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
+
+        # first element of each tuple in 'ext_modules'
+        # must be the extension name (a string) and match
+        # a python dotted-separated name
+        exts = [('foo-bar', '')]
+        self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
+
+        # second element of each tuple in 'ext_modules'
+        # must be a ary (build info)
+        exts = [('foo.bar', '')]
+        self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
+
+        # ok this one should pass
+        exts = [('foo.bar', {'sources': [''], 'libraries': 'foo',
+                             'some': 'bar'})]
+        cmd.check_extensions_list(exts)
+        ext = exts[0]
+        self.assert_(isinstance(ext, Extension))
+
+        # check_extensions_list adds in ext the values passed
+        # when they are in ('include_dirs', 'library_dirs', 'libraries'
+        # 'extra_objects', 'extra_compile_args', 'extra_link_args')
+        self.assertEquals(ext.libraries, 'foo')
+        self.assert_(not hasattr(ext, 'some'))
+
+        # 'macros' element of build info dict must be 1- or 2-tuple
+        exts = [('foo.bar', {'sources': [''], 'libraries': 'foo',
+                'some': 'bar', 'macros': [('1', '2', '3'), 'foo']})]
+        self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
+
+        exts[0][1]['macros'] = [('1', '2'), ('3',)]
+        cmd.check_extensions_list(exts)
+        self.assertEquals(exts[0].undef_macros, ['3'])
+        self.assertEquals(exts[0].define_macros, [('1', '2')])
+
+    def test_get_source_files(self):
+        modules = [Extension('foo', ['xxx'])]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        self.assertEquals(cmd.get_source_files(), ['xxx'])
+
+    def test_get_outputs(self):
+        modules = [Extension('foo', ['xxx'])]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        self.assertEquals(len(cmd.get_outputs()), 1)
 
 def test_suite():
     if not sysconfig.python_build:
