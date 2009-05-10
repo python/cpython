@@ -84,9 +84,9 @@ The following exceptions are only used as base classes for other exceptions.
 
 .. exception:: LookupError
 
-   The base class for the exceptions that are raised when a key or index used on a
-   mapping or sequence is invalid: :exc:`IndexError`, :exc:`KeyError`.  This can be
-   raised directly by :func:`sys.setdefaultencoding`.
+   The base class for the exceptions that are raised when a key or index used on
+   a mapping or sequence is invalid: :exc:`IndexError`, :exc:`KeyError`.  This
+   can be raised directly by :func:`codecs.lookup`.
 
 
 .. exception:: EnvironmentError
