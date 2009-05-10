@@ -329,7 +329,7 @@ class build_ext(Command):
             self.compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
             # 'define' option is a list of (name,value) tuples
-            for (name,value) in self.define:
+            for (name, value) in self.define:
                 self.compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
@@ -365,14 +365,16 @@ class build_ext(Command):
                 continue                # OK! (assume type-checking done
                                         # by Extension constructor)
 
-            (ext_name, build_info) = ext
-            log.warn("old-style (ext_name, build_info) tuple found in "
-                     "ext_modules for extension '%s'"
-                     "-- please convert to Extension instance" % ext_name)
-            if not isinstance(ext, tuple) and len(ext) != 2:
+            if not isinstance(ext, tuple) or len(ext) != 2:
                 raise DistutilsSetupError(
                        "each element of 'ext_modules' option must be an "
                        "Extension instance or 2-tuple")
+
+            ext_name, build_info = ext
+
+            log.warn(("old-style (ext_name, build_info) tuple found in "
+                      "ext_modules for extension '%s'"
+                      "-- please convert to Extension instance" % ext_name))
 
             if not (isinstance(ext_name, str) and
                     extension_name_re.match(ext_name)):
@@ -380,7 +382,7 @@ class build_ext(Command):
                        "first element of each tuple in 'ext_modules' "
                        "must be the extension name (a string)")
 
-            if not instance(build_info, DictionaryType):
+            if not isinstance(build_info, dict):
                 raise DistutilsSetupError(
                        "second element of each tuple in 'ext_modules' "
                        "must be a dictionary (build info)")
@@ -391,11 +393,8 @@ class build_ext(Command):
 
             # Easy stuff: one-to-one mapping from dict elements to
             # instance attributes.
-            for key in ('include_dirs',
-                        'library_dirs',
-                        'libraries',
-                        'extra_objects',
-                        'extra_compile_args',
+            for key in ('include_dirs', 'library_dirs', 'libraries',
+                        'extra_objects', 'extra_compile_args',
                         'extra_link_args'):
                 val = build_info.get(key)
                 if val is not None:
