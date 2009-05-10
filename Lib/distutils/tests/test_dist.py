@@ -38,11 +38,13 @@ class TestDistribution(distutils.dist.Distribution):
 class DistributionTestCase(unittest.TestCase):
 
     def setUp(self):
+        super(DistributionTestCase, self).setUp()
         self.argv = sys.argv[:]
         del sys.argv[1:]
 
     def tearDown(self):
         sys.argv[:] = self.argv
+        super(DistributionTestCase, self).tearDown()
 
     def create_distribution(self, configfiles=()):
         d = TestDistribution()
@@ -121,7 +123,8 @@ class DistributionTestCase(unittest.TestCase):
 
         self.assertEquals(len(warns), 0)
 
-class MetadataTestCase(support.TempdirManager, unittest.TestCase):
+class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
+                       unittest.TestCase):
 
     def test_simple_metadata(self):
         attrs = {"name": "package",
@@ -208,13 +211,6 @@ class MetadataTestCase(support.TempdirManager, unittest.TestCase):
     def test_custom_pydistutils(self):
         # fixes #2166
         # make sure pydistutils.cfg is found
-        old = {}
-        for env in ('HOME', 'HOMEPATH', 'HOMEDRIVE'):
-            value = os.environ.get(env)
-            old[env] = value
-            if value is not None:
-                del os.environ[env]
-
         if os.name == 'posix':
             user_filename = ".pydistutils.cfg"
         else:
@@ -231,22 +227,18 @@ class MetadataTestCase(support.TempdirManager, unittest.TestCase):
 
             # linux-style
             if sys.platform in ('linux', 'darwin'):
-                os.environ['HOME'] = temp_dir
+                self.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assert_(user_filename in files)
 
             # win32-style
             if sys.platform == 'win32':
                 # home drive should be found
-                os.environ['HOME'] = temp_dir
+                self.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assert_(user_filename in files,
                              '%r not found in %r' % (user_filename, files))
         finally:
-            for key, value in old.items():
-                if value is None:
-                    continue
-                os.environ[key] = value
             os.remove(user_filename)
 
 def test_suite():

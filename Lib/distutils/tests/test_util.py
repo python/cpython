@@ -8,28 +8,23 @@ import unittest
 from copy import copy
 
 from distutils.errors import DistutilsPlatformError
-
-from distutils.util import get_platform
-from distutils.util import convert_path
-from distutils.util import change_root
-from distutils.util import check_environ
-from distutils.util import split_quoted
-from distutils.util import strtobool
-from distutils.util import rfc822_escape
-
+from distutils.util import (get_platform, convert_path, change_root,
+                            check_environ, split_quoted, strtobool,
+                            rfc822_escape)
 from distutils import util # used to patch _environ_checked
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
+from distutils.tests import support
 
-class utilTestCase(unittest.TestCase):
+class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def setUp(self):
+        super(UtilTestCase, self).setUp()
         # saving the environment
         self.name = os.name
         self.platform = sys.platform
         self.version = sys.version
         self.sep = os.sep
-        self.environ = dict(os.environ)
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
@@ -51,10 +46,6 @@ class utilTestCase(unittest.TestCase):
         sys.platform = self.platform
         sys.version = self.version
         os.sep = self.sep
-        for k, v in self.environ.items():
-            os.environ[k] = v
-        for k in set(os.environ) - set(self.environ):
-            del os.environ[k]
         os.path.join = self.join
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
@@ -63,6 +54,7 @@ class utilTestCase(unittest.TestCase):
         else:
             del os.uname
         sysconfig._config_vars = copy(self._config_vars)
+        super(UtilTestCase, self).tearDown()
 
     def _set_uname(self, uname):
         self._uname = uname
@@ -102,7 +94,7 @@ class utilTestCase(unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
+        self.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
@@ -110,7 +102,7 @@ class utilTestCase(unittest.TestCase):
         self.assertEquals(get_platform(), 'macosx-10.3-i386')
 
         # macbook with fat binaries (fat, universal or fat64)
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
+        self.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
         get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
@@ -214,21 +206,14 @@ class utilTestCase(unittest.TestCase):
 
         # posix without HOME
         if os.name == 'posix':  # this test won't run on windows
-            old_home = os.environ.get('HOME')
-            try:
-                check_environ()
-                import pwd
-                self.assertEquals(os.environ['HOME'],
-                                  pwd.getpwuid(os.getuid())[5])
-            finally:
-                if old_home is not None:
-                    os.environ['HOME'] = old_home
-                else:
-                    del os.environ['HOME']
+            check_environ()
+            import pwd
+            self.assertEquals(self.environ['HOME'],
+                            pwd.getpwuid(os.getuid())[5])
         else:
             check_environ()
 
-        self.assertEquals(os.environ['PLAT'], get_platform())
+        self.assertEquals(self.environ['PLAT'], get_platform())
         self.assertEquals(util._environ_checked, 1)
 
     def test_split_quoted(self):
@@ -253,7 +238,7 @@ class utilTestCase(unittest.TestCase):
         self.assertEquals(res, wanted)
 
 def test_suite():
-    return unittest.makeSuite(utilTestCase)
+    return unittest.makeSuite(UtilTestCase)
 
 if __name__ == "__main__":
     unittest.main(defaultTest="test_suite")
