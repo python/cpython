@@ -5,6 +5,7 @@ import tempfile
 
 from distutils import log
 from distutils.core import Distribution
+from test.support import EnvironmentVarGuard
 
 class LoggingSilencer(object):
 
@@ -82,3 +83,13 @@ class DummyCommand:
 
     def ensure_finalized(self):
         pass
+
+class EnvironGuard(object):
+
+    def setUp(self):
+        super(EnvironGuard, self).setUp()
+        self.environ = EnvironmentVarGuard()
+
+    def tearDown(self):
+        self.environ.__exit__()
+        super(EnvironGuard, self).tearDown()
