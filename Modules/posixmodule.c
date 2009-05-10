@@ -494,13 +494,13 @@ convertenviron(void)
 		if (p == NULL)
 			continue;
 		k = PyUnicode_Decode(*e, (int)(p-*e),
-				     Py_FileSystemDefaultEncoding, "utf8b");
+				     Py_FileSystemDefaultEncoding, "surrogateescape");
 		if (k == NULL) {
 			PyErr_Clear();
 			continue;
 		}
 		v = PyUnicode_Decode(p+1, strlen(p+1),
-				     Py_FileSystemDefaultEncoding, "utf8b");
+				     Py_FileSystemDefaultEncoding, "surrogateescape");
 		if (v == NULL) {
 			PyErr_Clear();
 			Py_DECREF(k);
@@ -2167,7 +2167,7 @@ posix_getcwd(int use_bytes)
 		return posix_error();
 	if (use_bytes)
 		return PyBytes_FromStringAndSize(buf, strlen(buf));
-	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"utf8b");
+	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"surrogateescape");
 }
 
 PyDoc_STRVAR(posix_getcwd__doc__,
@@ -2513,7 +2513,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 			w = PyUnicode_FromEncodedObject(v,
 					Py_FileSystemDefaultEncoding,
-					"utf8b");
+					"surrogateescape");
 			Py_DECREF(v);
 			if (w != NULL)
 				v = w;
@@ -4695,7 +4695,7 @@ posix_readlink(PyObject *self, PyObject *args)
 
 		w = PyUnicode_FromEncodedObject(v,
 				Py_FileSystemDefaultEncoding,
-				"utf8b");
+				"surrogateescape");
 		if (w != NULL) {
 			Py_DECREF(v);
 			v = w;

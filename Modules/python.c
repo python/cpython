@@ -42,7 +42,7 @@ char2wchar(char* arg)
 			return res;
 		PyMem_Free(res);
 	}
-	/* Conversion failed. Fall back to escaping with utf8b. */
+	/* Conversion failed. Fall back to escaping with surrogateescape. */
 #ifdef HAVE_MBRTOWC
 	/* Try conversion with mbrtwoc (C99), and escape non-decodable bytes. */
 	
