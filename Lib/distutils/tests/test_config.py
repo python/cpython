@@ -48,18 +48,14 @@ password:xxx
 
 class PyPIRCCommandTestCase(support.TempdirManager,
                             support.LoggingSilencer,
+                            support.EnvironGuard,
                             unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
         super(PyPIRCCommandTestCase, self).setUp()
-
-        if 'HOME' in os.environ:
-            self._old_home = os.environ['HOME']
-        else:
-            self._old_home = None
         self.tmp_dir = self.mkdtemp()
-        os.environ['HOME'] = self.tmp_dir
+        self.environ['HOME'] = self.tmp_dir
         self.rc = os.path.join(self.tmp_dir, '.pypirc')
         self.dist = Distribution()
 
@@ -75,10 +71,6 @@ class PyPIRCCommandTestCase(support.TempdirManager,
 
     def tearDown(self):
         """Removes the patch."""
-        if self._old_home is None:
-            del os.environ['HOME']
-        else:
-            os.environ['HOME'] = self._old_home
         set_threshold(self.old_threshold)
         super(PyPIRCCommandTestCase, self).tearDown()
 
@@ -88,12 +80,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         # 2. handle the old format
 
         # new format
-        f = open(self.rc, 'w')
-        try:
-            f.write(PYPIRC)
-        finally:
-            f.close()
-
+        self.write_file(self.rc, PYPIRC)
         cmd = self._cmd(self.dist)
         config = cmd._read_pypirc()
 
@@ -104,10 +91,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         self.assertEquals(config, waited)
 
         # old format
-        f = open(self.rc, 'w')
-        f.write(PYPIRC_OLD)
-        f.close()
-
+        self.write_file(self.rc, PYPIRC_OLD)
         config = cmd._read_pypirc()
         config = list(sorted(config.items()))
         waited = [('password', 'secret'), ('realm', 'pypi'),
@@ -116,18 +100,13 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         self.assertEquals(config, waited)
 
     def test_server_empty_registration(self):
-
         cmd = self._cmd(self.dist)
         rc = cmd._get_rc_file()
         self.assert_(not os.path.exists(rc))
-
         cmd._store_pypirc('tarek', 'xxx')
-
         self.assert_(os.path.exists(rc))
         content = open(rc).read()
-
         self.assertEquals(content, WANTED)
-
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)
