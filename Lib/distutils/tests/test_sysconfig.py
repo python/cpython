@@ -1,25 +1,14 @@
-"""Tests for distutils.dist."""
-
-from distutils import sysconfig
-from distutils.ccompiler import get_default_compiler
-
+"""Tests for distutils.sysconfig."""
 import os
 import unittest
 
+from distutils import sysconfig
+from distutils.ccompiler import get_default_compiler
+from distutils.tests import support
 from test.test_support import TESTFN
 
-class SysconfigTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.old_flags = [('AR', os.environ.get('AR')),
-                          ('ARFLAGS', os.environ.get('ARFLAGS'))]
-
-    def tearDown(self):
-        for name, value in self.old_flags:
-            if value is not None:
-                os.environ[name] = value
-            elif name in os.environ:
-                del os.environ[name]
+class SysconfigTestCase(support.EnvironGuard,
+                        unittest.TestCase):
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
@@ -53,8 +42,8 @@ class SysconfigTestCase(unittest.TestCase):
         if get_default_compiler() != 'unix':
             return
 
-        os.environ['AR'] = 'my_ar'
-        os.environ['ARFLAGS'] = '-arflags'
+        self.environ['AR'] = 'my_ar'
+        self.environ['ARFLAGS'] = '-arflags'
 
         # make sure AR gets caught
         class compiler:
