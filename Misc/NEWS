@@ -285,6 +285,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
+  for old-style extensions.
+
 - Issue #5971: StreamHandler.handleError now swallows IOErrors which occur when
   trying to print a traceback.
 
