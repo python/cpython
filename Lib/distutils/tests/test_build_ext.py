@@ -129,7 +129,7 @@ class BuildExtTestCase(support.TempdirManager,
         cmd = build_ext(dist)
         cmd.library_dirs = 'my_lib_dir'
         cmd.finalize_options()
-        self.assertEquals(cmd.library_dirs, ['my_lib_dir'])
+        self.assert_('my_lib_dir' in cmd.library_dirs)
 
         # make sure rpath is turned into a list
         # if it's a list of os.pathsep's paths
