@@ -327,15 +327,15 @@ and implemented by all standard Python codecs:
 
 In addition, the following error handlers are specific to a single codec:
 
-+------------------+---------+--------------------------------------------+
-| Value            | Codec   | Meaning                                    |
-+==================+=========+============================================+
-| ``'surrogates'`` | utf-8   | Allow encoding and decoding of surrogate   |
-|                  |         | codes in UTF-8.                            |
-+------------------+---------+--------------------------------------------+
++-------------------+---------+-------------------------------------------+
+| Value             | Codec   | Meaning                                   |
++===================+=========+===========================================+
+|``'surrogatepass'``| utf-8   | Allow encoding and decoding of surrogate  |
+|                   |         | codes in UTF-8.                           |
++-------------------+---------+-------------------------------------------+
 
 .. versionadded:: 3.1
-   The ``'utf8b'`` and ``'surrogates'`` error handlers.
+   The ``'utf8b'`` and ``'surrogatepass'`` error handlers.
 
 The set of allowed values can be extended via :meth:`register_error`.
 

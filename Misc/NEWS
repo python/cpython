@@ -56,7 +56,7 @@ Core and Builtins
 - Issue #4426: The UTF-7 decoder was too strict and didn't accept some legal
   sequences. Patch by Nick Barnes and Victor Stinner.
 
-- Issue #3672: Reject surrogates in utf-8 codec; add surrogates error handler.
+- Issue #3672: Reject surrogates in utf-8 codec; add surrogatepass error handler.
 
 - Issue #5883: In the io module, the BufferedIOBase and TextIOBase ABCs have
   received a new method, detach().  detach() disconnects the underlying stream
