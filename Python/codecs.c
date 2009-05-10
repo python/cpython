@@ -751,7 +751,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 /* This handler is declared static until someone demonstrates
    a need to call it directly. */
 static PyObject *
-PyCodec_SurrogateErrors(PyObject *exc)
+PyCodec_SurrogatePassErrors(PyObject *exc)
 {
     PyObject *restuple;
     PyObject *object;
@@ -935,9 +935,9 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
     return PyCodec_BackslashReplaceErrors(exc);
 }
 
-static PyObject *surrogates_errors(PyObject *self, PyObject *exc)
+static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
 {
-    return PyCodec_SurrogateErrors(exc);
+    return PyCodec_SurrogatePassErrors(exc);
 }
 
 static PyObject *utf8b_errors(PyObject *self, PyObject *exc)
@@ -993,10 +993,10 @@ static int _PyCodecRegistry_Init(void)
 	    }
 	},
 	{
-	    "surrogates",
+	    "surrogatepass",
 	    {
-		"surrogates",
-		surrogates_errors,
+		"surrogatepass",
+		surrogatepass_errors,
 		METH_O
 	    }
 	},

@@ -314,7 +314,7 @@ w_object(PyObject *v, WFILE *p)
 	        PyObject *utf8;
 		utf8 = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
-					    "surrogates");
+					    "surrogatepass");
 		if (utf8 == NULL) {
 			p->depth--;
 			p->error = WFERR_UNMARSHALLABLE;
@@ -809,7 +809,7 @@ r_object(RFILE *p)
 			retval = NULL;
 			break;
 		}
-		v = PyUnicode_DecodeUTF8(buffer, n, "surrogates");
+		v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
 		PyMem_DEL(buffer);
 		retval = v;
 		break;
