@@ -187,6 +187,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
+  for old-style extensions.
+
 - Issue #5854: Updated __all__ to include some missing names and remove some
   names which should not be exported.
 
