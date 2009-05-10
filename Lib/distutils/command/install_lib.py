@@ -6,7 +6,6 @@ Implements the Distutils 'install_lib' command
 __revision__ = "$Id$"
 
 import os
-from types import IntType
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 
@@ -17,7 +16,7 @@ if hasattr(os, 'extsep'):
 else:
     PYTHON_SOURCE_EXTENSION = ".py"
 
-class install_lib (Command):
+class install_lib(Command):
 
     description = "install all Python modules (extensions and pure Python)"
 
@@ -51,8 +50,7 @@ class install_lib (Command):
     boolean_options = ['force', 'compile', 'skip-build']
     negative_opt = {'no-compile' : 'compile'}
 
-
-    def initialize_options (self):
+    def initialize_options(self):
         # let the 'install' command dictate our installation directory
         self.install_dir = None
         self.build_dir = None
@@ -61,8 +59,7 @@ class install_lib (Command):
         self.optimize = None
         self.skip_build = None
 
-    def finalize_options (self):
-
+    def finalize_options(self):
         # Get all the information we need to install pure Python modules
         # from the umbrella 'install' command -- build (source) directory,
         # install (target) directory, and whether to compile .py files.
@@ -80,15 +77,14 @@ class install_lib (Command):
         if self.optimize is None:
             self.optimize = 0
 
-        if type(self.optimize) is not IntType:
+        if not isinstance(self.optimize, int):
             try:
                 self.optimize = int(self.optimize)
-                assert 0 <= self.optimize <= 2
+                assert self.optimize in (0, 1, 2)
             except (ValueError, AssertionError):
                 raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 
-    def run (self):
-
+    def run(self):
         # Make sure we have built everything we need first
         self.build()
 
@@ -101,20 +97,17 @@ class install_lib (Command):
         if outfiles is not None and self.distribution.has_pure_modules():
             self.byte_compile(outfiles)
 
-    # run ()
-
-
     # -- Top-level worker functions ------------------------------------
     # (called from 'run()')
 
-    def build (self):
+    def build(self):
         if not self.skip_build:
             if self.distribution.has_pure_modules():
                 self.run_command('build_py')
             if self.distribution.has_ext_modules():
                 self.run_command('build_ext')
 
-    def install (self):
+    def install(self):
         if os.path.isdir(self.build_dir):
             outfiles = self.copy_tree(self.build_dir, self.install_dir)
         else:
@@ -123,7 +116,7 @@ class install_lib (Command):
             return
         return outfiles
 
-    def byte_compile (self, files):
+    def byte_compile(self, files):
         from distutils.util import byte_compile
 
         # Get the "--root" directory supplied to the "install" command,
@@ -144,8 +137,7 @@ class install_lib (Command):
 
     # -- Utility methods -----------------------------------------------
 
-    def _mutate_outputs (self, has_any, build_cmd, cmd_option, output_dir):
-
+    def _mutate_outputs(self, has_any, build_cmd, cmd_option, output_dir):
         if not has_any:
             return []
 
@@ -160,9 +152,7 @@ class install_lib (Command):
 
         return outputs
 
-    # _mutate_outputs ()
-
-    def _bytecode_filenames (self, py_filenames):
+    def _bytecode_filenames(self, py_filenames):
         bytecode_files = []
         for py_file in py_filenames:
             # Since build_py handles package data installation, the
@@ -182,7 +172,7 @@ class install_lib (Command):
     # -- External interface --------------------------------------------
     # (called by outsiders)
 
-    def get_outputs (self):
+    def get_outputs(self):
         """Return the list of files that would be installed if this command
         were actually run.  Not affected by the "dry-run" flag or whether
         modules have actually been built yet.
@@ -203,9 +193,7 @@ class install_lib (Command):
 
         return pure_outputs + bytecode_outputs + ext_outputs
 
-    # get_outputs ()
-
-    def get_inputs (self):
+    def get_inputs(self):
         """Get the list of files that are input to this command, ie. the
         files that get installed as they are named in the build tree.
         The files in this list correspond one-to-one to the output
@@ -222,5 +210,3 @@ class install_lib (Command):
             inputs.extend(build_ext.get_outputs())
 
         return inputs
-
-# class install_lib
