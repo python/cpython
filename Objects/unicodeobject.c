@@ -1549,7 +1549,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
             return 0;
         output = PyUnicode_AsEncodedObject(arg, 
                                            Py_FileSystemDefaultEncoding,
-                                           "utf8b");
+                                           "surrogateescape");
         Py_DECREF(arg);
         if (!output)
             return 0;

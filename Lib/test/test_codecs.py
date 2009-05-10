@@ -1521,32 +1521,32 @@ class TypesTest(unittest.TestCase):
         self.assertEquals(codecs.raw_unicode_escape_decode(r"\u1234"), ("\u1234", 6))
         self.assertEquals(codecs.raw_unicode_escape_decode(br"\u1234"), ("\u1234", 6))
 
-class Utf8bTest(unittest.TestCase):
+class SurrogateEscapeTest(unittest.TestCase):
 
     def test_utf8(self):
         # Bad byte
-        self.assertEqual(b"foo\x80bar".decode("utf-8", "utf8b"),
+        self.assertEqual(b"foo\x80bar".decode("utf-8", "surrogateescape"),
                          "foo\udc80bar")
-        self.assertEqual("foo\udc80bar".encode("utf-8", "utf8b"),
+        self.assertEqual("foo\udc80bar".encode("utf-8", "surrogateescape"),
                          b"foo\x80bar")
         # bad-utf-8 encoded surrogate
-        self.assertEqual(b"\xed\xb0\x80".decode("utf-8", "utf8b"),
+        self.assertEqual(b"\xed\xb0\x80".decode("utf-8", "surrogateescape"),
                          "\udced\udcb0\udc80")
-        self.assertEqual("\udced\udcb0\udc80".encode("utf-8", "utf8b"),
+        self.assertEqual("\udced\udcb0\udc80".encode("utf-8", "surrogateescape"),
                          b"\xed\xb0\x80")
 
     def test_ascii(self):
         # bad byte
-        self.assertEqual(b"foo\x80bar".decode("ascii", "utf8b"),
+        self.assertEqual(b"foo\x80bar".decode("ascii", "surrogateescape"),
                          "foo\udc80bar")
-        self.assertEqual("foo\udc80bar".encode("ascii", "utf8b"),
+        self.assertEqual("foo\udc80bar".encode("ascii", "surrogateescape"),
                          b"foo\x80bar")
 
     def test_charmap(self):
         # bad byte: \xa5 is unmapped in iso-8859-3
-        self.assertEqual(b"foo\xa5bar".decode("iso-8859-3", "utf8b"),
+        self.assertEqual(b"foo\xa5bar".decode("iso-8859-3", "surrogateescape"),
                          "foo\udca5bar")
-        self.assertEqual("foo\udca5bar".encode("iso-8859-3", "utf8b"),
+        self.assertEqual("foo\udca5bar".encode("iso-8859-3", "surrogateescape"),
                          b"foo\xa5bar")
 
 
@@ -1576,7 +1576,7 @@ def test_main():
         CharmapTest,
         WithStmtTest,
         TypesTest,
-        Utf8bTest,
+        SurrogateEscapeTest,
     )
 
 

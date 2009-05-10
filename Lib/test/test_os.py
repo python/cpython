@@ -708,13 +708,13 @@ if sys.platform != 'win32':
             self.fsencoding = sys.getfilesystemencoding()
             sys.setfilesystemencoding("utf-8")
             self.dir = support.TESTFN
-            self.bdir = self.dir.encode("utf-8", "utf8b")
+            self.bdir = self.dir.encode("utf-8", "surrogateescape")
             os.mkdir(self.dir)
             self.unicodefn = []
             for fn in self.filenames:
                 f = open(os.path.join(self.bdir, fn), "w")
                 f.close()
-                self.unicodefn.append(fn.decode("utf-8", "utf8b"))
+                self.unicodefn.append(fn.decode("utf-8", "surrogateescape"))
 
         def tearDown(self):
             shutil.rmtree(self.dir)

@@ -64,8 +64,8 @@ perform this conversion (see :func:`sys.getfilesystemencoding`).
 
 .. versionchanged:: 3.1
    On some systems, conversion using the file system encoding may
-   fail. In this case, Python uses the ``utf8b`` encoding error
-   handler, which means that undecodable bytes are replaced by a
+   fail. In this case, Python uses the ``surrogateescape`` encoding
+   error handler, which means that undecodable bytes are replaced by a
    Unicode character U+DCxx on decoding, and these are again
    translated to the original byte on encoding.
 

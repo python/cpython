@@ -830,7 +830,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
 }
 
 static PyObject *
-PyCodec_UTF8bErrors(PyObject *exc)
+PyCodec_SurrogateEscapeErrors(PyObject *exc)
 {
     PyObject *restuple;
     PyObject *object;
@@ -940,9 +940,9 @@ static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
     return PyCodec_SurrogatePassErrors(exc);
 }
 
-static PyObject *utf8b_errors(PyObject *self, PyObject *exc)
+static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
 {
-    return PyCodec_UTF8bErrors(exc);
+    return PyCodec_SurrogateEscapeErrors(exc);
 }
 
 static int _PyCodecRegistry_Init(void)
@@ -1001,10 +1001,10 @@ static int _PyCodecRegistry_Init(void)
 	    }
 	},
 	{
-	    "utf8b",
+	    "surrogateescape",
 	    {
-		"utf8b",
-		utf8b_errors,
+		"surrogateescape",
+		surrogateescape_errors,
 		METH_O
 	    }
 	}
