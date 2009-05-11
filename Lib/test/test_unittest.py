@@ -3280,19 +3280,22 @@ class Test_TestProgram(TestCase):
 
         runner = FakeRunner()
 
-        try:
-            oldParseArgs = TestProgram.parseArgs
-            TestProgram.parseArgs = lambda *args: None
-            TestProgram.test = test
-
-            program = TestProgram(testRunner=runner, exit=False)
-
-            self.assertEqual(program.result, result)
-            self.assertEqual(runner.test, test)
-
-        finally:
+        oldParseArgs = TestProgram.parseArgs
+        def restoreParseArgs():
             TestProgram.parseArgs = oldParseArgs
+        TestProgram.parseArgs = lambda *args: None
+        self.addCleanup(restoreParseArgs)
+
+        def removeTest():
             del TestProgram.test
+        TestProgram.test = test
+        self.addCleanup(removeTest)
+
+        program = TestProgram(testRunner=runner, exit=False, verbosity=2)
+
+        self.assertEqual(program.result, result)
+        self.assertEqual(runner.test, test)
+        self.assertEqual(program.verbosity, 2)
 
 
     class FooBar(unittest.TestCase):
