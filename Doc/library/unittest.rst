@@ -91,6 +91,31 @@ need to derive from a specific class.
    `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
       Tools for creating mock test objects (objects simulating external resources).
 
+Command Line Interface
+----------------------
+
+The unittest module can be used from the command line to run tests from
+modules, classes or even individual test methods::
+
+   python -m unittest test_module1 test_module2
+   python -m unittest test_module.TestClass
+   python -m unittest test_module.TestClass.test_method
+
+You can pass in a list with any combination of module names, and fully qualified class or
+method names.
+
+You can run tests with more detail (higher verbosity) by passing in the -v flag::
+
+   python-m unittest -v test_module
+
+For a list of all the command line options::
+
+   python -m unittest -h
+
+..  versionchanged:: 27
+   In earlier versions it was only possible to run individual test methods and not modules
+   or classes.
+
 .. _unittest-minimal-example:
 
 Basic example
@@ -177,7 +202,6 @@ following output::
 The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
-
 
 .. _organizing-tests:
 
@@ -1408,7 +1432,7 @@ Loading and running tests
       subclasses to provide a custom ``TestResult``.
 
 
-.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit]]]]]])
+.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit, [verbosity]]]]]]])
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1416,6 +1440,12 @@ Loading and running tests
 
       if __name__ == '__main__':
           unittest.main()
+
+   You can run tests with more detailed information by passing in the verbosity
+   argument::
+
+      if __name__ == '__main__':
+          unittest.main(verbosity=2)
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
@@ -1432,4 +1462,4 @@ Loading and running tests
    This stores the result of the tests run as the ``result`` attribute.
 
    .. versionchanged:: 2.7
-      The ``exit`` parameter was added.
+      The ``exit`` and ``verbosity`` parameters were added.

@@ -1524,7 +1524,8 @@ Examples:
 """
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=TextTestRunner,
-                 testLoader=defaultTestLoader, exit=True):
+                 testLoader=defaultTestLoader, exit=True,
+                 verbosity=1):
         if isinstance(module, basestring):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -1535,7 +1536,7 @@ Examples:
             argv = sys.argv
 
         self.exit = exit
-        self.verbosity = 1
+        self.verbosity = verbosity
         self.defaultTest = defaultTest
         self.testRunner = testRunner
         self.testLoader = testLoader
@@ -1566,6 +1567,7 @@ Examples:
                 return
             if len(args) > 0:
                 self.testNames = args
+                self.module = None
             else:
                 self.testNames = (self.defaultTest,)
             self.createTests()
@@ -1598,4 +1600,5 @@ main = TestProgram
 ##############################################################################
 
 if __name__ == "__main__":
+    sys.modules['unittest'] = sys.modules['__main__']
     main(module=None)
