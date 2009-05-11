@@ -109,7 +109,7 @@ class BuildCLibTestCase(support.TempdirManager,
         cmd = build_clib(dist)
 
         foo_c = os.path.join(pkg_dir, 'foo.c')
-        self.write_file(foo_c, 'int main(void) { return 1;}')
+        self.write_file(foo_c, 'int main(void) { return 1;}\n')
         cmd.libraries = [('foo', {'sources': [foo_c]})]
 
         build_temp = os.path.join(pkg_dir, 'build')
