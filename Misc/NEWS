@@ -432,7 +432,7 @@ Library
 - Issue #5995: unittest.main now takes an optional verbosity argument allowing 
   test modules to be run with a higher than default verbosity.
   
-- Issue 5995: A fix to allow you to run "python -m unittest test_module" or 
+- Issue #5995: A fix to allow you to run "python -m unittest test_module" or 
   "python -m unittest test_module.TestClass" from the command line.
 
 - Issue #5728: unittest.TestResult has new startTestRun and stopTestRun methods;
