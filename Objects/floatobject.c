@@ -1159,6 +1159,20 @@ Return a hexadecimal representation of a floating-point number.\n\
 >>> 3.14159.hex()\n\
 '0x1.921f9f01b866ep+1'");
 
+/* Case-insensitive locale-independent string match used for nan and inf
+   detection. t should be lower-case and null-terminated.  Return a nonzero
+   result if the first strlen(t) characters of s match t and 0 otherwise. */
+
+static int
+case_insensitive_match(const char *s, const char *t)
+{
+	while(*t && Py_TOLOWER(*s) == *t) {
+		s++;
+		t++;
+	}
+	return *t ? 0 : 1;
+}
+
 /* Convert a hexadecimal string to a float. */
 
 static PyObject *
@@ -1235,13 +1249,20 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		s++;
 
 	/* infinities and nans */
-	if (PyOS_strnicmp(s, "nan", 4) == 0) {
-		x = Py_NAN;
+	if (*s == 'i' || *s == 'I') {
+		if (!case_insensitive_match(s+1, "nf"))
+			goto parse_error;
+		s += 3;
+		x = Py_HUGE_VAL;
+		if (case_insensitive_match(s, "inity"))
+			s += 5;
 		goto finished;
 	}
-	if (PyOS_strnicmp(s, "inf", 4) == 0 ||
-	    PyOS_strnicmp(s, "infinity", 9) == 0) {
-		x = sign*Py_HUGE_VAL;
+	if (*s == 'n' || *s == 'N') {
+		if (!case_insensitive_match(s+1, "an"))
+			goto parse_error;
+		s += 3;
+		x = Py_NAN;
 		goto finished;
 	}
 
@@ -1294,12 +1315,6 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	else
 		exp = 0;
 
-	/* optional trailing whitespace leading to the end of the string */
-	while (Py_ISSPACE(*s))
-		s++;
-	if (s != s_end)
-		goto parse_error;
-
 /* for 0 <= j < ndigits, HEX_DIGIT(j) gives the jth most significant digit */
 #define HEX_DIGIT(j) hex_from_char(*((j) < fdigits ?		\
 				     coeff_end-(j) :			\
@@ -1313,7 +1328,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	while (ndigits > 0 && HEX_DIGIT(ndigits-1) == 0)
 		ndigits--;
 	if (ndigits == 0 || exp < LONG_MIN/2) {
-		x = sign * 0.0;
+		x = 0.0;
 		goto finished;
 	}
 	if (exp > LONG_MAX/2)
@@ -1329,7 +1344,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 
 	/* catch almost all nonextreme cases of overflow and underflow here */
 	if (top_exp < DBL_MIN_EXP - DBL_MANT_DIG) {
-		x = sign * 0.0;
+		x = 0.0;
 		goto finished;
 	}
 	if (top_exp > DBL_MAX_EXP)
@@ -1344,7 +1359,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		/* no rounding required */
 		for (i = ndigits-1; i >= 0; i--)
 			x = 16.0*x + HEX_DIGIT(i);
-		x = sign * ldexp(x, (int)(exp));
+		x = ldexp(x, (int)(exp));
 		goto finished;
 	}
 	/* rounding required.  key_digit is the index of the hex digit
@@ -1378,10 +1393,15 @@ float_fromhex(PyObject *cls, PyObject *arg)
 				goto overflow_error;
 		}
 	}
-	x = sign * ldexp(x, (int)(exp+4*key_digit));
+	x = ldexp(x, (int)(exp+4*key_digit));
 
   finished:
-	result_as_float = Py_BuildValue("(d)", x);
+	/* optional trailing whitespace leading to the end of the string */
+	while (Py_ISSPACE(*s))
+		s++;
+	if (s != s_end)
+		goto parse_error;
+	result_as_float = Py_BuildValue("(d)", sign * x);
 	if (result_as_float == NULL)
 		return NULL;
 	result = PyObject_CallObject(cls, result_as_float);
