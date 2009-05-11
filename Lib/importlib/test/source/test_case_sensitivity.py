@@ -36,18 +36,18 @@ class CaseSensitivityTest(unittest.TestCase):
         with test_support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
             sensitive, insensitive = self.sensitivity_test()
-            self.assert_(hasattr(sensitive, 'load_module'))
-            self.assert_(self.name in sensitive._base_path)
-            self.assert_(insensitive is None)
+            self.assertTrue(hasattr(sensitive, 'load_module'))
+            self.assertIn(self.name, sensitive._base_path)
+            self.assertIsNone(insensitive)
 
     def test_insensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
             sensitive, insensitive = self.sensitivity_test()
-            self.assert_(hasattr(sensitive, 'load_module'))
-            self.assert_(self.name in sensitive._base_path)
-            self.assert_(hasattr(insensitive, 'load_module'))
-            self.assert_(self.name in insensitive._base_path)
+            self.assertTrue(hasattr(sensitive, 'load_module'))
+            self.assertIn(self.name, sensitive._base_path)
+            self.assertTrue(hasattr(insensitive, 'load_module'))
+            self.assertIn(self.name, insensitive._base_path)
 
 
 def test_main():

@@ -9,30 +9,21 @@ import tempfile
 from test import support
 
 
-def writes_bytecode(fxn):
-    """Decorator to protect sys.dont_write_bytecode from mutation."""
+def writes_bytecode_files(fxn):
+    """Decorator to protect sys.dont_write_bytecode from mutation and to skip
+    tests that require it to be set to False."""
+    if sys.dont_write_bytecode:
+        return lambda *args, **kwargs: None
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
         original = sys.dont_write_bytecode
         sys.dont_write_bytecode = False
-        to_return = fxn(*args, **kwargs)
-        sys.dont_write_bytecode = original
+        try:
+            to_return = fxn(*args, **kwargs)
+        finally:
+            sys.dont_write_bytecode = original
         return to_return
     return wrapper
-
-
-def writes_bytecode_files(fxn):
-    """Decorator that returns the function if writing bytecode is enabled, else
-    a stub function that accepts anything and simply returns None."""
-    if sys.dont_write_bytecode:
-        return lambda *args, **kwargs: None
-    else:
-        @functools.wraps(fxn)
-        def wrapper(*args, **kwargs):
-            to_return = fxn(*args, **kwargs)
-            sys.dont_write_bytecode = False
-            return to_return
-        return wrapper
 
 
 def bytecode_path(source_path):
