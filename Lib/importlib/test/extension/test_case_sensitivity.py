@@ -20,13 +20,13 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         with support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
             loader = self.find_module()
-            self.assert_(loader is None)
+            self.assertIsNone(loader)
 
     def test_case_insensitivity(self):
         with support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
             loader = self.find_module()
-            self.assert_(hasattr(loader, 'load_module'))
+            self.assertTrue(hasattr(loader, 'load_module'))
 
 
 

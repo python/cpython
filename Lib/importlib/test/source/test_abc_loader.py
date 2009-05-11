@@ -157,10 +157,10 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock = self.mocker({name: path})
         with util.uncache(name):
             module = mock.load_module(name)
-            self.assert_(name in sys.modules)
+            self.assertIn(name, sys.modules)
         self.eq_attrs(module, __name__=name, __file__=path, __package__='pkg',
                         __loader__=mock)
-        self.assert_(not hasattr(module, '__path__'))
+        self.assertFalse(hasattr(module, '__path__'))
         return mock, name
 
     def test_module_reuse(self):
@@ -247,16 +247,16 @@ class PyPycLoaderTests(PyLoaderTests):
 
     mocker = PyPycLoaderMock
 
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def verify_bytecode(self, mock, name):
         assert name in mock.module_paths
-        self.assert_(name in mock.module_bytecode)
+        self.assertIn(name, mock.module_bytecode)
         magic = mock.module_bytecode[name][:4]
         self.assertEqual(magic, imp.get_magic())
         mtime = importlib._r_long(mock.module_bytecode[name][4:8])
         self.assertEqual(mtime, 1)
         bc = mock.module_bytecode[name][8:]
-
+        self.assertEqual(bc, mock.compile_bc(name))
 
     def test_module(self):
         mock, name = super().test_module()
@@ -286,7 +286,7 @@ class SkipWritingBytecodeTests(unittest.TestCase):
     """Test that bytecode is properly handled based on
     sys.dont_write_bytecode."""
 
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def run_test(self, dont_write_bytecode):
         name = 'mod'
         mock = PyPycLoaderMock({name: os.path.join('path', 'to', 'mod')})
@@ -307,7 +307,7 @@ class RegeneratedBytecodeTests(unittest.TestCase):
 
     """Test that bytecode is regenerated as expected."""
 
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def test_different_magic(self):
         # A different magic number should lead to new bytecode.
         name = 'mod'
@@ -323,7 +323,7 @@ class RegeneratedBytecodeTests(unittest.TestCase):
         magic = mock.module_bytecode[name][:4]
         self.assertEqual(magic, imp.get_magic())
 
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def test_old_mtime(self):
         # Bytecode with an older mtime should be regenerated.
         name = 'mod'

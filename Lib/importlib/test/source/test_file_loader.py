@@ -127,7 +127,7 @@ class BadBytecodeTest(unittest.TestCase):
         self.assert_(module_name in sys.modules)
 
     # [bad magic]
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def test_bad_magic(self):
         with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
@@ -140,7 +140,7 @@ class BadBytecodeTest(unittest.TestCase):
                 self.assertEqual(bytecode_file.read(4), imp.get_magic())
 
     # [bad timestamp]
-    @source_util.writes_bytecode
+    @source_util.writes_bytecode_files
     def test_bad_bytecode(self):
         zeros = b'\x00\x00\x00\x00'
         with source_util.create_modules('_temp') as mapping:

@@ -19,6 +19,15 @@ Library
   now it does.  This also means getfp method now returns the real fp.
 
 
+Tests
+-----
+
+- Issue 5442: Tests for importlib were not properly skipping case-sensitivity
+  tests on darwin even when the OS was installed on a case-sensitive
+  filesystem. Also fixed tests that should not be run when
+  sys.dont_write_bytecode is true.
+
+
 What's New in Python 3.1 beta 1?
 ================================
 
