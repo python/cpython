@@ -12,6 +12,12 @@ What's New in Python 3.1 release candiate 1?
 Core and Builtins
 -----------------
 
+- Issue #5981: Fix three minor inf/nan issues in float.fromhex:
+  (1) inf and nan strings with trailing whitespace were incorrectly
+  rejected;  (2) parsing of strings representing infinities and nans
+  was locale aware; and (3) the interpretation of fromhex('-nan')
+  didn't match that of float('-nan').
+
 Library
 -------
 

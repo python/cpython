@@ -615,6 +615,11 @@ class HexFloatTestCase(unittest.TestCase):
             'snan',
             'NaNs',
             'nna',
+            'an',
+            'nf',
+            'nfinity',
+            'inity',
+            'iinity',
             '0xnan',
             '',
             ' ',
@@ -661,6 +666,32 @@ class HexFloatTestCase(unittest.TestCase):
             else:
                 self.fail('Expected float.fromhex(%r) to raise ValueError; '
                           'got %r instead' % (x, result))
+
+
+    def test_whitespace(self):
+        value_pairs = [
+            ('inf', INF),
+            ('-Infinity', -INF),
+            ('nan', NAN),
+            ('1.0', 1.0),
+            ('-0x.2', -0.125),
+            ('-0.0', -0.0)
+            ]
+        whitespace = [
+            '',
+            ' ',
+            '\t',
+            '\n',
+            '\n \t',
+            '\f',
+            '\v',
+            '\r'
+            ]
+        for inp, expected in value_pairs:
+            for lead in whitespace:
+                for trail in whitespace:
+                    got = fromHex(lead + inp + trail)
+                    self.identical(got, expected)
 
 
     def test_from_hex(self):
