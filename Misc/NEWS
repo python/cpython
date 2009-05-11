@@ -12,6 +12,11 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #5981: Fix two minor inf/nan issues in float.fromhex: (1) inf
+  and nan strings with trailing whitespace were incorrectly rejected
+  and (2) the interpretation of fromhex('-nan') didn't match that of
+  float('-nan').
+
 - Issue #5890: in subclasses of 'property' the __doc__ attribute was
   shadowed by classtype's, even if it was None.  property now
   inserts the __doc__ into the subclass instance __dict__.
