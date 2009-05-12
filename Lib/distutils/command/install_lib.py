@@ -77,7 +77,8 @@ class install_lib(Command):
         if not isinstance(self.optimize, int):
             try:
                 self.optimize = int(self.optimize)
-                assert self.optimize in (0, 1, 2)
+                if self.optimize not in (0, 1, 2):
+                    raise AssertionError
             except (ValueError, AssertionError):
                 raise DistutilsOptionError("optimize must be 0, 1, or 2")
 
