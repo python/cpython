@@ -310,38 +310,38 @@ class build_ext(Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler(compiler=self.compiler,
+        self._compiler = new_compiler(compiler=self.compiler,
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
-        customize_compiler(self.compiler)
+        customize_compiler(self._compiler)
         # If we are cross-compiling, init the compiler now (if we are not
         # cross-compiling, init would not hurt, but people may rely on
         # late initialization of compiler even if they shouldn't...)
         if os.name == 'nt' and self.plat_name != get_platform():
-            self.compiler.initialize(self.plat_name)
+            self._compiler.initialize(self.plat_name)
 
         # And make sure that any compile/link-related options (which might
         # come from the command-line or from the setup script) are set in
         # that CCompiler object -- that way, they automatically apply to
         # all compiling and linking done here.
         if self.include_dirs is not None:
-            self.compiler.set_include_dirs(self.include_dirs)
+            self._compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
             # 'define' option is a list of (name,value) tuples
             for (name, value) in self.define:
-                self.compiler.define_macro(name, value)
+                self._compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
-                self.compiler.undefine_macro(macro)
+                self._compiler.undefine_macro(macro)
         if self.libraries is not None:
-            self.compiler.set_libraries(self.libraries)
+            self._compiler.set_libraries(self.libraries)
         if self.library_dirs is not None:
-            self.compiler.set_library_dirs(self.library_dirs)
+            self._compiler.set_library_dirs(self.library_dirs)
         if self.rpath is not None:
-            self.compiler.set_runtime_library_dirs(self.rpath)
+            self._compiler.set_runtime_library_dirs(self.rpath)
         if self.link_objects is not None:
-            self.compiler.set_link_objects(self.link_objects)
+            self._compiler.set_link_objects(self.link_objects)
 
         # Now actually compile and link everything.
         self.build_extensions()
@@ -444,9 +444,7 @@ class build_ext(Command):
         # "build" tree.
         outputs = []
         for ext in self.extensions:
-            fullname = self.get_ext_fullname(ext.name)
-            outputs.append(os.path.join(self.build_lib,
-                                        self.get_ext_filename(fullname)))
+            outputs.append(self.get_ext_fullpath(ext.name))
         return outputs
 
     def build_extensions(self):
@@ -471,24 +469,9 @@ class build_ext(Command):
                   "a list of source filenames" % ext.name)
         sources = list(sources)
 
-        fullname = self.get_ext_fullname(ext.name)
-        if self.inplace:
-            # ignore build-lib -- put the compiled extension into
-            # the source tree along with pure Python modules
-
-            modpath = fullname.split('.')
-            package = '.'.join(modpath[0:-1])
-            base = modpath[-1]
-
-            build_py = self.get_finalized_command('build_py')
-            package_dir = build_py.get_package_dir(package)
-            ext_filename = os.path.join(package_dir,
-                                        self.get_ext_filename(base))
-        else:
-            ext_filename = os.path.join(self.build_lib,
-                                        self.get_ext_filename(fullname))
+        ext_path = self.get_ext_fullpath(ext.name)
         depends = sources + ext.depends
-        if not (self.force or newer_group(depends, ext_filename, 'newer')):
+        if not (self.force or newer_group(depends, ext_path, 'newer')):
             log.debug("skipping '%s' extension (up-to-date)", ext.name)
             return
         else:
@@ -519,13 +502,13 @@ class build_ext(Command):
         for undef in ext.undef_macros:
             macros.append((undef,))
 
-        objects = self.compiler.compile(sources,
-                                        output_dir=self.build_temp,
-                                        macros=macros,
-                                        include_dirs=ext.include_dirs,
-                                        debug=self.debug,
-                                        extra_postargs=extra_args,
-                                        depends=ext.depends)
+        objects = self._compiler.compile(sources,
+                                         output_dir=self.build_temp,
+                                         macros=macros,
+                                         include_dirs=ext.include_dirs,
+                                         debug=self.debug,
+                                         extra_postargs=extra_args,
+                                         depends=ext.depends)
 
         # XXX -- this is a Vile HACK!
         #
@@ -546,10 +529,10 @@ class build_ext(Command):
         extra_args = ext.extra_link_args or []
 
         # Detect target language, if not provided
-        language = ext.language or self.compiler.detect_language(sources)
+        language = ext.language or self._compiler.detect_language(sources)
 
-        self.compiler.link_shared_object(
-            objects, ext_filename,
+        self._compiler.link_shared_object(
+            objects, ext_path,
             libraries=self.get_libraries(ext),
             library_dirs=ext.library_dirs,
             runtime_library_dirs=ext.runtime_library_dirs,
@@ -640,8 +623,28 @@ class build_ext(Command):
 
     # -- Name generators -----------------------------------------------
     # (extension names, filenames, whatever)
+    def get_ext_fullpath(self, ext_name):
+        """Returns the path of the filename for a given extension.
+
+        The file is located in `build_lib` or directly in the package
+        (inplace option).
+        """
+        if self.inplace:
+            fullname = self.get_ext_fullname(ext_name)
+            modpath = fullname.split('.')
+            package = '.'.join(modpath[0:-1])
+            base = modpath[-1]
+            build_py = self.get_finalized_command('build_py')
+            package_dir = os.path.abspath(build_py.get_package_dir(package))
+            return os.path.join(package_dir, base)
+        else:
+            filename = self.get_ext_filename(ext_name)
+            return os.path.join(self.build_lib, filename)
 
     def get_ext_fullname(self, ext_name):
+        """Returns the fullname of a given extension name.
+
+        Adds the `package.` prefix"""
         if self.package is None:
             return ext_name
         else:
@@ -686,7 +689,7 @@ class build_ext(Command):
         # Append '_d' to the python import library on debug builds.
         if sys.platform == "win32":
             from distutils.msvccompiler import MSVCCompiler
-            if not isinstance(self.compiler, MSVCCompiler):
+            if not isinstance(self._compiler, MSVCCompiler):
                 template = "python%d%d"
                 if self.debug:
                     template = template + '_d'
