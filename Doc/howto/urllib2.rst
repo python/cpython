@@ -204,7 +204,7 @@ e.g. ::
 
     >>> req = urllib.request.Request('http://www.pretend_server.org')
     >>> try: urllib.request.urlopen(req)
-    >>> except urllib.error.URLError, e:
+    >>> except urllib.error.URLError as e:
     >>>    print(e.reason)
     >>>
     (4, 'getaddrinfo failed')
@@ -313,7 +313,7 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
     >>> req = urllib.request.Request('http://www.python.org/fish.html')
     >>> try:
     >>>     urllib.request.urlopen(req)
-    >>> except urllib.error.URLError, e:
+    >>> except urllib.error.URLError as e:
     >>>     print(e.code)
     >>>     print(e.read())
     >>>
@@ -342,10 +342,10 @@ Number 1
     req = Request(someurl)
     try:
         response = urlopen(req)
-    except HTTPError, e:
+    except HTTPError as e:
         print('The server couldn\'t fulfill the request.')
         print('Error code: ', e.code)
-    except URLError, e:
+    except URLError as e:
         print('We failed to reach a server.')
         print('Reason: ', e.reason)
     else:
@@ -367,7 +367,7 @@ Number 2
     req = Request(someurl)
     try:
         response = urlopen(req)
-    except URLError, e:
+    except URLError as e:
         if hasattr(e, 'reason'):
             print('We failed to reach a server.')
             print('Reason: ', e.reason)
