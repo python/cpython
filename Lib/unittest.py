@@ -1567,7 +1567,7 @@ Examples:
                 return
             if len(args) > 0:
                 self.testNames = args
-                if os.path.splitext(os.path.basename(__file__))[0] == 'unitest':
+                if sys.modules['unittest'] is sys.modules['__main__']:
                     self.module = None
             else:
                 self.testNames = (self.defaultTest,)
