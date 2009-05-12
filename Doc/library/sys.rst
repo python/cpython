@@ -781,11 +781,10 @@ always available.
    :func:`os.popen`, :func:`os.system` or the :func:`exec\*` family of functions in
    the :mod:`os` module.)
 
-   .. note::
-
-      The standard streams are in text mode by default.  To write or read binary
-      data to these, use the underlying binary buffer.  For example, to write
-      bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.
+   The standard streams are in text mode by default.  To write or read binary
+   data to these, use the underlying binary buffer.  For example, to write bytes
+   to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.  Using
+   :meth:`io.TextIOWrapper.detach` streams can be made binary by default.
 
 
 .. data:: __stdin__
