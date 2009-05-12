@@ -311,38 +311,38 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self._compiler = new_compiler(compiler=self.compiler,
+        self.compiler = new_compiler(compiler=None,
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
-        customize_compiler(self._compiler)
+        customize_compiler(self.compiler)
         # If we are cross-compiling, init the compiler now (if we are not
         # cross-compiling, init would not hurt, but people may rely on
         # late initialization of compiler even if they shouldn't...)
         if os.name == 'nt' and self.plat_name != get_platform():
-            self._compiler.initialize(self.plat_name)
+            self.compiler.initialize(self.plat_name)
 
         # And make sure that any compile/link-related options (which might
         # come from the command-line or from the setup script) are set in
         # that CCompiler object -- that way, they automatically apply to
         # all compiling and linking done here.
         if self.include_dirs is not None:
-            self._compiler.set_include_dirs(self.include_dirs)
+            self.compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
             # 'define' option is a list of (name,value) tuples
             for (name, value) in self.define:
-                self._compiler.define_macro(name, value)
+                self.compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
-                self._compiler.undefine_macro(macro)
+                self.compiler.undefine_macro(macro)
         if self.libraries is not None:
-            self._compiler.set_libraries(self.libraries)
+            self.compiler.set_libraries(self.libraries)
         if self.library_dirs is not None:
-            self._compiler.set_library_dirs(self.library_dirs)
+            self.compiler.set_library_dirs(self.library_dirs)
         if self.rpath is not None:
-            self._compiler.set_runtime_library_dirs(self.rpath)
+            self.compiler.set_runtime_library_dirs(self.rpath)
         if self.link_objects is not None:
-            self._compiler.set_link_objects(self.link_objects)
+            self.compiler.set_link_objects(self.link_objects)
 
         # Now actually compile and link everything.
         self.build_extensions()
@@ -504,7 +504,7 @@ class build_ext (Command):
         for undef in ext.undef_macros:
             macros.append((undef,))
 
-        objects = self._compiler.compile(sources,
+        objects = self.compiler.compile(sources,
                                          output_dir=self.build_temp,
                                          macros=macros,
                                          include_dirs=ext.include_dirs,
@@ -531,9 +531,9 @@ class build_ext (Command):
         extra_args = ext.extra_link_args or []
 
         # Detect target language, if not provided
-        language = ext.language or self._compiler.detect_language(sources)
+        language = ext.language or self.compiler.detect_language(sources)
 
-        self._compiler.link_shared_object(
+        self.compiler.link_shared_object(
             objects, ext_path,
             libraries=self.get_libraries(ext),
             library_dirs=ext.library_dirs,
@@ -704,7 +704,7 @@ class build_ext (Command):
         # Append '_d' to the python import library on debug builds.
         if sys.platform == "win32":
             from distutils.msvccompiler import MSVCCompiler
-            if not isinstance(self._compiler, MSVCCompiler):
+            if not isinstance(self.compiler, MSVCCompiler):
                 template = "python%d%d"
                 if self.debug:
                     template = template + '_d'
