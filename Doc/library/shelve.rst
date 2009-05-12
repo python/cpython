@@ -26,13 +26,15 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    By default, version 3 pickles are used to serialize values.  The version of the
    pickle protocol can be specified with the *protocol* parameter.
 
-   By default, mutations to persistent-dictionary mutable entries are not
-   automatically written back.  If the optional *writeback* parameter is set to
-   *True*, all entries accessed are cached in memory, and written back at close
-   time; this can make it handier to mutate mutable entries in the persistent
-   dictionary, but, if many entries are accessed, it can consume vast amounts of
-   memory for the cache, and it can make the close operation very slow since all
-   accessed entries are written back (there is no way to determine which accessed
+   Because of Python semantics, a shelf cannot know when a mutable
+   persistent-dictionary entry is modified.  By default modified objects are
+   written only when assigned to the shelf (see :ref:`shelve-example`).  If
+   the optional *writeback* parameter is set to *True*, all entries accessed
+   are cached in memory, and written back at close time; this can make it
+   handier to mutate mutable entries in the persistent dictionary, but, if
+   many entries are accessed, it can consume vast amounts of memory for the
+   cache, and it can make the close operation very slow since all accessed
+   entries are written back (there is no way to determine which accessed
    entries are mutable, nor which ones were actually mutated).
 
 Shelve objects support all methods supported by dictionaries.  This eases the
@@ -118,6 +120,8 @@ Restrictions
    function.  The optional *protocol* and *writeback* parameters have the same
    interpretation as for the :class:`Shelf` class.
 
+
+.. _shelve-example:
 
 Example
 -------
