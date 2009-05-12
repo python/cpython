@@ -80,7 +80,8 @@ class install_lib (Command):
         if type(self.optimize) is not IntType:
             try:
                 self.optimize = int(self.optimize)
-                assert 0 <= self.optimize <= 2
+                if self.optimize not in (0, 1, 2):
+                    raise AssertionError
             except (ValueError, AssertionError):
                 raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 
