@@ -1567,7 +1567,8 @@ Examples:
                 return
             if len(args) > 0:
                 self.testNames = args
-                self.module = None
+                if os.path.splitext(os.path.basename(__file__))[0] == 'unitest':
+                    self.module = None
             else:
                 self.testNames = (self.defaultTest,)
             self.createTests()
