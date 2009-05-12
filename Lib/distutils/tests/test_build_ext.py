@@ -99,7 +99,7 @@ class BuildExtTestCase(support.TempdirManager,
             else:
                 _config_vars['Py_ENABLE_SHARED'] = old_var
 
-        # make sur we get some lobrary dirs under solaris
+        # make sure we get some library dirs under solaris
         self.assert_(len(cmd.library_dirs) > 0)
 
     def test_finalize_options(self):
@@ -219,12 +219,49 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.ensure_finalized()
         self.assertEquals(cmd.get_source_files(), ['xxx'])
 
+    def test_compiler_option(self):
+        # cmd.compiler is an option and
+        # should not be overriden by a compiler instance
+        # when the command is run
+        dist = Distribution()
+        cmd = build_ext(dist)
+        cmd.compiler = 'unix'
+        cmd.ensure_finalized()
+        cmd.run()
+        self.assertEquals(cmd.compiler, 'unix')
+
     def test_get_outputs(self):
-        modules = [Extension('foo', ['xxx'])]
-        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        tmp_dir = self.mkdtemp()
+        c_file = os.path.join(tmp_dir, 'foo.c')
+        self.write_file(c_file, '')
+        ext = Extension('foo', [c_file])
+        dist = Distribution({'name': 'xx',
+                             'ext_modules': [ext]})
         cmd = build_ext(dist)
         cmd.ensure_finalized()
         self.assertEquals(len(cmd.get_outputs()), 1)
+
+        if os.name == "nt":
+            cmd.debug = sys.executable.endswith("_d.exe")
+
+        cmd.build_lib = os.path.join(self.tmp_dir, 'build')
+        cmd.build_temp = os.path.join(self.tmp_dir, 'tempt')
+
+        # issue #5977 : distutils build_ext.get_outputs
+        # returns wrong result with --inplace
+        cmd.inplace = 1
+        cmd.run()
+        so_file = cmd.get_outputs()[0]
+        self.assert_(os.path.exists(so_file))
+        so_dir = os.path.dirname(so_file)
+        self.assertEquals(so_dir, os.getcwd())
+
+        cmd.inplace = 0
+        cmd.run()
+        so_file = cmd.get_outputs()[0]
+        self.assert_(os.path.exists(so_file))
+        so_dir = os.path.dirname(so_file)
+        self.assertEquals(so_dir, cmd.build_lib)
 
 def test_suite():
     if not sysconfig.python_build:

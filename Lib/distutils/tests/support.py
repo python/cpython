@@ -42,6 +42,18 @@ class TempdirManager(object):
         self.tempdirs.append(d)
         return d
 
+    def write_file(self, path, content='xxx'):
+        """Writes a file in the given path.
+
+        path can be a string or a sequence.
+        """
+        if isinstance(path, (list, tuple)):
+            path = os.path.join(*path)
+        f = open(path, 'w')
+        try:
+            f.write(content)
+        finally:
+            f.close()
 
 class DummyCommand:
     """Class to store options for retrieval via set_undefined_options()."""
