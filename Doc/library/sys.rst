@@ -789,7 +789,7 @@ always available.
 
       def make_streams_binary():
           sys.stdin = sys.stdin.detach()
-          sys.stdout = sys.stout.detach()
+          sys.stdout = sys.stdout.detach()
           sys.stderr = sys.stderr.detach()
 
 
