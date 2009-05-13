@@ -1308,7 +1308,7 @@ The value must be a supported type. Raise a ValueError exception if\n\
 value has (or contains an object that has) an unsupported type.\n\
 \n\
 New in version 2.4: The version argument indicates the data format that\n\
-dumps should use (see below).");
+dumps should use.");
 
 
 static PyObject *
