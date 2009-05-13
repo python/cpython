@@ -1179,6 +1179,20 @@ marshal_dump(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+PyDoc_STRVAR(dump_doc,
+"dump(value, file[, version])\n\
+\n\
+Write the value on the open file. The value must be a supported type.\n\
+The file must be an open file object such as sys.stdout or returned by\n\
+open() or os.popen(). It must be opened in binary mode ('wb' or 'w+b').\n\
+\n\
+If the value has (or contains an object that has) an unsupported type, a\n\
+ValueError exception is raised — but garbage data will also be written\n\
+to the file. The object will not be properly read back by load()\n\
+\n\
+New in version 2.4: The version argument indicates the data format that\n\
+dump should use.");
+
 static PyObject *
 marshal_load(PyObject *self, PyObject *f)
 {
@@ -1197,6 +1211,19 @@ marshal_load(PyObject *self, PyObject *f)
 	return result;
 }
 
+PyDoc_STRVAR(load_doc,
+"load(file)\n\
+\n\
+Read one value from the open file and return it. If no valid value is\n\
+read (e.g. because the data has a different Python version’s\n\
+incompatible marshal format), raise EOFError, ValueError or TypeError.\n\
+The file must be an open file object opened in binary mode ('rb' or\n\
+'r+b').\n\
+\n\
+Note: If an object containing an unsupported type was marshalled with\n\
+dump(), load() will substitute None for the unmarshallable type.");
+
+
 static PyObject *
 marshal_dumps(PyObject *self, PyObject *args)
 {
@@ -1206,6 +1233,17 @@ marshal_dumps(PyObject *self, PyObject *args)
 		return NULL;
 	return PyMarshal_WriteObjectToString(x, version);
 }
+
+PyDoc_STRVAR(dumps_doc,
+"dumps(value[, version])\n\
+\n\
+Return the string that would be written to a file by dump(value, file).\n\
+The value must be a supported type. Raise a ValueError exception if\n\
+value has (or contains an object that has) an unsupported type.\n\
+\n\
+New in version 2.4: The version argument indicates the data format that\n\
+dumps should use (see below).");
+
 
 static PyObject *
 marshal_loads(PyObject *self, PyObject *args)
@@ -1226,18 +1264,56 @@ marshal_loads(PyObject *self, PyObject *args)
 	return result;
 }
 
+PyDoc_STRVAR(loads_doc,
+"loads(string)\n\
+\n\
+Convert the string to a value. If no valid value is found, raise\n\
+EOFError, ValueError or TypeError. Extra characters in the string are\n\
+ignored.");
+
 static PyMethodDef marshal_methods[] = {
-	{"dump",	marshal_dump,	METH_VARARGS},
-	{"load",	marshal_load,	METH_O},
-	{"dumps",	marshal_dumps,	METH_VARARGS},
-	{"loads",	marshal_loads,	METH_VARARGS},
+	{"dump",	marshal_dump,	METH_VARARGS,	dump_doc},
+	{"load",	marshal_load,	METH_O,		load_doc},
+	{"dumps",	marshal_dumps,	METH_VARARGS,	dumps_doc},
+	{"loads",	marshal_loads,	METH_VARARGS,	loads_doc},
 	{NULL,		NULL}		/* sentinel */
 };
+
+PyDoc_STRVAR(marshal_doc,
+"This module contains functions that can read and write Python values in\n\
+a binary format. The format is specific to Python, but independent of\n\
+machine architecture issues.\n\
+\n\
+Not all Python object types are supported; in general, only objects\n\
+whose value is independent from a particular invocation of Python can be\n\
+written and read by this module. The following types are supported:\n\
+None, integers, long integers, floating point numbers, strings, Unicode\n\
+objects, tuples, lists, sets, dictionaries, and code objects, where it\n\
+should be understood that tuples, lists and dictionaries are only\n\
+supported as long as the values contained therein are themselves\n\
+supported; and recursive lists and dictionaries should not be written\n\
+(they will cause infinite loops).\n\
+\n\
+Variables:\n\
+\n\
+version -- indicates the format that the module uses. Version 0 is the\n\
+    historical format, version 1 (added in Python 2.4) shares interned\n\
+    strings and version 2 (added in Python 2.5) uses a binary format for\n\
+    floating point numbers. (New in version 2.4)\n\
+\n\
+Functions:\n\
+\n\
+dump() -- write value to a file\n\
+load() -- read value from a file\n\
+dumps() -- write value to a string\n\
+loads() -- read value from a string");
+
 
 PyMODINIT_FUNC
 PyMarshal_Init(void)
 {
-	PyObject *mod = Py_InitModule("marshal", marshal_methods);
+	PyObject *mod = Py_InitModule3("marshal", marshal_methods,
+		marshal_doc);
 	if (mod == NULL)
 		return;
 	PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);

@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5994: the marshal module now has docstrings.
+
 - Issue #5971: StreamHandler.handleError now swallows IOErrors which occur when
   trying to print a traceback.
 
