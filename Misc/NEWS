@@ -293,6 +293,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4050: inspect.findsource/getsource now raise an IOError if the 'source'
+  file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.
+
 - Issue #5977: distutils build_ext.get_outputs was not taking into account the
   inplace option. Initial patch by kxroberto.
 

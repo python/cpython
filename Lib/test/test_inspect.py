@@ -9,6 +9,9 @@ from test.test_support import TESTFN, run_unittest
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
 
+# C module for test_findsource_binary
+import time
+
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
 # isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
@@ -328,6 +331,10 @@ class TestBuggyCases(GetSourceBase):
 
     def test_method_in_dynamic_class(self):
         self.assertSourceEqual(mod2.method_in_dynamic_class, 95, 97)
+
+    def test_findsource_binary(self):
+        self.assertRaises(IOError, inspect.getsource, time)
+        self.assertRaises(IOError, inspect.findsource, time)
 
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
