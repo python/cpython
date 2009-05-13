@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4050: inspect.findsource/getsource now raise an IOError if the 'source'
+  file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.  This fix
+  corrects a pydoc regression.
+
 - Issue 5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
