@@ -135,16 +135,17 @@ def _collapse_address_list_recursive(addresses):
 
     Example:
 
-        ip1 = IPv4('1.1.0.0/24')
-        ip2 = IPv4('1.1.1.0/24')
-        ip3 = IPv4('1.1.2.0/24')
-        ip4 = IPv4('1.1.3.0/24')
-        ip5 = IPv4('1.1.4.0/24')
-        ip6 = IPv4('1.1.0.1/22')
+    >>> ip1 = IPv4('1.1.0.0/24')
+    >>> ip2 = IPv4('1.1.1.0/24')
+    >>> ip3 = IPv4('1.1.2.0/24')
+    >>> ip4 = IPv4('1.1.3.0/24')
+    >>> ip5 = IPv4('1.1.4.0/24')
+    >>> ip6 = IPv4('1.1.0.1/22')
 
-        _collapse_address_list_recursive([ip1, ip2, ip3, ip4, ip5, ip6]) ->
-          [IPv4('1.1.0.0/22'), IPv4('1.1.4.0/24')]
+    >>> _collapse_address_list_recursive([ip1, ip2, ip3, ip4, ip5, ip6])
+    [IPv4('1.1.0.0/22'), IPv4('1.1.4.0/24'), IPv4('1.1.0.1/22')]
 
+    Notes:
         This shouldn't be called directly; it is called via
           collapse_address_list([]).
 
@@ -180,8 +181,9 @@ def collapse_address_list(addresses):
     """Collapse a list of IP objects.
 
     Example:
-        collapse_address_list([IPv4('1.1.0.0/24'), IPv4('1.1.1.0/24')]) ->
-          [IPv4('1.1.0.0/23')]
+
+    >>> collapse_address_list([IPv4('1.1.0.0/24'), IPv4('1.1.1.0/24')])
+    [IPv4('1.1.0.0/23')]
 
     Args:
         addresses: A list of IPv4 or IPv6 objects.
@@ -270,21 +272,20 @@ class BaseIP(object):
 
         For example:
 
-            addr1 = IP('10.1.1.0/24')
-            addr2 = IP('10.1.1.0/26')
-            addr1.address_exclude(addr2) =
-                [IP('10.1.1.64/26'), IP('10.1.1.128/25')]
+        >>> addr1 = IP('10.1.1.0/24')
+        >>> addr2 = IP('10.1.1.0/26')
+        >>> addr1.address_exclude(addr2)
+        [IPv4('10.1.1.64/26'), IPv4('10.1.1.128/25')]
 
         or IPv6:
 
-            addr1 = IP('::1/32')
-            addr2 = IP('::1/128')
-            addr1.address_exclude(addr2) = [IP('::0/128'),
-                IP('::2/127'),
-                IP('::4/126'),
-                IP('::8/125'),
-                ...
-                IP('0:0:8000::/33')]
+        >>> addr1 = IP('::1/32')
+        >>> addr2 = IP('::1/128')
+        >>> s = addr1.address_exclude(addr2)
+        >>> s[:4]
+        [IPv6('::/128'), IPv6('::2/127'), IPv6('::4/126'), IPv6('::8/125')]
+        >>> s[-1]
+        IPv6('0:0:8000::/33')
 
         Args:
             other: An IP object of the same type.
@@ -372,6 +373,15 @@ class BaseIP(object):
               eg: IPv4('10.0.0.1/24') < IPv6('::1/128')
             1 if self.version > other.version
               eg: IPv6('::1/128') > IPv4('255.255.255.0/24')
+
+        To sort networks with sorted(), min(), max() and other tools with a
+        *key* argument, use the operator.attrgetter() function to extract the
+        relevant fields:
+
+            >>> from operator import attrgetter
+            >>> s = [IPv6('::1/128'), IPv4('255.255.255.0/24')]
+            >>> sorted(s, key=attrgetter('version', 'network', 'netmask'))
+            [IPv4('255.255.255.0/24'), IPv6('::1/128')]
 
         """
         if self.version < other.version:
@@ -521,19 +531,23 @@ class IPv4(BaseIP):
 
     """This class represents and manipulates 32-bit IPv4 addresses.
 
-    Attributes: [examples for IPv4('1.2.3.4/27')]
-        .ip: 16909060
-        .ip_ext: '1.2.3.4'
-        .ip_ext_full: '1.2.3.4'
-        .network: 16909056L
-        .network_ext: '1.2.3.0'
-        .hostmask: 31L (0x1F)
-        .hostmask_ext: '0.0.0.31'
-        .broadcast: 16909087L (0x102031F)
-        .broadcast_ext: '1.2.3.31'
-        .netmask: 4294967040L (0xFFFFFFE0)
-        .netmask_ext: '255.255.255.224'
-        .prefixlen: 27
+    >>> addr = IPv4('1.2.3.4/27')
+    >>> for attr in ['ip', 'ip_ext', 'ip_ext_full', 'network', 'network_ext',
+    ...              'hostmask', 'hostmask_ext', 'broadcast', 'broadcast_ext',
+    ...              'netmask', 'netmask_ext', 'prefixlen']:
+    ...     print(attr, '=', getattr(addr, attr))
+    ip = 16909060
+    ip_ext = 1.2.3.4
+    ip_ext_full = 1.2.3.4
+    network = 16909056
+    network_ext = 1.2.3.0
+    hostmask = 31
+    hostmask_ext = 0.0.0.31
+    broadcast = 16909087
+    broadcast_ext = 1.2.3.31
+    netmask = 4294967264
+    netmask_ext = 255.255.255.224
+    prefixlen = 27
 
     """
 
@@ -558,9 +572,9 @@ class IPv4(BaseIP):
               net-masks. (255.0.0.0 == 0.255.255.255)
 
               Additionally, an integer can be passed, so
-              IPv4('192.168.1.1') == IPv4(3232235777).
+                  IPv4('192.168.1.1') == IPv4(3232235777).
               or, more generally
-              IPv4(IPv4('192.168.1.1').ip) == IPv4('192.168.1.1')
+                  IPv4(IPv4('192.168.1.1').ip) == IPv4('192.168.1.1')
 
         Raises:
             IPv4IpValidationError: If ipaddr isn't a valid IPv4 address.
@@ -863,19 +877,23 @@ class IPv6(BaseIP):
 
     """This class respresents and manipulates 128-bit IPv6 addresses.
 
-    Attributes: [examples for IPv6('2001:658:22A:CAFE:200::1/64')]
-        .ip: 42540616829182469433547762482097946625L
-        .ip_ext: '2001:658:22a:cafe:200::1'
-        .ip_ext_full: '2001:0658:022a:cafe:0200:0000:0000:0001'
-        .network: 42540616829182469433403647294022090752L
-        .network_ext: '2001:658:22a:cafe::'
-        .hostmask: 18446744073709551615L
-        .hostmask_ext: '::ffff:ffff:ffff:ffff'
-        .broadcast: 42540616829182469451850391367731642367L
-        .broadcast_ext: '2001:658:22a:cafe:ffff:ffff:ffff:ffff'
-        .netmask: 340282366920938463444927863358058659840L
-        .netmask_ext: 64
-        .prefixlen: 64
+    >>> addr = IPv6('2001:658:22A:CAFE:200::1/64')
+    >>> for attr in ['ip', 'ip_ext', 'ip_ext_full', 'network', 'network_ext',
+    ...              'hostmask', 'hostmask_ext', 'broadcast', 'broadcast_ext',
+    ...              'netmask', 'netmask_ext', 'prefixlen']:
+    ...     print(attr, '=', getattr(addr, attr))
+    ip = 42540616829182469433547762482097946625
+    ip_ext = 2001:658:22a:cafe:200::1
+    ip_ext_full = 2001:0658:022a:cafe:0200:0000:0000:0001
+    network = 42540616829182469433403647294022090752
+    network_ext = 2001:658:22a:cafe::
+    hostmask = 18446744073709551615
+    hostmask_ext = ::ffff:ffff:ffff:ffff
+    broadcast = 42540616829182469451850391367731642367
+    broadcast_ext = 2001:658:22a:cafe:ffff:ffff:ffff:ffff
+    netmask = 340282366920938463444927863358058659840
+    netmask_ext = 64
+    prefixlen = 64
 
     """
 
@@ -896,10 +914,10 @@ class IPv6(BaseIP):
               a mask of /128.
 
               Additionally, an integer can be passed, so
-              IPv6('2001:4860::') ==
-              IPv6(42541956101370907050197289607612071936L).
+                  IPv6('2001:4860::') ==
+                  IPv6(42541956101370907050197289607612071936L).
               or, more generally
-              IPv6(IPv6('2001:4860::').ip) == IPv6('2001:4860::')
+                  IPv6(IPv6('2001:4860::').ip) == IPv6('2001:4860::')
 
         Raises:
             IPv6IpValidationError: If ipaddr isn't a valid IPv6 address.
@@ -1367,3 +1385,8 @@ _IPV6_RFC2373_LOOPBACK = IPv6('::1')
 _IPV6_RFC4291_LINK_LOCAL = IPv6('fe80::/10')
 _IPV6_RFC3513_SITE_LOCAL = IPv6('fec0::/10')  # Deprecated by RFC3879.
 _IPV6_RFC4193_PRIVATE = IPv6('fc00::/7')
+
+if __name__ == '__main__':
+
+    import doctest
+    print(doctest.testmod())
