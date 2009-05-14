@@ -23,6 +23,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #5006: Better handling of unicode byte-order marks (BOM) in the io
+  library. This means, for example, that opening an UTF-16 text file in
+  append mode doesn't add a BOM at the end of the file if the file isn't
+  empty.
+
 - Issue #4050: inspect.findsource/getsource now raise an IOError if the 'source'
   file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.  This fix
   corrects a pydoc regression.

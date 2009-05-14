@@ -41,6 +41,7 @@ PyObject *_PyIO_str_readline;
 PyObject *_PyIO_str_reset;
 PyObject *_PyIO_str_seek;
 PyObject *_PyIO_str_seekable;
+PyObject *_PyIO_str_setstate;
 PyObject *_PyIO_str_tell;
 PyObject *_PyIO_str_truncate;
 PyObject *_PyIO_str_writable;
@@ -48,6 +49,7 @@ PyObject *_PyIO_str_write;
 
 PyObject *_PyIO_empty_str;
 PyObject *_PyIO_empty_bytes;
+PyObject *_PyIO_zero;
 
 
 PyDoc_STRVAR(module_doc,
@@ -734,6 +736,8 @@ PyInit__io(void)
         goto fail;
     if (!(_PyIO_str_seekable = PyUnicode_InternFromString("seekable")))
         goto fail;
+    if (!(_PyIO_str_setstate = PyUnicode_InternFromString("setstate")))
+        goto fail;
     if (!(_PyIO_str_tell = PyUnicode_InternFromString("tell")))
         goto fail;
     if (!(_PyIO_str_truncate = PyUnicode_InternFromString("truncate")))
@@ -746,6 +750,8 @@ PyInit__io(void)
     if (!(_PyIO_empty_str = PyUnicode_FromStringAndSize(NULL, 0)))
         goto fail;
     if (!(_PyIO_empty_bytes = PyBytes_FromStringAndSize(NULL, 0)))
+        goto fail;
+    if (!(_PyIO_zero = PyLong_FromLong(0L)))
         goto fail;
 
     state->initialized = 1;
