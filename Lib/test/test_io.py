@@ -1963,6 +1963,37 @@ class TextIOWrapperTest(unittest.TestCase):
 
         self.assertEqual(buffer.seekable(), txt.seekable())
 
+    def test_append_bom(self):
+        # The BOM is not written again when appending to a non-empty file
+        filename = support.TESTFN
+        for charset in ('utf-8-sig', 'utf-16', 'utf-32'):
+            with self.open(filename, 'w', encoding=charset) as f:
+                f.write('aaa')
+                pos = f.tell()
+            with self.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'aaa'.encode(charset))
+
+            with self.open(filename, 'a', encoding=charset) as f:
+                f.write('xxx')
+            with self.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'aaaxxx'.encode(charset))
+
+    def test_seek_bom(self):
+        # Same test, but when seeking manually
+        filename = support.TESTFN
+        for charset in ('utf-8-sig', 'utf-16', 'utf-32'):
+            with self.open(filename, 'w', encoding=charset) as f:
+                f.write('aaa')
+                pos = f.tell()
+            with self.open(filename, 'r+', encoding=charset) as f:
+                f.seek(pos)
+                f.write('zzz')
+                f.seek(0)
+                f.write('bbb')
+            with self.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'bbbzzz'.encode(charset))
+
+
 class CTextIOWrapperTest(TextIOWrapperTest):
 
     def test_initialization(self):

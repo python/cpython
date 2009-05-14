@@ -141,6 +141,7 @@ extern PyObject *_PyIO_str_readline;
 extern PyObject *_PyIO_str_reset;
 extern PyObject *_PyIO_str_seek;
 extern PyObject *_PyIO_str_seekable;
+extern PyObject *_PyIO_str_setstate;
 extern PyObject *_PyIO_str_tell;
 extern PyObject *_PyIO_str_truncate;
 extern PyObject *_PyIO_str_writable;
@@ -148,3 +149,4 @@ extern PyObject *_PyIO_str_write;
 
 extern PyObject *_PyIO_empty_str;
 extern PyObject *_PyIO_empty_bytes;
+extern PyObject *_PyIO_zero;

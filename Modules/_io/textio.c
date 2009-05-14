@@ -647,6 +647,8 @@ typedef struct
     char telling;
     /* Specialized encoding func (see below) */
     encodefunc_t encodefunc;
+    /* Whether or not it's the start of the stream */
+    char encoding_start_of_stream;
 
     /* Reads and writes are internally buffered in order to speed things up.
        However, any read will first flush the write buffer if itsn't empty.
@@ -707,21 +709,50 @@ utf16le_encode(PyTextIOWrapperObject *self, PyObject *text)
 static PyObject *
 utf16_encode(PyTextIOWrapperObject *self, PyObject *text)
 {
-    PyObject *res;
-    res = PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(text),
-                                PyUnicode_GET_SIZE(text),
-                                PyBytes_AS_STRING(self->errors), 0);
-    if (res == NULL)
-        return NULL;
-    /* Next writes will skip the BOM and use native byte ordering */
+    if (!self->encoding_start_of_stream) {
+        /* Skip the BOM and use native byte ordering */
 #if defined(WORDS_BIGENDIAN)
-    self->encodefunc = (encodefunc_t) utf16be_encode;
+        return utf16be_encode(self, text);
 #else
-    self->encodefunc = (encodefunc_t) utf16le_encode;
+        return utf16le_encode(self, text);
 #endif
-    return res;
+    }
+    return PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(text),
+                                 PyUnicode_GET_SIZE(text),
+                                 PyBytes_AS_STRING(self->errors), 0);
 }
 
+static PyObject *
+utf32be_encode(PyTextIOWrapperObject *self, PyObject *text)
+{
+    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
+                                 PyUnicode_GET_SIZE(text),
+                                 PyBytes_AS_STRING(self->errors), 1);
+}
+
+static PyObject *
+utf32le_encode(PyTextIOWrapperObject *self, PyObject *text)
+{
+    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
+                                 PyUnicode_GET_SIZE(text),
+                                 PyBytes_AS_STRING(self->errors), -1);
+}
+
+static PyObject *
+utf32_encode(PyTextIOWrapperObject *self, PyObject *text)
+{
+    if (!self->encoding_start_of_stream) {
+        /* Skip the BOM and use native byte ordering */
+#if defined(WORDS_BIGENDIAN)
+        return utf32be_encode(self, text);
+#else
+        return utf32le_encode(self, text);
+#endif
+    }
+    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
+                                 PyUnicode_GET_SIZE(text),
+                                 PyBytes_AS_STRING(self->errors), 0);
+}
 
 static PyObject *
 utf8_encode(PyTextIOWrapperObject *self, PyObject *text)
@@ -749,10 +780,13 @@ typedef struct {
 static encodefuncentry encodefuncs[] = {
     {"ascii",       (encodefunc_t) ascii_encode},
     {"iso8859-1",   (encodefunc_t) latin1_encode},
+    {"utf-8",       (encodefunc_t) utf8_encode},
     {"utf-16-be",   (encodefunc_t) utf16be_encode},
     {"utf-16-le",   (encodefunc_t) utf16le_encode},
     {"utf-16",      (encodefunc_t) utf16_encode},
-    {"utf-8",       (encodefunc_t) utf8_encode},
+    {"utf-32-be",   (encodefunc_t) utf32be_encode},
+    {"utf-32-le",   (encodefunc_t) utf32le_encode},
+    {"utf-32",      (encodefunc_t) utf32_encode},
     {NULL, NULL}
 };
 
@@ -978,6 +1012,33 @@ TextIOWrapper_init(PyTextIOWrapperObject *self, PyObject *args, PyObject *kwds)
     self->seekable = self->telling = PyObject_IsTrue(res);
     Py_DECREF(res);
 
+    self->encoding_start_of_stream = 0;
+    if (self->seekable && self->encoder) {
+        PyObject *cookieObj;
+        int cmp;
+
+        self->encoding_start_of_stream = 1;
+
+        cookieObj = PyObject_CallMethodObjArgs(buffer, _PyIO_str_tell, NULL);
+        if (cookieObj == NULL)
+            goto error;
+
+        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        Py_DECREF(cookieObj);
+        if (cmp < 0) {
+            goto error;
+        }
+
+        if (cmp == 0) {
+            self->encoding_start_of_stream = 0;
+            res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
+                                             _PyIO_zero, NULL);
+            if (res == NULL)
+                goto error;
+            Py_DECREF(res);
+        }
+    }
+
     self->ok = 1;
     return 0;
 
@@ -1192,8 +1253,10 @@ TextIOWrapper_write(PyTextIOWrapperObject *self, PyObject *args)
         needflush = 1;
 
     /* XXX What if we were just reading? */
-    if (self->encodefunc != NULL)
+    if (self->encodefunc != NULL) {
         b = (*self->encodefunc)((PyObject *) self, text);
+        self->encoding_start_of_stream = 0;
+    }
     else
         b = PyObject_CallMethodObjArgs(self->encoder,
                                        _PyIO_str_encode, text, NULL);
@@ -1847,23 +1910,37 @@ _TextIOWrapper_decoder_setstate(PyTextIOWrapperObject *self,
     return 0;
 }
 
+static int
+_TextIOWrapper_encoder_setstate(PyTextIOWrapperObject *self,
+                                CookieStruct *cookie)
+{
+    PyObject *res;
+    /* Same as _TextIOWrapper_decoder_setstate() above. */
+    if (cookie->start_pos == 0 && cookie->dec_flags == 0) {
+        res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_reset, NULL);
+        self->encoding_start_of_stream = 1;
+    }
+    else {
+        res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
+                                         _PyIO_zero, NULL);
+        self->encoding_start_of_stream = 0;
+    }
+    if (res == NULL)
+        return -1;
+    Py_DECREF(res);
+    return 0;
+}
+
 static PyObject *
 TextIOWrapper_seek(PyTextIOWrapperObject *self, PyObject *args)
 {
     PyObject *cookieObj, *posobj;
     CookieStruct cookie;
     int whence = 0;
-    static PyObject *zero = NULL;
     PyObject *res;
     int cmp;
 
     CHECK_INITIALIZED(self);
-
-    if (zero == NULL) {
-        zero = PyLong_FromLong(0L);
-        if (zero == NULL)
-            return NULL;
-    }
 
     if (!PyArg_ParseTuple(args, "O|i:seek", &cookieObj, &whence))
         return NULL;
@@ -1879,7 +1956,7 @@ TextIOWrapper_seek(PyTextIOWrapperObject *self, PyObject *args)
 
     if (whence == 1) {
         /* seek relative to current position */
-        cmp = PyObject_RichCompareBool(cookieObj, zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -1900,7 +1977,7 @@ TextIOWrapper_seek(PyTextIOWrapperObject *self, PyObject *args)
     else if (whence == 2) {
         /* seek relative to end of file */
 
-        cmp = PyObject_RichCompareBool(cookieObj, zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -1934,7 +2011,7 @@ TextIOWrapper_seek(PyTextIOWrapperObject *self, PyObject *args)
         goto fail;
     }
 
-    cmp = PyObject_RichCompareBool(cookieObj, zero, Py_LT);
+    cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_LT);
     if (cmp < 0)
         goto fail;
 
@@ -2013,6 +2090,11 @@ TextIOWrapper_seek(PyTextIOWrapperObject *self, PyObject *args)
             goto fail;
     }
 
+    /* Finally, reset the encoder (merely useful for proper BOM handling) */
+    if (self->encoder) {
+        if (_TextIOWrapper_encoder_setstate(self, &cookie) < 0)
+            goto fail;
+    }
     return cookieObj;
   fail:
     Py_XDECREF(cookieObj);
