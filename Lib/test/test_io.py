@@ -290,6 +290,19 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.seek(-1, 2), self.LARGE)
         self.assertEqual(f.read(2), b"x")
 
+    def test_invalid_operations(self):
+        # Try writing on a file opened in read mode and vice-versa.
+        for mode in ("w", "wb"):
+            with open(support.TESTFN, mode) as fp:
+                self.assertRaises(IOError, fp.read)
+                self.assertRaises(IOError, fp.readline)
+        with open(support.TESTFN, "rb") as fp:
+            self.assertRaises(IOError, fp.write, b"blah")
+            self.assertRaises(IOError, fp.writelines, [b"blah\n"])
+        with open(support.TESTFN, "r") as fp:
+            self.assertRaises(IOError, fp.write, "blah")
+            self.assertRaises(IOError, fp.writelines, ["blah\n"])
+
     def test_raw_file_io(self):
         with self.open(support.TESTFN, "wb", buffering=0) as f:
             self.assertEqual(f.readable(), False)

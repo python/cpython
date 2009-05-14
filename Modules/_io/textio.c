@@ -1228,6 +1228,11 @@ TextIOWrapper_write(PyTextIOWrapperObject *self, PyObject *args)
 
     CHECK_CLOSED(self);
 
+    if (self->encoder == NULL) {
+        PyErr_SetString(PyExc_IOError, "not writable");
+        return NULL;
+    }
+
     Py_INCREF(text);
 
     textlen = PyUnicode_GetSize(text);
@@ -1363,7 +1368,7 @@ TextIOWrapper_read_chunk(PyTextIOWrapperObject *self)
      */
 
     if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError, "no decoder");
+        PyErr_SetString(PyExc_IOError, "not readable");
         return -1;
     }
 
