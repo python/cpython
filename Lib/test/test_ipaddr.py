@@ -19,7 +19,7 @@
 
 
 import unittest
-
+from test import support
 import ipaddr
 
 
@@ -569,4 +569,5 @@ class IpaddrUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    support.run_unittest(IpaddrUnitTest)
+    support.run_doctest(ipaddr, True)
