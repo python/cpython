@@ -293,6 +293,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6022: a test file was created in the current working directory by
+  test_get_outputs in Distutils.
+
 - Issue #4050: inspect.findsource/getsource now raise an IOError if the 'source'
   file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.
 
