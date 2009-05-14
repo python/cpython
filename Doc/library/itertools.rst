@@ -294,7 +294,7 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
-          it = range(s.start or 0, s.stop or sys.maxsize, s.step or 1)
+          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
           nexti = next(it)
           for i, element in enumerate(iterable):
               if i == nexti:
