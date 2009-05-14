@@ -256,7 +256,11 @@ class HashLibTestCase(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(HashLibTestCase)
+    key = test_support.threading_setup()
+    try:
+        test_support.run_unittest(HashLibTestCase)
+    finally:
+        test_support.threading_cleanup(*key)
 
 
 if __name__ == "__main__":
