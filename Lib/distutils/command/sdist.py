@@ -17,19 +17,18 @@ from distutils.filelist import FileList
 from distutils import log
 from distutils.util import convert_path
 
-def show_formats ():
+def show_formats():
     """Print all possible values for the 'formats' option (used by
     the "--help-formats" command-line option).
     """
     from distutils.fancy_getopt import FancyGetopt
     from distutils.archive_util import ARCHIVE_FORMATS
-    formats=[]
+    formats = []
     for format in ARCHIVE_FORMATS.keys():
         formats.append(("formats=" + format, None,
                         ARCHIVE_FORMATS[format][2]))
     formats.sort()
-    pretty_printer = FancyGetopt(formats)
-    pretty_printer.print_help(
+    FancyGetopt(formats).print_help(
         "List of available source distribution formats:")
 
 class sdist (Command):
