@@ -31,7 +31,7 @@ def show_formats():
     FancyGetopt(formats).print_help(
         "List of available source distribution formats:")
 
-class sdist (Command):
+class sdist(Command):
 
     description = "create a source distribution (tarball, zip file, etc.)"
 
@@ -78,8 +78,8 @@ class sdist (Command):
     negative_opt = {'no-defaults': 'use-defaults',
                     'no-prune': 'prune' }
 
-    default_format = { 'posix': 'gztar',
-                       'nt': 'zip' }
+    default_format = {'posix': 'gztar',
+                      'nt': 'zip' }
 
     def initialize_options(self):
         # 'template' and 'manifest' are, respectively, the names of
@@ -100,7 +100,6 @@ class sdist (Command):
         self.dist_dir = None
 
         self.archive_files = None
-
 
     def finalize_options(self):
         if self.manifest is None:
@@ -124,7 +123,6 @@ class sdist (Command):
 
         if self.dist_dir is None:
             self.dist_dir = "dist"
-
 
     def run(self):
         # 'filelist' contains the list of files that will make up the
@@ -243,7 +241,6 @@ class sdist (Command):
         # Don't regenerate the manifest, just read it in.
         else:
             self.read_manifest()
-
 
     def add_defaults(self):
         """Add all the default files to self.filelist:
@@ -373,7 +370,7 @@ class sdist (Command):
         vcs_ptrn = r'(^|%s)(%s)(%s).*' % (seps, '|'.join(vcs_dirs), seps)
         self.filelist.exclude_pattern(vcs_ptrn, is_regex=1)
 
-    def write_manifest (self):
+    def write_manifest(self):
         """Write the file list in 'self.filelist' (presumably as filled in
         by 'add_defaults()' and 'read_template()') to the manifest file
         named by 'self.manifest'.
