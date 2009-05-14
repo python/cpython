@@ -454,9 +454,7 @@ Changes to Python's build process and to the C API include:
   for passing typing safety information and a less complicated signature
   for calling a destructor.
 
-  The old type had a problematic API and is now deprecated.  To ease
-  transitioning code, the new type was implemented as a subtype of
-  :ctype:`PyCObject` API.
+  The old type had a problematic API and is now deprecated.
 
   (Contributed by Larry Hastings; :issue:`5630`.)
 
