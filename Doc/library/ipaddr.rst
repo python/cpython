@@ -199,6 +199,16 @@ both IPv4 and IPv6.
       1 if self.version > other.version
         eg: IPv6('::1/128') > IPv4('255.255.255.0/24')
 
+      .. note::
+
+         To sort networks with :func:`sorted`, :func:`min`, :func:`max` and
+         other tools with a *key* argument, use the :func:`operator.attrgetter`
+         function to extract the relevant fields::
+
+            >>> from operator import attrgetter
+            >>> s = [IPv6('::1/128'), IPv4('255.255.255.0/24')]
+            >>> sorted(s, key=attrgetter('version', 'network', 'netmask'))
+            [IPv4('255.255.255.0/24'), IPv6('::1/128')]
 
    .. method:: subnet(prefixlen_diff=1)
 
