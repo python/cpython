@@ -13,7 +13,7 @@ from distutils.command.sdist import sdist
 from distutils.command.sdist import show_formats
 from distutils.core import Distribution
 from distutils.tests.test_config import PyPIRCCommandTestCase
-from distutils.errors import DistutilsExecError
+from distutils.errors import DistutilsExecError, DistutilsOptionError
 from distutils.spawn import find_executable
 from distutils.tests import support
 from distutils.archive_util import ARCHIVE_FORMATS
@@ -223,6 +223,28 @@ class sdistTestCase(PyPIRCCommandTestCase):
         output = [line for line in stdout.getvalue().split('\n')
                   if line.strip().startswith('--formats=')]
         self.assertEquals(len(output), num_formats)
+
+    def test_finalize_options(self):
+
+        dist, cmd = self.get_cmd()
+        cmd.finalize_options()
+
+        # default options set by finalize
+        self.assertEquals(cmd.manifest, 'MANIFEST')
+        self.assertEquals(cmd.template, 'MANIFEST.in')
+        self.assertEquals(cmd.dist_dir, 'dist')
+
+        # formats has to be a string splitable on (' ', ',') or
+        # a stringlist
+        cmd.formats = 1
+        self.assertRaises(DistutilsOptionError, cmd.finalize_options)
+        cmd.formats = ['zip']
+        cmd.finalize_options()
+
+        # formats has to be known
+        cmd.formats = 'supazipa'
+        self.assertRaises(DistutilsOptionError, cmd.finalize_options)
+
 
 def test_suite():
     return unittest.makeSuite(sdistTestCase)
