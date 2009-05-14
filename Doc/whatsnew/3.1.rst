@@ -363,6 +363,9 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Google, :issue:`3959`.)
 
+* The :mod:`nntplib` module now supports IPv6.
+
+  (Contributed by Derek Morr; :issue:`1664`.)
 
 Optimizations
 =============
@@ -445,6 +448,17 @@ Changes to Python's build process and to the C API include:
 * Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
+
+* Added :ctype:`PyCapsule` as a replacement for the :ctype:`PyCObject` API.
+  The principal difference is that the new type has a well defined interface
+  for passing typing safety information and a less complicated signature
+  for calling a destructor.
+
+  The old type had a problematic API and is now deprecated.  To ease
+  transitioning code, the new type was implemented as a subtype of
+  :ctype:`PyCObject` API.
+
+  (Contributed by Larry Hastings; :issue:`5630`.)
 
 Porting to Python 3.1
 =====================
