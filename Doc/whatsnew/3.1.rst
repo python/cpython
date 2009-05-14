@@ -94,10 +94,13 @@ program's output, improving its professional appearance and readability::
     '1,234,567'
     >>> format(1234567.89, ',.2f')
     '1,234,567.89'
+    >>> format(12345.6 + 8901234.12j, ',f')
+    '12,345.600000+8,901,234.120000j'
     >>> format(Decimal('1234567.89'), ',f')
     '1,234,567.89'
 
-The supported types are :class:`int`, :class:`float` and :class:`decimal.Decimal`.
+The supported types are :class:`int`, :class:`float`, :class:`complex`
+and :class:`decimal.Decimal`.
 
 Discussions are underway about how to specify alternative separators
 like dots, spaces, apostrophes, or underscores.  Locale-aware applications
@@ -397,11 +400,16 @@ Major performance enhancements have been added:
   (Contributed by Antoine Pitrou and Amaury Forgeot d'Arc, :issue:`4868`.)
 
 * The :mod:`json` module is getting a C extension to substantially improve
-  its performance.  The code is expected to be added in-time for the beta
-  release.
+  its performance.  In addition, the API was modified so that json works
+  only with :class:`str`, not with :class:`bytes`.  That change makes the
+  module more closely conform to the `JSON specification <http://json.org/>`_
+  which is defined in terms of Unicode.
+  (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou
+  and Benjamin Peterson; :issue:`4136`.)
 
-  (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou;
-  :issue:`4136`.)
+* Unpickling now interns the attribute names of pickled objects.  This saves
+  memory and allows pickles to be smaller.
+  (Contributed by Jake McGuire and Antoine Pitrou; :issue:`5084`.)
 
 Build and C API Changes
 =======================
