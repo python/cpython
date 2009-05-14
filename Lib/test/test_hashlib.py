@@ -254,14 +254,9 @@ class HashLibTestCase(unittest.TestCase):
 
         self.assertEqual(expected_hash, hasher.hexdigest())
 
-
+@test_support.reap_threads
 def test_main():
-    key = test_support.threading_setup()
-    try:
-        test_support.run_unittest(HashLibTestCase)
-    finally:
-        test_support.threading_cleanup(*key)
-
+    test_support.run_unittest(HashLibTestCase)
 
 if __name__ == "__main__":
     test_main()
