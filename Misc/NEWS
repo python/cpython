@@ -285,6 +285,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6022: a test file was created in the current working directory by
+  test_get_outputs in Distutils.
+
 - Issue #5977: distutils build_ext.get_outputs was not taking into account the
   inplace option. Initial patch by kxroberto.
 
