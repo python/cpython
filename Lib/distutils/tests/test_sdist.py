@@ -7,12 +7,16 @@ from os.path import join
 import sys
 import tempfile
 
+from test.test_support import captured_stdout
+
 from distutils.command.sdist import sdist
+from distutils.command.sdist import show_formats
 from distutils.core import Distribution
 from distutils.tests.test_config import PyPIRCCommandTestCase
 from distutils.errors import DistutilsExecError
 from distutils.spawn import find_executable
 from distutils.tests import support
+from distutils.archive_util import ARCHIVE_FORMATS
 
 SETUP_PY = """
 from distutils.core import setup
@@ -209,6 +213,16 @@ class sdistTestCase(PyPIRCCommandTestCase):
         # checking the MANIFEST
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
         self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
+
+    def test_show_formats(self):
+        with captured_stdout() as stdout:
+            show_formats()
+
+        # the output should be a header line + one line per format
+        num_formats = len(ARCHIVE_FORMATS.keys())
+        output = [line for line in stdout.getvalue().split('\n')
+                  if line.strip().startswith('--formats=')]
+        self.assertEquals(len(output), num_formats)
 
 def test_suite():
     return unittest.makeSuite(sdistTestCase)
