@@ -293,6 +293,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5918: Fix a crash in the parser module.
+
 - Issue #1664: Make nntplib IPv6-capable. Patch by Derek Morr.
 
 - Issue #6022: a test file was created in the current working directory by
