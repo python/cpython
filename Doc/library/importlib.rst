@@ -16,7 +16,7 @@ Introduction
 The purpose of the :mod:`importlib` package is two-fold. One is to provide an
 implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
-implementaiton of :keyword:`import` which is portable to any Python
+implementation of :keyword:`import` which is portable to any Python
 interpreter. This also provides a reference implementation which is easier to
 comprehend than one in a programming language other than Python.
 
