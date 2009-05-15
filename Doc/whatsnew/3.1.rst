@@ -349,6 +349,16 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Ross Light; :issue:`4285`.)
 
+* A new module, :mod:`ipaddr` has been added to the standard library.
+  It provides classes to represent, verify and manipulate IPv4 and IPv6
+  host and network addresses.
+
+  (Contributed by Google, :issue:`3959`.)
+
+* The :mod:`nntplib` :mod:`imaplib` modules now support IPv6.
+
+  (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
+
 * A new module, :mod:`importlib` was added.  It provides a complete, portable,
   pure Python reference implementation of the :keyword:`import` statement and its
   counterpart, the :func:`__import__` function.  It represents a substantial
@@ -356,16 +366,6 @@ New, Improved, and Deprecated Modules
   imports.
 
   (Contributed by Brett Cannon.)
-
-* A new module, :mod:`ipaddr` has been added to the standard library.
-  It provides classes to represent, verify and manipulate IPv4 and IPv6
-  host and network addresses.
-
-  (Contributed by Google, :issue:`3959`.)
-
-* The :mod:`nntplib` module now supports IPv6.
-
-  (Contributed by Derek Morr; :issue:`1664`.)
 
 Optimizations
 =============
@@ -407,11 +407,13 @@ Major performance enhancements have been added:
   only with :class:`str`, not with :class:`bytes`.  That change makes the
   module more closely conform to the `JSON specification <http://json.org/>`_
   which is defined in terms of Unicode.
+
   (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou
   and Benjamin Peterson; :issue:`4136`.)
 
 * Unpickling now interns the attribute names of pickled objects.  This saves
   memory and allows pickles to be smaller.
+
   (Contributed by Jake McGuire and Antoine Pitrou; :issue:`5084`.)
 
 Build and C API Changes
@@ -452,9 +454,8 @@ Changes to Python's build process and to the C API include:
 * Added :ctype:`PyCapsule` as a replacement for the :ctype:`PyCObject` API.
   The principal difference is that the new type has a well defined interface
   for passing typing safety information and a less complicated signature
-  for calling a destructor.
-
-  The old type had a problematic API and is now deprecated.
+  for calling a destructor.  The old type had a problematic API and is now
+  deprecated.
 
   (Contributed by Larry Hastings; :issue:`5630`.)
 
