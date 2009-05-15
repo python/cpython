@@ -2,6 +2,8 @@
 
 import copy
 import copy_reg
+import weakref
+import operator
 
 import unittest
 from test import test_support
@@ -584,6 +586,92 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(copy.deepcopy(foo), foo)
         bar = lambda: None
         self.assertEqual(copy.deepcopy(bar), bar)
+
+    def _check_weakref(self, _copy):
+        class C(object):
+            pass
+        obj = C()
+        x = weakref.ref(obj)
+        y = _copy(x)
+        self.assertTrue(y is x)
+        del obj
+        y = _copy(x)
+        self.assertTrue(y is x)
+
+    def test_copy_weakref(self):
+        self._check_weakref(copy.copy)
+
+    def test_deepcopy_weakref(self):
+        self._check_weakref(copy.deepcopy)
+
+    def _check_copy_weakdict(self, _dicttype):
+        class C(object):
+            pass
+        a, b, c, d = [C() for i in xrange(4)]
+        u = _dicttype()
+        u[a] = b
+        u[c] = d
+        v = copy.copy(u)
+        self.assertFalse(v is u)
+        self.assertEqual(v, u)
+        self.assertEqual(v[a], b)
+        self.assertEqual(v[c], d)
+        self.assertEqual(len(v), 2)
+        del c, d
+        self.assertEqual(len(v), 1)
+        x, y = C(), C()
+        # The underlying containers are decoupled
+        v[x] = y
+        self.assertFalse(x in u)
+
+    def test_copy_weakkeydict(self):
+        self._check_copy_weakdict(weakref.WeakKeyDictionary)
+
+    def test_copy_weakvaluedict(self):
+        self._check_copy_weakdict(weakref.WeakValueDictionary)
+
+    def test_deepcopy_weakkeydict(self):
+        class C(object):
+            def __init__(self, i):
+                self.i = i
+        a, b, c, d = [C(i) for i in xrange(4)]
+        u = weakref.WeakKeyDictionary()
+        u[a] = b
+        u[c] = d
+        # Keys aren't copied, values are
+        v = copy.deepcopy(u)
+        self.assertNotEqual(v, u)
+        self.assertEqual(len(v), 2)
+        self.assertFalse(v[a] is b)
+        self.assertFalse(v[c] is d)
+        self.assertEqual(v[a].i, b.i)
+        self.assertEqual(v[c].i, d.i)
+        del c
+        self.assertEqual(len(v), 1)
+
+    def test_deepcopy_weakvaluedict(self):
+        class C(object):
+            def __init__(self, i):
+                self.i = i
+        a, b, c, d = [C(i) for i in xrange(4)]
+        u = weakref.WeakValueDictionary()
+        u[a] = b
+        u[c] = d
+        # Keys are copied, values aren't
+        v = copy.deepcopy(u)
+        self.assertNotEqual(v, u)
+        self.assertEqual(len(v), 2)
+        (x, y), (z, t) = sorted(v.items(), key=lambda (k, v): k.i)
+        self.assertFalse(x is a)
+        self.assertEqual(x.i, a.i)
+        self.assertTrue(y is b)
+        self.assertFalse(z is c)
+        self.assertEqual(z.i, c.i)
+        self.assertTrue(t is d)
+        del x, y, z, t
+        del d
+        self.assertEqual(len(v), 1)
+
 
 def global_foo(x, y): return x+y
 
