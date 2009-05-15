@@ -8,7 +8,6 @@ __revision__ = "$Id$"
 
 import sys, os, string, re
 from types import *
-from copy import copy
 
 try:
     import warnings
@@ -537,7 +536,7 @@ Common commands: (see '--help-commands' for more)
         # merge it in with the global negative aliases.
         negative_opt = self.negative_opt
         if hasattr(cmd_class, 'negative_opt'):
-            negative_opt = copy(negative_opt)
+            negative_opt = negative_opt.copy()
             negative_opt.update(cmd_class.negative_opt)
 
         # Check for help_options in command class.  They have a different
