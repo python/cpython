@@ -547,7 +547,7 @@ fileio_readall(PyFileIOObject *self)
 			return NULL;
 		}
 
-		if (PyBytes_GET_SIZE(result) < newsize) {
+		if (PyBytes_GET_SIZE(result) < (Py_ssize_t)newsize) {
 			if (_PyBytes_Resize(&result, newsize) < 0) {
 				if (total == 0) {
 					Py_DECREF(result);
