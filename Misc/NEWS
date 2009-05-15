@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2116: Weak references and weak dictionaries now support copy()ing and
+  deepcopy()ing.
+
 - Issue #1655: Make imaplib IPv6-capable. Patch by Derek Morr.
 
 - Issue #5918: Fix a crash in the parser module.
