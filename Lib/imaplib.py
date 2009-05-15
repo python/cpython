@@ -222,9 +222,7 @@ class IMAP4:
 
 
     def _create_socket(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.host, self.port))
-        return sock
+        return socket.create_connection((self.host, self.port))
 
     def open(self, host = '', port = IMAP4_PORT):
         """Setup connection to remote server on "host:port"
