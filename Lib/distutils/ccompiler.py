@@ -6,7 +6,6 @@ for the Distutils compiler abstraction model."""
 __revision__ = "$Id$"
 
 import sys, os, re
-from copy import copy
 from distutils.errors import *
 from distutils.spawn import spawn
 from distutils.file_util import move_file
@@ -233,7 +232,7 @@ class CCompiler:
         any list of standard include directories that the compiler may
         search by default.
         """
-        self.include_dirs = copy(dirs)
+        self.include_dirs = dirs[:]
 
     def add_library(self, libname):
         """Add 'libname' to the list of libraries that will be included in
@@ -257,7 +256,7 @@ class CCompiler:
         not affect any standard system libraries that the linker may
         include by default.
         """
-        self.libraries = copy(libnames)
+        self.libraries = libnames[:]
 
     def add_library_dir(self, dir):
         """Add 'dir' to the list of directories that will be searched for
@@ -272,7 +271,7 @@ class CCompiler:
         strings).  This does not affect any standard library search path
         that the linker may search by default.
         """
-        self.library_dirs = copy(dirs)
+        self.library_dirs = dirs[:]
 
     def add_runtime_library_dir(self, dir):
         """Add 'dir' to the list of directories that will be searched for
@@ -286,7 +285,7 @@ class CCompiler:
         standard search path that the runtime linker may search by
         default.
         """
-        self.runtime_library_dirs = copy(dirs)
+        self.runtime_library_dirs = dirs[:]
 
     def add_link_object(self, object):
         """Add 'object' to the list of object files (or analogues, such as
@@ -302,7 +301,7 @@ class CCompiler:
         files that the linker may include by default (such as system
         libraries).
         """
-        self.objects = copy(objects)
+        self.objects = objects[:]
 
 
     # -- Private utility methods --------------------------------------
