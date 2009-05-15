@@ -85,6 +85,17 @@ class WeakValueDictionary(collections.MutableMapping):
                 new[key] = o
         return new
 
+    __copy__ = copy
+
+    def __deepcopy__(self, memo):
+        from copy import deepcopy
+        new = self.__class__()
+        for key, wr in self.data.items():
+            o = wr()
+            if o is not None:
+                new[deepcopy(key, memo)] = o
+        return new
+
     def get(self, key, default=None):
         try:
             wr = self.data[key]
@@ -249,6 +260,17 @@ class WeakKeyDictionary(collections.MutableMapping):
             o = key()
             if o is not None:
                 new[o] = value
+        return new
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memo):
+        from copy import deepcopy
+        new = self.__class__()
+        for key, value in self.data.items():
+            o = key()
+            if o is not None:
+                new[o] = deepcopy(value, memo)
         return new
 
     def get(self, key, default=None):
