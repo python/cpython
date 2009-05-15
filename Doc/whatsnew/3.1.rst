@@ -353,9 +353,40 @@ New, Improved, and Deprecated Modules
   It provides classes to represent, verify and manipulate IPv4 and IPv6
   host and network addresses.
 
+  The :func:`ipaddr.IP` factory function creates an address object from
+  a string or integer representing the IP or the IP and prefix/netmask.
+  The objects provide a number of attributes for direct access to
+  components of the full address::
+
+    >>> addr = IP('2001:658:22A:CAFE:200::1/64')
+    >>> for attr in ['ip', 'ip_ext', 'ip_ext_full', 'network', 'network_ext',
+    ...              'hostmask', 'hostmask_ext', 'broadcast', 'broadcast_ext',
+    ...              'netmask', 'netmask_ext', 'prefixlen']:
+    ...     print(attr, '=', getattr(addr, attr))
+    ...
+    ip = 42540616829182469433547762482097946625
+    ip_ext = 2001:658:22a:cafe:200::1
+    ip_ext_full = 2001:0658:022a:cafe:0200:0000:0000:0001
+    network = 42540616829182469433403647294022090752
+    network_ext = 2001:658:22a:cafe::
+    hostmask = 18446744073709551615
+    hostmask_ext = ::ffff:ffff:ffff:ffff
+    broadcast = 42540616829182469451850391367731642367
+    broadcast_ext = 2001:658:22a:cafe:ffff:ffff:ffff:ffff
+    netmask = 340282366920938463444927863358058659840
+    netmask_ext = 64
+    prefixlen = 64
+
+  Each address object supports a number of simple properties including:
+  ``is_private``, ``is_multicast``, ``is_loopback``, and ``is_link_local``.
+
+  Additionally, the address objects provide a sort order for IP addresses,
+  support for address ranges (stored as lists of addresses), and subnet
+  computations.
+
   (Contributed by Google, :issue:`3959`.)
 
-* The :mod:`nntplib` :mod:`imaplib` modules now support IPv6.
+* The :mod:`nntplib` and :mod:`imaplib` modules now support IPv6.
 
   (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
 
