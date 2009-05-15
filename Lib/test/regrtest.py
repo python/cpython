@@ -598,6 +598,7 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
     else:
         cfp = io.StringIO()  # XXX Should use io.StringIO()
 
+    refleak = False  # True if the test leaked references.
     try:
         save_stdout = sys.stdout
         try:
@@ -619,7 +620,7 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             if indirect_test is not None:
                 indirect_test()
             if huntrleaks:
-                dash_R(the_module, test, indirect_test, huntrleaks)
+                refleak = dash_R(the_module, test, indirect_test, huntrleaks)
             test_time = time.time() - start_time
             test_times.append((test_time, test))
         finally:
@@ -649,6 +650,8 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
             sys.stdout.flush()
         return 0
     else:
+        if refleak:
+            return 0
         if not cfp:
             return 1
         output = cfp.getvalue()
@@ -698,6 +701,11 @@ def cleanup_test_droppings(testname, verbose):
                 "removed: %s" % (testname, kind, name, msg)), file=sys.stderr)
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
+    """Run a test multiple times, looking for reference leaks.
+
+    Returns:
+        False if the test didn't leak references; True if we detected refleaks.
+    """
     # This code is hackish and inelegant, but it seems to do the job.
     import copyreg, _abcoll
 
@@ -745,6 +753,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         refrep = open(fname, "a")
         print(msg, file=refrep)
         refrep.close()
+        return True
+    return False
 
 def dash_R_cleanup(fs, ps, pic, abcs):
     import gc, copyreg
