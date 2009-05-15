@@ -147,6 +147,15 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Eric Smith; :issue:`5237`.)
 
+* The :func:`string.maketrans` function is deprecated and is replaced by new
+  static methods, :meth:`bytes.maketrans` and :meth:`bytearray.maketrans`.
+  This change solves the confusion around which types were supported by the
+  :mod:`string` module. Now, :class:`str`, :class:`bytes`, and
+  :class:`bytearray` each have their own **maketrans** and **translate**
+  methods with intermediate translation tables of the appropriate type.
+
+  (Contributed by Georg Brandl; :issue:`5675`.)
+
 * ``round(x, n)`` now returns an integer if *x* is an integer.
   Previously it returned a float::
 
@@ -248,8 +257,8 @@ New, Improved, and Deprecated Modules
     [2, 3, 5, 7]
 
     >>> c = count(start=Fraction(1,2), step=Fraction(1,6))
-    >>> next(c), next(c), next(c), next(c)
-    (Fraction(1, 2), Fraction(2, 3), Fraction(5, 6), Fraction(1, 1))
+    >>> [next(c), next(c), next(c), next(c)]
+    [Fraction(1, 2), Fraction(2, 3), Fraction(5, 6), Fraction(1, 1)]
 
   (Contributed by Raymond Hettinger.)
 
@@ -433,10 +442,10 @@ Major performance enhancements have been added:
 
   (Contributed by Antoine Pitrou and Amaury Forgeot d'Arc, :issue:`4868`.)
 
-* The :mod:`json` module is getting a C extension to substantially improve
+* The :mod:`json` module now has a C extension to substantially improve
   its performance.  In addition, the API was modified so that json works
   only with :class:`str`, not with :class:`bytes`.  That change makes the
-  module more closely conform to the `JSON specification <http://json.org/>`_
+  module closely match the `JSON specification <http://json.org/>`_
   which is defined in terms of Unicode.
 
   (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou
@@ -481,6 +490,11 @@ Changes to Python's build process and to the C API include:
 * Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
+
+* Added a new :cfunc:`PyOS_string_to_double` function to replace the
+  deprecated functions :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof`.
+
+  (Contributed by Mark Dickinson; :issue:`5914`.)
 
 * Added :ctype:`PyCapsule` as a replacement for the :ctype:`PyCObject` API.
   The principal difference is that the new type has a well defined interface
