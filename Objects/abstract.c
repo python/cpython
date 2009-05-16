@@ -2574,14 +2574,8 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		Py_LeaveRecursiveCall();
 		return r;
 	}
-	if (name == NULL) {
-		name = PyUnicode_InternFromString("__instancecheck__");
-		if (name == NULL)
-			return -1;
-	}
-	checker = PyObject_GetAttr(cls, name);
-	if (checker == NULL && PyErr_Occurred())
-		PyErr_Clear();
+
+	checker = _PyObject_LookupSpecial(cls, "__instancecheck__", &name);
 	if (checker != NULL) {
 		PyObject *res;
 		int ok = -1;
@@ -2644,14 +2638,8 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 		Py_LeaveRecursiveCall();
 		return r;
 	}
-	if (name == NULL) {
-		name = PyUnicode_InternFromString("__subclasscheck__");
-		if (name == NULL)
-			return -1;
-	}
-	PyErr_Fetch(&t, &v, &tb);
-	checker = PyObject_GetAttr(cls, name);
-	PyErr_Restore(t, v, tb);
+
+	checker = _PyObject_LookupSpecial(cls, "__subclasscheck__", &name);
 	if (checker != NULL) {
 		PyObject *res;
 		int ok = -1;

@@ -599,14 +599,6 @@ type___instancecheck__(PyObject *type, PyObject *inst)
 
 
 static PyObject *
-type_get_instancecheck(PyObject *type, void *context)
-{
-	static PyMethodDef ml = {"__instancecheck__",
-				 type___instancecheck__, METH_O };
-	return PyCFunction_New(&ml, type);
-}
-
-static PyObject *
 type___subclasscheck__(PyObject *type, PyObject *inst)
 {
 	switch (_PyObject_RealIsSubclass(inst, type)) {
@@ -619,13 +611,6 @@ type___subclasscheck__(PyObject *type, PyObject *inst)
 	}
 }
 
-static PyObject *
-type_get_subclasscheck(PyObject *type, void *context)
-{
-	static PyMethodDef ml = {"__subclasscheck__",
-				 type___subclasscheck__, METH_O };
-	return PyCFunction_New(&ml, type);
-}
 
 static PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, (setter)type_set_name, NULL},
@@ -635,8 +620,6 @@ static PyGetSetDef type_getsets[] = {
 	 (setter)type_set_abstractmethods, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__doc__", (getter)type_get_doc, NULL, NULL},
-	{"__instancecheck__", (getter)type_get_instancecheck, NULL, NULL},
-	{"__subclasscheck__", (getter)type_get_subclasscheck, NULL, NULL},
 	{0}
 };
 
@@ -2518,6 +2501,10 @@ static PyMethodDef type_methods[] = {
 	 METH_VARARGS | METH_KEYWORDS | METH_CLASS,
          PyDoc_STR("__prepare__() -> dict\n"
                    "used to create the namespace for the class statement")},
+	{"__instancecheck__", type___instancecheck__, METH_O,
+	 PyDoc_STR("__instancecheck__() -> check if an object is an instance")},
+	{"__subclasscheck__", type___subclasscheck__, METH_O,
+	 PyDoc_STR("__subclasschck__ -> check if an class is a subclass")},
 	{0}
 };
 
