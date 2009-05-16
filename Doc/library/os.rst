@@ -930,7 +930,8 @@ Files and Directories
 
    .. versionchanged:: 2.3
       On Windows NT/2k/XP and Unix, if *path* is a Unicode object, the result will be
-      a list of Unicode objects.
+      a list of Unicode objects. Undecodable filenames will still be returned as
+      string objects.
 
 
 .. function:: lstat(path)
