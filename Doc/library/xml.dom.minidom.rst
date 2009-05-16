@@ -30,7 +30,7 @@ DOM applications typically start by parsing some XML into a DOM.  With
 The :func:`parse` function can take either a filename or an open file object.
 
 
-.. function:: parse(filename_or_file, parser)
+.. function:: parse(filename_or_file[, parser[, bufsize]])
 
    Return a :class:`Document` from the given input. *filename_or_file* may be
    either a file name, or a file-like object. *parser*, if given, must be a SAX2
