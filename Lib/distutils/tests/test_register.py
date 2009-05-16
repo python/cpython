@@ -4,10 +4,14 @@ import os
 import unittest
 import getpass
 import urllib2
+import warnings
+
+from test.test_support import check_warnings
 
 from distutils.command import register as register_module
 from distutils.command.register import register
 from distutils.core import Distribution
+from distutils.errors import DistutilsSetupError
 
 from distutils.tests import support
 from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
@@ -59,7 +63,7 @@ class FakeOpener(object):
     def read(self):
         return 'xxx'
 
-class registerTestCase(PyPIRCCommandTestCase):
+class RegisterTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         PyPIRCCommandTestCase.setUp(self)
@@ -76,10 +80,11 @@ class registerTestCase(PyPIRCCommandTestCase):
         urllib2.build_opener = self.old_opener
         PyPIRCCommandTestCase.tearDown(self)
 
-    def _get_cmd(self):
-        metadata = {'url': 'xxx', 'author': 'xxx',
-                    'author_email': 'xxx',
-                    'name': 'xxx', 'version': 'xxx'}
+    def _get_cmd(self, metadata=None):
+        if metadata is None:
+            metadata = {'url': 'xxx', 'author': 'xxx',
+                        'author_email': 'xxx',
+                        'name': 'xxx', 'version': 'xxx'}
         pkg_info, dist = self.create_dist(**metadata)
         return register(dist)
 
@@ -184,8 +189,70 @@ class registerTestCase(PyPIRCCommandTestCase):
         self.assertEquals(headers['Content-length'], '290')
         self.assert_('tarek' in req.data)
 
+    def test_strict(self):
+        # testing the script option
+        # when on, the register command stops if
+        # the metadata is incomplete or if
+        # long_description is not reSt compliant
+
+        # empty metadata
+        cmd = self._get_cmd({})
+        cmd.ensure_finalized()
+        cmd.strict = 1
+        self.assertRaises(DistutilsSetupError, cmd.run)
+
+        # we don't test the reSt feature if docutils
+        # is not installed
+        try:
+            import docutils
+        except ImportError:
+            return
+
+        # metadata are OK but long_description is broken
+        metadata = {'url': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': 'xxx',
+                    'long_description': 'title\n==\n\ntext'}
+
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = 1
+        self.assertRaises(DistutilsSetupError, cmd.run)
+
+        # now something that works
+        metadata['long_description'] = 'title\n=====\n\ntext'
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = 1
+        inputs = RawInputs('1', 'tarek', 'y')
+        register_module.raw_input = inputs.__call__
+        # let's run the command
+        try:
+            cmd.run()
+        finally:
+            del register_module.raw_input
+
+        # strict is not by default
+        cmd = self._get_cmd()
+        cmd.ensure_finalized()
+        inputs = RawInputs('1', 'tarek', 'y')
+        register_module.raw_input = inputs.__call__
+        # let's run the command
+        try:
+            cmd.run()
+        finally:
+            del register_module.raw_input
+
+    def test_check_metadata_deprecated(self):
+        # makes sure make_metadata is deprecated
+        cmd = self._get_cmd()
+        with check_warnings() as w:
+            warnings.simplefilter("always")
+            cmd.check_metadata()
+            self.assertEquals(len(w.warnings), 1)
+
 def test_suite():
-    return unittest.makeSuite(registerTestCase)
+    return unittest.makeSuite(RegisterTestCase)
 
 if __name__ == "__main__":
     unittest.main(defaultTest="test_suite")
