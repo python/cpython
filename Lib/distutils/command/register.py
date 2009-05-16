@@ -10,6 +10,7 @@ __revision__ = "$Id$"
 import os, string, getpass
 import io
 import urllib.parse, urllib.request
+from warnings import warn
 
 from distutils.core import PyPIRCCommand
 from distutils.errors import *
@@ -21,18 +22,34 @@ class register(PyPIRCCommand):
     user_options = PyPIRCCommand.user_options + [
         ('list-classifiers', None,
          'list the valid Trove classifiers'),
+        ('strict', None ,
+         'Will stop the registering if the meta-data are not fully compliant')
         ]
     boolean_options = PyPIRCCommand.boolean_options + [
-        'verify', 'list-classifiers']
+        'verify', 'list-classifiers', 'strict']
+
+    sub_commands = [('check', lambda self: True)]
 
     def initialize_options(self):
         PyPIRCCommand.initialize_options(self)
         self.list_classifiers = 0
+        self.strict = 0
+
+    def finalize_options(self):
+        PyPIRCCommand.finalize_options(self)
+        # setting options for the `check` subcommand
+        check_options = {'strict': ('register', self.strict),
+                         'restructuredtext': ('register', 1)}
+        self.distribution.command_options['check'] = check_options
 
     def run(self):
         self.finalize_options()
         self._set_config()
-        self.check_metadata()
+
+        # Run sub commands
+        for cmd_name in self.get_sub_commands():
+            self.run_command(cmd_name)
+
         if self.dry_run:
             self.verify_metadata()
         elif self.list_classifiers:
@@ -41,34 +58,14 @@ class register(PyPIRCCommand):
             self.send_metadata()
 
     def check_metadata(self):
-        """Ensure that all required elements of meta-data (name, version,
-           URL, (author and author_email) or (maintainer and
-           maintainer_email)) are supplied by the Distribution object; warn if
-           any are missing.
-        """
-        metadata = self.distribution.metadata
-
-        missing = []
-        for attr in ('name', 'version', 'url'):
-            if not (hasattr(metadata, attr) and getattr(metadata, attr)):
-                missing.append(attr)
-
-        if missing:
-            self.warn("missing required meta-data: " +
-                      ", ".join(missing))
-
-        if metadata.author:
-            if not metadata.author_email:
-                self.warn("missing meta-data: if 'author' supplied, " +
-                          "'author_email' must be supplied too")
-        elif metadata.maintainer:
-            if not metadata.maintainer_email:
-                self.warn("missing meta-data: if 'maintainer' supplied, " +
-                          "'maintainer_email' must be supplied too")
-        else:
-            self.warn("missing meta-data: either (author and author_email) " +
-                      "or (maintainer and maintainer_email) " +
-                      "must be supplied")
+        """Deprecated API."""
+        warn("distutils.command.register.check_metadata is deprecated, \
+              use the check command instead", PendingDeprecationWarning)
+        check = self.distribution.get_command_obj('check')
+        check.ensure_finalized()
+        check.strict = self.strict
+        check.restructuredtext = 1
+        check.run()
 
     def _set_config(self):
         ''' Reads the configuration file and set attributes.
