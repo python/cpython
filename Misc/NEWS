@@ -293,6 +293,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6041: Now distutils `sdist` and `register` commands use `check` as a 
+  subcommand.
+
 - Issue #2116: Weak references and weak dictionaries now support copy()ing and
   deepcopy()ing.
 
