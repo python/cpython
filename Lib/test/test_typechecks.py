@@ -29,10 +29,6 @@ class SubInt(Integer):
     pass
 
 
-class Evil:
-    def __instancecheck__(self, inst): return False
-
-
 class TypeChecksTest(unittest.TestCase):
 
     def testIsSubclassInternal(self):
@@ -75,11 +71,18 @@ class TypeChecksTest(unittest.TestCase):
         self.assertEqual(isinstance(42, SubInt), False)
         self.assertEqual(isinstance(42, (SubInt,)), False)
 
-    def testInfiniteRecursionCaughtProperly(self):
-        e = Evil()
-        # This invokes isinstance() recursively, until the stack is exhausted.
-        self.assertRaises(RuntimeError, isinstance, e, Evil)
-        # XXX How to check the same situation for issubclass()?
+    def test_oldstyle(self):
+        # These should just be ignored.
+        class X:
+            def __instancecheck__(self, inst):
+                return True
+            def __subclasscheck__(self, cls):
+                return True
+        class Sub(X): pass
+        self.assertFalse(isinstance(3, X))
+        self.assertTrue(isinstance(X(), X))
+        self.assertFalse(issubclass(int, X))
+        self.assertTrue(issubclass(Sub, X))
 
 
 def test_main():
