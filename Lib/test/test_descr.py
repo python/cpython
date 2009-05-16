@@ -1556,16 +1556,25 @@ order (MRO) for bases """
             return 0
         def stop(self):
             raise StopIteration
+        def return_true(self, thing=None):
+            return True
+        def do_isinstance(obj):
+            return isinstance(int, obj)
+        def do_issubclass(obj):
+            return issubclass(int, obj)
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
         # does it right.
         specials = [
-            ("__bytes__", bytes, hello, {}),
-            ("__reversed__", reversed, empty_seq, {}),
-            ("__length_hint__", list, zero,
+            ("__bytes__", bytes, hello, set(), {}),
+            ("__reversed__", reversed, empty_seq, set(), {}),
+            ("__length_hint__", list, zero, set(),
              {"__iter__" : iden, "__next__" : stop}),
-            ("__sizeof__", sys.getsizeof, zero, {}),
+            ("__sizeof__", sys.getsizeof, zero, set(), {}),
+            ("__instancecheck__", do_isinstance, return_true, set(), {}),
+            ("__subclasscheck__", do_issubclass, return_true,
+             set(("__bases__",)), {}),
             # These two fail because the compiler generates LOAD_ATTR to look
             # them up.  We'd have to add a new opcode to fix this, and it's
             # probably not worth it.
@@ -1577,7 +1586,9 @@ order (MRO) for bases """
             def __getattr__(self, attr, test=self):
                 test.fail("__getattr__ called with {0}".format(attr))
             def __getattribute__(self, attr, test=self):
-                test.fail("__getattribute__ called with {0}".format(attr))
+                if attr not in ok:
+                    test.fail("__getattribute__ called with {0}".format(attr))
+                return object.__getattribute__(attr)
         class SpecialDescr(object):
             def __init__(self, impl):
                 self.impl = impl
@@ -1586,7 +1597,7 @@ order (MRO) for bases """
                 return self.impl.__get__(obj, owner)
 
 
-        for name, runner, meth_impl, env in specials:
+        for name, runner, meth_impl, ok, env in specials:
             class X(Checker):
                 pass
             for attr, obj in env.items():
