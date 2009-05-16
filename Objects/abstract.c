@@ -2902,7 +2902,6 @@ int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
 	static PyObject *name = NULL;
-	PyObject *checker;
 
 	/* Quick test for an exact match */
 	if (Py_TYPE(inst) == (PyTypeObject *)cls)
@@ -2927,33 +2926,25 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		return r;
 	}
 
-	if (PyClass_Check(cls) || PyInstance_Check(cls)) {
-		checker = PyObject_GetAttrString(cls, "__instancecheck__");
-		if (checker == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_AttributeError))
-				PyErr_Clear();
-			else
-				return -1;
-		}
-	}
-	else {
+	if (!(PyClass_Check(cls) || PyInstance_Check(cls))) {
+		PyObject *checker;
 		checker = _PyObject_LookupSpecial(cls, "__instancecheck__", &name);
-	}
-	if (checker != NULL) {
-		PyObject *res;
-		int ok = -1;
-		if (Py_EnterRecursiveCall(" in __instancecheck__")) {
+		if (checker != NULL) {
+			PyObject *res;
+			int ok = -1;
+			if (Py_EnterRecursiveCall(" in __instancecheck__")) {
+				Py_DECREF(checker);
+				return ok;
+			}
+			res = PyObject_CallFunctionObjArgs(checker, inst, NULL);
+			Py_LeaveRecursiveCall();
 			Py_DECREF(checker);
+			if (res != NULL) {
+				ok = PyObject_IsTrue(res);
+				Py_DECREF(res);
+			}
 			return ok;
 		}
-		res = PyObject_CallFunctionObjArgs(checker, inst, NULL);
-		Py_LeaveRecursiveCall();
-		Py_DECREF(checker);
-		if (res != NULL) {
-			ok = PyObject_IsTrue(res);
-			Py_DECREF(res);
-		}
-		return ok;
 	}
 	return recursive_isinstance(inst, cls);
 }
@@ -2992,8 +2983,6 @@ int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
 	static PyObject *name = NULL;
-	PyObject *t, *v, *tb;
-	PyObject *checker;
 	
  	if (PyTuple_Check(cls)) {
  		Py_ssize_t i;
@@ -3013,36 +3002,25 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
  		Py_LeaveRecursiveCall();
  		return r;
  	}
-	if (PyClass_Check(cls) || PyInstance_Check(cls)) {
-		PyErr_Fetch(&t, &v, &tb);
-		checker = PyObject_GetAttr(cls, name);
-		if (checker == NULL &&
-		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-			Py_XDECREF(t);
-			Py_XDECREF(v);
-			Py_XDECREF(tb);
-			return -1;
-		}
-		PyErr_Restore(t, v, tb);
-	}
-	else {
+	if (!(PyClass_Check(cls) || PyInstance_Check(cls))) {
+		PyObject *checker;
 		checker = _PyObject_LookupSpecial(cls, "__subclasscheck__", &name);
-	}
-	if (checker != NULL) {
-		PyObject *res;
-		int ok = -1;
-		if (Py_EnterRecursiveCall(" in __subclasscheck__")) {
+		if (checker != NULL) {
+			PyObject *res;
+			int ok = -1;
+			if (Py_EnterRecursiveCall(" in __subclasscheck__")) {
+				Py_DECREF(checker);
+				return ok;
+			}
+			res = PyObject_CallFunctionObjArgs(checker, derived, NULL);
+			Py_LeaveRecursiveCall();
 			Py_DECREF(checker);
+			if (res != NULL) {
+				ok = PyObject_IsTrue(res);
+				Py_DECREF(res);
+			}
 			return ok;
 		}
-		res = PyObject_CallFunctionObjArgs(checker, derived, NULL);
-		Py_LeaveRecursiveCall();
-		Py_DECREF(checker);
-		if (res != NULL) {
-			ok = PyObject_IsTrue(res);
-			Py_DECREF(res);
-		}
-		return ok;
 	}
 	return recursive_issubclass(derived, cls);
 }
