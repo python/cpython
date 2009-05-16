@@ -2927,7 +2927,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		return r;
 	}
 
-	if (PyInstance_Check(cls)) {
+	if (PyClass_Check(cls) || PyInstance_Check(cls)) {
 		checker = PyObject_GetAttrString(cls, "__instancecheck__");
 		if (checker == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -3013,7 +3013,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
  		Py_LeaveRecursiveCall();
  		return r;
  	}
-	if (PyInstance_Check(cls)) {
+	if (PyClass_Check(cls) || PyInstance_Check(cls)) {
 		PyErr_Fetch(&t, &v, &tb);
 		checker = PyObject_GetAttr(cls, name);
 		if (checker == NULL &&
