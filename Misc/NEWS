@@ -12,8 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
-- __isinstancecheck__ and __subclasscheck__ are now completely ignored on
-  classic classes and instances.
+- __instancecheck__ and __subclasscheck__ are now completely ignored on classic
+  classes and instances.
 
 - Issue #5994: the marshal module now has docstrings.
 
