@@ -267,23 +267,18 @@ Common commands: (see '--help-commands' for more)
 
         self.finalize_options()
 
-    # __init__ ()
-
-
-    def get_option_dict (self, command):
+    def get_option_dict(self, command):
         """Get the option dictionary for a given command.  If that
         command's option dictionary hasn't been created yet, then create it
         and return the new dictionary; otherwise, return the existing
         option dictionary.
         """
-
         dict = self.command_options.get(command)
         if dict is None:
             dict = self.command_options[command] = {}
         return dict
 
-
-    def dump_option_dicts (self, header=None, commands=None, indent=""):
+    def dump_option_dicts(self, header=None, commands=None, indent=""):
         from pprint import pformat
 
         if commands is None:             # dump all command option dicts
@@ -308,13 +303,9 @@ Common commands: (see '--help-commands' for more)
                 for line in string.split(out, "\n"):
                     print indent + "  " + line
 
-    # dump_option_dicts ()
-
-
-
     # -- Config file finding/parsing methods ---------------------------
 
-    def find_config_files (self):
+    def find_config_files(self):
         """Find as many configuration files as should be processed for this
         platform, and return a list of filenames in the order in which they
         should be parsed.  The filenames returned are guaranteed to exist
@@ -355,10 +346,7 @@ Common commands: (see '--help-commands' for more)
 
         return files
 
-    # find_config_files ()
-
-
-    def parse_config_files (self, filenames=None):
+    def parse_config_files(self, filenames=None):
         from ConfigParser import ConfigParser
 
         if filenames is None:
@@ -400,12 +388,9 @@ Common commands: (see '--help-commands' for more)
                 except ValueError, msg:
                     raise DistutilsOptionError, msg
 
-    # parse_config_files ()
-
-
     # -- Command-line parsing methods ----------------------------------
 
-    def parse_command_line (self):
+    def parse_command_line(self):
         """Parse the setup script's command line, taken from the
         'script_args' instance attribute (which defaults to 'sys.argv[1:]'
         -- see 'setup()' in core.py).  This list is first processed for
@@ -478,9 +463,7 @@ Common commands: (see '--help-commands' for more)
         # All is well: return true
         return 1
 
-    # parse_command_line()
-
-    def _get_toplevel_options (self):
+    def _get_toplevel_options(self):
         """Return the non-display options recognized at the top level.
 
         This includes options that are recognized *only* at the top
@@ -491,7 +474,7 @@ Common commands: (see '--help-commands' for more)
              "list of packages that provide distutils commands"),
             ]
 
-    def _parse_command_opts (self, parser, args):
+    def _parse_command_opts(self, parser, args):
         """Parse the command-line options for a single command.
         'parser' must be a FancyGetopt instance; 'args' must be the list
         of arguments, starting with the current command (whose options
@@ -587,14 +570,11 @@ Common commands: (see '--help-commands' for more)
 
         return args
 
-    # _parse_command_opts ()
-
-    def finalize_options (self):
+    def finalize_options(self):
         """Set final values for all the options on the Distribution
         instance, analogous to the .finalize_options() method of Command
         objects.
         """
-
         keywords = self.metadata.keywords
         if keywords is not None:
             if type(keywords) is StringType:
@@ -607,11 +587,8 @@ Common commands: (see '--help-commands' for more)
                 platformlist = string.split(platforms, ',')
                 self.metadata.platforms = map(string.strip, platformlist)
 
-    def _show_help (self,
-                    parser,
-                    global_options=1,
-                    display_options=1,
-                    commands=[]):
+    def _show_help(self, parser, global_options=1, display_options=1,
+                   commands=[]):
         """Show help for the setup script command-line in the form of
         several lists of command-line options.  'parser' should be a
         FancyGetopt instance; do not expect it to be returned in the
@@ -661,10 +638,7 @@ Common commands: (see '--help-commands' for more)
         print gen_usage(self.script_name)
         return
 
-    # _show_help ()
-
-
-    def handle_display_options (self, option_order):
+    def handle_display_options(self, option_order):
         """If there were any non-global "display-only" options
         (--help-commands or the metadata display options) on the command
         line, display the requested info and return true; else return
@@ -704,13 +678,10 @@ Common commands: (see '--help-commands' for more)
 
         return any_display_options
 
-    # handle_display_options()
-
-    def print_command_list (self, commands, header, max_length):
+    def print_command_list(self, commands, header, max_length):
         """Print a subset of the list of all commands -- used by
         'print_commands()'.
         """
-
         print header + ":"
 
         for cmd in commands:
@@ -724,10 +695,7 @@ Common commands: (see '--help-commands' for more)
 
             print "  %-*s  %s" % (max_length, cmd, description)
 
-    # print_command_list ()
-
-
-    def print_commands (self):
+    def print_commands(self):
         """Print out a help message listing all available commands with a
         description of each.  The list is divided into "standard commands"
         (listed in distutils.command.__all__) and "extra commands"
@@ -735,7 +703,6 @@ Common commands: (see '--help-commands' for more)
         descriptions come from the command class attribute
         'description'.
         """
-
         import distutils.command
         std_commands = distutils.command.__all__
         is_std = {}
@@ -761,9 +728,7 @@ Common commands: (see '--help-commands' for more)
                                     "Extra commands",
                                     max_length)
 
-    # print_commands ()
-
-    def get_command_list (self):
+    def get_command_list(self):
         """Get a list of (command, description) tuples.
         The list is divided into "standard commands" (listed in
         distutils.command.__all__) and "extra commands" (mentioned in
@@ -798,7 +763,7 @@ Common commands: (see '--help-commands' for more)
 
     # -- Command class/object methods ----------------------------------
 
-    def get_command_packages (self):
+    def get_command_packages(self):
         """Return a list of packages from which commands are loaded."""
         pkgs = self.command_packages
         if not isinstance(pkgs, type([])):
@@ -811,7 +776,7 @@ Common commands: (see '--help-commands' for more)
             self.command_packages = pkgs
         return pkgs
 
-    def get_command_class (self, command):
+    def get_command_class(self, command):
         """Return the class that implements the Distutils command named by
         'command'.  First we check the 'cmdclass' dictionary; if the
         command is mentioned there, we fetch the class object from the
@@ -850,9 +815,7 @@ Common commands: (see '--help-commands' for more)
         raise DistutilsModuleError("invalid command '%s'" % command)
 
 
-    # get_command_class ()
-
-    def get_command_obj (self, command, create=1):
+    def get_command_obj(self, command, create=1):
         """Return the command object for 'command'.  Normally this object
         is cached on a previous call to 'get_command_obj()'; if no command
         object for 'command' is in the cache, then we either create and
@@ -879,7 +842,7 @@ Common commands: (see '--help-commands' for more)
 
         return cmd_obj
 
-    def _set_command_options (self, command_obj, option_dict=None):
+    def _set_command_options(self, command_obj, option_dict=None):
         """Set the options for 'command_obj' from 'option_dict'.  Basically
         this means copying elements of a dictionary ('option_dict') to
         attributes of an instance ('command').
@@ -919,7 +882,7 @@ Common commands: (see '--help-commands' for more)
             except ValueError, msg:
                 raise DistutilsOptionError, msg
 
-    def reinitialize_command (self, command, reinit_subcommands=0):
+    def reinitialize_command(self, command, reinit_subcommands=0):
         """Reinitializes a command to the state it was in when first
         returned by 'get_command_obj()': ie., initialized but not yet
         finalized.  This provides the opportunity to sneak option
@@ -958,13 +921,12 @@ Common commands: (see '--help-commands' for more)
 
         return command
 
-
     # -- Methods that operate on the Distribution ----------------------
 
-    def announce (self, msg, level=1):
+    def announce(self, msg, level=1):
         log.debug(msg)
 
-    def run_commands (self):
+    def run_commands(self):
         """Run each command that was seen on the setup script command line.
         Uses the list of commands found and cache of command objects
         created by 'get_command_obj()'.
@@ -972,10 +934,9 @@ Common commands: (see '--help-commands' for more)
         for cmd in self.commands:
             self.run_command(cmd)
 
-
     # -- Methods that operate on its Commands --------------------------
 
-    def run_command (self, command):
+    def run_command(self, command):
         """Do whatever it takes to run a command (including nothing at all,
         if the command has already been run).  Specifically: if we have
         already created and run the command named by 'command', return
@@ -996,28 +957,28 @@ Common commands: (see '--help-commands' for more)
 
     # -- Distribution query methods ------------------------------------
 
-    def has_pure_modules (self):
+    def has_pure_modules(self):
         return len(self.packages or self.py_modules or []) > 0
 
-    def has_ext_modules (self):
+    def has_ext_modules(self):
         return self.ext_modules and len(self.ext_modules) > 0
 
-    def has_c_libraries (self):
+    def has_c_libraries(self):
         return self.libraries and len(self.libraries) > 0
 
-    def has_modules (self):
+    def has_modules(self):
         return self.has_pure_modules() or self.has_ext_modules()
 
-    def has_headers (self):
+    def has_headers(self):
         return self.headers and len(self.headers) > 0
 
-    def has_scripts (self):
+    def has_scripts(self):
         return self.scripts and len(self.scripts) > 0
 
-    def has_data_files (self):
+    def has_data_files(self):
         return self.data_files and len(self.data_files) > 0
 
-    def is_pure (self):
+    def is_pure(self):
         return (self.has_pure_modules() and
                 not self.has_ext_modules() and
                 not self.has_c_libraries())
@@ -1028,9 +989,6 @@ Common commands: (see '--help-commands' for more)
     # they are defined in a sneaky way: the constructor binds self.get_XXX
     # to self.metadata.get_XXX.  The actual code is in the
     # DistributionMetadata class, below.
-
-# class Distribution
-
 
 class DistributionMetadata:
     """Dummy class to hold the distribution meta-data: name, version,
@@ -1067,18 +1025,14 @@ class DistributionMetadata:
         self.requires = None
         self.obsoletes = None
 
-    def write_pkg_info (self, base_dir):
+    def write_pkg_info(self, base_dir):
         """Write the PKG-INFO file into the release tree.
         """
         pkg_info = open( os.path.join(base_dir, 'PKG-INFO'), 'w')
-
         self.write_pkg_file(pkg_info)
-
         pkg_info.close()
 
-    # write_pkg_info ()
-
-    def write_pkg_file (self, file):
+    def write_pkg_file(self, file):
         """Write the PKG-INFO format data to a file object.
         """
         version = '1.0'
@@ -1112,7 +1066,6 @@ class DistributionMetadata:
         self._write_list(file, 'Obsoletes', self.get_obsoletes())
 
     def _write_field(self, file, name, value):
-
         if isinstance(value, unicode):
             value = value.encode(PKG_INFO_ENCODING)
         else:
@@ -1120,19 +1073,18 @@ class DistributionMetadata:
         file.write('%s: %s\n' % (name, value))
 
     def _write_list (self, file, name, values):
-
         for value in values:
             self._write_field(file, name, value)
 
     # -- Metadata query methods ----------------------------------------
 
-    def get_name (self):
+    def get_name(self):
         return self.name or "UNKNOWN"
 
     def get_version(self):
         return self.version or "0.0.0"
 
-    def get_fullname (self):
+    def get_fullname(self):
         return "%s-%s" % (self.get_name(), self.get_version())
 
     def get_author(self):
@@ -1148,14 +1100,10 @@ class DistributionMetadata:
         return self.maintainer_email or "UNKNOWN"
 
     def get_contact(self):
-        return (self.maintainer or
-                self.author or
-                "UNKNOWN")
+        return self.maintainer or self.author or "UNKNOWN"
 
     def get_contact_email(self):
-        return (self.maintainer_email or
-                self.author_email or
-                "UNKNOWN")
+        return self.maintainer_email or self.author_email or "UNKNOWN"
 
     def get_url(self):
         return self.url or "UNKNOWN"
@@ -1183,7 +1131,6 @@ class DistributionMetadata:
         return self.download_url or "UNKNOWN"
 
     # PEP 314
-
     def get_requires(self):
         return self.requires or []
 
@@ -1212,10 +1159,7 @@ class DistributionMetadata:
             distutils.versionpredicate.VersionPredicate(v)
         self.obsoletes = value
 
-# class DistributionMetadata
-
-
-def fix_help_options (options):
+def fix_help_options(options):
     """Convert a 4-tuple 'help_options' list as found in various command
     classes to the 3-tuple form required by FancyGetopt.
     """
