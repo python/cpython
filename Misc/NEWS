@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #3527: Removed Py_WIN_WIDE_FILENAMES which is not used any more.
+
 - __instancecheck__ and __subclasscheck__ are now completely ignored on classic
   classes and instances.
 
