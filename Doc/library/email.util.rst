@@ -84,7 +84,7 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    about for common use.
 
 
-.. function:: formatdate([timeval[, localtime][, usegmt]])
+.. function:: formatdate(timeval=None, localtime=False, usegmt=False)
 
    Returns a date string as per :rfc:`2822`, e.g.::
 
@@ -105,11 +105,11 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    ``False``.
 
 
-.. function:: make_msgid([idstring])
+.. function:: make_msgid(idstring=None)
 
    Returns a string suitable for an :rfc:`2822`\ -compliant
-   :mailheader:`Message-ID` header.  Optional *idstring* if given, is a string used
-   to strengthen the uniqueness of the message id.
+   :mailheader:`Message-ID` header.  Optional *idstring* if given, is a string
+   used to strengthen the uniqueness of the message id.
 
 
 .. function:: decode_rfc2231(s)
@@ -117,7 +117,7 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    Decode the string *s* according to :rfc:`2231`.
 
 
-.. function:: encode_rfc2231(s[, charset[, language]])
+.. function:: encode_rfc2231(s, charset=None, language=None)
 
    Encode the string *s* according to :rfc:`2231`.  Optional *charset* and
    *language*, if given is the character set name and language name to use.  If
@@ -125,7 +125,7 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    is not, the string is encoded using the empty string for *language*.
 
 
-.. function:: collapse_rfc2231_value(value[, errors[, fallback_charset]])
+.. function:: collapse_rfc2231_value(value, errors='replace', fallback_charset='us-ascii')
 
    When a header parameter is encoded in :rfc:`2231` format,
    :meth:`Message.get_param` may return a 3-tuple containing the character set,

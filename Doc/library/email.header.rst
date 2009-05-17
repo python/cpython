@@ -46,7 +46,7 @@ header using the embedded ISO-8859-1 character.
 Here is the :class:`Header` class description:
 
 
-.. class:: Header([s[, charset[, maxlinelen[, header_name[, continuation_ws[, errors]]]]]])
+.. class:: Header(s=None, charset=None, maxlinelen=None, header_name=None, continuation_ws=' ', errors='strict')
 
    Create a MIME-compliant header that can contain strings in different character
    sets.
@@ -70,14 +70,15 @@ Here is the :class:`Header` class description:
    for *header_name* is ``None``, meaning it is not taken into account for the
    first line of a long, split header.
 
-   Optional *continuation_ws* must be :rfc:`2822`\ -compliant folding whitespace,
-   and is usually either a space or a hard tab character. This character will be
-   prepended to continuation lines. *continuation_ws* defaults to a single space character (" ").
+   Optional *continuation_ws* must be :rfc:`2822`\ -compliant folding
+   whitespace, and is usually either a space or a hard tab character.  This
+   character will be prepended to continuation lines.  *continuation_ws*
+   defaults to a single space character.
 
    Optional *errors* is passed straight through to the :meth:`append` method.
 
 
-   .. method:: append(s[, charset[, errors]])
+   .. method:: append(s, charset=None, errors='strict')
 
       Append the string *s* to the MIME header.
 
@@ -103,7 +104,7 @@ Here is the :class:`Header` class description:
       :func:`ustr.encode` call, and defaults to "strict".
 
 
-   .. method:: encode([splitchars])
+   .. method:: encode(splitchars=';, \\t', maxlinelen=None)
 
       Encode a message header into an RFC-compliant format, possibly wrapping
       long lines and encapsulating non-ASCII parts in base64 or quoted-printable
@@ -111,9 +112,12 @@ Here is the :class:`Header` class description:
       split long ASCII lines on, in rough support of :rfc:`2822`'s *highest
       level syntactic breaks*.  This doesn't affect :rfc:`2047` encoded lines.
 
+      *maxlinelen*, if given, overrides the instance's value for the maximum
+      line length.
+
+
    The :class:`Header` class also provides a number of methods to support
    standard operators and built-in functions.
-
 
    .. method:: __str__()
 
@@ -156,7 +160,7 @@ The :mod:`email.header` module also provides the following convenient functions.
       [('p\xf6stal', 'iso-8859-1')]
 
 
-.. function:: make_header(decoded_seq[, maxlinelen[, header_name[, continuation_ws]]])
+.. function:: make_header(decoded_seq, maxlinelen=None, header_name=None, continuation_ws=' ')
 
    Create a :class:`Header` instance from a sequence of pairs as returned by
    :func:`decode_header`.
@@ -165,7 +169,7 @@ The :mod:`email.header` module also provides the following convenient functions.
    pairs of the format ``(decoded_string, charset)`` where *charset* is the name of
    the character set.
 
-   This function takes one of those sequence of pairs and returns a :class:`Header`
-   instance.  Optional *maxlinelen*, *header_name*, and *continuation_ws* are as in
-   the :class:`Header` constructor.
+   This function takes one of those sequence of pairs and returns a
+   :class:`Header` instance.  Optional *maxlinelen*, *header_name*, and
+   *continuation_ws* are as in the :class:`Header` constructor.
 

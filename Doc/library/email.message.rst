@@ -36,7 +36,7 @@ Here are the methods of the :class:`Message` class:
    The constructor takes no arguments.
 
 
-   .. method:: as_string([unixfrom])
+   .. method:: as_string(unixfrom=False, maxheaderlen=0)
 
       Return the entire message flattened as a string.  When optional *unixfrom*
       is ``True``, the envelope header is included in the returned string.
@@ -88,7 +88,7 @@ Here are the methods of the :class:`Message` class:
       :meth:`set_payload` instead.
 
 
-   .. method:: get_payload([i[, decode]])
+   .. method:: get_payload(i=None, decode=False)
 
       Return the current payload, which will be a list of
       :class:`Message` objects when :meth:`is_multipart` is ``True``, or a
@@ -113,7 +113,7 @@ Here are the methods of the :class:`Message` class:
       *decode* is ``False``.
 
 
-   .. method:: set_payload(payload[, charset])
+   .. method:: set_payload(payload, charset=None)
 
       Set the entire message object's payload to *payload*.  It is the client's
       responsibility to ensure the payload invariants.  Optional *charset* sets
@@ -201,7 +201,8 @@ Here are the methods of the :class:`Message` class:
    .. method:: __delitem__(name)
 
       Delete all occurrences of the field with name *name* from the message's
-      headers.  No exception is raised if the named field isn't present in the headers.
+      headers.  No exception is raised if the named field isn't present in the
+      headers.
 
 
    .. method:: Message.__contains__(name)
@@ -226,7 +227,7 @@ Here are the methods of the :class:`Message` class:
       values.
 
 
-   .. method:: get(name[, failobj])
+   .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
       :meth:`__getitem__` except that optional *failobj* is returned if the
@@ -235,7 +236,7 @@ Here are the methods of the :class:`Message` class:
    Here are some additional useful methods:
 
 
-   .. method:: get_all(name[, failobj])
+   .. method:: get_all(name, failobj=None)
 
       Return a list of all the values for the field named *name*. If there are
       no such named headers in the message, *failobj* is returned (defaults to
@@ -315,7 +316,7 @@ Here are the methods of the :class:`Message` class:
       :mailheader:`Content-Type` header.
 
 
-   .. method:: get_params([failobj[, header[, unquote]]])
+   .. method:: get_params(failobj=None, header='content-type', unquote=True)
 
       Return the message's :mailheader:`Content-Type` parameters, as a list.
       The elements of the returned list are 2-tuples of key/value pairs, as
@@ -330,7 +331,7 @@ Here are the methods of the :class:`Message` class:
       search instead of :mailheader:`Content-Type`.
 
 
-   .. method:: get_param(param[, failobj[, header[, unquote]]])
+   .. method:: get_param(param, failobj=None, header='content-type', unquote=True)
 
       Return the value of the :mailheader:`Content-Type` header's parameter
       *param* as a string.  If the message has no :mailheader:`Content-Type`
@@ -363,7 +364,7 @@ Here are the methods of the :class:`Message` class:
       to ``False``.
 
 
-   .. method:: set_param(param, value[, header[, requote[, charset[, language]]]])
+   .. method:: set_param(param, value, header='Content-Type', requote=True, charset=None, language='')
 
       Set a parameter in the :mailheader:`Content-Type` header.  If the
       parameter already exists in the header, its value will be replaced with
@@ -381,7 +382,7 @@ Here are the methods of the :class:`Message` class:
       should be strings.
 
 
-   .. method:: del_param(param[, header[, requote]])
+   .. method:: del_param(param, header='content-type', requote=True)
 
       Remove the given parameter completely from the :mailheader:`Content-Type`
       header.  The header will be re-written in place without the parameter or
@@ -390,7 +391,7 @@ Here are the methods of the :class:`Message` class:
       alternative to :mailheader:`Content-Type`.
 
 
-   .. method:: set_type(type[, header][, requote])
+   .. method:: set_type(type, header='Content-Type', requote=True)
 
       Set the main type and subtype for the :mailheader:`Content-Type`
       header. *type* must be a string in the form :mimetype:`maintype/subtype`,
@@ -406,7 +407,7 @@ Here are the methods of the :class:`Message` class:
       header is also added.
 
 
-   .. method:: get_filename([failobj])
+   .. method:: get_filename(failobj=None)
 
       Return the value of the ``filename`` parameter of the
       :mailheader:`Content-Disposition` header of the message.  If the header
@@ -416,7 +417,7 @@ Here are the methods of the :class:`Message` class:
       unquoted as per :func:`email.utils.unquote`.
 
 
-   .. method:: get_boundary([failobj])
+   .. method:: get_boundary(failobj=None)
 
       Return the value of the ``boundary`` parameter of the
       :mailheader:`Content-Type` header of the message, or *failobj* if either
@@ -439,7 +440,7 @@ Here are the methods of the :class:`Message` class:
       have been present in the original :mailheader:`Content-Type` header.
 
 
-   .. method:: get_content_charset([failobj])
+   .. method:: get_content_charset(failobj=None)
 
       Return the ``charset`` parameter of the :mailheader:`Content-Type` header,
       coerced to lower case.  If there is no :mailheader:`Content-Type` header, or if
@@ -449,7 +450,7 @@ Here are the methods of the :class:`Message` class:
       :class:`~email.charset.Charset` instance for the default encoding of the message body.
 
 
-   .. method:: get_charsets([failobj])
+   .. method:: get_charsets(failobj=None)
 
       Return a list containing the character set names in the message.  If the
       message is a :mimetype:`multipart`, then the list will contain one element
