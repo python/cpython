@@ -10,7 +10,7 @@ Iterating over a message object tree is fairly easy with the
 useful higher level iterations over message object trees.
 
 
-.. function:: body_line_iterator(msg[, decode])
+.. function:: body_line_iterator(msg, decode=False)
 
    This iterates over all the payloads in all the subparts of *msg*, returning the
    string payloads line-by-line.  It skips over all the subpart headers, and it
@@ -21,7 +21,7 @@ useful higher level iterations over message object trees.
    Optional *decode* is passed through to :meth:`Message.get_payload`.
 
 
-.. function:: typed_subpart_iterator(msg[, maintype[, subtype]])
+.. function:: typed_subpart_iterator(msg, maintype='text', subtype=None)
 
    This iterates over all the subparts of *msg*, returning only those subparts that
    match the MIME type specified by *maintype* and *subtype*.
@@ -37,7 +37,7 @@ The following function has been added as a useful debugging tool.  It should
 *not* be considered part of the supported public interface for the package.
 
 
-.. function:: _structure(msg[, fp[, level]])
+.. function:: _structure(msg, fp=None, level=0, include_default=False)
 
    Prints an indented representation of the content types of the message object
    structure.  For example::
@@ -62,4 +62,4 @@ The following function has been added as a useful debugging tool.  It should
 
    Optional *fp* is a file-like object to print the output to.  It must be
    suitable for Python's :func:`print` function.  *level* is used internally.
-
+   *include_default*, if true, prints the default type as well.

@@ -23,7 +23,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
 :mod:`email.generator` module:
 
 
-.. class:: Generator(outfp[, mangle_from_[, maxheaderlen]])
+.. class:: Generator(outfp, mangle_from_=True, maxheaderlen=78)
 
    The constructor for the :class:`Generator` class takes a file-like object called
    *outfp* for an argument.  *outfp* must support the :meth:`write` method and be
@@ -47,7 +47,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
    The other public :class:`Generator` methods are:
 
 
-   .. method:: flatten(msg[, unixfrom])
+   .. method:: flatten(msg, unixfrom=False)
 
       Print the textual representation of the message object structure rooted at
       *msg* to the output file specified when the :class:`Generator` instance
@@ -84,7 +84,7 @@ except that non-\ :mimetype:`text` parts are substituted with a format string
 representing the part.
 
 
-.. class:: DecodedGenerator(outfp[, mangle_from_[, maxheaderlen[, fmt]]])
+.. class:: DecodedGenerator(outfp[, mangle_from_=True, maxheaderlen=78, fmt=None)
 
    This class, derived from :class:`Generator` walks through all the subparts of a
    message.  If the subpart is of main type :mimetype:`text`, then it prints the

@@ -2,8 +2,8 @@
 ===================================================
 
 .. module:: email
-   :synopsis: Package supporting the parsing, manipulating, and generating email messages,
-              including MIME documents.
+   :synopsis: Package supporting the parsing, manipulating, and generating
+              email messages, including MIME documents.
 .. moduleauthor:: Barry A. Warsaw <barry@python.org>
 .. sectionauthor:: Barry A. Warsaw <barry@python.org>
 .. Copyright (C) 2001-2007 Python Software Foundation
