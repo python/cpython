@@ -1,4 +1,3 @@
-
 :mod:`gc` --- Garbage Collector interface
 =========================================
 
@@ -37,7 +36,7 @@ The :mod:`gc` module provides the following functions:
    Returns true if automatic collection is enabled.
 
 
-.. function:: collect([generation])
+.. function:: collect(generations=2)
 
    With no arguments, run a full collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
@@ -210,5 +209,3 @@ The following constants are provided for use with :func:`set_debug`:
    The debugging flags necessary for the collector to print information about a
    leaking program (equal to ``DEBUG_COLLECTABLE | DEBUG_UNCOLLECTABLE |
    DEBUG_SAVEALL``).
-
-.. rubric:: Footnotes

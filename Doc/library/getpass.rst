@@ -10,7 +10,7 @@
 The :mod:`getpass` module provides two functions:
 
 
-.. function:: getpass([prompt[, stream]])
+.. function:: getpass(prompt='Password: ', stream=None)
 
    Prompt the user for a password without echoing.  The user is prompted using
    the string *prompt*, which defaults to ``'Password: '``.  On Unix, the prompt

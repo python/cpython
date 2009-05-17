@@ -78,7 +78,7 @@ Cookie Objects
    :meth:`value_decode` are inverses on the range of *value_decode*.
 
 
-.. method:: BaseCookie.output([attrs[, header[, sep]]])
+.. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\\r\\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
    *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
@@ -86,7 +86,7 @@ Cookie Objects
    (CRLF).
 
 
-.. method:: BaseCookie.js_output([attrs])
+.. method:: BaseCookie.js_output(attrs=None)
 
    Return an embeddable JavaScript snippet, which, if run on a browser which
    supports JavaScript, will act the same as if the HTTP headers was sent.
@@ -157,7 +157,7 @@ Morsel Objects
    Whether *K* is a member of the set of keys of a :class:`Morsel`.
 
 
-.. method:: Morsel.output([attrs[, header]])
+.. method:: Morsel.output(attrs=None, header='Set-Cookie:')
 
    Return a string representation of the Morsel, suitable to be sent as an HTTP
    header. By default, all the attributes are included, unless *attrs* is given, in
@@ -165,7 +165,7 @@ Morsel Objects
    ``"Set-Cookie:"``.
 
 
-.. method:: Morsel.js_output([attrs])
+.. method:: Morsel.js_output(attrs=None)
 
    Return an embeddable JavaScript snippet, which, if run on a browser which
    supports JavaScript, will act the same as if the HTTP header was sent.
@@ -173,7 +173,7 @@ Morsel Objects
    The meaning for *attrs* is the same as in :meth:`output`.
 
 
-.. method:: Morsel.OutputString([attrs])
+.. method:: Morsel.OutputString(attrs=None)
 
    Return a string representing the Morsel, without any surrounding HTTP or
    JavaScript.

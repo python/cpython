@@ -1,4 +1,3 @@
-
 :mod:`gettext` --- Multilingual internationalization services
 =============================================================
 
@@ -31,7 +30,7 @@ application needs to switch languages on the fly, you probably want to use the
 class-based API instead.
 
 
-.. function:: bindtextdomain(domain[, localedir])
+.. function:: bindtextdomain(domain, localedir=None)
 
    Bind the *domain* to the locale directory *localedir*.  More concretely,
    :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
@@ -43,14 +42,14 @@ class-based API instead.
    returned. [#]_
 
 
-.. function:: bind_textdomain_codeset(domain[, codeset])
+.. function:: bind_textdomain_codeset(domain, codeset=None)
 
    Bind the *domain* to *codeset*, changing the encoding of strings returned by the
    :func:`gettext` family of functions. If *codeset* is omitted, then the current
    binding is returned.
 
 
-.. function:: textdomain([domain])
+.. function:: textdomain(domain=None)
 
    Change or query the current global domain.  If *domain* is ``None``, then the
    current global domain is returned, otherwise the global domain is set to
@@ -141,7 +140,7 @@ class can also install themselves in the built-in namespace as the function
 :func:`_`.
 
 
-.. function:: find(domain[, localedir[,  languages[, all]]])
+.. function:: find(domain, localedir=None, languages=None, all=False)
 
    This function implements the standard :file:`.mo` file search algorithm.  It
    takes a *domain*, identical to what :func:`textdomain` takes.  Optional
@@ -159,7 +158,7 @@ class can also install themselves in the built-in namespace as the function
    :func:`find` then expands and normalizes the languages, and then iterates
    through them, searching for an existing file built of these components:
 
-   :file:`localedir/language/LC_MESSAGES/domain.mo`
+   :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`
 
    The first such file name that exists is returned by :func:`find`. If no such
    file is found, then ``None`` is returned. If *all* is given, it returns a list
@@ -167,7 +166,7 @@ class can also install themselves in the built-in namespace as the function
    the environment variables.
 
 
-.. function:: translation(domain[, localedir[, languages[, class_[, fallback[, codeset]]]]])
+.. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False, codeset=None)
 
    Return a :class:`Translations` instance based on the *domain*, *localedir*,
    and *languages*, which are first passed to :func:`find` to get a list of the
@@ -188,7 +187,7 @@ class can also install themselves in the built-in namespace as the function
    :class:`NullTranslations` instance if *fallback* is true.
 
 
-.. function:: install(domain[, localedir[, codeset[, names]]]])
+.. function:: install(domain, localedir=None, codeset=None, names=None)
 
    This installs the function :func:`_` in Python's builtin namespace, based on
    *domain*, *localedir*, and *codeset* which are passed to the function
@@ -218,7 +217,7 @@ interface you can use to write your own specialized translation classes.  Here
 are the methods of :class:`NullTranslations`:
 
 
-.. class:: NullTranslations([fp])
+.. class:: NullTranslations(fp=None)
 
    Takes an optional file object *fp*, which is ignored by the base class.
    Initializes "protected" instance variables *_info* and *_charset* which are set
@@ -289,7 +288,7 @@ are the methods of :class:`NullTranslations`:
       encoding used to return translated messages.
 
 
-   .. method:: install([names])
+   .. method:: install(names=None)
 
       This method installs :meth:`self.gettext` into the built-in namespace,
       binding it to ``_``.

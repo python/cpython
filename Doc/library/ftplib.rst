@@ -36,7 +36,7 @@ Here's a sample session using the :mod:`ftplib` module::
 The module defines the following items:
 
 
-.. class:: FTP([host[, user[, passwd[, acct[, timeout]]]]])
+.. class:: FTP(host='', user='', passwd='', acct=''[, timeout])
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
@@ -45,7 +45,6 @@ The module defines the following items:
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
    will be used).
-
 
    .. attribute:: all_errors
 
@@ -56,33 +55,33 @@ The module defines the following items:
       :exc:`IOError`.
 
 
-   .. exception:: error_reply
+.. exception:: error_reply
 
-      Exception raised when an unexpected reply is received from the server.
-
-
-   .. exception:: error_temp
-
-      Exception raised when an error code in the range 400--499 is received.
+   Exception raised when an unexpected reply is received from the server.
 
 
-   .. exception:: error_perm
+.. exception:: error_temp
 
-      Exception raised when an error code in the range 500--599 is received.
+   Exception raised when an error code in the range 400--499 is received.
 
 
-   .. exception:: error_proto
+.. exception:: error_perm
 
-      Exception raised when a reply is received from the server that does not
-      begin with a digit in the range 1--5.
+   Exception raised when an error code in the range 500--599 is received.
+
+
+.. exception:: error_proto
+
+   Exception raised when a reply is received from the server that does not begin
+   with a digit in the range 1--5.
 
 
 .. seealso::
 
    Module :mod:`netrc`
-      Parser for the :file:`.netrc` file format.  The file :file:`.netrc` is typically
-      used by FTP clients to load user authentication information before prompting the
-      user.
+      Parser for the :file:`.netrc` file format.  The file :file:`.netrc` is
+      typically used by FTP clients to load user authentication information
+      before prompting the user.
 
    .. index:: single: ftpmirror.py
 
@@ -112,7 +111,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    debugging output, logging each line sent and received on the control connection.
 
 
-.. method:: FTP.connect(host[, port[, timeout]])
+.. method:: FTP.connect(host='', port=0[, timeout])
 
    Connect to the given host and port.  The default port number is ``21``, as
    specified by the FTP protocol specification.  It is rarely needed to specify a
@@ -133,7 +132,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    that may be relevant to the user.)
 
 
-.. method:: FTP.login([user[, passwd[, acct]]])
+.. method:: FTP.login(user='anonymous', passwd='', acct='')
 
    Log in as the given *user*.  The *passwd* and *acct* parameters are optional and
    default to the empty string.  If no *user* is specified, it defaults to
@@ -150,33 +149,33 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    it's worth a try.
 
 
-.. method:: FTP.sendcmd(command)
+.. method:: FTP.sendcmd(cmd)
 
    Send a simple command string to the server and return the response string.
 
 
-.. method:: FTP.voidcmd(command)
+.. method:: FTP.voidcmd(cmd)
 
    Send a simple command string to the server and handle the response. Return
    nothing if a response code in the range 200--299 is received. Raise an exception
    otherwise.
 
 
-.. method:: FTP.retrbinary(command, callback[, maxblocksize[, rest]])
+.. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)
 
-   Retrieve a file in binary transfer mode.  *command* should be an appropriate
+   Retrieve a file in binary transfer mode.  *cmd* should be an appropriate
    ``RETR`` command: ``'RETR filename'``. The *callback* function is called for
    each block of data received, with a single string argument giving the data
-   block. The optional *maxblocksize* argument specifies the maximum chunk size to
+   block. The optional *blocksize* argument specifies the maximum chunk size to
    read on the low-level socket object created to do the actual transfer (which
    will also be the largest size of the data blocks passed to *callback*).  A
    reasonable default is chosen. *rest* means the same thing as in the
    :meth:`transfercmd` method.
 
 
-.. method:: FTP.retrlines(command[, callback])
+.. method:: FTP.retrlines(cmd, callback=None)
 
-   Retrieve a file or directory listing in ASCII transfer mode.  *command*
+   Retrieve a file or directory listing in ASCII transfer mode.  *cmd*
    should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or a
    command such as ``LIST``, ``NLST`` or ``MLSD`` (usually just the string
    ``'LIST'``).  The *callback* function is called for each line, with the
@@ -190,9 +189,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    Passive mode is on by default.
 
 
-.. method:: FTP.storbinary(command, file[, blocksize, callback])
+.. method:: FTP.storbinary(cmd, file, blocksize=8192, callback=None)
 
-   Store a file in binary transfer mode.  *command* should be an appropriate
+   Store a file in binary transfer mode.  *cmd* should be an appropriate
    ``STOR`` command: ``"STOR filename"``. *file* is an open file object which is
    read until EOF using its :meth:`read` method in blocks of size *blocksize* to
    provide the data to be stored.  The *blocksize* argument defaults to 8192.
@@ -200,16 +199,16 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    on each block of data after it is sent.
 
 
-.. method:: FTP.storlines(command, file[, callback])
+.. method:: FTP.storlines(cmd, file, callback=None)
 
-   Store a file in ASCII transfer mode.  *command* should be an appropriate
+   Store a file in ASCII transfer mode.  *cmd* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
    open file object *file* using its :meth:`readline` method to provide the data to
    be stored.  *callback* is an optional single parameter callable
    that is called on each line after it is sent.
 
 
-.. method:: FTP.transfercmd(cmd[, rest])
+.. method:: FTP.transfercmd(cmd, rest=None)
 
    Initiate a transfer over the data connection.  If the transfer is active, send a
    ``EPRT`` or  ``PORT`` command and the transfer command specified by *cmd*, and
@@ -229,7 +228,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    *rest* argument.
 
 
-.. method:: FTP.ntransfercmd(cmd[, rest])
+.. method:: FTP.ntransfercmd(cmd, rest=None)
 
    Like :meth:`transfercmd`, but returns a tuple of the data connection and the
    expected size of the data.  If the expected size could not be computed, ``None``
