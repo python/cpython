@@ -3,10 +3,8 @@ import unittest
 import os
 import shutil
 
-from distutils.dir_util import mkpath
-from distutils.dir_util import remove_tree
-from distutils.dir_util import create_tree
-from distutils.dir_util import copy_tree
+from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
+                                ensure_relative)
 
 from distutils import log
 from distutils.tests import support
@@ -84,6 +82,14 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         remove_tree(self.root_target, verbose=0)
         remove_tree(self.target2, verbose=0)
+
+    def test_ensure_relative(self):
+        if os.sep == '/':
+            self.assertEquals(ensure_relative('/home/foo'), 'home/foo')
+            self.assertEquals(ensure_relative('some/path'), 'some/path')
+        else:   # \\
+            self.assertEquals(ensure_relative('c:\\home\\foo'), 'home\\foo')
+            self.assertEquals(ensure_relative('home\\foo'), 'home\\foo')
 
 def test_suite():
     return unittest.makeSuite(DirUtilTestCase)
