@@ -2617,9 +2617,8 @@ int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
 	static PyObject *name = NULL;
-	PyObject *t, *v, *tb;
 	PyObject *checker;
-	
+
 	if (PyTuple_Check(cls)) {
 		Py_ssize_t i;
 		Py_ssize_t n;
