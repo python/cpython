@@ -178,7 +178,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	else {
 		PyErr_Clear();
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	    if (GetVersion() < 0x80000000) {
 		/* On NT, so wide API available */
 		PyObject *po;
