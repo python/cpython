@@ -1959,8 +1959,8 @@ support membership tests:
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
-   Iterating views while adding or deleting entries in the dictionary will raise
-   a :exc:`RuntimeError`.
+   Iterating views while adding or deleting entries in the dictionary may raise
+   a :exc:`RuntimeError` or fail to iterate over all entries.
 
 .. describe:: x in dictview
 
