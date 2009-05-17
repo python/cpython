@@ -179,9 +179,9 @@ def whichdb(filename):
     except struct.error:
         return ""
 
-    # Check for BSD hash
-    if magic in (0x00061561, 0x61150600):
-        return "dbm.bsd"
+    ## Check for BSD hash
+    #if magic in (0x00061561, 0x61150600):
+    #    return "dbm.bsd"
 
     # Unknown
     return ""
