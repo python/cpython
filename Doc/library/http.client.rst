@@ -23,7 +23,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host[, port[, strict[, timeout]]])
+.. class:: HTTPConnection(host, port=None, strict=None[, timeout])
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -45,7 +45,7 @@ The module provides the following classes:
       >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80, timeout=10)
 
 
-.. class:: HTTPSConnection(host[, port[, key_file[, cert_file[, strict[, timeout]]]]])
+.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None, strict=None[, timeout])
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``. *key_file* is the name of a PEM
@@ -57,7 +57,7 @@ The module provides the following classes:
       This does not do any certificate verification.
 
 
-.. class:: HTTPResponse(sock[, debuglevel=0][, strict=0])
+.. class:: HTTPResponse(sock, debuglevel=0, strict=0, method=None, url=None)
 
    Class whose instances are returned upon successful connection.  Not
    instantiated directly by user.
@@ -349,7 +349,7 @@ HTTPConnection Objects
 :class:`HTTPConnection` instances have the following methods:
 
 
-.. method:: HTTPConnection.request(method, url[, body[, headers]])
+.. method:: HTTPConnection.request(method, url, body=None, headers={})
 
    This will send a request to the server using the HTTP request
    method *method* and the selector *url*.  If the *body* argument is
@@ -398,7 +398,7 @@ As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.
 
 
-.. method:: HTTPConnection.putrequest(request, selector[, skip_host[, skip_accept_encoding]])
+.. method:: HTTPConnection.putrequest(request, selector, skip_host=False, skip_accept_encoding=False)
 
    This should be the first call after the connection to the server has been made.
    It sends a line to the server consisting of the *request* string, the *selector*
@@ -444,7 +444,7 @@ statement.
    Reads and returns the response body, or up to the next *amt* bytes.
 
 
-.. method:: HTTPResponse.getheader(name[, default])
+.. method:: HTTPResponse.getheader(name, default=None)
 
    Get the contents of the header *name*, or *default* if there is no matching
    header.

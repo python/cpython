@@ -15,7 +15,7 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
-.. function:: partial(func[,*args][, **keywords])
+.. function:: partial(func, *args, **keywords)
 
    Return a new :class:`partial` object which when called will behave like *func*
    called with the positional arguments *args* and keyword arguments *keywords*. If
@@ -58,7 +58,7 @@ The :mod:`functools` module defines the following functions:
    *sequence* contains only one item, the first item is returned.
 
 
-.. function:: update_wrapper(wrapper, wrapped[, assigned][, updated])
+.. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    Update a *wrapper* function to look like the *wrapped* function. The optional
    arguments are tuples to specify which attributes of the original function are
@@ -77,7 +77,7 @@ The :mod:`functools` module defines the following functions:
    than helpful.
 
 
-.. function:: wraps(wrapped[, assigned][, updated])
+.. function:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    This is a convenience function for invoking ``partial(update_wrapper,
    wrapped=wrapped, assigned=assigned, updated=updated)`` as a function decorator

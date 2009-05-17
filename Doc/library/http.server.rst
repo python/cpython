@@ -155,14 +155,14 @@ of which this module provides three different variants:
       This method will parse and dispatch the request to the appropriate
       :meth:`do_\*` method.  You should never need to override it.
 
-   .. method:: send_error(code[, message])
+   .. method:: send_error(code, message=None)
 
       Sends and logs a complete error reply to the client. The numeric *code*
       specifies the HTTP error code, with *message* as optional, more specific text. A
       complete set of headers is sent, followed by text composed using the
       :attr:`error_message_format` class variable.
 
-   .. method:: send_response(code[, message])
+   .. method:: send_response(code, message=None)
 
       Sends a response header and logs the accepted request. The HTTP response
       line is sent, followed by *Server* and *Date* headers. The values for
@@ -179,7 +179,7 @@ of which this module provides three different variants:
       Sends a blank line, indicating the end of the HTTP headers in the
       response.
 
-   .. method:: log_request([code[, size]])
+   .. method:: log_request(code='-', size='-')
 
       Logs an accepted (successful) request. *code* should specify the numeric
       HTTP code associated with the response. If a size of the response is
@@ -205,11 +205,11 @@ of which this module provides three different variants:
       Returns the server software's version string. This is a combination of the
       :attr:`server_version` and :attr:`sys_version` class variables.
 
-   .. method:: date_time_string([timestamp])
+   .. method:: date_time_string(timestamp=None)
 
-      Returns the date and time given by *timestamp* (which must be in the
-      format returned by :func:`time.time`), formatted for a message header. If
-      *timestamp* is omitted, it uses the current date and time.
+      Returns the date and time given by *timestamp* (which must be None or in
+      the format returned by :func:`time.time`), formatted for a message
+      header. If *timestamp* is omitted, it uses the current date and time.
 
       The result looks like ``'Sun, 06 Nov 1994 08:49:37 GMT'``.
 

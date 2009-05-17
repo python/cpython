@@ -115,7 +115,7 @@ The module also offers three general purpose functions based on heaps.
    streams is already sorted (smallest to largest).
 
 
-.. function:: nlargest(n, iterable[, key])
+.. function:: nlargest(n, iterable, key=None)
 
    Return a list with the *n* largest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is
@@ -124,7 +124,7 @@ The module also offers three general purpose functions based on heaps.
    reverse=True)[:n]``
 
 
-.. function:: nsmallest(n, iterable[, key])
+.. function:: nsmallest(n, iterable, key=None)
 
    Return a list with the *n* smallest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is

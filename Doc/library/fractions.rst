@@ -1,4 +1,3 @@
-
 :mod:`fractions` --- Rational numbers
 =====================================
 

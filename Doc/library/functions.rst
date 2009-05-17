@@ -65,14 +65,14 @@ are always available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
 
-.. function:: bytearray([arg[, encoding[, errors]]])
+.. function:: bytearray([source[, encoding[, errors]]])
 
    Return a new array of bytes.  The :class:`bytearray` type is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`str` type has, see :ref:`bytes-methods`.
 
-   The optional *arg* parameter can be used to initialize the array in a few
+   The optional *source* parameter can be used to initialize the array in a few
    different ways:
 
    * If it is a *string*, you must also give the *encoding* (and optionally,
@@ -91,7 +91,7 @@ are always available.  They are listed here in alphabetical order.
    Without an argument, an array of size 0 is created.
 
 
-.. function:: bytes([arg[, encoding[, errors]]])
+.. function:: bytes([source[, encoding[, errors]]])
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
@@ -139,7 +139,7 @@ are always available.  They are listed here in alphabetical order.
    type hierarchy in :ref:`types`.
 
 
-.. function:: compile(source, filename, mode[, flags[, dont_inherit]])
+.. function:: compile(source, filename, mode, flags=0, dont_inherit=False)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by an :keyword:`exec` statement or evaluated by a call to :func:`eval`.
@@ -263,25 +263,26 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       Because :func:`dir` is supplied primarily as a convenience for use at an
-      interactive prompt, it tries to supply an interesting set of names more than it
-      tries to supply a rigorously or consistently defined set of names, and its
-      detailed behavior may change across releases.  For example, metaclass attributes
-      are not in the result list when the argument is a class.
+      interactive prompt, it tries to supply an interesting set of names more
+      than it tries to supply a rigorously or consistently defined set of names,
+      and its detailed behavior may change across releases.  For example,
+      metaclass attributes are not in the result list when the argument is a
+      class.
 
 
 .. function:: divmod(a, b)
 
    Take two (non complex) numbers as arguments and return a pair of numbers
-   consisting of their quotient and remainder when using integer division.  With mixed
-   operand types, the rules for binary arithmetic operators apply.  For integers,
-   the result is the same as ``(a // b, a % b)``. For floating point
-   numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a / b)``
-   but may be 1 less than that.  In any case ``q * b + a % b`` is very close to
-   *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0 <= abs(a % b)
-   < abs(b)``.
+   consisting of their quotient and remainder when using integer division.  With
+   mixed operand types, the rules for binary arithmetic operators apply.  For
+   integers, the result is the same as ``(a // b, a % b)``. For floating point
+   numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
+   b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
+   close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
+   <= abs(a % b) < abs(b)``.
 
 
-.. function:: enumerate(iterable[, start=0])
+.. function:: enumerate(iterable, start=0)
 
    Return an enumerate object. *iterable* must be a sequence, an
    :term:`iterator`, or some other object which supports iteration.  The
@@ -299,7 +300,7 @@ are always available.  They are listed here in alphabetical order.
       3 Winter
 
 
-.. function:: eval(expression[, globals[, locals]])
+.. function:: eval(expression, globals=None, locals=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -550,18 +551,19 @@ are always available.  They are listed here in alphabetical order.
    case, a :exc:`TypeError` exception is raised.
 
 
-.. function:: iter(o[, sentinel])
+.. function:: iter(object[, sentinel])
 
-   Return an :term:`iterator` object.  The first argument is interpreted very differently
-   depending on the presence of the second argument. Without a second argument, *o*
-   must be a collection object which supports the iteration protocol (the
-   :meth:`__iter__` method), or it must support the sequence protocol (the
-   :meth:`__getitem__` method with integer arguments starting at ``0``).  If it
-   does not support either of those protocols, :exc:`TypeError` is raised. If the
-   second argument, *sentinel*, is given, then *o* must be a callable object.  The
-   iterator created in this case will call *o* with no arguments for each call to
-   its :meth:`__next__` method; if the value returned is equal to *sentinel*,
-   :exc:`StopIteration` will be raised, otherwise the value will be returned.
+   Return an :term:`iterator` object.  The first argument is interpreted very
+   differently depending on the presence of the second argument. Without a
+   second argument, *object* must be a collection object which supports the
+   iteration protocol (the :meth:`__iter__` method), or it must support the
+   sequence protocol (the :meth:`__getitem__` method with integer arguments
+   starting at ``0``).  If it does not support either of those protocols,
+   :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
+   then *object* must be a callable object.  The iterator created in this case
+   will call *object* with no arguments for each call to its :meth:`__next__`
+   method; if the value returned is equal to *sentinel*, :exc:`StopIteration`
+   will be raised, otherwise the value will be returned.
 
    One useful application of the second form of :func:`iter` is to read lines of
    a file until a certain line is reached.  The following example reads a file
@@ -584,10 +586,11 @@ are always available.  They are listed here in alphabetical order.
    items.  *iterable* may be either a sequence, a container that supports
    iteration, or an iterator object.  If *iterable* is already a list, a copy is
    made and returned, similar to ``iterable[:]``.  For instance, ``list('abc')``
-   returns ``['a', 'b', 'c']`` and ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.  If
-   no argument is given, returns a new empty list, ``[]``.
+   returns ``['a', 'b', 'c']`` and ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.
+   If no argument is given, returns a new empty list, ``[]``.
 
    :class:`list` is a mutable sequence type, as documented in :ref:`typesseq`.
+
 
 .. function:: locals()
 
@@ -595,11 +598,11 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      The contents of this dictionary should not be modified; changes may not affect
-      the values of local variables used by the interpreter.
+      The contents of this dictionary should not be modified; changes may not
+      affect the values of local variables used by the interpreter.
 
-   Free variables are returned by :func:`locals` when it is called in a function block.
-   Modifications of free variables may not affect the values used by the
+   Free variables are returned by :func:`locals` when it is called in a function
+   block.  Modifications of free variables may not affect the values used by the
    interpreter.  Free variables are not returned in class blocks.
 
 
@@ -666,7 +669,7 @@ are always available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
-.. function:: open(file[, mode='r'[, buffering=None[, encoding=None[, errors=None[, newline=None[, closefd=True]]]]]])
+.. function:: open(file, mode='r', buffering=None, encoding=None, errors=None, newline=None, closefd=True)
 
    Open *file* and return a corresponding stream.  If the file cannot be opened,
    an :exc:`IOError` is raised.
@@ -812,7 +815,7 @@ are always available.  They are listed here in alphabetical order.
    must be of integer types, and *y* must be non-negative.
 
 
-.. function:: print([object, ...][, sep=' '][, end='\\n'][, file=sys.stdout])
+.. function:: print([object, ...], *, sep=' ', end='\\n', file=sys.stdout)
 
    Print *object*\(s) to the stream *file*, separated by *sep* and followed by
    *end*.  *sep*, *end* and *file*, if present, must be given as keyword
@@ -828,7 +831,7 @@ are always available.  They are listed here in alphabetical order.
    is not present or ``None``, :data:`sys.stdout` will be used.
 
 
-.. function:: property([fget[, fset[, fdel[, doc]]]])
+.. function:: property(fget=None, fset=None, fdel=None, doc=None)
 
    Return a property attribute.
 
@@ -987,7 +990,7 @@ are always available.  They are listed here in alphabetical order.
    for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable[, key[, reverse]])
+.. function:: sorted(iterable[, key][, reverse])
 
    Return a new sorted list from the items in *iterable*.
 
@@ -1103,7 +1106,8 @@ are always available.  They are listed here in alphabetical order.
 
       class C(B):
           def method(self, arg):
-              super().method(arg)    # This does the same thing as: super(C, self).method(arg)
+              super().method(arg)    # This does the same thing as:
+                                     # super(C, self).method(arg)
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
@@ -1209,7 +1213,7 @@ are always available.  They are listed here in alphabetical order.
       True
 
 
-.. function:: __import__(name[, globals[, locals[, fromlist[, level]]]])
+.. function:: __import__(name, globals={}, locals={}, fromlist=[], level=-1)
 
    .. index::
       statement: import

@@ -1,4 +1,3 @@
-
 :mod:`glob` --- Unix style pathname pattern expansion
 =====================================================
 

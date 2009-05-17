@@ -1,4 +1,3 @@
-
 :mod:`hmac` --- Keyed-Hashing for Message Authentication
 ========================================================
 
@@ -11,7 +10,7 @@
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 
-.. function:: new(key[, msg[, digestmod]])
+.. function:: new(key, msg=None, digestmod=None)
 
    Return a new hmac object.  If *msg* is present, the method call ``update(msg)``
    is made. *digestmod* is the digest constructor or module for the HMAC object to
