@@ -558,10 +558,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* This is enough for unicodeobject.h to do the "right thing" on Windows. */
 #define Py_UNICODE_SIZE 2
 
-/* Define to indicate that the Python Unicode representation can be passed
-   as-is to Win32 Wide API.  */
-#define Py_WIN_WIDE_FILENAMES
-
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 
