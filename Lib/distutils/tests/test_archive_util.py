@@ -1,5 +1,5 @@
 """Tests for distutils.archive_util."""
-__revision__ = "$Id:$"
+__revision__ = "$Id$"
 
 import unittest
 import os
@@ -40,7 +40,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assert_(os.path.exists(tarball))
 
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
-    def test_make_tarball(self):
+    def test_make_zipfile(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
         self.write_file([tmpdir, 'file1'], 'xxx')
