@@ -408,11 +408,6 @@ Common commands: (see '--help-commands' for more)
         # that allows the user to interactively specify the "command line".
         #
         toplevel_options = self._get_toplevel_options()
-        if sys.platform == 'mac':
-            import EasyDialogs
-            cmdlist = self.get_command_list()
-            self.script_args = EasyDialogs.GetArgv(
-                toplevel_options + self.display_options, cmdlist)
 
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
@@ -432,7 +427,6 @@ Common commands: (see '--help-commands' for more)
         # for display options we return immediately
         if self.handle_display_options(option_order):
             return
-
         while args:
             args = self._parse_command_opts(parser, args)
             if args is None:            # user asked for help (and got it)
