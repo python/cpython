@@ -81,16 +81,17 @@ XXX Possible additions:
 
 import sys, os
 
-__all__ = ["input","close","nextfile","filename","lineno","filelineno",
-           "isfirstline","isstdin","FileInput"]
+__all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
+           "isfirstline", "isstdin", "FileInput"]
 
 _state = None
 
 DEFAULT_BUFSIZE = 8*1024
 
-def input(files=None, inplace=0, backup="", bufsize=0,
+def input(files=None, inplace=False, backup="", bufsize=0,
           mode="r", openhook=None):
-    """input([files[, inplace[, backup[, mode[, openhook]]]]])
+    """input(files=None, inplace=False, backup="", bufsize=0, \
+mode="r", openhook=None)
 
     Create an instance of the FileInput class. The instance will be used
     as global state for the functions of this module, and is also returned
@@ -194,7 +195,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=0, backup="", bufsize=0,
+    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
@@ -398,11 +399,11 @@ def hook_encoded(encoding):
 
 def _test():
     import getopt
-    inplace = 0
-    backup = 0
+    inplace = False
+    backup = False
     opts, args = getopt.getopt(sys.argv[1:], "ib:")
     for o, a in opts:
-        if o == '-i': inplace = 1
+        if o == '-i': inplace = True
         if o == '-b': backup = a
     for line in input(args, inplace=inplace, backup=backup):
         if line[-1:] == '\n': line = line[:-1]
