@@ -11,15 +11,16 @@ from distutils.spawn import spawn
 from distutils.dir_util import mkpath
 from distutils import log
 
-def make_tarball (base_name, base_dir, compress="gzip",
-                  verbose=0, dry_run=0):
+def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0):
     """Create a (possibly compressed) tar file from all the files under
-    'base_dir'.  'compress' must be "gzip" (the default), "compress",
-    "bzip2", or None.  Both "tar" and the compression utility named by
-    'compress' must be on the default program search path, so this is
-    probably Unix-specific.  The output tar file will be named 'base_dir' +
-    ".tar", possibly plus the appropriate compression extension (".gz",
-    ".bz2" or ".Z").  Return the output filename.
+    'base_dir'.
+
+    'compress' must be "gzip" (the default), "compress", "bzip2", or None.
+    Both "tar" and the compression utility named by 'compress' must be on
+    the default program search path, so this is probably Unix-specific.
+    The output tar file will be named 'base_dir' +  ".tar", possibly plus
+    the appropriate compression extension (".gz", ".bz2" or ".Z").
+    Returns the output filename.
     """
     # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
     # It's pretty new, though, so we certainly can't require it --
@@ -27,9 +28,9 @@ def make_tarball (base_name, base_dir, compress="gzip",
     # "create a tree of hardlinks" step!  (Would also be nice to
     # detect GNU tar to use its 'z' option and save a step.)
 
-    compress_ext = { 'gzip': ".gz",
-                     'bzip2': '.bz2',
-                     'compress': ".Z" }
+    compress_ext = {'gzip': ".gz",
+                    'bzip2': '.bz2',
+                    'compress': ".Z" }
 
     # flags for compression program, each element of list will be an argument
     compress_flags = {'gzip': ["-f9"],
@@ -52,15 +53,14 @@ def make_tarball (base_name, base_dir, compress="gzip",
     else:
         return archive_name
 
-# make_tarball ()
+def make_zipfile(base_name, base_dir, verbose=0, dry_run=0):
+    """Create a zip file from all the files under 'base_dir'.
 
-
-def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
-    """Create a zip file from all the files under 'base_dir'.  The output
-    zip file will be named 'base_dir' + ".zip".  Uses either the "zipfile"
-    Python module (if available) or the InfoZIP "zip" utility (if installed
-    and found on the default search path).  If neither tool is available,
-    raises DistutilsExecError.  Returns the name of the output zip file.
+    The output zip file will be named 'base_dir' + ".zip".  Uses either the
+    "zipfile" Python module (if available) or the InfoZIP "zip" utility
+    (if installed and found on the default search path).  If neither tool is
+    available, raises DistutilsExecError.  Returns the name of the output zip
+    file.
     """
     try:
         import zipfile
@@ -93,21 +93,18 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
                  zip_filename, base_dir)
 
         if not dry_run:
-            z = zipfile.ZipFile(zip_filename, "w",
-                                compression=zipfile.ZIP_DEFLATED)
+            zip = zipfile.ZipFile(zip_filename, "w",
+                                  compression=zipfile.ZIP_DEFLATED)
 
             for dirpath, dirnames, filenames in os.walk(base_dir):
                 for name in filenames:
                     path = os.path.normpath(os.path.join(dirpath, name))
                     if os.path.isfile(path):
-                        z.write(path, path)
+                        zip.write(path, path)
                         log.info("adding '%s'" % path)
-            z.close()
+            zip.close()
 
     return zip_filename
-
-# make_zipfile ()
-
 
 ARCHIVE_FORMATS = {
     'gztar': (make_tarball, [('compress', 'gzip')], "gzip'ed tar-file"),
@@ -117,19 +114,24 @@ ARCHIVE_FORMATS = {
     'zip':   (make_zipfile, [],"ZIP file")
     }
 
-def check_archive_formats (formats):
+def check_archive_formats(formats):
+    """Returns the first format from the 'format' list that is unknown.
+
+    If all formats are known, returns None
+    """
     for format in formats:
         if format not in ARCHIVE_FORMATS:
             return format
-    else:
-        return None
+    return None
 
-def make_archive (base_name, format,
-                  root_dir=None, base_dir=None,
-                  verbose=0, dry_run=0):
-    """Create an archive file (eg. zip or tar).  'base_name' is the name
-    of the file to create, minus any format-specific extension; 'format'
-    is the archive format: one of "zip", "tar", "ztar", or "gztar".
+def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
+                 dry_run=0):
+    """Create an archive file (eg. zip or tar).
+
+    'base_name' is the name of the file to create, minus any format-specific
+    extension; 'format' is the archive format: one of "zip", "tar", "ztar",
+    or "gztar".
+
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
     archive.  'base_dir' is the directory where we start archiving from;
@@ -147,7 +149,7 @@ def make_archive (base_name, format,
     if base_dir is None:
         base_dir = os.curdir
 
-    kwargs = { 'dry_run': dry_run }
+    kwargs = {'dry_run': dry_run}
 
     try:
         format_info = ARCHIVE_FORMATS[format]
@@ -155,7 +157,7 @@ def make_archive (base_name, format,
         raise ValueError("unknown archive format '%s'" % format)
 
     func = format_info[0]
-    for (arg,val) in format_info[1]:
+    for arg, val in format_info[1]:
         kwargs[arg] = val
     filename = func(base_name, base_dir, **kwargs)
 
@@ -164,5 +166,3 @@ def make_archive (base_name, format,
         os.chdir(save_cwd)
 
     return filename
-
-# make_archive ()
