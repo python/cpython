@@ -1,4 +1,3 @@
-
 :mod:`array` --- Efficient arrays of numeric values
 ===================================================
 

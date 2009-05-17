@@ -1,4 +1,3 @@
-
 :mod:`asynchat` --- Asynchronous socket command/response handler
 ================================================================
 

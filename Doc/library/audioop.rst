@@ -1,4 +1,3 @@
-
 :mod:`audioop` --- Manipulate raw audio data
 ============================================
 

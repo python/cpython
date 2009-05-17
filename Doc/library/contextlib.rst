@@ -1,4 +1,3 @@
-
 :mod:`contextlib` --- Utilities for :keyword:`with`\ -statement contexts.
 =========================================================================
 

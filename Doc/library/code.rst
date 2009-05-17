@@ -1,10 +1,8 @@
-
 :mod:`code` --- Interpreter base classes
 ========================================
 
 .. module:: code
    :synopsis: Facilities to implement read-eval-print loops.
-
 
 
 The ``code`` module provides facilities to implement read-eval-print loops in

@@ -1,4 +1,3 @@
-
 :mod:`decimal` --- Decimal fixed point and floating point arithmetic
 ====================================================================
 

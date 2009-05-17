@@ -1,4 +1,3 @@
-
 :mod:`binascii` --- Convert between binary and ASCII
 ====================================================
 

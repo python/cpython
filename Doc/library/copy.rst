@@ -1,4 +1,3 @@
-
 :mod:`copy` --- Shallow and deep copy operations
 ================================================
 

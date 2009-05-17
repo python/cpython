@@ -165,7 +165,7 @@ The following attributes are defined for formatter instance objects:
    :const:`AS_IS` values, is passed to the writer's :meth:`new_styles` method.
 
 
-.. method:: formatter.pop_style([n=1])
+.. method:: formatter.pop_style(n=1)
 
    Pop the last *n* style specifications passed to :meth:`push_style`.  A tuple
    representing the revised stack, including :const:`AS_IS` values, is passed to
@@ -177,7 +177,7 @@ The following attributes are defined for formatter instance objects:
    Set the spacing style for the writer.
 
 
-.. method:: formatter.assert_line_data([flag=1])
+.. method:: formatter.assert_line_data(flag=1)
 
    Inform the formatter that data has been added to the current paragraph
    out-of-band.  This should be used when the writer has been manipulated
@@ -194,7 +194,7 @@ Two implementations of formatter objects are provided by this module. Most
 applications may use one of these classes without modification or subclassing.
 
 
-.. class:: NullFormatter([writer])
+.. class:: NullFormatter(writer=None)
 
    A formatter which does nothing.  If *writer* is omitted, a :class:`NullWriter`
    instance is created.  No methods of the writer are called by
@@ -337,7 +337,7 @@ this module.  Most applications will need to derive new writer classes from the
    output.
 
 
-.. class:: DumbWriter([file[, maxcol=72]])
+.. class:: DumbWriter(file=None, maxcol=72)
 
    Simple writer class which writes output on the file object passed in as *file*
    or, if *file* is omitted, on standard output.  The output is simply word-wrapped

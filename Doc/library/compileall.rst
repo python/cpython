@@ -1,4 +1,3 @@
-
 :mod:`compileall` --- Byte-compile Python libraries
 ===================================================
 

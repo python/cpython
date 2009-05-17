@@ -1,4 +1,3 @@
-
 :mod:`curses.ascii` --- Utilities for ASCII characters
 ======================================================
 
