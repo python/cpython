@@ -56,8 +56,8 @@ installapps4way: install_Python4way install_PythonLauncher \
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
-	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python"
-	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw"
+	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python3"
+	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw3"
 
 
 # Install 3 variants of python/pythonw: 
@@ -68,23 +68,23 @@ install_pythonw: pythonw
 install_pythonw4way: pythonw-32 pythonw-64 pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-64"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-64"
-	ln -sf python$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/python-64"
-	ln -sf pythonw$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/pythonw-64"
+	ln -sf python$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/python3-64"
+	ln -sf pythonw$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/pythonw3-64"
 
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-32"
-	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python-32"
-	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw-32"
+	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python3-32"
+	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw3-32"
 
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-all"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)-all"
-	ln -sf python$(VERSION)-all "$(DESTDIR)$(prefix)/bin/python-all"
-	ln -sf pythonw$(VERSION)-all "$(DESTDIR)$(prefix)/bin/pythonw-all"
+	ln -sf python$(VERSION)-all "$(DESTDIR)$(prefix)/bin/python3-all"
+	ln -sf pythonw$(VERSION)-all "$(DESTDIR)$(prefix)/bin/pythonw3-all"
 
 	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
 	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python$(VERSION)"
-	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw"
-	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python"
+	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw3"
+	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python3"
 
 #
 # Install unix tools in /usr/local/bin. These are just aliases for the 
@@ -94,9 +94,9 @@ installunixtools:
 	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
-	for fn in python pythonw idle pydoc python-config smtpd.py   \
+	for fn in python3 pythonw3 idle3 pydoc3 python3-config \
 		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py ;\
+		  pydoc$(VERSION) python$(VERSION)-config ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
@@ -114,7 +114,7 @@ altinstallunixtools:
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
 	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py ;\
+		  pydoc$(VERSION) python$(VERSION)-config ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
@@ -129,19 +129,15 @@ altinstallunixtools4way: altinstallunixtools
 install_versionedtools:
 	for fn in idle pydoc ;\
 	do \
-		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}" ]; then \
+		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}3" ]; then \
 			continue ;\
 		fi ;\
-		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
-		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
+		mv "$(DESTDIR)$(prefix)/bin/$${fn}3" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
+		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}3" ;\
 	done
-	if [ ! -h "$(DESTDIR)$(prefix)/bin/python-config" ]; then \
-		mv "$(DESTDIR)$(prefix)/bin/python-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
-		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python-config" ; \
-	fi
-	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
-		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
-		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
+	if [ ! -h "$(DESTDIR)$(prefix)/bin/python3-config" ]; then \
+		mv "$(DESTDIR)$(prefix)/bin/python3-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
+		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python3-config" ; \
 	fi
 
 
