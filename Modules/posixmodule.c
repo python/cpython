@@ -523,13 +523,13 @@ posix_error_with_filename(char* name)
 	return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 static PyObject *
 posix_error_with_unicode_filename(Py_UNICODE* name)
 {
 	return PyErr_SetFromErrnoWithUnicodeFilename(PyExc_OSError, name);
 }
-#endif /* Py_WIN_WIDE_FILENAMES */
+#endif /* MS_WINDOWS */
 
 
 static PyObject *
@@ -556,7 +556,6 @@ win32_error(char* function, char* filename)
 		return PyErr_SetFromWindowsErr(errno);
 }
 
-#ifdef Py_WIN_WIDE_FILENAMES
 static PyObject *
 win32_error_unicode(char* function, Py_UNICODE* filename)
 {
@@ -585,9 +584,7 @@ convert_to_unicode(PyObject **param)
 	return (*param) != NULL;
 }
 
-#endif /* Py_WIN_WIDE_FILENAMES */
-
-#endif
+#endif /* MS_WINDOWS */
 
 #if defined(PYOS_OS2)
 /**********************************************************************
@@ -686,7 +683,7 @@ posix_fildes(PyObject *fdobj, int (*func)(int))
 	return Py_None;
 }
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 static int
 unicode_file_names(void)
 {
@@ -741,7 +738,7 @@ posix_2str(PyObject *args,
 	return Py_None;
 }
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 static PyObject*
 win32_1str(PyObject* args, char* func, 
 	   char* format, BOOL (__stdcall *funcA)(LPCSTR), 
@@ -1497,7 +1494,6 @@ IsUNCRootA(char *path, int pathlen)
 	#undef ISSLASH
 }
 
-#ifdef Py_WIN_WIDE_FILENAMES
 static BOOL
 IsUNCRootW(Py_UNICODE *path, int pathlen)
 {
@@ -1520,7 +1516,6 @@ IsUNCRootW(Py_UNICODE *path, int pathlen)
 
 	#undef ISSLASH
 }
-#endif /* Py_WIN_WIDE_FILENAMES */
 #endif /* MS_WINDOWS */
 
 static PyObject *
@@ -1540,7 +1535,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 	int res;
 	PyObject *result;
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	/* If on wide-character-capable OS see if argument
 	   is Unicode and if so use wide API.  */
 	if (unicode_file_names()) {
@@ -1603,7 +1598,7 @@ posix_access(PyObject *self, PyObject *args)
 	char *path;
 	int mode;
 	
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	DWORD attr;
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
@@ -1636,7 +1631,7 @@ finish:
 	return PyBool_FromLong(!(mode & 2) 
 	                       || !(attr & FILE_ATTRIBUTE_READONLY)
 			       || (attr & FILE_ATTRIBUTE_DIRECTORY));
-#else
+#else /* MS_WINDOWS */
 	int res;
 	if (!PyArg_ParseTuple(args, "eti:access", 
 			      Py_FileSystemDefaultEncoding, &path, &mode))
@@ -1646,7 +1641,7 @@ finish:
 	Py_END_ALLOW_THREADS
 	PyMem_Free(path);
 	return PyBool_FromLong(res == 0);
-#endif
+#endif /* MS_WINDOWS */
 }
 
 #ifndef F_OK
@@ -1757,7 +1752,7 @@ posix_chmod(PyObject *self, PyObject *args)
 	char *path = NULL;
 	int i;
 	int res;
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	DWORD attr;
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
@@ -1807,7 +1802,7 @@ posix_chmod(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
-#else /* Py_WIN_WIDE_FILENAMES */
+#else /* MS_WINDOWS */
 	if (!PyArg_ParseTuple(args, "eti:chmod", Py_FileSystemDefaultEncoding,
 	                      &path, &i))
 		return NULL;
@@ -2092,7 +2087,7 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 	char buf[1026];
 	char *res;
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	DWORD len;
 	if (unicode_file_names()) {
 		wchar_t wbuf[1026];
@@ -2121,7 +2116,7 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 		if (wbuf2 != wbuf) free(wbuf2);
 		return resobj;
 	}
-#endif
+#endif /* MS_WINDOWS */
 
 	Py_BEGIN_ALLOW_THREADS
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
@@ -2134,8 +2129,8 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 		return posix_error();
 	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"strict");
 }
-#endif
-#endif
+#endif /* Py_USING_UNICODE */
+#endif /* HAVE_GETCWD */
 
 
 #ifdef HAVE_LINK
@@ -2175,7 +2170,6 @@ posix_listdir(PyObject *self, PyObject *args)
 	char *bufptr = namebuf;
 	Py_ssize_t len = sizeof(namebuf)-5; /* only claim to have space for MAX_PATH */
 
-#ifdef Py_WIN_WIDE_FILENAMES
 	/* If on wide-character-capable OS see if argument
 	   is Unicode and if so use wide API.  */
 	if (unicode_file_names()) {
@@ -2258,7 +2252,6 @@ posix_listdir(PyObject *self, PyObject *args)
 		   are also valid. */
 		PyErr_Clear();
 	}
-#endif
 
 	if (!PyArg_ParseTuple(args, "et#:listdir",
 	                      Py_FileSystemDefaultEncoding, &bufptr, &len))
@@ -2482,7 +2475,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	Py_ssize_t insize = sizeof(inbuf);
 	char outbuf[MAX_PATH*2];
 	char *temp;
-#ifdef Py_WIN_WIDE_FILENAMES
+
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po)) {
@@ -2512,7 +2505,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		   are also valid. */
 		PyErr_Clear();
 	}
-#endif
+
 	if (!PyArg_ParseTuple (args, "et#:_getfullpathname",
 	                       Py_FileSystemDefaultEncoding, &inbufp,
 	                       &insize))
@@ -2539,7 +2532,7 @@ posix_mkdir(PyObject *self, PyObject *args)
 	char *path = NULL;
 	int mode = 0777;
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, "U|i:mkdir", &po, &mode)) {
@@ -2573,7 +2566,7 @@ posix_mkdir(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
-#else
+#else /* MS_WINDOWS */
 
 	if (!PyArg_ParseTuple(args, "et|i:mkdir",
 	                      Py_FileSystemDefaultEncoding, &path, &mode))
@@ -2590,7 +2583,7 @@ posix_mkdir(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
-#endif
+#endif /* MS_WINDOWS */
 }
 
 
@@ -2833,7 +2826,7 @@ second form is used, set the access and modified times to the current time.");
 static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	PyObject *arg;
 	PyUnicodeObject *obwpath;
 	wchar_t *wpath = NULL;
@@ -2911,7 +2904,7 @@ posix_utime(PyObject *self, PyObject *args)
 done:
 	CloseHandle(hFile);
 	return result;
-#else /* Py_WIN_WIDE_FILENAMES */
+#else /* MS_WINDOWS */
 
 	char *path = NULL;
 	long atime, mtime, ausec, musec;
@@ -2985,7 +2978,7 @@ done:
 #undef UTIME_ARG
 #undef ATIME
 #undef MTIME
-#endif /* Py_WIN_WIDE_FILENAMES */
+#endif /* MS_WINDOWS */
 }
 
 
@@ -8273,7 +8266,7 @@ win32_startfile(PyObject *self, PyObject *args)
 	char *filepath;
 	char *operation = NULL;
 	HINSTANCE rc;
-#ifdef Py_WIN_WIDE_FILENAMES
+
 	if (unicode_file_names()) {
 		PyObject *unipath, *woperation = NULL;
 		if (!PyArg_ParseTuple(args, "U|s:startfile",
@@ -8308,7 +8301,6 @@ win32_startfile(PyObject *self, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-#endif
 
 normal:
 	if (!PyArg_ParseTuple(args, "et|s:startfile", 
@@ -8328,7 +8320,7 @@ normal:
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif
+#endif /* MS_WINDOWS */
 
 #ifdef HAVE_GETLOADAVG
 PyDoc_STRVAR(posix_getloadavg__doc__,
