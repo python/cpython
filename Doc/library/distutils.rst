@@ -1,10 +1,9 @@
-
 :mod:`distutils` --- Building and installing Python modules
 ===========================================================
 
 .. module:: distutils
-   :synopsis: Support for building and installing Python modules into an existing Python
-              installation.
+   :synopsis: Support for building and installing Python modules into an
+              existing Python installation.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
@@ -19,12 +18,12 @@ This package is discussed in two separate chapters:
 .. seealso::
 
    :ref:`distutils-index`
-      The manual for developers and packagers of Python modules.  This describes how
-      to prepare :mod:`distutils`\ -based packages so that they may be easily
-      installed into an existing Python installation.
+      The manual for developers and packagers of Python modules.  This describes
+      how to prepare :mod:`distutils`\ -based packages so that they may be
+      easily installed into an existing Python installation.
 
    :ref:`install-index`
-      An "administrators" manual which includes information on installing modules into
-      an existing Python installation. You do not need to be a Python programmer to
-      read this manual.
+      An "administrators" manual which includes information on installing
+      modules into an existing Python installation.  You do not need to be a
+      Python programmer to read this manual.
 

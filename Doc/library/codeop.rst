@@ -1,4 +1,3 @@
-
 :mod:`codeop` --- Compile Python code
 =====================================
 

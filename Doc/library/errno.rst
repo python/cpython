@@ -1,4 +1,3 @@
-
 :mod:`errno` --- Standard errno system symbols
 ==============================================
 

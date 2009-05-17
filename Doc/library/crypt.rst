@@ -1,4 +1,3 @@
-
 :mod:`crypt` --- Function to check Unix passwords
 =================================================
 

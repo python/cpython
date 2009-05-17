@@ -1,4 +1,3 @@
-
 :mod:`fnmatch` --- Unix filename pattern matching
 =================================================
 

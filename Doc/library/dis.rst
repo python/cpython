@@ -1,4 +1,3 @@
-
 :mod:`dis` --- Disassembler for Python bytecode
 ===============================================
 
@@ -6,11 +5,11 @@
    :synopsis: Disassembler for Python bytecode.
 
 
-The :mod:`dis` module supports the analysis of Python :term:`bytecode` by disassembling
-it.  Since there is no Python assembler, this module defines the Python assembly
-language.  The Python bytecode which this module takes as an input is defined
-in the file  :file:`Include/opcode.h` and used by the compiler and the
-interpreter.
+The :mod:`dis` module supports the analysis of Python :term:`bytecode` by
+disassembling it.  Since there is no Python assembler, this module defines the
+Python assembly language.  The Python bytecode which this module takes as an
+input is defined in the file :file:`Include/opcode.h` and used by the compiler
+and the interpreter.
 
 Example: Given the function :func:`myfunc`::
 

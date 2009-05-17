@@ -1,4 +1,3 @@
-
 :mod:`asyncore` --- Asynchronous socket handler
 ===============================================
 
