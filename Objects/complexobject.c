@@ -648,7 +648,7 @@ static PyObject *
 complex_int(PyObject *v)
 {
 	PyErr_SetString(PyExc_TypeError,
-		   "can't convert complex to int; use int(abs(z))");
+		   "can't convert complex to int");
 	return NULL;
 }
 
@@ -656,7 +656,7 @@ static PyObject *
 complex_float(PyObject *v)
 {
 	PyErr_SetString(PyExc_TypeError,
-		   "can't convert complex to float; use abs(z)");
+		   "can't convert complex to float");
 	return NULL;
 }
 
