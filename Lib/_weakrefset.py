@@ -118,6 +118,8 @@ class WeakSet:
         return self.data >= set(ref(item) for item in other)
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
         return self.data == set(ref(item) for item in other)
 
     def symmetric_difference(self, other):
