@@ -134,13 +134,11 @@ class TestWeakSet(unittest.TestCase):
 
     def test_gc(self):
         # Create a nest of cycles to exercise overall ref count check
-        class A:
-            pass
-        s = set(A() for i in range(1000))
+        s = WeakSet(Foo() for i in range(1000))
         for elem in s:
             elem.cycle = s
             elem.sub = elem
-            elem.set = set([elem])
+            elem.set = WeakSet([elem])
 
     def test_subclass_with_custom_hash(self):
         # Bug #1257731
@@ -169,17 +167,12 @@ class TestWeakSet(unittest.TestCase):
         t = WeakSet(s)
         self.assertNotEqual(id(s), id(t))
 
-    def test_set_literal(self):
-        s = set([1,2,3])
-        t = {1,2,3}
-        self.assertEqual(s, t)
-
     def test_hash(self):
         self.assertRaises(TypeError, hash, self.s)
 
     def test_clear(self):
         self.s.clear()
-        self.assertEqual(self.s, set())
+        self.assertEqual(self.s, WeakSet([]))
         self.assertEqual(len(self.s), 0)
 
     def test_copy(self):
@@ -303,6 +296,16 @@ class TestWeakSet(unittest.TestCase):
         t = self.s.copy()
         t ^= t
         self.assertEqual(t, WeakSet())
+
+    def test_eq(self):
+        # issue 5964
+        self.assertTrue(self.s == self.s)
+        self.assertTrue(self.s == WeakSet(self.items))
+        self.assertFalse(self.s == set(self.items))
+        self.assertFalse(self.s == list(self.items))
+        self.assertFalse(self.s == tuple(self.items))
+        self.assertFalse(self.s == WeakSet([Foo]))
+        self.assertFalse(self.s == 1)
 
 
 def test_main(verbose=None):
