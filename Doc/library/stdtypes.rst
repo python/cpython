@@ -1986,7 +1986,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       note for :meth:`dict.items`.
 
       Using :meth:`iteritems` while adding or deleting entries in the dictionary
-      will raise a :exc:`RuntimeError`.
+      may raise a :exc:`RuntimeError` or fail to iterate over all entries.
 
       .. versionadded:: 2.2
 
@@ -1996,7 +1996,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       :meth:`dict.items`.
 
       Using :meth:`iterkeys` while adding or deleting entries in the dictionary
-      will raise a :exc:`RuntimeError`.
+      may raise a :exc:`RuntimeError` or fail to iterate over all entries.
 
       .. versionadded:: 2.2
 
@@ -2006,7 +2006,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       :meth:`dict.items`.
 
       Using :meth:`itervalues` while adding or deleting entries in the
-      dictionary will raise a :exc:`RuntimeError`.
+      dictionary may raise a :exc:`RuntimeError` or fail to iterate over all
+      entries.
 
       .. versionadded:: 2.2
 
