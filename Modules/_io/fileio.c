@@ -223,7 +223,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		PyErr_Clear();
 	}
 
-#ifdef Py_WIN_WIDE_FILENAMES
+#ifdef MS_WINDOWS
 	if (GetVersion() < 0x80000000) {
 		/* On NT, so wide API available */
 		if (PyUnicode_Check(nameobj))
