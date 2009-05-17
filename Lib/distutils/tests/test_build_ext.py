@@ -17,6 +17,12 @@ from test import test_support
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
+if sys.platform != 'win32':
+    UNDER_MSVC8 = False
+else:
+    from distutils.msvccompiler import get_build_version
+    UNDER_MSVC8 = get_build_version() < 8.0
+
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
                        unittest.TestCase):
@@ -231,6 +237,8 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(cmd.compiler, 'unix')
 
     def test_get_outputs(self):
+        if UNDER_MSVC8:
+            return # not running this test for MSVC < 8
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
         self.write_file(c_file, 'void initfoo(void) {};\n')
