@@ -366,7 +366,7 @@ class GNUTranslations(NullTranslations):
 
 
 # Locate a .mo file using the gettext strategy
-def find(domain, localedir=None, languages=None, all=0):
+def find(domain, localedir=None, languages=None, all=False):
     # Get some reasonable defaults for arguments that were not supplied
     if localedir is None:
         localedir = _default_localedir
@@ -410,7 +410,7 @@ def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False, codeset=None):
     if class_ is None:
         class_ = GNUTranslations
-    mofiles = find(domain, localedir, languages, all=1)
+    mofiles = find(domain, localedir, languages, all=True)
     if not mofiles:
         if fallback:
             return NullTranslations()
