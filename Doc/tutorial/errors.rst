@@ -53,7 +53,7 @@ programs, however, and result in error messages as shown here::
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   TypeError: coercing to Unicode: need string or buffer, int found
+   TypeError: Can't convert 'int' object to str implicitly
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -353,7 +353,7 @@ complicated example::
    ...         print("executing finally clause")
    ...
    >>> divide(2, 1)
-   result is 2
+   result is 2.0
    executing finally clause
    >>> divide(2, 0)
    division by zero!
