@@ -198,6 +198,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6046: Fixed the library extension when distutils build_ext is used
+  inplace. Initial patch by Roumen Petrov.
+
 - Issue #6022: a test file was created in the current working directory by
   test_get_outputs in Distutils.
 
