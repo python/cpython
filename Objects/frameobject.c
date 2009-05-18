@@ -127,7 +127,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	if (!f->f_trace)
 	{
 		PyErr_Format(PyExc_ValueError,
-			     "f_lineno can only be set by a trace function");
+			     "f_lineno can only be set by a"
+			     " line trace function");
 		return -1;
 	}
 
