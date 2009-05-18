@@ -3,6 +3,7 @@ __revision__ = "$Id$"
 
 import unittest
 import os
+from os.path import splitdrive
 
 from distutils.archive_util import (check_archive_formats, make_tarball,
                                     make_zipfile, make_archive)
@@ -26,13 +27,16 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.write_file([tmpdir, 'file2'], 'xxx')
 
         tmpdir2 = self.mkdtemp()
+        unittest.skipUnless(splitdrive(tmpdir)[0] == splitdrive(tmpdir2)[0],
+                            "Source and target should be on same drive")
+
         base_name = os.path.join(tmpdir2, 'archive')
 
         # working with relative paths to avoid tar warnings
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
-            make_tarball(base_name, '.')
+            make_tarball(splitdrive(base_name)[1], '.')
         finally:
             os.chdir(old_dir)
 
@@ -45,7 +49,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
-            make_tarball(base_name, '.', compress=None)
+            make_tarball(splitdrive(base_name)[1], '.', compress=None)
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar'
