@@ -620,7 +620,8 @@ class build_ext(Command):
             base = modpath[-1]
             build_py = self.get_finalized_command('build_py')
             package_dir = os.path.abspath(build_py.get_package_dir(package))
-            return os.path.join(package_dir, base)
+            filename = self.get_ext_filename(ext_name)
+            return os.path.join(package_dir, filename)
         else:
             filename = self.get_ext_filename(ext_name)
             return os.path.join(self.build_lib, filename)
