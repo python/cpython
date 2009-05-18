@@ -560,5 +560,6 @@ class MutableSequence(Sequence):
 
     def __iadd__(self, values):
         self.extend(values)
+        return self
 
 MutableSequence.register(list)
