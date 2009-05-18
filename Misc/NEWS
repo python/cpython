@@ -298,6 +298,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6053: Fixed distutils tests on win32. patch by Hirokazu Yamamoto.
+
 - Issue #6046: Fixed the library extension when distutils build_ext is used
   inplace. Initial patch by Roumen Petrov.
 
