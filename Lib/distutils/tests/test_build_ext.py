@@ -20,12 +20,6 @@ from test import support
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
-if sys.platform != 'win32':
-    UNDER_MSVC8 = False
-else:
-    from distutils.msvccompiler import get_build_version
-    UNDER_MSVC8 = get_build_version() < 8.0
-
 def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
@@ -299,7 +293,6 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         self.assertEquals(cmd.compiler, 'unix')
 
-    @unittest.skipIf(UNDER_MSVC8, 'not running this test for MSVC < 8')
     def test_get_outputs(self):
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
@@ -329,6 +322,8 @@ class BuildExtTestCase(TempdirManager,
         finally:
             os.chdir(old_wd)
         self.assert_(os.path.exists(so_file))
+        self.assertEquals(os.path.splitext(so_file)[-1],
+                          sysconfig.get_config_var('SO'))
         so_dir = os.path.dirname(so_file)
         self.assertEquals(so_dir, other_tmp_dir)
 
@@ -336,6 +331,8 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         so_file = cmd.get_outputs()[0]
         self.assert_(os.path.exists(so_file))
+        self.assertEquals(os.path.splitext(so_file)[-1],
+                          sysconfig.get_config_var('SO'))
         so_dir = os.path.dirname(so_file)
         self.assertEquals(so_dir, cmd.build_lib)
 
