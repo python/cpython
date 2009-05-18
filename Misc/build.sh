@@ -67,7 +67,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(asynchat|cmd_line|docxmlrpc|dumbdbm|file|ftplib|httpservers|imaplib|popen2|socket|smtplib|sys|telnetlib|threadedtempfile|threading|threadsignals|urllib2_localnet|xmlrpc)"
+LEAKY_TESTS="test_(asynchat|cmd_line|docxmlrpc|dumbdbm|file|ftplib|httpservers|imaplib|popen2|socket|smtplib|sys|telnetlib|threadedtempfile|threading|threadsignals|xmlrpc)"
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.

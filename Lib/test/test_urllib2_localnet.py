@@ -195,7 +195,11 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     testing.
     """
 
-    digest_auth_handler = DigestAuthHandler()
+    def __init__(self, digest_auth_handler, *args, **kwargs):
+        # This has to be set before calling our parent's __init__(), which will
+        # try to call do_GET().
+        self.digest_auth_handler = digest_auth_handler
+        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def log_message(self, format, *args):
         # Uncomment the next line for debugging.
@@ -224,49 +228,50 @@ class ProxyAuthTests(unittest.TestCase):
     REALM = "TestRealm"
 
     def setUp(self):
-        FakeProxyHandler.digest_auth_handler.set_users({
-            self.USER : self.PASSWD
-            })
-        FakeProxyHandler.digest_auth_handler.set_realm(self.REALM)
+        self.digest_auth_handler = DigestAuthHandler()
+        self.digest_auth_handler.set_users({self.USER: self.PASSWD})
+        self.digest_auth_handler.set_realm(self.REALM)
+        def create_fake_proxy_handler(*args, **kwargs):
+            return FakeProxyHandler(self.digest_auth_handler, *args, **kwargs)
 
-        self.server = LoopbackHttpServerThread(FakeProxyHandler)
+        self.server = LoopbackHttpServerThread(create_fake_proxy_handler)
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
         handler = urllib2.ProxyHandler({"http" : proxy_url})
-        self._digest_auth_handler = urllib2.ProxyDigestAuthHandler()
-        self.opener = urllib2.build_opener(handler, self._digest_auth_handler)
+        self.proxy_digest_handler = urllib2.ProxyDigestAuthHandler()
+        self.opener = urllib2.build_opener(handler, self.proxy_digest_handler)
 
     def tearDown(self):
         self.server.stop()
 
     def test_proxy_with_bad_password_raises_httperror(self):
-        self._digest_auth_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
-        FakeProxyHandler.digest_auth_handler.set_qop("auth")
+        self.digest_auth_handler.set_qop("auth")
         self.assertRaises(urllib2.HTTPError,
                           self.opener.open,
                           self.URL)
 
     def test_proxy_with_no_password_raises_httperror(self):
-        FakeProxyHandler.digest_auth_handler.set_qop("auth")
+        self.digest_auth_handler.set_qop("auth")
         self.assertRaises(urllib2.HTTPError,
                           self.opener.open,
                           self.URL)
 
     def test_proxy_qop_auth_works(self):
-        self._digest_auth_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
-        FakeProxyHandler.digest_auth_handler.set_qop("auth")
+        self.digest_auth_handler.set_qop("auth")
         result = self.opener.open(self.URL)
         while result.read():
             pass
         result.close()
 
     def test_proxy_qop_auth_int_works_or_throws_urlerror(self):
-        self._digest_auth_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
-        FakeProxyHandler.digest_auth_handler.set_qop("auth-int")
+        self.digest_auth_handler.set_qop("auth-int")
         try:
             result = self.opener.open(self.URL)
         except urllib2.URLError:
@@ -484,8 +489,7 @@ def test_main():
     # the next line.
     #test_support.requires("network")
 
-    test_support.run_unittest(ProxyAuthTests)
-    test_support.run_unittest(TestUrlopen)
+    test_support.run_unittest(ProxyAuthTests, TestUrlopen)
 
 if __name__ == "__main__":
     test_main()
