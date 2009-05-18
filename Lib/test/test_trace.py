@@ -471,7 +471,7 @@ class JumpTracer:
     def trace(self, frame, event, arg):
         if not self.done and frame.f_code == self.function.func_code:
             firstLine = frame.f_code.co_firstlineno
-            if frame.f_lineno == firstLine + self.jumpFrom:
+            if event == 'line' and frame.f_lineno == firstLine + self.jumpFrom:
                 # Cope with non-integer self.jumpTo (because of
                 # no_jump_to_non_integers below).
                 try:
