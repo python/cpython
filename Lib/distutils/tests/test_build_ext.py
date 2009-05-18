@@ -231,8 +231,6 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(cmd.compiler, 'unix')
 
     def test_get_outputs(self):
-        if UNDER_MSVC8:
-            return # not running this test for MSVC < 8
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
         self.write_file(c_file, 'void initfoo(void) {};\n')
