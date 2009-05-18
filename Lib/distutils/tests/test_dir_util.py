@@ -88,7 +88,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
             self.assertEquals(ensure_relative('/home/foo'), 'home/foo')
             self.assertEquals(ensure_relative('some/path'), 'some/path')
         else:   # \\
-            self.assertEquals(ensure_relative('c:\\home\\foo'), 'home\\foo')
+            self.assertEquals(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
             self.assertEquals(ensure_relative('home\\foo'), 'home\\foo')
 
 def test_suite():
