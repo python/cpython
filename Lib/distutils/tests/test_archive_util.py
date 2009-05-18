@@ -27,7 +27,14 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         tmpdir2 = self.mkdtemp()
         base_name = os.path.join(tmpdir2, 'archive')
-        make_tarball(base_name, tmpdir)
+
+        # working with relative paths to avoid tar warnings
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            make_tarball(base_name, '.')
+        finally:
+            os.chdir(old_dir)
 
         # check if the compressed tarball was created
         tarball = base_name + '.tar.gz'
@@ -35,7 +42,12 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
-        make_tarball(base_name, tmpdir, compress=None)
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            make_tarball(base_name, '.', compress=None)
+        finally:
+            os.chdir(old_dir)
         tarball = base_name + '.tar'
         self.assert_(os.path.exists(tarball))
 
