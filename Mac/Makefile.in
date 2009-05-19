@@ -38,12 +38,7 @@ STRIPFLAG=-s
 CPMAC=/Developer/Tools/CpMac
 
 APPTEMPLATE=$(srcdir)/Resources/app
-APPSUBDIRS=MacOS Resources Resources/English.lproj \
-	Resources/English.lproj/Documentation \
-	Resources/English.lproj/Documentation/doc \
-	Resources/English.lproj/Documentation/ide
-DOCDIR=$(srcdir)/Resources/app/Resources/English.lproj/Documentation
-DOCINDEX=$(DOCDIR)/"Documentation idx"
+APPSUBDIRS=MacOS Resources 
 compileall=$(srcdir)/../Lib/compileall.py
 
 installapps: install_Python install_PythonLauncher install_IDLE \
@@ -157,9 +152,6 @@ install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)
 
 install_Python:
-	@if test ! -f $(DOCINDEX); then \
-		echo WARNING: you should run Apple Help Indexing Tool on $(DOCDIR); \
-	fi
 	@for i in "$(PYTHONAPPSDIR)" "$(APPINSTALLDIR)" "$(APPINSTALLDIR)/Contents"; do \
 		if test ! -d "$(DESTDIR)$$i"; then \
 			echo "Creating directory $(DESTDIR)$$i"; \
