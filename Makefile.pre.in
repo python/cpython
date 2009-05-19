@@ -866,7 +866,7 @@ LIBSUBDIRS=	tkinter site-packages test test/output test/data \
 		importlib/test/import_ importlib/test/source \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		multiprocessing multiprocessing/dummy \
-		curses $(MACHDEPS)
+		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
