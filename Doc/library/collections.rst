@@ -844,6 +844,9 @@ the items are returned in the order their keys were first added.
    a (key, value) pair.  The pairs are returned in LIFO order if *last* is
    true or FIFO order if false.
 
+In addition to the usual mapping methods, ordered dictionaries also support
+reverse iteration using :func:`reversed`.
+
 Equality tests between :class:`OrderedDict` objects are order-sensitive
 and are implemented as ``list(od1.items())==list(od2.items())``.
 Equality tests between :class:`OrderedDict` objects and other
