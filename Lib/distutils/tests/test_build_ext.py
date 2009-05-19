@@ -336,6 +336,28 @@ class BuildExtTestCase(support.TempdirManager,
         so_dir = os.path.dirname(so_file)
         self.assertEquals(so_dir, cmd.build_lib)
 
+        # inplace = 0, cmd.package = 'bar'
+        cmd.package = 'bar'
+        path = cmd.get_ext_fullpath('foo')
+        # checking that the last directory is bar
+        path = os.path.split(path)[0]
+        lastdir = os.path.split(path)[-1]
+        self.assertEquals(lastdir, cmd.package)
+
+        # inplace = 1, cmd.package = 'bar'
+        cmd.inplace = 1
+        other_tmp_dir = os.path.realpath(self.mkdtemp())
+        old_wd = os.getcwd()
+        os.chdir(other_tmp_dir)
+        try:
+            path = cmd.get_ext_fullpath('foo')
+        finally:
+            os.chdir(old_wd)
+        # checking that the last directory is bar
+        path = os.path.split(path)[0]
+        lastdir = os.path.split(path)[-1]
+        self.assertEquals(lastdir, cmd.package)
+
 def test_suite():
     src = _get_source_filename()
     if not os.path.exists(src):

@@ -298,6 +298,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
+  and tests on pywin32 by Tim Golden.
+
 - Issue #6053: Fixed distutils tests on win32. patch by Hirokazu Yamamoto.
 
 - Issue #6046: Fixed the library extension when distutils build_ext is used
