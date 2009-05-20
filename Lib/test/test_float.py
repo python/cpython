@@ -532,6 +532,11 @@ class InfNanTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "-INFI")
         self.assertRaises(ValueError, float, "infinitys")
 
+        self.assertRaises(ValueError, float, "++Inf")
+        self.assertRaises(ValueError, float, "-+inf")
+        self.assertRaises(ValueError, float, "+-infinity")
+        self.assertRaises(ValueError, float, "--Infinity")
+
     def test_inf_as_str(self):
         self.assertEqual(repr(1e300 * 1e300), "inf")
         self.assertEqual(repr(-1e300 * 1e300), "-inf")
@@ -562,6 +567,11 @@ class InfNanTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "na")
         self.assertRaises(ValueError, float, "+na")
         self.assertRaises(ValueError, float, "-na")
+
+        self.assertRaises(ValueError, float, "++nan")
+        self.assertRaises(ValueError, float, "-+NAN")
+        self.assertRaises(ValueError, float, "+-NaN")
+        self.assertRaises(ValueError, float, "--nAn")
 
     def test_nan_as_str(self):
         self.assertEqual(repr(1e300 * 1e300 * 0), "nan")

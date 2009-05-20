@@ -21,6 +21,8 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                                          int flags,
                                          int *type);
 
+PyAPI_FUNC(double) _Py_parse_inf_or_nan(const char *p, char **endptr);
+
 
 /* PyOS_double_to_string's "flags" parameter can be set to 0 or more of: */
 #define Py_DTSF_SIGN      0x01 /* always add the sign */

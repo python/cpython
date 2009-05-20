@@ -1157,20 +1157,6 @@ Return a hexadecimal representation of a floating-point number.\n\
 >>> 3.14159.hex()\n\
 '0x1.921f9f01b866ep+1'");
 
-/* Case-insensitive locale-independent string match used for nan and inf
-   detection. t should be lower-case and null-terminated.  Return a nonzero
-   result if the first strlen(t) characters of s match t and 0 otherwise. */
-
-static int
-case_insensitive_match(const char *s, const char *t)
-{
-	while(*t && Py_TOLOWER(*s) == *t) {
-		s++;
-		t++;
-	}
-	return *t ? 0 : 1;
-}
-
 /* Convert a hexadecimal string to a float. */
 
 static PyObject *
@@ -1180,7 +1166,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	double x;
 	long exp, top_exp, lsb, key_digit;
 	char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
-	int half_eps, digit, round_up, sign=1;
+	int half_eps, digit, round_up, negate=0;
 	Py_ssize_t length, ndigits, fdigits, i;
 
 	/*
@@ -1237,33 +1223,24 @@ float_fromhex(PyObject *cls, PyObject *arg)
 	 * Parse the string *
 	 ********************/
 
-	/* leading whitespace and optional sign */
+	/* leading whitespace */
 	while (Py_ISSPACE(*s))
-		s++;
-	if (*s == '-') {
-		s++;
-		sign = -1;
-	}
-	else if (*s == '+')
 		s++;
 
 	/* infinities and nans */
-	if (*s == 'i' || *s == 'I') {
-		if (!case_insensitive_match(s+1, "nf"))
-			goto parse_error;
-		s += 3;
-		x = Py_HUGE_VAL;
-		if (case_insensitive_match(s, "inity"))
-			s += 5;
+	x = _Py_parse_inf_or_nan(s, &coeff_end);
+	if (coeff_end != s) {
+		s = coeff_end;
 		goto finished;
 	}
-	if (*s == 'n' || *s == 'N') {
-		if (!case_insensitive_match(s+1, "an"))
-			goto parse_error;
-		s += 3;
-		x = Py_NAN;
-		goto finished;
+
+	/* optional sign */
+	if (*s == '-') {
+		s++;
+		negate = 1;
 	}
+	else if (*s == '+')
+		s++;
 
 	/* [0x] */
 	s_store = s;
@@ -1400,7 +1377,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 		s++;
 	if (s != s_end)
 		goto parse_error;
-	result_as_float = Py_BuildValue("(d)", sign * x);
+	result_as_float = Py_BuildValue("(d)", negate ? -x : x);
 	if (result_as_float == NULL)
 		return NULL;
 	result = PyObject_CallObject(cls, result_as_float);

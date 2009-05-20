@@ -3,6 +3,57 @@
 #include <Python.h>
 #include <locale.h>
 
+/* _Py_parse_inf_or_nan: Attempt to parse a string of the form "nan", "inf" or
+   "infinity", with an optional leading sign of "+" or "-".  On success,
+   return the NaN or Infinity as a double and set *endptr to point just beyond
+   the successfully parsed portion of the string.  On failure, return -1.0 and
+   set *endptr to point to the start of the string. */
+
+static int
+case_insensitive_match(const char *s, const char *t)
+{
+	while(*t && Py_TOLOWER(*s) == *t) {
+		s++;
+		t++;
+	}
+	return *t ? 0 : 1;
+}
+
+double
+_Py_parse_inf_or_nan(const char *p, char **endptr)
+{
+	double retval;
+	const char *s;
+	int negate = 0;
+
+	s = p;
+	if (*s == '-') {
+		negate = 1;
+		s++;
+	}
+	else if (*s == '+') {
+		s++;
+	}
+	if (case_insensitive_match(s, "inf")) {
+		s += 3;
+		if (case_insensitive_match(s, "inity"))
+			s += 5;
+		retval = negate ? -Py_HUGE_VAL : Py_HUGE_VAL;
+	}
+#ifdef Py_NAN
+	else if (case_insensitive_match(s, "nan")) {
+		s += 3;
+		retval = negate ? -Py_NAN : Py_NAN;
+	}
+#endif
+	else {
+		s = p;
+		retval = -1.0;
+	}
+	*endptr = (char *)s;
+	return retval;
+}
+
 /**
  * PyOS_ascii_strtod:
  * @nptr:    the string to convert to a numeric value.
@@ -49,6 +100,10 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 	result = _Py_dg_strtod(nptr, endptr);
 	_Py_SET_53BIT_PRECISION_END;
 
+	if (*endptr == nptr)
+		/* string might represent and inf or nan */
+		result = _Py_parse_inf_or_nan(nptr, endptr);
+
 	return result;
 
 }
@@ -62,19 +117,6 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
    Note that unlike _Py_dg_strtod, the system strtod may not always give
    correctly rounded results.
 */
-
-/* Case-insensitive string match used for nan and inf detection; t should be
-   lower-case.  Returns 1 for a successful match, 0 otherwise. */
-
-static int
-case_insensitive_match(const char *s, const char *t)
-{
-	while(*t && Py_TOLOWER(*s) == *t) {
-		s++;
-		t++;
-	}
-	return *t ? 0 : 1;
-}
 
 double
 _PyOS_ascii_strtod(const char *nptr, char **endptr)
@@ -101,6 +143,11 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 	decimal_point_pos = NULL;
 
+	/* Parse infinities and nans */
+	val = _Py_parse_inf_or_nan(nptr, endptr);
+	if (*endptr != nptr)
+		return val;
+
 	/* Set errno to zero, so that we can distinguish zero results
 	   and underflows */
 	errno = 0;
@@ -117,31 +164,6 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 	else if (*p == '+') {
 		p++;
 	}
-
-	/* Parse infinities and nans */
-	if (*p == 'i' || *p == 'I') {
-		if (case_insensitive_match(p+1, "nf")) {
-			val = Py_HUGE_VAL;
-			if (case_insensitive_match(p+3, "inity"))
-				fail_pos = (char *)p+8;
-			else
-				fail_pos = (char *)p+3;
-			goto got_val;
-		}
-		else
-			goto invalid_string;
-	}
-#ifdef Py_NAN
-	if (*p == 'n' || *p == 'N') {
-		if (case_insensitive_match(p+1, "an")) {
-			val = Py_NAN;
-			fail_pos = (char *)p+3;
-			goto got_val;
-		}
-		else
-			goto invalid_string;
-	}
-#endif
 
 	/* Some platform strtods accept hex floats; Python shouldn't (at the
 	   moment), so we check explicitly for strings starting with '0x'. */
@@ -231,7 +253,6 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 	if (fail_pos == digits_pos)
 		goto invalid_string;
 
-  got_val:
 	if (negate && fail_pos != nptr)
 		val = -val;
 	*endptr = fail_pos;
