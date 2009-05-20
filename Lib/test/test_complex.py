@@ -431,6 +431,13 @@ class ComplexTest(unittest.TestCase):
 
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
+    def test_overflow(self):
+        self.assertEqual(complex("1e500"), complex(INF, 0.0))
+        self.assertEqual(complex("-1e500j"), complex(0.0, -INF))
+        self.assertEqual(complex("-1e500+1.8e308j"), complex(-INF, INF))
+
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
     def test_repr_roundtrip(self):
         vals = [0.0, 1e-500, 1e-315, 1e-200, 0.0123, 3.1415, 1e50, INF, NAN]
         vals += [-v for v in vals]
