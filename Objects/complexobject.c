@@ -989,8 +989,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	z = PyOS_ascii_strtod(s, &end);
 	if (end == s && errno == ENOMEM)
 		return PyErr_NoMemory();
-	if (errno == ERANGE && fabs(z) >= 1.0)
-		goto overflow;
 
 	if (end != s) {
 		/* all 4 forms starting with <float> land here */
@@ -1002,8 +1000,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			y = PyOS_ascii_strtod(s, &end);
 			if (end == s && errno == ENOMEM)
 				return PyErr_NoMemory();
-			if (errno == ERANGE && fabs(y) >= 1.0)
-				goto overflow;
 			if (end != s)
 				/* <float><signed-float>j */
 				s = end;
@@ -1062,11 +1058,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
   parse_error:
 	PyErr_SetString(PyExc_ValueError,
 			"complex() arg is a malformed string");
-	return NULL;
-
-  overflow:
-	PyErr_SetString(PyExc_OverflowError,
-			"complex() arg overflow");
 	return NULL;
 }
 
