@@ -8,7 +8,7 @@ m4_define(PYTHON_VERSION, 3.1)
 
 AC_REVISION($Revision$)
 AC_PREREQ(2.61)
-AC_INIT(python, PYTHON_VERSION, http://www.python.org/python-bugs)
+AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
