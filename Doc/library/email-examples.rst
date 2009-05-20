@@ -1,3 +1,5 @@
+.. _email-examples:
+
 :mod:`email`: Examples
 ----------------------
 
