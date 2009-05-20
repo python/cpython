@@ -140,20 +140,26 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 			     new_lineno);
 		return -1;
 	}
-
-	/* Find the bytecode offset for the start of the given line, or the
-	 * first code-owning line after it. */
-	PyString_AsStringAndSize(f->f_code->co_lnotab, &lnotab, &lnotab_len);
-	addr = 0;
-	line = f->f_code->co_firstlineno;
-	new_lasti = -1;
-	for (offset = 0; offset < lnotab_len; offset += 2) {
-		addr += lnotab[offset];
-		line += lnotab[offset+1];
-		if (line >= new_lineno) {
-			new_lasti = addr;
-			new_lineno = line;
-			break;
+	else if (new_lineno == f->f_code->co_firstlineno) {
+		new_lasti = 0;
+		new_lineno = f->f_code->co_firstlineno;
+	}
+	else {
+		/* Find the bytecode offset for the start of the given
+		 * line, or the first code-owning line after it. */
+		PyString_AsStringAndSize(f->f_code->co_lnotab,
+					 &lnotab, &lnotab_len);
+		addr = 0;
+		line = f->f_code->co_firstlineno;
+		new_lasti = -1;
+		for (offset = 0; offset < lnotab_len; offset += 2) {
+			addr += lnotab[offset];
+			line += lnotab[offset+1];
+			if (line >= new_lineno) {
+				new_lasti = addr;
+				new_lineno = line;
+				break;
+			}
 		}
 	}
 

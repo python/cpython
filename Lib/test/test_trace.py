@@ -740,6 +740,27 @@ class JumpTestCase(unittest.TestCase):
     def test_19_no_jump_without_trace_function(self):
         no_jump_without_trace_function()
 
+    def test_jump_to_firstlineno(self):
+        # This tests that PDB can jump back to the first line in a
+        # file.  See issue #1689458.  It can only be triggered in a
+        # function call if the function is defined on a single line.
+        code = compile("""
+# Comments don't count.
+output.append(2)  # firstlineno is here.
+output.append(3)
+output.append(4)
+""", "<fake module>", "exec")
+        class fake_function:
+            func_code = code
+            jump = (2, 0)
+        tracer = JumpTracer(fake_function)
+        sys.settrace(tracer.trace)
+        namespace = {"output": []}
+        exec code in namespace
+        sys.settrace(None)
+        self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
+
+
 def test_main():
     test_support.run_unittest(
         TraceTestCase,
