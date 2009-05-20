@@ -477,7 +477,7 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
 
 	if (offset < 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"offset cannit be negative");
+				"offset cannot be negative");
 		return NULL;
 	}
 	if (dict->size > buffer_len - offset) {
@@ -533,7 +533,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
 
 	if (offset < 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"offset cannit be negative");
+				"offset cannot be negative");
 		return NULL;
 	}
 
