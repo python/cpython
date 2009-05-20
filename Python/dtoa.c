@@ -264,15 +264,6 @@ extern int strtod_diglim;
 #define Big0 (Frac_mask1 | Exp_msk1*(DBL_MAX_EXP+Bias-1))
 #define Big1 0xffffffff
 
-#ifndef NAN_WORD0
-#define NAN_WORD0 0x7ff80000
-#endif
-
-#ifndef NAN_WORD1
-#define NAN_WORD1 0
-#endif
-
-
 /* struct BCinfo is used to pass information from _Py_dg_strtod to bigcomp */
 
 typedef struct BCinfo BCinfo;
@@ -1026,25 +1017,6 @@ static const double tinytens[] = { 1e-16, 1e-32, 1e-64, 1e-128,
 #define Scale_Bit 0x10
 #define n_bigtens 5
 
-/* case insensitive string match, for recognising 'inf[inity]' and
-   'nan' strings. */
-
-static int
-match(const char **sp, char *t)
-{
-    int c, d;
-    const char *s = *sp;
-
-    while((d = *t++)) {
-        if ((c = *++s) >= 'A' && c <= 'Z')
-            c += 'a' - 'A';
-        if (c != d)
-            return 0;
-    }
-    *sp = s + 1;
-    return 1;
-}
-
 #define ULbits 32
 #define kshift 5
 #define kmask 31
@@ -1459,28 +1431,6 @@ _Py_dg_strtod(const char *s00, char **se)
     }
     if (!nd) {
         if (!nz && !nz0) {
-            /* Check for Nan and Infinity */
-            if (!bc.dplen)
-                switch(c) {
-                case 'i':
-                case 'I':
-                    if (match(&s,"nf")) {
-                        --s;
-                        if (!match(&s,"inity"))
-                            ++s;
-                        word0(&rv) = 0x7ff00000;
-                        word1(&rv) = 0;
-                        goto ret;
-                    }
-                    break;
-                case 'n':
-                case 'N':
-                    if (match(&s, "an")) {
-                        word0(&rv) = NAN_WORD0;
-                        word1(&rv) = NAN_WORD1;
-                        goto ret;
-                    }
-                }
           ret0:
             s = s00;
             sign = 0;
