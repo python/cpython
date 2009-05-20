@@ -472,7 +472,7 @@ class JumpTracer:
     def trace(self, frame, event, arg):
         if not self.done and frame.f_code == self.function.__code__:
             firstLine = frame.f_code.co_firstlineno
-            if frame.f_lineno == firstLine + self.jumpFrom:
+            if event == 'line' and frame.f_lineno == firstLine + self.jumpFrom:
                 # Cope with non-integer self.jumpTo (because of
                 # no_jump_to_non_integers below).
                 try:
@@ -740,6 +740,27 @@ class JumpTestCase(unittest.TestCase):
         self.run_test(no_jump_to_non_integers)
     def test_19_no_jump_without_trace_function(self):
         no_jump_without_trace_function()
+
+    def test_jump_to_firstlineno(self):
+        # This tests that PDB can jump back to the first line in a
+        # file.  See issue #1689458.  It can only be triggered in a
+        # function call if the function is defined on a single line.
+        code = compile("""
+# Comments don't count.
+output.append(2)  # firstlineno is here.
+output.append(3)
+output.append(4)
+""", "<fake module>", "exec")
+        class fake_function:
+            __code__ = code
+            jump = (2, 0)
+        tracer = JumpTracer(fake_function)
+        sys.settrace(tracer.trace)
+        namespace = {"output": []}
+        exec(code, namespace)
+        sys.settrace(None)
+        self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
+
 
 def test_main():
     support.run_unittest(
