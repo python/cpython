@@ -1057,7 +1057,7 @@ opcodes = [
       arg=string1,
       stack_before=[],
       stack_after=[pybytes],
-      proto=1,
+      proto=3,
       doc="""Push a Python string object.
 
       There are two arguments:  the first is a 1-byte unsigned int giving
@@ -1384,7 +1384,7 @@ opcodes = [
       arg=None,
       stack_before=[markobject, stackslice],
       stack_after=[],
-      proto=0,
+      proto=1,
       doc="""Pop all the stack objects at and above the topmost markobject.
 
       When an opcode using a variable number of stack objects is done,
