@@ -799,7 +799,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	*/
 
 	/* first look for forms starting with <float> */
-	z = PyOS_string_to_double(s, &end, PyExc_OverflowError);
+	z = PyOS_string_to_double(s, &end, NULL);
 	if (z == -1.0 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_ValueError))
 			PyErr_Clear();
@@ -812,7 +812,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		if (*s == '+' || *s == '-') {
 			/* <float><signed-float>j | <float><sign>j */
 			x = z;
-			y = PyOS_string_to_double(s, &end, PyExc_OverflowError);
+			y = PyOS_string_to_double(s, &end, NULL);
 			if (y == -1.0 && PyErr_Occurred()) {
 				if (PyErr_ExceptionMatches(PyExc_ValueError))
 					PyErr_Clear();

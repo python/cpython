@@ -12,6 +12,10 @@ What's New in Python 3.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #5829: complex("1e500") no longer raises OverflowError.  This
+  makes it consistent with float("1e500") and interpretation of real
+  and imaginary literals.
+
 - Issue #3527: Removed Py_WIN_WIDE_FILENAMES which is not used any more.
 
 - Issue #5994: the marshal module now has docstrings.
