@@ -352,7 +352,7 @@ class TestCase(object):
            not have a method with the specified name.
         """
         self._testMethodName = methodName
-        self._result = None
+        self._resultForDoCleanups = None
         try:
             testMethod = getattr(self, methodName)
         except AttributeError:
@@ -456,7 +456,7 @@ class TestCase(object):
             if startTestRun is not None:
                 startTestRun()
 
-        self._result = result
+        self._resultForDoCleanups = result
         result.startTest(self)
         testMethod = getattr(self, self._testMethodName)
         try:
@@ -503,7 +503,7 @@ class TestCase(object):
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
         tearDown."""
-        result = self._result
+        result = self._resultForDoCleanups
         ok = True
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop(-1)
