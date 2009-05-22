@@ -298,6 +298,28 @@ Example:
 
 This section shows various approaches to working with deques.
 
+Bounded length deques provide functionality similar to the ``tail`` filter
+in Unix::
+
+   def tail(filename, n=10):
+       'Return the last n lines of a file'
+       return deque(open(filename), n)
+
+Another approach to using deques is to maintain a sequence of recently
+added elements by appending to the right and popping to the left::
+
+    def moving_average(iterable, n=3):
+        # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
+        # http://en.wikipedia.org/wiki/Moving_average
+        it = iter(iterable)
+        d = deque(itertools.islice(it, n-1))
+        d.appendleft(0)
+        s = sum(d)
+        for elem in it:
+            s += elem - d.popleft()
+            d.append(elem)
+            yield s / n
+
 The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure python implementation of ``del d[n]`` relies on
 the :meth:`rotate` method to position elements to be popped::
@@ -314,31 +336,6 @@ reverse the rotation.
 With minor variations on that approach, it is easy to implement Forth style
 stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 ``rot``, and ``roll``.
-
-Multi-pass data reduction algorithms can be succinctly expressed and efficiently
-coded by extracting elements with multiple calls to :meth:`popleft`, applying
-a reduction function, and calling :meth:`append` to add the result back to the
-deque.
-
-For example, building a balanced binary tree of nested lists entails reducing
-two adjacent nodes into one by grouping them in a list:
-
-   >>> def maketree(iterable):
-   ...     d = deque(iterable)
-   ...     while len(d) > 1:
-   ...         pair = [d.popleft(), d.popleft()]
-   ...         d.append(pair)
-   ...     return list(d)
-   ...
-   >>> print(maketree('abcdefgh'))
-   [[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
-
-Bounded length deques provide functionality similar to the ``tail`` filter
-in Unix::
-
-   def tail(filename, n=10):
-       'Return the last n lines of a file'
-       return deque(open(filename), n)
 
 .. _defaultdict-objects:
 
