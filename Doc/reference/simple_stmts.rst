@@ -386,9 +386,10 @@ first converted to a string using the rules for string conversions.  The
 object is (converted and) written, unless the output system believes it is
 positioned at the beginning of a line.  This is the case (1) when no characters
 have yet been written to standard output, (2) when the last character written to
-standard output is ``'\n'``, or (3) when the last write operation on standard
-output was not a :keyword:`print` statement.  (In some cases it may be
-functional to write an empty string to standard output for this reason.)
+standard output is a whitespace character except ``' '``, or (3) when the last
+write operation on standard output was not a :keyword:`print` statement.
+(In some cases it may be functional to write an empty string to standard output
+for this reason.)
 
 .. note::
 
