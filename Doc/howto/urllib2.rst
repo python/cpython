@@ -313,7 +313,7 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
     >>> req = urllib.request.Request('http://www.python.org/fish.html')
     >>> try:
     >>>     urllib.request.urlopen(req)
-    >>> except urllib.error.URLError as e:
+    >>> except urllib.error.HTTPError as e:
     >>>     print(e.code)
     >>>     print(e.read())
     >>>
