@@ -1483,7 +1483,7 @@ available.  They are listed here in alphabetical order.
    names.
 
    If you simply want to import a module (potentially within a package) by name,
-   you can use :func:`__import__` and then look it up in :data:`sys.modules`::
+   you can call :func:`__import__` and then look it up in :data:`sys.modules`::
 
       >>> import sys
       >>> name = 'foo.bar.baz'
