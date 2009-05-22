@@ -157,6 +157,12 @@ This module also defines two shortcut functions:
 
       retcode = call(["ls", "-l"])
 
+   .. warning::
+
+      Like :meth:`Popen.wait`, this will deadlock if the child process
+      generates enough output to a stdout or stderr pipe such that it blocks
+      waiting for the OS pipe buffer to accept more data.
+
 
 .. function:: check_call(*popenargs, **kwargs)
 
@@ -170,6 +176,10 @@ This module also defines two shortcut functions:
       check_call(["ls", "-l"])
 
    .. versionadded:: 2.5
+
+   .. warning::
+
+      See the warning for :func:`call`.
 
 
 .. function:: check_output(*popenargs, **kwargs)
