@@ -1413,7 +1413,7 @@ available.  They are listed here in alphabetical order.
       >>> zipped
       [(1, 4), (2, 5), (3, 6)]
       >>> x2, y2 = zip(*zipped)
-      >>> x == x2, y == y2
+      >>> x == list(x2) and y == list(y2)
       True
 
    .. versionadded:: 2.0
