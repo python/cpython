@@ -958,6 +958,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #6094: Build correctly with Subversion 1.7.
+
 - Issue #5847: Remove -n switch on "Edit with IDLE" menu item.
 
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
