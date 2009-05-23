@@ -48,5 +48,5 @@ _Py_svnversion(void)
 	static const char svnversion[] = SVNVERSION;
 	if (svnversion[0] != '$')
 		return svnversion; /* it was interpolated, or passed on command line */
-	return "exported";
+	return "Unversioned directory";
 }
