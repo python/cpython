@@ -314,7 +314,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
             PyErr_NoMemory();
             goto exit;
         }
-        n2 = wcsxfrm(buf, s, n2);
+        n2 = wcsxfrm(buf, s, n2+1);
     }
     result = PyUnicode_FromWideChar(buf, n2);
  exit:

@@ -54,6 +54,11 @@ Library
   now it does.  This also means getfp method now returns the real fp.
 
 
+Extension Modules
+-----------------
+
+- Issue #6093: Fix off-by-one error in locale.strxfrm.
+
 Tests
 -----
 
