@@ -1666,7 +1666,8 @@ def main():
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_struct', ['_struct.c'])],
 
-          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3"]
+          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
+                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib
