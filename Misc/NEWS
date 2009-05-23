@@ -71,6 +71,8 @@ Extension Modules
 
 - Issue #6093: Fix off-by-one error in locale.strxfrm.
 
+- The _functools and _locale modules are now built into the shared library.
+
 Tests
 -----
 
