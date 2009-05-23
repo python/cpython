@@ -98,6 +98,8 @@ Library
 Build
 -----
 
+- Issue #6094: Build correctly with Subversion 1.7.
+
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
