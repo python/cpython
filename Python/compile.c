@@ -1646,9 +1646,6 @@ compiler_for(struct compiler *c, stmt_ty s)
 	VISIT(c, expr, s->v.For.iter);
 	ADDOP(c, GET_ITER);
 	compiler_use_next_block(c, start);
-	/* for expressions must be traced on each iteration,
-	   so we need to set an extra line number. */
-	c->u->u_lineno_set = false;
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
 	VISIT_SEQ(c, stmt, s->v.For.body);
@@ -1694,9 +1691,6 @@ compiler_while(struct compiler *c, stmt_ty s)
 	if (!compiler_push_fblock(c, LOOP, loop))
 		return 0;
 	if (constant == -1) {
-		/* while expressions must be traced on each iteration,
-		   so we need to set an extra line number. */
-		c->u->u_lineno_set = false;
 		VISIT(c, expr, s->v.While.test);
 		ADDOP_JABS(c, POP_JUMP_IF_FALSE, anchor);
 	}
@@ -3493,51 +3487,9 @@ blocksize(basicblock *b)
 	return size;
 }
 
-/* All about a_lnotab.
-
-c_lnotab is an array of unsigned bytes disguised as a Python string.
-It is used to map bytecode offsets to source code line #s (when needed
-for tracebacks).
-
-The array is conceptually a list of
-    (bytecode offset increment, line number increment)
-pairs.	The details are important and delicate, best illustrated by example:
-
-    byte code offset	source code line number
-	0		    1
-	6		    2
-       50		    7
-      350		  307
-      361		  308
-
-The first trick is that these numbers aren't stored, only the increments
-from one row to the next (this doesn't really work, but it's a start):
-
-    0, 1,  6, 1,  44, 5,  300, 300,  11, 1
-
-The second trick is that an unsigned byte can't hold negative values, or
-values larger than 255, so (a) there's a deep assumption that byte code
-offsets and their corresponding line #s both increase monotonically, and (b)
-if at least one column jumps by more than 255 from one row to the next, more
-than one pair is written to the table. In case #b, there's no way to know
-from looking at the table later how many were written.	That's the delicate
-part.  A user of c_lnotab desiring to find the source line number
-corresponding to a bytecode address A should do something like this
-
-    lineno = addr = 0
-    for addr_incr, line_incr in c_lnotab:
-	addr += addr_incr
-	if addr > A:
-	    return lineno
-	lineno += line_incr
-
-In order for this to work, when the addr field increments by more than 255,
-the line # increment in each pair generated must be 0 until the remaining addr
-increment is < 256.  So, in the example above, assemble_lnotab (it used
-to be called com_set_lineno) should not (as was actually done until 2.2)
-expand 300, 300 to 255, 255, 45, 45, 
-	    but to 255,	  0, 45, 255, 0, 45.
-*/
+/* Appends a pair to the end of the line number table, a_lnotab, representing
+   the instruction's bytecode offset and line number.  See
+   Objects/lnotab_notes.txt for the description of the line number table. */
 
 static int
 assemble_lnotab(struct assembler *a, struct instr *i)

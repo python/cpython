@@ -23,7 +23,8 @@ typedef struct {
     PyObject *co_filename;	/* string (where it was loaded from) */
     PyObject *co_name;		/* string (name, for reference) */
     int co_firstlineno;		/* first source line number */
-    PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) */
+    PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) See
+				   Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;     /* for optimization only (see frameobject.c) */
 } PyCodeObject;
 
@@ -90,15 +91,11 @@ typedef struct _addr_pair {
         int ap_upper;
 } PyAddrPair;
 
-/* Check whether lasti (an instruction offset) falls outside bounds
-   and whether it is a line number that should be traced.  Returns
-   a line number if it should be traced or -1 if the line should not.
-
-   If lasti is not within bounds, updates bounds.
+/* Update *bounds to describe the first and one-past-the-last instructions in the
+   same line as lasti.  Return the number of that line.
 */
-
-PyAPI_FUNC(int) PyCode_CheckLineNumber(PyCodeObject* co,
-                                       int lasti, PyAddrPair *bounds);
+PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
+                                        int lasti, PyAddrPair *bounds);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lineno_obj);
