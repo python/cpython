@@ -151,7 +151,7 @@ class OtherFileTests(unittest.TestCase):
                     self.assertEquals(f.readable(), False)
                     self.assertEquals(f.writable(), True)
                     if sys.platform != "darwin" and \
-                       not sys.platform.startswith('freebsd') and \
+                       'bsd' not in sys.platform and \
                        not sys.platform.startswith('sunos'):
                         # Somehow /dev/tty appears seekable on some BSDs
                         self.assertEquals(f.seekable(), False)
