@@ -1115,7 +1115,7 @@ svnversion_init(void)
 
 
 	svnversion = _Py_svnversion();
-	if (strcmp(svnversion, "exported") != 0)
+	if (strcmp(svnversion, "Unversioned directory") != 0 && strcmp(svnversion, "exported") != 0)
 		svn_revision = svnversion;
 	else if (istag) {
 		len = strlen(_patchlevel_revision);
