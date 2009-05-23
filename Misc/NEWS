@@ -160,6 +160,11 @@ Library
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
 
+Extension Modules
+-----------------
+
+- Issue #6093: Fix off-by-one error in locale.strxfrm.
+
 Build
 -----
 
