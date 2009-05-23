@@ -751,9 +751,10 @@ if _have_ssl:
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
-            self.sock = socket.create_connection((host, port), timeout)
-            self.sock = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
-            self.file = SSLFakeFile(self.sock)
+            new_socket = socket.create_connection((host, port), timeout)
+            new_socket = ssl.wrap_socket(new_socket, self.keyfile, self.certfile)
+            self.file = SSLFakeFile(new_socket)
+            return new_socket
 
     __all__.append("SMTP_SSL")
 
