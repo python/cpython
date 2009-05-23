@@ -798,9 +798,11 @@ always available.
       specifies the local trace function.
 
    ``'line'``
-      The interpreter is about to execute a new line of code (sometimes multiple
-      line events on one line exist).  The local trace function is called; *arg*
-      is ``None``; the return value specifies the new local trace function.
+      The interpreter is about to execute a new line of code or re-execute the
+      condition of a loop.  The local trace function is called; *arg* is
+      ``None``; the return value specifies the new local trace function.  See
+      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      works.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace

@@ -507,48 +507,8 @@ PyTypeObject PyCode_Type = {
 	code_new,			/* tp_new */
 };
 
-/* All about c_lnotab.
-
-c_lnotab is an array of unsigned bytes disguised as a Python string.  In -O
-mode, SET_LINENO opcodes aren't generated, and bytecode offsets are mapped
-to source code line #s (when needed for tracebacks) via c_lnotab instead.
-The array is conceptually a list of
-    (bytecode offset increment, line number increment)
-pairs.  The details are important and delicate, best illustrated by example:
-
-    byte code offset    source code line number
-        0		    1
-        6		    2
-       50		    7
-      350                 307
-      361                 308
-
-The first trick is that these numbers aren't stored, only the increments
-from one row to the next (this doesn't really work, but it's a start):
-
-    0, 1,  6, 1,  44, 5,  300, 300,  11, 1
-
-The second trick is that an unsigned byte can't hold negative values, or
-values larger than 255, so (a) there's a deep assumption that byte code
-offsets and their corresponding line #s both increase monotonically, and (b)
-if at least one column jumps by more than 255 from one row to the next, more
-than one pair is written to the table. In case #b, there's no way to know
-from looking at the table later how many were written.  That's the delicate
-part.  A user of c_lnotab desiring to find the source line number
-corresponding to a bytecode address A should do something like this
-
-    lineno = addr = 0
-    for addr_incr, line_incr in c_lnotab:
-        addr += addr_incr
-        if addr > A:
-            return lineno
-        lineno += line_incr
-
-In order for this to work, when the addr field increments by more than 255,
-the line # increment in each pair generated must be 0 until the remaining addr
-increment is < 256.  So, in the example above, com_set_lineno should not (as
-was actually done until 2.2) expand 300, 300 to 255, 255,  45, 45, but to
-255, 0,  45, 255,  0, 45.
+/* Use co_lnotab to compute the line number from a bytecode index, addrq.  See
+   lnotab_notes.txt for the details of the lnotab representation.
 */
 
 int
@@ -567,85 +527,10 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 	return line;
 }
 
-/* 
-   Check whether the current instruction is at the start of a line.
-
- */
-
-	/* The theory of SET_LINENO-less tracing.
-
-	   In a nutshell, we use the co_lnotab field of the code object
-	   to tell when execution has moved onto a different line.
-
-	   As mentioned above, the basic idea is so set things up so
-	   that
-
-	         *instr_lb <= frame->f_lasti < *instr_ub
-
-	   is true so long as execution does not change lines.
-
-	   This is all fairly simple.  Digging the information out of
-	   co_lnotab takes some work, but is conceptually clear.
-
-	   Somewhat harder to explain is why we don't *always* call the
-	   line trace function when the above test fails.
-
-	   Consider this code:
-
-	   1: def f(a):
-	   2:     if a:
-	   3:        print 1
-	   4:     else:
-	   5:        print 2
-
-	   which compiles to this:
-
-	   2           0 LOAD_FAST                0 (a)
-		       3 JUMP_IF_FALSE            9 (to 15)
-		       6 POP_TOP
-
-	   3           7 LOAD_CONST               1 (1)
-		      10 PRINT_ITEM
-		      11 PRINT_NEWLINE
-		      12 JUMP_FORWARD             6 (to 21)
-		 >>   15 POP_TOP
-
-	   5          16 LOAD_CONST               2 (2)
-		      19 PRINT_ITEM
-		      20 PRINT_NEWLINE
-		 >>   21 LOAD_CONST               0 (None)
-		      24 RETURN_VALUE
-
-	   If 'a' is false, execution will jump to instruction at offset
-	   15 and the co_lnotab will claim that execution has moved to
-	   line 3.  This is at best misleading.  In this case we could
-	   associate the POP_TOP with line 4, but that doesn't make
-	   sense in all cases (I think).
-
-	   What we do is only call the line trace function if the co_lnotab
-	   indicates we have jumped to the *start* of a line, i.e. if the
-	   current instruction offset matches the offset given for the
-	   start of a line by the co_lnotab.
-
-	   This also takes care of the situation where 'a' is true.
-	   Execution will jump from instruction offset 12 to offset 21.
-	   Then the co_lnotab would imply that execution has moved to line
-	   5, which is again misleading.
-
-	   Why do we set f_lineno when tracing?  Well, consider the code
-	   above when 'a' is true.  If stepping through this with 'n' in
-	   pdb, you would stop at line 1 with a "call" type event, then
-	   line events on lines 2 and 3, then a "return" type event -- but
-	   you would be shown line 5 during this event.  This is a change
-	   from the behaviour in 2.2 and before, and I've found it
-	   confusing in practice.  By setting and using f_lineno when
-	   tracing, one can report a line number different from that
-	   suggested by f_lasti on this one occasion where it's desirable.
-	*/
-
-
-int 
-PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
+/* Update *bounds to describe the first and one-past-the-last instructions in
+   the same line as lasti.  Return the number of that line. */
+int
+_PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
 {
         int size, addr, line;
         unsigned char* p;
@@ -662,11 +547,9 @@ PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
            instr_lb -- if we stored the matching value of p
            somwhere we could skip the first while loop. */
 
-        /* see comments in compile.c for the description of
+        /* See lnotab_notes.txt for the description of
            co_lnotab.  A point to remember: increments to p
-           should come in pairs -- although we don't care about
-           the line increments here, treating them as byte
-           increments gets confusing, to say the least. */
+           come in (addr, line) pairs. */
 
         bounds->ap_lower = 0;
         while (size > 0) {
@@ -679,13 +562,6 @@ PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
                 --size;
         }
 
-        /* If lasti and addr don't match exactly, we don't want to
-           change the lineno slot on the frame or execute a trace
-           function.  Return -1 instead.
-        */
-        if (addr != lasti)
-                line = -1;
-        
         if (size > 0) {
                 while (--size >= 0) {
                         addr += *p++;
