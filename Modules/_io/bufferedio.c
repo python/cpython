@@ -1123,6 +1123,27 @@ Buffered_iternext(BufferedObject *self)
     return line;
 }
 
+static PyObject *
+Buffered_repr(BufferedObject *self)
+{
+    PyObject *nameobj, *res;
+
+    nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+    if (nameobj == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return NULL;
+        res = PyUnicode_FromFormat("<%s>", Py_TYPE(self)->tp_name);
+    }
+    else {
+        res = PyUnicode_FromFormat("<%s name=%R>",
+                                   Py_TYPE(self)->tp_name, nameobj);
+        Py_DECREF(nameobj);
+    }
+    return res;
+}
+
 /*
  * class BufferedReader
  */
@@ -1472,7 +1493,7 @@ PyTypeObject PyBufferedReader_Type = {
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /*tp_compare */
-    0,                          /*tp_repr*/
+    (reprfunc)Buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
@@ -1828,7 +1849,7 @@ PyTypeObject PyBufferedWriter_Type = {
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /*tp_compare */
-    0,                          /*tp_repr*/
+    (reprfunc)Buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
@@ -2219,7 +2240,7 @@ PyTypeObject PyBufferedRandom_Type = {
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /*tp_compare */
-    0,                          /*tp_repr*/
+    (reprfunc)Buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/

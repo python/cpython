@@ -618,6 +618,16 @@ class CommonBufferedTests:
             self.assert_(s.startswith("Exception IOError: "), s)
             self.assert_(s.endswith(" ignored"), s)
 
+    def test_repr(self):
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        clsname = "%s.%s" % (self.tp.__module__, self.tp.__name__)
+        self.assertEqual(repr(b), "<%s>" % clsname)
+        raw.name = "dummy"
+        self.assertEqual(repr(b), "<%s name='dummy'>" % clsname)
+        raw.name = b"dummy"
+        self.assertEqual(repr(b), "<%s name=b'dummy'>" % clsname)
+
 
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     read_mode = "rb"
@@ -1528,7 +1538,15 @@ class TextIOWrapperTest(unittest.TestCase):
         raw = self.BytesIO("hello".encode("utf-8"))
         b = self.BufferedReader(raw)
         t = self.TextIOWrapper(b, encoding="utf-8")
-        self.assertEqual(repr(t), "<TextIOWrapper encoding=utf-8>")
+        modname = self.TextIOWrapper.__module__
+        self.assertEqual(repr(t),
+                         "<%s.TextIOWrapper encoding='utf-8'>" % modname)
+        raw.name = "dummy"
+        self.assertEqual(repr(t),
+                         "<%s.TextIOWrapper name='dummy' encoding='utf-8'>" % modname)
+        raw.name = b"dummy"
+        self.assertEqual(repr(t),
+                         "<%s.TextIOWrapper name=b'dummy' encoding='utf-8'>" % modname)
 
     def test_line_buffering(self):
         r = self.BytesIO()

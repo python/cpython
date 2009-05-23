@@ -736,6 +736,15 @@ class _BufferedIOMixin(BufferedIOBase):
     def mode(self):
         return self.raw.mode
 
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        try:
+            name = self.name
+        except AttributeError:
+            return "<_pyio.{0}>".format(clsname)
+        else:
+            return "<_pyio.{0} name={1!r}>".format(clsname, name)
+
     ### Lower-level APIs ###
 
     def fileno(self):
@@ -1455,7 +1464,13 @@ class TextIOWrapper(TextIOBase):
     #   - "chars_..." for integer variables that count decoded characters
 
     def __repr__(self):
-        return "<TextIOWrapper encoding={0}>".format(self.encoding)
+        try:
+            name = self.name
+        except AttributeError:
+            return "<_pyio.TextIOWrapper encoding={0!r}>".format(self.encoding)
+        else:
+            return "<_pyio.TextIOWrapper name={0!r} encoding={1!r}>".format(
+                name, self.encoding)
 
     @property
     def encoding(self):

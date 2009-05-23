@@ -70,9 +70,13 @@ class AutoFileTests(unittest.TestCase):
         self.assertEquals(array('b', [1, 2]), a[:n])
 
     def testRepr(self):
-        self.assertEquals(repr(self.f),
-                          "io.FileIO(%d, %s)" % (self.f.fileno(),
-                                                       repr(self.f.mode)))
+        self.assertEquals(repr(self.f), "<_io.FileIO name=%r mode=%r>"
+                                        % (self.f.name, self.f.mode))
+        del self.f.name
+        self.assertEquals(repr(self.f), "<_io.FileIO fd=%r mode=%r>"
+                                        % (self.f.fileno(), self.f.mode))
+        self.f.close()
+        self.assertEquals(repr(self.f), "<_io.FileIO [closed]>")
 
     def testErrors(self):
         f = self.f
