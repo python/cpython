@@ -171,6 +171,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6094: Build correctly with Subversion 1.7.
+
 - Link the shared python library with $(MODLIBS).
 
 - Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built

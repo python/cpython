@@ -721,7 +721,7 @@ if test $SVNVERSION = found
 then
 	SVNVERSION="svnversion \$(srcdir)"
 else
-	SVNVERSION="echo exported"
+	SVNVERSION="echo Unversioned directory"
 fi
 
 case $MACHDEP in
