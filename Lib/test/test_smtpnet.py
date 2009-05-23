@@ -4,17 +4,15 @@ import unittest
 from test import support
 import smtplib
 
-support.requires(
-    "network",
-    "use of network resource is not enabled and "
-    "test requires Internet access for communication with smtp.gmail.com:465",
-    )
+support.requires("network")
 
 class SmtpSSLTest(unittest.TestCase):
     testServer = 'smtp.gmail.com'
     remotePort = 465
 
     def test_connect(self):
+        #Skip test silently if no SSL; in 3.1 we use SkipTest
+        if not hasattr(smtplib, 'SMTP_SSL'): return
         server = smtplib.SMTP_SSL(self.testServer, self.remotePort)
         server.ehlo()
         server.quit()
