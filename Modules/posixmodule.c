@@ -3902,7 +3902,7 @@ Return the current process id");
 static PyObject *
 posix_getpid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getpid());
+	return PyLong_FromPid(getpid());
 }
 
 
@@ -3956,13 +3956,13 @@ Call the system call getpgid().");
 static PyObject *
 posix_getpgid(PyObject *self, PyObject *args)
 {
-	int pid, pgid;
-	if (!PyArg_ParseTuple(args, "i:getpgid", &pid))
+	pid_t pid, pgid;
+	if (!PyArg_ParseTuple(args, PARSE_PID ":getpgid", &pid))
 		return NULL;
 	pgid = getpgid(pid);
 	if (pgid < 0)
 		return posix_error();
-	return PyInt_FromLong((long)pgid);
+	return PyLong_FromPid(pgid);
 }
 #endif /* HAVE_GETPGID */
 
@@ -3976,9 +3976,9 @@ static PyObject *
 posix_getpgrp(PyObject *self, PyObject *noargs)
 {
 #ifdef GETPGRP_HAVE_ARG
-	return PyInt_FromLong((long)getpgrp(0));
+	return PyLong_FromPid(getpgrp(0));
 #else /* GETPGRP_HAVE_ARG */
-	return PyInt_FromLong((long)getpgrp());
+	return PyLong_FromPid(getpgrp());
 #endif /* GETPGRP_HAVE_ARG */
 }
 #endif /* HAVE_GETPGRP */
@@ -4012,7 +4012,7 @@ Return the parent's process id.");
 static PyObject *
 posix_getppid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong(getppid());
+	return PyLong_FromPid(getppid());
 }
 #endif
 
@@ -4101,8 +4101,13 @@ Kill a process group with a signal.");
 static PyObject *
 posix_killpg(PyObject *self, PyObject *args)
 {
-	int pgid, sig;
-	if (!PyArg_ParseTuple(args, "ii:killpg", &pgid, &sig))
+	int sig;
+	pid_t pgid;
+	/* XXX some man pages make the `pgid` parameter an int, others
+	   a pid_t. Since getpgrp() returns a pid_t, we assume killpg should
+	   take the same type. Moreover, pid_t is always at least as wide as
+	   int (else compilation of this module fails), which is safe. */
+	if (!PyArg_ParseTuple(args, PARSE_PID "i:killpg", &pgid, &sig))
 		return NULL;
 	if (killpg(pgid, sig) == -1)
 		return posix_error();
@@ -6267,8 +6272,9 @@ Set the process group associated with the terminal given by a fd.");
 static PyObject *
 posix_tcsetpgrp(PyObject *self, PyObject *args)
 {
-	int fd, pgid;
-	if (!PyArg_ParseTuple(args, "ii:tcsetpgrp", &fd, &pgid))
+	int fd;
+	pid_t pgid;
+	if (!PyArg_ParseTuple(args, "i" PARSE_PID ":tcsetpgrp", &fd, &pgid))
 		return NULL;
 	if (tcsetpgrp(fd, pgid) < 0)
 		return posix_error();
