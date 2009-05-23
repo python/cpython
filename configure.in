@@ -1736,14 +1736,6 @@ then
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*) 
-		# -u _PyMac_Error is needed to pull in the mac toolbox glue,
-		# which is
-		# not used by the core itself but which needs to be in the core so
-		# that dynamically loaded extension modules have access to it.
-		# -prebind is no longer used, because it actually seems to give a
-		# slowdown in stead of a speedup, maybe due to the large number of
-		# dynamic loads Python does.
-
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 		if test "$enable_framework"
 		then
