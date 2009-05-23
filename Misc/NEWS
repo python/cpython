@@ -12,6 +12,9 @@ What's New in Python 2.6.3
 Core and Builtins
 -----------------
 
+- Issue #6089: str.format can raise SystemError with certain invalid
+  field specifiers.
+
 - Issue #5994: the marshal module now has docstrings.
 
 - Issue #5981: Fix two minor inf/nan issues in float.fromhex: (1) inf
