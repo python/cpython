@@ -1744,7 +1744,7 @@ then
 		# slowdown in stead of a speedup, maybe due to the large number of
 		# dynamic loads Python does.
 
-		LINKFORSHARED="$extra_undefs"
+		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
