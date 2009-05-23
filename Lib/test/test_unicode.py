@@ -1100,6 +1100,10 @@ class UnicodeTest(
         self.assertRaises(IndexError, u"{:s}".format)
         self.assertRaises(IndexError, u"{}".format)
 
+        # issue 6089
+        self.assertRaises(ValueError, u"{0[0]x}".format, [None])
+        self.assertRaises(ValueError, u"{0[0](10)}".format, [None])
+
         # can't have a replacement on the field name portion
         self.assertRaises(TypeError, u'{0[{1}]}'.format, u'abcdefg', 4)
 
