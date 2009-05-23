@@ -846,11 +846,26 @@ mode_string(PyFileIOObject *self)
 static PyObject *
 fileio_repr(PyFileIOObject *self)
 {
-        if (self->fd < 0)
-		return PyUnicode_FromFormat("io.FileIO(-1)");
+	PyObject *nameobj, *res;
 
-	return PyUnicode_FromFormat("io.FileIO(%d, '%s')",
-				   self->fd, mode_string(self));
+        if (self->fd < 0)
+		return PyUnicode_FromFormat("<_io.FileIO [closed]>");
+
+	nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+	if (nameobj == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_AttributeError))
+			PyErr_Clear();
+		else
+			return NULL;
+		res = PyUnicode_FromFormat("<_io.FileIO fd=%d mode='%s'>",
+					   self->fd, mode_string(self));
+	}
+	else {
+		res = PyUnicode_FromFormat("<_io.FileIO name=%R mode='%s'>",
+					   nameobj, mode_string(self));
+		Py_DECREF(nameobj);
+	}
+	return res;
 }
 
 static PyObject *

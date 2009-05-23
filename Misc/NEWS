@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5761: Add the name of the underlying file to the repr() of various
+  IO objects.
+
 - Issue #5259: smtplib plain auth login no longer gives a traceback.  Fix
   by Musashi Tamura, tests by Marcin Bachry.
 

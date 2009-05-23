@@ -2308,8 +2308,25 @@ TextIOWrapper_truncate(PyTextIOWrapperObject *self, PyObject *args)
 static PyObject *
 TextIOWrapper_repr(PyTextIOWrapperObject *self)
 {
-  CHECK_INITIALIZED(self);
-  return PyUnicode_FromFormat("<TextIOWrapper encoding=%S>", self->encoding);
+    PyObject *nameobj, *res;
+
+    CHECK_INITIALIZED(self);
+
+    nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+    if (nameobj == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return NULL;
+        res = PyUnicode_FromFormat("<_io.TextIOWrapper encoding=%R>",
+                                   self->encoding);
+    }
+    else {
+        res = PyUnicode_FromFormat("<_io.TextIOWrapper name=%R encoding=%R>",
+                                   nameobj, self->encoding);
+        Py_DECREF(nameobj);
+    }
+    return res;
 }
 
 
