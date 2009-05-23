@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1983: Fix functions taking or returning a process identifier to use
+  the dedicated C type ``pid_t`` instead of a C ``int``. Some platforms have
+  a process identifier type wider than the standard C integer type.
+
 - Issue #4066: smtplib.SMTP_SSL._get_socket now correctly returns the socket.
   Patch by Farhan Ahmad, test by Marcin Bachry.
 
