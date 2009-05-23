@@ -11,7 +11,7 @@ class SmtpSSLTest(unittest.TestCase):
     remotePort = 465
 
     def test_connect(self):
-        test_support.get_attribute(smtplib, 'SMTP_SSLX')
+        test_support.get_attribute(smtplib, 'SMTP_SSL')
         server = smtplib.SMTP_SSL(self.testServer, self.remotePort)
         server.ehlo()
         server.quit()
