@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4066: smtplib.SMTP_SSL._get_socket now correctly returns the socket.
+  Patch by Farhan Ahmad, test by Marcin Bachry.
+
 - Issue #5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
