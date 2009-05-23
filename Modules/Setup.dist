@@ -112,6 +112,10 @@ pwd pwdmodule.c			# this is needed to find out the user's home dir
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 _weakref _weakref.c		# weak references
+_functools _functoolsmodule.c   # Tools for working with functions and callable objects
+
+# access to ISO C locale support
+_locale _localemodule.c  # -lintl
 
 # Standard I/O baseline
 _io -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
@@ -164,7 +168,6 @@ _symtable symtablemodule.c
 #_collections _collectionsmodule.c # Container types
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
-#_functools _functoolsmodule.c # Tools for working with functions and callable objects
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #datetime datetimemodule.c	# date/time type
@@ -172,9 +175,6 @@ _symtable symtablemodule.c
 #_heapq _heapqmodule.c	# Heap queue algorithm
 
 #unicodedata unicodedata.c    # static Unicode character database
-
-# access to ISO C locale support
-#_locale _localemodule.c  # -lintl
 
 
 # Modules with some UNIX dependencies -- on by default:
