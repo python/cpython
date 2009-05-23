@@ -60,6 +60,11 @@ Library
 - Issue 5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
+Installation
+------------
+
+- Issue #6047: fullinstall has been removed because Python 3's executable will
+  now be known as python3.
 
 Extension Modules
 -----------------

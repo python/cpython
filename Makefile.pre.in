@@ -754,18 +754,8 @@ memtest:	all platform
 		-$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
-# Install everything, and install Python 3 to "python"
-fullinstall:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall @FRAMEWORKINSTALLLAST@
+install: altinstall bininstall
 
-# "make install" is an alias for "make altinstall" since we don't want to
-# overwrite Python 2.x by default.
-install:	altinstall
-		@echo "* Note: not installed as 'python'."
-		@echo "* Use 'make fullinstall' to install as 'python'."
-		@echo "* However, 'make fullinstall' is discouraged,"
-		@echo "* as it will clobber your Python 2.x installation."
-
-# Install almost everything without disturbing 2.x versions
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
                 sharedinstall oldsharedinstall maninstall @FRAMEWORKALTINSTALLLAST@
 
@@ -790,20 +780,9 @@ $(DESTSHARED):
 			fi; \
 		done
 
-
-# Install the interpreter (by creating a hard link to python$(VERSION))
-bininstall:	altbininstall
-	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE); \
-	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(EXE); \
-	else true; \
-	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)$(EXE))
-	-rm -f $(DESTDIR)$(BINDIR)/python-config
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
-
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
-altbininstall:	$(BUILDPYTHON)
+altbininstall: $(BUILDPYTHON)
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -824,6 +803,8 @@ altbininstall:	$(BUILDPYTHON)
 		fi; \
 	else	true; \
 	fi
+
+bininstall: altbininstall
 	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE); \
 	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE); \
 	else true; \

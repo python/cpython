@@ -119,7 +119,7 @@ script) you must take care that your primary python executable is not
 overwritten by the installation of a different versio.  All files and
 directories installed using "make altinstall" contain the major and minor
 version and can thus live side-by-side.  "make install" also creates
-${prefix}/bin/python which refers to ${prefix}/bin/pythonX.Y.  If you intend
+${prefix}/bin/python3 which refers to ${prefix}/bin/pythonX.Y.  If you intend
 to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using
 "make install".  Install all other versions using "make altinstall".
@@ -167,7 +167,7 @@ On Unix, Linux, BSD, OSX, and Cygwin:
     ./configure
     make
     make test
-    sudo make install    # or "make altinstall"
+    sudo make install
 
 You can pass many options to the configure script; run "./configure
 --help" to find out more.  On OSX and Cygwin, the executable is called
