@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5259: smtplib plain auth login no longer gives a traceback.  Fix
+  by Musashi Tamura, tests by Marcin Bachry.
+
 - Issue #1983: Fix functions taking or returning a process identifier to use
   the dedicated C type ``pid_t`` instead of a C ``int``. Some platforms have
   a process identifier type wider than the standard C integer type.
