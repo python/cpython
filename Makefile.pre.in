@@ -770,6 +770,8 @@ bininstall:	altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
 	-rm -f $(DESTDIR)$(BINDIR)/python-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
+	-rm -f $(DESTDIR)$(LIBPC)/python.pc
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python.pc)
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
@@ -946,8 +948,12 @@ inclinstall:
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
 LIBPL=		$(LIBP)/config
+
+# pkgconfig directory
+LIBPC=		$(LIBDIR)/pkgconfig
+
 libainstall:	all
-	@for i in $(LIBDIR) $(LIBP) $(LIBPL); \
+	@for i in $(LIBDIR) $(LIBP) $(LIBPL) $(LIBPC); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -974,6 +980,7 @@ libainstall:	all
 	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Modules/Setup.config $(DESTDIR)$(LIBPL)/Setup.config
+	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	# Substitution happens here, as the completely-expanded BINDIR
