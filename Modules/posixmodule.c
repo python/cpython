@@ -311,8 +311,7 @@ extern int lstat(const char *, struct stat *);
 #endif /* UNION_WAIT */
 
 /* Issue #1983: pid_t can be longer than a C long on some systems */
-#ifdef SIZEOF_PID_T
-#if SIZEOF_PID_T == SIZEOF_INT
+#if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
 #define PARSE_PID "i"
 #define PyLong_FromPid PyInt_FromLong
 #define PyLong_AsPid PyInt_AsLong
@@ -326,7 +325,6 @@ extern int lstat(const char *, struct stat *);
 #define PyLong_AsPid PyInt_AsLongLong
 #else
 #error "sizeof(pid_t) is neither sizeof(int), sizeof(long) or sizeof(long long)"
-#endif
 #endif /* SIZEOF_PID_T */
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
