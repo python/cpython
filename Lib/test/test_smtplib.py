@@ -276,6 +276,9 @@ sim_users = {'Mr.A@somewhere.com':'John A',
              'Mrs.C@somewhereesle.com':'Ruth C',
             }
 
+sim_auth = ('Mr.A@somewhere.com', 'somepassword')
+sim_auth_b64encoded = 'AE1yLkFAc29tZXdoZXJlLmNvbQBzb21lcGFzc3dvcmQ='
+
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
              'list-2':['Ms.B@somewhere.com',],
             }
@@ -288,6 +291,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                '250-SIZE 20000000\r\n' \
                '250-STARTTLS\r\n' \
                '250-DELIVERBY\r\n' \
+               '250-AUTH PLAIN\r\n' \
                '250 HELP'
         self.push(resp)
 
@@ -315,6 +319,16 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                     self.push('250 %s %s' % (sim_users[user_email], quoted_addr))
         else:
             self.push('550 No access for you!')
+
+    def smtp_AUTH(self, arg):
+        mech, auth = arg.split()
+        if mech.lower() == 'plain':
+            if auth == sim_auth_b64encoded:
+                self.push('235 ok, go ahead')
+            else:
+                self.push('550 No access for you!')
+        else:
+            self.push('504 auth type unimplemented')
 
 
 class SimSMTPServer(smtpd.SMTPServer):
@@ -364,6 +378,7 @@ class SMTPSimTests(TestCase):
                              'size': '20000000',
                              'starttls': '',
                              'deliverby': '',
+                             'auth': ' PLAIN',
                              'help': '',
                              }
 
@@ -401,6 +416,11 @@ class SMTPSimTests(TestCase):
         self.assertEqual(smtp.expn(u), expected_unknown)
         smtp.quit()
 
+    def testAUTH(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+
+        expected_auth_ok = (235, b'ok, go ahead')
+        self.assertEqual(smtp.login(sim_auth[0], sim_auth[1]), expected_auth_ok)
 
 
 def test_main(verbose=None):
