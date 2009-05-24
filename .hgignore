@@ -40,6 +40,7 @@ Doc/tools/sphinx/
 Doc/tools/docutils/
 Doc/tools/jinja/
 Doc/tools/pygments/
+Misc/python.pc
 Modules/Setup
 Modules/Setup.config
 Modules/Setup.local
