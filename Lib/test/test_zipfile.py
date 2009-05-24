@@ -1012,6 +1012,11 @@ class TestWithDirectory(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
         self.assertTrue(os.path.exists(os.path.join(TESTFN2, "a", "b", "c")))
 
+    def test_bug_6050(self):
+        # Extraction should succeed if directories already exist
+        os.mkdir(os.path.join(TESTFN2, "a"))
+        self.testExtractDir()
+
     def testStoreDir(self):
         os.mkdir(os.path.join(TESTFN2, "x"))
         zipf = zipfile.ZipFile(TESTFN, "w")
