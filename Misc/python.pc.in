@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Python
+Description: Python library
+Requires: 
+Version: @VERSION@
+Libs.private: @LIBS@
+Libs: -L${libdir} -lpython@VERSION@
+Cflags: -I${includedir}/python@VERSION@ 
+
