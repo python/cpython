@@ -34,7 +34,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 {
 	int fd;
 	int code;
-	int arg;
+	long arg;
 	int ret;
 	char *str;
 	Py_ssize_t len;
@@ -61,7 +61,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	PyErr_Clear();
 	arg = 0;
 	if (!PyArg_ParseTuple(args,
-             "O&i|i;fcntl requires a file or file descriptor,"
+             "O&i|l;fcntl requires a file or file descriptor,"
              " an integer and optionally a third integer or a string", 
 			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;

@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1309352: fcntl now converts its third arguments to a C `long` rather
+  than an int, which makes some operations possible under 64-bit Linux (e.g.
+  DN_MULTISHOT with F_NOTIFY).
+
 - Issue #5761: Add the name of the underlying file to the repr() of various
   IO objects.
 
