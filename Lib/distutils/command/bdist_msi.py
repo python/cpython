@@ -141,6 +141,8 @@ class bdist_msi (Command):
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'msi')
         short_version = get_python_version()
+        if (not self.target_version) and self.distribution.has_ext_modules():
+            self.target_version = short_version
         if self.target_version:
             self.versions = [self.target_version]
             if not self.skip_build and self.distribution.has_ext_modules()\
