@@ -302,6 +302,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6050: Don't fail extracting a directory from a zipfile if
+  the directory already exists.
+
 - Issue #5311: bdist_msi can now build packages that do not depend on a
   specific Python version.
 
