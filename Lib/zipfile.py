@@ -964,7 +964,8 @@ class ZipFile:
             os.makedirs(upperdirs)
 
         if member.filename[-1] == '/':
-            os.mkdir(targetpath)
+            if not os.path.isdir(targetpath):
+                os.mkdir(targetpath)
             return targetpath
 
         source = self.open(member, pwd=pwd)

@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6050: Don't fail extracting a directory from a zipfile if
+  the directory already exists.
+
 - Issue #5259: smtplib plain auth login no longer gives a traceback.  Fix
   by Musashi Tamura, tests by Marcin Bachry.
 
