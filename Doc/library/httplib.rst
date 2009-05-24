@@ -433,6 +433,8 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. Normally used when
    it is required to do HTTPS Conection through a proxy server.
 
+   .. versionadded:: 2.7
+
 
 .. method:: HTTPConnection.connect()
 
