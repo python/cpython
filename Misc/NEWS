@@ -230,6 +230,9 @@ Installation
 Library
 -------
 
+- Issue #5311: bdist_msi can now build packages that do not depend on a
+  specific Python version.
+
 - Issue #5940: distutils.command.build_clib.check_library_list was not doing 
   the right type checkings anymore.
 
