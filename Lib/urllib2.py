@@ -192,6 +192,7 @@ class Request:
         # self.__r_type is what's left after doing the splittype
         self.host = None
         self.port = None
+        self._tunnel_host = None
         self.data = data
         self.headers = {}
         for key, value in headers.items():
@@ -252,8 +253,13 @@ class Request:
         return self.__r_host
 
     def set_proxy(self, host, type):
-        self.host, self.type = host, type
-        self.__r_host = self.__original
+        if self.type == 'https' and not self._tunnel_host:
+            self._tunnel_host = self.host
+        else:
+            self.type = type
+            self.__r_host = self.__original
+
+        self.host = host
 
     def has_proxy(self):
         return self.__r_host == self.__original
@@ -700,7 +706,7 @@ class ProxyHandler(BaseHandler):
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
-        if orig_type == proxy_type:
+        if orig_type == proxy_type or orig_type == 'https':
             # let other handlers take care of it
             return None
         else:
@@ -1098,6 +1104,10 @@ class AbstractHTTPHandler(BaseHandler):
         headers["Connection"] = "close"
         headers = dict(
             (name.title(), val) for name, val in headers.items())
+
+        if req._tunnel_host:
+            h.set_tunnel(req._tunnel_host)
+
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             try:
