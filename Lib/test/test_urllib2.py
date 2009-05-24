@@ -939,6 +939,21 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "http_open")],
                          [tup[0:2] for tup in o.calls])
 
+    def test_proxy_https(self):
+        o = OpenerDirector()
+        ph = urllib2.ProxyHandler(dict(https='proxy.example.com:3128'))
+        o.add_handler(ph)
+        meth_spec = [
+            [("https_open","return response")]
+        ]
+        handlers = add_ordered_mock_handlers(o, meth_spec)
+        req = Request("https://www.example.com/")
+        self.assertEqual(req.get_host(), "www.example.com")
+        r = o.open(req)
+        self.assertEqual(req.get_host(), "proxy.example.com:3128")
+        self.assertEqual([(handlers[0], "https_open")],
+                         [tup[0:2] for tup in o.calls])
+
     def test_basic_auth(self, quote_char='"'):
         opener = OpenerDirector()
         password_manager = MockPasswordManager()
