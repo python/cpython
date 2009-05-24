@@ -3117,6 +3117,7 @@ free_string_array(char **array, Py_ssize_t count)
 	PyMem_DEL(array);
 }
 
+static
 int fsconvert_strdup(PyObject *o, char**out)
 {
 	PyObject *bytes;

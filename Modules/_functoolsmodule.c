@@ -203,7 +203,7 @@ static PyGetSetDef partial_getsetlist[] = {
    it as a hook to do stange things.
  */
 
-PyObject *
+static PyObject *
 partial_reduce(partialobject *pto, PyObject *unused)
 {
 	return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn, 
@@ -211,7 +211,7 @@ partial_reduce(partialobject *pto, PyObject *unused)
 			     pto->dict ? pto->dict : Py_None);
 }
 
-PyObject *
+static PyObject *
 partial_setstate(partialobject *pto, PyObject *args)
 {
 	PyObject *fn, *fnargs, *kw, *dict;
