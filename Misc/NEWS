@@ -87,6 +87,13 @@ Extension Modules
 - The _functools and _locale modules are now built into the libpython shared
   library instead of as extension modules.
 
+Build
+-----
+
+- Issue #3585: Add pkg-config support. It creates a python-2.7.pc file
+  and a python3.pc symlink in the $(LIBDIR)/pkgconfig directory. Patch by
+  Clinton Roy.
+
 Tests
 -----
 
