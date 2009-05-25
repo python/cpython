@@ -1715,9 +1715,9 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
     int i;
     Py_ssize_t dict_size, ppos = 0;
 
-    static const char mark_op = MARK;
-    static const char setitem = SETITEM;
-    static const char setitems = SETITEMS;
+    const char mark_op = MARK;
+    const char setitem_op = SETITEM;
+    const char setitems_op = SETITEMS;
 
     assert(obj != NULL);
     assert(self->proto > 0);
@@ -1731,7 +1731,7 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
             return -1;
         if (save(self, value, 0) < 0)
             return -1;
-        if (pickler_write(self, &setitem, 1) < 0)
+        if (pickler_write(self, &setitem_op, 1) < 0)
             return -1;
         return 0;
     }
@@ -1749,7 +1749,7 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
             if (++i == BATCHSIZE)
                 break;
         }
-        if (pickler_write(self, &setitems, 1) < 0)
+        if (pickler_write(self, &setitems_op, 1) < 0)
             return -1;
         if (PyDict_Size(obj) != dict_size) {
             PyErr_Format(
