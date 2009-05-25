@@ -181,7 +181,10 @@ hasfree.append(137)
 def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_VAR_KW', 142)  # #args + (#kwargs << 8)
-def_op('EXTENDED_ARG', 143)
-EXTENDED_ARG = 143
+
+jrel_op('SETUP_WITH', 143)
+
+def_op('EXTENDED_ARG', 145)
+EXTENDED_ARG = 145
 
 del def_op, name_op, jrel_op, jabs_op
