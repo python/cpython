@@ -13,7 +13,7 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-pysqlite was written by Gerhard Häring and provides a SQL interface compliant
+sqlite3 was written by Gerhard Häring and provides a SQL interface compliant
 with the DB-API 2.0 specification described by :pep:`249`.
 
 To use the module, you must first create a :class:`Connection` object that
@@ -50,8 +50,9 @@ is insecure; it makes your program vulnerable to an SQL injection attack.
 
 Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
 wherever you want to use a value, and then provide a tuple of values as the
-second argument to the cursor's :meth:`~Cursor.execute` method.  (Other database modules
-may use a different placeholder, such as ``%s`` or ``:1``.) For example::
+second argument to the cursor's :meth:`~Cursor.execute` method.  (Other database
+modules may use a different placeholder, such as ``%s`` or ``:1``.) For
+example::
 
    # Never do this -- insecure!
    symbol = 'IBM'
@@ -90,11 +91,12 @@ This example uses the iterator form::
 .. seealso::
 
    http://www.pysqlite.org
-      The pysqlite web page.
+      The pysqlite web page -- sqlite3 is developed externally under the name
+      "pysqlite".
 
    http://www.sqlite.org
-      The SQLite web page; the documentation describes the syntax and the available
-      data types for the supported SQL dialect.
+      The SQLite web page; the documentation describes the syntax and the
+      available data types for the supported SQL dialect.
 
    :pep:`249` - Database API Specification 2.0
       PEP written by Marc-André Lemburg.
@@ -784,10 +786,10 @@ So if you are within a transaction and issue a command like ``CREATE TABLE
 ...``, ``VACUUM``, ``PRAGMA``, the :mod:`sqlite3` module will commit implicitly
 before executing that command. There are two reasons for doing that. The first
 is that some of these commands don't work within transactions. The other reason
-is that pysqlite needs to keep track of the transaction state (if a transaction
+is that sqlite3 needs to keep track of the transaction state (if a transaction
 is active or not).
 
-You can control which kind of ``BEGIN`` statements pysqlite implicitly executes
+You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
 (or none at all) via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
 
@@ -799,8 +801,8 @@ statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
 
 
 
-Using pysqlite efficiently
---------------------------
+Using :mod:`sqlite3` efficiently
+--------------------------------
 
 
 Using shortcut methods
