@@ -106,7 +106,7 @@ class TestHashing(object):
 # List subclass we can add attributes to.
 class MyClassSuite(list):
 
-    def __init__(self, tests, klass):
+    def __init__(self, tests):
         super(MyClassSuite, self).__init__(tests)
 
 
@@ -1271,7 +1271,7 @@ class Test_TestLoader(TestCase):
         tests = [Foo('test_1'), Foo('test_2')]
 
         loader = unittest.TestLoader()
-        loader.classSuiteClass = MyClassSuite
+        loader.suiteClass = list
         self.assertEqual(loader.loadTestsFromTestCase(Foo), tests)
 
     # It is implicit in the documentation for TestLoader.suiteClass that
@@ -1284,7 +1284,7 @@ class Test_TestLoader(TestCase):
             def foo_bar(self): pass
         m.Foo = Foo
 
-        tests = [unittest.ClassTestSuite([Foo('test_1'), Foo('test_2')], Foo)]
+        tests = [[Foo('test_1'), Foo('test_2')]]
 
         loader = unittest.TestLoader()
         loader.suiteClass = list
@@ -1303,7 +1303,7 @@ class Test_TestLoader(TestCase):
         tests = [Foo('test_1'), Foo('test_2')]
 
         loader = unittest.TestLoader()
-        loader.classSuiteClass = MyClassSuite
+        loader.suiteClass = list
         self.assertEqual(loader.loadTestsFromName('Foo', m), tests)
 
     # It is implicit in the documentation for TestLoader.suiteClass that
@@ -1316,7 +1316,7 @@ class Test_TestLoader(TestCase):
             def foo_bar(self): pass
         m.Foo = Foo
 
-        tests = [unittest.ClassTestSuite([Foo('test_1'), Foo('test_2')], Foo)]
+        tests = [[Foo('test_1'), Foo('test_2')]]
 
         loader = unittest.TestLoader()
         loader.suiteClass = list
@@ -2842,7 +2842,7 @@ class Test_TestSkipping(TestCase):
                 def test_dont_skip(self): pass
             test_do_skip = Foo("test_skip")
             test_dont_skip = Foo("test_dont_skip")
-            suite = unittest.ClassTestSuite([test_do_skip, test_dont_skip], Foo)
+            suite = unittest.TestSuite([test_do_skip, test_dont_skip])
             events = []
             result = LoggingResult(events)
             suite.run(result)
@@ -2861,9 +2861,10 @@ class Test_TestSkipping(TestCase):
                 record.append(1)
         record = []
         result = unittest.TestResult()
-        suite = unittest.ClassTestSuite([Foo("test_1")], Foo)
+        test = Foo("test_1")
+        suite = unittest.TestSuite([test])
         suite.run(result)
-        self.assertEqual(result.skipped, [(suite, "testing")])
+        self.assertEqual(result.skipped, [(test, "testing")])
         self.assertEqual(record, [])
 
     def test_expected_failure(self):
