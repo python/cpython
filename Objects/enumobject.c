@@ -241,9 +241,12 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				return NULL;
 		}
 	}
-	else
+	else {
 		reversed_meth = _PyObject_LookupSpecial(seq, "__reversed__",
 							&reversed_cache);
+		if (reversed_meth == NULL && PyErr_Occurred())
+			return NULL;
+	}
 	if (reversed_meth != NULL) {
 		PyObject *res = PyObject_CallFunctionObjArgs(reversed_meth, NULL);
 		Py_DECREF(reversed_meth);
