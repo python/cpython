@@ -1699,6 +1699,69 @@ batch_dict(PicklerObject *self, PyObject *iter)
     return -1;
 }
 
+/* This is a variant of batch_dict() above that specializes for dicts, with no
+ * support for dict subclasses. Like batch_dict(), we batch up chunks of
+ *     MARK key value ... key value SETITEMS
+ * opcode sequences.  Calling code should have arranged to first create an
+ * empty dict, or dict-like object, for the SETITEMS to operate on.
+ * Returns 0 on success, -1 on error.
+ *
+ * Note that this currently doesn't work for protocol 0.
+ */
+static int
+batch_dict_exact(PicklerObject *self, PyObject *obj)
+{
+    PyObject *key = NULL, *value = NULL;
+    int i;
+    Py_ssize_t dict_size, ppos = 0;
+
+    static const char mark_op = MARK;
+    static const char setitem = SETITEM;
+    static const char setitems = SETITEMS;
+
+    assert(obj != NULL);
+    assert(self->proto > 0);
+
+    dict_size = PyDict_Size(obj);
+
+    /* Special-case len(d) == 1 to save space. */
+    if (dict_size == 1) {
+        PyDict_Next(obj, &ppos, &key, &value);
+        if (save(self, key, 0) < 0)
+            return -1;
+        if (save(self, value, 0) < 0)
+            return -1;
+        if (pickler_write(self, &setitem, 1) < 0)
+            return -1;
+        return 0;
+    }
+
+    /* Write in batches of BATCHSIZE. */
+    do {
+        i = 0;
+        if (pickler_write(self, &mark_op, 1) < 0)
+            return -1;
+        while (PyDict_Next(obj, &ppos, &key, &value)) {
+            if (save(self, key, 0) < 0)
+                return -1;
+            if (save(self, value, 0) < 0)
+                return -1;
+            if (++i == BATCHSIZE)
+                break;
+        }
+        if (pickler_write(self, &setitems, 1) < 0)
+            return -1;
+        if (PyDict_Size(obj) != dict_size) {
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "dictionary changed size during iteration");
+            return -1;
+        }
+
+    } while (i == BATCHSIZE);
+    return 0;
+}
+
 static int
 save_dict(PicklerObject *self, PyObject *obj)
 {
@@ -1733,15 +1796,24 @@ save_dict(PicklerObject *self, PyObject *obj)
 
     if (len != 0) {
         /* Save the dict items. */
-        items = PyObject_CallMethod(obj, "items", "()");
-        if (items == NULL)
-            goto error;
-        iter = PyObject_GetIter(items);
-        Py_DECREF(items);
-        if (iter == NULL)
-            goto error;
-        status = batch_dict(self, iter);
-        Py_DECREF(iter);
+        if (PyDict_CheckExact(obj) && self->proto > 0) {
+            /* We can take certain shortcuts if we know this is a dict and
+               not a dict subclass. */
+            if (Py_EnterRecursiveCall(" while pickling an object") == 0) {
+                status = batch_dict_exact(self, obj);
+                Py_LeaveRecursiveCall();
+            }
+        } else {
+            items = PyObject_CallMethod(obj, "items", "()");
+            if (items == NULL)
+                goto error;
+            iter = PyObject_GetIter(items);
+            Py_DECREF(items);
+            if (iter == NULL)
+                goto error;
+            status = batch_dict(self, iter);
+            Py_DECREF(iter);
+        }
     }
 
     if (0) {
