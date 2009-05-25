@@ -347,9 +347,10 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
-   with_stmt: "with" `expression` ["as" `target`] ":" `suite`
+   with_stmt: "with" with_item ("," with_item)* ":" `suite`
+   with_item: `expression` ["as" `target`]
 
-The execution of the :keyword:`with` statement proceeds as follows:
+The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
 #. The context expression is evaluated to obtain a context manager.
 
@@ -381,6 +382,21 @@ The execution of the :keyword:`with` statement proceeds as follows:
    If the suite was exited for any reason other than an exception, the return
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
+
+With more than one item, the context managers are processed as if multiple
+:keyword:`with` statements were nested::
+
+   with A() as a, B() as b:
+       suite
+
+is equivalent to ::
+
+   with A() as a:
+       with B() as b:
+           suite
+
+.. versionchanged:: 3.1
+   Support for multiple context expressions.
 
 .. seealso::
 
