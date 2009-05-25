@@ -669,10 +669,12 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 	else {
 		PyObject *method = _PyObject_LookupSpecial(o, "__sizeof__",
 							   &str__sizeof__);
-		if (method == NULL)
-			PyErr_Format(PyExc_TypeError,
-				     "Type %.100s doesn't define __sizeof__",
-				     Py_TYPE(o)->tp_name);
+		if (method == NULL) {
+			if (!PyErr_Occurred())
+				PyErr_Format(PyExc_TypeError,
+					     "Type %.100s doesn't define __sizeof__",
+					     Py_TYPE(o)->tp_name);
+		}
 		else {
 			res = PyObject_CallFunctionObjArgs(method, NULL);
 			Py_DECREF(method);

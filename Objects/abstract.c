@@ -111,8 +111,12 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 		return defaultvalue;
 	/* try o.__length_hint__() */
         hintmeth = _PyObject_LookupSpecial(o, "__length_hint__", &hintstrobj);
-	if (hintmeth == NULL)
-		return defaultvalue;
+	if (hintmeth == NULL) {
+		if (PyErr_Occurred())
+			return -1;
+		else
+			return defaultvalue;
+	}
 	ro = PyObject_CallFunctionObjArgs(hintmeth, NULL);
 	Py_DECREF(hintmeth);
 	if (ro == NULL) {
@@ -2945,6 +2949,8 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 			}
 			return ok;
 		}
+		else if (PyErr_Occurred())
+			return -1;
 	}
 	return recursive_isinstance(inst, cls);
 }
@@ -3020,6 +3026,9 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 				Py_DECREF(res);
 			}
 			return ok;
+		}
+		else if (PyErr_Occurred()) {
+			return -1;
 		}
 	}
 	return recursive_issubclass(derived, cls);
