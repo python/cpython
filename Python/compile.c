@@ -779,7 +779,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case BREAK_LOOP:
 			return 0;
 	        case SETUP_WITH:
-			return 1;
+			return 4;
 		case WITH_CLEANUP:
 			return -1; /* XXX Sometimes more */
 		case LOAD_LOCALS:
