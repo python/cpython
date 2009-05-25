@@ -42,7 +42,7 @@
 #define for_stmt 295
 #define try_stmt 296
 #define with_stmt 297
-#define with_var 298
+#define with_item 298
 #define except_clause 299
 #define suite 300
 #define test 301

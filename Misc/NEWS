@@ -15,6 +15,8 @@ Core and Builtins
 - Issue #6089: Fixed str.format with certain invalid field specifiers
   that would raise SystemError.
 
+- Added support for multiple context managers in the same with statement.
+
 - Issue #5829: complex("1e500") no longer raises OverflowError.  This
   makes it consistent with float("1e500") and interpretation of real
   and imaginary literals.
