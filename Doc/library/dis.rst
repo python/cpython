@@ -532,6 +532,18 @@ Miscellaneous opcodes.
    the names of the base classes, and TOS2 the class name.
 
 
+.. opcode:: SETUP_WITH (delta)
+
+   This opcode performs several operations before a with block starts.  First,
+   it loads :meth:`~object.__exit__` from the context manager and pushes it onto
+   the stack for later use by :opcode:`WITH_CLEANUP`.  Then,
+   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
+   is pushed.  Finally, the result of calling the enter method is pushed onto
+   the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
+   store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
+   :opcode:`UNPACK_SEQUENCE`).
+
+
 .. opcode:: WITH_CLEANUP ()
 
    Cleans up the stack when a :keyword:`with` statement block exits.  On top of

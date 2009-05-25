@@ -141,8 +141,10 @@ extern "C" {
 #define CALL_FUNCTION_KW           141	/* #args + (#kwargs<<8) */
 #define CALL_FUNCTION_VAR_KW       142	/* #args + (#kwargs<<8) */
 
+#define SETUP_WITH 143
+
 /* Support for opargs more than 16 bits long */
-#define EXTENDED_ARG  143
+#define EXTENDED_ARG  145
 
 
 enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE, PyCmp_GT=Py_GT, PyCmp_GE=Py_GE,

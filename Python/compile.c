@@ -778,6 +778,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return -1;
 		case BREAK_LOOP:
 			return 0;
+	        case SETUP_WITH:
+			return 1;
 		case WITH_CLEANUP:
 			return -1; /* XXX Sometimes more */
 		case LOAD_LOCALS:
@@ -2821,80 +2823,31 @@ expr_constant(expr_ty e)
 static int
 compiler_with(struct compiler *c, stmt_ty s)
 {
-    static identifier enter_attr, exit_attr;
     basicblock *block, *finally;
-    identifier tmpvalue = NULL;
 
     assert(s->kind == With_kind);
-
-    if (!enter_attr) {
-	enter_attr = PyString_InternFromString("__enter__");
-	if (!enter_attr)
-	    return 0;
-    }
-    if (!exit_attr) {
-	exit_attr = PyString_InternFromString("__exit__");
-	if (!exit_attr)
-	    return 0;
-    }
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
     if (!block || !finally)
 	return 0;
 
-    if (s->v.With.optional_vars) {
-	/* Create a temporary variable to hold context.__enter__().
-	   We need to do this rather than preserving it on the stack
-	   because SETUP_FINALLY remembers the stack level.
-	   We need to do the assignment *inside* the try/finally
-	   so that context.__exit__() is called when the assignment
-	   fails.  But we need to call context.__enter__() *before*
-	   the try/finally so that if it fails we won't call
-	   context.__exit__().
-	*/
-	tmpvalue = compiler_new_tmpname(c);
-	if (tmpvalue == NULL)
-	    return 0;
-	PyArena_AddPyObject(c->c_arena, tmpvalue);
-    }
-
     /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
+    ADDOP_JREL(c, SETUP_WITH, finally);
 
-    /* Squirrel away context.__exit__ by stuffing it under context */
-    ADDOP(c, DUP_TOP);
-    ADDOP_O(c, LOAD_ATTR, exit_attr, names);
-    ADDOP(c, ROT_TWO);
-
-    /* Call context.__enter__() */
-    ADDOP_O(c, LOAD_ATTR, enter_attr, names);
-    ADDOP_I(c, CALL_FUNCTION, 0);
-
-    if (s->v.With.optional_vars) {
-	/* Store it in tmpvalue */
-	if (!compiler_nameop(c, tmpvalue, Store))
-	    return 0;
-    }
-    else {
-	/* Discard result from context.__enter__() */
-	ADDOP(c, POP_TOP);
-    }
-
-    /* Start the try block */
-    ADDOP_JREL(c, SETUP_FINALLY, finally);
-
+    /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, FINALLY_TRY, block)) {
 	return 0;
     }
 
     if (s->v.With.optional_vars) {
-	/* Bind saved result of context.__enter__() to VAR */
-	if (!compiler_nameop(c, tmpvalue, Load) ||
-	    !compiler_nameop(c, tmpvalue, Del))
-	  return 0;
-	VISIT(c, expr, s->v.With.optional_vars);
+        VISIT(c, expr, s->v.With.optional_vars);
+    }
+    else {
+        /* Discard result from context.__enter__() */
+        ADDOP(c, POP_TOP);
     }
 
     /* BLOCK code */
