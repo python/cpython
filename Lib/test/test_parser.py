@@ -199,6 +199,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_with(self):
         self.check_suite("with open('x'): pass\n")
         self.check_suite("with open('x') as f: pass\n")
+        self.check_suite("with open('x') as f, open('y') as g: pass\n")
 
     def test_try_stmt(self):
         self.check_suite("try: pass\nexcept: pass\n")

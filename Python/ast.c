@@ -3009,27 +3009,18 @@ ast_for_try_stmt(struct compiling *c, const node *n)
     return TryFinally(body, finally, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
-static expr_ty
-ast_for_with_var(struct compiling *c, const node *n)
-{
-    REQ(n, with_var);
-    return ast_for_expr(c, CHILD(n, 1));
-}
-
-/* with_stmt: 'with' test [ with_var ] ':' suite */
+/* with_item: test ['as' expr] */
 static stmt_ty
-ast_for_with_stmt(struct compiling *c, const node *n)
+ast_for_with_item(struct compiling *c, const node *n, asdl_seq *content)
 {
     expr_ty context_expr, optional_vars = NULL;
-    int suite_index = 3;    /* skip 'with', test, and ':' */
-    asdl_seq *suite_seq;
 
-    assert(TYPE(n) == with_stmt);
-    context_expr = ast_for_expr(c, CHILD(n, 1));
+    REQ(n, with_item);
+    context_expr = ast_for_expr(c, CHILD(n, 0));
     if (!context_expr)
         return NULL;
-    if (TYPE(CHILD(n, 2)) == with_var) {
-        optional_vars = ast_for_with_var(c, CHILD(n, 2));
+    if (NCH(n) == 3) {
+        optional_vars = ast_for_expr(c, CHILD(n, 2));
 
         if (!optional_vars) {
             return NULL;
@@ -3037,15 +3028,45 @@ ast_for_with_stmt(struct compiling *c, const node *n)
         if (!set_context(c, optional_vars, Store, n)) {
             return NULL;
         }
-        suite_index = 4;
     }
 
-    suite_seq = ast_for_suite(c, CHILD(n, suite_index));
-    if (!suite_seq) {
-        return NULL;
-    }
-    return With(context_expr, optional_vars, suite_seq, LINENO(n), 
+    return With(context_expr, optional_vars, content, LINENO(n),
                 n->n_col_offset, c->c_arena);
+}
+
+/* with_stmt: 'with' with_item (',' with_item)* ':' suite */
+static stmt_ty
+ast_for_with_stmt(struct compiling *c, const node *n)
+{
+    int i;
+    stmt_ty ret;
+    asdl_seq *inner;
+
+    REQ(n, with_stmt);
+
+    /* process the with items inside-out */
+    i = NCH(n) - 1;
+    /* the suite of the innermost with item is the suite of the with stmt */
+    inner = ast_for_suite(c, CHILD(n, i));
+    if (!inner)
+        return NULL;
+
+    for (;;) {
+        i -= 2;
+        ret = ast_for_with_item(c, CHILD(n, i), inner);
+        if (!ret)
+            return NULL;
+        /* was this the last item? */
+        if (i == 1)
+            break;
+        /* if not, wrap the result so far in a new sequence */
+        inner = asdl_seq_new(1, c->c_arena);
+        if (!inner)
+            return NULL;
+        asdl_seq_SET(inner, 0, ret);
+    }
+
+    return ret;
 }
 
 static stmt_ty

@@ -2618,36 +2618,39 @@ validate_decorators(node *tree)
     return ok;
 }
 
-/*  with_var
-with_var: 'as' expr
+/*  with_item:
+ *   test ['as' expr]
  */
 static int
-validate_with_var(node *tree)
+validate_with_item(node *tree)
 {
     int nch = NCH(tree);
-    int ok = (validate_ntype(tree, with_var)
-        && (nch == 2)
-        && validate_name(CHILD(tree, 0), "as")
-        && validate_expr(CHILD(tree, 1)));
-   return ok;
+    int ok = (validate_ntype(tree, with_item)
+              && (nch == 1 || nch == 3)
+              && validate_test(CHILD(tree, 0)));
+    if (ok && nch == 3) 
+        ok = (validate_name(CHILD(tree, 1), "as")
+              && validate_expr(CHILD(tree, 2)));
+    return ok;
 }
 
-/*  with_stmt
- *           0      1       2       -2   -1
-with_stmt: 'with' test [ with_var ] ':' suite
+/*  with_stmt:
+ *    0      1          ...             -2   -1
+ *   'with' with_item (',' with_item)* ':' suite
  */
 static int
 validate_with_stmt(node *tree)
 {
+    int i;
     int nch = NCH(tree);
     int ok = (validate_ntype(tree, with_stmt)
-        && ((nch == 4) || (nch == 5))
+        && (nch % 2 == 0)
         && validate_name(CHILD(tree, 0), "with")
-        && validate_test(CHILD(tree, 1))
-        && (nch == 4 || validate_with_var(CHILD(tree, 2))) 
         && validate_colon(RCHILD(tree, -2))
         && validate_suite(RCHILD(tree, -1)));
-   return ok;
+    for (i = 1; ok && i < nch - 2; i += 2)
+        ok = validate_with_item(CHILD(tree, i));
+    return ok;
 }
 
 /*  funcdef:

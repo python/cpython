@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Added support for multiple context managers in the same with statement.
+
 - Issue #6101: A new opcode, SETUP_WITH, has been added to speed up the with
   statement and correctly lookup the __enter__ and __exit__ special methods.
 

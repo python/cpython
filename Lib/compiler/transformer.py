@@ -965,18 +965,22 @@ class Transformer:
             return try_except
 
     def com_with(self, nodelist):
-        # with_stmt: 'with' expr [with_var] ':' suite
-        expr = self.com_node(nodelist[1])
+        # with_stmt: 'with' with_item (',' with_item)* ':' suite
         body = self.com_node(nodelist[-1])
-        if nodelist[2][0] == token.COLON:
-            var = None
-        else:
-            var = self.com_assign(nodelist[2][2], OP_ASSIGN)
-        return With(expr, var, body, lineno=nodelist[0][2])
+        for i in range(len(nodelist) - 3, 0, -2):
+            ret = self.com_with_item(nodelist[i], body, nodelist[0][2])
+            if i == 1:
+                return ret
+            body = ret
 
-    def com_with_var(self, nodelist):
-        # with_var: 'as' expr
-        return self.com_node(nodelist[1])
+    def com_with_item(self, nodelist, body, lineno):
+        # with_item: test ['as' expr]
+        if len(nodelist) == 4:
+            var = self.com_assign(nodelist[3], OP_ASSIGN)
+        else:
+            var = None
+        expr = self.com_node(nodelist[1])
+        return With(expr, var, body, lineno=lineno)
 
     def com_augassign_op(self, node):
         assert node[0] == symbol.augassign
