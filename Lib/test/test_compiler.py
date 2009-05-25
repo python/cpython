@@ -165,6 +165,27 @@ class CompilerTest(unittest.TestCase):
         exec c in dct
         self.assertEquals(dct.get('result'), 1)
 
+    def testWithMult(self):
+        events = []
+        class Ctx:
+            def __init__(self, n):
+                self.n = n
+            def __enter__(self):
+                events.append(self.n)
+            def __exit__(self, *args):
+                pass
+        c = compiler.compile('from __future__ import with_statement\n'
+                             'def f():\n'
+                             '    with Ctx(1) as tc, Ctx(2) as tc2:\n'
+                             '        return 1\n'
+                             'result = f()',
+                             '<string>',
+                             'exec' )
+        dct = {'Ctx': Ctx}
+        exec c in dct
+        self.assertEquals(dct.get('result'), 1)
+        self.assertEquals(events, [1, 2])
+
     def testGlobal(self):
         code = compiler.compile('global x\nx=1', '<string>', 'exec')
         d1 = {'__builtins__': {}}
