@@ -338,9 +338,9 @@ within *IDLE* or *PythonWin*::
    >>> printf("Hello, %s\n", "World!")
    Hello, World!
    14
-   >>> printf("Hello, %S", u"World!")
+   >>> printf("Hello, %S\n", u"World!")
    Hello, World!
-   13
+   14
    >>> printf("%d bottles of beer\n", 42)
    42 bottles of beer
    19
@@ -355,7 +355,7 @@ unicode strings have to be wrapped in their corresponding ``ctypes`` type, so
 that they can be converted to the required C data type::
 
    >>> printf("An int %d, a double %f\n", 1234, c_double(3.14))
-   Integer 1234, double 3.1400001049
+   An int 1234, a double 3.140000
    31
    >>>
 
@@ -411,9 +411,9 @@ prototype for a C function), and tries to convert the arguments to valid types::
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ArgumentError: argument 2: exceptions.TypeError: wrong type
-   >>> printf("%s %d %f", "X", 2, 3)
-   X 2 3.00000012
-   12
+   >>> printf("%s %d %f\n", "X", 2, 3)
+   X 2 3.000000
+   13
    >>>
 
 If you have defined your own classes which you pass to function calls, you have

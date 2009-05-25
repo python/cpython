@@ -1072,10 +1072,10 @@ to a particular option, or fail to pass a required option attribute,
   tells :mod:`optparse` where to write it: :attr:`dest` names an attribute of the
   ``options`` object that :mod:`optparse` builds as it parses the command line.
 
-* ``default`` (deprecated)
+* ``default``
 
   The value to use for this option's destination if the option is not seen on the
-  command line.  Deprecated; use ``parser.set_defaults()`` instead.
+  command line.  See also ``parser.set_defaults()``.
 
 * ``nargs`` (default: 1)
 

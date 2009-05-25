@@ -13,7 +13,7 @@ cur.execute("select ?", (AUSTRIA,))
 row = cur.fetchone()
 assert row[0] == AUSTRIA
 
-# but we can make pysqlite always return bytestrings ...
+# but we can make sqlite3 always return bytestrings ...
 con.text_factory = str
 cur.execute("select ?", (AUSTRIA,))
 row = cur.fetchone()
@@ -26,11 +26,12 @@ assert row[0] == AUSTRIA.encode("utf-8")
 # here we implement one that will ignore Unicode characters that cannot be
 # decoded from UTF-8
 con.text_factory = lambda x: str(x, "utf-8", "ignore")
-cur.execute("select ?", ("this is latin1 and would normally create errors" + "\xe4\xf6\xfc".encode("latin1"),))
+cur.execute("select ?", ("this is latin1 and would normally create errors" +
+                         "\xe4\xf6\xfc".encode("latin1"),))
 row = cur.fetchone()
 assert type(row[0]) == str
 
-# pysqlite offers a builtin optimized text_factory that will return bytestring
+# sqlite3 offers a builtin optimized text_factory that will return bytestring
 # objects, if the data is in ASCII only, and otherwise return unicode objects
 con.text_factory = sqlite3.OptimizedUnicode
 cur.execute("select ?", (AUSTRIA,))
