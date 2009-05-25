@@ -38,11 +38,23 @@
    determine its type and the appropriate module is used; if it does not exist,
    the first module listed above that can be imported is used.
 
-   The optional *flag* argument can be ``'r'`` to open an existing database for
-   reading only, ``'w'`` to open an existing database for reading and writing,
-   ``'c'`` to create the database if it doesn't exist, or ``'n'``, which will
-   always create a new empty database.  If not specified, the default value is
-   ``'r'``.
+   The optional *flag* argument can be:
+
+   +---------+-------------------------------------------+
+   | Value   | Meaning                                   |
+   +=========+===========================================+
+   | ``'r'`` | Open existing database for reading only   |
+   |         | (default)                                 |
+   +---------+-------------------------------------------+
+   | ``'w'`` | Open existing database for reading and    |
+   |         | writing                                   |
+   +---------+-------------------------------------------+
+   | ``'c'`` | Open database for reading and writing,    |
+   |         | creating it if it doesn't exist           |
+   +---------+-------------------------------------------+
+   | ``'n'`` | Always create a new, empty database, open |
+   |         | for reading and writing                   |
+   +---------+-------------------------------------------+
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be
