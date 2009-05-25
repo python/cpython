@@ -59,7 +59,7 @@ import warnings
 ##############################################################################
 # Exported classes and functions
 ##############################################################################
-__all__ = ['TestResult', 'TestCase', 'TestSuite', 'ClassTestSuite',
+__all__ = ['TestResult', 'TestCase', 'TestSuite',
            'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure']
@@ -458,6 +458,13 @@ class TestCase(object):
 
         self._resultForDoCleanups = result
         result.startTest(self)
+        if getattr(self.__class__, "__unittest_skip__", False):
+            # If the whole class was skipped.
+            try:
+                result.addSkip(self, self.__class__.__unittest_skip_why__)
+            finally:
+                result.stopTest(self)
+            return
         testMethod = getattr(self, self._testMethodName)
         try:
             success = False
@@ -1110,37 +1117,6 @@ class TestSuite(object):
             test.debug()
 
 
-class ClassTestSuite(TestSuite):
-    """
-    Suite of tests derived from a single TestCase class.
-    """
-
-    def __init__(self, tests, class_collected_from):
-        super(ClassTestSuite, self).__init__(tests)
-        self.collected_from = class_collected_from
-
-    def id(self):
-        module = getattr(self.collected_from, "__module__", None)
-        if module is not None:
-            return "{0}.{1}".format(module, self.collected_from.__name__)
-        return self.collected_from.__name__
-
-    def run(self, result):
-        if getattr(self.collected_from, "__unittest_skip__", False):
-            # ClassTestSuite result pretends to be a TestCase enough to be
-            # reported.
-            result.startTest(self)
-            try:
-                result.addSkip(self, self.collected_from.__unittest_skip_why__)
-            finally:
-                result.stopTest(self)
-        else:
-            result = super(ClassTestSuite, self).run(result)
-        return result
-
-    shortDescription = id
-
-
 class FunctionTestCase(TestCase):
     """A test case that wraps a test function.
 
@@ -1213,7 +1189,6 @@ class TestLoader(object):
     testMethodPrefix = 'test'
     sortTestMethodsUsing = cmp
     suiteClass = TestSuite
-    classSuiteClass = ClassTestSuite
 
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
@@ -1223,8 +1198,7 @@ class TestLoader(object):
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
-        suite = self.classSuiteClass(map(testCaseClass, testCaseNames),
-                                     testCaseClass)
+        suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return suite
 
     def loadTestsFromModule(self, module):
