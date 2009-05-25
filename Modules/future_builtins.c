@@ -85,11 +85,12 @@ initfuture_builtins(void)
 	if (itertools == NULL)
 		return;
 
+	/* If anything in the following loop fails, we fall through. */
 	for (cur_func = it_funcs; *cur_func; ++cur_func){
 		iter_func = PyObject_GetAttrString(itertools, *cur_func);
-		if (iter_func == NULL)
-			return;
-		PyModule_AddObject(m, *cur_func+1, iter_func);
+		if (iter_func == NULL ||
+		    PyModule_AddObject(m, *cur_func+1, iter_func) < 0)
+			break;
 	}
 	Py_DECREF(itertools);
 	/* any other initialization needed */
