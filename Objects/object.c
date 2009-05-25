@@ -497,6 +497,8 @@ PyObject_Bytes(PyObject *v)
             }
             return result;
 	}
+	else if (PyErr_Occurred())
+		return NULL;
 	return PyBytes_FromObject(v);
 }
 

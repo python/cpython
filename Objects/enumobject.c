@@ -238,6 +238,8 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(reversed_meth);
 		return res;
 	}
+	else if (PyErr_Occurred())
+		return NULL;
 
 	if (!PySequence_Check(seq)) {
 		PyErr_SetString(PyExc_TypeError,

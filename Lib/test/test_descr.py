@@ -1595,7 +1595,11 @@ order (MRO) for bases """
             def __get__(self, obj, owner):
                 record.append(1)
                 return self.impl.__get__(obj, owner)
-
+        class MyException(Exception):
+            pass
+        class ErrDescr(object):
+            def __get__(self, obj, owner):
+                raise MyException
 
         for name, runner, meth_impl, ok, env in specials:
             class X(Checker):
@@ -1613,6 +1617,18 @@ order (MRO) for bases """
             setattr(X, name, SpecialDescr(meth_impl))
             runner(X())
             self.assertEqual(record, [1], name)
+
+            class X(Checker):
+                pass
+            for attr, obj in env.items():
+                setattr(X, attr, obj)
+            setattr(X, name, ErrDescr())
+            try:
+                runner(X())
+            except MyException:
+                pass
+            else:
+                self.fail("{0!r} didn't raise".format(name))
 
     def test_specials(self):
         # Testing special operators...
