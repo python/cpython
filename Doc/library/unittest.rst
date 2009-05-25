@@ -60,8 +60,7 @@ so a new fixture is created for each test.
 
 Test suites are implemented by the :class:`TestSuite` class.  This class allows
 individual tests and test suites to be aggregated; when the suite is executed,
-all tests added directly to the suite and in "child" test suites are run.  A
-:class:`ClassTestSuite` contains the test cases of a class.
+all tests added directly to the suite and in "child" test suites are run.
 
 A test runner is an object that provides a single method,
 :meth:`~TestRunner.run`, which accepts a :class:`TestCase` or :class:`TestSuite`
@@ -1032,11 +1031,10 @@ Grouping tests
    test suites that will be used to build the suite initially. Additional methods
    are provided to add test cases and suites to the collection later on.
 
-   :class:`TestSuite` (including :class:`ClassTestSuite`) objects behave much
-   like :class:`TestCase` objects, except they do not actually implement a test.
-   Instead, they are used to aggregate tests into groups of tests that should be
-   run together. Some additional methods are available to add tests to
-   :class:`TestSuite` instances:
+   :class:`TestSuite` objects behave much like :class:`TestCase` objects, except
+   they do not actually implement a test.  Instead, they are used to aggregate
+   tests into groups of tests that should be run together. Some additional
+   methods are available to add tests to :class:`TestSuite` instances:
 
 
    .. method:: TestSuite.addTest(test)
@@ -1091,14 +1089,6 @@ Grouping tests
 
    In the typical usage of a :class:`TestSuite` object, the :meth:`run` method
    is invoked by a :class:`TestRunner` rather than by the end-user test harness.
-
-
-.. class:: ClassTestSuite(tests, collected_from)
-
-   This subclass of :class:`TestSuite` repesents an aggregation of individuals
-   tests from one :class:`TestCase` class.  *tests* is an iterable of
-   :class:`TestCase` instances created from the class.  *collected_from* is the
-   class they came from.
 
 
 Loading and running tests
@@ -1200,12 +1190,6 @@ Loading and running tests
       :class:`TestSuite` class.
 
       This affects all the :meth:`loadTestsFrom\*` methods.
-
-
-   .. attribute:: classSuiteClass
-
-      Callable object that constructs a test suite for the tests cases from one
-      class.  The default value is :class:`ClassTestSuite`.
 
 
 .. class:: TestResult
