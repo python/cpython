@@ -446,7 +446,7 @@ Core and Builtins
   only one-dimensional contiguous buffers are supported and exercised right
   now. Slicing, slice assignment and comparison (equality and inequality)
   have been added. Also, the tolist() method has been implemented, but only
-  for byte buffers. Endly, the API has been updated to return bytes objects
+  for byte buffers. Finally, the API has been updated to return bytes objects
   wherever it used to return bytearrays.
 
 - Issue #3560: clean up the new C PyMemoryView API so that naming is
