@@ -220,6 +220,9 @@ Library
 - Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
   and tests on pywin32 by Tim Golden.
 
+- Issue #1309567: Fix linecache behavior of stripping subdirectories when
+  looking for files given by a relative filename.
+
 - Issue #6046: Fixed the library extension when distutils build_ext is used
   inplace. Initial patch by Roumen Petrov.
 

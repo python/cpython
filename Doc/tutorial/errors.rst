@@ -216,7 +216,7 @@ Raising Exceptions
 The :keyword:`raise` statement allows the programmer to force a specified
 exception to occur. For example::
 
-   >>> raise NameError, 'HiThere'
+   >>> raise NameError('HiThere')
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    NameError: HiThere
@@ -231,7 +231,7 @@ handle it, a simpler form of the :keyword:`raise` statement allows you to
 re-raise the exception::
 
    >>> try:
-   ...     raise NameError, 'HiThere'
+   ...     raise NameError('HiThere')
    ... except NameError:
    ...     print 'An exception flew by!'
    ...     raise
@@ -263,7 +263,7 @@ directly or indirectly.  For example::
    ...     print 'My exception occurred, value:', e.value
    ...
    My exception occurred, value: 4
-   >>> raise MyError, 'oops!'
+   >>> raise MyError('oops!')
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    __main__.MyError: 'oops!'

@@ -285,11 +285,11 @@ position in the string results in an error::
    >>> word[0] = 'x'
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   TypeError: object doesn't support item assignment
+   TypeError: object does not support item assignment
    >>> word[:1] = 'Splat'
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   TypeError: object doesn't support slice assignment
+   TypeError: object does not support slice assignment
 
 However, creating a new string with the combined content is easy and efficient::
 
