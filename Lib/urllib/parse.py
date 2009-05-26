@@ -488,7 +488,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
         space = ' '
     else:
         space = b' '
-    string = quote(string, safe + space)
+    string = quote(string, safe + space, encoding, errors)
     return string.replace(' ', '+')
 
 def quote_from_bytes(bs, safe='/'):
