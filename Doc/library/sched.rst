@@ -100,7 +100,7 @@ Scheduler Objects
 .. method:: scheduler.cancel(event)
 
    Remove the event from the queue. If *event* is not an event currently in the
-   queue, this method will raise a :exc:`RuntimeError`.
+   queue, this method will raise a :exc:`ValueError`.
 
 
 .. method:: scheduler.empty()
