@@ -428,6 +428,16 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(x), 1)
             self.assert_(x is x[0])
 
+    def test_recursive_tuple(self):
+        t = ([],)
+        t[0].append(t)
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertEqual(len(x), 1)
+            self.assertEqual(len(x[0]), 1)
+            self.assert_(x is x[0][0])
+
     def test_recursive_dict(self):
         d = {}
         d[1] = d
