@@ -65,6 +65,11 @@ class cPickleFastPicklerTests(AbstractPickleTests):
                           AbstractPickleTests.test_recursive_list,
                           self)
 
+    def test_recursive_tuple(self):
+        self.assertRaises(ValueError,
+                          AbstractPickleTests.test_recursive_tuple,
+                          self)
+
     def test_recursive_inst(self):
         self.assertRaises(ValueError,
                           AbstractPickleTests.test_recursive_inst,
