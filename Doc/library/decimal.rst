@@ -1803,7 +1803,7 @@ the :const:`Inexact` trap is set, it is also useful for validation:
    >>> Decimal('3.214').quantize(TWOPLACES, context=Context(traps=[Inexact]))
    Traceback (most recent call last):
       ...
-   Inexact
+   Inexact: None
 
 Q. Once I have valid two place inputs, how do I maintain that invariant
 throughout an application?

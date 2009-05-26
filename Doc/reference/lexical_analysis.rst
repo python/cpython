@@ -339,7 +339,9 @@ Keywords
 
 The following identifiers are used as reserved words, or *keywords* of the
 language, and cannot be used as ordinary identifiers.  They must be spelled
-exactly as written here::
+exactly as written here:
+
+.. sourcecode:: text
 
    and       del       from      not       while
    as        elif      global    or        with
