@@ -405,7 +405,7 @@ The module :mod:`socket` exports the following constants and functions:
    :exc:`socket.error` will be raised. Note that exactly what is valid depends on
    the underlying C implementation of :cfunc:`inet_aton`.
 
-   :func:`inet_aton` does not support IPv6, and :func:`getnameinfo` should be used
+   :func:`inet_aton` does not support IPv6, and :func:`inet_pton` should be used
    instead for IPv4/v6 dual stack support.
 
 
@@ -419,7 +419,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    If the string passed to this function is not exactly 4 bytes in length,
    :exc:`socket.error` will be raised. :func:`inet_ntoa` does not support IPv6, and
-   :func:`getnameinfo` should be used instead for IPv4/v6 dual stack support.
+   :func:`inet_ntop` should be used instead for IPv4/v6 dual stack support.
 
 
 .. function:: inet_pton(address_family, ip_string)
@@ -436,6 +436,11 @@ The module :mod:`socket` exports the following constants and functions:
    :cfunc:`inet_pton`.
 
    Availability: Unix (maybe not all platforms).
+
+   .. seealso::
+
+      :func:`ipaddr.BaseIP.packed`
+         Platform-independent conversion to a packed, binary format.
 
    .. versionadded:: 2.3
 
