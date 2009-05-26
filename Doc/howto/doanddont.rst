@@ -30,7 +30,7 @@ Inside Function Definitions
 
 ``from module import *`` is *invalid* inside function definitions. While many
 versions of Python do not check for the invalidity, it does not make it more
-valid, no more then having a smart lawyer makes a man innocent. Do not use it
+valid, no more than having a smart lawyer makes a man innocent. Do not use it
 like that ever. Even in versions where it was accepted, it made the function
 execution slower, because the compiler could not be certain which names are
 local and which are global. In Python 2.1 this construct causes warnings, and
@@ -111,7 +111,7 @@ Good examples::
 from module import name1, name2
 -------------------------------
 
-This is a "don't" which is much weaker then the previous "don't"s but is still
+This is a "don't" which is much weaker than the previous "don't"s but is still
 something you should not do if you don't have good reasons to do that. The
 reason it is usually bad idea is because you suddenly have an object which lives
 in two separate namespaces. When the binding in one namespace changes, the
@@ -245,11 +245,11 @@ Using the Batteries
 Every so often, people seem to be writing stuff in the Python library again,
 usually poorly. While the occasional module has a poor interface, it is usually
 much better to use the rich standard library and data types that come with
-Python then inventing your own.
+Python than inventing your own.
 
 A useful module very few people know about is :mod:`os.path`. It  always has the
 correct path arithmetic for your operating system, and will usually be much
-better then whatever you come up with yourself.
+better than whatever you come up with yourself.
 
 Compare::
 
@@ -284,7 +284,7 @@ Using Backslash to Continue Statements
 ======================================
 
 Since Python treats a newline as a statement terminator, and since statements
-are often more then is comfortable to put in one line, many people do::
+are often more than is comfortable to put in one line, many people do::
 
    if foo.bar()['first'][0] == baz.quux(1, 2)[5:9] and \
       calculate_number(10, 20) != forbulate(500, 360):

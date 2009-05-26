@@ -311,7 +311,7 @@ geturl, and info, methods. ::
     >>> req = urllib2.Request('http://www.python.org/fish.html')
     >>> try:
     >>>     urllib2.urlopen(req)
-    >>> except URLError, e:
+    >>> except HTTPError, e:
     >>>     print e.code
     >>>     print e.read()
     >>>

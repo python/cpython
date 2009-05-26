@@ -1858,11 +1858,11 @@ sequences, it should iterate through the values.
    reverse iteration.  It should return a new iterator object that iterates
    over all the objects in the container in reverse order.
 
-   If the :meth:`__reversed__` method is not provided, the
-   :func:`reversed` builtin will fall back to using the sequence protocol
-   (:meth:`__len__` and :meth:`__getitem__`).  Objects should normally
-   only provide :meth:`__reversed__` if they do not support the sequence
-   protocol and an efficient implementation of reverse iteration is possible.
+   If the :meth:`__reversed__` method is not provided, the :func:`reversed`
+   builtin will fall back to using the sequence protocol (:meth:`__len__` and
+   :meth:`__getitem__`).  Objects that support the sequence protocol should
+   only provide :meth:`__reversed__` if they can provide an implementation
+   that is more efficient than the one provided by :func:`reversed`.
 
    .. versionadded:: 2.6
 

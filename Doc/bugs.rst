@@ -19,6 +19,9 @@ the problem has already been fixed for the next release, or additional
 information is needed (in which case you are welcome to provide it if you can!).
 To do this, search the bug database using the search box on the top of the page.
 
+In the case of documentation bugs, look at the most recent development docs at
+http://docs.python.org/dev to see if the bug has been fixed.
+
 If the problem you're reporting is not already in the bug tracker, go back to
 the Python Bug Tracker.  If you don't already have a tracker account, select the
 "Register" link in the sidebar and undergo the registration procedure.
