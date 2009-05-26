@@ -91,7 +91,8 @@ installunixtools:
 	fi
 	for fn in python3 pythonw3 idle3 pydoc3 python3-config \
 		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config ;\
+		  pydoc$(VERSION) python$(VERSION)-config 2to3 \
+		  2to3-$(VERSION) ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
@@ -109,7 +110,7 @@ altinstallunixtools:
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
 	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config ;\
+		  pydoc$(VERSION) python$(VERSION)-config 2to3-$(VERSION);\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
@@ -130,6 +131,8 @@ install_versionedtools:
 		mv "$(DESTDIR)$(prefix)/bin/$${fn}3" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
 		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}3" ;\
 	done
+	mv "$(DESTDIR)$(prefix)/bin/2to3" "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)"
+	ln -sf "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3"
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/python3-config" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/python3-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
 		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python3-config" ; \
