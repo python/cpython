@@ -259,6 +259,7 @@ markblocks(unsigned char *code, Py_ssize_t len)
 			case SETUP_LOOP:
 			case SETUP_EXCEPT:
 			case SETUP_FINALLY:
+			case SETUP_WITH:
 				j = GETJUMPTGT(code, i);
 				blocks[j] = 1;
 				break;
@@ -550,6 +551,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 			case SETUP_LOOP:
 			case SETUP_EXCEPT:
 			case SETUP_FINALLY:
+			case SETUP_WITH:
 				tgt = GETJUMPTGT(codestr, i);
 				/* Replace JUMP_* to a RETURN into just a RETURN */
 				if (UNCONDITIONAL_JUMP(opcode) &&
@@ -628,6 +630,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 			case SETUP_LOOP:
 			case SETUP_EXCEPT:
 			case SETUP_FINALLY:
+			case SETUP_WITH:
 				j = addrmap[GETARG(codestr, i) + i + 3] - addrmap[i] - 3;
 				SETARG(codestr, i, j);
 				break;
