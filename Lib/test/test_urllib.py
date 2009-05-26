@@ -510,6 +510,21 @@ class QuotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using quote(): %r != %r" % (expect, result))
 
+    def test_quote_plus_with_unicode(self):
+        # Encoding (latin-1) test for quote_plus
+        given = "\xa2\xd8 \xff"
+        expect = "%A2%D8+%FF"
+        result = urllib.parse.quote_plus(given, encoding="latin-1")
+        self.assertEqual(expect, result,
+                         "using quote_plus(): %r != %r" % (expect, result))
+        # Errors test for quote_plus
+        given = "ab\u6f22\u5b57 cd"
+        expect = "ab%3F%3F+cd"
+        result = urllib.parse.quote_plus(given, encoding="latin-1",
+                                         errors="replace")
+        self.assertEqual(expect, result,
+                         "using quote_plus(): %r != %r" % (expect, result))
+
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
 
