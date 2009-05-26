@@ -87,6 +87,8 @@ Installation
 - Issue #6047: fullinstall has been removed because Python 3's executable will
   now be known as python3.
 
+- Lib/smtpd.py is no longer installed as a script.
+
 Extension Modules
 -----------------
 
