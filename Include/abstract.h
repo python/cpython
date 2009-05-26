@@ -632,13 +632,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 o1*o2.
        */
 
-     PyAPI_FUNC(PyObject *) PyNumber_Divide(PyObject *o1, PyObject *o2);
-
-       /*
-	 Returns the result of dividing o1 by o2, or null on failure.
-	 This is the equivalent of the Python expression: o1/o2.
-       */
-
      PyAPI_FUNC(PyObject *) PyNumber_FloorDivide(PyObject *o1, PyObject *o2);
 
        /*
@@ -830,14 +823,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 Returns the result of multiplying o1 by o2, possibly in-place, or
 	 null on failure.  This is the equivalent of the Python expression:
 	 o1 *= o2.
-       */
-
-     PyAPI_FUNC(PyObject *) PyNumber_InPlaceDivide(PyObject *o1, PyObject *o2);
-
-       /*
-	 Returns the result of dividing o1 by o2, possibly in-place, or null
-	 on failure.  This is the equivalent of the Python expression:
-	 o1 /= o2.
        */
 
      PyAPI_FUNC(PyObject *) PyNumber_InPlaceFloorDivide(PyObject *o1,
