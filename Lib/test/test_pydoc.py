@@ -254,6 +254,12 @@ class PyDocDocTest(unittest.TestCase):
         self.assertEqual(expected, result,
             "documentation for missing module found")
 
+    def test_input_strip(self):
+        missing_module = " test.i_am_not_here "
+        result = str(run_pydoc(missing_module), 'ascii')
+        expected = missing_pattern % missing_module.strip()
+        self.assertEqual(expected, result)
+
 
 class TestDescriptions(unittest.TestCase):
 
