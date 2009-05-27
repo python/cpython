@@ -156,6 +156,17 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Georg Brandl; :issue:`5675`.)
 
+* The syntax of the :keyword:`with` statement now allows multiple context
+  managers in a single statement::
+
+    >>> with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
+    ...     for line in infile:
+    ...         if '<critical>' in line:
+    ...             outfile.write(line)
+
+  (Contributed by Georg Brandl;
+  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
+
 * ``round(x, n)`` now returns an integer if *x* is an integer.
   Previously it returned a float::
 
