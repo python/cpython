@@ -173,6 +173,15 @@ class TestNamedTuple(unittest.TestCase):
             self.assertEqual(p, q)
             self.assertEqual(p._fields, q._fields)
 
+    def test_name_conflicts(self):
+        # Some names like "self", "cls", "tuple", "itemgetter", and "property"
+        # failed when used as field names.  Test to make sure these now work.
+        T = namedtuple('T', 'itemgetter property self cls tuple')
+        t = T(1, 2, 3, 4, 5)
+        self.assertEqual(t, (1,2,3,4,5))
+        newt = t._replace(itemgetter=10, property=20, self=30, cls=40, tuple=50)
+        self.assertEqual(newt, (10,20,30,40,50))
+
 class ABCTestCase(unittest.TestCase):
 
     def validate_abstract_methods(self, abc, *names):
