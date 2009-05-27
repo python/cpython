@@ -1739,6 +1739,7 @@ has the same effect as typing a particular string at the help> prompt.
 
     def help(self, request):
         if type(request) is type(''):
+            request = request.strip()
             if request == 'help': self.intro()
             elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
