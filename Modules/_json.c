@@ -1334,9 +1334,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     static PyObject *empty_dict = NULL;
     PyObject *kstr = NULL;
     PyObject *ident = NULL;
-    PyObject *key = NULL;
-    PyObject *value = NULL;
     PyObject *it = NULL;
+    PyObject *items;
+    PyObject *item = NULL;
     int skipkeys;
     Py_ssize_t idx;
 
@@ -1379,16 +1379,38 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         */
     }
 
-    /* TODO: C speedup not implemented for sort_keys */
+    items = PyObject_CallMethod(dct, "items", "");	/* XXX key=itemgetter(0) */
+    if (items == NULL)
+        goto bail;
+    if (PyObject_IsTrue(s->sort_keys)) {
+        PyObject *rv;
+        PyObject *itemlist;
+		
+        itemlist = PySequence_List(items);
+        Py_DECREF(items);
+        if (itemlist == NULL)
+            goto bail;
 
-    it = PyObject_GetIter(dct);
-    if (it == NULL)
+        rv = PyObject_CallMethod(itemlist, "sort", "");
+        if (rv == NULL) {
+            Py_DECREF(itemlist);
+            goto bail;
+        }
+        items = itemlist;
+    }
+    it = PyObject_GetIter(items);
+	Py_DECREF(items);
+	if (it == NULL)
         goto bail;
     skipkeys = PyObject_IsTrue(s->skipkeys);
     idx = 0;
-    while ((key = PyIter_Next(it)) != NULL) {
-        PyObject *encoded;
-
+    while ((item = PyIter_Next(it)) != NULL) {
+        PyObject *encoded, *key, *value;
+        if (!PyTuple_Check(item) || Py_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+            goto bail;
+        }
+        key = PyTuple_GET_ITEM(item, 0);
         if (PyUnicode_Check(key)) {
             Py_INCREF(key);
             kstr = key;
@@ -1398,18 +1420,20 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
             if (kstr == NULL)
                 goto bail;
         }
+        else if (key == Py_True || key == Py_False || key == Py_None) {
+			/* This must come before the PyLong_Check because 
+			   True and False are also 1 and 0.*/
+            kstr = _encoded_const(key);
+            if (kstr == NULL)
+                goto bail;
+        }
         else if (PyLong_Check(key)) {
             kstr = PyObject_Str(key);
             if (kstr == NULL)
                 goto bail;
         }
-        else if (key == Py_True || key == Py_False || key == Py_None) {
-            kstr = _encoded_const(key);
-            if (kstr == NULL)
-                goto bail;
-        }
         else if (skipkeys) {
-            Py_DECREF(key);
+            Py_DECREF(item);
             continue;
         }
         else {
@@ -1435,14 +1459,11 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         if (PyList_Append(rval, s->key_separator))
             goto bail;
 
-        value = PyObject_GetItem(dct, key);
-        if (value == NULL)
-            goto bail;
+        value = PyTuple_GET_ITEM(item, 1);
         if (encoder_listencode_obj(s, rval, value, indent_level))
             goto bail;
         idx += 1;
-        Py_CLEAR(value);
-        Py_DECREF(key);
+        Py_DECREF(item);
     }
     if (PyErr_Occurred())
         goto bail;
@@ -1466,8 +1487,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
 
 bail:
     Py_XDECREF(it);
-    Py_XDECREF(key);
-    Py_XDECREF(value);
+    Py_XDECREF(item);
     Py_XDECREF(kstr);
     Py_XDECREF(ident);
     return -1;
