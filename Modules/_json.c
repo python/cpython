@@ -1334,8 +1334,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     static PyObject *empty_dict = NULL;
     PyObject *kstr = NULL;
     PyObject *ident = NULL;
-    PyObject *key, *value;
-    Py_ssize_t pos;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+    PyObject *it = NULL;
     int skipkeys;
     Py_ssize_t idx;
 
@@ -1346,7 +1347,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         if (open_dict == NULL || close_dict == NULL || empty_dict == NULL)
             return -1;
     }
-    if (PyDict_Size(dct) == 0)
+    if (Py_SIZE(dct) == 0)
         return PyList_Append(rval, empty_dict);
 
     if (s->markers != Py_None) {
@@ -1380,10 +1381,12 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
 
     /* TODO: C speedup not implemented for sort_keys */
 
-    pos = 0;
+    it = PyObject_GetIter(dct);
+    if (it == NULL)
+        goto bail;
     skipkeys = PyObject_IsTrue(s->skipkeys);
     idx = 0;
-    while (PyDict_Next(dct, &pos, &key, &value)) {
+    while ((key = PyIter_Next(it)) != NULL) {
         PyObject *encoded;
 
         if (PyUnicode_Check(key)) {
@@ -1406,6 +1409,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
                 goto bail;
         }
         else if (skipkeys) {
+            Py_DECREF(key);
             continue;
         }
         else {
@@ -1430,10 +1434,20 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         Py_DECREF(encoded);
         if (PyList_Append(rval, s->key_separator))
             goto bail;
+
+        value = PyObject_GetItem(dct, key);
+        if (value == NULL)
+            goto bail;
         if (encoder_listencode_obj(s, rval, value, indent_level))
             goto bail;
         idx += 1;
+        Py_CLEAR(value);
+        Py_DECREF(key);
     }
+    if (PyErr_Occurred())
+        goto bail;
+    Py_CLEAR(it);
+
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
             goto bail;
@@ -1451,6 +1465,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     return 0;
 
 bail:
+    Py_XDECREF(it);
+    Py_XDECREF(key);
+    Py_XDECREF(value);
     Py_XDECREF(kstr);
     Py_XDECREF(ident);
     return -1;
