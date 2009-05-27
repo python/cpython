@@ -1153,14 +1153,17 @@ dict_subscript(PyDictObject *mp, register PyObject *key)
 	if (v == NULL) {
 		if (!PyDict_CheckExact(mp)) {
 			/* Look up __missing__ method if we're a subclass. */
-		    	PyObject *missing;
+		    	PyObject *missing, *res;
 			static PyObject *missing_str = NULL;
 			missing = _PyObject_LookupSpecial((PyObject *)mp,
 							  "__missing__",
 							  &missing_str);
-			if (missing != NULL)
-				return PyObject_CallFunctionObjArgs(missing,
-					key, NULL);
+			if (missing != NULL) {
+				res = PyObject_CallFunctionObjArgs(missing,
+								   key, NULL);
+				Py_DECREF(missing);
+				return res;
+			}
 			else if (PyErr_Occurred())
 				return NULL;
 		}
