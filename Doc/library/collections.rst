@@ -524,8 +524,8 @@ Example:
    <BLANKLINE>
            _fields = ('x', 'y')
    <BLANKLINE>
-           def __new__(cls, x, y):
-               return tuple.__new__(cls, (x, y))
+           def __new__(_cls, x, y):
+               return _tuple.__new__(_cls, (x, y))
    <BLANKLINE>
            @classmethod
            def _make(cls, iterable, new=tuple.__new__, len=len):
@@ -542,9 +542,9 @@ Example:
                'Return a new dict which maps field names to their values'
                return {'x': t[0], 'y': t[1]}
    <BLANKLINE>
-           def _replace(self, **kwds):
+           def _replace(_self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               result = self._make(map(kwds.pop, ('x', 'y'), self))
+               result = _self._make(map(kwds.pop, ('x', 'y'), _self))
                if kwds:
                    raise ValueError('Got unexpected field names: %r' % kwds.keys())
                return result
@@ -552,8 +552,8 @@ Example:
            def __getnewargs__(self):
                return tuple(self)
    <BLANKLINE>
-           x = property(itemgetter(0))
-           y = property(itemgetter(1))
+           x = _property(_itemgetter(0))
+           y = _property(_itemgetter(1))
 
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
    >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
