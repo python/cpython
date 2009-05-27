@@ -1689,7 +1689,15 @@ order (MRO) for bases """
             return isinstance(int, obj)
         def do_issubclass(obj):
             return issubclass(int, obj)
-        def swallow(*args): pass
+        def swallow(*args):
+            pass
+        def do_dict_missing(checker):
+            class DictSub(checker.__class__, dict):
+                pass
+            self.assertEqual(DictSub()["hi"], 4)
+        def some_number(self_, key):
+            self.assertEqual(key, "hi")
+            return 4
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
@@ -1701,6 +1709,8 @@ order (MRO) for bases """
              {"__iter__" : iden, "next" : stop}),
             ("__sizeof__", sys.getsizeof, zero, set(), {}),
             ("__instancecheck__", do_isinstance, return_true, set(), {}),
+            ("__missing__", do_dict_missing, some_number,
+             set(("__class__",)), {}),
             ("__subclasscheck__", do_issubclass, return_true,
              set(("__bases__",)), {}),
             ("__enter__", run_context, iden, set(), {"__exit__" : swallow}),
@@ -1713,7 +1723,7 @@ order (MRO) for bases """
             def __getattribute__(self, attr, test=self):
                 if attr not in ok:
                     test.fail("__getattribute__ called with {0}".format(attr))
-                return object.__getattribute__(attr)
+                return object.__getattribute__(self, attr)
         class SpecialDescr(object):
             def __init__(self, impl):
                 self.impl = impl
