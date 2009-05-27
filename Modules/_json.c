@@ -1339,6 +1339,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     PyObject *item = NULL;
     int skipkeys;
     Py_ssize_t idx;
+    PyObject *mapping;
+    static PyObject *code = NULL;
 
     if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
         open_dict = PyUnicode_InternFromString("{");
@@ -1379,25 +1381,28 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         */
     }
 
-    items = PyObject_CallMethod(dct, "items", "");	/* XXX key=itemgetter(0) */
-    if (items == NULL)
-        goto bail;
     if (PyObject_IsTrue(s->sort_keys)) {
-        PyObject *rv;
-        PyObject *itemlist;
-		
-        itemlist = PySequence_List(items);
-        Py_DECREF(items);
-        if (itemlist == NULL)
-            goto bail;
+        if (code == NULL) {
+            code = Py_CompileString("sorted(d.items(), key=lambda kv: kv[0])", 
+                                    "_json.c", Py_eval_input);
+            if (code == NULL)
+                goto bail;
+        }
 
-        rv = PyObject_CallMethod(itemlist, "sort", "");
-        if (rv == NULL) {
-            Py_DECREF(itemlist);
+        mapping = PyDict_New();
+        if (mapping == NULL)
+            goto bail;
+        if (PyDict_SetItemString(mapping, "d", dct) == -1) {
+            Py_DECREF(mapping);
             goto bail;
         }
-        items = itemlist;
-    }
+        items = PyEval_EvalCode((PyCodeObject *)code, PyEval_GetGlobals(), mapping);
+        Py_DECREF(mapping);
+	} else {
+        items = PyMapping_Items(dct);
+	}
+	if (items == NULL)
+        goto bail;
     it = PyObject_GetIter(items);
 	Py_DECREF(items);
 	if (it == NULL)
