@@ -68,6 +68,9 @@ Library
 - Issue #6050: Don't fail extracting a directory from a zipfile if
   the directory already exists.
 
+- collections.namedtuple() was not working with the following field
+  names:  cls, self, tuple, itemgetter, and property.
+
 - Issue #5259: smtplib plain auth login no longer gives a traceback.  Fix
   by Musashi Tamura, tests by Marcin Bachry.
 

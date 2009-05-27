@@ -68,8 +68,8 @@ def namedtuple(typename, field_names, verbose=False):
         '%(typename)s(%(argtxt)s)' \n
         __slots__ = () \n
         _fields = %(field_names)r \n
-        def __new__(cls, %(argtxt)s):
-            return tuple.__new__(cls, (%(argtxt)s)) \n
+        def __new__(_cls, %(argtxt)s):
+            return _tuple.__new__(_cls, (%(argtxt)s)) \n
         @classmethod
         def _make(cls, iterable, new=tuple.__new__, len=len):
             'Make a new %(typename)s object from a sequence or iterable'
@@ -82,22 +82,23 @@ def namedtuple(typename, field_names, verbose=False):
         def _asdict(t):
             'Return a new dict which maps field names to their values'
             return {%(dicttxt)s} \n
-        def _replace(self, **kwds):
+        def _replace(_self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            result = self._make(map(kwds.pop, %(field_names)r, self))
+            result = _self._make(map(kwds.pop, %(field_names)r, _self))
             if kwds:
                 raise ValueError('Got unexpected field names: %%r' %% kwds.keys())
             return result \n
         def __getnewargs__(self):
             return tuple(self) \n\n''' % locals()
     for i, name in enumerate(field_names):
-        template += '        %s = property(itemgetter(%d))\n' % (name, i)
+        template += '        %s = _property(_itemgetter(%d))\n' % (name, i)
     if verbose:
         print(template)
 
     # Execute the template string in a temporary namespace and
     # support tracing utilities by setting a value for frame.f_globals['__name__']
-    namespace = dict(itemgetter=_itemgetter, __name__='namedtuple_%s' % typename)
+    namespace = dict(_itemgetter=_itemgetter, __name__='namedtuple_%s' % typename,
+                     _property=property, _tuple=tuple)
     try:
         exec(template, namespace)
     except SyntaxError as e:
