@@ -43,3 +43,8 @@ class TestEncodeBaseStringAscii(TestCase):
         items = [('one', 1), ('two', 2), ('three', 3), ('four', 4), ('five', 5)]
         s = json.dumps(OrderedDict(items))
         self.assertEqual(s, '{"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}')
+
+    def test_sorted_dict(self):
+        items = [('one', 1), ('two', 2), ('three', 3), ('four', 4), ('five', 5)]
+        s = json.dumps(dict(items), sort_keys=True)
+        self.assertEqual(s, '{"five": 5, "four": 4, "one": 1, "three": 3, "two": 2}')
