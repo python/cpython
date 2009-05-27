@@ -6,14 +6,7 @@ import tempfile
 
 from test import support
 
-try: set
-except NameError: from sets import Set as set
-
 import modulefinder
-
-# Note: To test modulefinder with Python 2.2, sets.py and
-# modulefinder.py must be available - they are not in the standard
-# library.
 
 TEST_DIR = tempfile.mkdtemp()
 TEST_PATH = [TEST_DIR, os.path.dirname(__future__.__file__)]
