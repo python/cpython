@@ -307,6 +307,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6121: pydoc now ignores leading and trailing spaces in the
+  argument to the 'help' function.
+
 - In unittest, using a skipping decorator on a class is now equivalent to
   skipping every test on the class.  The ClassTestSuite class has been removed.
 
