@@ -1155,13 +1155,14 @@ dict_subscript(PyDictObject *mp, register PyObject *key)
 			/* Look up __missing__ method if we're a subclass. */
 		    	PyObject *missing;
 			static PyObject *missing_str = NULL;
-			if (missing_str == NULL)
-				missing_str =
-				  PyString_InternFromString("__missing__");
-			missing = _PyType_Lookup(Py_TYPE(mp), missing_str);
+			missing = _PyObject_LookupSpecial((PyObject *)mp,
+							  "__missing__",
+							  &missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
-					(PyObject *)mp, key, NULL);
+					key, NULL);
+			else if (PyErr_Occurred())
+				return NULL;
 		}
 		set_key_error(key);
 		return NULL;
