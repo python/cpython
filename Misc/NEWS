@@ -37,6 +37,9 @@ Library
 - Issue #6118: urllib.parse.quote_plus ignored the encoding and errors
   arguments for strings with a space in them.
 
+- collections.namedtuple() was not working with the following field
+  names:  cls, self, tuple, itemgetter, and property.
+
 - In unittest, using a skipping decorator on a class is now equivalent to
   skipping every test on the class.  The ClassTestSuite class has been removed.
 
