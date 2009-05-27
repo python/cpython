@@ -7,6 +7,8 @@ from test import mapping_tests
 import pickle, cPickle, copy
 from random import randrange, shuffle
 import operator
+import keyword
+import re
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
@@ -169,6 +171,44 @@ class TestNamedTuple(unittest.TestCase):
             q = copier(p)
             self.assertEqual(p, q)
             self.assertEqual(p._fields, q._fields)
+
+    def test_name_conflicts(self):
+        # Some names like "self", "cls", "tuple", "itemgetter", and "property"
+        # failed when used as field names.  Test to make sure these now work.
+        T = namedtuple('T', 'itemgetter property self cls tuple')
+        t = T(1, 2, 3, 4, 5)
+        self.assertEqual(t, (1,2,3,4,5))
+        newt = t._replace(itemgetter=10, property=20, self=30, cls=40, tuple=50)
+        self.assertEqual(newt, (10,20,30,40,50))
+
+        # Broader test of all interesting names in a template
+        with test_support.captured_stdout() as template:
+            T = namedtuple('T', 'x', verbose=True)
+        words = set(re.findall('[A-Za-z]+', template.getvalue()))
+        words -= set(keyword.kwlist)
+        T = namedtuple('T', words)
+        # test __new__
+        values = tuple(range(len(words)))
+        t = T(*values)
+        self.assertEqual(t, values)
+        t = T(**dict(zip(T._fields, values)))
+        self.assertEqual(t, values)
+        # test _make
+        t = T._make(values)
+        self.assertEqual(t, values)
+        # exercise __repr__
+        repr(t)
+        # test _asdict
+        self.assertEqual(t._asdict(), dict(zip(T._fields, values)))
+        # test _replace
+        t = T._make(values)
+        newvalues = tuple(v*10 for v in values)
+        newt = t._replace(**dict(zip(T._fields, newvalues)))
+        self.assertEqual(newt, newvalues)
+        # test _fields
+        self.assertEqual(T._fields, tuple(words))
+        # test __getnewargs__
+        self.assertEqual(t.__getnewargs__(), values)
 
 class ABCTestCase(unittest.TestCase):
 
