@@ -3,12 +3,15 @@ __revision__ = "$Id$"
 
 import unittest
 import os
+import tarfile
 from os.path import splitdrive
+import warnings
 
 from distutils.archive_util import (check_archive_formats, make_tarball,
                                     make_zipfile, make_archive)
-from distutils.spawn import find_executable
+from distutils.spawn import find_executable, spawn
 from distutils.tests import support
+from test.support import check_warnings
 
 try:
     import zipfile
@@ -19,12 +22,13 @@ except ImportError:
 class ArchiveUtilTestCase(support.TempdirManager,
                           unittest.TestCase):
 
-    @unittest.skipUnless(find_executable('tar'), 'Need the tar command to run')
     def test_make_tarball(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
         self.write_file([tmpdir, 'file1'], 'xxx')
         self.write_file([tmpdir, 'file2'], 'xxx')
+        os.mkdir(os.path.join(tmpdir, 'sub'))
+        self.write_file([tmpdir, 'sub', 'file3'], 'xxx')
 
         tmpdir2 = self.mkdtemp()
         unittest.skipUnless(splitdrive(tmpdir)[0] == splitdrive(tmpdir2)[0],
@@ -54,6 +58,111 @@ class ArchiveUtilTestCase(support.TempdirManager,
             os.chdir(old_dir)
         tarball = base_name + '.tar'
         self.assert_(os.path.exists(tarball))
+
+    def _tarinfo(self, path):
+        tar = tarfile.open(path)
+        try:
+            names = tar.getnames()
+            names.sort()
+            return tuple(names)
+        finally:
+            tar.close()
+
+    def _create_files(self):
+        # creating something to tar
+        tmpdir = self.mkdtemp()
+        dist = os.path.join(tmpdir, 'dist')
+        os.mkdir(dist)
+        self.write_file([dist, 'file1'], 'xxx')
+        self.write_file([dist, 'file2'], 'xxx')
+        os.mkdir(os.path.join(dist, 'sub'))
+        self.write_file([dist, 'sub', 'file3'], 'xxx')
+        os.mkdir(os.path.join(dist, 'sub2'))
+        tmpdir2 = self.mkdtemp()
+        base_name = os.path.join(tmpdir2, 'archive')
+        return tmpdir, tmpdir2, base_name
+
+    @unittest.skipUnless(find_executable('tar'), 'Need the tar command to run')
+    def test_tarfile_vs_tar(self):
+        tmpdir, tmpdir2, base_name =  self._create_files()
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            make_tarball(base_name, 'dist')
+        finally:
+            os.chdir(old_dir)
+
+        # check if the compressed tarball was created
+        tarball = base_name + '.tar.gz'
+        self.assert_(os.path.exists(tarball))
+
+        # now create another tarball using `tar`
+        tarball2 = os.path.join(tmpdir, 'archive2.tar.gz')
+        cmd = ['tar', '-czf', 'archive2.tar.gz', 'dist']
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            spawn(cmd)
+        finally:
+            os.chdir(old_dir)
+
+        self.assert_(os.path.exists(tarball2))
+        # let's compare both tarballs
+        self.assertEquals(self._tarinfo(tarball), self._tarinfo(tarball2))
+
+        # trying an uncompressed one
+        base_name = os.path.join(tmpdir2, 'archive')
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            make_tarball(base_name, 'dist', compress=None)
+        finally:
+            os.chdir(old_dir)
+        tarball = base_name + '.tar'
+        self.assert_(os.path.exists(tarball))
+
+        # now for a dry_run
+        base_name = os.path.join(tmpdir2, 'archive')
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            make_tarball(base_name, 'dist', compress=None, dry_run=True)
+        finally:
+            os.chdir(old_dir)
+        tarball = base_name + '.tar'
+        self.assert_(os.path.exists(tarball))
+
+    @unittest.skipUnless(find_executable('compress'),
+                         'The compress program is required')
+    def test_compress_deprecated(self):
+        tmpdir, tmpdir2, base_name =  self._create_files()
+
+        # using compress and testing the PendingDeprecationWarning
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            with check_warnings() as w:
+                warnings.simplefilter("always")
+                make_tarball(base_name, 'dist', compress='compress')
+        finally:
+            os.chdir(old_dir)
+        tarball = base_name + '.tar.Z'
+        self.assert_(os.path.exists(tarball))
+        self.assertEquals(len(w.warnings), 1)
+
+        # same test with dry_run
+        os.remove(tarball)
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            with check_warnings() as w:
+                warnings.simplefilter("always")
+                make_tarball(base_name, 'dist', compress='compress',
+                             dry_run=True)
+        finally:
+            os.chdir(old_dir)
+        self.assert_(not os.path.exists(tarball))
+        self.assertEquals(len(w.warnings), 1)
 
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile(self):

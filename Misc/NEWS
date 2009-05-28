@@ -684,6 +684,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6048: Now Distutils uses the tarfile module in archive_util.
+
 - Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
   and tests on pywin32 by Tim Golden.
 
