@@ -37,9 +37,8 @@ class TestGenericUnivNewlines(unittest.TestCase):
     WRITEMODE = 'wb'
 
     def setUp(self):
-        fp = open(test_support.TESTFN, self.WRITEMODE)
-        fp.write(self.DATA)
-        fp.close()
+        with open(test_support.TESTFN, self.WRITEMODE) as fp:
+            fp.write(self.DATA)
 
     def tearDown(self):
         try:
@@ -48,35 +47,35 @@ class TestGenericUnivNewlines(unittest.TestCase):
             pass
 
     def test_read(self):
-        fp = open(test_support.TESTFN, self.READMODE)
-        data = fp.read()
+        with open(test_support.TESTFN, self.READMODE) as fp:
+            data = fp.read()
         self.assertEqual(data, DATA_LF)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readlines(self):
-        fp = open(test_support.TESTFN, self.READMODE)
-        data = fp.readlines()
+        with open(test_support.TESTFN, self.READMODE) as fp:
+            data = fp.readlines()
         self.assertEqual(data, DATA_SPLIT)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readline(self):
-        fp = open(test_support.TESTFN, self.READMODE)
-        data = []
-        d = fp.readline()
-        while d:
-            data.append(d)
+        with open(test_support.TESTFN, self.READMODE) as fp:
+            data = []
             d = fp.readline()
+            while d:
+                data.append(d)
+                d = fp.readline()
         self.assertEqual(data, DATA_SPLIT)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_seek(self):
-        fp = open(test_support.TESTFN, self.READMODE)
-        fp.readline()
-        pos = fp.tell()
-        data = fp.readlines()
-        self.assertEqual(data, DATA_SPLIT[1:])
-        fp.seek(pos)
-        data = fp.readlines()
+        with open(test_support.TESTFN, self.READMODE) as fp:
+            fp.readline()
+            pos = fp.tell()
+            data = fp.readlines()
+            self.assertEqual(data, DATA_SPLIT[1:])
+            fp.seek(pos)
+            data = fp.readlines()
         self.assertEqual(data, DATA_SPLIT[1:])
 
     def test_execfile(self):
@@ -106,10 +105,10 @@ class TestCRLFNewlines(TestGenericUnivNewlines):
     DATA = DATA_CRLF
 
     def test_tell(self):
-        fp = open(test_support.TESTFN, self.READMODE)
-        self.assertEqual(repr(fp.newlines), repr(None))
-        data = fp.readline()
-        pos = fp.tell()
+        with open(test_support.TESTFN, self.READMODE) as fp:
+            self.assertEqual(repr(fp.newlines), repr(None))
+            data = fp.readline()
+            pos = fp.tell()
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
 class TestMixedNewlines(TestGenericUnivNewlines):
