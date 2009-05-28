@@ -20,6 +20,7 @@ except ImportError:
     ZIP_SUPPORT = find_executable('zip')
 
 class ArchiveUtilTestCase(support.TempdirManager,
+                          support.LoggingSilencer,
                           unittest.TestCase):
 
     def test_make_tarball(self):
@@ -82,7 +83,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         base_name = os.path.join(tmpdir2, 'archive')
         return tmpdir, tmpdir2, base_name
 
-    @unittest.skipUnless(find_executable('tar'), 'Need the tar command to run')
+    @unittest.skipUnless(find_executable('tar') and find_executable('gzip'),
+                         'Need the tar command to run')
     def test_tarfile_vs_tar(self):
         tmpdir, tmpdir2, base_name =  self._create_files()
         old_dir = os.getcwd()
@@ -98,11 +100,13 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         # now create another tarball using `tar`
         tarball2 = os.path.join(tmpdir, 'archive2.tar.gz')
-        cmd = ['tar', '-czf', 'archive2.tar.gz', 'dist']
+        tar_cmd = ['tar', '-cf', 'archive2.tar', 'dist']
+        gzip_cmd = ['gzip', '-f9', 'archive2.tar']
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
-            spawn(cmd)
+            spawn(tar_cmd)
+            spawn(gzip_cmd)
         finally:
             os.chdir(old_dir)
 
