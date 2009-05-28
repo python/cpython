@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- smtplib 'login' and 'cram-md5' login are also fixed (see Issue #5259).
+
 - Issue #6121: pydoc now ignores leading and trailing spaces in the
   argument to the 'help' function.
 
