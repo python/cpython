@@ -307,6 +307,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6048: Now Distutils uses the tarfile module in archive_util.
+
 - Issue #6121: pydoc now ignores leading and trailing spaces in the
   argument to the 'help' function.
 
