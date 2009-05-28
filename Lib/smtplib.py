@@ -538,8 +538,9 @@ class SMTP:
 
         def encode_cram_md5(challenge, user, password):
             challenge = base64.decodestring(challenge)
-            response = user + " " + hmac.HMAC(password, challenge).hexdigest()
-            return encode_base64(response)
+            response = user + " " + hmac.HMAC(password.encode('ascii'),
+                                              challenge).hexdigest()
+            return encode_base64(response.encode('ascii'), eol='')
 
         def encode_plain(user, password):
             s = "\0%s\0%s" % (user, password)
@@ -581,10 +582,10 @@ class SMTP:
                 AUTH_PLAIN + " " + encode_plain(user, password))
         elif authmethod == AUTH_LOGIN:
             (code, resp) = self.docmd("AUTH",
-                "%s %s" % (AUTH_LOGIN, encode_base64(user)))
+                "%s %s" % (AUTH_LOGIN, encode_base64(user.encode('ascii'), eol='')))
             if code != 334:
                 raise SMTPAuthenticationError(code, resp)
-            (code, resp) = self.docmd(encode_base64(password))
+            (code, resp) = self.docmd(encode_base64(password.encode('ascii'), eol=''))
         elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
         if code not in (235, 503):
