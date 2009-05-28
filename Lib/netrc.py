@@ -26,9 +26,12 @@ class netrc:
                 file = os.path.join(os.environ['HOME'], ".netrc")
             except KeyError:
                 raise IOError("Could not find .netrc: $HOME is not set")
-        fp = open(file)
         self.hosts = {}
         self.macros = {}
+        with open(file) as fp:
+            self._parse(file, fp)
+
+    def _parse(self, file, fp):
         lexer = shlex.shlex(fp)
         lexer.wordchars += r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
         while 1:
