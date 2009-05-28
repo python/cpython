@@ -80,6 +80,8 @@ Functions provided:
    :meth:`__exit__` methods should avoid raising exceptions, and in particular they
    should not re-raise a passed-in exception.
 
+   .. deprecated:: 3.1
+      The with-statement now supports this functionality directly.
 
 .. function:: closing(thing)
 
