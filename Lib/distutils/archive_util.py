@@ -6,6 +6,9 @@ that sort of thing)."""
 __revision__ = "$Id$"
 
 import os
+from warnings import warn
+import sys
+
 from distutils.errors import DistutilsExecError
 from distutils.spawn import spawn
 from distutils.dir_util import mkpath
@@ -22,36 +25,45 @@ def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0):
     the appropriate compression extension (".gz", ".bz2" or ".Z").
     Returns the output filename.
     """
-    # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
-    # It's pretty new, though, so we certainly can't require it --
-    # but it would be nice to take advantage of it to skip the
-    # "create a tree of hardlinks" step!  (Would also be nice to
-    # detect GNU tar to use its 'z' option and save a step.)
-
-    compress_ext = {'gzip': ".gz",
-                    'bzip2': '.bz2',
-                    'compress': ".Z" }
+    tar_compression = {'gzip': 'gz', 'bzip2': 'bz2', None: '', 'compress': ''}
+    compress_ext = {'gzip': '.gz', 'bzip2': '.bz2', 'compress': '.Z'}
 
     # flags for compression program, each element of list will be an argument
-    compress_flags = {'gzip': ["-f9"],
-                      'compress': ["-f"],
-                      'bzip2': ['-f9']}
-
     if compress is not None and compress not in compress_ext.keys():
         raise ValueError, \
-              "bad value for 'compress': must be None, 'gzip', or 'compress'"
+              ("bad value for 'compress': must be None, 'gzip', 'bzip2' "
+               "or 'compress'")
 
-    archive_name = base_name + ".tar"
+    archive_name = base_name + '.tar'
+    if compress != 'compress':
+        archive_name += compress_ext.get(compress, '')
+
     mkpath(os.path.dirname(archive_name), dry_run=dry_run)
-    cmd = ["tar", "-cf", archive_name, base_dir]
-    spawn(cmd, dry_run=dry_run)
 
-    if compress:
-        spawn([compress] + compress_flags[compress] + [archive_name],
-              dry_run=dry_run)
-        return archive_name + compress_ext[compress]
-    else:
-        return archive_name
+    # creating the tarball
+    import tarfile  # late import so Python build itself doesn't break
+
+    log.info('Creating tar archive')
+    if not dry_run:
+        tar = tarfile.open(archive_name, 'w|%s' % tar_compression[compress])
+        try:
+            tar.add(base_dir)
+        finally:
+            tar.close()
+
+    # compression using `compress`
+    if compress == 'compress':
+        warn("'compress' will be deprecated.", PendingDeprecationWarning)
+        # the option varies depending on the platform
+        compressed_name = archive_name + compress_ext[compress]
+        if sys.platform == 'win32':
+            cmd = [compress, archive_name, compressed_name]
+        else:
+            cmd = [compress, '-f', archive_name]
+        spawn(cmd, dry_run=dry_run)
+        return compressed_name
+
+    return archive_name
 
 def make_zipfile(base_name, base_dir, verbose=0, dry_run=0):
     """Create a zip file from all the files under 'base_dir'.
