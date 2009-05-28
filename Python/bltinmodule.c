@@ -1485,7 +1485,7 @@ PyDoc_STRVAR(open_doc,
 "open(name[, mode[, buffering]]) -> file object\n\
 \n\
 Open a file using the file() type, returns a file object.  This is the\n\
-preferred way to open a file.");
+preferred way to open a file.  See file.__doc__ for further information.");
 
 
 static PyObject *
