@@ -165,7 +165,7 @@ Some smaller changes made to the core Python language are:
     ...             outfile.write(line)
 
   With the new syntax, the :func:`contextlib.nested` function is no longer
-  needed and is not deprecated.
+  needed and is now deprecated.
 
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
