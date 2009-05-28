@@ -2,6 +2,7 @@
 
 import sys
 from functools import wraps
+from warnings import warn
 
 __all__ = ["contextmanager", "nested", "closing"]
 
@@ -101,6 +102,8 @@ def nested(*managers):
                     <body>
 
     """
+    warn("With-statements now directly support multiple context managers",
+        DeprecationWarning, 2)
     exits = []
     vars = []
     exc = (None, None, None)
