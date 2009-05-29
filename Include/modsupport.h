@@ -43,6 +43,8 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
 
+#define Py_CLEANUP_SUPPORTED 0x20000
+
 #define PYTHON_API_VERSION 1013
 #define PYTHON_API_STRING "1013"
 /* The API version is maintained (independently from the Python version)

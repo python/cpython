@@ -804,8 +804,6 @@ posix_2str(PyObject *args,
 	if (!PyArg_ParseTuple(args, format,
 	                      PyUnicode_FSConverter, &opath1,
 	                      PyUnicode_FSConverter, &opath2)) {
-		Py_XDECREF(opath1);
-		Py_XDECREF(opath2);
 		return NULL;
 	}
 	path1 = bytes2str(opath1, 1);

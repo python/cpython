@@ -1539,6 +1539,10 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     PyObject *output = NULL;
     Py_ssize_t size;
     void *data;
+    if (arg == NULL) {
+        Py_DECREF(*(PyObject**)addr);
+        return 1;
+    }
     if (PyBytes_Check(arg) || PyByteArray_Check(arg)) {
         output = arg;
         Py_INCREF(output);
@@ -1573,7 +1577,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
         return 0;
     }
     *(PyObject**)addr = output;
-    return 1;
+    return Py_CLEANUP_SUPPORTED;
 }
 
 

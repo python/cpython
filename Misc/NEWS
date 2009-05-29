@@ -12,6 +12,8 @@ What's New in Python 3.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #6012: Add cleanup support to O& argument parsing.
+
 - Issue #6089: Fixed str.format with certain invalid field specifiers
   that would raise SystemError.
 

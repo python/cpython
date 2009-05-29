@@ -379,11 +379,13 @@ Many of the following APIs take two arguments encoding and errors. These
 parameters encoding and errors have the same semantics as the ones of the
 builtin unicode() Unicode object constructor.
 
-Setting encoding to *NULL* causes the default encoding to be used which is
-ASCII.  The file system calls should use :cdata:`Py_FileSystemDefaultEncoding`
-as the encoding for file names. This variable should be treated as read-only: On
-some systems, it will be a pointer to a static string, on others, it will change
-at run-time (such as when the application invokes setlocale).
+Setting encoding to *NULL* causes the default encoding to be used
+which is ASCII.  The file system calls should use
+:cfunc:`PyUnicode_FSConverter` for encoding file names. This uses the
+variable :cdata:`Py_FileSystemDefaultEncoding` internally. This
+variable should be treated as read-only: On some systems, it will be a
+pointer to a static string, on others, it will change at run-time
+(such as when the application invokes setlocale).
 
 Error handling is set by errors which may also be set to *NULL* meaning to use
 the default handling defined for the codec.  Default error handling for all
@@ -781,6 +783,19 @@ the user settings on the machine running the codec.
    Encode a Unicode object using MBCS and return the result as Python bytes
    object.  Error handling is "strict".  Return *NULL* if an exception was
    raised by the codec.
+
+For decoding file names and other environment strings, :cdata:`Py_FileSystemEncoding`
+should be used as the encoding, and ``"surrogateescape"`` should be used as the error
+handler. For encoding file names during argument parsing, the ``O&`` converter should
+be used, passsing PyUnicode_FSConverter as the conversion function:
+
+.. cfunction:: int PyUnicode_FSConverter(PyObject* obj, void* result)
+
+   Convert *obj* into *result*, using the file system encoding, and the ``surrogateescape``
+   error handler. *result* must be a ``PyObject*``, yielding a bytes or bytearray object
+   which must be released if it is no longer used.
+
+   .. versionadded:: 3.1
 
 .. % --- Methods & Slots ----------------------------------------------------
 
