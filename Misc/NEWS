@@ -309,6 +309,9 @@ Library
 
 - Issue #6048: Now Distutils uses the tarfile module in archive_util.
 
+- Issue #5150: IDLE's format menu now has an option to strip trailing
+  whitespace.
+
 - Issue #6121: pydoc now ignores leading and trailing spaces in the
   argument to the 'help' function.
 
