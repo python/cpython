@@ -503,6 +503,9 @@ Library
 
 - unittest.assertNotEqual() now uses the inequality operator (!=) instead
   of the equality operator.
+  
+- Issue #6001: Test discovery for unittest. Implemented in 
+  unittest.TestLoader.discover and from the command line.
 
 - Issue #5679: The methods unittest.TestCase.addCleanup and doCleanups were added.
   addCleanup allows you to add cleanup functions that will be called
