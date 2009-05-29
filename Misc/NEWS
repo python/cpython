@@ -108,6 +108,11 @@ Library
   makeunicodedata.py and regenerated the Unicode database (This fixes
   u'\u1d79'.lower() == '\x00').
 
+Extension Modules
+-----------------
+
+- Issue #4873: Fix resource leaks in error cases of pwd and grp.
+
 Build
 -----
 
