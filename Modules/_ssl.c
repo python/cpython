@@ -667,7 +667,7 @@ _get_peer_alt_names (X509 *certificate) {
 	char buf[2048];
 	char *vptr;
 	int len;
-	const unsigned char *p;
+	unsigned char *p;
 
 	if (certificate == NULL)
 		return peer_alt_names;

@@ -27,12 +27,6 @@ PyObject *EventHandlerCallRef_New(EventHandlerCallRef itself);
 PyObject *EventRef_New(EventRef itself);
 
 /********** EventTypeSpec *******/
-static PyObject*
-EventTypeSpec_New(EventTypeSpec *in)
-{
-        return Py_BuildValue("ll", in->eventClass, in->eventKind);
-}
-
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
@@ -66,12 +60,6 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 /********** end HIPoint *******/
 
 /********** EventHotKeyID *******/
-
-static PyObject*
-EventHotKeyID_New(EventHotKeyID *in)
-{
-        return Py_BuildValue("ll", in->signature, in->id);
-}
 
 static int
 EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)

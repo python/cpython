@@ -182,6 +182,7 @@ get_long(PyObject *v, long *p)
 
 /* Same, but handling unsigned long */
 
+#ifndef PY_STRUCT_OVERFLOW_MASKING
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
@@ -201,6 +202,7 @@ get_ulong(PyObject *v, unsigned long *p)
 	}
 	return 0;
 }
+#endif  /* PY_STRUCT_OVERFLOW_MASKING */
 
 #ifdef HAVE_LONG_LONG
 

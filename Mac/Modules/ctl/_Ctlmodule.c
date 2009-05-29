@@ -1598,7 +1598,7 @@ static PyObject *CtlObj_GetBevelButtonMenuValue(ControlObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	SInt16 outValue;
+	UInt16 outValue;
 #ifndef GetBevelButtonMenuValue
 	PyMac_PRECHECK(GetBevelButtonMenuValue);
 #endif
