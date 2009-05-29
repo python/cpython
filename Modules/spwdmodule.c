@@ -59,9 +59,12 @@ static PyTypeObject StructSpwdType;
 static void
 sets(PyObject *v, int i, const char* val)
 {
-  if (val)
-	  PyStructSequence_SET_ITEM(v, i, PyUnicode_FromString(val));
-  else {
+  if (val) {
+	  PyObject *o = PyUnicode_Decode(val, strlen(val),
+					 Py_FileSystemDefaultEncoding,
+					 "surrogateescape");
+	  PyStructSequence_SET_ITEM(v, i, o);
+  } else {
 	  PyStructSequence_SET_ITEM(v, i, Py_None);
 	  Py_INCREF(Py_None);
   }
@@ -113,13 +116,24 @@ static PyObject* spwd_getspnam(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct spwd *p;
-	if (!PyArg_ParseTuple(args, "s:getspnam", &name))
+	PyObject *arg, *bytes, *retval = NULL;
+
+	if (!PyArg_ParseTuple(args, "U:getspnam", &arg))
 		return NULL;
+	if ((bytes = PyUnicode_AsEncodedString(arg,
+					       Py_FileSystemDefaultEncoding,
+					       "surrogateescape")) == NULL)
+		return NULL;
+	if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
+		goto out;
 	if ((p = getspnam(name)) == NULL) {
 		PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
-		return NULL;
+		goto out;
 	}
-	return mkspent(p);
+	retval = mkspent(p);
+out:
+	Py_DECREF(bytes);
+	return retval;
 }
 
 #endif /* HAVE_GETSPNAM */
