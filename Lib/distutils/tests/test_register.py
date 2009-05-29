@@ -66,7 +66,7 @@ class FakeOpener(object):
 class RegisterTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
-        PyPIRCCommandTestCase.setUp(self)
+        super(RegisterTestCase, self).setUp()
         # patching the password prompt
         self._old_getpass = getpass.getpass
         def _getpass(prompt):
@@ -78,7 +78,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
     def tearDown(self):
         getpass.getpass = self._old_getpass
         urllib.request.build_opener = self.old_opener
-        PyPIRCCommandTestCase.tearDown(self)
+        super(RegisterTestCase, self).tearDown()
 
     def _get_cmd(self, metadata=None):
         if metadata is None:
