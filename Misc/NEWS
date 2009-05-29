@@ -15,6 +15,9 @@ Core and Builtins
 - Issue #6089: Fixed str.format with certain invalid field specifiers
   that would raise SystemError.
 
+- Issue #5982: staticmethod and classmethod now expose the wrapped
+  function with __func__.
+
 - Added support for multiple context managers in the same with-statement.
   Deprecated contextlib.nested() which is no longer needed.
 

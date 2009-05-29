@@ -254,11 +254,23 @@ class CellTest(unittest.TestCase):
         self.assert_(cell(-36) == cell(-36.0))
         self.assert_(cell(True) > empty_cell())
 
+class StaticMethodAttrsTest(unittest.TestCase):
+    def test_func_attribute(self):
+        def f():
+            pass
+
+        c = classmethod(f)
+        self.assert_(c.__func__ is f)
+
+        s = staticmethod(f)
+        self.assert_(s.__func__ is f)
+
 
 def test_main():
     support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
                               ArbitraryFunctionAttrTest, FunctionDictsTest,
-                              FunctionDocstringTest, CellTest)
+                              FunctionDocstringTest, CellTest,
+                              StaticMethodAttrsTest)
 
 if __name__ == "__main__":
     test_main()
