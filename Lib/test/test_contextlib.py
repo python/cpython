@@ -9,6 +9,7 @@ import unittest
 import threading
 from contextlib import *  # Tests __all__
 from test import test_support
+import warnings
 
 class ContextManagerTestCase(unittest.TestCase):
 
@@ -331,7 +332,9 @@ class LockContextTestCase(unittest.TestCase):
 
 # This is needed to make the test actually run under regrtest.py!
 def test_main():
-    test_support.run_unittest(__name__)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()
