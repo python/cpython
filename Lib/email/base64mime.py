@@ -113,7 +113,7 @@ def decode(string):
     elif isinstance(string, str):
         return a2b_base64(string.encode('raw-unicode-escape'))
     else:
-        return a2b_base64(s)
+        return a2b_base64(string)
 
 
 # For convenience and backwards compatibility w/ standard base64 module
