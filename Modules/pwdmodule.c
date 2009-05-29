@@ -49,8 +49,9 @@ static void
 sets(PyObject *v, int i, const char* val)
 {
   if (val) {
-	  PyObject *o =
-		PyUnicode_DecodeUnicodeEscape(val, strlen(val), "strict");
+	  PyObject *o = PyUnicode_Decode(val, strlen(val),
+					 Py_FileSystemDefaultEncoding,
+					 "surrogateescape");
 	  PyStructSequence_SET_ITEM(v, i, o);
   }
   else {
@@ -129,14 +130,25 @@ pwd_getpwnam(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct passwd *p;
-	if (!PyArg_ParseTuple(args, "s:getpwnam", &name))
+	PyObject *arg, *bytes, *retval = NULL;
+
+	if (!PyArg_ParseTuple(args, "U:getpwnam", &arg))
 		return NULL;
+	if ((bytes = PyUnicode_AsEncodedString(arg,
+					       Py_FileSystemDefaultEncoding,
+					       "surrogateescape")) == NULL)
+		return NULL;
+	if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
+		goto out;
 	if ((p = getpwnam(name)) == NULL) {
 		PyErr_Format(PyExc_KeyError,
 			     "getpwnam(): name not found: %s", name);
-		return NULL;
+		goto out;
 	}
-	return mkpwent(p);
+	retval = mkpwent(p);
+out:
+	Py_DECREF(bytes);
+	return retval;
 }
 
 #ifdef HAVE_GETPWENT
