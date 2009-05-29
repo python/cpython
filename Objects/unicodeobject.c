@@ -8547,7 +8547,7 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
         }
     } else {
         /* x must be a dict */
-        if (!PyDict_Check(x)) {
+        if (!PyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
                             "to maketrans it must be a dict");
             goto err;
