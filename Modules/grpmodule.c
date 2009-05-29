@@ -76,7 +76,6 @@ mkgrent(struct group *p)
 
     if (PyErr_Occurred()) {
         Py_DECREF(v);
-        Py_DECREF(w);
         return NULL;
     }
 
@@ -139,6 +138,7 @@ grp_getgrall(PyObject *self, PyObject *ignore)
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(d);
+            endgrent();
             return NULL;
         }
         Py_DECREF(v);

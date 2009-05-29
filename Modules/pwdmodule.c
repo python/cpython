@@ -163,6 +163,7 @@ pwd_getpwall(PyObject *self)
 		if (v == NULL || PyList_Append(d, v) != 0) {
 			Py_XDECREF(v);
 			Py_DECREF(d);
+			endpwent();
 			return NULL;
 		}
 		Py_DECREF(v);
