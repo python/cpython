@@ -470,6 +470,14 @@ Major performance enhancements have been added:
 
   (Contributed by Jake McGuire and Antoine Pitrou; :issue:`5084`.)
 
+IDLE
+====
+
+* IDLE's format menu now provides an option to strip trailing whitespace
+  from a source file.
+
+  (Contributed by Roger D. Serwy; :issue:`5150`.)
+
 Build and C API Changes
 =======================
 
