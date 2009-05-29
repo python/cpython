@@ -7,7 +7,9 @@ Still need testing:
 """
 
 from StringIO import StringIO
+import os
 import re
+import sys
 from test import test_support
 import unittest
 from unittest import TestCase, TestProgram
@@ -255,6 +257,30 @@ class Test_TestLoader(TestCase):
 
         reference = [unittest.TestSuite([MyTestCase('test')])]
         self.assertEqual(list(suite), reference)
+
+
+    # Check that loadTestsFromModule honors (or not) a module
+    # with a load_tests function.
+    def test_loadTestsFromModule__load_tests(self):
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
+
+        load_tests_args = []
+        def load_tests(loader, tests, pattern):
+            load_tests_args.extend((loader, tests, pattern))
+            return tests
+        m.load_tests = load_tests
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m)
+        self.assertEquals(load_tests_args, [loader, suite, None])
+
+        load_tests_args = []
+        suite = loader.loadTestsFromModule(m, use_load_tests=False)
+        self.assertEquals(load_tests_args, [])
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromModule()
@@ -3379,6 +3405,275 @@ class Test_TextTestRunner(TestCase):
         self.assertEqual(events, expected)
 
 
+class TestDiscovery(TestCase):
+
+    # Heavily mocked tests so I can avoid hitting the filesystem
+    def test_get_module_from_path(self):
+        loader = unittest.TestLoader()
+
+        def restore_import():
+            unittest.__import__ = __import__
+        unittest.__import__ = lambda *_: None
+        self.addCleanup(restore_import)
+
+        expected_module = object()
+        def del_module():
+            del sys.modules['bar.baz']
+        sys.modules['bar.baz'] = expected_module
+        self.addCleanup(del_module)
+
+        loader._top_level_dir = '/foo'
+        module = loader._get_module_from_path('/foo/bar/baz.py')
+        self.assertEqual(module, expected_module)
+
+        if not __debug__:
+            # asserts are off
+            return
+
+        with self.assertRaises(AssertionError):
+            loader._get_module_from_path('/bar/baz.py')
+
+    def test_find_tests(self):
+        loader = unittest.TestLoader()
+
+        original_listdir = os.listdir
+        def restore_listdir():
+            os.listdir = original_listdir
+        original_isfile = os.path.isfile
+        def restore_isfile():
+            os.path.isfile = original_isfile
+        original_isdir = os.path.isdir
+        def restore_isdir():
+            os.path.isdir = original_isdir
+
+        path_lists = [['test1.py', 'test2.py', 'not_a_test.py', 'test_dir',
+                       'test.foo', 'another_dir'],
+                      ['test3.py', 'test4.py', ]]
+        os.listdir = lambda path: path_lists.pop(0)
+        self.addCleanup(restore_listdir)
+
+        def isdir(path):
+            return path.endswith('dir')
+        os.path.isdir = isdir
+        self.addCleanup(restore_isdir)
+
+        def isfile(path):
+            # another_dir is not a package and so shouldn't be recursed into
+            return not path.endswith('dir') and not 'another_dir' in path
+        os.path.isfile = isfile
+        self.addCleanup(restore_isfile)
+
+        loader._get_module_from_path = lambda path: path + ' module'
+        loader.loadTestsFromModule = lambda module: module + ' tests'
+
+        loader._top_level_dir = '/foo'
+        suite = list(loader._find_tests('/foo', 'test*.py'))
+
+        expected = [os.path.join('/foo', name) + ' module tests' for name in
+                    ('test1.py', 'test2.py')]
+        expected.extend([os.path.join('/foo', 'test_dir', name) + ' module tests' for name in
+                    ('test3.py', 'test4.py')])
+        self.assertEqual(suite, expected)
+
+    def test_find_tests_with_package(self):
+        loader = unittest.TestLoader()
+
+        original_listdir = os.listdir
+        def restore_listdir():
+            os.listdir = original_listdir
+        original_isfile = os.path.isfile
+        def restore_isfile():
+            os.path.isfile = original_isfile
+        original_isdir = os.path.isdir
+        def restore_isdir():
+            os.path.isdir = original_isdir
+
+        directories = ['a_directory', 'test_directory', 'test_directory2']
+        path_lists = [directories, [], [], []]
+        os.listdir = lambda path: path_lists.pop(0)
+        self.addCleanup(restore_listdir)
+
+        os.path.isdir = lambda path: True
+        self.addCleanup(restore_isdir)
+
+        os.path.isfile = lambda path: os.path.basename(path) not in directories
+        self.addCleanup(restore_isfile)
+
+        class Module(object):
+            paths = []
+            load_tests_args = []
+
+            def __init__(self, path):
+                self.path = path
+                self.paths.append(path)
+                if os.path.basename(path) == 'test_directory':
+                    def load_tests(loader, tests, pattern):
+                        self.load_tests_args.append((loader, tests, pattern))
+                        return 'load_tests'
+                    self.load_tests = load_tests
+
+            def __eq__(self, other):
+                return self.path == other.path
+
+        loader._get_module_from_path = lambda path: Module(path)
+        def loadTestsFromModule(module, use_load_tests):
+            if use_load_tests:
+                raise self.failureException('use_load_tests should be False for packages')
+            return module.path + ' module tests'
+        loader.loadTestsFromModule = loadTestsFromModule
+
+        loader._top_level_dir = '/foo'
+        # this time no '.py' on the pattern so that it can match
+        # a test package
+        suite = list(loader._find_tests('/foo', 'test*'))
+
+        # We should have loaded tests from the test_directory package by calling load_tests
+        # and directly from the test_directory2 package
+        self.assertEqual(suite, ['load_tests', '/foo/test_directory2 module tests'])
+        self.assertEqual(Module.paths, [os.path.join('/foo', 'test_directory'),
+                                        os.path.join('/foo', 'test_directory2')])
+
+        # load_tests should have been called once with loader, tests and pattern
+        self.assertEqual(Module.load_tests_args,
+                         [(loader, os.path.join('/foo', 'test_directory') + ' module tests',
+                           'test*')])
+
+    def test_discover(self):
+        loader = unittest.TestLoader()
+
+        original_isfile = os.path.isfile
+        def restore_isfile():
+            os.path.isfile = original_isfile
+
+        os.path.isfile = lambda path: False
+        self.addCleanup(restore_isfile)
+
+        full_path = os.path.abspath(os.path.normpath('/foo'))
+        def clean_path():
+            if sys.path[-1] == full_path:
+                sys.path.pop(-1)
+        self.addCleanup(clean_path)
+
+        with self.assertRaises(ImportError):
+            loader.discover('/foo/bar', top_level_dir='/foo')
+
+        self.assertEqual(loader._top_level_dir, full_path)
+        self.assertIn(full_path, sys.path)
+
+        os.path.isfile = lambda path: True
+        _find_tests_args = []
+        def _find_tests(start_dir, pattern):
+            _find_tests_args.append((start_dir, pattern))
+            return ['tests']
+        loader._find_tests = _find_tests
+        loader.suiteClass = str
+
+        suite = loader.discover('/foo/bar/baz', 'pattern', '/foo/bar')
+
+        top_level_dir = os.path.abspath(os.path.normpath('/foo/bar'))
+        start_dir = os.path.abspath(os.path.normpath('/foo/bar/baz'))
+        self.assertEqual(suite, "['tests']")
+        self.assertEqual(loader._top_level_dir, top_level_dir)
+        self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
+
+    def test_command_line_handling_parseArgs(self):
+        # Haha - take that uninstantiable class
+        program = object.__new__(TestProgram)
+
+        args = []
+        def do_discovery(argv):
+            args.extend(argv)
+        program._do_discovery = do_discovery
+        program.parseArgs(['something', 'discover'])
+        self.assertEqual(args, [])
+
+        program.parseArgs(['something', 'discover', 'foo', 'bar'])
+        self.assertEqual(args, ['foo', 'bar'])
+
+    def test_command_line_handling_do_discovery_too_many_arguments(self):
+        class Stop(Exception):
+            pass
+        def usageExit():
+            raise Stop
+
+        program = object.__new__(TestProgram)
+        program.usageExit = usageExit
+
+        with self.assertRaises(Stop):
+            # too many args
+            program._do_discovery(['one', 'two', 'three', 'four'])
+
+
+    def test_command_line_handling_do_discovery_calls_loader(self):
+        program = object.__new__(TestProgram)
+
+        class Loader(object):
+            args = []
+            def discover(self, start_dir, pattern, top_level_dir):
+                self.args.append((start_dir, pattern, top_level_dir))
+                return 'tests'
+
+        program._do_discovery(['-v'], Loader=Loader)
+        self.assertEqual(program.verbosity, 2)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['--verbose'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery([], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['fish'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['fish', 'eggs'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('fish', 'eggs', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['fish', 'eggs', 'ham'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('fish', 'eggs', 'ham')])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['-s', 'fish'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['-t', 'fish'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('.', 'test*.py', 'fish')])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['-p', 'fish'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('.', 'fish', None)])
+
+        Loader.args = []
+        program = object.__new__(TestProgram)
+        program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v'], Loader=Loader)
+        self.assertEqual(program.test, 'tests')
+        self.assertEqual(Loader.args, [('fish', 'eggs', None)])
+        self.assertEqual(program.verbosity, 2)
+
+
 ######################################################################
 ## Main
 ######################################################################
@@ -3387,7 +3682,7 @@ def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
         Test_TestSkipping, Test_Assertions, TestLongMessage,
-        Test_TestProgram, TestCleanUp)
+        Test_TestProgram, TestCleanUp, TestDiscovery)
 
 if __name__ == "__main__":
     test_main()

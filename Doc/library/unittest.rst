@@ -90,6 +90,9 @@ need to derive from a specific class.
    `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
       Tools for creating mock test objects (objects simulating external resources).
 
+
+.. _unittest-command-line-interface:
+
 Command Line Interface
 ----------------------
 
@@ -100,8 +103,8 @@ modules, classes or even individual test methods::
    python -m unittest test_module.TestClass
    python -m unittest test_module.TestClass.test_method
 
-You can pass in a list with any combination of module names, and fully qualified class or
-method names.
+You can pass in a list with any combination of module names, and fully
+qualified class or method names.
 
 You can run tests with more detail (higher verbosity) by passing in the -v flag::
 
@@ -111,9 +114,47 @@ For a list of all the command line options::
 
    python -m unittest -h
 
-..  versionchanged:: 27
-   In earlier versions it was only possible to run individual test methods and not modules
-   or classes.
+..  versionchanged:: 2.7
+   In earlier versions it was only possible to run individual test methods and
+   not modules or classes.
+
+The command line can also be used for test discovery, for running all of the
+tests in a project or just a subset.
+
+
+.. _unittest-test-discovery:
+
+Test Discovery
+--------------
+
+.. versionadded:: 2.7
+
+unittest supports simple test discovery. For a project's tests to be
+compatible with test discovery they must all be importable from the top level
+directory of the project; i.e. they must all be in Python packages.
+
+Test discovery is implemented in :meth:`TestLoader.discover`, but can also be
+used from the command line. The basic command line usage is::
+
+   cd project_directory
+   python -m unittest discover
+
+The ``discover`` sub-command has the following options:
+
+   -v, --verbose    Verbose output
+   -s directory     Directory to start discovery ('.' default)
+   -p pattern       Pattern to match test files ('test*.py' default)
+   -t directory     Top level directory of project (default to
+                    start directory)
+
+The -s, -p, & -t options can be passsed in as positional arguments. The
+following two command lines are equivalent::
+
+   python -m unittest -s project_directory -p '*_test.py'
+   python -m unittest project_directory '*_test.py'
+
+Test modules and packages can customize test loading and discovery by through
+the `load_tests protocol`_.
 
 .. _unittest-minimal-example:
 
@@ -1151,6 +1192,13 @@ Loading and running tests
          directly does not play well with this method.  Doing so, however, can
          be useful when the fixtures are different and defined in subclasses.
 
+      If a module provides a ``load_tests`` function it will be called to
+      load the tests. This allows modules to customize test loading.
+      This is the `load_tests protocol`_.
+
+      .. versionchanged:: 2.7
+         Support for ``load_tests`` added.
+
 
    .. method:: loadTestsFromName(name[, module])
 
@@ -1165,13 +1213,14 @@ Loading and running tests
       rather than "a callable object".
 
       For example, if you have a module :mod:`SampleTests` containing a
-      :class:`TestCase`\ -derived class :class:`SampleTestCase` with three test
-      methods (:meth:`test_one`, :meth:`test_two`, and :meth:`test_three`), the
-      specifier ``'SampleTests.SampleTestCase'`` would cause this method to return a
-      suite which will run all three test methods.  Using the specifier
-      ``'SampleTests.SampleTestCase.test_two'`` would cause it to return a test suite
-      which will run only the :meth:`test_two` test method.  The specifier can refer
-      to modules and packages which have not been imported; they will be imported as a
+      :class:`TestCase`\ -derived class :class:`SampleTestCase` with three
+      test methods (:meth:`test_one`, :meth:`test_two`, and
+      :meth:`test_three`), the specifier ``'SampleTests.SampleTestCase'``
+      would cause this method to return a suite which will run all three test
+      methods. Using the specifier ``'SampleTests.SampleTestCase.test_two'``
+      would cause it to return a test suite which will run only the
+      :meth:`test_two` test method. The specifier can refer to modules and
+      packages which have not been imported; they will be imported as a
       side-effect.
 
       The method optionally resolves *name* relative to the given *module*.
@@ -1188,6 +1237,31 @@ Loading and running tests
 
       Return a sorted sequence of method names found within *testCaseClass*;
       this should be a subclass of :class:`TestCase`.
+
+
+   .. method:: discover(start_dir, pattern='test*.py', top_level_dir=None)
+
+      Find and return all test modules from the specified start directory,
+      recursing into subdirectories to find them. Only test files that match
+      *pattern* will be loaded. (Using shell style pattern matching.)
+
+      All test modules must be importable from the top level of the project. If
+      the start directory is not the top level directory then the top level
+      directory must be specified separately.
+
+      If a test package name (directory with :file:`__init__.py`) matches the
+      pattern then the package will be checked for a ``load_tests``
+      function. If this exists then it will be called with *loader*, *tests*,
+      *pattern*.
+
+      If load_tests exists then discovery does  *not* recurse into the package,
+      ``load_tests`` is responsible for loading all tests in the package.
+
+      The pattern is deliberately not stored as a loader attribute so that
+      packages can continue discovery themselves. *top_level_dir* is stored so
+      ``load_tests`` does not need to pass this argument in to
+      ``loader.discover()``.
+
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1353,8 +1427,8 @@ Loading and running tests
 
    .. method:: addFailure(test, err)
 
-      Called when the test case *test* signals a failure. *err* is a tuple of the form
-      returned by :func:`sys.exc_info`:  ``(type, value, traceback)``.
+      Called when the test case *test* signals a failure. *err* is a tuple of
+      the form returned by :func:`sys.exc_info`: ``(type, value, traceback)``.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`failures` attribute, where *formatted_err* is a
@@ -1447,3 +1521,68 @@ Loading and running tests
 
    .. versionchanged:: 2.7
       The ``exit`` and ``verbosity`` parameters were added.
+
+
+load_tests Protocol
+###################
+
+Modules or packages can customize how tests are loaded from them during normal
+test runs or test discovery by implementing a function called ``load_tests``.
+
+If a test module defines ``load_tests`` it will be called by
+:meth:`TestLoader.loadTestsFromModule` with the following arguments::
+
+    load_tests(loader, standard_tests, None)
+
+It should return a :class:`TestSuite`.
+
+*loader* is the instance of :class:`TestLoader` doing the loading.
+*standard_tests* are the tests that would be loaded by default from the
+module. It is common for test modules to only want to add or remove tests
+from the standard set of tests.
+The third argument is used when loading packages as part of test discovery.
+
+A typical ``load_tests`` function that loads tests from a specific set of
+:class:`TestCase` classes may look like::
+
+    test_cases = (TestCase1, TestCase2, TestCase3)
+
+    def load_tests(loader, tests, pattern):
+        suite = TestSuite()
+        for test_class in test_cases:
+            tests = loader.loadTestsFromTestCase(test_class)
+            suite.addTests(tests)
+        return suite
+
+If discovery is started, either from the command line or by calling
+:meth:`TestLoader.discover`, with a pattern that matches a package
+name then the package :file:`__init__.py` will be checked for ``load_tests``.
+
+.. note::
+
+   The default pattern is 'test*.py'. This matches all python files
+   that start with 'test' but *won't* match any test directories.
+
+   A pattern like 'test*' will match test packages as well as
+   modules.
+
+If the package :file:`__init__.py` defines ``load_tests`` then it will be
+called and discovery not continued into the package. ``load_tests``
+is called with the following arguments::
+
+    load_tests(loader, standard_tests, pattern)
+
+This should return a :class:`TestSuite` representing all the tests
+from the package. (``standard_tests`` will only contain tests
+collected from :file:`__init__.py`.)
+
+Because the pattern is passed into ``load_tests`` the package is free to
+continue (and potentially modify) test discovery. A 'do nothing'
+``load_tests`` function for a test package would look like::
+
+    def load_tests(loader, standard_tests, pattern):
+        # top level directory cached on loader instance
+        this_dir = os.path.dirname(__file__)
+        package_tests = loader.discover(start_dir=this_dir, pattern=pattern)
+        standard_tests.addTests(package_tests)
+        return standard_tests
