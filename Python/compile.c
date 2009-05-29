@@ -535,18 +535,6 @@ compiler_exit_scope(struct compiler *c)
 
 }
 
-/* Allocate a new "anonymous" local variable.
-   Used by list comprehensions and with statements.
-*/
-
-static PyObject *
-compiler_new_tmpname(struct compiler *c)
-{
-	char tmpname[256];
-	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->u->u_tmpname);
-	return PyString_FromString(tmpname);
-}
-
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
 */
