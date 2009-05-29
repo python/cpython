@@ -1067,6 +1067,8 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #4873: Fix resource leaks in error cases of pwd and grp.
+
 - Issue #4751: For hashlib algorithms provided by OpenSSL, the Python
   GIL is now released during computation on data lengths >= 2048 bytes.
 
