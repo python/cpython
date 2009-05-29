@@ -693,6 +693,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6131: test_modulefinder leaked when run after test_distutils.
+  Patch by Hirokazu Yamamoto.
+
 - Issue #6048: Now Distutils uses the tarfile module in archive_util.
 
 - Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
