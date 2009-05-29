@@ -29,14 +29,14 @@ recursive-include somecode *
 class sdistTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
-        PyPIRCCommandTestCase.setUp(self)
+        super(sdistTestCase, self).setUp()
         self.old_path = os.getcwd()
 
     def tearDown(self):
         os.chdir(self.old_path)
         if os.path.exists(TEMP_PKG):
             shutil.rmtree(TEMP_PKG)
-        PyPIRCCommandTestCase.tearDown(self)
+        super(sdistTestCase, self).tearDown()
 
     def _init_tmp_pkg(self):
         if os.path.exists(TEMP_PKG):
