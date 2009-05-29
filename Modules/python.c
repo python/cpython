@@ -38,8 +38,16 @@ char2wchar(char* arg)
 		if (!res)
 			goto oom;
 		count = mbstowcs(res, arg, argsize+1);
-		if (count != (size_t)-1)
-			return res;
+		if (count != (size_t)-1) {
+			wchar_t *tmp;
+			/* Only use the result if it contains no
+			   surrogate characters. */
+			for (tmp = res; *tmp != 0 &&
+				     (*tmp < 0xd800 || *tmp > 0xdfff); tmp++)
+				;
+			if (*tmp == 0)
+				return res;
+		}
 		PyMem_Free(res);
 	}
 	/* Conversion failed. Fall back to escaping with surrogateescape. */
@@ -73,6 +81,14 @@ char2wchar(char* arg)
 			*out++ = 0xdc00 + *in++;
 			argsize--;
 			memset(&mbs, 0, sizeof mbs);
+			continue;
+		}
+		if (*out >= 0xd800 && *out <= 0xdfff) {
+			/* Surrogate character.  Escape the original
+			   byte sequence with surrogateescape. */
+			argsize -= converted;
+			while (converted--)
+				*out++ = 0xdc00 + *in++;
 			continue;
 		}
 		/* successfully converted some bytes */
