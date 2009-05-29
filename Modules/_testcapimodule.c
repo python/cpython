@@ -1415,6 +1415,36 @@ raise_memoryerror(PyObject *self)
 	return NULL;
 }
 
+/* Issue 6012 */
+static PyObject *str1, *str2;
+static int
+failing_converter(PyObject *obj, void *arg)
+{
+	/* Clone str1, then let the conversion fail. */
+	assert(str1);
+	str2 = str1;
+	Py_INCREF(str2);
+	return 0;
+}
+static PyObject*
+argparsing(PyObject *o, PyObject *args)
+{
+	PyObject *res;
+	str1 = str2 = NULL;
+	if (!PyArg_ParseTuple(args, "O&O&",
+			      PyUnicode_FSConverter, &str1,
+			      failing_converter, &str2)) {
+		if (!str2)
+			/* argument converter not called? */
+			return NULL;
+		/* Should be 1 */
+		res = PyLong_FromLong(Py_REFCNT(str2));
+		Py_DECREF(str2);
+		PyErr_Clear();
+		return res;
+	}
+	Py_RETURN_NONE;
+}
 
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
@@ -1433,7 +1463,6 @@ static PyMethodDef TestMethods[] = {
 	 PyDoc_STR("This is a pretty normal docstring.")},
 	{"test_string_to_double", (PyCFunction)test_string_to_double, METH_NOARGS},
 	{"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
-
 	{"getargs_tuple",	getargs_tuple,			 METH_VARARGS},
 	{"getargs_keywords", (PyCFunction)getargs_keywords, 
 	  METH_VARARGS|METH_KEYWORDS},
@@ -1468,6 +1497,7 @@ static PyMethodDef TestMethods[] = {
 #endif
 	{"traceback_print", traceback_print, 	         METH_VARARGS},
 	{"exception_print", exception_print, 	         METH_VARARGS},
+	{"argparsing",     argparsing, METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 

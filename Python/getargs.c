@@ -141,6 +141,7 @@ _PyArg_VaParse_SizeT(PyObject *args, char *format, va_list va)
 
 #define GETARGS_CAPSULE_NAME_CLEANUP_PTR "getargs.cleanup_ptr"
 #define GETARGS_CAPSULE_NAME_CLEANUP_BUFFER "getargs.cleanup_buffer"
+#define GETARGS_CAPSULE_NAME_CLEANUP_CONVERT "getargs.cleanup_convert"
 
 static void
 cleanup_ptr(PyObject *self)
@@ -188,6 +189,46 @@ addcleanup(void *ptr, PyObject **freelist, PyCapsule_Destructor destr)
 	}
 	if (PyList_Append(*freelist, cobj)) {
 		Py_DECREF(cobj);
+		return -1;
+	}
+        Py_DECREF(cobj);
+	return 0;
+}
+
+static void
+cleanup_convert(PyObject *self)
+{
+	typedef int (*destr_t)(PyObject *, void *);
+	destr_t destr = (destr_t)PyCapsule_GetContext(self);
+	void *ptr = PyCapsule_GetPointer(self,
+					 GETARGS_CAPSULE_NAME_CLEANUP_CONVERT);
+	if (ptr && destr)
+		destr(NULL, ptr);
+}
+
+static int
+addcleanup_convert(void *ptr, PyObject **freelist, int (*destr)(PyObject*,void*))
+{
+	PyObject *cobj;
+	if (!*freelist) {
+		*freelist = PyList_New(0);
+		if (!*freelist) {
+			destr(NULL, ptr);
+			return -1;
+		}
+	}
+	cobj = PyCapsule_New(ptr, GETARGS_CAPSULE_NAME_CLEANUP_CONVERT, 
+			     cleanup_convert);
+	if (!cobj) {
+		destr(NULL, ptr);
+		return -1;
+	}
+	if (PyCapsule_SetContext(cobj, destr) == -1) {
+		/* This really should not happen. */
+		Py_FatalError("capsule refused setting of context.");
+	}
+	if (PyList_Append(*freelist, cobj)) {
+		Py_DECREF(cobj); /* This will also call destr. */
 		return -1;
 	}
         Py_DECREF(cobj);
@@ -1253,10 +1294,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			typedef int (*converter)(PyObject *, void *);
 			converter convert = va_arg(*p_va, converter);
 			void *addr = va_arg(*p_va, void *);
+			int res;
 			format++;
-			if (! (*convert)(arg, addr))
+			if (! (res = (*convert)(arg, addr)))
 				return converterr("(unspecified)",
 						  arg, msgbuf, bufsize);
+			if (res == Py_CLEANUP_SUPPORTED &&
+			    addcleanup_convert(addr, freelist, convert) == -1)
+				return converterr("(cleanup problem)",
+						arg, msgbuf, bufsize);
 		}
 		else {
 			p = va_arg(*p_va, PyObject **);

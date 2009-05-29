@@ -115,6 +115,10 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
+# Bug #6012
+class Test6012(unittest.TestCase):
+    def test(self):
+        self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
 
 def test_main():
     support.run_unittest(CAPITest)
@@ -159,7 +163,7 @@ def test_main():
         t.start()
         t.join()
 
-    support.run_unittest(TestPendingCalls)
+    support.run_unittest(TestPendingCalls, Test6012)
 
 
 if __name__ == "__main__":
