@@ -16,7 +16,7 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
             self._logs.append(msg)
 
     def setUp(self):
-        support.TempdirManager.setUp(self)
+        super(FileUtilTestCase, self).setUp()
         self._logs = []
         self.old_log = log.info
         log.info = self._log
@@ -27,7 +27,7 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def tearDown(self):
         log.info = self.old_log
-        support.TempdirManager.tearDown(self)
+        super(FileUtilTestCase, self).tearDown()
 
     def test_move_file_verbosity(self):
         f = open(self.source, 'w')

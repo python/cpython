@@ -18,7 +18,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
             self._logs.append(msg)
 
     def setUp(self):
-        support.TempdirManager.setUp(self)
+        super(DirUtilTestCase, self).setUp()
         self._logs = []
         tmp_dir = self.mkdtemp()
         self.root_target = os.path.join(tmp_dir, 'deep')
@@ -29,7 +29,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def tearDown(self):
         log.info = self.old_log
-        support.TempdirManager.tearDown(self)
+        super(DirUtilTestCase, self).tearDown()
 
     def test_mkpath_remove_tree_verbosity(self):
 

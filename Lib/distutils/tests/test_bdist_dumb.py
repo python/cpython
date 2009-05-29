@@ -22,16 +22,14 @@ class BuildDumbTestCase(support.TempdirManager,
                         unittest.TestCase):
 
     def setUp(self):
-        support.TempdirManager.setUp(self)
-        support.LoggingSilencer.setUp(self)
+        super(BuildDumbTestCase, self).setUp()
         self.old_location = os.getcwd()
         self.old_sys_argv = sys.argv[:]
 
     def tearDown(self):
         os.chdir(self.old_location)
         sys.argv = self.old_sys_argv[:]
-        support.LoggingSilencer.tearDown(self)
-        support.TempdirManager.tearDown(self)
+        super(BuildDumbTestCase, self).tearDown()
 
     def test_simple_built(self):
 
