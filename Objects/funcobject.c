@@ -669,6 +669,11 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static PyMemberDef cm_memberlist[] = {
+	{"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+	{NULL}  /* Sentinel */
+};
+
 PyDoc_STRVAR(classmethod_doc,
 "classmethod(function) -> method\n\
 \n\
@@ -719,7 +724,7 @@ PyTypeObject PyClassMethod_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	cm_memberlist,		/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
@@ -819,6 +824,11 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static PyMemberDef sm_memberlist[] = {
+	{"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+	{NULL}  /* Sentinel */
+};
+
 PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function) -> method\n\
 \n\
@@ -866,7 +876,7 @@ PyTypeObject PyStaticMethod_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	sm_memberlist,		/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */

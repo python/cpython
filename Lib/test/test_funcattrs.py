@@ -273,10 +273,23 @@ class FunctionDocstringTest(FuncAttrsTest):
         self.assertEqual(self.b.__doc__, None)
         self.assertEqual(self.b.func_doc, None)
 
+class StaticMethodAttrsTest(unittest.TestCase):
+    def test_func_attribute(self):
+        def f():
+            pass
+
+        c = classmethod(f)
+        self.assert_(c.__func__ is f)
+
+        s = staticmethod(f)
+        self.assert_(s.__func__ is f)
+
+
 def test_main():
     test_support.run_unittest(FunctionPropertiesTest, ImplicitReferencesTest,
                               ArbitraryFunctionAttrTest, FunctionDictsTest,
-                              FunctionDocstringTest)
+                              FunctionDocstringTest,
+                              StaticMethodAttrsTest)
 
 if __name__ == "__main__":
     test_main()

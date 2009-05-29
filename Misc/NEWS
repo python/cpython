@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5982: staticmethod and classmethod now expose the wrapped
+  function with __func__.
+
 - Added support for multiple context managers in the same with-statement.
   Deprecated contextlib.nested() which is no longer needed.
 
