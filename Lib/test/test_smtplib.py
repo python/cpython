@@ -294,16 +294,10 @@ sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
 # Simulated SMTP channel & server
 class SimSMTPChannel(smtpd.SMTPChannel):
 
-    def __init__(self, *args, **kw):
-        self.__extrafeatures = []
+    def __init__(self, extra_features, *args, **kw):
+        self._extrafeatures = ''.join(
+            [ "250-{0}\r\n".format(x) for x in extra_features ])
         smtpd.SMTPChannel.__init__(self, *args, **kw)
-
-    @property
-    def _extrafeatures(self):
-        return ''.join([ "250-{0}\r\n".format(x) for x in self.__extrafeatures ])
-
-    def add_feature(self, feature):
-        self.__extrafeatures.append(feature)
 
     def smtp_EHLO(self, arg):
         resp = ('250-testhost\r\n'
@@ -354,15 +348,20 @@ class SimSMTPChannel(smtpd.SMTPChannel):
 
 class SimSMTPServer(smtpd.SMTPServer):
 
+    def __init__(self, *args, **kw):
+        self._extra_features = []
+        smtpd.SMTPServer.__init__(self, *args, **kw)
+
     def handle_accept(self):
         conn, addr = self.accept()
-        self._SMTPchannel = SimSMTPChannel(self, conn, addr)
+        self._SMTPchannel = SimSMTPChannel(self._extra_features,
+                                           self, conn, addr)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         pass
 
     def add_feature(self, feature):
-        self._SMTPchannel.add_feature(feature)
+        self._extra_features.append(feature)
 
 
 # Test various SMTP & ESMTP commands/behaviors that require a simulated server
@@ -441,8 +440,8 @@ class SMTPSimTests(TestCase):
         smtp.quit()
 
     def testAUTH_PLAIN(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         self.serv.add_feature("AUTH PLAIN")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
 
         expected_auth_ok = (235, b'plain auth ok')
         self.assertEqual(smtp.login(sim_auth[0], sim_auth[1]), expected_auth_ok)
@@ -456,16 +455,16 @@ class SMTPSimTests(TestCase):
     # the error message).
 
     def testAUTH_LOGIN(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         self.serv.add_feature("AUTH LOGIN")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
             if sim_auth_login_password not in str(err):
                 raise "expected encoded password not found in error message"
 
     def testAUTH_CRAM_MD5(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         self.serv.add_feature("AUTH CRAM-MD5")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
 
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
