@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5330: C functions called with keyword arguments were not reported by
+  the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
+
 - Issue #5982: staticmethod and classmethod now expose the wrapped
   function with __func__.
 
