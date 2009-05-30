@@ -16,6 +16,90 @@ This module implements classes for working with IP host and network addresses,
 both IPv4 and IPv6.
 
 
+.. _ipaddr_examples:
+
+Examples
+--------
+
+Netmask.
+
+   >>> ipaddr.IP('1.1.1.1/255.255.255.0')
+   IPv4('1.1.1.1/24')
+   >>> ipaddr.IP('1080::200C:417B/96')
+   IPv6('1080::200c:417b/96')
+
+Hostmask.
+
+   >>> ipaddr.IPv4('1.1.1.1/0.0.0.255')
+   IPv4('1.1.1.1/24')
+
+Prefix length.
+
+   >>> addr = ipaddr.IPv4('1.1.1.1/24')
+   >>> addr.prefixlen
+   24
+
+Individual addresses.
+
+   >>> ipaddr.IP('1.1.1.1')
+   IPv4('1.1.1.1/32')
+
+Many standard Python operations are also supported.
+
+Comparison.
+
+   >>> ipaddr.IPv4('1.1.1.1') == ipaddr.IPv4('1.1.1.2')
+   False
+   >>> ipaddr.IPv4('1.1.1.1') < ipaddr.IPv4('1.1.1.2')
+   True
+
+Inclusion.
+
+   >>> ipaddr.IPv4('1.1.1.1') in ipaddr.IPv4("1.0.0.0/8")
+   True
+
+Sorting.
+
+   >>> a = ipaddr.IPv4('1.1.1.10')
+   >>> b = ipaddr.IPv4('1.10.1.10')
+   >>> c = ipaddr.IPv4('1.1.10.10')
+   >>> d = ipaddr.IPv4('1.1.1.1')
+   >>> sorted([a, b, c, d])
+   [IPv4('1.1.1.1/32'), IPv4('1.1.1.10/32'), IPv4('1.1.10.10/32'), IPv4('1.10.1.10/32')]
+
+Conversion to string and integer forms.
+
+   >>> spam = ipaddr.IPv4('192.168.1.254'))
+   >>> str(spam)
+   '192.168.1.254/32'
+   >>> spam.ip_ext
+   '192.168.1.254'
+   >>> int(spam)
+   3232236030
+   >>> eggs = ipaddr.IPv6('ffff::1/120')
+   >>> int(eggs)
+   340277174624079928635746076935438991361
+
+Additionally, there are quite a few network-specific features available to
+ipaddr.
+
+   >>> ipaddr.IPv4('10.0.0.0/8').supernet()
+   IPv4('10.0.0.0/7')
+   >>> ipaddr.IPv4('10.0.0.0/8').subnet()
+   [IPv4('10.0.0.0/9'), IPv4('10.128.0.0/9')]
+   # This returns networks with a prefix length of /10
+   >>> ipaddr.IPv4('10.0.0.0/8').subnet(prefixlen_diff=2)
+   [IPv4('10.0.0.0/10'), IPv4('10.64.0.0/10'), IPv4('10.128.0.0/10'), IPv4('10.192.0.0/10')]
+   # Remove an address from a superblock.
+   >>> ipaddr.IP('10.0.0.0/24').address_exclude(ipaddr.IP('10.0.0.0/28'))
+   [IPv4('10.0.0.16/28'), IPv4('10.0.0.32/27'), IPv4('10.0.0.64/26'), IPv4('10.0.0.128/25')]
+
+
+.. _ipaddr_funcs_and_classes:
+
+Functions And Classes
+---------------------
+
 .. function:: IP(ipaddr)
 
    Take an IP string or int and return an object of the correct type.  Returns
@@ -159,8 +243,7 @@ both IPv4 and IPv6.
          >>> addr1 = IP('::1/32')
          >>> addr2 = IP('::1/128')
          >>> addr1.address_exclude(addr2)
-         [IP('::0/128'), IP('::2/127'), IP('::4/126'), IP('::8/125'),
-          ... IP('0:0:8000::/33')]
+         [IP('::0/128'), IP('::2/127'), IP('::4/126'), IP('::8/125'), IP('0:0:8000::/33')]
 
       Raises :exc:`ValueError` if *other* is not completely contained by *self*.
 
@@ -296,6 +379,11 @@ both IPv4 and IPv6.
       True if this is the unspecified address as defined in :rfc:`2373` section
       2.5.2.
 
+
+.. _ipaddr_exceptions:
+
+Exceptions
+----------
 
 The following exceptions are defined by this module:
 
