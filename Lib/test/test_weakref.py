@@ -942,6 +942,17 @@ class MappingTestCase(TestBase):
             dict[o] = o.arg
         return dict, objects
 
+    def test_make_weak_valued_dict_from_dict(self):
+        o = Object(3)
+        dict = weakref.WeakValueDictionary({364:o})
+        self.assertEqual(dict[364], o)
+
+    def test_make_weak_valued_dict_from_weak_valued_dict(self):
+        o = Object(3)
+        dict = weakref.WeakValueDictionary({364:o})
+        dict2 = weakref.WeakValueDictionary(dict)
+        self.assertEqual(dict[364], o)
+
     def make_weak_valued_dict(self):
         dict = weakref.WeakValueDictionary()
         objects = list(map(Object, range(self.COUNT)))
