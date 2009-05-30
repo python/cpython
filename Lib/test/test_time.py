@@ -1,7 +1,7 @@
 from test import support
 import time
 import unittest
-
+import locale
 
 class TimeTestCase(unittest.TestCase):
 
@@ -223,9 +223,24 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assert_(0 <= (t1-t0) < 0.2)
 
-def test_main():
-    support.run_unittest(TimeTestCase)
+class TestLocale(unittest.TestCase):
+    def setUp(self):
+        self.oldloc = locale.setlocale(locale.LC_ALL)
 
+    def tearDown(self):
+        locale.setlocale(locale.LC_ALL, self.oldloc)
+
+    def test_bug_5562(self):
+        try:
+            tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
+        except locale.Error:
+            # skip this test
+            return
+        # This should not cause an exception
+        time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
+
+def test_main():
+    support.run_unittest(TimeTestCase, TestLocale)
 
 if __name__ == "__main__":
     test_main()

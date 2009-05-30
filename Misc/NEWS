@@ -111,6 +111,8 @@ Installation
 Extension Modules
 -----------------
 
+- Issue #5562: Use wcsftime for time.strftime where available.
+
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
 - Issue #6093: Fix off-by-one error in locale.strxfrm.
