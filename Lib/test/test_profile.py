@@ -44,7 +44,6 @@ class ProfileTest(unittest.TestCase):
     def test_calling_conventions(self):
         # Issue #5330: profile and cProfile wouldn't report C functions called
         # with keyword arguments. We test all calling conventions.
-        prof = self.profilerclass(timer, 0.001)
         stmts = [
             "[].sort()",
             "[].sort(reverse=True)",
@@ -53,6 +52,7 @@ class ProfileTest(unittest.TestCase):
         ]
         for stmt in stmts:
             s = StringIO()
+            prof = self.profilerclass(timer, 0.001)
             prof.runctx(stmt, globals(), locals())
             stats = pstats.Stats(prof, stream=s)
             stats.print_stats()
