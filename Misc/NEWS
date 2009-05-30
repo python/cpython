@@ -111,7 +111,7 @@ Installation
 Extension Modules
 -----------------
 
-- Issue #5562: Use wcsftime for time.strftime where available.
+- Issue #3061: Use wcsftime for time.strftime where available.
 
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
