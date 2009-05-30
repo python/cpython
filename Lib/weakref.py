@@ -49,7 +49,7 @@ class WeakValueDictionary(collections.MutableMapping):
                 del self.data[wr.key]
         self._remove = remove
         self.data = d = {}
-        d.update(*args, **kw)
+        self.update(*args, **kw)
 
     def __getitem__(self, key):
         o = self.data[key]()

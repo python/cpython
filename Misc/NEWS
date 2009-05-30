@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6149: Fix initialization of WeakValueDictionary objects from non-empty
+  parameters.
+
 
 What's New in Python 3.1 release candidate 1?
 =============================================
