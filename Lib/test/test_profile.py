@@ -16,6 +16,7 @@ class ProfileTest(unittest.TestCase):
 
     profilerclass = profile.Profile
     methodnames = ['print_stats', 'print_callers', 'print_callees']
+    expected_max_output = ':0(max)'
 
     def get_expected_output(self):
         return _ProfileOutput
@@ -52,6 +53,27 @@ class ProfileTest(unittest.TestCase):
                 print('\n'.join(unified_diff(
                                   results[i+1].split('\n'),
                                   expected[method].split('\n'))))
+
+    def test_calling_conventions(self):
+        # Issue #5330: profile and cProfile wouldn't report C functions called
+        # with keyword arguments. We test all calling conventions.
+        stmts = [
+            "max([0])",
+            "max([0], key=int)",
+            "max([0], **dict(key=int))",
+            "max(*([0],))",
+            "max(*([0],), key=int)",
+            "max(*([0],), **dict(key=int))",
+        ]
+        for stmt in stmts:
+            s = StringIO()
+            prof = self.profilerclass(timer, 0.001)
+            prof.runctx(stmt, globals(), locals())
+            stats = pstats.Stats(prof, stream=s)
+            stats.print_stats()
+            res = s.getvalue()
+            self.assertTrue(self.expected_max_output in res,
+                "Profiling {0!r} didn't report max:\n{1}".format(stmt, res))
 
 
 def regenerate_expected_output(filename, cls):

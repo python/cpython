@@ -9,6 +9,7 @@ from test.test_profile import ProfileTest, regenerate_expected_output
 
 class CProfileTest(ProfileTest):
     profilerclass = cProfile.Profile
+    expected_max_output = "{built-in method max}"
 
     def get_expected_output(self):
         return _ProfileOutput
