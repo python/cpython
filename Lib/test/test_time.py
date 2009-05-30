@@ -230,7 +230,7 @@ class TestLocale(unittest.TestCase):
     def tearDown(self):
         locale.setlocale(locale.LC_ALL, self.oldloc)
 
-    def test_bug_5562(self):
+    def test_bug_3061(self):
         try:
             tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
         except locale.Error:
