@@ -16,6 +16,7 @@ class ProfileTest(unittest.TestCase):
     profilerclass = profile.Profile
     methodnames = ['print_stats', 'print_callers', 'print_callees']
     expected_output = {}
+    expected_list_sort_output = ':0(sort)'
 
     @classmethod
     def do_profiling(cls):
@@ -39,6 +40,25 @@ class ProfileTest(unittest.TestCase):
             self.assertEqual(results[i+1], self.expected_output[method],
                              "Stats.%s output for %s doesn't fit expectation!" %
                              (method, self.profilerclass.__name__))
+
+    def test_calling_conventions(self):
+        # Issue #5330: profile and cProfile wouldn't report C functions called
+        # with keyword arguments. We test all calling conventions.
+        prof = self.profilerclass(timer, 0.001)
+        stmts = [
+            "[].sort()",
+            "[].sort(reverse=True)",
+            "[].sort(*(None, None, True))",
+            "[].sort(**dict(reverse=True))",
+        ]
+        for stmt in stmts:
+            s = StringIO()
+            prof.runctx(stmt, globals(), locals())
+            stats = pstats.Stats(prof, stream=s)
+            stats.print_stats()
+            res = s.getvalue()
+            self.assertTrue(self.expected_list_sort_output in res,
+                "Profiling {0!r} didn't report list.sort:\n{1}".format(stmt, res))
 
 
 def regenerate_expected_output(filename, cls):
