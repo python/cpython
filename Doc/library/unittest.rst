@@ -79,16 +79,20 @@ need to derive from a specific class.
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
-   `Simple Smalltalk Testing: With Patterns <http://www.XProgramming.com/testfram.htm>`_
-      Kent Beck's original paper on testing frameworks using the pattern shared by
-      :mod:`unittest`.
+   `Simple Smalltalk Testing: With Patterns
+   <http://www.XProgramming.com/testfram.htm>`_
+      Kent Beck's original paper on testing frameworks using the pattern shared
+      by :mod:`unittest`.
 
-   `Nose <http://code.google.com/p/python-nose/>`_ and `py.test <http://pytest.org>`_
-      Third-party unittest frameworks with a lighter-weight syntax
-      for writing tests.  For example, ``assert func(10) == 42``.
+   `Nose <http://code.google.com/p/python-nose/>`_ and `py.test
+   <http://pytest.org>`_
+      Third-party unittest frameworks with a lighter-weight syntax for writing
+      tests.  For example, ``assert func(10) == 42``.
 
-   `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
-      Tools for creating mock test objects (objects simulating external resources).
+   `python-mock <http://python-mock.sourceforge.net/>`_ and
+   `minimock <http://blog.ianbicking.org/minimock.html>`_
+      Tools for creating mock test objects (objects simulating external
+      resources).
 
 
 
@@ -277,13 +281,12 @@ The simplest :class:`TestCase` subclass will simply override the
            self.assertEqual(widget.size(), (50, 50), 'incorrect default size')
 
 Note that in order to test something, we use the one of the :meth:`assert\*`
-methods provided by the :class:`TestCase` base class.  If the
-test fails, an exception will be raised, and :mod:`unittest` will identify the
-test case as a :dfn:`failure`.  Any other exceptions will be treated as
-:dfn:`errors`. This helps you identify where the problem is: :dfn:`failures` are
-caused by incorrect results - a 5 where you expected a 6. :dfn:`Errors` are
-caused by incorrect code - e.g., a :exc:`TypeError` caused by an incorrect
-function call.
+methods provided by the :class:`TestCase` base class.  If the test fails, an
+exception will be raised, and :mod:`unittest` will identify the test case as a
+:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`. This
+helps you identify where the problem is: :dfn:`failures` are caused by incorrect
+results - a 5 where you expected a 6. :dfn:`Errors` are caused by incorrect
+code - e.g., a :exc:`TypeError` caused by an incorrect function call.
 
 The way to run a test case will be described later.  For now, note that to
 construct an instance of such a test case, we call its constructor without
@@ -482,10 +485,10 @@ may treat :exc:`AssertionError` differently.
 
 .. note::
 
-   Even though :class:`FunctionTestCase` can be used to quickly convert an existing
-   test base over to a :mod:`unittest`\ -based system, this approach is not
-   recommended.  Taking the time to set up proper :class:`TestCase` subclasses will
-   make future test refactorings infinitely easier.
+   Even though :class:`FunctionTestCase` can be used to quickly convert an
+   existing test base over to a :mod:`unittest`\ -based system, this approach is
+   not recommended.  Taking the time to set up proper :class:`TestCase`
+   subclasses will make future test refactorings infinitely easier.
 
 In some cases, the existing tests may have been written using the :mod:`doctest`
 module.  If so, :mod:`doctest` provides a :class:`DocTestSuite` class that can
@@ -514,7 +517,8 @@ Basic skipping looks like this: ::
        def test_nothing(self):
            self.fail("shouldn't happen")
 
-       @unittest.skipIf(mylib.__version__ < (1, 3), "not supported in this library version")
+       @unittest.skipIf(mylib.__version__ < (1, 3),
+                        "not supported in this library version")
        def test_format(self):
            # Tests that work for only a certain version of the library.
            pass
@@ -1079,10 +1083,10 @@ Test cases
 .. class:: FunctionTestCase(testFunc[, setUp[, tearDown[, description]]])
 
    This class implements the portion of the :class:`TestCase` interface which
-   allows the test runner to drive the test, but does not provide the methods which
-   test code can use to check and report errors. This is used to create test cases
-   using legacy test code, allowing it to be integrated into a :mod:`unittest`\
-   -based test framework.
+   allows the test runner to drive the test, but does not provide the methods
+   which test code can use to check and report errors.  This is used to create
+   test cases using legacy test code, allowing it to be integrated into a
+   :mod:`unittest`-based test framework.
 
 
 .. _testsuite-objects:
@@ -1117,8 +1121,8 @@ Grouping tests
       Add all the tests from an iterable of :class:`TestCase` and :class:`TestSuite`
       instances to this test suite.
 
-      This is equivalent to iterating over *tests*, calling :meth:`addTest` for each
-      element.
+      This is equivalent to iterating over *tests*, calling :meth:`addTest` for
+      each element.
 
    :class:`TestSuite` shares the following methods with :class:`TestCase`:
 
@@ -1217,15 +1221,14 @@ Loading and running tests
       rather than "a callable object".
 
       For example, if you have a module :mod:`SampleTests` containing a
-      :class:`TestCase`\ -derived class :class:`SampleTestCase` with three
-      test methods (:meth:`test_one`, :meth:`test_two`, and
-      :meth:`test_three`), the specifier ``'SampleTests.SampleTestCase'``
-      would cause this method to return a suite which will run all three test
-      methods. Using the specifier ``'SampleTests.SampleTestCase.test_two'``
-      would cause it to return a test suite which will run only the
-      :meth:`test_two` test method. The specifier can refer to modules and
-      packages which have not been imported; they will be imported as a
-      side-effect.
+      :class:`TestCase`\ -derived class :class:`SampleTestCase` with three test
+      methods (:meth:`test_one`, :meth:`test_two`, and :meth:`test_three`), the
+      specifier ``'SampleTests.SampleTestCase'`` would cause this method to
+      return a suite which will run all three test methods. Using the specifier
+      ``'SampleTests.SampleTestCase.test_two'`` would cause it to return a test
+      suite which will run only the :meth:`test_two` test method. The specifier
+      can refer to modules and packages which have not been imported; they will
+      be imported as a side-effect.
 
       The method optionally resolves *name* relative to the given *module*.
 
