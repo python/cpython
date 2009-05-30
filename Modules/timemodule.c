@@ -417,15 +417,25 @@ gettmarg(PyObject *args, struct tm *p)
 }
 
 #ifdef HAVE_STRFTIME
+#ifdef HAVE_WCSFTIME
+#define time_char wchar_t
+#define format_time wcsftime
+#define time_strlen wcslen
+#else
+#define time_char char
+#define format_time strftime
+#define time_strlen strlen
+#endif
+
 static PyObject *
 time_strftime(PyObject *self, PyObject *args)
 {
 	PyObject *tup = NULL;
 	struct tm buf;
-	const char *fmt;
-	PyObject *format;
+	const time_char *fmt;
+	PyObject *format, *tmpfmt;
 	size_t fmtlen, buflen;
-	char *outbuf = 0;
+	time_char *outbuf = 0;
 	size_t i;
 
 	memset((void *) &buf, '\0', sizeof(buf));
@@ -508,22 +518,38 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
 
+#ifdef HAVE_WCSFTIME
+	tmpfmt = PyBytes_FromStringAndSize(NULL,
+					   sizeof(wchar_t) * (PyUnicode_GetSize(format)+1));
+	if (!tmpfmt)
+		return NULL;
+	/* This assumes that PyUnicode_AsWideChar doesn't do any UTF-16
+	   expansion. */
+	if (PyUnicode_AsWideChar((PyUnicodeObject*)format,
+				 (wchar_t*)PyBytes_AS_STRING(tmpfmt),
+				 PyUnicode_GetSize(format)+1) == (size_t)-1)
+		/* This shouldn't fail. */
+		Py_FatalError("PyUnicode_AsWideChar failed");
+	format = tmpfmt;
+	fmt = (wchar_t*)PyBytes_AS_STRING(format);
+#else
 	/* Convert the unicode string to an ascii one */
 	format = PyUnicode_AsEncodedString(format, TZNAME_ENCODING, NULL);
 	if (format == NULL)
 		return NULL;
 	fmt = PyBytes_AS_STRING(format);
+#endif
 
 #ifdef MS_WINDOWS
 	/* check that the format string contains only valid directives */
-	for(outbuf = strchr(fmt, '%');
+	for(outbuf = wcschr(fmt, L'%');
 		outbuf != NULL;
-		outbuf = strchr(outbuf+2, '%'))
+		outbuf = wcschr(outbuf+2, L'%'))
 	{
 		if (outbuf[1]=='#')
 			++outbuf; /* not documented by python, */
 		if (outbuf[1]=='\0' ||
-			!strchr("aAbBcdfHIjmMpSUwWxXyYzZ%", outbuf[1]))
+			!wcschr(L"aAbBcdfHIjmMpSUwWxXyYzZ%", outbuf[1]))
 		{
 			PyErr_SetString(PyExc_ValueError, "Invalid format string");
 			return 0;
@@ -531,18 +557,18 @@ time_strftime(PyObject *self, PyObject *args)
 	}
 #endif
 
-	fmtlen = strlen(fmt);
+	fmtlen = time_strlen(fmt);
 
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
 	for (i = 1024; ; i += i) {
-		outbuf = (char *)PyMem_Malloc(i);
+		outbuf = (time_char *)PyMem_Malloc(i*sizeof(time_char));
 		if (outbuf == NULL) {
 			Py_DECREF(format);
 			return PyErr_NoMemory();
 		}
-		buflen = strftime(outbuf, i, fmt, &buf);
+		buflen = format_time(outbuf, i, fmt, &buf);
 		if (buflen > 0 || i >= 256 * fmtlen) {
 			/* If the buffer is 256 times as long as the format,
 			   it's probably not failing for lack of room!
@@ -550,8 +576,12 @@ time_strftime(PyObject *self, PyObject *args)
 			   e.g. an empty format, or %Z when the timezone
 			   is unknown. */
 			PyObject *ret;
+#ifdef HAVE_WCSFTIME
+			ret = PyUnicode_FromWideChar(outbuf, buflen);
+#else
 			ret = PyUnicode_Decode(outbuf, buflen,
 					       TZNAME_ENCODING, NULL);
+#endif
 			PyMem_Free(outbuf);
 			Py_DECREF(format);
 			return ret;
@@ -567,6 +597,9 @@ time_strftime(PyObject *self, PyObject *args)
 #endif
 	}
 }
+
+#undef time_char
+#undef format_time
 
 PyDoc_STRVAR(strftime_doc,
 "strftime(format[, tuple]) -> string\n\
