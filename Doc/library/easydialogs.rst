@@ -100,7 +100,7 @@ The :mod:`EasyDialogs` module defines the following functions:
    +----------------------+------------------------------------------+
 
    *commandlist* is a list of items of the form *cmdstr* or ``(cmdstr, descr)``,
-   where *descr* is as above.  The *cmdstr*s will appear in a popup menu.  When
+   where *descr* is as above.  The *cmdstr*\ s will appear in a popup menu.  When
    chosen, the text of *cmdstr* will be appended to the command line as is, except
    that a trailing ``':'`` or ``'='`` (if present) will be trimmed off.
 
