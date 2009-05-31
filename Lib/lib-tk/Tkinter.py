@@ -3550,8 +3550,8 @@ class PanedWindow(Widget):
 
         The child argument is the name of the child widget
         followed by pairs of arguments that specify how to
-        manage the windows. Options may have any of the values
-        accepted by the configure subcommand.
+        manage the windows. The possible options and values
+        are the ones accepted by the paneconfigure method.
         """
         self.tk.call((self._w, 'add', child) + self._options(kw))
 
