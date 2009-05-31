@@ -95,6 +95,34 @@ class TestEPoll(unittest.TestCase):
         finally:
             ep.close()
 
+        # adding by object w/ fileno works, too.
+        ep = select.epoll(2)
+        try:
+            ep.register(server, select.EPOLLIN | select.EPOLLOUT)
+            ep.register(client, select.EPOLLIN | select.EPOLLOUT)
+        finally:
+            ep.close()
+
+        ep = select.epoll(2)
+        try:
+            # TypeError: argument must be an int, or have a fileno() method.
+            self.assertRaises(TypeError, ep.register, object(),
+                select.EPOLLIN | select.EPOLLOUT)
+            self.assertRaises(TypeError, ep.register, None,
+                select.EPOLLIN | select.EPOLLOUT)
+            # ValueError: file descriptor cannot be a negative integer (-1)
+            self.assertRaises(ValueError, ep.register, -1,
+                select.EPOLLIN | select.EPOLLOUT)
+            # IOError: [Errno 9] Bad file descriptor
+            self.assertRaises(IOError, ep.register, 10000,
+                select.EPOLLIN | select.EPOLLOUT)
+            # registering twice also raises an exception
+            ep.register(server, select.EPOLLIN | select.EPOLLOUT)
+            self.assertRaises(IOError, ep.register, server,
+                select.EPOLLIN | select.EPOLLOUT)
+        finally:
+            ep.close()
+
     def test_fromfd(self):
         server, client = self._connected_pair()
 
