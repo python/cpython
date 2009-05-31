@@ -654,6 +654,12 @@ Other Changes and Fixes
   The :option:`-r` option also now reports the seed that was used
   (Added by Collin Winter.)
 
+* The :file:`regrtest.py` script now takes a :option:`-j` switch
+  that takes an integer specifying how many tests run in parallel. This
+  allows to shorten the total runtime on multi-core machines.
+  This option is compatible with several other options, including the
+  :option:`-R` switch which is known to produce long runtimes.
+  (Added by Antoine Pitrou, :issue:`6152`.)
 
 .. ======================================================================
 

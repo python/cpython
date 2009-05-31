@@ -378,6 +378,10 @@ else:
                 'Unicode filename tests may not be effective' \
                 % TESTFN_UNICODE_UNENCODEABLE
 
+# Disambiguate TESTFN for parallel testing, while letting it remain a valid
+# module name.
+TESTFN = "{0}_{1}_tmp".format(TESTFN, os.getpid())
+
 # Make sure we can write to TESTFN, try in /tmp if we can't
 fp = None
 try:

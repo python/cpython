@@ -1104,6 +1104,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #6152: New option '-j'/'--multiprocess' for regrtest allows running
+  regression tests in parallel, shortening the total runtime.
+
 - Issue #5354: New test support function import_fresh_module() makes
   it easy to import both normal and optimised versions of modules.
   test_heapq and test_warnings have been adjusted to use it, tests for
