@@ -1352,7 +1352,7 @@ the receiving end. A simple way of doing this is attaching a
 At the receiving end, you can set up a receiver using the :mod:`socketserver`
 module. Here is a basic working example::
 
-   import cPickle
+   import pickle
    import logging
    import logging.handlers
    import socketserver
@@ -1385,7 +1385,7 @@ module. Here is a basic working example::
                self.handleLogRecord(record)
 
        def unPickle(self, data):
-           return cPickle.loads(data)
+           return pickle.loads(data)
 
        def handleLogRecord(self, record):
            # if a name is specified, we use the named logger rather than the one
