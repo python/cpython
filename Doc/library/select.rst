@@ -160,6 +160,11 @@ Edge and Level Trigger Polling (epoll) Objects
 
    Register a fd descriptor with the epoll object.
 
+   .. note::
+
+     Registering a file descriptor that's already registered raises an
+     IOError -- contrary to :ref:`poll-objects`'s register.
+
 
 .. method:: epoll.modify(fd, eventmask)
 
