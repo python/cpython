@@ -2156,6 +2156,9 @@ _Py_ReadyTypes(void)
 
 	if (PyType_Ready(&PyMemberDescr_Type) < 0)
 		Py_FatalError("Can't initialize member descriptor type");
+
+	if (PyType_Ready(&PyFile_Type) < 0)
+		Py_FatalError("Can't initialize file type");
 }
 
 
