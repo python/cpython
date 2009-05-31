@@ -1541,6 +1541,7 @@ The maketrans and translate methods differ in semantics from the versions
 available on strings:
 
 .. method:: bytes.translate(table[, delete])
+            bytearray.translate(table[, delete])
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
    the optional argument *delete* are removed, and the remaining bytes have been
@@ -1557,6 +1558,7 @@ available on strings:
 
 
 .. staticmethod:: bytes.maketrans(from, to)
+                  bytearray.maketrans(from, to)
 
    This static method returns a translation table usable for
    :meth:`bytes.translate` that will map each character in *from* into the
