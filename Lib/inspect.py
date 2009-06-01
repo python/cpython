@@ -704,7 +704,7 @@ def walktree(classes, children, parent):
             results.append(walktree(children[c], children, c))
     return results
 
-def getclasstree(classes, unique=0):
+def getclasstree(classes, unique=False):
     """Arrange the given list of classes into a hierarchy of nested lists.
 
     Where a nested list appears, it contains classes derived from the class
