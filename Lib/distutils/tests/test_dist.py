@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 """Tests for distutils.dist."""
 import os
 import io
@@ -35,7 +36,8 @@ class TestDistribution(Distribution):
         return self._config_files
 
 
-class DistributionTestCase(unittest.TestCase):
+class DistributionTestCase(support.LoggingSilencer,
+                           unittest.TestCase):
 
     def setUp(self):
         super(DistributionTestCase, self).setUp()
@@ -121,6 +123,49 @@ class DistributionTestCase(unittest.TestCase):
             warnings.warn = old_warn
 
         self.assertEquals(len(warns), 0)
+
+    def test_finalize_options(self):
+
+        attrs = {'keywords': 'one,two',
+                 'platforms': 'one,two'}
+
+        dist = Distribution(attrs=attrs)
+        dist.finalize_options()
+
+        # finalize_option splits platforms and keywords
+        self.assertEquals(dist.metadata.platforms, ['one', 'two'])
+        self.assertEquals(dist.metadata.keywords, ['one', 'two'])
+
+    def test_show_help(self):
+        class FancyGetopt(object):
+            def __init__(self):
+                self.count = 0
+
+            def set_option_table(self, *args):
+                pass
+
+            def print_help(self, *args):
+                self.count += 1
+
+        parser = FancyGetopt()
+        dist = Distribution()
+        dist.commands = ['sdist']
+        dist.script_name = 'setup.py'
+        dist._show_help(parser)
+        self.assertEquals(parser.count, 3)
+
+    def test_get_command_packages(self):
+        dist = Distribution()
+        self.assertEquals(dist.command_packages, None)
+        cmds = dist.get_command_packages()
+        self.assertEquals(cmds, ['distutils.command'])
+        self.assertEquals(dist.command_packages,
+                          ['distutils.command'])
+
+        dist.command_packages = 'one,two'
+        cmds = dist.get_command_packages()
+        self.assertEquals(cmds, ['distutils.command', 'one', 'two'])
+
 
 class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                        unittest.TestCase):
