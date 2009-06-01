@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import errno
 import functools
+import gc
 import socket
 import sys
 import os
@@ -630,7 +631,6 @@ def gc_collect():
     longer than expected.  This function tries its best to force all garbage
     objects to disappear.
     """
-    import gc
     gc.collect()
     gc.collect()
     gc.collect()

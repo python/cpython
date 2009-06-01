@@ -257,7 +257,7 @@ matches with them.
 Compiling Regular Expressions
 -----------------------------
 
-Regular expressions are compiled into :class:`RegexObject` instances, which have
+Regular expressions are compiled into pattern objects, which have
 methods for various operations such as searching for pattern matches or
 performing string substitutions. ::
 
@@ -336,7 +336,7 @@ Performing Matches
 ------------------
 
 Once you have an object representing a compiled regular expression, what do you
-do with it?  :class:`RegexObject` instances have several methods and attributes.
+do with it?  Pattern objects have several methods and attributes.
 Only the most significant ones will be covered here; consult the :mod:`re` docs
 for a complete listing.
 
@@ -427,8 +427,8 @@ Trying these methods will soon clarify their meaning::
 and :meth:`end` return the starting and ending index of the match. :meth:`span`
 returns both start and end indexes in a single tuple.  Since the :meth:`match`
 method only checks if the RE matches at the start of a string, :meth:`start`
-will always be zero.  However, the :meth:`search` method of :class:`RegexObject`
-instances scans through the string, so  the match may not start at zero in that
+will always be zero.  However, the :meth:`search` method of patterns
+scans through the string, so  the match may not start at zero in that
 case. ::
 
    >>> print(p.match('::: message'))
@@ -450,7 +450,7 @@ in a variable, and then check if it was ``None``.  This usually looks like::
    else:
        print('No match')
 
-Two :class:`RegexObject` methods return all of the matches for a pattern.
+Two pattern methods return all of the matches for a pattern.
 :meth:`findall` returns a list of matching strings::
 
    >>> p = re.compile('\d+')
@@ -475,10 +475,10 @@ instances as an :term:`iterator`. [#]_ ::
 Module-Level Functions
 ----------------------
 
-You don't have to create a :class:`RegexObject` and call its methods; the
+You don't have to create a pattern object and call its methods; the
 :mod:`re` module also provides top-level functions called :func:`match`,
 :func:`search`, :func:`findall`, :func:`sub`, and so forth.  These functions
-take the same arguments as the corresponding :class:`RegexObject` method, with
+take the same arguments as the corresponding pattern method, with
 the RE string added as the first argument, and still return either ``None`` or a
 :class:`MatchObject` instance. ::
 
@@ -487,12 +487,12 @@ the RE string added as the first argument, and still return either ``None`` or a
    >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')
    <re.MatchObject instance at 80c5978>
 
-Under the hood, these functions simply produce a :class:`RegexObject` for you
+Under the hood, these functions simply create a pattern object for you
 and call the appropriate method on it.  They also store the compiled object in a
 cache, so future calls using the same RE are faster.
 
 Should you use these module-level functions, or should you get the
-:class:`RegexObject` and call its methods yourself?  That choice depends on how
+pattern and call its methods yourself?  That choice depends on how
 frequently the RE will be used, and on your personal coding style.  If the RE is
 being used at only one point in the code, then the module functions are probably
 more convenient.  If a program contains a lot of regular expressions, or re-uses
@@ -1031,7 +1031,7 @@ Modifying Strings
 
 Up to this point, we've simply performed searches against a static string.
 Regular expressions are also commonly used to modify strings in various ways,
-using the following :class:`RegexObject` methods:
+using the following pattern methods:
 
 +------------------+-----------------------------------------------+
 | Method/Attribute | Purpose                                       |
@@ -1051,7 +1051,7 @@ using the following :class:`RegexObject` methods:
 Splitting Strings
 -----------------
 
-The :meth:`split` method of a :class:`RegexObject` splits a string apart
+The :meth:`split` method of a pattern splits a string apart
 wherever the RE matches, returning a list of the pieces. It's similar to the
 :meth:`split` method of strings but provides much more generality in the
 delimiters that you can split by; :meth:`split` only supports splitting by
@@ -1196,10 +1196,10 @@ hexadecimal::
    'Call 0xffd2 for printing, 0xc000 for user code.'
 
 When using the module-level :func:`re.sub` function, the pattern is passed as
-the first argument.  The pattern may be a string or a :class:`RegexObject`; if
+the first argument.  The pattern may be provided as an object or as a string; if
 you need to specify regular expression flags, you must either use a
-:class:`RegexObject` as the first parameter, or use embedded modifiers in the
-pattern, e.g.  ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
+pattern object as the first parameter, or use embedded modifiers in the
+pattern string, e.g. ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
 
 
 Common Problems
