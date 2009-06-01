@@ -1,5 +1,6 @@
 # Copyright 2007 Google Inc.
 #  Licensed to PSF under a Contributor Agreement.
+#
 # See also: http://code.google.com/p/ipaddr-py/
 
 """An IPv4/IPv6 manipulation library in Python.
@@ -9,7 +10,7 @@ and prefixes.
 
 """
 
-__version__ = '1.0.2'
+__version__ = '1.1.0'
 
 import struct
 
