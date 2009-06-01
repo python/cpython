@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6150: Fix test_unicode on wide-unicode builds.
+
 - Issue #6149: Fix initialization of WeakValueDictionary objects from non-empty
   parameters.
 

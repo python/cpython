@@ -908,14 +908,15 @@ class UnicodeTest(
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')
         self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
-        self.assertEqual('\ud800\udc02'.encode('utf-8'), b'\xf0\x90\x80\x82')
-        self.assertEqual('\ud84d\udc56'.encode('utf-8'), b'\xf0\xa3\x91\x96')
+        if sys.maxunicode == 65535:
+            self.assertEqual('\ud800\udc02'.encode('utf-8'), b'\xf0\x90\x80\x82')
+            self.assertEqual('\ud84d\udc56'.encode('utf-8'), b'\xf0\xa3\x91\x96')
         self.assertEqual('\ud800'.encode('utf-8', 'surrogatepass'), b'\xed\xa0\x80')
         self.assertEqual('\udc00'.encode('utf-8', 'surrogatepass'), b'\xed\xb0\x80')
-        self.assertEqual(
-            ('\ud800\udc02'*1000).encode('utf-8', 'surrogatepass'),
-            b'\xf0\x90\x80\x82'*1000
-        )
+        if sys.maxunicode == 65535:
+            self.assertEqual(
+                ('\ud800\udc02'*1000).encode('utf-8'),
+                b'\xf0\x90\x80\x82'*1000)
         self.assertEqual(
             '\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f'
             '\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00'
