@@ -46,6 +46,9 @@ unused_docs = [
     'library/xml.etree',
 ]
 
+# Ignore .rst in Sphinx its self.
+exclude_trees = ['tools/sphinx']
+
 # Relative filename of the reference count data file.
 refcount_file = 'data/refcounts.dat'
 

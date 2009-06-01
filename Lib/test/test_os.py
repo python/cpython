@@ -35,9 +35,7 @@ class FileTests(unittest.TestCase):
                 retries += 1
                 if retries > 10:
                     # XXX test skipped
-                    print("couldn't allocate two consecutive fds, "
-                        "skipping test_closerange", file=sys.stderr)
-                    return
+                    self.skipTest("couldn't allocate two consecutive fds")
                 first, second = second, os.dup(second)
         finally:
             os.close(second)

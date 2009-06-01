@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import errno
+import functools
 import socket
 import sys
 import os
@@ -932,6 +933,16 @@ def threading_cleanup(num_active, num_limbo):
     while len(threading._limbo) != num_limbo and count < _MAX_COUNT:
         count += 1
         time.sleep(0.1)
+
+def reap_threads(func):
+    @functools.wraps(func)
+    def decorator(*args):
+        key = threading_setup()
+        try:
+            return func(*args)
+        finally:
+            threading_cleanup(*key)
+    return decorator
 
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes

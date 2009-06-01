@@ -1055,28 +1055,27 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader())
             return
 
-        fp = io.open(filename, "rb")
-        # Must overwrite CRC and sizes with correct data later
-        zinfo.CRC = CRC = 0
-        zinfo.compress_size = compress_size = 0
-        zinfo.file_size = file_size = 0
-        self.fp.write(zinfo.FileHeader())
-        if zinfo.compress_type == ZIP_DEFLATED:
-            cmpr = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                 zlib.DEFLATED, -15)
-        else:
-            cmpr = None
-        while 1:
-            buf = fp.read(1024 * 8)
-            if not buf:
-                break
-            file_size = file_size + len(buf)
-            CRC = crc32(buf, CRC) & 0xffffffff
-            if cmpr:
-                buf = cmpr.compress(buf)
-                compress_size = compress_size + len(buf)
-            self.fp.write(buf)
-        fp.close()
+        with open(filename, "rb") as fp:
+            # Must overwrite CRC and sizes with correct data later
+            zinfo.CRC = CRC = 0
+            zinfo.compress_size = compress_size = 0
+            zinfo.file_size = file_size = 0
+            self.fp.write(zinfo.FileHeader())
+            if zinfo.compress_type == ZIP_DEFLATED:
+                cmpr = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                     zlib.DEFLATED, -15)
+            else:
+                cmpr = None
+            while 1:
+                buf = fp.read(1024 * 8)
+                if not buf:
+                    break
+                file_size = file_size + len(buf)
+                CRC = crc32(buf, CRC) & 0xffffffff
+                if cmpr:
+                    buf = cmpr.compress(buf)
+                    compress_size = compress_size + len(buf)
+                self.fp.write(buf)
         if cmpr:
             buf = cmpr.flush()
             compress_size = compress_size + len(buf)
@@ -1400,9 +1399,8 @@ def main(args = None):
             tgtdir = os.path.dirname(tgt)
             if not os.path.exists(tgtdir):
                 os.makedirs(tgtdir)
-            fp = io.open(tgt, 'wb')
-            fp.write(zf.read(path))
-            fp.close()
+            with open(tgt, 'wb') as fp:
+                fp.write(zf.read(path))
         zf.close()
 
     elif args[0] == '-c':

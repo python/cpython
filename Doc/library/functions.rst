@@ -1209,7 +1209,7 @@ are always available.  They are listed here in alphabetical order.
       >>> list(zipped)
       [(1, 4), (2, 5), (3, 6)]
       >>> x2, y2 = zip(*zip(x, y))
-      >>> x == x2, y == y2
+      >>> x == list(x2) and y == list(y2)
       True
 
 
@@ -1272,7 +1272,7 @@ are always available.  They are listed here in alphabetical order.
    names.
 
    If you simply want to import a module (potentially within a package) by name,
-   you can get it from :data:`sys.modules`::
+   you can call :func:`__import__` and then look it up in :data:`sys.modules`::
 
       >>> import sys
       >>> name = 'foo.bar.baz'

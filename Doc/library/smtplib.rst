@@ -364,3 +364,8 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
    server.sendmail(fromaddr, toaddrs, msg)
    server.quit()
 
+.. note::
+
+   In general, you will want to use the :mod:`email` package's features to
+   construct an email message, which you can then convert to a string and send
+   via :meth:`sendmail`; see :ref:`email-examples`.
