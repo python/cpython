@@ -86,6 +86,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	int in_finally[CO_MAXBLOCKS];	/* (ditto) */
 	int blockstack_top = 0;		/* (ditto) */
 	unsigned char setup_op = 0;	/* (ditto) */
+	char *tmp;
 
 	/* f_lineno must be an integer. */
 	if (!PyInt_Check(p_new_lineno)) {
@@ -115,7 +116,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	/* Find the bytecode offset for the start of the given line, or the
 	 * first code-owning line after it. */
 	PyString_AsStringAndSize(f->f_code->co_lnotab,
-	                         &(char*)lnotab, &lnotab_len);
+	                         &tmp, &lnotab_len);
+	lnotab = (unsigned char *) tmp;
 	addr = 0;
 	line = f->f_code->co_firstlineno;
 	new_lasti = -1;
