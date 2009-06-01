@@ -1007,6 +1007,7 @@ def add_files(db):
             lib.add_file("test_difflib_expect.html")
             lib.add_file("check_soundcard.vbs")
             lib.add_file("empty.vbs")
+            lib.add_file("Sine-1000Hz-300ms.aif")
             lib.glob("*.uue")
             lib.glob("*.pem")
             lib.glob("*.pck")
