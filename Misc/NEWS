@@ -12,6 +12,9 @@ What's New in Python 3.0.2?
 Core and Builtins
 -----------------
 
+- Issue #4547: When debugging a very large function, it was not always
+  possible to update the lineno attribute of the current frame.
+
 - Issue #6089: Fixed str.format with certain invalid field specifiers
   that would raise SystemError.
 

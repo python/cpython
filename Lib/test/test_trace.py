@@ -741,6 +741,23 @@ class JumpTestCase(unittest.TestCase):
     def test_19_no_jump_without_trace_function(self):
         no_jump_without_trace_function()
 
+    def test_20_large_function(self):
+        d = {}
+        exec("""def f(output):        # line 0
+            x = 0                     # line 1
+            y = 1                     # line 2
+            '''                       # line 3
+            %s                        # lines 4-1004
+            '''                       # line 1005
+            x += 1                    # line 1006
+            output.append(x)          # line 1007
+            return""" % ('\n' * 1000,), d)
+        f = d['f']
+
+        f.jump = (2, 1007)
+        f.output = [0]
+        self.run_test(f)
+
 def test_main():
     support.run_unittest(
         TraceTestCase,
