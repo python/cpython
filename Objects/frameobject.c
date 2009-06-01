@@ -114,8 +114,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 
 	/* Find the bytecode offset for the start of the given line, or the
 	 * first code-owning line after it. */
-	PyString_AsStringAndSize((char*)f->f_code->co_lnotab,
-	                         &lnotab, &lnotab_len);
+	PyString_AsStringAndSize(f->f_code->co_lnotab,
+	                         &(char*)lnotab, &lnotab_len);
 	addr = 0;
 	line = f->f_code->co_firstlineno;
 	new_lasti = -1;
