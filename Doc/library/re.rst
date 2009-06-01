@@ -215,7 +215,7 @@ The special characters are:
 ``(?aiLmsux)``
    (One or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
    ``'s'``, ``'u'``, ``'x'``.)  The group matches the empty string; the
-   letters set the corresponding flags: :const:`re.a` (ASCII-only matching),
+   letters set the corresponding flags: :const:`re.A` (ASCII-only matching),
    :const:`re.I` (ignore case), :const:`re.L` (locale dependent),
    :const:`re.M` (multi-line), :const:`re.S` (dot matches all),
    and :const:`re.X` (verbose), for the entire regular expression. (The
