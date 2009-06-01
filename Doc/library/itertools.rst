@@ -459,7 +459,7 @@ loops that truncate the stream.
                yield tuple(prod)
 
 
-.. function:: repeat(object, times=-1)
+.. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
    unless the *times* argument is specified. Used as argument to :func:`map` for
