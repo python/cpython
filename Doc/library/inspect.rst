@@ -1,4 +1,3 @@
-
 :mod:`inspect` --- Inspect live objects
 =======================================
 
@@ -215,7 +214,8 @@ attributes:
 
 .. function:: isfunction(object)
 
-   Return true if the object is a Python function or unnamed (:term:`lambda`) function.
+   Return true if the object is a Python function or unnamed (:term:`lambda`)
+   function.
 
 
 .. function:: isgeneratorfunction(object)
@@ -370,8 +370,7 @@ Retrieving source code
 Classes and functions
 ---------------------
 
-
-.. function:: getclasstree(classes[, unique])
+.. function:: getclasstree(classes, unique=False)
 
    Arrange the given list of classes into a hierarchy of nested lists. Where a
    nested list appears, it contains classes derived from the class whose entry
@@ -399,10 +398,11 @@ Classes and functions
 
 .. function:: getfullargspec(func)
 
-   Get the names and default values of a function's arguments.  A :term:`named tuple`
-   is returned:
+   Get the names and default values of a function's arguments.  A :term:`named
+   tuple` is returned:
 
-   ``FullArgSpec(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)``
+   ``FullArgSpec(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults,
+   annotations)``
 
    *args* is a list of the argument names.  *varargs* and *varkw* are the names
    of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an n-tuple of
@@ -416,11 +416,11 @@ Classes and functions
 
 .. function:: getargvalues(frame)
 
-   Get information about arguments passed into a particular frame. A :term:`named tuple`
-   ``ArgInfo(args, varargs, keywords, locals)`` is returned. *args* is a list of the
-   argument names (it may contain nested lists). *varargs* and *varkw* are the
-   names of the ``*`` and ``**`` arguments or ``None``. *locals* is the locals
-   dictionary of the given frame.
+   Get information about arguments passed into a particular frame.  A
+   :term:`named tuple` ``ArgInfo(args, varargs, keywords, locals)`` is
+   returned. *args* is a list of the argument names (it may contain nested
+   lists). *varargs* and *varkw* are the names of the ``*`` and ``**`` arguments
+   or ``None``. *locals* is the locals dictionary of the given frame.
 
 
 .. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue, join])
@@ -482,13 +482,13 @@ the number of lines of context to return, which are centered around the current
 line.
 
 
-.. function:: getframeinfo(frame[, context])
+.. function:: getframeinfo(frame, context=1)
 
    Get information about a frame or traceback object.  A :term:`named tuple`
    ``Traceback(filename, lineno, function, code_context, index)`` is returned.
 
 
-.. function:: getouterframes(frame[, context])
+.. function:: getouterframes(frame, context=1)
 
    Get a list of frame records for a frame and all outer frames.  These frames
    represent the calls that lead to the creation of *frame*. The first entry in the
@@ -496,7 +496,7 @@ line.
    on *frame*'s stack.
 
 
-.. function:: getinnerframes(traceback[, context])
+.. function:: getinnerframes(traceback, context=1)
 
    Get a list of frame records for a traceback's frame and all inner frames.  These
    frames represent calls made as a consequence of *frame*.  The first entry in the
@@ -509,14 +509,14 @@ line.
    Return the frame object for the caller's stack frame.
 
 
-.. function:: stack([context])
+.. function:: stack(context=1)
 
    Return a list of frame records for the caller's stack.  The first entry in the
    returned list represents the caller; the last entry represents the outermost
    call on the stack.
 
 
-.. function:: trace([context])
+.. function:: trace(context=1)
 
    Return a list of frame records for the stack between the current frame and the
    frame in which an exception currently being handled was raised in.  The first

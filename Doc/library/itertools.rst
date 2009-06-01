@@ -1,4 +1,3 @@
-
 :mod:`itertools` --- Functions creating iterators for efficient looping
 =======================================================================
 
@@ -291,7 +290,7 @@ loops that truncate the stream.
                   yield x
 
 
-.. function:: groupby(iterable[, key])
+.. function:: groupby(iterable, key=None)
 
    Make an iterator that returns consecutive keys and groups from the *iterable*.
    The *key* is a function computing a key value for each element.  If not
@@ -372,7 +371,7 @@ loops that truncate the stream.
    then the step defaults to one.
 
 
-.. function:: permutations(iterable[, r])
+.. function:: permutations(iterable, r=None)
 
    Return successive *r* length permutations of elements in the *iterable*.
 
@@ -430,7 +429,7 @@ loops that truncate the stream.
    The number of items returned is ``n! / (n-r)!`` when ``0 <= r <= n``
    or zero when ``r > n``.
 
-.. function:: product(*iterables[, repeat])
+.. function:: product(*iterables, repeat=1)
 
    Cartesian product of input iterables.
 
@@ -460,7 +459,7 @@ loops that truncate the stream.
                yield tuple(prod)
 
 
-.. function:: repeat(object[, times])
+.. function:: repeat(object, times=-1)
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
    unless the *times* argument is specified. Used as argument to :func:`map` for
@@ -505,7 +504,7 @@ loops that truncate the stream.
                   break
 
 
-.. function:: tee(iterable[, n=2])
+.. function:: tee(iterable, n=2)
 
    Return *n* independent iterators from a single iterable.  Equivalent to::
 
@@ -531,7 +530,7 @@ loops that truncate the stream.
    :func:`list` instead of :func:`tee`.
 
 
-.. function:: zip_longest(*iterables[, fillvalue])
+.. function:: zip_longest(*iterables, fillvalue=None)
 
    Make an iterator that aggregates elements from each of the iterables. If the
    iterables are of uneven length, missing values are filled-in with *fillvalue*.

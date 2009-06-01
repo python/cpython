@@ -26,7 +26,7 @@ Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
 
-.. class:: IMAP4([host[, port]])
+.. class:: IMAP4(host='', port=IMAP4_PORT)
 
    This class implements the actual IMAP4 protocol.  The connection is created and
    protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
@@ -59,7 +59,7 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, certfile=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -264,7 +264,7 @@ An :class:`IMAP4` instance has the following methods:
    Shutdown connection to server. Returns server ``BYE`` response.
 
 
-.. method:: IMAP4.lsub([directory[, pattern]])
+.. method:: IMAP4.lsub(directory='""', pattern='*')
 
    List subscribed mailbox names in directory matching pattern. *directory*
    defaults to the top level directory and *pattern* defaults to match any mailbox.
@@ -348,7 +348,7 @@ An :class:`IMAP4` instance has the following methods:
       typ, msgnums = M.search(None, '(FROM "LDJ")')
 
 
-.. method:: IMAP4.select([mailbox[, readonly]])
+.. method:: IMAP4.select(mailbox='INBOX', readonly=False)
 
    Select a mailbox. Returned data is the count of messages in *mailbox*
    (``EXISTS`` response).  The default *mailbox* is ``'INBOX'``.  If the *readonly*
@@ -464,12 +464,12 @@ An :class:`IMAP4` instance has the following methods:
    Unsubscribe from old mailbox.
 
 
-.. method:: IMAP4.xatom(name[, arg[, ...]])
+.. method:: IMAP4.xatom(name[, ...])
 
    Allow simple extension commands notified by server in ``CAPABILITY`` response.
 
-The following attributes are defined on instances of :class:`IMAP4`:
 
+The following attributes are defined on instances of :class:`IMAP4`:
 
 .. attribute:: IMAP4.PROTOCOL_VERSION
 
