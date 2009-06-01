@@ -21,6 +21,11 @@ Library
 - Issue #6149: Fix initialization of WeakValueDictionary objects from non-empty
   parameters.
 
+Windows
+-------
+
+- Issue #6158: Package Sine-1000Hz-300ms.aif in MSI file.
+
 
 What's New in Python 3.1 release candidate 1?
 =============================================
