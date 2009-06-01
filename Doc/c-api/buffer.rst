@@ -137,7 +137,7 @@ Buffer related functions
    Return 1 if *obj* supports the buffer interface otherwise 0.
 
 
-.. cfunction:: int PyObject_GetBuffer(PyObject *obj, PyObject *view, int flags)
+.. cfunction:: int PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 
       Export *obj* into a :ctype:`Py_buffer`, *view*.  These arguments must
       never be *NULL*.  The *flags* argument is a bit field indicating what

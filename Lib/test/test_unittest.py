@@ -3175,7 +3175,7 @@ class TestCleanUp(TestCase):
 
         result = MockResult()
         test = TestableTest('testNothing')
-        test._result = result
+        test._resultForDoCleanups = result
 
         exc1 = Exception('foo')
         exc2 = Exception('bar')
