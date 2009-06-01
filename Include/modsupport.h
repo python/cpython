@@ -92,10 +92,10 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 */
 
 #ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename PyModule_New2 so
+ /* When we are tracing reference counts, rename PyModule_Create2 so
     modules compiled with incompatible settings will generate a
     link-time error. */
- #define PyModule_New2 PyModule_Create2TraceRefs
+ #define PyModule_Create2 PyModule_Create2TraceRefs
 #endif
 
 PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,

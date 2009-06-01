@@ -28,6 +28,13 @@ Windows
 
 - Issue #6158: Package Sine-1000Hz-300ms.aif in MSI file.
 
+C-API
+-----
+
+- Issue #5735: Python compiled with --with-pydebug should throw an
+  ImportError when trying to import modules compiled without
+  --with-pydebug, and vice-versa.
+
 
 What's New in Python 3.1 release candidate 1?
 =============================================
