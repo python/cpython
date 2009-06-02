@@ -1640,9 +1640,11 @@ class TestProgram(object):
     """
     USAGE = USAGE
     def __init__(self, module='__main__', defaultTest=None,
-                 argv=None, testRunner=TextTestRunner,
+                 argv=None, testRunner=None,
                  testLoader=defaultTestLoader, exit=True,
                  verbosity=1):
+        if testRunner is None:
+            testRunner = TextTestRunner
         if isinstance(module, basestring):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
