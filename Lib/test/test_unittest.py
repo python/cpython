@@ -3325,6 +3325,14 @@ class Test_TestProgram(TestCase):
         self.assertEqual(program.verbosity, 2)
 
 
+    def testTestProgram_testRunnerArgument(self):
+        program = object.__new__(TestProgram)
+        program.parseArgs = lambda _: None
+        program.runTests = lambda: None
+        program.__init__(testRunner=None)
+        self.assertEqual(program.testRunner, unittest.TextTestRunner)
+
+
     class FooBar(unittest.TestCase):
         def testPass(self):
             assert True
