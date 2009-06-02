@@ -396,6 +396,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ip2 > ip3)
         self.assertTrue(ip3 > ip2)
 
+        # Confirm that relative comparisons to the wrong type fail properly.
+        self.assertRaises(TypeError, lambda: ipv4 < '')
+        self.assertRaises(TypeError, lambda: ipv4 > '')
+        self.assertRaises(TypeError, lambda: ipv4 >= '')
+        self.assertRaises(TypeError, lambda: ipv4 <= '')
+        self.assertRaises(TypeError, lambda: ipv6 < '')
+        self.assertRaises(TypeError, lambda: ipv6 > '')
+        self.assertRaises(TypeError, lambda: ipv6 >= '')
+        self.assertRaises(TypeError, lambda: ipv6 <= '')
+
     def test_embedded_ipv4(self):
         ipv4_string = '192.168.0.1'
         ipv4 = ipaddr.IPv4(ipv4_string)
