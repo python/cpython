@@ -2284,6 +2284,17 @@ class Test_Assertions(TestCase):
         self.assertRaises(AssertionError,
                           self.failIfAlmostEqual, 0, .1+.1j, places=0)
 
+
+class Test_TestProgram(TestCase):
+
+    def testTestProgram_testRunnerArgument(self):
+        program = object.__new__(unittest.TestProgram)
+        program.parseArgs = lambda _: None
+        program.runTests = lambda: None
+        program.__init__(testRunner=None)
+        self.assertEqual(program.testRunner, unittest.TextTestRunner)
+
+
 ######################################################################
 ## Main
 ######################################################################
@@ -2291,7 +2302,7 @@ class Test_Assertions(TestCase):
 def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_Assertions)
+        Test_Assertions, Test_TestProgram)
 
 if __name__ == "__main__":
     test_main()
