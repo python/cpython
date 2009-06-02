@@ -10,7 +10,7 @@ and prefixes.
 
 """
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 import struct
 
@@ -204,17 +204,25 @@ class BaseIP(object):
 
     def __lt__(self, other):
         try:
-            return (self.version < other.version
-                    or self.ip < other.ip
-                    or self.netmask < other.netmask)
+            if self.version != other.version:
+                return self.version < other.version
+            if self.ip != other.ip:
+                return self.ip < other.ip
+            if self.netmask != other.netmask:
+                return self.netmask < other.netmask
+            return False
         except AttributeError:
             return NotImplemented
 
     def __gt__(self, other):
         try:
-            return (self.version > other.version
-                    or self.ip > other.ip
-                    or self.netmask > other.netmask)
+            if self.version != other.version:
+                return self.version > other.version
+            if self.ip != other.ip:
+                return self.ip > other.ip
+            if self.netmask != other.netmask:
+                return self.netmask > other.netmask
+            return False
         except AttributeError:
             return NotImplemented
 
