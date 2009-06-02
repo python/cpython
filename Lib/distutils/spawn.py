@@ -8,17 +8,16 @@ executable name.
 
 __revision__ = "$Id$"
 
-import sys, os, string
-from distutils.errors import *
+import sys
+import os
+
+from distutils.errors import DistutilsPlatformError, DistutilsExecError
 from distutils import log
 
-def spawn (cmd,
-           search_path=1,
-           verbose=0,
-           dry_run=0):
+def spawn(cmd, search_path=1, verbose=0, dry_run=0):
+    """Run another program, specified as a command list 'cmd', in a new process.
 
-    """Run another program, specified as a command list 'cmd', in a new
-    process.  'cmd' is just the argument list for the new process, ie.
+    'cmd' is just the argument list for the new process, ie.
     cmd[0] is the program to run and cmd[1:] are the rest of its arguments.
     There is no way to run a program with a name different from that of its
     executable.
@@ -41,37 +40,29 @@ def spawn (cmd,
         raise DistutilsPlatformError, \
               "don't know how to spawn programs on platform '%s'" % os.name
 
-# spawn ()
+def _nt_quote_args(args):
+    """Quote command-line arguments for DOS/Windows conventions.
 
-
-def _nt_quote_args (args):
-    """Quote command-line arguments for DOS/Windows conventions: just
-    wraps every argument which contains blanks in double quotes, and
+    Just wraps every argument which contains blanks in double quotes, and
     returns a new argument list.
     """
-
     # XXX this doesn't seem very robust to me -- but if the Windows guys
     # say it'll work, I guess I'll have to accept it.  (What if an arg
     # contains quotes?  What other magic characters, other than spaces,
     # have to be escaped?  Is there an escaping mechanism other than
     # quoting?)
-
-    for i in range(len(args)):
-        if string.find(args[i], ' ') != -1:
-            args[i] = '"%s"' % args[i]
+    for i, arg in enumerate(args):
+        if ' ' in arg:
+            args[i] = '"%s"' % arg
     return args
 
-def _spawn_nt (cmd,
-               search_path=1,
-               verbose=0,
-               dry_run=0):
-
+def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
     executable = cmd[0]
     cmd = _nt_quote_args(cmd)
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable
-    log.info(string.join([executable] + cmd[1:], ' '))
+    log.info(' '.join([executable] + cmd[1:]))
     if not dry_run:
         # spawn for NT requires a full path to the .exe
         try:
@@ -85,18 +76,12 @@ def _spawn_nt (cmd,
             raise DistutilsExecError, \
                   "command '%s' failed with exit status %d" % (cmd[0], rc)
 
-
-def _spawn_os2 (cmd,
-                search_path=1,
-                verbose=0,
-                dry_run=0):
-
+def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
     executable = cmd[0]
-    #cmd = _nt_quote_args(cmd)
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable
-    log.info(string.join([executable] + cmd[1:], ' '))
+    log.info(' '.join([executable] + cmd[1:]))
     if not dry_run:
         # spawnv for OS/2 EMX requires a full path to the .exe
         try:
@@ -107,27 +92,20 @@ def _spawn_os2 (cmd,
                   "command '%s' failed: %s" % (cmd[0], exc[-1])
         if rc != 0:
             # and this reflects the command running but failing
-            print "command '%s' failed with exit status %d" % (cmd[0], rc)
+            log.debug("command '%s' failed with exit status %d" % (cmd[0], rc))
             raise DistutilsExecError, \
                   "command '%s' failed with exit status %d" % (cmd[0], rc)
 
 
-def _spawn_posix (cmd,
-                  search_path=1,
-                  verbose=0,
-                  dry_run=0):
-
-    log.info(string.join(cmd, ' '))
+def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
+    log.info(' '.join(cmd))
     if dry_run:
         return
     exec_fn = search_path and os.execvp or os.execv
-
     pid = os.fork()
 
-    if pid == 0:                        # in the child
+    if pid == 0:  # in the child
         try:
-            #print "cmd[0] =", cmd[0]
-            #print "cmd =", cmd
             exec_fn(cmd[0], cmd)
         except OSError, e:
             sys.stderr.write("unable to execute %s: %s\n" %
@@ -136,14 +114,12 @@ def _spawn_posix (cmd,
 
         sys.stderr.write("unable to execute %s for unknown reasons" % cmd[0])
         os._exit(1)
-
-
-    else:                               # in the parent
+    else:   # in the parent
         # Loop until the child either exits or is terminated by a signal
         # (ie. keep waiting if it's merely stopped)
         while 1:
             try:
-                (pid, status) = os.waitpid(pid, 0)
+                pid, status = os.waitpid(pid, 0)
             except OSError, exc:
                 import errno
                 if exc.errno == errno.EINTR:
@@ -158,7 +134,7 @@ def _spawn_posix (cmd,
             elif os.WIFEXITED(status):
                 exit_status = os.WEXITSTATUS(status)
                 if exit_status == 0:
-                    return              # hey, it succeeded!
+                    return   # hey, it succeeded!
                 else:
                     raise DistutilsExecError, \
                           "command '%s' failed with exit status %d" % \
@@ -171,21 +147,21 @@ def _spawn_posix (cmd,
                 raise DistutilsExecError, \
                       "unknown error executing '%s': termination status %d" % \
                       (cmd[0], status)
-# _spawn_posix ()
-
 
 def find_executable(executable, path=None):
-    """Try to find 'executable' in the directories listed in 'path' (a
-    string listing directories separated by 'os.pathsep'; defaults to
-    os.environ['PATH']).  Returns the complete filename or None if not
-    found.
+    """Tries to find 'executable' in the directories listed in 'path'.
+
+    A string listing directories separated by 'os.pathsep'; defaults to
+    os.environ['PATH'].  Returns the complete filename or None if not found.
     """
     if path is None:
         path = os.environ['PATH']
-    paths = string.split(path, os.pathsep)
-    (base, ext) = os.path.splitext(executable)
+    paths = path.split(os.pathsep)
+    base, ext = os.path.splitext(executable)
+
     if (sys.platform == 'win32' or os.name == 'os2') and (ext != '.exe'):
         executable = executable + '.exe'
+
     if not os.path.isfile(executable):
         for p in paths:
             f = os.path.join(p, executable)
@@ -195,5 +171,3 @@ def find_executable(executable, path=None):
         return None
     else:
         return executable
-
-# find_executable()

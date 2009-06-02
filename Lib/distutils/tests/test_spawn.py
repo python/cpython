@@ -1,8 +1,17 @@
 """Tests for distutils.spawn."""
 import unittest
-from distutils.spawn import _nt_quote_args
+import os
+import time
+from test.test_support import captured_stdout
 
-class SpawnTestCase(unittest.TestCase):
+from distutils.spawn import _nt_quote_args
+from distutils.spawn import spawn, find_executable
+from distutils.errors import DistutilsExecError
+from distutils.tests import support
+
+class SpawnTestCase(support.TempdirManager,
+                    support.LoggingSilencer,
+                    unittest.TestCase):
 
     def test_nt_quote_args(self):
 
@@ -12,6 +21,37 @@ class SpawnTestCase(unittest.TestCase):
                                 ['nochange', 'nospace'])):
             res = _nt_quote_args(args)
             self.assertEquals(res, wanted)
+
+
+    @unittest.skipUnless(os.name in ('nt', 'posix'),
+                         'Runs only under posix or nt')
+    def test_spawn(self):
+        tmpdir = self.mkdtemp()
+
+        # creating something executable
+        # through the shell that returns 1
+        if os.name == 'posix':
+            exe = os.path.join(tmpdir, 'foo.sh')
+            self.write_file(exe, '#!/bin/sh\nexit 1')
+            os.chmod(exe, 0777)
+        else:
+            exe = os.path.join(tmpdir, 'foo.bat')
+            self.write_file(exe, 'exit 1')
+
+        os.chmod(exe, 0777)
+        self.assertRaises(DistutilsExecError, spawn, [exe])
+
+        # now something that works
+        if os.name == 'posix':
+            exe = os.path.join(tmpdir, 'foo.sh')
+            self.write_file(exe, '#!/bin/sh\nexit 0')
+            os.chmod(exe, 0777)
+        else:
+            exe = os.path.join(tmpdir, 'foo.bat')
+            self.write_file(exe, 'exit 0')
+
+        os.chmod(exe, 0777)
+        spawn([exe])  # should work without any error
 
 def test_suite():
     return unittest.makeSuite(SpawnTestCase)
