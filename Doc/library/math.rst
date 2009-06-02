@@ -277,7 +277,7 @@ Hyperbolic functions
 
 
 Constants
-=========
+---------
 
 .. data:: pi
 
