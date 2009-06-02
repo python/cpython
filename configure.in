@@ -159,7 +159,7 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
-		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure bininstall maninstall"
+		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure "
 		if test "$UNIVERSAL_ARCHS" = "all"
 		then
 			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkinstallunixtools4way"
