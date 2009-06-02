@@ -16,7 +16,7 @@ gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
 gethostbyaddr() -- map an IP number or hostname to DNS info
 getservbyname() -- map a service name and a protocol name to a port number
-getprotobyname() -- mape a protocol name (e.g. 'tcp') to a number
+getprotobyname() -- map a protocol name (e.g. 'tcp') to a number
 ntohs(), ntohl() -- convert 16, 32 bit int from network to host byte order
 htons(), htonl() -- convert 16, 32 bit int from host to network byte order
 inet_aton() -- convert IP addr string (123.45.67.89) to 32-bit packed format
