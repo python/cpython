@@ -798,8 +798,10 @@ Examples:
                                                in MyTestCase
 """
     def __init__(self, module='__main__', defaultTest=None,
-                 argv=None, testRunner=TextTestRunner,
+                 argv=None, testRunner=None,
                  testLoader=defaultTestLoader):
+        if testRunner is None:
+            testRunner = TextTestRunner
         if type(module) == type(''):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
