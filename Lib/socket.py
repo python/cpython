@@ -235,7 +235,7 @@ class _fileobject(object):
 
     __slots__ = ["mode", "bufsize", "softspace",
                  # "closed" is a property, see below
-                 "_sock", "_rbufsize", "_wbufsize", "_rbuf", "_wbuf",
+                 "_sock", "_rbufsize", "_wbufsize", "_rbuf", "_wbuf", "_wbuf_len",
                  "_close"]
 
     def __init__(self, sock, mode='rb', bufsize=-1, close=False):
@@ -261,6 +261,7 @@ class _fileobject(object):
         # realloc()ed down much smaller than their original allocation.
         self._rbuf = StringIO()
         self._wbuf = [] # A list of strings
+        self._wbuf_len = 0
         self._close = close
 
     def _getclosed(self):
@@ -287,6 +288,7 @@ class _fileobject(object):
         if self._wbuf:
             buffer = "".join(self._wbuf)
             self._wbuf = []
+            self._wbuf_len = 0
             self._sock.sendall(buffer)
 
     def fileno(self):
@@ -297,24 +299,21 @@ class _fileobject(object):
         if not data:
             return
         self._wbuf.append(data)
+        self._wbuf_len += len(data)
         if (self._wbufsize == 0 or
             self._wbufsize == 1 and '\n' in data or
-            self._get_wbuf_len() >= self._wbufsize):
+            self._wbuf_len >= self._wbufsize):
             self.flush()
 
     def writelines(self, list):
         # XXX We could do better here for very long lists
         # XXX Should really reject non-string non-buffers
-        self._wbuf.extend(filter(None, map(str, list)))
+        lines = filter(None, map(str, list))
+        self._wbuf_len += sum(map(len, lines))
+        self._wbuf.extend(lines)
         if (self._wbufsize <= 1 or
-            self._get_wbuf_len() >= self._wbufsize):
+            self._wbuf_len >= self._wbufsize):
             self.flush()
-
-    def _get_wbuf_len(self):
-        buf_len = 0
-        for x in self._wbuf:
-            buf_len += len(x)
-        return buf_len
 
     def read(self, size=-1):
         # Use max, disallow tiny reads in a loop as they are very inefficient.
