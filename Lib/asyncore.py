@@ -106,8 +106,7 @@ def readwrite(obj, flags):
         if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
             obj.handle_close()
     except socket.error, e:
-        if e.args[0] not in (EBADF, ECONNRESET, ENOTCONN, ESHUTDOWN,
-ECONNABORTED):
+        if e.args[0] not in (EBADF, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
             obj.handle_error()
         else:
             obj.handle_close()
