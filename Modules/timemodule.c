@@ -540,7 +540,7 @@ time_strftime(PyObject *self, PyObject *args)
 	fmt = PyBytes_AS_STRING(format);
 #endif
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && defined(HAVE_WCSFTIME)
 	/* check that the format string contains only valid directives */
 	for(outbuf = wcschr(fmt, L'%');
 		outbuf != NULL;
