@@ -1,8 +1,10 @@
 """Tests for distutils.extension."""
 import unittest
 import os
+import warnings
 
-from distutils.extension import read_setup_file
+from test.support import check_warnings
+from distutils.extension import read_setup_file, Extension
 
 class ExtensionTestCase(unittest.TestCase):
 
@@ -28,6 +30,37 @@ class ExtensionTestCase(unittest.TestCase):
 
         self.assertEquals(names, wanted)
 
+    def test_extension_init(self):
+        # the first argument, which is the name, must be a string
+        self.assertRaises(AssertionError, Extension, 1, [])
+        ext = Extension('name', [])
+        self.assertEquals(ext.name, 'name')
+
+        # the second argument, which is the list of files, must
+        # be a list of strings
+        self.assertRaises(AssertionError, Extension, 'name', 'file')
+        self.assertRaises(AssertionError, Extension, 'name', ['file', 1])
+        ext = Extension('name', ['file1', 'file2'])
+        self.assertEquals(ext.sources, ['file1', 'file2'])
+
+        # others arguments have defaults
+        for attr in ('include_dirs', 'define_macros', 'undef_macros',
+                     'library_dirs', 'libraries', 'runtime_library_dirs',
+                     'extra_objects', 'extra_compile_args', 'extra_link_args',
+                     'export_symbols', 'swig_opts', 'depends'):
+            self.assertEquals(getattr(ext, attr), [])
+
+        self.assertEquals(ext.language, None)
+        self.assertEquals(ext.optional, None)
+
+        # if there are unknown keyword options, warn about them
+        with check_warnings() as w:
+            warnings.simplefilter('always')
+            ext = Extension('name', ['file1', 'file2'], chic=True)
+
+        self.assertEquals(len(w.warnings), 1)
+        self.assertEquals(str(w.warnings[0].message),
+                          "Unknown Extension options: 'chic'")
 
 def test_suite():
     return unittest.makeSuite(ExtensionTestCase)
