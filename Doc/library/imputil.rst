@@ -160,7 +160,7 @@ This code is intended to be read, not executed.  However, it does work
            parent = None
            q = import_module(head, qname, parent)
            if q: return q, tail
-       raise ImportError, "No module named " + qname
+       raise ImportError("No module named " + qname)
 
    def load_tail(q, tail):
        m = q
@@ -171,7 +171,7 @@ This code is intended to be read, not executed.  However, it does work
            mname = "%s.%s" % (m.__name__, head)
            m = import_module(head, mname, m)
            if not m:
-               raise ImportError, "No module named " + mname
+               raise ImportError("No module named " + mname)
        return m
 
    def ensure_fromlist(m, fromlist, recursive=0):
@@ -189,7 +189,7 @@ This code is intended to be read, not executed.  However, it does work
                subname = "%s.%s" % (m.__name__, sub)
                submod = import_module(sub, subname, m)
                if not submod:
-                   raise ImportError, "No module named " + subname
+                   raise ImportError("No module named " + subname)
 
    def import_module(partname, fqname, parent):
        try:

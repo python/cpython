@@ -149,21 +149,21 @@ def test():
     except ZeroDivisionError:
         print '\tGot ZeroDivisionError as expected from pool.apply()'
     else:
-        raise AssertionError, 'expected ZeroDivisionError'
+        raise AssertionError('expected ZeroDivisionError')
 
     try:
         print pool.map(f, range(10))
     except ZeroDivisionError:
         print '\tGot ZeroDivisionError as expected from pool.map()'
     else:
-        raise AssertionError, 'expected ZeroDivisionError'
+        raise AssertionError('expected ZeroDivisionError')
 
     try:
         print list(pool.imap(f, range(10)))
     except ZeroDivisionError:
         print '\tGot ZeroDivisionError as expected from list(pool.imap())'
     else:
-        raise AssertionError, 'expected ZeroDivisionError'
+        raise AssertionError('expected ZeroDivisionError')
 
     it = pool.imap(f, range(10))
     for i in range(10):
@@ -176,7 +176,7 @@ def test():
             break
         else:
             if i == 5:
-                raise AssertionError, 'expected ZeroDivisionError'
+                raise AssertionError('expected ZeroDivisionError')
 
     assert i == 9
     print '\tGot ZeroDivisionError as expected from IMapIterator.next()'

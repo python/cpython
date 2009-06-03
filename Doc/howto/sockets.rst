@@ -204,8 +204,7 @@ length message::
            while totalsent < MSGLEN:
                sent = self.sock.send(msg[totalsent:])
                if sent == 0:
-                   raise RuntimeError, \
-                       "socket connection broken"
+                   raise RuntimeError("socket connection broken")
                totalsent = totalsent + sent
 
        def myreceive(self):
@@ -213,8 +212,7 @@ length message::
            while len(msg) < MSGLEN:
                chunk = self.sock.recv(MSGLEN-len(msg))
                if chunk == '':
-                   raise RuntimeError, \
-                       "socket connection broken"
+                   raise RuntimeError("socket connection broken")
                msg = msg + chunk
            return msg
 
