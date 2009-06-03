@@ -182,7 +182,7 @@ the next item assigned to it.
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, it will not have been assigned to at all by the loop.  Hint:
 the built-in function :func:`range` returns an iterator of integers suitable to
-emulate the effect of Pascal's ``for i := a to b do``; e.g., ``range(3)``
+emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
 .. note::
