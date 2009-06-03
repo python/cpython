@@ -141,9 +141,11 @@ class Extension:
 # class Extension
 
 
-def read_setup_file (filename):
-    from distutils.sysconfig import \
-         parse_makefile, expand_makefile_vars, _variable_rx
+def read_setup_file(filename):
+    """Reads a Setup file and returns Extension instances."""
+    from distutils.sysconfig import (parse_makefile, expand_makefile_vars,
+                                     _variable_rx)
+
     from distutils.text_file import TextFile
     from distutils.util import split_quoted
 
@@ -168,10 +170,8 @@ def read_setup_file (filename):
             file.warn("'%s' lines not handled yet" % line)
             continue
 
-        #print "original line: " + line
         line = expand_makefile_vars(line, vars)
         words = split_quoted(line)
-        #print "expanded line: " + line
 
         # NB. this parses a slightly different syntax than the old
         # makesetup script: here, there must be exactly one extension per
@@ -237,15 +237,4 @@ def read_setup_file (filename):
 
         extensions.append(ext)
 
-        #print "module:", module
-        #print "source files:", source_files
-        #print "cpp args:", cpp_args
-        #print "lib args:", library_args
-
-        #extensions[module] = { 'sources': source_files,
-        #                       'cpp_args': cpp_args,
-        #                       'lib_args': library_args }
-
     return extensions
-
-# read_setup_file ()
