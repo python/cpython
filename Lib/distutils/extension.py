@@ -5,13 +5,9 @@ modules in setup scripts."""
 
 __revision__ = "$Id$"
 
-import os, string, sys
-from types import *
-
-try:
-    import warnings
-except ImportError:
-    warnings = None
+import os
+import sys
+import warnings
 
 # This class is really only used by the "build_ext" command, so it might
 # make sense to put it in distutils.command.build_ext.  However, that
@@ -107,9 +103,9 @@ class Extension:
                   optional=None,
                   **kw                      # To catch unknown keywords
                  ):
-        assert type(name) is StringType, "'name' must be a string"
-        assert (type(sources) is ListType and
-                map(type, sources) == [StringType]*len(sources)), \
+        assert isinstance(name, str)
+        assert (isinstance(sources, list) and
+                all(isinstance(v, str) for v in sources)), \
                 "'sources' must be a list of strings"
 
         self.name = name
@@ -130,16 +126,11 @@ class Extension:
         self.optional = optional
 
         # If there are unknown keyword options, warn about them
-        if len(kw):
-            L = kw.keys() ; L.sort()
-            L = map(repr, L)
-            msg = "Unknown Extension options: " + string.join(L, ', ')
-            if warnings is not None:
-                warnings.warn(msg)
-            else:
-                sys.stderr.write(msg + '\n')
-# class Extension
-
+        if len(kw) > 0:
+            options = [repr(option) for option in kw]
+            options = ', '.join(sorted(options))
+            msg = "Unknown Extension options: %s" % options
+            warnings.warn(msg)
 
 def read_setup_file(filename):
     """Reads a Setup file and returns Extension instances."""
@@ -200,7 +191,7 @@ def read_setup_file(filename):
             elif switch == "-I":
                 ext.include_dirs.append(value)
             elif switch == "-D":
-                equals = string.find(value, "=")
+                equals = value.find("=")
                 if equals == -1:        # bare "-DFOO" -- no value
                     ext.define_macros.append((value, None))
                 else:                   # "-DFOO=blah"
