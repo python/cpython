@@ -5,12 +5,9 @@ modules in setup scripts."""
 
 __revision__ = "$Id$"
 
-import os, sys
-
-try:
-    import warnings
-except ImportError:
-    warnings = None
+import os
+import sys
+import warnings
 
 # This class is really only used by the "build_ext" command, so it might
 # make sense to put it in distutils.command.build_ext.  However, that
@@ -129,14 +126,11 @@ class Extension:
         self.optional = optional
 
         # If there are unknown keyword options, warn about them
-        if len(kw):
-            L = map(repr, sorted(kw))
-            msg = "Unknown Extension options: " + ', '.join(L)
-            if warnings is not None:
-                warnings.warn(msg)
-            else:
-                sys.stderr.write(msg + '\n')
-
+        if len(kw) > 0:
+            options = [repr(option) for option in kw]
+            options = ', '.join(sorted(options))
+            msg = "Unknown Extension options: %s" % options
+            warnings.warn(msg)
 
 def read_setup_file(filename):
     """Reads a Setup file and returns Extension instances."""
