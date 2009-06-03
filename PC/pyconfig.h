@@ -638,7 +638,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_WAITPID */
 
 /* Define to 1 if you have the `wcsftime' function. */
+#if defined(_MSC_VER) && _MSC_VER >= 1310
 #define HAVE_WCSFTIME 1
+#endif
 
 /* Define to 1 if you have the `wcscoll' function. */
 #ifndef MS_WINCE
