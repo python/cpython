@@ -249,7 +249,7 @@ def test(namespace=multiprocessing):
         info = multiprocessing._debug_info()
         if info:
             print info
-            raise ValueError, 'there should be no positive refcounts left'
+            raise ValueError('there should be no positive refcounts left')
 
 
 if __name__ == '__main__':
@@ -271,6 +271,6 @@ if __name__ == '__main__':
         import multiprocessing.dummy as namespace
     else:
         print 'Usage:\n\t%s [processes | manager | threads]' % sys.argv[0]
-        raise SystemExit, 2
+        raise SystemExit(2)
 
     test(namespace)
