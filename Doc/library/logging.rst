@@ -67,7 +67,7 @@ message::
    DEBUG:root:This message should go to the log file
 
 If you run the script repeatedly, the additional log messages are appended to
-the file.  To create a new file each time, you can pass a filemode argument to
+the file.  To create a new file each time, you can pass a *filemode* argument to
 :func:`basicConfig` with a value of ``'w'``.  Rather than managing the file size
 yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
 
@@ -110,7 +110,7 @@ application::
 The most current file is always :file:`/tmp/logging_rotatingfile_example.out`,
 and each time it reaches the size limit it is renamed with the suffix
 ``.1``. Each of the existing backup files is renamed to increment the suffix
-(``.1`` becomes ``.2``, etc.)  and the ``.5`` file is erased.
+(``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
 
 Obviously this example sets the log length much much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
