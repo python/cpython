@@ -2,12 +2,12 @@
 
 Implements the Distutils 'install' command."""
 
-from distutils import log
-
 __revision__ = "$Id$"
 
-import sys, os, string
-from types import *
+import sys
+import os
+
+from distutils import log
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.sysconfig import get_config_vars
@@ -117,7 +117,7 @@ if HAS_USER_SITE:
 SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
 
-class install (Command):
+class install(Command):
 
     description = "install everything from build directory"
 
@@ -190,8 +190,8 @@ class install (Command):
     negative_opt = {'no-compile' : 'compile'}
 
 
-    def initialize_options (self):
-
+    def initialize_options(self):
+        """Initializes options."""
         # High-level options: these select both an installation base
         # and scheme.
         self.prefix = None
@@ -267,8 +267,8 @@ class install (Command):
     # party Python modules on various platforms given a wide
     # array of user input is decided.  Yes, it's quite complex!)
 
-    def finalize_options (self):
-
+    def finalize_options(self):
+        """Finalizes options."""
         # This method (and its pliant slaves, like 'finalize_unix()',
         # 'finalize_other()', and 'select_scheme()') is where the default
         # installation directories for modules, extension modules, and
@@ -326,7 +326,7 @@ class install (Command):
         # $platbase in the other installation directories and not worry
         # about needing recursive variable expansion (shudder).
 
-        py_version = (string.split(sys.version))[0]
+        py_version = sys.version.split()[0]
         (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
@@ -409,29 +409,27 @@ class install (Command):
         # Punt on doc directories for now -- after all, we're punting on
         # documentation completely!
 
-    # finalize_options ()
+    def dump_dirs(self, msg):
+        """Dumps the list of user options."""
+        if not DEBUG:
+            return
+        from distutils.fancy_getopt import longopt_xlate
+        log.debug(msg + ":")
+        for opt in self.user_options:
+            opt_name = opt[0]
+            if opt_name[-1] == "=":
+                opt_name = opt_name[0:-1]
+            if opt_name in self.negative_opt:
+                opt_name = self.negative_opt[opt_name]
+                opt_name = opt_name.translate(longopt_xlate)
+                val = not getattr(self, opt_name)
+            else:
+                opt_name = opt_name.translate(longopt_xlate)
+                val = getattr(self, opt_name)
+            log.debug("  %s: %s" % (opt_name, val))
 
-
-    def dump_dirs (self, msg):
-        if DEBUG:
-            from distutils.fancy_getopt import longopt_xlate
-            print msg + ":"
-            for opt in self.user_options:
-                opt_name = opt[0]
-                if opt_name[-1] == "=":
-                    opt_name = opt_name[0:-1]
-                if opt_name in self.negative_opt:
-                    opt_name = string.translate(self.negative_opt[opt_name],
-                                                longopt_xlate)
-                    val = not getattr(self, opt_name)
-                else:
-                    opt_name = string.translate(opt_name, longopt_xlate)
-                    val = getattr(self, opt_name)
-                print "  %s: %s" % (opt_name, val)
-
-
-    def finalize_unix (self):
-
+    def finalize_unix(self):
+        """Finalizes options for posix platforms."""
         if self.install_base is not None or self.install_platbase is not None:
             if ((self.install_lib is None and
                  self.install_purelib is None and
@@ -470,11 +468,8 @@ class install (Command):
             self.install_platbase = self.exec_prefix
             self.select_scheme("unix_prefix")
 
-    # finalize_unix ()
-
-
-    def finalize_other (self):          # Windows and Mac OS for now
-
+    def finalize_other(self):
+        """Finalizes options for non-posix platforms"""
         if self.user:
             if self.install_userbase is None:
                 raise DistutilsPlatformError(
@@ -495,10 +490,8 @@ class install (Command):
                 raise DistutilsPlatformError, \
                       "I don't know how to install stuff on '%s'" % os.name
 
-    # finalize_other ()
-
-
-    def select_scheme (self, name):
+    def select_scheme(self, name):
+        """Sets the install directories by applying the install schemes."""
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
         for key in SCHEME_KEYS:
@@ -506,8 +499,7 @@ class install (Command):
             if getattr(self, attrname) is None:
                 setattr(self, attrname, scheme[key])
 
-
-    def _expand_attrs (self, attrs):
+    def _expand_attrs(self, attrs):
         for attr in attrs:
             val = getattr(self, attr)
             if val is not None:
@@ -516,40 +508,36 @@ class install (Command):
                 val = subst_vars(val, self.config_vars)
                 setattr(self, attr, val)
 
+    def expand_basedirs(self):
+        """Calls `os.path.expanduser` on install_base, install_platbase and
+        root."""
+        self._expand_attrs(['install_base', 'install_platbase', 'root'])
 
-    def expand_basedirs (self):
-        self._expand_attrs(['install_base',
-                            'install_platbase',
-                            'root'])
+    def expand_dirs(self):
+        """Calls `os.path.expanduser` on install dirs."""
+        self._expand_attrs(['install_purelib', 'install_platlib',
+                            'install_lib', 'install_headers',
+                            'install_scripts', 'install_data',])
 
-    def expand_dirs (self):
-        self._expand_attrs(['install_purelib',
-                            'install_platlib',
-                            'install_lib',
-                            'install_headers',
-                            'install_scripts',
-                            'install_data',])
-
-
-    def convert_paths (self, *names):
+    def convert_paths(self, *names):
+        """Call `convert_path` over `names`."""
         for name in names:
             attr = "install_" + name
             setattr(self, attr, convert_path(getattr(self, attr)))
 
-
-    def handle_extra_path (self):
-
+    def handle_extra_path(self):
+        """Set `path_file` and `extra_dirs` using `extra_path`."""
         if self.extra_path is None:
             self.extra_path = self.distribution.extra_path
 
         if self.extra_path is not None:
-            if type(self.extra_path) is StringType:
-                self.extra_path = string.split(self.extra_path, ',')
+            if isinstance(self.extra_path, str):
+                self.extra_path = self.extra_path.split(',')
 
             if len(self.extra_path) == 1:
                 path_file = extra_dirs = self.extra_path[0]
             elif len(self.extra_path) == 2:
-                (path_file, extra_dirs) = self.extra_path
+                path_file, extra_dirs = self.extra_path
             else:
                 raise DistutilsOptionError, \
                       ("'extra_path' option must be a list, tuple, or "
@@ -558,7 +546,6 @@ class install (Command):
             # convert to local form in case Unix notation used (as it
             # should be in setup scripts)
             extra_dirs = convert_path(extra_dirs)
-
         else:
             path_file = None
             extra_dirs = ''
@@ -568,17 +555,14 @@ class install (Command):
         self.path_file = path_file
         self.extra_dirs = extra_dirs
 
-    # handle_extra_path ()
-
-
-    def change_roots (self, *names):
+    def change_roots(self, *names):
+        """Change the install direcories pointed by name using root."""
         for name in names:
             attr = "install_" + name
             setattr(self, attr, change_root(self.root, getattr(self, attr)))
 
     def create_home_path(self):
-        """Create directories under ~
-        """
+        """Create directories under ~."""
         if not self.user:
             return
         home = convert_path(os.path.expanduser("~"))
@@ -589,8 +573,8 @@ class install (Command):
 
     # -- Command execution methods -------------------------------------
 
-    def run (self):
-
+    def run(self):
+        """Runs the command."""
         # Obviously have to build before we can install
         if not self.skip_build:
             self.run_command('build')
@@ -633,9 +617,8 @@ class install (Command):
                        "you'll have to change the search path yourself"),
                        self.install_lib)
 
-    # run ()
-
-    def create_path_file (self):
+    def create_path_file(self):
+        """Creates the .pth file"""
         filename = os.path.join(self.install_libbase,
                                 self.path_file + ".pth")
         if self.install_path_file:
@@ -648,8 +631,8 @@ class install (Command):
 
     # -- Reporting methods ---------------------------------------------
 
-    def get_outputs (self):
-        # Assemble the outputs of all the sub-commands.
+    def get_outputs(self):
+        """Assembles the outputs of all the sub-commands."""
         outputs = []
         for cmd_name in self.get_sub_commands():
             cmd = self.get_finalized_command(cmd_name)
@@ -665,7 +648,8 @@ class install (Command):
 
         return outputs
 
-    def get_inputs (self):
+    def get_inputs(self):
+        """Returns the inputs of all the sub-commands"""
         # XXX gee, this looks familiar ;-(
         inputs = []
         for cmd_name in self.get_sub_commands():
@@ -674,24 +658,28 @@ class install (Command):
 
         return inputs
 
-
     # -- Predicates for sub-command list -------------------------------
 
-    def has_lib (self):
-        """Return true if the current distribution has any Python
+    def has_lib(self):
+        """Returns true if the current distribution has any Python
         modules to install."""
         return (self.distribution.has_pure_modules() or
                 self.distribution.has_ext_modules())
 
-    def has_headers (self):
+    def has_headers(self):
+        """Returns true if the current distribution has any headers to
+        install."""
         return self.distribution.has_headers()
 
-    def has_scripts (self):
+    def has_scripts(self):
+        """Returns true if the current distribution has any scripts to.
+        install."""
         return self.distribution.has_scripts()
 
-    def has_data (self):
+    def has_data(self):
+        """Returns true if the current distribution has any data to.
+        install."""
         return self.distribution.has_data_files()
-
 
     # 'sub_commands': a list of commands this command might have to run to
     # get its work done.  See cmd.py for more info.
@@ -701,5 +689,3 @@ class install (Command):
                     ('install_data',    has_data),
                     ('install_egg_info', lambda self:True),
                    ]
-
-# class install
