@@ -540,7 +540,7 @@ class SMTP:
         """
 
         def encode_cram_md5(challenge, user, password):
-            challenge = base64.decodestring(challenge)
+            challenge = base64.decodebytes(challenge)
             response = user + " " + hmac.HMAC(password.encode('ascii'),
                                               challenge).hexdigest()
             return encode_base64(response.encode('ascii'), eol='')

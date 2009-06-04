@@ -391,9 +391,9 @@ def main():
 def test():
     s0 = b"Aladdin:open sesame"
     print(repr(s0))
-    s1 = encodestring(s0)
+    s1 = encodebytes(s0)
     print(repr(s1))
-    s2 = decodestring(s1)
+    s2 = decodebytes(s1)
     print(repr(s2))
     assert s0 == s2
 
