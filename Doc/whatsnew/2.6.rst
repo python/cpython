@@ -682,15 +682,15 @@ and :meth:`Semaphore` to create shared locks.)
         for N in range(1, 1000, 10):
             p.apply_async(factorial, (N, d))
 
-    # Mark pool as closed -- no more tasks can be added.
-    p.close()
+        # Mark pool as closed -- no more tasks can be added.
+        p.close()
 
-    # Wait for tasks to exit
-    p.join()
+        # Wait for tasks to exit
+        p.join()
 
-    # Output results
-    for k, v in sorted(d.items()):
-        print k, v
+        # Output results
+        for k, v in sorted(d.items()):
+            print k, v
 
 This will produce the output::
 
