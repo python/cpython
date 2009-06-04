@@ -2178,17 +2178,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			char *doc_str;
 			char *tp_doc;
 
-			doc_str = _PyUnicode_AsStringAndSize(doc, &len);
+			doc_str = _PyUnicode_AsString(doc);
 			if (doc_str == NULL) {
 				Py_DECREF(type);
 				return NULL;
 			}
-			if ((Py_ssize_t)strlen(doc_str) != len) {
-				PyErr_SetString(PyExc_TypeError,
-						"__doc__ contains null-bytes");
-				Py_DECREF(type);
-				return NULL;
-			}
+			/* Silently truncate the docstring if it contains null bytes. */
+			len = strlen(doc_str);
 			tp_doc = (char *)PyObject_MALLOC(len + 1);
 			if (tp_doc == NULL) {
 				Py_DECREF(type);
