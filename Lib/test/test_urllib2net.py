@@ -174,7 +174,9 @@ class OtherNetworkTests(unittest.TestCase):
                            (expected_err, url, req, type(err), err))
                     self.assert_(isinstance(err, expected_err), msg)
             else:
-                with support.transient_internet():
+                with support.time_out, \
+                     support.socket_peer_reset, \
+                     support.ioerror_peer_reset:
                     buf = f.read()
                 f.close()
                 debug("read %d bytes" % len(buf))

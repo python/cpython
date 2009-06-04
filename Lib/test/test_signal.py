@@ -146,8 +146,8 @@ class InterProcessSignalTests(unittest.TestCase):
         # re-raises information about any exceptions the child
         # throws. The real work happens in self.run_test().
         os_done_r, os_done_w = os.pipe()
-        with nested(closing(os.fdopen(os_done_r, 'rb')),
-                    closing(os.fdopen(os_done_w, 'wb'))) as (done_r, done_w):
+        with closing(os.fdopen(os_done_r, 'rb')) as done_r, \
+             closing(os.fdopen(os_done_w, 'wb')) as done_w:
             child = os.fork()
             if child == 0:
                 # In the child process; run the test and report results

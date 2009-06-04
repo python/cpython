@@ -11,7 +11,6 @@ Functions:
 
 import os
 import stat
-import contextlib
 from itertools import filterfalse
 
 __all__ = ["cmp", "dircmp", "cmpfiles"]
@@ -63,7 +62,7 @@ def _sig(st):
 
 def _do_cmp(f1, f2):
     bufsize = BUFSIZE
-    with contextlib.nested(open(f1, 'rb'), open(f2, 'rb')) as (fp1, fp2):
+    with open(f1, 'rb') as fp1, open(f2, 'rb') as fp2:
         while True:
             b1 = fp1.read(bufsize)
             b2 = fp2.read(bufsize)
