@@ -103,25 +103,33 @@ enum {
 
 /* Exception classes for pickle. These should override the ones defined in
    pickle.py, when the C-optimized Pickler and Unpickler are used. */
-static PyObject *PickleError;
-static PyObject *PicklingError;
-static PyObject *UnpicklingError;
+static PyObject *PickleError = NULL;
+static PyObject *PicklingError = NULL;
+static PyObject *UnpicklingError = NULL;
 
 /* copyreg.dispatch_table, {type_object: pickling_function} */
-static PyObject *dispatch_table;
+static PyObject *dispatch_table = NULL;
 /* For EXT[124] opcodes. */
 /* copyreg._extension_registry, {(module_name, function_name): code} */
-static PyObject *extension_registry;
+static PyObject *extension_registry = NULL;
 /* copyreg._inverted_registry, {code: (module_name, function_name)} */
-static PyObject *inverted_registry;
+static PyObject *inverted_registry = NULL;
 /* copyreg._extension_cache, {code: object} */
-static PyObject *extension_cache;
+static PyObject *extension_cache = NULL;
+
+/* _compat_pickle.NAME_MAPPING, {(oldmodule, oldname): (newmodule, newname)} */
+static PyObject *name_mapping_2to3 = NULL;
+/* _compat_pickle.IMPORT_MAPPING, {oldmodule: newmodule} */
+static PyObject *import_mapping_2to3 = NULL;
+/* Same, but with REVERSE_NAME_MAPPING / REVERSE_IMPORT_MAPPING */
+static PyObject *name_mapping_3to2 = NULL;
+static PyObject *import_mapping_3to2 = NULL;
 
 /* XXX: Are these really nescessary? */
 /* As the name says, an empty tuple. */
-static PyObject *empty_tuple;
+static PyObject *empty_tuple = NULL;
 /* For looking up name pairs in copyreg._extension_registry. */
-static PyObject *two_tuple;
+static PyObject *two_tuple = NULL;
 
 static int
 stack_underflow(void)
@@ -315,6 +323,8 @@ typedef struct PicklerObject {
                                    should not be used if with self-referential
                                    objects. */
     int fast_nesting;
+    int fix_imports;            /* Indicate whether Pickler should fix
+                                   the name of globals for Python 2.x. */
     PyObject *fast_memo;
 } PicklerObject;
 
@@ -340,6 +350,9 @@ typedef struct UnpicklerObject {
                                    objects. */
     Py_ssize_t num_marks;       /* Number of marks in the mark stack. */
     Py_ssize_t marks_size;      /* Current allocated size of the mark stack. */
+    int proto;                  /* Protocol of the pickle loaded. */
+    int fix_imports;            /* Indicate whether Unpickler should fix
+                                   the name of globals pickled by Python 2.x. */
 } UnpicklerObject;
 
 /* Forward declarations */
@@ -1972,6 +1985,63 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             unicode_encoder = PyUnicode_AsASCIIString;
         }
 
+        /* For protocol < 3 and if the user didn't request against doing so,
+           we convert module names to the old 2.x module names. */
+        if (self->fix_imports) {
+            PyObject *key;
+            PyObject *item;
+
+            key = PyTuple_Pack(2, module_name, global_name);
+            if (key == NULL)
+                goto error;
+            item = PyDict_GetItemWithError(name_mapping_3to2, key);
+            Py_DECREF(key);
+            if (item) {
+                if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+                    PyErr_Format(PyExc_RuntimeError,
+                                 "_compat_pickle.REVERSE_NAME_MAPPING values "
+                                 "should be 2-tuples, not %.200s",
+                                 Py_TYPE(item)->tp_name);
+                    goto error;
+                }
+                Py_CLEAR(module_name);
+                Py_CLEAR(global_name);
+                module_name = PyTuple_GET_ITEM(item, 0);
+                global_name = PyTuple_GET_ITEM(item, 1);
+                if (!PyUnicode_Check(module_name) ||
+                    !PyUnicode_Check(global_name)) {
+                    PyErr_Format(PyExc_RuntimeError,
+                                 "_compat_pickle.REVERSE_NAME_MAPPING values "
+                                 "should be pairs of str, not (%.200s, %.200s)",
+                                 Py_TYPE(module_name)->tp_name,
+                                 Py_TYPE(global_name)->tp_name);
+                    goto error;
+                }
+                Py_INCREF(module_name);
+                Py_INCREF(global_name);
+            }
+            else if (PyErr_Occurred()) {
+                goto error;
+            }
+
+            item = PyDict_GetItemWithError(import_mapping_3to2, module_name);
+            if (item) {
+                if (!PyUnicode_Check(item)) {
+                    PyErr_Format(PyExc_RuntimeError,
+                                 "_compat_pickle.REVERSE_IMPORT_MAPPING values "
+                                 "should be strings, not %.200s",
+                                 Py_TYPE(item)->tp_name);
+                    goto error;
+                }
+                Py_CLEAR(module_name);
+                module_name = item;
+                Py_INCREF(module_name);
+            }
+            else if (PyErr_Occurred()) {
+                goto error;
+            }
+        }
+
         /* Save the name of the module. */
         encoded = unicode_encoder(module_name);
         if (encoded == NULL) {
@@ -2608,18 +2678,23 @@ PyDoc_STRVAR(Pickler_doc,
 "The file argument must have a write() method that accepts a single\n"
 "bytes argument. It can thus be a file object opened for binary\n"
 "writing, a io.BytesIO instance, or any other custom object that\n"
-"meets this interface.\n");
+"meets this interface.\n"
+"\n"
+"If fix_imports is True and protocol is less than 3, pickle will try to\n"
+"map the new Python 3.x names to the old module names used in Python\n"
+"2.x, so that the pickle data stream is readable with Python 2.x.\n");
 
 static int
 Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"file", "protocol", 0};
+    static char *kwlist[] = {"file", "protocol", "fix_imports", 0};
     PyObject *file;
     PyObject *proto_obj = NULL;
     long proto = 0;
+    int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:Pickler",
-                                     kwlist, &file, &proto_obj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:Pickler",
+                                     kwlist, &file, &proto_obj, &fix_imports))
         return -1;
 
     /* In case of multiple __init__() calls, clear previous content. */
@@ -2628,8 +2703,11 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 
     if (proto_obj == NULL || proto_obj == Py_None)
         proto = DEFAULT_PROTOCOL;
-    else
+    else {
         proto = PyLong_AsLong(proto_obj);
+        if (proto == -1 && PyErr_Occurred())
+            return -1;
+    }
 
     if (proto < 0)
         proto = HIGHEST_PROTOCOL;
@@ -2639,12 +2717,13 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-	self->proto = proto;
-	self->bin = proto > 0;
-	self->arg = NULL;
-	self->fast = 0;
-	self->fast_nesting = 0;
-	self->fast_memo = NULL;
+    self->proto = proto;
+    self->bin = proto > 0;
+    self->arg = NULL;
+    self->fast = 0;
+    self->fast_nesting = 0;
+    self->fast_memo = NULL;
+    self->fix_imports = fix_imports && proto < 3;
 
     if (!PyObject_HasAttrString(file, "write")) {
         PyErr_SetString(PyExc_TypeError,
@@ -4220,8 +4299,10 @@ load_proto(UnpicklerObject *self)
         return -1;
 
     i = (unsigned char)s[0];
-    if (i <= HIGHEST_PROTOCOL)
+    if (i <= HIGHEST_PROTOCOL) {
+        self->proto = i;
         return 0;
+    }
 
     PyErr_Format(PyExc_ValueError, "unsupported pickle protocol: %d", i);
     return -1;
@@ -4383,12 +4464,67 @@ Unpickler_find_class(UnpicklerObject *self, PyObject *args)
                            &module_name, &global_name))
         return NULL;
 
+    /* Try to map the old names used in Python 2.x to the new ones used in
+       Python 3.x.  We do this only with old pickle protocols and when the
+       user has not disabled the feature. */
+    if (self->proto < 3 && self->fix_imports) {
+        PyObject *key;
+        PyObject *item;
+
+        /* Check if the global (i.e., a function or a class) was renamed
+           or moved to another module. */
+        key = PyTuple_Pack(2, module_name, global_name);
+        if (key == NULL)
+            return NULL;
+        item = PyDict_GetItemWithError(name_mapping_2to3, key);
+        Py_DECREF(key);
+        if (item) {
+            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "_compat_pickle.NAME_MAPPING values should be "
+                             "2-tuples, not %.200s", Py_TYPE(item)->tp_name);
+                return NULL;
+            }
+            module_name = PyTuple_GET_ITEM(item, 0);
+            global_name = PyTuple_GET_ITEM(item, 1);
+            if (!PyUnicode_Check(module_name) ||
+                !PyUnicode_Check(global_name)) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "_compat_pickle.NAME_MAPPING values should be "
+                             "pairs of str, not (%.200s, %.200s)",
+                             Py_TYPE(module_name)->tp_name,
+                             Py_TYPE(global_name)->tp_name);
+                return NULL;
+            }
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* Check if the module was renamed. */
+        item = PyDict_GetItemWithError(import_mapping_2to3, module_name);
+        if (item) {
+            if (!PyUnicode_Check(item)) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "_compat_pickle.IMPORT_MAPPING values should be "
+                             "strings, not %.200s", Py_TYPE(item)->tp_name);
+                return NULL;
+            }
+            module_name = item;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
+        }
+    }
+
     modules_dict = PySys_GetObject("modules");
     if (modules_dict == NULL)
         return NULL;
 
-    module = PyDict_GetItem(modules_dict, module_name);
+    module = PyDict_GetItemWithError(modules_dict, module_name);
     if (module == NULL) {
+        if (PyErr_Occurred())
+            return NULL;
         module = PyImport_Import(module_name);
         if (module == NULL)
             return NULL;
@@ -4477,15 +4613,20 @@ PyDoc_STRVAR(Unpickler_doc,
 "reading, a BytesIO object, or any other custom object that\n"
 "meets this interface.\n"
 "\n"
-"Optional keyword arguments are encoding and errors, which are\n"
-"used to decode 8-bit string instances pickled by Python 2.x.\n"
-"These default to 'ASCII' and 'strict', respectively.\n");
+"Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
+"which are used to control compatiblity support for pickle stream\n"
+"generated by Python 2.x.  If *fix_imports* is True, pickle will try to\n"
+"map the old Python 2.x names to the new names used in Python 3.x.  The\n"
+"*encoding* and *errors* tell pickle how to decode 8-bit string\n"
+"instances pickled by Python 2.x; these default to 'ASCII' and\n"
+"'strict', respectively.\n");
 
 static int
 Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"file", "encoding", "errors", 0};
+    static char *kwlist[] = {"file", "fix_imports", "encoding", "errors", 0};
     PyObject *file;
+    int fix_imports = 1;
     char *encoding = NULL;
     char *errors = NULL;
 
@@ -4504,8 +4645,8 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
        extra careful in the other Unpickler methods, since a subclass could
        forget to call Unpickler.__init__() thus breaking our internal
        invariants. */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss:Unpickler", kwlist,
-                                     &file, &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|iss:Unpickler", kwlist,
+                                     &file, &fix_imports, &encoding, &errors))
         return -1;
 
     /* In case of multiple __init__() calls, clear previous content. */
@@ -4549,6 +4690,8 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
 
     self->last_string = NULL;
     self->arg = NULL;
+    self->proto = 0;
+    self->fix_imports = fix_imports;
 
     return 0;
 }
@@ -4672,40 +4815,85 @@ static PyTypeObject Unpickler_Type = {
 };
 
 static int
-init_stuff(void)
+initmodule(void)
 {
-    PyObject *copyreg;
+    PyObject *copyreg = NULL;
+    PyObject *compat_pickle = NULL;
+
+    /* XXX: We should ensure that the types of the dictionaries imported are
+       exactly PyDict objects. Otherwise, it is possible to crash the pickle
+       since we use the PyDict API directly to access these dictionaries. */
 
     copyreg = PyImport_ImportModule("copyreg");
     if (!copyreg)
-        return -1;
-
+        goto error;
     dispatch_table = PyObject_GetAttrString(copyreg, "dispatch_table");
     if (!dispatch_table)
         goto error;
-
     extension_registry = \
         PyObject_GetAttrString(copyreg, "_extension_registry");
     if (!extension_registry)
         goto error;
-
     inverted_registry = PyObject_GetAttrString(copyreg, "_inverted_registry");
     if (!inverted_registry)
         goto error;
-
     extension_cache = PyObject_GetAttrString(copyreg, "_extension_cache");
     if (!extension_cache)
         goto error;
+    Py_CLEAR(copyreg);
 
-    Py_DECREF(copyreg);
+    /* Load the 2.x -> 3.x stdlib module mapping tables */
+    compat_pickle = PyImport_ImportModule("_compat_pickle");
+    if (!compat_pickle)
+        goto error;
+    name_mapping_2to3 = PyObject_GetAttrString(compat_pickle, "NAME_MAPPING");
+    if (!name_mapping_2to3)
+        goto error;
+    if (!PyDict_CheckExact(name_mapping_2to3)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "_compat_pickle.NAME_MAPPING should be a dict, not %.200s",
+                     Py_TYPE(name_mapping_2to3)->tp_name);
+        goto error;
+    }
+    import_mapping_2to3 = PyObject_GetAttrString(compat_pickle,
+                                                 "IMPORT_MAPPING");
+    if (!import_mapping_2to3)
+        goto error;
+    if (!PyDict_CheckExact(import_mapping_2to3)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "_compat_pickle.IMPORT_MAPPING should be a dict, "
+                     "not %.200s", Py_TYPE(import_mapping_2to3)->tp_name);
+        goto error;
+    }
+    /* ... and the 3.x -> 2.x mapping tables */
+    name_mapping_3to2 = PyObject_GetAttrString(compat_pickle,
+                                               "REVERSE_NAME_MAPPING");
+    if (!name_mapping_3to2)
+        goto error;
+    if (!PyDict_CheckExact(name_mapping_3to2)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "_compat_pickle.REVERSE_NAME_MAPPING shouldbe a dict, "
+                     "not %.200s", Py_TYPE(name_mapping_3to2)->tp_name);
+        goto error;
+    }
+    import_mapping_3to2 = PyObject_GetAttrString(compat_pickle,
+                                                 "REVERSE_IMPORT_MAPPING");
+    if (!import_mapping_3to2)
+        goto error;
+    if (!PyDict_CheckExact(import_mapping_3to2)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "_compat_pickle.REVERSE_IMPORT_MAPPING should be a dict, "
+                     "not %.200s", Py_TYPE(import_mapping_3to2)->tp_name);
+        goto error;
+    }
+    Py_CLEAR(compat_pickle);
 
     empty_tuple = PyTuple_New(0);
     if (empty_tuple == NULL)
-        return -1;
-
+        goto error;
     two_tuple = PyTuple_New(2);
     if (two_tuple == NULL)
-        return -1;
+        goto error;
     /* We use this temp container with no regard to refcounts, or to
      * keeping containees alive.  Exempt from GC, because we don't
      * want anything looking at two_tuple() by magic.
@@ -4715,7 +4903,18 @@ init_stuff(void)
     return 0;
 
   error:
-    Py_DECREF(copyreg);
+    Py_CLEAR(copyreg);
+    Py_CLEAR(dispatch_table);
+    Py_CLEAR(extension_registry);
+    Py_CLEAR(inverted_registry);
+    Py_CLEAR(extension_cache);
+    Py_CLEAR(compat_pickle);
+    Py_CLEAR(name_mapping_2to3);
+    Py_CLEAR(import_mapping_2to3);
+    Py_CLEAR(name_mapping_3to2);
+    Py_CLEAR(import_mapping_3to2);
+    Py_CLEAR(empty_tuple);
+    Py_CLEAR(two_tuple);
     return -1;
 }
 
@@ -4773,7 +4972,7 @@ PyInit__pickle(void)
     if (PyModule_AddObject(m, "UnpicklingError", UnpicklingError) < 0)
         return NULL;
 
-    if (init_stuff() < 0)
+    if (initmodule() < 0)
         return NULL;
 
     return m;
