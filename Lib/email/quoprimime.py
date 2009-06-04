@@ -32,8 +32,6 @@ __all__ = [
     'body_length',
     'decode',
     'decodestring',
-    'encode',
-    'encodestring',
     'header_decode',
     'header_encode',
     'header_length',

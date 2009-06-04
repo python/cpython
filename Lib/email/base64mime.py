@@ -29,8 +29,6 @@ __all__ = [
     'body_encode',
     'decode',
     'decodestring',
-    'encode',
-    'encodestring',
     'header_encode',
     'header_length',
     ]
