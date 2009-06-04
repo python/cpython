@@ -116,38 +116,44 @@ The modern interface provides:
    incorrectly padded or if there are non-alphabet characters present in the
    string.
 
-The legacy interface:
 
+The legacy interface:
 
 .. function:: decode(input, output)
 
-   Decode the contents of the *input* file and write the resulting binary data to
-   the *output* file. *input* and *output* must either be file objects or objects
-   that mimic the file object interface. *input* will be read until
-   ``input.read()`` returns an empty string.
+   Decode the contents of the binary *input* file and write the resulting binary
+   data to the *output* file. *input* and *output* must either be file objects
+   or objects that mimic the file object interface working with bytes
+   objects. *input* will be read until ``input.read()`` returns an empty string.
 
 
-.. function:: decodestring(s)
+.. function:: decodebytes(s)
+              decodestring(s)
 
-   Decode the string *s*, which must contain one or more lines of base64 encoded
-   data, and return a string containing the resulting binary data.
+   Decode the bytestring *s*, which must contain one or more lines of base64
+   encoded data, and return a bytestring containing the resulting binary data.
+   ``decodestring`` is a deprecated alias.
 
 
 .. function:: encode(input, output)
 
-   Encode the contents of the *input* file and write the resulting base64 encoded
-   data to the *output* file. *input* and *output* must either be file objects or
-   objects that mimic the file object interface. *input* will be read until
-   ``input.read()`` returns an empty string.  :func:`encode` returns the encoded
-   data plus a trailing newline character (``'\n'``).
+   Encode the contents of the binary *input* file and write the resulting base64
+   encoded data to the *output* file. *input* and *output* must either be file
+   objects or objects that mimic the file object interface working with bytes
+   objects. *input* will be read until ``input.read()`` returns an empty string.
+   :func:`encode` returns the encoded data plus a trailing newline character
+   (``b'\n'``).
 
 
-.. function:: encodestring(s)
+.. function:: encodebytes(s)
+              encodestring(s)
 
-   Encode the string *s*, which can contain arbitrary binary data, and return a
-   string containing one or more lines of base64-encoded data.
-   :func:`encodestring` returns a string containing one or more lines of
-   base64-encoded data always including an extra trailing newline (``'\n'``).
+   Encode the bytestring *s*, which can contain arbitrary binary data, and
+   return a bytestring containing one or more lines of base64-encoded data.
+   :func:`encodebytes` returns a string containing one or more lines of
+   base64-encoded data always including an extra trailing newline (``b'\n'``).
+   ``encodestring`` is a deprecated alias.
+
 
 An example usage of the module:
 

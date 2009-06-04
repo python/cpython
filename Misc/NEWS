@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3613: base64.{encode,decode}string are now called
+  base64.{encode,decode}bytes which reflects what type they accept and return.
+  The old names are still there as deprecated aliases.
+
 - Issue #5767: Remove sgmlop support from xmlrpc.client.
 
 - Issue #6150: Fix test_unicode on wide-unicode builds.

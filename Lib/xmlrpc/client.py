@@ -419,11 +419,11 @@ class Binary:
         return self.data != other
 
     def decode(self, data):
-        self.data = base64.decodestring(data)
+        self.data = base64.decodebytes(data)
 
     def encode(self, out):
         out.write("<value><base64>\n")
-        encoded = base64.encodestring(self.data)
+        encoded = base64.encodebytes(self.data)
         out.write(encoded.decode('ascii'))
         out.write('\n')
         out.write("</base64></value>\n")
@@ -1100,7 +1100,7 @@ class Transport:
         if auth:
             import base64
             auth = urllib.parse.unquote_to_bytes(auth)
-            auth = base64.encodestring(auth).decode("utf-8")
+            auth = base64.encodebytes(auth).decode("utf-8")
             auth = "".join(auth.split()) # get rid of whitespace
             extra_headers = [
                 ("Authorization", "Basic " + auth)
