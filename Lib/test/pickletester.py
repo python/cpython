@@ -3,6 +3,7 @@ import unittest
 import pickle
 import pickletools
 import copyreg
+from http.cookies import SimpleCookie
 
 from test.support import TestFailed, TESTFN, run_with_locale
 
@@ -341,6 +342,24 @@ DATA2_DIS = """\
   181: .    STOP
 highest protocol among opcodes = 2
 """
+
+# set([1,2]) pickled from 2.x with protocol 2
+DATA3 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01(K\x01K\x02e\x85q\x02Rq\x03.'
+
+# xrange(5) pickled from 2.x with protocol 2
+DATA4 = b'\x80\x02c__builtin__\nxrange\nq\x00K\x00K\x05K\x01\x87q\x01Rq\x02.'
+
+# a SimpleCookie() object pickled from 2.x with protocol 2
+DATA5 = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
+         b'q\x02cCookie\nMorsel\nq\x03)\x81q\x04(U\x07commentq\x05U'
+         b'\x00q\x06U\x06domainq\x07h\x06U\x06secureq\x08h\x06U\x07'
+         b'expiresq\th\x06U\x07max-ageq\nh\x06U\x07versionq\x0bh\x06U'
+         b'\x04pathq\x0ch\x06U\x08httponlyq\rh\x06u}q\x0e(U\x0b'
+         b'coded_valueq\x0fU\x05valueq\x10h\x10h\x10h\x02h\x02ubs}q\x11b.')
+
+# set([3]) pickled from 2.x with protocol 2
+DATA6 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
+
 
 def create_data():
     c = C()
@@ -955,6 +974,29 @@ class AbstractPickleTests(unittest.TestCase):
             y_keys = sorted(y.__dict__)
             for x_key, y_key in zip(x_keys, y_keys):
                 self.assertIs(x_key, y_key)
+
+    def test_unpickle_from_2x(self):
+        # Unpickle non-trivial data from Python 2.x.
+        loaded = self.loads(DATA3)
+        self.assertEqual(loaded, set([1, 2]))
+        loaded = self.loads(DATA4)
+        self.assertEqual(type(loaded), type(range(0)))
+        self.assertEqual(list(loaded), list(range(5)))
+        loaded = self.loads(DATA5)
+        self.assertEqual(type(loaded), SimpleCookie)
+        self.assertEqual(list(loaded.keys()), ["key"])
+        self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
+
+    def test_pickle_to_2x(self):
+        # Pickle non-trivial data with protocol 2, expecting that it yields
+        # the same result as Python 2.x did.
+        # NOTE: this test is a bit too strong since we can produce different
+        # bytecode that 2.x will still understand.
+        dumped = self.dumps(range(5), 2)
+        self.assertEqual(dumped, DATA4)
+        dumped = self.dumps(set([3]), 2)
+        self.assertEqual(dumped, DATA6)
+
 
 # Test classes for reduce_ex
 
