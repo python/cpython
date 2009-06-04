@@ -138,82 +138,6 @@ bz2
     All of this managed to build bzip2-1.0.3\libbz2.lib, which the Python
     project links in.
 
-
-_bsddb
-    To use the version of bsddb that Python is built with by default, invoke
-    (in the dist directory)
-
-     svn export http://svn.python.org/projects/external/db-4.4.20
-
-
-    Then open a VS.NET 2003 shell, and invoke:
-
-       devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
-
-    and do that a second time for a Debug build too:
-
-       devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
-
-    Alternatively, if you want to start with the original sources,
-    go to Sleepycat's download page:
-        http://www.sleepycat.com/downloads/releasehistorybdb.html
-
-    and download version 4.4.20.
-
-    With or without strong cryptography? You can choose either with or
-    without strong cryptography, as per the instructions below.  By
-    default, Python is built and distributed WITHOUT strong crypto.
-
-    Unpack the sources; if you downloaded the non-crypto version, rename
-    the directory from db-4.4.20.NC to db-4.4.20.
-
-    Now apply any patches that apply to your version.
-
-    Open
-        dist\db-4.4.20\docs\index.html
-
-    and follow the "Windows->Building Berkeley DB with Visual C++ .NET"
-    instructions for building the Sleepycat
-    software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
-    Build the "db_static" project, for "Release" mode.
-
-    To run extensive tests, pass "-u bsddb" to regrtest.py.  test_bsddb3.py
-    is then enabled.  Running in verbose mode may be helpful.
-
-    XXX The test_bsddb3 tests don't always pass, on Windows (according to
-    XXX me) or on Linux (according to Barry).  (I had much better luck
-    XXX on Win2K than on Win98SE.)  The common failure mode across platforms
-    XXX is
-    XXX     DBAgainError: (11, 'Resource temporarily unavailable -- unable
-    XXX                         to join the environment')
-    XXX
-    XXX and it appears timing-dependent.  On Win2K I also saw this once:
-    XXX
-    XXX test02_SimpleLocks (bsddb.test.test_thread.HashSimpleThreaded) ...
-    XXX Exception in thread reader 1:
-    XXX Traceback (most recent call last):
-    XXX File "C:\Code\python\lib\threading.py", line 411, in __bootstrap
-    XXX    self.run()
-    XXX File "C:\Code\python\lib\threading.py", line 399, in run
-    XXX    apply(self.__target, self.__args, self.__kwargs)
-    XXX File "C:\Code\python\lib\bsddb\test\test_thread.py", line 268, in
-    XXX                  readerThread
-    XXX    rec = c.next()
-    XXX DBLockDeadlockError: (-30996, 'DB_LOCK_DEADLOCK: Locker killed
-    XXX                                to resolve a deadlock')
-    XXX
-    XXX I'm told that DBLockDeadlockError is expected at times.  It
-    XXX doesn't cause a test to fail when it happens (exceptions in
-    XXX threads are invisible to unittest).
-
-    Building for Win64:
-    - open a VS.NET 2003 command prompt
-    - run the SDK setenv.cmd script, passing /RETAIL and the target
-      architecture (/SRV64 for Itanium, /X64 for AMD64)
-    - build BerkeleyDB with the solution configuration matching the
-      target ("Release IA64" for Itanium, "Release AMD64" for AMD64), e.g.
-    devenv db-4.4.20\build_win32\Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
-
 _sqlite3
     Python wrapper for SQLite library.
     
@@ -363,7 +287,7 @@ Setting up the environment
 Extension modules
 
     To build those extension modules which require external libraries
-    (_tkinter, bz2, _bsddb, _sqlite3, _ssl) you can follow the instructions
+    (_tkinter, bz2, _sqlite3, _ssl) you can follow the instructions
     for the Visual Studio build above, with a few minor modifications. These
     instructions have only been tested using the sources in the Python
     subversion repository - building from original sources should work, but
@@ -385,19 +309,6 @@ Extension modules
 
     bz2
         No changes are needed
-
-    _bsddb
-        The file db.build should be copied from the Python PCBuild directory
-	to the directory db-4.4.20\build_win32.
-
-	The file db_static.vcproj in db-4.4.20\build_win32 should be edited to
-	remove the string "$(SolutionDir)" - this occurs in 2 places, only
-	relevant for 64-bit builds. (The edit is required as otherwise, nant
-	wants to read the solution file, which is not in a suitable form).
-
-	The bsddb library can then be build with the command
-	    nant -buildfile:db.build all
-	run from the db-4.4.20\build_win32 directory.
 
     _sqlite3
         No changes are needed. However, in order for the tests to succeed, a

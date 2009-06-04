@@ -25,8 +25,6 @@ def vs9to8(src, dest):
             # Bah. VS8.0 does not expand macros in file names.
             # Replace them here.
             lines = lines.replace('$(sqlite3Dir)', '..\\..\\..\\sqlite-3.5.9')
-            lines = lines.replace('$(bsddbDir)\\..\\..', '..\\..\\..\\db-4.4.20\\build_win32\\..')
-            lines = lines.replace('$(bsddbDir)', '..\\..\\..\\db-4.4.20\\build_win32')
 
         with open(destname, 'wb') as fout:
             lines = lines.replace("\n", "\r\n").encode()

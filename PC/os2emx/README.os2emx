@@ -123,7 +123,7 @@ Optional modules:
 Where I've been able to locate the required 3rd party packages already 
 ported to OS/2, I've built and included them.
 
-These include ncurses (_curses, _curses_panel), BSD DB (bsddb185), 
+These include ncurses (_curses, _curses_panel),
 GNU GDBM (gdbm, dbm), zlib (zlib), GNU Readline (readline), and GNU UFC 
 (crypt).
 
@@ -149,10 +149,6 @@ WARNED" item 13.
 Upstream source patches:
 
 No updates to the Python 2.6 release have become available.
-
-Eberhard Mattes' EMXFIX04 update to his EMX 0.9d tools suite includes 
-bug fixes for the BSD DB library.  The bsddb module included in this 
-port incorporates these fixes.
 
 Library and other distributed Python code:
 
@@ -326,7 +322,6 @@ Procedure
    GNU UltraFast Crypt   HAVE_UFC
    Tcl/Tk                HAVE_TCLTK (not known to work)
    GNU Readline          HAVE_GREADLINE
-   BSD DB (v1.85)        HAVE_BSDDB
    ncurses               HAVE_NCURSES
    GNU gdbm              HAVE_GDBM
    libbz2                HAVE_BZ2
@@ -388,52 +383,23 @@ EMXVIEW.ZIP archive as part of the complete EMX development tools suite).
 Because of other side-effects I have modified the test_fcntl.py test 
 script to deactivate the exercising of the missing functionality.
 
-4.  the PyBSDDB3 module has been imported into the Python standard
-library, with the intent of superceding the BSDDB 1.85 module (bsddb).
-As I don't yet have a satisfactory port of Sleepcat's more recent DB
-library (3.3.x/4.0.x/4.1.x), I haven't included a binary of this
-module.  I have left the Python part of the PyBSDDB package in this
-distribution for completeness.
-
-5.  As a consequence of the PyBSDDB3 module being imported, the former 
-BSD DB (bsddb) module, linked against the DB v1.85 library from EMX, 
-has been renamed bsddb185.  The bsddb185 module will not be built by 
-default on most platforms, but in the absence of a PyBSDDB3 module I 
-have retained it in the EMX port.
-
-Version 1.85 of the DB library is widely known to have bugs, although 
-some patches have become available (and are incorporated into the 
-included bsddb185 module).  Unless you have problems with software 
-licenses which would rule out GDBM (and the dbm module because it is 
-linked against the GDBM library) or need it for file format compatibility, 
-you may be better off deleting it and relying on GDBM.
-
-Any code you have which uses the v1.85 bsddb module can be modified to 
-use the renamed module by changing
-
-  import bsddb
-
-to
-
-  import bsddb185 as bsddb
-
-6.  The readline module has been linked against ncurses rather than the 
+4.  The readline module has been linked against ncurses rather than the 
 termcap library supplied with EMX.
 
-7.  I have configured this port to use "/" as the preferred path separator 
+5.  I have configured this port to use "/" as the preferred path separator 
 character, rather than "\" ('\\'), in line with the convention supported 
 by EMX.  Backslashes are still supported of course, and still appear in 
 unexpected places due to outside sources that don't get normalised.
 
-8.  While the DistUtils components are now functional, other 
+6.  While the DistUtils components are now functional, other 
 packaging/binary handling tools and utilities such as those included in
 the Demo and Tools directories - freeze in particular - are unlikely to 
 work.  If you do get them going, I'd like to know about your success.
 
-9.  I haven't set out to support the [BEGIN|END]LIBPATH functionality 
+7.  I haven't set out to support the [BEGIN|END]LIBPATH functionality 
 supported by one of the earlier ports (Rush's??).  If it works let me know.
 
-10. As a result of the limitations imposed by EMX's library routines, the 
+8. As a result of the limitations imposed by EMX's library routines, the 
 standard extension module pwd only synthesises a simple passwd database, 
 and the grp module cannot be supported at all.
 
@@ -511,11 +477,7 @@ strftime routine - I'm looking into using one from FreeBSD, but its not
 ready yet.
 
 16. I have successfully built this port with Andy Zabolotny's ports of 
-pgcc 2.95 and gcc 3.2.1, in addition to EM's gcc 2.8.1.  To use the 
-bsddb185 module with the gcc 3.2.1 build, I had to recompile the DB library 
-with gcc 3.2.1 - I don't know why, but trying to import the module built 
-against a DB library compiled with gcc 2.8.1 would result in a SYS3175 
-error.
+pgcc 2.95 and gcc 3.2.1, in addition to EM's gcc 2.8.1.
 
 I have not attempted to compile Python with any version of gcc prior to 
 v2.8.1.
