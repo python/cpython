@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Removed the ipaddr module.
+
 - Issue #3613: base64.{encode,decode}string are now called
   base64.{encode,decode}bytes which reflects what type they accept and return.
   The old names are still there as deprecated aliases.
