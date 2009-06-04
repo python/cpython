@@ -113,7 +113,6 @@ Exported classes:
                  XML-RPC value
   Binary         binary data wrapper
 
-  SlowParser     Slow but safe standard parser (based on xmllib)
   Marshaller     Generate an XML-RPC params chunk from a Python data structure
   Unmarshaller   Unmarshal an XML-RPC response from incoming XML event message
   Transport      Handles an HTTP transaction to an XML-RPC server
@@ -136,6 +135,7 @@ Exported functions:
 
 import re, time, operator
 import http.client
+from xml.parsers import expat
 
 # --------------------------------------------------------------------
 # Internal stuff
@@ -439,30 +439,23 @@ WRAPPERS = (DateTime, Binary)
 # --------------------------------------------------------------------
 # XML parsers
 
-try:
-    from xml.parsers import expat
-    if not hasattr(expat, "ParserCreate"):
-        raise ImportError
-except ImportError:
-    ExpatParser = None # expat not available
-else:
-    class ExpatParser:
-        # fast expat parser for Python 2.0 and later.
-        def __init__(self, target):
-            self._parser = parser = expat.ParserCreate(None, None)
-            self._target = target
-            parser.StartElementHandler = target.start
-            parser.EndElementHandler = target.end
-            parser.CharacterDataHandler = target.data
-            encoding = None
-            target.xml(encoding, None)
+class ExpatParser:
+    # fast expat parser for Python 2.0 and later.
+    def __init__(self, target):
+        self._parser = parser = expat.ParserCreate(None, None)
+        self._target = target
+        parser.StartElementHandler = target.start
+        parser.EndElementHandler = target.end
+        parser.CharacterDataHandler = target.data
+        encoding = None
+        target.xml(encoding, None)
 
-        def feed(self, data):
-            self._parser.Parse(data, 0)
+    def feed(self, data):
+        self._parser.Parse(data, 0)
 
-        def close(self):
-            self._parser.Parse("", 1) # end of data
-            del self._target, self._parser # get rid of circular references
+    def close(self):
+        self._parser.Parse("", 1) # end of data
+        del self._target, self._parser # get rid of circular references
 
 # --------------------------------------------------------------------
 # XML-RPC marshalling and unmarshalling code
@@ -912,10 +905,8 @@ def getparser(use_datetime=0):
         target = Unmarshaller(use_datetime=use_datetime)
         if FastParser:
             parser = FastParser(target)
-        elif ExpatParser:
-            parser = ExpatParser(target)
         else:
-            parser = SlowParser(target)
+            parser = ExpatParser(target)
     return parser, target
 
 ##
