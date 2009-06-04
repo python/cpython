@@ -675,7 +675,7 @@ class NestedWith(unittest.TestCase):
             if self.gobble:
                 return True
 
-    class CtorRaises(object):
+    class InitRaises(object):
         def __init__(self): raise RuntimeError()
 
     class EnterRaises(object):
@@ -695,7 +695,7 @@ class NestedWith(unittest.TestCase):
 
     def testExceptionInExprList(self):
         try:
-            with self.Dummy() as a, self.CtorRaises():
+            with self.Dummy() as a, self.InitRaises():
                 pass
         except:
             pass
