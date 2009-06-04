@@ -439,56 +439,6 @@ WRAPPERS = (DateTime, Binary)
 # --------------------------------------------------------------------
 # XML parsers
 
-#
-# the SGMLOP parser is about 15x faster than Python's builtin
-# XML parser.  SGMLOP sources can be downloaded from:
-#
-#     http://www.pythonware.com/products/xml/sgmlop.htm
-#
-
-try:
-    import sgmlop
-    if not hasattr(sgmlop, "XMLParser"):
-        raise ImportError
-except ImportError:
-    SgmlopParser = None # sgmlop accelerator not available
-else:
-    class SgmlopParser:
-        def __init__(self, target):
-
-            # setup callbacks
-            self.finish_starttag = target.start
-            self.finish_endtag = target.end
-            self.handle_data = target.data
-            self.handle_xml = target.xml
-
-            # activate parser
-            self.parser = sgmlop.XMLParser()
-            self.parser.register(self)
-            self.feed = self.parser.feed
-            self.entity = {
-                "amp": "&", "gt": ">", "lt": "<",
-                "apos": "'", "quot": '"'
-                }
-
-        def close(self):
-            try:
-                self.parser.close()
-            finally:
-                self.parser = self.feed = None # nuke circular reference
-
-        def handle_proc(self, tag, attr):
-            m = re.search("encoding\s*=\s*['\"]([^\"']+)[\"']", attr)
-            if m:
-                self.handle_xml(m.group(1), 1)
-
-        def handle_entityref(self, entity):
-            # <string> entity
-            try:
-                self.handle_data(self.entity[entity])
-            except KeyError:
-                self.handle_data("&%s;" % entity)
-
 try:
     from xml.parsers import expat
     if not hasattr(expat, "ParserCreate"):
@@ -497,8 +447,7 @@ except ImportError:
     ExpatParser = None # expat not available
 else:
     class ExpatParser:
-        # fast expat parser for Python 2.0 and later.  this is about
-        # 50% slower than sgmlop, on roundtrip testing
+        # fast expat parser for Python 2.0 and later.
         def __init__(self, target):
             self._parser = parser = expat.ParserCreate(None, None)
             self._target = target
@@ -963,8 +912,6 @@ def getparser(use_datetime=0):
         target = Unmarshaller(use_datetime=use_datetime)
         if FastParser:
             parser = FastParser(target)
-        elif SgmlopParser:
-            parser = SgmlopParser(target)
         elif ExpatParser:
             parser = ExpatParser(target)
         else:
