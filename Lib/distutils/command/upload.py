@@ -127,7 +127,7 @@ class upload(PyPIRCCommand):
         user_pass = (self.username + ":" + self.password).encode('ascii')
         # The exact encoding of the authentication string is debated.
         # Anyway PyPI only accepts ascii for both username or password.
-        auth = "Basic " + base64.encodestring(user_pass).strip().decode('ascii')
+        auth = "Basic " + base64.encodebytes(user_pass).strip().decode('ascii')
 
         # Build up the MIME payload for the POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'

@@ -65,13 +65,13 @@ class GettextBaseTest(unittest.TestCase):
         if not os.path.isdir(LOCALEDIR):
             os.makedirs(LOCALEDIR)
         fp = open(MOFILE, 'wb')
-        fp.write(base64.decodestring(GNU_MO_DATA))
+        fp.write(base64.decodebytes(GNU_MO_DATA))
         fp.close()
         fp = open(UMOFILE, 'wb')
-        fp.write(base64.decodestring(UMO_DATA))
+        fp.write(base64.decodebytes(UMO_DATA))
         fp.close()
         fp = open(MMOFILE, 'wb')
-        fp.write(base64.decodestring(MMO_DATA))
+        fp.write(base64.decodebytes(MMO_DATA))
         fp.close()
         self.env = support.EnvironmentVarGuard()
         self.env['LANGUAGE'] = 'xx'

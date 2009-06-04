@@ -985,7 +985,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 if authorization[0].lower() == "basic":
                     try:
                         authorization = authorization[1].encode('ascii')
-                        authorization = base64.decodestring(authorization).\
+                        authorization = base64.decodebytes(authorization).\
                                         decode('ascii')
                     except (binascii.Error, UnicodeError):
                         pass

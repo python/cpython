@@ -316,7 +316,7 @@ class Plist(_InternalDict):
 
 
 def _encodeBase64(s, maxlinelength=76):
-    # copied from base64.encodestring(), with added maxlinelength argument
+    # copied from base64.encodebytes(), with added maxlinelength argument
     maxbinsize = (maxlinelength//4)*3
     pieces = []
     for i in range(0, len(s), maxbinsize):
@@ -335,7 +335,7 @@ class Data:
 
     @classmethod
     def fromBase64(cls, data):
-        # base64.decodestring just calls binascii.a2b_base64;
+        # base64.decodebytes just calls binascii.a2b_base64;
         # it seems overkill to use both base64 and binascii.
         return cls(binascii.a2b_base64(data))
 

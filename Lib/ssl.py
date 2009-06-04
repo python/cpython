@@ -413,7 +413,7 @@ def PEM_cert_to_DER_cert(pem_cert_string):
         raise ValueError("Invalid PEM encoding; must end with %s"
                          % PEM_FOOTER)
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
-    return base64.decodestring(d.encode('ASCII', 'strict'))
+    return base64.decodebytes(d.encode('ASCII', 'strict'))
 
 def get_server_certificate(addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
     """Retrieve the certificate from the server at the specified address,
