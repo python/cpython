@@ -12,7 +12,6 @@
      <excludeprojects>
        <include name="_tkinter.vcproj" />
        <include name="bz2.vcproj" />
-       <include name="_bsddb.vcproj" />
        <include name="_sqlite3.vcproj" />
        <include name="_ssl.vcproj" />
      </excludeprojects>

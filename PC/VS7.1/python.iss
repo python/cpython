@@ -137,9 +137,6 @@ Source: libs\_testcapi.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Comp
 Source: DLLs\_tkinter.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: tk
 Source: libs\_tkinter.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: tk
 
-Source: DLLs\bsddb.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
-Source: libs\bsddb.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
-
 Source: DLLs\mmap.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
 Source: libs\mmap.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 

@@ -5,7 +5,7 @@
 #
 #	cd python/dist/src
 #	valgrind --tool=memcheck --suppressions=Misc/valgrind-python.supp \
-#		./python -E ./Lib/test/regrtest.py -u bsddb,network
+#		./python -E ./Lib/test/regrtest.py -u gui,network
 #
 # You must edit Objects/obmalloc.c and uncomment Py_USING_MEMORY_DEBUGGER
 # to use the preferred suppressions with Py_ADDRESS_IN_RANGE.

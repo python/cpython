@@ -102,12 +102,14 @@ Restrictions
 .. class:: BsdDbShelf(dict[, protocol=None[, writeback=False]])
 
    A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`next`,
-   :meth:`previous`, :meth:`last` and :meth:`set_location` which are available in
-   the :mod:`bsddb` module but not in other database modules.  The *dict* object
-   passed to the constructor must support those methods.  This is generally
-   accomplished by calling one of :func:`bsddb.hashopen`, :func:`bsddb.btopen` or
-   :func:`bsddb.rnopen`.  The optional *protocol* and *writeback* parameters have
-   the same interpretation as for the :class:`Shelf` class.
+   :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
+   in the third-party :mod:`bsddb` module from `pybsddb
+   <http://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
+   modules.  The *dict* object passed to the constructor must support those
+   methods.  This is generally accomplished by calling one of
+   :func:`bsddb.hashopen`, :func:`bsddb.btopen` or :func:`bsddb.rnopen`.  The
+   optional *protocol* and *writeback* parameters have the same interpretation
+   as for the :class:`Shelf` class.
 
 
 .. class:: DbfilenameShelf(filename[, flag='c'[, protocol=None[, writeback=False]]])

@@ -103,13 +103,10 @@ winsound
     play sounds (typically .wav files) under Windows
 
 Python-controlled subprojects that wrap external projects:
-_bsddb
-    Wraps Berkeley DB 4.7.25, which is currently built by _bsddb.vcproj.
-    project (see below).
 _sqlite3
     Wraps SQLite 3.5.9, which is currently built by sqlite3.vcproj (see below).
 _tkinter
-    Wraps the Tk windowing system.  Unlike _bsddb and _sqlite3, there's no
+    Wraps the Tk windowing system.  Unlike _sqlite3, there's no
     corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
     within our pcbuild.sln, which means this module expects to find a
     pre-built Tcl/Tk in either ..\..\tcltk for 32-bit or ..\..\tcltk64 for
@@ -213,8 +210,8 @@ So for a release build, you'd call it as:
 
 This will be cleaned up in the future; ideally Tcl/Tk will be brought into our
 pcbuild.sln as custom .vcproj files, just as we've recently done with the
-_bsddb.vcproj and sqlite3.vcproj files, which will remove the need for
-Tcl/Tk to be built separately via a batch file.
+sqlite3.vcproj file, which will remove the need for Tcl/Tk to be built
+separately via a batch file.
 
 XXX trent.nelson 02-Apr-08:
     Having the external subprojects in ..\.. relative to this directory is a

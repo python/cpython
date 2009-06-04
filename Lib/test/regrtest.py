@@ -114,9 +114,6 @@ resources to test.  Currently only the following are defined:
     network -   It is okay to run tests that use external network
                 resource, e.g. testing SSL support for sockets.
 
-    bsddb -     It is okay to run the bsddb testsuite, which takes
-                a long time to complete.
-
     decimal -   Test the decimal module against a large suite that
                 verifies compliance with standards.
 
@@ -130,8 +127,8 @@ resources to test.  Currently only the following are defined:
     gui -       Run tests that require a running GUI.
 
 To enable all resources except one, use '-uall,-<resource>'.  For
-example, to run all the tests except for the bsddb tests, give the
-option '-uall,-bsddb'.
+example, to run all the tests except for the gui tests, give the
+option '-uall,-gui'.
 """
 
 import getopt
@@ -182,7 +179,7 @@ if sys.platform == 'darwin':
 
 from test import support
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
+RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
                   'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui')
 
 
@@ -900,7 +897,6 @@ _expectations = {
     'win32':
         """
         test__locale
-        test_bsddb3
         test_crypt
         test_curses
         test_dbm
@@ -937,8 +933,6 @@ _expectations = {
    'mac':
         """
         test_atexit
-        test_bsddb
-        test_bsddb3
         test_bz2
         test_crypt
         test_curses
@@ -966,7 +960,6 @@ _expectations = {
         """,
     'unixware7':
         """
-        test_bsddb
         test_epoll
         test_largefile
         test_kqueue
@@ -978,7 +971,6 @@ _expectations = {
         """,
     'openunix8':
         """
-        test_bsddb
         test_epoll
         test_largefile
         test_kqueue
@@ -991,7 +983,6 @@ _expectations = {
     'sco_sv3':
         """
         test_asynchat
-        test_bsddb
         test_fork1
         test_epoll
         test_gettext
@@ -1012,8 +1003,6 @@ _expectations = {
     'darwin':
         """
         test__locale
-        test_bsddb
-        test_bsddb3
         test_curses
         test_epoll
         test_dbm_gnu
@@ -1025,7 +1014,6 @@ _expectations = {
         """,
     'sunos5':
         """
-        test_bsddb
         test_curses
         test_dbm
         test_epoll
@@ -1038,7 +1026,6 @@ _expectations = {
         """,
     'hp-ux11':
         """
-        test_bsddb
         test_curses
         test_epoll
         test_dbm_gnu
@@ -1068,7 +1055,6 @@ _expectations = {
         """,
     'cygwin':
         """
-        test_bsddb3
         test_curses
         test_dbm
         test_epoll
@@ -1082,7 +1068,6 @@ _expectations = {
     'os2emx':
         """
         test_audioop
-        test_bsddb3
         test_curses
         test_epoll
         test_kqueue
@@ -1096,8 +1081,6 @@ _expectations = {
         """,
     'freebsd4':
         """
-        test_bsddb
-        test_bsddb3
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1115,8 +1098,6 @@ _expectations = {
         """,
     'aix5':
         """
-        test_bsddb
-        test_bsddb3
         test_bz2
         test_epoll
         test_dbm_gnu
@@ -1132,8 +1113,6 @@ _expectations = {
         """,
     'openbsd3':
         """
-        test_bsddb
-        test_bsddb3
         test_ctypes
         test_epoll
         test_dbm_gnu
@@ -1149,8 +1128,6 @@ _expectations = {
         """,
     'netbsd3':
         """
-        test_bsddb
-        test_bsddb3
         test_ctypes
         test_curses
         test_epoll

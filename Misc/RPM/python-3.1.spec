@@ -360,7 +360,6 @@ rm -f mainpkg.files tools.files
 %{__prefix}/%{libdirname}/python%{libvers}/email/mime
 %{__prefix}/%{libdirname}/python%{libvers}/sqlite3
 %{__prefix}/%{libdirname}/python%{libvers}/compiler
-%{__prefix}/%{libdirname}/python%{libvers}/bsddb
 %{__prefix}/%{libdirname}/python%{libvers}/hotshot
 %{__prefix}/%{libdirname}/python%{libvers}/logging
 %{__prefix}/%{libdirname}/python%{libvers}/lib-old
