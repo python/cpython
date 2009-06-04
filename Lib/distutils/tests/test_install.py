@@ -10,11 +10,14 @@ from distutils.command.install import install
 from distutils.command import install as install_module
 from distutils.command.install import INSTALL_SCHEMES
 from distutils.core import Distribution
+from distutils.errors import DistutilsOptionError
 
 from distutils.tests import support
 
 
-class InstallTestCase(support.TempdirManager, unittest.TestCase):
+class InstallTestCase(support.TempdirManager,
+                      support.LoggingSilencer,
+                      unittest.TestCase):
 
     def test_home_installation_scheme(self):
         # This ensure two things:
@@ -111,6 +114,74 @@ class InstallTestCase(support.TempdirManager, unittest.TestCase):
 
         self.assert_('userbase' in cmd.config_vars)
         self.assert_('usersite' in cmd.config_vars)
+
+    def test_handle_extra_path(self):
+        dist = Distribution({'name': 'xx', 'extra_path': 'path,dirs'})
+        cmd = install(dist)
+
+        # two elements
+        cmd.handle_extra_path()
+        self.assertEquals(cmd.extra_path, ['path', 'dirs'])
+        self.assertEquals(cmd.extra_dirs, 'dirs')
+        self.assertEquals(cmd.path_file, 'path')
+
+        # one element
+        cmd.extra_path = ['path']
+        cmd.handle_extra_path()
+        self.assertEquals(cmd.extra_path, ['path'])
+        self.assertEquals(cmd.extra_dirs, 'path')
+        self.assertEquals(cmd.path_file, 'path')
+
+        # none
+        dist.extra_path = cmd.extra_path = None
+        cmd.handle_extra_path()
+        self.assertEquals(cmd.extra_path, None)
+        self.assertEquals(cmd.extra_dirs, '')
+        self.assertEquals(cmd.path_file, None)
+
+        # three elements (no way !)
+        cmd.extra_path = 'path,dirs,again'
+        self.assertRaises(DistutilsOptionError, cmd.handle_extra_path)
+
+    def test_finalize_options(self):
+        dist = Distribution({'name': 'xx'})
+        cmd = install(dist)
+
+        # must supply either prefix/exec-prefix/home or
+        # install-base/install-platbase -- not both
+        cmd.prefix = 'prefix'
+        cmd.install_base = 'base'
+        self.assertRaises(DistutilsOptionError, cmd.finalize_options)
+
+        # must supply either home or prefix/exec-prefix -- not both
+        cmd.install_base = None
+        cmd.home = 'home'
+        self.assertRaises(DistutilsOptionError, cmd.finalize_options)
+
+        # can't combine user with with prefix/exec_prefix/home or
+        # install_(plat)base
+        cmd.prefix = None
+        cmd.user = 'user'
+        self.assertRaises(DistutilsOptionError, cmd.finalize_options)
+
+    def test_record(self):
+
+        install_dir = self.mkdtemp()
+        pkgdir, dist = self.create_dist()
+
+        dist = Distribution()
+        cmd = install(dist)
+        dist.command_obj['install'] = cmd
+        cmd.root = install_dir
+        cmd.record = os.path.join(pkgdir, 'RECORD')
+        cmd.ensure_finalized()
+
+        cmd.run()
+
+        # let's check the RECORD file was created with one
+        # line (the egg info file)
+        with open(cmd.record) as f:
+            self.assertEquals(len(f.readlines()), 1)
 
 def test_suite():
     return unittest.makeSuite(InstallTestCase)
