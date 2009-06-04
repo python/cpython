@@ -13,7 +13,7 @@ import binascii
 
 __all__ = [
     # Legacy interface exports traditional RFC 1521 Base64 encodings
-    'encode', 'decode', 'encodestring', 'decodestring',
+    'encode', 'decode', 'encodebytes', 'decodebytes',
     # Generalized interface for other encodings
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
     'b16encode', 'b16decode',
@@ -329,11 +329,9 @@ def decode(input, output):
         output.write(s)
 
 
-def encodestring(s):
-    """Encode a string into multiple lines of base-64 data.
-
-    Argument and return value are bytes.
-    """
+def encodebytes(s):
+    """Encode a bytestring into a bytestring containing multiple lines
+    of base-64 data."""
     if not isinstance(s, bytes_types):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     pieces = []
@@ -342,16 +340,26 @@ def encodestring(s):
         pieces.append(binascii.b2a_base64(chunk))
     return b"".join(pieces)
 
+def encodestring(s):
+    """Legacy alias of encodebytes()."""
+    import warnings
+    warnings.warn("encodestring() is a deprecated alias, use encodebytes()",
+                  DeprecationWarning, 2)
+    return encodebytes(s)
 
-def decodestring(s):
-    """Decode a string.
 
-    Argument and return value are bytes.
-    """
+def decodebytes(s):
+    """Decode a bytestring of base-64 data into a bytestring."""
     if not isinstance(s, bytes_types):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.a2b_base64(s)
 
+def decodestring(s):
+    """Legacy alias of decodebytes()."""
+    import warnings
+    warnings.warn("decodestring() is a deprecated alias, use decodebytes()",
+                  DeprecationWarning, 2)
+    return decodebytes(s)
 
 
 # Usable as a script...

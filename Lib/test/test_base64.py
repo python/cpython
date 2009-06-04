@@ -6,35 +6,35 @@ import binascii
 
 
 class LegacyBase64TestCase(unittest.TestCase):
-    def test_encodestring(self):
+    def test_encodebytes(self):
         eq = self.assertEqual
-        eq(base64.encodestring(b"www.python.org"), b"d3d3LnB5dGhvbi5vcmc=\n")
-        eq(base64.encodestring(b"a"), b"YQ==\n")
-        eq(base64.encodestring(b"ab"), b"YWI=\n")
-        eq(base64.encodestring(b"abc"), b"YWJj\n")
-        eq(base64.encodestring(b""), b"")
-        eq(base64.encodestring(b"abcdefghijklmnopqrstuvwxyz"
+        eq(base64.encodebytes(b"www.python.org"), b"d3d3LnB5dGhvbi5vcmc=\n")
+        eq(base64.encodebytes(b"a"), b"YQ==\n")
+        eq(base64.encodebytes(b"ab"), b"YWI=\n")
+        eq(base64.encodebytes(b"abc"), b"YWJj\n")
+        eq(base64.encodebytes(b""), b"")
+        eq(base64.encodebytes(b"abcdefghijklmnopqrstuvwxyz"
                                b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                b"0123456789!@#0^&*();:<>,. []{}"),
            b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
            b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
            b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n")
-        self.assertRaises(TypeError, base64.encodestring, "")
+        self.assertRaises(TypeError, base64.encodebytes, "")
 
-    def test_decodestring(self):
+    def test_decodebytes(self):
         eq = self.assertEqual
-        eq(base64.decodestring(b"d3d3LnB5dGhvbi5vcmc=\n"), b"www.python.org")
-        eq(base64.decodestring(b"YQ==\n"), b"a")
-        eq(base64.decodestring(b"YWI=\n"), b"ab")
-        eq(base64.decodestring(b"YWJj\n"), b"abc")
-        eq(base64.decodestring(b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
+        eq(base64.decodebytes(b"d3d3LnB5dGhvbi5vcmc=\n"), b"www.python.org")
+        eq(base64.decodebytes(b"YQ==\n"), b"a")
+        eq(base64.decodebytes(b"YWI=\n"), b"ab")
+        eq(base64.decodebytes(b"YWJj\n"), b"abc")
+        eq(base64.decodebytes(b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
                                b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
                                b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n"),
            b"abcdefghijklmnopqrstuvwxyz"
            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            b"0123456789!@#0^&*();:<>,. []{}")
-        eq(base64.decodestring(b''), b'')
-        self.assertRaises(TypeError, base64.decodestring, "")
+        eq(base64.decodebytes(b''), b'')
+        self.assertRaises(TypeError, base64.decodebytes, "")
 
     def test_encode(self):
         eq = self.assertEqual

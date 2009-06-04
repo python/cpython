@@ -232,7 +232,7 @@ class BinaryTestCase(unittest.TestCase):
 
     def test_decode(self):
         d = b'\x01\x02\x03abc123\xff\xfe'
-        de = base64.encodestring(d)
+        de = base64.encodebytes(d)
         t1 = xmlrpclib.Binary()
         t1.decode(de)
         self.assertEqual(str(t1), str(d, "latin-1"))
