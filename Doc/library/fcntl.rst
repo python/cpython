@@ -90,7 +90,7 @@ The module defines the following functions:
 
    Perform the lock operation *op* on file descriptor *fd* (file objects providing
    a :meth:`fileno` method are accepted as well). See the Unix manual
-   :manpage:`flock(3)` for details.  (On some systems, this function is emulated
+   :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :cfunc:`fcntl`.)
 
 
