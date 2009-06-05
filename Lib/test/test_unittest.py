@@ -3537,7 +3537,9 @@ class TestDiscovery(TestCase):
 
         # We should have loaded tests from the test_directory package by calling load_tests
         # and directly from the test_directory2 package
-        self.assertEqual(suite, ['load_tests', '/foo/test_directory2 module tests'])
+        self.assertEqual(suite,
+                         ['load_tests',
+                          os.path.join('/foo', 'test_directory2') + ' module tests'])
         self.assertEqual(Module.paths, [os.path.join('/foo', 'test_directory'),
                                         os.path.join('/foo', 'test_directory2')])
 
