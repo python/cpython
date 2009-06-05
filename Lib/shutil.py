@@ -58,9 +58,10 @@ def copyfile(src, dst):
         except OSError:
             # File most likely does not exist
             pass
-        # XXX What about other special files? (sockets, devices...)
-        if stat.S_ISFIFO(st.st_mode):
-            raise SpecialFileError("`%s` is a named pipe" % fn)
+        else:
+            # XXX What about other special files? (sockets, devices...)
+            if stat.S_ISFIFO(st.st_mode):
+                raise SpecialFileError("`%s` is a named pipe" % fn)
     try:
         fsrc = open(src, 'rb')
         fdst = open(dst, 'wb')
