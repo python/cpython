@@ -1,7 +1,12 @@
 from test.test_support import verbose, run_unittest
-from _locale import (setlocale, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
-                    localeconv, Error)
+from _locale import (setlocale, LC_NUMERIC, localeconv, Error)
+try:
+    from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
+except ImportError:
+    nl_langinfo = None
+
 import unittest
+import sys
 from platform import uname
 
 if uname()[0] == "Darwin":
@@ -19,6 +24,13 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'bs_BA', 'fr_LU', 'kl_GL', 'fa_IR', 'de_BE', 'sv_SE', 'it_CH', 'uk_UA',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'en_US',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
+
+# Workaround for MSVC6(debug) crash bug
+if "MSC v.1200" in sys.version:
+    def accept(loc):
+        a = loc.split(".")
+        return not(len(a) == 2 and len(a[-1]) >= 9)
+    candidate_locales = [loc for loc in candidate_locales if accept(loc)]
 
 # List known locale values to test against when available.
 # Dict formatted as ``<locale> : (<decimal_point>, <thousands_sep>)``.  If a
@@ -53,6 +65,7 @@ class _LocaleTests(unittest.TestCase):
                                     calc_type, data_type, set_locale,
                                     used_locale))
 
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         for loc in candidate_locales:
@@ -71,10 +84,11 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_NUMERIC, loc)
             except Error:
                 continue
-            for li, lc in ((RADIXCHAR, "decimal_point"),
-                            (THOUSEP, "thousands_sep")):
+            for li, lc in ("decimal_point",
+                            "thousands_sep"):
                 self.numeric_tester('localeconv', localeconv()[lc], lc, loc)
 
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     def test_lc_numeric_basic(self):
         # Test nl_langinfo against localeconv
         for loc in candidate_locales:
