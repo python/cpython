@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2005, 2006 Martin von LÃ¶wis
+# -*- coding: iso-8859-1 -*-
+# Copyright (C) 2005, 2006 Martin von Löwis
 # Licensed to PSF under a Contributor Agreement.
 # The bdist_wininst command proper
 # based on bdist_wininst
