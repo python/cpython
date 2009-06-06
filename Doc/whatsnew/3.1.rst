@@ -384,6 +384,24 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Brett Cannon.)
 
+* :mod:`pickle` is now more compatible with Python 2.x when using a
+  2.x-compatible protocol (that is, protocol 2 or lower), through translation
+  of some standard library module names to or from their Python 2.x
+  equivalents.
+
+  This means that more (protocol 2 or lower) pickles produced by Python 3.1
+  will be reusable by Python 2.x, and vice-versa. Standard set objects are
+  an example of this improvement.
+
+  This has the (unfortunate but unavoidable) side effect that some
+  protocol 2 pickles produced by Python 3.1 won't be readable with
+  Python 3.0. The latest pickle protocol, protocol 3, should be used when
+  migrating data between Python 3.x implementations, as it doesn't attempt
+  to remain compatible with Python 2.x.
+
+  (Contributed by Alexandre Vassalotti and Antoine Pitrou, :issue:`6137`.)
+
+
 Optimizations
 =============
 
