@@ -285,7 +285,7 @@ This example, as usual, demonstrates some new Python features:
   and ``methodname`` is the name of a method that is defined by the object's type.
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
-  object types and methods, using *classes*, as discussed later in this tutorial.)
+  object types and methods, using *classes*, see :ref:`tut-classes`)
   The method :meth:`append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [b]``, but more efficient.
