@@ -988,8 +988,12 @@ TextIOWrapper_init(PyTextIOWrapperObject *self, PyObject *args, PyObject *kwds)
             goto error;
         res = PyObject_GetAttrString(ci, "name");
         Py_DECREF(ci);
-        if (res == NULL)
-            PyErr_Clear();
+        if (res == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError))
+                PyErr_Clear();
+            else
+                goto error;
+        }
         else if (PyUnicode_Check(res)) {
             encodefuncentry *e = encodefuncs;
             while (e->name != NULL) {
@@ -1011,8 +1015,12 @@ TextIOWrapper_init(PyTextIOWrapperObject *self, PyObject *args, PyObject *kwds)
         Py_TYPE(buffer) == &PyBufferedRandom_Type) {
         raw = PyObject_GetAttrString(buffer, "raw");
         /* Cache the raw FileIO object to speed up 'closed' checks */
-        if (raw == NULL)
-            PyErr_Clear();
+        if (raw == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError))
+                PyErr_Clear();
+            else
+                goto error;
+        }
         else if (Py_TYPE(raw) == &PyFileIO_Type)
             self->raw = raw;
         else
@@ -2468,8 +2476,13 @@ TextIOWrapper_newlines_get(PyTextIOWrapperObject *self, void *context)
         Py_RETURN_NONE;
     res = PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
     if (res == NULL) {
-        PyErr_Clear();
-        Py_RETURN_NONE;
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        else {
+            return NULL;
+        }
     }
     return res;
 }
