@@ -29,9 +29,6 @@ is maintained at ActiveState.)
    `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/lang.html>`_
       On-line reference material.
 
-   `Tkinter for JPython <http://jtkinter.sourceforge.net>`_
-      The Jython interface to Tkinter.
-
    `Python and Tkinter Programming <http://www.amazon.com/exec/obidos/ASIN/1884777813>`_
       The book by John Grayson (ISBN 1-884777-81-3).
 
