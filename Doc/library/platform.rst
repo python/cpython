@@ -169,7 +169,7 @@ Java Platform
 
 .. function:: java_ver(release='', vendor='', vminfo=('','',''), osinfo=('','',''))
 
-   Version interface for JPython.
+   Version interface for Jython.
 
    Returns a tuple ``(release, vendor, vminfo, osinfo)`` with *vminfo* being a
    tuple ``(vm_name, vm_release, vm_vendor)`` and *osinfo* being a tuple
