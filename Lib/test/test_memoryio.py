@@ -459,9 +459,9 @@ class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
         # These are just dummy values but we nevertheless check them for fear
         # of unexpected breakage.
-        self.assertTrue(memio.encoding is None)
-        self.assertEqual(memio.errors, "strict")
-        self.assertEqual(memio.line_buffering, False)
+        self.assertIsNone(memio.encoding)
+        self.assertIsNone(memio.errors)
+        self.assertFalse(memio.line_buffering)
 
     def test_newline_none(self):
         # newline=None

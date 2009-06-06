@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6217: The C implementation of io.TextIOWrapper didn't include the
+  errors property.  Additionally, the errors and encoding properties of StringIO
+  are always None now.
+
 - Issue #6137: The pickle module now translates module names when loading
   or dumping pickles with a 2.x-compatible protocol, in order to make data
   sharing and migration easier. This behaviour can be disabled using the

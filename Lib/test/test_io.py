@@ -2024,6 +2024,12 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.open(filename, 'rb') as f:
                 self.assertEquals(f.read(), 'bbbzzz'.encode(charset))
 
+    def test_errors_property(self):
+        with self.open(support.TESTFN, "w") as f:
+            self.assertEqual(f.errors, "strict")
+        with self.open(support.TESTFN, "w", errors="replace") as f:
+            self.assertEqual(f.errors, "replace")
+
 
 class CTextIOWrapperTest(TextIOWrapperTest):
 

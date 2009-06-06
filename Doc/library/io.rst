@@ -600,6 +600,10 @@ Text I/O
       The name of the encoding used to decode the stream's bytes into
       strings, and to encode strings into bytes.
 
+   .. attribute:: errors
+
+      The error setting of the decoder or encoder.
+
    .. attribute:: newlines
 
       A string, a tuple of strings, or ``None``, indicating the newlines
@@ -665,12 +669,8 @@ Text I/O
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
    write contains a newline character.
 
-   :class:`TextIOWrapper` provides these data attributes in addition to those of
+   :class:`TextIOWrapper` provides one attribute in addition to those of
    :class:`TextIOBase` and its parents:
-
-   .. attribute:: errors
-
-      The encoding and decoding error setting.
 
    .. attribute:: line_buffering
 

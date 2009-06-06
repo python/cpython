@@ -104,6 +104,18 @@ TextIOBase_newlines_get(PyObject *self, void *context)
     Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(TextIOBase_errors_doc,
+    "The error setting of the decoder or encoder.\n"
+    "\n"
+    "Subclasses should override.\n"
+    );
+
+static PyObject *
+TextIOBase_errors_get(PyObject *self, void *context)
+{
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TextIOBase_methods[] = {
     {"detach", (PyCFunction)TextIOBase_detach, METH_NOARGS, TextIOBase_detach_doc},
@@ -116,6 +128,7 @@ static PyMethodDef TextIOBase_methods[] = {
 static PyGetSetDef TextIOBase_getset[] = {
     {"encoding", (getter)TextIOBase_encoding_get, NULL, TextIOBase_encoding_doc},
     {"newlines", (getter)TextIOBase_newlines_get, NULL, TextIOBase_newlines_doc},
+    {"errors", (getter)TextIOBase_errors_get, NULL, TextIOBase_errors_doc},
     {NULL}
 };
 
@@ -2462,6 +2475,13 @@ TextIOWrapper_newlines_get(PyTextIOWrapperObject *self, void *context)
 }
 
 static PyObject *
+TextIOWrapper_errors_get(PyTextIOWrapperObject *self, void *context)
+{
+    CHECK_INITIALIZED(self);
+    return PyUnicode_FromString(PyBytes_AS_STRING(self->errors));
+}
+
+static PyObject *
 TextIOWrapper_chunk_size_get(PyTextIOWrapperObject *self, void *context)
 {
     CHECK_INITIALIZED(self);
@@ -2519,6 +2539,7 @@ static PyGetSetDef TextIOWrapper_getset[] = {
 /*    {"mode", (getter)TextIOWrapper_mode_get, NULL, NULL},
 */
     {"newlines", (getter)TextIOWrapper_newlines_get, NULL, NULL},
+    {"errors", (getter)TextIOWrapper_errors_get, NULL, NULL},
     {"_CHUNK_SIZE", (getter)TextIOWrapper_chunk_size_get,
                     (setter)TextIOWrapper_chunk_size_set, NULL},
     {NULL}

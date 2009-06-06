@@ -661,22 +661,6 @@ stringio_closed(StringIOObject *self, void *context)
 }
 
 static PyObject *
-stringio_encoding(StringIOObject *self, void *context)
-{
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-stringio_errors(StringIOObject *self, void *context)
-{
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    return PyUnicode_FromString("strict");
-}
-
-static PyObject *
 stringio_line_buffering(StringIOObject *self, void *context)
 {
     CHECK_INITIALIZED(self);
@@ -720,8 +704,6 @@ static PyGetSetDef stringio_getset[] = {
         will be found.
     */
     {"buffer",         (getter)stringio_buffer,         NULL, NULL},
-    {"encoding",       (getter)stringio_encoding,       NULL, NULL},
-    {"errors",         (getter)stringio_errors,         NULL, NULL},
     {"line_buffering", (getter)stringio_line_buffering, NULL, NULL},
     {NULL}
 };

@@ -1286,6 +1286,13 @@ class TextIOBase(IOBase):
         """
         return None
 
+    @property
+    def errors(self):
+        """Error setting of the decoder or encoder.
+
+        Subclasses should override."""
+        return None
+
 io.TextIOBase.register(TextIOBase)
 
 
@@ -1931,6 +1938,10 @@ class StringIO(TextIOWrapper):
         # TextIOWrapper tells the encoding in its repr. In StringIO,
         # that's a implementation detail.
         return object.__repr__(self)
+
+    @property
+    def errors(self):
+        return None
 
     @property
     def encoding(self):
