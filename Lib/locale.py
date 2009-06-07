@@ -536,10 +536,8 @@ def resetlocale(category=LC_ALL):
     """
     _setlocale(category, _build_localename(getdefaultlocale()))
 
-if sys.platform in ('win32', 'darwin', 'mac'):
+if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
-    # On the Mac, it should return the system encoding;
-    # it might return "ascii" instead
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
         import _locale

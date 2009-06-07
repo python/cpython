@@ -363,38 +363,6 @@ PyLocale_getdefaultlocale(PyObject* self)
 }
 #endif
 
-#if defined(__APPLE__)
-/*
-** Find out what the current script is.
-** Donated by Fredrik Lundh.
-*/
-static char *mac_getscript(void)
-{
-    CFStringEncoding enc = CFStringGetSystemEncoding();
-    static CFStringRef name = NULL;
-    /* Return the code name for the encodings for which we have codecs. */
-    switch(enc) {
-    case kCFStringEncodingMacRoman: return "mac-roman";
-    case kCFStringEncodingMacGreek: return "mac-greek";
-    case kCFStringEncodingMacCyrillic: return "mac-cyrillic";
-    case kCFStringEncodingMacTurkish: return "mac-turkish";
-    case kCFStringEncodingMacIcelandic: return "mac-icelandic";
-    /* XXX which one is mac-latin2? */
-    }
-    if (!name) {
-        /* This leaks an object. */
-        name = CFStringConvertEncodingToIANACharSetName(enc);
-    }
-    return (char *)CFStringGetCStringPtr(name, 0); 
-}
-
-static PyObject*
-PyLocale_getdefaultlocale(PyObject* self)
-{
-    return Py_BuildValue("Os", Py_None, mac_getscript());
-}
-#endif
-
 #ifdef HAVE_LANGINFO_H
 #define LANGINFO(X) {#X, X}
 static struct langinfo_constant{
@@ -645,7 +613,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {"strxfrm", (PyCFunction) PyLocale_strxfrm, 
    METH_VARARGS, strxfrm__doc__},
 #endif
-#if defined(MS_WINDOWS) || defined(__APPLE__)
+#if defined(MS_WINDOWS) 
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
 #ifdef HAVE_LANGINFO_H
