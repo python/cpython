@@ -132,7 +132,7 @@ install_versionedtools:
 		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}3" ;\
 	done
 	mv "$(DESTDIR)$(prefix)/bin/2to3" "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)"
-	ln -sf "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3"
+	ln -sf "2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3"
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/python3-config" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/python3-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
 		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python3-config" ; \
