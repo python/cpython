@@ -226,7 +226,7 @@ builtin_types = ("identifier", "string", "int", "bool", "object")
 # not sure if any of the methods are useful yet, but I'm adding them
 # piecemeal as they seem helpful
 
-class AST:
+class AST(object):
     pass # a marker class
 
 class Module(AST):
