@@ -463,10 +463,10 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
 			-compatibility_version $(VERSION) \
 			-current_version $(VERSION) \
-			-framework CoreFoundation; \
+			-framework CoreFoundation $(LIBS); \
         else \
 		/usr/bin/libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-			@LIBTOOL_CRUFT@ -framework CoreFoundation;\
+			@LIBTOOL_CRUFT@ -framework CoreFoundation $(LIBS);\
 	fi
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj

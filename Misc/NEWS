@@ -58,6 +58,13 @@ C-API
   --with-pydebug, and vice-versa.
 
 
+Build
+-----
+
+- Issue #6154: Make sure the intl library is added to LIBS if needed. Also
+  added LIBS to OS X framework builds.
+
+
 What's New in Python 3.1 release candidate 1?
 =============================================
 
