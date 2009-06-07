@@ -28,6 +28,27 @@ test_data = [
 class WinregTests(unittest.TestCase):
     remote_name = None
 
+    def setUp(self):
+        # Make sure that the test key is absent when the test
+        # starts.
+        self.delete_tree(HKEY_CURRENT_USER, test_key_name)
+
+    def delete_tree(self, root, subkey):
+        try:
+            hkey = OpenKey(root, subkey, KEY_ALL_ACCESS)
+        except WindowsError:
+            # subkey does not exist
+            return
+        while True:
+            try:
+                subsubkey = EnumKey(hkey, 0)
+            except WindowsError:
+                # no more subkeys
+                break
+            self.delete_tree(hkey, subsubkey)
+        CloseKey(hkey)
+        DeleteKey(root, subkey)
+
     def WriteTestData(self, root_key, subkeystr="sub_key"):
         # Set the default value for this key.
         SetValue(root_key, test_key_name, REG_SZ, "Default value")
