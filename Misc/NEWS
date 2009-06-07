@@ -46,6 +46,8 @@ Library
 Windows
 -------
 
+- Issue #6221: Delete test registry key before running the test.
+
 - Issue #6158: Package Sine-1000Hz-300ms.aif in MSI file.
 
 C-API
