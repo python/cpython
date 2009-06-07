@@ -1819,8 +1819,9 @@ fi
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
-	AC_DEFINE(WITH_LIBINTL, 1,
-	[Define to 1 if libintl is needed for locale functions.]))
+	[AC_DEFINE(WITH_LIBINTL, 1,
+	[Define to 1 if libintl is needed for locale functions.])
+        LIBS="-lintl $LIBS"])
 
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
