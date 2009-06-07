@@ -10,14 +10,12 @@ browser.
 Changes for Python: Add support for module versions
 """
 
-#__metaclass__ = type
-
 import os
 import traceback
 
 import spark
 
-class Token:
+class Token(object):
     # spark seems to dispatch in the parser based on a token's
     # type attribute
     def __init__(self, type, lineno):
@@ -45,7 +43,7 @@ class String(Token):
         self.value = value
         self.lineno = lineno
 
-class ASDLSyntaxError:
+class ASDLSyntaxError(Exception):
 
     def __init__(self, lineno, token=None, msg=None):
         self.lineno = lineno
