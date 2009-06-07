@@ -223,6 +223,15 @@ The server classes support the following class variables:
    desired.  If :meth:`handle_request` receives no incoming requests within the
    timeout period, the :meth:`handle_timeout` method is called.
 
+.. attribute:: TCPServer.disable_nagle_algorithm
+
+   If set to True, it will set the TCP_NODELAY attribute of new requests
+   connections.  This can help alleviate problems with latency in
+   request-response type applications.  To avoid sending many small packets,
+   this option should be used only when bufferning output, such as when
+   setting :attr:`StreamRequestHandler.wbufsize` attribute to -1.
+
+   .. versionadded:: 2.7
 
 There are various server methods that can be overridden by subclasses of base
 server classes like :class:`TCPServer`; these methods aren't useful to external
