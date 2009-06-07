@@ -204,19 +204,19 @@ class ASDLParser(spark.GenericParser, object):
 
     def p_field_2(self, (type, _, name)):
         " field ::= Id * Id "
-        return Field(type, name, seq=1)
+        return Field(type, name, seq=True)
 
     def p_field_3(self, (type, _, name)):
         " field ::= Id ? Id "
-        return Field(type, name, opt=1)
+        return Field(type, name, opt=True)
 
     def p_field_4(self, (type, _)):
         " field ::= Id * "
-        return Field(type, seq=1)
+        return Field(type, seq=True)
 
     def p_field_5(self, (type, _)):
         " field ::= Id ? "
-        return Field(type, opt=1)
+        return Field(type, opt=True)
 
 builtin_types = ("identifier", "string", "int", "bool", "object")
 
@@ -256,7 +256,7 @@ class Constructor(AST):
         return "Constructor(%s, %s)" % (self.name, self.fields)
 
 class Field(AST):
-    def __init__(self, type, name=None, seq=0, opt=0):
+    def __init__(self, type, name=None, seq=False, opt=False):
         self.type = type
         self.name = name
         self.seq = seq
@@ -264,9 +264,9 @@ class Field(AST):
 
     def __repr__(self):
         if self.seq:
-            extra = ", seq=1"
+            extra = ", seq=True"
         elif self.opt:
-            extra = ", opt=1"
+            extra = ", opt=True"
         else:
             extra = ""
         if self.name is None:
@@ -294,7 +294,7 @@ class Product(AST):
 
 class VisitorBase(object):
 
-    def __init__(self, skip=0):
+    def __init__(self, skip=False):
         self.cache = {}
         self.skip = skip
 
@@ -329,7 +329,7 @@ class VisitorBase(object):
 class Check(VisitorBase):
 
     def __init__(self):
-        super(Check, self).__init__(skip=1)
+        super(Check, self).__init__(skip=True)
         self.cons = {}
         self.errors = 0
         self.types = {}

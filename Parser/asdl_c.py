@@ -86,7 +86,7 @@ class EmitVisitor(asdl.VisitorBase):
         self.file = file
         super(EmitVisitor, self).__init__()
 
-    def emit(self, s, depth, reflow=1):
+    def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
         if reflow:
             lines = reflow_lines(s, depth)
@@ -255,7 +255,7 @@ class PrototypeVisitor(EmitVisitor):
         ctype = get_c_type(type)
         self.emit_function(cons.name, ctype, args, attrs)
 
-    def emit_function(self, name, ctype, args, attrs, union=1):
+    def emit_function(self, name, ctype, args, attrs, union=True):
         args = args + attrs
         if args:
             argstr = ", ".join(["%s %s" % (atype, aname)
@@ -267,19 +267,19 @@ class PrototypeVisitor(EmitVisitor):
         for i in range(1, len(args)+1):
             margs += ", a%d" % i
         self.emit("#define %s(%s) _Py_%s(%s)" % (name, margs, name, margs), 0,
-                reflow = 0)
-        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), 0)
+                reflow=False)
+        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), False)
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
-                           self.get_args(prod.fields), [], union=0)
+                           self.get_args(prod.fields), [], union=False)
 
 
 class FunctionVisitor(PrototypeVisitor):
     """Visitor to generate constructor functions for AST."""
 
-    def emit_function(self, name, ctype, args, attrs, union=1):
-        def emit(s, depth=0, reflow=1):
+    def emit_function(self, name, ctype, args, attrs, union=True):
+        def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
         argstr = ", ".join(["%s %s" % (atype, aname)
                             for atype, aname, opt in args + attrs])
@@ -298,7 +298,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
                 msg = "field %s is required for %s" % (argname, name)
                 emit('                "%s");' % msg,
-                     2, reflow=0)
+                     2, reflow=False)
                 emit('return NULL;', 2)
                 emit('}', 1)
 
@@ -314,7 +314,7 @@ class FunctionVisitor(PrototypeVisitor):
         emit("")
 
     def emit_body_union(self, name, args, attrs):
-        def emit(s, depth=0, reflow=1):
+        def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
         emit("p->kind = %s_kind;" % name, 1)
         for argtype, argname, opt in args:
@@ -323,7 +323,7 @@ class FunctionVisitor(PrototypeVisitor):
             emit("p->%s = %s;" % (argname, argname), 1)
 
     def emit_body_struct(self, name, args, attrs):
-        def emit(s, depth=0, reflow=1):
+        def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
         for argtype, argname, opt in args:
             emit("p->%s = %s;" % (argname, argname), 1)
