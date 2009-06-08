@@ -1,5 +1,5 @@
-:mod:`contextlib` --- Utilities for :keyword:`with`\ -statement contexts.
-=========================================================================
+:mod:`contextlib` --- Utilities for :keyword:`with`\ -statement contexts
+========================================================================
 
 .. module:: contextlib
    :synopsis: Utilities for with-statement contexts.
