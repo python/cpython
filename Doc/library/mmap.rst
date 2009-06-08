@@ -1,4 +1,3 @@
-
 :mod:`mmap` --- Memory-mapped file support
 ==========================================
 
@@ -37,7 +36,7 @@ memory but does not update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length[, tagname[, access[, offset]]])
+.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
 
    **(Windows version)** Maps *length* bytes from the file specified by the
    file handle *fileno*, and creates a mmap object.  If *length* is larger
@@ -59,7 +58,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    defaults to 0.  *offset* must be a multiple of the ALLOCATIONGRANULARITY.
 
 
-.. class:: mmap(fileno, length[, flags[, prot[, access[, offset]]]])
+.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -148,7 +147,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Returns ``-1`` on failure.
 
 
-   .. method:: flush([offset, size])
+   .. method:: flush([offset[, size]])
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before

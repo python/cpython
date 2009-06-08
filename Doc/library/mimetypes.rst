@@ -1,4 +1,3 @@
-
 :mod:`mimetypes` --- Map filenames to MIME types
 ================================================
 
@@ -23,7 +22,7 @@ the module has not been initialized, they will call :func:`init` if they rely on
 the information :func:`init` sets up.
 
 
-.. function:: guess_type(filename[, strict])
+.. function:: guess_type(url, strict=True)
 
    .. index:: pair: MIME; headers
 
@@ -47,7 +46,7 @@ the information :func:`init` sets up.
    are also recognized.
 
 
-.. function:: guess_all_extensions(type[, strict])
+.. function:: guess_all_extensions(type, strict=True)
 
    Guess the extensions for a file based on its MIME type, given by *type*. The
    return value is a list of strings giving all possible filename extensions,
@@ -58,7 +57,7 @@ the information :func:`init` sets up.
    Optional *strict* has the same meaning as with the :func:`guess_type` function.
 
 
-.. function:: guess_extension(type[, strict])
+.. function:: guess_extension(type, strict=True)
 
    Guess the extension for a file based on its MIME type, given by *type*. The
    return value is a string giving a filename extension, including the leading dot
@@ -73,7 +72,7 @@ Some additional functions and data items are available for controlling the
 behavior of the module.
 
 
-.. function:: init([files])
+.. function:: init(files=None)
 
    Initialize the internal data structures.  If given, *files* must be a sequence
    of file names which should be used to augment the default type map.  If omitted,
@@ -90,7 +89,7 @@ behavior of the module.
    does not exist or cannot be read, ``None`` is returned.
 
 
-.. function:: add_type(type, ext[, strict])
+.. function:: add_type(type, ext, strict=True)
 
    Add a mapping from the mimetype *type* to the extension *ext*. When the
    extension is already known, the new type will replace the old one. When the type
@@ -142,7 +141,7 @@ The :class:`MimeTypes` class may be useful for applications which may want more
 than one MIME-type database:
 
 
-.. class:: MimeTypes([filenames])
+.. class:: MimeTypes(filenames=(), strict=True)
 
    This class represents a MIME-types database.  By default, it provides access to
    the same database as the rest of this module. The initial database is a copy of
@@ -206,13 +205,13 @@ MimeTypes Objects
    module.
 
 
-.. method:: MimeTypes.guess_extension(type[, strict])
+.. method:: MimeTypes.guess_extension(type, strict=True)
 
    Similar to the :func:`guess_extension` function, using the tables stored as part
    of the object.
 
 
-.. method:: MimeTypes.guess_type(url[, strict])
+.. method:: MimeTypes.guess_type(url, strict=True)
 
    Similar to the :func:`guess_type` function, using the tables stored as part of
    the object.

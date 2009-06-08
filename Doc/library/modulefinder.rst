@@ -1,4 +1,3 @@
-
 :mod:`modulefinder` --- Find modules used by a script
 =====================================================
 
@@ -27,7 +26,7 @@ report of the imported modules will be printed.
    package replaces the :mod:`xml` package.
 
 
-.. class:: ModuleFinder([path=None, debug=0, excludes=[], replace_paths=[]])
+.. class:: ModuleFinder(path=None, debug=0, excludes=[], replace_paths=[])
 
    This class provides :meth:`run_script` and :meth:`report` methods to determine
    the set of modules imported by a script. *path* can be a list of directories to
