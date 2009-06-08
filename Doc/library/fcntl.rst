@@ -145,7 +145,6 @@ lay-out for the *lockdata* variable is system dependent --- therefore using the
 
    Module :mod:`os`
       If the locking flags :const:`O_SHLOCK` and :const:`O_EXLOCK` are present
-      in the :mod:`os` module, the :func:`os.open` function provides a more
-      platform-independent alternative to the :func:`lockf` and :func:`flock`
-      functions.
+      in the :mod:`os` module (on BSD only), the :func:`os.open` function
+      provides an alternative to the :func:`lockf` and :func:`flock` functions.
 

@@ -16,7 +16,7 @@ class ExceptionClassTests(unittest.TestCase):
 
     def verify_instance_interface(self, ins):
         for attr in ("args", "__str__", "__repr__"):
-            self.failUnless(hasattr(ins, attr),
+            self.assertTrue(hasattr(ins, attr),
                     "%s missing %s attribute" %
                         (ins.__class__.__name__, attr))
 
@@ -85,7 +85,7 @@ class ExceptionClassTests(unittest.TestCase):
 
     def interface_test_driver(self, results):
         for test_name, (given, expected) in zip(self.interface_tests, results):
-            self.failUnlessEqual(given, expected, "%s: %s != %s" % (test_name,
+            self.assertEqual(given, expected, "%s: %s != %s" % (test_name,
                 given, expected))
 
     def test_interface_single_arg(self):
