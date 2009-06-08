@@ -162,12 +162,11 @@ Common applications are to make lists where each element is the result of
 some operations applied to each member of the sequence, or to create a
 subsequence of those elements that satisfy a certain condition.
 
-
-Each list comprehension consists of an expression followed by a :keyword:`for`
-clause, then zero or more :keyword:`for` or :keyword:`if` clauses.  The result
-will be a list resulting from evaluating the expression in the context of the
-:keyword:`for` and :keyword:`if` clauses which follow it.  If the expression
-would evaluate to a tuple, it must be parenthesized.
+A list comprehension consists of brackets containing an expression followed
+by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
+clauses.  The result will be a list resulting from evaluating the expression in
+the context of the :keyword:`for` and :keyword:`if` clauses which follow it.  If
+the expression would evaluate to a tuple, it must be parenthesized.
 
 Here we take a list of numbers and return a list of three times each number::
 
@@ -348,8 +347,8 @@ The reverse operation is also possible::
    >>> x, y, z = t
 
 This is called, appropriately enough, *sequence unpacking* and works for any
-sequence on the right-hand side.  Sequence unpacking requires the list of
-variables on the left to have the same number of elements as the length of the
+sequence on the right-hand side.  Sequence unpacking requires that there are as
+many variables on the left side of the equals sign as there are elements in the
 sequence.  Note that multiple assignment is really just a combination of tuple
 packing and sequence unpacking.
 

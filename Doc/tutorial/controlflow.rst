@@ -675,7 +675,12 @@ extracted for you:
   (see :ref:`tut-firstclasses` for more on classes and methods).
 
 * Don't use fancy encodings if your code is meant to be used in international
-  environments.  Plain ASCII works best in any case.
+  environments.  Python's default, UTF-8, or even plain ASCII work best in any
+  case.
+
+* Likewise, don't use non-ASCII characters in identifiers if there is only the
+  slightest chance people speaking a different language will read or maintain
+  the code.
 
 
 .. rubric:: Footnotes
