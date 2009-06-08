@@ -578,6 +578,9 @@ Extension Modules
 Build
 -----
 
+- Issue 5809: Specifying both --enable-framework and --enable-shared is
+  an error. Configure now explicity tells you about this.
+
 - Link the shared python library with $(MODLIBS).
 
 - Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
