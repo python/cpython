@@ -2,9 +2,9 @@
 
 This module defines two useful functions:
 
-guess_type(url, strict=1) -- guess the MIME type and encoding of a URL.
+guess_type(url, strict=True) -- guess the MIME type and encoding of a URL.
 
-guess_extension(type, strict=1) -- guess the extension for a given MIME type.
+guess_extension(type, strict=True) -- guess the extension for a given MIME type.
 
 It also contains the following, for tuning the behavior:
 
