@@ -49,7 +49,7 @@ else:
 #   _listener holds the server object doing the listening
 _listener = None
 
-def fileConfig(fname, defaults=None, disable_existing_loggers=1):
+def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     """
     Read the logging configuration from a ConfigParser-format file.
 
