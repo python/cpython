@@ -1588,7 +1588,7 @@ SyntaxError: can't assign to yield expression
 Traceback (most recent call last):
   ...
   File "<doctest test.test_generators.__test__.coroutine[25]>", line 1
-SyntaxError: augmented assignment to yield expression not possible
+SyntaxError: can't assign to yield expression
 
 
 Now check some throw() conditions:

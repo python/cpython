@@ -144,7 +144,7 @@ Verify that syntax error's are raised for genexps used as lvalues
     Traceback (most recent call last):
        ...
       File "<doctest test.test_genexps.__test__.doctests[41]>", line 1
-    SyntaxError: augmented assignment to generator expression not possible
+    SyntaxError: can't assign to generator expression
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############
