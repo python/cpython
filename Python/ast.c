@@ -2088,31 +2088,6 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
-        /* TODO(nas): Remove duplicated error checks (set_context does it) */
-        switch (expr1->kind) {
-            case GeneratorExp_kind:
-                ast_error(ch, "augmented assignment to generator "
-                          "expression not possible");
-                return NULL;
-            case Yield_kind:
-                ast_error(ch, "augmented assignment to yield "
-                          "expression not possible");
-                return NULL;
-            case Name_kind: {
-                const char *var_name = PyBytes_AS_STRING(expr1->v.Name.id);
-                if ((var_name[0] == 'N' || var_name[0] == 'T' || var_name[0] == 'F') &&
-                    !forbidden_check(c, ch, var_name))
-                    return NULL;
-                break;
-            }
-            case Attribute_kind:
-            case Subscript_kind:
-                break;
-            default:
-                ast_error(ch, "illegal expression for augmented "
-                          "assignment");
-                return NULL;
-        }
         if(!set_context(c, expr1, Store, ch))
             return NULL;
 

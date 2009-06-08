@@ -248,12 +248,12 @@ Traceback (most recent call last):
 SyntaxError: keyword can't be an expression
 
 
-From ast_for_expr_stmt():
+More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
   File "<doctest test.test_syntax[31]>", line 1
-SyntaxError: augmented assignment to generator expression not possible
+SyntaxError: can't assign to generator expression
 >>> None += 1
 Traceback (most recent call last):
   File "<doctest test.test_syntax[32]>", line 1
@@ -261,7 +261,7 @@ SyntaxError: cannot assign to None
 >>> f() += 1
 Traceback (most recent call last):
   File "<doctest test.test_syntax[33]>", line 1
-SyntaxError: illegal expression for augmented assignment
+SyntaxError: can't assign to function call
 
 
 Test continue in finally in weird combinations.
