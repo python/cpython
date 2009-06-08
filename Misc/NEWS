@@ -1005,6 +1005,9 @@ Tools/Demos
 Build
 -----
 
+- Issue 5809: Specifying both --enable-framework and --enable-shared is
+  an error. Configure now explicity tells you about this.
+
 - Issue #3585: Add pkg-config support. It creates a python-2.7.pc file
   and a python.pc symlink in the $(LIBDIR)/pkgconfig directory. Patch by
   Clinton Roy.
