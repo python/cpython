@@ -3130,7 +3130,6 @@ ast_for_stmt(struct compiling *c, const node *n)
         n = CHILD(n, 0);
     }
     if (TYPE(n) == small_stmt) {
-        REQ(n, small_stmt);
         n = CHILD(n, 0);
         /* small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt
                      | flow_stmt | import_stmt | global_stmt | exec_stmt
