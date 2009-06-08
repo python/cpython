@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Ezio Melotti was given SVN access on June 7 2009 by GFB, for work on and
+  fixes to the documentation.
+
 - Paul Kippes was given commit privileges at PyCon 2009 by BAC to work on 3to2.
 
 - Ron DuPlain was given commit privileges at PyCon 2009 by BAC to work on 3to2.
