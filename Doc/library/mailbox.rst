@@ -1,4 +1,3 @@
-
 :mod:`mailbox` --- Manipulate mailboxes in various formats
 ==========================================================
 
@@ -26,7 +25,6 @@ Maildir, mbox, MH, Babyl, and MMDF.
 
 :class:`Mailbox` objects
 ------------------------
-
 
 .. class:: Mailbox
 
@@ -154,7 +152,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       when the :class:`Mailbox` instance was initialized.
 
 
-   .. method:: get(key[, default=None])
+   .. method:: get(key, default=None)
                __getitem__(key)
 
       Return a representation of the message corresponding to *key*. If no such
@@ -209,11 +207,10 @@ Maildir, mbox, MH, Babyl, and MMDF.
       Delete all messages from the mailbox.
 
 
-   .. method:: pop(key[, default])
+   .. method:: pop(key, default=None)
 
       Return a representation of the message corresponding to *key* and delete
-      the message. If no such message exists, return *default* if it was
-      supplied or else raise a :exc:`KeyError` exception. The message is
+      the message. If no such message exists, return *default*. The message is
       represented as an instance of the appropriate format-specific
       :class:`Message` subclass unless a custom message factory was specified
       when the :class:`Mailbox` instance was initialized.
@@ -277,7 +274,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^
 
 
-.. class:: Maildir(dirname[, factory=None[, create=True]])
+.. class:: Maildir(dirname, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Maildir format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -419,7 +416,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: mbox(path[, factory=None[, create=True]])
+.. class:: mbox(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in mbox format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -479,7 +476,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^
 
 
-.. class:: MH(path[, factory=None[, create=True]])
+.. class:: MH(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MH format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -609,7 +606,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^
 
 
-.. class:: Babyl(path[, factory=None[, create=True]])
+.. class:: Babyl(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Babyl format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -685,7 +682,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: MMDF(path[, factory=None[, create=True]])
+.. class:: MMDF(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MMDF format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -737,7 +734,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ------------------------
 
 
-.. class:: Message([message])
+.. class:: Message(message=None)
 
    A subclass of the :mod:`email.Message` module's :class:`Message`. Subclasses of
    :class:`mailbox.Message` add mailbox-format-specific state and behavior.
@@ -772,7 +769,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: MaildirMessage([message])
+.. class:: MaildirMessage(message=None)
 
    A message with Maildir-specific behaviors. Parameter *message* has the same
    meaning as with the :class:`Message` constructor.
@@ -940,7 +937,7 @@ When a :class:`MaildirMessage` instance is created based upon a
 ^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: mboxMessage([message])
+.. class:: mboxMessage(message=None)
 
    A message with mbox-specific behaviors. Parameter *message* has the same meaning
    as with the :class:`Message` constructor.
@@ -983,7 +980,7 @@ When a :class:`MaildirMessage` instance is created based upon a
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
@@ -1094,7 +1091,7 @@ instance, the "From " line is copied and all flags directly correspond:
 ^^^^^^^^^^^^^^^^^^
 
 
-.. class:: MHMessage([message])
+.. class:: MHMessage(message=None)
 
    A message with MH-specific behaviors. Parameter *message* has the same meaning
    as with the :class:`Message` constructor.
@@ -1184,7 +1181,7 @@ When an :class:`MHMessage` instance is created based upon a
 ^^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: BabylMessage([message])
+.. class:: BabylMessage(message=None)
 
    A message with Babyl-specific behaviors. Parameter *message* has the same
    meaning as with the :class:`Message` constructor.
@@ -1312,7 +1309,7 @@ When a :class:`BabylMessage` instance is created based upon an
 ^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: MMDFMessage([message])
+.. class:: MMDFMessage(message=None)
 
    A message with MMDF-specific behaviors. Parameter *message* has the same meaning
    as with the :class:`Message` constructor.
@@ -1354,7 +1351,7 @@ When a :class:`BabylMessage` instance is created based upon an
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be

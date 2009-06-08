@@ -1,4 +1,3 @@
-
 :mod:`marshal` --- Internal Python object serialization
 =======================================================
 

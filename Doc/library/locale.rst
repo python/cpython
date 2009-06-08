@@ -1,4 +1,3 @@
-
 :mod:`locale` --- Internationalization services
 ===============================================
 
@@ -26,7 +25,7 @@ The :mod:`locale` module defines the following exception and functions:
    Exception raised when :func:`setlocale` fails.
 
 
-.. function:: setlocale(category[, locale])
+.. function:: setlocale(category, locale=None)
 
    If *locale* is specified, it may be a string, a tuple of the form ``(language
    code, encoding)``, or ``None``. If it is a tuple, it is converted to a string
@@ -151,7 +150,7 @@ The :mod:`locale` module defines the following exception and functions:
    constants are available in the locale module.
 
 
-.. function:: getdefaultlocale([envvars])
+.. function:: getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'))
 
    Tries to determine the default locale settings and returns them as a tuple of
    the form ``(language code, encoding)``.
@@ -164,17 +163,17 @@ The :mod:`locale` module defines the following exception and functions:
 
    To maintain compatibility with other platforms, not only the :envvar:`LANG`
    variable is tested, but a list of variables given as envvars parameter.  The
-   first found to be defined will be used.  *envvars* defaults to the search path
-   used in GNU gettext; it must always contain the variable name ``LANG``.  The GNU
-   gettext search path contains ``'LANGUAGE'``, ``'LC_ALL'``, ``'LC_CTYPE'``, and
-   ``'LANG'``, in that order.
+   first found to be defined will be used.  *envvars* defaults to the search
+   path used in GNU gettext; it must always contain the variable name
+   ``'LANG'``.  The GNU gettext search path contains ``'LC_ALL'``,
+   ``'LC_CTYPE'``, ``'LANG'`` and ``'LANGUAGE'``, in that order.
 
    Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
 
-.. function:: getlocale([category])
+.. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as sequence containing
    *language code*, *encoding*. *category* may be one of the :const:`LC_\*` values
@@ -185,7 +184,7 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
 
 
-.. function:: getpreferredencoding([do_setlocale])
+.. function:: getpreferredencoding(do_setlocale=True)
 
    Return the encoding used for text data, according to user preferences.  User
    preferences are expressed differently on different systems, and might not be
@@ -207,7 +206,7 @@ The :mod:`locale` module defines the following exception and functions:
    encoding for the locale code just like :func:`setlocale`.
 
 
-.. function:: resetlocale([category])
+.. function:: resetlocale(category=LC_ALL)
 
    Sets the locale for *category* to the default setting.
 
@@ -232,7 +231,7 @@ The :mod:`locale` module defines the following exception and functions:
    sequence of strings.
 
 
-.. function:: format(format, val[, grouping[, monetary]])
+.. function:: format(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
@@ -246,13 +245,13 @@ The :mod:`locale` module defines the following exception and functions:
    For whole format strings, use :func:`format_string`.
 
 
-.. function:: format_string(format, val[, grouping])
+.. function:: format_string(format, val, grouping=False)
 
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
 
 
-.. function:: currency(val[, symbol[, grouping[, international]]])
+.. function:: currency(val, symbol=True, grouping=False, international=False)
 
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 

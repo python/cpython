@@ -616,9 +616,9 @@ In addition to the classes described above, there are a number of module- level
 functions.
 
 
-.. function:: getLogger([name])
+.. function:: getLogger(name=None)
 
-   Return a logger with the specified name or, if no name is specified, return a
+   Return a logger with the specified name or, if name is ``None``, return a
    logger which is the root logger of the hierarchy. If specified, the name is
    typically a dot-separated hierarchical name like *"a"*, *"a.b"* or *"a.b.c.d"*.
    Choice of these names is entirely up to the developer who is using logging.
@@ -639,7 +639,7 @@ functions.
           # ... override behaviour here
 
 
-.. function:: debug(msg[, *args[, **kwargs]])
+.. function:: debug(msg, *args, **kwargs)
 
    Logs a message with level :const:`DEBUG` on the root logger. The *msg* is the
    message format string, and the *args* are the arguments which are merged into
@@ -663,7 +663,7 @@ functions.
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning("Protocol problem: %s", "connection reset", extra=d)
 
-   would print something like  ::
+   would print something like ::
 
       2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
@@ -686,38 +686,38 @@ functions.
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
 
-.. function:: info(msg[, *args[, **kwargs]])
+.. function:: info(msg, *args, **kwargs)
 
    Logs a message with level :const:`INFO` on the root logger. The arguments are
    interpreted as for :func:`debug`.
 
 
-.. function:: warning(msg[, *args[, **kwargs]])
+.. function:: warning(msg, *args, **kwargs)
 
    Logs a message with level :const:`WARNING` on the root logger. The arguments are
    interpreted as for :func:`debug`.
 
 
-.. function:: error(msg[, *args[, **kwargs]])
+.. function:: error(msg, *args, **kwargs)
 
    Logs a message with level :const:`ERROR` on the root logger. The arguments are
    interpreted as for :func:`debug`.
 
 
-.. function:: critical(msg[, *args[, **kwargs]])
+.. function:: critical(msg, *args, **kwargs)
 
    Logs a message with level :const:`CRITICAL` on the root logger. The arguments
    are interpreted as for :func:`debug`.
 
 
-.. function:: exception(msg[, *args])
+.. function:: exception(msg, *args)
 
    Logs a message with level :const:`ERROR` on the root logger. The arguments are
    interpreted as for :func:`debug`. Exception info is added to the logging
    message. This function should only be called from an exception handler.
 
 
-.. function:: log(level, msg[, *args[, **kwargs]])
+.. function:: log(level, msg, *args, **kwargs)
 
    Logs a message with level *level* on the root logger. The other arguments are
    interpreted as for :func:`debug`.
@@ -759,7 +759,7 @@ functions.
    it as a :class:`LogRecord` instance at the receiving end.
 
 
-.. function:: basicConfig([**kwargs])
+.. function:: basicConfig(**kwargs)
 
    Does basic configuration for the logging system by creating a
    :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
@@ -876,7 +876,7 @@ instantiated directly, but always through the module-level function
    :const:`NOTSET` is found, and that value is returned.
 
 
-.. method:: Logger.debug(msg[, *args[, **kwargs]])
+.. method:: Logger.debug(msg, *args, **kwargs)
 
    Logs a message with level :const:`DEBUG` on this logger. The *msg* is the
    message format string, and the *args* are the arguments which are merged into
@@ -924,37 +924,37 @@ instantiated directly, but always through the module-level function
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
 
-.. method:: Logger.info(msg[, *args[, **kwargs]])
+.. method:: Logger.info(msg, *args, **kwargs)
 
    Logs a message with level :const:`INFO` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.warning(msg[, *args[, **kwargs]])
+.. method:: Logger.warning(msg, *args, **kwargs)
 
    Logs a message with level :const:`WARNING` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.error(msg[, *args[, **kwargs]])
+.. method:: Logger.error(msg, *args, **kwargs)
 
    Logs a message with level :const:`ERROR` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.critical(msg[, *args[, **kwargs]])
+.. method:: Logger.critical(msg, *args, **kwargs)
 
    Logs a message with level :const:`CRITICAL` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.log(lvl, msg[, *args[, **kwargs]])
+.. method:: Logger.log(lvl, msg, *args, **kwargs)
 
    Logs a message with integer level *lvl* on this logger. The other arguments are
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.exception(msg[, *args])
+.. method:: Logger.exception(msg, *args)
 
    Logs a message with level :const:`ERROR` on this logger. The arguments are
    interpreted as for :meth:`debug`. Exception info is added to the logging
@@ -1001,7 +1001,7 @@ instantiated directly, but always through the module-level function
    Logger-level filtering is applied using :meth:`filter`.
 
 
-.. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info [, func, extra])
+.. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info, func=None, extra=None)
 
    This is a factory method which can be overridden in subclasses to create
    specialized :class:`LogRecord` instances.
@@ -1561,7 +1561,7 @@ file-like object (or, more precisely, any object which supports :meth:`write`
 and :meth:`flush` methods).
 
 
-.. class:: StreamHandler([strm])
+.. class:: StreamHandler(strm=None)
 
    Returns a new instance of the :class:`StreamHandler` class. If *strm* is
    specified, the instance will use it for logging output; otherwise, *sys.stderr*
@@ -1591,7 +1591,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 :class:`StreamHandler`.
 
 
-.. class:: FileHandler(filename[, mode[, encoding[, delay]]])
+.. class:: FileHandler(filename, mode='a', encoding=None, delay=0)
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
@@ -1678,7 +1678,7 @@ The :class:`RotatingFileHandler` class, located in the :mod:`logging.handlers`
 module, supports rotation of disk log files.
 
 
-.. class:: RotatingFileHandler(filename[, mode[, maxBytes[, backupCount[, encoding[, delay]]]]])
+.. class:: RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=0)
 
    Returns a new instance of the :class:`RotatingFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
@@ -1719,7 +1719,7 @@ The :class:`TimedRotatingFileHandler` class, located in the
 timed intervals.
 
 
-.. class:: TimedRotatingFileHandler(filename [,when [,interval [,backupCount[, encoding[, delay[, utc]]]]]])
+.. class:: TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=0, utc=False)
 
    Returns a new instance of the :class:`TimedRotatingFileHandler` class. The
    specified file is opened and used as the stream for logging. On rotating it also
@@ -1861,7 +1861,7 @@ The :class:`SysLogHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to a remote or local Unix syslog.
 
 
-.. class:: SysLogHandler([address[, facility]])
+.. class:: SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER)
 
    Returns a new instance of the :class:`SysLogHandler` class intended to
    communicate with a remote Unix machine whose address is given by *address* in
@@ -1900,7 +1900,7 @@ Windows XP event log. Before you can use it, you need Mark Hammond's Win32
 extensions for Python installed.
 
 
-.. class:: NTEventLogHandler(appname[, dllname[, logtype]])
+.. class:: NTEventLogHandler(appname, dllname=None, logtype='Application')
 
    Returns a new instance of the :class:`NTEventLogHandler` class. The *appname* is
    used to define the application name as it appears in the event log. An
@@ -1964,7 +1964,7 @@ The :class:`SMTPHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to an email address via SMTP.
 
 
-.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject[, credentials])
+.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None)
 
    Returns a new instance of the :class:`SMTPHandler` class. The instance is
    initialized with the from and to addresses and subject line of the email. The
@@ -2023,7 +2023,7 @@ should, then :meth:`flush` is expected to do the needful.
       overridden to implement custom flushing strategies.
 
 
-.. class:: MemoryHandler(capacity[, flushLevel [, target]])
+.. class:: MemoryHandler(capacity, flushLevel=ERROR, target=None)
 
    Returns a new instance of the :class:`MemoryHandler` class. The instance is
    initialized with a buffer size of *capacity*. If *flushLevel* is not specified,
@@ -2062,7 +2062,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
 ``POST`` semantics.
 
 
-.. class:: HTTPHandler(host, url[, method])
+.. class:: HTTPHandler(host, url, method='GET')
 
    Returns a new instance of the :class:`HTTPHandler` class. The instance is
    initialized with a host address, url and HTTP method. The *host* can be of the
@@ -2150,13 +2150,13 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 +-------------------------+-----------------------------------------------+
 
 
-.. class:: Formatter([fmt[, datefmt]])
+.. class:: Formatter(fmt=None, datefmt=None)
 
-   Returns a new instance of the :class:`Formatter` class. The instance is
-   initialized with a format string for the message as a whole, as well as a format
-   string for the date/time portion of a message. If no *fmt* is specified,
-   ``'%(message)s'`` is used. If no *datefmt* is specified, the ISO8601 date format
-   is used.
+   Returns a new instance of the :class:`Formatter` class.  The instance is
+   initialized with a format string for the message as a whole, as well as a
+   format string for the date/time portion of a message.  If no *fmt* is
+   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, the
+   ISO8601 date format is used.
 
 
    .. method:: format(record)
@@ -2178,7 +2178,7 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
       recalculates it afresh.
 
 
-   .. method:: formatTime(record[, datefmt])
+   .. method:: formatTime(record, datefmt=None)
 
       This method should be called from :meth:`format` by a formatter which
       wants to make use of a formatted time. This method can be overridden in
@@ -2208,11 +2208,11 @@ example, a filter initialized with "A.B" will allow events logged by loggers
 initialized with the empty string, all events are passed.
 
 
-.. class:: Filter([name])
+.. class:: Filter(name='')
 
    Returns an instance of the :class:`Filter` class. If *name* is specified, it
    names a logger which, together with its children, will have its events allowed
-   through the filter. If no name is specified, allows every event.
+   through the filter. If *name* is the empty string, allows every event.
 
 
    .. method:: filter(record)
@@ -2233,7 +2233,7 @@ such as when the record was created, the source line where the logging call was
 made, and any exception information to be logged.
 
 
-.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info [, func])
+.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info, func=None)
 
    Returns an instance of :class:`LogRecord` initialized with interesting
    information. The *name* is the logger name; *lvl* is the numeric level;
@@ -2311,7 +2311,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 :mod:`logging` or :mod:`logging.handlers`.
 
 
-.. function:: fileConfig(fname[, defaults])
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
 
    Reads the logging configuration from a :mod:`configparser`\-format file named
    *fname*. This function can be called several times from an application,
@@ -2320,8 +2320,11 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    and load the chosen configuration). Defaults to be passed to the ConfigParser
    can be specified in the *defaults* argument.
 
+   If *disable_existing_loggers* is true, any existing loggers that are not
+   children of named loggers will be disabled.
 
-.. function:: listen([port])
+
+.. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT)
 
    Starts up a socket server on the specified port, and listens for new
    configurations. If no port is specified, the module's default

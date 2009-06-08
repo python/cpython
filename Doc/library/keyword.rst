@@ -1,4 +1,3 @@
-
 :mod:`keyword` --- Testing for Python keywords
 ==============================================
 

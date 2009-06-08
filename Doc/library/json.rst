@@ -112,7 +112,7 @@ Using json.tool from the shell to validate and pretty-print::
 Basic Usage
 -----------
 
-.. function:: dump(obj, fp[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, default[, **kw]]]]]]]]]])
+.. function:: dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, cls=None, indent=None, separators=None, default=None, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
    file-like object).
@@ -125,7 +125,6 @@ Basic Usage
    The :mod:`json` module always produces :class:`str` objects, not
    :class:`bytes` objects. Therefore, ``fp.write()`` must support :class:`str`
    input.
-
 
    If *check_circular* is ``False`` (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
@@ -153,13 +152,13 @@ Basic Usage
    *cls* kwarg.
 
 
-.. function:: dumps(obj[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, default[, **kw]]]]]]]]]])
+.. function:: dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, cls=None, indent=None, separators=None, default=None, **kw)
 
    Serialize *obj* to a JSON formatted :class:`str`.  The arguments have the
    same meaning as in :func:`dump`.
 
 
-.. function:: load(fp[, cls[, object_hook[, parse_float[, parse_int[, parse_constant[, object_pairs_hook[, **kw]]]]]]]])
+.. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *fp* (a ``.read()``-supporting file-like object containing a JSON
    document) to a Python object.
@@ -200,7 +199,7 @@ Basic Usage
    class.
 
 
-.. function:: loads(s[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_constant[, object_pairs_hook[, **kw]]]]]]]])
+.. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str` or :class:`unicode` instance containing a JSON
    document) to a Python object.
@@ -216,7 +215,7 @@ Basic Usage
 Encoders and decoders
 ---------------------
 
-.. class:: JSONDecoder([encoding[, object_hook[, parse_float[, parse_int[, parse_constant[, strict[, object_pairs_hook]]]]]]])
+.. class:: JSONDecoder(object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None)
 
    Simple JSON decoder.
 
@@ -292,7 +291,7 @@ Encoders and decoders
       extraneous data at the end.
 
 
-.. class:: JSONEncoder([skipkeys[, ensure_ascii[, check_circular[, allow_nan[, sort_keys[, indent[, separators[, default]]]]]]]])
+.. class:: JSONEncoder(skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
 
    Extensible JSON encoder for Python data structures.
 
