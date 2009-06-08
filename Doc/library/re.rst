@@ -479,9 +479,9 @@ form.
 .. data:: A
           ASCII
 
-   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` perform ASCII-only
-   matching instead of full Unicode matching. This is only meaningful for
-   Unicode patterns, and is ignored for byte patterns.
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
+   perform ASCII-only matching instead of full Unicode matching.  This is only
+   meaningful for Unicode patterns, and is ignored for byte patterns.
 
    Note that for backward compatibility, the :const:`re.U` flag still
    exists (as well as its synonym :const:`re.UNICODE` and its embedded
