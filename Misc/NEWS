@@ -64,6 +64,10 @@ Build
 - Issue #6154: Make sure the intl library is added to LIBS if needed. Also
   added LIBS to OS X framework builds.
 
+- Issue #5809: Specifying both --enable-framework and --enable-shared is
+  an error. Configure now explicity tells you about this.
+
+
 
 What's New in Python 3.1 release candidate 1?
 =============================================
