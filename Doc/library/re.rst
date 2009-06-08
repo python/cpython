@@ -9,8 +9,7 @@
 
 
 This module provides regular expression matching operations similar to
-those found in Perl. Both patterns and strings to be searched can be
-Unicode strings as well as 8-bit strings.
+those found in Perl.
 
 Both patterns and strings to be searched can be Unicode strings as well as
 8-bit strings. However, Unicode strings and 8-bit strings cannot be mixed:
