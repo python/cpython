@@ -1522,6 +1522,10 @@ then
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])
 	AC_MSG_RESULT(yes)
+	if test $enable_shared = "yes"
+	then
+		AC_MSG_ERROR([Specifying both --enable-shared and --enable-framework is not supported, use only --enable-framework instead])
+	fi
 else
 	AC_MSG_RESULT(no)
 fi
