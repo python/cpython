@@ -15,6 +15,7 @@ import sys, tempfile, os
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  If not available, nothing after this line will be executed.
 
+import unittest
 from test.support import requires, import_module
 requires('curses')
 
