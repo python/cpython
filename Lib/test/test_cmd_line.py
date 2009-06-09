@@ -173,7 +173,7 @@ class CmdLineTest(unittest.TestCase):
         with test.support.EnvironmentVarGuard() as env:
             path1 = "ABCDE" * 100
             path2 = "FGHIJ" * 100
-            env['PYTHONPATH'] = path1 + os.pathsep + path2
+            env.set('PYTHONPATH', path1 + os.pathsep + path2)
             p = _spawn_python('-S', '-c', 'import sys; print(sys.path)')
             stdout, _ = p.communicate()
             self.assert_(path1.encode('ascii') in stdout)
