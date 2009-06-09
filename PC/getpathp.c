@@ -424,8 +424,6 @@ calculate_path(void)
 	wchar_t *buf;
 	size_t bufsz;
 	wchar_t *pythonhome = Py_GetPythonHome();
-	char *_envpath = Py_GETENV("PYTHONPATH");
-	wchar_t wenvpath[MAXPATHLEN+1];
 	wchar_t *envpath = NULL;
 
 #ifdef MS_WINDOWS
@@ -434,13 +432,20 @@ calculate_path(void)
 	wchar_t *userpath = NULL;
 	wchar_t zip_path[MAXPATHLEN+1];
 	size_t len;
-#endif
+
+	if (!Py_IgnoreEnvironmentFlag) {
+		envpath = _wgetenv(L"PYTHONPATH");
+	}
+#else
+	char *_envpath = Py_GETENV("PYTHONPATH");
+	wchar_t wenvpath[MAXPATHLEN+1];
 	if (_envpath) {
 		size_t r = mbstowcs(wenvpath, _envpath, MAXPATHLEN+1);
 		envpath = wenvpath;
 		if (r == (size_t)-1 || r >= MAXPATHLEN)
 			envpath = NULL;
 	}
+#endif
 
 	get_progpath();
 	/* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
