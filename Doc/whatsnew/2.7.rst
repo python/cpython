@@ -672,7 +672,7 @@ that may require changes to your code:
 * Because of an optimization for the :keyword:`with` statement, the special
   methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
   type, and cannot be directly attached to the object's instance.  This
-  affects new-styles classes (derived from :class:`object`) or C extension
+  affects new-styles classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
 
 .. ======================================================================
