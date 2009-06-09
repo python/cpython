@@ -376,6 +376,30 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
 
+* The :mod:`pickle` module has been adapted for better interoperability with
+  Python 2.x when used with protocol 2 or lower.  The reorganization of the
+  standard library changed the formal reference for many objects.  For
+  example, ``__builtin__.set`` in Python 2 is called ``builtins.set`` in Python
+  3. This change cofounded efforts to share data between different versions of
+  Python.  But now when protocol 2 or lower is selected, the pickler will
+  automatically use the old Python 2 names for both loading and dumping. This
+  remapping is turned-on by default but can be disabled with the *fix_imports*
+  option::
+
+    >>> s = {1, 2, 3}
+    >>> pickle.dumps(s, protocol=0)
+    b'c__builtin__\nset\np0\n((lp1\nL1L\naL2L\naL3L\natp2\nRp3\n.'
+    >>> pickle.dumps(s, protocol=0, fix_imports=False)
+    b'cbuiltins\nset\np0\n((lp1\nL1L\naL2L\naL3L\natp2\nRp3\n.'
+
+  An unfortunate but unavoidable side-effect of this change is that protocol 2
+  pickles produced by Python 3.1 won't be readable with Python 3.0. The latest
+  pickle protocol, protocol 3, should be used when migrating data between
+  Python 3.x implementations, as it doesn't attempt to remain compatible with
+  Python 2.x.
+
+  (Contributed by Alexandre Vassalotti and Antoine Pitrou, :issue:`6137`.)
+
 * A new module, :mod:`importlib` was added.  It provides a complete, portable,
   pure Python reference implementation of the :keyword:`import` statement and its
   counterpart, the :func:`__import__` function.  It represents a substantial
@@ -383,24 +407,6 @@ New, Improved, and Deprecated Modules
   imports.
 
   (Contributed by Brett Cannon.)
-
-* :mod:`pickle` is now more compatible with Python 2.x when using a
-  2.x-compatible protocol (that is, protocol 2 or lower), through translation
-  of some standard library module names to or from their Python 2.x
-  equivalents.
-
-  This means that more (protocol 2 or lower) pickles produced by Python 3.1
-  will be reusable by Python 2.x, and vice-versa. Standard set objects are
-  an example of this improvement.
-
-  This has the (unfortunate but unavoidable) side effect that some
-  protocol 2 pickles produced by Python 3.1 won't be readable with
-  Python 3.0. The latest pickle protocol, protocol 3, should be used when
-  migrating data between Python 3.x implementations, as it doesn't attempt
-  to remain compatible with Python 2.x.
-
-  (Contributed by Alexandre Vassalotti and Antoine Pitrou, :issue:`6137`.)
-
 
 Optimizations
 =============
