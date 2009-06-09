@@ -61,7 +61,7 @@
 -- makes a difference when the precision is 0.
 %#.0f 0 -> 0.
 %#.1f 0 -> 0.0
---%#.0f 1.5 -> 2.   See issue 6198.
+%#.0f 1.5 -> 2.
 -- %#.0f 2.5 -> 2.    See issue 6198.
 %#.0f 10.1 -> 10.
 %#.0f 1234.56 -> 1235.
