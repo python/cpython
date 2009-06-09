@@ -133,7 +133,9 @@ classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 arglist: (argument ',')* (argument [',']
                          |'*' test (',' argument)* [',' '**' test] 
                          |'**' test)
-argument: test [gen_for] | test '=' test  # Really [keyword '='] test
+# The reason that keywords are test nodes instead of NAME is that using NAME
+# results in an amiguity. ast.c makes sure it's a NAME.
+argument: test [gen_for] | test '=' test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
