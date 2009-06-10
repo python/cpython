@@ -1116,7 +1116,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
         outrate /= d;
 
         alloc_size = sizeof(int) * (unsigned)nchannels;
-        if (alloc_size < nchannels) {
+        if (alloc_size < (unsigned)nchannels) {
                 PyErr_SetString(PyExc_MemoryError,
                                 "not enough memory for output buffer");
                 return 0;
