@@ -380,7 +380,7 @@ New, Improved, and Deprecated Modules
   Python 2.x when used with protocol 2 or lower.  The reorganization of the
   standard library changed the formal reference for many objects.  For
   example, ``__builtin__.set`` in Python 2 is called ``builtins.set`` in Python
-  3. This change cofounded efforts to share data between different versions of
+  3. This change confounded efforts to share data between different versions of
   Python.  But now when protocol 2 or lower is selected, the pickler will
   automatically use the old Python 2 names for both loading and dumping. This
   remapping is turned-on by default but can be disabled with the *fix_imports*
