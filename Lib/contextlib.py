@@ -103,7 +103,7 @@ def nested(*managers):
 
     """
     warn("With-statements now directly support multiple context managers",
-        DeprecationWarning, 2)
+        DeprecationWarning, 3)
     exits = []
     vars = []
     exc = (None, None, None)
