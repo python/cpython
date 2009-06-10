@@ -134,7 +134,7 @@ arglist: (argument ',')* (argument [',']
                          |'*' test (',' argument)* [',' '**' test] 
                          |'**' test)
 # The reason that keywords are test nodes instead of NAME is that using NAME
-# results in an amiguity. ast.c makes sure it's a NAME.
+# results in an ambiguity. ast.c makes sure it's a NAME.
 argument: test [gen_for] | test '=' test
 
 list_iter: list_for | list_if
