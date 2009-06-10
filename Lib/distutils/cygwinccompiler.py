@@ -47,12 +47,19 @@ cygwin in no-cygwin mode).
 
 __revision__ = "$Id$"
 
-import os,sys,copy
+import os
+import sys
+import copy
+from subprocess import Popen, PIPE
+import re
+
 from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
 from distutils import log
+from distutils.version import LooseVersion
+from distutils.spawn import find_executable
 
 def get_msvcr():
     """Include the appropriate MSVC runtime library if Python was built
@@ -348,16 +355,16 @@ CONFIG_H_NOTOK = "not ok"
 CONFIG_H_UNCERTAIN = "uncertain"
 
 def check_config_h():
+    """Check if the current Python installation appears amenable to building
+    extensions with GCC.
 
-    """Check if the current Python installation (specifically, pyconfig.h)
-    appears amenable to building extensions with GCC.  Returns a tuple
-    (status, details), where 'status' is one of the following constants:
-      CONFIG_H_OK
-        all is well, go ahead and compile
-      CONFIG_H_NOTOK
-        doesn't look good
-      CONFIG_H_UNCERTAIN
-        not sure -- unable to read pyconfig.h
+    Returns a tuple (status, details), where 'status' is one of the following
+    constants:
+
+    - CONFIG_H_OK: all is well, go ahead and compile
+    - CONFIG_H_NOTOK: doesn't look good
+    - CONFIG_H_UNCERTAIN: not sure -- unable to read pyconfig.h
+
     'details' is a human-readable string explaining the situation.
 
     Note there are two ways to conclude "OK": either 'sys.version' contains
@@ -369,77 +376,49 @@ def check_config_h():
     # "pyconfig.h" check -- should probably be renamed...
 
     from distutils import sysconfig
-    import string
-    # if sys.version contains GCC then python was compiled with
-    # GCC, and the pyconfig.h file should be OK
-    if string.find(sys.version,"GCC") >= 0:
-        return (CONFIG_H_OK, "sys.version mentions 'GCC'")
 
+    # if sys.version contains GCC then python was compiled with GCC, and the
+    # pyconfig.h file should be OK
+    if "GCC" in sys.version:
+        return CONFIG_H_OK, "sys.version mentions 'GCC'"
+
+    # let's see if __GNUC__ is mentioned in python.h
     fn = sysconfig.get_config_h_filename()
     try:
-        # It would probably better to read single lines to search.
-        # But we do this only once, and it is fast enough
-        f = open(fn)
-        s = f.read()
-        f.close()
-
+        with open(fn) as config_h:
+            if "__GNUC__" in config_h.read():
+                return CONFIG_H_OK, "'%s' mentions '__GNUC__'" % fn
+            else:
+                return CONFIG_H_NOTOK, "'%s' does not mention '__GNUC__'" % fn
     except IOError, exc:
-        # if we can't read this file, we cannot say it is wrong
-        # the compiler will complain later about this file as missing
         return (CONFIG_H_UNCERTAIN,
                 "couldn't read '%s': %s" % (fn, exc.strerror))
 
-    else:
-        # "pyconfig.h" contains an "#ifdef __GNUC__" or something similar
-        if string.find(s,"__GNUC__") >= 0:
-            return (CONFIG_H_OK, "'%s' mentions '__GNUC__'" % fn)
-        else:
-            return (CONFIG_H_NOTOK, "'%s' does not mention '__GNUC__'" % fn)
+RE_VERSION = re.compile('(\d+\.\d+(\.\d+)*)')
 
+def _find_exe_version(cmd):
+    """Find the version of an executable by running `cmd` in the shell.
 
+    If the command is not found, or the output does not match
+    `RE_VERSION`, returns None.
+    """
+    executable = cmd.split()[0]
+    if find_executable(executable) is None:
+        return None
+    out = Popen(cmd, shell=True, stdout=PIPE).stdout
+    try:
+        out_string = out.read()
+    finally:
+        out.close()
+    result = RE_VERSION.search(out_string)
+    if result is None:
+        return None
+    return LooseVersion(result.group(1))
 
 def get_versions():
     """ Try to find out the versions of gcc, ld and dllwrap.
-        If not possible it returns None for it.
-    """
-    from distutils.version import LooseVersion
-    from distutils.spawn import find_executable
-    import re
 
-    gcc_exe = find_executable('gcc')
-    if gcc_exe:
-        out = os.popen(gcc_exe + ' -dumpversion','r')
-        out_string = out.read()
-        out.close()
-        result = re.search('(\d+\.\d+(\.\d+)*)',out_string)
-        if result:
-            gcc_version = LooseVersion(result.group(1))
-        else:
-            gcc_version = None
-    else:
-        gcc_version = None
-    ld_exe = find_executable('ld')
-    if ld_exe:
-        out = os.popen(ld_exe + ' -v','r')
-        out_string = out.read()
-        out.close()
-        result = re.search('(\d+\.\d+(\.\d+)*)',out_string)
-        if result:
-            ld_version = LooseVersion(result.group(1))
-        else:
-            ld_version = None
-    else:
-        ld_version = None
-    dllwrap_exe = find_executable('dllwrap')
-    if dllwrap_exe:
-        out = os.popen(dllwrap_exe + ' --version','r')
-        out_string = out.read()
-        out.close()
-        result = re.search(' (\d+\.\d+(\.\d+)*)',out_string)
-        if result:
-            dllwrap_version = LooseVersion(result.group(1))
-        else:
-            dllwrap_version = None
-    else:
-        dllwrap_version = None
-    return (gcc_version, ld_version, dllwrap_version)
+    If not possible it returns None for it.
+    """
+    commands = ['gcc -dumpversion', 'ld -v', 'dllwrap --version']
+    return tuple([_find_exe_version(cmd) for cmd in commands])
