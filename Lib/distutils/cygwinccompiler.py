@@ -84,8 +84,9 @@ def get_msvcr():
             raise ValueError("Unknown MS Compiler version %s " % msc_ver)
 
 
-class CygwinCCompiler (UnixCCompiler):
-
+class CygwinCCompiler(UnixCCompiler):
+    """ Handles the Cygwin port of the GNU C compiler to Windows.
+    """
     compiler_type = 'cygwin'
     obj_extension = ".o"
     static_lib_extension = ".a"
@@ -94,11 +95,11 @@ class CygwinCCompiler (UnixCCompiler):
     shared_lib_format = "%s%s"
     exe_extension = ".exe"
 
-    def __init__ (self, verbose=0, dry_run=0, force=0):
+    def __init__(self, verbose=0, dry_run=0, force=0):
 
-        UnixCCompiler.__init__ (self, verbose, dry_run, force)
+        UnixCCompiler.__init__(self, verbose, dry_run, force)
 
-        (status, details) = check_config_h()
+        status, details = check_config_h()
         self.debug_print("Python's GCC status: %s (details: %s)" %
                          (status, details))
         if status is not CONFIG_H_OK:
@@ -153,10 +154,8 @@ class CygwinCCompiler (UnixCCompiler):
             # with MSVC 7.0 or later.
             self.dll_libraries = get_msvcr()
 
-    # __init__ ()
-
-
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        """Compiles the source by spawing GCC and windres if needed."""
         if ext == '.rc' or ext == '.res':
             # gcc needs '.res' and '.rc' compiled to object files !!!
             try:
@@ -170,21 +169,11 @@ class CygwinCCompiler (UnixCCompiler):
             except DistutilsExecError as msg:
                 raise CompileError(msg)
 
-    def link (self,
-              target_desc,
-              objects,
-              output_filename,
-              output_dir=None,
-              libraries=None,
-              library_dirs=None,
-              runtime_library_dirs=None,
-              export_symbols=None,
-              debug=0,
-              extra_preargs=None,
-              extra_postargs=None,
-              build_temp=None,
-              target_lang=None):
-
+    def link(self, target_desc, objects, output_filename, output_dir=None,
+             libraries=None, library_dirs=None, runtime_library_dirs=None,
+             export_symbols=None, debug=0, extra_preargs=None,
+             extra_postargs=None, build_temp=None, target_lang=None):
+        """Link the objects."""
         # use separate copies, so we can modify the lists
         extra_preargs = copy.copy(extra_preargs or [])
         libraries = copy.copy(libraries or [])
@@ -249,63 +238,44 @@ class CygwinCCompiler (UnixCCompiler):
         if not debug:
             extra_preargs.append("-s")
 
-        UnixCCompiler.link(self,
-                           target_desc,
-                           objects,
-                           output_filename,
-                           output_dir,
-                           libraries,
-                           library_dirs,
+        UnixCCompiler.link(self, target_desc, objects, output_filename,
+                           output_dir, libraries, library_dirs,
                            runtime_library_dirs,
                            None, # export_symbols, we do this in our def-file
-                           debug,
-                           extra_preargs,
-                           extra_postargs,
-                           build_temp,
+                           debug, extra_preargs, extra_postargs, build_temp,
                            target_lang)
-
-    # link ()
 
     # -- Miscellaneous methods -----------------------------------------
 
-    # overwrite the one from CCompiler to support rc and res-files
-    def object_filenames (self,
-                          source_filenames,
-                          strip_dir=0,
-                          output_dir=''):
-        if output_dir is None: output_dir = ''
+    def object_filenames(self, source_filenames, strip_dir=0, output_dir=''):
+        """Adds supports for rc and res files."""
+        if output_dir is None:
+            output_dir = ''
         obj_names = []
         for src_name in source_filenames:
             # use normcase to make sure '.rc' is really '.rc' and not '.RC'
-            (base, ext) = os.path.splitext (os.path.normcase(src_name))
+            base, ext = os.path.splitext(os.path.normcase(src_name))
             if ext not in (self.src_extensions + ['.rc','.res']):
                 raise UnknownFileError("unknown file type '%s' (from '%s')" % \
                       (ext, src_name))
             if strip_dir:
                 base = os.path.basename (base)
-            if ext == '.res' or ext == '.rc':
+            if ext in ('.res', '.rc'):
                 # these need to be compiled to object files
-                obj_names.append (os.path.join (output_dir,
-                                            base + ext + self.obj_extension))
+                obj_names.append (os.path.join(output_dir,
+                                              base + ext + self.obj_extension))
             else:
-                obj_names.append (os.path.join (output_dir,
-                                            base + self.obj_extension))
+                obj_names.append (os.path.join(output_dir,
+                                               base + self.obj_extension))
         return obj_names
 
-    # object_filenames ()
-
-# class CygwinCCompiler
-
-
 # the same as cygwin plus some additional parameters
-class Mingw32CCompiler (CygwinCCompiler):
-
+class Mingw32CCompiler(CygwinCCompiler):
+    """ Handles the Mingw32 port of the GNU C compiler to Windows.
+    """
     compiler_type = 'mingw32'
 
-    def __init__ (self,
-                  verbose=0,
-                  dry_run=0,
-                  force=0):
+    def __init__(self, verbose=0, dry_run=0, force=0):
 
         CygwinCCompiler.__init__ (self, verbose, dry_run, force)
 
@@ -340,10 +310,6 @@ class Mingw32CCompiler (CygwinCCompiler):
         # Include the appropriate MSVC runtime library if Python was built
         # with MSVC 7.0 or later.
         self.dll_libraries = get_msvcr()
-
-    # __init__ ()
-
-# class Mingw32CCompiler
 
 # Because these compilers aren't configured in Python's pyconfig.h file by
 # default, we should at least warn the user if he is using a unmodified
