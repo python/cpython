@@ -172,7 +172,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         #
         # Case of the 'when' specifier is not important; lower or upper case
         # will work.
-        currentTime = int(time.time())
         if self.when == 'S':
             self.interval = 1 # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
@@ -203,14 +202,15 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
         self.extMatch = re.compile(self.extMatch)
         self.interval = self.interval * interval # multiply by units requested
-        self.rolloverAt = currentTime + self.interval
-        # If we are rolling over at midnight or weekly, then the interval is already known.
-        # What we need to figure out is WHEN the next interval is.
-        self.adjustRollover(currentTime)
+        self.rolloverAt = self.computeRollover(int(time.time()))
 
         #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
 
-    def adjustRollover(self, currentTime):
+    def computeRollover(self, currentTime):
+        """
+        Work out the rollover time based on the specified time.
+        """
+        result = currentTime + self.interval
         # If we are rolling over at midnight or weekly, then the interval is already known.
         # What we need to figure out is WHEN the next interval is.  In other words,
         # if you are rolling over at midnight, then your base interval is 1 day,
@@ -230,7 +230,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             # r is the number of seconds left between now and midnight
             r = _MIDNIGHT - ((currentHour * 60 + currentMinute) * 60 +
                     currentSecond)
-            self.rolloverAt = currentTime + r
+            result = currentTime + r
             # If we are rolling over on a certain day, add in the number of days until
             # the next rollover, but offset by 1 since we just calculated the time
             # until the next day starts.  There are three cases:
@@ -253,7 +253,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    newRolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
+                    newRolloverAt = result + (daysToWait * (60 * 60 * 24))
                     if not self.utc:
                         dstNow = t[-1]
                         dstAtRollover = time.localtime(newRolloverAt)[-1]
@@ -262,7 +262,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                                 newRolloverAt = newRolloverAt - 3600
                             else:           # DST bows out before next rollover, so we need to add an hour
                                 newRolloverAt = newRolloverAt + 3600
-                    self.rolloverAt = newRolloverAt
+                    result = newRolloverAt
+        return result
 
     def shouldRollover(self, record):
         """
@@ -331,8 +332,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         #print "%s -> %s" % (self.baseFilename, dfn)
         self.mode = 'w'
         self.stream = self._open()
-        newRolloverAt = self.rolloverAt + self.interval
         currentTime = int(time.time())
+        newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
             newRolloverAt = newRolloverAt + self.interval
         #If DST changes and midnight or weekly rollover, adjust for this.
@@ -345,7 +346,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 else:           # DST bows out before next rollover, so we need to add an hour
                     newRolloverAt = newRolloverAt + 3600
         self.rolloverAt = newRolloverAt
-        self.adjustRollover(time.time())
 
 class WatchedFileHandler(logging.FileHandler):
     """
