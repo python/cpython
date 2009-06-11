@@ -24,4 +24,4 @@ class FixNumliterals(fixer_base.BaseFix):
         elif val.startswith(u'0') and val.isdigit() and len(set(val)) > 1:
             val = u"0o" + val[1:]
 
-        return Number(val, prefix=node.get_prefix())
+        return Number(val, prefix=node.prefix)

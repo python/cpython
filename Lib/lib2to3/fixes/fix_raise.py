@@ -52,31 +52,31 @@ class FixRaise(fixer_base.BaseFix):
                 # exc.children[1:-1] is the unparenthesized tuple
                 # exc.children[1].children[0] is the first element of the tuple
                 exc = exc.children[1].children[0].clone()
-            exc.set_prefix(" ")
+            exc.prefix = " "
 
         if "val" not in results:
             # One-argument raise
             new = pytree.Node(syms.raise_stmt, [Name(u"raise"), exc])
-            new.set_prefix(node.get_prefix())
+            new.prefix = node.prefix
             return new
 
         val = results["val"].clone()
         if is_tuple(val):
             args = [c.clone() for c in val.children[1:-1]]
         else:
-            val.set_prefix(u"")
+            val.prefix = u""
             args = [val]
 
         if "tb" in results:
             tb = results["tb"].clone()
-            tb.set_prefix(u"")
+            tb.prefix = u""
 
             e = Call(exc, args)
             with_tb = Attr(e, Name(u'with_traceback')) + [ArgList([tb])]
             new = pytree.Node(syms.simple_stmt, [Name(u"raise")] + with_tb)
-            new.set_prefix(node.get_prefix())
+            new.prefix = node.prefix
             return new
         else:
             return pytree.Node(syms.raise_stmt,
                                [Name(u"raise"), Call(exc, args)],
-                               prefix=node.get_prefix())
+                               prefix=node.prefix)

@@ -39,6 +39,6 @@ class FixIntern(fixer_base.BaseFix):
                                        [results["lpar"].clone(),
                                         newarglist,
                                         results["rpar"].clone()])] + after)
-        new.set_prefix(node.get_prefix())
+        new.prefix = node.prefix
         touch_import(None, u'sys', node)
         return new

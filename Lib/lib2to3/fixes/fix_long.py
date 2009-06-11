@@ -18,5 +18,5 @@ class FixLong(fixer_base.BaseFix):
     def transform(self, node, results):
         if is_probably_builtin(node):
             new = self.static_int.clone()
-            new.set_prefix(node.get_prefix())
+            new.prefix = node.prefix
             return new

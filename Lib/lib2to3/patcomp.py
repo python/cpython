@@ -14,10 +14,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 import os
 
 # Fairly local imports
-from .pgen2 import driver
-from .pgen2 import literals
-from .pgen2 import token
-from .pgen2 import tokenize
+from .pgen2 import driver, literals, token, tokenize, parse
 
 # Really local imports
 from . import pytree
@@ -26,6 +23,10 @@ from . import pygram
 # The pattern grammar file
 _PATTERN_GRAMMAR_FILE = os.path.join(os.path.dirname(__file__),
                                      "PatternGrammar.txt")
+
+
+class PatternSyntaxError(Exception):
+    pass
 
 
 def tokenize_wrapper(input):
@@ -54,7 +55,10 @@ class PatternCompiler(object):
     def compile_pattern(self, input, debug=False):
         """Compiles a pattern string to a nested pytree.*Pattern object."""
         tokens = tokenize_wrapper(input)
-        root = self.driver.parse_tokens(tokens, debug=debug)
+        try:
+            root = self.driver.parse_tokens(tokens, debug=debug)
+        except parse.ParseError as e:
+            raise PatternSyntaxError(str(e))
         return self.compile_node(root)
 
     def compile_node(self, node):
@@ -139,7 +143,9 @@ class PatternCompiler(object):
             value = node.value
             if value.isupper():
                 if value not in TOKEN_MAP:
-                    raise SyntaxError("Invalid token: %r" % value)
+                    raise PatternSyntaxError("Invalid token: %r" % value)
+                if nodes[1:]:
+                    raise PatternSyntaxError("Can't have details for token")
                 return pytree.LeafPattern(TOKEN_MAP[value])
             else:
                 if value == "any":
@@ -147,7 +153,7 @@ class PatternCompiler(object):
                 elif not value.startswith("_"):
                     type = getattr(self.pysyms, value, None)
                     if type is None:
-                        raise SyntaxError("Invalid symbol: %r" % value)
+                        raise PatternSyntaxError("Invalid symbol: %r" % value)
                 if nodes[1:]: # Details present
                     content = [self.compile_node(nodes[1].children[1])]
                 else:

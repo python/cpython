@@ -40,14 +40,14 @@ class FixThrow(fixer_base.BaseFix):
         if is_tuple(val):
             args = [c.clone() for c in val.children[1:-1]]
         else:
-            val.set_prefix(u"")
+            val.prefix = u""
             args = [val]
 
         throw_args = results["args"]
 
         if "tb" in results:
             tb = results["tb"].clone()
-            tb.set_prefix(u"")
+            tb.prefix = u""
 
             e = Call(exc, args)
             with_tb = Attr(e, Name(u'with_traceback')) + [ArgList([tb])]

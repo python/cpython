@@ -26,14 +26,14 @@ class FixWsComma(fixer_base.BaseFix):
         comma = False
         for child in new.children:
             if child in self.SEPS:
-                prefix = child.get_prefix()
+                prefix = child.prefix
                 if prefix.isspace() and u"\n" not in prefix:
-                    child.set_prefix(u"")
+                    child.prefix = u""
                 comma = True
             else:
                 if comma:
-                    prefix = child.get_prefix()
+                    prefix = child.prefix
                     if not prefix:
-                        child.set_prefix(u" ")
+                        child.prefix = u" "
                 comma = False
         return new

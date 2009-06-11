@@ -13,9 +13,9 @@ class FixBuffer(fixer_base.BaseFix):
     explicit = True # The user must ask for this fixer
 
     PATTERN = """
-              power< name='buffer' trailer< '(' [any] ')' > >
+              power< name='buffer' trailer< '(' [any] ')' > any* >
               """
 
     def transform(self, node, results):
         name = results["name"]
-        name.replace(Name(u"memoryview", prefix=name.get_prefix()))
+        name.replace(Name(u"memoryview", prefix=name.prefix))
