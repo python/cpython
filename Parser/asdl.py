@@ -20,7 +20,7 @@ def output(string):
     sys.stdout.write(string + "\n")
 
 
-class Token:
+class Token(object):
     # spark seems to dispatch in the parser based on a token's
     # type attribute
     def __init__(self, type, lineno):
@@ -221,20 +221,20 @@ class ASDLParser(spark.GenericParser, object):
     def p_field_2(self, info):
         " field ::= Id * Id "
         type, _, name = info
-        return Field(type, name, seq=1)
+        return Field(type, name, seq=True)
 
     def p_field_3(self, info):
         " field ::= Id ? Id "
         type, _, name = info
-        return Field(type, name, opt=1)
+        return Field(type, name, opt=True)
 
     def p_field_4(self, type_):
         " field ::= Id * "
-        return Field(type_[0], seq=1)
+        return Field(type_[0], seq=True)
 
     def p_field_5(self, type_):
         " field ::= Id ? "
-        return Field(type[0], opt=1)
+        return Field(type[0], opt=True)
 
 builtin_types = ("identifier", "string", "int", "bool", "object")
 
@@ -242,7 +242,7 @@ builtin_types = ("identifier", "string", "int", "bool", "object")
 # not sure if any of the methods are useful yet, but I'm adding them
 # piecemeal as they seem helpful
 
-class AST:
+class AST(object):
     pass # a marker class
 
 class Module(AST):
@@ -274,7 +274,7 @@ class Constructor(AST):
         return "Constructor(%s, %s)" % (self.name, self.fields)
 
 class Field(AST):
-    def __init__(self, type, name=None, seq=0, opt=0):
+    def __init__(self, type, name=None, seq=False, opt=False):
         self.type = type
         self.name = name
         self.seq = seq
@@ -282,9 +282,9 @@ class Field(AST):
 
     def __repr__(self):
         if self.seq:
-            extra = ", seq=1"
+            extra = ", seq=True"
         elif self.opt:
-            extra = ", opt=1"
+            extra = ", opt=True"
         else:
             extra = ""
         if self.name is None:
@@ -312,7 +312,7 @@ class Product(AST):
 
 class VisitorBase(object):
 
-    def __init__(self, skip=0):
+    def __init__(self, skip=False):
         self.cache = {}
         self.skip = skip
 
@@ -347,7 +347,7 @@ class VisitorBase(object):
 class Check(VisitorBase):
 
     def __init__(self):
-        super(Check, self).__init__(skip=1)
+        super(Check, self).__init__(skip=True)
         self.cons = {}
         self.errors = 0
         self.types = {}

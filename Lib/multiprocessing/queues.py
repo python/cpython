@@ -109,7 +109,7 @@ class Queue(object):
                 self._rlock.release()
 
     def qsize(self):
-        # Raises NotImplementError on Mac OSX because of broken sem_getvalue()
+        # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
         return self._maxsize - self._sem._semlock._get_value()
 
     def empty(self):
