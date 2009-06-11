@@ -1,14 +1,23 @@
 """Tests for distutils.sysconfig."""
 import os
+import test
 import unittest
 
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN
+from test.support import TESTFN, run_unittest
 
 class SysconfigTestCase(support.EnvironGuard,
                         unittest.TestCase):
+    def setUp(self):
+        super(SysconfigTestCase, self).setUp()
+        self.makefile = None
+
+    def tearDown(self):
+        if self.makefile is not None:
+            os.unlink(self.makefile)
+        super(SysconfigTestCase, self).tearDown()
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
@@ -56,8 +65,32 @@ class SysconfigTestCase(support.EnvironGuard,
         sysconfig.customize_compiler(comp)
         self.assertEquals(comp.exes['archiver'], 'my_ar -arflags')
 
+    def test_parse_makefile_base(self):
+        self.makefile = TESTFN
+        fd = open(self.makefile, 'w')
+        fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=LIB'" '\n')
+        fd.write('VAR=$OTHER\nOTHER=foo')
+        fd.close()
+        d = sysconfig.parse_makefile(self.makefile)
+        self.assertEquals(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
+                              'OTHER': 'foo'})
+
+    def test_parse_makefile_literal_dollar(self):
+        self.makefile = TESTFN
+        fd = open(self.makefile, 'w')
+        fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=\$$LIB'" '\n')
+        fd.write('VAR=$OTHER\nOTHER=foo')
+        fd.close()
+        d = sysconfig.parse_makefile(self.makefile)
+        self.assertEquals(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
+                              'OTHER': 'foo'})
+
 
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SysconfigTestCase))
     return suite
+
+
+if __name__ == '__main__':
+    run_unittest(test_suite())
