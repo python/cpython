@@ -317,6 +317,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5262: Fixed bug in next rollover time computation in
+  TimedRotatingFileHandler.
+
 - Issue #6263: Fixed syntax error in distutils.cygwincompiler.
 
 - Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
@@ -351,7 +354,7 @@ Library
 
 - Issue #1424152: Fix for httplib, urllib2 to support SSL while working through
   proxy. Original patch by Christopher Li, changes made by Senthil Kumaran.
- 
+
 - Issue #1983: Fix functions taking or returning a process identifier to use
   the dedicated C type ``pid_t`` instead of a C ``int``. Some platforms have
   a process identifier type wider than the standard C integer type.
@@ -359,7 +362,7 @@ Library
 - Issue #4066: smtplib.SMTP_SSL._get_socket now correctly returns the socket.
   Patch by Farhan Ahmad, test by Marcin Bachry.
 
-- Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
+- Issue #6062: In distutils, fixed the package option of build_ext. Feedback
   and tests on pywin32 by Tim Golden.
 
 - Issue #6053: Fixed distutils tests on win32. patch by Hirokazu Yamamoto.
@@ -367,7 +370,7 @@ Library
 - Issue #6046: Fixed the library extension when distutils build_ext is used
   inplace. Initial patch by Roumen Petrov.
 
-- Issue #6041: Now distutils `sdist` and `register` commands use `check` as a 
+- Issue #6041: Now distutils `sdist` and `register` commands use `check` as a
   subcommand.
 
 - Issue #2116: Weak references and weak dictionaries now support copy()ing and
@@ -517,8 +520,8 @@ Library
 
 - unittest.assertNotEqual() now uses the inequality operator (!=) instead
   of the equality operator.
-  
-- Issue #6001: Test discovery for unittest. Implemented in 
+
+- Issue #6001: Test discovery for unittest. Implemented in
   unittest.TestLoader.discover and from the command line.
 
 - Issue #5679: The methods unittest.TestCase.addCleanup and doCleanups were added.
@@ -528,11 +531,11 @@ Library
 
 - Issue #3379: unittest.main now takes an optional exit argument. If False main
   doesn't call sys.exit allowing it to be used from the interactive interpreter.
-  
-- Issue #5995: unittest.main now takes an optional verbosity argument allowing 
+
+- Issue #5995: unittest.main now takes an optional verbosity argument allowing
   test modules to be run with a higher than default verbosity.
-  
-- Issue #5995: A fix to allow you to run "python -m unittest test_module" or 
+
+- Issue #5995: A fix to allow you to run "python -m unittest test_module" or
   "python -m unittest test_module.TestClass" from the command line.
 
 - Issue #5728: unittest.TestResult has new startTestRun and stopTestRun methods;
