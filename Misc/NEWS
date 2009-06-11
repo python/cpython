@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5262: Fixed bug in next rollover time computation in
+  TimedRotatingFileHandler.
+
 - Issue #6217: The C implementation of io.TextIOWrapper didn't include the
   errors property.  Additionally, the errors and encoding properties of StringIO
   are always None now.
@@ -347,7 +350,7 @@ Library
 - Issue #5150: IDLE's format menu now has an option to strip trailing
   whitespace.
 
-- Issue #5940: distutils.command.build_clib.check_library_list was not doing 
+- Issue #5940: distutils.command.build_clib.check_library_list was not doing
   the right type checkings anymore.
 
 - Issue #4875: On win32, ctypes.util.find_library does no longer
@@ -783,7 +786,7 @@ Library
 
 - Issue #6048: Now Distutils uses the tarfile module in archive_util.
 
-- Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
+- Issue #6062: In distutils, fixed the package option of build_ext. Feedback
   and tests on pywin32 by Tim Golden.
 
 - Issue #6053: Fixed distutils tests on win32. patch by Hirokazu Yamamoto.
@@ -791,7 +794,7 @@ Library
 - Issue #6046: Fixed the library extension when distutils build_ext is used
   inplace. Initial patch by Roumen Petrov.
 
-- Issue #6041: Now distutils `sdist` and `register` commands use `check` as a 
+- Issue #6041: Now distutils `sdist` and `register` commands use `check` as a
   subcommand.
 
 - Issue #6022: a test file was created in the current working directory by
@@ -812,7 +815,7 @@ Library
 
 - Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
 
-- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive 
+- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive
   anymore.
 
 - Issue #5810: Fixed Distutils test_build_scripts so it uses
@@ -1221,7 +1224,7 @@ Build
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
 - Issue #4587: Add configure option --with-dbmliborder=db1:db2:... to specify
-  the order that backends for the dbm extension are checked. 
+  the order that backends for the dbm extension are checked.
 
 - Link the shared python library with $(MODLIBS).
 
