@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.5
 """Test suite for 2to3's parser and grammar files.
 
 This is the place to add tests for changes to 2to3's grammar, such as those
@@ -6,7 +5,6 @@ merging the grammars for Python 2 and 3. In addition to specific tests for
 parts of the grammar we've changed, we also make sure we can parse the
 test_grammar.py files from both Python 2 and Python 3.
 """
-# Author: Collin Winter
 
 # Testing imports
 from . import support
@@ -198,7 +196,7 @@ class TestLiterals(GrammarTest):
 
 
 def diff(fn, result):
-    f = open("@", "w")
+    f = open("@", "wb")
     try:
         f.write(result)
     finally:
@@ -207,8 +205,3 @@ def diff(fn, result):
         return os.system("diff -u %s @" % fn)
     finally:
         os.remove("@")
-
-
-if __name__ == "__main__":
-    import __main__
-    support.run_all_tests(__main__)

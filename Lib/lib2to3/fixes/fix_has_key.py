@@ -78,7 +78,7 @@ class FixHasKey(fixer_base.BaseFix):
             return None
         negation = results.get("negation")
         anchor = results["anchor"]
-        prefix = node.get_prefix()
+        prefix = node.prefix
         before = [n.clone() for n in results["before"]]
         arg = results["arg"].clone()
         after = results.get("after")
@@ -91,7 +91,7 @@ class FixHasKey(fixer_base.BaseFix):
             before = before[0]
         else:
             before = pytree.Node(syms.power, before)
-        before.set_prefix(u" ")
+        before.prefix = u" "
         n_op = Name(u"in", prefix=u" ")
         if negation:
             n_not = Name(u"not", prefix=u" ")
@@ -105,5 +105,5 @@ class FixHasKey(fixer_base.BaseFix):
                                 syms.arith_expr, syms.term,
                                 syms.factor, syms.power):
             new = parenthesize(new)
-        new.set_prefix(prefix)
+        new.prefix = prefix
         return new

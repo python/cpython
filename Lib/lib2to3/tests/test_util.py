@@ -1,6 +1,4 @@
-#!/usr/bin/env python2.5
 """ Test suite for the code in fixes.util """
-# Author: Collin Winter
 
 # Testing imports
 from . import support
@@ -552,8 +550,3 @@ class Test_touch_import(support.TestCase):
         node = parse('bar()')
         fixer_util.touch_import(None, "cgi", node)
         self.assertEqual(str(node), 'import cgi\nbar()\n\n')
-
-
-if __name__ == "__main__":
-    import __main__
-    support.run_all_tests(__main__)

@@ -61,15 +61,15 @@ class FixDict(fixer_base.BaseFix):
         args = head + [pytree.Node(syms.trailer,
                                    [Dot(),
                                     Name(method_name,
-                                         prefix=method.get_prefix())]),
+                                         prefix=method.prefix)]),
                        results["parens"].clone()]
         new = pytree.Node(syms.power, args)
         if not special:
-            new.set_prefix(u"")
+            new.prefix = u""
             new = Call(Name(isiter and u"iter" or u"list"), [new])
         if tail:
             new = pytree.Node(syms.power, [new] + tail)
-        new.set_prefix(node.get_prefix())
+        new.prefix = node.prefix
         return new
 
     P1 = "power< func=NAME trailer< '(' node=any ')' > any* >"

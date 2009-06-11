@@ -17,6 +17,5 @@ class FixNe(fixer_base.BaseFix):
         return node.type == token.NOTEQUAL and node.value == u"<>"
 
     def transform(self, node, results):
-        new = pytree.Leaf(token.NOTEQUAL, u"!=")
-        new.set_prefix(node.get_prefix())
+        new = pytree.Leaf(token.NOTEQUAL, u"!=", prefix=node.prefix)
         return new
