@@ -8,7 +8,8 @@ import subprocess
 from distutils import cygwinccompiler
 from distutils.cygwinccompiler import (CygwinCCompiler, check_config_h,
                                        CONFIG_H_OK, CONFIG_H_NOTOK,
-                                       CONFIG_H_UNCERTAIN, get_versions)
+                                       CONFIG_H_UNCERTAIN, get_versions,
+                                       get_msvcr)
 from distutils.tests import support
 
 class FakePopen(object):
@@ -112,6 +113,38 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         self._exes['dllwrap'] = 'Cheese Wrap'
         res = get_versions()
         self.assertEquals(res[2], None)
+
+    def test_get_msvcr(self):
+
+        # none
+        sys.version  = ('2.6.1 (r261:67515, Dec  6 2008, 16:42:21) '
+                        '\n[GCC 4.0.1 (Apple Computer, Inc. build 5370)]')
+        self.assertEquals(get_msvcr(), None)
+
+        # MSVC 7.0
+        sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
+                       '[MSC v.1300 32 bits (Intel)]')
+        self.assertEquals(get_msvcr(), ['msvcr70'])
+
+        # MSVC 7.1
+        sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
+                       '[MSC v.1310 32 bits (Intel)]')
+        self.assertEquals(get_msvcr(), ['msvcr71'])
+
+        # VS2005 / MSVC 8.0
+        sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
+                       '[MSC v.1400 32 bits (Intel)]')
+        self.assertEquals(get_msvcr(), ['msvcr80'])
+
+        # VS2008 / MSVC 9.0
+        sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
+                       '[MSC v.1500 32 bits (Intel)]')
+        self.assertEquals(get_msvcr(), ['msvcr90'])
+
+        # unknown
+        sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
+                       '[MSC v.1999 32 bits (Intel)]')
+        self.assertRaises(ValueError, get_msvcr)
 
 def test_suite():
     return unittest.makeSuite(CygwinCCompilerTestCase)
