@@ -333,7 +333,7 @@ class Random(_random.Random):
 ## -------------------- uniform distribution -------------------
 
     def uniform(self, a, b):
-        """Get a random number in the range [a, b)."""
+        "Get a random number in the range [a, b) or [a, b] depending on rounding."
         return a + (b-a) * self.random()
 
 ## -------------------- triangular --------------------
