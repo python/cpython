@@ -2120,10 +2120,6 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         for (i = 0; i < NCH(n) - 2; i += 2) {
             expr_ty e;
             node *ch = CHILD(n, i);
-            if (TYPE(ch) == yield_expr) {
-                ast_error(ch, "assignment to yield expression not possible");
-                return NULL;
-            }
             e = ast_for_testlist(c, ch);
 
             /* set context to assign */
