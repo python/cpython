@@ -63,10 +63,10 @@ class FixTupleParams(fixer_base.BaseFix):
         def handle_tuple(tuple_arg, add_prefix=False):
             n = Name(self.new_name())
             arg = tuple_arg.clone()
-            arg.set_prefix("")
+            arg.prefix = ""
             stmt = Assign(arg, n.clone())
             if add_prefix:
-                n.set_prefix(" ")
+                n.prefix = " "
             tuple_arg.replace(n)
             new_lines.append(pytree.Node(syms.simple_stmt,
                                          [stmt, end.clone()]))
@@ -91,14 +91,14 @@ class FixTupleParams(fixer_base.BaseFix):
         # TODO(cwinter) suite-cleanup
         after = start
         if start == 0:
-            new_lines[0].set_prefix(" ")
+            new_lines[0].prefix = " "
         elif is_docstring(suite[0].children[start]):
-            new_lines[0].set_prefix(indent)
+            new_lines[0].prefix = indent
             after = start + 1
 
         suite[0].children[after:after] = new_lines
         for i in range(after+1, after+len(new_lines)+1):
-            suite[0].children[i].set_prefix(indent)
+            suite[0].children[i].prefix = indent
         suite[0].changed()
 
     def transform_lambda(self, node, results):
@@ -109,7 +109,7 @@ class FixTupleParams(fixer_base.BaseFix):
         # Replace lambda ((((x)))): x  with lambda x: x
         if inner.type == token.NAME:
             inner = inner.clone()
-            inner.set_prefix(" ")
+            inner.prefix = " "
             args.replace(inner)
             return
 
@@ -124,7 +124,7 @@ class FixTupleParams(fixer_base.BaseFix):
                 subscripts = [c.clone() for c in to_index[n.value]]
                 new = pytree.Node(syms.power,
                                   [new_param.clone()] + subscripts)
-                new.set_prefix(n.get_prefix())
+                new.prefix = n.prefix
                 n.replace(new)
 
 

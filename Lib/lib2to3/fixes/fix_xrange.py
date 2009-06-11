@@ -28,14 +28,14 @@ class FixXrange(fixer_base.BaseFix):
 
     def transform_xrange(self, node, results):
         name = results["name"]
-        name.replace(Name("range", prefix=name.get_prefix()))
+        name.replace(Name("range", prefix=name.prefix))
 
     def transform_range(self, node, results):
         if not self.in_special_context(node):
             range_call = Call(Name("range"), [results["args"].clone()])
             # Encase the range call in list().
             list_call = Call(Name("list"), [range_call],
-                             prefix=node.get_prefix())
+                             prefix=node.prefix)
             # Put things that were after the range() call after the list call.
             for n in results["rest"]:
                 list_call.append_child(n)

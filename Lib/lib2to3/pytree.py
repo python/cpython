@@ -13,6 +13,7 @@ There's also a pattern matching implementation here.
 __author__ = "Guido van Rossum <guido@python.org>"
 
 import sys
+import warnings
 from io import StringIO
 
 
@@ -111,17 +112,21 @@ class Base(object):
         """
         Set the prefix for the node (see Leaf class).
 
-        This must be implemented by the concrete subclass.
+        DEPRECATED; use the prefix property directly.
         """
-        raise NotImplementedError
+        warnings.warn("set_prefix() is deprecated; use the prefix property",
+                      DeprecationWarning, stacklevel=2)
+        self.prefix = prefix
 
     def get_prefix(self):
         """
         Return the prefix for the node (see Leaf class).
 
-        This must be implemented by the concrete subclass.
+        DEPRECATED; use the prefix property directly.
         """
-        raise NotImplementedError
+        warnings.warn("get_prefix() is deprecated; use the prefix property",
+                      DeprecationWarning, stacklevel=2)
+        return self.prefix
 
     def replace(self, new):
         """Replace this node with a new one in the parent."""
@@ -209,12 +214,12 @@ class Base(object):
     def get_suffix(self):
         """
         Return the string immediately following the invocant node. This is
-        effectively equivalent to node.next_sibling.get_prefix()
+        effectively equivalent to node.next_sibling.prefix
         """
         next_sib = self.next_sibling
         if next_sib is None:
             return ""
-        return next_sib.get_prefix()
+        return next_sib.prefix
 
     if sys.version_info < (3, 0):
         def __str__(self):
@@ -241,7 +246,7 @@ class Node(Base):
             assert ch.parent is None, repr(ch)
             ch.parent = self
         if prefix is not None:
-            self.set_prefix(prefix)
+            self.prefix = prefix
 
     def __repr__(self):
         """Return a canonical string representation."""
@@ -282,24 +287,19 @@ class Node(Base):
             for node in child.post_order():
                 yield node
 
-    def set_prefix(self, prefix):
+    @property
+    def prefix(self):
         """
-        Set the prefix for the node.
-
-        This passes the responsibility on to the first child.
-        """
-        if self.children:
-            self.children[0].set_prefix(prefix)
-
-    def get_prefix(self):
-        """
-        Return the prefix for the node.
-
-        This passes the call on to the first child.
+        The whitespace and comments preceding this node in the input.
         """
         if not self.children:
             return ""
-        return self.children[0].get_prefix()
+        return self.children[0].prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        if self.children:
+            self.children[0].prefix = prefix
 
     def set_child(self, i, child):
         """
@@ -335,9 +335,9 @@ class Leaf(Base):
     """Concrete implementation for leaf nodes."""
 
     # Default values for instance variables
-    prefix = ""  # Whitespace and comments preceding this token in the input
-    lineno = 0   # Line where this token starts in the input
-    column = 0   # Column where this token tarts in the input
+    _prefix = ""  # Whitespace and comments preceding this token in the input
+    lineno = 0    # Line where this token starts in the input
+    column = 0    # Column where this token tarts in the input
 
     def __init__(self, type, value, context=None, prefix=None):
         """
@@ -348,11 +348,11 @@ class Leaf(Base):
         """
         assert 0 <= type < 256, type
         if context is not None:
-            self.prefix, (self.lineno, self.column) = context
+            self._prefix, (self.lineno, self.column) = context
         self.type = type
         self.value = value
         if prefix is not None:
-            self.prefix = prefix
+            self._prefix = prefix
 
     def __repr__(self):
         """Return a canonical string representation."""
@@ -388,14 +388,17 @@ class Leaf(Base):
         """Return a pre-order iterator for the tree."""
         yield self
 
-    def set_prefix(self, prefix):
-        """Set the prefix for the node."""
-        self.changed()
-        self.prefix = prefix
+    @property
+    def prefix(self):
+        """
+        The whitespace and comments preceding this token in the input.
+        """
+        return self._prefix
 
-    def get_prefix(self):
-        """Return the prefix for the node."""
-        return self.prefix
+    @prefix.setter
+    def prefix(self, prefix):
+        self.changed()
+        self._prefix = prefix
 
 
 def convert(gr, raw_node):

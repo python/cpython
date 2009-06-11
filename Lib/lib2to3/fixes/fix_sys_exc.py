@@ -22,8 +22,8 @@ class FixSysExc(fixer_base.BaseFix):
         sys_attr = results["attribute"][0]
         index = Number(self.exc_info.index(sys_attr.value))
 
-        call = Call(Name("exc_info"), prefix=sys_attr.get_prefix())
+        call = Call(Name("exc_info"), prefix=sys_attr.prefix)
         attr = Attr(Name("sys"), call)
-        attr[1].children[0].set_prefix(results["dot"].get_prefix())
+        attr[1].children[0].prefix = results["dot"].prefix
         attr.append(Subscript(index))
-        return Node(syms.power, attr, prefix=node.get_prefix())
+        return Node(syms.power, attr, prefix=node.prefix)

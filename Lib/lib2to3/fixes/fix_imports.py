@@ -124,7 +124,7 @@ class FixImports(fixer_base.BaseFix):
         if import_mod:
             mod_name = import_mod.value
             new_name = self.mapping[mod_name]
-            import_mod.replace(Name(new_name, prefix=import_mod.get_prefix()))
+            import_mod.replace(Name(new_name, prefix=import_mod.prefix))
             if "name_import" in results:
                 # If it's not a "from x import x, y" or "import x as y" import,
                 # marked its usage to be replaced.
@@ -142,4 +142,4 @@ class FixImports(fixer_base.BaseFix):
             bare_name = results["bare_with_attr"][0]
             new_name = self.replace.get(bare_name.value)
             if new_name:
-                bare_name.replace(Name(new_name, prefix=bare_name.get_prefix()))
+                bare_name.replace(Name(new_name, prefix=bare_name.prefix))

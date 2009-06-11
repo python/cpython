@@ -38,7 +38,7 @@ class FixExecfile(fixer_base.BaseFix):
         # Wrap the open call in a compile call. This is so the filename will be
         # preserved in the execed code.
         filename_arg = filename.clone()
-        filename_arg.set_prefix(" ")
+        filename_arg.prefix = " "
         exec_str = String("'exec'", " ")
         compile_args = open_expr + [Comma(), filename_arg, Comma(), exec_str]
         compile_call = Call(Name("compile"), compile_args, "")
@@ -48,4 +48,4 @@ class FixExecfile(fixer_base.BaseFix):
             args.extend([Comma(), globals.clone()])
         if locals is not None:
             args.extend([Comma(), locals.clone()])
-        return Call(Name("exec"), args, prefix=node.get_prefix())
+        return Call(Name("exec"), args, prefix=node.prefix)

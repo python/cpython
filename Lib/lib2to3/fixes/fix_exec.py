@@ -30,10 +30,10 @@ class FixExec(fixer_base.BaseFix):
         b = results.get("b")
         c = results.get("c")
         args = [a.clone()]
-        args[0].set_prefix("")
+        args[0].prefix = ""
         if b is not None:
             args.extend([Comma(), b.clone()])
         if c is not None:
             args.extend([Comma(), c.clone()])
 
-        return Call(Name("exec"), args, prefix=node.get_prefix())
+        return Call(Name("exec"), args, prefix=node.prefix)
