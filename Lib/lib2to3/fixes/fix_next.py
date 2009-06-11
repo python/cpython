@@ -48,17 +48,16 @@ class FixNext(fixer_base.BaseFix):
         base = results.get("base")
         attr = results.get("attr")
         name = results.get("name")
-        mod = results.get("mod")
 
         if base:
             if self.shadowed_next:
-                attr.replace(Name("__next__", prefix=attr.get_prefix()))
+                attr.replace(Name("__next__", prefix=attr.prefix))
             else:
                 base = [n.clone() for n in base]
-                base[0].set_prefix("")
-                node.replace(Call(Name("next", prefix=node.get_prefix()), base))
+                base[0].prefix = ""
+                node.replace(Call(Name("next", prefix=node.prefix), base))
         elif name:
-            n = Name("__next__", prefix=name.get_prefix())
+            n = Name("__next__", prefix=name.prefix)
             name.replace(n)
         elif attr:
             # We don't do this transformation if we're assigning to "x.next".

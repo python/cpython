@@ -73,7 +73,7 @@ class FixImport(fixer_base.BaseFix):
                 return
 
             new = FromImport('.', [imp])
-            new.set_prefix(node.get_prefix())
+            new.prefix = node.prefix
             return new
 
     def probably_a_local_import(self, imp_name):

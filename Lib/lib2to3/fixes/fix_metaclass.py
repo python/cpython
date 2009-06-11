@@ -89,7 +89,7 @@ def fixup_simple_stmt(parent, i, stmt_node):
     parent.insert_child(i, new_stmt)
     new_leaf1 = new_stmt.children[0].children[0]
     old_leaf1 = stmt_node.children[0].children[0]
-    new_leaf1.set_prefix(old_leaf1.get_prefix())
+    new_leaf1.prefix = old_leaf1.prefix
 
 
 def remove_trailing_newline(node):
@@ -136,7 +136,7 @@ def fixup_indent(suite):
         node = kids.pop()
         if isinstance(node, Leaf) and node.type != token.DEDENT:
             if node.prefix:
-                node.set_prefix('')
+                node.prefix = ''
             return
         else:
             kids.extend(node.children[::-1])
@@ -191,19 +191,19 @@ class FixMetaclass(fixer_base.BaseFix):
         # now stick the metaclass in the arglist
         meta_txt = last_metaclass.children[0].children[0]
         meta_txt.value = 'metaclass'
-        orig_meta_prefix = meta_txt.get_prefix()
+        orig_meta_prefix = meta_txt.prefix
 
         if arglist.children:
             arglist.append_child(Leaf(token.COMMA, ','))
-            meta_txt.set_prefix(' ')
+            meta_txt.prefix = ' '
         else:
-            meta_txt.set_prefix('')
+            meta_txt.prefix = ''
 
         # compact the expression "metaclass = Meta" -> "metaclass=Meta"
         expr_stmt = last_metaclass.children[0]
         assert expr_stmt.type == syms.expr_stmt
-        expr_stmt.children[1].set_prefix('')
-        expr_stmt.children[2].set_prefix('')
+        expr_stmt.children[1].prefix = ''
+        expr_stmt.children[2].prefix = ''
 
         arglist.append_child(last_metaclass)
 
@@ -214,7 +214,7 @@ class FixMetaclass(fixer_base.BaseFix):
             # one-liner that was just __metaclass_
             suite.remove()
             pass_leaf = Leaf(text_type, 'pass')
-            pass_leaf.set_prefix(orig_meta_prefix)
+            pass_leaf.prefix = orig_meta_prefix
             node.append_child(pass_leaf)
             node.append_child(Leaf(token.NEWLINE, '\n'))
 

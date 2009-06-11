@@ -120,7 +120,7 @@ class BaseFix(object):
         """
         lineno = node.get_lineno()
         for_output = node.clone()
-        for_output.set_prefix("")
+        for_output.prefix = ""
         msg = "Line %d: could not convert: %s"
         self.log_message(msg % (lineno, for_output))
         if reason:

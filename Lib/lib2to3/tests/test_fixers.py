@@ -1,12 +1,4 @@
-#!/usr/bin/env python2.5
 """ Test suite for the fixer modules """
-# Author: Collin Winter
-
-# Testing imports
-try:
-    from tests import support
-except ImportError:
-    from . import support
 
 # Python imports
 import os
@@ -16,14 +8,19 @@ from operator import itemgetter
 
 # Local imports
 from lib2to3 import pygram, pytree, refactor, fixer_util
+from lib2to3.tests import support
 
 
 class FixerTestCase(support.TestCase):
-    def setUp(self, fix_list=None):
+
+    # Other test cases can subclass this class and replace "fixer_pkg" with
+    # their own.
+    def setUp(self, fix_list=None, fixer_pkg="lib2to3", options=None):
         if fix_list is None:
             fix_list = [self.fixer]
-        options = {"print_function" : False}
-        self.refactor = support.get_refactorer(fix_list, options)
+        if options is None:
+            options = {"print_function" : False}
+        self.refactor = support.get_refactorer(fixer_pkg, fix_list, options)
         self.fixer_log = []
         self.filename = "<string>"
 
@@ -62,7 +59,7 @@ class FixerTestCase(support.TestCase):
         fixes = [self.fixer]
         fixes.extend(names)
         options = {"print_function" : False}
-        r = support.get_refactorer(fixes, options)
+        r = support.get_refactorer("lib2to3", fixes, options)
         (pre, post) = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):
@@ -419,6 +416,7 @@ class Test_print(FixerTestCase):
     def test_5(self):
         b = """print; print whatever;"""
         a = """print(); print(whatever);"""
+        self.check(b, a)
 
     def test_tuple(self):
         b = """print (a, b, c)"""
@@ -780,6 +778,52 @@ class Test_except(FixerTestCase):
                 pass
             except:
                 pass"""
+        self.check(b, a)
+
+    def test_one_line_suites(self):
+        b = """
+            try: raise TypeError
+            except TypeError, e:
+                pass
+            """
+        a = """
+            try: raise TypeError
+            except TypeError as e:
+                pass
+            """
+        self.check(b, a)
+        b = """
+            try:
+                raise TypeError
+            except TypeError, e: pass
+            """
+        a = """
+            try:
+                raise TypeError
+            except TypeError as e: pass
+            """
+        self.check(b, a)
+        b = """
+            try: raise TypeError
+            except TypeError, e: pass
+            """
+        a = """
+            try: raise TypeError
+            except TypeError as e: pass
+            """
+        self.check(b, a)
+        b = """
+            try: raise TypeError
+            except TypeError, e: pass
+            else: function()
+            finally: done()
+            """
+        a = """
+            try: raise TypeError
+            except TypeError as e: pass
+            else: function()
+            finally: done()
+            """
         self.check(b, a)
 
     # These should not be touched:
@@ -2640,9 +2684,27 @@ class Test_renames(FixerTestCase):
 class Test_unicode(FixerTestCase):
     fixer = "unicode"
 
+    def test_whitespace(self):
+        b = """unicode( x)"""
+        a = """str( x)"""
+        self.check(b, a)
+
+        b = """ unicode(x )"""
+        a = """ str(x )"""
+        self.check(b, a)
+
+        b = """ u'h'"""
+        a = """ 'h'"""
+        self.check(b, a)
+
     def test_unicode_call(self):
         b = """unicode(x, y, z)"""
         a = """str(x, y, z)"""
+        self.check(b, a)
+
+    def test_unichr(self):
+        b = """unichr(u'h')"""
+        a = """chr('h')"""
         self.check(b, a)
 
     def test_unicode_literal_1(self):
@@ -2656,8 +2718,8 @@ class Test_unicode(FixerTestCase):
         self.check(b, a)
 
     def test_unicode_literal_3(self):
-        b = """UR'''x'''"""
-        a = """R'''x'''"""
+        b = """UR'''x''' """
+        a = """R'''x''' """
         self.check(b, a)
 
 class Test_callable(FixerTestCase):
@@ -3304,6 +3366,11 @@ class Test_buffer(FixerTestCase):
     def test_buffer(self):
         b = """x = buffer(y)"""
         a = """x = memoryview(y)"""
+        self.check(b, a)
+
+    def test_slicing(self):
+        b = """buffer(y)[4:5]"""
+        a = """memoryview(y)[4:5]"""
         self.check(b, a)
 
 class Test_future(FixerTestCase):
@@ -4028,8 +4095,3 @@ class Test_getcwdu(FixerTestCase):
         b = """os.getcwdu (  )"""
         a = """os.getcwd (  )"""
         self.check(b, a)
-
-
-if __name__ == "__main__":
-    import __main__
-    support.run_all_tests(__main__)

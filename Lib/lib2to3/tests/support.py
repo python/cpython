@@ -30,7 +30,7 @@ def run_all_tests(test_mod=None, tests=None):
 def reformat(string):
     return dedent(string) + "\n\n"
 
-def get_refactorer(fixers=None, options=None):
+def get_refactorer(fixer_pkg="lib2to3", fixers=None, options=None):
     """
     A convenience function for creating a RefactoringTool for tests.
 
@@ -39,9 +39,9 @@ def get_refactorer(fixers=None, options=None):
     be passed to the RefactoringTool.
     """
     if fixers is not None:
-        fixers = ["lib2to3.fixes.fix_" + fix for fix in fixers]
+        fixers = [fixer_pkg + ".fixes.fix_" + fix for fix in fixers]
     else:
-        fixers = refactor.get_fixers_from_package("lib2to3.fixes")
+        fixers = refactor.get_fixers_from_package(fixer_pkg + ".fixes")
     options = options or {}
     return refactor.RefactoringTool(fixers, options, explicit=True)
 

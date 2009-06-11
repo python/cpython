@@ -27,7 +27,7 @@ def Assign(target, source):
     if not isinstance(target, list):
         target = [target]
     if not isinstance(source, list):
-        source.set_prefix(" ")
+        source.prefix = " "
         source = [source]
 
     return Node(syms.atom,
@@ -60,7 +60,7 @@ def Call(func_name, args=None, prefix=None):
     """A function call"""
     node = Node(syms.power, [func_name, ArgList(args)])
     if prefix is not None:
-        node.set_prefix(prefix)
+        node.prefix = prefix
     return node
 
 def Newline():
@@ -89,18 +89,18 @@ def ListComp(xp, fp, it, test=None):
 
     If test is None, the "if test" part is omitted.
     """
-    xp.set_prefix("")
-    fp.set_prefix(" ")
-    it.set_prefix(" ")
+    xp.prefix = ""
+    fp.prefix = " "
+    it.prefix = " "
     for_leaf = Leaf(token.NAME, "for")
-    for_leaf.set_prefix(" ")
+    for_leaf.prefix = " "
     in_leaf = Leaf(token.NAME, "in")
-    in_leaf.set_prefix(" ")
+    in_leaf.prefix = " "
     inner_args = [for_leaf, fp, in_leaf, it]
     if test:
-        test.set_prefix(" ")
+        test.prefix = " "
         if_leaf = Leaf(token.NAME, "if")
-        if_leaf.set_prefix(" ")
+        if_leaf.prefix = " "
         inner_args.append(Node(syms.comp_if, [if_leaf, test]))
     inner = Node(syms.listmaker, [xp, Node(syms.comp_for, inner_args)])
     return Node(syms.atom,

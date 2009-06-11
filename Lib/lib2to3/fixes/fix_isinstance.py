@@ -45,7 +45,7 @@ class FixIsinstance(fixer_base.BaseFix):
             del new_args[-1]
         if len(new_args) == 1:
             atom = testlist.parent
-            new_args[0].set_prefix(atom.get_prefix())
+            new_args[0].prefix = atom.prefix
             atom.replace(new_args[0])
         else:
             args[:] = new_args

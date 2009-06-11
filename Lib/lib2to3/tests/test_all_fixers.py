@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.5
 """Tests that run all fixer modules over an input stream.
 
 This has been broken out into its own test module because of its
@@ -6,18 +5,13 @@ running time.
 """
 # Author: Collin Winter
 
-# Testing imports
-try:
-    from . import support
-except ImportError:
-    import support
-
 # Python imports
 import unittest
 
 # Local imports
 from .. import pytree
 from .. import refactor
+from . import support
 
 
 class Test_all(support.TestCase):
@@ -29,8 +23,3 @@ class Test_all(support.TestCase):
         for filepath in support.all_project_files():
             print("Fixing %s..." % filepath)
             self.refactor.refactor_file(filepath)
-
-
-if __name__ == "__main__":
-    import __main__
-    support.run_all_tests(__main__)

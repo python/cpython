@@ -36,11 +36,11 @@ def find_excepts(nodes):
 class FixExcept(fixer_base.BaseFix):
 
     PATTERN = """
-    try_stmt< 'try' ':' suite
-                  cleanup=(except_clause ':' suite)+
-                  tail=(['except' ':' suite]
-                        ['else' ':' suite]
-                        ['finally' ':' suite]) >
+    try_stmt< 'try' ':' (simple_stmt | suite)
+                  cleanup=(except_clause ':' (simple_stmt | suite))+
+                  tail=(['except' ':' (simple_stmt | suite)]
+                        ['else' ':' (simple_stmt | suite)]
+                        ['finally' ':' (simple_stmt | suite)]) >
     """
 
     def transform(self, node, results):
@@ -58,7 +58,7 @@ class FixExcept(fixer_base.BaseFix):
                     # Generate a new N for the except clause
                     new_N = Name(self.new_name(), prefix=" ")
                     target = N.clone()
-                    target.set_prefix("")
+                    target.prefix = ""
                     N.replace(new_N)
                     new_N = new_N.clone()
 
@@ -82,10 +82,10 @@ class FixExcept(fixer_base.BaseFix):
                     for child in reversed(suite_stmts[:i]):
                         e_suite.insert_child(0, child)
                     e_suite.insert_child(i, assign)
-                elif N.get_prefix() == "":
+                elif N.prefix == "":
                     # No space after a comma is legal; no space after "as",
                     # not so much.
-                    N.set_prefix(" ")
+                    N.prefix = " "
 
         #TODO(cwinter) fix this when children becomes a smart list
         children = [c.clone() for c in node.children[:3]] + try_cleanup + tail
