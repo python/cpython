@@ -13,7 +13,6 @@ __revision__ = "$Id$"
 
 import os
 import re
-import string
 import sys
 
 from distutils.errors import DistutilsPlatformError
@@ -435,7 +434,7 @@ def _init_posix():
             # relative to the srcdir, which after installation no longer makes
             # sense.
             python_lib = get_python_lib(standard_lib=1)
-            linkerscript_path = string.split(g['LDSHARED'])[0]
+            linkerscript_path = g['LDSHARED'].split()[0]
             linkerscript_name = os.path.basename(linkerscript_path)
             linkerscript = os.path.join(python_lib, 'config',
                                         linkerscript_name)
