@@ -412,8 +412,8 @@ Replacing shell pipeline
    output = p2.communicate()[0]
 
 
-Replacing os.system()
-^^^^^^^^^^^^^^^^^^^^^
+Replacing :func:`os.system`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -440,8 +440,8 @@ A more realistic example would look like this::
        print("Execution failed:", e, file=sys.stderr)
 
 
-Replacing the os.spawn family
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing the :func:`os.spawn <os.spawnl>` family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 P_NOWAIT example::
 
@@ -468,17 +468,85 @@ Environment example::
    Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen
-^^^^^^^^^^^^^^^^^^
+
+Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   pipe = os.popen(cmd, 'r', bufsize)
+   (child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
    ==>
-   pipe = Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
+   p = Popen(cmd, shell=True, bufsize=bufsize,
+             stdin=PIPE, stdout=PIPE, close_fds=True)
+   (child_stdin, child_stdout) = (p.stdin, p.stdout)
 
 ::
 
-   pipe = os.popen(cmd, 'w', bufsize)
+   (child_stdin,
+    child_stdout,
+    child_stderr) = os.popen3(cmd, mode, bufsize)
    ==>
-   pipe = Popen(cmd, shell=True, bufsize=bufsize, stdin=PIPE).stdin
+   p = Popen(cmd, shell=True, bufsize=bufsize,
+             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+   (child_stdin,
+    child_stdout,
+    child_stderr) = (p.stdin, p.stdout, p.stderr)
+
+::
+
+   (child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
+   ==>
+   p = Popen(cmd, shell=True, bufsize=bufsize,
+             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+   (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+
+Return code handling translates as follows::
+
+   pipe = os.popen(cmd, 'w')
+   ...
+   rc = pipe.close()
+   if  rc != None and rc % 256:
+       print "There were some errors"
+   ==>
+   process = Popen(cmd, 'w', stdin=PIPE)
+   ...
+   process.stdin.close()
+   if process.wait() != 0:
+       print "There were some errors"
+
+
+Replacing functions from the :mod:`popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+
+   If the cmd argument to popen2 functions is a string, the command is executed
+   through /bin/sh.  If it is a list, the command is directly executed.
+
+::
+
+   (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
+   ==>
+   p = Popen(["somestring"], shell=True, bufsize=bufsize,
+             stdin=PIPE, stdout=PIPE, close_fds=True)
+   (child_stdout, child_stdin) = (p.stdout, p.stdin)
+
+::
+
+   (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
+   ==>
+   p = Popen(["mycmd", "myarg"], bufsize=bufsize,
+             stdin=PIPE, stdout=PIPE, close_fds=True)
+   (child_stdout, child_stdin) = (p.stdout, p.stdin)
+
+:class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as
+:class:`subprocess.Popen`, except that:
+
+* :class:`Popen` raises an exception if the execution fails.
+
+* the *capturestderr* argument is replaced with the *stderr* argument.
+
+* ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
+
+* popen2 closes all file descriptors by default, but you have to specify
+  ``close_fds=True`` with :class:`Popen`.

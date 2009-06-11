@@ -562,7 +562,7 @@ $(AST_H): $(AST_ASDL) $(ASDLGEN_FILES)
 $(AST_C): $(AST_ASDL) $(ASDLGEN_FILES)
 	$(ASDLGEN) -c $(AST_C_DIR) $(AST_ASDL)
 
-Python/compile.o Python/symtable.o: $(GRAMMAR_H) $(AST_H)
+Python/compile.o Python/symtable.o Python/ast.o: $(GRAMMAR_H) $(AST_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c

@@ -222,17 +222,17 @@ Traceback (most recent call last):
 SyntaxError: keyword can't be an expression
 
 
-From ast_for_expr_stmt():
+More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: augmented assignment to generator expression not possible
+SyntaxError: can't assign to generator expression
 >>> None += 1
 Traceback (most recent call last):
 SyntaxError: assignment to keyword
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment
+SyntaxError: can't assign to function call
 
 
 Test continue in finally in weird combinations.

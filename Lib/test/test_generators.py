@@ -1584,7 +1584,7 @@ SyntaxError: can't assign to yield expression
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: augmented assignment to yield expression not possible
+SyntaxError: can't assign to yield expression
 
 
 Now check some throw() conditions:

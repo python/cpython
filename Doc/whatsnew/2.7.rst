@@ -663,7 +663,11 @@ Porting to Python 2.7
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
-To be written.
+* Because of an optimization for the :keyword:`with` statement, the special
+  methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
+  type, and cannot be directly attached to the object's instance.  This
+  affects new-style classes (derived from :class:`object`) and C extension
+  types.  (:issue:`6101`.)
 
 .. ======================================================================
 

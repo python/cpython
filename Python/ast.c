@@ -2103,29 +2103,6 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
-        /* TODO(nas): Remove duplicated error checks (set_context does it) */
-        switch (expr1->kind) {
-            case GeneratorExp_kind:
-                ast_error(ch, "augmented assignment to generator "
-                          "expression not possible");
-                return NULL;
-            case Yield_kind:
-                ast_error(ch, "augmented assignment to yield "
-                          "expression not possible");
-                return NULL;
-            case Name_kind: {
-                if (forbidden_name(expr1, ch))
-                    return NULL;
-                break;
-            }
-            case Attribute_kind:
-            case Subscript_kind:
-                break;
-            default:
-                ast_error(ch, "illegal expression for augmented "
-                          "assignment");
-                return NULL;
-        }
         if(!set_context(c, expr1, Store, ch))
             return NULL;
 
@@ -3086,7 +3063,6 @@ ast_for_stmt(struct compiling *c, const node *n)
         n = CHILD(n, 0);
     }
     if (TYPE(n) == small_stmt) {
-        REQ(n, small_stmt);
         n = CHILD(n, 0);
         /* small_stmt: expr_stmt | del_stmt | pass_stmt | flow_stmt
                   | import_stmt | global_stmt | nonlocal_stmt | assert_stmt

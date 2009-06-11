@@ -437,11 +437,7 @@ def getenv(key, default=None):
 __all__.append("getenv")
 
 def _exists(name):
-    try:
-        eval(name)
-        return True
-    except NameError:
-        return False
+    return name in globals()
 
 # Supply spawn*() (probably only for Unix)
 if _exists("fork") and not _exists("spawnv") and _exists("execv"):
