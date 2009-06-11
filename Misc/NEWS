@@ -234,6 +234,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
+  in Makefiles. This prevents compile errors when using syntax like:
+  `LDFLAGS='-rpath=\$$LIB:/some/other/path'`. Patch by Floris Bruynooghe.
+
 - Issue #6062: In distutils, fixed the package option of build_ext. Feedback 
   and tests on pywin32 by Tim Golden.
 
