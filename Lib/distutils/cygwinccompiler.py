@@ -81,7 +81,7 @@ def get_msvcr():
             # VS2008 / MSVC 9.0
             return ['msvcr90']
         else:
-            raise ValueError("Unknown MS Compiler version %i " % msc_Ver)
+            raise ValueError("Unknown MS Compiler version %s " % msc_ver)
 
 
 class CygwinCCompiler (UnixCCompiler):
