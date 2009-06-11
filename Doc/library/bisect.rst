@@ -94,8 +94,8 @@ Instead, it is better to search a list of precomputed keys to find the index
 of the record in question::
 
     >>> data = [('red', 5), ('blue', 1), ('yellow', 8), ('black', 0)]
-    >>> data.sort(key=lambda r: r[1])       # precomputed list of keys
-    >>> keys = [r[1] for r in data]
+    >>> data.sort(key=lambda r: r[1])
+    >>> keys = [r[1] for r in data]         # precomputed list of keys
     >>> data[bisect_left(keys, 0)]
     ('black', 0)
     >>> data[bisect_left(keys, 1)]
