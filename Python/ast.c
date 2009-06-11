@@ -1347,9 +1347,6 @@ ast_for_atom(struct compiling *c, const node *n)
         if (TYPE(ch) == yield_expr)
             return ast_for_expr(c, ch);
         
-        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == gen_for))
-            return ast_for_genexp(c, ch);
-        
         return ast_for_testlist_gexp(c, ch);
     case LSQB: /* list (or list comprehension) */
         ch = CHILD(n, 1);
