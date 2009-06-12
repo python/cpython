@@ -94,7 +94,7 @@ PyDoc_STRVAR(module_doc,
  */
 
 static int
-BlockingIOError_init(PyBlockingIOErrorObject *self, PyObject *args,
+blockingioerror_init(PyBlockingIOErrorObject *self, PyObject *args,
                      PyObject *kwds)
 {
     PyObject *myerrno = NULL, *strerror = NULL;
@@ -123,7 +123,7 @@ BlockingIOError_init(PyBlockingIOErrorObject *self, PyObject *args,
     return 0;
 }
 
-static PyMemberDef BlockingIOError_members[] = {
+static PyMemberDef blockingioerror_members[] = {
     {"characters_written", T_PYSSIZET, offsetof(PyBlockingIOErrorObject, written), 0},
     {NULL}  /* Sentinel */
 };
@@ -158,14 +158,14 @@ static PyTypeObject _PyExc_BlockingIOError = {
     0,                          /* tp_iter */
     0,                          /* tp_iternext */
     0,                          /* tp_methods */
-    BlockingIOError_members,    /* tp_members */
+    blockingioerror_members,    /* tp_members */
     0,                          /* tp_getset */
     0,                          /* tp_base */
     0,                          /* tp_dict */
     0,                          /* tp_descr_get */
     0,                          /* tp_descr_set */
     0,                          /* tp_dictoffset */
-    (initproc)BlockingIOError_init, /* tp_init */
+    (initproc)blockingioerror_init, /* tp_init */
     0,                          /* tp_alloc */
     0,                          /* tp_new */
 };

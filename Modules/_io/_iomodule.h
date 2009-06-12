@@ -23,10 +23,10 @@ extern PyTypeObject PyIncrementalNewlineDecoder_Type;
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
  */
-extern PyObject* _PyIOBase_checkReadable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_checkWritable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_checkSeekable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_checkClosed(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_readable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_seekable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
 /* Helper for finalization.
    This function will revive an object ready to be deallocated and try to
