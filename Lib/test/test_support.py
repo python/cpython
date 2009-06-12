@@ -29,7 +29,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
            "threading_cleanup", "reap_children", "cpython_only",
-           "check_impl_detail", "get_attribute"]
+           "check_impl_detail", "get_attribute", "py3k_bytes"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -968,3 +968,18 @@ def reap_children():
                     break
             except:
                 break
+
+def py3k_bytes(b):
+    """Emulate the py3k bytes() constructor.
+
+    NOTE: This is only a best effort function.
+    """
+    try:
+        # memoryview?
+        return b.tobytes()
+    except AttributeError:
+        try:
+            # iterable of ints?
+            return b"".join(chr(x) for x in b)
+        except TypeError:
+            return bytes(b)
