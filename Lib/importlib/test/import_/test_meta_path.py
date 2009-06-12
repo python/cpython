@@ -1,6 +1,5 @@
 from .. import util
 from . import util as import_util
-from contextlib import nested
 from types import MethodType
 import unittest
 
@@ -18,8 +17,7 @@ class CallingOrder(unittest.TestCase):
         mod = 'top_level'
         first = util.mock_modules(mod)
         second = util.mock_modules(mod)
-        context = nested(util.mock_modules(mod), util.mock_modules(mod))
-        with  context as (first, second):
+        with util.mock_modules(mod) as first, util.mock_modules(mod) as second:
             first.modules[mod] = 42
             second.modules[mod] = -13
             with util.import_state(meta_path=[first, second]):
@@ -28,9 +26,8 @@ class CallingOrder(unittest.TestCase):
     def test_continuing(self):
         # [continuing]
         mod_name = 'for_real'
-        first = util.mock_modules('nonexistent')
-        second = util.mock_modules(mod_name)
-        with nested(first, second):
+        with util.mock_modules('nonexistent') as first, \
+             util.mock_modules(mod_name) as second:
             first.find_module = lambda self, fullname, path=None: None
             second.modules[mod_name] = 42
             with util.import_state(meta_path=[first, second]):
