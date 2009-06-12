@@ -99,16 +99,14 @@ class OrderedDict(dict, MutableMapping):
 
     def __reduce__(self):
         'Return state information for pickling'
-        dictitems = self.iteritems()
+        items = [[k, self[k]] for k in self]
         tmp = self.__map, self.__root
         del self.__map, self.__root
         inst_dict = vars(self).copy()
         self.__map, self.__root = tmp
-        # Set the state item to None when the dictionary is empty. This saves
-        # about 2 opcodes when the object is pickled.
-        if not inst_dict:
-            inst_dict = None
-        return (self.__class__, (), inst_dict, None, dictitems)
+        if inst_dict:
+            return (self.__class__, (items,), inst_dict)
+        return self.__class__, (items,)
 
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
