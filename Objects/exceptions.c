@@ -2136,6 +2136,6 @@ _PyExc_Init(void)
 void
 _PyExc_Fini(void)
 {
-    Py_XDECREF(PyExc_MemoryErrorInst);
-    PyExc_MemoryErrorInst = NULL;
+    Py_CLEAR(PyExc_MemoryErrorInst);
+    Py_CLEAR(PyExc_RecursionErrorInst);
 }
