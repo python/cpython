@@ -371,7 +371,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 
 
 PyObject *
-PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
+PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
 	PyObject *name = filename ? PyString_FromString(filename) : NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
@@ -381,7 +381,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 
 #ifdef MS_WINDOWS
 PyObject *
-PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, Py_UNICODE *filename)
+PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, const Py_UNICODE *filename)
 {
 	PyObject *name = filename ?
 	                 PyUnicode_FromUnicode(filename, wcslen(filename)) :

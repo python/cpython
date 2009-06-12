@@ -185,10 +185,11 @@ PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrno(PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObject(
 	PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(PyObject *, char *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(
+	PyObject *, const char *);
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-	PyObject *, Py_UNICODE *);
+	PyObject *, const Py_UNICODE *);
 #endif /* MS_WINDOWS */
 
 PyAPI_FUNC(PyObject *) PyErr_Format(PyObject *, const char *, ...)
