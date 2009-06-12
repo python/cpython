@@ -342,9 +342,14 @@ class bdist_msi (Command):
             exe_action = "PythonExe" + ver
             target_dir_prop = "TARGETDIR" + ver
             exe_prop = "PYTHON" + ver
+            if msilib.Win64:
+                # type: msidbLocatorTypeRawValue + msidbLocatorType64bit
+                Type = 2+16
+            else:
+                Type = 2
             add_data(self.db, "RegLocator",
-                    [(machine_reg, 2, install_path, None, 2),
-                     (user_reg, 1, install_path, None, 2)])
+                    [(machine_reg, 2, install_path, None, Type),
+                     (user_reg, 1, install_path, None, Type)])
             add_data(self.db, "AppSearch",
                     [(machine_prop, machine_reg),
                      (user_prop, user_reg)])

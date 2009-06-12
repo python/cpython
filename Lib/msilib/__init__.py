@@ -2,9 +2,11 @@
 # Copyright (C) 2005 Martin v. Löwis
 # Licensed to PSF under a Contributor Agreement.
 from _msi import *
-import os, string, re
+import os, string, re, sys
 
-Win64=0
+AMD64 = "AMD64" in sys.version
+Itanium = "Itanium" in sys.version
+Win64 = AMD64 or Itanium
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -145,8 +147,10 @@ def init_database(name, schema,
     si.SetProperty(PID_TITLE, "Installation Database")
     si.SetProperty(PID_SUBJECT, ProductName)
     si.SetProperty(PID_AUTHOR, Manufacturer)
-    if Win64:
+    if Itanium:
         si.SetProperty(PID_TEMPLATE, "Intel64;1033")
+    elif AMD64:
+        si.SetProperty(PID_TEMPLATE, "x64;1033")
     else:
         si.SetProperty(PID_TEMPLATE, "Intel;1033")
     si.SetProperty(PID_REVNUMBER, gen_uuid())
