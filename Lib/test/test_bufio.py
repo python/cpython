@@ -68,9 +68,12 @@ class CBufferSizeTest(BufferSizeTest):
 class PyBufferSizeTest(BufferSizeTest):
     open = staticmethod(pyio.open)
 
+class BuiltinBufferSizeTest(BufferSizeTest):
+    open = open
+
 
 def test_main():
-    support.run_unittest(CBufferSizeTest, PyBufferSizeTest)
+    support.run_unittest(CBufferSizeTest, PyBufferSizeTest, BuiltinBufferSizeTest)
 
 if __name__ == "__main__":
     test_main()

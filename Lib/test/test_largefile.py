@@ -124,20 +124,24 @@ class LargeFileTest(unittest.TestCase):
             newsize -= 1
             f.seek(42)
             f.truncate(newsize)
-            self.assertEqual(f.tell(), newsize)  # else wasn't truncated
+            if self.new_io:
+                self.assertEqual(f.tell(), newsize)  # else wasn't truncated
             f.seek(0, 2)
             self.assertEqual(f.tell(), newsize)
             # XXX truncate(larger than true size) is ill-defined
             # across platform; cut it waaaaay back
             f.seek(0)
             f.truncate(1)
-            self.assertEqual(f.tell(), 1)       # else pointer moved
+            if self.new_io:
+                self.assertEqual(f.tell(), 1)       # else pointer moved
             f.seek(0)
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
 
     def test_seekable(self):
         # Issue #5016; seekable() can return False when the current position
         # is negative when truncated to an int.
+        if not self.new_io:
+            self.skipTest("builtin file doesn't have seekable()")
         for pos in (2**31-1, 2**31, 2**31+1):
             with self.open(TESTFN, 'rb') as f:
                 f.seek(pos)
@@ -171,10 +175,12 @@ def test_main():
         else:
             f.close()
     suite = unittest.TestSuite()
-    for _open, prefix in [(io.open, 'C'), (pyio.open, 'Py')]:
+    for _open, prefix in [(io.open, 'C'), (pyio.open, 'Py'),
+                          (open, 'Builtin')]:
         class TestCase(LargeFileTest):
             pass
         TestCase.open = staticmethod(_open)
+        TestCase.new_io = _open is not open
         TestCase.__name__ = prefix + LargeFileTest.__name__
         suite.addTest(TestCase('test_seek'))
         suite.addTest(TestCase('test_osstat'))
