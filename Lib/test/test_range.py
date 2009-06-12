@@ -71,6 +71,13 @@ class RangeTest(unittest.TestCase):
                 self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
                                   list(r))
 
+    def test_odd_bug(self):
+        # This used to raise a "SystemError: NULL result without error"
+        # because the range validation step was eating the exception
+        # before NULL was returned.
+        with self.assertRaises(TypeError):
+            range([], 1, -1)
+
 def test_main():
     test.support.run_unittest(RangeTest)
 
