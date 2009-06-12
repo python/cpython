@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6195: fixed doctest to no longer try to read 'source' data from
+  binary files.
+
 - Issue #5262: Fixed bug in next rollover time computation in
   TimedRotatingFileHandler.
 

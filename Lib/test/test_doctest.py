@@ -2288,6 +2288,17 @@ using the optional keyword argument `encoding`:
     >>> doctest.master = None  # Reset master.
 """
 
+def test_testmod(): r"""
+Tests for the testmod function.  More might be useful, but for now we're just
+testing the case raised by Issue 6195, where trying to doctest a C module would
+fail with a UnicodeDecodeError because doctest tried to read the "source" lines
+out of the binary module.
+
+    >>> import unicodedata
+    >>> doctest.testmod(unicodedata)
+    TestResults(failed=0, attempted=0)
+"""
+
 ######################################################################
 ## Main
 ######################################################################
