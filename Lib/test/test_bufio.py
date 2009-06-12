@@ -1,12 +1,15 @@
 import unittest
-from test import test_support
+from test import test_support as support
 
-# Simple test to ensure that optimizations in fileobject.c deliver
-# the expected results.  For best testing, run this under a debug-build
-# Python too (to exercise asserts in the C code).
+import io # C implementation.
+import _pyio as pyio # Python implementation.
 
-lengths = range(1, 257) + [512, 1000, 1024, 2048, 4096, 8192, 10000,
-                           16384, 32768, 65536, 1000000]
+# Simple test to ensure that optimizations in the IO library deliver the
+# expected results.  For best testing, run this under a debug-build Python too
+# (to exercise asserts in the C code).
+
+lengths = list(range(1, 257)) + [512, 1000, 1024, 2048, 4096, 8192, 10000,
+                                 16384, 32768, 65536, 1000000]
 
 class BufferSizeTest(unittest.TestCase):
     def try_one(self, s):
@@ -14,27 +17,27 @@ class BufferSizeTest(unittest.TestCase):
         # .readline()s deliver what we wrote.
 
         # Ensure we can open TESTFN for writing.
-        test_support.unlink(test_support.TESTFN)
+        support.unlink(support.TESTFN)
 
         # Since C doesn't guarantee we can write/read arbitrary bytes in text
         # files, use binary mode.
-        f = open(test_support.TESTFN, "wb")
+        f = self.open(support.TESTFN, "wb")
         try:
             # write once with \n and once without
             f.write(s)
-            f.write("\n")
+            f.write(b"\n")
             f.write(s)
             f.close()
-            f = open(test_support.TESTFN, "rb")
+            f = open(support.TESTFN, "rb")
             line = f.readline()
-            self.assertEqual(line, s + "\n")
+            self.assertEqual(line, s + b"\n")
             line = f.readline()
             self.assertEqual(line, s)
             line = f.readline()
             self.assert_(not line) # Must be at EOF
             f.close()
         finally:
-            test_support.unlink(test_support.TESTFN)
+            support.unlink(support.TESTFN)
 
     def drive_one(self, pattern):
         for length in lengths:
@@ -47,19 +50,27 @@ class BufferSizeTest(unittest.TestCase):
             teststring = pattern * q + pattern[:r]
             self.assertEqual(len(teststring), length)
             self.try_one(teststring)
-            self.try_one(teststring + "x")
+            self.try_one(teststring + b"x")
             self.try_one(teststring[:-1])
 
     def test_primepat(self):
         # A pattern with prime length, to avoid simple relationships with
         # stdio buffer sizes.
-        self.drive_one("1234567890\00\01\02\03\04\05\06")
+        self.drive_one(b"1234567890\00\01\02\03\04\05\06")
 
     def test_nullpat(self):
-        self.drive_one("\0" * 1000)
+        self.drive_one(bytes(1000))
+
+
+class CBufferSizeTest(BufferSizeTest):
+    open = io.open
+
+class PyBufferSizeTest(BufferSizeTest):
+    open = staticmethod(pyio.open)
+
 
 def test_main():
-    test_support.run_unittest(BufferSizeTest)
+    support.run_unittest(CBufferSizeTest, PyBufferSizeTest)
 
 if __name__ == "__main__":
     test_main()

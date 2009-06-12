@@ -438,10 +438,11 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
-        # Python 3.0 _fileio module
-        exts.append( Extension("_fileio", ["_fileio.c"]) )
-        # Python 3.0 _bytesio module
-        exts.append( Extension("_bytesio", ["_bytesio.c"]) )
+        # Python 3.1 _io library
+        exts.append( Extension("_io",
+            ["_io/bufferedio.c", "_io/bytesio.c", "_io/fileio.c",
+             "_io/iobase.c", "_io/_iomodule.c", "_io/stringio.c", "_io/textio.c"],
+             depends=["_io/_iomodule.h"], include_dirs=["Modules/_io"]))
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
         # _json speedups
