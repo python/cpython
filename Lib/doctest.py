@@ -812,20 +812,28 @@ class DocTestFinder:
         # DocTestFinder._find_lineno to find the line number for a
         # given object's docstring.
         try:
-            file = inspect.getsourcefile(obj) or inspect.getfile(obj)
-            if module is not None:
-                # Supply the module globals in case the module was
-                # originally loaded via a PEP 302 loader and
-                # file is not a valid filesystem path
-                source_lines = linecache.getlines(file, module.__dict__)
-            else:
-                # No access to a loader, so assume it's a normal
-                # filesystem path
-                source_lines = linecache.getlines(file)
-            if not source_lines:
-                source_lines = None
+            file = inspect.getsourcefile(obj)
         except TypeError:
             source_lines = None
+        else:
+            if not file:
+                # Check to see if it's one of our special internal "files"
+                # (see __patched_linecache_getlines).
+                file = inspect.getfile(obj)
+                if not file[0]+file[-2:] == '<]>': file = None
+            if file is None: source_lines = None
+            else:
+                if module is not None:
+                    # Supply the module globals in case the module was
+                    # originally loaded via a PEP 302 loader and
+                    # file is not a valid filesystem path
+                    source_lines = linecache.getlines(file, module.__dict__)
+                else:
+                    # No access to a loader, so assume it's a normal
+                    # filesystem path
+                    source_lines = linecache.getlines(file)
+                if not source_lines:
+                    source_lines = None
 
         # Initialize globals, and merge in extraglobs.
         if globs is None:
