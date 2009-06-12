@@ -24,7 +24,7 @@ typedef struct {
     
     PyObject *dict;
     PyObject *weakreflist;
-} StringIOObject;
+} stringio;
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
@@ -51,7 +51,7 @@ PyDoc_STRVAR(stringio_doc,
    buffer of StringIO objects.  The caller should ensure that the 'size'
    argument is non-negative.  Returns 0 on success, -1 otherwise. */
 static int
-resize_buffer(StringIOObject *self, size_t size)
+resize_buffer(stringio *self, size_t size)
 {
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
@@ -106,7 +106,7 @@ resize_buffer(StringIOObject *self, size_t size)
 /* Internal routine for writing a whole PyUnicode object to the buffer of a
    StringIO object. Returns 0 on success, or -1 on error. */
 static Py_ssize_t
-write_str(StringIOObject *self, PyObject *obj)
+write_str(stringio *self, PyObject *obj)
 {
     Py_UNICODE *str;
     Py_ssize_t len;
@@ -186,7 +186,7 @@ PyDoc_STRVAR(stringio_getvalue_doc,
     "Retrieve the entire contents of the object.");
 
 static PyObject *
-stringio_getvalue(StringIOObject *self)
+stringio_getvalue(stringio *self)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -197,7 +197,7 @@ PyDoc_STRVAR(stringio_tell_doc,
     "Tell the current file position.");
 
 static PyObject *
-stringio_tell(StringIOObject *self)
+stringio_tell(stringio *self)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -211,7 +211,7 @@ PyDoc_STRVAR(stringio_read_doc,
     "is reached. Return an empty string at EOF.\n");
 
 static PyObject *
-stringio_read(StringIOObject *self, PyObject *args)
+stringio_read(stringio *self, PyObject *args)
 {
     Py_ssize_t size, n;
     Py_UNICODE *output;
@@ -252,7 +252,7 @@ stringio_read(StringIOObject *self, PyObject *args)
 
 /* Internal helper, used by stringio_readline and stringio_iternext */
 static PyObject *
-_stringio_readline(StringIOObject *self, Py_ssize_t limit)
+_stringio_readline(stringio *self, Py_ssize_t limit)
 {
     Py_UNICODE *start, *end, old_char;
     Py_ssize_t len, consumed;
@@ -286,7 +286,7 @@ PyDoc_STRVAR(stringio_readline_doc,
     "Returns an empty string if EOF is hit immediately.\n");
 
 static PyObject *
-stringio_readline(StringIOObject *self, PyObject *args)
+stringio_readline(stringio *self, PyObject *args)
 {
     PyObject *arg = Py_None;
     Py_ssize_t limit = -1;
@@ -310,7 +310,7 @@ stringio_readline(StringIOObject *self, PyObject *args)
 }
 
 static PyObject *
-stringio_iternext(StringIOObject *self)
+stringio_iternext(stringio *self)
 {
     PyObject *line;
 
@@ -354,7 +354,7 @@ PyDoc_STRVAR(stringio_truncate_doc,
     "Returns the new absolute position.\n");
 
 static PyObject *
-stringio_truncate(StringIOObject *self, PyObject *args)
+stringio_truncate(stringio *self, PyObject *args)
 {
     Py_ssize_t size;
     PyObject *arg = Py_None;
@@ -405,7 +405,7 @@ PyDoc_STRVAR(stringio_seek_doc,
     "Returns the new absolute position.\n");
 
 static PyObject *
-stringio_seek(StringIOObject *self, PyObject *args)
+stringio_seek(stringio *self, PyObject *args)
 {
     Py_ssize_t pos;
     int mode = 0;
@@ -453,7 +453,7 @@ PyDoc_STRVAR(stringio_write_doc,
     "the length of the string.\n");
 
 static PyObject *
-stringio_write(StringIOObject *self, PyObject *obj)
+stringio_write(stringio *self, PyObject *obj)
 {
     Py_ssize_t size;
 
@@ -479,7 +479,7 @@ PyDoc_STRVAR(stringio_close_doc,
     "This method has no effect if the file is already closed.\n");
 
 static PyObject *
-stringio_close(StringIOObject *self)
+stringio_close(stringio *self)
 {
     self->closed = 1;
     /* Free up some memory */
@@ -492,21 +492,21 @@ stringio_close(StringIOObject *self)
 }
 
 static int
-stringio_traverse(StringIOObject *self, visitproc visit, void *arg)
+stringio_traverse(stringio *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-stringio_clear(StringIOObject *self)
+stringio_clear(stringio *self)
 {
     Py_CLEAR(self->dict);
     return 0;
 }
 
 static void
-stringio_dealloc(StringIOObject *self)
+stringio_dealloc(stringio *self)
 {
     _PyObject_GC_UNTRACK(self);
     Py_CLEAR(self->readnl);
@@ -522,10 +522,10 @@ stringio_dealloc(StringIOObject *self)
 static PyObject *
 stringio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    StringIOObject *self;
+    stringio *self;
 
     assert(type != NULL && type->tp_alloc != NULL);
-    self = (StringIOObject *)type->tp_alloc(type, 0);
+    self = (stringio *)type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
 
@@ -542,7 +542,7 @@ stringio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-stringio_init(StringIOObject *self, PyObject *args, PyObject *kwds)
+stringio_init(stringio *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"initial_value", "newline", NULL};
     PyObject *value = NULL;
@@ -625,28 +625,28 @@ stringio_init(StringIOObject *self, PyObject *args, PyObject *kwds)
 
 /* Properties and pseudo-properties */
 static PyObject *
-stringio_seekable(StringIOObject *self, PyObject *args)
+stringio_seekable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
     Py_RETURN_TRUE;
 }
 
 static PyObject *
-stringio_readable(StringIOObject *self, PyObject *args)
+stringio_readable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
     Py_RETURN_TRUE;
 }
 
 static PyObject *
-stringio_writable(StringIOObject *self, PyObject *args)
+stringio_writable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
     Py_RETURN_TRUE;
 }
 
 static PyObject *
-stringio_buffer(StringIOObject *self, void *context)
+stringio_buffer(stringio *self, void *context)
 {
     PyErr_SetString(IO_STATE->unsupported_operation,
                     "buffer attribute is unsupported on type StringIO");
@@ -654,14 +654,14 @@ stringio_buffer(StringIOObject *self, void *context)
 }
 
 static PyObject *
-stringio_closed(StringIOObject *self, void *context)
+stringio_closed(stringio *self, void *context)
 {
     CHECK_INITIALIZED(self);
     return PyBool_FromLong(self->closed);
 }
 
 static PyObject *
-stringio_line_buffering(StringIOObject *self, void *context)
+stringio_line_buffering(stringio *self, void *context)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -669,7 +669,7 @@ stringio_line_buffering(StringIOObject *self, void *context)
 }
 
 static PyObject *
-stringio_newlines(StringIOObject *self, void *context)
+stringio_newlines(stringio *self, void *context)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -711,7 +711,7 @@ static PyGetSetDef stringio_getset[] = {
 PyTypeObject PyStringIO_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_io.StringIO",                            /*tp_name*/
-    sizeof(StringIOObject),                    /*tp_basicsize*/
+    sizeof(stringio),                    /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)stringio_dealloc,              /*tp_dealloc*/
     0,                                         /*tp_print*/
@@ -734,7 +734,7 @@ PyTypeObject PyStringIO_Type = {
     (traverseproc)stringio_traverse,           /*tp_traverse*/
     (inquiry)stringio_clear,                   /*tp_clear*/
     0,                                         /*tp_richcompare*/
-    offsetof(StringIOObject, weakreflist),     /*tp_weaklistoffset*/
+    offsetof(stringio, weakreflist),            /*tp_weaklistoffset*/
     0,                                         /*tp_iter*/
     (iternextfunc)stringio_iternext,           /*tp_iternext*/
     stringio_methods,                          /*tp_methods*/
@@ -744,7 +744,7 @@ PyTypeObject PyStringIO_Type = {
     0,                                         /*tp_dict*/
     0,                                         /*tp_descr_get*/
     0,                                         /*tp_descr_set*/
-    offsetof(StringIOObject, dict),            /*tp_dictoffset*/
+    offsetof(stringio, dict),                  /*tp_dictoffset*/
     (initproc)stringio_init,                   /*tp_init*/
     0,                                         /*tp_alloc*/
     stringio_new,                              /*tp_new*/
