@@ -1,3 +1,6 @@
+# NOTE: this file tests the new `io` library backported from Python 3.x.
+# Similar tests for the builtin file object can be found in test_file2k.py.
+
 from __future__ import print_function
 
 import sys
