@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6258: Support AMD64 in bdist_msi.
+
 - Issue #6195: fixed doctest to no longer try to read 'source' data from
   binary files.
 
