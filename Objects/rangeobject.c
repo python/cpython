@@ -59,26 +59,42 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (PyTuple_Size(args) <= 1) {
         if (!PyArg_UnpackTuple(args, "range", 1, 1, &stop))
-            goto Fail;
+            return NULL;
         stop = PyNumber_Index(stop);
         if (!stop)
-            goto Fail;
+            return NULL;
         start = PyLong_FromLong(0);
+        if (!start) {
+            Py_DECREF(stop);
+            return NULL;
+        }
         step = PyLong_FromLong(1);
-        if (!start || !step)
-            goto Fail;
+        if (!step) {
+            Py_DECREF(stop);
+            Py_DECREF(start);
+            return NULL;
+        }
     }
     else {
         if (!PyArg_UnpackTuple(args, "range", 2, 3,
                                &start, &stop, &step))
-            goto Fail;
+            return NULL;
 
         /* Convert borrowed refs to owned refs */
         start = PyNumber_Index(start);
+        if (!start)
+            return NULL;
         stop = PyNumber_Index(stop);
-        step = validate_step(step);
-        if (!start || !stop || !step)
-            goto Fail;
+        if (!stop) {
+            Py_DECREF(start);
+            return NULL;
+        }
+        step = validate_step(step);    /* Caution, this can clear exceptions */
+        if (!step) {
+            Py_DECREF(start);
+            Py_DECREF(stop);
+            return NULL;
+        }
     }
 
     obj = PyObject_New(rangeobject, &PyRange_Type);
