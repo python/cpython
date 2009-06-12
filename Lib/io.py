@@ -1852,6 +1852,10 @@ class StringIO(TextIOWrapper):
                                        encoding=encoding,
                                        errors=errors,
                                        newline=newline)
+        # Issue #5645: make universal newlines semantics the same as in the
+        # C version, even under Windows.
+        if newline is None:
+            self._writetranslate = False
         if initial_value:
             if not isinstance(initial_value, unicode):
                 initial_value = unicode(initial_value)
