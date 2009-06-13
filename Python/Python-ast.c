@@ -1330,11 +1330,6 @@ ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
            col_offset, PyArena *arena)
 {
         stmt_ty p;
-        if (!module) {
-                PyErr_SetString(PyExc_ValueError,
-                                "field module is required for ImportFrom");
-                return NULL;
-        }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
@@ -4273,8 +4268,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"module\" missing from ImportFrom");
-                        return 1;
+                        module = NULL;
                 }
                 if (PyObject_HasAttrString(obj, "names")) {
                         int res;
