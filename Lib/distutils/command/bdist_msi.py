@@ -282,9 +282,14 @@ class bdist_msi (Command):
         PYTHON.USER if defined, else from PYTHON.MACHINE.
         PYTHON is PYTHONDIR\python.exe"""
         install_path = r"SOFTWARE\Python\PythonCore\%s\InstallPath" % self.target_version
+        if msilib.Win64:
+            # type: msidbLocatorTypeRawValue + msidbLocatorType64bit
+            Type = 2+16
+        else:
+            Type = 2
         add_data(self.db, "RegLocator",
-                [("python.machine", 2, install_path, None, 2),
-                 ("python.user", 1, install_path, None, 2)])
+                [("python.machine", 2, install_path, None, Type),
+                 ("python.user", 1, install_path, None, Type)])
         add_data(self.db, "AppSearch",
                 [("PYTHON.MACHINE", "python.machine"),
                  ("PYTHON.USER", "python.user")])
