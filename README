@@ -33,32 +33,19 @@ LaTeX (through 2.5), and reStructuredText (2.6+) formats; the LaTeX and
 reStructuredText versions are primarily for documentation authors,
 translators, and people with special formatting requirements.
 
-This is a work in progress; please help improve it!
-
-The design documents for Python 3 are also online.  While the reference
-documentation is being updated, the PEPs are often the best source of
-information about new features.  Start by reading PEP 3000:
-
-    http://python.org/dev/peps/pep-3000/
-
 
 What's New
 ----------
 
-For an overview of what's new in Python 3, see Guido van Rossum's blog at
-artima.com:
+We try to have a comprehensive overview of the changes in the "What's New in
+Python 3.1" document, found at
 
-    http://www.artima.com/weblogs/index.jsp?blogger=guido
-
-We try to eventually have a comprehensive overview of the changes in
-the "What's New in Python 3.1" document, found at
-
-    http://docs.python.org/dev/3.1/whatsnew/3.1
+    http://docs.python.org/dev/3.1/whatsnew/3.1.html
 
 Please help write it!
 
 For a more detailed change log, read Misc/NEWS (though this file, too,
-is incomplete, and also doesn't list anything merged in from the 2.6
+is incomplete, and also doesn't list anything merged in from the 2.7
 release under development).
 
 If you want to install multiple versions of Python see the section below
