@@ -2294,7 +2294,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
 }
 
 static alias_ty
-alias_for_import_name(struct compiling *c, const node *n)
+alias_for_import_name(struct compiling *c, const node *n, int store)
 {
     /*
       import_as_name: NAME ['as' NAME]
@@ -2305,28 +2305,38 @@ alias_for_import_name(struct compiling *c, const node *n)
 
  loop:
     switch (TYPE(n)) {
-        case import_as_name:
+         case import_as_name: {
+            node *name_node = CHILD(n, 0);
             str = NULL;
             if (NCH(n) == 3) {
-                str = NEW_IDENTIFIER(CHILD(n, 2));
+                node *str_node = CHILD(n, 2);
+                if (store && !forbidden_check(c, str_node, STR(str_node)))
+                    return NULL;
+                str = NEW_IDENTIFIER(str_node);
                 if (!str)
                     return NULL;
             }
-            name = NEW_IDENTIFIER(CHILD(n, 0));
+            if (!forbidden_check(c, name_node, STR(name_node)))
+                return NULL;
+            name = NEW_IDENTIFIER(name_node);
             if (!name)
                 return NULL;
             return alias(name, str, c->c_arena);
+        }
         case dotted_as_name:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
                 goto loop;
             }
             else {
-                alias_ty a = alias_for_import_name(c, CHILD(n, 0));
+                node *asname_node = CHILD(n, 2);
+                alias_ty a = alias_for_import_name(c, CHILD(n, 0), store);
                 if (!a)
                     return NULL;
                 assert(!a->asname);
-                a->asname = NEW_IDENTIFIER(CHILD(n, 2));
+                if (store && !forbidden_check(c, asname_node, STR(asname_node)))
+                    return NULL;
+                a->asname = NEW_IDENTIFIER(asname_node);
                 if (!a->asname)
                     return NULL;
                 return a;
@@ -2334,7 +2344,10 @@ alias_for_import_name(struct compiling *c, const node *n)
             break;
         case dotted_name:
             if (NCH(n) == 1) {
-                name = NEW_IDENTIFIER(CHILD(n, 0));
+                node *name_node = CHILD(n, 0);
+                if (store && !forbidden_check(c, name_node, STR(name_node)))
+                    return NULL;
+                name = NEW_IDENTIFIER(name_node);
                 if (!name)
                     return NULL;
                 return alias(name, NULL, c->c_arena);
@@ -2408,7 +2421,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
         if (!aliases)
             return NULL;
         for (i = 0; i < NCH(n); i += 2) {
-            alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
+            alias_ty import_alias = alias_for_import_name(c, CHILD(n, i), 1);
             if (!import_alias)
                 return NULL;
             asdl_seq_SET(aliases, i / 2, import_alias);
@@ -2425,7 +2438,9 @@ ast_for_import_stmt(struct compiling *c, const node *n)
           optional module name */
         for (idx = 1; idx < NCH(n); idx++) {
             if (TYPE(CHILD(n, idx)) == dotted_name) {
-                mod = alias_for_import_name(c, CHILD(n, idx));
+                mod = alias_for_import_name(c, CHILD(n, idx), 0);
+                if (!mod)
+                    return NULL;
                 idx++;
                 break;
             } else if (TYPE(CHILD(n, idx)) != DOT) {
@@ -2466,14 +2481,14 @@ ast_for_import_stmt(struct compiling *c, const node *n)
 
         /* handle "from ... import *" special b/c there's no children */
         if (TYPE(n) == STAR) {
-            alias_ty import_alias = alias_for_import_name(c, n);
+            alias_ty import_alias = alias_for_import_name(c, n, 1);
             if (!import_alias)
                 return NULL;
                 asdl_seq_SET(aliases, 0, import_alias);
         }
         else {
             for (i = 0; i < NCH(n); i += 2) {
-                alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
+                alias_ty import_alias = alias_for_import_name(c, CHILD(n, i), 1);
                 if (!import_alias)
                     return NULL;
                     asdl_seq_SET(aliases, i / 2, import_alias);
