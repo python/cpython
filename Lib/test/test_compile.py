@@ -281,6 +281,8 @@ if 1:
             self.assertRaises(SyntaxError, compile, stmt, 'tmp', 'exec')
         # This is ok.
         compile("from None import x", "tmp", "exec")
+        compile("from x import None as y", "tmp", "exec")
+        compile("import None as x", "tmp", "exec")
 
     def test_import(self):
         succeed = [

@@ -2316,8 +2316,10 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 if (!str)
                     return NULL;
             }
-            if (!forbidden_check(c, name_node, STR(name_node)))
-                return NULL;
+            else {
+                if (!forbidden_check(c, name_node, STR(name_node)))
+                    return NULL;
+            }
             name = NEW_IDENTIFIER(name_node);
             if (!name)
                 return NULL;
@@ -2330,11 +2332,11 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             }
             else {
                 node *asname_node = CHILD(n, 2);
-                alias_ty a = alias_for_import_name(c, CHILD(n, 0), store);
+                alias_ty a = alias_for_import_name(c, CHILD(n, 0), 0);
                 if (!a)
                     return NULL;
                 assert(!a->asname);
-                if (store && !forbidden_check(c, asname_node, STR(asname_node)))
+                if (!forbidden_check(c, asname_node, STR(asname_node)))
                     return NULL;
                 a->asname = NEW_IDENTIFIER(asname_node);
                 if (!a->asname)
