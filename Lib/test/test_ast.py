@@ -152,6 +152,10 @@ class AST_Tests(unittest.TestCase):
         self.assertIsNone(slc.lower)
         self.assertIsNone(slc.step)
 
+    def test_from_import(self):
+        im = ast.parse("from . import y").body[0]
+        self.assertIsNone(im.module)
+
     def test_nodeclasses(self):
         x = ast.BinOp(1, 2, 3, lineno=0)
         self.assertEquals(x.left, 1)

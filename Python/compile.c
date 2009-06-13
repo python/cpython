@@ -1976,6 +1976,13 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
 	PyObject *names = PyTuple_New(n);
 	PyObject *level;
+	static PyObject *empty_string;
+
+	if (!empty_string) {
+		empty_string = PyString_FromString("");
+		if (!empty_string)
+			return 0;
+	}
 	
 	if (!names)
 		return 0;
@@ -1998,23 +2005,24 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		PyTuple_SET_ITEM(names, i, alias->name);
 	}
 
-	if (s->lineno > c->c_future->ff_lineno) {
-		if (!strcmp(PyString_AS_STRING(s->v.ImportFrom.module),
-			    "__future__")) {
-			Py_DECREF(level);
-			Py_DECREF(names);
-			return compiler_error(c, 
-				      "from __future__ imports must occur "
+	if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module && 
+	    !strcmp(PyString_AS_STRING(s->v.ImportFrom.module), "__future__")) {
+		Py_DECREF(level);
+		Py_DECREF(names);
+		return compiler_error(c, "from __future__ imports must occur "
 				      "at the beginning of the file");
-
-		}
 	}
 
 	ADDOP_O(c, LOAD_CONST, level, consts);
 	Py_DECREF(level);
 	ADDOP_O(c, LOAD_CONST, names, consts);
 	Py_DECREF(names);
-	ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
+	if (s->v.ImportFrom.module) {
+		ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
+	}
+	else {
+		ADDOP_NAME(c, IMPORT_NAME, empty_string, names);
+	}
 	for (i = 0; i < n; i++) {
 		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
 		identifier store_name;

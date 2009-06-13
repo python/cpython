@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- When no module is given in a relative import, the module field of the
+  ImportFrom AST node is now None instead of an empty string.
+
 - Assignment to None using import statements now raises a SyntaxError.
 
 - In the slice AST type, the step field will always be None if a step expression
