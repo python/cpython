@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Assignment to None using import statements now raises a SyntaxError.
+
 - In the slice AST type, the step field will always be None if a step expression
   is not specified.
 
