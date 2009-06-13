@@ -27,8 +27,10 @@ def _sphinx_version():
     major, minor, micro, level, serial = sys.version_info
     release = '%s%s' % (major, minor)
     if micro:
-        release += '%s' % micro
-    if level != 'final':
+        release += '%s' % (micro,)
+    if level == 'candidate':
+        release += 'rc%s' % (serial,)
+    elif level != 'final':
         release += '%s%s' % (level[0], serial)
     return release
 
