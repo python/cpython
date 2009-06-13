@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- In the slice AST type, the step field will always be None if a step expression
+  is not specified.
+
 - Issue #4547: When debugging a very large function, it was not always
   possible to update the lineno attribute of the current frame.
 
