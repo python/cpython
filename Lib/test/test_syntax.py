@@ -462,6 +462,12 @@ Traceback (most recent call last):
   File "<doctest test.test_syntax[49]>", line 1
 SyntaxError: keyword argument repeated
 
+>>> del ()
+Traceback (most recent call last):
+   ...
+  File "<doctest test.test_syntax[50]>", line 1
+SyntaxError: can't delete ()
+
 """
 
 import re
