@@ -1468,14 +1468,7 @@ ast_for_slice(struct compiling *c, const node *n)
 
     ch = CHILD(n, NCH(n) - 1);
     if (TYPE(ch) == sliceop) {
-        if (NCH(ch) == 1) {
-            /* No expression, so step is None */
-            ch = CHILD(ch, 0);
-            step = Name(new_identifier("None", c->c_arena), Load,
-                        LINENO(ch), ch->n_col_offset, c->c_arena);
-            if (!step)
-                return NULL;
-        } else {
+        if (NCH(ch) != 1) {
             ch = CHILD(ch, 1);
             if (TYPE(ch) == test) {
                 step = ast_for_expr(c, ch);
