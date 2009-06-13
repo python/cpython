@@ -46,13 +46,12 @@ class ImportTest(unittest.TestCase):
             else:
                 pyc = TESTFN + ".pyc"
 
-            f = open(source, "w")
-            print("# This tests Python's ability to import a", ext, "file.", file=f)
-            a = random.randrange(1000)
-            b = random.randrange(1000)
-            print("a =", a, file=f)
-            print("b =", b, file=f)
-            f.close()
+            with open(source, "w") as f:
+                print("# This tests Python's ability to import a", ext, "file.", file=f)
+                a = random.randrange(1000)
+                b = random.randrange(1000)
+                print("a =", a, file=f)
+                print("b =", b, file=f)
 
             if TESTFN in sys.modules:
                 del sys.modules[TESTFN]
