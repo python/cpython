@@ -651,14 +651,6 @@ stringio_writable(stringio *self, PyObject *args)
 }
 
 static PyObject *
-stringio_buffer(stringio *self, void *context)
-{
-    PyErr_SetString(_PyIO_unsupported_operation,
-                    "buffer attribute is unsupported on type StringIO");
-    return NULL;
-}
-
-static PyObject *
 stringio_closed(stringio *self, void *context)
 {
     CHECK_INITIALIZED(self);
@@ -708,7 +700,6 @@ static PyGetSetDef stringio_getset[] = {
         Hopefully, a better solution, than adding these pseudo-attributes,
         will be found.
     */
-    {"buffer",         (getter)stringio_buffer,         NULL, NULL},
     {"line_buffering", (getter)stringio_line_buffering, NULL, NULL},
     {NULL}
 };
