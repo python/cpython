@@ -498,6 +498,8 @@ If a single object is listed twice (under different names), then tests
 will only be generated for it once:
 
     >>> from test import doctest_aliases
+    >>> assert doctest_aliases.TwoNames.f
+    >>> assert doctest_aliases.TwoNames.g
     >>> tests = excl_empty_finder.find(doctest_aliases)
     >>> print len(tests)
     2

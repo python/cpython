@@ -10,4 +10,4 @@ class TwoNames:
         '''
         return 'f'
 
-        g = f # define an alias for f
+    g = f # define an alias for f
