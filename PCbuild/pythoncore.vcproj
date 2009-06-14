@@ -999,14 +999,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_fileio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\Modules\_bytesio.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\_functoolsmodule.c"
 				>
 			</File>
@@ -1347,6 +1339,42 @@
 				</File>
 				<File
 					RelativePath="..\Modules\cjkcodecs\multibytecodec.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="_io"
+				>
+				<File
+					RelativePath="..\Modules\_io\_iomodule.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\_iomodule.h"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\bufferedio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\bytesio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\fileio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\iobase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\stringio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\Modules\_io\textio.c"
 					>
 				</File>
 			</Filter>
