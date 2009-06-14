@@ -784,13 +784,18 @@ always available.
    The standard streams are in text mode by default.  To write or read binary
    data to these, use the underlying binary buffer.  For example, to write bytes
    to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.  Using
-   :meth:`io.TextIOBase.detach` streams can be made binary by default.  For
-   example, this function sets all the standard streams to binary::
+   :meth:`io.TextIOBase.detach` streams can be made binary by default.  This
+   function sets :data:`stdin` and :data:`stdout` to binary::
 
       def make_streams_binary():
           sys.stdin = sys.stdin.detach()
           sys.stdout = sys.stdout.detach()
-          sys.stderr = sys.stderr.detach()
+
+   Note that the streams can be replaced with objects (like
+   :class:`io.StringIO`) that do not support the
+   :attr:`~io.BufferedIOBase.buffer` attribute or the
+   :meth:`~io.BufferedIOBase.detach` method and can raise :exc:`AttributeError`
+   or :exc:`io.UnsupportedOperation`.
 
 
 .. data:: __stdin__
