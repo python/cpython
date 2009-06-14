@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
+  (On Unix)
+
 - Issue #6258: Support AMD64 in bdist_msi.
 
 - Fix a bug in the trace module where a bytes object from co_lnotab had its
