@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Accessing io.StringIO.buffer now raises an AttributeError instead of
+  io.UnsupportedOperation.
+
 - Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
   (On Unix)
 
