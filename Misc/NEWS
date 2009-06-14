@@ -325,6 +325,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
+  (On Unix)
+
 - Issue #6215: All bug fixes and enhancements from the Python 3.1 io library
   (including the fast C implementation) have been backported to the standard
   ``io`` module.
