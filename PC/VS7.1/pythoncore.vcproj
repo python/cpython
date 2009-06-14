@@ -362,16 +362,10 @@
 			RelativePath="..\..\Modules\cjkcodecs\_codecs_tw.c">
 		</File>
 		<File
-			RelativePath="..\..\Modules\_bytesio.c">
-		</File>
-		<File
 			RelativePath="..\..\Modules\_codecsmodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_csv.c">
-		</File>
-		<File
-			RelativePath="..\..\Modules\_fileio.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_functoolsmodule.c">
@@ -381,6 +375,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Modules\_hotshot.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\_io\_iomodule.c">
 		</File>
 		<File
 			RelativePath="..\..\Modules\_json.c">
@@ -443,10 +440,16 @@
 			RelativePath="..\..\Objects\boolobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_io\bufferedio.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\bufferobject.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\bytearrayobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\_io\bytesio.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\stringobject.c">
@@ -522,6 +525,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\exceptions.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\_io\fileio.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\fileobject.c">
@@ -627,6 +633,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\intobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\_io\iobase.c">
 		</File>
 		<File
 			RelativePath="..\..\Objects\iterobject.c">
@@ -773,6 +782,9 @@
 			RelativePath="..\..\Objects\sliceobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_io\stringio.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\stropmodule.c">
 		</File>
 		<File
@@ -789,6 +801,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Python\sysmodule.c">
+		</File>
+		<File
+			RelativePath="..\..\Modules\_io\textio.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\thread.c">

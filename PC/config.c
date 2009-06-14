@@ -52,8 +52,6 @@ extern void initparser(void);
 extern void init_winreg(void);
 extern void init_struct(void);
 extern void initdatetime(void);
-extern void init_fileio(void);
-extern void init_bytesio(void);
 extern void init_functools(void);
 extern void init_json(void);
 extern void initzlib(void);
@@ -68,6 +66,7 @@ extern void init_codecs_tw(void);
 extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
+extern void init_io(void);
 extern void _PyWarnings_Init(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
@@ -132,8 +131,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_winreg", init_winreg},
 	{"_struct", init_struct},
 	{"datetime", initdatetime},
-	{"_fileio", init_fileio},
-	{"_bytesio", init_bytesio},
 	{"_functools", init_functools},
 	{"_json", init_json},
 
@@ -165,6 +162,8 @@ struct _inittab _PyImport_Inittab[] = {
         {"sys", NULL},
 	{"exceptions", NULL},
         {"_warnings", _PyWarnings_Init},
+
+        {"_io", init_io},
 
         /* Sentinel */
         {0, 0}
