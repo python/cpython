@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
+  (On Unix)
+
 - Issue #6258: Support AMD64 in bdist_msi.
 
 - Issue #5262: Fixed bug in next rollover time computation in
