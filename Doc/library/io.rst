@@ -504,11 +504,9 @@ Buffered Streams
 
    .. method:: peek([n])
 
-      Return 1 (or *n* if specified) bytes from a buffer without advancing the
-      position.  Only a single read on the raw stream is done to satisfy the
-      call. The number of bytes returned may be less than requested since at
-      most all the buffer's bytes from the current position to the end are
-      returned.
+      Return bytes from the stream without advancing the position.  Only a
+      single read on the raw stream is done to satisfy the call. The number of
+      bytes returned may be less or more than requested.
 
    .. method:: read([n])
 
