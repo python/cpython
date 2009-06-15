@@ -2,8 +2,8 @@
 import sys
 import os
 import unittest
-import httplib
 
+from distutils.command import upload as upload_mod
 from distutils.command.upload import upload
 from distutils.core import Distribution
 
@@ -19,47 +19,36 @@ index-servers =
 [server1]
 username:me
 """
-class Response(object):
-    def __init__(self, status=200, reason='OK'):
-        self.status = status
-        self.reason = reason
 
-class FakeConnection(object):
+class FakeOpen(object):
 
-    def __init__(self):
-        self.requests = []
-        self.headers = []
-        self.body = ''
+    def __init__(self, url):
+        self.url = url
+        if not isinstance(url, str):
+            self.req = url
+        else:
+            self.req = None
+        self.msg = 'OK'
 
-    def __call__(self, netloc):
-        return self
+    def getcode(self):
+        return 200
 
-    def connect(self):
-        pass
-    endheaders = connect
-
-    def putrequest(self, method, url):
-        self.requests.append((method, url))
-
-    def putheader(self, name, value):
-        self.headers.append((name, value))
-
-    def send(self, body):
-        self.body = body
-
-    def getresponse(self):
-        return Response()
 
 class uploadTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         super(uploadTestCase, self).setUp()
-        self.old_class = httplib.HTTPConnection
-        self.conn = httplib.HTTPConnection = FakeConnection()
+        self.old_open = upload_mod.urlopen
+        upload_mod.urlopen = self._urlopen
+        self.last_open = None
 
     def tearDown(self):
-        httplib.HTTPConnection = self.old_class
+        upload_mod.urlopen = self.old_open
         super(uploadTestCase, self).tearDown()
+
+    def _urlopen(self, url):
+        self.last_open = FakeOpen(url)
+        return self.last_open
 
     def test_finalize_options(self):
 
@@ -105,12 +94,13 @@ class uploadTestCase(PyPIRCCommandTestCase):
         cmd.run()
 
         # what did we send ?
-        headers = dict(self.conn.headers)
+        headers = dict(self.last_open.req.headers)
         self.assertEquals(headers['Content-length'], '2086')
         self.assert_(headers['Content-type'].startswith('multipart/form-data'))
-
-        self.assertEquals(self.conn.requests, [('POST', '/pypi')])
-        self.assert_('xxx' in self.conn.body)
+        self.assertEquals(self.last_open.req.get_method(), 'POST')
+        self.assertEquals(self.last_open.req.get_full_url(),
+                          'http://pypi.python.org/pypi')
+        self.assert_('xxx' in self.last_open.req.data)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)
