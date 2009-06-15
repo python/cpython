@@ -1,11 +1,6 @@
 """distutils.command.upload
 
 Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
-
-from distutils.errors import *
-from distutils.core import PyPIRCCommand
-from distutils.spawn import spawn
-from distutils import log
 import sys
 import os
 import socket
@@ -15,12 +10,12 @@ import base64
 import urlparse
 import cStringIO as StringIO
 from ConfigParser import ConfigParser
+from hashlib import md5
 
-# this keeps compatibility for 2.3 and 2.4
-if sys.version < "2.5":
-    from md5 import md5
-else:
-    from hashlib import md5
+from distutils.errors import *
+from distutils.core import PyPIRCCommand
+from distutils.spawn import spawn
+from distutils import log
 
 class upload(PyPIRCCommand):
 
@@ -125,7 +120,8 @@ class upload(PyPIRCCommand):
                                      open(filename+".asc").read())
 
         # set up the authentication
-        auth = "Basic " + base64.encodestring(self.username + ":" + self.password).strip()
+        auth = "Basic " + base64.encodestring(self.username + ":" +
+                                              self.password).strip()
 
         # Build up the MIME payload for the POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
@@ -134,10 +130,10 @@ class upload(PyPIRCCommand):
         body = StringIO.StringIO()
         for key, value in data.items():
             # handle multiple entries for the same name
-            if type(value) != type([]):
+            if not isinstance(value, list):
                 value = [value]
             for value in value:
-                if type(value) is tuple:
+                if isinstance(value, tuple):
                     fn = ';filename="%s"' % value[0]
                     value = value[1]
                 else:
