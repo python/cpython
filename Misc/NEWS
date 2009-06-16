@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6289: Encoding errors from compile() were being masked.
+
 - When no module is given in a relative import, the module field of the
   ImportFrom AST node is now None instead of an empty string.
 
