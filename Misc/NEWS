@@ -800,6 +800,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6287: Added the license field in Distutils documentation.
+
 - Issue #6263: Fixed syntax error in distutils.cygwincompiler.
 
 - Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
