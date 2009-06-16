@@ -565,6 +565,8 @@ This information includes:
 +----------------------+---------------------------+-----------------+--------+
 | ``platforms``        | a list of platforms       | list of strings |        |
 +----------------------+---------------------------+-----------------+--------+
+| ``license``          | license for the package   | short string    | \(6)   |
++----------------------+---------------------------+-----------------+--------+
 
 Notes:
 
@@ -581,6 +583,13 @@ Notes:
    These fields should not be used if your package is to be compatible with Python
    versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
    <http://pypi.python.org/pypi>`_.
+
+(6)
+    The ``license`` field is a text indicating the license covering the
+    package where the license is not a selection from the "License" Trove
+    classifiers. See the ``Classifier`` field. Notice that
+    there's a ``licence`` distribution option which is deprecated but still
+    acts as an alias for ``license``.
 
 'short string'
    A single line of text, not more than 200 characters.
