@@ -160,6 +160,9 @@ Label Options
 The following options are supported by labels, buttons and other button-like
 widgets.
 
+.. tabularcolumns:: |p{0.2\textwidth}|p{0.7\textwidth}|
+..
+
    +--------------+-----------------------------------------------------------+
    | option       | description                                               |
    +==============+===========================================================+
@@ -700,6 +703,9 @@ Options
 ^^^^^^^
 
 This widget accepts the following specific options:
+
+.. tabularcolumns:: |p{0.2\textwidth}|p{0.7\textwidth}|
+..
 
    +----------------+--------------------------------------------------------+
    | option         | description                                            |
