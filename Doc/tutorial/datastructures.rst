@@ -466,7 +466,7 @@ Here is a small example using a dictionary::
    False
 
 The :func:`dict` constructor builds dictionaries directly from sequences of
-key-value pairs stored as tuples. ::
+key-value pairs::
 
    >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
    {'sape': 4139, 'jack': 4098, 'guido': 4127}
