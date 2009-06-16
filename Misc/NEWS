@@ -327,6 +327,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6287: Added the license field in Distutils documentation.
+
 - Issue #6286: Now Distutils upload command is based on urllib2 instead of
   httplib, allowing the usage of http_proxy.
 
