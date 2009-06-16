@@ -72,7 +72,7 @@ PyFloat_GetMin(void)
 static PyTypeObject FloatInfoType = {0, 0, 0, 0, 0, 0};
 
 PyDoc_STRVAR(floatinfo__doc__,
-"sys.floatinfo\n\
+"sys.float_info\n\
 \n\
 A structseq holding information about the float type. It contains low level\n\
 information about the precision and internal representation. Please study\n\
@@ -99,7 +99,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
 };
 
 static PyStructSequence_Desc floatinfo_desc = {
-	"sys.floatinfo",	/* name */
+	"sys.float_info",	/* name */
 	floatinfo__doc__,	/* doc */
 	floatinfo_fields,	/* fields */
 	11
