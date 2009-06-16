@@ -43,6 +43,16 @@
 -- ignored.  Blank lines, or lines containing only whitespace, are also
 -- ignored.
 
+-- The majority of the values below were computed with the help of
+-- version 2.3 of the MPFR library for multiple-precision
+-- floating-point computations with correct rounding.  All output
+-- values in this file are (modulo yet-to-be-discovered bugs)
+-- correctly rounded, provided that each input and output decimal
+-- floating-point value below is interpreted as a representation of
+-- the corresponding nearest IEEE 754 double-precision value.  See the
+-- MPFR homepage at http://www.mpfr.org for more information about the
+-- MPFR project.
+
 
 --------------------------
 -- acos: Inverse cosine --
