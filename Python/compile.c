@@ -140,7 +140,6 @@ struct compiler {
 
 	struct compiler_unit *u; /* compiler state for current block */
 	PyObject *c_stack;	 /* Python list holding compiler_unit ptrs */
-	char *c_encoding;	 /* source encoding (a borrowed reference) */
 	PyArena *c_arena;	 /* pointer to memory allocation arena */
 };
 
@@ -281,9 +280,6 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 			PyErr_SetString(PyExc_SystemError, "no symtable");
 		goto finally;
 	}
-
-	/* XXX initialize to NULL for now, need to handle */
-	c.c_encoding = NULL;
 
 	co = compiler_mod(&c, mod);
 
