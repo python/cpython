@@ -245,6 +245,10 @@ loops that truncate the stream.
               yield n
               n += step
 
+   When counting with floating point numbers, better accuracy can sometimes be
+   achieved by substituting multiplicative code such as: ``(start + step * i
+   for i in count())``.
+
    .. versionchanged:: 2.7
       added *step* argument and allowed non-integer arguments.
 
