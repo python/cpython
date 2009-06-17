@@ -68,6 +68,15 @@ Plain Integer Objects
 
 .. cfunction:: PyObject* PyInt_FromSsize_t(Py_ssize_t ival)
 
+   Create a new integer object with a value of *ival*. If the value is larger
+   than ``LONG_MAX`` or smaller than ``LONG_MIN``, a long integer object is
+   returned.
+
+   .. versionadded:: 2.5
+
+
+.. cfunction:: PyObject* PyInt_FromSize_t(size_t ival)
+
    Create a new integer object with a value of *ival*. If the value exceeds
    ``LONG_MAX``, a long integer object is returned.
 
