@@ -56,20 +56,17 @@ Functions provided:
 
    Combine multiple context managers into a single nested context manager.
 
-   Code like this::
+   This function has been deprecated in favour of the multiple manager form
+   of the :keyword:`with` statement.
+
+   The one advantage of this function over the multiple manager form of the
+   :keyword:`with` statement is that argument unpacking allows it to be
+   used with a variable number of context managers as follows::
 
       from contextlib import nested
 
-      with nested(A(), B(), C()) as (X, Y, Z):
+      with nested(*managers):
           do_something()
-
-   is equivalent to this::
-
-      m1, m2, m3 = A(), B(), C()
-      with m1 as X:
-          with m2 as Y:
-              with m3 as Z:
-                  do_something()
 
    Note that if the :meth:`__exit__` method of one of the nested context managers
    indicates an exception should be suppressed, no exception information will be
@@ -80,8 +77,29 @@ Functions provided:
    :meth:`__exit__` methods should avoid raising exceptions, and in particular they
    should not re-raise a passed-in exception.
 
+   This function has two major quirks that have led to it being deprecated. Firstly,
+   as the context managers are all constructed before the function is invoked, the
+   :meth:`__new__` and :meth:`__init__` methods of the inner context managers are
+   not actually covered by the scope of the outer context managers. That means, for
+   example, that using :func:`nested` to open two files is a programming error as the
+   first file will not be closed promptly if an exception is thrown when opening
+   the second file.
+
+   Secondly, if the :meth:`__enter__` method of one of the inner context managers
+   raises an exception that is caught and suppressed by the :meth:`__exit__` method
+   of one of the outer context managers, this construct will raise
+   :exc:`RuntimeError` rather than skipping the body of the :keyword:`with`
+   statement.
+
+   Developers that need to support nesting of a variable number of context managers
+   can either use the :mod:`warnings` module to suppress the DeprecationWarning
+   raised by this function or else use this function as a model for an application
+   specific implementation.
+
    .. deprecated:: 3.1
-      The with-statement now supports this functionality directly.
+      The with-statement now supports this functionality directly (without the
+      confusing error prone quirks).
+
 
 .. function:: closing(thing)
 
