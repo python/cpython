@@ -500,7 +500,7 @@ def check_output(*popenargs, **kwargs):
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
-    process = Popen(*popenargs, stdout=PIPE, **kwargs)
+    process = Popen(stdout=PIPE, *popenargs, **kwargs)
     output, unused_err = process.communicate()
     retcode = process.poll()
     if retcode:
@@ -1020,8 +1020,17 @@ class Popen(object):
 
 
         def _close_fds(self, but):
-            os.closerange(3, but)
-            os.closerange(but + 1, MAXFD)
+            if hasattr(os, 'closerange'):
+                os.closerange(3, but)
+                os.closerange(but + 1, MAXFD)
+            else:
+                for i in xrange(3, MAXFD):
+                    if i == but:
+                        continue
+                    try:
+                        os.close(i)
+                    except:
+                        pass
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
