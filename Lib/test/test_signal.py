@@ -1,6 +1,6 @@
 import unittest
 from test import support
-from contextlib import closing, nested
+from contextlib import closing
 import gc
 import pickle
 import select
