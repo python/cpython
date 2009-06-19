@@ -960,7 +960,7 @@ Lambdas shouldn't have their usual return behavior.
 # iterators have side-effects, so that which values *can* be generated at
 # each slot depend on the values iterated at previous slots.
 
-def conjoin(gs):
+def simple_conjoin(gs):
 
     values = [None] * len(gs)
 
