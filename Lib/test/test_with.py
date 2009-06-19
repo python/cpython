@@ -710,6 +710,7 @@ class NestedWith(unittest.TestCase):
             body_executed = True
         self.assertTrue(a.enter_called)
         self.assertTrue(a.exit_called)
+        self.assertTrue(body_executed)
         self.assertNotEqual(a.exc_info[0], None)
 
     def testEnterReturnsTuple(self):
