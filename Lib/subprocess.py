@@ -999,90 +999,98 @@ class Popen(object):
             # The first char specifies the exception type: 0 means
             # OSError, 1 means some other error.
             errpipe_read, errpipe_write = os.pipe()
-            self._set_cloexec_flag(errpipe_write)
-
-            gc_was_enabled = gc.isenabled()
-            # Disable gc to avoid bug where gc -> file_dealloc ->
-            # write to stderr -> hang.  http://bugs.python.org/issue1336
-            gc.disable()
             try:
-                self.pid = os.fork()
-            except:
-                if gc_was_enabled:
-                    gc.enable()
-                raise
-            self._child_created = True
-            if self.pid == 0:
-                # Child
                 try:
-                    # Close parent's pipe ends
-                    if p2cwrite is not None:
-                        os.close(p2cwrite)
-                    if c2pread is not None:
-                        os.close(c2pread)
-                    if errread is not None:
-                        os.close(errread)
-                    os.close(errpipe_read)
+                    self._set_cloexec_flag(errpipe_write)
 
-                    # Dup fds for child
-                    if p2cread is not None:
-                        os.dup2(p2cread, 0)
-                    if c2pwrite is not None:
-                        os.dup2(c2pwrite, 1)
-                    if errwrite is not None:
-                        os.dup2(errwrite, 2)
+                    gc_was_enabled = gc.isenabled()
+                    # Disable gc to avoid bug where gc -> file_dealloc ->
+                    # write to stderr -> hang.  http://bugs.python.org/issue1336
+                    gc.disable()
+                    try:
+                        self.pid = os.fork()
+                    except:
+                        if gc_was_enabled:
+                            gc.enable()
+                        raise
+                    self._child_created = True
+                    if self.pid == 0:
+                        # Child
+                        try:
+                            # Close parent's pipe ends
+                            if p2cwrite is not None:
+                                os.close(p2cwrite)
+                            if c2pread is not None:
+                                os.close(c2pread)
+                            if errread is not None:
+                                os.close(errread)
+                            os.close(errpipe_read)
 
-                    # Close pipe fds.  Make sure we don't close the same
-                    # fd more than once, or standard fds.
-                    if p2cread is not None and p2cread not in (0,):
-                        os.close(p2cread)
-                    if c2pwrite is not None and c2pwrite not in (p2cread, 1):
-                        os.close(c2pwrite)
-                    if errwrite is not None and errwrite not in (p2cread, c2pwrite, 2):
-                        os.close(errwrite)
+                            # Dup fds for child
+                            if p2cread is not None:
+                                os.dup2(p2cread, 0)
+                            if c2pwrite is not None:
+                                os.dup2(c2pwrite, 1)
+                            if errwrite is not None:
+                                os.dup2(errwrite, 2)
 
-                    # Close all other fds, if asked for
-                    if close_fds:
-                        self._close_fds(but=errpipe_write)
+                            # Close pipe fds.  Make sure we don't close the same
+                            # fd more than once, or standard fds.
+                            if p2cread is not None and p2cread not in (0,):
+                                os.close(p2cread)
+                            if c2pwrite is not None and c2pwrite not in (p2cread, 1):
+                                os.close(c2pwrite)
+                            if errwrite is not None and errwrite not in (p2cread, c2pwrite, 2):
+                                os.close(errwrite)
 
-                    if cwd is not None:
-                        os.chdir(cwd)
+                            # Close all other fds, if asked for
+                            if close_fds:
+                                self._close_fds(but=errpipe_write)
 
-                    if preexec_fn:
-                        preexec_fn()
+                            if cwd is not None:
+                                os.chdir(cwd)
 
-                    if env is None:
-                        os.execvp(executable, args)
-                    else:
-                        os.execvpe(executable, args, env)
+                            if preexec_fn:
+                                preexec_fn()
 
-                except:
-                    exc_type, exc_value, tb = sys.exc_info()
-                    # Save the traceback and attach it to the exception object
-                    exc_lines = traceback.format_exception(exc_type,
-                                                           exc_value,
-                                                           tb)
-                    exc_value.child_traceback = ''.join(exc_lines)
-                    os.write(errpipe_write, pickle.dumps(exc_value))
+                            if env is None:
+                                os.execvp(executable, args)
+                            else:
+                                os.execvpe(executable, args, env)
 
-                # This exitcode won't be reported to applications, so it
-                # really doesn't matter what we return.
-                os._exit(255)
+                        except:
+                            exc_type, exc_value, tb = sys.exc_info()
+                            # Save the traceback and attach it to the exception object
+                            exc_lines = traceback.format_exception(exc_type,
+                                                                   exc_value,
+                                                                   tb)
+                            exc_value.child_traceback = ''.join(exc_lines)
+                            os.write(errpipe_write, pickle.dumps(exc_value))
 
-            # Parent
-            if gc_was_enabled:
-                gc.enable()
-            os.close(errpipe_write)
-            if p2cread is not None and p2cwrite is not None:
-                os.close(p2cread)
-            if c2pwrite is not None and c2pread is not None:
-                os.close(c2pwrite)
-            if errwrite is not None and errread is not None:
-                os.close(errwrite)
+                        # This exitcode won't be reported to applications, so it
+                        # really doesn't matter what we return.
+                        os._exit(255)
 
-            # Wait for exec to fail or succeed; possibly raising exception
-            data = os.read(errpipe_read, 1048576) # Exceptions limited to 1 MB
-            os.close(errpipe_read)
+                    # Parent
+                    if gc_was_enabled:
+                        gc.enable()
+                finally:
+                    # be sure the FD is closed no matter what
+                    os.close(errpipe_write)
+
+                if p2cread is not None and p2cwrite is not None:
+                    os.close(p2cread)
+                if c2pwrite is not None and c2pread is not None:
+                    os.close(c2pwrite)
+                if errwrite is not None and errread is not None:
+                    os.close(errwrite)
+
+                # Wait for exec to fail or succeed; possibly raising exception
+                data = os.read(errpipe_read, 1048576) # Exceptions limited to 1 MB
+            finally:
+                # be sure the FD is closed no matter what
+                os.close(errpipe_read)
+
             if data != "":
                 os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
