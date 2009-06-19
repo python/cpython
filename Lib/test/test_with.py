@@ -283,15 +283,6 @@ class NestedNonexceptionalTestCase(unittest.TestCase,
         with Nested(mock_contextmanager_generator()):
             pass
 
-    def testSingleArgUnbound(self):
-        mock_contextmanager = mock_contextmanager_generator()
-        mock_nested = MockNested(mock_contextmanager)
-        with mock_nested:
-            self.assertInWithManagerInvariants(mock_contextmanager)
-            self.assertInWithManagerInvariants(mock_nested)
-        self.assertAfterWithManagerInvariantsNoError(mock_contextmanager)
-        self.assertAfterWithManagerInvariantsNoError(mock_nested)
-
     def testSingleArgBoundToNonTuple(self):
         m = mock_contextmanager_generator()
         # This will bind all the arguments to nested() into a single list
