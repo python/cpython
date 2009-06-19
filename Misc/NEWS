@@ -327,6 +327,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6274: Fixed possible file descriptors leak in subprocess.py
+
 - Issue #6189: Restored compatibility of subprocess.py with Python 2.2.
 
 - Issue #6287: Added the license field in Distutils documentation.
