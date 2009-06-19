@@ -15,6 +15,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6274: Fixed possible file descriptors leak in subprocess.py
+
 - Accessing io.StringIO.buffer now raises an AttributeError instead of
   io.UnsupportedOperation.
 
