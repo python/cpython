@@ -327,6 +327,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6164: Added an AIX specific linker argument in Distutils 
+  unixcompiler. Original patch by Sridhar Ratnakumar.
+
 - Issue #6274: Fixed possible file descriptors leak in subprocess.py
 
 - Issue #6189: Restored compatibility of subprocess.py with Python 2.2.
