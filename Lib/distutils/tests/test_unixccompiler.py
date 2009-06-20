@@ -86,6 +86,14 @@ class UnixCCompilerTestCase(unittest.TestCase):
         sysconfig.get_config_var = gcv
         self.assertEqual(self.cc.rpath_foo(), '-R/foo')
 
+        # AIX C/C++ linker
+        sys.platform = 'aix'
+        def gcv(v):
+            return 'xxx'
+        sysconfig.get_config_var = gcv
+        self.assertEqual(self.cc.rpath_foo(), '-blibpath:/foo')
+
+
 def test_suite():
     return unittest.makeSuite(UnixCCompilerTestCase)
 
