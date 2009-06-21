@@ -19,7 +19,6 @@ struct symtable {
 	PyObject *st_global;     /* borrowed ref to MODULE in st_symbols */
 	int st_nblocks;          /* number of blocks */
 	PyObject *st_private;        /* name of current class or NULL */
-        int st_tmpname;          /* temporary name counter */
 	PyFutureFeatures *st_future; /* module's future features */
 };
 
@@ -43,7 +42,6 @@ typedef struct _symtable_entry {
 	                                    an argument */
 	int ste_lineno;          /* first line of block */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
-	int ste_tmpname;         /* counter for listcomp temp vars */
 	struct symtable *ste_table;
 } PySTEntryObject;
 
