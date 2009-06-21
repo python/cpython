@@ -1396,6 +1396,10 @@ def basicConfig(**kwargs):
         root.addHandler(hdlr)
         level = kwargs.get("level")
         if level is not None:
+            if str(level) == level: # If a string was passed, do more checks
+                if level not in _levelNames:
+                    raise ValueError("Unknown level: %r" % level)
+                level = _levelNames[level]
             root.setLevel(level)
 
 #---------------------------------------------------------------------------
