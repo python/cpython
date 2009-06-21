@@ -111,7 +111,6 @@ struct compiler_unit {
 	   members, you can reach all early allocated blocks. */
 	basicblock *u_blocks;
 	basicblock *u_curblock; /* pointer to current block */
-	int u_tmpname;		/* temporary variables for list comps */
 
 	int u_nfblocks;
 	struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -468,7 +467,6 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	}
 
 	u->u_blocks = NULL;
-	u->u_tmpname = 0;
 	u->u_nfblocks = 0;
 	u->u_firstlineno = lineno;
 	u->u_lineno = 0;
