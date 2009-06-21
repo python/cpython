@@ -315,8 +315,7 @@ class bdist_msi (Command):
                             key = seen[afile]
                             add_data(self.db, "DuplicateFile",
                                 [(key + version, dir.component, key, None, dir.logical)])
-
-
+            db.Commit()
         cab.commit(db)
 
     def add_find_python(self):
