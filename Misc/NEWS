@@ -1152,6 +1152,11 @@ Extension Modules
 Tests
 -----
 
+- Issue #5450: Moved tests involving loading tk from Lib/test/test_tcl to
+  Lib/lib-tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate
+  the same behaviour as test_ttkguionly (and now also test_tk) which is to
+  skip the tests if DISPLAY is defined but can't be used.
+
 - Issue #6152: New option '-j'/'--multiprocess' for regrtest allows running
   regression tests in parallel, shortening the total runtime.
 
