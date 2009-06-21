@@ -15,12 +15,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #6314: logging.basicConfig() performs extra checks on the "level"
+  argument.
+
 - Issue #6274: Fixed possible file descriptors leak in subprocess.py
 
 - Accessing io.StringIO.buffer now raises an AttributeError instead of
   io.UnsupportedOperation.
 
-- Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
+- Issue #6271: mmap tried to close invalid file handle (-1) when anonymous.
   (On Unix)
 
 
