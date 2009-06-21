@@ -1337,6 +1337,11 @@ Extension Modules
 Tests
 -----
 
+- Issue #5450: Moved tests involving loading tk from Lib/test/test_tcl to
+  Lib/tkinter/test/test_tkinter/test_loadtk. With this, these tests demonstrate
+  the same behaviour as test_ttkguionly (and now also test_tk) which is to
+  skip the tests if DISPLAY is defined but can't be used.
+
 - regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
   that should cause a test to be skipped are now done using import_module
   from test support, which does the conversion.
