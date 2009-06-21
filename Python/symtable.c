@@ -1213,8 +1213,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT(st, expr, e->v.UnaryOp.operand);
 		break;
         case Lambda_kind: {
-		if (!GET_IDENTIFIER(lambda) ||
-		    !symtable_add_def(st, lambda, DEF_LOCAL))
+		if (!GET_IDENTIFIER(lambda))
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
