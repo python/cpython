@@ -1169,7 +1169,6 @@ static struct PyMethodDef xmlparse_methods[] = {
 */
 
 static char template_buffer[257];
-PyObject *template_string = NULL;
 
 static void
 init_template_buffer(void)

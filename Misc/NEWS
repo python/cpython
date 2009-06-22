@@ -26,6 +26,11 @@ Library
 - Issue #6271: mmap tried to close invalid file handle (-1) when anonymous.
   (On Unix)
 
+Extension Modules
+-----------------
+
+- Issue #5590: Remove unused global variable in pyexpat extension.
+
 
 What's New in Python 3.1 Release Candidate 2?
 =============================================
