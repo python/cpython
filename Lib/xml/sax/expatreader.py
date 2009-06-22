@@ -407,8 +407,8 @@ def create_parser(*args, **kwargs):
 # ---
 
 if __name__ == "__main__":
-    import xml.sax
+    import xml.sax.saxutils
     p = create_parser()
-    p.setContentHandler(xml.sax.XMLGenerator())
+    p.setContentHandler(xml.sax.saxutils.XMLGenerator())
     p.setErrorHandler(xml.sax.ErrorHandler())
-    p.parse("../../../hamlet.xml")
+    p.parse("http://www.ibiblio.org/xml/examples/shakespeare/hamlet.xml")
