@@ -41,7 +41,7 @@ def get_header_version_info(srcdir):
     suffixes = {
         'PY_RELEASE_LEVEL_ALPHA': 'a',
         'PY_RELEASE_LEVEL_BETA':  'b',
-        'PY_RELEASE_LEVEL_GAMMA': 'c',
+        'PY_RELEASE_LEVEL_GAMMA': 'rc',
         }
     if level != 'PY_RELEASE_LEVEL_FINAL':
         release += suffixes[level] + str(int(d['PY_RELEASE_SERIAL']))

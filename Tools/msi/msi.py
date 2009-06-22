@@ -120,7 +120,10 @@ docfile = ""
 if micro:
     docfile = str(micro)
 if level < 0xf:
-    docfile = '%x%s' % (level, serial)
+    if level == 0xC:
+        docfile = "rc%s" % (serial,)
+    else:
+        docfile = '%x%s' % (level, serial)
 docfile = 'python%s%s%s.chm' % (major, minor, docfile)
 
 # Build the mingw import library, libpythonXY.a
