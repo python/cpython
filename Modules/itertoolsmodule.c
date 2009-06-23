@@ -1137,7 +1137,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument for islice() must be a non-negative integer or None.");
+				   "Stop argument for islice() must be None or an integer: 0 <= x <= maxsize.");
 				return NULL;
 			}
 		}
@@ -1152,14 +1152,14 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument for islice() must be a non-negative integer or None.");
+				   "Stop argument for islice() must be None or an integer: 0 <= x <= maxsize.");
 				return NULL;
 			}
 		}
 	}
 	if (start<0 || stop<-1) {
 		PyErr_SetString(PyExc_ValueError,
-		   "Indices for islice() must be non-negative integers or None.");
+		   "Indices for islice() must be None or an integer: 0 <= x <= maxsize.");
 		return NULL;
 	}
 
