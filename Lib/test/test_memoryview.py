@@ -48,6 +48,12 @@ class AbstractMemoryTests:
         for tp in self._types:
             self.check_getitem_with_type(tp)
 
+    def test_iter(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            self.assertEqual(list(m), [m[i] for i in range(len(m))])
+
     def test_setitem_readonly(self):
         if not self.ro_type:
             return
