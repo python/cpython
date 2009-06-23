@@ -440,11 +440,6 @@ The module :mod:`socket` exports the following constants and functions:
 
    Availability: Unix (maybe not all platforms).
 
-   .. seealso::
-
-      :func:`ipaddr.BaseIP.packed`
-         Platform-independent conversion to a packed, binary format.
-
    .. versionadded:: 2.3
 
 
