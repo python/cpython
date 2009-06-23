@@ -505,6 +505,49 @@ memory_length(PyMemoryViewObject *self)
     return get_shape0(&self->view);
 }
 
+/* Alternate version of memory_subcript that only accepts indices.
+   Used by PySeqIter_New().
+*/
+static PyObject *
+memory_item(PyMemoryViewObject *self, Py_ssize_t result)
+{
+    Py_buffer *view = &(self->view);
+
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_IndexError,
+                        "invalid indexing of 0-dim memory");
+        return NULL;
+    }
+    if (view->ndim == 1) {
+        /* Return a bytes object */
+        char *ptr;
+        ptr = (char *)view->buf;
+        if (result < 0) {
+            result += get_shape0(view);
+        }
+        if ((result < 0) || (result >= get_shape0(view))) {
+            PyErr_SetString(PyExc_IndexError,
+                                "index out of bounds");
+            return NULL;
+        }
+        if (view->strides == NULL)
+            ptr += view->itemsize * result;
+        else
+            ptr += view->strides[0] * result;
+        if (view->suboffsets != NULL &&
+            view->suboffsets[0] >= 0) {
+            ptr = *((char **)ptr) + view->suboffsets[0];
+        }
+        return PyBytes_FromStringAndSize(ptr, view->itemsize);
+    } else {
+        /* Return a new memory-view object */
+        Py_buffer newview;
+        memset(&newview, 0, sizeof(newview));
+        /* XXX:  This needs to be fixed so it actually returns a sub-view */
+        return PyMemoryView_FromBuffer(&newview);
+    }
+}
+
 /*
   mem[obj] returns a bytes object holding the data for one element if
            obj fully indexes the memory view or another memory-view object
@@ -536,37 +579,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         result = PyNumber_AsSsize_t(key, NULL);
         if (result == -1 && PyErr_Occurred())
                 return NULL;
-        if (view->ndim == 1) {
-            /* Return a bytes object */
-            char *ptr;
-            ptr = (char *)view->buf;
-            if (result < 0) {
-                result += get_shape0(view);
-            }
-            if ((result < 0) || (result >= get_shape0(view))) {
-                PyErr_SetString(PyExc_IndexError,
-                                "index out of bounds");
-                return NULL;
-            }
-            if (view->strides == NULL)
-                ptr += view->itemsize * result;
-            else
-                ptr += view->strides[0] * result;
-            if (view->suboffsets != NULL &&
-                view->suboffsets[0] >= 0) {
-                ptr = *((char **)ptr) + view->suboffsets[0];
-            }
-            return PyBytes_FromStringAndSize(ptr, view->itemsize);
-        }
-        else {
-            /* Return a new memory-view object */
-            Py_buffer newview;
-            memset(&newview, 0, sizeof(newview));
-            /* XXX:  This needs to be fixed so it
-                         actually returns a sub-view
-            */
-            return PyMemoryView_FromBuffer(&newview);
-        }
+        return memory_item(self, result);
     }
     else if (PySlice_Check(key)) {
         Py_ssize_t start, stop, step, slicelength;
@@ -771,6 +784,12 @@ static PyMappingMethods memory_as_mapping = {
     (objobjargproc)memory_ass_sub,        /* mp_ass_subscript */
 };
 
+static PySequenceMethods memory_as_sequence = {
+	0,                                  /* sq_length */
+	0,                                  /* sq_concat */
+	0,                                  /* sq_repeat */
+	(ssizeargfunc)memory_item,          /* sq_item */
+};
 
 /* Buffer methods */
 
@@ -792,7 +811,7 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_reserved */
     (reprfunc)memory_repr,                    /* tp_repr */
     0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
+    &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
     0,                                        /* tp_hash */
     0,                                        /* tp_call */

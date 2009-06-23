@@ -12,6 +12,9 @@ What's New in Python 3.1?
 Core and Builtins
 -----------------
 
+- Issue #6329: Fixed iteration for memoryview objects (it was being blocked
+  because it wasn't recognized as a sequence).
+
 Library
 -------
 
