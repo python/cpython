@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Removed the ipaddr module.
+
 - Issue #6329: Fixed iteration for memoryview objects (it was being blocked
   because it wasn't recognized as a sequence).
 
