@@ -422,11 +422,6 @@ The module :mod:`socket` exports the following constants and functions:
 
    Availability: Unix (maybe not all platforms).
 
-   .. seealso::
-
-      :func:`ipaddr.BaseIP.packed`
-         Platform-independent conversion to a packed, binary format.
-
 
 .. function:: inet_ntop(address_family, packed_ip)
 
