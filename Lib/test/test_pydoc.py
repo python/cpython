@@ -1,5 +1,6 @@
 import sys
 import os
+import os.path
 import difflib
 import subprocess
 import re
@@ -7,6 +8,8 @@ import pydoc
 import inspect
 import unittest
 import test.test_support
+from contextlib import contextmanager
+from test.test_support import TESTFN, forget, rmtree, EnvironmentVarGuard
 
 from test import pydoc_mod
 
@@ -166,6 +169,9 @@ war</tt></dd></dl>
 # output pattern for missing module
 missing_pattern = "no Python documentation found for '%s'"
 
+# output pattern for module with bad imports
+badimport_pattern = "problem in %s - <type 'exceptions.ImportError'>: No module named %s"
+
 def run_pydoc(module_name, *args):
     """
     Runs pydoc on the specified module. Returns the stripped
@@ -236,6 +242,43 @@ class PyDocDocTest(unittest.TestCase):
         expected = missing_pattern % missing_module
         self.assertEqual(expected, result,
             "documentation for missing module found")
+
+    def test_badimport(self):
+        # This tests the fix for issue 5230, where if pydoc found the module
+        # but the module had an internal import error pydoc would report no doc
+        # found.
+        modname = 'testmod_xyzzy'
+        testpairs = (
+            ('i_am_not_here', 'i_am_not_here'),
+            ('test.i_am_not_here_either', 'i_am_not_here_either'),
+            ('test.i_am_not_here.neither_am_i', 'i_am_not_here.neither_am_i'),
+            ('i_am_not_here.{0}'.format(modname), 'i_am_not_here.{0}'.format(modname)),
+            ('test.{0}'.format(modname), modname),
+            )
+
+        @contextmanager
+        def newdirinpath(dir):
+            os.mkdir(dir)
+            sys.path.insert(0, dir)
+            yield
+            sys.path.pop(0)
+            rmtree(dir)
+
+        with newdirinpath(TESTFN):
+            with EnvironmentVarGuard() as env:
+                env.set('PYTHONPATH', TESTFN)
+                fullmodname = os.path.join(TESTFN, modname)
+                sourcefn = fullmodname + os.extsep + "py"
+                for importstring, expectedinmsg in testpairs:
+                    f = open(sourcefn, 'w')
+                    f.write("import {0}\n".format(importstring))
+                    f.close()
+                    try:
+                        result = run_pydoc(modname)
+                    finally:
+                        forget(modname)
+                    expected = badimport_pattern % (modname, expectedinmsg)
+                    self.assertEqual(expected, result)
 
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
