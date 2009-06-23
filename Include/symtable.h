@@ -63,13 +63,9 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_LOCAL 2            /* assignment in code block */
 #define DEF_PARAM 2<<1         /* formal parameter */
 #define USE 2<<2               /* name is used */
-#define DEF_STAR 2<<3          /* parameter is star arg */
-#define DEF_DOUBLESTAR 2<<4    /* parameter is star-star arg */
-#define DEF_INTUPLE 2<<5       /* name defined in tuple in parameters */
-#define DEF_FREE 2<<6          /* name used but not defined in nested block */
-#define DEF_FREE_GLOBAL 2<<7   /* free variable is actually implicit global */
-#define DEF_FREE_CLASS 2<<8    /* free variable from class's method */
-#define DEF_IMPORT 2<<9        /* assignment occurred via import */
+#define DEF_FREE 2<<3         /* name used but not defined in nested block */
+#define DEF_FREE_CLASS 2<<4    /* free variable from class's method */
+#define DEF_IMPORT 2<<5        /* assignment occurred via import */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
