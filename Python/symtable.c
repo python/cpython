@@ -492,7 +492,7 @@ check_unoptimized(const PySTEntryObject* ste) {
 	case OPT_IMPORT_STAR:
 		PyOS_snprintf(buf, sizeof(buf), 
 			      "import * is not allowed in function '%.100s' "
-			      "because it is %s",
+			      "because it %s",
 			      PyString_AS_STRING(ste->ste_name), trailer);
 		break;
 	case OPT_BARE_EXEC:
