@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6329: Fixed iteration for memoryview objects (it was being blocked
+  because it wasn't recognized as a sequence).
+
 - Issue #6289: Encoding errors from compile() were being masked.
 
 - When no module is given in a relative import, the module field of the
