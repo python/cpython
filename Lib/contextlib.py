@@ -90,10 +90,10 @@ def nested(*managers):
     """Combine multiple context managers into a single nested context manager.
 
    This function has been deprecated in favour of the multiple manager form
-   of the :keyword:`with` statement.
+   of the with statement.
 
    The one advantage of this function over the multiple manager form of the
-   :keyword:`with` statement is that argument unpacking allows it to be
+   with statement is that argument unpacking allows it to be
    used with a variable number of context managers as follows:
 
       with nested(*managers):
