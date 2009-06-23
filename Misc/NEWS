@@ -327,6 +327,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5230: pydoc would report no documentation found if a module generated
+  a 'not found' import error when loaded; it now reports the import errors.
+  Thanks to Lucas Prado Melo for initial fix and collaboration on the tests.
+
 - Issue #6314: logging.basicConfig() performs extra checks on the "level"
   argument.
 
