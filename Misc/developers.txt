@@ -12,6 +12,9 @@ be in the form of ReST.  Entries should include the initials of the
 project admin who made the change or granted access.  Feel free to revise
 the format to accommodate documentation needs as they arise.
 
+Note, when giving new commit permissions, be sure to get a contributor
+agreement from the committer.  See http://www.python.org/psf/contrib/
+for details.  When the agreement is signed, please note it in this log.
 
 
 Permissions History
