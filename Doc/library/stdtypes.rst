@@ -2342,7 +2342,7 @@ simple bytes or complex data structures.
       >>> v = memoryview(data)
       >>> v.readonly
       False
-      >>> v[0] = 'z'
+      >>> v[0] = b'z'
       >>> data
       bytearray(b'zbcefg')
       >>> v[1:4] = b'123'
