@@ -1106,7 +1106,7 @@ Exception>
 Standard methods & operators redefinition in classes
 
 Standard methods & operators map to special '__methods__' and thus may be
- redefined (mostly in in user-defined classes), e.g.:
+ redefined (mostly in user-defined classes), e.g.:
     class x:
          def __init__(self, v): self.value = v
          def __add__(self, r): return self.value + r

@@ -193,7 +193,7 @@ to print a warning each time it occurs (this may generate many
 messages if a warning is triggered repeatedly for the same source
 line, such as inside a loop);
 .B module
-to print each warning only only the first time it occurs in each
+to print each warning only the first time it occurs in each
 module;
 .B once
 to print each warning only the first time it occurs in the program; or

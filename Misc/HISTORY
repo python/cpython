@@ -17569,7 +17569,7 @@ people seemed not to have picked it up.  There's a Python script that
 fixes old code: demo/scripts/classfix.py.
 
 * There's a new reserved word: "access".  The syntax and semantics are
-still subject of of research and debate (as well as undocumented), but
+still subject of research and debate (as well as undocumented), but
 the parser knows about the keyword so you must not use it as a
 variable, function, or attribute name.
 
@@ -17819,7 +17819,7 @@ you could get away with the following:
 	(a) define a function of one argument and call it with any
 	    number of arguments; if the actual argument count wasn't
 	    one, the function would receive a tuple containing the
-	    arguments arguments (an empty tuple if there were none).
+	    arguments (an empty tuple if there were none).
 
 	(b) define a function of two arguments, and call it with more
 	    than two arguments; if there were more than two arguments,
@@ -18141,7 +18141,7 @@ Changes to the source code that affect C extension writers
 ----------------------------------------------------------
 
 The function strdup() no longer exists (it was used only in one places
-and is somewhat of a a portability problem sice some systems have the
+and is somewhat of a portability problem since some systems have the
 same function in their C library.
 
 The functions NEW() and RENEW() allocate one spare byte to guard

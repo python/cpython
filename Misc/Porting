@@ -37,6 +37,6 @@ options.
 Then bang on it until it executes very simple Python statements.
 
 Now bang on it some more.  At some point you'll want to use the os
-module; this is the time to start thinking about what to to with the
+module; this is the time to start thinking about what to do with the
 posix module.  It's okay to simply #ifdef out those functions that
 cause problems; the remaining ones will be quite useful.
