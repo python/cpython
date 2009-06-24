@@ -12,6 +12,9 @@ What's New in Python 3.1?
 Core and Builtins
 -----------------
 
+- Issue #6334: Fix bug in range length calculation for ranges with
+  large arguments.
+
 - Issue #6329: Fixed iteration for memoryview objects (it was being blocked
   because it wasn't recognized as a sequence).
 
