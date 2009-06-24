@@ -374,7 +374,6 @@ class TCPServer(BaseServer):
     - socket_type
     - request_queue_size (only for stream sockets)
     - allow_reuse_address
-    - disable_nagle_algorithm
 
     Instance variables:
 
@@ -391,8 +390,6 @@ class TCPServer(BaseServer):
     request_queue_size = 5
 
     allow_reuse_address = False
-
-    disable_nagle_algorithm = False
 
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
@@ -444,10 +441,7 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        request = self.socket.accept()
-        if self.disable_nagle_algorithm:
-            request[0].setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        return request
+        return self.socket.accept()
 
     def close_request(self, request):
         """Called to clean up an individual request."""
@@ -655,8 +649,15 @@ class StreamRequestHandler(BaseRequestHandler):
     rbufsize = -1
     wbufsize = 0
 
+    # Disable nagle algoritm for this socket, if True.
+    # Use only when wbufsize != 0, to avoid small packets.
+    disable_nagle_algorithm = False
+
     def setup(self):
         self.connection = self.request
+        if self.disable_nagle_algorithm:
+            self.connection.setsockopt(socket.IPPROTO_TCP,
+                                       socket.TCP_NODELAY, True)
         self.rfile = self.connection.makefile('rb', self.rbufsize)
         self.wfile = self.connection.makefile('wb', self.wbufsize)
 
