@@ -126,10 +126,9 @@ range_dealloc(rangeobject *r)
     PyObject_Del(r);
 }
 
-/* Return number of items in range (lo, hi, step), when arguments are
- * PyInt or PyLong objects.  step > 0 required.  Return a value < 0 if
- * & only if the true value is too large to fit in a signed long.
- * Arguments MUST return 1 with either PyLong_Check() or
+/* Return number of items in range (lo, hi, step), when arguments are PyLong
+ * objects.  step > 0 required.  Return a value < 0 if & only if the true
+ * value is too large to fit in a signed long.  Arguments MUST return 1 with
  * PyLong_Check().  Return -1 when there is an error.
  */
 static PyObject*
@@ -137,7 +136,7 @@ range_length_obj(rangeobject *r)
 {
     /* -------------------------------------------------------------
     Algorithm is equal to that of get_len_of_range(), but it operates
-    on PyObjects (which are assumed to be PyLong or PyInt objects).
+    on PyObjects (which are assumed to be PyLong objects).
     ---------------------------------------------------------------*/
     int cmp_result;
     PyObject *lo, *hi;
