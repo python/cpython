@@ -924,6 +924,24 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(range(1, 10, 3)), [1, 4, 7])
         #self.assertEqual(list(range(5, -5, -3)), [5, 2, -1, -4])
 
+        #issue 6334: the internal stored range length was being
+        #computed incorrectly in some cases involving large arguments.
+        x = range(10**20, 10**20+10, 3)
+        self.assertEqual(len(x), 4)
+        self.assertEqual(len(list(x)), 4)
+
+        x = range(10**20+10, 10**20, 3)
+        self.assertEqual(len(x), 0)
+        self.assertEqual(len(list(x)), 0)
+
+        x = range(10**20, 10**20+10, -3)
+        self.assertEqual(len(x), 0)
+        self.assertEqual(len(list(x)), 0)
+
+        x = range(10**20+10, 10**20, -3)
+        self.assertEqual(len(x), 4)
+        self.assertEqual(len(list(x)), 4)
+
         """ XXX(nnorwitz):
         # Now test range() with longs
         self.assertEqual(list(range(-2**100)), [])

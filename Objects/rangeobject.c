@@ -581,7 +581,6 @@ range_iter(PyObject *seq)
 {
     rangeobject *r = (rangeobject *)seq;
     longrangeiterobject *it;
-    PyObject *tmp, *len;
     long lstart, lstop, lstep;
 
     assert(PyRange_Check(seq));
@@ -612,15 +611,9 @@ range_iter(PyObject *seq)
 
     it->len = it->index = NULL;
 
-    /* Calculate length: (r->stop - r->start) / r->step */
-    tmp = PyNumber_Subtract(r->stop, r->start);
-    if (!tmp)
+    it->len = range_length_obj(r);
+    if (!it->len)
         goto create_failure;
-    len = PyNumber_FloorDivide(tmp, r->step);
-    Py_DECREF(tmp);
-    if (!len)
-        goto create_failure;
-    it->len = len;
     it->index = PyLong_FromLong(0);
     if (!it->index)
         goto create_failure;
