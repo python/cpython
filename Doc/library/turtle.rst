@@ -1141,6 +1141,7 @@ Appearance
 
 
 .. function:: shapesize(stretch_wid=None, stretch_len=None, outline=None)
+              turtlesize(stretch_wid=None, stretch_len=None, outline=None)
 
    :param stretch_wid: positive number
    :param stretch_len: positive number
@@ -1166,7 +1167,7 @@ Appearance
       (5, 5, 8)
 
 
-.. function:: shearfactor(self, shear=None):
+.. function:: shearfactor(shear=None)
 
    :param shear: number (optional)
 
@@ -1274,7 +1275,7 @@ Appearance
       >>> (4.0, -1.0, -0.0, 2.0)
 
 
-.. function:: get_shapepoly():
+.. function:: get_shapepoly()
 
    Return the current shape polygon as tuple of coordinate pairs. This
    can be used to define a new shape or components of a compound shape.
@@ -1402,6 +1403,7 @@ Special Turtle methods
 
 
 .. function:: getturtle()
+              getpen()
 
    Return the Turtle object itself.  Only reasonable use: as a function to
    return the "anonymous turtle":
@@ -1692,7 +1694,7 @@ Using screen events
       >>> screen.listen()
 
 
-.. function:: onkeypress(fun, key=None):
+.. function:: onkeypress(fun, key=None)
 
    :param fun: a function with no arguments or ``None``
    :param key: a string: key (e.g. "a") or key-symbol (e.g. "space")
@@ -1783,8 +1785,7 @@ Input methods
       >>> screen.textinput("NIM", "Name of first player:")
 
 
-.. function:: numinput(self, title, prompt,
-                       default=None, minval=None, maxval=None):
+.. function:: numinput(title, prompt, default=None, minval=None, maxval=None)
 
    :param title: string
    :param prompt: string
