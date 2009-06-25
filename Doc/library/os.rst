@@ -1710,8 +1710,8 @@ written in Python, such as a mail server's external command delivery program.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
-   preferable to using these functions.  Check specially the *Replacing Older
-   Functions with the subprocess Module* section in that documentation page.)
+   preferable to using these functions.  Check especially the
+   :ref:`subprocess-replacements` section.)
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
