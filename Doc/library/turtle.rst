@@ -1140,6 +1140,7 @@ Appearance
 
 
 .. function:: shapesize(stretch_wid=None, stretch_len=None, outline=None)
+              turtlesize(stretch_wid=None, stretch_len=None, outline=None)
 
    :param stretch_wid: positive number
    :param stretch_len: positive number
@@ -1332,6 +1333,7 @@ Special Turtle methods
 
 
 .. function:: getturtle()
+              getpen()
 
    Return the Turtle object itself.  Only reasonable use: as a function to
    return the "anonymous turtle":

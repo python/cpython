@@ -39,9 +39,12 @@ This module defines one class called :class:`Popen`:
    Arguments are:
 
    *args* should be a string, or a sequence of program arguments.  The program
-   to execute is normally the first item in the args sequence or the string if a
-   string is given, but can be explicitly set by using the *executable*
-   argument.
+   to execute is normally the first item in the args sequence or the string if
+   a string is given, but can be explicitly set by using the *executable*
+   argument.  When *executable* is given, the first item in the args sequence
+   is still treated by most programs as the command name, which can then be
+   different from the actual executable name.  On Unix, it becomes the display
+   name for the executing program in utilities such as :program:`ps`.
 
    On Unix, with *shell=False* (default): In this case, the Popen class uses
    :meth:`os.execvp` to execute the child program. *args* should normally be a
@@ -354,8 +357,8 @@ Replacing shell pipeline
    output = p2.communicate()[0]
 
 
-Replacing os.system()
-^^^^^^^^^^^^^^^^^^^^^
+Replacing :func:`os.system`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -382,8 +385,8 @@ A more realistic example would look like this::
        print >>sys.stderr, "Execution failed:", e
 
 
-Replacing the os.spawn family
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing the :func:`os.spawn <os.spawnl>` family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 P_NOWAIT example::
 
@@ -410,8 +413,8 @@ Environment example::
    Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen, os.popen2, os.popen3
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -453,9 +456,23 @@ Replacing os.popen, os.popen2, os.popen3
              stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
    (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
 
+Return code handling translates as follows::
 
-Replacing functions from the popen2 module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   pipe = os.popen(cmd, 'w')
+   ...
+   rc = pipe.close()
+   if  rc != None and rc % 256:
+       print "There were some errors"
+   ==>
+   process = Popen(cmd, 'w', stdin=PIPE)
+   ...
+   process.stdin.close()
+   if process.wait() != 0:
+       print "There were some errors"
+
+
+Replacing functions from the :mod:`popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
