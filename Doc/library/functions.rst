@@ -154,7 +154,7 @@ are always available.  They are listed here in alphabetical order.
    ``'exec'`` if *source* consists of a sequence of statements, ``'eval'`` if it
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
-   evaluate to something else than ``None`` will be printed).
+   evaluate to something other than ``None`` will be printed).
 
    The optional arguments *flags* and *dont_inherit* control which future
    statements (see :pep:`236`) affect the compilation of *source*.  If neither
