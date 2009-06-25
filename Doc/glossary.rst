@@ -523,7 +523,7 @@ Glossary
       :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
 
    view
-      The objects returned from :meth:`dict.keys`, :meth:`dict.items`, and
+      The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
       :meth:`dict.items` are called dictionary views.  They are lazy sequences
       that will see changes in the underlying dictionary.  To force the
       dictionary view to become a full list use ``list(dictview)``.  See
