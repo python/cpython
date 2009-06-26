@@ -32,6 +32,9 @@ Library
 - Issue #6271: mmap tried to close invalid file handle (-1) when anonymous.
   (On Unix)
 
+- Issue #1202: zipfile module would cause a struct.error when attempting to
+  store files with a CRC32 > 2**31-1.
+
 Extension Modules
 -----------------
 
