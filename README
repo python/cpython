@@ -12,10 +12,57 @@ changed considerably, and a lot of deprecated features have finally been
 removed.
 
 
-Release Schedule
-----------------
+Build Instructions
+------------------
 
-See PEP 375 for release details: http://www.python.org/dev/peps/pep-0375/
+On Unix, Linux, BSD, OSX, and Cygwin:
+
+    ./configure
+    make
+    make test
+    sudo make install
+
+This will install Python as python3.
+
+You can pass many options to the configure script; run "./configure
+--help" to find out more.  On OSX and Cygwin, the executable is called
+python.exe; elsewhere it's just python.
+
+On Mac OS X, if you have configured Python with --enable-framework,
+you should use "make frameworkinstall" to do the installation.  Note
+that this installs the Python executable in a place that is not
+normally on your PATH, you may want to set up a symlink in
+/usr/local/bin.
+
+On Windows, see PCbuild/readme.txt.
+
+If you wish, you can create a subdirectory and invoke configure from
+there.  For example:
+
+    mkdir debug
+    cd debug
+    ../configure --with-pydebug
+    make
+    make test
+
+(This will fail if you *also* built at the top-level directory.  You
+should do a "make clean" at the toplevel first.)
+
+
+What's New
+----------
+
+We try to have a comprehensive overview of the changes in the "What's New in
+Python 3.1" document, found at
+
+    http://docs.python.org/dev/3.1/whatsnew/3.1.html
+
+For a more detailed change log, read Misc/NEWS (though this file, too,
+is incomplete, and also doesn't list anything merged in from the 2.7
+release under development).
+
+If you want to install multiple versions of Python see the section below
+entitled "Installing multiple versions".
 
 
 Documentation
@@ -34,40 +81,17 @@ reStructuredText versions are primarily for documentation authors,
 translators, and people with special formatting requirements.
 
 
-What's New
-----------
-
-We try to have a comprehensive overview of the changes in the "What's New in
-Python 3.1" document, found at
-
-    http://docs.python.org/dev/3.1/whatsnew/3.1.html
-
-Please help write it!
-
-For a more detailed change log, read Misc/NEWS (though this file, too,
-is incomplete, and also doesn't list anything merged in from the 2.7
-release under development).
-
-If you want to install multiple versions of Python see the section below
-entitled "Installing multiple versions".
-
-
-Proposals for enhancement
--------------------------
-
-If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or python-ideas mailing lists for inital feedback. A Python
-Enhancement Proposal (PEP) may be submitted if your idea gains ground. All
-current PEPs, as well as guidelines for submitting a new PEP, are listed at
-http://www.python.org/dev/peps/.
-
-
 Converting From Python 2.x to 3.x
 ---------------------------------
 
 Python starting with 2.6 will contain features to help locating code that
 needs to be changed, such as optional warnings when deprecated features are
 used, and backported versions of certain key Python 3.x features.
+
+A source-to-source translation tool, "2to3", can take care of the mundane task
+of converting large amounts of source code.  It is not a complete solution but
+is complemented by the deprecation warnings in 2.6.  See
+http://docs.python.org/dev/py3k/library/2to3.html for more information.
 
 
 Testing
@@ -116,17 +140,6 @@ the primary version, you would execute "make install" in your 2.6 build
 directory and "make altinstall" in the others.
 
 
-Configuration options and variables
------------------------------------
-
-A source-to-source translation tool, "2to3", can take care of the
-mundane task of converting large amounts of source code.  It is not a
-complete solution but is complemented by the deprecation warnings in
-2.6.  This tool is currently available via the Subversion sandbox:
-
-    http://svn.python.org/view/sandbox/trunk/2to3/
-
-
 Issue Tracker and Mailing List
 ------------------------------
 
@@ -146,39 +159,20 @@ To subscribe to the list, use the mailman form:
     http://mail.python.org/mailman/listinfo/python-dev/
 
 
-Build Instructions
-------------------
+Proposals for enhancement
+-------------------------
 
-On Unix, Linux, BSD, OSX, and Cygwin:
+If you have a proposal to change Python, you may want to send an email to the
+comp.lang.python or python-ideas mailing lists for inital feedback. A Python
+Enhancement Proposal (PEP) may be submitted if your idea gains ground. All
+current PEPs, as well as guidelines for submitting a new PEP, are listed at
+http://www.python.org/dev/peps/.
 
-    ./configure
-    make
-    make test
-    sudo make install
 
-You can pass many options to the configure script; run "./configure
---help" to find out more.  On OSX and Cygwin, the executable is called
-python.exe; elsewhere it's just python.
+Release Schedule
+----------------
 
-On Mac OS X, if you have configured Python with --enable-framework,
-you should use "make frameworkinstall" to do the installation.  Note
-that this installs the Python executable in a place that is not
-normally on your PATH, you may want to set up a symlink in
-/usr/local/bin.
-
-On Windows, see PCbuild/readme.txt.
-
-If you wish, you can create a subdirectory and invoke configure from
-there.  For example:
-
-    mkdir debug
-    cd debug
-    ../configure --with-pydebug
-    make
-    make test
-
-(This will fail if you *also* built at the top-level directory.  You
-should do a "make clean" at the toplevel first.)
+See PEP 375 for release details: http://www.python.org/dev/peps/pep-0375/
 
 
 Copyright and License Information
