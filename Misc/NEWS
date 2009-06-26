@@ -195,6 +195,9 @@ Library
 
 - Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
   new arguments introduced in 2.5.
+  
+- Issue #1202: zipfile module would cause a DeprecationWarning when storing
+  files with a CRC32 > 2**31-1.
 
 Extension Modules
 -----------------
