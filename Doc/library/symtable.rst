@@ -144,6 +144,10 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is global.
 
+   .. method:: is_declared_global()
+
+      Return ``True`` if the symbol is declared global with a global statement.
+
    .. method:: is_local()
 
       Return ``True`` if the symbol is local to its block.
