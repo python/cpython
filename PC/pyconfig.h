@@ -325,9 +325,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 			their Makefile (other compilers are generally
 			taken care of by distutils.) */
 #			ifdef _DEBUG
-#				pragma comment(lib,"python31_d.lib")
+#				pragma comment(lib,"python32_d.lib")
 #			else
-#				pragma comment(lib,"python31.lib")
+#				pragma comment(lib,"python32.lib")
 #			endif /* _DEBUG */
 #		endif /* _MSC_VER */
 #	endif /* Py_BUILD_CORE */
