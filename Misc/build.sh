@@ -50,9 +50,9 @@ FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
-REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/py3k"
+REMOTE_DIR="/data/ftp.python.org/pub/www.python.org/doc/3.1"
 RESULT_FILE="$DIR/build/index.html"
-INSTALL_DIR="/tmp/python-test-3.0/local"
+INSTALL_DIR="/tmp/python-test-3.1/local"
 RSYNC_OPTS="-aC -e ssh"
 
 # Always run the installed version of Python.
