@@ -38,7 +38,7 @@
 	/>
 	<UserMacro
 		Name="PyDllName"
-		Value="python31"
+		Value="python32"
 	/>
 	<UserMacro
 		Name="PythonExe"
