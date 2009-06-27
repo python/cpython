@@ -26,8 +26,9 @@ The module defines the following public class:
 
    The constructor takes a statement to be timed, an additional statement used for
    setup, and a timer function.  Both statements default to ``'pass'``; the timer
-   function is platform-dependent (see the module doc string).  The statements may
-   contain newlines, as long as they don't contain multi-line string literals.
+   function is platform-dependent (see the module doc string).  *stmt* and *setup*
+   may also contain multiple statements separated by ``;`` or newlines, as long as
+   they don’t contain multi-line string literals.
 
    To measure the execution time of the first statement, use the :meth:`timeit`
    method.  The :meth:`repeat` method is a convenience to call :meth:`timeit`
