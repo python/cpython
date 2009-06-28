@@ -37,10 +37,6 @@ extern "C" {
   platform.
 */
 
-#if HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
 #if PYLONG_BITS_IN_DIGIT == 30
 #if !(defined HAVE_UINT64_T && defined HAVE_UINT32_T &&          \
       defined HAVE_INT64_T && defined HAVE_INT32_T)
