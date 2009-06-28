@@ -139,6 +139,10 @@ Exported functions:
 import re, string, time, operator
 
 from types import *
+import gzip
+import socket
+import errno
+import httplib
 
 # --------------------------------------------------------------------
 # Internal stuff
@@ -1129,6 +1133,72 @@ def loads(data, use_datetime=0):
     p.close()
     return u.close(), u.getmethodname()
 
+##
+# Encode a string using the gzip content encoding such as specified by the
+# Content-Encoding: gzip
+# in the HTTP header, as described in RFC 1952
+#
+# @param data the unencoded data
+# @return the encoded data
+
+def gzip_encode(data):
+    """data -> gzip encoded data
+
+    Encode data using the gzip content encoding as described in RFC 1952
+    """
+    f = StringIO.StringIO()
+    gzf = gzip.GzipFile(mode="wb", fileobj=f, compresslevel=1)
+    gzf.write(data)
+    gzf.close()
+    encoded = f.getvalue()
+    f.close()
+    return encoded
+
+##
+# Decode a string using the gzip content encoding such as specified by the
+# Content-Encoding: gzip
+# in the HTTP header, as described in RFC 1952
+#
+# @param data The encoded data
+# @return the unencoded data
+# @raises ValueError if data is not correctly coded.
+
+def gzip_decode(data):
+    """gzip encoded data -> unencoded data
+
+    Decode data using the gzip content encoding as described in RFC 1952
+    """
+    f = StringIO.StringIO(data)
+    gzf = gzip.GzipFile(mode="rb", fileobj=f)
+    try:
+        decoded = gzf.read()
+    except IOError:
+        raise ValueError("invalid data")
+    f.close()
+    gzf.close()
+    return decoded
+
+##
+# Return a decoded file-like object for the gzip encoding
+# as described in RFC 1952.
+#
+# @param response A stream supporting a read() method
+# @return a file-like object that the decoded data can be read() from
+
+class GzipDecodedResponse(gzip.GzipFile):
+    """a file-like object to decode a response encoded with the gzip
+    method, as described in RFC 1952.
+    """
+    def __init__(self, response):
+        #response doesn't support tell() and read(), required by
+        #GzipFile
+        self.stringio = StringIO.StringIO(response.read())
+        gzip.GzipFile.__init__(self, mode="rb", fileobj=self.stringio)
+
+    def close(self):
+        gzip.GzipFile.close(self)
+        self.stringio.close()
+
 
 # --------------------------------------------------------------------
 # request dispatcher
@@ -1156,8 +1226,39 @@ class Transport:
     # client identifier (may be overridden)
     user_agent = "xmlrpclib.py/%s (by www.pythonware.com)" % __version__
 
+    #if true, we'll request gzip encoding
+    accept_gzip_encoding = True
+
+    # if positive, encode request using gzip if it exceeds this threshold
+    # note that many server will get confused, so only use it if you know
+    # that they can decode such a request
+    encode_threshold = None #None = don't encode
+
     def __init__(self, use_datetime=0):
         self._use_datetime = use_datetime
+        self._connection = (None, None)
+        self._extra_headers = []
+    ##
+    # Send a complete request, and parse the response.
+    # Retry request if a cached connection has disconnected.
+    #
+    # @param host Target host.
+    # @param handler Target PRC handler.
+    # @param request_body XML-RPC request body.
+    # @param verbose Debugging flag.
+    # @return Parsed response.
+
+    def request(self, host, handler, request_body, verbose=0):
+        #retry request once if cached connection has gone cold
+        for i in (0, 1):
+            try:
+                return self.single_request(host, handler, request_body, verbose)
+            except (socket.error, httplib.HTTPException), e:
+                retry = (errno.ECONNRESET,
+                         errno.ECONNABORTED,
+                         httplib.BadStatusLine) #close after we sent request
+                if i or e[0] not in retry:
+                    raise
 
     ##
     # Send a complete request, and parse the response.
@@ -1168,30 +1269,39 @@ class Transport:
     # @param verbose Debugging flag.
     # @return Parsed response.
 
-    def request(self, host, handler, request_body, verbose=0):
+    def single_request(self, host, handler, request_body, verbose=0):
         # issue XML-RPC request
 
         h = self.make_connection(host)
         if verbose:
             h.set_debuglevel(1)
 
-        self.send_request(h, handler, request_body)
-        self.send_host(h, host)
-        self.send_user_agent(h)
-        self.send_content(h, request_body)
+        try:
+            self.send_request(h, handler, request_body)
+            self.send_host(h, host)
+            self.send_user_agent(h)
+            self.send_content(h, request_body)
 
-        errcode, errmsg, headers = h.getreply(buffering=True)
+            response = h.getresponse(buffering=True)
+            if response.status == 200:
+                self.verbose = verbose
+                return self.parse_response(response)
+        except Fault:
+            raise
+        except Exception:
+            # All unexpected errors leave connection in
+            # a strange state, so we clear it.
+            self.close()
+            raise
 
-        if errcode != 200:
-            raise ProtocolError(
-                host + handler,
-                errcode, errmsg,
-                headers
-                )
-
-        self.verbose = verbose
-
-        return self.parse_response(h.getfile())
+        #discard any response data and raise exception
+        if (response.getheader("content-length", 0)):
+            response.read()
+        raise ProtocolError(
+            host + handler,
+            response.status, response.reason,
+            response.msg,
+            )
 
     ##
     # Create parser.
@@ -1240,10 +1350,25 @@ class Transport:
     # @return A connection handle.
 
     def make_connection(self, host):
+        #return an existing connection if possible.  This allows
+        #HTTP/1.1 keep-alive.
+        if self._connection and host == self._connection[0]:
+            return self._connection[1]
+
         # create a HTTP connection object from a host descriptor
-        import httplib
-        host, extra_headers, x509 = self.get_host_info(host)
-        return httplib.HTTP(host)
+        chost, self._extra_headers, x509 = self.get_host_info(host)
+        #store the host argument along with the connection object
+        self._connection = host, httplib.HTTPConnection(chost)
+        return self._connection[1]
+
+    ##
+    # Clear any cached connection object.
+    # Used in the event of socket errors.
+    #
+    def close(self):
+        if self._connection[1]:
+            self._connection[1].close()
+            self._connection = (None, None)
 
     ##
     # Send request header.
@@ -1253,17 +1378,24 @@ class Transport:
     # @param request_body XML-RPC body.
 
     def send_request(self, connection, handler, request_body):
-        connection.putrequest("POST", handler)
+        if (self.accept_gzip_encoding):
+            connection.putrequest("POST", handler, skip_accept_encoding=True)
+            connection.putheader("Accept-Encoding", "gzip")
+        else:
+            connection.putrequest("POST", handler)
 
     ##
     # Send host name.
     #
     # @param connection Connection handle.
     # @param host Host name.
+    #
+    # Note: This function doesn't actually add the "Host"
+    # header anymore, it is done as part of the connection.putrequest() in
+    # send_request() above.
 
     def send_host(self, connection, host):
-        host, extra_headers, x509 = self.get_host_info(host)
-        connection.putheader("Host", host)
+        extra_headers = self._extra_headers
         if extra_headers:
             if isinstance(extra_headers, DictType):
                 extra_headers = extra_headers.items()
@@ -1286,6 +1418,13 @@ class Transport:
 
     def send_content(self, connection, request_body):
         connection.putheader("Content-Type", "text/xml")
+
+        #optionally encode the request
+        if (self.encode_threshold is not None and
+            self.encode_threshold < len(request_body)):
+            connection.putheader("Content-Encoding", "gzip")
+            request_body = gzip_encode(request_body)
+
         connection.putheader("Content-Length", str(len(request_body)))
         connection.endheaders(request_body)
 
@@ -1295,20 +1434,25 @@ class Transport:
     # @param file Stream.
     # @return Response tuple and target method.
 
-    def parse_response(self, file):
-        # read response from input file/socket, and parse it
+    def parse_response(self, response):
+        # read response data from httpresponse, and parse it
+        if response.getheader("Content-Encoding", "") == "gzip":
+            stream = GzipDecodedResponse(response)
+        else:
+            stream = response
 
         p, u = self.getparser()
 
         while 1:
-            response = file.read(1024)
-            if not response:
+            data = stream.read(1024)
+            if not data:
                 break
             if self.verbose:
-                print "body:", repr(response)
-            p.feed(response)
+                print "body:", repr(data)
+            p.feed(data)
 
-        file.close()
+        if stream is not response:
+            stream.close()
         p.close()
 
         return u.close()
@@ -1322,18 +1466,20 @@ class SafeTransport(Transport):
     # FIXME: mostly untested
 
     def make_connection(self, host):
+        if self._connection and host == self._connection[0]:
+            return self._connection[1]
         # create a HTTPS connection object from a host descriptor
         # host may be a string, or a (host, x509-dict) tuple
-        import httplib
-        host, extra_headers, x509 = self.get_host_info(host)
         try:
-            HTTPS = httplib.HTTPS
+            HTTPS = httplib.HTTPSConnection
         except AttributeError:
             raise NotImplementedError(
                 "your version of httplib doesn't support HTTPS"
                 )
         else:
-            return HTTPS(host, None, **(x509 or {}))
+            chost, self._extra_headers, x509 = self.get_host_info(host)
+            self._connection = host, HTTPSConnection(chost, None, **(x509 or {}))
+            return self._connection[1]
 
 ##
 # Standard server proxy.  This class establishes a virtual connection
@@ -1398,6 +1544,9 @@ class ServerProxy:
         self.__verbose = verbose
         self.__allow_none = allow_none
 
+    def __close(self):
+        self.__transport.close()
+
     def __request(self, methodname, params):
         # call a method on the remote server
 
@@ -1430,6 +1579,16 @@ class ServerProxy:
 
     # note: to call a remote object with an non-standard name, use
     # result getattr(server, "strange-python-name")(args)
+
+    def __call__(self, attr):
+        """A workaround to get special attributes on the ServerProxy
+           without interfering with the magic __getattr__
+        """
+        if attr == "close":
+            return self.__close
+        elif attr == "transport":
+            return self.__transport
+        raise AttributeError("Attribute %r not found" % (attr,))
 
 # compatibility
 

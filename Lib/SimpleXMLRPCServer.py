@@ -106,6 +106,7 @@ import BaseHTTPServer
 import sys
 import os
 import traceback
+import re
 try:
     import fcntl
 except ImportError:
@@ -430,6 +431,31 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # paths not on this list will result in a 404 error.
     rpc_paths = ('/', '/RPC2')
 
+    #if not None, encode responses larger than this, if possible
+    encode_threshold = 1400 #a common MTU
+
+    #Override form StreamRequestHandler: full buffering of output
+    #and no Nagle.
+    wbufsize = -1
+    disable_nagle_algorithm = True
+
+    # a re to match a gzip Accept-Encoding
+    aepattern = re.compile(r"""
+                            \s* ([^\s;]+) \s*            #content-coding
+                            (;\s* q \s*=\s* ([0-9\.]+))? #q
+                            """, re.VERBOSE | re.IGNORECASE)
+
+    def accept_encodings(self):
+        r = {}
+        ae = self.headers.get("Accept-Encoding", "")
+        for e in ae.split(","):
+            match = self.aepattern.match(e)
+            if match:
+                v = match.group(3)
+                v = float(v) if v else 1.0
+                r[match.group(1)] = v
+        return r
+
     def is_rpc_path_valid(self):
         if self.rpc_paths:
             return self.path in self.rpc_paths
@@ -463,6 +489,10 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 size_remaining -= len(L[-1])
             data = ''.join(L)
 
+            data = self.decode_request_content(data)
+            if data is None:
+                return #response has been sent
+
             # In previous versions of SimpleXMLRPCServer, _dispatch
             # could be overridden in this class, instead of in
             # SimpleXMLRPCDispatcher. To maintain backwards compatibility,
@@ -481,18 +511,36 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.send_header("X-exception", str(e))
                 self.send_header("X-traceback", traceback.format_exc())
 
+            self.send_header("Content-length", "0")
             self.end_headers()
         else:
             # got a valid XML RPC response
             self.send_response(200)
             self.send_header("Content-type", "text/xml")
+            if self.encode_threshold is not None:
+                if len(response) > self.encode_threshold:
+                    q = self.accept_encodings().get("gzip", 0)
+                    if q:
+                        response = xmlrpclib.gzip_encode(response)
+                        self.send_header("Content-Encoding", "gzip")
             self.send_header("Content-length", str(len(response)))
             self.end_headers()
             self.wfile.write(response)
 
-            # shut down the connection
-            self.wfile.flush()
-            self.connection.shutdown(1)
+    def decode_request_content(self, data):
+        #support gzip encoding of request
+        encoding = self.headers.get("content-encoding", "identity").lower()
+        if encoding == "identity":
+            return data
+        if encoding == "gzip":
+            try:
+                return xmlrpclib.gzip_decode(data)
+            except ValueError:
+                self.send_response(400, "error decoding gzip content")
+        else:
+            self.send_response(501, "encoding %r not supported" % encoding)
+        self.send_header("Content-length", "0")
+        self.end_headers()
 
     def report_404 (self):
             # Report a 404 error
@@ -502,9 +550,6 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
         self.wfile.write(response)
-        # shut down the connection
-        self.wfile.flush()
-        self.connection.shutdown(1)
 
     def log_request(self, code='-', size='-'):
         """Selectively log an accepted request."""
