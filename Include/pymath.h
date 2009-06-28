@@ -3,10 +3,6 @@
 
 #include "pyconfig.h" /* include for defines */
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to mathematical
 functions and constants
