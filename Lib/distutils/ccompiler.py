@@ -1151,12 +1151,14 @@ def gen_preprocess_options(macros, include_dirs):
     return pp_opts
 
 
-def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
+def gen_lib_options(compiler, library_dirs, runtime_library_dirs, libraries):
     """Generate linker options for searching library directories and
-    linking with specific libraries.  'libraries' and 'library_dirs' are,
-    respectively, lists of library names (not filenames!) and search
-    directories.  Returns a list of command-line options suitable for use
-    with some compiler (depending on the two format strings passed in).
+    linking with specific libraries.
+
+    'libraries' and 'library_dirs' are, respectively, lists of library names
+    (not filenames!) and search directories.  Returns a list of command-line
+    options suitable for use with some compiler (depending on the two format
+    strings passed in).
     """
     lib_opts = []
 
@@ -1166,7 +1168,7 @@ def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
     for dir in runtime_library_dirs:
         opt = compiler.runtime_library_dir_option(dir)
         if isinstance(opt, list):
-            lib_opts = lib_opts + opt
+            lib_opts.extend(opt)
         else:
             lib_opts.append(opt)
 
@@ -1177,14 +1179,14 @@ def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
     # pretty nasty way to arrange your C code.
 
     for lib in libraries:
-        (lib_dir, lib_name) = os.path.split(lib)
-        if lib_dir:
+        lib_dir, lib_name = os.path.split(lib)
+        if lib_dir != '':
             lib_file = compiler.find_library_file([lib_dir], lib_name)
-            if lib_file:
+            if lib_file is not None:
                 lib_opts.append(lib_file)
             else:
                 compiler.warn("no library file corresponding to "
                               "'%s' found (skipping)" % lib)
         else:
-            lib_opts.append(compiler.library_option (lib))
+            lib_opts.append(compiler.library_option(lib))
     return lib_opts
