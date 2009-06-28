@@ -33,7 +33,7 @@ name_matches(const char *name1, const char *name2) {
     /* if either is NULL, */
     if (!name1 || !name2) {
         /* they're only the same if they're both NULL. */
-        return name2 == name2;
+        return name1 == name2;
     }
     return !strcmp(name1, name2);
 }
