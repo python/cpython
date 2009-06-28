@@ -82,7 +82,7 @@ values share the same approximation, any one of them could be displayed
 while still preserving the invariant ``eval(repr(x)) == x``.
 
 Historically, the Python prompt and built-in :func:`repr` function would chose
-the one with 17 significant digits, ``0.10000000000000001``, Starting with
+the one with 17 significant digits, ``0.10000000000000001``.   Starting with
 Python 3.1, Python (on most systems) is now able to choose the shortest of
 these and simply display ``0.1``.
 
@@ -123,9 +123,9 @@ Also, since the 0.1 cannot get any closer to the exact value of 1/10 and
 
 Though the numbers cannot be made closer to their intended exact values,
 the :func:`round` function can be useful for post-rounding so that results
-have inexact values that are comparable to one another::
+with inexact values become comparable to one another::
 
-    >>> round(.1 + .1 + .1, 1) == round(.3, 1)
+    >>> round(.1 + .1 + .1, 10) == round(.3, 10)
     True
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
@@ -137,7 +137,7 @@ As that says near the end, "there are no easy answers."  Still, don't be unduly
 wary of floating-point!  The errors in Python float operations are inherited
 from the floating-point hardware, and on most machines are on the order of no
 more than 1 part in 2\*\*53 per operation.  That's more than adequate for most
-tasks, but you do need to keep in mind that it's not decimal arithmetic, and
+tasks, but you do need to keep in mind that it's not decimal arithmetic and
 that every float operation can suffer a new rounding error.
 
 While pathological cases do exist, for most casual use of floating-point
@@ -165,7 +165,7 @@ fraction::
 
    >>> x = 3.14159
    >>> x.as_integer_ratio()
-   (3537115888337719L, 1125899906842624L)
+   (3537115888337719, 1125899906842624)
 
 Since the ratio is exact, it can be used to losslessly recreate the
 original value::
