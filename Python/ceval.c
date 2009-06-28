@@ -2533,10 +2533,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				u = v = w = Py_None;
 			}
 			else {
+				PyObject *tp, *exc, *tb;
+				PyTryBlock *block;
 			        v = SECOND();
 				w = THIRD();
+				tp = FOURTH();
+				exc = stack_pointer[-5];
+				tb = stack_pointer[-6];
 				exit_func = stack_pointer[-7];
-				stack_pointer[-7] = NULL;
+				stack_pointer[-7] = tb;
+				stack_pointer[-6] = exc;
+				stack_pointer[-5] = tp;
+				FOURTH() = NULL;
+				block = &f->f_blockstack[f->f_iblock - 1];
+				assert(block->b_type == EXCEPT_HANDLER);
+				block->b_level--;
 			}
 			/* XXX Not the fastest way to call it... */
 			x = PyObject_CallFunctionObjArgs(exit_func, u, v, w,
