@@ -56,7 +56,7 @@ operators ``+``, ``-``, ``*`` and ``/`` work just like in most other languages
    >>> (50-5*6)/4
    5.0
    >>> 8/5 # Fractions aren't lost when dividing integers
-   1.6000000000000001
+   1.6
 
 Note: You might not see exactly the same result; floating point results can
 differ from one machine to another.  We will say more later about controlling
