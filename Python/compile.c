@@ -117,7 +117,6 @@ struct compiler_unit {
 	   members, you can reach all early allocated blocks. */
 	basicblock *u_blocks;
 	basicblock *u_curblock; /* pointer to current block */
-	int u_tmpname;		/* temporary variables for list comps */
 
 	int u_nfblocks;
 	struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -146,7 +145,6 @@ struct compiler {
 
 	struct compiler_unit *u; /* compiler state for current block */
 	PyObject *c_stack;	 /* Python list holding compiler_unit ptrs */
-	char *c_encoding;	 /* source encoding (a borrowed reference) */
 	PyArena *c_arena;	 /* pointer to memory allocation arena */
 };
 
@@ -294,9 +292,6 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 			PyErr_SetString(PyExc_SystemError, "no symtable");
 		goto finally;
 	}
-
-	/* XXX initialize to NULL for now, need to handle */
-	c.c_encoding = NULL;
 
 	co = compiler_mod(&c, mod);
 
@@ -488,7 +483,6 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	}
 
 	u->u_blocks = NULL;
-	u->u_tmpname = 0;
 	u->u_nfblocks = 0;
 	u->u_firstlineno = lineno;
 	u->u_lineno = 0;
@@ -2154,6 +2148,13 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
 	PyObject *names = PyTuple_New(n);
 	PyObject *level;
+	static PyObject *empty_string;
+
+	if (!empty_string) {
+		empty_string = PyUnicode_FromString("");
+		if (!empty_string)
+			return 0;
+	}
 	
 	if (!names)
 		return 0;
@@ -2171,23 +2172,24 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		PyTuple_SET_ITEM(names, i, alias->name);
 	}
 
-	if (s->lineno > c->c_future->ff_lineno) {
-		if (!PyUnicode_CompareWithASCIIString(s->v.ImportFrom.module,
-						      "__future__")) {
-			Py_DECREF(level);
-			Py_DECREF(names);
-			return compiler_error(c, 
-				      "from __future__ imports must occur "
+	if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module && 
+	    !PyUnicode_CompareWithASCIIString(s->v.ImportFrom.module, "__future__")) {
+		Py_DECREF(level);
+		Py_DECREF(names);
+		return compiler_error(c, "from __future__ imports must occur "
 				      "at the beginning of the file");
-
-		}
 	}
 
 	ADDOP_O(c, LOAD_CONST, level, consts);
 	Py_DECREF(level);
 	ADDOP_O(c, LOAD_CONST, names, consts);
 	Py_DECREF(names);
-	ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
+	if (s->v.ImportFrom.module) {
+		ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
+	}
+	else {
+		ADDOP_NAME(c, IMPORT_NAME, empty_string, names);
+	}
 	for (i = 0; i < n; i++) {
 		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
 		identifier store_name;

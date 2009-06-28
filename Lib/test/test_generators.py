@@ -960,11 +960,11 @@ Lambdas shouldn't have their usual return behavior.
 # iterators have side-effects, so that which values *can* be generated at
 # each slot depend on the values iterated at previous slots.
 
-def conjoin(gs):
+def simple_conjoin(gs):
 
     values = [None] * len(gs)
 
-    def gen(i, values=values):
+    def gen(i):
         if i >= len(gs):
             yield values
         else:
@@ -989,7 +989,7 @@ def conjoin(gs):
     # Do one loop nest at time recursively, until the # of loop nests
     # remaining is divisible by 3.
 
-    def gen(i, values=values):
+    def gen(i):
         if i >= n:
             yield values
 
@@ -1007,7 +1007,7 @@ def conjoin(gs):
     # remain.  Don't call directly:  this is an internal optimization for
     # gen's use.
 
-    def _gen3(i, values=values):
+    def _gen3(i):
         assert i < n and (n-i) % 3 == 0
         ip1, ip2, ip3 = i+1, i+2, i+3
         g, g1, g2 = gs[i : ip3]

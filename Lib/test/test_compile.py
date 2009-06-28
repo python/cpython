@@ -213,6 +213,10 @@ if 1:
             '(a, None) = 0, 0',
             'for None in range(10): pass',
             'def f(None): pass',
+            'import None',
+            'import x as None',
+            'from x import None',
+            'from x import y as None'
         ]
         for stmt in stmts:
             stmt += "\n"
