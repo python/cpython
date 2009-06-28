@@ -40,28 +40,6 @@ def capwords(s, sep=None):
     return (sep or ' ').join([x.capitalize() for x in s.split(sep)])
 
 
-# Construct a translation map for bytes.translate
-def maketrans(frm: bytes, to: bytes) -> bytes:
-    """maketrans(frm, to) -> bytes
-
-    Return a translation table (a bytes object of length 256)
-    suitable for use in bytes.translate where each byte in frm is
-    mapped to the byte at the same position in to.
-    The strings frm and to must be of the same length.
-    """
-    import warnings
-    warnings.warn("string.maketrans is deprecated, use bytes.maketrans instead",
-                  DeprecationWarning, 2)
-    if len(frm) != len(to):
-        raise ValueError("maketrans arguments must have same length")
-    if not (isinstance(frm, bytes) and isinstance(to, bytes)):
-        raise TypeError("maketrans arguments must be bytes objects")
-    L = bytearray(range(256))
-    for i, c in enumerate(frm):
-        L[c] = to[i]
-    return bytes(L)
-
-
 ####################################################################
 import re as _re
 

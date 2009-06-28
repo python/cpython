@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- The deprecated function string.maketrans has been removed.
+
 Build
 -----
 
