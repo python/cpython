@@ -373,7 +373,7 @@ Exact representation enables the :class:`Decimal` class to perform modulo
 calculations and equality tests that are unsuitable for binary floating point::
 
    >>> Decimal('1.00') % Decimal('.10')
-   Decimal("0.00")
+   Decimal('0.00')
    >>> 1.00 % 0.10
    0.09999999999999995
 
@@ -386,6 +386,6 @@ The :mod:`decimal` module provides arithmetic with as much precision as needed::
 
    >>> getcontext().prec = 36
    >>> Decimal(1) / Decimal(7)
-   Decimal("0.142857142857142857142857142857142857")
+   Decimal('0.142857142857142857142857142857142857')
 
 
