@@ -119,6 +119,7 @@ static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, unsigned char *);
+static PyObject * special_lookup(PyObject *, char *, PyObject **);
 
 #define NAME_ERROR_MSG \
 	"name '%.200s' is not defined"
@@ -2455,6 +2456,33 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					   STACK_LEVEL());
 			DISPATCH();
 
+		TARGET(SETUP_WITH)
+		{
+			static PyObject *exit, *enter;
+			w = TOP();
+			x = special_lookup(w, "__exit__", &exit);
+			if (!x)
+				break;
+			SET_TOP(x);
+		        u = special_lookup(w, "__enter__", &enter);
+			Py_DECREF(w);
+			if (!u) {
+				x = NULL;
+				break;
+			}
+			x = PyObject_CallFunctionObjArgs(u, NULL);
+			Py_DECREF(u);
+			if (!x)
+				break;
+			/* Setup the finally block before pushing the result
+			   of __enter__ on the stack. */
+			PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+					   STACK_LEVEL());
+
+			PUSH(x);
+			DISPATCH();
+		}
+
 		TARGET(WITH_CLEANUP)
 		{
 			/* At the top of the stack are 1-3 values indicating
@@ -2479,17 +2507,36 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   should still be resumed.)
 			*/
 
-			PyObject *exit_func = POP();
+			PyObject *exit_func;
 			u = TOP();
 			if (u == Py_None) {
+				POP();
+				exit_func = TOP();
+				SET_TOP(u);
 				v = w = Py_None;
 			}
 			else if (PyLong_Check(u)) {
+				POP();
+				switch(PyLong_AsLong(u)) {
+				case WHY_RETURN:
+				case WHY_CONTINUE:
+					/* Retval in TOP. */
+					exit_func = SECOND();
+					SET_SECOND(TOP());
+					SET_TOP(u);
+					break;
+				default:
+					exit_func = TOP();
+					SET_TOP(u);
+					break;
+				}
 				u = v = w = Py_None;
 			}
 			else {
-				v = SECOND();
+			        v = SECOND();
 				w = THIRD();
+				exit_func = stack_pointer[-7];
+				stack_pointer[-7] = NULL;
 			}
 			/* XXX Not the fastest way to call it... */
 			x = PyObject_CallFunctionObjArgs(exit_func, u, v, w,
@@ -2509,11 +2556,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			else if (err > 0) {
 				err = 0;
 				/* There was an exception and a True return */
-				STACKADJ(-2);
-				SET_TOP(PyLong_FromLong((long) WHY_SILENCED));
-				Py_DECREF(u);
-				Py_DECREF(v);
-				Py_DECREF(w);
+				PUSH(PyLong_FromLong((long) WHY_SILENCED));
 			}
 			PREDICT(END_FINALLY);
 			break;
@@ -3191,6 +3234,19 @@ fail: /* Jump here from prelude on failure */
 	Py_DECREF(f);
 	--tstate->recursion_depth;
 	return retval;
+}
+
+
+static PyObject *
+special_lookup(PyObject *o, char *meth, PyObject **cache)
+{
+	PyObject *res;
+	res = _PyObject_LookupSpecial(o, meth, cache);
+	if (res == NULL && !PyErr_Occurred()) {
+		PyErr_SetObject(PyExc_AttributeError, *cache);
+		return NULL;
+	}
+	return res;
 }
 
 

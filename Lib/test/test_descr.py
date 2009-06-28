@@ -1569,6 +1569,7 @@ order (MRO) for bases """
         def some_number(self_, key):
             self.assertEqual(key, "hi")
             return 4
+        def swallow(*args): pass
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
@@ -1584,11 +1585,8 @@ order (MRO) for bases """
              set(("__class__",)), {}),
             ("__subclasscheck__", do_issubclass, return_true,
              set(("__bases__",)), {}),
-            # These two fail because the compiler generates LOAD_ATTR to look
-            # them up.  We'd have to add a new opcode to fix this, and it's
-            # probably not worth it.
-            # ("__enter__", run_context, iden),
-            # ("__exit__", run_context, iden),
+            ("__enter__", run_context, iden, set(), {"__exit__" : swallow}),
+            ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
             ]
 
         class Checker(object):

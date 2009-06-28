@@ -89,9 +89,10 @@ typedef unsigned short mode_t;
 			   change LIST_APPEND and SET_ADD, add MAP_ADD)
        Python 3.1a0: 3150 (optimize conditional branches:
 			   introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
+       Python 3.2a0: 3160 (add SETUP_WITH)
 */
-#define MAGIC (3150 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
+#define MAGIC (3160 | ((long)'\r'<<16) | ((long)'\n'<<24))
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
    compiler works which are enabled by command line switches. */
