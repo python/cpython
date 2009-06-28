@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.1
+  What's New In Python 3.2
 ****************************
 
 :Author: Raymond Hettinger
@@ -66,8 +66,24 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
-* Stub
+* The previously deprecated :func:`string.maketrans` function has been
+  removed in favor of the static methods, :meth:`bytes.maketrans` and
+  :meth:`bytearray.maketrans`.  This change solves the confusion around which
+  types were supported by the :mod:`string` module. Now, :class:`str`,
+  :class:`bytes`, and :class:`bytearray` each have their own **maketrans** and
+  **translate** methods with intermediate translation tables of the
+  appropriate type.
 
+  (Contributed by Georg Brandl; :issue:`5675`.)
+
+* The previously deprecated :func:`contextlib.nested` function has been
+  removed in favor of a plain :keyword:`with` statement which can
+  accept multiple context managers.  The latter technique is faster
+  (because it is built-in), and it does a better job finalizing multiple
+  context managers when one of them raises an exception.
+
+  (Contributed by Georg Brandl and Mattias Brändström;
+  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
 Optimizations
 =============
@@ -90,7 +106,7 @@ Changes to Python's build process and to the C API include:
 * Stub
 
 
-Porting to Python 3.1
+Porting to Python 3.2
 =====================
 
 This section lists previously described changes and other bugfixes
