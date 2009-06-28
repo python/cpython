@@ -1823,15 +1823,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					created when the exception was caught, otherwise
 					the stack will be in an inconsistent state. */
 					PyTryBlock *b = PyFrame_BlockPop(f);
-					if (b->b_type != EXCEPT_HANDLER) {
-						PyErr_SetString(PyExc_SystemError,
-							"popped block is not an except handler");
-						why = WHY_EXCEPTION;
-					}
-					else {
-						UNWIND_EXCEPT_HANDLER(b);
-						why = WHY_NOT;
-					}
+					assert(b->b_type == EXCEPT_HANDLER);
+					UNWIND_EXCEPT_HANDLER(b);
+					why = WHY_NOT;
 				}
 			}
 			else if (PyExceptionClass_Check(v)) {
