@@ -189,8 +189,8 @@ floating point flying circus:
    '1.34'
    >>> float(a)
    1.3400000000000001
-   >>> round(a, 1)     # round() first converts to binary floating point
-   1.3
+   >>> round(a, 1)
+   Decimal('1.3')
    >>> int(a)
    1
    >>> a * 5
