@@ -360,7 +360,7 @@ becomes significant if the results are rounded to the nearest cent::
 
    >>> from decimal import *
    >>> Decimal('0.70') * Decimal('1.05')
-   Decimal("0.7350")
+   Decimal('0.7350')
    >>> .70 * 1.05
    0.73499999999999999
 
