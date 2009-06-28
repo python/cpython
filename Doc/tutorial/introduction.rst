@@ -60,16 +60,9 @@ operators ``+``, ``-``, ``*`` and ``/`` work just like in most other languages
 
 Note: You might not see exactly the same result; floating point results can
 differ from one machine to another.  We will say more later about controlling
-the appearance of floating point output; what we see here is the most
-informative display but not as easy to read as we would get with::
-
-   >>> print(8/5)
-   1.6
-
-For clarity in this tutorial we will show the simpler floating point output
-unless we are specifically discussing output formatting, and explain later
-why these two ways of displaying floating point data come to be different.
-See :ref:`tut-fp-issues` for a full discussion.
+the appearance of floating point output.  See also :ref:`tut-fp-issues` for a
+full discussion of some of the subtleties of floating point numbers and their
+representations.
 
 To do integer division and get an integer result,
 discarding any fractional result, there is another operator, ``//``::
