@@ -286,23 +286,24 @@ class UnixCCompiler(CCompiler):
             return "+s -L" + dir
         elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
             return ["-rpath", dir]
-        else:
-            if compiler[:3] == "gcc" or compiler[:3] == "g++":
-                # gcc on non-GNU systems does not need -Wl, but can
-                # use it anyway.  Since distutils has always passed in
-                # -Wl whenever gcc was used in the past it is probably
-                # safest to keep doing so.
-                if sysconfig.get_config_var("GNULD") == "yes":
-                    # GNU ld needs an extra option to get a RUNPATH
-                    # instead of just an RPATH.
-                    return "-Wl,--enable-new-dtags,-R" + dir
-                else:
-                    return "-Wl,-R" + dir
+        elif compiler[:3] == "gcc" or compiler[:3] == "g++":
+            # gcc on non-GNU systems does not need -Wl, but can
+            # use it anyway.  Since distutils has always passed in
+            # -Wl whenever gcc was used in the past it is probably
+            # safest to keep doing so.
+            if sysconfig.get_config_var("GNULD") == "yes":
+                # GNU ld needs an extra option to get a RUNPATH
+                # instead of just an RPATH.
+                return "-Wl,--enable-new-dtags,-R" + dir
             else:
-                # No idea how --enable-new-dtags would be passed on to
-                # ld if this system was using GNU ld.  Don't know if a
-                # system like this even exists.
-                return "-R" + dir
+                return "-Wl,-R" + dir
+        elif sys.platform[:3] == "aix":
+            return "-blibpath:" + dir
+        else:
+            # No idea how --enable-new-dtags would be passed on to
+            # ld if this system was using GNU ld.  Don't know if a
+            # system like this even exists.
+            return "-R" + dir
 
     def library_option(self, lib):
         return "-l" + lib
