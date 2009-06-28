@@ -357,19 +357,24 @@ static const char* FORBIDDEN[] = {
     "None",
     "True",
     "False",
-    "__debug__",
     NULL,
 };
 
 static int
-forbidden_name(identifier name, const node *n)
+forbidden_name(identifier name, const node *n, int full_checks)
 {
-    const char **p;
     assert(PyUnicode_Check(name));
-    for (p = FORBIDDEN; *p; p++) {
-        if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
-            ast_error(n, "assignment to keyword");
-            return 1;
+    if (PyUnicode_CompareWithASCIIString(name, "__debug__") == 0) {
+        ast_error(n, "assignment to keyword");
+        return 1;
+    }
+    if (full_checks) {
+        const char **p;
+        for (p = FORBIDDEN; *p; p++) {
+            if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
+                ast_error(n, "assignment to keyword");
+                return 1;
+            }
         }
     }
     return 0;
@@ -403,6 +408,8 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
             e->v.Attribute.ctx = ctx;
+            if (ctx == Store && forbidden_name(e->v.Attribute.attr, n, 1))
+                return 0;
             break;
         case Subscript_kind:
             e->v.Subscript.ctx = ctx;
@@ -414,7 +421,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case Name_kind:
             if (ctx == Store) {
-                if (forbidden_name(e->v.Name.id, n))
+                if (forbidden_name(e->v.Name.id, n, 1))
                     return 0; /* forbidden_name() calls ast_error() */
             }
             e->v.Name.ctx = ctx;
@@ -631,6 +638,8 @@ compiler_arg(struct compiling *c, const node *n)
     name = NEW_IDENTIFIER(ch);
     if (!name)
         return NULL;
+    if (forbidden_name(name, ch, 0))
+        return NULL;
 
     if (NCH(n) == 3 && TYPE(CHILD(n, 1)) == COLON) {
         annotation = ast_for_expr(c, CHILD(n, 2));
@@ -696,6 +705,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                 ch = CHILD(ch, 0);
                 argname = NEW_IDENTIFIER(ch);
                 if (!argname)
+                    goto error;
+                if (forbidden_name(argname, ch, 0))
                     goto error;
                 arg = arg(argname, annotation, c->c_arena);
                 if (!arg)
@@ -855,6 +866,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                     vararg = NEW_IDENTIFIER(CHILD(ch, 0));
                     if (!vararg)
                         return NULL;
+                    if (forbidden_name(vararg, CHILD(ch, 0), 0))
+                        return NULL;
                     if (NCH(ch) > 1) {
                         /* there is an annotation on the vararg */
                         varargannotation = ast_for_expr(c, CHILD(ch, 2));
@@ -879,6 +892,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                     kwargannotation = ast_for_expr(c, CHILD(ch, 2));
                 }
                 if (!kwarg)
+                    goto error;
+                if (forbidden_name(kwarg, CHILD(ch, 0), 0))
                     goto error;
                 i += 3;
                 break;
@@ -1000,6 +1015,8 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
+        return NULL;
+    if (forbidden_name(name, CHILD(n, name_i), 0))
         return NULL;
     args = ast_for_arguments(c, CHILD(n, name_i + 1));
     if (!args)
@@ -2010,7 +2027,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 } else if (e->kind != Name_kind) {
                   ast_error(CHILD(ch, 0), "keyword can't be an expression");
                   return NULL;
-                } else if (forbidden_name(e->v.Name.id, ch)) {
+                } else if (forbidden_name(e->v.Name.id, ch, 1)) {
 		  return NULL;
 		}
                 key = e->v.Name.id;
@@ -2279,11 +2296,11 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 str = NEW_IDENTIFIER(str_node);
                 if (!str)
                     return NULL;
-                if (store && forbidden_name(str, str_node))
+                if (store && forbidden_name(str, str_node, 0))
                     return NULL;
             }
             else {
-                if (forbidden_name(name, name_node))
+                if (forbidden_name(name, name_node, 0))
                     return NULL;
             }
             return alias(name, str, c->c_arena);
@@ -2302,7 +2319,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 a->asname = NEW_IDENTIFIER(asname_node);
                 if (!a->asname)
                     return NULL;
-                if (forbidden_name(a->asname, asname_node))
+                if (forbidden_name(a->asname, asname_node, 0))
                     return NULL;
                 return a;
             }
@@ -2313,7 +2330,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 name = NEW_IDENTIFIER(name_node);
                 if (!name)
                     return NULL;
-                if (store && forbidden_name(name, name_node))
+                if (store && forbidden_name(name, name_node, 0))
                     return NULL;
                 return alias(name, NULL, c->c_arena);
             }
@@ -2853,6 +2870,8 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         identifier e = NEW_IDENTIFIER(CHILD(exc, 3));
         if (!e)
             return NULL;
+        if (forbidden_name(e, CHILD(exc, 3), 0))
+            return NULL;
         expression = ast_for_expr(c, CHILD(exc, 1));
         if (!expression)
             return NULL;
@@ -3023,6 +3042,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
             return NULL;
+        if (forbidden_name(classname, CHILD(n, 3), 0))
+            return NULL;
         return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
     }
@@ -3033,6 +3054,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
+            return NULL;
+        if (forbidden_name(classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
@@ -3056,6 +3079,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         return NULL;
     classname = NEW_IDENTIFIER(CHILD(n, 1));
     if (!classname)
+        return NULL;
+    if (forbidden_name(classname, CHILD(n, 1), 0))
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords,
