@@ -1060,6 +1060,9 @@ Tools/Demos
 Build
 -----
 
+- Issue 5390: Add uninstall icon independent of whether file
+  extensions are installed.
+
 - Issue 5809: Specifying both --enable-framework and --enable-shared is
   an error. Configure now explicity tells you about this.
 
