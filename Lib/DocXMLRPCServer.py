@@ -240,10 +240,6 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
         self.end_headers()
         self.wfile.write(response)
 
-        # shut down the connection
-        self.wfile.flush()
-        self.connection.shutdown(1)
-
 class DocXMLRPCServer(  SimpleXMLRPCServer,
                         XMLRPCDocGenerator):
     """XML-RPC and HTML documentation server.

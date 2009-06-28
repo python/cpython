@@ -133,6 +133,15 @@ alone XML-RPC servers.
 
    .. versionadded:: 2.5
 
+.. attribute:: SimpleXMLRPCRequestHandler.encode_threshold
+
+   If this attribute is not ``None``, responses larger than this value
+   will be encoded using the *gzip* transfer encoding, if permitted by
+   the client.  The default is ``1400`` which corresponds roughly
+   to a single TCP packet.
+
+   .. versionadded:: 2.7
+
 .. _simplexmlrpcserver-example:
 
 SimpleXMLRPCServer Example
