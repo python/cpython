@@ -130,8 +130,10 @@ extern "C" {
 #define CALL_FUNCTION_KW           141	/* #args + (#kwargs<<8) */
 #define CALL_FUNCTION_VAR_KW       142	/* #args + (#kwargs<<8) */
 
+#define SETUP_WITH 143
+
 /* Support for opargs more than 16 bits long */
-#define EXTENDED_ARG  143
+#define EXTENDED_ARG  144
 
 #define LIST_APPEND     145
 #define SET_ADD         146
