@@ -3,7 +3,7 @@
 import _symtable
 from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
      DEF_IMPORT, DEF_BOUND, OPT_IMPORT_STAR, OPT_EXEC, OPT_BARE_EXEC,
-     SCOPE_OFF, SCOPE_MASK, FREE, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
+     SCOPE_OFF, SCOPE_MASK, FREE, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL, LOCAL)
 
 import weakref
 
@@ -137,7 +137,9 @@ class Function(SymbolTable):
 
     def get_locals(self):
         if self.__locals is None:
-            self.__locals = self.__idents_matching(lambda x:x & DEF_BOUND)
+            locs = (LOCAL, CELL)
+            test = lambda x: ((x >> SCOPE_OFF) & SCOPE_MASK) in locs
+            self.__locals = self.__idents_matching(test)
         return self.__locals
 
     def get_globals(self):
