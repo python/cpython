@@ -1424,7 +1424,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case LIST_APPEND:
 			w = POP();
-			v = stack_pointer[-oparg];
+			v = PEEK(oparg);
 			err = PyList_Append(v, w);
 			Py_DECREF(w);
 			if (err == 0) {
@@ -1954,7 +1954,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				}
 			} else if (unpack_iterable(v, oparg,
 						   stack_pointer + oparg)) {
-				stack_pointer += oparg;
+				STACKADJ(oparg);
 			} else {
 				/* unpack_iterable() raised an exception */
 				why = WHY_EXCEPTION;
