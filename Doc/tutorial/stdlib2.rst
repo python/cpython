@@ -359,10 +359,10 @@ results in decimal floating point and binary floating point. The difference
 becomes significant if the results are rounded to the nearest cent::
 
    >>> from decimal import *
-   >>> Decimal('0.70') * Decimal('1.05')
-   Decimal("0.7350")
-   >>> .70 * 1.05
-   0.73499999999999999
+   >>> round(Decimal('0.70') * Decimal('1.05'), 2)
+   Decimal('0.74')
+   >>> round(.70 * 1.05, 2)
+   0.73
 
 The :class:`Decimal` result keeps a trailing zero, automatically inferring four
 place significance from multiplicands with two place significance.  Decimal
