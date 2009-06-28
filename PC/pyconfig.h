@@ -95,12 +95,6 @@ WIN32 is still required for the locale module.
 #endif
 
 #ifdef MS_WINCE
-/* Python uses GetVersion() to distinguish between
- * Windows NT and 9x/ME where OS Unicode support is concerned.
- * Windows CE supports Unicode in the same way as NT so we
- * define the missing GetVersion() accordingly.
- */
-#define GetVersion() (4)
 /* Windows CE does not support environment variables */
 #define getenv(v) (NULL)
 #define environ (NULL)

@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #4856: Remove checks for win NT.
+
 - Issue #2016: Fixed a crash in a corner case where the dictionary of keyword
   arguments could be modified during the function call setup.
 
