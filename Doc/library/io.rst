@@ -359,8 +359,14 @@ I/O Base Classes
    implementation, but wrap one like :class:`BufferedWriter` and
    :class:`BufferedReader`.
 
-   :class:`BufferedIOBase` provides or overrides these methods in addition to
+   :class:`BufferedIOBase` provides or overrides these members in addition to
    those from :class:`IOBase`:
+
+   .. attribute:: raw
+
+      The underlying raw stream (a :class:`RawIOBase` instance) that
+      :class:`BufferedIOBase` deals with.  This is not part of the
+      :class:`BufferedIOBase` API and may not exist on some implementations.
 
    .. method:: detach()
 
@@ -606,6 +612,12 @@ Text I/O
 
       A string, a tuple of strings, or ``None``, indicating the newlines
       translated so far.
+
+   .. attribute:: buffer
+
+      The underlying binary buffer (a :class:`BufferedIOBase` instance) that
+      :class:`TextIOBase` deals with.  This is not part of the
+      :class:`TextIOBase` API and may not exist on some implementations.
 
    .. method:: detach()
 

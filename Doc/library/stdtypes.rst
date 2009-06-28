@@ -583,10 +583,18 @@ Once an iterator's :meth:`__next__` method raises :exc:`StopIteration`, it must
 continue to do so on subsequent calls.  Implementations that do not obey this
 property are deemed broken.
 
+
+.. _generator-types:
+
+Generator Types
+---------------
+
 Python's :term:`generator`\s provide a convenient way to implement the iterator
 protocol.  If a container object's :meth:`__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
 generator object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
+More information about generators can be found in :ref:`the documentation for
+the yield expression <yieldexpr>`.
 
 
 .. _typesseq:

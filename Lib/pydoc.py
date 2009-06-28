@@ -54,6 +54,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 
 import sys, imp, os, re, inspect, builtins, pkgutil
 from reprlib import Repr
+from traceback import extract_tb as _extract_tb
 try:
     from collections import deque
 except ImportError:
@@ -292,9 +293,9 @@ def safeimport(path, forceload=0, cache={}):
         elif exc is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
             raise ErrorDuringImport(value.filename, info)
-        elif exc is ImportError and \
-             str(value).lower().split()[:2] == ['no', 'module']:
-            # The module was not found.
+        elif exc is ImportError and _extract_tb(tb)[-1][2]=='safeimport':
+            # The import error occurred directly in this function,
+            # which means there is no such module in the path.
             return None
         else:
             # Some other error occurred during the importing process.
