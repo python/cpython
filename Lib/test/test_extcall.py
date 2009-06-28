@@ -243,6 +243,24 @@ TypeError if te dictionary is not empty
       ...
     TypeError: id() takes no keyword arguments
 
+A corner case of keyword dictionary items being deleted during
+the function call setup. See <http://bugs.python.org/issue2016>.
+
+    >>> class Name(str):
+    ...     def __eq__(self, other):
+    ...         try:
+    ...              del x[self]
+    ...         except KeyError:
+    ...              pass
+    ...         return str.__eq__(self, other)
+    ...     def __hash__(self):
+    ...         return str.__hash__(self)
+
+    >>> x = {Name("a"):1, Name("b"):2}
+    >>> def f(a, b):
+    ...     print(a,b)
+    >>> f(**x)
+    1 2
 """
 
 from test import support

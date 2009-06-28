@@ -49,6 +49,18 @@ class CodingTest(unittest.TestCase):
             unlink(TESTFN+".pyc")
             sys.path.pop(0)
 
+    def test_error_from_string(self):
+        # See http://bugs.python.org/issue6289
+        input = "# coding: ascii\n\N{SNOWMAN}".encode('utf-8')
+        try:
+            compile(input, "<string>", "exec")
+        except SyntaxError as e:
+            expected = "'ascii' codec can't decode byte 0xe2 in position 16: " \
+                "ordinal not in range(128)"
+            self.assertTrue(str(e).startswith(expected))
+        else:
+            self.fail("didn't raise")
+
 def test_main():
     test.support.run_unittest(CodingTest)
 
