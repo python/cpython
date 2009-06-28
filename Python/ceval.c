@@ -2537,14 +2537,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			        v = SECOND();
 				w = THIRD();
 				tp = FOURTH();
-				exc = stack_pointer[-5];
-				tb = stack_pointer[-6];
-				exit_func = stack_pointer[-7];
-				stack_pointer[-7] = tb;
-				stack_pointer[-6] = exc;
-				stack_pointer[-5] = tp;
+				exc = PEEK(5);
+				tb = PEEK(6);
+				exit_func = PEEK(7);
+				SET_VALUE(7, tb);
+				SET_VALUE(6, exc);
+				SET_VALUE(5, tp);
 				/* UNWIND_EXCEPT_BLOCK will pop this off. */
-				FOURTH() = NULL;
+				SET_FOURTH(NULL);
 				/* We just shifted the stack down, so we have
 				   to tell the except handler block that the
 				   values are lower than it expects. */
