@@ -2491,20 +2491,23 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   - (TOP, SECOND) = (WHY_{RETURN,CONTINUE}), retval
 			   - TOP = WHY_*; no retval below it
 			   - (TOP, SECOND, THIRD) = exc_info()
+			     (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
 			   Below them is EXIT, the context.__exit__ bound method.
 			   In the last case, we must call
 			     EXIT(TOP, SECOND, THIRD)
 			   otherwise we must call
 			     EXIT(None, None, None)
 
-			   In all cases, we remove EXIT from the stack, leaving
-			   the rest in the same order.
+			   In the first two cases, we remove EXIT from the
+			   stack, leaving the rest in the same order.  In the
+			   third case, we shift the bottom 3 values of the
+			   stack down, and replace the empty spot with NULL.
 
 			   In addition, if the stack represents an exception,
 			   *and* the function call returns a 'true' value, we
-			   "zap" this information, to prevent END_FINALLY from
-			   re-raising the exception.  (But non-local gotos
-			   should still be resumed.)
+			   push WHY_SILENCED onto the stack.  END_FINALLY will
+			   then not re-raise the exception.  (But non-local
+			   gotos should still be resumed.)
 			*/
 
 			PyObject *exit_func;
@@ -2544,7 +2547,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				stack_pointer[-7] = tb;
 				stack_pointer[-6] = exc;
 				stack_pointer[-5] = tp;
+				/* UNWIND_EXCEPT_BLOCK will pop this off. */
 				FOURTH() = NULL;
+				/* We just shifted the stack down, so we have
+				   to tell the except handler block that the
+				   values are lower than it expects. */
 				block = &f->f_blockstack[f->f_iblock - 1];
 				assert(block->b_type == EXCEPT_HANDLER);
 				block->b_level--;
