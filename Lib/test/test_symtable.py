@@ -92,7 +92,7 @@ class SymtableTest(unittest.TestCase):
         func = self.spam
         self.assertEqual(func.get_parameters(), ("a", "b", "kw", "var"))
         self.assertEqual(func.get_locals(),
-                         ("a", "b", "bar", "internal", "kw", "var", "x"))
+                         ("a", "b", "internal", "kw", "var", "x"))
         self.assertEqual(func.get_globals(), ("bar", "glob"))
         self.assertEqual(self.internal.get_frees(), ("x",))
 
