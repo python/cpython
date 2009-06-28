@@ -28,7 +28,7 @@ The module defines the following public class:
    setup, and a timer function.  Both statements default to ``'pass'``; the timer
    function is platform-dependent (see the module doc string).  *stmt* and *setup*
    may also contain multiple statements separated by ``;`` or newlines, as long as
-   they don’t contain multi-line string literals.
+   they don't contain multi-line string literals.
 
    To measure the execution time of the first statement, use the :meth:`timeit`
    method.  The :meth:`repeat` method is a convenience to call :meth:`timeit`
