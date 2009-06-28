@@ -209,6 +209,9 @@ Extension Modules
 Build
 -----
 
+- Issue 5390: Add uninstall icon independent of whether file
+  extensions are installed.
+
 - Issue #6094: Build correctly with Subversion 1.7.
 
 - Link the shared python library with $(MODLIBS).
