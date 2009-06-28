@@ -224,11 +224,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	}
 
 #ifdef MS_WINDOWS
-	if (GetVersion() < 0x80000000) {
-		/* On NT, so wide API available */
-		if (PyUnicode_Check(nameobj))
-			widename = PyUnicode_AS_UNICODE(nameobj);
-	}
+	if (PyUnicode_Check(nameobj))
+		widename = PyUnicode_AS_UNICODE(nameobj);
 	if (widename == NULL)
 #endif
 	if (fd < 0)

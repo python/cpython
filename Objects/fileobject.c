@@ -16,12 +16,6 @@
 #include <windows.h>
 #endif
 
-#ifdef _MSC_VER
-/* Need GetVersion to see if on NT so safe to use _wfopen */
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif /* _MSC_VER */
-
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 #include <io.h>
 #endif
@@ -2244,6 +2238,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 	char *mode = "r";
 	int bufsize = -1;
 	int wideargument = 0;
+	PyObject *po;
 
 	assert(PyFile_Check(self));
 	if (foself->f_fp != NULL) {
@@ -2255,19 +2250,16 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 
 #ifdef MS_WINDOWS
-	if (GetVersion() < 0x80000000) {    /* On NT, so wide API available */
-		PyObject *po;
-		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
-						kwlist, &po, &mode, &bufsize)) {
-			wideargument = 1;
-			if (fill_file_fields(foself, NULL, po, mode,
-					     fclose) == NULL)
-				goto Error;
-		} else {
-			/* Drop the argument parsing error as narrow
-			   strings are also valid. */
-			PyErr_Clear();
-		}
+	if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
+					kwlist, &po, &mode, &bufsize)) {
+		wideargument = 1;
+		if (fill_file_fields(foself, NULL, po, mode,
+				     fclose) == NULL)
+			goto Error;
+	} else {
+		/* Drop the argument parsing error as narrow
+		   strings are also valid. */
+		PyErr_Clear();
 	}
 #endif
 
