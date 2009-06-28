@@ -839,6 +839,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6164: Added an AIX specific linker argument in Distutils 
+  unixcompiler. Original patch by Sridhar Ratnakumar.
+
 - Issue #6286: Now Distutils upload command is based on urllib2 instead of
   httplib, allowing the usage of http_proxy.
 
