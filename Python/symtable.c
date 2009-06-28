@@ -38,7 +38,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 		goto fail;
 	ste->ste_table = st;
 	ste->ste_id = k;
-	ste->ste_tmpname = 0;
 
 	ste->ste_name = name;
 	Py_INCREF(name);
@@ -66,7 +65,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 	ste->ste_varargs = 0;
 	ste->ste_varkeywords = 0;
 	ste->ste_opt_lineno = 0;
-	ste->ste_tmpname = 0;
 	ste->ste_lineno = lineno;
 
 	if (st->st_cur != NULL &&
@@ -1099,7 +1097,6 @@ symtable_new_tmpname(struct symtable *st)
 }
 
 
-
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
@@ -1297,12 +1294,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		/* nothing to do here */
 		break;
         case With_kind:
-		if (!symtable_new_tmpname(st))
-			return 0;
                 VISIT(st, expr, s->v.With.context_expr);
                 if (s->v.With.optional_vars) {
-			if (!symtable_new_tmpname(st))
-				return 0;
                         VISIT(st, expr, s->v.With.optional_vars);
                 }
                 VISIT_SEQ(st, stmt, s->v.With.body);
@@ -1326,8 +1319,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT(st, expr, e->v.UnaryOp.operand);
 		break;
         case Lambda_kind: {
-		if (!GET_IDENTIFIER(lambda) ||
-		    !symtable_add_def(st, lambda, DEF_LOCAL))
+		if (!GET_IDENTIFIER(lambda))
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
