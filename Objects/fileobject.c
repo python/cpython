@@ -2238,7 +2238,9 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 	char *mode = "r";
 	int bufsize = -1;
 	int wideargument = 0;
+#ifdef MS_WINDOWS
 	PyObject *po;
+#endif
 
 	assert(PyFile_Check(self));
 	if (foself->f_fp != NULL) {
