@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6373: Fixed a RuntimeError when encoding with the latin-1 codec and
+  the 'surrogateescape' error handler, a string which contains unpaired
+  surrogates.
+
 - Issue #4856: Remove checks for win NT.
 
 Library
