@@ -839,6 +839,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6365: Distutils build_ext inplace mode was copying the compiled 
+  extension in a subdirectory if the extension name had dots.
+
 - Issue #6287: Added the license field in Distutils documentation.
 
 - Issue #6263: Fixed syntax error in distutils.cygwincompiler.
