@@ -428,7 +428,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if not quiet:
                         print test
                         sys.stdout.flush()
-                    popen = Popen([sys.executable, '-m', 'test.regrtest',
+                    # -E is needed by some tests, e.g. test_import
+                    popen = Popen([sys.executable, '-E', '-m', 'test.regrtest',
                                    '--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=STDOUT,
                                    universal_newlines=True, close_fds=True)
