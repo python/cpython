@@ -1549,6 +1549,11 @@ class SurrogateEscapeTest(unittest.TestCase):
         self.assertEqual("foo\udca5bar".encode("iso-8859-3", "surrogateescape"),
                          b"foo\xa5bar")
 
+    def test_latin1(self):
+        # Issue6373
+        self.assertEqual("\udce4\udceb\udcef\udcf6\udcfc".encode("latin1", "surrogateescape"),
+                         b"\xe4\xeb\xef\xf6\xfc")
+
 
 def test_main():
     support.run_unittest(

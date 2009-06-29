@@ -4201,10 +4201,12 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
                     repsize = PyBytes_Size(repunicode);
                     if (repsize > 1) {
                         /* Make room for all additional bytes. */
+                        respos = str - PyBytes_AS_STRING(res);
                         if (_PyBytes_Resize(&res, ressize+repsize-1)) {
                             Py_DECREF(repunicode);
                             goto onError;
                         }
+                        str = PyBytes_AS_STRING(res) + respos;
                         ressize += repsize-1;
                     }
                     memcpy(str, PyBytes_AsString(repunicode), repsize);
