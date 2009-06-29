@@ -238,7 +238,7 @@ static PyObject *
 mmap_read_method(mmap_object *self,
 		 PyObject *args)
 {
-	Py_ssize_t num_bytes;
+	Py_ssize_t num_bytes, n;
 	PyObject *result;
 
 	CHECK_VALID(NULL);
@@ -246,8 +246,18 @@ mmap_read_method(mmap_object *self,
 		return(NULL);
 
 	/* silently 'adjust' out-of-range requests */
-	if (num_bytes > self->size - self->pos) {
-		num_bytes -= (self->pos+num_bytes) - self->size;
+	assert(self->size >= self->pos);
+	n = self->size - self->pos;
+	/* The difference can overflow, only if self->size is greater than
+	 * PY_SSIZE_T_MAX.  But then the operation cannot possibly succeed,
+	 * because the mapped area and the returned string each need more 
+	 * than half of the addressable memory.  So we clip the size, and let
+	 * the code below raise MemoryError.
+	 */
+	if (n < 0)
+		n = PY_SSIZE_T_MAX;
+	if (num_bytes < 0 || num_bytes > n) {
+		num_bytes = n;
 	}
 	result = PyBytes_FromStringAndSize(self->data+self->pos, num_bytes);
 	self->pos += num_bytes;
