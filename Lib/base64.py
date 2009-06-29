@@ -58,8 +58,8 @@ def b64encode(s, altchars=None):
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
         if not isinstance(altchars, bytes_types):
-            altchars = TypeError("expected bytes, not %s"
-                                 % altchars.__class__.__name__)
+            raise TypeError("expected bytes, not %s"
+                            % altchars.__class__.__name__)
         assert len(altchars) == 2, repr(altchars)
         return _translate(encoded, {'+': altchars[0:1], '/': altchars[1:2]})
     return encoded
