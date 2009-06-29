@@ -339,10 +339,9 @@ class BuildExtTestCase(support.TempdirManager,
         # inplace = 0, cmd.package = 'bar'
         cmd.package = 'bar'
         path = cmd.get_ext_fullpath('foo')
-        # checking that the last directory is bar
+        # checking that the last directory is the build_dir
         path = os.path.split(path)[0]
-        lastdir = os.path.split(path)[-1]
-        self.assertEquals(lastdir, cmd.package)
+        self.assertEquals(path, cmd.build_lib)
 
         # inplace = 1, cmd.package = 'bar'
         cmd.inplace = 1
@@ -357,6 +356,19 @@ class BuildExtTestCase(support.TempdirManager,
         path = os.path.split(path)[0]
         lastdir = os.path.split(path)[-1]
         self.assertEquals(lastdir, cmd.package)
+
+    def test_build_ext_inplace(self):
+        etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
+        etree_ext = Extension('lxml.etree', [etree_c])
+        dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+        cmd = build_ext(dist)
+        cmd.inplace = 1
+        cmd.distribution.package_dir = {'': 'src'}
+        cmd.distribution.packages = ['lxml', 'lxml.html']
+        curdir = os.getcwd()
+        wanted = os.path.join(curdir, 'src', 'lxml', 'etree.so')
+        path = cmd.get_ext_fullpath('lxml.etree')
+        self.assertEquals(wanted, path)
 
 def test_suite():
     src = _get_source_filename()

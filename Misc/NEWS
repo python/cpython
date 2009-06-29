@@ -337,6 +337,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6365: Distutils build_ext inplace mode was copying the compiled 
+  extension in a subdirectory if the extension name had dots.
+
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
 
 - Issue #5230: pydoc would report no documentation found if a module generated
