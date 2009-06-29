@@ -496,6 +496,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
         e = self._nested_expression(100)
         print("Expecting 's_push: parser stack overflow' in next line",
               file=sys.stderr)
+        sys.stderr.flush()
         self.assertRaises(MemoryError, parser.expr, e)
 
 class STObjectTestCase(unittest.TestCase):
