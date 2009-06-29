@@ -322,7 +322,8 @@ and implemented by all standard Python codecs:
 | ``'backslashreplace'``  | Replace with backslashed escape sequences     |
 |                         | (only for encoding).                          |
 +-------------------------+-----------------------------------------------+
-| ``'surrogateescape'``   | Replace byte with surrogate U+DCxx.           |
+| ``'surrogateescape'``   | Replace byte with surrogate U+DCxx, as defined|
+|                         | in :pep:`383`.                                |
 +-------------------------+-----------------------------------------------+
 
 In addition, the following error handlers are specific to a single codec:
