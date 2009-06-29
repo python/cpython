@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
+
 - The deprecated function string.maketrans has been removed.
 
 Build
