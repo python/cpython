@@ -1717,7 +1717,7 @@ authentication* using the :mod:`hmac` module.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authentication* is ``True`` or *authkey* is a string then digest
+   If *authenticate* is ``True`` or *authkey* is a string then digest
    authentication is used.  The key used for authentication will be either
    *authkey* or ``current_process().authkey)`` if *authkey* is ``None``.
    If authentication fails then :exc:`AuthenticationError` is raised.  See
@@ -1759,7 +1759,7 @@ authentication* using the :mod:`hmac` module.
 
    If *authkey* is ``None`` and *authenticate* is ``True`` then
    ``current_process().authkey`` is used as the authentication key.  If
-   *authkey* is ``None`` and *authentication* is ``False`` then no
+   *authkey* is ``None`` and *authenticate* is ``False`` then no
    authentication is done.  If authentication fails then
    :exc:`AuthenticationError` is raised.  See :ref:`multiprocessing-auth-keys`.
 
