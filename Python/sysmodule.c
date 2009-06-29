@@ -599,12 +599,14 @@ sys_setdlopenflags(PyObject *self, PyObject *args)
 PyDoc_STRVAR(setdlopenflags_doc,
 "setdlopenflags(n) -> None\n\
 \n\
-Set the flags that will be used for dlopen() calls. Among other\n\
-things, this will enable a lazy resolving of symbols when importing\n\
-a module, if called as sys.setdlopenflags(0)\n\
-To share symbols across extension modules, call as\n\
-sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)"
-);
+Set the flags used by the interpreter for dlopen calls, such as when the\n\
+interpreter loads extension modules.  Among other things, this will enable\n\
+a lazy resolving of symbols when importing a module, if called as\n\
+sys.setdlopenflags(0).  To share symbols across extension modules, call as\n\
+sys.setdlopenflags(ctypes.RTLD_GLOBAL).  Symbolic names for the flag modules\n\
+can be either found in the ctypes module, or in the DLFCN module. If DLFCN\n\
+is not available, it can be generated from /usr/include/dlfcn.h using the\n\
+h2py script.");
 
 static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
@@ -618,10 +620,10 @@ sys_getdlopenflags(PyObject *self, PyObject *args)
 PyDoc_STRVAR(getdlopenflags_doc,
 "getdlopenflags() -> int\n\
 \n\
-Return the current value of the flags that are used for dlopen()\n\
-calls. The flag constants are defined in the dl module."
-);
-#endif
+Return the current value of the flags that are used for dlopen calls.\n\
+The flag constants are defined in the ctypes and DLFCN modules.");
+
+#endif	/* HAVE_DLOPEN */
 
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
