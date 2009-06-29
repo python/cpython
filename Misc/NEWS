@@ -843,6 +843,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6365: Distutils build_ext inplace mode was copying the compiled 
+  extension in a subdirectory if the extension name had dots.
+
 - Issue #6164: Added an AIX specific linker argument in Distutils 
   unixcompiler. Original patch by Sridhar Ratnakumar.
 
