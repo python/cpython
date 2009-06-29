@@ -959,68 +959,13 @@ attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
 	return TRUE;
 }
 
-static BOOL WINAPI
-Py_GetFileAttributesExA(LPCSTR pszFile, 
-		       GET_FILEEX_INFO_LEVELS level,
-                       LPVOID pv)
-{
-	BOOL result;
-	LPWIN32_FILE_ATTRIBUTE_DATA pfad = pv;
-	/* First try to use the system's implementation, if that is
-	   available and either succeeds to gives an error other than
-	   that it isn't implemented. */
-	result = GetFileAttributesExA(pszFile, level, pv);
-	if (result || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return result;
-	/* It's either not present, or not implemented.
-	   Emulate using FindFirstFile. */
-	if (level != GetFileExInfoStandard) {
-		SetLastError(ERROR_INVALID_PARAMETER);
-		return FALSE;
-	}
-	/* Use GetFileAttributes to validate that the file name
-	   does not contain wildcards (which FindFirstFile would
-	   accept). */
-	if (GetFileAttributesA(pszFile) == 0xFFFFFFFF)
-		return FALSE;
-	return attributes_from_dir(pszFile, pfad);
-}
-
-static BOOL WINAPI
-Py_GetFileAttributesExW(LPCWSTR pszFile, 
-		       GET_FILEEX_INFO_LEVELS level,
-                       LPVOID pv)
-{
-	BOOL result;
-	LPWIN32_FILE_ATTRIBUTE_DATA pfad = pv;
-	/* First try to use the system's implementation, if that is
-	   available and either succeeds to gives an error other than
-	   that it isn't implemented. */
-	result = GetFileAttributesExW(pszFile, level, pv);
-	if (result || GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-		return result;
-	/* It's either not present, or not implemented.
-	   Emulate using FindFirstFile. */
-	if (level != GetFileExInfoStandard) {
-		SetLastError(ERROR_INVALID_PARAMETER);
-		return FALSE;
-	}
-	/* Use GetFileAttributes to validate that the file name
-	   does not contain wildcards (which FindFirstFile would
-	   accept). */
-	if (GetFileAttributesW(pszFile) == 0xFFFFFFFF)
-		return FALSE;
-	return attributes_from_dir_w(pszFile, pfad);
-}
-
 static int 
 win32_stat(const char* path, struct win32_stat *result)
 {
 	WIN32_FILE_ATTRIBUTE_DATA info;
 	int code;
 	char *dot;
-	/* XXX not supported on Win95 and NT 3.x */
-	if (!Py_GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
+	if (!GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
 		if (GetLastError() != ERROR_SHARING_VIOLATION) {
 			/* Protocol violation: we explicitly clear errno, instead of
 			   setting it to a POSIX error. Callers should use GetLastError. */
@@ -1057,8 +1002,7 @@ win32_wstat(const wchar_t* path, struct win32_stat *result)
 	int code;
 	const wchar_t *dot;
 	WIN32_FILE_ATTRIBUTE_DATA info;
-	/* XXX not supported on Win95 and NT 3.x */
-	if (!Py_GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
+	if (!GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
 		if (GetLastError() != ERROR_SHARING_VIOLATION) {
 			/* Protocol violation: we explicitly clear errno, instead of
 			   setting it to a POSIX error. Callers should use GetLastError. */
