@@ -421,13 +421,15 @@ class Counter(dict):
         if iterable is not None:
             if isinstance(iterable, Mapping):
                 if self:
+                    self_get = self.get
                     for elem, count in iterable.items():
-                        self[elem] += count
+                        self[elem] = count + self_get(elem, 0)
                 else:
                     dict.update(self, iterable) # fast path when counter is empty
             else:
+                self_get = self.get
                 for elem in iterable:
-                    self[elem] += 1
+                    self[elem] = 1 + self_get(elem, 0)
         if kwds:
             self.update(kwds)
 
