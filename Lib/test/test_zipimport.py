@@ -290,7 +290,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.close()
             zi = zipimport.zipimporter(TEMP_ZIP)
             self.assertEquals(data, zi.get_data(name))
-            self.assert_('zipimporter object' in repr(zi))
+            self.assertTrue('zipimporter object' in repr(zi))
         finally:
             z.close()
             os.remove(TEMP_ZIP)
@@ -372,7 +372,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             s = StringIO.StringIO()
             print_tb(tb, 1, s)
-            self.failUnless(s.getvalue().endswith(raise_src))
+            self.assertTrue(s.getvalue().endswith(raise_src))
         else:
             raise AssertionError("This ought to be impossible")
 

@@ -306,7 +306,7 @@ class UnicodeTranslationsTest(GettextBaseTest):
         self._ = self.t.ugettext
 
     def test_unicode_msgid(self):
-        unless = self.failUnless
+        unless = self.assertTrue
         unless(isinstance(self._(''), unicode))
         unless(isinstance(self._(u''), unicode))
 

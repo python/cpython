@@ -501,8 +501,8 @@ class MmapTests(unittest.TestCase):
         f.close()
 
     def test_error(self):
-        self.assert_(issubclass(mmap.error, EnvironmentError))
-        self.assert_("mmap.error" in str(mmap.error))
+        self.assertTrue(issubclass(mmap.error, EnvironmentError))
+        self.assertTrue("mmap.error" in str(mmap.error))
 
     def test_io_methods(self):
         data = "0123456789"

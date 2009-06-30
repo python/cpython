@@ -22,7 +22,7 @@ class FileTests(unittest.TestCase):
     def test_access(self):
         f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
         os.close(f)
-        self.assert_(os.access(test_support.TESTFN, os.W_OK))
+        self.assertTrue(os.access(test_support.TESTFN, os.W_OK))
 
     def test_closerange(self):
         first = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
@@ -65,7 +65,7 @@ class TemporaryFileTests(unittest.TestCase):
 
     def check_tempfile(self, name):
         # make sure it doesn't already exist:
-        self.failIf(os.path.exists(name),
+        self.assertFalse(os.path.exists(name),
                     "file already exists for temporary file")
         # make sure we can create the file
         open(name, "w")
@@ -82,7 +82,7 @@ class TemporaryFileTests(unittest.TestCase):
         self.check_tempfile(name)
 
         name = os.tempnam(test_support.TESTFN, "pfx")
-        self.assert_(os.path.basename(name)[:3] == "pfx")
+        self.assertTrue(os.path.basename(name)[:3] == "pfx")
         self.check_tempfile(name)
 
     def test_tmpfile(self):
@@ -131,7 +131,7 @@ class TemporaryFileTests(unittest.TestCase):
         fp.seek(0,0)
         s = fp.read()
         fp.close()
-        self.assert_(s == "foobar")
+        self.assertTrue(s == "foobar")
 
     def test_tmpnam(self):
         import sys
@@ -156,7 +156,7 @@ class TemporaryFileTests(unittest.TestCase):
             # the root of the current drive.  That's a terrible place to
             # put temp files, and, depending on privileges, the user
             # may not even be able to open a file in the root directory.
-            self.failIf(os.path.exists(name),
+            self.assertFalse(os.path.exists(name),
                         "file already exists for temporary file")
         else:
             self.check_tempfile(name)
@@ -198,7 +198,7 @@ class StatAttributeTests(unittest.TestCase):
                     def trunc(x): return x
                 self.assertEquals(trunc(getattr(result, attr)),
                                   result[getattr(stat, name)])
-                self.assert_(attr in members)
+                self.assertTrue(attr in members)
 
         try:
             result[200]
@@ -464,7 +464,7 @@ class MakedirTests (unittest.TestCase):
         os.makedirs(path)
 
         # Try paths with a '.' in them
-        self.failUnlessRaises(OSError, os.makedirs, os.curdir)
+        self.assertRaises(OSError, os.makedirs, os.curdir)
         path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', os.curdir)
         os.makedirs(path)
         path = os.path.join(base, 'dir1', os.curdir, 'dir2', 'dir3', 'dir4',

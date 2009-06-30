@@ -609,7 +609,7 @@ class ReTests(unittest.TestCase):
             unicode
         except NameError:
             return # no problem if we have no unicode
-        self.assert_(re.compile('bug_926075') is not
+        self.assertTrue(re.compile('bug_926075') is not
                      re.compile(eval("u'bug_926075'")))
 
     def test_bug_931848(self):

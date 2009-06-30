@@ -189,7 +189,7 @@ class ContainerTestCase(unittest.TestCase):
             t = constructor(self.d.keys())
             new = marshal.loads(marshal.dumps(t))
             self.assertEqual(t, new)
-            self.assert_(isinstance(new, constructor))
+            self.assertTrue(isinstance(new, constructor))
             self.assertNotEqual(id(t), id(new))
             marshal.dump(t, file(test_support.TESTFN, "wb"))
             new = marshal.load(file(test_support.TESTFN, "rb"))

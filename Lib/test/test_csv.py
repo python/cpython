@@ -326,7 +326,7 @@ class TestDialectRegistry(unittest.TestCase):
         expected_dialects.sort()
         csv.register_dialect(name, myexceltsv)
         try:
-            self.failUnless(csv.get_dialect(name).delimiter, '\t')
+            self.assertTrue(csv.get_dialect(name).delimiter, '\t')
             got_dialects = csv.list_dialects()
             got_dialects.sort()
             self.assertEqual(expected_dialects, got_dialects)
@@ -337,8 +337,8 @@ class TestDialectRegistry(unittest.TestCase):
         name = 'fedcba'
         csv.register_dialect(name, delimiter=';')
         try:
-            self.failUnless(csv.get_dialect(name).delimiter, '\t')
-            self.failUnless(list(csv.reader('X;Y;Z', name)), ['X', 'Y', 'Z'])
+            self.assertTrue(csv.get_dialect(name).delimiter, '\t')
+            self.assertTrue(list(csv.reader('X;Y;Z', name)), ['X', 'Y', 'Z'])
         finally:
             csv.unregister_dialect(name)
 
@@ -935,7 +935,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         # given that all three lines in sample3 are equal,
         # I think that any character could have been 'guessed' as the
         # delimiter, depending on dictionary order
-        self.assert_(dialect.delimiter in self.sample3)
+        self.assertTrue(dialect.delimiter in self.sample3)
         dialect = sniffer.sniff(self.sample3, delimiters="?,")
         self.assertEqual(dialect.delimiter, "?")
         dialect = sniffer.sniff(self.sample3, delimiters="/,")

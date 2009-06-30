@@ -71,8 +71,8 @@ class FunctionTestCase(unittest.TestCase):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
         result = f(1, u"x", 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 139)
-        self.failUnlessEqual(type(result), int)
+        self.assertEqual(result, 139)
+        self.assertEqual(type(result), int)
 
     def test_wchar_result(self):
         try:
@@ -83,38 +83,38 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
         f.restype = c_wchar
         result = f(0, 0, 0, 0, 0, 0)
-        self.failUnlessEqual(result, u'\x00')
+        self.assertEqual(result, u'\x00')
 
     def test_voidresult(self):
         f = dll._testfunc_v
         f.restype = None
         f.argtypes = [c_int, c_int, POINTER(c_int)]
         result = c_int()
-        self.failUnlessEqual(None, f(1, 2, byref(result)))
-        self.failUnlessEqual(result.value, 3)
+        self.assertEqual(None, f(1, 2, byref(result)))
+        self.assertEqual(result.value, 3)
 
     def test_intresult(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
         f.restype = c_int
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), int)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), int)
 
         result = f(-1, -2, -3, -4, -5.0, -6.0)
-        self.failUnlessEqual(result, -21)
-        self.failUnlessEqual(type(result), int)
+        self.assertEqual(result, -21)
+        self.assertEqual(type(result), int)
 
         # If we declare the function to return a short,
         # is the high part split off?
         f.restype = c_short
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), int)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), int)
 
         result = f(1, 2, 3, 0x10004, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), int)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), int)
 
         # You cannot assing character format codes as restype any longer
         self.assertRaises(TypeError, setattr, f, "restype", "i")
@@ -124,36 +124,36 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
         f.restype = c_float
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
 
         result = f(-1, -2, -3, -4, -5.0, -6.0)
-        self.failUnlessEqual(result, -21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, -21)
+        self.assertEqual(type(result), float)
 
     def test_doubleresult(self):
         f = dll._testfunc_d_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
         f.restype = c_double
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
 
         result = f(-1, -2, -3, -4, -5.0, -6.0)
-        self.failUnlessEqual(result, -21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, -21)
+        self.assertEqual(type(result), float)
 
     def test_longdoubleresult(self):
         f = dll._testfunc_D_bhilfD
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]
         f.restype = c_longdouble
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
 
         result = f(-1, -2, -3, -4, -5.0, -6.0)
-        self.failUnlessEqual(result, -21)
-        self.failUnlessEqual(type(result), float)
+        self.assertEqual(result, -21)
+        self.assertEqual(type(result), float)
 
     def test_longlongresult(self):
         try:
@@ -164,23 +164,23 @@ class FunctionTestCase(unittest.TestCase):
         f.restype = c_longlong
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
         result = f(1, 2, 3, 4, 5.0, 6.0)
-        self.failUnlessEqual(result, 21)
+        self.assertEqual(result, 21)
 
         f = dll._testfunc_q_bhilfdq
         f.restype = c_longlong
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double, c_longlong]
         result = f(1, 2, 3, 4, 5.0, 6.0, 21)
-        self.failUnlessEqual(result, 42)
+        self.assertEqual(result, 42)
 
     def test_stringresult(self):
         f = dll._testfunc_p_p
         f.argtypes = None
         f.restype = c_char_p
         result = f("123")
-        self.failUnlessEqual(result, "123")
+        self.assertEqual(result, "123")
 
         result = f(None)
-        self.failUnlessEqual(result, None)
+        self.assertEqual(result, None)
 
     def test_pointers(self):
         f = dll._testfunc_p_p
@@ -193,29 +193,29 @@ class FunctionTestCase(unittest.TestCase):
 
         v = c_int(42)
 
-        self.failUnlessEqual(pointer(v).contents.value, 42)
+        self.assertEqual(pointer(v).contents.value, 42)
         result = f(pointer(v))
-        self.failUnlessEqual(type(result), POINTER(c_int))
-        self.failUnlessEqual(result.contents.value, 42)
+        self.assertEqual(type(result), POINTER(c_int))
+        self.assertEqual(result.contents.value, 42)
 
         # This on works...
         result = f(pointer(v))
-        self.failUnlessEqual(result.contents.value, v.value)
+        self.assertEqual(result.contents.value, v.value)
 
         p = pointer(c_int(99))
         result = f(p)
-        self.failUnlessEqual(result.contents.value, 99)
+        self.assertEqual(result.contents.value, 99)
 
         arg = byref(v)
         result = f(arg)
-        self.failIfEqual(result.contents, v.value)
+        self.assertNotEqual(result.contents, v.value)
 
         self.assertRaises(ArgumentError, f, byref(c_short(22)))
 
         # It is dangerous, however, because you don't control the lifetime
         # of the pointer:
         result = f(byref(c_int(99)))
-        self.failIfEqual(result.contents, 99)
+        self.assertNotEqual(result.contents, 99)
 
     def test_errors(self):
         f = dll._testfunc_p_p
@@ -242,7 +242,7 @@ class FunctionTestCase(unittest.TestCase):
 
         cb = CallBack(callback)
         f(2**18, cb)
-        self.failUnlessEqual(args, expected)
+        self.assertEqual(args, expected)
 
     ################################################################
 
@@ -259,13 +259,13 @@ class FunctionTestCase(unittest.TestCase):
 
         cb = MyCallback(callback)
         result = f(-10, cb)
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
         # test with prototype
         f.argtypes = [c_int, MyCallback]
         cb = MyCallback(callback)
         result = f(-10, cb)
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
         AnotherCallback = WINFUNCTYPE(c_int, c_int, c_int, c_int, c_int)
 
@@ -288,12 +288,12 @@ class FunctionTestCase(unittest.TestCase):
 
         def callback(value):
             #print "called back with", value
-            self.failUnlessEqual(type(value), int)
+            self.assertEqual(type(value), int)
             return value
 
         cb = MyCallback(callback)
         result = f(-10, cb)
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
     def test_longlong_callbacks(self):
 
@@ -305,12 +305,12 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_longlong, MyCallback]
 
         def callback(value):
-            self.failUnless(isinstance(value, (int, long)))
+            self.assertTrue(isinstance(value, (int, long)))
             return value & 0x7FFFFFFF
 
         cb = MyCallback(callback)
 
-        self.failUnlessEqual(13577625587, f(1000000000000, cb))
+        self.assertEqual(13577625587, f(1000000000000, cb))
 
     def test_errors(self):
         self.assertRaises(AttributeError, getattr, dll, "_xxx_yyy")
@@ -325,7 +325,7 @@ class FunctionTestCase(unittest.TestCase):
         result = dll._testfunc_byval(ptin, byref(ptout))
         got = result, ptout.x, ptout.y
         expected = 3, 1, 2
-        self.failUnlessEqual(got, expected)
+        self.assertEqual(got, expected)
 
         # with prototype
         ptin = POINT(101, 102)
@@ -335,7 +335,7 @@ class FunctionTestCase(unittest.TestCase):
         result = dll._testfunc_byval(ptin, byref(ptout))
         got = result, ptout.x, ptout.y
         expected = 203, 101, 102
-        self.failUnlessEqual(got, expected)
+        self.assertEqual(got, expected)
 
     def test_struct_return_2H(self):
         class S2H(Structure):
@@ -345,7 +345,7 @@ class FunctionTestCase(unittest.TestCase):
         dll.ret_2h_func.argtypes = [S2H]
         inp = S2H(99, 88)
         s2h = dll.ret_2h_func(inp)
-        self.failUnlessEqual((s2h.x, s2h.y), (99*2, 88*3))
+        self.assertEqual((s2h.x, s2h.y), (99*2, 88*3))
 
     if sys.platform == "win32":
         def test_struct_return_2H_stdcall(self):
@@ -356,7 +356,7 @@ class FunctionTestCase(unittest.TestCase):
             windll.s_ret_2h_func.restype = S2H
             windll.s_ret_2h_func.argtypes = [S2H]
             s2h = windll.s_ret_2h_func(S2H(99, 88))
-            self.failUnlessEqual((s2h.x, s2h.y), (99*2, 88*3))
+            self.assertEqual((s2h.x, s2h.y), (99*2, 88*3))
 
     def test_struct_return_8H(self):
         class S8I(Structure):
@@ -372,7 +372,7 @@ class FunctionTestCase(unittest.TestCase):
         dll.ret_8i_func.argtypes = [S8I]
         inp = S8I(9, 8, 7, 6, 5, 4, 3, 2)
         s8i = dll.ret_8i_func(inp)
-        self.failUnlessEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
+        self.assertEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     if sys.platform == "win32":
@@ -390,7 +390,7 @@ class FunctionTestCase(unittest.TestCase):
             windll.s_ret_8i_func.argtypes = [S8I]
             inp = S8I(9, 8, 7, 6, 5, 4, 3, 2)
             s8i = windll.s_ret_8i_func(inp)
-            self.failUnlessEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
+            self.assertEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                                  (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_sf1651235(self):
@@ -401,7 +401,7 @@ class FunctionTestCase(unittest.TestCase):
             return 0
 
         callback = proto(callback)
-        self.failUnlessRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
+        self.assertRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
 
 if __name__ == '__main__':
     unittest.main()

@@ -48,14 +48,14 @@ class MachOTest(unittest.TestCase):
     if sys.platform == "darwin":
         def test_find(self):
 
-            self.failUnlessEqual(find_lib('pthread'),
+            self.assertEqual(find_lib('pthread'),
                                  '/usr/lib/libSystem.B.dylib')
 
             result = find_lib('z')
-            self.failUnless(result.startswith('/usr/lib/libz.1'))
-            self.failUnless(result.endswith('.dylib'))
+            self.assertTrue(result.startswith('/usr/lib/libz.1'))
+            self.assertTrue(result.endswith('.dylib'))
 
-            self.failUnlessEqual(find_lib('IOKit'),
+            self.assertEqual(find_lib('IOKit'),
                                  '/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit')
 
 if __name__ == "__main__":

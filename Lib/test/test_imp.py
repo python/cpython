@@ -8,7 +8,7 @@ class LockTests(unittest.TestCase):
     """Very basic test of import lock functions."""
 
     def verify_lock_state(self, expected):
-        self.failUnlessEqual(imp.lock_held(), expected,
+        self.assertEqual(imp.lock_held(), expected,
                              "expected imp.lock_held() to be %r" % expected)
     def testLock(self):
         LOOPS = 50

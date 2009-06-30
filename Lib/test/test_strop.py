@@ -10,104 +10,104 @@ from test import test_support
 class StropFunctionTestCase(unittest.TestCase):
 
     def test_atoi(self):
-        self.assert_(strop.atoi(" 1 ") == 1)
+        self.assertTrue(strop.atoi(" 1 ") == 1)
         self.assertRaises(ValueError, strop.atoi, " 1x")
         self.assertRaises(ValueError, strop.atoi, " x1 ")
 
     def test_atol(self):
-        self.assert_(strop.atol(" 1 ") == 1L)
+        self.assertTrue(strop.atol(" 1 ") == 1L)
         self.assertRaises(ValueError, strop.atol, " 1x")
         self.assertRaises(ValueError, strop.atol, " x1 ")
 
     def test_atof(self):
-        self.assert_(strop.atof(" 1 ") == 1.0)
+        self.assertTrue(strop.atof(" 1 ") == 1.0)
         self.assertRaises(ValueError, strop.atof, " 1x")
         self.assertRaises(ValueError, strop.atof, " x1 ")
 
     def test_capitalize(self):
-        self.assert_(strop.capitalize(" hello ") == " hello ")
-        self.assert_(strop.capitalize("hello ") == "Hello ")
+        self.assertTrue(strop.capitalize(" hello ") == " hello ")
+        self.assertTrue(strop.capitalize("hello ") == "Hello ")
 
     def test_find(self):
-        self.assert_(strop.find("abcdefghiabc", "abc") == 0)
-        self.assert_(strop.find("abcdefghiabc", "abc", 1) == 9)
-        self.assert_(strop.find("abcdefghiabc", "def", 4) == -1)
+        self.assertTrue(strop.find("abcdefghiabc", "abc") == 0)
+        self.assertTrue(strop.find("abcdefghiabc", "abc", 1) == 9)
+        self.assertTrue(strop.find("abcdefghiabc", "def", 4) == -1)
 
     def test_rfind(self):
-        self.assert_(strop.rfind("abcdefghiabc", "abc") == 9)
+        self.assertTrue(strop.rfind("abcdefghiabc", "abc") == 9)
 
     def test_lower(self):
-        self.assert_(strop.lower("HeLLo") == "hello")
+        self.assertTrue(strop.lower("HeLLo") == "hello")
 
     def test_upper(self):
-        self.assert_(strop.upper("HeLLo") == "HELLO")
+        self.assertTrue(strop.upper("HeLLo") == "HELLO")
 
     def test_swapcase(self):
-        self.assert_(strop.swapcase("HeLLo cOmpUteRs") == "hEllO CoMPuTErS")
+        self.assertTrue(strop.swapcase("HeLLo cOmpUteRs") == "hEllO CoMPuTErS")
 
     def test_strip(self):
-        self.assert_(strop.strip(" \t\n hello \t\n ") == "hello")
+        self.assertTrue(strop.strip(" \t\n hello \t\n ") == "hello")
 
     def test_lstrip(self):
-        self.assert_(strop.lstrip(" \t\n hello \t\n ") == "hello \t\n ")
+        self.assertTrue(strop.lstrip(" \t\n hello \t\n ") == "hello \t\n ")
 
     def test_rstrip(self):
-        self.assert_(strop.rstrip(" \t\n hello \t\n ") == " \t\n hello")
+        self.assertTrue(strop.rstrip(" \t\n hello \t\n ") == " \t\n hello")
 
     def test_replace(self):
         replace = strop.replace
-        self.assert_(replace("one!two!three!", '!', '@', 1)
+        self.assertTrue(replace("one!two!three!", '!', '@', 1)
                      == "one@two!three!")
-        self.assert_(replace("one!two!three!", '!', '@', 2)
+        self.assertTrue(replace("one!two!three!", '!', '@', 2)
                      == "one@two@three!")
-        self.assert_(replace("one!two!three!", '!', '@', 3)
+        self.assertTrue(replace("one!two!three!", '!', '@', 3)
                      == "one@two@three@")
-        self.assert_(replace("one!two!three!", '!', '@', 4)
+        self.assertTrue(replace("one!two!three!", '!', '@', 4)
                      == "one@two@three@")
 
         # CAUTION: a replace count of 0 means infinity only to strop,
         # not to the string .replace() method or to the
         # string.replace() function.
 
-        self.assert_(replace("one!two!three!", '!', '@', 0)
+        self.assertTrue(replace("one!two!three!", '!', '@', 0)
                      == "one@two@three@")
-        self.assert_(replace("one!two!three!", '!', '@')
+        self.assertTrue(replace("one!two!three!", '!', '@')
                      == "one@two@three@")
-        self.assert_(replace("one!two!three!", 'x', '@')
+        self.assertTrue(replace("one!two!three!", 'x', '@')
                      == "one!two!three!")
-        self.assert_(replace("one!two!three!", 'x', '@', 2)
+        self.assertTrue(replace("one!two!three!", 'x', '@', 2)
                      == "one!two!three!")
 
     def test_split(self):
         split = strop.split
-        self.assert_(split("this is the split function")
+        self.assertTrue(split("this is the split function")
                      == ['this', 'is', 'the', 'split', 'function'])
-        self.assert_(split("a|b|c|d", '|') == ['a', 'b', 'c', 'd'])
-        self.assert_(split("a|b|c|d", '|', 2) == ['a', 'b', 'c|d'])
-        self.assert_(split("a b c d", None, 1) == ['a', 'b c d'])
-        self.assert_(split("a b c d", None, 2) == ['a', 'b', 'c d'])
-        self.assert_(split("a b c d", None, 3) == ['a', 'b', 'c', 'd'])
-        self.assert_(split("a b c d", None, 4) == ['a', 'b', 'c', 'd'])
-        self.assert_(split("a b c d", None, 0) == ['a', 'b', 'c', 'd'])
-        self.assert_(split("a  b  c  d", None, 2) ==  ['a', 'b', 'c  d'])
+        self.assertTrue(split("a|b|c|d", '|') == ['a', 'b', 'c', 'd'])
+        self.assertTrue(split("a|b|c|d", '|', 2) == ['a', 'b', 'c|d'])
+        self.assertTrue(split("a b c d", None, 1) == ['a', 'b c d'])
+        self.assertTrue(split("a b c d", None, 2) == ['a', 'b', 'c d'])
+        self.assertTrue(split("a b c d", None, 3) == ['a', 'b', 'c', 'd'])
+        self.assertTrue(split("a b c d", None, 4) == ['a', 'b', 'c', 'd'])
+        self.assertTrue(split("a b c d", None, 0) == ['a', 'b', 'c', 'd'])
+        self.assertTrue(split("a  b  c  d", None, 2) ==  ['a', 'b', 'c  d'])
 
     def test_join(self):
-        self.assert_(strop.join(['a', 'b', 'c', 'd']) == 'a b c d')
-        self.assert_(strop.join(('a', 'b', 'c', 'd'), '') == 'abcd')
-        self.assert_(strop.join(Sequence()) == 'w x y z')
+        self.assertTrue(strop.join(['a', 'b', 'c', 'd']) == 'a b c d')
+        self.assertTrue(strop.join(('a', 'b', 'c', 'd'), '') == 'abcd')
+        self.assertTrue(strop.join(Sequence()) == 'w x y z')
 
         # try a few long ones
-        self.assert_(strop.join(['x' * 100] * 100, ':')
+        self.assertTrue(strop.join(['x' * 100] * 100, ':')
                      == (('x' * 100) + ":") * 99 + "x" * 100)
-        self.assert_(strop.join(('x' * 100,) * 100, ':')
+        self.assertTrue(strop.join(('x' * 100,) * 100, ':')
                      == (('x' * 100) + ":") * 99 + "x" * 100)
 
     def test_maketrans(self):
-        self.assert_(strop.maketrans("abc", "xyz") == transtable)
+        self.assertTrue(strop.maketrans("abc", "xyz") == transtable)
         self.assertRaises(ValueError, strop.maketrans, "abc", "xyzq")
 
     def test_translate(self):
-        self.assert_(strop.translate("xyzabcdef", transtable, "def")
+        self.assertTrue(strop.translate("xyzabcdef", transtable, "def")
                      == "xyzxyz")
 
     def test_data_attributes(self):

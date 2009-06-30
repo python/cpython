@@ -42,7 +42,7 @@ class ComplexTest(unittest.TestCase):
         if x == 0:
             return abs(y) < eps
         # check that relative difference < eps
-        self.assert_(abs((x-y)/y) < eps)
+        self.assertTrue(abs((x-y)/y) < eps)
 
     def assertFloatsAreIdentical(self, x, y):
         """assert that floats x and y are identical, in the sense that:
@@ -73,7 +73,7 @@ class ComplexTest(unittest.TestCase):
         self.assertCloseAbs(x.imag, y.imag, eps)
 
     def assertIs(self, a, b):
-        self.assert_(a is b)
+        self.assertTrue(a is b)
 
     def check_div(self, x, y):
         """Compute complex z=x*y, and check that z/x==y and z/y==x."""
@@ -192,8 +192,8 @@ class ComplexTest(unittest.TestCase):
 
     def test_boolcontext(self):
         for i in xrange(100):
-            self.assert_(complex(random() + 1e-6, random() + 1e-6))
-        self.assert_(not complex(0.0, 0.0))
+            self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
+        self.assertTrue(not complex(0.0, 0.0))
 
     def test_conjugate(self):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
@@ -275,7 +275,7 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(split_zeros(complex(-0., 1.).real), split_zeros(-0.))
 
         c = 3.14 + 1j
-        self.assert_(complex(c) is c)
+        self.assertTrue(complex(c) is c)
         del c
 
         self.assertRaises(TypeError, complex, "1", "1")

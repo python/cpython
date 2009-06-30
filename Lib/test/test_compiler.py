@@ -87,7 +87,7 @@ class CompilerTest(unittest.TestCase):
 
     def testDocstrings(self):
         c = compiler.compile('"doc"', '<string>', 'exec')
-        self.assert_('__doc__' in c.co_names)
+        self.assertTrue('__doc__' in c.co_names)
         c = compiler.compile('def f():\n "doc"', '<string>', 'exec')
         g = {}
         exec c in g
@@ -110,9 +110,9 @@ class CompilerTest(unittest.TestCase):
 
     def _check_lineno(self, node):
         if not node.__class__ in NOLINENO:
-            self.assert_(isinstance(node.lineno, int),
+            self.assertTrue(isinstance(node.lineno, int),
                 "lineno=%s on %s" % (node.lineno, node.__class__))
-            self.assert_(node.lineno > 0,
+            self.assertTrue(node.lineno > 0,
                 "lineno=%s on %s" % (node.lineno, node.__class__))
         for child in node.getChildNodes():
             self.check_lineno(child)

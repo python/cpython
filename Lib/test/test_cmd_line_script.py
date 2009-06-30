@@ -154,9 +154,9 @@ class CmdLineTest(unittest.TestCase):
             print printed_file
             print printed_package
             print printed_argv0
-        self.assert_(printed_file in data)
-        self.assert_(printed_package in data)
-        self.assert_(printed_argv0 in data)
+        self.assertTrue(printed_file in data)
+        self.assertTrue(printed_package in data)
+        self.assertTrue(printed_argv0 in data)
 
     def _check_import_error(self, script_name, expected_msg,
                             *cmd_line_switches):
@@ -166,7 +166,7 @@ class CmdLineTest(unittest.TestCase):
             print 'Output from test script %r:' % script_name
             print data
             print 'Expected output: %r' % expected_msg
-        self.assert_(expected_msg in data)
+        self.assertTrue(expected_msg in data)
 
     def test_basic_script(self):
         with temp_dir() as script_dir:

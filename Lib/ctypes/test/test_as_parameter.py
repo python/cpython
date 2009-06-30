@@ -25,8 +25,8 @@ class BasicWrapTestCase(unittest.TestCase):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
         result = f(self.wrap(1), self.wrap(u"x"), self.wrap(3), self.wrap(4), self.wrap(5.0), self.wrap(6.0))
-        self.failUnlessEqual(result, 139)
-        self.failUnless(type(result), int)
+        self.assertEqual(result, 139)
+        self.assertTrue(type(result), int)
 
     def test_pointers(self):
         f = dll._testfunc_p_p
@@ -39,18 +39,18 @@ class BasicWrapTestCase(unittest.TestCase):
 
         v = c_int(42)
 
-        self.failUnlessEqual(pointer(v).contents.value, 42)
+        self.assertEqual(pointer(v).contents.value, 42)
         result = f(self.wrap(pointer(v)))
-        self.failUnlessEqual(type(result), POINTER(c_int))
-        self.failUnlessEqual(result.contents.value, 42)
+        self.assertEqual(type(result), POINTER(c_int))
+        self.assertEqual(result.contents.value, 42)
 
         # This on works...
         result = f(self.wrap(pointer(v)))
-        self.failUnlessEqual(result.contents.value, v.value)
+        self.assertEqual(result.contents.value, v.value)
 
         p = pointer(c_int(99))
         result = f(self.wrap(p))
-        self.failUnlessEqual(result.contents.value, 99)
+        self.assertEqual(result.contents.value, 99)
 
     def test_shorts(self):
         f = dll._testfunc_callback_i_if
@@ -67,7 +67,7 @@ class BasicWrapTestCase(unittest.TestCase):
 
         cb = CallBack(callback)
         f(self.wrap(2**18), self.wrap(cb))
-        self.failUnlessEqual(args, expected)
+        self.assertEqual(args, expected)
 
     ################################################################
 
@@ -84,17 +84,17 @@ class BasicWrapTestCase(unittest.TestCase):
         cb = MyCallback(callback)
 
         result = f(self.wrap(-10), self.wrap(cb))
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
         # test with prototype
         f.argtypes = [c_int, MyCallback]
         cb = MyCallback(callback)
 
         result = f(self.wrap(-10), self.wrap(cb))
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
         result = f(self.wrap(-10), self.wrap(cb))
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
         AnotherCallback = CALLBACK_FUNCTYPE(c_int, c_int, c_int, c_int, c_int)
 
@@ -116,12 +116,12 @@ class BasicWrapTestCase(unittest.TestCase):
 
         def callback(value):
             #print "called back with", value
-            self.failUnlessEqual(type(value), int)
+            self.assertEqual(type(value), int)
             return value
 
         cb = MyCallback(callback)
         result = f(self.wrap(-10), self.wrap(cb))
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
 
     def test_longlong_callbacks(self):
 
@@ -133,12 +133,12 @@ class BasicWrapTestCase(unittest.TestCase):
         f.argtypes = [c_longlong, MyCallback]
 
         def callback(value):
-            self.failUnless(isinstance(value, (int, long)))
+            self.assertTrue(isinstance(value, (int, long)))
             return value & 0x7FFFFFFF
 
         cb = MyCallback(callback)
 
-        self.failUnlessEqual(13577625587, int(f(self.wrap(1000000000000), self.wrap(cb))))
+        self.assertEqual(13577625587, int(f(self.wrap(1000000000000), self.wrap(cb))))
 
     def test_byval(self):
         # without prototype
@@ -148,7 +148,7 @@ class BasicWrapTestCase(unittest.TestCase):
         result = dll._testfunc_byval(ptin, byref(ptout))
         got = result, ptout.x, ptout.y
         expected = 3, 1, 2
-        self.failUnlessEqual(got, expected)
+        self.assertEqual(got, expected)
 
         # with prototype
         ptin = POINT(101, 102)
@@ -158,7 +158,7 @@ class BasicWrapTestCase(unittest.TestCase):
         result = dll._testfunc_byval(self.wrap(ptin), byref(ptout))
         got = result, ptout.x, ptout.y
         expected = 203, 101, 102
-        self.failUnlessEqual(got, expected)
+        self.assertEqual(got, expected)
 
     def test_struct_return_2H(self):
         class S2H(Structure):
@@ -168,7 +168,7 @@ class BasicWrapTestCase(unittest.TestCase):
         dll.ret_2h_func.argtypes = [S2H]
         inp = S2H(99, 88)
         s2h = dll.ret_2h_func(self.wrap(inp))
-        self.failUnlessEqual((s2h.x, s2h.y), (99*2, 88*3))
+        self.assertEqual((s2h.x, s2h.y), (99*2, 88*3))
 
     def test_struct_return_8H(self):
         class S8I(Structure):
@@ -184,7 +184,7 @@ class BasicWrapTestCase(unittest.TestCase):
         dll.ret_8i_func.argtypes = [S8I]
         inp = S8I(9, 8, 7, 6, 5, 4, 3, 2)
         s8i = dll.ret_8i_func(self.wrap(inp))
-        self.failUnlessEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
+        self.assertEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

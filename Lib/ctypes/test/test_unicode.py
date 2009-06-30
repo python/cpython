@@ -23,55 +23,55 @@ else:
         def test_ascii_strict(self):
             ctypes.set_conversion_mode("ascii", "strict")
             # no conversions take place with unicode arguments
-            self.failUnlessEqual(wcslen(u"abc"), 3)
-            self.failUnlessEqual(wcslen(u"ab\u2070"), 3)
+            self.assertEqual(wcslen(u"abc"), 3)
+            self.assertEqual(wcslen(u"ab\u2070"), 3)
             # string args are converted
-            self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessRaises(ctypes.ArgumentError, wcslen, "abה")
+            self.assertEqual(wcslen("abc"), 3)
+            self.assertRaises(ctypes.ArgumentError, wcslen, "abה")
 
         def test_ascii_replace(self):
             ctypes.set_conversion_mode("ascii", "replace")
-            self.failUnlessEqual(wcslen(u"abc"), 3)
-            self.failUnlessEqual(wcslen(u"ab\u2070"), 3)
-            self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessEqual(wcslen("abה"), 3)
+            self.assertEqual(wcslen(u"abc"), 3)
+            self.assertEqual(wcslen(u"ab\u2070"), 3)
+            self.assertEqual(wcslen("abc"), 3)
+            self.assertEqual(wcslen("abה"), 3)
 
         def test_ascii_ignore(self):
             ctypes.set_conversion_mode("ascii", "ignore")
-            self.failUnlessEqual(wcslen(u"abc"), 3)
-            self.failUnlessEqual(wcslen(u"ab\u2070"), 3)
+            self.assertEqual(wcslen(u"abc"), 3)
+            self.assertEqual(wcslen(u"ab\u2070"), 3)
             # ignore error mode skips non-ascii characters
-            self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessEqual(wcslen("הצüß"), 0)
+            self.assertEqual(wcslen("abc"), 3)
+            self.assertEqual(wcslen("הצüß"), 0)
 
         def test_latin1_strict(self):
             ctypes.set_conversion_mode("latin-1", "strict")
-            self.failUnlessEqual(wcslen(u"abc"), 3)
-            self.failUnlessEqual(wcslen(u"ab\u2070"), 3)
-            self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessEqual(wcslen("הצüß"), 4)
+            self.assertEqual(wcslen(u"abc"), 3)
+            self.assertEqual(wcslen(u"ab\u2070"), 3)
+            self.assertEqual(wcslen("abc"), 3)
+            self.assertEqual(wcslen("הצüß"), 4)
 
         def test_buffers(self):
             ctypes.set_conversion_mode("ascii", "strict")
             buf = ctypes.create_unicode_buffer("abc")
-            self.failUnlessEqual(len(buf), 3+1)
+            self.assertEqual(len(buf), 3+1)
 
             ctypes.set_conversion_mode("ascii", "replace")
             buf = ctypes.create_unicode_buffer("abהצü")
-            self.failUnlessEqual(buf[:], u"ab\uFFFD\uFFFD\uFFFD\0")
-            self.failUnlessEqual(buf[::], u"ab\uFFFD\uFFFD\uFFFD\0")
-            self.failUnlessEqual(buf[::-1], u"\0\uFFFD\uFFFD\uFFFDba")
-            self.failUnlessEqual(buf[::2], u"a\uFFFD\uFFFD")
-            self.failUnlessEqual(buf[6:5:-1], u"")
+            self.assertEqual(buf[:], u"ab\uFFFD\uFFFD\uFFFD\0")
+            self.assertEqual(buf[::], u"ab\uFFFD\uFFFD\uFFFD\0")
+            self.assertEqual(buf[::-1], u"\0\uFFFD\uFFFD\uFFFDba")
+            self.assertEqual(buf[::2], u"a\uFFFD\uFFFD")
+            self.assertEqual(buf[6:5:-1], u"")
 
             ctypes.set_conversion_mode("ascii", "ignore")
             buf = ctypes.create_unicode_buffer("abהצü")
             # is that correct? not sure.  But with 'ignore', you get what you pay for..
-            self.failUnlessEqual(buf[:], u"ab\0\0\0\0")
-            self.failUnlessEqual(buf[::], u"ab\0\0\0\0")
-            self.failUnlessEqual(buf[::-1], u"\0\0\0\0ba")
-            self.failUnlessEqual(buf[::2], u"a\0\0")
-            self.failUnlessEqual(buf[6:5:-1], u"")
+            self.assertEqual(buf[:], u"ab\0\0\0\0")
+            self.assertEqual(buf[::], u"ab\0\0\0\0")
+            self.assertEqual(buf[::-1], u"\0\0\0\0ba")
+            self.assertEqual(buf[::2], u"a\0\0")
+            self.assertEqual(buf[6:5:-1], u"")
 
     import _ctypes_test
     func = ctypes.CDLL(_ctypes_test.__file__)._testfunc_p_p
@@ -89,41 +89,41 @@ else:
 
         def test_ascii_replace(self):
             ctypes.set_conversion_mode("ascii", "strict")
-            self.failUnlessEqual(func("abc"), "abc")
-            self.failUnlessEqual(func(u"abc"), "abc")
+            self.assertEqual(func("abc"), "abc")
+            self.assertEqual(func(u"abc"), "abc")
             self.assertRaises(ctypes.ArgumentError, func, u"abה")
 
         def test_ascii_ignore(self):
             ctypes.set_conversion_mode("ascii", "ignore")
-            self.failUnlessEqual(func("abc"), "abc")
-            self.failUnlessEqual(func(u"abc"), "abc")
-            self.failUnlessEqual(func(u"הצüß"), "")
+            self.assertEqual(func("abc"), "abc")
+            self.assertEqual(func(u"abc"), "abc")
+            self.assertEqual(func(u"הצüß"), "")
 
         def test_ascii_replace(self):
             ctypes.set_conversion_mode("ascii", "replace")
-            self.failUnlessEqual(func("abc"), "abc")
-            self.failUnlessEqual(func(u"abc"), "abc")
-            self.failUnlessEqual(func(u"הצüß"), "????")
+            self.assertEqual(func("abc"), "abc")
+            self.assertEqual(func(u"abc"), "abc")
+            self.assertEqual(func(u"הצüß"), "????")
 
         def test_buffers(self):
             ctypes.set_conversion_mode("ascii", "strict")
             buf = ctypes.create_string_buffer(u"abc")
-            self.failUnlessEqual(len(buf), 3+1)
+            self.assertEqual(len(buf), 3+1)
 
             ctypes.set_conversion_mode("ascii", "replace")
             buf = ctypes.create_string_buffer(u"abהצü")
-            self.failUnlessEqual(buf[:], "ab???\0")
-            self.failUnlessEqual(buf[::], "ab???\0")
-            self.failUnlessEqual(buf[::-1], "\0???ba")
-            self.failUnlessEqual(buf[::2], "a??")
-            self.failUnlessEqual(buf[6:5:-1], "")
+            self.assertEqual(buf[:], "ab???\0")
+            self.assertEqual(buf[::], "ab???\0")
+            self.assertEqual(buf[::-1], "\0???ba")
+            self.assertEqual(buf[::2], "a??")
+            self.assertEqual(buf[6:5:-1], "")
 
             ctypes.set_conversion_mode("ascii", "ignore")
             buf = ctypes.create_string_buffer(u"abהצü")
             # is that correct? not sure.  But with 'ignore', you get what you pay for..
-            self.failUnlessEqual(buf[:], "ab\0\0\0\0")
-            self.failUnlessEqual(buf[::], "ab\0\0\0\0")
-            self.failUnlessEqual(buf[::-1], "\0\0\0\0ba")
+            self.assertEqual(buf[:], "ab\0\0\0\0")
+            self.assertEqual(buf[::], "ab\0\0\0\0")
+            self.assertEqual(buf[::-1], "\0\0\0\0ba")
 
 if __name__ == '__main__':
     unittest.main()

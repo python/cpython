@@ -15,11 +15,11 @@ class Test(unittest.TestCase):
 
             libc_open.argtypes = c_char_p, c_int
 
-            self.failUnlessEqual(libc_open("", 0), -1)
-            self.failUnlessEqual(get_errno(), errno.ENOENT)
+            self.assertEqual(libc_open("", 0), -1)
+            self.assertEqual(get_errno(), errno.ENOENT)
 
-            self.failUnlessEqual(set_errno(32), errno.ENOENT)
-            self.failUnlessEqual(get_errno(), 32)
+            self.assertEqual(set_errno(32), errno.ENOENT)
+            self.assertEqual(get_errno(), 32)
 
 
             def _worker():
@@ -31,14 +31,14 @@ class Test(unittest.TestCase):
                 else:
                     libc_open = libc.open
                 libc_open.argtypes = c_char_p, c_int
-                self.failUnlessEqual(libc_open("", 0), -1)
-                self.failUnlessEqual(get_errno(), 0)
+                self.assertEqual(libc_open("", 0), -1)
+                self.assertEqual(get_errno(), 0)
 
             t = threading.Thread(target=_worker)
             t.start()
             t.join()
 
-            self.failUnlessEqual(get_errno(), 32)
+            self.assertEqual(get_errno(), 32)
             set_errno(0)
 
     if os.name == "nt":
@@ -48,11 +48,11 @@ class Test(unittest.TestCase):
             GetModuleHandle = dll.GetModuleHandleA
             GetModuleHandle.argtypes = [c_wchar_p]
 
-            self.failUnlessEqual(0, GetModuleHandle("foo"))
-            self.failUnlessEqual(get_last_error(), 126)
+            self.assertEqual(0, GetModuleHandle("foo"))
+            self.assertEqual(get_last_error(), 126)
 
-            self.failUnlessEqual(set_last_error(32), 126)
-            self.failUnlessEqual(get_last_error(), 32)
+            self.assertEqual(set_last_error(32), 126)
+            self.assertEqual(get_last_error(), 32)
 
             def _worker():
                 set_last_error(0)
@@ -62,13 +62,13 @@ class Test(unittest.TestCase):
                 GetModuleHandle.argtypes = [c_wchar_p]
                 GetModuleHandle("bar")
 
-                self.failUnlessEqual(get_last_error(), 0)
+                self.assertEqual(get_last_error(), 0)
 
             t = threading.Thread(target=_worker)
             t.start()
             t.join()
 
-            self.failUnlessEqual(get_last_error(), 32)
+            self.assertEqual(get_last_error(), 32)
 
             set_last_error(0)
 

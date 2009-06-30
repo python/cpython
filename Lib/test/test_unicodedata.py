@@ -230,7 +230,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))
                 count += 1
-        self.assert_(count >= 10) # should have tested at least the ASCII digits
+        self.assertTrue(count >= 10) # should have tested at least the ASCII digits
 
     def test_digit_numeric_consistent(self):
         # Test that digit and numeric are consistent,
@@ -243,7 +243,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))
                 count += 1
-        self.assert_(count >= 10) # should have tested at least the ASCII digits
+        self.assertTrue(count >= 10) # should have tested at least the ASCII digits
 
     def test_bug_1704793(self):
         self.assertEquals(self.db.lookup("GOTHIC LETTER FAIHU"), u'\U00010346')
@@ -251,13 +251,13 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
     def test_ucd_510(self):
         import unicodedata
         # In UCD 5.1.0, a mirrored property changed wrt. UCD 3.2.0
-        self.assert_(unicodedata.mirrored(u"\u0f3a"))
-        self.assert_(not unicodedata.ucd_3_2_0.mirrored(u"\u0f3a"))
+        self.assertTrue(unicodedata.mirrored(u"\u0f3a"))
+        self.assertTrue(not unicodedata.ucd_3_2_0.mirrored(u"\u0f3a"))
         # Also, we now have two ways of representing
         # the upper-case mapping: as delta, or as absolute value
-        self.assert_(u"a".upper()==u'A')
-        self.assert_(u"\u1d79".upper()==u'\ua77d')
-        self.assert_(u".".upper()==u".")
+        self.assertTrue(u"a".upper()==u'A')
+        self.assertTrue(u"\u1d79".upper()==u'\ua77d')
+        self.assertTrue(u".".upper()==u".")
 
     def test_bug_5828(self):
         self.assertEqual(u"\u1d79".lower(), u"\u1d79")

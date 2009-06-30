@@ -13,33 +13,33 @@ class SubclassesTest(unittest.TestCase):
         class Z(X):
             pass
 
-        self.failUnlessEqual(sizeof(X), sizeof(c_int))
-        self.failUnlessEqual(sizeof(Y), sizeof(c_int)*2)
-        self.failUnlessEqual(sizeof(Z), sizeof(c_int))
-        self.failUnlessEqual(X._fields_, [("a", c_int)])
-        self.failUnlessEqual(Y._fields_, [("b", c_int)])
-        self.failUnlessEqual(Z._fields_, [("a", c_int)])
+        self.assertEqual(sizeof(X), sizeof(c_int))
+        self.assertEqual(sizeof(Y), sizeof(c_int)*2)
+        self.assertEqual(sizeof(Z), sizeof(c_int))
+        self.assertEqual(X._fields_, [("a", c_int)])
+        self.assertEqual(Y._fields_, [("b", c_int)])
+        self.assertEqual(Z._fields_, [("a", c_int)])
 
     def test_subclass_delayed(self):
         class X(Structure):
             pass
-        self.failUnlessEqual(sizeof(X), 0)
+        self.assertEqual(sizeof(X), 0)
         X._fields_ = [("a", c_int)]
 
         class Y(X):
             pass
-        self.failUnlessEqual(sizeof(Y), sizeof(X))
+        self.assertEqual(sizeof(Y), sizeof(X))
         Y._fields_ = [("b", c_int)]
 
         class Z(X):
             pass
 
-        self.failUnlessEqual(sizeof(X), sizeof(c_int))
-        self.failUnlessEqual(sizeof(Y), sizeof(c_int)*2)
-        self.failUnlessEqual(sizeof(Z), sizeof(c_int))
-        self.failUnlessEqual(X._fields_, [("a", c_int)])
-        self.failUnlessEqual(Y._fields_, [("b", c_int)])
-        self.failUnlessEqual(Z._fields_, [("a", c_int)])
+        self.assertEqual(sizeof(X), sizeof(c_int))
+        self.assertEqual(sizeof(Y), sizeof(c_int)*2)
+        self.assertEqual(sizeof(Z), sizeof(c_int))
+        self.assertEqual(X._fields_, [("a", c_int)])
+        self.assertEqual(Y._fields_, [("b", c_int)])
+        self.assertEqual(Z._fields_, [("a", c_int)])
 
 class StructureTestCase(unittest.TestCase):
     formats = {"c": c_char,
@@ -62,7 +62,7 @@ class StructureTestCase(unittest.TestCase):
             class X(Structure):
                 _fields_ = [("x", c_char),
                             ("y", tp)]
-            self.failUnlessEqual((sizeof(X), code),
+            self.assertEqual((sizeof(X), code),
                                  (calcsize("c%c0%c" % (code, code)), code))
 
     def test_unions(self):
@@ -70,39 +70,39 @@ class StructureTestCase(unittest.TestCase):
             class X(Union):
                 _fields_ = [("x", c_char),
                             ("y", tp)]
-            self.failUnlessEqual((sizeof(X), code),
+            self.assertEqual((sizeof(X), code),
                                  (calcsize("%c" % (code)), code))
 
     def test_struct_alignment(self):
         class X(Structure):
             _fields_ = [("x", c_char * 3)]
-        self.failUnlessEqual(alignment(X), calcsize("s"))
-        self.failUnlessEqual(sizeof(X), calcsize("3s"))
+        self.assertEqual(alignment(X), calcsize("s"))
+        self.assertEqual(sizeof(X), calcsize("3s"))
 
         class Y(Structure):
             _fields_ = [("x", c_char * 3),
                         ("y", c_int)]
-        self.failUnlessEqual(alignment(Y), calcsize("i"))
-        self.failUnlessEqual(sizeof(Y), calcsize("3si"))
+        self.assertEqual(alignment(Y), calcsize("i"))
+        self.assertEqual(sizeof(Y), calcsize("3si"))
 
         class SI(Structure):
             _fields_ = [("a", X),
                         ("b", Y)]
-        self.failUnlessEqual(alignment(SI), max(alignment(Y), alignment(X)))
-        self.failUnlessEqual(sizeof(SI), calcsize("3s0i 3si 0i"))
+        self.assertEqual(alignment(SI), max(alignment(Y), alignment(X)))
+        self.assertEqual(sizeof(SI), calcsize("3s0i 3si 0i"))
 
         class IS(Structure):
             _fields_ = [("b", Y),
                         ("a", X)]
 
-        self.failUnlessEqual(alignment(SI), max(alignment(X), alignment(Y)))
-        self.failUnlessEqual(sizeof(IS), calcsize("3si 3s 0i"))
+        self.assertEqual(alignment(SI), max(alignment(X), alignment(Y)))
+        self.assertEqual(sizeof(IS), calcsize("3si 3s 0i"))
 
         class XX(Structure):
             _fields_ = [("a", X),
                         ("b", X)]
-        self.failUnlessEqual(alignment(XX), alignment(X))
-        self.failUnlessEqual(sizeof(XX), calcsize("3s 3s 0s"))
+        self.assertEqual(alignment(XX), alignment(X))
+        self.assertEqual(sizeof(XX), calcsize("3s 3s 0s"))
 
     def test_emtpy(self):
         # I had problems with these
@@ -115,15 +115,15 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = []
 
         # Is this really the correct alignment, or should it be 0?
-        self.failUnless(alignment(X) == alignment(Y) == 1)
-        self.failUnless(sizeof(X) == sizeof(Y) == 0)
+        self.assertTrue(alignment(X) == alignment(Y) == 1)
+        self.assertTrue(sizeof(X) == sizeof(Y) == 0)
 
         class XX(Structure):
             _fields_ = [("a", X),
                         ("b", X)]
 
-        self.failUnlessEqual(alignment(XX), 1)
-        self.failUnlessEqual(sizeof(XX), 0)
+        self.assertEqual(alignment(XX), 1)
+        self.assertEqual(sizeof(XX), 0)
 
     def test_fields(self):
         # test the offset and size attributes of Structure/Unoin fields.
@@ -131,11 +131,11 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("x", c_int),
                         ("y", c_char)]
 
-        self.failUnlessEqual(X.x.offset, 0)
-        self.failUnlessEqual(X.x.size, sizeof(c_int))
+        self.assertEqual(X.x.offset, 0)
+        self.assertEqual(X.x.size, sizeof(c_int))
 
-        self.failUnlessEqual(X.y.offset, sizeof(c_int))
-        self.failUnlessEqual(X.y.size, sizeof(c_char))
+        self.assertEqual(X.y.offset, sizeof(c_int))
+        self.assertEqual(X.y.size, sizeof(c_char))
 
         # readonly
         self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
@@ -145,11 +145,11 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("x", c_int),
                         ("y", c_char)]
 
-        self.failUnlessEqual(X.x.offset, 0)
-        self.failUnlessEqual(X.x.size, sizeof(c_int))
+        self.assertEqual(X.x.offset, 0)
+        self.assertEqual(X.x.size, sizeof(c_int))
 
-        self.failUnlessEqual(X.y.offset, 0)
-        self.failUnlessEqual(X.y.size, sizeof(c_char))
+        self.assertEqual(X.y.offset, 0)
+        self.assertEqual(X.y.size, sizeof(c_char))
 
         # readonly
         self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
@@ -164,22 +164,22 @@ class StructureTestCase(unittest.TestCase):
                         ("b", c_longlong)]
             _pack_ = 1
 
-        self.failUnlessEqual(sizeof(X), 9)
-        self.failUnlessEqual(X.b.offset, 1)
+        self.assertEqual(sizeof(X), 9)
+        self.assertEqual(X.b.offset, 1)
 
         class X(Structure):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 2
-        self.failUnlessEqual(sizeof(X), 10)
-        self.failUnlessEqual(X.b.offset, 2)
+        self.assertEqual(sizeof(X), 10)
+        self.assertEqual(X.b.offset, 2)
 
         class X(Structure):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 4
-        self.failUnlessEqual(sizeof(X), 12)
-        self.failUnlessEqual(X.b.offset, 4)
+        self.assertEqual(sizeof(X), 12)
+        self.assertEqual(X.b.offset, 4)
 
         import struct
         longlong_size = struct.calcsize("q")
@@ -190,8 +190,8 @@ class StructureTestCase(unittest.TestCase):
                         ("b", c_longlong)]
             _pack_ = 8
 
-        self.failUnlessEqual(sizeof(X), longlong_align + longlong_size)
-        self.failUnlessEqual(X.b.offset, min(8, longlong_align))
+        self.assertEqual(sizeof(X), longlong_align + longlong_size)
+        self.assertEqual(X.b.offset, min(8, longlong_align))
 
 
         d = {"_fields_": [("a", "b"),
@@ -209,9 +209,9 @@ class StructureTestCase(unittest.TestCase):
         self.assertRaises(TypeError, Person, "Name", "HI")
 
         # short enough
-        self.failUnlessEqual(Person("12345", 5).name, "12345")
+        self.assertEqual(Person("12345", 5).name, "12345")
         # exact fit
-        self.failUnlessEqual(Person("123456", 5).name, "123456")
+        self.assertEqual(Person("123456", 5).name, "123456")
         # too long
         self.assertRaises(ValueError, Person, "1234567", 5)
 
@@ -229,10 +229,10 @@ class StructureTestCase(unittest.TestCase):
         class POINT(Structure):
             _fields_ = [("x", c_int), ("y", c_int)]
         pt = POINT(1, 2)
-        self.failUnlessEqual((pt.x, pt.y), (1, 2))
+        self.assertEqual((pt.x, pt.y), (1, 2))
 
         pt = POINT(y=2, x=1)
-        self.failUnlessEqual((pt.x, pt.y), (1, 2))
+        self.assertEqual((pt.x, pt.y), (1, 2))
 
     def test_invalid_field_types(self):
         class POINT(Structure):
@@ -244,14 +244,14 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_int * 4)]
 
         # can use tuple to initialize array (but not list!)
-        self.failUnlessEqual(SomeInts((1, 2)).a[:], [1, 2, 0, 0])
-        self.failUnlessEqual(SomeInts((1, 2)).a[::], [1, 2, 0, 0])
-        self.failUnlessEqual(SomeInts((1, 2)).a[::-1], [0, 0, 2, 1])
-        self.failUnlessEqual(SomeInts((1, 2)).a[::2], [1, 0])
-        self.failUnlessEqual(SomeInts((1, 2)).a[1:5:6], [2])
-        self.failUnlessEqual(SomeInts((1, 2)).a[6:4:-1], [])
-        self.failUnlessEqual(SomeInts((1, 2, 3, 4)).a[:], [1, 2, 3, 4])
-        self.failUnlessEqual(SomeInts((1, 2, 3, 4)).a[::], [1, 2, 3, 4])
+        self.assertEqual(SomeInts((1, 2)).a[:], [1, 2, 0, 0])
+        self.assertEqual(SomeInts((1, 2)).a[::], [1, 2, 0, 0])
+        self.assertEqual(SomeInts((1, 2)).a[::-1], [0, 0, 2, 1])
+        self.assertEqual(SomeInts((1, 2)).a[::2], [1, 0])
+        self.assertEqual(SomeInts((1, 2)).a[1:5:6], [2])
+        self.assertEqual(SomeInts((1, 2)).a[6:4:-1], [])
+        self.assertEqual(SomeInts((1, 2, 3, 4)).a[:], [1, 2, 3, 4])
+        self.assertEqual(SomeInts((1, 2, 3, 4)).a[::], [1, 2, 3, 4])
         # too long
         # XXX Should raise ValueError?, not RuntimeError
         self.assertRaises(RuntimeError, SomeInts, (1, 2, 3, 4, 5))
@@ -269,10 +269,10 @@ class StructureTestCase(unittest.TestCase):
 
         p = Person("Someone", ("1234", "5678"), 5)
 
-        self.failUnlessEqual(p.name, "Someone")
-        self.failUnlessEqual(p.phone.areacode, "1234")
-        self.failUnlessEqual(p.phone.number, "5678")
-        self.failUnlessEqual(p.age, 5)
+        self.assertEqual(p.name, "Someone")
+        self.assertEqual(p.phone.areacode, "1234")
+        self.assertEqual(p.phone.number, "5678")
+        self.assertEqual(p.age, 5)
 
     def test_structures_with_wchar(self):
         try:
@@ -285,12 +285,12 @@ class StructureTestCase(unittest.TestCase):
                         ("age", c_int)]
 
         p = PersonW(u"Someone")
-        self.failUnlessEqual(p.name, "Someone")
+        self.assertEqual(p.name, "Someone")
 
-        self.failUnlessEqual(PersonW(u"1234567890").name, u"1234567890")
-        self.failUnlessEqual(PersonW(u"12345678901").name, u"12345678901")
+        self.assertEqual(PersonW(u"1234567890").name, u"1234567890")
+        self.assertEqual(PersonW(u"12345678901").name, u"12345678901")
         # exact fit
-        self.failUnlessEqual(PersonW(u"123456789012").name, u"123456789012")
+        self.assertEqual(PersonW(u"123456789012").name, u"123456789012")
         #too long
         self.assertRaises(ValueError, PersonW, u"1234567890123")
 
@@ -305,24 +305,24 @@ class StructureTestCase(unittest.TestCase):
                         ("age", c_int)]
 
         cls, msg = self.get_except(Person, "Someone", (1, 2))
-        self.failUnlessEqual(cls, RuntimeError)
+        self.assertEqual(cls, RuntimeError)
         # In Python 2.5, Exception is a new-style class, and the repr changed
         if issubclass(Exception, object):
-            self.failUnlessEqual(msg,
+            self.assertEqual(msg,
                                  "(Phone) <type 'exceptions.TypeError'>: "
                                  "expected string or Unicode object, int found")
         else:
-            self.failUnlessEqual(msg,
+            self.assertEqual(msg,
                                  "(Phone) exceptions.TypeError: "
                                  "expected string or Unicode object, int found")
 
         cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
-        self.failUnlessEqual(cls, RuntimeError)
+        self.assertEqual(cls, RuntimeError)
         if issubclass(Exception, object):
-            self.failUnlessEqual(msg,
+            self.assertEqual(msg,
                                  "(Phone) <type 'exceptions.TypeError'>: too many initializers")
         else:
-            self.failUnlessEqual(msg, "(Phone) exceptions.TypeError: too many initializers")
+            self.assertEqual(msg, "(Phone) exceptions.TypeError: too many initializers")
 
 
     def get_except(self, func, *args):
@@ -337,7 +337,7 @@ class StructureTestCase(unittest.TestCase):
 ##        # same as 'class X(Structure): pass'
 ##        # fails, since we need either a _fields_ or a _abstract_ attribute
 ##        cls, msg = self.get_except(meta, "X", (Structure,), {})
-##        self.failUnlessEqual((cls, msg),
+##        self.assertEqual((cls, msg),
 ##                             (AttributeError, "class must define a '_fields_' attribute"))
 
     def test_abstract_class(self):
@@ -345,15 +345,15 @@ class StructureTestCase(unittest.TestCase):
             _abstract_ = "something"
         # try 'X()'
         cls, msg = self.get_except(eval, "X()", locals())
-        self.failUnlessEqual((cls, msg), (TypeError, "abstract class"))
+        self.assertEqual((cls, msg), (TypeError, "abstract class"))
 
     def test_methods(self):
 ##        class X(Structure):
 ##            _fields_ = []
 
-        self.failUnless("in_dll" in dir(type(Structure)))
-        self.failUnless("from_address" in dir(type(Structure)))
-        self.failUnless("in_dll" in dir(type(Structure)))
+        self.assertTrue("in_dll" in dir(type(Structure)))
+        self.assertTrue("from_address" in dir(type(Structure)))
+        self.assertTrue("in_dll" in dir(type(Structure)))
 
 class PointerMemberTestCase(unittest.TestCase):
 
@@ -366,7 +366,7 @@ class PointerMemberTestCase(unittest.TestCase):
         # We can assign arrays of the correct type
         s.array = (c_int * 3)(1, 2, 3)
         items = [s.array[i] for i in range(3)]
-        self.failUnlessEqual(items, [1, 2, 3])
+        self.assertEqual(items, [1, 2, 3])
 
         # The following are bugs, but are included here because the unittests
         # also describe the current behaviour.
@@ -377,14 +377,14 @@ class PointerMemberTestCase(unittest.TestCase):
         s.array[0] = 42
 
         items = [s.array[i] for i in range(3)]
-        self.failUnlessEqual(items, [42, 2, 3])
+        self.assertEqual(items, [42, 2, 3])
 
         s.array[0] = 1
 
 ##        s.array[1] = 42
 
         items = [s.array[i] for i in range(3)]
-        self.failUnlessEqual(items, [1, 2, 3])
+        self.assertEqual(items, [1, 2, 3])
 
     def test_none_to_pointer_fields(self):
         class S(Structure):
@@ -394,7 +394,7 @@ class PointerMemberTestCase(unittest.TestCase):
         s = S()
         s.x = 12345678
         s.p = None
-        self.failUnlessEqual(s.x, 12345678)
+        self.assertEqual(s.x, 12345678)
 
 class TestRecursiveStructure(unittest.TestCase):
     def test_contains_itself(self):
@@ -404,7 +404,7 @@ class TestRecursiveStructure(unittest.TestCase):
         try:
             Recursive._fields_ = [("next", Recursive)]
         except AttributeError, details:
-            self.failUnless("Structure or union cannot contain itself" in
+            self.assertTrue("Structure or union cannot contain itself" in
                             str(details))
         else:
             self.fail("Structure or union cannot contain itself")
@@ -421,7 +421,7 @@ class TestRecursiveStructure(unittest.TestCase):
         try:
             Second._fields_ = [("first", First)]
         except AttributeError, details:
-            self.failUnless("_fields_ is final" in
+            self.assertTrue("_fields_ is final" in
                             str(details))
         else:
             self.fail("AttributeError not raised")

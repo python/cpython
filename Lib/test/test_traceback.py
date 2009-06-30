@@ -37,16 +37,16 @@ class TracebackCases(unittest.TestCase):
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
-        self.assert_(len(err) == 4)
-        self.assert_(err[1].strip() == "return x!")
-        self.assert_("^" in err[2]) # third line has caret
-        self.assert_(err[1].find("!") == err[2].find("^")) # in the right place
+        self.assertTrue(len(err) == 4)
+        self.assertTrue(err[1].strip() == "return x!")
+        self.assertTrue("^" in err[2]) # third line has caret
+        self.assertTrue(err[1].find("!") == err[2].find("^")) # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_2,
                                         SyntaxError)
-        self.assert_("^" in err[2]) # third line has caret
-        self.assert_(err[2].count('\n') == 1) # and no additional newline
-        self.assert_(err[1].find("+") == err[2].find("^")) # in the right place
+        self.assertTrue("^" in err[2]) # third line has caret
+        self.assertTrue(err[2].count('\n') == 1) # and no additional newline
+        self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
 
     def test_nocaret(self):
         if is_jython:
@@ -54,16 +54,16 @@ class TracebackCases(unittest.TestCase):
             return
         err = self.get_exception_format(self.syntax_error_without_caret,
                                         SyntaxError)
-        self.assert_(len(err) == 3)
-        self.assert_(err[1].strip() == "[x for x in x] = x")
+        self.assertTrue(len(err) == 3)
+        self.assertTrue(err[1].strip() == "[x for x in x] = x")
 
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
-        self.assert_(len(err) == 4)
-        self.assert_(err[1].strip() == "print 2")
-        self.assert_("^" in err[2])
-        self.assert_(err[1].find("2") == err[2].find("^"))
+        self.assertTrue(len(err) == 4)
+        self.assertTrue(err[1].strip() == "print 2")
+        self.assertTrue("^" in err[2])
+        self.assertTrue(err[1].find("2") == err[2].find("^"))
 
     def test_bug737473(self):
         import sys, os, tempfile, time
@@ -103,7 +103,7 @@ def test():
                 test_bug737473.test()
             except NotImplementedError:
                 src = traceback.extract_tb(sys.exc_traceback)[-1][-1]
-                self.failUnlessEqual(src, 'raise NotImplementedError')
+                self.assertEqual(src, 'raise NotImplementedError')
         finally:
             sys.path[:] = savedpath
             for f in os.listdir(testdir):
@@ -181,9 +181,9 @@ class TracebackFormatTests(unittest.TestCase):
         tb_lines = python_fmt.splitlines()
         self.assertEquals(len(tb_lines), 3)
         banner, location, source_line = tb_lines
-        self.assert_(banner.startswith('Traceback'))
-        self.assert_(location.startswith('  File'))
-        self.assert_(source_line.startswith('    raise'))
+        self.assertTrue(banner.startswith('Traceback'))
+        self.assertTrue(location.startswith('  File'))
+        self.assertTrue(source_line.startswith('    raise'))
 
 
 def test_main():

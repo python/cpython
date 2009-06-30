@@ -15,10 +15,10 @@ if not hasattr(select, "kqueue"):
 class TestKQueue(unittest.TestCase):
     def test_create_queue(self):
         kq = select.kqueue()
-        self.assert_(kq.fileno() > 0, kq.fileno())
-        self.assert_(not kq.closed)
+        self.assertTrue(kq.fileno() > 0, kq.fileno())
+        self.assertTrue(not kq.closed)
         kq.close()
-        self.assert_(kq.closed)
+        self.assertTrue(kq.closed)
         self.assertRaises(ValueError, kq.fileno)
 
     def test_create_event(self):
@@ -34,8 +34,8 @@ class TestKQueue(unittest.TestCase):
         self.assertEqual(ev, ev)
         self.assertNotEqual(ev, other)
         self.assertEqual(cmp(ev, other), -1)
-        self.assert_(ev < other)
-        self.assert_(other >= ev)
+        self.assertTrue(ev < other)
+        self.assertTrue(other >= ev)
         self.assertRaises(TypeError, cmp, ev, None)
         self.assertRaises(TypeError, cmp, ev, 1)
         self.assertRaises(TypeError, cmp, ev, "ev")

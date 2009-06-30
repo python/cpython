@@ -40,7 +40,7 @@ class QueryTestCase(unittest.TestCase):
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
-        verify = self.assert_
+        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
         for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, uni("yaddayadda"),
                      self.a, self.b):
@@ -63,7 +63,7 @@ class QueryTestCase(unittest.TestCase):
         self.d = {}
         self.d[0] = self.d[1] = self.d[2] = self.d
 
-        verify = self.assert_
+        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
 
         for icky in self.a, self.b, self.d, (self.d, self.d):
@@ -91,7 +91,7 @@ class QueryTestCase(unittest.TestCase):
 
     def test_unreadable(self):
         # Not recursive but not readable anyway
-        verify = self.assert_
+        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
         for unreadable in type(3), pprint, pprint.isrecursive:
             # module-level convenience functions
@@ -114,7 +114,7 @@ class QueryTestCase(unittest.TestCase):
         # it sorted a dict display if and only if the display required
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
-        verify = self.assert_
+        verify = self.assertTrue
         for simple in (0, 0L, 0+0j, 0.0, "", uni(""),
                        (), tuple2(), tuple3(),
                        [], list2(), list3(),

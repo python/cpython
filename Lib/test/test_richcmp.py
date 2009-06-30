@@ -106,7 +106,7 @@ class VectorTest(unittest.TestCase):
             self.assertEqual(len(realres), len(expres))
             for i in xrange(len(realres)):
                 # results are bool, so we can use "is" here
-                self.assert_(realres[i] is expres[i])
+                self.assertTrue(realres[i] is expres[i])
 
     def test_mixed(self):
         # check that comparisons involving Vector objects
@@ -163,7 +163,7 @@ class NumberTest(unittest.TestCase):
                 for op in opmap[opname]:
                     realres = op(ta, tb)
                     realres = getattr(realres, "x", realres)
-                    self.assert_(realres is expres)
+                    self.assertTrue(realres is expres)
 
     def test_values(self):
         # check all operators and all comparison results
@@ -239,8 +239,8 @@ class MiscTest(unittest.TestCase):
         b.append(17)
         # Even recursive lists of different lengths are different,
         # but they cannot be ordered
-        self.assert_(not (a == b))
-        self.assert_(a != b)
+        self.assertTrue(not (a == b))
+        self.assertTrue(a != b)
         self.assertRaises(RuntimeError, operator.lt, a, b)
         self.assertRaises(RuntimeError, operator.le, a, b)
         self.assertRaises(RuntimeError, operator.gt, a, b)
@@ -250,9 +250,9 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(RuntimeError, operator.ne, a, b)
         a.insert(0, 11)
         b.insert(0, 12)
-        self.assert_(not (a == b))
-        self.assert_(a != b)
-        self.assert_(a < b)
+        self.assertTrue(not (a == b))
+        self.assertTrue(a != b)
+        self.assertTrue(a < b)
 
 class DictTest(unittest.TestCase):
 
@@ -271,10 +271,10 @@ class DictTest(unittest.TestCase):
             imag1b[k] = v
         imag2 = imag1b.copy()
         imag2[k] = v + 1.0
-        self.assert_(imag1a == imag1a)
-        self.assert_(imag1a == imag1b)
-        self.assert_(imag2 == imag2)
-        self.assert_(imag1a != imag2)
+        self.assertTrue(imag1a == imag1a)
+        self.assertTrue(imag1a == imag1b)
+        self.assertTrue(imag2 == imag2)
+        self.assertTrue(imag1a != imag2)
         for opname in ("lt", "le", "gt", "ge"):
             for op in opmap[opname]:
                 self.assertRaises(TypeError, op, imag1a, imag2)
@@ -282,7 +282,7 @@ class DictTest(unittest.TestCase):
 class ListTest(unittest.TestCase):
 
     def assertIs(self, a, b):
-        self.assert_(a is b)
+        self.assertTrue(a is b)
 
     def test_coverage(self):
         # exercise all comparisons for lists

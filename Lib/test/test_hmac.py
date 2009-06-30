@@ -260,7 +260,7 @@ class SanityTestCase(unittest.TestCase):
         # Testing if HMAC defaults to MD5 algorithm.
         # NOTE: this whitebox test depends on the hmac class internals
         h = hmac.HMAC("key")
-        self.failUnless(h.digest_cons == hashlib.md5)
+        self.assertTrue(h.digest_cons == hashlib.md5)
 
     def test_exercise_all_methods(self):
         # Exercising all methods once.
@@ -280,11 +280,11 @@ class CopyTestCase(unittest.TestCase):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC("key")
         h2 = h1.copy()
-        self.failUnless(h1.digest_cons == h2.digest_cons,
+        self.assertTrue(h1.digest_cons == h2.digest_cons,
             "digest constructors don't match.")
-        self.failUnless(type(h1.inner) == type(h2.inner),
+        self.assertTrue(type(h1.inner) == type(h2.inner),
             "Types of inner don't match.")
-        self.failUnless(type(h1.outer) == type(h2.outer),
+        self.assertTrue(type(h1.outer) == type(h2.outer),
             "Types of outer don't match.")
 
     def test_realcopy(self):
@@ -292,10 +292,10 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.HMAC("key")
         h2 = h1.copy()
         # Using id() in case somebody has overridden __cmp__.
-        self.failUnless(id(h1) != id(h2), "No real copy of the HMAC instance.")
-        self.failUnless(id(h1.inner) != id(h2.inner),
+        self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
+        self.assertTrue(id(h1.inner) != id(h2.inner),
             "No real copy of the attribute 'inner'.")
-        self.failUnless(id(h1.outer) != id(h2.outer),
+        self.assertTrue(id(h1.outer) != id(h2.outer),
             "No real copy of the attribute 'outer'.")
 
     def test_equality(self):
@@ -303,9 +303,9 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.HMAC("key")
         h1.update("some random text")
         h2 = h1.copy()
-        self.failUnless(h1.digest() == h2.digest(),
+        self.assertTrue(h1.digest() == h2.digest(),
             "Digest of copy doesn't match original digest.")
-        self.failUnless(h1.hexdigest() == h2.hexdigest(),
+        self.assertTrue(h1.hexdigest() == h2.hexdigest(),
             "Hexdigest of copy doesn't match original hexdigest.")
 
 def test_main():

@@ -67,35 +67,35 @@ class MaildirTestCase(unittest.TestCase):
         """Test an empty maildir mailbox"""
         # Test for regression on bug #117490:
         self.mbox = mailbox.Maildir(test_support.TESTFN)
-        self.assert_(len(self.mbox) == 0)
-        self.assert_(self.mbox.next() is None)
-        self.assert_(self.mbox.next() is None)
+        self.assertTrue(len(self.mbox) == 0)
+        self.assertTrue(self.mbox.next() is None)
+        self.assertTrue(self.mbox.next() is None)
 
     def test_nonempty_maildir_cur(self):
         self.createMessage("cur")
         self.mbox = mailbox.Maildir(test_support.TESTFN)
-        self.assert_(len(self.mbox) == 1)
-        self.assert_(self.mbox.next() is not None)
-        self.assert_(self.mbox.next() is None)
-        self.assert_(self.mbox.next() is None)
+        self.assertTrue(len(self.mbox) == 1)
+        self.assertTrue(self.mbox.next() is not None)
+        self.assertTrue(self.mbox.next() is None)
+        self.assertTrue(self.mbox.next() is None)
 
     def test_nonempty_maildir_new(self):
         self.createMessage("new")
         self.mbox = mailbox.Maildir(test_support.TESTFN)
-        self.assert_(len(self.mbox) == 1)
-        self.assert_(self.mbox.next() is not None)
-        self.assert_(self.mbox.next() is None)
-        self.assert_(self.mbox.next() is None)
+        self.assertTrue(len(self.mbox) == 1)
+        self.assertTrue(self.mbox.next() is not None)
+        self.assertTrue(self.mbox.next() is None)
+        self.assertTrue(self.mbox.next() is None)
 
     def test_nonempty_maildir_both(self):
         self.createMessage("cur")
         self.createMessage("new")
         self.mbox = mailbox.Maildir(test_support.TESTFN)
-        self.assert_(len(self.mbox) == 2)
-        self.assert_(self.mbox.next() is not None)
-        self.assert_(self.mbox.next() is not None)
-        self.assert_(self.mbox.next() is None)
-        self.assert_(self.mbox.next() is None)
+        self.assertTrue(len(self.mbox) == 2)
+        self.assertTrue(self.mbox.next() is not None)
+        self.assertTrue(self.mbox.next() is not None)
+        self.assertTrue(self.mbox.next() is None)
+        self.assertTrue(self.mbox.next() is None)
 
     def test_unix_mbox(self):
         ### should be better!
@@ -139,7 +139,7 @@ body4
 """)
         f.close()
         box = mailbox.UnixMailbox(open(self._path, 'r'))
-        self.assert_(len(list(iter(box))) == 4)
+        self.assertTrue(len(list(iter(box))) == 4)
 
 
     # XXX We still need more tests!

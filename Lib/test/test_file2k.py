@@ -83,17 +83,17 @@ class AutoFileTests(unittest.TestCase):
 
     def testRepr(self):
         # verify repr works
-        self.assert_(repr(self.f).startswith("<open file '" + TESTFN))
+        self.assertTrue(repr(self.f).startswith("<open file '" + TESTFN))
 
     def testErrors(self):
         f = self.f
         self.assertEquals(f.name, TESTFN)
-        self.assert_(not f.isatty())
-        self.assert_(not f.closed)
+        self.assertTrue(not f.isatty())
+        self.assertTrue(not f.closed)
 
         self.assertRaises(TypeError, f.readinto, "")
         f.close()
-        self.assert_(f.closed)
+        self.assertTrue(f.closed)
 
     def testMethods(self):
         methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
@@ -104,7 +104,7 @@ class AutoFileTests(unittest.TestCase):
 
         # __exit__ should close the file
         self.f.__exit__(None, None, None)
-        self.assert_(self.f.closed)
+        self.assertTrue(self.f.closed)
 
         for methodname in methods:
             method = getattr(self.f, methodname)
@@ -172,7 +172,7 @@ class OtherFileTests(unittest.TestCase):
     def testUnicodeOpen(self):
         # verify repr works for unicode too
         f = open(unicode(TESTFN), "w")
-        self.assert_(repr(f).startswith("<open file u'" + TESTFN))
+        self.assertTrue(repr(f).startswith("<open file u'" + TESTFN))
         f.close()
         os.unlink(TESTFN)
 
@@ -365,7 +365,7 @@ class FileSubclassTests(unittest.TestCase):
 
         with C(TESTFN, 'w') as f:
             pass
-        self.failUnless(f.subclass_closed)
+        self.assertTrue(f.subclass_closed)
 
 
 class FileThreadingTests(unittest.TestCase):

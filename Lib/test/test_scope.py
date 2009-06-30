@@ -467,7 +467,7 @@ class X:
     locals()['looked_up_by_load_name'] = True
     passed = looked_up_by_load_name
 
-self.assert_(X.passed)
+self.assertTrue(X.passed)
 """
 
     def testLocalsFunction(self):
@@ -482,7 +482,7 @@ self.assert_(X.passed)
             return g
 
         d = f(2)(4)
-        self.assert_(d.has_key('h'))
+        self.assertTrue(d.has_key('h'))
         del d['h']
         self.assertEqual(d, {'x': 2, 'y': 7, 'w': 6})
 
@@ -516,8 +516,8 @@ self.assert_(X.passed)
             return C
 
         varnames = f(1).z
-        self.assert_("x" not in varnames)
-        self.assert_("y" in varnames)
+        self.assertTrue("x" not in varnames)
+        self.assertTrue("y" in varnames)
 
     def testLocalsClass_WithTrace(self):
         # Issue23728: after the trace function returns, the locals()

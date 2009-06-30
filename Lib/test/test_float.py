@@ -148,9 +148,9 @@ class FormatFunctionsTestCase(unittest.TestCase):
         float.__setformat__('float', self.save_formats['float'])
 
     def test_getformat(self):
-        self.assert_(float.__getformat__('double') in
+        self.assertTrue(float.__getformat__('double') in
                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
-        self.assert_(float.__getformat__('float') in
+        self.assertTrue(float.__getformat__('float') in
                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
         self.assertRaises(ValueError, float.__getformat__, 'chicken')
         self.assertRaises(TypeError, float.__getformat__, 1)
@@ -340,12 +340,12 @@ class ReprTestCase(unittest.TestCase):
 # ways to create and represent inf and nan
 class InfNanTest(unittest.TestCase):
     def test_inf_from_str(self):
-        self.assert_(isinf(float("inf")))
-        self.assert_(isinf(float("+inf")))
-        self.assert_(isinf(float("-inf")))
-        self.assert_(isinf(float("infinity")))
-        self.assert_(isinf(float("+infinity")))
-        self.assert_(isinf(float("-infinity")))
+        self.assertTrue(isinf(float("inf")))
+        self.assertTrue(isinf(float("+inf")))
+        self.assertTrue(isinf(float("-inf")))
+        self.assertTrue(isinf(float("infinity")))
+        self.assertTrue(isinf(float("+infinity")))
+        self.assertTrue(isinf(float("-infinity")))
 
         self.assertEqual(repr(float("inf")), "inf")
         self.assertEqual(repr(float("+inf")), "inf")
@@ -387,9 +387,9 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(str(-1e300 * 1e300), "-inf")
 
     def test_nan_from_str(self):
-        self.assert_(isnan(float("nan")))
-        self.assert_(isnan(float("+nan")))
-        self.assert_(isnan(float("-nan")))
+        self.assertTrue(isnan(float("nan")))
+        self.assertTrue(isnan(float("+nan")))
+        self.assertTrue(isnan(float("-nan")))
 
         self.assertEqual(repr(float("nan")), "nan")
         self.assertEqual(repr(float("+nan")), "nan")
@@ -418,14 +418,14 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(str(-1e300 * 1e300 * 0), "nan")
 
     def notest_float_nan(self):
-        self.assert_(NAN.is_nan())
-        self.failIf(INF.is_nan())
-        self.failIf((0.).is_nan())
+        self.assertTrue(NAN.is_nan())
+        self.assertFalse(INF.is_nan())
+        self.assertFalse((0.).is_nan())
 
     def notest_float_inf(self):
-        self.assert_(INF.is_inf())
-        self.failIf(NAN.is_inf())
-        self.failIf((0.).is_inf())
+        self.assertTrue(INF.is_inf())
+        self.assertFalse(NAN.is_inf())
+        self.assertFalse((0.).is_inf())
 
 fromHex = float.fromhex
 toHex = float.hex

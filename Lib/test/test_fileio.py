@@ -82,17 +82,17 @@ class AutoFileTests(unittest.TestCase):
 
     def testErrors(self):
         f = self.f
-        self.assert_(not f.isatty())
-        self.assert_(not f.closed)
+        self.assertTrue(not f.isatty())
+        self.assertTrue(not f.closed)
         #self.assertEquals(f.name, TESTFN)
         self.assertRaises(ValueError, f.read, 10) # Open for reading
         f.close()
-        self.assert_(f.closed)
+        self.assertTrue(f.closed)
         f = _FileIO(TESTFN, 'r')
         self.assertRaises(TypeError, f.readinto, "")
-        self.assert_(not f.closed)
+        self.assertTrue(not f.closed)
         f.close()
-        self.assert_(f.closed)
+        self.assertTrue(f.closed)
 
     def testMethods(self):
         methods = ['fileno', 'isatty', 'read', 'readinto',
@@ -102,7 +102,7 @@ class AutoFileTests(unittest.TestCase):
             methods.remove('truncate')
 
         self.f.close()
-        self.assert_(self.f.closed)
+        self.assertTrue(self.f.closed)
 
         for methodname in methods:
             method = getattr(self.f, methodname)

@@ -12,8 +12,8 @@ class MyInt(c_int):
 class Test(unittest.TestCase):
 
     def test_compare(self):
-        self.failUnlessEqual(MyInt(3), MyInt(3))
-        self.failIfEqual(MyInt(42), MyInt(43))
+        self.assertEqual(MyInt(3), MyInt(3))
+        self.assertNotEqual(MyInt(42), MyInt(43))
 
     def test_ignore_retval(self):
         # Test if the return value of a callback is ignored
@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
             return (1, "abc", None)
 
         cb = proto(func)
-        self.failUnlessEqual(None, cb())
+        self.assertEqual(None, cb())
 
 
     def test_int_callback(self):
@@ -34,24 +34,24 @@ class Test(unittest.TestCase):
 
         cb = CFUNCTYPE(None, MyInt)(func)
 
-        self.failUnlessEqual(None, cb(42))
-        self.failUnlessEqual(type(args[-1]), MyInt)
+        self.assertEqual(None, cb(42))
+        self.assertEqual(type(args[-1]), MyInt)
 
         cb = CFUNCTYPE(c_int, c_int)(func)
 
-        self.failUnlessEqual(42, cb(42))
-        self.failUnlessEqual(type(args[-1]), int)
+        self.assertEqual(42, cb(42))
+        self.assertEqual(type(args[-1]), int)
 
     def test_int_struct(self):
         class X(Structure):
             _fields_ = [("x", MyInt)]
 
-        self.failUnlessEqual(X().x, MyInt())
+        self.assertEqual(X().x, MyInt())
 
         s = X()
         s.x = MyInt(42)
 
-        self.failUnlessEqual(s.x, MyInt(42))
+        self.assertEqual(s.x, MyInt(42))
 
 if __name__ == "__main__":
     unittest.main()

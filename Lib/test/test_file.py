@@ -88,13 +88,13 @@ class AutoFileTests(unittest.TestCase):
     def testErrors(self):
         f = self.f
         self.assertEquals(f.name, TESTFN)
-        self.assert_(not f.isatty())
-        self.assert_(not f.closed)
+        self.assertTrue(not f.isatty())
+        self.assertTrue(not f.closed)
 
         if hasattr(f, "readinto"):
             self.assertRaises((IOError, TypeError), f.readinto, "")
         f.close()
-        self.assert_(f.closed)
+        self.assertTrue(f.closed)
 
     def testMethods(self):
         methods = [('fileno', ()),
@@ -116,7 +116,7 @@ class AutoFileTests(unittest.TestCase):
 
         # __exit__ should close the file
         self.f.__exit__(None, None, None)
-        self.assert_(self.f.closed)
+        self.assertTrue(self.f.closed)
 
         for methodname, args in methods:
             method = getattr(self.f, methodname)

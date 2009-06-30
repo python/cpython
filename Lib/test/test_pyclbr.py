@@ -35,7 +35,7 @@ class PyclbrTest(TestCase):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
         if attr in ignore: return
         if not hasattr(obj, attr): print "???", attr
-        self.failUnless(hasattr(obj, attr),
+        self.assertTrue(hasattr(obj, attr),
                         'expected hasattr(%r, %r)' % (obj, attr))
 
 
@@ -44,7 +44,7 @@ class PyclbrTest(TestCase):
         if key in ignore: return
         if not obj.has_key(key):
             print >>sys.stderr, "***",key
-        self.failUnless(obj.has_key(key))
+        self.assertTrue(obj.has_key(key))
 
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
@@ -92,12 +92,12 @@ class PyclbrTest(TestCase):
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
-                self.assert_(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
+                self.assertTrue(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
                 self.assertEquals(py_item.__module__, value.module)
             else:
-                self.failUnless(isinstance(py_item, (ClassType, type)))
+                self.assertTrue(isinstance(py_item, (ClassType, type)))
                 if py_item.__module__ != moduleName:
                     continue   # skip classes that came from somewhere else
 

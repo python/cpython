@@ -88,7 +88,7 @@ class LongTest(unittest.TestCase):
     # The sign of the number is also random.
 
     def getran(self, ndigits):
-        self.assert_(ndigits > 0)
+        self.assertTrue(ndigits > 0)
         nbits_hi = ndigits * SHIFT
         nbits_lo = nbits_hi - SHIFT + 1
         answer = 0L
@@ -97,13 +97,13 @@ class LongTest(unittest.TestCase):
         while nbits < nbits_lo:
             bits = (r >> 1) + 1
             bits = min(bits, nbits_hi - nbits)
-            self.assert_(1 <= bits <= SHIFT)
+            self.assertTrue(1 <= bits <= SHIFT)
             nbits = nbits + bits
             answer = answer << bits
             if r & 1:
                 answer = answer | ((1 << bits) - 1)
             r = int(random.random() * (SHIFT * 2))
-        self.assert_(nbits_lo <= nbits <= nbits_hi)
+        self.assertTrue(nbits_lo <= nbits <= nbits_hi)
         if random.random() < 0.5:
             answer = -answer
         return answer
@@ -129,9 +129,9 @@ class LongTest(unittest.TestCase):
         eq(r, r2, Frm("divmod returns different mod than %% for %r and %r", x, y))
         eq(x, q*y + r, Frm("x != q*y + r after divmod on x=%r, y=%r", x, y))
         if y > 0:
-            self.assert_(0 <= r < y, Frm("bad mod from divmod on %r and %r", x, y))
+            self.assertTrue(0 <= r < y, Frm("bad mod from divmod on %r and %r", x, y))
         else:
-            self.assert_(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
+            self.assertTrue(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
 
     def test_division(self):
         digits = range(1, MAXDIGITS+1) + range(KARATSUBA_CUTOFF,
@@ -552,7 +552,7 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(sys.maxint) + 1) mustn't overflow")
-        self.assert_(isinstance(y, long),
+        self.assertTrue(isinstance(y, long),
             "int(long(sys.maxint) + 1) should have returned long")
 
         x = hugeneg_aslong - 1
@@ -560,14 +560,14 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(-sys.maxint-1) - 1) mustn't overflow")
-        self.assert_(isinstance(y, long),
+        self.assertTrue(isinstance(y, long),
                "int(long(-sys.maxint-1) - 1) should have returned long")
 
         class long2(long):
             pass
         x = long2(1L<<100)
         y = int(x)
-        self.assert_(type(y) is long,
+        self.assertTrue(type(y) is long,
             "overflowing int conversion must return long not long subtype")
 
         # long -> Py_ssize_t conversion
@@ -850,7 +850,7 @@ class LongTest(unittest.TestCase):
             self.assertEqual(k, len(bin(x).lstrip('-0b')))
             # Behaviour as specified in the docs
             if x != 0:
-                self.assert_(2**(k-1) <= abs(x) < 2**k)
+                self.assertTrue(2**(k-1) <= abs(x) < 2**k)
             else:
                 self.assertEqual(k, 0)
             # Alternative definition: x.bit_length() == 1 + floor(log_2(x))

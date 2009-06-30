@@ -127,7 +127,7 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(len(c), r)                         # r-length combinations
                     self.assertEqual(len(set(c)), r)                    # no duplicate elements
                     self.assertEqual(list(c), sorted(c))                # keep original ordering
-                    self.assert_(all(e in values for e in c))           # elements taken from input iterable
+                    self.assertTrue(all(e in values for e in c))           # elements taken from input iterable
                     self.assertEqual(list(c),
                                      [e for e in values if e in c])      # comb is a subsequence of the input iterable
                 self.assertEqual(result, list(combinations1(values, r))) # matches first pure python version
@@ -191,14 +191,14 @@ class TestBasicOps(unittest.TestCase):
                 if n == 0 or r <= 1:
                     self.assertEquals(result, regular_combs)            # cases that should be identical
                 else:
-                    self.assert_(set(result) >= set(regular_combs))     # rest should be supersets of regular combs
+                    self.assertTrue(set(result) >= set(regular_combs))     # rest should be supersets of regular combs
 
                 for c in result:
                     self.assertEqual(len(c), r)                         # r-length combinations
                     noruns = [k for k,v in groupby(c)]                  # combo without consecutive repeats
                     self.assertEqual(len(noruns), len(set(noruns)))     # no repeats other than consecutive
                     self.assertEqual(list(c), sorted(c))                # keep original ordering
-                    self.assert_(all(e in values for e in c))           # elements taken from input iterable
+                    self.assertTrue(all(e in values for e in c))           # elements taken from input iterable
                     self.assertEqual(noruns,
                                      [e for e in values if e in c])     # comb is a subsequence of the input iterable
                 self.assertEqual(result, list(cwr1(values, r)))         # matches first pure python version
@@ -261,7 +261,7 @@ class TestBasicOps(unittest.TestCase):
                 for p in result:
                     self.assertEqual(len(p), r)                         # r-length permutations
                     self.assertEqual(len(set(p)), r)                    # no duplicate elements
-                    self.assert_(all(e in values for e in p))           # elements taken from input iterable
+                    self.assertTrue(all(e in values for e in p))           # elements taken from input iterable
                 self.assertEqual(result, list(permutations1(values, r))) # matches first pure python version
                 self.assertEqual(result, list(permutations2(values, r))) # matches second pure python version
                 if r == n:
@@ -821,7 +821,7 @@ class TestBasicOps(unittest.TestCase):
         # tee pass-through to copyable iterator
         a, b = tee('abc')
         c, d = tee(a)
-        self.assert_(a is c)
+        self.assertTrue(a is c)
 
         # test tee_new
         t1, t2 = tee('abc')
@@ -829,7 +829,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, tnew)
         self.assertRaises(TypeError, tnew, 10)
         t3 = tnew(t1)
-        self.assert_(list(t1) == list(t2) == list(t3) == list('abc'))
+        self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
 
         # test that tee objects are weak referencable
         a, b = tee(xrange(10))
@@ -1336,7 +1336,7 @@ class SubclassWithKwargsTest(unittest.TestCase):
                 Subclass(newarg=1)
             except TypeError, err:
                 # we expect type errors because of wrong argument count
-                self.failIf("does not take keyword arguments" in err.args[0])
+                self.assertFalse("does not take keyword arguments" in err.args[0])
 
 
 libreftest = """ Doctest for examples in the library reference: libitertools.tex

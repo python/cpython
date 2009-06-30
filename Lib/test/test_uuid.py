@@ -288,8 +288,8 @@ class TestUUID(TestCase):
         self.assertEqual(universal_local_bit, 0, message)
         self.assertNotEqual(node, 0, message)
         self.assertNotEqual(node, 0xffffffffffffL, message)
-        self.assert_(0 <= node, message)
-        self.assert_(node < (1L << 48), message)
+        self.assertTrue(0 <= node, message)
+        self.assertTrue(node < (1L << 48), message)
 
         TestUUID.source2node[source] = node
         if TestUUID.last_node:
@@ -331,8 +331,8 @@ class TestUUID(TestCase):
 
     def test_random_getnode(self):
         node = uuid._random_getnode()
-        self.assert_(0 <= node)
-        self.assert_(node < (1L <<48))
+        self.assertTrue(0 <= node)
+        self.assertTrue(node < (1L <<48))
 
     def test_unixdll_getnode(self):
         import sys

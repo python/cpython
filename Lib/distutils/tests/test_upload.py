@@ -96,11 +96,11 @@ class uploadTestCase(PyPIRCCommandTestCase):
         # what did we send ?
         headers = dict(self.last_open.req.headers)
         self.assertEquals(headers['Content-length'], '2086')
-        self.assert_(headers['Content-type'].startswith('multipart/form-data'))
+        self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
         self.assertEquals(self.last_open.req.get_method(), 'POST')
         self.assertEquals(self.last_open.req.get_full_url(),
                           'http://pypi.python.org/pypi')
-        self.assert_('xxx' in self.last_open.req.data)
+        self.assertTrue('xxx' in self.last_open.req.data)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)

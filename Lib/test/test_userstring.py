@@ -114,7 +114,7 @@ class MutableStringTest(UserStringTest):
         s = self.type2test("foobar")
         s2 = s.immutable()
         self.assertEqual(s, s2)
-        self.assert_(isinstance(s2, UserString))
+        self.assertTrue(isinstance(s2, UserString))
 
     def test_iadd(self):
         s = self.type2test("foo")

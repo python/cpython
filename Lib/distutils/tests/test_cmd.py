@@ -70,7 +70,7 @@ class CommandTestCase(unittest.TestCase):
 
         cmd.option2 = None
         cmd.ensure_string('option2', 'xxx')
-        self.assert_(hasattr(cmd, 'option2'))
+        self.assertTrue(hasattr(cmd, 'option2'))
 
         cmd.option3 = 1
         self.assertRaises(DistutilsOptionError, cmd.ensure_string, 'option3')

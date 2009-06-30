@@ -14,8 +14,8 @@ class BinASCIITest(unittest.TestCase):
 
     def test_exceptions(self):
         # Check module exceptions
-        self.assert_(issubclass(binascii.Error, Exception))
-        self.assert_(issubclass(binascii.Incomplete, Exception))
+        self.assertTrue(issubclass(binascii.Error, Exception))
+        self.assertTrue(issubclass(binascii.Incomplete, Exception))
 
     def test_functions(self):
         # Check presence of all functions
@@ -26,10 +26,10 @@ class BinASCIITest(unittest.TestCase):
                 prefixes.extend(["crc_", "rlecode_", "rledecode_"])
             for prefix in prefixes:
                 name = prefix + suffix
-                self.assert_(callable(getattr(binascii, name)))
+                self.assertTrue(callable(getattr(binascii, name)))
                 self.assertRaises(TypeError, getattr(binascii, name))
         for name in ("hexlify", "unhexlify"):
-            self.assert_(callable(getattr(binascii, name)))
+            self.assertTrue(callable(getattr(binascii, name)))
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_base64valid(self):

@@ -64,7 +64,7 @@ class OpcodeTest(unittest.TestCase):
 
         try:  raise DClass, a
         except DClass, v:
-            self.assert_(isinstance(v, DClass))
+            self.assertTrue(isinstance(v, DClass))
         else:
             self.fail("no exception")
 

@@ -263,7 +263,7 @@ class UTF32Test(ReadTest):
         f.write(u"spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assert_(d == self.spamle or d == self.spambe)
+        self.assertTrue(d == self.spamle or d == self.spambe)
         # try to read it back
         s = StringIO.StringIO(d)
         f = reader(s)
@@ -390,7 +390,7 @@ class UTF16Test(ReadTest):
         f.write(u"spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assert_(d == self.spamle or d == self.spambe)
+        self.assertTrue(d == self.spamle or d == self.spambe)
         # try to read it back
         s = StringIO.StringIO(d)
         f = reader(s)
@@ -1129,14 +1129,14 @@ class Str2StrTest(unittest.TestCase):
         reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
         sout = reader.read()
         self.assertEqual(sout, "\x80")
-        self.assert_(isinstance(sout, str))
+        self.assertTrue(isinstance(sout, str))
 
     def test_readline(self):
         sin = "\x80".encode("base64_codec")
         reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
         sout = reader.readline()
         self.assertEqual(sout, "\x80")
-        self.assert_(isinstance(sout, str))
+        self.assertTrue(isinstance(sout, str))
 
 all_unicode_encodings = [
     "ascii",

@@ -45,20 +45,20 @@ class Test(unittest.TestCase):
             ob = tp()
             v = memoryview(ob)
             try:
-                self.failUnlessEqual(normalize(v.format), normalize(fmt))
-                self.failUnlessEqual(v.size, sizeof(ob))
-                self.failUnlessEqual(v.itemsize, sizeof(itemtp))
-                self.failUnlessEqual(v.shape, shape)
+                self.assertEqual(normalize(v.format), normalize(fmt))
+                self.assertEqual(v.size, sizeof(ob))
+                self.assertEqual(v.itemsize, sizeof(itemtp))
+                self.assertEqual(v.shape, shape)
                 # ctypes object always have a non-strided memory block
-                self.failUnlessEqual(v.strides, None)
+                self.assertEqual(v.strides, None)
                 # they are always read/write
-                self.failIf(v.readonly)
+                self.assertFalse(v.readonly)
 
                 if v.shape:
                     n = 1
                     for dim in v.shape:
                         n = n * dim
-                    self.failUnlessEqual(v.itemsize * n, v.size)
+                    self.assertEqual(v.itemsize * n, v.size)
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -69,20 +69,20 @@ class Test(unittest.TestCase):
             ob = tp()
             v = memoryview(ob)
             try:
-                self.failUnlessEqual(v.format, fmt)
-                self.failUnlessEqual(v.size, sizeof(ob))
-                self.failUnlessEqual(v.itemsize, sizeof(itemtp))
-                self.failUnlessEqual(v.shape, shape)
+                self.assertEqual(v.format, fmt)
+                self.assertEqual(v.size, sizeof(ob))
+                self.assertEqual(v.itemsize, sizeof(itemtp))
+                self.assertEqual(v.shape, shape)
                 # ctypes object always have a non-strided memory block
-                self.failUnlessEqual(v.strides, None)
+                self.assertEqual(v.strides, None)
                 # they are always read/write
-                self.failIf(v.readonly)
+                self.assertFalse(v.readonly)
 
                 if v.shape:
                     n = 1
                     for dim in v.shape:
                         n = n * dim
-                    self.failUnlessEqual(v.itemsize * n, v.size)
+                    self.assertEqual(v.itemsize * n, v.size)
             except:
                 # so that we can see the failing type
                 print(tp)

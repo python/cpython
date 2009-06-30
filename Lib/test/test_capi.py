@@ -41,7 +41,7 @@ class TestPendingCalls(unittest.TestCase):
             if context and not context.event.is_set():
                 continue
             count += 1
-            self.failUnless(count < 10000,
+            self.assertTrue(count < 10000,
                 "timeout waiting for %i callbacks, got %i"%(n, len(l)))
         if False and test_support.verbose:
             print "(%i)"%(len(l),)

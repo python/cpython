@@ -24,10 +24,10 @@ class TestGdbm(unittest.TestCase):
         self.g['12345678910'] = '019237410982340912840198242'
         key_set = set(self.g.keys())
         self.assertEqual(key_set, frozenset(['a', '12345678910']))
-        self.assert_(self.g.has_key('a'))
+        self.assertTrue(self.g.has_key('a'))
         key = self.g.firstkey()
         while key:
-            self.assert_(key in key_set)
+            self.assertTrue(key in key_set)
             key_set.remove(key)
             key = self.g.nextkey(key)
         self.assertRaises(KeyError, lambda: self.g['xxx'])
@@ -65,7 +65,7 @@ class TestGdbm(unittest.TestCase):
 
         self.g['x'] = 'x' * 10000
         size1 = os.path.getsize(filename)
-        self.assert_(size0 < size1)
+        self.assertTrue(size0 < size1)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.
@@ -73,7 +73,7 @@ class TestGdbm(unittest.TestCase):
 
         self.g.reorganize()
         size2 = os.path.getsize(filename)
-        self.assert_(size1 > size2 >= size0)
+        self.assertTrue(size1 > size2 >= size0)
 
 
 def test_main():

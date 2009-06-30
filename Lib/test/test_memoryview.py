@@ -28,7 +28,7 @@ class AbstractMemoryTests:
         oldrefcount = sys.getrefcount(b)
         m = self._view(b)
         self.assertEquals(m[0], item(b"a"))
-        self.assert_(isinstance(m[0], bytes), type(m[0]))
+        self.assertTrue(isinstance(m[0], bytes), type(m[0]))
         self.assertEquals(m[5], item(b"f"))
         self.assertEquals(m[-1], item(b"f"))
         self.assertEquals(m[-6], item(b"a"))
@@ -119,7 +119,7 @@ class AbstractMemoryTests:
             expected = b"".join(
                 self.getitem_type(c) for c in b"abcdef")
             self.assertEquals(b, expected)
-            self.assert_(isinstance(b, bytes), type(b))
+            self.assertTrue(isinstance(b, bytes), type(b))
 
     def test_tolist(self):
         for tp in self._types:
@@ -212,7 +212,7 @@ class AbstractMemoryTests:
             b = m = o = None
             # The cycle must be broken
             gc.collect()
-            self.assert_(wr() is None, wr())
+            self.assertTrue(wr() is None, wr())
 
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
@@ -291,8 +291,8 @@ class BytesMemoryviewTest(unittest.TestCase,
     def test_constructor(self):
         for tp in self._types:
             ob = tp(self._source)
-            self.assert_(memoryview(ob))
-            self.assert_(memoryview(object=ob))
+            self.assertTrue(memoryview(ob))
+            self.assertTrue(memoryview(object=ob))
             self.assertRaises(TypeError, memoryview)
             self.assertRaises(TypeError, memoryview, ob, ob)
             self.assertRaises(TypeError, memoryview, argument=ob)

@@ -15,7 +15,7 @@ class StructFieldsTestCase(unittest.TestCase):
     def test_1_A(self):
         class X(Structure):
             pass
-        self.failUnlessEqual(sizeof(X), 0) # not finalized
+        self.assertEqual(sizeof(X), 0) # not finalized
         X._fields_ = [] # finalized
         self.assertRaises(AttributeError, setattr, X, "_fields_", [])
 

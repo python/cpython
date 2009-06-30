@@ -23,15 +23,15 @@ class InstallScriptsTestCase(support.TempdirManager,
             skip_build=1,
             )
         cmd = install_scripts(dist)
-        self.assert_(not cmd.force)
-        self.assert_(not cmd.skip_build)
-        self.assert_(cmd.build_dir is None)
-        self.assert_(cmd.install_dir is None)
+        self.assertTrue(not cmd.force)
+        self.assertTrue(not cmd.skip_build)
+        self.assertTrue(cmd.build_dir is None)
+        self.assertTrue(cmd.install_dir is None)
 
         cmd.finalize_options()
 
-        self.assert_(cmd.force)
-        self.assert_(cmd.skip_build)
+        self.assertTrue(cmd.force)
+        self.assertTrue(cmd.skip_build)
         self.assertEqual(cmd.build_dir, "/foo/bar")
         self.assertEqual(cmd.install_dir, "/splat/funk")
 
@@ -69,7 +69,7 @@ class InstallScriptsTestCase(support.TempdirManager,
 
         installed = os.listdir(target)
         for name in expected:
-            self.assert_(name in installed)
+            self.assertTrue(name in installed)
 
 
 def test_suite():

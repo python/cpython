@@ -130,14 +130,14 @@ class TestBisect(unittest.TestCase):
             elem = randrange(-1, n+1)
             ip = self.module.bisect_left(data, elem)
             if ip < len(data):
-                self.failUnless(elem <= data[ip])
+                self.assertTrue(elem <= data[ip])
             if ip > 0:
-                self.failUnless(data[ip-1] < elem)
+                self.assertTrue(data[ip-1] < elem)
             ip = self.module.bisect_right(data, elem)
             if ip < len(data):
-                self.failUnless(elem < data[ip])
+                self.assertTrue(elem < data[ip])
             if ip > 0:
-                self.failUnless(data[ip-1] <= elem)
+                self.assertTrue(data[ip-1] <= elem)
 
     def test_optionalSlicing(self):
         for func, data, elem, expected in self.precomputedCases:
@@ -146,15 +146,15 @@ class TestBisect(unittest.TestCase):
                 for hi in xrange(3,8):
                     hi = min(len(data), hi)
                     ip = func(data, elem, lo, hi)
-                    self.failUnless(lo <= ip <= hi)
+                    self.assertTrue(lo <= ip <= hi)
                     if func is self.module.bisect_left and ip < hi:
-                        self.failUnless(elem <= data[ip])
+                        self.assertTrue(elem <= data[ip])
                     if func is self.module.bisect_left and ip > lo:
-                        self.failUnless(data[ip-1] < elem)
+                        self.assertTrue(data[ip-1] < elem)
                     if func is self.module.bisect_right and ip < hi:
-                        self.failUnless(elem < data[ip])
+                        self.assertTrue(elem < data[ip])
                     if func is self.module.bisect_right and ip > lo:
-                        self.failUnless(data[ip-1] <= elem)
+                        self.assertTrue(data[ip-1] <= elem)
                     self.assertEqual(ip, max(lo, min(hi, expected)))
 
     def test_backcompatibility(self):

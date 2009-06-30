@@ -222,10 +222,10 @@ class Test_ISO2022(unittest.TestCase):
         self.assertEqual(iso2022jp2.decode('iso2022-jp-2'), uni)
 
     def test_iso2022_jp_g0(self):
-        self.failIf('\x0e' in u'\N{SOFT HYPHEN}'.encode('iso-2022-jp-2'))
+        self.assertFalse('\x0e' in u'\N{SOFT HYPHEN}'.encode('iso-2022-jp-2'))
         for encoding in ('iso-2022-jp-2004', 'iso-2022-jp-3'):
             e = u'\u3406'.encode(encoding)
-            self.failIf(filter(lambda x: x >= '\x80', e))
+            self.assertFalse(filter(lambda x: x >= '\x80', e))
 
     def test_bug1572832(self):
         if sys.maxunicode >= 0x10000:

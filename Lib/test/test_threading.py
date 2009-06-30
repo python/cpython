@@ -41,7 +41,7 @@ class TestThread(threading.Thread):
                 self.nrunning.inc()
                 if verbose:
                     print self.nrunning.get(), 'tasks are running'
-                self.testcase.assert_(self.nrunning.get() <= 3)
+                self.testcase.assertTrue(self.nrunning.get() <= 3)
 
             time.sleep(delay)
             if verbose:
@@ -49,7 +49,7 @@ class TestThread(threading.Thread):
 
             with self.mutex:
                 self.nrunning.dec()
-                self.testcase.assert_(self.nrunning.get() >= 0)
+                self.testcase.assertTrue(self.nrunning.get() >= 0)
                 if verbose:
                     print '%s is finished. %d tasks are running' % (
                         self.name, self.nrunning.get())
@@ -73,18 +73,18 @@ class ThreadTests(unittest.TestCase):
         for i in range(NUMTASKS):
             t = TestThread("<thread %d>"%i, self, sema, mutex, numrunning)
             threads.append(t)
-            self.failUnlessEqual(t.ident, None)
-            self.assert_(re.match('<TestThread\(.*, initial\)>', repr(t)))
+            self.assertEqual(t.ident, None)
+            self.assertTrue(re.match('<TestThread\(.*, initial\)>', repr(t)))
             t.start()
 
         if verbose:
             print 'waiting for all tasks to complete'
         for t in threads:
             t.join(NUMTASKS)
-            self.assert_(not t.is_alive())
-            self.failIfEqual(t.ident, 0)
+            self.assertTrue(not t.is_alive())
+            self.assertNotEqual(t.ident, 0)
             self.assertFalse(t.ident is None)
-            self.assert_(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
+            self.assertTrue(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
         if verbose:
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
@@ -142,8 +142,8 @@ class ThreadTests(unittest.TestCase):
         tid = thread.start_new_thread(f, (mutex,))
         # Wait for the thread to finish.
         mutex.acquire()
-        self.assert_(tid in threading._active)
-        self.assert_(isinstance(threading._active[tid],
+        self.assertTrue(tid in threading._active)
+        self.assertTrue(isinstance(threading._active[tid],
                                 threading._DummyThread))
         del threading._active[tid]
 
@@ -203,7 +203,7 @@ class ThreadTests(unittest.TestCase):
         self.assertTrue(ret)
         if verbose:
             print "    verifying worker hasn't exited"
-        self.assert_(not t.finished)
+        self.assertTrue(not t.finished)
         if verbose:
             print "    attempting to raise asynch exception in worker"
         result = set_async_exc(ctypes.c_long(t.id), exception)
@@ -211,7 +211,7 @@ class ThreadTests(unittest.TestCase):
         if verbose:
             print "    waiting for worker to say it caught the exception"
         worker_saw_exception.wait(timeout=10)
-        self.assert_(t.finished)
+        self.assertTrue(t.finished)
         if verbose:
             print "    all OK -- joining worker"
         if t.finished:
@@ -282,8 +282,8 @@ class ThreadTests(unittest.TestCase):
 
             sys.settrace(func)
             """])
-        self.failIf(rc == 2, "interpreted was blocked")
-        self.failUnless(rc == 0, "Unexpected error")
+        self.assertFalse(rc == 2, "interpreted was blocked")
+        self.assertTrue(rc == 0, "Unexpected error")
 
 
     def test_enumerate_after_join(self):
@@ -354,8 +354,8 @@ class ThreadJoinOnShutdown(unittest.TestCase):
         rc = p.wait()
         data = p.stdout.read().replace('\r', '')
         self.assertEqual(data, "end of main\nend of thread\n")
-        self.failIf(rc == 2, "interpreter was blocked")
-        self.failUnless(rc == 0, "Unexpected error")
+        self.assertFalse(rc == 2, "interpreter was blocked")
+        self.assertTrue(rc == 0, "Unexpected error")
 
     def test_1_join_on_shutdown(self):
         # The usual case: on exit, wait for a non-daemon thread

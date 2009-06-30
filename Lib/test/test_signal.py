@@ -217,10 +217,10 @@ class WakeupSignalTests(unittest.TestCase):
         # before select is called
         time.sleep(self.TIMEOUT_FULL)
         mid_time = time.time()
-        self.assert_(mid_time - before_time < self.TIMEOUT_HALF)
+        self.assertTrue(mid_time - before_time < self.TIMEOUT_HALF)
         select.select([self.read], [], [], self.TIMEOUT_FULL)
         after_time = time.time()
-        self.assert_(after_time - mid_time < self.TIMEOUT_HALF)
+        self.assertTrue(after_time - mid_time < self.TIMEOUT_HALF)
 
     def test_wakeup_fd_during(self):
         import select
@@ -231,7 +231,7 @@ class WakeupSignalTests(unittest.TestCase):
         self.assertRaises(select.error, select.select,
             [self.read], [], [], self.TIMEOUT_FULL)
         after_time = time.time()
-        self.assert_(after_time - before_time < self.TIMEOUT_HALF)
+        self.assertTrue(after_time - before_time < self.TIMEOUT_HALF)
 
     def setUp(self):
         import fcntl

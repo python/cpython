@@ -65,8 +65,8 @@ class BufferSizesTests(unittest.TestCase):
         self.assertEqual(fi.filename(), t2)
         self.assertEqual(fi.lineno(), 21)
         self.assertEqual(fi.filelineno(), 6)
-        self.failIf(fi.isfirstline())
-        self.failIf(fi.isstdin())
+        self.assertFalse(fi.isfirstline())
+        self.assertFalse(fi.isstdin())
 
         if verbose:
             print '%s. Nextfile (bs=%s)' % (start+2, bs)
@@ -134,7 +134,7 @@ class FileInputTests(unittest.TestCase):
             self.assertEqual(fi.filename(), t3)
 
             line = fi.readline()
-            self.failIf(line)
+            self.assertFalse(line)
             self.assertEqual(fi.lineno(), 1)
             self.assertEqual(fi.filelineno(), 0)
             self.assertEqual(fi.filename(), t4)

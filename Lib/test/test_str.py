@@ -86,7 +86,7 @@ class StrTest(
             def __unicode__(self):
                 return "not unicode"
 
-        self.assert_(str(Foo0()).startswith("<")) # this is different from __unicode__
+        self.assertTrue(str(Foo0()).startswith("<")) # this is different from __unicode__
         self.assertEqual(str(Foo1()), "foo")
         self.assertEqual(str(Foo2()), "foo")
         self.assertEqual(str(Foo3()), "foo")

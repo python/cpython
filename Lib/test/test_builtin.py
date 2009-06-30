@@ -122,7 +122,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_neg(self):
         x = -sys.maxint-1
-        self.assert_(isinstance(x, int))
+        self.assertTrue(isinstance(x, int))
         self.assertEqual(-x, sys.maxint+1)
 
     def test_apply(self):
@@ -152,19 +152,19 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, apply, id, (42,), 42)
 
     def test_callable(self):
-        self.assert_(callable(len))
+        self.assertTrue(callable(len))
         def f(): pass
-        self.assert_(callable(f))
+        self.assertTrue(callable(f))
         class C:
             def meth(self): pass
-        self.assert_(callable(C))
+        self.assertTrue(callable(C))
         x = C()
-        self.assert_(callable(x.meth))
-        self.assert_(not callable(x))
+        self.assertTrue(callable(x.meth))
+        self.assertTrue(not callable(x))
         class D(C):
             def __call__(self): pass
         y = D()
-        self.assert_(callable(y))
+        self.assertTrue(callable(y))
         y()
 
     def test_chr(self):
@@ -193,9 +193,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, cmp)
 
     def test_coerce(self):
-        self.assert_(not fcmp(coerce(1, 1.1), (1.0, 1.1)))
+        self.assertTrue(not fcmp(coerce(1, 1.1), (1.0, 1.1)))
         self.assertEqual(coerce(1, 1L), (1L, 1L))
-        self.assert_(not fcmp(coerce(1L, 1.1), (1.0, 1.1)))
+        self.assertTrue(not fcmp(coerce(1L, 1.1), (1.0, 1.1)))
         self.assertRaises(TypeError, coerce)
         class BadNumber:
             def __coerce__(self, other):
@@ -234,11 +234,11 @@ class BuiltinTest(unittest.TestCase):
 
         # dir() - local scope
         local_var = 1
-        self.assert_('local_var' in dir())
+        self.assertTrue('local_var' in dir())
 
         # dir(module)
         import sys
-        self.assert_('exit' in dir(sys))
+        self.assertTrue('exit' in dir(sys))
 
         # dir(module_with_invalid__dict__)
         import types
@@ -248,8 +248,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, dir, f)
 
         # dir(type)
-        self.assert_("strip" in dir(str))
-        self.assert_("__mro__" not in dir(str))
+        self.assertTrue("strip" in dir(str))
+        self.assertTrue("__mro__" not in dir(str))
 
         # dir(obj)
         class Foo(object):
@@ -258,13 +258,13 @@ class BuiltinTest(unittest.TestCase):
                 self.y = 8
                 self.z = 9
         f = Foo()
-        self.assert_("y" in dir(f))
+        self.assertTrue("y" in dir(f))
 
         # dir(obj_no__dict__)
         class Foo(object):
             __slots__ = []
         f = Foo()
-        self.assert_("__repr__" in dir(f))
+        self.assertTrue("__repr__" in dir(f))
 
         # dir(obj_no__class__with__dict__)
         # (an ugly trick to cause getattr(f, "__class__") to fail)
@@ -273,15 +273,15 @@ class BuiltinTest(unittest.TestCase):
             def __init__(self):
                 self.bar = "wow"
         f = Foo()
-        self.assert_("__repr__" not in dir(f))
-        self.assert_("bar" in dir(f))
+        self.assertTrue("__repr__" not in dir(f))
+        self.assertTrue("bar" in dir(f))
 
         # dir(obj_using __dir__)
         class Foo(object):
             def __dir__(self):
                 return ["kan", "ga", "roo"]
         f = Foo()
-        self.assert_(dir(f) == ["ga", "kan", "roo"])
+        self.assertTrue(dir(f) == ["ga", "kan", "roo"])
 
         # dir(obj__dir__not_list)
         class Foo(object):
@@ -309,10 +309,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(divmod(-sys.maxint-1, -1),
                          (sys.maxint+1, 0))
 
-        self.assert_(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
-        self.assert_(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
-        self.assert_(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))
-        self.assert_(not fcmp(divmod(-3.25, -1.0), (3.0, -0.25)))
+        self.assertTrue(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
+        self.assertTrue(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
+        self.assertTrue(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))
+        self.assertTrue(not fcmp(divmod(-3.25, -1.0), (3.0, -0.25)))
 
         self.assertRaises(TypeError, divmod)
 
@@ -571,11 +571,11 @@ class BuiltinTest(unittest.TestCase):
                 for func in funcs:
                     outp = filter(func, cls(inp))
                     self.assertEqual(outp, exp)
-                    self.assert_(not isinstance(outp, cls))
+                    self.assertTrue(not isinstance(outp, cls))
 
     def test_getattr(self):
         import sys
-        self.assert_(getattr(sys, 'stdout') is sys.stdout)
+        self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
@@ -584,7 +584,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_hasattr(self):
         import sys
-        self.assert_(hasattr(sys, 'stdout'))
+        self.assertTrue(hasattr(sys, 'stdout'))
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
         if have_unicode:
@@ -647,9 +647,9 @@ class BuiltinTest(unittest.TestCase):
     def test_intern(self):
         self.assertRaises(TypeError, intern)
         s = "never interned before"
-        self.assert_(intern(s) is s)
+        self.assertTrue(intern(s) is s)
         s2 = s.swapcase().swapcase()
-        self.assert_(intern(s2) is s)
+        self.assertTrue(intern(s2) is s)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -690,11 +690,11 @@ class BuiltinTest(unittest.TestCase):
         c = C()
         d = D()
         e = E()
-        self.assert_(isinstance(c, C))
-        self.assert_(isinstance(d, C))
-        self.assert_(not isinstance(e, C))
-        self.assert_(not isinstance(c, D))
-        self.assert_(not isinstance('foo', E))
+        self.assertTrue(isinstance(c, C))
+        self.assertTrue(isinstance(d, C))
+        self.assertTrue(not isinstance(e, C))
+        self.assertTrue(not isinstance(c, D))
+        self.assertTrue(not isinstance('foo', E))
         self.assertRaises(TypeError, isinstance, E, 'foo')
         self.assertRaises(TypeError, isinstance)
 
@@ -708,9 +708,9 @@ class BuiltinTest(unittest.TestCase):
         c = C()
         d = D()
         e = E()
-        self.assert_(issubclass(D, C))
-        self.assert_(issubclass(C, C))
-        self.assert_(not issubclass(C, D))
+        self.assertTrue(issubclass(D, C))
+        self.assertTrue(issubclass(C, C))
+        self.assertTrue(not issubclass(C, D))
         self.assertRaises(TypeError, issubclass, 'foo', E)
         self.assertRaises(TypeError, issubclass, E, 'foo')
         self.assertRaises(TypeError, issubclass)
@@ -1042,18 +1042,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(range(a+4, a, -2), [a+4, a+2])
 
         seq = range(a, b, c)
-        self.assert_(a in seq)
-        self.assert_(b not in seq)
+        self.assertTrue(a in seq)
+        self.assertTrue(b not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = range(b, a, -c)
-        self.assert_(b in seq)
-        self.assert_(a not in seq)
+        self.assertTrue(b in seq)
+        self.assertTrue(a not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = range(-a, -b, -c)
-        self.assert_(-a in seq)
-        self.assert_(-b not in seq)
+        self.assertTrue(-a in seq)
+        self.assertTrue(-b not in seq)
         self.assertEqual(len(seq), 2)
 
         self.assertRaises(TypeError, range)
@@ -1452,7 +1452,7 @@ class BuiltinTest(unittest.TestCase):
         # tests for object.__format__ really belong elsewhere, but
         #  there's no good place to put them
         x = object().__format__('')
-        self.assert_(x.startswith('<object object at'))
+        self.assertTrue(x.startswith('<object object at'))
 
         # first argument to object.__format__ must be string
         self.assertRaises(TypeError, object().__format__, 3)
