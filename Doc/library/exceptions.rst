@@ -477,7 +477,10 @@ module for more information.
 
    .. versionadded:: 2.5
 
-The class hierarchy for built-in exceptions is:
 
+Exception hierarchy
+-------------------
+
+The class hierarchy for built-in exceptions is:
 
 .. literalinclude:: ../../Lib/test/exception_hierarchy.txt
