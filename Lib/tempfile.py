@@ -411,6 +411,9 @@ class _TemporaryFileWrapper:
             result = self.file.__exit__(exc, value, tb)
             self.close()
             return result
+    else:
+        def __exit__(self, exc, value, tb):
+            pass
 
 
 def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
