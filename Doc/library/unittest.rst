@@ -651,8 +651,8 @@ Test cases
 
       Run the test, collecting the result into the test result object passed as
       *result*.  If *result* is omitted or :const:`None`, a temporary result
-      object is created (by calling the :meth:`defaultTestCase` method) and
-      used; this result object is not returned to :meth:`run`'s caller.
+      object is created (by calling the :meth:`defaultTestResult` method) and
+      used. The result object is not returned to :meth:`run`'s caller.
 
       The same effect may be had by simply calling the :class:`TestCase`
       instance.
