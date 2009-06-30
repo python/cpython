@@ -50,15 +50,15 @@ class BasicTestMappingProtocol(unittest.TestCase):
         for key, value in self.reference.items():
             self.assertEqual(d[key], value)
         knownkey = list(self.other.keys())[0]
-        self.failUnlessRaises(KeyError, lambda:d[knownkey])
+        self.assertRaises(KeyError, lambda:d[knownkey])
         #len
         self.assertEqual(len(p), 0)
         self.assertEqual(len(d), len(self.reference))
         #__contains__
         for k in self.reference:
-            self.assert_(k in d)
+            self.assertTrue(k in d)
         for k in self.other:
-            self.failIf(k in d)
+            self.assertFalse(k in d)
         #cmp
         self.assertEqual(p, p)
         self.assertEqual(d, d)
@@ -69,10 +69,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
         if not d: self.fail("Full mapping must compare to True")
         # keys(), items(), iterkeys() ...
         def check_iterandlist(iter, lst, ref):
-            self.assert_(hasattr(iter, '__next__'))
-            self.assert_(hasattr(iter, '__iter__'))
+            self.assertTrue(hasattr(iter, '__next__'))
+            self.assertTrue(hasattr(iter, '__iter__'))
             x = list(iter)
-            self.assert_(set(x)==set(lst)==set(ref))
+            self.assertTrue(set(x)==set(lst)==set(ref))
         check_iterandlist(iter(d.keys()), list(d.keys()),
                           self.reference.keys())
         check_iterandlist(iter(d), list(d.keys()), self.reference.keys())
@@ -85,7 +85,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         knownkey, knownvalue = next(iter(self.other.items()))
         self.assertEqual(d.get(key, knownvalue), value)
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
-        self.failIf(knownkey in d)
+        self.assertFalse(knownkey in d)
 
     def test_write(self):
         # Test for write operations on mapping
@@ -96,7 +96,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
             self.assertEqual(p[key], value)
         for key in self.reference.keys():
             del p[key]
-            self.failUnlessRaises(KeyError, lambda:p[key])
+            self.assertRaises(KeyError, lambda:p[key])
         p = self._empty_mapping()
         #update
         p.update(self.reference)
@@ -115,16 +115,16 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(d[knownkey], knownvalue)
         #pop
         self.assertEqual(d.pop(knownkey), knownvalue)
-        self.failIf(knownkey in d)
+        self.assertFalse(knownkey in d)
         self.assertRaises(KeyError, d.pop, knownkey)
         default = 909
         d[knownkey] = knownvalue
         self.assertEqual(d.pop(knownkey, default), knownvalue)
-        self.failIf(knownkey in d)
+        self.assertFalse(knownkey in d)
         self.assertEqual(d.pop(knownkey, default), default)
         #popitem
         key, value = d.popitem()
-        self.failIf(key in d)
+        self.assertFalse(key in d)
         self.assertEqual(value, self.reference[key])
         p=self._empty_mapping()
         self.assertRaises(KeyError, p.popitem)
@@ -133,17 +133,17 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(self._empty_mapping(), self._empty_mapping())
 
     def test_bool(self):
-        self.assert_(not self._empty_mapping())
-        self.assert_(self.reference)
-        self.assert_(bool(self._empty_mapping()) is False)
-        self.assert_(bool(self.reference) is True)
+        self.assertTrue(not self._empty_mapping())
+        self.assertTrue(self.reference)
+        self.assertTrue(bool(self._empty_mapping()) is False)
+        self.assertTrue(bool(self.reference) is True)
 
     def test_keys(self):
         d = self._empty_mapping()
         self.assertEqual(list(d.keys()), [])
         d = self.reference
-        self.assert_(list(self.inmapping.keys())[0] in d.keys())
-        self.assert_(list(self.other.keys())[0] not in d.keys())
+        self.assertTrue(list(self.inmapping.keys())[0] in d.keys())
+        self.assertTrue(list(self.other.keys())[0] not in d.keys())
         self.assertRaises(TypeError, d.keys, None)
 
     def test_values(self):
@@ -268,10 +268,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_get(self):
         d = self._empty_mapping()
-        self.assert_(d.get(list(self.other.keys())[0]) is None)
+        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         d = self.reference
-        self.assert_(d.get(list(self.other.keys())[0]) is None)
+        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         self.assertEqual(d.get(list(self.inmapping.keys())[0]),
                          list(self.inmapping.values())[0])
@@ -304,15 +304,15 @@ class BasicTestMappingProtocol(unittest.TestCase):
 class TestMappingProtocol(BasicTestMappingProtocol):
     def test_constructor(self):
         BasicTestMappingProtocol.test_constructor(self)
-        self.assert_(self._empty_mapping() is not self._empty_mapping())
+        self.assertTrue(self._empty_mapping() is not self._empty_mapping())
         self.assertEqual(self.type2test(x=1, y=2), {"x": 1, "y": 2})
 
     def test_bool(self):
         BasicTestMappingProtocol.test_bool(self)
-        self.assert_(not self._empty_mapping())
-        self.assert_(self._full_mapping({"x": "y"}))
-        self.assert_(bool(self._empty_mapping()) is False)
-        self.assert_(bool(self._full_mapping({"x": "y"})) is True)
+        self.assertTrue(not self._empty_mapping())
+        self.assertTrue(self._full_mapping({"x": "y"}))
+        self.assertTrue(bool(self._empty_mapping()) is False)
+        self.assertTrue(bool(self._full_mapping({"x": "y"})) is True)
 
     def test_keys(self):
         BasicTestMappingProtocol.test_keys(self)
@@ -320,9 +320,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         self.assertEqual(list(d.keys()), [])
         d = self._full_mapping({'a': 1, 'b': 2})
         k = d.keys()
-        self.assert_('a' in k)
-        self.assert_('b' in k)
-        self.assert_('c' not in k)
+        self.assertTrue('a' in k)
+        self.assertTrue('b' in k)
+        self.assertTrue('c' not in k)
 
     def test_values(self):
         BasicTestMappingProtocol.test_values(self)
@@ -337,12 +337,12 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
     def test_contains(self):
         d = self._empty_mapping()
-        self.assert_(not ('a' in d))
-        self.assert_('a' not in d)
+        self.assertTrue(not ('a' in d))
+        self.assertTrue('a' not in d)
         d = self._full_mapping({'a': 1, 'b': 2})
-        self.assert_('a' in d)
-        self.assert_('b' in d)
-        self.assert_('c' not in d)
+        self.assertTrue('a' in d)
+        self.assertTrue('b' in d)
+        self.assertTrue('c' not in d)
 
         self.assertRaises(TypeError, d.__contains__)
 
@@ -421,7 +421,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_fromkeys(self):
         self.assertEqual(self.type2test.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = self._empty_mapping()
-        self.assert_(not(d.fromkeys('abc') is d))
+        self.assertTrue(not(d.fromkeys('abc') is d))
         self.assertEqual(d.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         self.assertEqual(d.fromkeys((4,5),0), {4:0, 5:0})
         self.assertEqual(d.fromkeys([]), {})
@@ -432,17 +432,17 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         class dictlike(self.type2test): pass
         self.assertEqual(dictlike.fromkeys('a'), {'a':None})
         self.assertEqual(dictlike().fromkeys('a'), {'a':None})
-        self.assert_(dictlike.fromkeys('a').__class__ is dictlike)
-        self.assert_(dictlike().fromkeys('a').__class__ is dictlike)
+        self.assertTrue(dictlike.fromkeys('a').__class__ is dictlike)
+        self.assertTrue(dictlike().fromkeys('a').__class__ is dictlike)
         # FIXME: the following won't work with UserDict, because it's an old style class
-        # self.assert_(type(dictlike.fromkeys('a')) is dictlike)
+        # self.assertTrue(type(dictlike.fromkeys('a')) is dictlike)
         class mydict(self.type2test):
             def __new__(cls):
                 return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
         # FIXME: the following won't work with UserDict, because it's an old style class
-        # self.assert_(isinstance(ud, collections.UserDict))
+        # self.assertTrue(isinstance(ud, collections.UserDict))
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass
@@ -472,16 +472,16 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
         d = self._empty_mapping()
         self.assertEqual(d.copy(), d)
-        self.assert_(isinstance(d.copy(), d.__class__))
+        self.assertTrue(isinstance(d.copy(), d.__class__))
         self.assertRaises(TypeError, d.copy, None)
 
     def test_get(self):
         BasicTestMappingProtocol.test_get(self)
         d = self._empty_mapping()
-        self.assert_(d.get('c') is None)
+        self.assertTrue(d.get('c') is None)
         self.assertEqual(d.get('c', 3), 3)
         d = self._full_mapping({'a' : 1, 'b' : 2})
-        self.assert_(d.get('c') is None)
+        self.assertTrue(d.get('c') is None)
         self.assertEqual(d.get('c', 3), 3)
         self.assertEqual(d.get('a'), 1)
         self.assertEqual(d.get('a', 3), 1)
@@ -489,9 +489,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_setdefault(self):
         BasicTestMappingProtocol.test_setdefault(self)
         d = self._empty_mapping()
-        self.assert_(d.setdefault('key0') is None)
+        self.assertTrue(d.setdefault('key0') is None)
         d.setdefault('key0', [])
-        self.assert_(d.setdefault('key0') is None)
+        self.assertTrue(d.setdefault('key0') is None)
         d.setdefault('key', []).append(3)
         self.assertEqual(d['key'][0], 3)
         d.setdefault('key', []).append(4)
@@ -517,9 +517,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
                     self.assertEqual(va, int(ka))
                     kb, vb = tb = b.popitem()
                     self.assertEqual(vb, int(kb))
-                    self.assert_(not(copymode < 0 and ta != tb))
-                self.assert_(not a)
-                self.assert_(not b)
+                    self.assertTrue(not(copymode < 0 and ta != tb))
+                self.assertTrue(not a)
+                self.assertTrue(not b)
 
     def test_pop(self):
         BasicTestMappingProtocol.test_pop(self)
@@ -577,7 +577,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
                 return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assert_(isinstance(ud, collections.UserDict))
+        self.assertTrue(isinstance(ud, collections.UserDict))
 
     def test_pop(self):
         TestMappingProtocol.test_pop(self)

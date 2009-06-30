@@ -629,7 +629,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
         behaviour of the interpreter when it encounters a similar condition.
         """
         f = 'tokenize_tests-latin1-coding-cookie-and-utf8-bom-sig.txt'
-        self.failUnlessRaises(SyntaxError, self._testFile, f)
+        self.assertRaises(SyntaxError, self._testFile, f)
 
     def test_no_coding_cookie_and_utf8_bom(self):
         f = 'tokenize_tests-no-coding-cookie-and-utf8-bom-sig-only.txt'

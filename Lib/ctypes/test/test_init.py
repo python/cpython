@@ -24,17 +24,17 @@ class InitTest(unittest.TestCase):
         # make sure the only accessing a nested structure
         # doesn't call the structure's __new__ and __init__
         y = Y()
-        self.failUnlessEqual((y.x.a, y.x.b), (0, 0))
-        self.failUnlessEqual(y.x.new_was_called, False)
+        self.assertEqual((y.x.a, y.x.b), (0, 0))
+        self.assertEqual(y.x.new_was_called, False)
 
         # But explicitely creating an X structure calls __new__ and __init__, of course.
         x = X()
-        self.failUnlessEqual((x.a, x.b), (9, 12))
-        self.failUnlessEqual(x.new_was_called, True)
+        self.assertEqual((x.a, x.b), (9, 12))
+        self.assertEqual(x.new_was_called, True)
 
         y.x = x
-        self.failUnlessEqual((y.x.a, y.x.b), (9, 12))
-        self.failUnlessEqual(y.x.new_was_called, False)
+        self.assertEqual((y.x.a, y.x.b), (9, 12))
+        self.assertEqual(y.x.new_was_called, False)
 
 if __name__ == "__main__":
     unittest.main()

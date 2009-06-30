@@ -35,9 +35,9 @@ class InstallDataTestCase(support.TempdirManager,
         # let's check the result
         self.assertEquals(len(cmd.get_outputs()), 2)
         rtwo = os.path.split(two)[-1]
-        self.assert_(os.path.exists(os.path.join(inst2, rtwo)))
+        self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
         rone = os.path.split(one)[-1]
-        self.assert_(os.path.exists(os.path.join(inst, rone)))
+        self.assertTrue(os.path.exists(os.path.join(inst, rone)))
         cmd.outfiles = []
 
         # let's try with warn_dir one
@@ -47,8 +47,8 @@ class InstallDataTestCase(support.TempdirManager,
 
         # let's check the result
         self.assertEquals(len(cmd.get_outputs()), 2)
-        self.assert_(os.path.exists(os.path.join(inst2, rtwo)))
-        self.assert_(os.path.exists(os.path.join(inst, rone)))
+        self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
+        self.assertTrue(os.path.exists(os.path.join(inst, rone)))
         cmd.outfiles = []
 
         # now using root and empty dir
@@ -65,8 +65,8 @@ class InstallDataTestCase(support.TempdirManager,
 
         # let's check the result
         self.assertEquals(len(cmd.get_outputs()), 4)
-        self.assert_(os.path.exists(os.path.join(inst2, rtwo)))
-        self.assert_(os.path.exists(os.path.join(inst, rone)))
+        self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
+        self.assertTrue(os.path.exists(os.path.join(inst, rone)))
 
 def test_suite():
     return unittest.makeSuite(InstallDataTestCase)

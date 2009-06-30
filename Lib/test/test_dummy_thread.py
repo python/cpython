@@ -24,43 +24,43 @@ class LockTests(unittest.TestCase):
 
     def test_initlock(self):
         #Make sure locks start locked
-        self.failUnless(not self.lock.locked(),
+        self.assertTrue(not self.lock.locked(),
                         "Lock object is not initialized unlocked.")
 
     def test_release(self):
         # Test self.lock.release()
         self.lock.acquire()
         self.lock.release()
-        self.failUnless(not self.lock.locked(),
+        self.assertTrue(not self.lock.locked(),
                         "Lock object did not release properly.")
 
     def test_improper_release(self):
         #Make sure release of an unlocked thread raises _thread.error
-        self.failUnlessRaises(_thread.error, self.lock.release)
+        self.assertRaises(_thread.error, self.lock.release)
 
     def test_cond_acquire_success(self):
         #Make sure the conditional acquiring of the lock works.
-        self.failUnless(self.lock.acquire(0),
+        self.assertTrue(self.lock.acquire(0),
                         "Conditional acquiring of the lock failed.")
 
     def test_cond_acquire_fail(self):
         #Test acquiring locked lock returns False
         self.lock.acquire(0)
-        self.failUnless(not self.lock.acquire(0),
+        self.assertTrue(not self.lock.acquire(0),
                         "Conditional acquiring of a locked lock incorrectly "
                          "succeeded.")
 
     def test_uncond_acquire_success(self):
         #Make sure unconditional acquiring of a lock works.
         self.lock.acquire()
-        self.failUnless(self.lock.locked(),
+        self.assertTrue(self.lock.locked(),
                         "Uncondional locking failed.")
 
     def test_uncond_acquire_return_val(self):
         #Make sure that an unconditional locking returns True.
-        self.failUnless(self.lock.acquire(1) is True,
+        self.assertTrue(self.lock.acquire(1) is True,
                         "Unconditional locking did not return True.")
-        self.failUnless(self.lock.acquire() is True)
+        self.assertTrue(self.lock.acquire() is True)
 
     def test_uncond_acquire_blocking(self):
         #Make sure that unconditional acquiring of a locked lock blocks.
@@ -80,7 +80,7 @@ class LockTests(unittest.TestCase):
         end_time = int(time.time())
         if support.verbose:
             print("done")
-        self.failUnless((end_time - start_time) >= DELAY,
+        self.assertTrue((end_time - start_time) >= DELAY,
                         "Blocking by unconditional acquiring failed.")
 
 class MiscTests(unittest.TestCase):
@@ -88,18 +88,18 @@ class MiscTests(unittest.TestCase):
 
     def test_exit(self):
         #Make sure _thread.exit() raises SystemExit
-        self.failUnlessRaises(SystemExit, _thread.exit)
+        self.assertRaises(SystemExit, _thread.exit)
 
     def test_ident(self):
         #Test sanity of _thread.get_ident()
-        self.failUnless(isinstance(_thread.get_ident(), int),
+        self.assertTrue(isinstance(_thread.get_ident(), int),
                         "_thread.get_ident() returned a non-integer")
-        self.failUnless(_thread.get_ident() != 0,
+        self.assertTrue(_thread.get_ident() != 0,
                         "_thread.get_ident() returned 0")
 
     def test_LockType(self):
         #Make sure _thread.LockType is the same type as _thread.allocate_locke()
-        self.failUnless(isinstance(_thread.allocate_lock(), _thread.LockType),
+        self.assertTrue(isinstance(_thread.allocate_lock(), _thread.LockType),
                         "_thread.LockType is not an instance of what is "
                          "returned by _thread.allocate_lock()")
 
@@ -108,13 +108,13 @@ class MiscTests(unittest.TestCase):
         # should raise KeyboardInterrupt upon completion.
         def call_interrupt():
             _thread.interrupt_main()
-        self.failUnlessRaises(KeyboardInterrupt, _thread.start_new_thread,
+        self.assertRaises(KeyboardInterrupt, _thread.start_new_thread,
                               call_interrupt, tuple())
 
     def test_interrupt_in_main(self):
         # Make sure that if interrupt_main is called in main threat that
         # KeyboardInterrupt is raised instantly.
-        self.failUnlessRaises(KeyboardInterrupt, _thread.interrupt_main)
+        self.assertRaises(KeyboardInterrupt, _thread.interrupt_main)
 
 class ThreadTests(unittest.TestCase):
     """Test thread creation."""
@@ -128,16 +128,16 @@ class ThreadTests(unittest.TestCase):
         testing_queue = queue.Queue(1)
         _thread.start_new_thread(arg_tester, (testing_queue, True, True))
         result = testing_queue.get()
-        self.failUnless(result[0] and result[1],
+        self.assertTrue(result[0] and result[1],
                         "Argument passing for thread creation using tuple failed")
         _thread.start_new_thread(arg_tester, tuple(), {'queue':testing_queue,
                                                        'arg1':True, 'arg2':True})
         result = testing_queue.get()
-        self.failUnless(result[0] and result[1],
+        self.assertTrue(result[0] and result[1],
                         "Argument passing for thread creation using kwargs failed")
         _thread.start_new_thread(arg_tester, (testing_queue, True), {'arg2':True})
         result = testing_queue.get()
-        self.failUnless(result[0] and result[1],
+        self.assertTrue(result[0] and result[1],
                         "Argument passing for thread creation using both tuple"
                         " and kwargs failed")
 
@@ -164,7 +164,7 @@ class ThreadTests(unittest.TestCase):
         time.sleep(DELAY)
         if support.verbose:
             print('done')
-        self.failUnless(testing_queue.qsize() == thread_count,
+        self.assertTrue(testing_queue.qsize() == thread_count,
                         "Not all %s threads executed properly after %s sec." %
                         (thread_count, DELAY))
 

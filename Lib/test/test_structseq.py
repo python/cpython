@@ -28,7 +28,7 @@ class StructSeqTest(unittest.TestCase):
 
     def test_repr(self):
         t = time.gmtime()
-        self.assert_(repr(t))
+        self.assertTrue(repr(t))
         t = time.gmtime(0)
         self.assertEqual(repr(t),
             "time.struct_time(tm_year=1970, tm_mon=1, tm_mday=1, tm_hour=0, "
@@ -50,8 +50,8 @@ class StructSeqTest(unittest.TestCase):
     def test_contains(self):
         t1 = time.gmtime()
         for item in t1:
-            self.assert_(item in t1)
-        self.assert_(-42 not in t1)
+            self.assertTrue(item in t1)
+        self.assertTrue(-42 not in t1)
 
     def test_hash(self):
         t1 = time.gmtime()
@@ -61,11 +61,11 @@ class StructSeqTest(unittest.TestCase):
         t1 = time.gmtime()
         t2 = type(t1)(t1)
         self.assertEqual(t1, t2)
-        self.assert_(not (t1 < t2))
-        self.assert_(t1 <= t2)
-        self.assert_(not (t1 > t2))
-        self.assert_(t1 >= t2)
-        self.assert_(not (t1 != t2))
+        self.assertTrue(not (t1 < t2))
+        self.assertTrue(t1 <= t2)
+        self.assertTrue(not (t1 > t2))
+        self.assertTrue(t1 >= t2)
+        self.assertTrue(not (t1 != t2))
 
     def test_fields(self):
         t = time.gmtime()

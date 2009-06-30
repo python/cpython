@@ -449,7 +449,7 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(l, proto)
             x = self.loads(s)
             self.assertEqual(len(x), 1)
-            self.assert_(x is x[0])
+            self.assertTrue(x is x[0])
 
     def test_recursive_tuple(self):
         t = ([],)
@@ -459,7 +459,7 @@ class AbstractPickleTests(unittest.TestCase):
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertEqual(len(x[0]), 1)
-            self.assert_(x is x[0][0])
+            self.assertTrue(x is x[0][0])
 
     def test_recursive_dict(self):
         d = {}
@@ -468,7 +468,7 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(d, proto)
             x = self.loads(s)
             self.assertEqual(list(x.keys()), [1])
-            self.assert_(x[1] is x)
+            self.assertTrue(x[1] is x)
 
     def test_recursive_inst(self):
         i = C()
@@ -477,7 +477,7 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(i, 2)
             x = self.loads(s)
             self.assertEqual(dir(x), dir(i))
-            self.assert_(x.attr is x)
+            self.assertTrue(x.attr is x)
 
     def test_recursive_multi(self):
         l = []
@@ -491,7 +491,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
             self.assertEqual(list(x[0].attr.keys()), [1])
-            self.assert_(x[0].attr[1] is x)
+            self.assertTrue(x[0].attr[1] is x)
 
     def test_get(self):
         self.assertRaises(KeyError, self.loads, b'g0\np0')
@@ -639,7 +639,7 @@ class AbstractPickleTests(unittest.TestCase):
         try:
             self.loads(badpickle)
         except ValueError as detail:
-            self.failUnless(str(detail).startswith(
+            self.assertTrue(str(detail).startswith(
                                             "unsupported pickle protocol"))
         else:
             self.fail("expected bad protocol number to raise ValueError")
@@ -720,7 +720,7 @@ class AbstractPickleTests(unittest.TestCase):
             for x in None, False, True:
                 s = self.dumps(x, proto)
                 y = self.loads(s)
-                self.assert_(x is y, (proto, x, s, y))
+                self.assertTrue(x is y, (proto, x, s, y))
                 expected = expected_opcode[proto, x]
                 self.assertEqual(opcode_in_pickle(expected, s), True)
 
@@ -770,8 +770,8 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
-            self.assert_(__name__.encode("utf-8") in s1)
-            self.assert_(b"MyList" in s1)
+            self.assertTrue(__name__.encode("utf-8") in s1)
+            self.assertTrue(b"MyList" in s1)
             self.assertEqual(opcode_in_pickle(opcode, s1), False)
 
             y = self.loads(s1)
@@ -780,8 +780,8 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assert_(__name__.encode("utf-8") not in s2)
-            self.assert_(b"MyList" not in s2)
+            self.assertTrue(__name__.encode("utf-8") not in s2)
+            self.assertTrue(b"MyList" not in s2)
             self.assertEqual(opcode_in_pickle(opcode, s2), True, repr(s2))
 
             y = self.loads(s2)
@@ -825,7 +825,7 @@ class AbstractPickleTests(unittest.TestCase):
             if proto == 0:
                 self.assertEqual(num_appends, 0)
             else:
-                self.failUnless(num_appends >= 2)
+                self.assertTrue(num_appends >= 2)
 
     def test_dict_chunking(self):
         n = 10  # too small to chunk
@@ -848,7 +848,7 @@ class AbstractPickleTests(unittest.TestCase):
             if proto == 0:
                 self.assertEqual(num_setitems, 0)
             else:
-                self.failUnless(num_setitems >= 2)
+                self.assertTrue(num_setitems >= 2)
 
     def test_simple_newobj(self):
         x = object.__new__(SimpleNewObj)  # avoid __init__

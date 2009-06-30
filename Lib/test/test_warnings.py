@@ -83,9 +83,9 @@ class FilterTests(object):
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
             self.module.warn(message, UserWarning)
-            self.assert_(message, w[-1].message)
+            self.assertTrue(message, w[-1].message)
             self.module.warn(message, UserWarning)
-            self.assert_(w[-1].message, message)
+            self.assertTrue(w[-1].message, message)
 
     def test_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -165,7 +165,7 @@ class FilterTests(object):
             text = 'handle normally'
             self.module.warn(text)
             self.assertEqual(str(w[-1].message), text)
-            self.assert_(w[-1].category is UserWarning)
+            self.assertTrue(w[-1].category is UserWarning)
 
             self.module.filterwarnings("ignore", "", Warning, "", 0)
             text = 'filtered out'
@@ -178,7 +178,7 @@ class FilterTests(object):
             text = 'nonmatching text'
             self.module.warn(text)
             self.assertEqual(str(w[-1].message), text)
-            self.assert_(w[-1].category is UserWarning)
+            self.assertTrue(w[-1].category is UserWarning)
 
 class CFilterTests(BaseTest, FilterTests):
     module = c_warnings
@@ -198,7 +198,7 @@ class WarnTests(unittest.TestCase):
                 text = 'multi %d' %i  # Different text on each call.
                 self.module.warn(text)
                 self.assertEqual(str(w[-1].message), text)
-                self.assert_(w[-1].category is UserWarning)
+                self.assertTrue(w[-1].category is UserWarning)
 
     # Issue 3639
     def test_warn_nonstandard_types(self):
@@ -407,7 +407,7 @@ class _WarningsTests(BaseTest):
                 self.module.resetwarnings()
                 self.module.filterwarnings("once", category=UserWarning)
                 self.module.warn_explicit(message, UserWarning, "file", 42)
-                self.failUnlessEqual(w[-1].message, message)
+                self.assertEqual(w[-1].message, message)
                 del w[:]
                 self.module.warn_explicit(message, UserWarning, "file", 42)
                 self.assertEquals(len(w), 0)
@@ -415,7 +415,7 @@ class _WarningsTests(BaseTest):
                 self.module.onceregistry = {}
                 __warningregistry__ = {}
                 self.module.warn('onceregistry test')
-                self.failUnlessEqual(w[-1].message.args, message.args)
+                self.assertEqual(w[-1].message.args, message.args)
                 # Removal of onceregistry is okay.
                 del w[:]
                 del self.module.onceregistry
@@ -469,7 +469,7 @@ class _WarningsTests(BaseTest):
             with support.captured_output('stderr') as stream:
                 self.module.warn(text)
                 result = stream.getvalue()
-        self.failUnless(text in result)
+        self.assertTrue(text in result)
 
     def test_showwarning_not_callable(self):
         with original_warnings.catch_warnings(module=self.module):
@@ -490,19 +490,19 @@ class _WarningsTests(BaseTest):
             with support.captured_output('stderr') as stream:
                 warning_tests.inner(text)
                 result = stream.getvalue()
-        self.failUnlessEqual(result.count('\n'), 2,
+        self.assertEqual(result.count('\n'), 2,
                              "Too many newlines in %r" % result)
         first_line, second_line = result.split('\n', 1)
         expected_file = os.path.splitext(warning_tests.__file__)[0] + '.py'
         first_line_parts = first_line.rsplit(':', 3)
         path, line, warning_class, message = first_line_parts
         line = int(line)
-        self.failUnlessEqual(expected_file, path)
-        self.failUnlessEqual(warning_class, ' ' + UserWarning.__name__)
-        self.failUnlessEqual(message, ' ' + text)
+        self.assertEqual(expected_file, path)
+        self.assertEqual(warning_class, ' ' + UserWarning.__name__)
+        self.assertEqual(message, ' ' + text)
         expected_line = '  ' + linecache.getline(path, line).strip() + '\n'
         assert expected_line
-        self.failUnlessEqual(second_line, expected_line)
+        self.assertEqual(second_line, expected_line)
 
 
 class WarningsDisplayTests(unittest.TestCase):
@@ -519,13 +519,13 @@ class WarningsDisplayTests(unittest.TestCase):
         format = "%s:%s: %s: %s\n  %s\n"
         expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
-        self.failUnlessEqual(expect, self.module.formatwarning(message,
+        self.assertEqual(expect, self.module.formatwarning(message,
                                                 category, file_name, line_num))
         # Test the 'line' argument.
         file_line += " for the win!"
         expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
-        self.failUnlessEqual(expect, self.module.formatwarning(message,
+        self.assertEqual(expect, self.module.formatwarning(message,
                                     category, file_name, line_num, file_line))
 
     def test_showwarning(self):
@@ -539,7 +539,7 @@ class WarningsDisplayTests(unittest.TestCase):
                                             line_num)
         self.module.showwarning(message, category, file_name, line_num,
                                 file_object)
-        self.failUnlessEqual(file_object.getvalue(), expect)
+        self.assertEqual(file_object.getvalue(), expect)
         # Test 'line' argument.
         expected_file_line += "for the win!"
         expect = self.module.formatwarning(message, category, file_name,
@@ -547,7 +547,7 @@ class WarningsDisplayTests(unittest.TestCase):
         file_object = StringIO()
         self.module.showwarning(message, category, file_name, line_num,
                                 file_object, expected_file_line)
-        self.failUnlessEqual(expect, file_object.getvalue())
+        self.assertEqual(expect, file_object.getvalue())
 
 class CWarningsDisplayTests(BaseTest, WarningsDisplayTests):
     module = c_warnings
@@ -567,20 +567,20 @@ class CatchWarningTests(BaseTest):
         # Ensure both showwarning and filters are restored when recording
         with wmod.catch_warnings(module=wmod, record=True):
             wmod.filters = wmod.showwarning = object()
-        self.assert_(wmod.filters is orig_filters)
-        self.assert_(wmod.showwarning is orig_showwarning)
+        self.assertTrue(wmod.filters is orig_filters)
+        self.assertTrue(wmod.showwarning is orig_showwarning)
         # Same test, but with recording disabled
         with wmod.catch_warnings(module=wmod, record=False):
             wmod.filters = wmod.showwarning = object()
-        self.assert_(wmod.filters is orig_filters)
-        self.assert_(wmod.showwarning is orig_showwarning)
+        self.assertTrue(wmod.filters is orig_filters)
+        self.assertTrue(wmod.showwarning is orig_showwarning)
 
     def test_catch_warnings_recording(self):
         wmod = self.module
         # Ensure warnings are recorded when requested
         with wmod.catch_warnings(module=wmod, record=True) as w:
             self.assertEqual(w, [])
-            self.assert_(type(w) is list)
+            self.assertTrue(type(w) is list)
             wmod.simplefilter("always")
             wmod.warn("foo")
             self.assertEqual(str(w[-1].message), "foo")
@@ -593,8 +593,8 @@ class CatchWarningTests(BaseTest):
         # Ensure warnings are not recorded when not requested
         orig_showwarning = wmod.showwarning
         with wmod.catch_warnings(module=wmod, record=False) as w:
-            self.assert_(w is None)
-            self.assert_(wmod.showwarning is orig_showwarning)
+            self.assertTrue(w is None)
+            self.assertTrue(wmod.showwarning is orig_showwarning)
 
     def test_catch_warnings_reentry_guard(self):
         wmod = self.module
@@ -615,17 +615,17 @@ class CatchWarningTests(BaseTest):
         orig_showwarning = wmod.showwarning
         # Ensure default behaviour is not to record warnings
         with wmod.catch_warnings(module=wmod) as w:
-            self.assert_(w is None)
-            self.assert_(wmod.showwarning is orig_showwarning)
-            self.assert_(wmod.filters is not orig_filters)
-        self.assert_(wmod.filters is orig_filters)
+            self.assertTrue(w is None)
+            self.assertTrue(wmod.showwarning is orig_showwarning)
+            self.assertTrue(wmod.filters is not orig_filters)
+        self.assertTrue(wmod.filters is orig_filters)
         if wmod is sys.modules['warnings']:
             # Ensure the default module is this one
             with wmod.catch_warnings() as w:
-                self.assert_(w is None)
-                self.assert_(wmod.showwarning is orig_showwarning)
-                self.assert_(wmod.filters is not orig_filters)
-            self.assert_(wmod.filters is orig_filters)
+                self.assertTrue(w is None)
+                self.assertTrue(wmod.showwarning is orig_showwarning)
+                self.assertTrue(wmod.filters is not orig_filters)
+            self.assertTrue(wmod.filters is orig_filters)
 
     def test_check_warnings(self):
         # Explicit tests for the test.support convenience wrapper

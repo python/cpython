@@ -59,7 +59,7 @@ class TC(unittest.TestCase):
                          "file '%s' does not end with '%s'" % (nbase, suf))
 
         nbase = nbase[len(pre):len(nbase)-len(suf)]
-        self.assert_(self.str_check.match(nbase),
+        self.assertTrue(self.str_check.match(nbase),
                      "random string '%s' does not match /^[a-zA-Z0-9_-]{6}$/"
                      % nbase)
 
@@ -88,7 +88,7 @@ class test_exports(TC):
         for key in dict:
             if key[0] != '_' and key not in expected:
                 unexp.append(key)
-        self.failUnless(len(unexp) == 0,
+        self.assertTrue(len(unexp) == 0,
                         "unexpected keys: %s" % unexp)
 
 test_classes.append(test_exports)
@@ -113,7 +113,7 @@ class test__RandomNameSequence(TC):
         for i in range(TEST_FILES):
             s = next(r)
             self.nameCheck(s, '', '', '')
-            self.failIf(s in dict)
+            self.assertFalse(s in dict)
             dict[s] = 1
 
     def supports_iter(self):
@@ -140,9 +140,9 @@ class test__candidate_tempdir_list(TC):
 
         cand = tempfile._candidate_tempdir_list()
 
-        self.failIf(len(cand) == 0)
+        self.assertFalse(len(cand) == 0)
         for c in cand:
-            self.assert_(isinstance(c, str),
+            self.assertTrue(isinstance(c, str),
                          "%s is not a string" % c)
 
     def test_wanted_dirs(self):
@@ -160,14 +160,14 @@ class test__candidate_tempdir_list(TC):
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname: raise ValueError
-                self.assert_(dirname in cand)
+                self.assertTrue(dirname in cand)
 
             try:
                 dirname = os.getcwd()
             except (AttributeError, os.error):
                 dirname = os.curdir
 
-            self.assert_(dirname in cand)
+            self.assertTrue(dirname in cand)
 
             # Not practical to try to verify the presence of OS-specific
             # paths in this list.
@@ -184,14 +184,14 @@ class test__get_candidate_names(TC):
     def test_retval(self):
         # _get_candidate_names returns a _RandomNameSequence object
         obj = tempfile._get_candidate_names()
-        self.assert_(isinstance(obj, tempfile._RandomNameSequence))
+        self.assertTrue(isinstance(obj, tempfile._RandomNameSequence))
 
     def test_same_thing(self):
         # _get_candidate_names always returns the same object
         a = tempfile._get_candidate_names()
         b = tempfile._get_candidate_names()
 
-        self.assert_(a is b)
+        self.assertTrue(a is b)
 
 test_classes.append(test__get_candidate_names)
 
@@ -300,9 +300,9 @@ class test__mkstemp_inner(TC):
             decorated = sys.executable
 
         retval = os.spawnl(os.P_WAIT, sys.executable, decorated, tester, v, fd)
-        self.failIf(retval < 0,
+        self.assertFalse(retval < 0,
                     "child process caught fatal signal %d" % -retval)
-        self.failIf(retval > 0, "child process reports failure %d"%retval)
+        self.assertFalse(retval > 0, "child process reports failure %d"%retval)
 
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
@@ -322,8 +322,8 @@ class test_gettempprefix(TC):
         # gettempprefix returns a nonempty prefix string
         p = tempfile.gettempprefix()
 
-        self.assert_(isinstance(p, str))
-        self.assert_(len(p) > 0)
+        self.assertTrue(isinstance(p, str))
+        self.assertTrue(len(p) > 0)
 
     def test_usable_template(self):
         # gettempprefix returns a usable prefix string
@@ -354,9 +354,9 @@ class test_gettempdir(TC):
         # gettempdir returns a directory which exists
 
         dir = tempfile.gettempdir()
-        self.assert_(os.path.isabs(dir) or dir == os.curdir,
+        self.assertTrue(os.path.isabs(dir) or dir == os.curdir,
                      "%s is not an absolute path" % dir)
-        self.assert_(os.path.isdir(dir),
+        self.assertTrue(os.path.isdir(dir),
                      "%s is not a directory" % dir)
 
     def test_directory_writable(self):
@@ -377,7 +377,7 @@ class test_gettempdir(TC):
         a = tempfile.gettempdir()
         b = tempfile.gettempdir()
 
-        self.assert_(a is b)
+        self.assertTrue(a is b)
 
 test_classes.append(test_gettempdir)
 
@@ -580,7 +580,7 @@ class test_NamedTemporaryFile(TC):
     def test_creates_named(self):
         # NamedTemporaryFile creates files with names
         f = tempfile.NamedTemporaryFile()
-        self.failUnless(os.path.exists(f.name),
+        self.assertTrue(os.path.exists(f.name),
                         "NamedTemporaryFile %s does not exist" % f.name)
 
     def test_del_on_close(self):
@@ -590,7 +590,7 @@ class test_NamedTemporaryFile(TC):
             f = tempfile.NamedTemporaryFile(dir=dir)
             f.write(b'blat')
             f.close()
-            self.failIf(os.path.exists(f.name),
+            self.assertFalse(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
             os.rmdir(dir)
@@ -604,7 +604,7 @@ class test_NamedTemporaryFile(TC):
             tmp = f.name
             f.write(b'blat')
             f.close()
-            self.failUnless(os.path.exists(f.name),
+            self.assertTrue(os.path.exists(f.name),
                         "NamedTemporaryFile %s missing after close" % f.name)
         finally:
             if tmp is not None:
@@ -625,12 +625,12 @@ class test_NamedTemporaryFile(TC):
     def test_context_manager(self):
         # A NamedTemporaryFile can be used as a context manager
         with tempfile.NamedTemporaryFile() as f:
-            self.failUnless(os.path.exists(f.name))
-        self.failIf(os.path.exists(f.name))
+            self.assertTrue(os.path.exists(f.name))
+        self.assertFalse(os.path.exists(f.name))
         def use_closed():
             with f:
                 pass
-        self.failUnlessRaises(ValueError, use_closed)
+        self.assertRaises(ValueError, use_closed)
 
     # How to test the mode and bufsize parameters?
 
@@ -653,21 +653,21 @@ class test_SpooledTemporaryFile(TC):
     def test_basic(self):
         # SpooledTemporaryFile can create files
         f = self.do_create()
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f = self.do_create(max_size=100, pre="a", suf=".txt")
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
 
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
             f = tempfile.SpooledTemporaryFile(max_size=10, dir=dir)
-            self.failIf(f._rolled)
+            self.assertFalse(f._rolled)
             f.write(b'blat ' * 5)
-            self.failUnless(f._rolled)
+            self.assertTrue(f._rolled)
             filename = f.name
             f.close()
-            self.failIf(isinstance(filename, str) and os.path.exists(filename),
+            self.assertFalse(isinstance(filename, str) and os.path.exists(filename),
                         "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
@@ -675,46 +675,46 @@ class test_SpooledTemporaryFile(TC):
     def test_rewrite_small(self):
         # A SpooledTemporaryFile can be written to multiple within the max_size
         f = self.do_create(max_size=30)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         for i in range(5):
             f.seek(0, 0)
             f.write(b'x' * 20)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
 
     def test_write_sequential(self):
         # A SpooledTemporaryFile should hold exactly max_size bytes, and roll
         # over afterward
         f = self.do_create(max_size=30)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.write(b'x' * 20)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.write(b'x' * 10)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.write(b'x')
-        self.failUnless(f._rolled)
+        self.assertTrue(f._rolled)
 
     def test_sparse(self):
         # A SpooledTemporaryFile that is written late in the file will extend
         # when that occurs
         f = self.do_create(max_size=30)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.seek(100, 0)
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.write(b'x')
-        self.failUnless(f._rolled)
+        self.assertTrue(f._rolled)
 
     def test_fileno(self):
         # A SpooledTemporaryFile should roll over to a real file on fileno()
         f = self.do_create(max_size=30)
-        self.failIf(f._rolled)
-        self.failUnless(f.fileno() > 0)
-        self.failUnless(f._rolled)
+        self.assertFalse(f._rolled)
+        self.assertTrue(f.fileno() > 0)
+        self.assertTrue(f._rolled)
 
     def test_multiple_close_before_rollover(self):
         # A SpooledTemporaryFile can be closed many times without error
         f = tempfile.SpooledTemporaryFile()
         f.write(b'abc\n')
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
         f.close()
         try:
             f.close()
@@ -726,7 +726,7 @@ class test_SpooledTemporaryFile(TC):
         # A SpooledTemporaryFile can be closed many times without error
         f = tempfile.SpooledTemporaryFile(max_size=1)
         f.write(b'abc\n')
-        self.failUnless(f._rolled)
+        self.assertTrue(f._rolled)
         f.close()
         try:
             f.close()
@@ -768,51 +768,51 @@ class test_SpooledTemporaryFile(TC):
         f.write("\u039B\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n")
-        self.failIf(f._rolled)
+        self.assertFalse(f._rolled)
 
         f.write("\u039B" * 20 + "\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
-        self.failUnless(f._rolled)
+        self.assertTrue(f._rolled)
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
         with tempfile.SpooledTemporaryFile(max_size=1) as f:
-            self.failIf(f._rolled)
-            self.failIf(f.closed)
-        self.failUnless(f.closed)
+            self.assertFalse(f._rolled)
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
         def use_closed():
             with f:
                 pass
-        self.failUnlessRaises(ValueError, use_closed)
+        self.assertRaises(ValueError, use_closed)
 
     def test_context_manager_during_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
         with tempfile.SpooledTemporaryFile(max_size=1) as f:
-            self.failIf(f._rolled)
+            self.assertFalse(f._rolled)
             f.write(b'abc\n')
             f.flush()
-            self.failUnless(f._rolled)
-            self.failIf(f.closed)
-        self.failUnless(f.closed)
+            self.assertTrue(f._rolled)
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
         def use_closed():
             with f:
                 pass
-        self.failUnlessRaises(ValueError, use_closed)
+        self.assertRaises(ValueError, use_closed)
 
     def test_context_manager_after_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
         f = tempfile.SpooledTemporaryFile(max_size=1)
         f.write(b'abc\n')
         f.flush()
-        self.failUnless(f._rolled)
+        self.assertTrue(f._rolled)
         with f:
-            self.failIf(f.closed)
-        self.failUnless(f.closed)
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
         def use_closed():
             with f:
                 pass
-        self.failUnlessRaises(ValueError, use_closed)
+        self.assertRaises(ValueError, use_closed)
 
 
 test_classes.append(test_SpooledTemporaryFile)

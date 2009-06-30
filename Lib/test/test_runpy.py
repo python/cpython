@@ -37,14 +37,14 @@ class RunModuleCodeTest(unittest.TestCase):
     def test_run_code(self):
         saved_argv0 = sys.argv[0]
         d = _run_code(self.test_source, {})
-        self.failUnless(d["result"] == self.expected_result)
-        self.failUnless(d["__name__"] is None)
-        self.failUnless(d["__file__"] is None)
-        self.failUnless(d["__loader__"] is None)
-        self.failUnless(d["__package__"] is None)
-        self.failUnless(d["run_argv0"] is saved_argv0)
-        self.failUnless("run_name" not in d)
-        self.failUnless(sys.argv[0] is saved_argv0)
+        self.assertTrue(d["result"] == self.expected_result)
+        self.assertTrue(d["__name__"] is None)
+        self.assertTrue(d["__file__"] is None)
+        self.assertTrue(d["__loader__"] is None)
+        self.assertTrue(d["__package__"] is None)
+        self.assertTrue(d["run_argv0"] is saved_argv0)
+        self.assertTrue("run_name" not in d)
+        self.assertTrue(sys.argv[0] is saved_argv0)
 
     def test_run_module_code(self):
         initial = object()
@@ -60,19 +60,19 @@ class RunModuleCodeTest(unittest.TestCase):
                               file,
                               loader,
                               package)
-        self.failUnless("result" not in d1)
-        self.failUnless(d2["initial"] is initial)
+        self.assertTrue("result" not in d1)
+        self.assertTrue(d2["initial"] is initial)
         self.assertEqual(d2["result"], self.expected_result)
         self.assertEqual(d2["nested"]["x"], 1)
-        self.failUnless(d2["__name__"] is name)
-        self.failUnless(d2["run_name_in_sys_modules"])
-        self.failUnless(d2["module_in_sys_modules"])
-        self.failUnless(d2["__file__"] is file)
-        self.failUnless(d2["run_argv0"] is file)
-        self.failUnless(d2["__loader__"] is loader)
-        self.failUnless(d2["__package__"] is package)
-        self.failUnless(sys.argv[0] is saved_argv0)
-        self.failUnless(name not in sys.modules)
+        self.assertTrue(d2["__name__"] is name)
+        self.assertTrue(d2["run_name_in_sys_modules"])
+        self.assertTrue(d2["module_in_sys_modules"])
+        self.assertTrue(d2["__file__"] is file)
+        self.assertTrue(d2["run_argv0"] is file)
+        self.assertTrue(d2["__loader__"] is loader)
+        self.assertTrue(d2["__package__"] is package)
+        self.assertTrue(sys.argv[0] is saved_argv0)
+        self.assertTrue(name not in sys.modules)
 
 
 class RunModuleTest(unittest.TestCase):
@@ -159,14 +159,14 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name) # Read from source
-            self.failUnless("x" in d1)
+            self.assertTrue("x" in d1)
             self.assertEqual(d1["x"], 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
-            self.failUnless("x" in d2)
+            self.assertTrue("x" in d2)
             self.assertEqual(d2["x"], 1)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
@@ -211,19 +211,19 @@ from ..uncle.cousin import nephew
             pkg_name = mod_name.rpartition('.')[0]
             if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name, run_name=run_name) # Read from source
-            self.failUnless("__package__" in d1)
-            self.failUnless(d1["__package__"] == pkg_name)
-            self.failUnless("sibling" in d1)
-            self.failUnless("nephew" in d1)
+            self.assertTrue("__package__" in d1)
+            self.assertTrue(d1["__package__"] == pkg_name)
+            self.assertTrue("sibling" in d1)
+            self.assertTrue("nephew" in d1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
-            self.failUnless("__package__" in d2)
-            self.failUnless(d2["__package__"] == pkg_name)
-            self.failUnless("sibling" in d2)
-            self.failUnless("nephew" in d2)
+            self.assertTrue("__package__" in d2)
+            self.assertTrue(d2["__package__"] == pkg_name)
+            self.assertTrue("sibling" in d2)
+            self.assertTrue("nephew" in d2)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)

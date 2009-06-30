@@ -155,7 +155,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "test_capi1")
-                self.assert_(co.co_filename.endswith('test_exceptions.py'))
+                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
             else:
                 self.fail("Expected exception")
 
@@ -167,7 +167,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "__init__")
-                self.assert_(co.co_filename.endswith('test_exceptions.py'))
+                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEquals(co2.co_name, "test_capi2")
             else:
@@ -189,12 +189,12 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
         else:
-            self.failUnlessEqual(str(WindowsError(1001)),
+            self.assertEqual(str(WindowsError(1001)),
                                  "1001")
-            self.failUnlessEqual(str(WindowsError(1001, "message")),
+            self.assertEqual(str(WindowsError(1001, "message")),
                                  "[Error 1001] message")
-            self.failUnlessEqual(WindowsError(1001, "message").errno, 22)
-            self.failUnlessEqual(WindowsError(1001, "message").winerror, 1001)
+            self.assertEqual(WindowsError(1001, "message").errno, 22)
+            self.assertEqual(WindowsError(1001, "message").winerror, 1001)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -319,25 +319,25 @@ class ExceptionTests(unittest.TestCase):
             tb = sys.exc_info()[2]
 
         e = BaseException().with_traceback(tb)
-        self.failUnless(isinstance(e, BaseException))
+        self.assertTrue(isinstance(e, BaseException))
         self.assertEqual(e.__traceback__, tb)
 
         e = IndexError(5).with_traceback(tb)
-        self.failUnless(isinstance(e, IndexError))
+        self.assertTrue(isinstance(e, IndexError))
         self.assertEqual(e.__traceback__, tb)
 
         class MyException(Exception):
             pass
 
         e = MyException().with_traceback(tb)
-        self.failUnless(isinstance(e, MyException))
+        self.assertTrue(isinstance(e, MyException))
         self.assertEqual(e.__traceback__, tb)
 
     def testInvalidTraceback(self):
         try:
             Exception().__traceback__ = 5
         except TypeError as e:
-            self.failUnless("__traceback__ must be a traceback" in str(e))
+            self.assertTrue("__traceback__ must be a traceback" in str(e))
         else:
             self.fail("No exception raised")
 
@@ -402,10 +402,10 @@ class ExceptionTests(unittest.TestCase):
     def testUnicodeStrUsage(self):
         # Make sure both instances and classes have a str and unicode
         # representation.
-        self.failUnless(str(Exception))
-        self.failUnless(str(Exception))
-        self.failUnless(str(Exception('a')))
-        self.failUnless(str(Exception('a')))
+        self.assertTrue(str(Exception))
+        self.assertTrue(str(Exception))
+        self.assertTrue(str(Exception('a')))
+        self.assertTrue(str(Exception('a')))
 
     def testExceptionCleanupNames(self):
         # Make sure the local variable bound to the exception instance by
@@ -413,9 +413,9 @@ class ExceptionTests(unittest.TestCase):
         try:
             raise Exception()
         except Exception as e:
-            self.failUnless(e)
+            self.assertTrue(e)
             del e
-        self.failIf('e' in locals())
+        self.assertFalse('e' in locals())
 
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except
@@ -441,7 +441,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
         # Qualified "except" without "as"
         obj = MyObj()
@@ -452,7 +452,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
         # Bare "except"
         obj = MyObj()
@@ -463,7 +463,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
         # "except" with premature block leave
         obj = MyObj()
@@ -475,7 +475,7 @@ class ExceptionTests(unittest.TestCase):
                 break
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
         # "except" block raising another exception
         obj = MyObj()
@@ -493,7 +493,7 @@ class ExceptionTests(unittest.TestCase):
             e.__context__ = None
             obj = None
             obj = wr()
-            self.failUnless(obj is None, "%s" % obj)
+            self.assertTrue(obj is None, "%s" % obj)
 
         # Some complicated construct
         obj = MyObj()
@@ -510,7 +510,7 @@ class ExceptionTests(unittest.TestCase):
                 pass
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
         # Inside an exception-silencing "with" block
         class Context:
@@ -524,7 +524,7 @@ class ExceptionTests(unittest.TestCase):
             inner_raising_func()
         obj = None
         obj = wr()
-        self.failUnless(obj is None, "%s" % obj)
+        self.assertTrue(obj is None, "%s" % obj)
 
     def test_generator_leaking(self):
         # Test that generator exception state doesn't leak into the calling
@@ -598,8 +598,8 @@ class ExceptionTests(unittest.TestCase):
             except RuntimeError:
                 return sys.exc_info()
         e, v, tb = g()
-        self.assert_(isinstance(v, RuntimeError), type(v))
-        self.assert_("maximum recursion depth exceeded" in str(v), str(v))
+        self.assertTrue(isinstance(v, RuntimeError), type(v))
+        self.assertTrue("maximum recursion depth exceeded" in str(v), str(v))
 
 
     def test_MemoryError(self):

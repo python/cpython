@@ -126,7 +126,7 @@ class StructTest(unittest.TestCase):
                     # encoding of the string when packed.
                     arg = bytes(arg, 'latin1')
                 if rev != arg:
-                    self.assert_(asy)
+                    self.assertTrue(asy)
 
     def test_native_qQ(self):
         # can't pack -1 as unsigned regardless
@@ -192,7 +192,7 @@ class StructTest(unittest.TestCase):
                     expected = x
                     if x < 0:
                         expected += 1 << self.bitsize
-                        self.assert_(expected > 0)
+                        self.assertTrue(expected > 0)
                     expected = hex(expected)[2:] # chop "0x"
                     if len(expected) & 1:
                         expected = "0" + expected

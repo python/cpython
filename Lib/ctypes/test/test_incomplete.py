@@ -30,7 +30,7 @@ class MyTestCase(unittest.TestCase):
         for i in range(8):
             result.append(p.name)
             p = p.next[0]
-        self.failUnlessEqual(result, ["foo", "bar"] * 4)
+        self.assertEqual(result, ["foo", "bar"] * 4)
 
         # to not leak references, we must clean _pointer_type_cache
         from ctypes import _pointer_type_cache

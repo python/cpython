@@ -46,7 +46,7 @@ class msvc9compilerTestCase(unittest.TestCase):
         # windows registeries versions.
         path = r'Software\Microsoft\Notepad'
         v = Reg.get_value(path, "lfitalic")
-        self.assert_(v in (0, 1))
+        self.assertTrue(v in (0, 1))
 
         import winreg
         HKCU = winreg.HKEY_CURRENT_USER
@@ -54,7 +54,7 @@ class msvc9compilerTestCase(unittest.TestCase):
         self.assertEquals(keys, None)
 
         keys = Reg.read_keys(HKCU, r'Software\Microsoft')
-        self.assert_('Notepad' in keys)
+        self.assertTrue('Notepad' in keys)
 
 def test_suite():
     return unittest.makeSuite(msvc9compilerTestCase)

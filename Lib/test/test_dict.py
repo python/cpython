@@ -10,7 +10,7 @@ class DictTest(unittest.TestCase):
     def test_constructor(self):
         # calling built-in types without argument must return empty
         self.assertEqual(dict(), {})
-        self.assert_(dict() is not {})
+        self.assertTrue(dict() is not {})
 
     def test_literal_constructor(self):
         # check literal constructor for different sized dicts (to exercise the BUILD_MAP oparg
@@ -24,18 +24,18 @@ class DictTest(unittest.TestCase):
             self.assertEqual(eval(dictliteral), dict(items))
 
     def test_bool(self):
-        self.assert_(not {})
-        self.assert_({1: 2})
-        self.assert_(bool({}) is False)
-        self.assert_(bool({1: 2}) is True)
+        self.assertTrue(not {})
+        self.assertTrue({1: 2})
+        self.assertTrue(bool({}) is False)
+        self.assertTrue(bool({1: 2}) is True)
 
     def test_keys(self):
         d = {}
         self.assertEqual(set(d.keys()), set())
         d = {'a': 1, 'b': 2}
         k = d.keys()
-        self.assert_('a' in d)
-        self.assert_('b' in d)
+        self.assertTrue('a' in d)
+        self.assertTrue('b' in d)
         self.assertRaises(TypeError, d.keys, None)
         self.assertEqual(repr(dict(a=1).keys()), "dict_keys(['a'])")
 
@@ -58,12 +58,12 @@ class DictTest(unittest.TestCase):
 
     def test_contains(self):
         d = {}
-        self.assert_(not ('a' in d))
-        self.assert_('a' not in d)
+        self.assertTrue(not ('a' in d))
+        self.assertTrue('a' not in d)
         d = {'a': 1, 'b': 2}
-        self.assert_('a' in d)
-        self.assert_('b' in d)
-        self.assert_('c' not in d)
+        self.assertTrue('a' in d)
+        self.assertTrue('b' in d)
+        self.assertTrue('c' not in d)
 
         self.assertRaises(TypeError, d.__contains__)
 
@@ -197,7 +197,7 @@ class DictTest(unittest.TestCase):
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
-        self.assert_(not(d.fromkeys('abc') is d))
+        self.assertTrue(not(d.fromkeys('abc') is d))
         self.assertEqual(d.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         self.assertEqual(d.fromkeys((4,5),0), {4:0, 5:0})
         self.assertEqual(d.fromkeys([]), {})
@@ -208,14 +208,14 @@ class DictTest(unittest.TestCase):
         class dictlike(dict): pass
         self.assertEqual(dictlike.fromkeys('a'), {'a':None})
         self.assertEqual(dictlike().fromkeys('a'), {'a':None})
-        self.assert_(type(dictlike.fromkeys('a')) is dictlike)
-        self.assert_(type(dictlike().fromkeys('a')) is dictlike)
+        self.assertTrue(type(dictlike.fromkeys('a')) is dictlike)
+        self.assertTrue(type(dictlike().fromkeys('a')) is dictlike)
         class mydict(dict):
             def __new__(cls):
                 return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assert_(isinstance(ud, collections.UserDict))
+        self.assertTrue(isinstance(ud, collections.UserDict))
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass
@@ -252,10 +252,10 @@ class DictTest(unittest.TestCase):
 
     def test_get(self):
         d = {}
-        self.assert_(d.get('c') is None)
+        self.assertTrue(d.get('c') is None)
         self.assertEqual(d.get('c', 3), 3)
         d = {'a' : 1, 'b' : 2}
-        self.assert_(d.get('c') is None)
+        self.assertTrue(d.get('c') is None)
         self.assertEqual(d.get('c', 3), 3)
         self.assertEqual(d.get('a'), 1)
         self.assertEqual(d.get('a', 3), 1)
@@ -265,9 +265,9 @@ class DictTest(unittest.TestCase):
     def test_setdefault(self):
         # dict.setdefault()
         d = {}
-        self.assert_(d.setdefault('key0') is None)
+        self.assertTrue(d.setdefault('key0') is None)
         d.setdefault('key0', [])
-        self.assert_(d.setdefault('key0') is None)
+        self.assertTrue(d.setdefault('key0') is None)
         d.setdefault('key', []).append(3)
         self.assertEqual(d['key'][0], 3)
         d.setdefault('key', []).append(4)
@@ -309,9 +309,9 @@ class DictTest(unittest.TestCase):
                     self.assertEqual(va, int(ka))
                     kb, vb = tb = b.popitem()
                     self.assertEqual(vb, int(kb))
-                    self.assert_(not(copymode < 0 and ta != tb))
-                self.assert_(not a)
-                self.assert_(not b)
+                    self.assertTrue(not(copymode < 0 and ta != tb))
+                self.assertTrue(not a)
+                self.assertTrue(not b)
 
         d = {}
         self.assertRaises(KeyError, d.popitem)
@@ -525,8 +525,8 @@ class DictTest(unittest.TestCase):
         d = D({1: 2, 3: 4})
         self.assertEqual(d[1], 2)
         self.assertEqual(d[3], 4)
-        self.assert_(2 not in d)
-        self.assert_(2 not in d.keys())
+        self.assertTrue(2 not in d)
+        self.assertTrue(2 not in d.keys())
         self.assertEqual(d[2], 42)
         class E(dict):
             def __missing__(self, key):
@@ -663,7 +663,7 @@ class DictTest(unittest.TestCase):
             obj.x = iter(obj.v)
             del obj, container
             gc.collect()
-            self.assert_(ref() is None, "Cycle was not collected")
+            self.assertTrue(ref() is None, "Cycle was not collected")
 
     def _not_tracked(self, t):
         # Nested containers can take several collections to untrack

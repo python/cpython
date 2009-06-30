@@ -48,7 +48,7 @@ class UnicodeTest(
         method = getattr(object, methodname)
         realresult = method(*args)
         self.assertEqual(realresult, result)
-        self.assert_(type(realresult) is type(result))
+        self.assertTrue(type(realresult) is type(result))
 
         # if the original is returned make sure that
         # this doesn't happen with subclasses
@@ -60,7 +60,7 @@ class UnicodeTest(
             method = getattr(object, methodname)
             realresult = method(*args)
             self.assertEqual(realresult, result)
-            self.assert_(object is not realresult)
+            self.assertTrue(object is not realresult)
 
     def test_literals(self):
         self.assertEqual('\xff', '\u00ff')
@@ -294,25 +294,25 @@ class UnicodeTest(
         self.assertEqual('abc', 'abc')
         self.assertEqual('abc', 'abc')
         self.assertEqual('abc', 'abc')
-        self.assert_('abcd' > 'abc')
-        self.assert_('abcd' > 'abc')
-        self.assert_('abcd' > 'abc')
-        self.assert_('abc' < 'abcd')
-        self.assert_('abc' < 'abcd')
-        self.assert_('abc' < 'abcd')
+        self.assertTrue('abcd' > 'abc')
+        self.assertTrue('abcd' > 'abc')
+        self.assertTrue('abcd' > 'abc')
+        self.assertTrue('abc' < 'abcd')
+        self.assertTrue('abc' < 'abcd')
+        self.assertTrue('abc' < 'abcd')
 
         if 0:
             # Move these tests to a Unicode collation module test...
             # Testing UTF-16 code point order comparisons...
 
             # No surrogates, no fixup required.
-            self.assert_('\u0061' < '\u20ac')
+            self.assertTrue('\u0061' < '\u20ac')
             # Non surrogate below surrogate value, no fixup required
-            self.assert_('\u0061' < '\ud800\udc02')
+            self.assertTrue('\u0061' < '\ud800\udc02')
 
             # Non surrogate above surrogate value, fixup required
             def test_lecmp(s, s2):
-                self.assert_(s < s2)
+                self.assertTrue(s < s2)
 
             def test_fixup(s):
                 s2 = '\ud800\udc01'
@@ -352,7 +352,7 @@ class UnicodeTest(
                 test_fixup('\uff61')
 
         # Surrogates on both sides, no fixup required
-        self.assert_('\ud800\udc02' < '\ud84d\udc56')
+        self.assertTrue('\ud800\udc02' < '\ud84d\udc56')
 
     def test_islower(self):
         string_tests.MixinStrUnicodeUserStringTest.test_islower(self)
@@ -436,32 +436,32 @@ class UnicodeTest(
 
     def test_contains(self):
         # Testing Unicode contains method
-        self.assert_('a' in 'abdb')
-        self.assert_('a' in 'bdab')
-        self.assert_('a' in 'bdaba')
-        self.assert_('a' in 'bdba')
-        self.assert_('a' not in 'bdb')
-        self.assert_('a' in 'bdba')
-        self.assert_('a' in ('a',1,None))
-        self.assert_('a' in (1,None,'a'))
-        self.assert_('a' in ('a',1,None))
-        self.assert_('a' in (1,None,'a'))
-        self.assert_('a' not in ('x',1,'y'))
-        self.assert_('a' not in ('x',1,None))
-        self.assert_('abcd' not in 'abcxxxx')
-        self.assert_('ab' in 'abcd')
-        self.assert_('ab' in 'abc')
-        self.assert_('ab' in (1,None,'ab'))
-        self.assert_('' in 'abc')
-        self.assert_('' in '')
-        self.assert_('' in 'abc')
-        self.assert_('\0' not in 'abc')
-        self.assert_('\0' in '\0abc')
-        self.assert_('\0' in 'abc\0')
-        self.assert_('a' in '\0abc')
-        self.assert_('asdf' in 'asdf')
-        self.assert_('asdf' not in 'asd')
-        self.assert_('asdf' not in '')
+        self.assertTrue('a' in 'abdb')
+        self.assertTrue('a' in 'bdab')
+        self.assertTrue('a' in 'bdaba')
+        self.assertTrue('a' in 'bdba')
+        self.assertTrue('a' not in 'bdb')
+        self.assertTrue('a' in 'bdba')
+        self.assertTrue('a' in ('a',1,None))
+        self.assertTrue('a' in (1,None,'a'))
+        self.assertTrue('a' in ('a',1,None))
+        self.assertTrue('a' in (1,None,'a'))
+        self.assertTrue('a' not in ('x',1,'y'))
+        self.assertTrue('a' not in ('x',1,None))
+        self.assertTrue('abcd' not in 'abcxxxx')
+        self.assertTrue('ab' in 'abcd')
+        self.assertTrue('ab' in 'abc')
+        self.assertTrue('ab' in (1,None,'ab'))
+        self.assertTrue('' in 'abc')
+        self.assertTrue('' in '')
+        self.assertTrue('' in 'abc')
+        self.assertTrue('\0' not in 'abc')
+        self.assertTrue('\0' in '\0abc')
+        self.assertTrue('\0' in 'abc\0')
+        self.assertTrue('a' in '\0abc')
+        self.assertTrue('asdf' in 'asdf')
+        self.assertTrue('asdf' not in 'asd')
+        self.assertTrue('asdf' not in '')
 
         self.assertRaises(TypeError, "abc".__contains__)
 

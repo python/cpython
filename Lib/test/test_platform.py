@@ -125,12 +125,12 @@ class PlatformTest(unittest.TestCase):
 
     def test_uname(self):
         res = platform.uname()
-        self.assert_(any(res))
+        self.assertTrue(any(res))
 
     def test_java_ver(self):
         res = platform.java_ver()
         if sys.platform == 'java':
-            self.assert_(all(res))
+            self.assertTrue(all(res))
 
     def test_win32_ver(self):
         res = platform.win32_ver()
@@ -148,7 +148,7 @@ class PlatformTest(unittest.TestCase):
                     real_ver = ln.strip().split()[-1]
                     break
             fd.close()
-            self.failIf(real_ver is None)
+            self.assertFalse(real_ver is None)
             self.assertEquals(res[0], real_ver)
 
             # res[1] claims to contain

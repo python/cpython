@@ -47,7 +47,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         # check if the compressed tarball was created
         tarball = base_name + '.tar.gz'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
@@ -58,7 +58,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
 
     def _tarinfo(self, path):
         tar = tarfile.open(path)
@@ -96,7 +96,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         # check if the compressed tarball was created
         tarball = base_name + '.tar.gz'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
 
         # now create another tarball using `tar`
         tarball2 = os.path.join(tmpdir, 'archive2.tar.gz')
@@ -110,7 +110,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
 
-        self.assert_(os.path.exists(tarball2))
+        self.assertTrue(os.path.exists(tarball2))
         # let's compare both tarballs
         self.assertEquals(self._tarinfo(tarball), self._tarinfo(tarball2))
 
@@ -123,7 +123,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
 
         # now for a dry_run
         base_name = os.path.join(tmpdir2, 'archive')
@@ -134,7 +134,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
 
     @unittest.skipUnless(find_executable('compress'),
                          'The compress program is required')
@@ -151,7 +151,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar.Z'
-        self.assert_(os.path.exists(tarball))
+        self.assertTrue(os.path.exists(tarball))
         self.assertEquals(len(w.warnings), 1)
 
         # same test with dry_run
@@ -165,7 +165,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
                              dry_run=True)
         finally:
             os.chdir(old_dir)
-        self.assert_(not os.path.exists(tarball))
+        self.assertTrue(not os.path.exists(tarball))
         self.assertEquals(len(w.warnings), 1)
 
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')

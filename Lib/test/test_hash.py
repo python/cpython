@@ -91,7 +91,7 @@ class HashInheritanceTestCase(unittest.TestCase):
         objects = (self.default_expected +
                    self.fixed_expected)
         for obj in objects:
-            self.assert_(isinstance(obj, Hashable), repr(obj))
+            self.assertTrue(isinstance(obj, Hashable), repr(obj))
 
     def test_not_hashable(self):
         for obj in self.error_expected:

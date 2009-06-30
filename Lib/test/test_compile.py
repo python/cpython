@@ -376,10 +376,10 @@ if 1:
                 import __mangled_mod
                 import __package__.module
 
-        self.assert_("_A__mangled" in A.f.__code__.co_varnames)
-        self.assert_("__not_mangled__" in A.f.__code__.co_varnames)
-        self.assert_("_A__mangled_mod" in A.f.__code__.co_varnames)
-        self.assert_("__package__" in A.f.__code__.co_varnames)
+        self.assertTrue("_A__mangled" in A.f.__code__.co_varnames)
+        self.assertTrue("__not_mangled__" in A.f.__code__.co_varnames)
+        self.assertTrue("_A__mangled_mod" in A.f.__code__.co_varnames)
+        self.assertTrue("__package__" in A.f.__code__.co_varnames)
 
     def test_compile_ast(self):
         fname = __file__
@@ -398,7 +398,7 @@ if 1:
         for fname, code in sample_code:
             co1 = compile(code, '%s1' % fname, 'exec')
             ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST)
-            self.assert_(type(ast) == _ast.Module)
+            self.assertTrue(type(ast) == _ast.Module)
             co2 = compile(ast, '%s3' % fname, 'exec')
             self.assertEqual(co1, co2)
             # the code object's filename comes from the second compilation step

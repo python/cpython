@@ -177,7 +177,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
 
         TestImporter.modules['reloadmodule'] = (False, test_co)
         import reloadmodule
-        self.failIf(hasattr(reloadmodule,'reloaded'))
+        self.assertFalse(hasattr(reloadmodule,'reloaded'))
 
         import hooktestpackage.newrel
         self.assertEqual(hooktestpackage.newrel.get_name(),

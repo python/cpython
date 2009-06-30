@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
         c.pvalues = val_array
 
         # memory contains 4 NUL bytes now, that's correct
-        self.failUnlessEqual("00-00-00-00", dump(val_array))
+        self.assertEqual("00-00-00-00", dump(val_array))
 
         # set the values of the array through the pointer:
         for i in range(4):
@@ -35,7 +35,7 @@ class Test(unittest.TestCase):
         values = [c.pvalues[i].val for i in range(4)]
 
         # These are the expected results: here s the bug!
-        self.failUnlessEqual(
+        self.assertEqual(
             (values, dump(val_array)),
             ([1, 2, 3, 4], "01-02-03-04")
         )
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
         val_array = (Value * 4)()
 
         # memory contains 4 NUL bytes now, that's correct
-        self.failUnlessEqual("00-00-00-00", dump(val_array))
+        self.assertEqual("00-00-00-00", dump(val_array))
 
         ptr = cast(val_array, POINTER(Value))
         # set the values of the array through the pointer:
@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
         values = [ptr[i].val for i in range(4)]
 
         # These are the expected results: here s the bug!
-        self.failUnlessEqual(
+        self.assertEqual(
             (values, dump(val_array)),
             ([1, 2, 3, 4], "01-02-03-04")
         )
