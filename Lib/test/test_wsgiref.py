@@ -151,7 +151,7 @@ class IntegrationTests(TestCase):
             start_response("200 OK", ('Content-Type','text/plain'))
             return ["Hello, world!"]
         out, err = run_amock(validator(bad_app))
-        self.failUnless(out.endswith(
+        self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
         self.assertEqual(
@@ -166,7 +166,7 @@ class IntegrationTests(TestCase):
             s(b"200 OK", [(b"Content-Type", b"text/plain; charset=utf-8")])
             return [b"data"]
         out, err = run_amock(validator(bad_app))
-        self.failUnless(out.endswith(
+        self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
         self.assertEqual(
@@ -181,7 +181,7 @@ class IntegrationTests(TestCase):
                 ])
             return [b"data"]
         out, err = run_amock(validator(app))
-        self.failUnless(err.endswith('"GET / HTTP/1.0" 200 4\n'))
+        self.assertTrue(err.endswith('"GET / HTTP/1.0" 200 4\n'))
         ver = sys.version.split()[0].encode('ascii')
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
@@ -210,16 +210,16 @@ class UtilityTests(TestCase):
         env = {}
         util.setup_testing_defaults(env)
         if isinstance(value,StringIO):
-            self.failUnless(isinstance(env[key],StringIO))
+            self.assertTrue(isinstance(env[key],StringIO))
         elif isinstance(value,BytesIO):
-            self.failUnless(isinstance(env[key],BytesIO))
+            self.assertTrue(isinstance(env[key],BytesIO))
         else:
             self.assertEqual(env[key],value)
 
         # Check existing value
         env = {key:alt}
         util.setup_testing_defaults(env)
-        self.failUnless(env[key] is alt)
+        self.assertTrue(env[key] is alt)
 
     def checkCrossDefault(self,key,value,**kw):
         util.setup_testing_defaults(kw)
@@ -246,15 +246,15 @@ class UtilityTests(TestCase):
         compare_generic_iter(make_it,match)
 
         it = make_it()
-        self.failIf(it.filelike.closed)
+        self.assertFalse(it.filelike.closed)
 
         for item in it:
             pass
 
-        self.failIf(it.filelike.closed)
+        self.assertFalse(it.filelike.closed)
 
         it.close()
-        self.failUnless(it.filelike.closed)
+        self.assertTrue(it.filelike.closed)
 
 
     def testSimpleShifts(self):
@@ -354,14 +354,14 @@ class UtilityTests(TestCase):
             "TE Trailers Transfer-Encoding Upgrade"
         ).split():
             for alt in hop, hop.title(), hop.upper(), hop.lower():
-                self.failUnless(util.is_hop_by_hop(alt))
+                self.assertTrue(util.is_hop_by_hop(alt))
 
         # Not comprehensive, just a few random header names
         for hop in (
             "Accept Cache-Control Date Pragma Trailer Via Warning"
         ).split():
             for alt in hop, hop.title(), hop.upper(), hop.lower():
-                self.failIf(util.is_hop_by_hop(alt))
+                self.assertFalse(util.is_hop_by_hop(alt))
 
 class HeaderTests(TestCase):
 
@@ -372,17 +372,17 @@ class HeaderTests(TestCase):
         self.assertEqual(Headers(test[:]).keys(), ['x'])
         self.assertEqual(Headers(test[:]).values(), ['y'])
         self.assertEqual(Headers(test[:]).items(), test)
-        self.failIf(Headers(test).items() is test)  # must be copy!
+        self.assertFalse(Headers(test).items() is test)  # must be copy!
 
         h=Headers([])
         del h['foo']   # should not raise an error
 
         h['Foo'] = 'bar'
         for m in h.__contains__, h.get, h.get_all, h.__getitem__:
-            self.failUnless(m('foo'))
-            self.failUnless(m('Foo'))
-            self.failUnless(m('FOO'))
-            self.failIf(m('bar'))
+            self.assertTrue(m('foo'))
+            self.assertTrue(m('Foo'))
+            self.assertTrue(m('FOO'))
+            self.assertFalse(m('bar'))
 
         self.assertEqual(h['foo'],'bar')
         h['foo'] = 'baz'
@@ -438,7 +438,7 @@ class HeaderTests(TestCase):
             h.get("content-disposition"))
 
         del h['content-disposition']
-        self.assert_(b'content-disposition' not in h)
+        self.assertTrue(b'content-disposition' not in h)
 
 
 class ErrorHandler(BaseCGIHandler):
@@ -486,7 +486,7 @@ class HandlerTests(TestCase):
             if k not in empty:
                 self.assertEqual(env[k],v)
         for k,v in empty.items():
-            self.failUnless(k in env)
+            self.assertTrue(k in env)
 
     def testEnviron(self):
         h = TestHandler(X="Y")
@@ -499,7 +499,7 @@ class HandlerTests(TestCase):
         h = BaseCGIHandler(None,None,None,{})
         h.setup_environ()
         for key in 'wsgi.url_scheme', 'wsgi.input', 'wsgi.errors':
-            self.assert_(key in h.environ)
+            self.assertTrue(key in h.environ)
 
     def testScheme(self):
         h=TestHandler(HTTPS="on"); h.setup_environ()
@@ -586,7 +586,7 @@ class HandlerTests(TestCase):
             "\r\n%s" % (h.error_status,len(h.error_body),h.error_body)
             ).encode("iso-8859-1"))
 
-        self.failUnless("AssertionError" in h.stderr.getvalue())
+        self.assertTrue("AssertionError" in h.stderr.getvalue())
 
     def testErrorAfterOutput(self):
         MSG = "Some output has been sent"
@@ -599,7 +599,7 @@ class HandlerTests(TestCase):
         self.assertEqual(h.stdout.getvalue(),
             ("Status: 200 OK\r\n"
             "\r\n"+MSG).encode("iso-8859-1"))
-        self.failUnless("AssertionError" in h.stderr.getvalue())
+        self.assertTrue("AssertionError" in h.stderr.getvalue())
 
 
     def testHeaderFormats(self):
@@ -638,7 +638,7 @@ class HandlerTests(TestCase):
                     if proto=="HTTP/0.9":
                         self.assertEqual(h.stdout.getvalue(),b"")
                     else:
-                        self.failUnless(
+                        self.assertTrue(
                             re.match((stdpat%(version,sw)).encode("iso-8859-1"),
                                 h.stdout.getvalue()),
                             ((stdpat%(version,sw)).encode("iso-8859-1"),

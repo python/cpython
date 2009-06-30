@@ -139,7 +139,7 @@ class LargeFileTest(unittest.TestCase):
         for pos in (2**31-1, 2**31, 2**31+1):
             with self.open(TESTFN, 'rb') as f:
                 f.seek(pos)
-                self.assert_(f.seekable())
+                self.assertTrue(f.seekable())
 
 
 def test_main():

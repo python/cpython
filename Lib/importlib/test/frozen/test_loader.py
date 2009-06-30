@@ -43,7 +43,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__hello__'):
             module1 = machinery.FrozenImporter.load_module('__hello__')
             module2 = machinery.FrozenImporter.load_module('__hello__')
-            self.assert_(module1 is module2)
+            self.assertTrue(module1 is module2)
 
     def test_state_after_failure(self):
         # No way to trigger an error in a frozen module.
@@ -65,12 +65,12 @@ class InspectLoaderTests(unittest.TestCase):
         code = machinery.FrozenImporter.get_code(name)
         mod = imp.new_module(name)
         exec(code, mod.__dict__)
-        self.assert_(hasattr(mod, 'initialized'))
+        self.assertTrue(hasattr(mod, 'initialized'))
 
     def test_get_source(self):
         # Should always return None.
         result = machinery.FrozenImporter.get_source('__hello__')
-        self.assert_(result is None)
+        self.assertTrue(result is None)
 
     def test_is_package(self):
         # Should be able to tell what is a package.
@@ -78,7 +78,7 @@ class InspectLoaderTests(unittest.TestCase):
                     ('__phello__.spam', False))
         for name, is_package in test_for:
             result = machinery.FrozenImporter.is_package(name)
-            self.assert_(bool(result) == is_package)
+            self.assertTrue(bool(result) == is_package)
 
     def test_failure(self):
         # Raise ImportError for modules that are not frozen.

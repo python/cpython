@@ -73,14 +73,14 @@ class ConfigTestCase(support.LoggingSilencer,
         self.write_file(f2, 'xxx')
 
         for f in (f1, f2):
-            self.assert_(os.path.exists(f))
+            self.assertTrue(os.path.exists(f))
 
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
         cmd._clean(f1, f2)
 
         for f in (f1, f2):
-            self.assert_(not os.path.exists(f))
+            self.assertTrue(not os.path.exists(f))
 
 def test_suite():
     return unittest.makeSuite(ConfigTestCase)

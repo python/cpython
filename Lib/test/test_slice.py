@@ -73,7 +73,7 @@ class SliceTest(unittest.TestCase):
 
         obj = AnyClass()
         s = slice(obj)
-        self.assert_(s.stop is obj)
+        self.assertTrue(s.stop is obj)
 
     def test_indices(self):
         self.assertEqual(slice(None           ).indices(10), (0, 10,  1))

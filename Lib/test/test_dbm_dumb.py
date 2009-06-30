@@ -118,7 +118,7 @@ class DumbDBMTestCase(unittest.TestCase):
         f['1'] = 'a'
         f.close()
         f = dumbdbm.open(_fname, 'r')
-        self.assert_('\u00fc' in f)
+        self.assertTrue('\u00fc' in f)
         self.assertEqual(f['\u00fc'.encode('utf-8')],
                          self._dict['\u00fc'.encode('utf-8')])
         self.assertEqual(f[b'1'], b'a')

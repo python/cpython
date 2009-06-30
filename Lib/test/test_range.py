@@ -26,18 +26,18 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(list(range(a+4, a, -2)), [a+4, a+2])
 
         seq = list(range(a, b, c))
-        self.assert_(a in seq)
-        self.assert_(b not in seq)
+        self.assertTrue(a in seq)
+        self.assertTrue(b not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(b, a, -c))
-        self.assert_(b in seq)
-        self.assert_(a not in seq)
+        self.assertTrue(b in seq)
+        self.assertTrue(a not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(-a, -b, -c))
-        self.assert_(-a in seq)
-        self.assert_(-b not in seq)
+        self.assertTrue(-a in seq)
+        self.assertTrue(-b not in seq)
         self.assertEqual(len(seq), 2)
 
         self.assertRaises(TypeError, range)

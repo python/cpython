@@ -91,7 +91,7 @@ class TestGzip(unittest.TestCase):
         while 1:
             L = f.readline(line_length)
             if not L and line_length != 0: break
-            self.assert_(len(L) <= line_length)
+            self.assertTrue(len(L) <= line_length)
             line_length = (line_length + 1) % 50
         f.close()
 
@@ -157,7 +157,7 @@ class TestGzip(unittest.TestCase):
     def test_1647484(self):
         for mode in ('wb', 'rb'):
             f = gzip.GzipFile(self.filename, mode)
-            self.assert_(hasattr(f, "name"))
+            self.assertTrue(hasattr(f, "name"))
             self.assertEqual(f.name, self.filename)
             f.close()
 
@@ -169,7 +169,7 @@ class TestGzip(unittest.TestCase):
         fRead = gzip.GzipFile(self.filename)
         dataRead = fRead.read()
         self.assertEqual(dataRead, data1)
-        self.assert_(hasattr(fRead, 'mtime'))
+        self.assertTrue(hasattr(fRead, 'mtime'))
         self.assertEqual(fRead.mtime, mtime)
         fRead.close()
 

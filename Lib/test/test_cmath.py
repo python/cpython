@@ -412,7 +412,7 @@ class CMathTests(unittest.TestCase):
 
         # real or imaginary part NaN
         for z in complex_nans:
-            self.assert_(math.isnan(phase(z)))
+            self.assertTrue(math.isnan(phase(z)))
 
     def test_abs(self):
         # zeros
@@ -425,18 +425,18 @@ class CMathTests(unittest.TestCase):
 
         # real or imaginary part NaN
         self.assertEqual(abs(complex(NAN, -INF)), INF)
-        self.assert_(math.isnan(abs(complex(NAN, -2.3))))
-        self.assert_(math.isnan(abs(complex(NAN, -0.0))))
-        self.assert_(math.isnan(abs(complex(NAN, 0.0))))
-        self.assert_(math.isnan(abs(complex(NAN, 2.3))))
+        self.assertTrue(math.isnan(abs(complex(NAN, -2.3))))
+        self.assertTrue(math.isnan(abs(complex(NAN, -0.0))))
+        self.assertTrue(math.isnan(abs(complex(NAN, 0.0))))
+        self.assertTrue(math.isnan(abs(complex(NAN, 2.3))))
         self.assertEqual(abs(complex(NAN, INF)), INF)
         self.assertEqual(abs(complex(-INF, NAN)), INF)
-        self.assert_(math.isnan(abs(complex(-2.3, NAN))))
-        self.assert_(math.isnan(abs(complex(-0.0, NAN))))
-        self.assert_(math.isnan(abs(complex(0.0, NAN))))
-        self.assert_(math.isnan(abs(complex(2.3, NAN))))
+        self.assertTrue(math.isnan(abs(complex(-2.3, NAN))))
+        self.assertTrue(math.isnan(abs(complex(-0.0, NAN))))
+        self.assertTrue(math.isnan(abs(complex(0.0, NAN))))
+        self.assertTrue(math.isnan(abs(complex(2.3, NAN))))
         self.assertEqual(abs(complex(INF, NAN)), INF)
-        self.assert_(math.isnan(abs(complex(NAN, NAN))))
+        self.assertTrue(math.isnan(abs(complex(NAN, NAN))))
 
         # result overflows
         if float.__getformat__("double").startswith("IEEE"):
@@ -455,26 +455,26 @@ class CMathTests(unittest.TestCase):
         self.assertCEqual(rect(1, -pi/2), (0, -1.))
 
     def test_isnan(self):
-        self.failIf(cmath.isnan(1))
-        self.failIf(cmath.isnan(1j))
-        self.failIf(cmath.isnan(INF))
-        self.assert_(cmath.isnan(NAN))
-        self.assert_(cmath.isnan(complex(NAN, 0)))
-        self.assert_(cmath.isnan(complex(0, NAN)))
-        self.assert_(cmath.isnan(complex(NAN, NAN)))
-        self.assert_(cmath.isnan(complex(NAN, INF)))
-        self.assert_(cmath.isnan(complex(INF, NAN)))
+        self.assertFalse(cmath.isnan(1))
+        self.assertFalse(cmath.isnan(1j))
+        self.assertFalse(cmath.isnan(INF))
+        self.assertTrue(cmath.isnan(NAN))
+        self.assertTrue(cmath.isnan(complex(NAN, 0)))
+        self.assertTrue(cmath.isnan(complex(0, NAN)))
+        self.assertTrue(cmath.isnan(complex(NAN, NAN)))
+        self.assertTrue(cmath.isnan(complex(NAN, INF)))
+        self.assertTrue(cmath.isnan(complex(INF, NAN)))
 
     def test_isinf(self):
-        self.failIf(cmath.isinf(1))
-        self.failIf(cmath.isinf(1j))
-        self.failIf(cmath.isinf(NAN))
-        self.assert_(cmath.isinf(INF))
-        self.assert_(cmath.isinf(complex(INF, 0)))
-        self.assert_(cmath.isinf(complex(0, INF)))
-        self.assert_(cmath.isinf(complex(INF, INF)))
-        self.assert_(cmath.isinf(complex(NAN, INF)))
-        self.assert_(cmath.isinf(complex(INF, NAN)))
+        self.assertFalse(cmath.isinf(1))
+        self.assertFalse(cmath.isinf(1j))
+        self.assertFalse(cmath.isinf(NAN))
+        self.assertTrue(cmath.isinf(INF))
+        self.assertTrue(cmath.isinf(complex(INF, 0)))
+        self.assertTrue(cmath.isinf(complex(0, INF)))
+        self.assertTrue(cmath.isinf(complex(INF, INF)))
+        self.assertTrue(cmath.isinf(complex(NAN, INF)))
+        self.assertTrue(cmath.isinf(complex(INF, NAN)))
 
 
 def test_main():

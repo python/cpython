@@ -14,22 +14,22 @@ class AnonTest(unittest.TestCase):
                         ("y", c_int)]
             _anonymous_ = ["_"]
 
-        self.failUnlessEqual(Y.a.offset, sizeof(c_int))
-        self.failUnlessEqual(Y.b.offset, sizeof(c_int))
+        self.assertEqual(Y.a.offset, sizeof(c_int))
+        self.assertEqual(Y.b.offset, sizeof(c_int))
 
-        self.failUnlessEqual(ANON.a.offset, 0)
-        self.failUnlessEqual(ANON.b.offset, 0)
+        self.assertEqual(ANON.a.offset, 0)
+        self.assertEqual(ANON.b.offset, 0)
 
     def test_anon_nonseq(self):
         # TypeError: _anonymous_ must be a sequence
-        self.failUnlessRaises(TypeError,
+        self.assertRaises(TypeError,
                               lambda: type(Structure)("Name",
                                                       (Structure,),
                                                       {"_fields_": [], "_anonymous_": 42}))
 
     def test_anon_nonmember(self):
         # AttributeError: type object 'Name' has no attribute 'x'
-        self.failUnlessRaises(AttributeError,
+        self.assertRaises(AttributeError,
                               lambda: type(Structure)("Name",
                                                       (Structure,),
                                                       {"_fields_": [],
@@ -50,11 +50,11 @@ class AnonTest(unittest.TestCase):
                         ("y", c_int)]
             _anonymous_ = ["_"]
 
-        self.failUnlessEqual(Y.x.offset, 0)
-        self.failUnlessEqual(Y.a.offset, sizeof(c_int))
-        self.failUnlessEqual(Y.b.offset, sizeof(c_int))
-        self.failUnlessEqual(Y._.offset, sizeof(c_int))
-        self.failUnlessEqual(Y.y.offset, sizeof(c_int) * 2)
+        self.assertEqual(Y.x.offset, 0)
+        self.assertEqual(Y.a.offset, sizeof(c_int))
+        self.assertEqual(Y.b.offset, sizeof(c_int))
+        self.assertEqual(Y._.offset, sizeof(c_int))
+        self.assertEqual(Y.y.offset, sizeof(c_int) * 2)
 
 if __name__ == "__main__":
     unittest.main()

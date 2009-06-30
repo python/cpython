@@ -21,17 +21,17 @@ class RefcountTestCase(unittest.TestCase):
             #print "called back with", value
             return value
 
-        self.failUnlessEqual(grc(callback), 2)
+        self.assertEqual(grc(callback), 2)
         cb = MyCallback(callback)
 
-        self.failUnless(grc(callback) > 2)
+        self.assertTrue(grc(callback) > 2)
         result = f(-10, cb)
-        self.failUnlessEqual(result, -18)
+        self.assertEqual(result, -18)
         cb = None
 
         gc.collect()
 
-        self.failUnlessEqual(grc(callback), 2)
+        self.assertEqual(grc(callback), 2)
 
 
     def test_refcount(self):
@@ -39,19 +39,19 @@ class RefcountTestCase(unittest.TestCase):
         def func(*args):
             pass
         # this is the standard refcount for func
-        self.failUnlessEqual(grc(func), 2)
+        self.assertEqual(grc(func), 2)
 
         # the CFuncPtr instance holds atr least one refcount on func:
         f = OtherCallback(func)
-        self.failUnless(grc(func) > 2)
+        self.assertTrue(grc(func) > 2)
 
         # and may release it again
         del f
-        self.failUnless(grc(func) >= 2)
+        self.assertTrue(grc(func) >= 2)
 
         # but now it must be gone
         gc.collect()
-        self.failUnless(grc(func) == 2)
+        self.assertTrue(grc(func) == 2)
 
         class X(ctypes.Structure):
             _fields_ = [("a", OtherCallback)]
@@ -59,27 +59,27 @@ class RefcountTestCase(unittest.TestCase):
         x.a = OtherCallback(func)
 
         # the CFuncPtr instance holds atr least one refcount on func:
-        self.failUnless(grc(func) > 2)
+        self.assertTrue(grc(func) > 2)
 
         # and may release it again
         del x
-        self.failUnless(grc(func) >= 2)
+        self.assertTrue(grc(func) >= 2)
 
         # and now it must be gone again
         gc.collect()
-        self.failUnlessEqual(grc(func), 2)
+        self.assertEqual(grc(func), 2)
 
         f = OtherCallback(func)
 
         # the CFuncPtr instance holds atr least one refcount on func:
-        self.failUnless(grc(func) > 2)
+        self.assertTrue(grc(func) > 2)
 
         # create a cycle
         f.cycle = f
 
         del f
         gc.collect()
-        self.failUnlessEqual(grc(func), 2)
+        self.assertEqual(grc(func), 2)
 
 class AnotherLeak(unittest.TestCase):
     def test_callback(self):
@@ -92,7 +92,7 @@ class AnotherLeak(unittest.TestCase):
 
         a = sys.getrefcount(ctypes.c_int)
         f(1, 2)
-        self.failUnlessEqual(sys.getrefcount(ctypes.c_int), a)
+        self.assertEqual(sys.getrefcount(ctypes.c_int), a)
 
 if __name__ == '__main__':
     unittest.main()

@@ -67,14 +67,14 @@ class NormalizationTest(unittest.TestCase):
                 continue
 
             # Perform tests
-            self.failUnless(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
-            self.failUnless(c4 ==  NFC(c4) ==  NFC(c5), line)
-            self.failUnless(c3 ==  NFD(c1) ==  NFD(c2) ==  NFD(c3), line)
-            self.failUnless(c5 ==  NFD(c4) ==  NFD(c5), line)
-            self.failUnless(c4 == NFKC(c1) == NFKC(c2) == \
+            self.assertTrue(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
+            self.assertTrue(c4 ==  NFC(c4) ==  NFC(c5), line)
+            self.assertTrue(c3 ==  NFD(c1) ==  NFD(c2) ==  NFD(c3), line)
+            self.assertTrue(c5 ==  NFD(c4) ==  NFD(c5), line)
+            self.assertTrue(c4 == NFKC(c1) == NFKC(c2) == \
                             NFKC(c3) == NFKC(c4) == NFKC(c5),
                             line)
-            self.failUnless(c5 == NFKD(c1) == NFKD(c2) == \
+            self.assertTrue(c5 == NFKD(c1) == NFKD(c2) == \
                             NFKD(c3) == NFKD(c4) == NFKD(c5),
                             line)
 
@@ -87,7 +87,7 @@ class NormalizationTest(unittest.TestCase):
             X = chr(c)
             if X in part1_data:
                 continue
-            self.failUnless(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
 
     def test_bug_834676(self):
         # Check for bug 834676

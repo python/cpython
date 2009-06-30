@@ -79,7 +79,7 @@ class RelativeImports(unittest.TestCase):
             import_util.import_('pkg')  # For __import__().
             module = import_util.import_('', global_, fromlist=['mod2'], level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assert_(hasattr(module, 'mod2'))
+            self.assertTrue(hasattr(module, 'mod2'))
             self.assertEqual(module.mod2.attr, 'pkg.mod2')
         self.relative_import_test(create, globals_, callback)
 
@@ -105,7 +105,7 @@ class RelativeImports(unittest.TestCase):
             module = import_util.import_('', global_, fromlist=['module'],
                              level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assert_(hasattr(module, 'module'))
+            self.assertTrue(hasattr(module, 'module'))
             self.assertEqual(module.module.attr, 'pkg.module')
         self.relative_import_test(create, globals_, callback)
 
@@ -129,7 +129,7 @@ class RelativeImports(unittest.TestCase):
             module = import_util.import_('', global_, fromlist=['subpkg2'],
                                             level=2)
             self.assertEqual(module.__name__, 'pkg')
-            self.assert_(hasattr(module, 'subpkg2'))
+            self.assertTrue(hasattr(module, 'subpkg2'))
             self.assertEqual(module.subpkg2.attr, 'pkg.subpkg2.__init__')
 
     def test_deep_import(self):

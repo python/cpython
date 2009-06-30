@@ -35,11 +35,11 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test_dir_includes_correct_attrs(self):
         self.b.known_attr = 7
-        self.assert_('known_attr' in dir(self.b),
+        self.assertTrue('known_attr' in dir(self.b),
             "set attributes not in dir listing of method")
         # Test on underlying function object of method
         self.F.a.known_attr = 7
-        self.assert_('known_attr' in dir(self.fi.a), "set attribute on function "
+        self.assertTrue('known_attr' in dir(self.fi.a), "set attribute on function "
                      "implementations, should show up in next dir")
 
     def test_duplicate_function_equality(self):
@@ -248,11 +248,11 @@ class CellTest(unittest.TestCase):
         # their presence should not be interpreted as providing any
         # guarantees about the semantics (or even existence) of cell
         # comparisons in future versions of CPython.
-        self.assert_(cell(2) < cell(3))
-        self.assert_(empty_cell() < cell('saturday'))
-        self.assert_(empty_cell() == empty_cell())
-        self.assert_(cell(-36) == cell(-36.0))
-        self.assert_(cell(True) > empty_cell())
+        self.assertTrue(cell(2) < cell(3))
+        self.assertTrue(empty_cell() < cell('saturday'))
+        self.assertTrue(empty_cell() == empty_cell())
+        self.assertTrue(cell(-36) == cell(-36.0))
+        self.assertTrue(cell(True) > empty_cell())
 
 class StaticMethodAttrsTest(unittest.TestCase):
     def test_func_attribute(self):
@@ -260,10 +260,10 @@ class StaticMethodAttrsTest(unittest.TestCase):
             pass
 
         c = classmethod(f)
-        self.assert_(c.__func__ is f)
+        self.assertTrue(c.__func__ is f)
 
         s = staticmethod(f)
-        self.assert_(s.__func__ is f)
+        self.assertTrue(s.__func__ is f)
 
 
 def test_main():

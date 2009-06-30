@@ -91,7 +91,7 @@ class PointerTestCase(unittest.TestCase):
     def test_p_cint(self):
         i = c_int(42)
         x = pointer(i)
-        self.failUnlessEqual(x._objects, {'1': i})
+        self.assertEqual(x._objects, {'1': i})
 
 class DeletePointerTestCase(unittest.TestCase):
     def X_test(self):

@@ -10,37 +10,37 @@ class MacPathTestCase(unittest.TestCase):
 
     def test_isabs(self):
         isabs = macpath.isabs
-        self.assert_(isabs("xx:yy"))
-        self.assert_(isabs("xx:yy:"))
-        self.assert_(isabs("xx:"))
-        self.failIf(isabs("foo"))
-        self.failIf(isabs(":foo"))
-        self.failIf(isabs(":foo:bar"))
-        self.failIf(isabs(":foo:bar:"))
+        self.assertTrue(isabs("xx:yy"))
+        self.assertTrue(isabs("xx:yy:"))
+        self.assertTrue(isabs("xx:"))
+        self.assertFalse(isabs("foo"))
+        self.assertFalse(isabs(":foo"))
+        self.assertFalse(isabs(":foo:bar"))
+        self.assertFalse(isabs(":foo:bar:"))
 
-        self.assert_(isabs(b"xx:yy"))
-        self.assert_(isabs(b"xx:yy:"))
-        self.assert_(isabs(b"xx:"))
-        self.failIf(isabs(b"foo"))
-        self.failIf(isabs(b":foo"))
-        self.failIf(isabs(b":foo:bar"))
-        self.failIf(isabs(b":foo:bar:"))
+        self.assertTrue(isabs(b"xx:yy"))
+        self.assertTrue(isabs(b"xx:yy:"))
+        self.assertTrue(isabs(b"xx:"))
+        self.assertFalse(isabs(b"foo"))
+        self.assertFalse(isabs(b":foo"))
+        self.assertFalse(isabs(b":foo:bar"))
+        self.assertFalse(isabs(b":foo:bar:"))
 
 
     def test_commonprefix(self):
         commonprefix = macpath.commonprefix
-        self.assert_(commonprefix(["home:swenson:spam", "home:swen:spam"])
+        self.assertTrue(commonprefix(["home:swenson:spam", "home:swen:spam"])
                      == "home:swen")
-        self.assert_(commonprefix([":home:swen:spam", ":home:swen:eggs"])
+        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:eggs"])
                      == ":home:swen:")
-        self.assert_(commonprefix([":home:swen:spam", ":home:swen:spam"])
+        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:spam"])
                      == ":home:swen:spam")
 
-        self.assert_(commonprefix([b"home:swenson:spam", b"home:swen:spam"])
+        self.assertTrue(commonprefix([b"home:swenson:spam", b"home:swen:spam"])
                      == b"home:swen")
-        self.assert_(commonprefix([b":home:swen:spam", b":home:swen:eggs"])
+        self.assertTrue(commonprefix([b":home:swen:spam", b":home:swen:eggs"])
                      == b":home:swen:")
-        self.assert_(commonprefix([b":home:swen:spam", b":home:swen:spam"])
+        self.assertTrue(commonprefix([b":home:swen:spam", b":home:swen:spam"])
                      == b":home:swen:spam")
 
     def test_split(self):

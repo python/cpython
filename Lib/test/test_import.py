@@ -145,12 +145,12 @@ class ImportTest(unittest.TestCase):
         # import x.y.z binds x in the current namespace
         import test as x
         import test.support
-        self.assert_(x is test, x.__name__)
-        self.assert_(hasattr(test.support, "__file__"))
+        self.assertTrue(x is test, x.__name__)
+        self.assertTrue(hasattr(test.support, "__file__"))
 
         # import x.y.z as w binds z as w
         import test.support as y
-        self.assert_(y is test.support, y.__name__)
+        self.assertTrue(y is test.support, y.__name__)
 
     def test_import_initless_directory_warning(self):
         with warnings.catch_warnings():
@@ -168,7 +168,7 @@ class ImportTest(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assert_(TESTFN in sys.modules, "expected module in sys.modules")
+            self.assertTrue(TESTFN in sys.modules, "expected module in sys.modules")
             self.assertEquals(mod.a, 1, "module has wrong attribute values")
             self.assertEquals(mod.b, 2, "module has wrong attribute values")
 
@@ -185,7 +185,7 @@ class ImportTest(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, imp.reload, mod)
             # But we still expect the module to be in sys.modules.
             mod = sys.modules.get(TESTFN)
-            self.failIf(mod is None, "expected module to still be in sys.modules")
+            self.assertFalse(mod is None, "expected module to still be in sys.modules")
 
             # We should have replaced a w/ 10, but the old b value should
             # stick.
@@ -207,12 +207,12 @@ class ImportTest(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.failUnless(mod.__file__.endswith('.py'))
+            self.assertTrue(mod.__file__.endswith('.py'))
             os.remove(source)
             del sys.modules[TESTFN]
             mod = __import__(TESTFN)
             ext = mod.__file__[-4:]
-            self.failUnless(ext in ('.pyc', '.pyo'), ext)
+            self.assertTrue(ext in ('.pyc', '.pyo'), ext)
         finally:
             sys.path.pop(0)
             remove_files(TESTFN)

@@ -29,14 +29,14 @@ class MixInCheckStateHandling:
             d = codecs.getincrementaldecoder(encoding)()
             part1 = d.decode(s[:i])
             state = d.getstate()
-            self.assert_(isinstance(state[1], int))
+            self.assertTrue(isinstance(state[1], int))
             # Check that the condition stated in the documentation for
             # IncrementalDecoder.getstate() holds
             if not state[1]:
                 # reset decoder to the default state without anything buffered
                 d.setstate((state[0][:0], 0))
                 # Feeding the previous input may not produce any output
-                self.assert_(not d.decode(state[0]))
+                self.assertTrue(not d.decode(state[0]))
                 # The decoder must return to the same state
                 self.assertEqual(state, d.getstate())
             # Create a new decoder and set it to the state
@@ -296,7 +296,7 @@ class UTF32Test(ReadTest):
         f.write("spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assert_(d == self.spamle or d == self.spambe)
+        self.assertTrue(d == self.spamle or d == self.spambe)
         # try to read it back
         s = io.BytesIO(d)
         f = reader(s)
@@ -429,7 +429,7 @@ class UTF16Test(ReadTest):
         f.write("spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assert_(d == self.spamle or d == self.spambe)
+        self.assertTrue(d == self.spamle or d == self.spambe)
         # try to read it back
         s = io.BytesIO(d)
         f = reader(s)
@@ -1335,7 +1335,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 for c in s:
                     writer.write(c)
                     chunk = q.read()
-                    self.assert_(type(chunk) is bytes, type(chunk))
+                    self.assertTrue(type(chunk) is bytes, type(chunk))
                     encodedresult += chunk
                 q = Queue(b"")
                 reader = codecs.getreader(encoding)(q)

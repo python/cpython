@@ -9,11 +9,11 @@ from fnmatch import fnmatch, fnmatchcase
 class FnmatchTestCase(unittest.TestCase):
     def check_match(self, filename, pattern, should_match=1):
         if should_match:
-            self.assert_(fnmatch(filename, pattern),
+            self.assertTrue(fnmatch(filename, pattern),
                          "expected %r to match pattern %r"
                          % (filename, pattern))
         else:
-            self.assert_(not fnmatch(filename, pattern),
+            self.assertTrue(not fnmatch(filename, pattern),
                          "expected %r not to match pattern %r"
                          % (filename, pattern))
 

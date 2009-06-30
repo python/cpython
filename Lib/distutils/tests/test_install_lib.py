@@ -39,8 +39,8 @@ class InstallLibTestCase(support.TempdirManager,
         f = os.path.join(pkg_dir, 'foo.py')
         self.write_file(f, '# python file')
         cmd.byte_compile([f])
-        self.assert_(os.path.exists(os.path.join(pkg_dir, 'foo.pyc')))
-        self.assert_(os.path.exists(os.path.join(pkg_dir, 'foo.pyo')))
+        self.assertTrue(os.path.exists(os.path.join(pkg_dir, 'foo.pyc')))
+        self.assertTrue(os.path.exists(os.path.join(pkg_dir, 'foo.pyo')))
 
     def test_get_outputs(self):
         pkg_dir, dist = self.create_dist()
@@ -57,7 +57,7 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.distribution.script_name = 'setup.py'
 
         # get_output should return 4 elements
-        self.assert_(len(cmd.get_outputs()) >= 2)
+        self.assertTrue(len(cmd.get_outputs()) >= 2)
 
     def test_get_inputs(self):
         pkg_dir, dist = self.create_dist()

@@ -21,7 +21,7 @@ class BuildWinInstTestCase(support.TempdirManager,
         # and make sure it finds it and returns its content
         # no matter what platform we have
         exe_file = cmd.get_exe_bytes()
-        self.assert_(len(exe_file) > 10)
+        self.assertTrue(len(exe_file) > 10)
 
 def test_suite():
     return unittest.makeSuite(BuildWinInstTestCase)

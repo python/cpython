@@ -57,7 +57,7 @@ class AnyDBMTestCase(unittest.TestCase):
         return keys
 
     def test_error(self):
-        self.assert_(issubclass(self.module.error, IOError))
+        self.assertTrue(issubclass(self.module.error, IOError))
 
     def test_anydbm_not_existing(self):
         self.assertRaises(dbm.error, dbm.open, _fname)
@@ -154,9 +154,9 @@ class WhichDBTestCase(unittest.TestCase):
             self.d[k] = v
         self.assertEqual(sorted(self.d.keys()), sorted(k for (k, v) in a))
         for k, v in a:
-            self.assert_(k in self.d)
+            self.assertTrue(k in self.d)
             self.assertEqual(self.d[k], v)
-        self.assert_(b'xxx' not in self.d)
+        self.assertTrue(b'xxx' not in self.d)
         self.assertRaises(KeyError, lambda: self.d[b'xxx'])
         self.d.close()
 

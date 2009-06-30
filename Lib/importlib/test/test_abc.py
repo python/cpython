@@ -11,7 +11,7 @@ class SubclassTests(unittest.TestCase):
     def verify(self, ABC, *classes):
         """Verify the classes are subclasses of the ABC."""
         for cls in classes:
-            self.assert_(issubclass(cls, ABC))
+            self.assertTrue(issubclass(cls, ABC))
 
     def test_Finder(self):
         self.verify(abc.Finder, machinery.BuiltinImporter,

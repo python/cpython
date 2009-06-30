@@ -188,9 +188,9 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(len(d), n-i)
             j = random.randrange(-len(d), len(d))
             val = d[j]
-            self.assert_(val in d)
+            self.assertTrue(val in d)
             del d[j]
-            self.assert_(val not in d)
+            self.assertTrue(val not in d)
         self.assertEqual(len(d), 0)
 
     def test_rotate(self):
@@ -291,7 +291,7 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(RuntimeError, d.remove, 'c')
         for x, y in zip(d, e):
             # verify that original order and values are retained.
-            self.assert_(x is y)
+            self.assertTrue(x is y)
 
         # Handle evil mutator
         for match in (True, False):
@@ -305,7 +305,7 @@ class TestBasic(unittest.TestCase):
         e = eval(repr(d))
         self.assertEqual(list(d), list(e))
         d.append(d)
-        self.assert_('...' in repr(d))
+        self.assertTrue('...' in repr(d))
 
     def test_print(self):
         d = deque(range(200))
@@ -461,7 +461,7 @@ class TestBasic(unittest.TestCase):
             obj.x = iter(container)
             del obj, container
             gc.collect()
-            self.assert_(ref() is None, "Cycle was not collected")
+            self.assertTrue(ref() is None, "Cycle was not collected")
 
 class TestVariousIteratorArgs(unittest.TestCase):
 

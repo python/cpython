@@ -19,7 +19,7 @@ class FinderTests(unittest.TestCase):
         # Test None returned upon not finding a suitable finder.
         module = '<test module>'
         with util.import_state():
-            self.assert_(machinery.PathFinder.find_module(module) is None)
+            self.assertTrue(machinery.PathFinder.find_module(module) is None)
 
     def test_sys_path(self):
         # Test that sys.path is used when 'path' is None.
@@ -30,7 +30,7 @@ class FinderTests(unittest.TestCase):
         with util.import_state(path_importer_cache={path: importer},
                                path=[path]):
             loader = machinery.PathFinder.find_module(module)
-            self.assert_(loader is importer)
+            self.assertTrue(loader is importer)
 
     def test_path(self):
         # Test that 'path' is used when set.
@@ -40,7 +40,7 @@ class FinderTests(unittest.TestCase):
         importer = util.mock_modules(module)
         with util.import_state(path_importer_cache={path: importer}):
             loader = machinery.PathFinder.find_module(module, [path])
-            self.assert_(loader is importer)
+            self.assertTrue(loader is importer)
 
     def test_path_hooks(self):
         # Test that sys.path_hooks is used.
@@ -51,16 +51,16 @@ class FinderTests(unittest.TestCase):
         hook = import_util.mock_path_hook(path, importer=importer)
         with util.import_state(path_hooks=[hook]):
             loader = machinery.PathFinder.find_module(module, [path])
-            self.assert_(loader is importer)
-            self.assert_(path in sys.path_importer_cache)
-            self.assert_(sys.path_importer_cache[path] is importer)
+            self.assertTrue(loader is importer)
+            self.assertTrue(path in sys.path_importer_cache)
+            self.assertTrue(sys.path_importer_cache[path] is importer)
 
     def test_path_importer_cache_has_None(self):
         # Test that if sys.path_importer_cache has None that None is returned.
         clear_cache = {path: None for path in sys.path}
         with util.import_state(path_importer_cache=clear_cache):
             for name in ('asynchat', 'sys', '<test module>'):
-                self.assert_(machinery.PathFinder.find_module(name) is None)
+                self.assertTrue(machinery.PathFinder.find_module(name) is None)
 
     def test_path_importer_cache_has_None_continues(self):
         # Test that having None in sys.path_importer_cache causes the search to
@@ -71,7 +71,7 @@ class FinderTests(unittest.TestCase):
         with util.import_state(path=['1', '2'],
                             path_importer_cache={'1': None, '2': importer}):
             loader = machinery.PathFinder.find_module(module)
-            self.assert_(loader is importer)
+            self.assertTrue(loader is importer)
 
 
 
@@ -88,15 +88,15 @@ class DefaultPathFinderTests(unittest.TestCase):
         with util.import_state():
             nothing = _bootstrap._DefaultPathFinder.find_module(module,
                                                            path=[existing_path])
-            self.assert_(nothing is None)
-            self.assert_(existing_path in sys.path_importer_cache)
-            self.assert_(not isinstance(sys.path_importer_cache[existing_path],
+            self.assertTrue(nothing is None)
+            self.assertTrue(existing_path in sys.path_importer_cache)
+            self.assertTrue(not isinstance(sys.path_importer_cache[existing_path],
                                         imp.NullImporter))
             nothing = _bootstrap._DefaultPathFinder.find_module(module,
                                                                 path=[bad_path])
-            self.assert_(nothing is None)
-            self.assert_(bad_path in sys.path_importer_cache)
-            self.assert_(isinstance(sys.path_importer_cache[bad_path],
+            self.assertTrue(nothing is None)
+            self.assertTrue(bad_path in sys.path_importer_cache)
+            self.assertTrue(isinstance(sys.path_importer_cache[bad_path],
                                     imp.NullImporter))
 
     def test_path_importer_cache_has_None(self):
@@ -113,7 +113,7 @@ class DefaultPathFinderTests(unittest.TestCase):
             with util.import_state(path_importer_cache={path: None}):
                 loader = _bootstrap._DefaultPathFinder.find_module(module,
                                                                     path=[path])
-                self.assert_(loader is importer)
+                self.assertTrue(loader is importer)
         finally:
             _bootstrap._DEFAULT_PATH_HOOK = original_hook
 

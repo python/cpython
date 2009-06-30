@@ -47,26 +47,26 @@ class HelperFunctionsTests(unittest.TestCase):
         path_parts = ("Beginning", "End")
         original_dir = os.path.join(*path_parts)
         abs_dir, norm_dir = site.makepath(*path_parts)
-        self.failUnlessEqual(os.path.abspath(original_dir), abs_dir)
+        self.assertEqual(os.path.abspath(original_dir), abs_dir)
         if original_dir == os.path.normcase(original_dir):
-            self.failUnlessEqual(abs_dir, norm_dir)
+            self.assertEqual(abs_dir, norm_dir)
         else:
-            self.failUnlessEqual(os.path.normcase(abs_dir), norm_dir)
+            self.assertEqual(os.path.normcase(abs_dir), norm_dir)
 
     def test_init_pathinfo(self):
         dir_set = site._init_pathinfo()
         for entry in [site.makepath(path)[1] for path in sys.path
                         if path and os.path.isdir(path)]:
-            self.failUnless(entry in dir_set,
+            self.assertTrue(entry in dir_set,
                             "%s from sys.path not found in set returned "
                             "by _init_pathinfo(): %s" % (entry, dir_set))
 
     def pth_file_tests(self, pth_file):
         """Contain common code for testing results of reading a .pth file"""
-        self.failUnless(pth_file.imported in sys.modules,
+        self.assertTrue(pth_file.imported in sys.modules,
                 "%s not in sys.path" % pth_file.imported)
-        self.failUnless(site.makepath(pth_file.good_dir_path)[0] in sys.path)
-        self.failUnless(not os.path.exists(pth_file.bad_dir_path))
+        self.assertTrue(site.makepath(pth_file.good_dir_path)[0] in sys.path)
+        self.assertTrue(not os.path.exists(pth_file.bad_dir_path))
 
     def test_addpackage(self):
         # Make sure addpackage() imports if the line starts with 'import',
@@ -98,7 +98,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_s_option(self):
         usersite = site.USER_SITE
-        self.assert_(usersite in sys.path)
+        self.assertTrue(usersite in sys.path)
 
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite])
@@ -196,7 +196,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.abs__file__()
         for module in (sys, os, builtins):
             try:
-                self.failUnless(os.path.isabs(module.__file__), repr(module))
+                self.assertTrue(os.path.isabs(module.__file__), repr(module))
             except AttributeError:
                 continue
         # We could try everything in sys.modules; however, when regrtest.py
@@ -209,7 +209,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.removeduppaths()
         seen_paths = set()
         for path in sys.path:
-            self.failUnless(path not in seen_paths)
+            self.assertTrue(path not in seen_paths)
             seen_paths.add(path)
 
     def test_add_build_dir(self):
@@ -220,17 +220,17 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_setting_quit(self):
         # 'quit' and 'exit' should be injected into builtins
-        self.failUnless(hasattr(builtins, "quit"))
-        self.failUnless(hasattr(builtins, "exit"))
+        self.assertTrue(hasattr(builtins, "quit"))
+        self.assertTrue(hasattr(builtins, "exit"))
 
     def test_setting_copyright(self):
         # 'copyright' and 'credits' should be in builtins
-        self.failUnless(hasattr(builtins, "copyright"))
-        self.failUnless(hasattr(builtins, "credits"))
+        self.assertTrue(hasattr(builtins, "copyright"))
+        self.assertTrue(hasattr(builtins, "credits"))
 
     def test_setting_help(self):
         # 'help' should be set in builtins
-        self.failUnless(hasattr(builtins, "help"))
+        self.assertTrue(hasattr(builtins, "help"))
 
     def test_aliasing_mbcs(self):
         if sys.platform == "win32":
@@ -244,7 +244,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_setdefaultencoding_removed(self):
         # Make sure sys.setdefaultencoding is gone
-        self.failUnless(not hasattr(sys, "setdefaultencoding"))
+        self.assertTrue(not hasattr(sys, "setdefaultencoding"))
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.

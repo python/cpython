@@ -53,9 +53,9 @@ class TestBase:
             if expected:
                 result = func(source, scheme)[0]
                 if func is self.decode:
-                    self.assert_(type(result) is str, type(result))
+                    self.assertTrue(type(result) is str, type(result))
                 else:
-                    self.assert_(type(result) is bytes, type(result))
+                    self.assertTrue(type(result) is bytes, type(result))
                 self.assertEqual(result, expected)
             else:
                 self.assertRaises(UnicodeError, func, source, scheme)

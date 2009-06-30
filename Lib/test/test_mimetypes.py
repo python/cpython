@@ -47,7 +47,7 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_guess_all_types(self):
         eq = self.assertEqual
-        unless = self.failUnless
+        unless = self.assertTrue
         # First try strict.  Use a set here for testing the results because if
         # test_urllib2 is run before test_mimetypes, global state is modified
         # such that the 'all' set will have more items in it.

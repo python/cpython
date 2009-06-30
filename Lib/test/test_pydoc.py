@@ -309,7 +309,7 @@ class TestDescriptions(unittest.TestCase):
         # Check that pydocfodder module can be described
         from test import pydocfodder
         doc = pydoc.render_doc(pydocfodder)
-        self.assert_("pydocfodder" in doc)
+        self.assertTrue("pydocfodder" in doc)
 
     def test_classic_class(self):
         class C: "Classic class"
@@ -317,7 +317,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(C), 'class C')
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s' % __name__
-        self.assert_(expected in pydoc.render_doc(c))
+        self.assertTrue(expected in pydoc.render_doc(c))
 
     def test_class(self):
         class C(object): "New-style class"
@@ -326,7 +326,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(C), 'class C')
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s object' % __name__
-        self.assert_(expected in pydoc.render_doc(c))
+        self.assertTrue(expected in pydoc.render_doc(c))
 
 
 def test_main():

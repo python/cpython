@@ -204,7 +204,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(TypeError, base64.b16decode, "")
 
     def test_ErrorHeritage(self):
-        self.assert_(issubclass(binascii.Error, ValueError))
+        self.assertTrue(issubclass(binascii.Error, ValueError))
 
 
 

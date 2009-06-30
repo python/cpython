@@ -280,7 +280,7 @@ class CopyTestCase(unittest.TestCase):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC(b"key")
         h2 = h1.copy()
-        self.failUnless(h1.digest_cons == h2.digest_cons,
+        self.assertTrue(h1.digest_cons == h2.digest_cons,
             "digest constructors don't match.")
         self.assertEqual(type(h1.inner), type(h2.inner),
             "Types of inner don't match.")
@@ -292,10 +292,10 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.HMAC(b"key")
         h2 = h1.copy()
         # Using id() in case somebody has overridden __eq__/__ne__.
-        self.failUnless(id(h1) != id(h2), "No real copy of the HMAC instance.")
-        self.failUnless(id(h1.inner) != id(h2.inner),
+        self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
+        self.assertTrue(id(h1.inner) != id(h2.inner),
             "No real copy of the attribute 'inner'.")
-        self.failUnless(id(h1.outer) != id(h2.outer),
+        self.assertTrue(id(h1.outer) != id(h2.outer),
             "No real copy of the attribute 'outer'.")
 
     def test_equality(self):
