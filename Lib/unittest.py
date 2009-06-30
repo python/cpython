@@ -680,7 +680,7 @@ class TestCase(object):
         def deprecated_func(*args, **kwargs):
             warnings.warn(
                 'Please use {0} instead.'.format(original_func.__name__),
-                PendingDeprecationWarning, 2)
+                DeprecationWarning, 2)
             return original_func(*args, **kwargs)
         return deprecated_func
 

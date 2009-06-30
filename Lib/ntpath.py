@@ -233,7 +233,7 @@ def splitunc(p):
     """
     import warnings
     warnings.warn("ntpath.splitunc is deprecated, use ntpath.splitdrive instead",
-                  PendingDeprecationWarning)
+                  DeprecationWarning)
     sep = _get_sep(p)
     if not p[1:2]:
         return p[:0], p # Drive letter present
