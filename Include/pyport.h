@@ -3,6 +3,12 @@
 
 #include "pyconfig.h" /* include for defines */
 
+/* Some versions of HP-UX & Solaris need inttypes.h for int32_t,
+   INT32_MAX, etc. */
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
