@@ -734,7 +734,7 @@ class MinidomTest(unittest.TestCase):
     def check_clone_attribute(self, deep, testName):
         doc = parseString("<doc attr='value'/>")
         attr = doc.documentElement.getAttributeNode("attr")
-        self.failIfEqual(attr, None)
+        self.assertNotEqual(attr, None)
         clone = attr.cloneNode(deep)
         self.confirm(not clone.isSameNode(attr))
         self.confirm(not attr.isSameNode(clone))

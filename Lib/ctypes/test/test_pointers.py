@@ -17,7 +17,7 @@ class PointersTestCase(unittest.TestCase):
 
         POINTER(c_ulong)(c_ulong(22))
         # Pointer can't set contents: has no _type_
-        self.failUnlessRaises(TypeError, A, c_ulong(33))
+        self.assertRaises(TypeError, A, c_ulong(33))
 
     def test_pass_pointers(self):
         dll = CDLL(_ctypes_test.__file__)
@@ -27,12 +27,12 @@ class PointersTestCase(unittest.TestCase):
         i = c_int(12345678)
 ##        func.argtypes = (POINTER(c_int),)
         address = func(byref(i))
-        self.failUnlessEqual(c_int.from_address(address).value, 12345678)
+        self.assertEqual(c_int.from_address(address).value, 12345678)
 
         func.restype = POINTER(c_int)
         res = func(pointer(i))
-        self.failUnlessEqual(res.contents.value, 12345678)
-        self.failUnlessEqual(res[0], 12345678)
+        self.assertEqual(res.contents.value, 12345678)
+        self.assertEqual(res[0], 12345678)
 
     def test_change_pointers(self):
         dll = CDLL(_ctypes_test.__file__)
@@ -43,18 +43,18 @@ class PointersTestCase(unittest.TestCase):
         func.argtypes = (POINTER(c_int),)
 
         res = func(pointer(i))
-        self.failUnlessEqual(res[0], 87654)
-        self.failUnlessEqual(res.contents.value, 87654)
+        self.assertEqual(res[0], 87654)
+        self.assertEqual(res.contents.value, 87654)
 
         # C code: *res = 54345
         res[0] = 54345
-        self.failUnlessEqual(i.value, 54345)
+        self.assertEqual(i.value, 54345)
 
         # C code:
         #   int x = 12321;
         #   res = &x
         res.contents = c_int(12321)
-        self.failUnlessEqual(i.value, 54345)
+        self.assertEqual(i.value, 54345)
 
     def test_callbacks_with_pointers(self):
         # a function type receiving a pointer
@@ -78,7 +78,7 @@ class PointersTestCase(unittest.TestCase):
 
 ##        i = c_int(42)
 ##        callback(byref(i))
-##        self.failUnless(i.value == 84)
+##        self.assertTrue(i.value == 84)
 
         doit(callback)
 ##        print self.result
@@ -91,11 +91,11 @@ class PointersTestCase(unittest.TestCase):
             i = ct(42)
             p = pointer(i)
 ##            print type(p.contents), ct
-            self.failUnless(type(p.contents) is ct)
+            self.assertTrue(type(p.contents) is ct)
             # p.contents is the same as p[0]
 ##            print p.contents
-##            self.failUnless(p.contents == 42)
-##            self.failUnless(p[0] == 42)
+##            self.assertTrue(p.contents == 42)
+##            self.assertTrue(p[0] == 42)
 
             self.assertRaises(TypeError, delitem, p, 0)
 
@@ -117,9 +117,9 @@ class PointersTestCase(unittest.TestCase):
 
         pt = pointer(Table(1, 2, 3))
 
-        self.failUnlessEqual(pt.contents.a, 1)
-        self.failUnlessEqual(pt.contents.b, 2)
-        self.failUnlessEqual(pt.contents.c, 3)
+        self.assertEqual(pt.contents.a, 1)
+        self.assertEqual(pt.contents.b, 2)
+        self.assertEqual(pt.contents.c, 3)
 
         pt.contents.c = 33
 
@@ -130,8 +130,8 @@ class PointersTestCase(unittest.TestCase):
         p = pointer(c_int(42))
         # Although a pointer can be indexed, it ha no length
         self.assertRaises(TypeError, len, p)
-        self.failUnlessEqual(p[0], 42)
-        self.failUnlessEqual(p.contents.value, 42)
+        self.assertEqual(p[0], 42)
+        self.assertEqual(p.contents.value, 42)
 
     def test_charpp(self):
         """Test that a character pointer-to-pointer is correctly passed"""
@@ -156,20 +156,20 @@ class PointersTestCase(unittest.TestCase):
         pp = pointer(p)
         q = pointer(y)
         pp[0] = q         # <==
-        self.failUnlessEqual(p[0], 6)
+        self.assertEqual(p[0], 6)
     def test_c_void_p(self):
         # http://sourceforge.net/tracker/?func=detail&aid=1518190&group_id=5470&atid=105470
         if sizeof(c_void_p) == 4:
-            self.failUnlessEqual(c_void_p(0xFFFFFFFFL).value,
+            self.assertEqual(c_void_p(0xFFFFFFFFL).value,
                                  c_void_p(-1).value)
-            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
+            self.assertEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
                                  c_void_p(-1).value)
         elif sizeof(c_void_p) == 8:
-            self.failUnlessEqual(c_void_p(0xFFFFFFFFL).value,
+            self.assertEqual(c_void_p(0xFFFFFFFFL).value,
                                  0xFFFFFFFFL)
-            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
+            self.assertEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
                                  c_void_p(-1).value)
-            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFFFFFFFFFL).value,
+            self.assertEqual(c_void_p(0xFFFFFFFFFFFFFFFFFFFFFFFFL).value,
                                  c_void_p(-1).value)
 
         self.assertRaises(TypeError, c_void_p, 3.14) # make sure floats are NOT accepted
@@ -177,16 +177,16 @@ class PointersTestCase(unittest.TestCase):
 
     def test_pointers_bool(self):
         # NULL pointers have a boolean False value, non-NULL pointers True.
-        self.failUnlessEqual(bool(POINTER(c_int)()), False)
-        self.failUnlessEqual(bool(pointer(c_int())), True)
+        self.assertEqual(bool(POINTER(c_int)()), False)
+        self.assertEqual(bool(pointer(c_int())), True)
 
-        self.failUnlessEqual(bool(CFUNCTYPE(None)(0)), False)
-        self.failUnlessEqual(bool(CFUNCTYPE(None)(42)), True)
+        self.assertEqual(bool(CFUNCTYPE(None)(0)), False)
+        self.assertEqual(bool(CFUNCTYPE(None)(42)), True)
 
         # COM methods are boolean True:
         if sys.platform == "win32":
             mth = WINFUNCTYPE(None)(42, "name", (), None)
-            self.failUnlessEqual(bool(mth), True)
+            self.assertEqual(bool(mth), True)
 
 if __name__ == '__main__':
     unittest.main()

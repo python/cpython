@@ -71,21 +71,21 @@ class XMLRPCTestCase(unittest.TestCase):
     def test_cmp_datetime_DateTime(self):
         now = datetime.datetime.now()
         dt = xmlrpclib.DateTime(now.timetuple())
-        self.assert_(dt == now)
-        self.assert_(now == dt)
+        self.assertTrue(dt == now)
+        self.assertTrue(now == dt)
         then = now + datetime.timedelta(seconds=4)
-        self.assert_(then >= dt)
-        self.assert_(dt < then)
+        self.assertTrue(then >= dt)
+        self.assertTrue(dt < then)
 
     def test_bug_1164912 (self):
         d = xmlrpclib.DateTime()
         ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,),
                                             methodresponse=True))
-        self.assert_(isinstance(new_d.value, str))
+        self.assertTrue(isinstance(new_d.value, str))
 
         # Check that the output of dumps() is still an 8-bit string
         s = xmlrpclib.dumps((new_d,), methodresponse=True)
-        self.assert_(isinstance(s, str))
+        self.assertTrue(isinstance(s, str))
 
     def test_newstyle_class(self):
         class T(object):
@@ -175,10 +175,10 @@ class XMLRPCTestCase(unittest.TestCase):
         items = d.items()
         if have_unicode:
             self.assertEquals(s, u"abc \x95")
-            self.assert_(isinstance(s, unicode))
+            self.assertTrue(isinstance(s, unicode))
             self.assertEquals(items, [(u"def \x96", u"ghi \x97")])
-            self.assert_(isinstance(items[0][0], unicode))
-            self.assert_(isinstance(items[0][1], unicode))
+            self.assertTrue(isinstance(items[0][0], unicode))
+            self.assertTrue(isinstance(items[0][1], unicode))
         else:
             self.assertEquals(s, "abc \xc2\x95")
             self.assertEquals(items, [("def \xc2\x96", "ghi \xc2\x97")])
@@ -511,7 +511,7 @@ class SimpleServerTestCase(BaseServerTestCase):
         self.assertRaises(AttributeError,
                           SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
 
-        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
+        self.assertTrue(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
         # Get the test to run faster by sending a request with test_simple1.
         # This avoids waiting for the socket timeout.
         self.test_simple1()
@@ -838,7 +838,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_custom_user_agent")
 
         req = self.issue_request(TestTransport)
-        self.assert_("X-Test: test_custom_user_agent\r\n" in req)
+        self.assertTrue("X-Test: test_custom_user_agent\r\n" in req)
 
     def test_send_host(self):
         class TestTransport(FakeTransport):
@@ -848,7 +848,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_send_host")
 
         req = self.issue_request(TestTransport)
-        self.assert_("X-Test: test_send_host\r\n" in req)
+        self.assertTrue("X-Test: test_send_host\r\n" in req)
 
     def test_send_request(self):
         class TestTransport(FakeTransport):
@@ -858,7 +858,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_send_request")
 
         req = self.issue_request(TestTransport)
-        self.assert_("X-Test: test_send_request\r\n" in req)
+        self.assertTrue("X-Test: test_send_request\r\n" in req)
 
     def test_send_content(self):
         class TestTransport(FakeTransport):
@@ -868,7 +868,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 xmlrpclib.Transport.send_content(self, conn, body)
 
         req = self.issue_request(TestTransport)
-        self.assert_("X-Test: test_send_content\r\n" in req)
+        self.assertTrue("X-Test: test_send_content\r\n" in req)
 
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,

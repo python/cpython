@@ -54,7 +54,7 @@ class ContextManagerTestCase(unittest.TestCase):
         ctx = whee()
         ctx.__enter__()
         # Calling __exit__ should not result in an exception
-        self.failIf(ctx.__exit__(TypeError, TypeError("foo"), None))
+        self.assertFalse(ctx.__exit__(TypeError, TypeError("foo"), None))
 
     def test_contextmanager_trap_yield_after_throw(self):
         @contextmanager
@@ -261,17 +261,17 @@ class FileContextTestCase(unittest.TestCase):
         try:
             f = None
             with open(tfn, "w") as f:
-                self.failIf(f.closed)
+                self.assertFalse(f.closed)
                 f.write("Booh\n")
-            self.failUnless(f.closed)
+            self.assertTrue(f.closed)
             f = None
             try:
                 with open(tfn, "r") as f:
-                    self.failIf(f.closed)
+                    self.assertFalse(f.closed)
                     self.assertEqual(f.read(), "Booh\n")
                     1/0
             except ZeroDivisionError:
-                self.failUnless(f.closed)
+                self.assertTrue(f.closed)
             else:
                 self.fail("Didn't raise ZeroDivisionError")
         finally:
@@ -283,16 +283,16 @@ class FileContextTestCase(unittest.TestCase):
 class LockContextTestCase(unittest.TestCase):
 
     def boilerPlate(self, lock, locked):
-        self.failIf(locked())
+        self.assertFalse(locked())
         with lock:
-            self.failUnless(locked())
-        self.failIf(locked())
+            self.assertTrue(locked())
+        self.assertFalse(locked())
         try:
             with lock:
-                self.failUnless(locked())
+                self.assertTrue(locked())
                 1/0
         except ZeroDivisionError:
-            self.failIf(locked())
+            self.assertFalse(locked())
         else:
             self.fail("Didn't raise ZeroDivisionError")
 

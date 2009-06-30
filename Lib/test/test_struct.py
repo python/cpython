@@ -181,7 +181,7 @@ class StructTest(unittest.TestCase):
                 self.assertEqual(struct.calcsize(xfmt), len(res))
                 rev = struct.unpack(xfmt, res)[0]
                 if rev != arg:
-                    self.assert_(asy)
+                    self.assertTrue(asy)
 
     def test_native_qQ(self):
         # can't pack -1 as unsigned regardless
@@ -252,7 +252,7 @@ class StructTest(unittest.TestCase):
                     expected = long(x)
                     if x < 0:
                         expected += 1L << self.bitsize
-                        self.assert_(expected > 0)
+                        self.assertTrue(expected > 0)
                     expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
                     if len(expected) & 1:
                         expected = "0" + expected

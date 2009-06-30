@@ -18,10 +18,10 @@ class CFuncPtrTestCase(unittest.TestCase):
             return len(args)
 
         x = X(func)
-        self.failUnlessEqual(x.restype, c_int)
-        self.failUnlessEqual(x.argtypes, (c_int, c_int))
-        self.failUnlessEqual(sizeof(x), sizeof(c_voidp))
-        self.failUnlessEqual(sizeof(X), sizeof(c_voidp))
+        self.assertEqual(x.restype, c_int)
+        self.assertEqual(x.argtypes, (c_int, c_int))
+        self.assertEqual(sizeof(x), sizeof(c_voidp))
+        self.assertEqual(sizeof(X), sizeof(c_voidp))
 
     def test_first(self):
         StdCallback = WINFUNCTYPE(c_int, c_int, c_int)
@@ -33,12 +33,12 @@ class CFuncPtrTestCase(unittest.TestCase):
         s = StdCallback(func)
         c = CdeclCallback(func)
 
-        self.failUnlessEqual(s(1, 2), 3)
-        self.failUnlessEqual(c(1, 2), 3)
+        self.assertEqual(s(1, 2), 3)
+        self.assertEqual(c(1, 2), 3)
         # The following no longer raises a TypeError - it is now
         # possible, as in C, to call cdecl functions with more parameters.
         #self.assertRaises(TypeError, c, 1, 2, 3)
-        self.failUnlessEqual(c(1, 2, 3, 4, 5, 6), 3)
+        self.assertEqual(c(1, 2, 3, 4, 5, 6), 3)
         if not WINFUNCTYPE is CFUNCTYPE and os.name != "ce":
             self.assertRaises(TypeError, s, 1, 2, 3)
 
@@ -75,9 +75,9 @@ class CFuncPtrTestCase(unittest.TestCase):
         ##                  "lpfnWndProc", WNDPROC_2(wndproc))
         # instead:
 
-        self.failUnless(WNDPROC is WNDPROC_2)
+        self.assertTrue(WNDPROC is WNDPROC_2)
         # 'wndclass.lpfnWndProc' leaks 94 references.  Why?
-        self.failUnlessEqual(wndclass.lpfnWndProc(1, 2, 3, 4), 10)
+        self.assertEqual(wndclass.lpfnWndProc(1, 2, 3, 4), 10)
 
 
         f = wndclass.lpfnWndProc
@@ -85,7 +85,7 @@ class CFuncPtrTestCase(unittest.TestCase):
         del wndclass
         del wndproc
 
-        self.failUnlessEqual(f(10, 11, 12, 13), 46)
+        self.assertEqual(f(10, 11, 12, 13), 46)
 
     def test_dllfunctions(self):
 
@@ -97,8 +97,8 @@ class CFuncPtrTestCase(unittest.TestCase):
         strchr = lib.my_strchr
         strchr.restype = c_char_p
         strchr.argtypes = (c_char_p, c_char)
-        self.failUnlessEqual(strchr("abcdefghi", "b"), "bcdefghi")
-        self.failUnlessEqual(strchr("abcdefghi", "x"), None)
+        self.assertEqual(strchr("abcdefghi", "b"), "bcdefghi")
+        self.assertEqual(strchr("abcdefghi", "x"), None)
 
 
         strtok = lib.my_strtok
@@ -118,10 +118,10 @@ class CFuncPtrTestCase(unittest.TestCase):
 ##        b.value = s
 
 ##        b = c_string(s)
-        self.failUnlessEqual(strtok(b, "\n"), "a")
-        self.failUnlessEqual(strtok(None, "\n"), "b")
-        self.failUnlessEqual(strtok(None, "\n"), "c")
-        self.failUnlessEqual(strtok(None, "\n"), None)
+        self.assertEqual(strtok(b, "\n"), "a")
+        self.assertEqual(strtok(None, "\n"), "b")
+        self.assertEqual(strtok(None, "\n"), "c")
+        self.assertEqual(strtok(None, "\n"), None)
 
 if __name__ == '__main__':
     unittest.main()

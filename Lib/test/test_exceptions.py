@@ -162,7 +162,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "test_capi1")
-                self.assert_(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
+                self.assertTrue(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
             else:
                 self.fail("Expected exception")
 
@@ -174,7 +174,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "__init__")
-                self.assert_(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
+                self.assertTrue(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEquals(co2.co_name, "test_capi2")
             else:
@@ -190,12 +190,12 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
         else:
-            self.failUnlessEqual(str(WindowsError(1001)),
+            self.assertEqual(str(WindowsError(1001)),
                                  "1001")
-            self.failUnlessEqual(str(WindowsError(1001, "message")),
+            self.assertEqual(str(WindowsError(1001, "message")),
                                  "[Error 1001] message")
-            self.failUnlessEqual(WindowsError(1001, "message").errno, 22)
-            self.failUnlessEqual(WindowsError(1001, "message").winerror, 1001)
+            self.assertEqual(WindowsError(1001, "message").errno, 22)
+            self.assertEqual(WindowsError(1001, "message").winerror, 1001)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -308,7 +308,7 @@ class ExceptionTests(unittest.TestCase):
         # going through the 'args' attribute.
         args = (1, 2, 3)
         exc = BaseException(*args)
-        self.failUnlessEqual(exc[:], args)
+        self.assertEqual(exc[:], args)
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,
@@ -350,11 +350,11 @@ class ExceptionTests(unittest.TestCase):
     def testUnicodeStrUsage(self):
         # Make sure both instances and classes have a str and unicode
         # representation.
-        self.failUnless(str(Exception))
-        self.failUnless(unicode(Exception))
-        self.failUnless(str(Exception('a')))
-        self.failUnless(unicode(Exception(u'a')))
-        self.failUnless(unicode(Exception(u'\xe1')))
+        self.assertTrue(str(Exception))
+        self.assertTrue(unicode(Exception))
+        self.assertTrue(str(Exception('a')))
+        self.assertTrue(unicode(Exception(u'a')))
+        self.assertTrue(unicode(Exception(u'\xe1')))
 
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
@@ -386,8 +386,8 @@ class ExceptionTests(unittest.TestCase):
                 except RuntimeError:
                     return sys.exc_info()
             e, v, tb = g()
-            self.assert_(e is RuntimeError, e)
-            self.assert_("maximum recursion depth exceeded" in str(v), v)
+            self.assertTrue(e is RuntimeError, e)
+            self.assertTrue("maximum recursion depth exceeded" in str(v), v)
 
 
 def test_main():

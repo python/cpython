@@ -5,7 +5,7 @@ from test import test_support
 
 class TestFuture(unittest.TestCase):
     def assertType(self, obj, typ):
-        self.assert_(type(obj) is typ,
+        self.assertTrue(type(obj) is typ,
             "type(%r) is %r, not %r" % (obj, type(obj), typ))
 
     def test_unicode_strings(self):

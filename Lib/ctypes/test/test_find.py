@@ -76,7 +76,7 @@ class Test_OpenGL_libs(unittest.TestCase):
 ##            sqrt = libm.sqrt
 ##            sqrt.argtypes = (c_double,)
 ##            sqrt.restype = c_double
-##            self.failUnlessEqual(sqrt(2), math.sqrt(2))
+##            self.assertEqual(sqrt(2), math.sqrt(2))
 
 if __name__ == "__main__":
     unittest.main()

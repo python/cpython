@@ -16,17 +16,17 @@ class StyleTest(unittest.TestCase):
     def test_configure(self):
         style = self.style
         style.configure('TButton', background='yellow')
-        self.failUnlessEqual(style.configure('TButton', 'background'),
+        self.assertEqual(style.configure('TButton', 'background'),
             'yellow')
-        self.failUnless(isinstance(style.configure('TButton'), dict))
+        self.assertTrue(isinstance(style.configure('TButton'), dict))
 
 
     def test_map(self):
         style = self.style
         style.map('TButton', background=[('active', 'background', 'blue')])
-        self.failUnlessEqual(style.map('TButton', 'background'),
+        self.assertEqual(style.map('TButton', 'background'),
             [('active', 'background', 'blue')])
-        self.failUnless(isinstance(style.map('TButton'), dict))
+        self.assertTrue(isinstance(style.map('TButton'), dict))
 
 
     def test_lookup(self):
@@ -34,38 +34,38 @@ class StyleTest(unittest.TestCase):
         style.configure('TButton', background='yellow')
         style.map('TButton', background=[('active', 'background', 'blue')])
 
-        self.failUnlessEqual(style.lookup('TButton', 'background'), 'yellow')
-        self.failUnlessEqual(style.lookup('TButton', 'background',
+        self.assertEqual(style.lookup('TButton', 'background'), 'yellow')
+        self.assertEqual(style.lookup('TButton', 'background',
             ['active', 'background']), 'blue')
-        self.failUnlessEqual(style.lookup('TButton', 'optionnotdefined',
+        self.assertEqual(style.lookup('TButton', 'optionnotdefined',
             default='iknewit'), 'iknewit')
 
 
     def test_layout(self):
         style = self.style
-        self.failUnlessRaises(Tkinter.TclError, style.layout, 'NotALayout')
+        self.assertRaises(Tkinter.TclError, style.layout, 'NotALayout')
         tv_style = style.layout('Treeview')
 
         # "erase" Treeview layout
         style.layout('Treeview', '')
-        self.failUnlessEqual(style.layout('Treeview'),
+        self.assertEqual(style.layout('Treeview'),
             [('null', {'sticky': 'nswe'})]
         )
 
         # restore layout
         style.layout('Treeview', tv_style)
-        self.failUnlessEqual(style.layout('Treeview'), tv_style)
+        self.assertEqual(style.layout('Treeview'), tv_style)
 
         # should return a list
-        self.failUnless(isinstance(style.layout('TButton'), list))
+        self.assertTrue(isinstance(style.layout('TButton'), list))
 
         # correct layout, but "option" doesn't exist as option
-        self.failUnlessRaises(Tkinter.TclError, style.layout, 'Treeview',
+        self.assertRaises(Tkinter.TclError, style.layout, 'Treeview',
             [('name', {'option': 'inexistent'})])
 
 
     def test_theme_use(self):
-        self.failUnlessRaises(Tkinter.TclError, self.style.theme_use,
+        self.assertRaises(Tkinter.TclError, self.style.theme_use,
             'nonexistingname')
 
         curr_theme = self.style.theme_use()
@@ -79,8 +79,8 @@ class StyleTest(unittest.TestCase):
             # just one theme available, can't go on with tests
             return
 
-        self.failIf(curr_theme == new_theme)
-        self.failIf(new_theme != self.style.theme_use())
+        self.assertFalse(curr_theme == new_theme)
+        self.assertFalse(new_theme != self.style.theme_use())
 
         self.style.theme_use(curr_theme)
 

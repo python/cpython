@@ -57,7 +57,7 @@ class CommandTests(unittest.TestCase):
                   /\.          # and end with the name of the file.
                '''
 
-        self.assert_(re.match(pat, getstatus("/."), re.VERBOSE))
+        self.assertTrue(re.match(pat, getstatus("/."), re.VERBOSE))
 
 
 def test_main():

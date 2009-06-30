@@ -240,12 +240,12 @@ class ModuleFinderTest(unittest.TestCase):
             more = list(found - modules)
             less = list(modules - found)
             # check if we found what we expected, not more, not less
-            self.failUnlessEqual((more, less), ([], []))
+            self.assertEqual((more, less), ([], []))
 
             # check for missing and maybe missing modules
             bad, maybe = mf.any_missing_maybe()
-            self.failUnlessEqual(bad, missing)
-            self.failUnlessEqual(maybe, maybe_missing)
+            self.assertEqual(bad, missing)
+            self.assertEqual(maybe, maybe_missing)
         finally:
             distutils.dir_util.remove_tree(TEST_DIR)
 

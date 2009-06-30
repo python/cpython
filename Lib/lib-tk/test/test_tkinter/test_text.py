@@ -19,18 +19,18 @@ class TextTest(unittest.TestCase):
         text = self.text
 
         # pattern and index are obligatory arguments.
-        self.failUnlessRaises(Tkinter.TclError, text.search, None, '1.0')
-        self.failUnlessRaises(Tkinter.TclError, text.search, 'a', None)
-        self.failUnlessRaises(Tkinter.TclError, text.search, None, None)
+        self.assertRaises(Tkinter.TclError, text.search, None, '1.0')
+        self.assertRaises(Tkinter.TclError, text.search, 'a', None)
+        self.assertRaises(Tkinter.TclError, text.search, None, None)
 
         # Invalid text index.
-        self.failUnlessRaises(Tkinter.TclError, text.search, '', 0)
+        self.assertRaises(Tkinter.TclError, text.search, '', 0)
 
         # Check if we are getting the indices as strings -- you are likely
         # to get Tcl_Obj under Tk 8.5 if Tkinter doesn't convert it.
         text.insert('1.0', 'hi-test')
-        self.failUnlessEqual(text.search('-test', '1.0', 'end'), '1.2')
-        self.failUnlessEqual(text.search('test', '1.0', 'end'), '1.3')
+        self.assertEqual(text.search('-test', '1.0', 'end'), '1.2')
+        self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
 
 
 tests_gui = (TextTest, )

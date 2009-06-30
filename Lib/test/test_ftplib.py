@@ -438,7 +438,7 @@ class TestTimeouts(TestCase):
 
     def testTimeoutDefault(self):
         # default -- use global socket timeout
-        self.assert_(socket.getdefaulttimeout() is None)
+        self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             ftp = ftplib.FTP("localhost")
@@ -450,7 +450,7 @@ class TestTimeouts(TestCase):
 
     def testTimeoutNone(self):
         # no timeout -- do not use global socket timeout
-        self.assert_(socket.getdefaulttimeout() is None)
+        self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
             ftp = ftplib.FTP("localhost", timeout=None)

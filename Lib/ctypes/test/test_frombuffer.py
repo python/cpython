@@ -16,14 +16,14 @@ class Test(unittest.TestCase):
 
         y = X.from_buffer(a)
         self.assertEqual(y.c_int, a[0])
-        self.failIf(y.init_called)
+        self.assertFalse(y.init_called)
 
         self.assertEqual(x[:], a.tolist())
 
         a[0], a[-1] = 200, -200
         self.assertEqual(x[:], a.tolist())
 
-        self.assert_(a in x._objects.values())
+        self.assertTrue(a in x._objects.values())
 
         self.assertRaises(ValueError,
                           c_int.from_buffer, a, -1)
@@ -49,7 +49,7 @@ class Test(unittest.TestCase):
 
         y = X.from_buffer_copy(a)
         self.assertEqual(y.c_int, a[0])
-        self.failIf(y.init_called)
+        self.assertFalse(y.init_called)
 
         self.assertEqual(x[:], range(16))
 

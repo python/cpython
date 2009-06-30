@@ -13,9 +13,9 @@ class ValuesTestCase(unittest.TestCase):
         ctdll = CDLL(_ctypes_test.__file__)
         an_integer = c_int.in_dll(ctdll, "an_integer")
         x = an_integer.value
-        self.failUnlessEqual(x, ctdll.get_an_integer())
+        self.assertEqual(x, ctdll.get_an_integer())
         an_integer.value *= 2
-        self.failUnlessEqual(x*2, ctdll.get_an_integer())
+        self.assertEqual(x*2, ctdll.get_an_integer())
 
     def test_undefined(self):
         ctdll = CDLL(_ctypes_test.__file__)
@@ -34,11 +34,11 @@ class ValuesTestCase(unittest.TestCase):
             # docstrings are also removed in the latter case.
             opt = c_int.in_dll(pydll, "Py_OptimizeFlag").value
             if __debug__:
-                self.failUnlessEqual(opt, 0)
+                self.assertEqual(opt, 0)
             elif ValuesTestCase.__doc__ is not None:
-                self.failUnlessEqual(opt, 1)
+                self.assertEqual(opt, 1)
             else:
-                self.failUnlessEqual(opt, 2)
+                self.assertEqual(opt, 2)
 
         def test_frozentable(self):
             # Python exports a PyImport_FrozenModules symbol. This is a
@@ -70,7 +70,7 @@ class ValuesTestCase(unittest.TestCase):
                 expected = [("__hello__", 104), ("__phello__", -104), ("__phello__.spam", 104)]
             else:
                 expected = [("__hello__", 100), ("__phello__", -100), ("__phello__.spam", 100)]
-            self.failUnlessEqual(items, expected)
+            self.assertEqual(items, expected)
 
             from ctypes import _pointer_type_cache
             del _pointer_type_cache[struct_frozen]

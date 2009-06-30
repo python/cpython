@@ -6,26 +6,26 @@ import unittest
 class MacPathTestCase(unittest.TestCase):
 
     def test_abspath(self):
-        self.assert_(macpath.abspath("xx:yy") == "xx:yy")
+        self.assertTrue(macpath.abspath("xx:yy") == "xx:yy")
 
     def test_isabs(self):
         isabs = macpath.isabs
-        self.assert_(isabs("xx:yy"))
-        self.assert_(isabs("xx:yy:"))
-        self.assert_(isabs("xx:"))
-        self.failIf(isabs("foo"))
-        self.failIf(isabs(":foo"))
-        self.failIf(isabs(":foo:bar"))
-        self.failIf(isabs(":foo:bar:"))
+        self.assertTrue(isabs("xx:yy"))
+        self.assertTrue(isabs("xx:yy:"))
+        self.assertTrue(isabs("xx:"))
+        self.assertFalse(isabs("foo"))
+        self.assertFalse(isabs(":foo"))
+        self.assertFalse(isabs(":foo:bar"))
+        self.assertFalse(isabs(":foo:bar:"))
 
 
     def test_commonprefix(self):
         commonprefix = macpath.commonprefix
-        self.assert_(commonprefix(["home:swenson:spam", "home:swen:spam"])
+        self.assertTrue(commonprefix(["home:swenson:spam", "home:swen:spam"])
                      == "home:swen")
-        self.assert_(commonprefix([":home:swen:spam", ":home:swen:eggs"])
+        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:eggs"])
                      == ":home:swen:")
-        self.assert_(commonprefix([":home:swen:spam", ":home:swen:spam"])
+        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:spam"])
                      == ":home:swen:spam")
 
     def test_split(self):

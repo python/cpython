@@ -161,7 +161,7 @@ class ImportTest(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assert_(TESTFN in sys.modules, "expected module in sys.modules")
+            self.assertTrue(TESTFN in sys.modules, "expected module in sys.modules")
             self.assertEquals(mod.a, 1, "module has wrong attribute values")
             self.assertEquals(mod.b, 2, "module has wrong attribute values")
 
@@ -181,7 +181,7 @@ class ImportTest(unittest.TestCase):
 
             # But we still expect the module to be in sys.modules.
             mod = sys.modules.get(TESTFN)
-            self.failIf(mod is None, "expected module to still be in sys.modules")
+            self.assertFalse(mod is None, "expected module to still be in sys.modules")
 
             # We should have replaced a w/ 10, but the old b value should
             # stick.
@@ -208,12 +208,12 @@ class ImportTest(unittest.TestCase):
         # import x.y.z binds x in the current namespace
         import test as x
         import test.test_support
-        self.assert_(x is test, x.__name__)
-        self.assert_(hasattr(test.test_support, "__file__"))
+        self.assertTrue(x is test, x.__name__)
+        self.assertTrue(hasattr(test.test_support, "__file__"))
 
         # import x.y.z as w binds z as w
         import test.test_support as y
-        self.assert_(y is test.test_support, y.__name__)
+        self.assertTrue(y is test.test_support, y.__name__)
 
     def test_import_initless_directory_warning(self):
         with warnings.catch_warnings():
@@ -394,14 +394,14 @@ class RelativeImport(unittest.TestCase):
         ns = dict(__package__='foo', __name__='test.notarealmodule')
         with check_warnings() as w:
             check_absolute()
-            self.assert_('foo' in str(w.message))
+            self.assertTrue('foo' in str(w.message))
             self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check relative fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
         with check_warnings() as w:
             check_absolute()
-            self.assert_('foo' in str(w.message))
+            self.assertTrue('foo' in str(w.message))
             self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check both fail with package set to a non-string

@@ -216,9 +216,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
     def check_status_and_reason(self, response, status, data=None):
         body = response.read()
-        self.assert_(response)
+        self.assertTrue(response)
         self.assertEquals(response.status, status)
-        self.assert_(response.reason != None)
+        self.assertTrue(response.reason != None)
         if data:
             self.assertEqual(data, body)
 

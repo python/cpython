@@ -9,14 +9,14 @@ class MutexTest(unittest.TestCase):
 
         def called_by_mutex(some_data):
             self.assertEqual(some_data, "spam")
-            self.assert_(m.test(), "mutex not held")
+            self.assertTrue(m.test(), "mutex not held")
             # Nested locking
             m.lock(called_by_mutex2, "eggs")
 
         def called_by_mutex2(some_data):
             self.assertEquals(some_data, "eggs")
-            self.assert_(m.test(), "mutex not held")
-            self.assert_(ready_for_2,
+            self.assertTrue(m.test(), "mutex not held")
+            self.assertTrue(ready_for_2,
                          "called_by_mutex2 called too soon")
 
         m = mutex.mutex()
@@ -26,7 +26,7 @@ class MutexTest(unittest.TestCase):
         # unlock both locks
         m.unlock()
         m.unlock()
-        self.failIf(m.test(), "mutex still held")
+        self.assertFalse(m.test(), "mutex still held")
 
 def test_main():
     test.test_support.run_unittest(MutexTest)

@@ -19,8 +19,8 @@ from test import test_support
 class Pep247Test(unittest.TestCase):
 
     def check_module(self, module, key=None):
-        self.assert_(hasattr(module, 'digest_size'))
-        self.assert_(module.digest_size is None or module.digest_size > 0)
+        self.assertTrue(hasattr(module, 'digest_size'))
+        self.assertTrue(module.digest_size is None or module.digest_size > 0)
 
         if not key is None:
             obj1 = module.new(key)
@@ -41,7 +41,7 @@ class Pep247Test(unittest.TestCase):
 
         self.assertEquals(h1, h2)
 
-        self.assert_(hasattr(obj1, 'digest_size'))
+        self.assertTrue(hasattr(obj1, 'digest_size'))
 
         if not module.digest_size is None:
             self.assertEquals(obj1.digest_size, module.digest_size)

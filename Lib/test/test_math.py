@@ -72,7 +72,7 @@ class MathTests(unittest.TestCase):
         self.ftest('acos(1)', math.acos(1), 0)
         self.assertRaises(ValueError, math.acos, INF)
         self.assertRaises(ValueError, math.acos, NINF)
-        self.assert_(math.isnan(math.acos(NAN)))
+        self.assertTrue(math.isnan(math.acos(NAN)))
 
     def testAcosh(self):
         self.assertRaises(TypeError, math.acosh)
@@ -82,7 +82,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.acosh, -1)
         self.assertEquals(math.acosh(INF), INF)
         self.assertRaises(ValueError, math.acosh, NINF)
-        self.assert_(math.isnan(math.acosh(NAN)))
+        self.assertTrue(math.isnan(math.acosh(NAN)))
 
     def testAsin(self):
         self.assertRaises(TypeError, math.asin)
@@ -91,7 +91,7 @@ class MathTests(unittest.TestCase):
         self.ftest('asin(1)', math.asin(1), math.pi/2)
         self.assertRaises(ValueError, math.asin, INF)
         self.assertRaises(ValueError, math.asin, NINF)
-        self.assert_(math.isnan(math.asin(NAN)))
+        self.assertTrue(math.isnan(math.asin(NAN)))
 
     def testAsinh(self):
         self.assertRaises(TypeError, math.asinh)
@@ -100,7 +100,7 @@ class MathTests(unittest.TestCase):
         self.ftest('asinh(-1)', math.asinh(-1), -0.88137358701954305)
         self.assertEquals(math.asinh(INF), INF)
         self.assertEquals(math.asinh(NINF), NINF)
-        self.assert_(math.isnan(math.asinh(NAN)))
+        self.assertTrue(math.isnan(math.asinh(NAN)))
 
     def testAtan(self):
         self.assertRaises(TypeError, math.atan)
@@ -109,7 +109,7 @@ class MathTests(unittest.TestCase):
         self.ftest('atan(1)', math.atan(1), math.pi/4)
         self.ftest('atan(inf)', math.atan(INF), math.pi/2)
         self.ftest('atan(-inf)', math.atan(NINF), -math.pi/2)
-        self.assert_(math.isnan(math.atan(NAN)))
+        self.assertTrue(math.isnan(math.atan(NAN)))
 
     def testAtanh(self):
         self.assertRaises(TypeError, math.atan)
@@ -120,7 +120,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.atanh, -1)
         self.assertRaises(ValueError, math.atanh, INF)
         self.assertRaises(ValueError, math.atanh, NINF)
-        self.assert_(math.isnan(math.atanh(NAN)))
+        self.assertTrue(math.isnan(math.atanh(NAN)))
 
     def testAtan2(self):
         self.assertRaises(TypeError, math.atan2)
@@ -137,7 +137,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.atan2(0., 0.), 0.)
         self.assertEqual(math.atan2(0., 2.3), 0.)
         self.assertEqual(math.atan2(0., INF), 0.)
-        self.assert_(math.isnan(math.atan2(0., NAN)))
+        self.assertTrue(math.isnan(math.atan2(0., NAN)))
         # math.atan2(-0, x)
         self.ftest('atan2(-0., -inf)', math.atan2(-0., NINF), -math.pi)
         self.ftest('atan2(-0., -2.3)', math.atan2(-0., -2.3), -math.pi)
@@ -145,7 +145,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.atan2(-0., 0.), -0.)
         self.assertEqual(math.atan2(-0., 2.3), -0.)
         self.assertEqual(math.atan2(-0., INF), -0.)
-        self.assert_(math.isnan(math.atan2(-0., NAN)))
+        self.assertTrue(math.isnan(math.atan2(-0., NAN)))
         # math.atan2(INF, x)
         self.ftest('atan2(inf, -inf)', math.atan2(INF, NINF), math.pi*3/4)
         self.ftest('atan2(inf, -2.3)', math.atan2(INF, -2.3), math.pi/2)
@@ -153,7 +153,7 @@ class MathTests(unittest.TestCase):
         self.ftest('atan2(inf, 0.)', math.atan2(INF, 0.0), math.pi/2)
         self.ftest('atan2(inf, 2.3)', math.atan2(INF, 2.3), math.pi/2)
         self.ftest('atan2(inf, inf)', math.atan2(INF, INF), math.pi/4)
-        self.assert_(math.isnan(math.atan2(INF, NAN)))
+        self.assertTrue(math.isnan(math.atan2(INF, NAN)))
         # math.atan2(NINF, x)
         self.ftest('atan2(-inf, -inf)', math.atan2(NINF, NINF), -math.pi*3/4)
         self.ftest('atan2(-inf, -2.3)', math.atan2(NINF, -2.3), -math.pi/2)
@@ -161,27 +161,27 @@ class MathTests(unittest.TestCase):
         self.ftest('atan2(-inf, 0.)', math.atan2(NINF, 0.0), -math.pi/2)
         self.ftest('atan2(-inf, 2.3)', math.atan2(NINF, 2.3), -math.pi/2)
         self.ftest('atan2(-inf, inf)', math.atan2(NINF, INF), -math.pi/4)
-        self.assert_(math.isnan(math.atan2(NINF, NAN)))
+        self.assertTrue(math.isnan(math.atan2(NINF, NAN)))
         # math.atan2(+finite, x)
         self.ftest('atan2(2.3, -inf)', math.atan2(2.3, NINF), math.pi)
         self.ftest('atan2(2.3, -0.)', math.atan2(2.3, -0.), math.pi/2)
         self.ftest('atan2(2.3, 0.)', math.atan2(2.3, 0.), math.pi/2)
         self.assertEqual(math.atan2(2.3, INF), 0.)
-        self.assert_(math.isnan(math.atan2(2.3, NAN)))
+        self.assertTrue(math.isnan(math.atan2(2.3, NAN)))
         # math.atan2(-finite, x)
         self.ftest('atan2(-2.3, -inf)', math.atan2(-2.3, NINF), -math.pi)
         self.ftest('atan2(-2.3, -0.)', math.atan2(-2.3, -0.), -math.pi/2)
         self.ftest('atan2(-2.3, 0.)', math.atan2(-2.3, 0.), -math.pi/2)
         self.assertEqual(math.atan2(-2.3, INF), -0.)
-        self.assert_(math.isnan(math.atan2(-2.3, NAN)))
+        self.assertTrue(math.isnan(math.atan2(-2.3, NAN)))
         # math.atan2(NAN, x)
-        self.assert_(math.isnan(math.atan2(NAN, NINF)))
-        self.assert_(math.isnan(math.atan2(NAN, -2.3)))
-        self.assert_(math.isnan(math.atan2(NAN, -0.)))
-        self.assert_(math.isnan(math.atan2(NAN, 0.)))
-        self.assert_(math.isnan(math.atan2(NAN, 2.3)))
-        self.assert_(math.isnan(math.atan2(NAN, INF)))
-        self.assert_(math.isnan(math.atan2(NAN, NAN)))
+        self.assertTrue(math.isnan(math.atan2(NAN, NINF)))
+        self.assertTrue(math.isnan(math.atan2(NAN, -2.3)))
+        self.assertTrue(math.isnan(math.atan2(NAN, -0.)))
+        self.assertTrue(math.isnan(math.atan2(NAN, 0.)))
+        self.assertTrue(math.isnan(math.atan2(NAN, 2.3)))
+        self.assertTrue(math.isnan(math.atan2(NAN, INF)))
+        self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
 
     def testCeil(self):
         self.assertRaises(TypeError, math.ceil)
@@ -197,7 +197,7 @@ class MathTests(unittest.TestCase):
         self.ftest('ceil(-1.5)', math.ceil(-1.5), -1)
         self.assertEquals(math.ceil(INF), INF)
         self.assertEquals(math.ceil(NINF), NINF)
-        self.assert_(math.isnan(math.ceil(NAN)))
+        self.assertTrue(math.isnan(math.ceil(NAN)))
 
         class TestCeil(object):
             def __float__(self):
@@ -229,14 +229,14 @@ class MathTests(unittest.TestCase):
             self.assertEquals(copysign(INF, NINF), NINF)
             self.assertEquals(copysign(NINF, INF), INF)
             self.assertEquals(copysign(NINF, NINF), NINF)
-            self.assert_(math.isnan(copysign(NAN, 1.)))
-            self.assert_(math.isnan(copysign(NAN, INF)))
-            self.assert_(math.isnan(copysign(NAN, NINF)))
-            self.assert_(math.isnan(copysign(NAN, NAN)))
+            self.assertTrue(math.isnan(copysign(NAN, 1.)))
+            self.assertTrue(math.isnan(copysign(NAN, INF)))
+            self.assertTrue(math.isnan(copysign(NAN, NINF)))
+            self.assertTrue(math.isnan(copysign(NAN, NAN)))
             # copysign(INF, NAN) may be INF or it may be NINF, since
             # we don't know whether the sign bit of NAN is set on any
             # given platform.
-            self.assert_(math.isinf(copysign(INF, NAN)))
+            self.assertTrue(math.isinf(copysign(INF, NAN)))
             # similarly, copysign(2., NAN) could be 2. or -2.
             self.assertEquals(abs(copysign(2., NAN)), 2.)
 
@@ -247,12 +247,12 @@ class MathTests(unittest.TestCase):
         self.ftest('cos(pi/2)', math.cos(math.pi/2), 0)
         self.ftest('cos(pi)', math.cos(math.pi), -1)
         try:
-            self.assert_(math.isnan(math.cos(INF)))
-            self.assert_(math.isnan(math.cos(NINF)))
+            self.assertTrue(math.isnan(math.cos(INF)))
+            self.assertTrue(math.isnan(math.cos(NINF)))
         except ValueError:
             self.assertRaises(ValueError, math.cos, INF)
             self.assertRaises(ValueError, math.cos, NINF)
-        self.assert_(math.isnan(math.cos(NAN)))
+        self.assertTrue(math.isnan(math.cos(NAN)))
 
     def testCosh(self):
         self.assertRaises(TypeError, math.cosh)
@@ -260,7 +260,7 @@ class MathTests(unittest.TestCase):
         self.ftest('cosh(2)-2*cosh(1)**2', math.cosh(2)-2*math.cosh(1)**2, -1) # Thanks to Lambert
         self.assertEquals(math.cosh(INF), INF)
         self.assertEquals(math.cosh(NINF), INF)
-        self.assert_(math.isnan(math.cosh(NAN)))
+        self.assertTrue(math.isnan(math.cosh(NAN)))
 
     def testDegrees(self):
         self.assertRaises(TypeError, math.degrees)
@@ -275,7 +275,7 @@ class MathTests(unittest.TestCase):
         self.ftest('exp(1)', math.exp(1), math.e)
         self.assertEquals(math.exp(INF), INF)
         self.assertEquals(math.exp(NINF), 0.)
-        self.assert_(math.isnan(math.exp(NAN)))
+        self.assertTrue(math.isnan(math.exp(NAN)))
 
     def testFabs(self):
         self.assertRaises(TypeError, math.fabs)
@@ -315,7 +315,7 @@ class MathTests(unittest.TestCase):
         self.ftest('floor(-1.23e167)', math.floor(-1.23e167), -1.23e167)
         self.assertEquals(math.ceil(INF), INF)
         self.assertEquals(math.ceil(NINF), NINF)
-        self.assert_(math.isnan(math.floor(NAN)))
+        self.assertTrue(math.isnan(math.floor(NAN)))
 
         class TestFloor(object):
             def __float__(self):
@@ -338,9 +338,9 @@ class MathTests(unittest.TestCase):
         self.ftest('fmod(-10,1)', math.fmod(-10,1), 0)
         self.ftest('fmod(-10,0.5)', math.fmod(-10,0.5), 0)
         self.ftest('fmod(-10,1.5)', math.fmod(-10,1.5), -1)
-        self.assert_(math.isnan(math.fmod(NAN, 1.)))
-        self.assert_(math.isnan(math.fmod(1., NAN)))
-        self.assert_(math.isnan(math.fmod(NAN, NAN)))
+        self.assertTrue(math.isnan(math.fmod(NAN, 1.)))
+        self.assertTrue(math.isnan(math.fmod(1., NAN)))
+        self.assertTrue(math.isnan(math.fmod(NAN, NAN)))
         self.assertRaises(ValueError, math.fmod, 1., 0.)
         self.assertRaises(ValueError, math.fmod, INF, 1.)
         self.assertRaises(ValueError, math.fmod, NINF, 1.)
@@ -367,7 +367,7 @@ class MathTests(unittest.TestCase):
 
         self.assertEquals(math.frexp(INF)[0], INF)
         self.assertEquals(math.frexp(NINF)[0], NINF)
-        self.assert_(math.isnan(math.frexp(NAN)[0]))
+        self.assertTrue(math.isnan(math.frexp(NAN)[0]))
 
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
@@ -469,8 +469,8 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.hypot(INF, NAN), INF)
         self.assertEqual(math.hypot(NAN, NINF), INF)
         self.assertEqual(math.hypot(NINF, NAN), INF)
-        self.assert_(math.isnan(math.hypot(1.0, NAN)))
-        self.assert_(math.isnan(math.hypot(NAN, -2.0)))
+        self.assertTrue(math.isnan(math.hypot(1.0, NAN)))
+        self.assertTrue(math.isnan(math.hypot(NAN, -2.0)))
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
@@ -484,7 +484,7 @@ class MathTests(unittest.TestCase):
         self.assertEquals(math.ldexp(-1., -1000000), -0.)
         self.assertEquals(math.ldexp(INF, 30), INF)
         self.assertEquals(math.ldexp(NINF, -213), NINF)
-        self.assert_(math.isnan(math.ldexp(NAN, 0)))
+        self.assertTrue(math.isnan(math.ldexp(NAN, 0)))
 
         # large second argument
         for n in [10**5, 10L**5, 10**10, 10L**10, 10**20, 10**40]:
@@ -494,7 +494,7 @@ class MathTests(unittest.TestCase):
             self.assertEquals(math.ldexp(-1., -n), -0.)
             self.assertEquals(math.ldexp(0., -n), 0.)
             self.assertEquals(math.ldexp(-0., -n), -0.)
-            self.assert_(math.isnan(math.ldexp(NAN, -n)))
+            self.assertTrue(math.isnan(math.ldexp(NAN, -n)))
 
             self.assertRaises(OverflowError, math.ldexp, 1., n)
             self.assertRaises(OverflowError, math.ldexp, -1., n)
@@ -502,7 +502,7 @@ class MathTests(unittest.TestCase):
             self.assertEquals(math.ldexp(-0., n), -0.)
             self.assertEquals(math.ldexp(INF, n), INF)
             self.assertEquals(math.ldexp(NINF, n), NINF)
-            self.assert_(math.isnan(math.ldexp(NAN, n)))
+            self.assertTrue(math.isnan(math.ldexp(NAN, n)))
 
     def testLog(self):
         self.assertRaises(TypeError, math.log)
@@ -514,7 +514,7 @@ class MathTests(unittest.TestCase):
         self.ftest('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
         self.assertEquals(math.log(INF), INF)
         self.assertRaises(ValueError, math.log, NINF)
-        self.assert_(math.isnan(math.log(NAN)))
+        self.assertTrue(math.isnan(math.log(NAN)))
 
     def testLog1p(self):
         self.assertRaises(TypeError, math.log1p)
@@ -524,7 +524,7 @@ class MathTests(unittest.TestCase):
         self.ftest('log1p(1)', math.log1p(1), math.log(2))
         self.assertEquals(math.log1p(INF), INF)
         self.assertRaises(ValueError, math.log1p, NINF)
-        self.assert_(math.isnan(math.log1p(NAN)))
+        self.assertTrue(math.isnan(math.log1p(NAN)))
         n= 2**90
         self.assertAlmostEquals(math.log1p(n), 62.383246250395075)
         self.assertAlmostEquals(math.log1p(n), math.log1p(float(n)))
@@ -536,7 +536,7 @@ class MathTests(unittest.TestCase):
         self.ftest('log10(10)', math.log10(10), 1)
         self.assertEquals(math.log(INF), INF)
         self.assertRaises(ValueError, math.log10, NINF)
-        self.assert_(math.isnan(math.log10(NAN)))
+        self.assertTrue(math.isnan(math.log10(NAN)))
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
@@ -553,8 +553,8 @@ class MathTests(unittest.TestCase):
         self.assertEquals(math.modf(NINF), (-0.0, NINF))
 
         modf_nan = math.modf(NAN)
-        self.assert_(math.isnan(modf_nan[0]))
-        self.assert_(math.isnan(modf_nan[1]))
+        self.assertTrue(math.isnan(modf_nan[0]))
+        self.assertTrue(math.isnan(modf_nan[1]))
 
     def testPow(self):
         self.assertRaises(TypeError, math.pow)
@@ -566,9 +566,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.pow(NINF, 1), NINF)
         self.assertEqual((math.pow(1, INF)), 1.)
         self.assertEqual((math.pow(1, NINF)), 1.)
-        self.assert_(math.isnan(math.pow(NAN, 1)))
-        self.assert_(math.isnan(math.pow(2, NAN)))
-        self.assert_(math.isnan(math.pow(0, NAN)))
+        self.assertTrue(math.isnan(math.pow(NAN, 1)))
+        self.assertTrue(math.isnan(math.pow(2, NAN)))
+        self.assertTrue(math.isnan(math.pow(0, NAN)))
         self.assertEqual(math.pow(1, NAN), 1)
 
         # pow(0., x)
@@ -582,7 +582,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, 0., -2.3)
         self.assertRaises(ValueError, math.pow, 0., -3.)
         self.assertRaises(ValueError, math.pow, 0., NINF)
-        self.assert_(math.isnan(math.pow(0., NAN)))
+        self.assertTrue(math.isnan(math.pow(0., NAN)))
 
         # pow(INF, x)
         self.assertEqual(math.pow(INF, INF), INF)
@@ -595,7 +595,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.pow(INF, -2.3), 0.)
         self.assertEqual(math.pow(INF, -3.), 0.)
         self.assertEqual(math.pow(INF, NINF), 0.)
-        self.assert_(math.isnan(math.pow(INF, NAN)))
+        self.assertTrue(math.isnan(math.pow(INF, NAN)))
 
         # pow(-0., x)
         self.assertEqual(math.pow(-0., INF), 0.)
@@ -608,7 +608,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, -0., -2.3)
         self.assertRaises(ValueError, math.pow, -0., -3.)
         self.assertRaises(ValueError, math.pow, -0., NINF)
-        self.assert_(math.isnan(math.pow(-0., NAN)))
+        self.assertTrue(math.isnan(math.pow(-0., NAN)))
 
         # pow(NINF, x)
         self.assertEqual(math.pow(NINF, INF), INF)
@@ -621,7 +621,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.pow(NINF, -2.3), 0.)
         self.assertEqual(math.pow(NINF, -3.), -0.)
         self.assertEqual(math.pow(NINF, NINF), 0.)
-        self.assert_(math.isnan(math.pow(NINF, NAN)))
+        self.assertTrue(math.isnan(math.pow(NINF, NAN)))
 
         # pow(-1, x)
         self.assertEqual(math.pow(-1., INF), 1.)
@@ -634,7 +634,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, -1., -2.3)
         self.assertEqual(math.pow(-1., -3.), -1.)
         self.assertEqual(math.pow(-1., NINF), 1.)
-        self.assert_(math.isnan(math.pow(-1., NAN)))
+        self.assertTrue(math.isnan(math.pow(-1., NAN)))
 
         # pow(1, x)
         self.assertEqual(math.pow(1., INF), 1.)
@@ -717,12 +717,12 @@ class MathTests(unittest.TestCase):
         self.ftest('sin(pi/2)', math.sin(math.pi/2), 1)
         self.ftest('sin(-pi/2)', math.sin(-math.pi/2), -1)
         try:
-            self.assert_(math.isnan(math.sin(INF)))
-            self.assert_(math.isnan(math.sin(NINF)))
+            self.assertTrue(math.isnan(math.sin(INF)))
+            self.assertTrue(math.isnan(math.sin(NINF)))
         except ValueError:
             self.assertRaises(ValueError, math.sin, INF)
             self.assertRaises(ValueError, math.sin, NINF)
-        self.assert_(math.isnan(math.sin(NAN)))
+        self.assertTrue(math.isnan(math.sin(NAN)))
 
     def testSinh(self):
         self.assertRaises(TypeError, math.sinh)
@@ -731,7 +731,7 @@ class MathTests(unittest.TestCase):
         self.ftest('sinh(1)+sinh(-1)', math.sinh(1)+math.sinh(-1), 0)
         self.assertEquals(math.sinh(INF), INF)
         self.assertEquals(math.sinh(NINF), NINF)
-        self.assert_(math.isnan(math.sinh(NAN)))
+        self.assertTrue(math.isnan(math.sinh(NAN)))
 
     def testSqrt(self):
         self.assertRaises(TypeError, math.sqrt)
@@ -740,7 +740,7 @@ class MathTests(unittest.TestCase):
         self.ftest('sqrt(4)', math.sqrt(4), 2)
         self.assertEquals(math.sqrt(INF), INF)
         self.assertRaises(ValueError, math.sqrt, NINF)
-        self.assert_(math.isnan(math.sqrt(NAN)))
+        self.assertTrue(math.isnan(math.sqrt(NAN)))
 
     def testTan(self):
         self.assertRaises(TypeError, math.tan)
@@ -748,12 +748,12 @@ class MathTests(unittest.TestCase):
         self.ftest('tan(pi/4)', math.tan(math.pi/4), 1)
         self.ftest('tan(-pi/4)', math.tan(-math.pi/4), -1)
         try:
-            self.assert_(math.isnan(math.tan(INF)))
-            self.assert_(math.isnan(math.tan(NINF)))
+            self.assertTrue(math.isnan(math.tan(INF)))
+            self.assertTrue(math.isnan(math.tan(NINF)))
         except:
             self.assertRaises(ValueError, math.tan, INF)
             self.assertRaises(ValueError, math.tan, NINF)
-        self.assert_(math.isnan(math.tan(NAN)))
+        self.assertTrue(math.isnan(math.tan(NAN)))
 
     def testTanh(self):
         self.assertRaises(TypeError, math.tanh)
@@ -761,7 +761,7 @@ class MathTests(unittest.TestCase):
         self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0)
         self.ftest('tanh(inf)', math.tanh(INF), 1)
         self.ftest('tanh(-inf)', math.tanh(NINF), -1)
-        self.assert_(math.isnan(math.tanh(NAN)))
+        self.assertTrue(math.isnan(math.tanh(NAN)))
         # check that tanh(-0.) == -0. on IEEE 754 systems
         if float.__getformat__("double").startswith("IEEE"):
             self.assertEqual(math.tanh(-0.), -0.)
@@ -807,20 +807,20 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.copysign(4., -0.), -4.0)
 
     def testIsnan(self):
-        self.assert_(math.isnan(float("nan")))
-        self.assert_(math.isnan(float("inf")* 0.))
-        self.failIf(math.isnan(float("inf")))
-        self.failIf(math.isnan(0.))
-        self.failIf(math.isnan(1.))
+        self.assertTrue(math.isnan(float("nan")))
+        self.assertTrue(math.isnan(float("inf")* 0.))
+        self.assertFalse(math.isnan(float("inf")))
+        self.assertFalse(math.isnan(0.))
+        self.assertFalse(math.isnan(1.))
 
     def testIsinf(self):
-        self.assert_(math.isinf(float("inf")))
-        self.assert_(math.isinf(float("-inf")))
-        self.assert_(math.isinf(1E400))
-        self.assert_(math.isinf(-1E400))
-        self.failIf(math.isinf(float("nan")))
-        self.failIf(math.isinf(0.))
-        self.failIf(math.isinf(1.))
+        self.assertTrue(math.isinf(float("inf")))
+        self.assertTrue(math.isinf(float("-inf")))
+        self.assertTrue(math.isinf(1E400))
+        self.assertTrue(math.isinf(-1E400))
+        self.assertFalse(math.isinf(float("nan")))
+        self.assertFalse(math.isinf(0.))
+        self.assertFalse(math.isinf(1.))
 
     # RED_FLAG 16-Oct-2000 Tim
     # While 2.0 is more consistent about exceptions than previous releases, it

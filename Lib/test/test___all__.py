@@ -18,7 +18,7 @@ class AllTest(unittest.TestCase):
                 # Silent fail here seems the best route since some modules
                 # may not be available in all environments.
                 return
-        self.failUnless(hasattr(sys.modules[modname], "__all__"),
+        self.assertTrue(hasattr(sys.modules[modname], "__all__"),
                         "%s has no __all__ attribute" % modname)
         names = {}
         exec "from %s import *" % modname in names

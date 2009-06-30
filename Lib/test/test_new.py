@@ -154,7 +154,7 @@ class NewTest(unittest.TestCase):
             d = new.code(argcount, nlocals, stacksize, flags, codestring,
                          constants, t, varnames, filename, name,
                          firstlineno, lnotab)
-            self.assert_(type(t[0]) is S, "eek, tuple changed under us!")
+            self.assertTrue(type(t[0]) is S, "eek, tuple changed under us!")
 
 def test_main():
     test_support.run_unittest(NewTest)

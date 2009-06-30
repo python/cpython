@@ -81,15 +81,15 @@ class CloseSocketTest(unittest.TestCase):
         # delve deep into response to fetch socket._socketobject
         response = _urlopen_with_retry("http://www.python.org/")
         abused_fileobject = response.fp
-        self.assert_(abused_fileobject.__class__ is socket._fileobject)
+        self.assertTrue(abused_fileobject.__class__ is socket._fileobject)
         httpresponse = abused_fileobject._sock
-        self.assert_(httpresponse.__class__ is httplib.HTTPResponse)
+        self.assertTrue(httpresponse.__class__ is httplib.HTTPResponse)
         fileobject = httpresponse.fp
-        self.assert_(fileobject.__class__ is socket._fileobject)
+        self.assertTrue(fileobject.__class__ is socket._fileobject)
 
-        self.assert_(not fileobject.closed)
+        self.assertTrue(not fileobject.closed)
         response.close()
-        self.assert_(fileobject.closed)
+        self.assertTrue(fileobject.closed)
 
 class OtherNetworkTests(unittest.TestCase):
     def setUp(self):
@@ -176,7 +176,7 @@ class OtherNetworkTests(unittest.TestCase):
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                            (expected_err, url, req, type(err), err))
-                    self.assert_(isinstance(err, expected_err), msg)
+                    self.assertTrue(isinstance(err, expected_err), msg)
             else:
                 with test_support.transient_internet():
                     buf = f.read()

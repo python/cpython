@@ -88,7 +88,7 @@ class InstallTestCase(support.TempdirManager,
 
     def _test_user_site(self):
         for key in ('nt_user', 'unix_user', 'os2_home'):
-            self.assert_(key in INSTALL_SCHEMES)
+            self.assertTrue(key in INSTALL_SCHEMES)
 
         dist = Distribution({'name': 'xx'})
         cmd = install(dist)
@@ -96,24 +96,24 @@ class InstallTestCase(support.TempdirManager,
         # making sure the user option is there
         options = [name for name, short, lable in
                    cmd.user_options]
-        self.assert_('user' in options)
+        self.assertTrue('user' in options)
 
         # setting a value
         cmd.user = 1
 
         # user base and site shouldn't be created yet
-        self.assert_(not os.path.exists(self.user_base))
-        self.assert_(not os.path.exists(self.user_site))
+        self.assertTrue(not os.path.exists(self.user_base))
+        self.assertTrue(not os.path.exists(self.user_site))
 
         # let's run finalize
         cmd.ensure_finalized()
 
         # now they should
-        self.assert_(os.path.exists(self.user_base))
-        self.assert_(os.path.exists(self.user_site))
+        self.assertTrue(os.path.exists(self.user_base))
+        self.assertTrue(os.path.exists(self.user_site))
 
-        self.assert_('userbase' in cmd.config_vars)
-        self.assert_('usersite' in cmd.config_vars)
+        self.assertTrue('userbase' in cmd.config_vars)
+        self.assertTrue('usersite' in cmd.config_vars)
 
     def test_handle_extra_path(self):
         dist = Distribution({'name': 'xx', 'extra_path': 'path,dirs'})

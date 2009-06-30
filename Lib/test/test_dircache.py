@@ -38,7 +38,7 @@ class DircacheTests(unittest.TestCase):
         self.assertEquals(entries, [])
 
         # Check that cache is actually caching, not just passing through.
-        self.assert_(dircache.listdir(self.tempdir) is entries)
+        self.assertTrue(dircache.listdir(self.tempdir) is entries)
 
         # Directories aren't "files" on Windows, and directory mtime has
         # nothing to do with when files under a directory get created.
@@ -53,7 +53,7 @@ class DircacheTests(unittest.TestCase):
             self.writeTemp("test1")
             entries = dircache.listdir(self.tempdir)
             self.assertEquals(entries, ['test1'])
-            self.assert_(dircache.listdir(self.tempdir) is entries)
+            self.assertTrue(dircache.listdir(self.tempdir) is entries)
 
         ## UNSUCCESSFUL CASES
         self.assertRaises(OSError, dircache.listdir, self.tempdir+"_nonexistent")

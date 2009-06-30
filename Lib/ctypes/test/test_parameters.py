@@ -33,8 +33,8 @@ class SimpleTypesTestCase(unittest.TestCase):
                 return value * 4
             from_param = classmethod(from_param)
 
-        self.failUnlessEqual(CVOIDP.from_param("abc"), "abcabc")
-        self.failUnlessEqual(CCHARP.from_param("abc"), "abcabcabcabc")
+        self.assertEqual(CVOIDP.from_param("abc"), "abcabc")
+        self.assertEqual(CCHARP.from_param("abc"), "abcabcabcabc")
 
         try:
             from ctypes import c_wchar_p
@@ -46,7 +46,7 @@ class SimpleTypesTestCase(unittest.TestCase):
                 return value * 3
             from_param = classmethod(from_param)
 
-        self.failUnlessEqual(CWCHARP.from_param("abc"), "abcabcabc")
+        self.assertEqual(CWCHARP.from_param("abc"), "abcabcabc")
 
     # XXX Replace by c_char_p tests
     def test_cstrings(self):
@@ -55,10 +55,10 @@ class SimpleTypesTestCase(unittest.TestCase):
         # c_char_p.from_param on a Python String packs the string
         # into a cparam object
         s = "123"
-        self.failUnless(c_char_p.from_param(s)._obj is s)
+        self.assertTrue(c_char_p.from_param(s)._obj is s)
 
         # new in 0.9.1: convert (encode) unicode to ascii
-        self.failUnlessEqual(c_char_p.from_param(u"123")._obj, "123")
+        self.assertEqual(c_char_p.from_param(u"123")._obj, "123")
         self.assertRaises(UnicodeEncodeError, c_char_p.from_param, u"123\377")
 
         self.assertRaises(TypeError, c_char_p.from_param, 42)
@@ -66,7 +66,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         # calling c_char_p.from_param with a c_char_p instance
         # returns the argument itself:
         a = c_char_p("123")
-        self.failUnless(c_char_p.from_param(a) is a)
+        self.assertTrue(c_char_p.from_param(a) is a)
 
     def test_cw_strings(self):
         from ctypes import byref
@@ -77,15 +77,15 @@ class SimpleTypesTestCase(unittest.TestCase):
             return
         s = u"123"
         if sys.platform == "win32":
-            self.failUnless(c_wchar_p.from_param(s)._obj is s)
+            self.assertTrue(c_wchar_p.from_param(s)._obj is s)
             self.assertRaises(TypeError, c_wchar_p.from_param, 42)
 
             # new in 0.9.1: convert (decode) ascii to unicode
-            self.failUnlessEqual(c_wchar_p.from_param("123")._obj, u"123")
+            self.assertEqual(c_wchar_p.from_param("123")._obj, u"123")
         self.assertRaises(UnicodeDecodeError, c_wchar_p.from_param, "123\377")
 
         pa = c_wchar_p.from_param(c_wchar_p(u"123"))
-        self.failUnlessEqual(type(pa), c_wchar_p)
+        self.assertEqual(type(pa), c_wchar_p)
 
     def test_int_pointers(self):
         from ctypes import c_short, c_uint, c_int, c_long, POINTER, pointer
@@ -94,10 +94,10 @@ class SimpleTypesTestCase(unittest.TestCase):
 ##        p = pointer(c_int(42))
 ##        x = LPINT.from_param(p)
         x = LPINT.from_param(pointer(c_int(42)))
-        self.failUnlessEqual(x.contents.value, 42)
-        self.failUnlessEqual(LPINT(c_int(42)).contents.value, 42)
+        self.assertEqual(x.contents.value, 42)
+        self.assertEqual(LPINT(c_int(42)).contents.value, 42)
 
-        self.failUnlessEqual(LPINT.from_param(None), 0)
+        self.assertEqual(LPINT.from_param(None), 0)
 
         if c_int != c_long:
             self.assertRaises(TypeError, LPINT.from_param, pointer(c_long(42)))
@@ -133,8 +133,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         from ctypes import c_short, c_uint, c_int, c_long, POINTER
         INTARRAY = c_int * 3
         ia = INTARRAY()
-        self.failUnlessEqual(len(ia), 3)
-        self.failUnlessEqual([ia[i] for i in range(3)], [0, 0, 0])
+        self.assertEqual(len(ia), 3)
+        self.assertEqual([ia[i] for i in range(3)], [0, 0, 0])
 
         # Pointers are only compatible with arrays containing items of
         # the same type!
@@ -161,8 +161,8 @@ class SimpleTypesTestCase(unittest.TestCase):
                 return None
 
         func.argtypes = (Adapter(),)
-        self.failUnlessEqual(func(None), None)
-        self.failUnlessEqual(func(object()), None)
+        self.assertEqual(func(None), None)
+        self.assertEqual(func(object()), None)
 
         class Adapter(object):
             def from_param(cls, obj):
@@ -171,7 +171,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         func.argtypes = (Adapter(),)
         # don't know how to convert parameter 1
         self.assertRaises(ArgumentError, func, object())
-        self.failUnlessEqual(func(c_void_p(42)), 42)
+        self.assertEqual(func(c_void_p(42)), 42)
 
         class Adapter(object):
             def from_param(cls, obj):

@@ -38,9 +38,9 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertEqual(UserDict.UserDict().fromkeys('one two'.split()), d4)
         self.assertEqual(UserDict.UserDict.fromkeys('one two'.split(), 1), d5)
         self.assertEqual(UserDict.UserDict().fromkeys('one two'.split(), 1), d5)
-        self.assert_(u1.fromkeys('one two'.split()) is not u1)
-        self.assert_(isinstance(u1.fromkeys('one two'.split()), UserDict.UserDict))
-        self.assert_(isinstance(u2.fromkeys('one two'.split()), UserDict.IterableUserDict))
+        self.assertTrue(u1.fromkeys('one two'.split()) is not u1)
+        self.assertTrue(isinstance(u1.fromkeys('one two'.split()), UserDict.UserDict))
+        self.assertTrue(isinstance(u2.fromkeys('one two'.split()), UserDict.IterableUserDict))
 
         # Test __repr__
         self.assertEqual(str(u0), str(d0))
@@ -95,8 +95,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
         # Test has_key and "in".
         for i in u2.keys():
-            self.assert_(u2.has_key(i))
-            self.assert_(i in u2)
+            self.assertTrue(u2.has_key(i))
+            self.assertTrue(i in u2)
             self.assertEqual(u1.has_key(i), d1.has_key(i))
             self.assertEqual(i in u1, i in d1)
             self.assertEqual(u0.has_key(i), d0.has_key(i))
@@ -131,7 +131,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test setdefault
         t = UserDict.UserDict()
         self.assertEqual(t.setdefault("x", 42), 42)
-        self.assert_(t.has_key("x"))
+        self.assertTrue(t.has_key("x"))
         self.assertEqual(t.setdefault("x", 23), 42)
 
         # Test pop
@@ -161,8 +161,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         d = D({1: 2, 3: 4})
         self.assertEqual(d[1], 2)
         self.assertEqual(d[3], 4)
-        self.assert_(2 not in d)
-        self.assert_(2 not in d.keys())
+        self.assertTrue(2 not in d)
+        self.assertTrue(2 not in d.keys())
         self.assertEqual(d[2], 42)
         class E(UserDict.UserDict):
             def __missing__(self, key):
@@ -269,12 +269,12 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
 
         ## Now, test the DictMixin methods one by one
         # has_key
-        self.assert_(s.has_key(10))
-        self.assert_(not s.has_key(20))
+        self.assertTrue(s.has_key(10))
+        self.assertTrue(not s.has_key(20))
 
         # __contains__
-        self.assert_(10 in s)
-        self.assert_(20 not in s)
+        self.assertTrue(10 in s)
+        self.assertTrue(20 not in s)
 
         # __iter__
         self.assertEqual([k for k in s], [10, 30])
@@ -309,7 +309,7 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
 
         # pop
         self.assertEqual(s.pop(10), 'ten')
-        self.assert_(10 not in s)
+        self.assertTrue(10 not in s)
         s[10] = 'ten'
         self.assertEqual(s.pop("x", 1), 1)
         s["x"] = 42
@@ -317,7 +317,7 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
 
         # popitem
         k, v = s.popitem()
-        self.assert_(k not in s)
+        self.assertTrue(k not in s)
         s[k] = v
 
         # clear

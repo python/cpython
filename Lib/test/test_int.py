@@ -76,15 +76,15 @@ class IntTestCases(unittest.TestCase):
         s = repr(-1-sys.maxint)
         x = int(s)
         self.assertEqual(x+1, -sys.maxint)
-        self.assert_(isinstance(x, int))
+        self.assertTrue(isinstance(x, int))
         # should return long
         self.assertEqual(int(s[1:]), sys.maxint+1)
 
         # should return long
         x = int(1e100)
-        self.assert_(isinstance(x, long))
+        self.assertTrue(isinstance(x, long))
         x = int(-1e100)
-        self.assert_(isinstance(x, long))
+        self.assertTrue(isinstance(x, long))
 
 
         # SF bug 434186:  0x80000000/2 != 0x80000000>>1.
@@ -102,11 +102,11 @@ class IntTestCases(unittest.TestCase):
         self.assertRaises(ValueError, int, '123\x00 245', 20)
 
         x = int('1' * 600)
-        self.assert_(isinstance(x, long))
+        self.assertTrue(isinstance(x, long))
 
         if have_unicode:
             x = int(unichr(0x661) * 600)
-            self.assert_(isinstance(x, long))
+            self.assertTrue(isinstance(x, long))
 
         self.assertRaises(TypeError, int, 1, 12)
 
@@ -249,7 +249,7 @@ class IntTestCases(unittest.TestCase):
             self.assertEqual(k, len(bin(x).lstrip('-0b')))
             # Behaviour as specified in the docs
             if x != 0:
-                self.assert_(2**(k-1) <= abs(x) < 2**k)
+                self.assertTrue(2**(k-1) <= abs(x) < 2**k)
             else:
                 self.assertEqual(k, 0)
             # Alternative definition: x.bit_length() == 1 + floor(log_2(x))

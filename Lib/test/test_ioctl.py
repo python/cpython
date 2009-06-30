@@ -24,7 +24,7 @@ class IoctlTests(unittest.TestCase):
         tty = open("/dev/tty", "r")
         r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
         rpgrp = struct.unpack("i", r)[0]
-        self.assert_(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
+        self.assertTrue(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
 
     def test_ioctl_mutate(self):
         import array
@@ -34,7 +34,7 @@ class IoctlTests(unittest.TestCase):
         r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
         rpgrp = buf[0]
         self.assertEquals(r, 0)
-        self.assert_(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
+        self.assertTrue(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
 
     def test_ioctl_signed_unsigned_code_param(self):
         if not pty:

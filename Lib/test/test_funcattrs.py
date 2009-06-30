@@ -31,14 +31,14 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test_dir_includes_correct_attrs(self):
         self.b.known_attr = 7
-        self.assert_('known_attr' in dir(self.b),
+        self.assertTrue('known_attr' in dir(self.b),
             "set attributes not in dir listing of method")
         # Test on underlying function object of method
         self.f.a.im_func.known_attr = 7
-        self.assert_('known_attr' in dir(self.f.a),
+        self.assertTrue('known_attr' in dir(self.f.a),
             "set attribute on unbound method implementation in class not in "
                      "dir")
-        self.assert_('known_attr' in dir(self.fi.a),
+        self.assertTrue('known_attr' in dir(self.fi.a),
             "set attribute on unbound method implementations, should show up"
                      " in next dir")
 
@@ -279,10 +279,10 @@ class StaticMethodAttrsTest(unittest.TestCase):
             pass
 
         c = classmethod(f)
-        self.assert_(c.__func__ is f)
+        self.assertTrue(c.__func__ is f)
 
         s = staticmethod(f)
-        self.assert_(s.__func__ is f)
+        self.assertTrue(s.__func__ is f)
 
 
 def test_main():

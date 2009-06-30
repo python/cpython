@@ -37,12 +37,12 @@ class HashLibTestCase(unittest.TestCase):
         except ValueError:
             pass
         else:
-            self.assert_(0 == "hashlib didn't reject bogus hash name")
+            self.assertTrue(0 == "hashlib didn't reject bogus hash name")
 
     def test_hexdigest(self):
         for name in self.supported_hash_names:
             h = hashlib.new(name)
-            self.assert_(hexstr(h.digest()) == h.hexdigest())
+            self.assertTrue(hexstr(h.digest()) == h.hexdigest())
 
     def test_large_update(self):
         aas = 'a' * 128

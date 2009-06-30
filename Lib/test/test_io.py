@@ -396,7 +396,7 @@ class IOTest(unittest.TestCase):
         with self.open(support.TESTFN, "ab") as f:
             self.assertEqual(f.tell(), 3)
         with self.open(support.TESTFN, "a") as f:
-            self.assert_(f.tell() > 0)
+            self.assertTrue(f.tell() > 0)
 
     def test_destructor(self):
         record = []
@@ -514,7 +514,7 @@ class IOTest(unittest.TestCase):
         wr = weakref.ref(f)
         del f
         support.gc_collect()
-        self.assert_(wr() is None, wr)
+        self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
 
@@ -622,8 +622,8 @@ class CommonBufferedTests:
         if s:
             # The destructor *may* have printed an unraisable error, check it
             self.assertEqual(len(s.splitlines()), 1)
-            self.assert_(s.startswith("Exception IOError: "), s)
-            self.assert_(s.endswith(" ignored"), s)
+            self.assertTrue(s.startswith("Exception IOError: "), s)
+            self.assertTrue(s.endswith(" ignored"), s)
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -720,7 +720,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEquals(b"e", bufio.read(1))
         self.assertEquals(b"fg", bufio.read())
         self.assertEquals(b"", bufio.peek(1))
-        self.assert_(None is bufio.read())
+        self.assertTrue(None is bufio.read())
         self.assertEquals(b"", bufio.read())
 
     def test_read_past_eof(self):
@@ -822,7 +822,7 @@ class CBufferedReaderTest(BufferedReaderTest):
         wr = weakref.ref(f)
         del f
         support.gc_collect()
-        self.assert_(wr() is None, wr)
+        self.assertTrue(wr() is None, wr)
 
 class PyBufferedReaderTest(BufferedReaderTest):
     tp = pyio.BufferedReader
@@ -871,7 +871,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         flushed = b"".join(writer._write_stack)
         # At least (total - 8) bytes were implicitly flushed, perhaps more
         # depending on the implementation.
-        self.assert_(flushed.startswith(contents[:-8]), flushed)
+        self.assertTrue(flushed.startswith(contents[:-8]), flushed)
 
     def check_writes(self, intermediate_func):
         # Lots of writes, test the flushed output is as expected.
@@ -1083,7 +1083,7 @@ class CBufferedWriterTest(BufferedWriterTest):
         wr = weakref.ref(f)
         del f
         support.gc_collect()
-        self.assert_(wr() is None, wr)
+        self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"123xxx")
 
@@ -1573,7 +1573,7 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(b, encoding="utf8")
         self.assertEqual(t.encoding, "utf8")
         t = self.TextIOWrapper(b)
-        self.assert_(t.encoding is not None)
+        self.assertTrue(t.encoding is not None)
         codecs.lookup(t.encoding)
 
     def test_encoding_errors_reading(self):
@@ -1743,8 +1743,8 @@ class TextIOWrapperTest(unittest.TestCase):
         if s:
             # The destructor *may* have printed an unraisable error, check it
             self.assertEqual(len(s.splitlines()), 1)
-            self.assert_(s.startswith("Exception IOError: "), s)
-            self.assert_(s.endswith(" ignored"), s)
+            self.assertTrue(s.startswith("Exception IOError: "), s)
+            self.assertTrue(s.endswith(" ignored"), s)
 
     # Systematic tests of the text I/O API
 
@@ -2064,7 +2064,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         wr = weakref.ref(t)
         del t
         support.gc_collect()
-        self.assert_(wr() is None, wr)
+        self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"456def")
 
@@ -2288,7 +2288,7 @@ class MiscIOTest(unittest.TestCase):
         wr = weakref.ref(c)
         del c, b
         support.gc_collect()
-        self.assert_(wr() is None, wr)
+        self.assertTrue(wr() is None, wr)
 
     def test_abcs(self):
         # Test the visible base classes are ABCs.

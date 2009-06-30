@@ -21,12 +21,12 @@ class SysconfigTestCase(support.EnvironGuard,
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
-        self.assert_(os.path.isfile(config_h), config_h)
+        self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_python_lib(self):
         lib_dir = sysconfig.get_python_lib()
         # XXX doesn't work on Linux when Python was never installed before
-        #self.assert_(os.path.isdir(lib_dir), lib_dir)
+        #self.assertTrue(os.path.isdir(lib_dir), lib_dir)
         # test for pythonxx.lib?
         self.assertNotEqual(sysconfig.get_python_lib(),
                             sysconfig.get_python_lib(prefix=TESTFN))
@@ -36,14 +36,14 @@ class SysconfigTestCase(support.EnvironGuard,
         # This is not much of a test.  We make sure Python.h exists
         # in the directory returned by get_python_inc() but we don't know
         # it is the correct file.
-        self.assert_(os.path.isdir(inc_dir), inc_dir)
+        self.assertTrue(os.path.isdir(inc_dir), inc_dir)
         python_h = os.path.join(inc_dir, "Python.h")
-        self.assert_(os.path.isfile(python_h), python_h)
+        self.assertTrue(os.path.isfile(python_h), python_h)
 
     def test_get_config_vars(self):
         cvars = sysconfig.get_config_vars()
-        self.assert_(isinstance(cvars, dict))
-        self.assert_(cvars)
+        self.assertTrue(isinstance(cvars, dict))
+        self.assertTrue(cvars)
 
     def test_customize_compiler(self):
 

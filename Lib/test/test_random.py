@@ -67,7 +67,7 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(len(s), k)
             uniq = set(s)
             self.assertEqual(len(uniq), k)
-            self.failUnless(uniq <= set(population))
+            self.assertTrue(uniq <= set(population))
         self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
 
     def test_sample_distribution(self):
@@ -112,7 +112,7 @@ class TestBasicOps(unittest.TestCase):
             samp = self.gen.sample(d, k)
             # Verify that we got ints back (keys); the values are complex.
             for x in samp:
-                self.assert_(type(x) is int)
+                self.assertTrue(type(x) is int)
         samp.sort()
         self.assertEqual(samp, range(N))
 
@@ -237,7 +237,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
         cum = 0
         for i in xrange(100):
             r = self.gen.randrange(span)
-            self.assert_(0 <= r < span)
+            self.assertTrue(0 <= r < span)
             cum |= r
         self.assertEqual(cum, span-1)
 
@@ -247,7 +247,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
             stop = self.gen.randrange(2 ** (i-2))
             if stop <= start:
                 return
-            self.assert_(start <= self.gen.randrange(start, stop) < stop)
+            self.assertTrue(start <= self.gen.randrange(start, stop) < stop)
 
     def test_rangelimits(self):
         for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
@@ -257,7 +257,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
     def test_genrandbits(self):
         # Verify ranges
         for k in xrange(1, 1000):
-            self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
+            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
 
         # Verify all bits active
         getbits = self.gen.getrandbits
@@ -283,17 +283,17 @@ class SystemRandom_TestBasicOps(TestBasicOps):
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)
-            self.assert_(n == 2**(k-1))
+            self.assertTrue(n == 2**(k-1))
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
-            self.assert_(k in [numbits, numbits+1])
-            self.assert_(2**k > n > 2**(k-2))
+            self.assertTrue(k in [numbits, numbits+1])
+            self.assertTrue(2**k > n > 2**(k-2))
 
             n -= n >> 15     # check a little farther below the next power of two
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
-            self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
+            self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
 
 
 class MersenneTwister_TestBasicOps(TestBasicOps):
@@ -389,7 +389,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         cum = 0
         for i in xrange(100):
             r = self.gen.randrange(span)
-            self.assert_(0 <= r < span)
+            self.assertTrue(0 <= r < span)
             cum |= r
         self.assertEqual(cum, span-1)
 
@@ -399,7 +399,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             stop = self.gen.randrange(2 ** (i-2))
             if stop <= start:
                 return
-            self.assert_(start <= self.gen.randrange(start, stop) < stop)
+            self.assertTrue(start <= self.gen.randrange(start, stop) < stop)
 
     def test_rangelimits(self):
         for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
@@ -413,7 +413,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
                          97904845777343510404718956115L)
         # Verify ranges
         for k in xrange(1, 1000):
-            self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
+            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
 
         # Verify all bits active
         getbits = self.gen.getrandbits
@@ -439,24 +439,24 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)
-            self.assert_(n == 2**(k-1))
+            self.assertTrue(n == 2**(k-1))
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
-            self.assert_(k in [numbits, numbits+1])
-            self.assert_(2**k > n > 2**(k-2))
+            self.assertTrue(k in [numbits, numbits+1])
+            self.assertTrue(2**k > n > 2**(k-2))
 
             n -= n >> 15     # check a little farther below the next power of two
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
-            self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
+            self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
 
     def test_randrange_bug_1590891(self):
         start = 1000000000000
         stop = -100000000000000000000
         step = -200
         x = self.gen.randrange(start, stop, step)
-        self.assert_(stop < x <= start)
+        self.assertTrue(stop < x <= start)
         self.assertEqual((x+stop)%step, 0)
 
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
@@ -534,7 +534,7 @@ class TestModule(unittest.TestCase):
 
     def test__all__(self):
         # tests validity but not completeness of the __all__ list
-        self.failUnless(set(random.__all__) <= set(dir(random)))
+        self.assertTrue(set(random.__all__) <= set(dir(random)))
 
     def test_random_subclass_with_kwargs(self):
         # SF bug #1486663 -- this used to erroneously raise a TypeError

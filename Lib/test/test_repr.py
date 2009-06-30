@@ -123,20 +123,20 @@ class ReprTests(unittest.TestCase):
         eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
-        self.failUnless(s.startswith("<class "))
-        self.failUnless(s.endswith(">"))
-        self.failUnless(s.find("...") == 8)
+        self.assertTrue(s.startswith("<class "))
+        self.assertTrue(s.endswith(">"))
+        self.assertTrue(s.find("...") == 8)
 
     def test_file(self):
         fp = open(unittest.__file__)
-        self.failUnless(repr(fp).startswith(
+        self.assertTrue(repr(fp).startswith(
             "<open file '%s', mode 'r' at 0x" % unittest.__file__))
         fp.close()
-        self.failUnless(repr(fp).startswith(
+        self.assertTrue(repr(fp).startswith(
             "<closed file '%s', mode 'r' at 0x" % unittest.__file__))
 
     def test_lambda(self):
-        self.failUnless(repr(lambda x: x).startswith(
+        self.assertTrue(repr(lambda x: x).startswith(
             "<function <lambda"))
         # XXX anonymous functions?  see func_repr
 
@@ -145,7 +145,7 @@ class ReprTests(unittest.TestCase):
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
-        self.failUnless(repr(''.split).startswith(
+        self.assertTrue(repr(''.split).startswith(
             '<built-in method split of str object at 0x'))
 
     def test_xrange(self):
@@ -175,7 +175,7 @@ class ReprTests(unittest.TestCase):
         # XXX doesn't test buffers with no b_base or read-write buffers (see
         # bufferobject.c).  The test is fairly incomplete too.  Sigh.
         x = buffer('foo')
-        self.failUnless(repr(x).startswith('<read-only buffer for 0x'))
+        self.assertTrue(repr(x).startswith('<read-only buffer for 0x'))
 
     def test_cell(self):
         # XXX Hmm? How to get at a cell object?
@@ -192,9 +192,9 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.failUnless(repr(x).startswith('<staticmethod object at 0x'))
+        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
         x = classmethod(C.foo)
-        self.failUnless(repr(x).startswith('<classmethod object at 0x'))
+        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
 
     def test_unsortable(self):
         # Repr.repr() used to call sorted() on sets, frozensets and dicts
@@ -272,7 +272,7 @@ class bar:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
         # Module name may be prefixed with "test.", depending on how run.
-        self.failUnless(repr(bar.bar).startswith(
+        self.assertTrue(repr(bar.bar).startswith(
             "<class %s.bar at 0x" % bar.__name__))
 
     def test_instance(self):
@@ -282,7 +282,7 @@ class baz:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
-        self.failUnless(repr(ibaz).startswith(
+        self.assertTrue(repr(ibaz).startswith(
             "<%s.baz instance at 0x" % baz.__name__))
 
     def test_method(self):
@@ -297,7 +297,7 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         '<unbound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod>')
         # Bound method next
         iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
-        self.failUnless(repr(iqux.amethod).startswith(
+        self.assertTrue(repr(iqux.amethod).startswith(
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa instance at 0x' \
             % (qux.__name__,) ))
 

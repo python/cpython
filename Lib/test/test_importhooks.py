@@ -177,11 +177,11 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
 
         TestImporter.modules['reloadmodule'] = (False, test_co)
         import reloadmodule
-        self.failIf(hasattr(reloadmodule,'reloaded'))
+        self.assertFalse(hasattr(reloadmodule,'reloaded'))
 
         TestImporter.modules['reloadmodule'] = (False, reload_co)
         reload(reloadmodule)
-        self.failUnless(hasattr(reloadmodule,'reloaded'))
+        self.assertTrue(hasattr(reloadmodule,'reloaded'))
 
         import hooktestpackage.oldabs
         self.assertEqual(hooktestpackage.oldabs.get_name(),

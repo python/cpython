@@ -73,15 +73,15 @@ class BuildExtTestCase(support.TempdirManager,
         import xx
 
         for attr in ('error', 'foo', 'new', 'roj'):
-            self.assert_(hasattr(xx, attr))
+            self.assertTrue(hasattr(xx, attr))
 
         self.assertEquals(xx.foo(2, 5), 7)
         self.assertEquals(xx.foo(13,15), 28)
         self.assertEquals(xx.new().demo(), None)
         doc = 'This is a template module just for instruction.'
         self.assertEquals(xx.__doc__, doc)
-        self.assert_(isinstance(xx.Null(), xx.Null))
-        self.assert_(isinstance(xx.Str(), xx.Str))
+        self.assertTrue(isinstance(xx.Null(), xx.Null))
+        self.assertTrue(isinstance(xx.Str(), xx.Str))
 
     def tearDown(self):
         # Get everything back to normal
@@ -114,7 +114,7 @@ class BuildExtTestCase(support.TempdirManager,
                 _config_vars['Py_ENABLE_SHARED'] = old_var
 
         # make sure we get some library dirs under solaris
-        self.assert_(len(cmd.library_dirs) > 0)
+        self.assertTrue(len(cmd.library_dirs) > 0)
 
     def test_user_site(self):
         # site.USER_SITE was introduced in 2.6
@@ -128,7 +128,7 @@ class BuildExtTestCase(support.TempdirManager,
         # making sure the user option is there
         options = [name for name, short, lable in
                    cmd.user_options]
-        self.assert_('user' in options)
+        self.assertTrue('user' in options)
 
         # setting a value
         cmd.user = 1
@@ -144,9 +144,9 @@ class BuildExtTestCase(support.TempdirManager,
 
         # see if include_dirs and library_dirs
         # were set
-        self.assert_(lib in cmd.library_dirs)
-        self.assert_(lib in cmd.rpath)
-        self.assert_(incl in cmd.include_dirs)
+        self.assertTrue(lib in cmd.library_dirs)
+        self.assertTrue(lib in cmd.rpath)
+        self.assertTrue(incl in cmd.include_dirs)
 
     def test_optional_extension(self):
 
@@ -175,10 +175,10 @@ class BuildExtTestCase(support.TempdirManager,
 
         from distutils import sysconfig
         py_include = sysconfig.get_python_inc()
-        self.assert_(py_include in cmd.include_dirs)
+        self.assertTrue(py_include in cmd.include_dirs)
 
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
-        self.assert_(plat_py_include in cmd.include_dirs)
+        self.assertTrue(plat_py_include in cmd.include_dirs)
 
         # make sure cmd.libraries is turned into a list
         # if it's a string
@@ -192,7 +192,7 @@ class BuildExtTestCase(support.TempdirManager,
         cmd = build_ext(dist)
         cmd.library_dirs = 'my_lib_dir'
         cmd.finalize_options()
-        self.assert_('my_lib_dir' in cmd.library_dirs)
+        self.assertTrue('my_lib_dir' in cmd.library_dirs)
 
         # make sure rpath is turned into a list
         # if it's a list of os.pathsep's paths
@@ -257,13 +257,13 @@ class BuildExtTestCase(support.TempdirManager,
                              'some': 'bar'})]
         cmd.check_extensions_list(exts)
         ext = exts[0]
-        self.assert_(isinstance(ext, Extension))
+        self.assertTrue(isinstance(ext, Extension))
 
         # check_extensions_list adds in ext the values passed
         # when they are in ('include_dirs', 'library_dirs', 'libraries'
         # 'extra_objects', 'extra_compile_args', 'extra_link_args')
         self.assertEquals(ext.libraries, 'foo')
-        self.assert_(not hasattr(ext, 'some'))
+        self.assertTrue(not hasattr(ext, 'some'))
 
         # 'macros' element of build info dict must be 1- or 2-tuple
         exts = [('foo.bar', {'sources': [''], 'libraries': 'foo',
@@ -321,7 +321,7 @@ class BuildExtTestCase(support.TempdirManager,
             so_file = cmd.get_outputs()[0]
         finally:
             os.chdir(old_wd)
-        self.assert_(os.path.exists(so_file))
+        self.assertTrue(os.path.exists(so_file))
         self.assertEquals(os.path.splitext(so_file)[-1],
                           sysconfig.get_config_var('SO'))
         so_dir = os.path.dirname(so_file)
@@ -330,7 +330,7 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.inplace = 0
         cmd.run()
         so_file = cmd.get_outputs()[0]
-        self.assert_(os.path.exists(so_file))
+        self.assertTrue(os.path.exists(so_file))
         self.assertEquals(os.path.splitext(so_file)[-1],
                           sysconfig.get_config_var('SO'))
         so_dir = os.path.dirname(so_file)

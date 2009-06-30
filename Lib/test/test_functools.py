@@ -96,7 +96,7 @@ class TestPartial(unittest.TestCase):
             p = self.thetype(capture, *args)
             expected = args + ('x',)
             got, empty = p('x')
-            self.failUnless(expected == got and empty == {})
+            self.assertTrue(expected == got and empty == {})
 
     def test_keyword(self):
         # make sure keyword arguments are captured correctly
@@ -104,15 +104,15 @@ class TestPartial(unittest.TestCase):
             p = self.thetype(capture, a=a)
             expected = {'a':a,'x':None}
             empty, got = p(x=None)
-            self.failUnless(expected == got and empty == ())
+            self.assertTrue(expected == got and empty == ())
 
     def test_no_side_effects(self):
         # make sure there are no side effects that affect subsequent calls
         p = self.thetype(capture, 0, a=1)
         args1, kw1 = p(1, b=2)
-        self.failUnless(args1 == (0,1) and kw1 == {'a':1,'b':2})
+        self.assertTrue(args1 == (0,1) and kw1 == {'a':1,'b':2})
         args2, kw2 = p()
-        self.failUnless(args2 == (0,) and kw2 == {'a':1})
+        self.assertTrue(args2 == (0,) and kw2 == {'a':1})
 
     def test_error_propagation(self):
         def f(x, y):
@@ -172,13 +172,13 @@ class TestUpdateWrapper(unittest.TestCase):
                       updated=functools.WRAPPER_UPDATES):
         # Check attributes were assigned
         for name in assigned:
-            self.failUnless(getattr(wrapper, name) is getattr(wrapped, name))
+            self.assertTrue(getattr(wrapper, name) is getattr(wrapped, name))
         # Check attributes were updated
         for name in updated:
             wrapper_attr = getattr(wrapper, name)
             wrapped_attr = getattr(wrapped, name)
             for key in wrapped_attr:
-                self.failUnless(wrapped_attr[key] is wrapper_attr[key])
+                self.assertTrue(wrapped_attr[key] is wrapper_attr[key])
 
     def test_default_update(self):
         def f():
@@ -204,7 +204,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.check_wrapper(wrapper, f, (), ())
         self.assertEqual(wrapper.__name__, 'wrapper')
         self.assertEqual(wrapper.__doc__, None)
-        self.failIf(hasattr(wrapper, 'attr'))
+        self.assertFalse(hasattr(wrapper, 'attr'))
 
     def test_selective_update(self):
         def f():
@@ -229,7 +229,7 @@ class TestUpdateWrapper(unittest.TestCase):
             pass
         functools.update_wrapper(wrapper, max)
         self.assertEqual(wrapper.__name__, 'max')
-        self.assert_(wrapper.__doc__.startswith('max('))
+        self.assertTrue(wrapper.__doc__.startswith('max('))
 
 class TestWraps(TestUpdateWrapper):
 
@@ -257,7 +257,7 @@ class TestWraps(TestUpdateWrapper):
         self.check_wrapper(wrapper, f, (), ())
         self.assertEqual(wrapper.__name__, 'wrapper')
         self.assertEqual(wrapper.__doc__, None)
-        self.failIf(hasattr(wrapper, 'attr'))
+        self.assertFalse(hasattr(wrapper, 'attr'))
 
     def test_selective_update(self):
         def f():

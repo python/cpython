@@ -21,9 +21,9 @@ class DbmTestCase(unittest.TestCase):
             self.d[k] = v
         self.assertEqual(sorted(self.d.keys()), sorted(k for (k, v) in a))
         for k, v in a:
-            self.assert_(k in self.d)
+            self.assertTrue(k in self.d)
             self.assertEqual(self.d[k], v)
-        self.assert_('xxx' not in self.d)
+        self.assertTrue('xxx' not in self.d)
         self.assertRaises(KeyError, lambda: self.d['xxx'])
         self.d.close()
 

@@ -52,7 +52,7 @@ class TestImport(unittest.TestCase):
         try: __import__(self.module_name)
         except SyntaxError: pass
         else: raise RuntimeError, 'Failed to induce SyntaxError'
-        self.assert_(not sys.modules.has_key(self.module_name) and
+        self.assertTrue(not sys.modules.has_key(self.module_name) and
                      not hasattr(sys.modules[self.package_name], 'foo'))
 
         # ...make up a variable name that isn't bound in __builtins__
