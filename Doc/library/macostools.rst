@@ -59,8 +59,8 @@ documentation. Hence, aliases created with :func:`mkalias` could conceivably
 have incompatible behaviour in some cases.
 
 
-:mod:`findertools` --- The :program:`finder`'s Apple Events interface
-=====================================================================
+:mod:`findertools` --- The :program:`finder`\'s Apple Events interface
+======================================================================
 
 .. module:: findertools
    :platform: Mac
