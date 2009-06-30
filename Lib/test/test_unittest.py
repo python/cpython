@@ -9,6 +9,7 @@ Still need testing:
 import os
 import re
 import sys
+import warnings
 from test import support
 import unittest
 from unittest import TestCase, TestProgram
@@ -2810,13 +2811,20 @@ test case
 
         Do not use these methods.  They will go away in 3.3.
         """
-        self.failIfEqual(3, 5)
-        self.failUnlessEqual(3, 3)
-        self.failUnlessAlmostEqual(2.0, 2.0)
-        self.failIfAlmostEqual(3.0, 5.0)
-        self.failUnless(True)
-        self.failUnlessRaises(TypeError, lambda _: 3.14 + 'spam')
-        self.failIf(False)
+        old = (
+            (self.failIfEqual, (3, 5)),
+            (self.failUnlessEqual, (3, 3)),
+            (self.failUnlessAlmostEqual, (2.0, 2.0)),
+            (self.failIfAlmostEqual, (3.0, 5.0)),
+            (self.failUnless, (True,)),
+            (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
+            (self.failIf, (False,))
+        )
+        for meth, args in old:
+            with warnings.catch_warnings(record=True) as w:
+                meth(*args)
+            self.assertEqual(len(w), 1)
+            self.assertIs(w[0].category, DeprecationWarning)
 
     def testDeepcopy(self):
         # Issue: 5660
