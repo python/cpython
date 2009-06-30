@@ -642,8 +642,8 @@ option involved in the error; be sure to do the same when calling
 ``parser.error()`` from your application code.
 
 If :mod:`optparse`'s default error-handling behaviour does not suit your needs,
-you'll need to subclass OptionParser and override its :meth:`exit` and/or
-:meth:`error` methods.
+you'll need to subclass OptionParser and override its :meth:`~OptionParser.exit`
+and/or :meth:`~OptionParser.error` methods.
 
 
 .. _optparse-putting-it-all-together:
