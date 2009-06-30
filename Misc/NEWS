@@ -341,6 +341,10 @@ Core and Builtins
 Library
 -------
 
+- Issues #5155, 5313, 5331: multiprocessing.Process._bootstrap was 
+  unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
+  descriptor errors
+
 - Issue #6365: Distutils build_ext inplace mode was copying the compiled 
   extension in a subdirectory if the extension name had dots.
 
