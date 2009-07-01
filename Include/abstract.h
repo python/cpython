@@ -777,12 +777,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         is cleared and the value is clipped. 
        */
 
-       /*
-         PyNumber_Int used to be found here.  It's now in Include/intobject.h,
-         where it is defined to be an alias for PyNumber_Long.  New code
-         should use PyNumber_Long instead.
-       */
-
      PyAPI_FUNC(PyObject *) PyNumber_Long(PyObject *o);
 
        /*
