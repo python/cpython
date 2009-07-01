@@ -88,7 +88,6 @@
 #include "funcobject.h"
 #include "classobject.h"
 #include "fileobject.h"
-#include "cobject.h"
 #include "pycapsule.h"
 #include "traceback.h"
 #include "sliceobject.h"
