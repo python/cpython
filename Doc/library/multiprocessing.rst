@@ -2107,7 +2107,7 @@ Beware replacing sys.stdin with a "file like object"
 
         os.close(sys.stdin.fileno())
 
-    In the :meth:`multiprocessing.Process._bootstrap` method of - this resulted
+    in the :meth:`multiprocessing.Process._bootstrap` method --- this resulted
     in issues with processes-in-processes. This has been changed to::
 
         sys.stdin.close()
@@ -2116,7 +2116,7 @@ Beware replacing sys.stdin with a "file like object"
     Which solves the fundamental issue of processes colliding with each other
     resulting in a bad file descriptor error, but introduces a potential danger
     to applications which replace :func:`sys.stdin` with a "file-like object"
-    with output buffering, this danger is that if multiple processes call
+    with output buffering.  This danger is that if multiple processes call
     :func:`close()` on this file-like object, it could result in the same
     data being flushed to the object multiple times, resulting in corruption.
 
