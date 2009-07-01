@@ -16,7 +16,7 @@ Core and Builtins
   This fixes a build failure on HP-UX: int32_t and uint32_t are
   defined in inttypes.h instead of stdint.h on that platform.
 
-- Issue #6373: Fixed a RuntimeError when encoding with the latin-1 codec and
+- Issue #6373: Fixed a SystemError when encoding with the latin-1 codec and
   the 'surrogateescape' error handler, a string which contains unpaired
   surrogates.
 
