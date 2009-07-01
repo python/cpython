@@ -567,12 +567,3 @@ Helper functions
    that this replaces runs of whitespace characters by a single space, and removes
    leading and trailing whitespace.
 
-
-.. function:: maketrans(frm, to)
-
-   Return a translation table suitable for passing to :meth:`bytes.translate`,
-   that will map each character in *from* into the character at the same
-   position in *to*; *from* and *to* must have the same length.
-
-   .. deprecated:: 3.1
-      Use the :meth:`bytes.maketrans` static method instead.
