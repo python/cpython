@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6369: Fix an RLE decompression bug in the binhex module.
+
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
 
 Build
