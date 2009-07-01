@@ -102,7 +102,6 @@ Other Objects
    slice.rst
    weakref.rst
    capsule.rst
-   cobject.rst
    cell.rst
    gen.rst
    datetime.rst
