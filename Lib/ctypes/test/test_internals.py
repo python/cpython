@@ -18,7 +18,7 @@ What about pointers?
 """
 
 class ObjectsTestCase(unittest.TestCase):
-    def assertTrueSame(self, a, b):
+    def assertSame(self, a, b):
         self.assertEqual(id(a), id(b))
 
     def test_ints(self):
@@ -33,7 +33,7 @@ class ObjectsTestCase(unittest.TestCase):
         rc = grc(s)
         cs = c_char_p(s)
         self.assertEqual(rc + 1, grc(s))
-        self.assertTrueSame(cs._objects, s)
+        self.assertSame(cs._objects, s)
 
     def test_simple_struct(self):
         class X(Structure):
