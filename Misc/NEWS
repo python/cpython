@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- The deprecated PyCObject has been removed.
+
 - Issue #6347: Include inttypes.h as well as stdint.h in pyport.h.
   This fixes a build failure on HP-UX: int32_t and uint32_t are
   defined in inttypes.h instead of stdint.h on that platform.

@@ -327,7 +327,6 @@ OBJECT_OBJS=	\
 		Objects/bytesobject.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
-		Objects/cobject.o \
 		Objects/codeobject.o \
 		Objects/complexobject.o \
 		Objects/descrobject.o \
@@ -622,7 +621,6 @@ PYTHON_HEADERS= \
 		Include/cellobject.h \
 		Include/ceval.h \
 		Include/classobject.h \
-		Include/cobject.h \
 		Include/code.h \
 		Include/codecs.h \
 		Include/compile.h \
