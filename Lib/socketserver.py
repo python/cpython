@@ -445,6 +445,7 @@ class TCPServer(BaseServer):
 
     def close_request(self, request):
         """Called to clean up an individual request."""
+        request.shutdown(socket.SHUT_WR)
         request.close()
 
 
@@ -611,8 +612,10 @@ class BaseRequestHandler:
         self.client_address = client_address
         self.server = server
         self.setup()
-        self.handle()
-        self.finish()
+        try:
+            self.handle()
+        finally:
+            self.finish()
 
     def setup(self):
         pass
@@ -646,12 +649,17 @@ class StreamRequestHandler(BaseRequestHandler):
     rbufsize = -1
     wbufsize = 0
 
+    # A timeout to apply to the request socket, if not None.
+    timeout = None
+
     # Disable nagle algoritm for this socket, if True.
     # Use only when wbufsize != 0, to avoid small packets.
     disable_nagle_algorithm = False
 
     def setup(self):
         self.connection = self.request
+        if self.timeout is not None:
+            self.connection.settimeout(self.timeout)
         if self.disable_nagle_algorithm:
             self.connection.setsockopt(socket.IPPROTO_TCP,
                                        socket.TCP_NODELAY, True)
