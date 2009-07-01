@@ -4,7 +4,7 @@ import sys
 from functools import wraps
 from warnings import warn
 
-__all__ = ["contextmanager", "nested", "closing"]
+__all__ = ["contextmanager", "closing"]
 
 class GeneratorContextManager(object):
     """Helper for @contextmanager decorator."""
