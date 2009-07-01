@@ -2,7 +2,6 @@ from importlib import _bootstrap
 from importlib import machinery
 from .. import util
 from . import util as import_util
-from contextlib import nested
 import imp
 import os
 import sys
