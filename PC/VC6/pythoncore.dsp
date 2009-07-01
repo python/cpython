@@ -277,10 +277,6 @@ SOURCE=..\..\Modules\cmathmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Objects\cobject.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\codecs.c
 # End Source File
 # Begin Source File
