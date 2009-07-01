@@ -32,20 +32,20 @@ class FixerTestCase(support.TestCase):
         before = support.reformat(before)
         after = support.reformat(after)
         tree = self.refactor.refactor_string(before, self.filename)
-        self.failUnlessEqual(after, unicode(tree))
+        self.assertEqual(after, unicode(tree))
         return tree
 
     def check(self, before, after, ignore_warnings=False):
         tree = self._check(before, after)
-        self.failUnless(tree.was_changed)
+        self.assertTrue(tree.was_changed)
         if not ignore_warnings:
-            self.failUnlessEqual(self.fixer_log, [])
+            self.assertEqual(self.fixer_log, [])
 
     def warns(self, before, after, message, unchanged=False):
         tree = self._check(before, after)
-        self.failUnless(message in "".join(self.fixer_log))
+        self.assertTrue(message in "".join(self.fixer_log))
         if not unchanged:
-            self.failUnless(tree.was_changed)
+            self.assertTrue(tree.was_changed)
 
     def warns_unchanged(self, before, message):
         self.warns(before, before, message, unchanged=True)
@@ -53,7 +53,7 @@ class FixerTestCase(support.TestCase):
     def unchanged(self, before, ignore_warnings=False):
         self._check(before, before)
         if not ignore_warnings:
-            self.failUnlessEqual(self.fixer_log, [])
+            self.assertEqual(self.fixer_log, [])
 
     def assert_runs_after(self, *names):
         fixes = [self.fixer]

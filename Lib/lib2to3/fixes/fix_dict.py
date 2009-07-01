@@ -66,7 +66,7 @@ class FixDict(fixer_base.BaseFix):
         new = pytree.Node(syms.power, args)
         if not special:
             new.prefix = u""
-            new = Call(Name(isiter and u"iter" or u"list"), [new])
+            new = Call(Name(u"iter" if isiter else u"list"), [new])
         if tail:
             new = pytree.Node(syms.power, [new] + tail)
         new.prefix = node.prefix
