@@ -324,11 +324,11 @@ class _Rledecoderengine:
         mark = len(self.pre_buffer)
         if self.pre_buffer[-3:] == RUNCHAR + b'\0' + RUNCHAR:
             mark = mark - 3
-        elif self.pre_buffer[-1] == RUNCHAR:
+        elif self.pre_buffer[-1:] == RUNCHAR:
             mark = mark - 2
         elif self.pre_buffer[-2:] == RUNCHAR + b'\0':
             mark = mark - 2
-        elif self.pre_buffer[-2] == RUNCHAR:
+        elif self.pre_buffer[-2:-1] == RUNCHAR:
             pass # Decode all
         else:
             mark = mark - 1
