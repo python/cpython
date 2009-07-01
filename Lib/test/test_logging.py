@@ -99,7 +99,7 @@ class BaseTest(unittest.TestCase):
         finally:
             logging._releaseLock()
 
-    def assertTruelog_lines(self, expected_values, stream=None):
+    def assert_log_lines(self, expected_values, stream=None):
         """Match the collected log lines against the regular expression
         self.expected_log_pat, and compare the extracted group values to
         the expected_values list of tuples."""
@@ -165,7 +165,7 @@ class BuiltinLevelsTest(BaseTest):
 
         INF.debug(m())
 
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('ERR', 'CRITICAL', '1'),
             ('ERR', 'ERROR', '2'),
             ('INF', 'CRITICAL', '3'),
@@ -197,7 +197,7 @@ class BuiltinLevelsTest(BaseTest):
         INF_ERR.info(m())
         INF_ERR.debug(m())
 
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('INF.ERR', 'CRITICAL', '1'),
             ('INF.ERR', 'ERROR', '2'),
         ])
@@ -228,7 +228,7 @@ class BuiltinLevelsTest(BaseTest):
         INF_ERR_UNDEF.info(m())
         INF_ERR_UNDEF.debug(m())
 
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('INF.UNDEF', 'CRITICAL', '1'),
             ('INF.UNDEF', 'ERROR', '2'),
             ('INF.UNDEF', 'WARNING', '3'),
@@ -256,7 +256,7 @@ class BuiltinLevelsTest(BaseTest):
         GRANDCHILD.debug(m())
         CHILD.debug(m())
 
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('INF.BADPARENT.UNDEF', 'CRITICAL', '1'),
             ('INF.BADPARENT.UNDEF', 'INFO', '2'),
             ('INF.BADPARENT', 'CRITICAL', '3'),
@@ -285,7 +285,7 @@ class BasicFilterTest(BaseTest):
             spam_eggs_fish.info(self.next_message())  # Good.
             spam_bakedbeans.info(self.next_message())
 
-            self.assertTruelog_lines([
+            self.assert_log_lines([
                 ('spam.eggs', 'INFO', '2'),
                 ('spam.eggs.fish', 'INFO', '3'),
             ])
@@ -367,7 +367,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
         self.root_logger.setLevel(VERBOSE)
         # Levels >= 'Verbose' are good.
         self.log_at_all_levels(self.root_logger)
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('Verbose', '5'),
             ('Sociable', '6'),
             ('Effusive', '7'),
@@ -382,7 +382,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
         try:
             # Levels >= 'Sociable' are good.
             self.log_at_all_levels(self.root_logger)
-            self.assertTruelog_lines([
+            self.assert_log_lines([
                 ('Sociable', '6'),
                 ('Effusive', '7'),
                 ('Terse', '8'),
@@ -413,12 +413,12 @@ class CustomLevelsAndFiltersTest(BaseTest):
                 ('Taciturn', '9'),
                 ('Silent', '10'),
             ]
-            self.assertTruelog_lines(first_lines)
+            self.assert_log_lines(first_lines)
 
             specific_filter = VerySpecificFilter()
             self.root_logger.addFilter(specific_filter)
             self.log_at_all_levels(self.root_logger)
-            self.assertTruelog_lines(first_lines + [
+            self.assert_log_lines(first_lines + [
                 # Not only 'Garrulous' is still missing, but also 'Sociable'
                 # and 'Taciturn'
                 ('Boring', '11'),
@@ -458,9 +458,9 @@ class MemoryHandlerTest(BaseTest):
         # The memory handler flushes to its target handler based on specific
         #  criteria (message count and message level).
         self.mem_logger.debug(self.next_message())
-        self.assertTruelog_lines([])
+        self.assert_log_lines([])
         self.mem_logger.info(self.next_message())
-        self.assertTruelog_lines([])
+        self.assert_log_lines([])
         # This will flush because the level is >= logging.WARNING
         self.mem_logger.warn(self.next_message())
         lines = [
@@ -468,19 +468,19 @@ class MemoryHandlerTest(BaseTest):
             ('INFO', '2'),
             ('WARNING', '3'),
         ]
-        self.assertTruelog_lines(lines)
+        self.assert_log_lines(lines)
         for n in (4, 14):
             for i in range(9):
                 self.mem_logger.debug(self.next_message())
-            self.assertTruelog_lines(lines)
+            self.assert_log_lines(lines)
             # This will flush because it's the 10th message since the last
             #  flush.
             self.mem_logger.debug(self.next_message())
             lines = lines + [('DEBUG', str(i)) for i in range(n, n + 10)]
-            self.assertTruelog_lines(lines)
+            self.assert_log_lines(lines)
 
         self.mem_logger.debug(self.next_message())
-        self.assertTruelog_lines(lines)
+        self.assert_log_lines(lines)
 
 
 class ExceptionFormatter(logging.Formatter):
@@ -650,11 +650,11 @@ class ConfigFileTest(BaseTest):
             logger.info(self.next_message())
             # Outputs a message
             logger.error(self.next_message())
-            self.assertTruelog_lines([
+            self.assert_log_lines([
                 ('ERROR', '2'),
             ], stream=output)
             # Original logger output is empty.
-            self.assertTruelog_lines([])
+            self.assert_log_lines([])
 
     def test_config1_ok(self, config=config1):
         # A config file defining a sub-parser as well.
@@ -664,12 +664,12 @@ class ConfigFileTest(BaseTest):
             # Both will output a message
             logger.info(self.next_message())
             logger.error(self.next_message())
-            self.assertTruelog_lines([
+            self.assert_log_lines([
                 ('INFO', '1'),
                 ('ERROR', '2'),
             ], stream=output)
             # Original logger output is empty.
-            self.assertTruelog_lines([])
+            self.assert_log_lines([])
 
     def test_config2_failure(self):
         # A simple config file which overrides the default settings.
@@ -692,7 +692,7 @@ class ConfigFileTest(BaseTest):
             self.assertEquals(output.getvalue(),
                 "ERROR:root:just testing\nGot a [RuntimeError]\n")
             # Original logger output is empty
-            self.assertTruelog_lines([])
+            self.assert_log_lines([])
 
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
@@ -847,7 +847,7 @@ class MemoryTest(BaseTest):
         foo.setLevel(logging.DEBUG)
         self.root_logger.debug(self.next_message())
         foo.debug(self.next_message())
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('foo', 'DEBUG', '2'),
         ])
         del foo
@@ -856,7 +856,7 @@ class MemoryTest(BaseTest):
         # foo has retained its settings.
         bar = logging.getLogger("foo")
         bar.debug(self.next_message())
-        self.assertTruelog_lines([
+        self.assert_log_lines([
             ('foo', 'DEBUG', '2'),
             ('foo', 'DEBUG', '3'),
         ])
