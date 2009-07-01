@@ -487,9 +487,6 @@
 			RelativePath="..\..\Modules\cmathmodule.c">
 		</File>
 		<File
-			RelativePath="..\..\Objects\cobject.c">
-		</File>
-		<File
 			RelativePath="..\..\Python\codecs.c">
 		</File>
 		<File

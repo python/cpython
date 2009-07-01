@@ -675,10 +675,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\cobject.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Include\code.h"
 				>
 			</File>
@@ -1380,10 +1376,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Objects\classobject.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Objects\cobject.c"
 				>
 			</File>
 			<File
