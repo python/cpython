@@ -81,10 +81,10 @@ class TestNodes(support.TestCase):
     def test_leaf_prefix(self):
         l1 = pytree.Leaf(100, "foo")
         self.assertEqual(l1.prefix, "")
-        self.failIf(l1.was_changed)
+        self.assertFalse(l1.was_changed)
         l1.prefix = "  ##\n\n"
         self.assertEqual(l1.prefix, "  ##\n\n")
-        self.failUnless(l1.was_changed)
+        self.assertTrue(l1.was_changed)
 
     def test_node(self):
         l1 = pytree.Leaf(100, "foo")
@@ -154,13 +154,13 @@ class TestNodes(support.TestCase):
         l3 = pytree.Leaf(100, "bar")
         n1 = pytree.Node(1000, [l1, l2, l3])
         self.assertEqual(n1.children, [l1, l2, l3])
-        self.failUnless(isinstance(n1.children, list))
-        self.failIf(n1.was_changed)
+        self.assertTrue(isinstance(n1.children, list))
+        self.assertFalse(n1.was_changed)
         l2new = pytree.Leaf(100, "-")
         l2.replace(l2new)
         self.assertEqual(n1.children, [l1, l2new, l3])
-        self.failUnless(isinstance(n1.children, list))
-        self.failUnless(n1.was_changed)
+        self.assertTrue(isinstance(n1.children, list))
+        self.assertTrue(n1.was_changed)
 
     def test_replace_with_list(self):
         l1 = pytree.Leaf(100, "foo")
@@ -170,7 +170,7 @@ class TestNodes(support.TestCase):
 
         l2.replace([pytree.Leaf(100, "*"), pytree.Leaf(100, "*")])
         self.assertEqual(str(n1), "foo**bar")
-        self.failUnless(isinstance(n1.children, list))
+        self.assertTrue(isinstance(n1.children, list))
 
     def test_post_order(self):
         l1 = pytree.Leaf(100, "foo")
@@ -186,34 +186,34 @@ class TestNodes(support.TestCase):
 
     def test_changed(self):
         l1 = pytree.Leaf(100, "f")
-        self.failIf(l1.was_changed)
+        self.assertFalse(l1.was_changed)
         l1.changed()
-        self.failUnless(l1.was_changed)
+        self.assertTrue(l1.was_changed)
 
         l1 = pytree.Leaf(100, "f")
         n1 = pytree.Node(1000, [l1])
-        self.failIf(n1.was_changed)
+        self.assertFalse(n1.was_changed)
         n1.changed()
-        self.failUnless(n1.was_changed)
+        self.assertTrue(n1.was_changed)
 
         l1 = pytree.Leaf(100, "foo")
         l2 = pytree.Leaf(100, "+")
         l3 = pytree.Leaf(100, "bar")
         n1 = pytree.Node(1000, [l1, l2, l3])
         n2 = pytree.Node(1000, [n1])
-        self.failIf(l1.was_changed)
-        self.failIf(n1.was_changed)
-        self.failIf(n2.was_changed)
+        self.assertFalse(l1.was_changed)
+        self.assertFalse(n1.was_changed)
+        self.assertFalse(n2.was_changed)
 
         n1.changed()
-        self.failUnless(n1.was_changed)
-        self.failUnless(n2.was_changed)
-        self.failIf(l1.was_changed)
+        self.assertTrue(n1.was_changed)
+        self.assertTrue(n2.was_changed)
+        self.assertFalse(l1.was_changed)
 
     def test_leaf_constructor_prefix(self):
         for prefix in ("xyz_", ""):
             l1 = pytree.Leaf(100, "self", prefix=prefix)
-            self.failUnless(str(l1), prefix + "self")
+            self.assertTrue(str(l1), prefix + "self")
             self.assertEqual(l1.prefix, prefix)
 
     def test_node_constructor_prefix(self):
@@ -221,7 +221,7 @@ class TestNodes(support.TestCase):
             l1 = pytree.Leaf(100, "self")
             l2 = pytree.Leaf(100, "foo", prefix="_")
             n1 = pytree.Node(1000, [l1, l2], prefix=prefix)
-            self.failUnless(str(n1), prefix + "self_foo")
+            self.assertTrue(str(n1), prefix + "self_foo")
             self.assertEqual(n1.prefix, prefix)
             self.assertEqual(l1.prefix, prefix)
             self.assertEqual(l2.prefix, "_")
@@ -237,8 +237,8 @@ class TestNodes(support.TestCase):
         self.assertEqual(l1.parent, n1)
         self.assertEqual(n1.parent, None)
         self.assertEqual(n2.parent, None)
-        self.failIf(n1.was_changed)
-        self.failUnless(n2.was_changed)
+        self.assertFalse(n1.was_changed)
+        self.assertTrue(n2.was_changed)
 
         self.assertEqual(l2.remove(), 1)
         self.assertEqual(l1.remove(), 0)
@@ -246,8 +246,8 @@ class TestNodes(support.TestCase):
         self.assertEqual(l1.parent, None)
         self.assertEqual(n1.parent, None)
         self.assertEqual(n2.parent, None)
-        self.failUnless(n1.was_changed)
-        self.failUnless(n2.was_changed)
+        self.assertTrue(n1.was_changed)
+        self.assertTrue(n2.was_changed)
 
     def test_remove_parentless(self):
         n1 = pytree.Node(1000, [])
@@ -316,7 +316,7 @@ class TestNodes(support.TestCase):
         n2 = pytree.Node(1000, [])
         p1 = pytree.Node(1000, [n1, n2])
 
-        self.failUnless(n1.next_sibling is n2)
+        self.assertTrue(n1.next_sibling is n2)
         self.assertEqual(n2.next_sibling, None)
         self.assertEqual(p1.next_sibling, None)
 
@@ -325,7 +325,7 @@ class TestNodes(support.TestCase):
         l2 = pytree.Leaf(100, "b")
         p1 = pytree.Node(1000, [l1, l2])
 
-        self.failUnless(l1.next_sibling is l2)
+        self.assertTrue(l1.next_sibling is l2)
         self.assertEqual(l2.next_sibling, None)
         self.assertEqual(p1.next_sibling, None)
 
@@ -334,7 +334,7 @@ class TestNodes(support.TestCase):
         n2 = pytree.Node(1000, [])
         p1 = pytree.Node(1000, [n1, n2])
 
-        self.failUnless(n2.prev_sibling is n1)
+        self.assertTrue(n2.prev_sibling is n1)
         self.assertEqual(n1.prev_sibling, None)
         self.assertEqual(p1.prev_sibling, None)
 
@@ -343,7 +343,7 @@ class TestNodes(support.TestCase):
         l2 = pytree.Leaf(100, "b")
         p1 = pytree.Node(1000, [l1, l2])
 
-        self.failUnless(l2.prev_sibling is l1)
+        self.assertTrue(l2.prev_sibling is l1)
         self.assertEqual(l1.prev_sibling, None)
         self.assertEqual(p1.prev_sibling, None)
 
@@ -416,7 +416,7 @@ class TestPatterns(support.TestCase):
         r = {}
         self.assertTrue(pw.match_seq([l1, l3], r))
         self.assertEqual(r, {"pl": l3, "pw": [l1, l3]})
-        self.assert_(r["pl"] is l3)
+        self.assertTrue(r["pl"] is l3)
         r = {}
 
     def test_generate_matches(self):
@@ -459,5 +459,5 @@ class TestPatterns(support.TestCase):
         l3 = pytree.Leaf(8, ")")
         node = pytree.Node(331, [l1, l2, l3])
         r = {}
-        self.assert_(pattern.match(node, r))
+        self.assertTrue(pattern.match(node, r))
         self.assertEqual(r["args"], [l2])
