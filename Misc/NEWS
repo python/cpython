@@ -41,6 +41,9 @@ Library
 Build
 -----
 
+- Issue 4601: 'make install' did not set the appropriate permissions on
+  directories.
+
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
