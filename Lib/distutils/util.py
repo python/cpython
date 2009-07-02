@@ -12,9 +12,10 @@ from distutils.dep_util import newer
 from distutils.spawn import spawn
 from distutils import log
 
-def get_platform ():
-    """Return a string that identifies the current platform.  This is used
-    mainly to distinguish platform-specific build directories and
+def get_platform():
+    """Return a string that identifies the current platform.
+
+    This is used mainly to distinguish platform-specific build directories and
     platform-specific built distributions.  Typically includes the OS name
     and version and the architecture (as supplied by 'os.uname()'),
     although the exact information included depends on the OS; eg. for IRIX
@@ -153,11 +154,10 @@ def get_platform ():
 
     return "%s-%s-%s" % (osname, release, machine)
 
-# get_platform ()
 
+def convert_path(pathname):
+    """Return 'pathname' as a name that will work on the native filesystem.
 
-def convert_path (pathname):
-    """Return 'pathname' as a name that will work on the native filesystem,
     i.e. split it on '/' and put it back together again using the current
     directory separator.  Needed because filenames in the setup script are
     always supplied in Unix style, and have to be converted to the local
@@ -181,12 +181,12 @@ def convert_path (pathname):
         return os.curdir
     return os.path.join(*paths)
 
-# convert_path ()
 
+def change_root(new_root, pathname):
+    """Return 'pathname' with 'new_root' prepended.
 
-def change_root (new_root, pathname):
-    """Return 'pathname' with 'new_root' prepended.  If 'pathname' is
-    relative, this is equivalent to "os.path.join(new_root,pathname)".
+    If 'pathname' is relative, this is equivalent to
+    "os.path.join(new_root,pathname)".
     Otherwise, it requires making 'pathname' relative and then joining the
     two, which is tricky on DOS/Windows and Mac OS.
     """
@@ -218,13 +218,15 @@ def change_root (new_root, pathname):
             return os.path.join(new_root, pathname)
 
     else:
-        raise DistutilsPlatformError("nothing known about platform '%s'" % os.name)
-
+        raise DistutilsPlatformError("nothing known about "
+                                     "platform '%s'" % os.name)
 
 _environ_checked = 0
-def check_environ ():
-    """Ensure that 'os.environ' has all the environment variables we
-    guarantee that users can use in config files, command-line options,
+
+def check_environ():
+    """Ensure that 'os.environ' has all the environment variables needed.
+
+    We guarantee that users can use in config files, command-line options,
     etc.  Currently this includes:
       HOME - user's home directory (Unix only)
       PLAT - description of the current platform, including hardware
@@ -243,10 +245,10 @@ def check_environ ():
 
     _environ_checked = 1
 
+def subst_vars(s, local_vars):
+    """Perform shell/Perl-style variable substitution on 'string'.
 
-def subst_vars (s, local_vars):
-    """Perform shell/Perl-style variable substitution on 'string'.  Every
-    occurrence of '$' followed by a name is considered a variable, and
+    Every occurrence of '$' followed by a name is considered a variable, and
     variable is substituted by the value found in the 'local_vars'
     dictionary, or in 'os.environ' if it's not in 'local_vars'.
     'os.environ' is first checked/augmented to guarantee that it contains
@@ -266,12 +268,11 @@ def subst_vars (s, local_vars):
     except KeyError as var:
         raise ValueError("invalid variable '$%s'" % var)
 
-# subst_vars ()
+def grok_environment_error(exc, prefix="error: "):
+    """Generate a useful error message from an EnvironmentError.
 
-
-def grok_environment_error (exc, prefix="error: "):
-    """Generate a useful error message from an EnvironmentError (IOError or
-    OSError) exception object.  Handles Python 1.5.1 and 1.5.2 styles, and
+    This will generate an IOError or an OSError exception object.
+    Handles Python 1.5.1 and 1.5.2 styles, and
     does what it can to deal with exception objects that don't have a
     filename (which happens when the error is due to a two-file operation,
     such as 'rename()' or 'link()'.  Returns the error message as a string
@@ -290,18 +291,20 @@ def grok_environment_error (exc, prefix="error: "):
 
     return error
 
-
 # Needed by 'split_quoted()'
 _wordchars_re = _squote_re = _dquote_re = None
+
 def _init_regex():
     global _wordchars_re, _squote_re, _dquote_re
     _wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
     _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
     _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 
-def split_quoted (s):
+def split_quoted(s):
     """Split a string up according to Unix shell-like rules for quotes and
-    backslashes.  In short: words are delimited by spaces, as long as those
+    backslashes.
+
+    In short: words are delimited by spaces, as long as those
     spaces are not escaped by a backslash, or inside a quoted string.
     Single and double quotes are equivalent, and the quote characters can
     be backslash-escaped.  The backslash is stripped from any two-character
@@ -309,7 +312,6 @@ def split_quoted (s):
     characters are stripped from any quoted string.  Returns a list of
     words.
     """
-
     # This is a nice algorithm for splitting up a single string, since it
     # doesn't require character-by-character examination.  It was a little
     # bit of a brain-bender to get it working right, though...
@@ -357,13 +359,12 @@ def split_quoted (s):
 
     return words
 
-# split_quoted ()
 
+def execute(func, args, msg=None, verbose=0, dry_run=0):
+    """Perform some action that affects the outside world.
 
-def execute (func, args, msg=None, verbose=0, dry_run=0):
-    """Perform some action that affects the outside world (eg.  by
-    writing to the filesystem).  Such actions are special because they
-    are disabled by the 'dry_run' flag.  This method takes care of all
+    eg. by writing to the filesystem).  Such actions are special because
+    they are disabled by the 'dry_run' flag.  This method takes care of all
     that bureaucracy for you; all you have to do is supply the
     function to call and an argument tuple for it (to embody the
     "external action" being performed), and an optional message to
@@ -379,7 +380,7 @@ def execute (func, args, msg=None, verbose=0, dry_run=0):
         func(*args)
 
 
-def strtobool (val):
+def strtobool(val):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
@@ -395,15 +396,13 @@ def strtobool (val):
         raise ValueError("invalid truth value %r" % (val,))
 
 
-def byte_compile (py_files,
-                  optimize=0, force=0,
-                  prefix=None, base_dir=None,
-                  verbose=1, dry_run=0,
-                  direct=None):
+def byte_compile(py_files, optimize=0, force=0, prefix=None, base_dir=None,
+                  verbose=1, dry_run=0, direct=None):
     """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in the same directory.  'py_files' is a list of files
-    to compile; any files that don't end in ".py" are silently skipped.
-    'optimize' must be one of the following:
+    or .pyo files in the same directory.
+
+    'py_files' is a list of files to compile; any files that don't end in
+    ".py" are silently skipped. 'optimize' must be one of the following:
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
@@ -428,7 +427,6 @@ def byte_compile (py_files,
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
     """
-
     # First, if the caller didn't force us into direct or indirect mode,
     # figure out which mode we should be in.  We take a conservative
     # approach: choose direct mode *only* if the current interpreter is
@@ -516,8 +514,8 @@ byte_compile(files, optimize=%r, force=%r,
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
-                    raise ValueError("invalid prefix: filename %r doesn't start with %r"
-                           % (file, prefix))
+                    raise ValueError("invalid prefix: filename %r doesn't "
+                                     "start with %r" % (file, prefix))
                 dfile = dfile[len(prefix):]
             if base_dir:
                 dfile = os.path.join(base_dir, dfile)
@@ -532,9 +530,8 @@ byte_compile(files, optimize=%r, force=%r,
                     log.debug("skipping byte-compilation of %s to %s",
                               file, cfile_base)
 
-# byte_compile ()
 
-def rfc822_escape (header):
+def rfc822_escape(header):
     """Return a version of the string escaped for inclusion in an
     RFC-822 header, by ensuring there are 8 spaces space after each newline.
     """
