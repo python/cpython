@@ -1605,12 +1605,11 @@ class PyBuildInstallLib(install_lib):
 
     def set_dir_modes(self, dirname, mode):
         if not self.is_chmod_supported(): return
-        os.walk(dirname, self.set_dir_modes_visitor, mode)
-
-    def set_dir_modes_visitor(self, mode, dirname, names):
-        if os.path.islink(dirname): return
-        log.info("changing mode of %s to %o", dirname, mode)
-        if not self.dry_run: os.chmod(dirname, mode)
+        for dirpath, dirnames, fnames in os.walk(dirname):
+            if os.path.islink(dirpath):
+                continue
+            log.info("changing mode of %s to %o", dirpath, mode)
+            if not self.dry_run: os.chmod(dirpath, mode)
 
     def is_chmod_supported(self):
         return hasattr(os, 'chmod')
