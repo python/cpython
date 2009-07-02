@@ -15,6 +15,9 @@ Core and Builtins
 - Issue #4547: When debugging a very large function, it was not always
   possible to update the lineno attribute of the current frame.
 
+- Issue #4618: When unicode arguments are passed to print(), the default
+  separator and end should be unicode also.
+
 - Issue #6119: Fixed a incorrect Py3k warning about order comparisons of builtin
   functions and methods.
 

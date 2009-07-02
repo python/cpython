@@ -1556,13 +1556,39 @@ static PyObject *
 builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"sep", "end", "file", 0};
-	static PyObject *dummy_args;
+	static PyObject *dummy_args = NULL;
+	static PyObject *unicode_newline = NULL, *unicode_space = NULL;
+	static PyObject *str_newline = NULL, *str_space = NULL;
+	PyObject *newline, *space;
 	PyObject *sep = NULL, *end = NULL, *file = NULL;
-	int i, err;
+	int i, err, use_unicode = 0;
 
 	if (dummy_args == NULL) {
 		if (!(dummy_args = PyTuple_New(0)))
 			return NULL;
+	}
+	if (str_newline == NULL) {
+		str_newline = PyString_FromString("\n");
+		if (str_newline == NULL)
+			return NULL;
+		str_space = PyString_FromString(" ");
+		if (str_space == NULL) {
+			Py_CLEAR(str_newline);
+			return NULL;
+		}
+		unicode_newline = PyUnicode_FromString("\n");
+		if (unicode_newline == NULL) {
+			Py_CLEAR(str_newline);
+			Py_CLEAR(str_space);
+			return NULL;
+		}
+		unicode_space = PyUnicode_FromString(" ");
+		if (unicode_space == NULL) {
+			Py_CLEAR(str_newline);
+			Py_CLEAR(str_space);
+			Py_CLEAR(unicode_space);
+			return NULL;
+		}
 	}
 	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
 					 kwlist, &sep, &end, &file))
@@ -1573,26 +1599,56 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 		if (file == Py_None)
 			Py_RETURN_NONE;
 	}
-
-	if (sep && sep != Py_None && !PyString_Check(sep) &&
-            !PyUnicode_Check(sep)) {
-		PyErr_Format(PyExc_TypeError,
-			     "sep must be None, str or unicode, not %.200s",
-			     sep->ob_type->tp_name);
-		return NULL;
+	if (sep == Py_None) {
+		sep = NULL;
 	}
-	if (end && end != Py_None && !PyString_Check(end) &&
-	    !PyUnicode_Check(end)) {
-		PyErr_Format(PyExc_TypeError,
-			     "end must be None, str or unicode, not %.200s",
-			     end->ob_type->tp_name);
-		return NULL;
+	else if (sep) {
+		if (PyUnicode_Check(sep)) {
+			use_unicode = 1;
+		}
+		else if (!PyString_Check(sep)) {
+			PyErr_Format(PyExc_TypeError,
+				     "sep must be None, str or unicode, not %.200s",
+				     sep->ob_type->tp_name);
+			return NULL;
+		}
+	}
+	if (end == Py_None)
+		end = NULL;
+	else if (end) {
+		if (PyUnicode_Check(end)) {
+			use_unicode = 1;
+		}
+		else if (!PyString_Check(end)) {
+			PyErr_Format(PyExc_TypeError,
+				     "end must be None, str or unicode, not %.200s",
+				     end->ob_type->tp_name);
+			return NULL;
+		}
+	}
+
+	if (!use_unicode) {
+		for (i = 0; i < PyTuple_Size(args); i++) {
+			if (PyUnicode_Check(PyTuple_GET_ITEM(args, i))) {
+				use_unicode = 1;
+				break;
+			}
+		}
+	}
+	if (use_unicode) {
+		newline = unicode_newline;
+		space = unicode_space;
+	}
+	else {
+		newline = str_newline;
+		space = str_space;
 	}
 
 	for (i = 0; i < PyTuple_Size(args); i++) {
 		if (i > 0) {
-			if (sep == NULL || sep == Py_None)
-				err = PyFile_WriteString(" ", file);
+			if (sep == NULL)
+				err = PyFile_WriteObject(space, file,
+							 Py_PRINT_RAW);
 			else
 				err = PyFile_WriteObject(sep, file,
 							 Py_PRINT_RAW);
@@ -1605,8 +1661,8 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 			return NULL;
 	}
 
-	if (end == NULL || end == Py_None)
-		err = PyFile_WriteString("\n", file);
+	if (end == NULL)
+		err = PyFile_WriteObject(newline, file, Py_PRINT_RAW);
 	else
 		err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
 	if (err)
