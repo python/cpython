@@ -661,7 +661,7 @@ class AppBuilder(BundleBuilder):
                 if USE_ZIPIMPORT:
                     if name != "zlib":
                         # neatly pack all extension modules in a subdirectory,
-                        # except zlib, since it's neccesary for bootstrapping.
+                        # except zlib, since it's necessary for bootstrapping.
                         dstpath = pathjoin("ExtensionModules", dstpath)
                     # Python modules are stored in a Zip archive, but put
                     # extensions in Contents/Resources/. Add a tiny "loader"

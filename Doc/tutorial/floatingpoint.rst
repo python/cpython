@@ -65,7 +65,7 @@ display ::
    >>> 0.1
    0.1000000000000000055511151231257827021181583404541015625
 
-instead!  The Python prompt uses the builtin :func:`repr` function to obtain a
+instead!  The Python prompt uses the built-in :func:`repr` function to obtain a
 string version of everything it displays.  For floats, ``repr(float)`` rounds
 the true decimal value to 17 significant digits, giving ::
 
@@ -81,7 +81,7 @@ thing in all languages that support your hardware's floating-point arithmetic
 (although some languages may not *display* the difference by default, or in all
 output modes).
 
-Python's builtin :func:`str` function produces only 12 significant digits, and
+Python's built-in :func:`str` function produces only 12 significant digits, and
 you may wish to use that instead.  It's unusual for ``eval(str(x))`` to
 reproduce *x*, but the output may be more pleasant to look at::
 

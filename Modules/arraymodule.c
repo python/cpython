@@ -935,7 +935,7 @@ array_count(arrayobject *self, PyObject *v)
 PyDoc_STRVAR(count_doc,
 "count(x)\n\
 \n\
-Return number of occurences of x in the array.");
+Return number of occurrences of x in the array.");
 
 static PyObject *
 array_index(arrayobject *self, PyObject *v)
@@ -959,7 +959,7 @@ array_index(arrayobject *self, PyObject *v)
 PyDoc_STRVAR(index_doc,
 "index(x)\n\
 \n\
-Return index of first occurence of x in the array.");
+Return index of first occurrence of x in the array.");
 
 static int
 array_contains(arrayobject *self, PyObject *v)
@@ -1001,7 +1001,7 @@ array_remove(arrayobject *self, PyObject *v)
 PyDoc_STRVAR(remove_doc,
 "remove(x)\n\
 \n\
-Remove the first occurence of x in the array.");
+Remove the first occurrence of x in the array.");
 
 static PyObject *
 array_pop(arrayobject *self, PyObject *args)
@@ -2055,16 +2055,16 @@ Methods:\n\
 append() -- append a new item to the end of the array\n\
 buffer_info() -- return information giving the current memory info\n\
 byteswap() -- byteswap all the items of the array\n\
-count() -- return number of occurences of an object\n\
+count() -- return number of occurrences of an object\n\
 extend() -- extend array by appending multiple elements from an iterable\n\
 fromfile() -- read items from a file object\n\
 fromlist() -- append items from the list\n\
 fromstring() -- append items from the string\n\
-index() -- return index of first occurence of an object\n\
+index() -- return index of first occurrence of an object\n\
 insert() -- insert a new item into the array at a provided position\n\
 pop() -- remove and return item (default last)\n\
 read() -- DEPRECATED, use fromfile()\n\
-remove() -- remove first occurence of an object\n\
+remove() -- remove first occurrence of an object\n\
 reverse() -- reverse the order of the items in the array\n\
 tofile() -- write all items to a file object\n\
 tolist() -- return the array converted to an ordinary list\n\

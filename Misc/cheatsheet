@@ -481,7 +481,7 @@ s.istitle()       return True if string s is a titlecased string, False    (7)
 s.isupper()       return True if all characters in s are uppercase, False  (6)
                   otherwise.
 s.join(seq)       return a concatenation of the strings in the sequence
-                  seq, seperated by 's's.
+                  seq, separated by 's's.
 s.ljust(width)    return s left justified in a string of length width.    (1),
                                                                            (8)
 s.lower()         return a copy of s converted to lowercase.
@@ -1556,10 +1556,10 @@ secs)         monday), Julian day(1-366), daylight flag(-1,0 or 1))
 asctime(
 timeTuple),
 strftime(
-format,       return a formated string representing time.
+format,       return a formatted string representing time.
 timeTuple)
 mktime(tuple) inverse of localtime(). Return a float.
-strptime(     parse a formated string representing time, return tuple as in
+strptime(     parse a formatted string representing time, return tuple as in
 string[,      gmtime().
 format])
 sleep(secs)   Suspend execution for <secs> seconds. <secs> can be a float.

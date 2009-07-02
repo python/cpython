@@ -3316,7 +3316,7 @@ class PhotoImage(Image):
         """Return the color (red, green, blue) of the pixel at X,Y."""
         return self.tk.call(self.name, 'get', x, y)
     def put(self, data, to=None):
-        """Put row formated colors to image starting from
+        """Put row formatted colors to image starting from
         position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))"""
         args = (self.name, 'put', data)
         if to:

@@ -9546,7 +9546,7 @@ if test -n "$hardcode_libdir_flag_spec" || \
    test -n "$runpath_var" || \
    test "X$hardcode_automatic" = "Xyes" ; then
 
-  # We can hardcode non-existant directories.
+  # We can hardcode non-existent directories.
   if test "$hardcode_direct" != no &&
      # If the only mechanism to avoid hardcoding is shlibpath_var, we
      # have to relink, otherwise we might link with an installed library
@@ -13514,7 +13514,7 @@ if test -n "$hardcode_libdir_flag_spec_CXX" || \
    test -n "$runpath_var_CXX" || \
    test "X$hardcode_automatic_CXX" = "Xyes" ; then
 
-  # We can hardcode non-existant directories.
+  # We can hardcode non-existent directories.
   if test "$hardcode_direct_CXX" != no &&
      # If the only mechanism to avoid hardcoding is shlibpath_var, we
      # have to relink, otherwise we might link with an installed library
@@ -16117,7 +16117,7 @@ if test -n "$hardcode_libdir_flag_spec_F77" || \
    test -n "$runpath_var_F77" || \
    test "X$hardcode_automatic_F77" = "Xyes" ; then
 
-  # We can hardcode non-existant directories.
+  # We can hardcode non-existent directories.
   if test "$hardcode_direct_F77" != no &&
      # If the only mechanism to avoid hardcoding is shlibpath_var, we
      # have to relink, otherwise we might link with an installed library
@@ -18720,7 +18720,7 @@ if test -n "$hardcode_libdir_flag_spec_GCJ" || \
    test -n "$runpath_var_GCJ" || \
    test "X$hardcode_automatic_GCJ" = "Xyes" ; then
 
-  # We can hardcode non-existant directories.
+  # We can hardcode non-existent directories.
   if test "$hardcode_direct_GCJ" != no &&
      # If the only mechanism to avoid hardcoding is shlibpath_var, we
      # have to relink, otherwise we might link with an installed library

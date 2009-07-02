@@ -864,7 +864,7 @@ static int _progress_handler(void* user_arg)
             PyErr_Clear();
         }
 
-        /* abort query if error occured */
+        /* abort query if error occurred */
         rc = 1; 
     } else {
         rc = (int)PyObject_IsTrue(ret);

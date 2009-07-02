@@ -131,7 +131,7 @@ class BasicTestCase(unittest.TestCase):
 
         self.assertEqual(d.get('0321'), '0321-0321-0321-0321-0321')
 
-        # By default non-existant keys return None...
+        # By default non-existent keys return None...
         self.assertEqual(d.get('abcd'), None)
 
         # ...but they raise exceptions in other situations.  Call

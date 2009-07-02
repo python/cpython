@@ -54,7 +54,7 @@ Here's the new type at work:
     {1: 3.25}
     >>> print a[1]                      # show the new item
     3.25
-    >>> print a[0]                      # a non-existant item
+    >>> print a[0]                      # a non-existent item
     0.0
     >>> a.merge({1:100, 2:200})         # use a dict method
     >>> print sortdict(a)               # show the result
