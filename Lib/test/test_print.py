@@ -9,12 +9,7 @@ import unittest
 from test import test_support
 
 import sys
-if sys.version_info[0] == 3:
-    # 3.x
-    from io import StringIO
-else:
-    # 2.x
-    from StringIO import StringIO
+from StringIO import StringIO
 
 NotDefined = object()
 
@@ -111,6 +106,34 @@ class TestPrint(unittest.TestCase):
         self.assertRaises(TypeError, print, '', sep=3)
         self.assertRaises(TypeError, print, '', end=3)
         self.assertRaises(AttributeError, print, '', file='')
+
+    def test_mixed_args(self):
+        # If an unicode arg is passed, sep and end should be unicode, too.
+        class Recorder(object):
+
+            def __init__(self, must_be_unicode):
+                self.buf = []
+                self.force_unicode = must_be_unicode
+
+            def write(self, what):
+                if self.force_unicode and not isinstance(what, unicode):
+                    raise AssertionError("{0!r} is not unicode".format(what))
+                self.buf.append(what)
+
+        buf = Recorder(True)
+        print(u'hi', file=buf)
+        self.assertEqual(u''.join(buf.buf), 'hi\n')
+        del buf.buf[:]
+        print(u'hi', u'nothing', file=buf)
+        self.assertEqual(u''.join(buf.buf), 'hi nothing\n')
+        buf = Recorder(False)
+        print('hi', 'bye', end=u'\n', file=buf)
+        self.assertTrue(isinstance(buf.buf[1], unicode))
+        self.assertTrue(isinstance(buf.buf[3], unicode))
+        del buf.buf[:]
+        print(sep=u'x', file=buf)
+        self.assertTrue(isinstance(buf.buf[-1], unicode))
+
 
 def test_main():
     test_support.run_unittest(TestPrint)
