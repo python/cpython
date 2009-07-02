@@ -1588,7 +1588,7 @@ class OptionParser (OptionContainer):
         """print_usage(file : file = stdout)
 
         Print the usage message for the current program (self.usage) to
-        'file' (default stdout).  Any occurence of the string "%prog" in
+        'file' (default stdout).  Any occurrence of the string "%prog" in
         self.usage is replaced with the name of the current program
         (basename of sys.argv[0]).  Does nothing if self.usage is empty
         or not defined.
@@ -1606,7 +1606,7 @@ class OptionParser (OptionContainer):
         """print_version(file : file = stdout)
 
         Print the version message for this program (self.version) to
-        'file' (default stdout).  As with print_usage(), any occurence
+        'file' (default stdout).  As with print_usage(), any occurrence
         of "%prog" in self.version is replaced by the current program's
         name.  Does nothing if self.version is empty or undefined.
         """

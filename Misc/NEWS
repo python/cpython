@@ -1087,7 +1087,7 @@ Library
 - Issue #3575: Incremental decoder's decode function now takes bytearray
   by using 's*' instead of 't#'.
 
-- Issue #2222: Fixed reference leak when occured os.rename()
+- Issue #2222: Fixed reference leak when occurred os.rename()
   fails unicode conversion on 2nd parameter. (windows only)
 
 - Issue 2464. urllib2 now supports a malformation in the URL received

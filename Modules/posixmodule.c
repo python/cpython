@@ -2400,7 +2400,7 @@ posix_listdir(PyObject *self, PyObject *args)
 static PyObject *
 posix__getfullpathname(PyObject *self, PyObject *args)
 {
-	/* assume encoded strings wont more than double no of chars */
+	/* assume encoded strings won't more than double no of chars */
 	char inbuf[MAX_PATH*2];
 	char *inbufp = inbuf;
 	Py_ssize_t insize = sizeof(inbuf);
@@ -5034,7 +5034,7 @@ _PyPopenCreateProcess(char *cmdstring,
 			   "Your program accessed mem currently in use at xxx"
 			   and a hopeful warning about the stability of your
 			   system.
-			   Cost is Ctrl+C wont kill children, but anyone
+			   Cost is Ctrl+C won't kill children, but anyone
 			   who cares can have a go!
 			*/
 			dwProcessFlags |= CREATE_NEW_CONSOLE;

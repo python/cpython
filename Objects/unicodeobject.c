@@ -1688,7 +1688,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
                 charsleft = (charsleft << 16) | ch;
                 /* out, charsleft, bitsleft = */ ENCODE(out, charsleft, bitsleft);
 
-                /* If the next character is special then we dont' need to terminate
+                /* If the next character is special then we don't need to terminate
                    the shift sequence. If the next character is not a BASE64 character
                    or '-' then the shift sequence will be terminated implicitly and we
                    don't have to insert a '-'. */

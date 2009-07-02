@@ -13,7 +13,7 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
-Because pseudo-terminal handling is highly platform dependant, there is code to
+Because pseudo-terminal handling is highly platform dependent, there is code to
 do it only for SGI and Linux. (The Linux code is supposed to work on other
 platforms, but hasn't been tested yet.)
 

@@ -470,7 +470,7 @@ arguments)``.  This is occasionally useful to clients as well.  (Note that this
 only works if the base class is defined or imported directly in the global
 scope.)
 
-Python has two builtin functions that work with inheritance:
+Python has two built-in functions that work with inheritance:
 
 * Use :func:`isinstance` to check an object's type: ``isinstance(obj, int)``
   will be ``True`` only if ``obj.__class__`` is :class:`int` or some class

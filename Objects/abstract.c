@@ -2244,7 +2244,7 @@ PySequence_Fast(PyObject *v, const char *m)
 
 /* Iterate over seq.  Result depends on the operation:
    PY_ITERSEARCH_COUNT:  -1 if error, else # of times obj appears in seq.
-   PY_ITERSEARCH_INDEX:  0-based index of first occurence of obj in seq;
+   PY_ITERSEARCH_INDEX:  0-based index of first occurrence of obj in seq;
    	set ValueError and return -1 if none found; also return -1 on error.
    Py_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
 */

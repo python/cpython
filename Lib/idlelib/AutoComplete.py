@@ -67,7 +67,7 @@ class AutoComplete:
 
     def try_open_completions_event(self, event):
         """Happens when it would be nice to open a completion list, but not
-        really neccesary, for example after an dot, so function
+        really necessary, for example after an dot, so function
         calls won't be made.
         """
         lastchar = self.text.get("insert-1c")
@@ -79,7 +79,7 @@ class AutoComplete:
                                          COMPLETE_FILES)
 
     def autocomplete_event(self, event):
-        """Happens when the user wants to complete his word, and if neccesary,
+        """Happens when the user wants to complete his word, and if necessary,
         open a completion list after that (if there is more than one
         completion)
         """

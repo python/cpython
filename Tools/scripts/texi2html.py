@@ -38,7 +38,7 @@
 # rpyron 2002-05-07
 # Robert Pyron <rpyron@alum.mit.edu>
 # 1. BUGFIX: In function makefile(), strip blanks from the nodename.
-#    This is necesary to match the behavior of parser.makeref() and
+#    This is necessary to match the behavior of parser.makeref() and
 #    parser.do_node().
 # 2. BUGFIX fixed KeyError in end_ifset (well, I may have just made
 #    it go away, rather than fix it)

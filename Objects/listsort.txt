@@ -309,7 +309,7 @@ Stability constrains permissible merging patterns.  For example, if we have
     A:10000  B:20000  C:10000
 
 we dare not merge A with C first, because if A, B and C happen to contain
-a common element, it would get out of order wrt its occurence(s) in B.  The
+a common element, it would get out of order wrt its occurrence(s) in B.  The
 merging must be done as (A+B)+C or A+(B+C) instead.
 
 So merging is always done on two consecutive runs at a time, and in-place,

@@ -104,7 +104,7 @@ class OtherNetworkTests(unittest.TestCase):
     def test_ftp(self):
         urls = [
             'ftp://ftp.kernel.org/pub/linux/kernel/README',
-            'ftp://ftp.kernel.org/pub/linux/kernel/non-existant-file',
+            'ftp://ftp.kernel.org/pub/linux/kernel/non-existent-file',
             #'ftp://ftp.kernel.org/pub/leenox/kernel/test',
             'ftp://gatekeeper.research.compaq.com/pub/DEC/SRC'
                 '/research-reports/00README-Legal-Rules-Regs',

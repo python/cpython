@@ -220,7 +220,7 @@ MODULES		=                   \
 
   # zlibmodule.c    -- Wrapper of ZLib Compression API (GZip Format)
   # puremodule.c    -- Wrapper of Purify Debugging API (Probably Non-OS/2)
-  # dlmodule.c      -- Some Wierd Form of Data Processing Module
+  # dlmodule.c      -- Some Weird Form of Data Processing Module
   # xxmodule.c      -- Template to Create Your Own Module
 
 #

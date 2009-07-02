@@ -196,7 +196,7 @@ class ArbitraryFunctionAttrTest(FuncAttrsTest):
 
     def test_unset_attr(self):
         for func in [self.b, self.f.a, self.fi.a]:
-            try:  func.non_existant_attr
+            try:  func.non_existent_attr
             except AttributeError: pass
             else: self.fail("using unknown attributes should raise "
                             "AttributeError")
