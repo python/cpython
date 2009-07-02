@@ -20,6 +20,11 @@ Core and Builtins
   the 'surrogateescape' error handler, a string which contains unpaired
   surrogates.
 
+C-API
+-----
+
+- The code flags for old __future__ features are now available again.
+
 Library
 -------
 
