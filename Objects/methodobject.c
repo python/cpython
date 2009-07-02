@@ -230,16 +230,17 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
 	PyObject *res;
 	int eq;
 
-	if ((op != Py_EQ && op != Py_NE) ||
-	    !PyCFunction_Check(self) ||
-	    !PyCFunction_Check(other))
-	{
-		/* Py3K warning if types are not equal and comparison isn't == or !=  */
-		if (PyErr_WarnPy3k("builtin_function_or_method inequality "
+	if (op != Py_EQ && op != Py_NE) {
+		/* Py3K warning if comparison isn't == or !=.  */
+		if (PyErr_WarnPy3k("builtin_function_or_method order "
 				   "comparisons not supported in 3.x", 1) < 0) {
 			return NULL;
 		}
 
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	else if (!PyCFunction_Check(self) || !PyCFunction_Check(other)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}

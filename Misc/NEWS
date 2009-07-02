@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6119: Fixed a incorrect Py3k warning about order comparisons of builtin
+  functions and methods.
+
 - Issue #6347: Include inttypes.h as well as stdint.h in pyport.h.
   This fixes a build failure on HP-UX: int32_t and uint32_t are
   defined in inttypes.h instead of stdint.h on that platform.
