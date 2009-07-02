@@ -7,16 +7,17 @@ $exec_prefix)."""
 __revision__ = "$Id$"
 
 import os
+
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import remove_tree, ensure_relative
-from distutils.errors import *
+from distutils.errors import DistutilsPlatformError
 from distutils.sysconfig import get_python_version
 from distutils import log
 
 class bdist_dumb(Command):
 
-    description = "create a \"dumb\" built distribution"
+    description = 'create a "dumb" built distribution'
 
     user_options = [('bdist-dir=', 'd',
                      "temporary directory for creating the distribution"),
