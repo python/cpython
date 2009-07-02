@@ -354,17 +354,6 @@ class TestStdlibRemovals(unittest.TestCase):
                 mod.walk("crashers", dumbo, None)
             self.assertEquals(str(w.message), msg)
 
-    def test_commands_members(self):
-        import commands
-        # commands module tests may have already triggered this warning
-        reset_module_registry(commands)
-        members = {"mk2arg" : 2, "mkarg" : 1, "getstatus" : 1}
-        for name, arg_count in members.items():
-            with warnings.catch_warnings():
-                warnings.filterwarnings("error")
-                func = getattr(commands, name)
-                self.assertRaises(DeprecationWarning, func, *([None]*arg_count))
-
     def test_reduce_move(self):
         from operator import add
         # reduce tests may have already triggered this warning
