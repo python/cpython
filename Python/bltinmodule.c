@@ -1459,13 +1459,19 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 			Py_RETURN_NONE;
 	}
 
-	if (sep && sep != Py_None && !PyUnicode_Check(sep)) {
+	if (sep == Py_None) {
+		sep = NULL;
+	}
+	else if (sep && !PyUnicode_Check(sep)) {
 		PyErr_Format(PyExc_TypeError,
 			     "sep must be None or a string, not %.200s",
 			     sep->ob_type->tp_name);
 		return NULL;
 	}
-	if (end && end != Py_None && !PyUnicode_Check(end)) {
+	if (end == Py_None) {
+		end = NULL;
+	}
+	else if (end && !PyUnicode_Check(end)) {
 		PyErr_Format(PyExc_TypeError,
 			     "end must be None or a string, not %.200s",
 			     end->ob_type->tp_name);
@@ -1474,7 +1480,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 
 	for (i = 0; i < PyTuple_Size(args); i++) {
 		if (i > 0) {
-			if (sep == NULL || sep == Py_None)
+			if (sep == NULL)
 				err = PyFile_WriteString(" ", file);
 			else
 				err = PyFile_WriteObject(sep, file,
@@ -1488,7 +1494,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 			return NULL;
 	}
 
-	if (end == NULL || end == Py_None)
+	if (end == NULL)
 		err = PyFile_WriteString("\n", file);
 	else
 		err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
