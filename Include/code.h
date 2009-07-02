@@ -43,7 +43,9 @@ typedef struct {
 #define CO_NOFREE       0x0040
 
 /* These are no longer used. */
+#if 0
 #define CO_GENERATOR_ALLOWED    0x1000
+#endif
 #define CO_FUTURE_DIVISION    	0x2000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
