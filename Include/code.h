@@ -42,7 +42,6 @@ typedef struct {
 */
 #define CO_NOFREE       0x0040
 
-#if 0
 /* These are no longer used. */
 #define CO_GENERATOR_ALLOWED    0x1000
 #define CO_FUTURE_DIVISION    	0x2000
@@ -50,7 +49,6 @@ typedef struct {
 #define CO_FUTURE_WITH_STATEMENT  0x8000
 #define CO_FUTURE_PRINT_FUNCTION  0x10000
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
-#endif
 
 #define CO_FUTURE_BARRY_AS_BDFL  0x40000
 

@@ -24,6 +24,11 @@ Core and Builtins
 
 - Issue #4856: Remove checks for win NT.
 
+C-API
+-----
+
+- The code flags for old __future__ features are now available again.
+
 Library
 -------
 
