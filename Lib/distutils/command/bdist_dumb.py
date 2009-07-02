@@ -7,16 +7,17 @@ $exec_prefix)."""
 __revision__ = "$Id$"
 
 import os
+
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import remove_tree, ensure_relative
-from distutils.errors import *
+from distutils.errors import DistutilsPlatformError
 from distutils.sysconfig import get_python_version
 from distutils import log
 
 class bdist_dumb (Command):
 
-    description = "create a \"dumb\" built distribution"
+    description = 'create a "dumb" built distribution'
 
     user_options = [('bdist-dir=', 'd',
                      "temporary directory for creating the distribution"),
@@ -53,11 +54,7 @@ class bdist_dumb (Command):
         self.skip_build = 0
         self.relative = 0
 
-    # initialize_options()
-
-
-    def finalize_options (self):
-
+    def finalize_options(self):
         if self.bdist_dir is None:
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'dumb')
@@ -74,11 +71,7 @@ class bdist_dumb (Command):
                                    ('dist_dir', 'dist_dir'),
                                    ('plat_name', 'plat_name'))
 
-    # finalize_options()
-
-
     def run (self):
-
         if not self.skip_build:
             self.run_command('build')
 
@@ -127,7 +120,3 @@ class bdist_dumb (Command):
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
-
-    # run()
-
-# class bdist_dumb
