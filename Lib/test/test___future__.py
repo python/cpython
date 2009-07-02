@@ -53,8 +53,11 @@ class FutureTest(unittest.TestCase):
 
             a(hasattr(value, "compiler_flag"),
                    "feature is missing a .compiler_flag attr")
+            # Make sure the compile accepts the flag.
+            compile("", "<test>", "exec", value.compiler_flag)
             a(isinstance(getattr(value, "compiler_flag"), int),
                    ".compiler_flag isn't int")
+
 
 def test_main():
     support.run_unittest(FutureTest)
