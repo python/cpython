@@ -22,6 +22,9 @@ class TestPy3KWarnings(unittest.TestCase):
     def assertWarning(self, _, warning, expected_message):
         self.assertEqual(str(warning.message), expected_message)
 
+    def assertNoWarning(self, _, recorder):
+        self.assertEqual(len(recorder.warnings), 0)
+
     def test_backquote(self):
         expected = 'backquote not supported in 3.x; use repr()'
         with check_warnings() as w:
@@ -132,7 +135,7 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_builtin_function_or_method_comparisons(self):
         expected = ('builtin_function_or_method '
-                    'inequality comparisons not supported in 3.x')
+                    'order comparisons not supported in 3.x')
         func = eval
         meth = {}.get
         with check_warnings() as w:
@@ -143,6 +146,12 @@ class TestPy3KWarnings(unittest.TestCase):
             self.assertWarning(meth <= func, w, expected)
             w.reset()
             self.assertWarning(meth >= func, w, expected)
+            w.reset()
+            self.assertNoWarning(meth == func, w)
+            self.assertNoWarning(meth != func, w)
+            lam = lambda x: x
+            self.assertNoWarning(lam == func, w)
+            self.assertNoWarning(lam != func, w)
 
     def test_sort_cmp_arg(self):
         expected = "the cmp argument is not supported in 3.x"
