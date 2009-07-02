@@ -42,15 +42,15 @@ typedef struct {
 */
 #define CO_NOFREE       0x0040
 
-#if 0
 /* These are no longer used. */
+#if 0
 #define CO_GENERATOR_ALLOWED    0x1000
+#endif
 #define CO_FUTURE_DIVISION    	0x2000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
 #define CO_FUTURE_PRINT_FUNCTION  0x10000
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
-#endif
 
 #define CO_FUTURE_BARRY_AS_BDFL  0x40000
 
