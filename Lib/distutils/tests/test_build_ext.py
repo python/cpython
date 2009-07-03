@@ -337,7 +337,8 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(so_dir, cmd.build_lib)
 
         # inplace = 0, cmd.package = 'bar'
-        cmd.package = 'bar'
+        build_py = cmd.get_finalized_command('build_py')
+        build_py.package_dir = {'': 'bar'}
         path = cmd.get_ext_fullpath('foo')
         # checking that the last directory is the build_dir
         path = os.path.split(path)[0]
@@ -355,12 +356,14 @@ class BuildExtTestCase(support.TempdirManager,
         # checking that the last directory is bar
         path = os.path.split(path)[0]
         lastdir = os.path.split(path)[-1]
-        self.assertEquals(lastdir, cmd.package)
+        self.assertEquals(lastdir, 'bar')
 
-    def test_build_ext_inplace(self):
-        etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
-        etree_ext = Extension('lxml.etree', [etree_c])
-        dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+    def test_ext_fullpath(self):
+        # building lxml.etree inplace
+        #etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
+        #etree_ext = Extension('lxml.etree', [etree_c])
+        #dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+        dist = Distribution()
         cmd = build_ext(dist)
         cmd.inplace = 1
         cmd.distribution.package_dir = {'': 'src'}
@@ -368,6 +371,28 @@ class BuildExtTestCase(support.TempdirManager,
         curdir = os.getcwd()
         wanted = os.path.join(curdir, 'src', 'lxml', 'etree.so')
         path = cmd.get_ext_fullpath('lxml.etree')
+        self.assertEquals(wanted, path)
+
+        # building lxml.etree not inplace
+        cmd.inplace = 0
+        cmd.build_lib = os.path.join(curdir, 'tmpdir')
+        wanted = os.path.join(curdir, 'tmpdir', 'lxml', 'etree.so')
+        path = cmd.get_ext_fullpath('lxml.etree')
+        self.assertEquals(wanted, path)
+
+        # building twisted.runner.portmap not inplace
+        build_py = cmd.get_finalized_command('build_py')
+        build_py.package_dir = {}
+        cmd.distribution.packages = ['twisted', 'twisted.runner.portmap']
+        path = cmd.get_ext_fullpath('twisted.runner.portmap')
+        wanted = os.path.join(curdir, 'tmpdir', 'twisted', 'runner',
+                              'portmap.so')
+        self.assertEquals(wanted, path)
+
+        # building twisted.runner.portmap inplace
+        cmd.inplace = 1
+        path = cmd.get_ext_fullpath('twisted.runner.portmap')
+        wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap.so')
         self.assertEquals(wanted, path)
 
 def test_suite():
