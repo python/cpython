@@ -863,6 +863,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6403: Fixed package path usage in build_ext.
+
 - Issue #6365: Distutils build_ext inplace mode was copying the compiled 
   extension in a subdirectory if the extension name had dots.
 
