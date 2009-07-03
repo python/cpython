@@ -1746,6 +1746,8 @@ initselect(void)
 	Py_INCREF(SelectError);
 	PyModule_AddObject(m, "error", SelectError);
 
+	PyModule_AddIntConstant(m, "PIPE_BUF", PIPE_BUF);
+
 #if defined(HAVE_POLL)
 #ifdef __APPLE__
 	if (select_have_broken_poll()) {
