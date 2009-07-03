@@ -100,6 +100,15 @@ The module defines the following:
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
+.. attribute:: select.PIPE_BUF
+
+   Files reported as ready for writing by :func:`select`, :func:`poll` or
+   similar interfaces in this module are guaranteed to not block on a write
+   of up to :const:`PIPE_BUF` bytes.
+   This value is guaranteed by POSIX to be at least 512.
+
+   .. versionadded:: 2.7
+
 
 .. _epoll-objects:
 
