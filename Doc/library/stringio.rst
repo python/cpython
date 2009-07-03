@@ -72,8 +72,9 @@ made more efficient by using the function :func:`StringIO` from this module
 instead.
 
 Since this module provides a factory function which returns objects of built-in
-types, there's no way to build your own version using subclassing.  Use the
-original :mod:`StringIO` module in that case.
+types, there's no way to build your own version using subclassing.  It's not
+possible to set attributes on it.  Use the original :mod:`StringIO` module in
+those cases.
 
 Unlike the memory files implemented by the :mod:`StringIO` module, those
 provided by this module are not able to accept Unicode strings that cannot be
