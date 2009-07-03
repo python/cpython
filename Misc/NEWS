@@ -347,6 +347,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6403: Fixed package path usage in build_ext.
+
 - Issues #5155, 5313, 5331: multiprocessing.Process._bootstrap was 
   unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
   descriptor errors
