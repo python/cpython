@@ -550,7 +550,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
             raise RuntimeError("already doing multiple processes")
         self.queue = multiprocessing.JoinableQueue()
         processes = [multiprocessing.Process(target=self._child)
-                     for i in xrange(num_processes)]
+                     for i in range(num_processes)]
         try:
             for p in processes:
                 p.start()
@@ -558,7 +558,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
                                                               doctests_only)
         finally:
             self.queue.join()
-            for i in xrange(num_processes):
+            for i in range(num_processes):
                 self.queue.put(None)
             for p in processes:
                 if p.is_alive():
