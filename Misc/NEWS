@@ -27,6 +27,8 @@ Core and Builtins
 C-API
 -----
 
+- Issue #6405: Remove duplicatet type declarations in descrobject.h.
+
 - The code flags for old __future__ features are now available again.
 
 Library
