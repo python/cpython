@@ -262,6 +262,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6403: Fixed package path usage in build_ext.
+
 - Issue #6287: Added the license field in Distutils documentation.
 
 - Issue #6263: Fixed syntax error in distutils.cygwincompiler.
