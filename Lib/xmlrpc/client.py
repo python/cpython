@@ -1138,11 +1138,11 @@ class Transport:
         for i in (0, 1):
             try:
                 return self.single_request(host, handler, request_body, verbose)
-            except (socket.error, http.client.HTTPException) as e:
-                retry = (errno.ECONNRESET,
-                         errno.ECONNABORTED,
-                         http.client.BadStatusLine) #close after we sent request
-                if i or e[0] not in retry:
+            except socket.error as e:
+                if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED):
+                    raise
+            except http.client.BadStatusLine: #close after we sent request
+                if i:
                     raise
 
     def single_request(self, host, handler, request_body, verbose=0):
