@@ -1256,7 +1256,7 @@ class Transport:
             except socket.error, e:
                 if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED):
                     raise
-            except http.client.BadStatusLine: #close after we sent request
+            except httplib.BadStatusLine: #close after we sent request
                 if i:
                     raise
 
