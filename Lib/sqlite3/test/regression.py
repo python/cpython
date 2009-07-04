@@ -65,10 +65,10 @@ class RegressionTests(unittest.TestCase):
     def CheckColumnNameWithSpaces(self):
         cur = self.con.cursor()
         cur.execute('select 1 as "foo bar [datetime]"')
-        self.failUnlessEqual(cur.description[0][0], "foo bar")
+        self.assertEqual(cur.description[0][0], "foo bar")
 
         cur.execute('select 1 as "foo baz"')
-        self.failUnlessEqual(cur.description[0][0], "foo baz")
+        self.assertEqual(cur.description[0][0], "foo baz")
 
     def CheckStatementAvailable(self):
         # pysqlite up to 2.3.2 crashed on this, because the active statement handle was not checked
