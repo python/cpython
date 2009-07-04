@@ -182,6 +182,8 @@ class SysModuleTest(unittest.TestCase):
                 "under Windows, test would generate a spurious crash dialog")
         code = textwrap.dedent("""
             import sys
+            import msvcrt
+            msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS)
 
             def f():
                 try:
