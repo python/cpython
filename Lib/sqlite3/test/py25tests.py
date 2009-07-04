@@ -54,19 +54,19 @@ class ContextTests(unittest.TestCase):
             self.con.execute("insert into test(c) values ('foo')")
         self.con.rollback()
         count = self.con.execute("select count(*) from test").fetchone()[0]
-        self.failUnlessEqual(count, 1)
+        self.assertEqual(count, 1)
 
     def CheckContextManagerRollback(self):
         """Is a rollback called in the context manager?"""
         global did_rollback
-        self.failUnlessEqual(did_rollback, False)
+        self.assertEqual(did_rollback, False)
         try:
             with self.con:
                 self.con.execute("insert into test(c) values (4)")
                 self.con.execute("insert into test(c) values (4)")
         except sqlite.IntegrityError:
             pass
-        self.failUnlessEqual(did_rollback, True)
+        self.assertEqual(did_rollback, True)
 
 def suite():
     ctx_suite = unittest.makeSuite(ContextTests, "Check")
