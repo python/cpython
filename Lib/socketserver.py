@@ -445,12 +445,7 @@ class TCPServer(BaseServer):
 
     def close_request(self, request):
         """Called to clean up an individual request."""
-        try:
-            #explicitly shutdown.  socket.close() merely releases
-            #the socket and waits for GC to perform the actual close.
-            request.shutdown(socket.SHUT_WR)
-        except socket.error:
-            pass #some platforms may raise ENOTCONN here
+        request.shutdown(socket.SHUT_WR)
         request.close()
 
 

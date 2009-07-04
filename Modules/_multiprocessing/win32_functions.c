@@ -130,6 +130,12 @@ win32_ExitProcess(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "I", &uExitCode))
 		return NULL;
 
+	#if defined(Py_DEBUG)
+		SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOALIGNMENTFAULTEXCEPT|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
+	#endif
+
+
 	ExitProcess(uExitCode);
 
 	return NULL;
