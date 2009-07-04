@@ -34,6 +34,9 @@ C-API
 Library
 -------
 
+- Issue #3392: The subprocess communicate() method no longer fails in select()
+  when file descriptors are large; communicate() now uses poll() when possible.
+
 - Issue #6369: Fix an RLE decompression bug in the binhex module.
 
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
