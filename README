@@ -924,7 +924,7 @@ Installing multiple versions
 On Unix and Mac systems if you intend to install multiple versions of Python
 using the same installation prefix (--prefix argument to the configure
 script) you must take care that your primary python executable is not
-overwritten by the installation of a different versio.  All files and
+overwritten by the installation of a different version.  All files and
 directories installed using "make altinstall" contain the major and minor
 version and can thus live side-by-side.  "make install" also creates
 ${prefix}/bin/python which refers to ${prefix}/bin/pythonX.Y.  If you intend
