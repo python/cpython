@@ -347,6 +347,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6413: Fixed the log level in distutils.dist for announce.
+
 - Issue #3392: The subprocess communicate() method no longer fails in select()
   when file descriptors are large; communicate() now uses poll() when possible.
 
