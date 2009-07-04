@@ -766,8 +766,24 @@ class ProcessTestCase(unittest.TestCase):
             p.terminate()
             self.assertNotEqual(p.wait(), 0)
 
+
+unit_tests = [ProcessTestCase]
+
+if subprocess._has_poll:
+    class ProcessTestCaseNoPoll(ProcessTestCase):
+        def setUp(self):
+            subprocess._has_poll = False
+            ProcessTestCase.setUp(self)
+
+        def tearDown(self):
+            subprocess._has_poll = True
+            ProcessTestCase.tearDown(self)
+
+    unit_tests.append(ProcessTestCaseNoPoll)
+
+
 def test_main():
-    test_support.run_unittest(ProcessTestCase)
+    test_support.run_unittest(*unit_tests)
     if hasattr(test_support, "reap_children"):
         test_support.reap_children()
 
