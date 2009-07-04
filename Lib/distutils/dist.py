@@ -907,8 +907,8 @@ Common commands: (see '--help-commands' for more)
 
     # -- Methods that operate on the Distribution ----------------------
 
-    def announce(self, msg, level=1):
-        log.debug(msg)
+    def announce(self, msg, level=log.INFO):
+        log.log(level, msg)
 
     def run_commands(self):
         """Run each command that was seen on the setup script command line.
