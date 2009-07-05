@@ -278,6 +278,12 @@ class BaseTest(unittest.TestCase):
             a,
             array.array(self.typecode, self.example[::-1]+2*self.example)
         )
+        a = array.array(self.typecode, self.example)
+        a += a
+        self.assertEqual(
+            a,
+            array.array(self.typecode, self.example + self.example)
+        )
 
         b = array.array(self.badtypecode())
         self.assertRaises(TypeError, a.__add__, b)
@@ -673,6 +679,13 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(
             a,
             array.array(self.typecode, self.example+self.example[::-1])
+        )
+
+        a = array.array(self.typecode, self.example)
+        a.extend(a)
+        self.assertEqual(
+            a,
+            array.array(self.typecode, self.example+self.example)
         )
 
         b = array.array(self.badtypecode())
