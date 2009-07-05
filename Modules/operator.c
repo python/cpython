@@ -65,7 +65,26 @@ used for special class methods; variants without leading and trailing\n\
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   return PyObject_RichCompare(a1,a2,A); }
 
-spami(isCallable       , PyCallable_Check)
+/* Deprecated operators that need warnings. */
+static int
+op_isCallable(PyObject *x)
+{
+	if (PyErr_WarnPy3k("operator.isCallable() is not supported in 3.x. "
+			   "Use hasattr(obj, '__call__').", 1) < 0)
+		return -1;
+	return PyCallable_Check(x);
+}
+
+static int
+op_sequenceIncludes(PyObject *seq, PyObject* ob)
+{
+	if (PyErr_WarnPy3k("operator.sequenceIncludes() is not supported "
+			   "in 3.x. Use operator.contains().", 1) < 0)
+		return -1;
+	return PySequence_Contains(seq, ob);
+}
+
+spami(isCallable       , op_isCallable)
 spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
 spam2(op_add           , PyNumber_Add)
@@ -104,7 +123,7 @@ spamoi(op_repeat       , PySequence_Repeat)
 spam2(op_iconcat       , PySequence_InPlaceConcat)
 spamoi(op_irepeat      , PySequence_InPlaceRepeat)
 spami2b(op_contains     , PySequence_Contains)
-spami2b(sequenceIncludes, PySequence_Contains)
+spami2b(sequenceIncludes, op_sequenceIncludes)
 spamn2(indexOf         , PySequence_Index)
 spamn2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
