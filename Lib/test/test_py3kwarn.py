@@ -279,6 +279,18 @@ class TestPy3KWarnings(unittest.TestCase):
                 def __hash__(self): pass
             self.assertEqual(len(w.warnings), 0)
 
+    def test_operator(self):
+        from operator import isCallable, sequenceIncludes
+
+        expected_ = ("operator.isCallable() is not supported in 3.x. "
+                     "Use hasattr(obj, '__call__').")
+        seq_warn = ("operator.sequenceIncludes() is not supported "
+                    "in 3.x. Use operator.contains().")
+        with check_warnings() as w:
+            self.assertWarning(isCallable(self), w, callable_warn)
+            w.reset()
+            self.assertWarning(sequenceIncludes(range(3), 2), w, seq_warn)
+
 
 class TestStdlibRemovals(unittest.TestCase):
 
