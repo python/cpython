@@ -532,17 +532,19 @@ class ForkingMixIn:
             if self.active_children is None:
                 self.active_children = []
             self.active_children.append(pid)
-            self.close_request(request)
+            request.close() #close socket handle in parent process
             return
         else:
             # Child process.
             # This must never return, hence os._exit()!
             try:
                 self.finish_request(request, client_address)
+                self.close_request(request)
                 os._exit(0)
             except:
                 try:
                     self.handle_error(request, client_address)
+                    self.close_request(request)
                 finally:
                     os._exit(1)
 
