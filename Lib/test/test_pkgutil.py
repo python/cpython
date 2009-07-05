@@ -74,6 +74,12 @@ class PkgutilTests(unittest.TestCase):
         self.assertEqual(res1, RESOURCE_DATA)
         res2 = pkgutil.get_data(pkg, 'sub/res.txt')
         self.assertEqual(res2, RESOURCE_DATA)
+
+        names = []
+        for loader, name, ispkg in pkgutil.iter_modules([zip_file]):
+            names.append(name)
+        self.assertEqual(names, ['test_getdata_zipfile'])
+
         del sys.path[0]
 
         del sys.modules[pkg]
