@@ -43,6 +43,16 @@ Library
 
 - The deprecated function string.maketrans has been removed.
 
+- Issue #4005: Fixed a crash of pydoc when there was a zip file present in
+  sys.path.
+
+Extension Modules
+-----------------
+
+- Issue #4509: array.array objects are no longer modified after an operation
+  failing due to the resize restriction in-place when the object has exported
+  buffers.
+
 Build
 -----
 
