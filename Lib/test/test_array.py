@@ -749,8 +749,24 @@ class BaseTest(unittest.TestCase):
         ArraySubclassWithKwargs('b', newarg=1)
 
     def test_create_from_bytes(self):
+        # XXX This test probably needs to be moved in a subclass or
+        # generalized to use self.typecode.
         a = array.array('H', b"1234")
         self.assertEqual(len(a) * a.itemsize, 4)
+
+    def test_memoryview_no_resize(self):
+        # Test for issue 4509.
+        a = array.array(self.typecode, self.example)
+        m = memoryview(a)
+        expected = m.tobytes()
+        self.assertRaises(BufferError, a.pop, 0)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.remove, a[0])
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.__setitem__, slice(0, 0), a)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.__delitem__, slice(0, len(a)))
+        self.assertEqual(m.tobytes(), expected)
 
 
 class StringTest(BaseTest):
