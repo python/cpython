@@ -73,7 +73,7 @@ class StructTest(unittest.TestCase):
             return
         try:
             struct.pack(format, number)
-        except (struct.error, TypeError):
+        except struct.error:
             if PY_STRUCT_FLOAT_COERCE:
                 self.fail("expected DeprecationWarning for float coerce")
         except DeprecationWarning:
@@ -220,12 +220,6 @@ class StructTest(unittest.TestCase):
 
         class IntTester(unittest.TestCase):
 
-            # XXX Most std integer modes fail to test for out-of-range.
-            # The "i" and "l" codes appear to range-check OK on 32-bit boxes, but
-            # fail to check correctly on some 64-bit ones (Tru64 Unix + Compaq C
-            # reported by Mark Favas).
-            BUGGY_RANGE_CHECK = "bBhHiIlL"
-
             def __init__(self, formatpair, bytesize):
                 super(IntTester, self).__init__(methodName='test_one')
                 self.assertEqual(len(formatpair), 2)
@@ -289,12 +283,8 @@ class StructTest(unittest.TestCase):
 
                 else:
                     # x is out of range -- verify pack realizes that.
-                    if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
-                        if verbose:
-                            print "Skipping buggy range check for code", code
-                    else:
-                        deprecated_err(pack, ">" + code, x)
-                        deprecated_err(pack, "<" + code, x)
+                    deprecated_err(pack, ">" + code, x)
+                    deprecated_err(pack, "<" + code, x)
 
                 # Much the same for unsigned.
                 code = self.unsigned_code
@@ -338,12 +328,8 @@ class StructTest(unittest.TestCase):
 
                 else:
                     # x is out of range -- verify pack realizes that.
-                    if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
-                        if verbose:
-                            print "Skipping buggy range check for code", code
-                    else:
-                        deprecated_err(pack, ">" + code, x)
-                        deprecated_err(pack, "<" + code, x)
+                    deprecated_err(pack, ">" + code, x)
+                    deprecated_err(pack, "<" + code, x)
 
             def run(self):
                 from random import randrange
@@ -374,10 +360,25 @@ class StructTest(unittest.TestCase):
                             self.test_one(x)
 
                 # Some error cases.
+                class NotAnIntNS(object):
+                    def __int__(self):
+                        return 42
+
+                    def __long__(self):
+                        return 1729L
+
+                class NotAnIntOS:
+                    def __int__(self):
+                        return 10585
+
+                    def __long__(self):
+                        return -163L
+
                 for direction in "<>":
                     for code in self.formatpair:
-                        for badobject in "a string", 3+42j, randrange:
-                            self.assertRaises((struct.error, TypeError),
+                        for badobject in ("a string", 3+42j, randrange,
+                                          NotAnIntNS(), NotAnIntOS()):
+                            self.assertRaises(struct.error,
                                                struct.pack, direction + code,
                                                badobject)
 
@@ -447,7 +448,7 @@ class StructTest(unittest.TestCase):
             import sys
             for endian in ('', '>', '<'):
                 for cls in (int, long):
-                    for fmt in ('B', 'H', 'I', 'L'):
+                    for fmt in ('B', 'H', 'I', 'L', 'Q'):
                         deprecated_err(struct.pack, endian + fmt, cls(-1))
 
                     deprecated_err(struct.pack, endian + 'B', cls(300))
@@ -455,12 +456,12 @@ class StructTest(unittest.TestCase):
 
                 deprecated_err(struct.pack, endian + 'I', sys.maxint * 4L)
                 deprecated_err(struct.pack, endian + 'L', sys.maxint * 4L)
+                deprecated_err(struct.pack, endian + 'Q', 2**64)
 
-    def XXXtest_1530559(self):
-        # XXX This is broken: see the bug report
+    def test_1530559(self):
         # SF bug 1530559. struct.pack raises TypeError where it used to convert.
         for endian in ('', '>', '<'):
-            for fmt in ('B', 'H', 'I', 'L', 'b', 'h', 'i', 'l'):
+            for fmt in ('B', 'H', 'I', 'L', 'Q', 'b', 'h', 'i', 'l', 'q'):
                 self.check_float_coerce(endian + fmt, 1.0)
                 self.check_float_coerce(endian + fmt, 1.5)
 
