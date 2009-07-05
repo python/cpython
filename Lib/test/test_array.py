@@ -767,6 +767,12 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.__delitem__, slice(0, len(a)))
         self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.__imul__, 2)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.__iadd__, a)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.extend, a)
+        self.assertEqual(m.tobytes(), expected)
 
 
 class StringTest(BaseTest):
