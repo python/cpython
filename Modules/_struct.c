@@ -124,8 +124,6 @@ typedef struct { char c; _Bool x; } s_bool;
 static PyObject *
 get_pylong(PyObject *v)
 {
-	PyNumberMethods *m;
-
 	assert(v != NULL);
 	if (PyInt_Check(v))
 		return PyLong_FromLong(PyInt_AS_LONG(v));
@@ -133,52 +131,41 @@ get_pylong(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	m = Py_TYPE(v)->tp_as_number;
-	if (m != NULL && m->nb_long != NULL) {
-		v = m->nb_long(v);
-		if (v == NULL)
+#ifdef PY_STRUCT_FLOAT_COERCE
+	if (PyFloat_Check(v)) {
+		if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2)<0)
 			return NULL;
-		if (PyLong_Check(v))
-			return v;
-		Py_DECREF(v);
+		return PyNumber_Long(v);
 	}
+#endif
 	PyErr_SetString(StructError,
 			"cannot convert argument to long");
 	return NULL;
 }
 
-/* Helper routine to get a Python integer and raise the appropriate error
-   if it isn't one */
+/* Helper to convert a Python object to a C long.  Raise StructError and
+   return -1 if v has the wrong type or is outside the range of a long. */
 
 static int
 get_long(PyObject *v, long *p)
 {
-	long x = PyInt_AsLong(v);
-	if (x == -1 && PyErr_Occurred()) {
-#ifdef PY_STRUCT_FLOAT_COERCE
-		if (PyFloat_Check(v)) {
-			PyObject *o;
-			int res;
-			PyErr_Clear();
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
-				return -1;
-			o = PyNumber_Int(v);
-			if (o == NULL)
-				return -1;
-			res = get_long(o, p);
-			Py_DECREF(o);
-			return res;
-		}
-#endif
-		if (PyErr_ExceptionMatches(PyExc_TypeError))
+	long x;
+
+	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
+	assert(PyLong_Check(v));
+	x = PyLong_AsLong(v);
+	Py_DECREF(v);
+	if (x == (long)-1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
-					"required argument is not an integer");
+					"argument out of range");
 		return -1;
 	}
 	*p = x;
 	return 0;
 }
-
 
 /* Same, but handling unsigned long */
 
@@ -186,20 +173,21 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-	if (PyLong_Check(v)) {
-		unsigned long x = PyLong_AsUnsignedLong(v);
-		if (x == (unsigned long)(-1) && PyErr_Occurred())
-			return -1;
-		*p = x;
-		return 0;
-	}
-	if (get_long(v, (long *)p) < 0)
+	unsigned long x;
+
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	if (((long)*p) < 0) {
-		PyErr_SetString(StructError,
-				"unsigned argument is < 0");
+	assert(PyLong_Check(v));
+	x = PyLong_AsUnsignedLong(v);
+	Py_DECREF(v);
+	if (x == (unsigned long)-1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
 		return -1;
 	}
+	*p = x;
 	return 0;
 }
 #endif  /* PY_STRUCT_OVERFLOW_MASKING */
@@ -219,8 +207,12 @@ get_longlong(PyObject *v, PY_LONG_LONG *p)
 	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
 	Py_DECREF(v);
-	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred())
+	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
 		return -1;
+	}
 	*p = x;
 	return 0;
 }
@@ -238,8 +230,12 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
 	Py_DECREF(v);
-	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred())
+	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			PyErr_SetString(StructError,
+					"argument out of range");
 		return -1;
+	}
 	*p = x;
 	return 0;
 }
@@ -256,79 +252,81 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 static int
 get_wrapped_long(PyObject *v, long *p)
 {
-	if (get_long(v, p) < 0) {
-		if (PyLong_Check(v) &&
-		    PyErr_ExceptionMatches(PyExc_OverflowError)) {
-			PyObject *wrapped;
-			long x;
-			PyErr_Clear();
-#ifdef PY_STRUCT_FLOAT_COERCE
-			if (PyFloat_Check(v)) {
-				PyObject *o;
-				int res;
-				PyErr_Clear();
-				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
-					return -1;
-				o = PyNumber_Int(v);
-				if (o == NULL)
-					return -1;
-				res = get_wrapped_long(o, p);
-				Py_DECREF(o);
-				return res;
-			}
-#endif
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0)
-				return -1;
-			wrapped = PyNumber_And(v, pylong_ulong_mask);
-			if (wrapped == NULL)
-				return -1;
-			x = (long)PyLong_AsUnsignedLong(wrapped);
-			Py_DECREF(wrapped);
-			if (x == -1 && PyErr_Occurred())
-				return -1;
-			*p = x;
-		} else {
-			return -1;
-		}
+	PyObject *wrapped;
+	long x;
+
+	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
+	assert(PyLong_Check(v));
+
+	x = PyLong_AsLong(v);
+	if (!(x == (long)-1 && PyErr_Occurred())) {
+		/* PyLong_AsLong succeeded; no need to wrap */
+		Py_DECREF(v);
+		*p = x;
+		return 0;
 	}
+	if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+		Py_DECREF(v);
+		return -1;
+	}
+
+	PyErr_Clear();
+	if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
+		Py_DECREF(v);
+		return -1;
+	}
+	wrapped = PyNumber_And(v, pylong_ulong_mask);
+	Py_DECREF(v);
+	if (wrapped == NULL)
+		return -1;
+	/* XXX we're relying on the (long) cast to preserve the value modulo
+	   ULONG_MAX+1, but the C standards don't guarantee this */
+	x = (long)PyLong_AsUnsignedLong(wrapped);
+	Py_DECREF(wrapped);
+	if (x == (long)-1 && PyErr_Occurred())
+		return -1;
+	*p = x;
 	return 0;
 }
 
 static int
 get_wrapped_ulong(PyObject *v, unsigned long *p)
 {
-	long x = (long)PyLong_AsUnsignedLong(v);
-	if (x == -1 && PyErr_Occurred()) {
-		PyObject *wrapped;
-		PyErr_Clear();
-#ifdef PY_STRUCT_FLOAT_COERCE
-		if (PyFloat_Check(v)) {
-			PyObject *o;
-			int res;
-			PyErr_Clear();
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
-				return -1;
-			o = PyNumber_Int(v);
-			if (o == NULL)
-				return -1;
-			res = get_wrapped_ulong(o, p);
-			Py_DECREF(o);
-			return res;
-		}
-#endif
-		wrapped = PyNumber_And(v, pylong_ulong_mask);
-		if (wrapped == NULL)
-			return -1;
-		if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
-			Py_DECREF(wrapped);
-			return -1;
-		}
-		x = (long)PyLong_AsUnsignedLong(wrapped);
-		Py_DECREF(wrapped);
-		if (x == -1 && PyErr_Occurred())
-			return -1;
+	PyObject *wrapped;
+	unsigned long x;
+
+	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
+	assert(PyLong_Check(v));
+
+	x = PyLong_AsUnsignedLong(v);
+	if (!(x == (unsigned long)-1 && PyErr_Occurred())) {
+		Py_DECREF(v);
+		*p = x;
+		return 0;
 	}
-	*p = (unsigned long)x;
+	if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+		Py_DECREF(v);
+		return -1;
+	}
+
+	PyErr_Clear();
+	if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
+		Py_DECREF(v);
+		return -1;
+	}
+	wrapped = PyNumber_And(v, pylong_ulong_mask);
+	Py_DECREF(v);
+	if (wrapped == NULL)
+		return -1;
+	x = PyLong_AsUnsignedLong(wrapped);
+	Py_DECREF(wrapped);
+	if (x == (unsigned long)-1 && PyErr_Occurred())
+		return -1;
+	*p = x;
 	return 0;
 }
 

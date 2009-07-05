@@ -1167,6 +1167,21 @@ C-API
 Extension Modules
 -----------------
 
+- Issues #1530559, #1741130: Fix various struct.pack inconsistencies
+  for the integer formats ('bBhHiIlLqQ').  In the following, '*'
+  represents any of '=', '<', '>'.
+
+    - Packing a float now always gives a Deprecation Warning.
+      Previously it only warned for 'I', 'L', '*B', '*H', '*I', '*L'.
+
+    - If x is not an int, long or float, then packing x will always
+      result in struct.error.  Previously an x with an __int__ method
+      could be packed by 'b', 'B', 'h', 'H', 'i', 'l', '*b', '*h'
+      ,'*i', '*l', and an x with a __long__ method could be packed by
+      'q', 'Q', '*q', '*Q'; for x with neither __int__ nor __long__,
+      TypeError used to be raised (with a confusing error message) for
+      'I', 'L', '*B', '*H', '*I', '*L', and struct.error in other cases.
+
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
 - Issue #4751: For hashlib algorithms provided by OpenSSL, the Python
