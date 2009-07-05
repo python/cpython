@@ -810,8 +810,8 @@ array_iter_extend(arrayobject *self, PyObject *bb)
 static int
 array_do_extend(arrayobject *self, PyObject *bb)
 {
-	Py_ssize_t size, oldsize;
-
+	Py_ssize_t size, oldsize, bbsize;
+	
 	if (!array_Check(bb))
 		return array_iter_extend(self, bb);
 #define b ((arrayobject *)bb)
@@ -826,11 +826,13 @@ array_do_extend(arrayobject *self, PyObject *bb)
 		return -1;
 	}
 	oldsize = Py_SIZE(self);
+	/* Get the size of bb before resizing the array since bb could be self. */
+	bbsize = Py_SIZE(bb);
 	size = oldsize + Py_SIZE(b);
 	if (array_resize(self, size) == -1)
 		return -1;
 	memcpy(self->ob_item + oldsize * self->ob_descr->itemsize,
-		b->ob_item, Py_SIZE(b) * b->ob_descr->itemsize);
+		b->ob_item, bbsize * b->ob_descr->itemsize);
 
 	return 0;
 #undef b
