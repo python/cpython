@@ -878,6 +878,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6377: Enabled the compiler option, and deprecate its usage as an 
+  attribute.
+
 - Issue #6413: Fixed the log level in distutils.dist for announce.
 
 - Issue #6403: Fixed package path usage in build_ext.
