@@ -465,6 +465,8 @@ class StructTest(unittest.TestCase):
                 self.check_float_coerce(endian + fmt, 1.0)
                 self.check_float_coerce(endian + fmt, 1.5)
 
+    @unittest.skipUnless(PY_STRUCT_OVERFLOW_MASKING,
+                         "only applies when overflow masking enabled")
     def test_issue4228(self):
         # Packing a long may yield either 32 or 64 bits
         x = struct.pack('L', -1)[:4]
