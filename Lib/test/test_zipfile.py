@@ -379,6 +379,14 @@ class TestsWithSourceFile(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zip_test_writestr_permissions(f, zipfile.ZIP_STORED)
 
+    def test_writestr_extended_local_header_issue1202(self):
+        orig_zip = zipfile.ZipFile(TESTFN2, 'w')
+        for data in 'abcdefghijklmnop':
+            zinfo = zipfile.ZipInfo(data)
+            zinfo.flag_bits |= 0x08  # Include an extended local header.
+            orig_zip.writestr(zinfo, data)
+        orig_zip.close()
+
     def tearDown(self):
         os.remove(TESTFN)
         os.remove(TESTFN2)
