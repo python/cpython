@@ -1752,7 +1752,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
 {
     PyObject *v;
     /* It might be possible to tighten this worst case */
-    Py_ssize_t allocated = 5 * size;
+    Py_ssize_t allocated = 8 * size;
     int inShift = 0;
     Py_ssize_t i = 0;
     unsigned int base64bits = 0;
@@ -1760,7 +1760,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     char * out;
     char * start;
 
-    if (allocated / 5 != size)
+    if (allocated / 8 != size)
         return PyErr_NoMemory();
 
     if (size == 0)
