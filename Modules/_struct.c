@@ -493,7 +493,7 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	if (x < 0 || x > USHRT_MAX){
 		PyErr_SetString(StructError,
-				"short format requires 0 <= number <= " STRINGIFY(USHRT_MAX));
+				"ushort format requires 0 <= number <= " STRINGIFY(USHRT_MAX));
 		return -1;
 	}
 	y = (unsigned short)x;
