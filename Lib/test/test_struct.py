@@ -26,12 +26,8 @@ else:
 try:
     import _struct
 except ImportError:
-    PY_STRUCT_RANGE_CHECKING = 0
-    PY_STRUCT_OVERFLOW_MASKING = 1
     PY_STRUCT_FLOAT_COERCE = 2
 else:
-    PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
-    PY_STRUCT_OVERFLOW_MASKING = getattr(_struct, '_PY_STRUCT_OVERFLOW_MASKING', 0)
     PY_STRUCT_FLOAT_COERCE = getattr(_struct, '_PY_STRUCT_FLOAT_COERCE', 0)
 
 def string_reverse(s):
@@ -53,20 +49,6 @@ def with_warning_restore(func):
             warnings.filterwarnings("error", category=DeprecationWarning)
             return func(*args, **kw)
     return decorator
-
-@with_warning_restore
-def deprecated_err(func, *args):
-    try:
-        func(*args)
-    except (struct.error, OverflowError):
-        pass
-    except DeprecationWarning:
-        if not PY_STRUCT_OVERFLOW_MASKING:
-            raise TestFailed, "%s%s expected to raise DeprecationWarning" % (
-                func.__name__, args)
-    else:
-        raise TestFailed, "%s%s did not raise error" % (
-            func.__name__, args)
 
 class StructTest(unittest.TestCase):
 
@@ -289,7 +271,7 @@ class StructTest(unittest.TestCase):
                                                                  '\x01' + got)
                 else:
                     # x is out of range -- verify pack realizes that.
-                    deprecated_err(pack, format, x)
+                    self.assertRaises(struct.error, pack, format, x)
 
             def run(self):
                 from random import randrange
