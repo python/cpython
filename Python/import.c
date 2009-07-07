@@ -881,7 +881,9 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 {
 	FILE *fp;
 	time_t mtime = srcstat->st_mtime;
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS   /* since Windows uses different permissions  */
+	mode_t mode = srcstat->st_mode & ~S_IEXEC;
+#else
 	mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
 #endif 
 
