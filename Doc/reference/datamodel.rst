@@ -1254,11 +1254,11 @@ Basic customization
    .. index:: single: __len__() (mapping object method)
 
    Called to implement truth value testing and the built-in operation
-   ``bool()``; should return ``False`` or ``True``, or their integer equivalents
-   ``0`` or ``1``.  When this method is not defined, :meth:`__len__` is called,
-   if it is defined, and the object is considered true if its result is nonzero.
-   If a class defines neither :meth:`__len__` nor :meth:`__bool__`, all its
-   instances are considered true.
+   ``bool()``; should return ``False`` or ``True``.  When this method is not
+   defined, :meth:`__len__` is called, if it is defined, and the object is
+   considered true if its result is nonzero.  If a class defines neither
+   :meth:`__len__` nor :meth:`__bool__`, all its instances are considered
+   true.
 
 
 .. _attribute-access:
