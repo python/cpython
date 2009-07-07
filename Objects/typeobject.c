@@ -4807,10 +4807,8 @@ slot_nb_bool(PyObject *self)
 			}
 			else {
 				PyErr_Format(PyExc_TypeError,
-					     "%s should return "
-					     "bool or int, returned %s",
-					     (using_len ? "__len__"
-					                : "__bool__"),
+					     "__bool__ should return "
+					     "bool, returned %s",
 					     Py_TYPE(temp)->tp_name);
 				result = -1;
 			}
