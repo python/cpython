@@ -1,5 +1,6 @@
 import unittest
 import os
+import stat
 import random
 import shutil
 import sys
@@ -90,6 +91,23 @@ class ImportTest(unittest.TestCase):
                     test_with_extension(ext)
         finally:
             del sys.path[0]
+
+    @unittest.skipUnless(os.name == 'posix', "test meaningful only on posix systems")
+    def test_execute_bit_not_copied(self):
+        # Issue 6070: under posix .pyc files got their execute bit set if
+        # the .py file had the execute bit set, but they aren't executable.
+        try:
+            fname = TESTFN + os.extsep + "py"
+            f = open(fname, 'w').close()
+            os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
+                             stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+            __import__(TESTFN)
+            s = os.stat(fname + 'c')
+            self.assertEquals(stat.S_IMODE(s.st_mode),
+                              stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        finally:
+            remove_files(TESTFN)
+            del sys.modules[TESTFN]
 
     def testImpModule(self):
         # Verify that the imp module can correctly load and find .py files
@@ -231,6 +249,7 @@ class ImportTest(unittest.TestCase):
                               err.args[0])
         else:
             self.fail("import by path didn't raise an exception")
+
 
 class TestPycRewriting(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points
