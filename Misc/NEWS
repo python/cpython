@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue 6070: On posix platforms import no longer copies the execute bit
+  from the .py file to the .pyc file if it is set.  Patch by Marco N.
+
 - Issue #4618: When unicode arguments are passed to print(), the default
   separator and end should be unicode also.
 
