@@ -168,6 +168,7 @@ class BaseServer:
     - verify_request(request, client_address)
     - server_close()
     - process_request(request, client_address)
+    - shutdown_request(request)
     - close_request(request)
     - handle_error()
 
@@ -281,7 +282,7 @@ class BaseServer:
                 self.process_request(request, client_address)
             except:
                 self.handle_error(request, client_address)
-                self.close_request(request)
+                self.shutdown_request(request)
 
     def handle_timeout(self):
         """Called if no new request arrives within self.timeout.
@@ -305,7 +306,7 @@ class BaseServer:
 
         """
         self.finish_request(request, client_address)
-        self.close_request(request)
+        self.shutdown_request(request)
 
     def server_close(self):
         """Called to clean-up the server.
@@ -318,6 +319,10 @@ class BaseServer:
     def finish_request(self, request, client_address):
         """Finish one request by instantiating RequestHandlerClass."""
         self.RequestHandlerClass(request, client_address, self)
+
+    def shutdown_request(self, request):
+        """Called to shutdown and close an individual request."""
+        self.close_request(request)
 
     def close_request(self, request):
         """Called to clean up an individual request."""
@@ -359,6 +364,7 @@ class TCPServer(BaseServer):
     - handle_timeout()
     - verify_request(request, client_address)
     - process_request(request, client_address)
+    - shutdown_request(request)
     - close_request(request)
     - handle_error()
 
@@ -443,14 +449,18 @@ class TCPServer(BaseServer):
         """
         return self.socket.accept()
 
-    def close_request(self, request):
-        """Called to clean up an individual request."""
+    def shutdown_request(self, request):
+        """Called to shutdown and close an individual request."""
         try:
             #explicitly shutdown.  socket.close() merely releases
             #the socket and waits for GC to perform the actual close.
             request.shutdown(socket.SHUT_WR)
         except socket.error:
             pass #some platforms may raise ENOTCONN here
+        self.close_request(request)
+
+    def close_request(self, request):
+        """Called to clean up an individual request."""
         request.close()
 
 
@@ -471,6 +481,10 @@ class UDPServer(TCPServer):
     def server_activate(self):
         # No need to call listen() for UDP.
         pass
+
+    def shutdown_request(self, request):
+        # No need to shutdown anything.
+        self.close_request(request)
 
     def close_request(self, request):
         # No need to close anything.
@@ -532,19 +546,19 @@ class ForkingMixIn:
             if self.active_children is None:
                 self.active_children = []
             self.active_children.append(pid)
-            request.close() #close socket handle in parent process
+            self.close_request(request) #close handle in parent process
             return
         else:
             # Child process.
             # This must never return, hence os._exit()!
             try:
                 self.finish_request(request, client_address)
-                self.close_request(request)
+                self.shutdown_request(request)
                 os._exit(0)
             except:
                 try:
                     self.handle_error(request, client_address)
-                    self.close_request(request)
+                    self.shutdown_request(request)
                 finally:
                     os._exit(1)
 
@@ -564,10 +578,10 @@ class ThreadingMixIn:
         """
         try:
             self.finish_request(request, client_address)
-            self.close_request(request)
+            self.shutdown_request(request)
         except:
             self.handle_error(request, client_address)
-            self.close_request(request)
+            self.shutdown_request(request)
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
