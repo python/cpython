@@ -1173,6 +1173,10 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #1523: Remove deprecated overflow wrapping for struct.pack
+  with an integer format code ('bBhHiIlLqQ').  Packing an out-of-range
+  integer now consistently raises struct.error.
+
 - Issues #1530559, #1741130: Fix various struct.pack inconsistencies
   for the integer formats ('bBhHiIlLqQ').  In the following, '*'
   represents any of '=', '<', '>'.
