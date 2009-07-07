@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6428: Since Python 3.0, the __bool__ method must return a bool
+  object, and not an int.  Fix the corresponding error message, and the
+  documentation.
+
 - The deprecated PyCObject has been removed.
 
 - Issue #6347: Include inttypes.h as well as stdint.h in pyport.h.
