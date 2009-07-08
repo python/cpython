@@ -132,13 +132,17 @@ class build_ext(Command):
     def _set_compiler(self, compiler):
         if not isinstance(compiler, str) and compiler is not None:
             # we don't want to allow that anymore in the future
-            warn("'compiler' specify the compiler type in build_ext. "
+            warn("'compiler' specifies the compiler type in build_ext. "
                  "If you want to get the compiler object itself, "
                  "use 'compiler_obj'", PendingDeprecationWarning)
-
         self._compiler = compiler
 
     def _get_compiler(self):
+        if not isinstance(self._compiler, str) and self._compiler is not None:
+            # we don't want to allow that anymore in the future
+            warn("'compiler' specifies the compiler type in build_ext. "
+                 "If you want to get the compiler object itself, "
+                 "use 'compiler_obj'", PendingDeprecationWarning)
         return self._compiler
 
     compiler = property(_get_compiler, _set_compiler)
@@ -341,10 +345,22 @@ class build_ext(Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler_obj = new_compiler(compiler=self.compiler,
+
+        # used to prevent the usage of an existing compiler for the
+        # compiler option when calling new_compiler()
+        # this will be removed in 3.3 and 2.8
+        if not isinstance(self._compiler, str):
+            self._compiler = None
+
+        self.compiler_obj = new_compiler(compiler=self._compiler,
                                          verbose=self.verbose,
                                          dry_run=self.dry_run,
                                          force=self.force)
+
+        # used to keep the compiler object reachable with
+        # "self.compiler". this will be removed in 3.3 and 2.8
+        self._compiler = self.compiler_obj
+
         customize_compiler(self.compiler_obj)
         # If we are cross-compiling, init the compiler now (if we are not
         # cross-compiling, init would not hurt, but people may rely on
