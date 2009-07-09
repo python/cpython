@@ -267,9 +267,8 @@ class PosixTester(unittest.TestCase):
                 _create_and_do_getcwd(dirname)
 
             finally:
-                # XXX: Temporarily ignore errors to see if the test gives useful failure info on Solaris buildbot
-                shutil.rmtree(base_path, ignore_errors=True)
                 os.chdir(curdir)
+                shutil.rmtree(base_path)
 
 
 def test_main():
