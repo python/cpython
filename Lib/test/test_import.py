@@ -97,6 +97,7 @@ class ImportTest(unittest.TestCase):
     def test_execute_bit_not_copied(self):
         # Issue 6070: under posix .pyc files got their execute bit set if
         # the .py file had the execute bit set, but they aren't executable.
+        oldmask = os.umask(022)
         try:
             fname = TESTFN + os.extsep + "py"
             f = open(fname, 'w').close()
@@ -112,6 +113,7 @@ class ImportTest(unittest.TestCase):
             self.assertEquals(stat.S_IMODE(s.st_mode),
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         finally:
+            os.umask(oldmask)
             remove_files(TESTFN)
             if TESTFN in sys.modules: del sys.modules[TESTFN]
 
