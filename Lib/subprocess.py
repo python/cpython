@@ -376,6 +376,12 @@ else:
     import fcntl
     import pickle
 
+    # When select or poll has indicated that the file is writable,
+    # we can write up to _PIPE_BUF bytes without risk of blocking.
+    # POSIX defines PIPE_BUF as >= 512.
+    _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
+
+
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "CalledProcessError"]
 
@@ -383,11 +389,6 @@ try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
     MAXFD = 256
-
-# When select or poll has indicated that the file is writable,
-# we can write up to _PIPE_BUF bytes without risk of blocking.
-# POSIX defines PIPE_BUF as >= 512.
-_PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
 
 _active = []
 

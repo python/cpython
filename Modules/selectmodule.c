@@ -1764,7 +1764,9 @@ PyInit_select(void)
 	Py_INCREF(SelectError);
 	PyModule_AddObject(m, "error", SelectError);
 
+#ifdef PIPE_BUF
 	PyModule_AddIntConstant(m, "PIPE_BUF", PIPE_BUF);
+#endif
 
 #if defined(HAVE_POLL)
 #ifdef __APPLE__
