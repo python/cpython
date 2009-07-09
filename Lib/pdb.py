@@ -1211,7 +1211,7 @@ see no sign that the breakpoint was reached.
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = 0
         with open(filename) as fp:
-            statement = fp.read()
+            statement = "exec(%r)" % (fp.read(),)
         self.run(statement)
 
 # Simplified interface
