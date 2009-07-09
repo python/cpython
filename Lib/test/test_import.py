@@ -7,7 +7,8 @@ import sys
 import py_compile
 import warnings
 import marshal
-from test.test_support import unlink, TESTFN, unload, run_unittest, check_warnings
+from test.test_support import (unlink, TESTFN, unload, run_unittest,
+    check_warnings, TestFailed)
 
 
 def remove_files(name):
@@ -102,7 +103,12 @@ class ImportTest(unittest.TestCase):
             os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
                              stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
             __import__(TESTFN)
-            s = os.stat(fname + 'c')
+            fn = fname + 'c'
+            if not os.path.exists(fn):
+                fn = fname + 'o'
+                if not os.path.exists(fn): raise TestFailed("__import__ did "
+                    "not result in creation of either a .pyc or .pyo file")
+            s = os.stat(fn)
             self.assertEquals(stat.S_IMODE(s.st_mode),
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         finally:
