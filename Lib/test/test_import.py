@@ -98,6 +98,7 @@ class ImportTest(unittest.TestCase):
         # Issue 6070: under posix .pyc files got their execute bit set if
         # the .py file had the execute bit set, but they aren't executable.
         oldmask = os.umask(022)
+        sys.path.insert(0, os.curdir)
         try:
             fname = TESTFN + os.extsep + "py"
             f = open(fname, 'w').close()
@@ -116,6 +117,7 @@ class ImportTest(unittest.TestCase):
             os.umask(oldmask)
             remove_files(TESTFN)
             if TESTFN in sys.modules: del sys.modules[TESTFN]
+            del sys.path[0]
 
     def testImpModule(self):
         # Verify that the imp module can correctly load and find .py files
