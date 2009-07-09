@@ -134,7 +134,7 @@ class build_ext(Command):
             # we don't want to allow that anymore in the future
             warn("'compiler' specifies the compiler type in build_ext. "
                  "If you want to get the compiler object itself, "
-                 "use 'compiler_obj'", PendingDeprecationWarning)
+                 "use 'compiler_obj'", DeprecationWarning)
         self._compiler = compiler
 
     def _get_compiler(self):
@@ -142,7 +142,7 @@ class build_ext(Command):
             # we don't want to allow that anymore in the future
             warn("'compiler' specifies the compiler type in build_ext. "
                  "If you want to get the compiler object itself, "
-                 "use 'compiler_obj'", PendingDeprecationWarning)
+                 "use 'compiler_obj'", DeprecationWarning)
         return self._compiler
 
     compiler = property(_get_compiler, _set_compiler)
