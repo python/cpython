@@ -34,6 +34,9 @@ C-API
 Library
 -------
 
+- Issue #6323: The pdb debugger did not exit when running a script with a
+  syntax error.
+
 - Issue #6369: Fix an RLE decompression bug in the binhex module.
 
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
