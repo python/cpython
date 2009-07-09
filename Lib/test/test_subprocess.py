@@ -769,7 +769,7 @@ class ProcessTestCase(unittest.TestCase):
 
 unit_tests = [ProcessTestCase]
 
-if subprocess._has_poll:
+if getattr(subprocess, '_has_poll', False):
     class ProcessTestCaseNoPoll(ProcessTestCase):
         def setUp(self):
             subprocess._has_poll = False
