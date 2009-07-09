@@ -107,7 +107,7 @@ class ImportTest(unittest.TestCase):
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         finally:
             remove_files(TESTFN)
-            del sys.modules[TESTFN]
+            if TESTFN in sys.modules: del sys.modules[TESTFN]
 
     def testImpModule(self):
         # Verify that the imp module can correctly load and find .py files
