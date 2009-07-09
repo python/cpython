@@ -267,8 +267,8 @@ class PosixTester(unittest.TestCase):
                 _create_and_do_getcwd(dirname)
 
             finally:
-                shutil.rmtree(base_path)
                 os.chdir(curdir)
+                shutil.rmtree(base_path)
 
 
 def test_main():
