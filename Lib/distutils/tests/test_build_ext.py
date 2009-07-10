@@ -362,6 +362,7 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(lastdir, 'bar')
 
     def test_ext_fullpath(self):
+        ext = sysconfig.get_config_vars()['SO']
         # building lxml.etree inplace
         #etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
         #etree_ext = Extension('lxml.etree', [etree_c])
@@ -372,14 +373,14 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.distribution.package_dir = {'': 'src'}
         cmd.distribution.packages = ['lxml', 'lxml.html']
         curdir = os.getcwd()
-        wanted = os.path.join(curdir, 'src', 'lxml', 'etree.so')
+        wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEquals(wanted, path)
 
         # building lxml.etree not inplace
         cmd.inplace = 0
         cmd.build_lib = os.path.join(curdir, 'tmpdir')
-        wanted = os.path.join(curdir, 'tmpdir', 'lxml', 'etree.so')
+        wanted = os.path.join(curdir, 'tmpdir', 'lxml', 'etree' + ext)
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEquals(wanted, path)
 
@@ -389,13 +390,13 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.distribution.packages = ['twisted', 'twisted.runner.portmap']
         path = cmd.get_ext_fullpath('twisted.runner.portmap')
         wanted = os.path.join(curdir, 'tmpdir', 'twisted', 'runner',
-                              'portmap.so')
+                              'portmap' + ext)
         self.assertEquals(wanted, path)
 
         # building twisted.runner.portmap inplace
         cmd.inplace = 1
         path = cmd.get_ext_fullpath('twisted.runner.portmap')
-        wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap.so')
+        wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap' + ext)
         self.assertEquals(wanted, path)
 
     def test_compiler_deprecation_warning(self):
