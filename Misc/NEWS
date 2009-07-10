@@ -866,6 +866,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6455: Fixed test_build_ext under win32. 
+
 - Issue #6413: Fixed the log level in distutils.dist for announce.
 
 - Issue #6403: Fixed package path usage in build_ext.
