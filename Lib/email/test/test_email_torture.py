@@ -17,7 +17,7 @@ from test.test_support import TestSkipped
 
 import email
 from email import __file__ as testfile
-from email.Iterators import _structure
+from email.iterators import _structure
 
 def openfile(filename):
     from os.path import join, dirname, abspath
