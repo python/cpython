@@ -58,9 +58,9 @@ unsigned (long) integers.
 The module defines the following type:
 
 
-.. function:: array(typecode[, initializer])
+.. class:: array(typecode[, initializer])
 
-   Return a new array whose items are restricted by *typecode*, and initialized
+   A new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a list, string, or iterable
    over elements of the appropriate type.
 
@@ -75,7 +75,7 @@ The module defines the following type:
 
 .. data:: ArrayType
 
-   Obsolete alias for :func:`array`.
+   Obsolete alias for :class:`array`.
 
 Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned
@@ -84,7 +84,6 @@ value must be an array object with the same type code; in all other cases,
 and may be used wherever buffer objects are supported.
 
 The following data items and methods are also supported:
-
 
 .. attribute:: array.typecode
 
