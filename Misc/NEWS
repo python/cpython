@@ -353,9 +353,6 @@ Library
 - Issue #2622: Fixed an ImportError when importing email.messsage from a
   standalone application built with py2exe or py2app.
 
-- Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
-  "PyInit" prefix, rather than "init". 
-
 - Issue #6455: Fixed test_build_ext under win32. 
 
 - Issue #6377: Enabled the compiler option, and deprecate its usage as an 
