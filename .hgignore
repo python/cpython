@@ -42,6 +42,7 @@ libpython*.a
 *.rej
 *~
 Lib/lib2to3/*.pickle
+Lib/test/data/*
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
