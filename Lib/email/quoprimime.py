@@ -11,7 +11,7 @@ character set, but that includes some 8-bit characters that are normally not
 allowed in email bodies or headers.
 
 Quoted-printable is very space-inefficient for encoding binary files; use the
-email.base64MIME module for that instead.
+email.base64mime module for that instead.
 
 This module provides an interface to encode and decode both headers and bodies
 with quoted-printable encoding.
@@ -23,7 +23,7 @@ in To:/From:/Cc: etc. fields, as well as Subject: lines.
 This module does not do the line wrapping or end-of-line character
 conversion necessary for proper internationalized headers; it only
 does dumb encoding and decoding.  To deal with the various line
-wrapping issues, use the email.Header module.
+wrapping issues, use the email.header module.
 """
 
 __all__ = [
@@ -330,7 +330,7 @@ def header_decode(s):
 
     This function does not parse a full MIME header value encoded with
     quoted-printable (like =?iso-8895-1?q?Hello_World?=) -- please use
-    the high level email.Header class for that functionality.
+    the high level email.header class for that functionality.
     """
     s = s.replace('_', ' ')
     return re.sub(r'=\w{2}', _unquote_match, s)

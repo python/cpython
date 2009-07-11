@@ -20,7 +20,7 @@ in To:, From:, Cc:, etc. fields, as well as Subject: lines.
 
 This module does not do the line wrapping or end-of-line character conversion
 necessary for proper internationalized headers; it only does dumb encoding and
-decoding.  To deal with the various line wrapping issues, use the email.Header
+decoding.  To deal with the various line wrapping issues, use the email.header
 module.
 """
 
@@ -167,7 +167,7 @@ def decode(s, convert_eols=None):
 
     This function does not parse a full MIME header value encoded with
     base64 (like =?iso-8895-1?b?bmloISBuaWgh?=) -- please use the high
-    level email.Header class for that functionality.
+    level email.header class for that functionality.
     """
     if not s:
         return s
