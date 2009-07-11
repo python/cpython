@@ -643,7 +643,13 @@ class _wrap_close:
         self._proc = proc
     def close(self):
         self._stream.close()
-        return self._proc.wait() << 8  # Shift left to match old behavior
+        returncode = self._proc.wait()
+        if returncode == 0:
+            return None
+        if name == 'nt':
+            return returncode
+        else:
+            return returncode << 8  # Shift left to match old behavior
     def __getattr__(self, name):
         return getattr(self._stream, name)
     def __iter__(self):

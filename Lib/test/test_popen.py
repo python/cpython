@@ -42,6 +42,13 @@ class PopenTest(unittest.TestCase):
         )
         support.reap_children()
 
+    def test_return_code(self):
+        self.assertEqual(os.popen("exit 0").close(), None)
+        if os.name == 'nt':
+            self.assertEqual(os.popen("exit 42").close(), 42)
+        else:
+            self.assertEqual(os.popen("exit 42").close(), 42 << 8)
+
 def test_main():
     support.run_unittest(PopenTest)
 
