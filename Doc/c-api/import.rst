@@ -28,10 +28,10 @@ Importing Modules
    leaves the module in ``sys.modules``.
 
    .. versionchanged:: 2.4
-      failing imports remove incomplete module objects.
+      Failing imports remove incomplete module objects.
 
    .. versionchanged:: 2.6
-      always use absolute imports
+      Always uses absolute imports.
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
@@ -62,7 +62,7 @@ Importing Modules
    unless a non-empty *fromlist* was given.
 
    .. versionchanged:: 2.4
-      failing imports remove incomplete module objects.
+      Failing imports remove incomplete module objects.
 
    .. versionchanged:: 2.6
       The function is an alias for :cfunc:`PyImport_ImportModuleLevel` with
@@ -95,7 +95,7 @@ Importing Modules
    are installed in the current environment, e.g. by :mod:`rexec` or :mod:`ihooks`.
 
    .. versionchanged:: 2.6
-      always use absolute imports
+      Always uses absolute imports.
 
 
 .. cfunction:: PyObject* PyImport_ReloadModule(PyObject *m)
