@@ -34,6 +34,9 @@ C-API
 Library
 -------
 
+- Issue #6358: The exit status of a command started with os.popen() was
+  reported differently than it did with python 2.x.
+
 - Issue #6323: The pdb debugger did not exit when running a script with a
   syntax error.
 
