@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
+  "PyInit" prefix, rather than "init". 
+
 - Issue #6455: Fixed test_build_ext under win32. 
 
 - Issue #6377: Enabled the compiler option, and deprecate its usage as an 
