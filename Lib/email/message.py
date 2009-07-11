@@ -129,7 +129,7 @@ class Message:
         "From ".  For more flexibility, use the flatten() method of a
         Generator instance.
         """
-        from email.Generator import Generator
+        from email.generator import Generator
         fp = StringIO()
         g = Generator(fp)
         g.flatten(self, unixfrom=unixfrom)
@@ -787,4 +787,4 @@ class Message:
         return [part.get_content_charset(failobj) for part in self.walk()]
 
     # I.e. def walk(self): ...
-    from email.Iterators import walk
+    from email.iterators import walk

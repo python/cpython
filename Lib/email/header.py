@@ -62,7 +62,7 @@ def decode_header(header):
     header, otherwise a lower-case string containing the name of the character
     set specified in the encoded string.
 
-    An email.Errors.HeaderParseError may be raised when certain decoding error
+    An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
     """
     # If no encoding, just return the header
@@ -337,8 +337,8 @@ class Header:
         # different charsets and/or encodings, and the resulting header will
         # accurately reflect each setting.
         #
-        # Each encoding can be email.Utils.QP (quoted-printable, for
-        # ASCII-like character sets like iso-8859-1), email.Utils.BASE64
+        # Each encoding can be email.utils.QP (quoted-printable, for
+        # ASCII-like character sets like iso-8859-1), email.utils.BASE64
         # (Base64, for non-ASCII like character sets like KOI8-R and
         # iso-2022-jp), or None (no encoding).
         #

@@ -262,6 +262,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2622: Fixed an ImportError when importing email.messsage from a
+  standalone application built with py2exe or py2app.
+
 - Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
   "PyInit" prefix, rather than "init". 
 
