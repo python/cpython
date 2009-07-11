@@ -6,8 +6,7 @@ extensions ASAP)."""
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
-from types import *
+import sys, os, re
 from warnings import warn
 
 from distutils.core import Command
@@ -41,7 +40,7 @@ def show_compilers ():
     show_compilers()
 
 
-class build_ext (Command):
+class build_ext(Command):
 
     description = "build C/C++ extensions (compile/link to build directory)"
 
@@ -149,7 +148,7 @@ class build_ext (Command):
 
     compiler = property(_get_compiler, _set_compiler)
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.extensions = None
         self.build_lib = None
         self.plat_name = None
@@ -213,13 +212,13 @@ class build_ext (Command):
             self.libraries = []
         if self.library_dirs is None:
             self.library_dirs = []
-        elif type(self.library_dirs) is StringType:
-            self.library_dirs = string.split(self.library_dirs, os.pathsep)
+        elif isinstance(self.library_dirs, str):
+            self.library_dirs = self.library_dirs.split(os.pathsep)
 
         if self.rpath is None:
             self.rpath = []
-        elif type(self.rpath) is StringType:
-            self.rpath = string.split(self.rpath, os.pathsep)
+        elif isinstance(self.rpath, str):
+            self.rpath = self.rpath.split(os.pathsep)
 
         # for extensions under windows use different directories
         # for Release and Debug builds.
@@ -296,7 +295,7 @@ class build_ext (Command):
 
         if self.define:
             defines = self.define.split(',')
-            self.define = map(lambda symbol: (symbol, '1'), defines)
+            self.define = [(symbol, '1') for symbol in defines]
 
         # The option for macros to undefine is also a string from the
         # option parsing, but has to be a list.  Multiple symbols can also
@@ -512,7 +511,7 @@ class build_ext (Command):
 
     def build_extension(self, ext):
         sources = ext.sources
-        if sources is None or type(sources) not in (ListType, TupleType):
+        if sources is None or not isinstance(sources, (list, tuple)):
             raise DistutilsSetupError, \
                   ("in 'ext_modules' option (extension '%s'), " +
                    "'sources' must be present and must be " +
@@ -593,14 +592,12 @@ class build_ext (Command):
             target_lang=language)
 
 
-    def swig_sources (self, sources, extension):
-
+    def swig_sources(self, sources, extension):
         """Walk the list of source files in 'sources', looking for SWIG
         interface (.i) files.  Run SWIG on all that are found, and
         return a modified 'sources' list with SWIG source files replaced
         by the generated C (or C++) files.
         """
-
         new_sources = []
         swig_sources = []
         swig_targets = {}
@@ -649,9 +646,7 @@ class build_ext (Command):
 
         return new_sources
 
-    # swig_sources ()
-
-    def find_swig (self):
+    def find_swig(self):
         """Return the name of the SWIG executable.  On Unix, this is
         just "swig" -- it should be in the PATH.  Tries a bit harder on
         Windows.
@@ -679,8 +674,6 @@ class build_ext (Command):
             raise DistutilsPlatformError, \
                   ("I don't know how to find (much less run) SWIG "
                    "on platform '%s'") % os.name
-
-    # find_swig ()
 
     # -- Name generators -----------------------------------------------
     # (extension names, filenames, whatever)
@@ -726,29 +719,28 @@ class build_ext (Command):
         "foo\bar.pyd").
         """
         from distutils.sysconfig import get_config_var
-        ext_path = string.split(ext_name, '.')
+        ext_path = ext_name.split('.')
         # OS/2 has an 8 character module (extension) limit :-(
         if os.name == "os2":
             ext_path[len(ext_path) - 1] = ext_path[len(ext_path) - 1][:8]
         # extensions in debug_mode are named 'module_d.pyd' under windows
         so_ext = get_config_var('SO')
         if os.name == 'nt' and self.debug:
-            return apply(os.path.join, ext_path) + '_d' + so_ext
+            return os.path.join(*ext_path) + '_d' + so_ext
         return os.path.join(*ext_path) + so_ext
 
-    def get_export_symbols (self, ext):
+    def get_export_symbols(self, ext):
         """Return the list of symbols that a shared extension has to
         export.  This either uses 'ext.export_symbols' or, if it's not
         provided, "init" + module_name.  Only relevant on Windows, where
         the .pyd file (DLL) must export the module "init" function.
         """
-
-        initfunc_name = "init" + string.split(ext.name,'.')[-1]
+        initfunc_name = "init" + ext.name.split('.')[-1]
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols
 
-    def get_libraries (self, ext):
+    def get_libraries(self, ext):
         """Return the list of libraries to link against when building a
         shared extension.  On most platforms, this is just 'ext.libraries';
         on Windows and OS/2, we add the Python library (eg. python20.dll).
@@ -821,5 +813,3 @@ class build_ext (Command):
                 return ext.libraries + [pythonlib]
             else:
                 return ext.libraries
-
-# class build_ext
