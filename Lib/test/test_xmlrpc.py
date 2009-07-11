@@ -541,11 +541,17 @@ class KeepaliveServerTestCase(BaseServerTestCase):
 
     def test_two(self):
         p = xmlrpclib.ServerProxy(URL)
+        #do three requests.
         self.assertEqual(p.pow(6,8), 6**8)
         self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(p.pow(6,8), 6**8)
+
+        #they should have all been handled by a single request handler
         self.assertEqual(len(self.RequestHandler.myRequests), 1)
-        #we may or may not catch the final "append" with the empty line
-        self.assertTrue(len(self.RequestHandler.myRequests[-1]) >= 2)
+
+        #check that we did at least two (the third may be pending append
+        #due to thread scheduling)
+        self.assertGreaterEqual(len(self.RequestHandler.myRequests[-1]), 2)
 
 #A test case that verifies that gzip encoding works in both directions
 #(for a request and the response)
