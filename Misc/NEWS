@@ -49,7 +49,7 @@ Core and Builtins
   possible to update the lineno attribute of the current frame.
 
 - Issue #5330: C functions called with keyword arguments were not reported by
-  the various profiling modules (profile, cProfile). Patch by Hagen F�rstenau.
+  the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
 
 - Issue #5982: staticmethod and classmethod now expose the wrapped
   function with __func__.
@@ -222,7 +222,7 @@ Core and Builtins
 - Issue #4074: Change the criteria for doing a full garbage collection (i.e.
   collecting the oldest generation) so that allocating lots of objects without
   destroying them does not show quadratic performance. Based on a proposal by
-  Martin von Löwis at
+  Martin von LÃ¶wis at
   http://mail.python.org/pipermail/python-dev/2008-June/080579.html.
 
 - Issue #4850: Change COUNT_ALLOCS variables to Py_ssize_t.
