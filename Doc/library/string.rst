@@ -300,7 +300,7 @@ result as if you had called :func:`str` on the value.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][,][.`precision`][`type`]
    fill: <a character other than '}'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -357,6 +357,10 @@ following:
 The ``'#'`` option is only valid for integers, and only for binary, octal, or
 hexadecimal output.  If present, it specifies that the output will be prefixed
 by ``'0b'``, ``'0o'``, or ``'0x'``, respectively.
+
+The ``','`` option signals the use of a comma for a thousands separator.
+For a locale aware separator, use the ``'n'`` integer presentation type
+instead.
 
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
