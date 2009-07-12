@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6438: Fixed distutils.cygwinccompiler.get_versions : the regular
+  expression string pattern was trying to match against a bytes returned by 
+  Popen. Tested under win32 to build the py-postgresql project.
+
 - Issue #6258: Support AMD64 in bdist_msi.
 
 - Issue #6195: fixed doctest to no longer try to read 'source' data from

@@ -2,7 +2,7 @@
 import unittest
 import sys
 import os
-from io import StringIO
+from io import BytesIO
 import subprocess
 
 from distutils import cygwinccompiler
@@ -19,7 +19,8 @@ class FakePopen(object):
         self.cmd = cmd.split()[0]
         exes = self.test_class._exes
         if self.cmd in exes:
-            self.stdout = StringIO(exes[self.cmd])
+            # issue #6438 in Python 3.x, Popen returns bytes
+            self.stdout = BytesIO(exes[self.cmd])
         else:
             self.stdout = os.popen(cmd, 'r')
 
@@ -87,30 +88,30 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         self.assertEquals(get_versions(), (None, None, None))
 
         # Let's fake we have 'gcc' and it returns '3.4.5'
-        self._exes['gcc'] = 'gcc (GCC) 3.4.5 (mingw special)\nFSF'
+        self._exes['gcc'] = b'gcc (GCC) 3.4.5 (mingw special)\nFSF'
         res = get_versions()
         self.assertEquals(str(res[0]), '3.4.5')
 
         # and let's see what happens when the version
         # doesn't match the regular expression
         # (\d+\.\d+(\.\d+)*)
-        self._exes['gcc'] = 'very strange output'
+        self._exes['gcc'] = b'very strange output'
         res = get_versions()
         self.assertEquals(res[0], None)
 
         # same thing for ld
-        self._exes['ld'] = 'GNU ld version 2.17.50 20060824'
+        self._exes['ld'] = b'GNU ld version 2.17.50 20060824'
         res = get_versions()
         self.assertEquals(str(res[1]), '2.17.50')
-        self._exes['ld'] = '@(#)PROGRAM:ld  PROJECT:ld64-77'
+        self._exes['ld'] = b'@(#)PROGRAM:ld  PROJECT:ld64-77'
         res = get_versions()
         self.assertEquals(res[1], None)
 
         # and dllwrap
-        self._exes['dllwrap'] = 'GNU dllwrap 2.17.50 20060824\nFSF'
+        self._exes['dllwrap'] = b'GNU dllwrap 2.17.50 20060824\nFSF'
         res = get_versions()
         self.assertEquals(str(res[2]), '2.17.50')
-        self._exes['dllwrap'] = 'Cheese Wrap'
+        self._exes['dllwrap'] = b'Cheese Wrap'
         res = get_versions()
         self.assertEquals(res[2], None)
 
