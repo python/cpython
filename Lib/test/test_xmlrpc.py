@@ -352,13 +352,14 @@ def is_unavailable_exception(e):
 
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
+    request_count = 1
     def setUp(self):
         # enable traceback reporting
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
 
         self.evt = threading.Event()
         # start server thread to handle requests
-        serv_args = (self.evt, 1, self.requestHandler)
+        serv_args = (self.evt, self.request_count, self.requestHandler)
         threading.Thread(target=http_server, args=serv_args).start()
 
         # wait for the server to be ready
@@ -518,7 +519,7 @@ class SimpleServerTestCase(BaseServerTestCase):
 
 #A test case that verifies that a server using the HTTP/1.1 keep-alive mechanism
 #does indeed serve subsequent requests on the same connection
-class KeepaliveServerTestCase(BaseServerTestCase):
+class BaseKeepaliveServerTestCase(BaseServerTestCase):
     #a request handler that supports keep-alive and logs requests into a
     #class variable
     class RequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
@@ -527,10 +528,11 @@ class KeepaliveServerTestCase(BaseServerTestCase):
         myRequests = []
         def handle(self):
             self.myRequests.append([])
+            self.reqidx = len(self.myRequests)-1
             return self.parentClass.handle(self)
         def handle_one_request(self):
             result = self.parentClass.handle_one_request(self)
-            self.myRequests[-1].append(self.raw_requestline)
+            self.myRequests[self.reqidx].append(self.raw_requestline)
             return result
 
     requestHandler = RequestHandler
@@ -539,6 +541,9 @@ class KeepaliveServerTestCase(BaseServerTestCase):
         self.RequestHandler.myRequests = []
         return BaseServerTestCase.setUp(self)
 
+#A test case that verifies that a server using the HTTP/1.1 keep-alive mechanism
+#does indeed serve subsequent requests on the same connection
+class KeepaliveServerTestCase1(BaseKeepaliveServerTestCase):
     def test_two(self):
         p = xmlrpclib.ServerProxy(URL)
         #do three requests.
@@ -552,6 +557,37 @@ class KeepaliveServerTestCase(BaseServerTestCase):
         #check that we did at least two (the third may be pending append
         #due to thread scheduling)
         self.assertGreaterEqual(len(self.RequestHandler.myRequests[-1]), 2)
+
+#test special attribute access on the serverproxy, through the __call__
+#function.
+class KeepaliveServerTestCase2(BaseKeepaliveServerTestCase):
+    #ask for two keepalive requests to be handled.
+    request_count=2
+
+    def test_close(self):
+        p = xmlrpclib.ServerProxy(URL)
+        #do some requests with close.
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(p.pow(6,8), 6**8)
+        p("close")() #this should trigger a new keep-alive request
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(p.pow(6,8), 6**8)
+
+        #they should have all been two request handlers, each having logged at least
+        #two complete requests
+        self.assertEqual(len(self.RequestHandler.myRequests), 2)
+        self.assertGreaterEqual(len(self.RequestHandler.myRequests[-1]), 2)
+        self.assertGreaterEqual(len(self.RequestHandler.myRequests[-2]), 2)
+
+    def test_transport(self):
+        p = xmlrpclib.ServerProxy(URL)
+        #do some requests with close.
+        self.assertEqual(p.pow(6,8), 6**8)
+        p("transport").close() #same as above, really.
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertEqual(len(self.RequestHandler.myRequests), 2)
 
 #A test case that verifies that gzip encoding works in both directions
 #(for a request and the response)
@@ -880,7 +916,8 @@ def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase, TransportSubclassTestCase]
     xmlrpc_tests.append(SimpleServerTestCase)
-    xmlrpc_tests.append(KeepaliveServerTestCase)
+    xmlrpc_tests.append(KeepaliveServerTestCase1)
+    xmlrpc_tests.append(KeepaliveServerTestCase2)
     xmlrpc_tests.append(GzipServerTestCase)
     xmlrpc_tests.append(ServerProxyTestCase)
     xmlrpc_tests.append(FailingServerTestCase)
