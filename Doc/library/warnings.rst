@@ -279,6 +279,8 @@ Available Functions
    be a string and *category* a subclass of :exc:`Warning`. :func:`warnpy3k`
    is using :exc:`DeprecationWarning` as default warning class.
 
+   .. versionadded:: 2.6
+
 
 .. function:: showwarning(message, category, filename, lineno[, file[, line]])
 
