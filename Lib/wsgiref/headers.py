@@ -1,6 +1,6 @@
 """Manage HTTP Response Headers
 
-Much of this module is red-handedly pilfered from email.Message in the stdlib,
+Much of this module is red-handedly pilfered from email.message in the stdlib,
 so portions are Copyright (C) 2001,2002 Python Software Foundation, and were
 written by Barry Warsaw.
 """
@@ -184,7 +184,7 @@ class Headers:
 
         h.add_header('content-disposition', 'attachment', filename='bud.gif')
 
-        Note that unlike the corresponding 'email.Message' method, this does
+        Note that unlike the corresponding 'email.message' method, this does
         *not* handle '(charset, language, value)' tuples: all values must be
         strings or None.
         """

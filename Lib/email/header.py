@@ -61,7 +61,7 @@ def decode_header(header):
     otherwise a lower-case string containing the name of the character set
     specified in the encoded string.
 
-    An email.Errors.HeaderParseError may be raised when certain decoding error
+    An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
     """
     # If no encoding, just return the header with no charset.
