@@ -6,6 +6,7 @@ Still need testing:
     TestCase.{assert,fail}* methods (some are tested implicitly)
 """
 
+import sys
 from test import test_support
 import unittest
 from unittest import TestCase
@@ -2285,15 +2286,6 @@ class Test_Assertions(TestCase):
                           self.failIfAlmostEqual, 0, .1+.1j, places=0)
 
 
-class Test_TestProgram(TestCase):
-
-    def testTestProgram_testRunnerArgument(self):
-        program = object.__new__(unittest.TestProgram)
-        program.parseArgs = lambda _: None
-        program.runTests = lambda: None
-        program.__init__(testRunner=None)
-        self.assertEqual(program.testRunner, unittest.TextTestRunner)
-
 
 ######################################################################
 ## Main
@@ -2302,7 +2294,7 @@ class Test_TestProgram(TestCase):
 def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_Assertions, Test_TestProgram)
+        Test_Assertions)
 
 if __name__ == "__main__":
     test_main()
