@@ -464,7 +464,16 @@ def _norm_version(version, build=''):
 
 _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
                          '.*'
-                         'Version ([\d.]+))')
+                         '\[.* ([\d.]+)\])')
+
+# Examples of VER command output:
+#
+#   Windows 2000:  Microsoft Windows 2000 [Version 5.00.2195]
+#   Windows XP:    Microsoft Windows XP [Version 5.1.2600]
+#   Windows Vista: Microsoft Windows [Version 6.0.6002]
+#
+# Note that the "Version" string gets localized on different
+# Windows versions.
 
 def _syscmd_ver(system='', release='', version='',
 
@@ -596,6 +605,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
     version = '%i.%i.%i' % (maj,min,buildno & 0xFFFF)
     if csd[:13] == 'Service Pack ':
         csd = 'SP' + csd[13:]
+
     if plat == VER_PLATFORM_WIN32_WINDOWS:
         regkey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion'
         # Try to guess the release name
@@ -610,6 +620,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
                 release = 'postMe'
         elif maj == 5:
             release = '2000'
+
     elif plat == VER_PLATFORM_WIN32_NT:
         regkey = 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion'
         if maj <= 4:
@@ -638,8 +649,12 @@ def win32_ver(release='',version='',csd='',ptype=''):
                         release = 'Vista'
                     else:
                         release = '2008Server'
+            #elif min == 1:
+            #    # Windows 7 release candidate uses version 6.1.7100
+            #    release = '7RC'
             else:
                 release = 'post2008Server'
+
     else:
         if not release:
             # E.g. Win3.1 with win32s
@@ -1114,7 +1129,7 @@ def uname():
             node = _node()
             machine = ''
 
-        use_syscmd_ver = 01
+        use_syscmd_ver = 1
 
         # Try win32_ver() on win32 platforms
         if system == 'win32':
