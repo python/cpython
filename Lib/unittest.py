@@ -800,8 +800,6 @@ Examples:
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=None,
                  testLoader=defaultTestLoader):
-        if testRunner is None:
-            testRunner = TextTestRunner
         if type(module) == type(''):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -851,6 +849,9 @@ Examples:
                                                        self.module)
 
     def runTests(self):
+        if self.testRunner is None:
+            self.testRunner = TextTestRunner
+
         if isinstance(self.testRunner, (type, types.ClassType)):
             try:
                 testRunner = self.testRunner(verbosity=self.verbosity)
