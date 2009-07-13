@@ -174,6 +174,17 @@ def addLevelName(level, levelName):
     finally:
         _releaseLock()
 
+def _checkLevel(level):
+    if isinstance(level, int):
+        rv = level
+    elif str(level) == level:
+        if level not in _levelNames:
+            raise ValueError("Unknown level: %r" % level)
+        rv = _levelNames[level]
+    else:
+        raise TypeError("Level not an integer or a valid string: %r" % level)
+    return rv
+
 #---------------------------------------------------------------------------
 #   Thread-related stuff
 #---------------------------------------------------------------------------
@@ -593,7 +604,7 @@ class Handler(Filterer):
         and the filter list to empty.
         """
         Filterer.__init__(self)
-        self.level = level
+        self.level = _checkLevel(level)
         self.formatter = None
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
@@ -631,7 +642,7 @@ class Handler(Filterer):
         """
         Set the logging level of this handler.
         """
-        self.level = level
+        self.level = _checkLevel(level)
 
     def format(self, record):
         """
@@ -1010,7 +1021,7 @@ class Logger(Filterer):
         """
         Filterer.__init__(self)
         self.name = name
-        self.level = level
+        self.level = _checkLevel(level)
         self.parent = None
         self.propagate = 1
         self.handlers = []
@@ -1020,7 +1031,7 @@ class Logger(Filterer):
         """
         Set the logging level of this logger.
         """
-        self.level = level
+        self.level = _checkLevel(level)
 
     def debug(self, msg, *args, **kwargs):
         """
@@ -1397,10 +1408,6 @@ def basicConfig(**kwargs):
         root.addHandler(hdlr)
         level = kwargs.get("level")
         if level is not None:
-            if str(level) == level: # If a string was passed, do more checks
-                if level not in _levelNames:
-                    raise ValueError("Unknown level: %r" % level)
-                level = _levelNames[level]
             root.setLevel(level)
 
 #---------------------------------------------------------------------------
