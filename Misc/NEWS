@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1616979: Added the cp720 (Arabic DOS) encoding.
+
 - Issue #6428: Since Python 3.0, the __bool__ method must return a bool
   object, and not an int.  Fix the corresponding error message, and the
   documentation.
