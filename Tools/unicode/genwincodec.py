@@ -24,7 +24,7 @@ def genwinmap(codepage):
         buf = ctypes.create_unicode_buffer(2)
         ret = MultiByteToWideChar(
             codepage, 0,
-            chr(i), 1,
+            bytes([i]), 1,
             buf, 2)
         assert ret == 1, "invalid code page"
         assert buf[1] == '\x00'

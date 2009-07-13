@@ -175,38 +175,38 @@ decoding_table = (
     '}'         #  0x7D -> RIGHT CURLY BRACKET
     '~'         #  0x7E -> TILDE
     '\x7f'      #  0x7F -> CONTROL CHARACTER
-    '?'         #  0x80 -> QUESTION MARK
+    '\x80'
     '\x81'
-    '?'         #  0x82 -> QUESTION MARK
-    '?'         #  0x83 -> QUESTION MARK
-    '?'         #  0x84 -> QUESTION MARK
-    '?'         #  0x85 -> QUESTION MARK
-    '?'         #  0x86 -> QUESTION MARK
-    '?'         #  0x87 -> QUESTION MARK
-    '?'         #  0x88 -> QUESTION MARK
-    '?'         #  0x89 -> QUESTION MARK
-    '?'         #  0x8A -> QUESTION MARK
-    '?'         #  0x8B -> QUESTION MARK
-    '?'         #  0x8C -> QUESTION MARK
+    '\xe9'      #  0x82 -> LATIN SMALL LETTER E WITH ACUTE
+    '\xe2'      #  0x83 -> LATIN SMALL LETTER A WITH CIRCUMFLEX
+    '\x84'
+    '\xe0'      #  0x85 -> LATIN SMALL LETTER A WITH GRAVE
+    '\x86'
+    '\xe7'      #  0x87 -> LATIN SMALL LETTER C WITH CEDILLA
+    '\xea'      #  0x88 -> LATIN SMALL LETTER E WITH CIRCUMFLEX
+    '\xeb'      #  0x89 -> LATIN SMALL LETTER E WITH DIAERESIS
+    '\xe8'      #  0x8A -> LATIN SMALL LETTER E WITH GRAVE
+    '\xef'      #  0x8B -> LATIN SMALL LETTER I WITH DIAERESIS
+    '\xee'      #  0x8C -> LATIN SMALL LETTER I WITH CIRCUMFLEX
     '\x8d'
-    '?'         #  0x8E -> QUESTION MARK
+    '\x8e'
     '\x8f'
     '\x90'
-    '?'         #  0x91 -> QUESTION MARK
-    '?'         #  0x92 -> QUESTION MARK
-    '?'         #  0x93 -> QUESTION MARK
-    '?'         #  0x94 -> QUESTION MARK
-    '?'         #  0x95 -> QUESTION MARK
-    '?'         #  0x96 -> QUESTION MARK
-    '?'         #  0x97 -> QUESTION MARK
-    '?'         #  0x98 -> QUESTION MARK
-    '?'         #  0x99 -> QUESTION MARK
-    '?'         #  0x9A -> QUESTION MARK
-    '?'         #  0x9B -> QUESTION MARK
-    '?'         #  0x9C -> QUESTION MARK
+    '\u0651'    #  0x91 -> ARABIC SHADDA
+    '\u0652'    #  0x92 -> ARABIC SUKUN
+    '\xf4'      #  0x93 -> LATIN SMALL LETTER O WITH CIRCUMFLEX
+    '\xa4'      #  0x94 -> CURRENCY SIGN
+    '\u0640'    #  0x95 -> ARABIC TATWEEL
+    '\xfb'      #  0x96 -> LATIN SMALL LETTER U WITH CIRCUMFLEX
+    '\xf9'      #  0x97 -> LATIN SMALL LETTER U WITH GRAVE
+    '\u0621'    #  0x98 -> ARABIC LETTER HAMZA
+    '\u0622'    #  0x99 -> ARABIC LETTER ALEF WITH MADDA ABOVE
+    '\u0623'    #  0x9A -> ARABIC LETTER ALEF WITH HAMZA ABOVE
+    '\u0624'    #  0x9B -> ARABIC LETTER WAW WITH HAMZA ABOVE
+    '\xa3'      #  0x9C -> POUND SIGN
     '\u0625'    #  0x9D -> ARABIC LETTER ALEF WITH HAMZA BELOW
-    '?'         #  0x9E -> QUESTION MARK
-    '?'         #  0x9F -> QUESTION MARK
+    '\u0626'    #  0x9E -> ARABIC LETTER YEH WITH HAMZA ABOVE
+    '\u0627'    #  0x9F -> ARABIC LETTER ALEF
     '\u0628'    #  0xA0 -> ARABIC LETTER BEH
     '\u0629'    #  0xA1 -> ARABIC LETTER TEH MARBUTA
     '\u062a'    #  0xA2 -> ARABIC LETTER TEH
