@@ -821,7 +821,8 @@ class DocTestFinder:
                 # (see __patched_linecache_getlines).
                 file = inspect.getfile(obj)
                 if not file[0]+file[-2:] == '<]>': file = None
-            if file is None: source_lines = None
+            if file is None:
+                source_lines = None
             else:
                 if module is not None:
                     # Supply the module globals in case the module was
