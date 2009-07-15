@@ -61,9 +61,11 @@ Library
 Extension Modules
 -----------------
 
-- Issue #4509: array.array objects are no longer modified after an operation
+- Issue #4509: Array objects are no longer modified after an operation
   failing due to the resize restriction in-place when the object has exported
   buffers.
+
+- Issue #2389: Array objects are now pickled in a portable manner.
 
 Build
 -----

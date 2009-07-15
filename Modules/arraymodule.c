@@ -27,6 +27,8 @@ struct arraydescr {
 	PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
 	int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
         char *formats;
+	int is_integer_type;
+	int is_signed;
 };
 
 typedef struct arrayobject {
@@ -389,20 +391,24 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 }
 
 
-/* Description of types */
+/* Description of types.
+ *
+ * Don't forget to update typecode_to_mformat_code() if you add a new
+ * typecode.
+ */
 static struct arraydescr descriptors[] = {
-	{'b', 1, b_getitem, b_setitem, "b"},
-	{'B', 1, BB_getitem, BB_setitem, "B"},
-	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "u"},
-	{'h', sizeof(short), h_getitem, h_setitem, "h"},
-	{'H', sizeof(short), HH_getitem, HH_setitem, "H"},
-	{'i', sizeof(int), i_getitem, i_setitem, "i"},
-	{'I', sizeof(int), II_getitem, II_setitem, "I"},
-	{'l', sizeof(long), l_getitem, l_setitem, "l"},
-	{'L', sizeof(long), LL_getitem, LL_setitem, "L"},
-	{'f', sizeof(float), f_getitem, f_setitem, "f"},
-	{'d', sizeof(double), d_getitem, d_setitem, "d"},
-	{'\0', 0, 0, 0, 0} /* Sentinel */
+	{'b', 1, b_getitem, b_setitem, "b", 1, 1},
+	{'B', 1, BB_getitem, BB_setitem, "B", 1, 0},
+	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "u", 0, 0},
+	{'h', sizeof(short), h_getitem, h_setitem, "h", 1, 1},
+	{'H', sizeof(short), HH_getitem, HH_setitem, "H", 1, 0},
+	{'i', sizeof(int), i_getitem, i_setitem, "i", 1, 1},
+	{'I', sizeof(int), II_getitem, II_setitem, "I", 1, 0},
+	{'l', sizeof(long), l_getitem, l_setitem, "l", 1, 1},
+	{'L', sizeof(long), LL_getitem, LL_setitem, "L", 1, 0},
+	{'f', sizeof(float), f_getitem, f_setitem, "f", 0, 0},
+	{'d', sizeof(double), d_getitem, d_setitem, "d", 0, 0},
+	{'\0', 0, 0, 0, 0, 0, 0} /* Sentinel */
 };
 
 /****************************************************************************
@@ -1136,40 +1142,6 @@ Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
 4, or 8 bytes in size, RuntimeError is raised.");
 
 static PyObject *
-array_reduce(arrayobject *array)
-{
-	PyObject *dict, *result;
-
-	dict = PyObject_GetAttrString((PyObject *)array, "__dict__");
-	if (dict == NULL) {
-		PyErr_Clear();
-		dict = Py_None;
-		Py_INCREF(dict);
-	}
-	if (Py_SIZE(array) > 0) {
-		if (array->ob_descr->itemsize 
-				> PY_SSIZE_T_MAX / Py_SIZE(array)) {
-			return PyErr_NoMemory();
-		}
-		result = Py_BuildValue("O(Cy#)O",
-			Py_TYPE(array), 
-			array->ob_descr->typecode,
-			array->ob_item,
-			Py_SIZE(array) * array->ob_descr->itemsize,
-			dict);
-	} else {
-		result = Py_BuildValue("O(C)O",
-			Py_TYPE(array), 
-			array->ob_descr->typecode,
-			dict);
-	}
-	Py_DECREF(dict);
-	return result;
-}
-
-PyDoc_STRVAR(array_doc, "Return state information for pickling.");
-
-static PyObject *
 array_reverse(arrayobject *self, PyObject *unused)
 {
 	register Py_ssize_t itemsize = self->ob_descr->itemsize;
@@ -1475,6 +1447,498 @@ an array of some other type.");
 
 
 
+/*********************** Pickling support ************************/
+
+enum machine_format_code {
+	UNKNOWN_FORMAT = -1,
+	/* UNKNOWN_FORMAT is used to indicate that the machine format for an
+	 * array type code cannot be interpreted. When this occurs, a list of
+	 * Python objects is used to represent the content of the array
+	 * instead of using the memory content of the array directly. In that
+	 * case, the array_reconstructor mechanism is bypassed completely, and
+	 * the standard array constructor is used instead.
+	 *
+	 * This is will most likely occur when the machine doesn't use IEEE
+	 * floating-point numbers.
+	 */
+
+	UNSIGNED_INT8 = 0,
+	SIGNED_INT8 = 1,
+	UNSIGNED_INT16_LE = 2,
+	UNSIGNED_INT16_BE = 3,
+	SIGNED_INT16_LE = 4,
+	SIGNED_INT16_BE = 5,
+	UNSIGNED_INT32_LE = 6,
+	UNSIGNED_INT32_BE = 7,
+	SIGNED_INT32_LE = 8,
+	SIGNED_INT32_BE = 9,
+	UNSIGNED_INT64_LE = 10,
+	UNSIGNED_INT64_BE = 11,
+	SIGNED_INT64_LE = 12,
+	SIGNED_INT64_BE = 13,
+	IEEE_754_FLOAT_LE = 14,
+	IEEE_754_FLOAT_BE = 15,
+	IEEE_754_DOUBLE_LE = 16,
+	IEEE_754_DOUBLE_BE = 17,
+	UTF16_LE = 18,
+	UTF16_BE = 19,
+	UTF32_LE = 20,
+	UTF32_BE = 21
+};
+#define MACHINE_FORMAT_CODE_MIN 0
+#define MACHINE_FORMAT_CODE_MAX 21
+
+static const struct mformatdescr {
+	size_t size;
+	int is_signed;
+	int is_big_endian;
+} mformat_descriptors[] = {
+	{1, 0, 0},		/* 0: UNSIGNED_INT8 */
+	{1, 1, 0},		/* 1: SIGNED_INT8 */
+	{2, 0, 0},		/* 2: UNSIGNED_INT16_LE */
+	{2, 0, 1},		/* 3: UNSIGNED_INT16_BE */
+	{2, 1, 0},		/* 4: SIGNED_INT16_LE */
+	{2, 1, 1},		/* 5: SIGNED_INT16_BE */
+	{4, 0, 0},		/* 6: UNSIGNED_INT32_LE */
+	{4, 0, 1},		/* 7: UNSIGNED_INT32_BE */
+	{4, 1, 0},		/* 8: SIGNED_INT32_LE */
+	{4, 1, 1},		/* 9: SIGNED_INT32_BE */
+	{8, 0, 0},		/* 10: UNSIGNED_INT64_LE */
+	{8, 0, 1},		/* 11: UNSIGNED_INT64_BE */
+	{8, 1, 0},		/* 12: SIGNED_INT64_LE */
+	{8, 1, 1},		/* 13: SIGNED_INT64_BE */
+	{4, 0, 0},		/* 14: IEEE_754_FLOAT_LE */
+	{4, 0, 1},		/* 15: IEEE_754_FLOAT_BE */
+	{8, 0, 0},		/* 16: IEEE_754_DOUBLE_LE */
+	{8, 0, 1},		/* 17: IEEE_754_DOUBLE_BE */
+	{4, 0, 0},		/* 18: UTF16_LE */
+	{4, 0, 1},		/* 19: UTF16_BE */
+	{8, 0, 0},		/* 20: UTF32_LE */
+	{8, 0, 1}		/* 21: UTF32_BE */
+};
+
+
+/*
+ * Internal: This function is used to find the machine format of a given
+ * array type code. This returns UNKNOWN_FORMAT when the machine format cannot
+ * be found.
+ */
+static enum machine_format_code
+typecode_to_mformat_code(int typecode)
+{
+#ifdef BYTEORDER_IS_BIG_ENDIAN
+	const int is_big_endian = 1;
+#else
+	const int is_big_endian = 0;
+#endif
+	size_t intsize;
+	int is_signed;
+
+	switch (typecode) {
+	case 'b':
+		return SIGNED_INT8;
+	case 'B':
+		return UNSIGNED_INT8;
+
+	case 'u':
+		if (sizeof(Py_UNICODE) == 2) {
+			return UTF16_LE + is_big_endian;
+		}
+		if (sizeof(Py_UNICODE) == 4) {
+			return UTF32_LE + is_big_endian;
+		}
+		return UNKNOWN_FORMAT;
+
+	case 'f':
+		if (sizeof(float) == 4) {
+			const float y = 16711938.0;
+			if (memcmp(&y, "\x4b\x7f\x01\x02", 4) == 0)
+				return IEEE_754_FLOAT_BE;
+			if (memcmp(&y, "\x02\x01\x7f\x4b", 4) == 0)
+				return IEEE_754_FLOAT_LE;
+		}
+		return UNKNOWN_FORMAT;
+
+	case 'd':
+		if (sizeof(double) == 8) {
+			const double x = 9006104071832581.0;
+			if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
+				return IEEE_754_DOUBLE_BE;
+			if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
+				return IEEE_754_DOUBLE_LE;
+		}
+		return UNKNOWN_FORMAT;
+
+	/* Integers */
+	case 'h':
+		intsize = sizeof(short);
+		is_signed = 1;
+		break;
+	case 'H':
+		intsize = sizeof(short);
+		is_signed = 0;
+		break;
+	case 'i':
+		intsize = sizeof(int);
+		is_signed = 1;
+		break;
+	case 'I':
+		intsize = sizeof(int);
+		is_signed = 0;
+		break;
+	case 'l':
+		intsize = sizeof(long);
+		is_signed = 1;
+		break;
+	case 'L':
+		intsize = sizeof(long);
+		is_signed = 0;
+		break;
+	default:
+		return UNKNOWN_FORMAT;
+	}
+	switch (intsize) {
+	case 2:
+		return UNSIGNED_INT16_LE + is_big_endian + (2 * is_signed);
+	case 4:
+		return UNSIGNED_INT32_LE + is_big_endian + (2 * is_signed);
+	case 8:
+		return UNSIGNED_INT64_LE + is_big_endian + (2 * is_signed);
+	default:
+		return UNKNOWN_FORMAT;
+	}
+}
+
+/* Forward declaration. */
+static PyObject *array_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
+/*
+ * Internal: This function wraps the array constructor--i.e., array_new()--to
+ * allow the creation of array objects from C code without having to deal
+ * directly the tuple argument of array_new(). The typecode argument is a
+ * Unicode character value, like 'i' or 'f' for example, representing an array
+ * type code. The items argument is a bytes or a list object from which
+ * contains the initial value of the array.
+ *  
+ * On success, this functions returns the array object created. Otherwise,
+ * NULL is returned to indicate a failure.
+ */
+static PyObject *
+make_array(PyTypeObject *arraytype, int typecode, PyObject *items)
+{
+	PyObject *new_args;
+	PyObject *array_obj;
+	PyObject *typecode_obj;
+	Py_UNICODE typecode_str[1] = {typecode};
+
+	assert(arraytype != NULL);
+	assert(items != NULL);
+
+	typecode_obj = PyUnicode_FromUnicode(typecode_str, 1);
+	if (typecode_obj == NULL)
+		return NULL;
+
+	new_args = PyTuple_New(2);
+	if (new_args == NULL)
+		return NULL;
+	Py_INCREF(items);
+	PyTuple_SET_ITEM(new_args, 0, typecode_obj);
+	PyTuple_SET_ITEM(new_args, 1, items);
+
+	array_obj = array_new(arraytype, new_args, NULL);
+	Py_DECREF(new_args);
+	if (array_obj == NULL)
+		return NULL;
+
+	return array_obj;
+}
+
+/*
+ * This functions is a special constructor used when unpickling an array. It
+ * provides a portable way to rebuild an array from its memory representation.
+ */
+static PyObject *
+array_reconstructor(PyObject *self, PyObject *args)
+{
+	PyTypeObject *arraytype;
+	PyObject *items;
+	PyObject *converted_items;
+	PyObject *result;
+	int typecode;
+	enum machine_format_code mformat_code;
+	struct arraydescr *descr;
+
+	if (!PyArg_ParseTuple(args, "OCiO:array._array_reconstructor",
+			&arraytype, &typecode, &mformat_code, &items))
+		return NULL;
+
+	if (!PyType_Check(arraytype)) {
+		PyErr_Format(PyExc_TypeError,
+			"first argument must a type object, not %.200s",
+			Py_TYPE(arraytype)->tp_name);
+		return NULL;
+	}
+	if (!PyType_IsSubtype(arraytype, &Arraytype)) {
+		PyErr_Format(PyExc_TypeError,
+			"%.200s is not a subtype of %.200s",
+			arraytype->tp_name, Arraytype.tp_name);
+		return NULL;
+	}
+	for (descr = descriptors; descr->typecode != '\0'; descr++) {
+		if (descr->typecode == typecode)
+			break;
+	}
+	if (descr->typecode == '\0') {
+		PyErr_SetString(PyExc_ValueError,
+				"second argument must be a valid type code");
+		return NULL;
+	}
+	if (mformat_code < MACHINE_FORMAT_CODE_MIN ||
+	    mformat_code > MACHINE_FORMAT_CODE_MAX) {
+		PyErr_SetString(PyExc_ValueError,
+			"third argument must be a valid machine format code.");
+		return NULL;
+	}
+	if (!PyBytes_Check(items)) {
+		PyErr_Format(PyExc_TypeError,
+			"fourth argument should be bytes, not %.200s",
+			Py_TYPE(items)->tp_name);
+		return NULL;
+	}
+
+	/* Fast path: No decoding has to be done. */
+	if (mformat_code == typecode_to_mformat_code(typecode) ||
+	    mformat_code == UNKNOWN_FORMAT) {
+		return make_array(arraytype, typecode, items);
+	}
+
+	/* Slow path: Decode the byte string according to the given machine
+	 * format code. This occurs when the computer unpickling the array 
+	 * object is architecturally different from the one that pickled the
+	 * array.
+	 */
+	if (Py_SIZE(items) % mformat_descriptors[mformat_code].size != 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"string length not a multiple of item size");
+		return NULL;
+	}
+	switch (mformat_code) {
+	case IEEE_754_FLOAT_LE:
+	case IEEE_754_FLOAT_BE: {
+		int i;
+		int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
+		Py_ssize_t itemcount = Py_SIZE(items) / 4;
+		const unsigned char *memstr =
+			(unsigned char *)PyBytes_AS_STRING(items);
+
+		converted_items = PyList_New(itemcount);
+		if (converted_items == NULL)
+			return NULL;
+		for (i = 0; i < itemcount; i++) {
+			PyObject *pyfloat = PyFloat_FromDouble(
+				_PyFloat_Unpack4(&memstr[i * 4], le));
+			if (pyfloat == NULL) {
+				Py_DECREF(converted_items);
+				return NULL;
+			}
+			PyList_SET_ITEM(converted_items, i, pyfloat);
+		}
+		break;
+	}
+	case IEEE_754_DOUBLE_LE:
+	case IEEE_754_DOUBLE_BE: {
+		int i;
+		int le = (mformat_code == IEEE_754_DOUBLE_LE) ? 1 : 0;
+		Py_ssize_t itemcount = Py_SIZE(items) / 8;
+		const unsigned char *memstr =
+			(unsigned char *)PyBytes_AS_STRING(items);
+
+		converted_items = PyList_New(itemcount);
+		if (converted_items == NULL)
+			return NULL;
+		for (i = 0; i < itemcount; i++) {
+			PyObject *pyfloat = PyFloat_FromDouble(
+				_PyFloat_Unpack8(&memstr[i * 8], le));
+			if (pyfloat == NULL) {
+				Py_DECREF(converted_items);
+				return NULL;
+			}
+			PyList_SET_ITEM(converted_items, i, pyfloat);
+		}
+		break;
+	}
+	case UTF16_LE:
+	case UTF16_BE: {
+		int byteorder = (mformat_code == UTF16_LE) ? -1 : 1;
+		converted_items = PyUnicode_DecodeUTF16(
+			PyBytes_AS_STRING(items), Py_SIZE(items),
+			"strict", &byteorder);
+		if (converted_items == NULL)
+			return NULL;
+		break;
+	}
+	case UTF32_LE:
+	case UTF32_BE: {
+		int byteorder = (mformat_code == UTF32_LE) ? -1 : 1;
+		converted_items = PyUnicode_DecodeUTF32(
+			PyBytes_AS_STRING(items), Py_SIZE(items),
+			"strict", &byteorder);
+		if (converted_items == NULL)
+			return NULL;
+		break;
+	}
+
+	case UNSIGNED_INT8:
+	case SIGNED_INT8:
+	case UNSIGNED_INT16_LE:
+	case UNSIGNED_INT16_BE:
+	case SIGNED_INT16_LE:
+	case SIGNED_INT16_BE:
+	case UNSIGNED_INT32_LE:
+	case UNSIGNED_INT32_BE:
+	case SIGNED_INT32_LE:
+	case SIGNED_INT32_BE:
+	case UNSIGNED_INT64_LE:
+	case UNSIGNED_INT64_BE:
+	case SIGNED_INT64_LE:
+	case SIGNED_INT64_BE: {
+		int i;
+		const struct mformatdescr mf_descr =
+			mformat_descriptors[mformat_code];
+		Py_ssize_t itemcount = Py_SIZE(items) / mf_descr.size;
+		const unsigned char *memstr =
+			(unsigned char *)PyBytes_AS_STRING(items);
+		struct arraydescr *descr;
+
+		/* If possible, try to pack array's items using a data type
+		 * that fits better. This may result in an array with narrower
+		 * or wider elements.
+		 *
+		 * For example, if a 32-bit machine pickles a L-code array of
+		 * unsigned longs, then the array will be unpickled by 64-bit
+		 * machine as an I-code array of unsigned ints.
+		 *
+		 * XXX: Is it possible to write a unit test for this?
+		 */
+		for (descr = descriptors; descr->typecode != '\0'; descr++) {
+			if (descr->is_integer_type &&
+			    descr->itemsize == mf_descr.size &&
+			    descr->is_signed == mf_descr.is_signed)
+				typecode = descr->typecode;
+		}
+
+		converted_items = PyList_New(itemcount);
+		if (converted_items == NULL)
+			return NULL;
+		for (i = 0; i < itemcount; i++) {
+			PyObject *pylong;
+
+			pylong = _PyLong_FromByteArray(
+				&memstr[i * mf_descr.size],
+				mf_descr.size,
+				!mf_descr.is_big_endian,
+				mf_descr.is_signed);
+			if (pylong == NULL) {
+				Py_DECREF(converted_items);
+				return NULL;
+			}
+			PyList_SET_ITEM(converted_items, i, pylong);
+		}
+		break;
+	}
+	case UNKNOWN_FORMAT:
+		/* Impossible, but needed to shut up GCC about the unhandled
+		 * enumeration value.
+		 */
+		return NULL;
+	}
+
+	result = make_array(arraytype, typecode, converted_items);
+	Py_DECREF(converted_items);
+	return result;
+}
+
+static PyObject *
+array_reduce_ex(arrayobject *array, PyObject *value)
+{
+	PyObject *dict;
+	PyObject *result;
+	PyObject *array_str;
+	int typecode = array->ob_descr->typecode;
+	int mformat_code;
+	static PyObject *array_reconstructor = NULL;
+	long protocol;
+
+	if (array_reconstructor == NULL) {
+		PyObject *array_module = PyImport_ImportModule("array");
+		if (array_module == NULL)
+			return NULL;
+		array_reconstructor = PyObject_GetAttrString(
+			array_module,
+			"_array_reconstructor");
+		Py_DECREF(array_module);
+		if (array_reconstructor == NULL)
+			return NULL;
+	}
+
+	if (!PyLong_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"__reduce_ex__ argument should an integer");
+		return NULL;
+	}
+	protocol = PyLong_AsLong(value);
+	if (protocol == -1 && PyErr_Occurred())
+		return NULL;
+
+	dict = PyObject_GetAttrString((PyObject *)array, "__dict__");
+	if (dict == NULL) {
+		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+			return NULL;
+		PyErr_Clear();
+		dict = Py_None;
+		Py_INCREF(dict);
+	}
+
+	mformat_code = typecode_to_mformat_code(typecode);
+	if (mformat_code == UNKNOWN_FORMAT || protocol < 3) {
+		/* Convert the array to a list if we got something weird
+		 * (e.g., non-IEEE floats), or we are pickling the array using
+		 * a Python 2.x compatible protocol.
+		 *
+		 * It is necessary to a list representation for Python 2.x
+		 * compatible pickle protocol, since Python 2's str objects
+		 * are unpickled as unicode by Python 3. Thus it is impossible
+		 * to make arrays unpicklable by Python 3 by using their memory
+		 * representation, unless we resort to ugly hacks such as
+		 * coercing unicode objects to bytes in array_reconstructor.
+		 */
+		PyObject *list;
+		list = array_tolist(array, NULL);
+		if (list == NULL) {
+			Py_DECREF(dict);
+			return NULL;
+		}
+		result = Py_BuildValue(
+			"O(CO)O", Py_TYPE(array), typecode, list, dict);
+		Py_DECREF(list);
+		Py_DECREF(dict);
+		return result;
+	}
+
+	array_str = array_tostring(array, NULL);
+	if (array_str == NULL) {
+		Py_DECREF(dict);
+		return NULL;
+	}
+	result = Py_BuildValue(
+		"O(OCiN)O", array_reconstructor, Py_TYPE(array), typecode,
+		mformat_code, array_str, dict);
+	Py_DECREF(dict);
+	return result;
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
 static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
@@ -1525,8 +1989,8 @@ static PyMethodDef array_methods[] = {
 	 insert_doc},
 	{"pop",		(PyCFunction)array_pop,		METH_VARARGS,
 	 pop_doc},
-	{"__reduce__",	(PyCFunction)array_reduce,	METH_NOARGS,
-	 array_doc},
+	{"__reduce_ex__", (PyCFunction)array_reduce_ex,	METH_O,
+	 reduce_doc},
 	{"remove",	(PyCFunction)array_remove,	METH_O,
 	 remove_doc},
 	{"reverse",	(PyCFunction)array_reverse,	METH_NOARGS,
@@ -2167,6 +2631,8 @@ static PyTypeObject PyArrayIter_Type = {
 
 /* No functions in array module. */
 static PyMethodDef a_methods[] = {
+    {"_array_reconstructor", array_reconstructor, METH_VARARGS,
+     PyDoc_STR("Internal. Used for pickling support.")},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
