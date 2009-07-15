@@ -5,10 +5,16 @@
 
 import unittest
 from test import support
-from weakref import proxy
-import array, io, math
-from pickle import loads, dumps, HIGHEST_PROTOCOL
+import weakref
+import pickle
 import operator
+import io
+import math
+import struct
+
+import array
+from array import _array_reconstructor as array_reconstructor
+
 
 class ArraySubclass(array.array):
     pass
@@ -29,6 +35,123 @@ class BadConstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, 'x')
 
 tests.append(BadConstructorTest)
+
+# Machine format codes.
+#
+# Search for "enum machine_format_code" in Modules/arraymodule.c to get the
+# authoritative values.
+UNKNOWN_FORMAT = -1
+UNSIGNED_INT8 = 0
+SIGNED_INT8 = 1
+UNSIGNED_INT16_LE = 2
+UNSIGNED_INT16_BE = 3
+SIGNED_INT16_LE = 4
+SIGNED_INT16_BE = 5
+UNSIGNED_INT32_LE = 6
+UNSIGNED_INT32_BE = 7
+SIGNED_INT32_LE = 8
+SIGNED_INT32_BE = 9
+UNSIGNED_INT64_LE = 10
+UNSIGNED_INT64_BE = 11
+SIGNED_INT64_LE = 12
+SIGNED_INT64_BE = 13
+IEEE_754_FLOAT_LE = 14
+IEEE_754_FLOAT_BE = 15
+IEEE_754_DOUBLE_LE = 16
+IEEE_754_DOUBLE_BE = 17
+UTF16_LE = 18
+UTF16_BE = 19
+UTF32_LE = 20
+UTF32_BE = 21
+
+class ArrayReconstructorTest(unittest.TestCase):
+
+    def test_error(self):
+        self.assertRaises(TypeError, array_reconstructor,
+                          "", "b", 0, b"")
+        self.assertRaises(TypeError, array_reconstructor,
+                          str, "b", 0, b"")
+        self.assertRaises(TypeError, array_reconstructor,
+                          array.array, "b", '', b"")
+        self.assertRaises(TypeError, array_reconstructor,
+                          array.array, "b", 0, "")
+        self.assertRaises(ValueError, array_reconstructor,
+                          array.array, "?", 0, b"")
+        self.assertRaises(ValueError, array_reconstructor,
+                          array.array, "b", UNKNOWN_FORMAT, b"")
+        self.assertRaises(ValueError, array_reconstructor,
+                          array.array, "b", 22, b"")
+        self.assertRaises(ValueError, array_reconstructor,
+                          array.array, "d", 16, b"a")
+
+    def test_numbers(self):
+        testcases = (
+            (['B', 'H', 'I', 'L'], UNSIGNED_INT8, '=BBBB',
+             [0x80, 0x7f, 0, 0xff]),
+            (['b', 'h', 'i', 'l'], SIGNED_INT8, '=bbb',
+             [-0x80, 0x7f, 0]),
+            (['H', 'I', 'L'], UNSIGNED_INT16_LE, '<HHHH',
+             [0x8000, 0x7fff, 0, 0xffff]),
+            (['H', 'I', 'L'], UNSIGNED_INT16_BE, '>HHHH',
+             [0x8000, 0x7fff, 0, 0xffff]),
+            (['h', 'i', 'l'], SIGNED_INT16_LE, '<hhh',
+             [-0x8000, 0x7fff, 0]),
+            (['h', 'i', 'l'], SIGNED_INT16_BE, '>hhh',
+             [-0x8000, 0x7fff, 0]),
+            (['I', 'L'], UNSIGNED_INT32_LE, '<IIII',
+             [1<<31, (1<<31)-1, 0, (1<<32)-1]),
+            (['I', 'L'], UNSIGNED_INT32_BE, '>IIII',
+             [1<<31, (1<<31)-1, 0, (1<<32)-1]),
+            (['i', 'l'], SIGNED_INT32_LE, '<iii',
+             [-1<<31, (1<<31)-1, 0]),
+            (['i', 'l'], SIGNED_INT32_BE, '>iii',
+             [-1<<31, (1<<31)-1, 0]),
+            (['L'], UNSIGNED_INT64_LE, '<QQQQ',
+             [1<<63, (1<<63)-1, 0, (1<<64)-1]),
+            (['L'], UNSIGNED_INT64_BE, '>QQQQ',
+             [1<<63, (1<<63)-1, 0, (1<<64)-1]),
+            (['l'], SIGNED_INT64_LE, '<qqq',
+             [-1<<63, (1<<63)-1, 0]),
+            (['l'], SIGNED_INT64_BE, '>qqq',
+             [-1<<63, (1<<63)-1, 0]),
+            (['f'], IEEE_754_FLOAT_LE, '<ffff',
+             [16711938.0, float('inf'), float('-inf'), -0.0]),
+            (['f'], IEEE_754_FLOAT_BE, '>ffff',
+             [16711938.0, float('inf'), float('-inf'), -0.0]),
+            (['d'], IEEE_754_DOUBLE_LE, '<dddd',
+             [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
+            (['d'], IEEE_754_DOUBLE_BE, '>dddd',
+             [9006104071832581.0, float('inf'), float('-inf'), -0.0])
+        )
+        for testcase in testcases:
+            valid_typecodes, mformat_code, struct_fmt, values = testcase
+            arraystr = struct.pack(struct_fmt, *values)
+            for typecode in valid_typecodes:
+                a = array.array(typecode, values)
+                b = array_reconstructor(
+                    array.array, typecode, mformat_code, arraystr)
+                self.assertEqual(a, b,
+                    msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+
+    def test_unicode(self):
+        teststr = "Bonne Journ\xe9e \U0002030a\U00020347"
+        testcases = (
+            (UTF16_LE, "UTF-16-LE"),
+            (UTF16_BE, "UTF-16-BE"),
+            (UTF32_LE, "UTF-32-LE"),
+            (UTF32_BE, "UTF-32-BE")
+        )
+        for testcase in testcases:
+            mformat_code, encoding = testcase
+            a = array.array('u', teststr)
+            b = array_reconstructor(
+                array.array, 'u', mformat_code, teststr.encode(encoding))
+            self.assertEqual(a, b,
+                msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+
+
+tests.append(ArrayReconstructorTest)
+
 
 class BaseTest(unittest.TestCase):
     # Required class attributes (provided by subclasses
@@ -97,31 +220,38 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
 
+    def test_reduce_ex(self):
+        a = array.array(self.typecode, self.example)
+        for protocol in range(3):
+            self.assert_(a.__reduce_ex__(protocol)[0] is array.array)
+        for protocol in range(3, pickle.HIGHEST_PROTOCOL):
+            self.assert_(a.__reduce_ex__(protocol)[0] is array_reconstructor)
+
     def test_pickle(self):
-        for protocol in range(HIGHEST_PROTOCOL + 1):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             a = array.array(self.typecode, self.example)
-            b = loads(dumps(a, protocol))
+            b = pickle.loads(pickle.dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
 
             a = ArraySubclass(self.typecode, self.example)
             a.x = 10
-            b = loads(dumps(a, protocol))
+            b = pickle.loads(pickle.dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
             self.assertEqual(a.x, b.x)
             self.assertEqual(type(a), type(b))
 
     def test_pickle_for_empty_array(self):
-        for protocol in range(HIGHEST_PROTOCOL + 1):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             a = array.array(self.typecode)
-            b = loads(dumps(a, protocol))
+            b = pickle.loads(pickle.dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
 
             a = ArraySubclass(self.typecode)
             a.x = 10
-            b = loads(dumps(a, protocol))
+            b = pickle.loads(pickle.dumps(a, protocol))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
             self.assertEqual(a.x, b.x)
@@ -757,7 +887,7 @@ class BaseTest(unittest.TestCase):
 
     def test_weakref(self):
         s = array.array(self.typecode, self.example)
-        p = proxy(s)
+        p = weakref.proxy(s)
         self.assertEqual(p.tostring(), s.tostring())
         s = None
         self.assertRaises(ReferenceError, len, p)
