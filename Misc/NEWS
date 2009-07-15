@@ -1262,6 +1262,8 @@ Tests
   support.EnvironmentVarGuard objects restored the environment variables
   incorrectly on __exit__.
 
+- Issue #2389: Array objects are now pickled in a portable manner.
+
 
 What's New in Python 2.6 final
 ==============================
