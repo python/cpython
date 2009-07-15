@@ -1905,7 +1905,7 @@ array_reduce_ex(arrayobject *array, PyObject *value)
 		 * (e.g., non-IEEE floats), or we are pickling the array using
 		 * a Python 2.x compatible protocol.
 		 *
-		 * It is necessary to a list representation for Python 2.x
+		 * It is necessary to use a list representation for Python 2.x
 		 * compatible pickle protocol, since Python 2's str objects
 		 * are unpickled as unicode by Python 3. Thus it is impossible
 		 * to make arrays unpicklable by Python 3 by using their memory
