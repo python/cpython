@@ -74,6 +74,12 @@ Build
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
+Tests
+-----
+
+- Removed importlib's custom test discovery code and switched to
+    unittest.TestLoader.discover().
+
 
 What's New in Python 3.1?
 =========================
