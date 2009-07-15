@@ -107,6 +107,17 @@ class ArrayReconstructorTest(unittest.TestCase):
             (['i', 'l'], SIGNED_INT32_BE, '>iii',
              [-1<<31, (1<<31)-1, 0]),
             (['L'], UNSIGNED_INT64_LE, '<QQQQ',
+             [1<<31, (1<<31)-1, 0, (1<<32)-1]),
+            (['L'], UNSIGNED_INT64_BE, '>QQQQ',
+             [1<<31, (1<<31)-1, 0, (1<<32)-1]),
+            (['l'], SIGNED_INT64_LE, '<qqq',
+             [-1<<31, (1<<31)-1, 0]),
+            (['l'], SIGNED_INT64_BE, '>qqq',
+             [-1<<31, (1<<31)-1, 0]),
+            # The following tests for INT64 will raise an OverflowError
+            # when run on a 32-bit machine. The tests are simply skipped
+            # in that case.
+            (['L'], UNSIGNED_INT64_LE, '<QQQQ',
              [1<<63, (1<<63)-1, 0, (1<<64)-1]),
             (['L'], UNSIGNED_INT64_BE, '>QQQQ',
              [1<<63, (1<<63)-1, 0, (1<<64)-1]),
@@ -127,7 +138,10 @@ class ArrayReconstructorTest(unittest.TestCase):
             valid_typecodes, mformat_code, struct_fmt, values = testcase
             arraystr = struct.pack(struct_fmt, *values)
             for typecode in valid_typecodes:
-                a = array.array(typecode, values)
+                try:
+                    a = array.array(typecode, values)
+                except OverflowError:
+                    continue  # Skip this test case.
                 b = array_reconstructor(
                     array.array, typecode, mformat_code, arraystr)
                 self.assertEqual(a, b,
