@@ -1,9 +1,4 @@
-from test.support import run_unittest
-import importlib.test
-
-
-def test_main():
-    run_unittest(importlib.test.test_suite('importlib.test'))
+from importlib.test.__main__ import test_main
 
 
 if __name__ == '__main__':
