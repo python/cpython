@@ -50,16 +50,15 @@ __revision__ = "$Id$"
 import os
 import sys
 import copy
-from subprocess import Popen, PIPE
 import re
+from warnings import warn
 
 from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
 from distutils import log
-from distutils.version import LooseVersion
-from distutils.spawn import find_executable
+from distutils.util import get_compiler_versions
 
 def get_msvcr():
     """Include the appropriate MSVC runtime library if Python was built
@@ -110,7 +109,7 @@ class CygwinCCompiler(UnixCCompiler):
                 % details)
 
         self.gcc_version, self.ld_version, self.dllwrap_version = \
-            get_versions()
+            get_compiler_versions()
         self.debug_print(self.compiler_type + ": gcc %s, ld %s, dllwrap %s\n" %
                          (self.gcc_version,
                           self.ld_version,
@@ -359,31 +358,26 @@ def check_config_h():
         return (CONFIG_H_UNCERTAIN,
                 "couldn't read '%s': %s" % (fn, exc.strerror))
 
-RE_VERSION = re.compile('(\d+\.\d+(\.\d+)*)')
+class _Deprecated_SRE_Pattern(object):
+    def __init__(self, pattern):
+        self.pattern = pattern
 
-def _find_exe_version(cmd):
-    """Find the version of an executable by running `cmd` in the shell.
+    def __getattr__(self, name):
+        if name in ('findall', 'finditer', 'match', 'scanner', 'search',
+                    'split', 'sub', 'subn'):
+            warn("'distutils.cygwinccompiler.RE_VERSION' is deprecated "
+                 "and will be removed in the next version", DeprecationWarning)
+        return getattr(self.pattern, name)
 
-    If the command is not found, or the output does not match
-    `RE_VERSION`, returns None.
-    """
-    executable = cmd.split()[0]
-    if find_executable(executable) is None:
-        return None
-    out = Popen(cmd, shell=True, stdout=PIPE).stdout
-    try:
-        out_string = out.read()
-    finally:
-        out.close()
-    result = RE_VERSION.search(out_string)
-    if result is None:
-        return None
-    return LooseVersion(result.group(1))
+RE_VERSION = _Deprecated_SRE_Pattern(re.compile('(\d+\.\d+(\.\d+)*)'))
 
 def get_versions():
     """ Try to find out the versions of gcc, ld and dllwrap.
 
     If not possible it returns None for it.
     """
-    commands = ['gcc -dumpversion', 'ld -v', 'dllwrap --version']
-    return tuple([_find_exe_version(cmd) for cmd in commands])
+    warn("'distutils.cygwinccompiler.get_versions' is deprecated "
+         "use 'distutils.util.get_compiler_versions' instead",
+         DeprecationWarning)
+
+    return get_compiler_versions()

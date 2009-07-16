@@ -6,15 +6,33 @@ import os
 import sys
 import unittest
 from copy import copy
+from StringIO import StringIO
+import subprocess
 
 from distutils.errors import DistutilsPlatformError
 from distutils.util import (get_platform, convert_path, change_root,
                             check_environ, split_quoted, strtobool,
-                            rfc822_escape)
-from distutils import util # used to patch _environ_checked
+                            rfc822_escape, get_compiler_versions,
+                            _find_exe_version, _MAC_OS_X_LD_VERSION)
+from distutils import util
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
 from distutils.tests import support
+from distutils.version import LooseVersion
+
+class FakePopen(object):
+    test_class = None
+    def __init__(self, cmd, shell, stdout, stderr):
+        self.cmd = cmd.split()[0]
+        exes = self.test_class._exes
+        if self.cmd not in exes:
+            # we don't want to call the system, returning an empty
+            # output so it doesn't match
+            self.stdout = StringIO()
+            self.stderr = StringIO()
+        else:
+            self.stdout = StringIO(exes[self.cmd])
+            self.stderr = StringIO()
 
 class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
@@ -37,8 +55,15 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         else:
             self.uname = None
             self._uname = None
-
         os.uname = self._get_uname
+
+        # patching POpen
+        self.old_find_executable = util.find_executable
+        util.find_executable = self._find_executable
+        self._exes = {}
+        self.old_popen = subprocess.Popen
+        FakePopen.test_class = self
+        subprocess.Popen = FakePopen
 
     def tearDown(self):
         # getting back the environment
@@ -54,6 +79,8 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         else:
             del os.uname
         sysconfig._config_vars = copy(self._config_vars)
+        util.find_executable = self.old_find_executable
+        subprocess.Popen = self.old_popen
         super(UtilTestCase, self).tearDown()
 
     def _set_uname(self, uname):
@@ -236,6 +263,70 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         wanted = ('I am a%(8s)spoor%(8s)slonesome%(8s)s'
                   'header%(8s)s') % {'8s': '\n'+8*' '}
         self.assertEquals(res, wanted)
+
+    def test_find_exe_version(self):
+        # the ld version scheme under MAC OS is:
+        #   ^@(#)PROGRAM:ld  PROJECT:ld64-VERSION
+        #
+        # where VERSION is a 2-digit number for major
+        # revisions. For instance under Leopard, it's
+        # currently 77
+        #
+        # Dots are used when branching is done.
+        #
+        # The SnowLeopard ld64 is currently 95.2.12
+
+        for output, version in (('@(#)PROGRAM:ld  PROJECT:ld64-77', '77'),
+                                ('@(#)PROGRAM:ld  PROJECT:ld64-95.2.12',
+                                 '95.2.12')):
+            result = _MAC_OS_X_LD_VERSION.search(output)
+            self.assertEquals(result.group(1), version)
+
+    def _find_executable(self, name):
+        if name in self._exes:
+            return name
+        return None
+
+    def test_get_compiler_versions(self):
+        # get_versions calls distutils.spawn.find_executable on
+        # 'gcc', 'ld' and 'dllwrap'
+        self.assertEquals(get_compiler_versions(), (None, None, None))
+
+        # Let's fake we have 'gcc' and it returns '3.4.5'
+        self._exes['gcc'] = 'gcc (GCC) 3.4.5 (mingw special)\nFSF'
+        res = get_compiler_versions()
+        self.assertEquals(str(res[0]), '3.4.5')
+
+        # and let's see what happens when the version
+        # doesn't match the regular expression
+        # (\d+\.\d+(\.\d+)*)
+        self._exes['gcc'] = 'very strange output'
+        res = get_compiler_versions()
+        self.assertEquals(res[0], None)
+
+        # same thing for ld
+        if sys.platform != 'darwin':
+            self._exes['ld'] = 'GNU ld version 2.17.50 20060824'
+            res = get_compiler_versions()
+            self.assertEquals(str(res[1]), '2.17.50')
+            self._exes['ld'] = '@(#)PROGRAM:ld  PROJECT:ld64-77'
+            res = get_compiler_versions()
+            self.assertEquals(res[1], None)
+        else:
+            self._exes['ld'] = 'GNU ld version 2.17.50 20060824'
+            res = get_compiler_versions()
+            self.assertEquals(res[1], None)
+            self._exes['ld'] = '@(#)PROGRAM:ld  PROJECT:ld64-77'
+            res = get_compiler_versions()
+            self.assertEquals(str(res[1]), '77')
+
+        # and dllwrap
+        self._exes['dllwrap'] = 'GNU dllwrap 2.17.50 20060824\nFSF'
+        res = get_compiler_versions()
+        self.assertEquals(str(res[2]), '2.17.50')
+        self._exes['dllwrap'] = 'Cheese Wrap'
+        res = get_compiler_versions()
+        self.assertEquals(res[2], None)
 
 def test_suite():
     return unittest.makeSuite(UtilTestCase)
