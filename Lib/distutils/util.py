@@ -7,10 +7,12 @@ one of the other *util.py modules.
 __revision__ = "$Id$"
 
 import sys, os, string, re
+
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
-from distutils.spawn import spawn
+from distutils.spawn import spawn, find_executable
 from distutils import log
+from distutils.version import LooseVersion
 
 def get_platform():
     """Return a string that identifies the current platform.
@@ -538,6 +540,56 @@ def rfc822_escape(header):
     lines = [x.strip() for x in header.split('\n')]
     sep = '\n' + 8*' '
     return sep.join(lines)
+
+_RE_VERSION = re.compile(b'(\d+\.\d+(\.\d+)*)')
+_MAC_OS_X_LD_VERSION = re.compile(b'^@\(#\)PROGRAM:ld  PROJECT:ld64-((\d+)(\.\d+)*)')
+
+def _find_ld_version():
+    """Finds the ld version. The version scheme differs under Mac OSX."""
+    if sys.platform == 'darwin':
+        return _find_exe_version('ld -v', _MAC_OS_X_LD_VERSION)
+    else:
+        return _find_exe_version('ld -v')
+
+def _find_exe_version(cmd, pattern=_RE_VERSION):
+    """Find the version of an executable by running `cmd` in the shell.
+
+    `pattern` is a compiled regular expression. If not provided, default
+    to _RE_VERSION. If the command is not found, or the output does not
+    match the mattern, returns None.
+    """
+    from subprocess import Popen, PIPE
+    executable = cmd.split()[0]
+    if find_executable(executable) is None:
+        return None
+    pipe = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    try:
+        stdout, stderr = pipe.stdout.read(), pipe.stderr.read()
+    finally:
+        pipe.stdout.close()
+        pipe.stderr.close()
+    # some commands like ld under MacOS X, will give the
+    # output in the stderr, rather than stdout.
+    if stdout != b'':
+        out_string = stdout
+    else:
+        out_string = stderr
+
+    result = pattern.search(out_string)
+    if result is None:
+        return None
+    return LooseVersion(result.group(1).decode())
+
+def get_compiler_versions():
+    """Returns a tuple providing the versions of gcc, ld and dllwrap
+
+    For each command, if a command is not found, None is returned.
+    Otherwise a LooseVersion instance is returned.
+    """
+    gcc = _find_exe_version('gcc -dumpversion')
+    ld = _find_ld_version()
+    dllwrap = _find_exe_version('dllwrap --version')
+    return gcc, ld, dllwrap
 
 # 2to3 support
 
