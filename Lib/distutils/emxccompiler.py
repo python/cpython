@@ -21,12 +21,15 @@ handles the EMX port of the GNU C compiler to OS/2.
 
 __revision__ = "$Id$"
 
-import os,sys,copy
+import os, sys, copy
+from warnings import warn
+
 from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
 from distutils import log
+from distutils.util import get_compiler_versions
 
 class EMXCCompiler (UnixCCompiler):
 
@@ -55,8 +58,8 @@ class EMXCCompiler (UnixCCompiler):
                 ("Reason: %s." % details) +
                 "Compiling may fail because of undefined preprocessor macros.")
 
-        (self.gcc_version, self.ld_version) = \
-            get_versions()
+        gcc_version, ld_version, dllwrap_version = get_compiler_versions()
+        self.gcc_version, self.ld_version = gcc_version, ld_version
         self.debug_print(self.compiler_type + ": gcc %s, ld %s\n" %
                          (self.gcc_version,
                           self.ld_version) )
@@ -291,23 +294,11 @@ def get_versions():
     """ Try to find out the versions of gcc and ld.
         If not possible it returns None for it.
     """
-    from distutils.version import StrictVersion
-    from distutils.spawn import find_executable
-    import re
+    warn("'distutils.emxccompiler.get_versions' is deprecated "
+         "use 'distutils.util.get_compiler_versions' instead",
+         DeprecationWarning)
 
-    gcc_exe = find_executable('gcc')
-    if gcc_exe:
-        out = os.popen(gcc_exe + ' -dumpversion','r')
-        out_string = out.read()
-        out.close()
-        result = re.search('(\d+\.\d+\.\d+)', out_string, re.ASCII)
-        if result:
-            gcc_version = StrictVersion(result.group(1))
-        else:
-            gcc_version = None
-    else:
-        gcc_version = None
     # EMX ld has no way of reporting version number, and we use GCC
     # anyway - so we can link OMF DLLs
-    ld_version = None
-    return (gcc_version, ld_version)
+    gcc_version, ld_version, dllwrap_version = get_compiler_versions()
+    return gcc_version, None
