@@ -1066,10 +1066,10 @@ class Popen(object):
                     gc.disable()
                     try:
                         self.pid = os.fork()
-                    finally:
+                    except:
                         if gc_was_enabled:
                             gc.enable()
-
+                        raise
                     self._child_created = True
                     if self.pid == 0:
                         # Child
