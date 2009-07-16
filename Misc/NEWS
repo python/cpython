@@ -352,6 +352,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6433: fixed issues with multiprocessing.pool.map hanging on empty list
+
 - Issue #6314: logging: Extra checks on the "level" argument in more places.
 
 - Issue #2622: Fixed an ImportError when importing email.messsage from a
