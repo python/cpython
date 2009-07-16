@@ -990,6 +990,12 @@ class _TestPool(BaseTestCase):
         self.assertEqual(pmap(sqr, range(100), chunksize=20),
                          map(sqr, range(100)))
 
+    def test_map_chunksize(self):
+        try:
+            self.pool.map_async(sqr, [], chunksize=1).get(timeout=TIMEOUT1)
+        except multiprocessing.TimeoutError:
+            self.fail("pool.map_async with chunksize stalled on null list")
+
     def test_async(self):
         res = self.pool.apply_async(sqr, (7, TIMEOUT1,))
         get = TimingWrapper(res.get)

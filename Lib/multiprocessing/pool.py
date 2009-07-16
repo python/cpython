@@ -207,6 +207,8 @@ class Pool(object):
             chunksize, extra = divmod(len(iterable), len(self._pool) * 4)
             if extra:
                 chunksize += 1
+        if len(iterable) == 0:
+            chunksize = 0
 
         task_batches = Pool._get_tasks(func, iterable, chunksize)
         result = MapResult(self._cache, chunksize, len(iterable), callback)
