@@ -3550,27 +3550,21 @@ AC_CACHE_VAL(ac_cv_broken_poll,
 AC_TRY_RUN([
 #include <poll.h>
 
-int main (void)
-    {
+int main()
+{
     struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
-    
+    int poll_test;
+
     close (42);
 
-    int poll_test = poll (&poll_struct, 1, 0);
-
+    poll_test = poll(&poll_struct, 1, 0);
     if (poll_test < 0)
-        {
-        exit(0);
-        }
+        return 0;
     else if (poll_test == 0 && poll_struct.revents != POLLNVAL)
-        {
-        exit(0);
-        }
+        return 0;
     else
-        {
-        exit(1);
-        }
-    }
+        return 1;
+}
 ],
 ac_cv_broken_poll=yes,
 ac_cv_broken_poll=no,
