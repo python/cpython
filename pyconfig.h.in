@@ -946,13 +946,13 @@
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The number of bytes in an off_t. */
+/* The size of `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 
 /* The size of `pid_t', as computed by sizeof. */
 #undef SIZEOF_PID_T
 
-/* The number of bytes in a pthread_t. */
+/* The size of `pthread_t', as computed by sizeof. */
 #undef SIZEOF_PTHREAD_T
 
 /* The size of `short', as computed by sizeof. */
@@ -961,7 +961,7 @@
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
-/* The number of bytes in a time_t. */
+/* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
 
 /* The size of `uintptr_t', as computed by sizeof. */
