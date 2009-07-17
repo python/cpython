@@ -40,6 +40,8 @@ C-API
 Library
 -------
 
+- Issue #6415: Fixed warnings.warn sagfault on bad formatted string.
+
 - Issue #6358: The exit status of a command started with os.popen() was
   reported differently than it did with python 2.x.
 

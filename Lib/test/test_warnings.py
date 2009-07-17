@@ -338,6 +338,20 @@ class WarnTests(unittest.TestCase):
                             self.module.warn_explicit,
                             None, Warning, None, 1, registry=42)
 
+    def test_bad_str(self):
+        # issue 6415
+        # Warnings instance with a bad format string for __str__ should not
+        # trigger a bus error.
+        class BadStrWarning(Warning):
+            """Warning with a bad format string for __str__."""
+            def __str__(self):
+                return ("A bad formatted string %(err)" %
+                        {"err" : "there is no %(err)s"})
+
+        with self.assertRaises(ValueError):
+            self.module.warn(BadStrWarning())
+
+
 class CWarnTests(BaseTest, WarnTests):
     module = c_warnings
 
