@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6415: Fixed warnings.warn sagfault on bad formatted string.
+
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
 
 - Issue #5230: pydoc would report no documentation found if a module generated
