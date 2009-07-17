@@ -1428,9 +1428,10 @@ AC_CHECK_TYPES(uintptr_t,
         #include <stdint.h>
         #endif])
 
-AC_CHECK_SIZEOF(off_t, []
-[AC_INCLUDES_DEFAULT,
- #include <sys/types.h>
+AC_CHECK_SIZEOF(off_t, [], [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 ])
 
 AC_MSG_CHECKING(whether to enable large file support)
@@ -1447,9 +1448,13 @@ else
   AC_MSG_RESULT(no)
 fi
 
-AC_CHECK_SIZEOF(time_t, []
-[AC_INCLUDES_DEFAULT,
- #include <time.h>
+AC_CHECK_SIZEOF(time_t, [], [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 ])
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
@@ -1466,9 +1471,10 @@ have_pthread_t=no
 AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = *(pthread_t*)0;], have_pthread_t=yes)
 AC_MSG_RESULT($have_pthread_t)
 if test "$have_pthread_t" = yes ; then
-  AC_CHECK_SIZEOF(pthread_t, []
-  [AC_INCLUDES_DEFAULT,
-    #include <pthread.h>
+  AC_CHECK_SIZEOF(pthread_t, [], [
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
   ])
 fi
 CC="$ac_save_cc"
