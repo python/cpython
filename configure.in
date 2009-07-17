@@ -1428,26 +1428,10 @@ AC_CHECK_TYPES(uintptr_t,
         #include <stdint.h>
         #endif])
 
-
-# Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
-AC_MSG_CHECKING(size of off_t)
-AC_CACHE_VAL(ac_cv_sizeof_off_t,
-[AC_TRY_RUN([#include <stdio.h>
-#include <sys/types.h>
-main()
-{
-  FILE *f=fopen("conftestval", "w");
-  if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof(off_t));
-  exit(0);
-}],
-ac_cv_sizeof_off_t=`cat conftestval`,
-ac_cv_sizeof_off_t=0,
-ac_cv_sizeof_off_t=4)
+AC_CHECK_SIZEOF(off_t, []
+[AC_INCLUDES_DEFAULT,
+ #include <sys/types.h>
 ])
-AC_MSG_RESULT($ac_cv_sizeof_off_t)
-AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t,
-[The number of bytes in an off_t.])
 
 AC_MSG_CHECKING(whether to enable large file support)
 if test "$have_long_long" = yes -a \
@@ -1463,26 +1447,10 @@ else
   AC_MSG_RESULT(no)
 fi
 
-# AC_CHECK_SIZEOF() doesn't include <time.h>.
-AC_MSG_CHECKING(size of time_t)
-AC_CACHE_VAL(ac_cv_sizeof_time_t,
-[AC_TRY_RUN([#include <stdio.h>
-#include <time.h>
-main()
-{
-  FILE *f=fopen("conftestval", "w");
-  if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof(time_t));
-  exit(0);
-}],
-ac_cv_sizeof_time_t=`cat conftestval`,
-ac_cv_sizeof_time_t=0,
-ac_cv_sizeof_time_t=4)
+AC_CHECK_SIZEOF(time_t, []
+[AC_INCLUDES_DEFAULT,
+ #include <time.h>
 ])
-AC_MSG_RESULT($ac_cv_sizeof_time_t)
-AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t, 
-[The number of bytes in a time_t.])
-
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
 ac_save_cc="$CC"
@@ -1498,25 +1466,10 @@ have_pthread_t=no
 AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = *(pthread_t*)0;], have_pthread_t=yes)
 AC_MSG_RESULT($have_pthread_t)
 if test "$have_pthread_t" = yes ; then
-  # AC_CHECK_SIZEOF() doesn't include <pthread.h>.
-  AC_MSG_CHECKING(size of pthread_t)
-  AC_CACHE_VAL(ac_cv_sizeof_pthread_t,
-  [AC_TRY_RUN([#include <stdio.h>
-#include <pthread.h>
-  main()
-  {
-    FILE *f=fopen("conftestval", "w");
-    if (!f) exit(1);
-    fprintf(f, "%d\n", sizeof(pthread_t));
-    exit(0);
-  }],
-  ac_cv_sizeof_pthread_t=`cat conftestval`,
-  ac_cv_sizeof_pthread_t=0,
-  ac_cv_sizeof_pthread_t=4)
+  AC_CHECK_SIZEOF(pthread_t, []
+  [AC_INCLUDES_DEFAULT,
+    #include <pthread.h>
   ])
-  AC_MSG_RESULT($ac_cv_sizeof_pthread_t)
-  AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t,
-   [The number of bytes in a pthread_t.])
 fi
 CC="$ac_save_cc"
 
