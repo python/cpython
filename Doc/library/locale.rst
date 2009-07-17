@@ -144,13 +144,127 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: nl_langinfo(option)
 
-   Return some locale-specific information as a string. This function is not
-   available on all systems, and the set of possible options might also vary across
-   platforms. The possible argument values are numbers, for which symbolic
-   constants are available in the locale module.
+   Return some locale-specific information as a string.  This function is not
+   available on all systems, and the set of possible options might also vary
+   across platforms.  The possible argument values are numbers, for which
+   symbolic constants are available in the locale module.
+
+   The :func:`nl_langinfo` function accepts one of the following keys.  Most
+   descriptions are taken from the corresponding description in the GNU C
+   library.
+
+   .. data:: CODESET
+
+      Get a string with the name of the character encoding used in the
+      selected locale.
+
+   .. data:: D_T_FMT
+
+      Get a string that can be used as a format string for :func:`strftime` to
+      represent time and date in a locale-specific way.
+
+   .. data:: D_FMT
+
+      Get a string that can be used as a format string for :func:`strftime` to
+      represent a date in a locale-specific way.
+
+   .. data:: T_FMT
+
+      Get a string that can be used as a format string for :func:`strftime` to
+      represent a time in a locale-specific way.
+
+   .. data:: T_FMT_AMPM
+
+      Get a format string for :func:`strftime` to represent time in the am/pm
+      format.
+
+   .. data:: DAY_1 ... DAY_7
+
+      Get the name of the n-th day of the week.
+
+      .. note::
+
+         This follows the US convention of :const:`DAY_1` being Sunday, not the
+         international convention (ISO 8601) that Monday is the first day of the
+         week.
+
+   .. data:: ABDAY_1 ... ABDAY_7
+
+      Get the abbreviated name of the n-th day of the week.
+
+   .. data:: MON_1 ... MON_12
+
+      Get the name of the n-th month.
+
+   .. data:: ABMON_1 ... ABMON_12
+
+      Get the abbreviated name of the n-th month.
+
+   .. data:: RADIXCHAR
+
+      Get the radix character (decimal dot, decimal comma, etc.)
+
+   .. data:: THOUSEP
+
+      Get the separator character for thousands (groups of three digits).
+
+   .. data:: YESEXPR
+
+      Get a regular expression that can be used with the regex function to
+      recognize a positive response to a yes/no question.
+
+      .. note::
+
+         The expression is in the syntax suitable for the :cfunc:`regex` function
+         from the C library, which might differ from the syntax used in :mod:`re`.
+
+   .. data:: NOEXPR
+
+      Get a regular expression that can be used with the regex(3) function to
+      recognize a negative response to a yes/no question.
+
+   .. data:: CRNCYSTR
+
+      Get the currency symbol, preceded by "-" if the symbol should appear before
+      the value, "+" if the symbol should appear after the value, or "." if the
+      symbol should replace the radix character.
+
+   .. data:: ERA
+
+      Get a string that represents the era used in the current locale.
+
+      Most locales do not define this value.  An example of a locale which does
+      define this value is the Japanese one.  In Japan, the traditional
+      representation of dates includes the name of the era corresponding to the
+      then-emperor's reign.
+
+      Normally it should not be necessary to use this value directly. Specifying
+      the ``E`` modifier in their format strings causes the :func:`strftime`
+      function to use this information.  The format of the returned string is not
+      specified, and therefore you should not assume knowledge of it on different
+      systems.
+
+   .. data:: ERA_YEAR
+
+      Get the year in the relevant era of the locale.
+
+   .. data:: ERA_D_T_FMT
+
+      Get a format string for :func:`strftime` to represent dates and times in a
+      locale-specific era-based way.
+
+   .. data:: ERA_D_FMT
+
+      Get a format string for :func:`strftime` to represent time in a
+      locale-specific era-based way.
+
+   .. data:: ALT_DIGITS
+
+      Get a representation of up to 100 values used to represent the values
+      0 to 99.
 
 
-.. function:: getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'))
+.. function:: getdefaultlocale([envvars])
 
    Tries to determine the default locale settings and returns them as a tuple of
    the form ``(language code, encoding)``.
@@ -338,140 +452,13 @@ The :mod:`locale` module defines the following exception and functions:
    This is a symbolic constant used for different values returned by
    :func:`localeconv`.
 
-The :func:`nl_langinfo` function accepts one of the following keys. Most
-descriptions are taken from the corresponding description in the GNU C library.
-
-
-.. data:: CODESET
-
-   Return a string with the name of the character encoding used in the selected
-   locale.
-
-
-.. data:: D_T_FMT
-
-   Return a string that can be used as a format string for strftime(3) to represent
-   time and date in a locale-specific way.
-
-
-.. data:: D_FMT
-
-   Return a string that can be used as a format string for strftime(3) to represent
-   a date in a locale-specific way.
-
-
-.. data:: T_FMT
-
-   Return a string that can be used as a format string for strftime(3) to represent
-   a time in a locale-specific way.
-
-
-.. data:: T_FMT_AMPM
-
-   The return value can be used as a format string for 'strftime' to represent time
-   in the am/pm format.
-
-
-.. data:: DAY_1 ... DAY_7
-
-   Return name of the n-th day of the week.
-
-   .. note::
-
-      This follows the US convention of :const:`DAY_1` being Sunday, not the
-      international convention (ISO 8601) that Monday is the first day of the week.
-
-
-.. data:: ABDAY_1 ... ABDAY_7
-
-   Return abbreviated name of the n-th day of the week.
-
-
-.. data:: MON_1 ... MON_12
-
-   Return name of the n-th month.
-
-
-.. data:: ABMON_1 ... ABMON_12
-
-   Return abbreviated name of the n-th month.
-
-
-.. data:: RADIXCHAR
-
-   Return radix character (decimal dot, decimal comma, etc.)
-
-
-.. data:: THOUSEP
-
-   Return separator character for thousands (groups of three digits).
-
-
-.. data:: YESEXPR
-
-   Return a regular expression that can be used with the regex function to
-   recognize a positive response to a yes/no question.
-
-   .. note::
-
-      The expression is in the syntax suitable for the :cfunc:`regex` function from
-      the C library, which might differ from the syntax used in :mod:`re`.
-
-
-.. data:: NOEXPR
-
-   Return a regular expression that can be used with the regex(3) function to
-   recognize a negative response to a yes/no question.
-
-
-.. data:: CRNCYSTR
-
-   Return the currency symbol, preceded by "-" if the symbol should appear before
-   the value, "+" if the symbol should appear after the value, or "." if the symbol
-   should replace the radix character.
-
-
-.. data:: ERA
-
-   The return value represents the era used in the current locale.
-
-   Most locales do not define this value.  An example of a locale which does define
-   this value is the Japanese one.  In Japan, the traditional representation of
-   dates includes the name of the era corresponding to the then-emperor's reign.
-
-   Normally it should not be necessary to use this value directly. Specifying the
-   ``E`` modifier in their format strings causes the :func:`strftime` function to
-   use this information.  The format of the returned string is not specified, and
-   therefore you should not assume knowledge of it on different systems.
-
-
-.. data:: ERA_YEAR
-
-   The return value gives the year in the relevant era of the locale.
-
-
-.. data:: ERA_D_T_FMT
-
-   This return value can be used as a format string for :func:`strftime` to
-   represent dates and times in a locale-specific era-based way.
-
-
-.. data:: ERA_D_FMT
-
-   This return value can be used as a format string for :func:`strftime` to
-   represent time in a locale-specific era-based way.
-
-
-.. data:: ALT_DIGITS
-
-   The return value is a representation of up to 100 values used to represent the
-   values 0 to 99.
 
 Example::
 
    >>> import locale
    >>> loc = locale.getlocale() # get current locale
-   >>> locale.setlocale(locale.LC_ALL, 'de_DE') # use German locale; name might vary with platform
+   # use German locale; name might vary with platform
+   >>> locale.setlocale(locale.LC_ALL, 'de_DE')
    >>> locale.strcoll('f\xe4n', 'foo') # compare a string containing an umlaut
    >>> locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
    >>> locale.setlocale(locale.LC_ALL, 'C') # use default (C) locale
