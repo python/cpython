@@ -320,6 +320,8 @@ warn_explicit(PyObject *category, PyObject *message,
     }
     if (rc == 1) {
         text = PyObject_Str(message);
+        if (text == NULL)
+            goto cleanup;
         category = (PyObject*)message->ob_type;
     }
     else {
