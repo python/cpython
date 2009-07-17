@@ -1526,7 +1526,7 @@ static const struct mformatdescr {
 static enum machine_format_code
 typecode_to_mformat_code(int typecode)
 {
-#ifdef BYTEORDER_IS_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 	const int is_big_endian = 1;
 #else
 	const int is_big_endian = 0;
