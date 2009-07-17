@@ -1806,7 +1806,8 @@ PyCurses_EraseChar(PyObject *self)
 static PyObject *
 PyCurses_getsyx(PyObject *self)
 {
-  int x,y;
+  int x = 0;
+  int y = 0;
 
   PyCursesInitialised
 
