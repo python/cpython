@@ -908,6 +908,13 @@ Library
   It's `distutils.util.get_compiler_versions`. Added deprecation warnings
   for the obsolete get_versions() functions.
 
+- Issue #6433: fixed issues with multiprocessing.pool.map hanging on empty list
+
+- Issue #6314: logging: Extra checks on the "level" argument in more places.
+
+- Issue #2622: Fixed an ImportError when importing email.messsage from a
+  standalone application built with py2exe or py2app.
+
 - Issue #6459: distutils.command.build_ext.get_export_symbols now uses the
   "PyInit" prefix, rather than "init".
 
@@ -919,6 +926,10 @@ Library
 - Issue #6413: Fixed the log level in distutils.dist for announce.
 
 - Issue #6403: Fixed package path usage in build_ext.
+
+- Issues #5155, 5313, 5331: multiprocessing.Process._bootstrap was
+  unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
+  descriptor errors
 
 - Issue #6365: Distutils build_ext inplace mode was copying the compiled
   extension in a subdirectory if the extension name had dots.

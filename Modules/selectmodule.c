@@ -1492,7 +1492,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 	if (nevents < 0) {
 		PyErr_Format(PyExc_ValueError,
 			"Length of eventlist must be 0 or positive, got %d",
-			nchanges);
+			nevents);
 		return NULL;
 	}
 
@@ -1550,6 +1550,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 			PyErr_NoMemory();
 			return NULL;
 		}
+		i = 0;
 		while ((ei = PyIter_Next(it)) != NULL) {
 			if (!kqueue_event_Check(ei)) {
 				Py_DECREF(ei);
@@ -1558,7 +1559,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 				 	"select.kevent objects");
 				goto error;
 			} else {
-				chl[i] = ((kqueue_event_Object *)ei)->e;
+				chl[i++] = ((kqueue_event_Object *)ei)->e;
 			}
 			Py_DECREF(ei);
 		}
@@ -1589,7 +1590,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 		goto error;
 	}
 
-	for (i=0; i < gotevents; i++) {
+	for (i = 0; i < gotevents; i++) {
 		kqueue_event_Object *ch;
 
 		ch = PyObject_New(kqueue_event_Object, &kqueue_event_Type);

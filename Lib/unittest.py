@@ -1684,8 +1684,6 @@ class TestProgram(object):
                  argv=None, testRunner=None,
                  testLoader=defaultTestLoader, exit=True,
                  verbosity=1):
-        if testRunner is None:
-            testRunner = TextTestRunner
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -1775,6 +1773,8 @@ class TestProgram(object):
         self.test = loader.discover(start_dir, pattern, top_level_dir)
 
     def runTests(self):
+        if self.testRunner is None:
+            self.testRunner = TextTestRunner
         if isinstance(self.testRunner, type):
             try:
                 testRunner = self.testRunner(verbosity=self.verbosity)
