@@ -2591,7 +2591,7 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
 # exit Python
 AC_MSG_CHECKING(for chflags)
 AC_CACHE_VAL(ac_cv_have_chflags,
-AC_TRY_RUN([
+AC_TRY_RUN([[
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -2600,7 +2600,7 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-], ac_cv_have_chflags=yes,
+]], ac_cv_have_chflags=yes,
    ac_cv_have_chflags=no,
    ac_cv_have_chflags=no)
 )
@@ -2612,7 +2612,7 @@ fi
 
 AC_MSG_CHECKING(for lchflags)
 AC_CACHE_VAL(ac_cv_have_lchflags,
-AC_TRY_RUN([
+AC_TRY_RUN([[
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -2621,7 +2621,7 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-], ac_cv_have_lchflags=yes,
+]], ac_cv_have_lchflags=yes,
    ac_cv_have_lchflags=no,
    ac_cv_have_lchflags=no)
 )
