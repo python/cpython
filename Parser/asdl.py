@@ -323,8 +323,8 @@ class VisitorBase(object):
         try:
             meth(object, *args)
         except Exception:
-            output("Error visiting", repr(object))
-            output(sys.exc_info()[1])
+            output("Error visiting" + repr(object))
+            output(str(sys.exc_info()[1]))
             traceback.print_exc()
             # XXX hack
             if hasattr(self, 'file'):
