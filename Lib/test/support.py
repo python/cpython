@@ -453,13 +453,12 @@ def open_urlresource(url, *args, **kw):
     requires('urlfetch')
     filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
-    for path in [os.path.curdir, os.path.pardir]:
-        fn = os.path.join(path, filename)
-        if os.path.exists(fn):
-            return open(fn, *args, **kw)
+    fn = os.path.join(os.path.dirname(__file__), "data", filename)
+    if os.path.exists(fn):
+        return open(fn)
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
-    fn, _ = urllib.request.urlretrieve(url, filename)
+    fn, _ = urllib.request.urlretrieve(url, fn)
     return open(fn, *args, **kw)
 
 
