@@ -352,6 +352,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6415: Fixed warnings.warn sagfault on bad formatted string.
+
 - Issue #6466: now distutils.cygwinccompiler and distutils.emxccompiler
   uses the same refactored function to get gcc/ld/dllwrap versions numbers.
   It's `distutils.util.get_compiler_versions`. Added deprecation warnings
