@@ -918,10 +918,11 @@ yes)
     AC_MSG_CHECKING(whether $CC accepts -fno-strict-aliasing)
      ac_save_cc="$CC"
      CC="$CC -fno-strict-aliasing"
+     AC_CACHE_VAL(ac_cv_no_strict_aliasing_ok,
      AC_TRY_RUN([int main() { return 0; }],
      ac_cv_no_strict_aliasing_ok=yes,
      ac_cv_no_strict_aliasing_ok=no,
-     ac_cv_no_strict_aliasing_ok=no)
+     ac_cv_no_strict_aliasing_ok=no))
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_no_strict_aliasing_ok)
     if test $ac_cv_no_strict_aliasing_ok = yes
@@ -2589,6 +2590,7 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
 # On Tru64, chflags seems to be present, but calling it will
 # exit Python
 AC_MSG_CHECKING(for chflags)
+AC_CACHE_VAL(ac_cv_have_chflags,
 AC_TRY_RUN([
 #include <sys/stat.h>
 #include <unistd.h>
@@ -2598,12 +2600,18 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-],AC_DEFINE(HAVE_CHFLAGS, 1, Define to 1 if you have the `chflags' function.)
-  AC_MSG_RESULT(yes),
-  AC_MSG_RESULT(no)
+], ac_cv_have_chflags=yes,
+   ac_cv_have_chflags=no,
+   ac_cv_have_chflags=no)
 )
+AC_MSG_RESULT($ac_cv_have_chflags)
+if test $ac_cv_have_chflags = yes
+then
+  AC_DEFINE(HAVE_CHFLAGS, 1, Define to 1 if you have the `chflags' function.)
+fi
 
 AC_MSG_CHECKING(for lchflags)
+AC_CACHE_VAL(ac_cv_have_lchflags,
 AC_TRY_RUN([
 #include <sys/stat.h>
 #include <unistd.h>
@@ -2613,10 +2621,15 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-],AC_DEFINE(HAVE_LCHFLAGS, 1, Define to 1 if you have the `lchflags' function.)
-  AC_MSG_RESULT(yes),
-  AC_MSG_RESULT(no)
+], ac_cv_have_lchflags=yes,
+   ac_cv_have_lchflags=no,
+   ac_cv_have_lchflags=no)
 )
+AC_MSG_RESULT($ac_cv_have_lchflags)
+if test $ac_cv_have_lchflags = yes
+then
+  AC_DEFINE(HAVE_LCHFLAGS, 1, Define to 1 if you have the `lchflags' function.)
+fi
 
 dnl Check if system zlib has *Copy() functions
 dnl
@@ -2770,19 +2783,22 @@ AC_TRY_LINK([
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdio.h>
-],[
-getaddrinfo(NULL, NULL, NULL, NULL);
-], [
-AC_MSG_RESULT(yes)
-AC_MSG_CHECKING(getaddrinfo bug)
-AC_TRY_RUN([
+], [getaddrinfo(NULL, NULL, NULL, NULL);],
+have_getaddrinfo=yes,
+have_getaddrinfo=no)
+AC_MSG_RESULT($have_getaddrinfo)
+if test $have_getaddrinfo = yes
+then
+  AC_MSG_CHECKING(getaddrinfo bug)
+  AC_CACHE_VAL(ac_cv_buggy_getaddrinfo,
+  AC_TRY_RUN([[
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-main()
+int main()
 {
   int passive, gaierr, inet4 = 0, inet6 = 0;
   struct addrinfo hints, *ai, *aitop;
@@ -2854,26 +2870,22 @@ main()
 
   if (aitop)
     freeaddrinfo(aitop);
-  exit(0);
+  return 0;
 
  bad:
   if (aitop)
     freeaddrinfo(aitop);
-  exit(1);
+  return 1;
 }
-],
-AC_MSG_RESULT(good)
-buggygetaddrinfo=no,
-AC_MSG_RESULT(buggy)
-buggygetaddrinfo=yes,
-AC_MSG_RESULT(buggy)
-buggygetaddrinfo=yes)], [
-AC_MSG_RESULT(no)
-buggygetaddrinfo=yes
-])
+]], ac_cv_buggy_getaddrinfo=no,
+    ac_cv_buggy_getaddrinfo=yes,
+    ac_cv_buggy_getaddrinfo=yes))
+fi
 
-if test "$buggygetaddrinfo" = "yes"; then
-	if test "$ipv6" = "yes"; then
+if test $have_getaddrinfo = no -o $ac_cv_buggy_getaddrinfo = yes
+then
+	if test $ipv6 = yes
+	then
 		echo 'Fatal: You must get working getaddrinfo() function.'
 		echo '       or you can specify "--disable-ipv6"'.
 		exit 1
@@ -3205,6 +3217,7 @@ fi
 
 # Multiprocessing check for broken sem_getvalue
 AC_MSG_CHECKING(for broken sem_getvalue)
+AC_CACHE_VAL(ac_cv_broken_sem_getvalue,
 AC_TRY_RUN([
 #include <unistd.h>
 #include <fcntl.h>
@@ -3225,11 +3238,16 @@ int main(void){
   sem_close(a);
   return res==-1 ? 1 : 0;
 }
-]
-,AC_MSG_RESULT(no),
- AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1, define to 1 if your sem_getvalue is broken.)
+], ac_cv_broken_sem_getvalue=no,
+   ac_cv_broken_sem_getvalue=yes,
+   ac_cv_broken_sem_getvalue=yes)
 )
+AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
+if test $ac_cv_broken_sem_getvalue = yes
+then
+  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1,
+  [define to 1 if your sem_getvalue is broken.])
+fi
 
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
 # -0. on some architectures.
@@ -3534,6 +3552,7 @@ then
 fi
 
 AC_MSG_CHECKING(for broken poll())
+AC_CACHE_VAL(ac_cv_broken_poll,
 AC_TRY_RUN([
 #include <poll.h>
 
@@ -3561,7 +3580,7 @@ int main (void)
 ],
 ac_cv_broken_poll=yes,
 ac_cv_broken_poll=no,
-ac_cv_broken_poll=no)
+ac_cv_broken_poll=no))
 AC_MSG_RESULT($ac_cv_broken_poll)
 if test "$ac_cv_broken_poll" = yes
 then
@@ -3763,6 +3782,7 @@ else
 fi
 
 AC_MSG_CHECKING(for %zd printf() format support)
+AC_CACHE_VAL(ac_cv_have_size_t_format,
 AC_TRY_RUN([#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -3796,10 +3816,17 @@ int main()
 	return 1;
 
     return 0;
-}],
-[AC_MSG_RESULT(yes)
- AC_DEFINE(PY_FORMAT_SIZE_T, "z", [Define to printf format modifier for Py_ssize_t])],
- AC_MSG_RESULT(no))
+}
+], ac_cv_have_size_t_format=yes,
+   ac_cv_have_size_t_format=no,
+   ac_cv_have_size_t_format=no)
+)
+AC_MSG_RESULT($ac_cv_have_size_t_format)
+if test $ac_cv_have_size_t_format = yes
+then
+  AC_DEFINE(PY_FORMAT_SIZE_T, "z",
+  [Define to printf format modifier for Py_ssize_t])
+fi
 
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
