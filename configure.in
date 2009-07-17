@@ -3777,7 +3777,8 @@ fi
 
 AC_MSG_CHECKING(for %zd printf() format support)
 AC_CACHE_VAL(ac_cv_have_size_t_format,
-AC_TRY_RUN([#include <stdio.h>
+AC_TRY_RUN([[
+#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -3811,9 +3812,9 @@ int main()
 
     return 0;
 }
-], ac_cv_have_size_t_format=yes,
-   ac_cv_have_size_t_format=no,
-   ac_cv_have_size_t_format=no)
+]], ac_cv_have_size_t_format=yes,
+    ac_cv_have_size_t_format=no,
+    ac_cv_have_size_t_format=no)
 )
 AC_MSG_RESULT($ac_cv_have_size_t_format)
 if test $ac_cv_have_size_t_format = yes
