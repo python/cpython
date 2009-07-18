@@ -34,6 +34,10 @@ C-API
 Library
 -------
 
+- Issue #6431: Make Fraction type return NotImplemented when it doesn't
+  know how to handle a comparison without loss of precision.  Also add
+  correct handling of infinities and nans for comparisons with float.
+
 - Issue #6415: Fixed warnings.warn sagfault on bad formatted string.
 
 - Issue #6358: The exit status of a command started with os.popen() was
