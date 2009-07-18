@@ -3,6 +3,7 @@
 from decimal import Decimal
 from test.support import run_unittest
 import math
+import numbers
 import operator
 import fractions
 import unittest
@@ -11,6 +12,69 @@ from pickle import dumps, loads
 F = fractions.Fraction
 gcd = fractions.gcd
 
+class DummyFloat(object):
+    """Dummy float class for testing comparisons with Fractions"""
+
+    def __init__(self, value):
+        if not isinstance(value, float):
+            raise TypeError("DummyFloat can only be initialized from float")
+        self.value = value
+
+    def _richcmp(self, other, op):
+        if isinstance(other, numbers.Rational):
+            return op(F.from_float(self.value), other)
+        elif isinstance(other, DummyFloat):
+            return op(self.value, other.value)
+        else:
+            return NotImplemented
+
+    def __eq__(self, other): return self._richcmp(other, operator.eq)
+    def __le__(self, other): return self._richcmp(other, operator.le)
+    def __lt__(self, other): return self._richcmp(other, operator.lt)
+    def __ge__(self, other): return self._richcmp(other, operator.ge)
+    def __gt__(self, other): return self._richcmp(other, operator.gt)
+
+    # shouldn't be calling __float__ at all when doing comparisons
+    def __float__(self):
+        assert False, "__float__ should not be invoked for comparisons"
+
+    # same goes for subtraction
+    def __sub__(self, other):
+        assert False, "__sub__ should not be invoked for comparisons"
+    __rsub__ = __sub__
+
+
+class DummyRational(object):
+    """Test comparison of Fraction with a naive rational implementation."""
+
+    def __init__(self, num, den):
+        g = gcd(num, den)
+        self.num = num // g
+        self.den = den // g
+
+    def __eq__(self, other):
+        if isinstance(other, fractions.Fraction):
+            return (self.num == other._numerator and
+                    self.den == other._denominator)
+        else:
+            return NotImplemented
+
+    def __lt__(self, other):
+        return(self.num * other._denominator < self.den * other._numerator)
+
+    def __gt__(self, other):
+        return(self.num * other._denominator > self.den * other._numerator)
+
+    def __le__(self, other):
+        return(self.num * other._denominator <= self.den * other._numerator)
+
+    def __ge__(self, other):
+        return(self.num * other._denominator >= self.den * other._numerator)
+
+    # this class is for testing comparisons; conversion to float
+    # should never be used for a comparison, since it loses accuracy
+    def __float__(self):
+        assert False, "__float__ should not be invoked"
 
 class GcdTest(unittest.TestCase):
 
@@ -324,6 +388,50 @@ class FractionTest(unittest.TestCase):
         self.assertFalse(F(1, 2) != F(1, 2))
         self.assertTrue(F(1, 2) != F(1, 3))
 
+    def testComparisonsDummyRational(self):
+        self.assertTrue(F(1, 2) == DummyRational(1, 2))
+        self.assertTrue(DummyRational(1, 2) == F(1, 2))
+        self.assertFalse(F(1, 2) == DummyRational(3, 4))
+        self.assertFalse(DummyRational(3, 4) == F(1, 2))
+
+        self.assertTrue(F(1, 2) < DummyRational(3, 4))
+        self.assertFalse(F(1, 2) < DummyRational(1, 2))
+        self.assertFalse(F(1, 2) < DummyRational(1, 7))
+        self.assertFalse(F(1, 2) > DummyRational(3, 4))
+        self.assertFalse(F(1, 2) > DummyRational(1, 2))
+        self.assertTrue(F(1, 2) > DummyRational(1, 7))
+        self.assertTrue(F(1, 2) <= DummyRational(3, 4))
+        self.assertTrue(F(1, 2) <= DummyRational(1, 2))
+        self.assertFalse(F(1, 2) <= DummyRational(1, 7))
+        self.assertFalse(F(1, 2) >= DummyRational(3, 4))
+        self.assertTrue(F(1, 2) >= DummyRational(1, 2))
+        self.assertTrue(F(1, 2) >= DummyRational(1, 7))
+
+        self.assertTrue(DummyRational(1, 2) < F(3, 4))
+        self.assertFalse(DummyRational(1, 2) < F(1, 2))
+        self.assertFalse(DummyRational(1, 2) < F(1, 7))
+        self.assertFalse(DummyRational(1, 2) > F(3, 4))
+        self.assertFalse(DummyRational(1, 2) > F(1, 2))
+        self.assertTrue(DummyRational(1, 2) > F(1, 7))
+        self.assertTrue(DummyRational(1, 2) <= F(3, 4))
+        self.assertTrue(DummyRational(1, 2) <= F(1, 2))
+        self.assertFalse(DummyRational(1, 2) <= F(1, 7))
+        self.assertFalse(DummyRational(1, 2) >= F(3, 4))
+        self.assertTrue(DummyRational(1, 2) >= F(1, 2))
+        self.assertTrue(DummyRational(1, 2) >= F(1, 7))
+
+    def testComparisonsDummyFloat(self):
+        x = DummyFloat(1./3.)
+        y = F(1, 3)
+        self.assertTrue(x != y)
+        self.assertTrue(x < y or x > y)
+        self.assertFalse(x == y)
+        self.assertFalse(x <= y and x >= y)
+        self.assertTrue(y != x)
+        self.assertTrue(y < x or y > x)
+        self.assertFalse(y == x)
+        self.assertFalse(y <= x and y >= x)
+
     def testMixedLess(self):
         self.assertTrue(2 < F(5, 2))
         self.assertFalse(2 < F(4, 2))
@@ -335,6 +443,13 @@ class FractionTest(unittest.TestCase):
         self.assertTrue(0.4 < F(1, 2))
         self.assertFalse(0.5 < F(1, 2))
 
+        self.assertFalse(float('inf') < F(1, 2))
+        self.assertTrue(float('-inf') < F(0, 10))
+        self.assertFalse(float('nan') < F(-3, 7))
+        self.assertTrue(F(1, 2) < float('inf'))
+        self.assertFalse(F(17, 12) < float('-inf'))
+        self.assertFalse(F(144, -89) < float('nan'))
+
     def testMixedLessEqual(self):
         self.assertTrue(0.5 <= F(1, 2))
         self.assertFalse(0.6 <= F(1, 2))
@@ -344,6 +459,13 @@ class FractionTest(unittest.TestCase):
         self.assertFalse(2 <= F(3, 2))
         self.assertTrue(F(4, 2) <= 2)
         self.assertFalse(F(5, 2) <= 2)
+
+        self.assertFalse(float('inf') <= F(1, 2))
+        self.assertTrue(float('-inf') <= F(0, 10))
+        self.assertFalse(float('nan') <= F(-3, 7))
+        self.assertTrue(F(1, 2) <= float('inf'))
+        self.assertFalse(F(17, 12) <= float('-inf'))
+        self.assertFalse(F(144, -89) <= float('nan'))
 
     def testBigFloatComparisons(self):
         # Because 10**23 can't be represented exactly as a float:
@@ -369,6 +491,10 @@ class FractionTest(unittest.TestCase):
         self.assertFalse(2 == F(3, 2))
         self.assertTrue(F(4, 2) == 2)
         self.assertFalse(F(5, 2) == 2)
+        self.assertFalse(F(5, 2) == float('nan'))
+        self.assertFalse(float('nan') == F(3, 7))
+        self.assertFalse(F(5, 2) == float('inf'))
+        self.assertFalse(float('-inf') == F(2, 5))
 
     def testStringification(self):
         self.assertEquals("Fraction(7, 3)", repr(F(7, 3)))
