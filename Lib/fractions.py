@@ -501,54 +501,56 @@ class Fraction(numbers.Rational):
         if isinstance(b, numbers.Complex) and b.imag == 0:
             b = b.real
         if isinstance(b, float):
-            return a == a.from_float(b)
+            if math.isnan(b) or math.isinf(b):
+                # comparisons with an infinity or nan should behave in
+                # the same way for any finite a, so treat a as zero.
+                return 0.0 == b
+            else:
+                return a == a.from_float(b)
         else:
-            # XXX: If b.__eq__ is implemented like this method, it may
-            # give the wrong answer after float(a) changes a's
-            # value. Better ways of doing this are welcome.
-            return float(a) == b
+            # Since a doesn't know how to compare with b, let's give b
+            # a chance to compare itself with a.
+            return NotImplemented
 
-    def _subtractAndCompareToZero(a, b, op):
-        """Helper function for comparison operators.
+    def _richcmp(self, other, op):
+        """Helper for comparison operators, for internal use only.
 
-        Subtracts b from a, exactly if possible, and compares the
-        result with 0 using op, in such a way that the comparison
-        won't recurse. If the difference raises a TypeError, returns
-        NotImplemented instead.
+        Implement comparison between a Rational instance `self`, and
+        either another Rational instance or a float `other`.  If
+        `other` is not a Rational instance or a float, return
+        NotImplemented. `op` should be one of the six standard
+        comparison operators.
 
         """
-        if isinstance(b, numbers.Complex) and b.imag == 0:
-            b = b.real
-        if isinstance(b, float):
-            b = a.from_float(b)
-        try:
-            # XXX: If b <: Real but not <: Rational, this is likely
-            # to fall back to a float. If the actual values differ by
-            # less than MIN_FLOAT, this could falsely call them equal,
-            # which would make <= inconsistent with ==. Better ways of
-            # doing this are welcome.
-            diff = a - b
-        except TypeError:
+        # convert other to a Rational instance where reasonable.
+        if isinstance(other, numbers.Rational):
+            return op(self._numerator * other.denominator,
+                      self._denominator * other.numerator)
+        if isinstance(other, numbers.Complex) and other.imag == 0:
+            other = other.real
+        if isinstance(other, float):
+            if math.isnan(other) or math.isinf(other):
+                return op(0.0, other)
+            else:
+                return op(self, self.from_float(other))
+        else:
             return NotImplemented
-        if isinstance(diff, numbers.Rational):
-            return op(diff.numerator, 0)
-        return op(diff, 0)
 
     def __lt__(a, b):
         """a < b"""
-        return a._subtractAndCompareToZero(b, operator.lt)
+        return a._richcmp(b, operator.lt)
 
     def __gt__(a, b):
         """a > b"""
-        return a._subtractAndCompareToZero(b, operator.gt)
+        return a._richcmp(b, operator.gt)
 
     def __le__(a, b):
         """a <= b"""
-        return a._subtractAndCompareToZero(b, operator.le)
+        return a._richcmp(b, operator.le)
 
     def __ge__(a, b):
         """a >= b"""
-        return a._subtractAndCompareToZero(b, operator.ge)
+        return a._richcmp(b, operator.ge)
 
     def __bool__(a):
         """a != 0"""
