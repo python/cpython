@@ -347,8 +347,7 @@ class WarnTests(unittest.TestCase):
                 return ("A bad formatted string %(err)" %
                         {"err" : "there is no %(err)s"})
 
-        with self.assertRaises(ValueError):
-            self.module.warn(BadStrWarning())
+        self.assertRaises(ValueError, self.module.warn, BadStrWarning())
 
 
 class CWarnTests(BaseTest, WarnTests):
