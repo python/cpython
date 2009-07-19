@@ -12,7 +12,7 @@ EMPTY = ''
 TESTS = 'cjkencodings_test inspect_fodder inspect_fodder2 mapping_tests'
 TESTS = TESTS.split()
 TEST_PATH = os.path.dirname(support.__file__)
-MODULES = "linecache unittest".split()
+MODULES = "linecache abc".split()
 MODULE_PATH = os.path.dirname(FILENAME)
 
 SOURCE_1 = '''

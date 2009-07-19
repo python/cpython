@@ -910,6 +910,8 @@ Core and Builtins
 Library
 -------
 
+- unittest has been split up into a package.  All old names should still work.
+
 - Issue #6466: now distutils.cygwinccompiler and distutils.emxccompiler
   uses the same refactored function to get gcc/ld/dllwrap versions numbers.
   It's `distutils.util.get_compiler_versions`. Added deprecation warnings
