@@ -148,7 +148,7 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('doctest')
+        self.checkModule('doctest', ignore=("DocTestCase",))
         self.checkModule('rfc822')
         self.checkModule('difflib')
 
