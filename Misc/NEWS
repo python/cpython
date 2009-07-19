@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6070: On posix platforms import no longer copies the execute bit
+  from the .py file to the .pyc file if it is set.
+
 - Issue #1616979: Added the cp720 (Arabic DOS) encoding.
 
 - Issue #6428: Since Python 3.0, the __bool__ method must return a bool
