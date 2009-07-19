@@ -183,7 +183,8 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock.source = b"1/0"
         with util.uncache(name):
             sys.modules[name] = module
-            self.assertRaises(ZeroDivisionError, mock.load_module, name)
+            with self.assertRaises(ZeroDivisionError):
+                mock.load_module(name)
             self.assertTrue(sys.modules[name] is module)
             self.assertTrue(hasattr(module, 'blah'))
         return mock
@@ -193,7 +194,8 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock = self.mocker({name: os.path.join('path', 'to', 'mod')})
         mock.source = b"1/0"
         with util.uncache(name):
-            self.assertRaises(ZeroDivisionError, mock.load_module, name)
+            with self.assertRaises(ZeroDivisionError):
+                mock.load_module(name)
             self.assertTrue(name not in sys.modules)
         return mock
 
@@ -207,14 +209,14 @@ class PyLoaderInterfaceTests(unittest.TestCase):
         # No source path should lead to ImportError.
         name = 'mod'
         mock = PyLoaderMock({})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
     def test_source_path_is_None(self):
         name = 'mod'
         mock = PyLoaderMock({name: None})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
 
 class PyLoaderGetSourceTests(unittest.TestCase):
@@ -349,17 +351,17 @@ class BadBytecodeFailureTests(unittest.TestCase):
         mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
                                                                 'mod'),
                                             'magic': bad_magic}})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
     def test_bad_bytecode(self):
-        # Bad code object bytecode should elad to an ImportError.
+        # Bad code object bytecode should lead to an ImportError.
         name = 'mod'
         mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
                                                                 'mod'),
                                             'bc': b''}})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
 
 def raise_ImportError(*args, **kwargs):
@@ -387,16 +389,16 @@ class MissingPathsTests(unittest.TestCase):
         # If all *_path methods return None, raise ImportError.
         name = 'mod'
         mock = PyPycLoaderMock({name: None})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
     def test_source_path_ImportError(self):
         # An ImportError from source_path should trigger an ImportError.
         name = 'mod'
         mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
                                                                 'mod')}})
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
     def test_bytecode_path_ImportError(self):
         # An ImportError from bytecode_path should trigger an ImportError.
@@ -404,8 +406,8 @@ class MissingPathsTests(unittest.TestCase):
         mock = PyPycLoaderMock({name: os.path.join('path', 'to', 'mod')})
         bad_meth = types.MethodType(raise_ImportError, mock)
         mock.bytecode_path = bad_meth
-        with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.load_module(name)
 
 
 def test_main():
