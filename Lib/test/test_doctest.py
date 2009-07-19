@@ -1813,19 +1813,19 @@ def test_DocTestSuite():
          >>> import test.sample_doctest
          >>> suite = doctest.DocTestSuite(test.sample_doctest)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=4>
+         <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can also supply the module by name:
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=4>
+         <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can use the current module:
 
          >>> suite = test.sample_doctest.test_suite()
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=4>
+         <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can supply global variables.  If we pass globs, they will be
        used instead of the module globals.  Here we'll pass an empty
@@ -1833,7 +1833,7 @@ def test_DocTestSuite():
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest', globs={})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=5>
+         <unittest.result.TestResult run=9 errors=0 failures=5>
 
        Alternatively, we can provide extra globals.  Here we'll make an
        error go away by providing an extra global variable:
@@ -1841,7 +1841,7 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...                              extraglobs={'y': 1})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=3>
+         <unittest.result.TestResult run=9 errors=0 failures=3>
 
        You can pass option flags.  Here we'll cause an extra error
        by disabling the blank-line feature:
@@ -1849,7 +1849,7 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...                      optionflags=doctest.DONT_ACCEPT_BLANKLINE)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=5>
+         <unittest.result.TestResult run=9 errors=0 failures=5>
 
        You can supply setUp and tearDown functions:
 
@@ -1866,7 +1866,7 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...      setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=3>
+         <unittest.result.TestResult run=9 errors=0 failures=3>
 
        But the tearDown restores sanity:
 
@@ -1884,7 +1884,7 @@ def test_DocTestSuite():
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest', setUp=setUp)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=9 errors=0 failures=3>
+         <unittest.result.TestResult run=9 errors=0 failures=3>
 
        Here, we didn't need to use a tearDown function because we
        modified the test globals, which are a copy of the
@@ -1903,7 +1903,7 @@ def test_DocFileSuite():
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=3 errors=0 failures=2>
 
        The test files are looked for in the directory containing the
        calling module.  A package keyword argument can be provided to
@@ -1915,7 +1915,7 @@ def test_DocFileSuite():
          ...                              'test_doctest4.txt',
          ...                              package='test')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=3 errors=0 failures=2>
 
        Support for using a package's __loader__.get_data() is also
        provided.
@@ -1934,14 +1934,14 @@ def test_DocFileSuite():
          ... finally:
          ...     if added_loader:
          ...         del test.__loader__
-         <unittest.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=3 errors=0 failures=2>
 
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
 
          >>> suite = doctest.DocFileSuite('../test/test_doctest.txt')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=1 errors=0 failures=1>
+         <unittest.result.TestResult run=1 errors=0 failures=1>
 
        If DocFileSuite is used from an interactive session, then files
        are resolved relative to the directory of sys.argv[0]:
@@ -1966,7 +1966,7 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite(test_file, module_relative=False)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=1 errors=0 failures=1>
+         <unittest.result.TestResult run=1 errors=0 failures=1>
 
        It is an error to specify `package` when `module_relative=False`:
 
@@ -1982,7 +1982,7 @@ def test_DocFileSuite():
          ...                              'test_doctest4.txt',
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=1>
+         <unittest.result.TestResult run=3 errors=0 failures=1>
 
        In this case, we supplied a missing favorite color. You can
        provide doctest options:
@@ -1993,7 +1993,7 @@ def test_DocFileSuite():
          ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE,
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=3 errors=0 failures=2>
 
        And, you can provide setUp and tearDown functions:
 
@@ -2012,7 +2012,7 @@ def test_DocFileSuite():
          ...                              'test_doctest4.txt',
          ...                              setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=1>
+         <unittest.result.TestResult run=3 errors=0 failures=1>
 
        But the tearDown restores sanity:
 
@@ -2031,7 +2031,7 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite('test_doctest.txt', setUp=setUp)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=1 errors=0 failures=0>
+         <unittest.result.TestResult run=1 errors=0 failures=0>
 
        Here, we didn't need to use a tearDown function because we
        modified the test globals.  The test globals are
@@ -2043,7 +2043,7 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite('test_doctest3.txt')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=1 errors=0 failures=0>
+         <unittest.result.TestResult run=1 errors=0 failures=0>
 
        If the tests contain non-ASCII characters, we have to specify which
        encoding the file is encoded with. We do so by using the `encoding`
@@ -2054,7 +2054,7 @@ def test_DocFileSuite():
          ...                              'test_doctest4.txt',
          ...                              encoding='utf-8')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=3 errors=0 failures=2>
 
        """
 

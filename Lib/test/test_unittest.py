@@ -6,6 +6,7 @@ Still need testing:
     TestCase.{assert,fail}* methods (some are tested implicitly)
 """
 
+import builtins
 import os
 import re
 import sys
@@ -3389,9 +3390,10 @@ class TestDiscovery(TestCase):
     def test_get_module_from_path(self):
         loader = unittest.TestLoader()
 
+        old_import = __import__
         def restore_import():
-            unittest.__import__ = __import__
-        unittest.__import__ = lambda *_: None
+            builtins.__import__ = old_import
+        builtins.__import__ = lambda *_: None
         self.addCleanup(restore_import)
 
         expected_module = object()
