@@ -139,10 +139,13 @@ Exported functions:
 import re, string, time, operator
 
 from types import *
-import gzip
 import socket
 import errno
 import httplib
+try:
+    import gzip
+except ImportError:
+    gzip = None #python can be built without zlib/gzip support
 
 # --------------------------------------------------------------------
 # Internal stuff
@@ -1146,6 +1149,8 @@ def gzip_encode(data):
 
     Encode data using the gzip content encoding as described in RFC 1952
     """
+    if not gzip:
+        raise NotImplementedError
     f = StringIO.StringIO()
     gzf = gzip.GzipFile(mode="wb", fileobj=f, compresslevel=1)
     gzf.write(data)
@@ -1168,6 +1173,8 @@ def gzip_decode(data):
 
     Decode data using the gzip content encoding as described in RFC 1952
     """
+    if not gzip:
+        raise NotImplementedError
     f = StringIO.StringIO(data)
     gzf = gzip.GzipFile(mode="rb", fileobj=f)
     try:
@@ -1192,6 +1199,8 @@ class GzipDecodedResponse(gzip.GzipFile):
     def __init__(self, response):
         #response doesn't support tell() and read(), required by
         #GzipFile
+        if not gzip:
+            raise NotImplementedError
         self.stringio = StringIO.StringIO(response.read())
         gzip.GzipFile.__init__(self, mode="rb", fileobj=self.stringio)
 
@@ -1378,7 +1387,7 @@ class Transport:
     # @param request_body XML-RPC body.
 
     def send_request(self, connection, handler, request_body):
-        if (self.accept_gzip_encoding):
+        if (self.accept_gzip_encoding and gzip):
             connection.putrequest("POST", handler, skip_accept_encoding=True)
             connection.putheader("Accept-Encoding", "gzip")
         else:
@@ -1421,7 +1430,8 @@ class Transport:
 
         #optionally encode the request
         if (self.encode_threshold is not None and
-            self.encode_threshold < len(request_body)):
+            self.encode_threshold < len(request_body) and
+            gzip):
             connection.putheader("Content-Encoding", "gzip")
             request_body = gzip_encode(request_body)
 

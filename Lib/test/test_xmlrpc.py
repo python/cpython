@@ -918,7 +918,11 @@ def test_main():
     xmlrpc_tests.append(SimpleServerTestCase)
     xmlrpc_tests.append(KeepaliveServerTestCase1)
     xmlrpc_tests.append(KeepaliveServerTestCase2)
-    xmlrpc_tests.append(GzipServerTestCase)
+    try:
+        import gzip
+        xmlrpc_tests.append(GzipServerTestCase)
+    except ImportError:
+        pass #gzip not supported in this build
     xmlrpc_tests.append(ServerProxyTestCase)
     xmlrpc_tests.append(FailingServerTestCase)
     xmlrpc_tests.append(CGIHandlerTestCase)

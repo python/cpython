@@ -521,8 +521,11 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if len(response) > self.encode_threshold:
                     q = self.accept_encodings().get("gzip", 0)
                     if q:
-                        response = xmlrpclib.gzip_encode(response)
-                        self.send_header("Content-Encoding", "gzip")
+                        try:
+                            response = xmlrpclib.gzip_encode(response)
+                            self.send_header("Content-Encoding", "gzip")
+                        except NotImplementedError:
+                            pass
             self.send_header("Content-length", str(len(response)))
             self.end_headers()
             self.wfile.write(response)
@@ -535,6 +538,8 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if encoding == "gzip":
             try:
                 return xmlrpclib.gzip_decode(data)
+            except NotImplementedError:
+                self.send_response(501, "encoding %r not supported" % encoding)
             except ValueError:
                 self.send_response(400, "error decoding gzip content")
         else:
