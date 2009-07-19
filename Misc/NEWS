@@ -12,6 +12,9 @@ What's New in Python 2.6.3
 Core and Builtins
 -----------------
 
+- Issue #6070: On posix platforms import no longer copies the execute bit
+  from the .py file to the .pyc file if it is set.
+
 - Issue #4547: When debugging a very large function, it was not always
   possible to update the lineno attribute of the current frame.
 
