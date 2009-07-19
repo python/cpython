@@ -7,6 +7,7 @@ Still need testing:
 """
 
 from StringIO import StringIO
+import __builtin__
 import os
 import re
 import sys
@@ -3410,9 +3411,10 @@ class TestDiscovery(TestCase):
     def test_get_module_from_path(self):
         loader = unittest.TestLoader()
 
+        old_import = __import__
         def restore_import():
-            unittest.__import__ = __import__
-        unittest.__import__ = lambda *_: None
+            __builtin__.__import__ = old_import
+        __builtin__.__import__ = lambda *_: None
         self.addCleanup(restore_import)
 
         expected_module = object()
