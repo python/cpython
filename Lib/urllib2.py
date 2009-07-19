@@ -594,7 +594,7 @@ class HTTPRedirectHandler(BaseHandler):
         fp.read()
         fp.close()
 
-        return self.parent.open(new)
+        return self.parent.open(new, timeout=req.timeout)
 
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
@@ -710,7 +710,7 @@ class ProxyHandler(BaseHandler):
             # {'http': 'ftp://proxy.example.com'}, we may end up turning
             # a request for http://acme.example.com/a into one for
             # ftp://proxy.example.com/a
-            return self.parent.open(req)
+            return self.parent.open(req, timeout=req.timeout)
 
 class HTTPPasswordMgr:
 
@@ -826,7 +826,7 @@ class AbstractBasicAuthHandler:
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             req.add_header(self.auth_header, auth)
-            return self.parent.open(req)
+            return self.parent.open(req, timeout=req.timeout)
         else:
             return None
 
@@ -917,7 +917,7 @@ class AbstractDigestAuthHandler:
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
             req.add_unredirected_header(self.auth_header, auth_val)
-            resp = self.parent.open(req)
+            resp = self.parent.open(req, timeout=req.timeout)
             return resp
 
     def get_cnonce(self, nonce):
