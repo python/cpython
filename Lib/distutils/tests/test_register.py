@@ -202,10 +202,10 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         self.assertRaises(DistutilsSetupError, cmd.run)
 
         # we don't test the reSt feature if docutils
-        # is not installed
+        # is not installed or we our on py3k
         try:
             import docutils
-        except ImportError:
+        except Exception:
             return
 
         # metadata are OK but long_description is broken
