@@ -1192,7 +1192,7 @@ def gzip_decode(data):
 # @param response A stream supporting a read() method
 # @return a file-like object that the decoded data can be read() from
 
-class GzipDecodedResponse(gzip.GzipFile):
+class GzipDecodedResponse(gzip.GzipFile if gzip else object):
     """a file-like object to decode a response encoded with the gzip
     method, as described in RFC 1952.
     """
