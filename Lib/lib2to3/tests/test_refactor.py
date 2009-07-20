@@ -215,7 +215,7 @@ from __future__ import print_function"""
         expected = ["hi.py"]
         check(tree, expected)
         tree = ["hi.py",
-                "a_dir/stuff.py"]
+                os.path.join("a_dir", "stuff.py")]
         check(tree, tree)
 
     def test_file_encoding(self):
