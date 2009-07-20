@@ -6,21 +6,22 @@ import unittest
 import sys
 
 
-def case_insensitive_tests(class_):
+CASE_INSENSITIVE_FS = True
+# Windows is the only OS that is *always* case-insensitive
+# (OS X *can* be case-sensitive).
+if sys.platform not in ('win32', 'cygwin'):
+    changed_name = __file__.upper()
+    if changed_name == __file__:
+        changed_name = __file__.lower()
+    if not os.path.exists(changed_name):
+        CASE_INSENSITIVE_FS = False
+
+
+def case_insensitive_tests(test):
     """Class decorator that nullifies tests requiring a case-insensitive
     file system."""
-    # Windows is the only OS that is *always* case-insensitive
-    # (OS X *can* be case-sensitive).
-    if sys.platform not in ('win32', 'cygwin'):
-        changed_name = __file__.upper()
-        if changed_name == __file__:
-            changed_name = __file__.lower()
-        if os.path.exists(changed_name):
-            return class_
-        else:
-            return unittest.TestCase
-    else:
-        return class_
+    return unittest.skipIf(not CASE_INSENSITIVE_FS,
+                            "requires a case-insensitive filesystem")(test)
 
 
 @contextmanager
