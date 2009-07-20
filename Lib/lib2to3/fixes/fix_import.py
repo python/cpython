@@ -12,7 +12,7 @@ Becomes:
 
 # Local imports
 from .. import fixer_base
-from os.path import dirname, join, exists, pathsep
+from os.path import dirname, join, exists, sep
 from ..fixer_util import FromImport, syms, token
 
 
@@ -84,7 +84,7 @@ class FixImport(fixer_base.BaseFix):
         # so can't be a relative import.
         if not exists(join(dirname(base_path), '__init__.py')):
             return False
-        for ext in ['.py', pathsep, '.pyc', '.so', '.sl', '.pyd']:
+        for ext in ['.py', sep, '.pyc', '.so', '.sl', '.pyd']:
             if exists(base_path + ext):
                 return True
         return False
