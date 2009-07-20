@@ -346,20 +346,20 @@ class BadBytecodeFailureTests(unittest.TestCase):
         # A bad magic number should lead to an ImportError.
         name = 'mod'
         bad_magic = b'\x00\x00\x00\x00'
-        mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
-                                                                'mod'),
-                                            'magic': bad_magic}})
+        mock = PyPycLoaderMock({name: None},
+                {name: {'path': os.path.join('path', 'to', 'mod'),
+                        'magic': bad_magic}})
         with util.uncache(name):
             self.assertRaises(ImportError, mock.load_module, name)
 
     def test_bad_bytecode(self):
-        # Bad code object bytecode should elad to an ImportError.
+        # Bad code object bytecode should lead to an ImportError.
         name = 'mod'
-        mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
-                                                                'mod'),
-                                            'bc': b''}})
+        mock = PyPycLoaderMock({name: None},
+                    {name: {'path': os.path.join('path', 'to', 'mod'),
+                            'bc': b''}})
         with util.uncache(name):
-            self.assertRaises(ImportError, mock.load_module, name)
+            self.assertRaises(EOFError, mock.load_module, name)
 
 
 def raise_ImportError(*args, **kwargs):
