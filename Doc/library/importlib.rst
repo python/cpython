@@ -238,7 +238,7 @@ are also provided to help in implementing the core ABCs.
 
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_source`. Uses
-        :meth:`importlib.abc.InspectLoader.get_data` and :meth:`source_path` to
+        :meth:`importlib.abc.ResourceLoader.get_data` and :meth:`source_path` to
         get the source code.  It tries to guess the source encoding using
         :func:`tokenize.detect_encoding`.
 
@@ -253,7 +253,7 @@ are also provided to help in implementing the core ABCs.
 
         An abstract method which returns the modification time for the source
         code of the specified module. The modification time should be an
-        integer. If there is no source code, return :keyword:`None. If the
+        integer. If there is no source code, return :keyword:`None`. If the
         module cannot be found then :exc:`ImportError` is raised.
 
     .. method:: bytecode_path(fullname)
