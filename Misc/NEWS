@@ -62,6 +62,12 @@ Build
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
+Test
+----
+
+- Fix a test in importlib.test.source.test_abc_loader that was incorrectly
+  testing when a .pyc file lacked an code object bytecode.
+
 
 What's New in Python 3.1?
 =========================
