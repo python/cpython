@@ -43,6 +43,11 @@ C-API
 Library
 -------
 
+- Add importlib.abc.ExecutionLoader to represent the PEP 302 protocol for
+  loaders that allow for modules to be executed. Both importlib.abc.PyLoader
+  and PyPycLoader inherit from this class and provide implementations in
+  relation to other methods required by the ABCs.
+
 - importlib.abc.PyLoader did not inherit from importlib.abc.ResourceLoader like
   the documentation said it did even though the code in PyLoader relied on the
   abstract method required by ResourceLoader.
