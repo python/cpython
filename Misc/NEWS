@@ -88,6 +88,10 @@ Build
 Tests
 -----
 
+- Fixed tests in importlib.test.source.test_abc_loader that were masking
+  the proper exceptions that should be raised for missing or improper code
+  object bytecode.
+
 - Removed importlib's custom test discovery code and switched to
     unittest.TestLoader.discover().
 

@@ -348,19 +348,27 @@ class BadBytecodeFailureTests(unittest.TestCase):
         # A bad magic number should lead to an ImportError.
         name = 'mod'
         bad_magic = b'\x00\x00\x00\x00'
-        mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
-                                                                'mod'),
-                                            'magic': bad_magic}})
+        bc = {name:
+                {'path': os.path.join('path', 'to', 'mod'),
+                 'magic': bad_magic}}
+        mock = PyPycLoaderMock({name: None}, bc)
         with util.uncache(name), self.assertRaises(ImportError):
             mock.load_module(name)
 
-    def test_bad_bytecode(self):
-        # Bad code object bytecode should lead to an ImportError.
+    def test_no_bytecode(self):
+        # Missing code object bytecode should lead to an EOFError.
         name = 'mod'
-        mock = PyPycLoaderMock({}, {name: {'path': os.path.join('path', 'to',
-                                                                'mod'),
-                                            'bc': b''}})
-        with util.uncache(name), self.assertRaises(ImportError):
+        bc = {name: {'path': os.path.join('path', 'to', 'mod'), 'bc': b''}}
+        mock = PyPycLoaderMock({name: None}, bc)
+        with util.uncache(name), self.assertRaises(EOFError):
+            mock.load_module(name)
+
+    def test_bad_bytecode(self):
+        # Malformed code object bytecode should lead to a ValueError.
+        name = 'mod'
+        bc = {name: {'path': os.path.join('path', 'to', 'mod'), 'bc': b'XXX'}}
+        mock = PyPycLoaderMock({name: None}, bc)
+        with util.uncache(name), self.assertRaises(ValueError):
             mock.load_module(name)
 
 
