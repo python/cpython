@@ -205,7 +205,7 @@ are also provided to help in implementing the core ABCs.
 .. class:: ExecutionLoader
 
     An abstract base class which inherits from :class:`InspectLoader` that,
-    when implemented, allows a module to be executed as a script. The ABC
+    when implemented, helps a module to be executed as a script. The ABC
     represents an optional :pep:`302` protocol.
 
     .. method:: get_filename(fullname)
