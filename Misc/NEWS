@@ -37,6 +37,10 @@ C-API
 Library
 -------
 
+- importlib.abc.PyLoader did not inherit from importlib.abc.ResourceLoader like
+  the documentation said it did even though the code in PyLoader relied on the
+  abstract method required by ResourceLoader.
+
 - Issue #6431: Make Fraction type return NotImplemented when it doesn't
   know how to handle a comparison without loss of precision.  Also add
   correct handling of infinities and nans for comparisons with float.
