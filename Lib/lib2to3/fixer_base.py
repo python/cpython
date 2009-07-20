@@ -33,6 +33,8 @@ class BaseFix(object):
     explicit = False # Is this ignored by refactor.py -f all?
     run_order = 5   # Fixers will be sorted by run order before execution
                     # Lower numbers will be run first.
+    _accept_type = None # [Advanced and not public] This tells RefactoringTool
+                        # which node type to accept when there's not a pattern.
 
     # Shortcut for access to Python grammar symbols
     syms = pygram.python_symbols

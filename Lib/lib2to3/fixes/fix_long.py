@@ -5,18 +5,15 @@
 """
 
 # Local imports
-from .. import fixer_base
-from ..fixer_util import Name, Number, is_probably_builtin
+from lib2to3 import fixer_base
+from lib2to3.fixer_util import is_probably_builtin
 
 
 class FixLong(fixer_base.BaseFix):
 
     PATTERN = "'long'"
 
-    static_int = Name("int")
-
     def transform(self, node, results):
         if is_probably_builtin(node):
-            new = self.static_int.clone()
-            new.prefix = node.prefix
-            return new
+            node.value = "int"
+            node.changed()
