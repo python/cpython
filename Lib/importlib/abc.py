@@ -76,7 +76,7 @@ InspectLoader.register(machinery.BuiltinImporter)
 InspectLoader.register(machinery.FrozenImporter)
 
 
-class PyLoader(_bootstrap.PyLoader, InspectLoader):
+class PyLoader(_bootstrap.PyLoader, ResourceLoader, InspectLoader):
 
     """Abstract base class to assist in loading source code by requiring only
     back-end storage methods to be implemented.
