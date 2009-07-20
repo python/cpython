@@ -1471,7 +1471,21 @@ ast_for_slice(struct compiling *c, const node *n)
 
     ch = CHILD(n, NCH(n) - 1);
     if (TYPE(ch) == sliceop) {
-        if (NCH(ch) != 1) {
+        if (NCH(ch) == 1) {
+            /* 
+              This is an extended slice (ie "x[::]") with no expression in the
+              step field. We set this literally to "None" in order to
+              disambiguate it from x[:]. (The interpreter might have to call
+              __getslice__ for x[:], but it must call __getitem__ for x[::].)
+            */
+            identifier none = new_identifier("None", c->c_arena);
+            if (!none)
+                return NULL;
+            ch = CHILD(ch, 0);
+            step = Name(none, Load, LINENO(ch), ch->n_col_offset, c->c_arena);
+            if (!step)
+                return NULL;
+        } else {
             ch = CHILD(ch, 1);
             if (TYPE(ch) == test) {
                 step = ast_for_expr(c, ch);

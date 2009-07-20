@@ -150,7 +150,8 @@ class AST_Tests(unittest.TestCase):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
         self.assertIsNone(slc.lower)
-        self.assertIsNone(slc.step)
+        self.assertTrue(isinstance(slc.step, ast.Name))
+        self.assertEqual(slc.step.id, "None")
 
     def test_from_import(self):
         im = ast.parse("from . import y").body[0]

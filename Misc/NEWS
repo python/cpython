@@ -44,9 +44,6 @@ Core and Builtins
 
 - Assignment to None using import statements now raises a SyntaxError.
 
-- In the slice AST type, the step field will always be None if a step expression
-  is not specified.
-
 - Issue #4547: When debugging a very large function, it was not always
   possible to update the lineno attribute of the current frame.
 
