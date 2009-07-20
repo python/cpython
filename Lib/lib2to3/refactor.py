@@ -14,14 +14,15 @@ __author__ = "Guido van Rossum <guido@python.org>"
 # Python imports
 import os
 import sys
-import difflib
 import logging
 import operator
-from collections import defaultdict
+import collections
+import io
+import warnings
 from itertools import chain
 
 # Local imports
-from .pgen2 import driver, tokenize
+from .pgen2 import driver, tokenize, token
 from . import pytree, pygram
 
 
@@ -37,7 +38,12 @@ def get_all_fix_names(fixer_pkg, remove_prefix=True):
             fix_names.append(name[:-3])
     return fix_names
 
-def get_head_types(pat):
+
+class _EveryNode(Exception):
+    pass
+
+
+def _get_head_types(pat):
     """ Accepts a pytree Pattern Node and returns a set
         of the pattern types which will match first. """
 
@@ -45,34 +51,50 @@ def get_head_types(pat):
         # NodePatters must either have no type and no content
         #   or a type and content -- so they don't get any farther
         # Always return leafs
+        if pat.type is None:
+            raise _EveryNode
         return set([pat.type])
 
     if isinstance(pat, pytree.NegatedPattern):
         if pat.content:
-            return get_head_types(pat.content)
-        return set([None]) # Negated Patterns don't have a type
+            return _get_head_types(pat.content)
+        raise _EveryNode # Negated Patterns don't have a type
 
     if isinstance(pat, pytree.WildcardPattern):
         # Recurse on each node in content
         r = set()
         for p in pat.content:
             for x in p:
-                r.update(get_head_types(x))
+                r.update(_get_head_types(x))
         return r
 
     raise Exception("Oh no! I don't understand pattern %s" %(pat))
 
-def get_headnode_dict(fixer_list):
+
+def _get_headnode_dict(fixer_list):
     """ Accepts a list of fixers and returns a dictionary
         of head node type --> fixer list.  """
-    head_nodes = defaultdict(list)
+    head_nodes = collections.defaultdict(list)
+    every = []
     for fixer in fixer_list:
-        if not fixer.pattern:
-            head_nodes[None].append(fixer)
-            continue
-        for t in get_head_types(fixer.pattern):
-            head_nodes[t].append(fixer)
-    return head_nodes
+        if fixer.pattern:
+            try:
+                heads = _get_head_types(fixer.pattern)
+            except _EveryNode:
+                every.append(fixer)
+            else:
+                for node_type in heads:
+                    head_nodes[node_type].append(fixer)
+        else:
+            if fixer._accept_type is not None:
+                head_nodes[fixer._accept_type].append(fixer)
+            else:
+                every.append(fixer)
+    for node_type in chain(pygram.python_grammar.symbol2number.values(),
+                           pygram.python_grammar.tokens):
+        head_nodes[node_type].extend(every)
+    return dict(head_nodes)
+
 
 def get_fixers_from_package(pkg_name):
     """
@@ -101,13 +123,56 @@ else:
     _to_system_newlines = _identity
 
 
+def _detect_future_print(source):
+    have_docstring = False
+    gen = tokenize.generate_tokens(io.StringIO(source).readline)
+    def advance():
+        tok = next(gen)
+        return tok[0], tok[1]
+    ignore = frozenset((token.NEWLINE, tokenize.NL, token.COMMENT))
+    try:
+        while True:
+            tp, value = advance()
+            if tp in ignore:
+                continue
+            elif tp == token.STRING:
+                if have_docstring:
+                    break
+                have_docstring = True
+            elif tp == token.NAME:
+                if value == "from":
+                    tp, value = advance()
+                    if tp != token.NAME and value != "__future__":
+                        break
+                    tp, value = advance()
+                    if tp != token.NAME and value != "import":
+                        break
+                    tp, value = advance()
+                    if tp == token.OP and value == "(":
+                        tp, value = advance()
+                    while tp == token.NAME:
+                        if value == "print_function":
+                            return True
+                        tp, value = advance()
+                        if tp != token.OP and value != ",":
+                            break
+                        tp, value = advance()
+                else:
+                    break
+            else:
+                break
+    except StopIteration:
+        pass
+    return False
+
+
 class FixerError(Exception):
     """A fixer could not be loaded."""
 
 
 class RefactoringTool(object):
 
-    _default_options = {"print_function": False}
+    _default_options = {}
 
     CLASS_PREFIX = "Fix" # The prefix for fixer classes
     FILE_PREFIX = "fix_" # The prefix for modules with a fixer within
@@ -124,20 +189,21 @@ class RefactoringTool(object):
         self.explicit = explicit or []
         self.options = self._default_options.copy()
         if options is not None:
+            if "print_function" in options:
+                warnings.warn("the 'print_function' option is deprecated",
+                              DeprecationWarning)
             self.options.update(options)
         self.errors = []
         self.logger = logging.getLogger("RefactoringTool")
         self.fixer_log = []
         self.wrote = False
-        if self.options["print_function"]:
-            del pygram.python_grammar.keywords["print"]
         self.driver = driver.Driver(pygram.python_grammar,
                                     convert=pytree.convert,
                                     logger=self.logger)
         self.pre_order, self.post_order = self.get_fixers()
 
-        self.pre_order_heads = get_headnode_dict(self.pre_order)
-        self.post_order_heads = get_headnode_dict(self.post_order)
+        self.pre_order_heads = _get_headnode_dict(self.pre_order)
+        self.post_order_heads = _get_headnode_dict(self.post_order)
 
         self.files = []  # List of files that were or should be modified
 
@@ -196,8 +262,9 @@ class RefactoringTool(object):
             msg = msg % args
         self.logger.debug(msg)
 
-    def print_output(self, lines):
-        """Called with lines of output to give to the user."""
+    def print_output(self, old_text, new_text, filename, equal):
+        """Called with the old version, new version, and filename of a
+        refactored file."""
         pass
 
     def refactor(self, items, write=False, doctests_only=False):
@@ -220,7 +287,8 @@ class RefactoringTool(object):
             dirnames.sort()
             filenames.sort()
             for name in filenames:
-                if not name.startswith(".") and name.endswith("py"):
+                if not name.startswith(".") and \
+                        os.path.splitext(name)[1].endswith("py"):
                     fullname = os.path.join(dirpath, name)
                     self.refactor_file(fullname, write, doctests_only)
             # Modify dirnames in-place to remove subdirs with leading dots
@@ -276,12 +344,16 @@ class RefactoringTool(object):
             An AST corresponding to the refactored input stream; None if
             there were errors during the parse.
         """
+        if _detect_future_print(data):
+            self.driver.grammar = pygram.python_grammar_no_print_statement
         try:
             tree = self.driver.parse_string(data)
         except Exception as err:
             self.log_error("Can't parse %s: %s: %s",
                            name, err.__class__.__name__, err)
             return
+        finally:
+            self.driver.grammar = pygram.python_grammar
         self.log_debug("Refactoring %s", name)
         self.refactor_tree(tree, name)
         return tree
@@ -338,12 +410,11 @@ class RefactoringTool(object):
         if not fixers:
             return
         for node in traversal:
-            for fixer in fixers[node.type] + fixers[None]:
+            for fixer in fixers[node.type]:
                 results = fixer.match(node)
                 if results:
                     new = fixer.transform(node, results)
-                    if new is not None and (new != node or
-                                            str(new) != str(node)):
+                    if new is not None:
                         node.replace(new)
                         node = new
 
@@ -357,10 +428,11 @@ class RefactoringTool(object):
             old_text = self._read_python_source(filename)[0]
             if old_text is None:
                 return
-        if old_text == new_text:
+        equal = old_text == new_text
+        self.print_output(old_text, new_text, filename, equal)
+        if equal:
             self.log_debug("No changes to %s", filename)
             return
-        self.print_output(diff_texts(old_text, new_text, filename))
         if write:
             self.write_file(new_text, filename, old_text, encoding)
         else:
@@ -582,12 +654,3 @@ class MultiprocessRefactoringTool(RefactoringTool):
         else:
             return super(MultiprocessRefactoringTool, self).refactor_file(
                 *args, **kwargs)
-
-
-def diff_texts(a, b, filename):
-    """Return a unified diff of two strings."""
-    a = a.splitlines()
-    b = b.splitlines()
-    return difflib.unified_diff(a, b, filename, filename,
-                                "(original)", "(refactored)",
-                                lineterm="")
