@@ -1,4 +1,4 @@
-""" Test suite for the code in fixes.util """
+""" Test suite for the code in fixer_util """
 
 # Testing imports
 from . import support
@@ -7,10 +7,10 @@ from . import support
 import os.path
 
 # Local imports
-from .. import pytree
-from .. import fixer_util
-from ..fixer_util import Attr, Name
-
+from lib2to3.pytree import Node, Leaf
+from lib2to3 import fixer_util
+from lib2to3.fixer_util import Attr, Name, Call, Comma
+from lib2to3.pgen2 import token
 
 def parse(code, strip_levels=0):
     # The topmost node is file_input, which we don't care about.
@@ -24,7 +24,7 @@ def parse(code, strip_levels=0):
 class MacroTestCase(support.TestCase):
     def assertStr(self, node, string):
         if isinstance(node, (tuple, list)):
-            node = pytree.Node(fixer_util.syms.simple_stmt, node)
+            node = Node(fixer_util.syms.simple_stmt, node)
         self.assertEqual(str(node), string)
 
 
@@ -76,6 +76,31 @@ class Test_Name(MacroTestCase):
         self.assertStr(Name("a"), "a")
         self.assertStr(Name("foo.foo().bar"), "foo.foo().bar")
         self.assertStr(Name("a", prefix="b"), "ba")
+
+
+class Test_Call(MacroTestCase):
+    def _Call(self, name, args=None, prefix=None):
+        """Help the next test"""
+        children = []
+        if isinstance(args, list):
+            for arg in args:
+                children.append(arg)
+                children.append(Comma())
+            children.pop()
+        return Call(Name(name), children, prefix)
+
+    def test(self):
+        kids = [None,
+                [Leaf(token.NUMBER, 1), Leaf(token.NUMBER, 2),
+                 Leaf(token.NUMBER, 3)],
+                [Leaf(token.NUMBER, 1), Leaf(token.NUMBER, 3),
+                 Leaf(token.NUMBER, 2), Leaf(token.NUMBER, 4)],
+                [Leaf(token.STRING, "b"), Leaf(token.STRING, "j", prefix=" ")]
+                ]
+        self.assertStr(self._Call("A"), "A()")
+        self.assertStr(self._Call("b", kids[1]), "b(1,2,3)")
+        self.assertStr(self._Call("a.b().c", kids[2]), "a.b().c(1,3,2,4)")
+        self.assertStr(self._Call("d", kids[3], prefix=" "), " d(b, j)")
 
 
 class Test_does_tree_import(support.TestCase):

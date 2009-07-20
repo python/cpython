@@ -26,19 +26,14 @@ parend_expr = patcomp.compile_pattern(
               )
 
 
-class FixPrint(fixer_base.ConditionalFix):
+class FixPrint(fixer_base.BaseFix):
 
     PATTERN = """
               simple_stmt< any* bare='print' any* > | print_stmt
               """
 
-    skip_on = '__future__.print_function'
-
     def transform(self, node, results):
         assert results
-
-        if self.should_skip(node):
-            return
 
         bare_print = results.get("bare")
 

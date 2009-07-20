@@ -84,8 +84,6 @@ def build_pattern(mapping=MAPPING):
 
 class FixImports(fixer_base.BaseFix):
 
-    order = "pre" # Pre-order tree traversal
-
     # This is overridden in fix_imports2.
     mapping = MAPPING
 

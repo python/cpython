@@ -18,8 +18,6 @@ class FixerTestCase(support.TestCase):
     def setUp(self, fix_list=None, fixer_pkg="lib2to3", options=None):
         if fix_list is None:
             fix_list = [self.fixer]
-        if options is None:
-            options = {"print_function" : False}
         self.refactor = support.get_refactorer(fixer_pkg, fix_list, options)
         self.fixer_log = []
         self.filename = u"<string>"
@@ -58,8 +56,7 @@ class FixerTestCase(support.TestCase):
     def assert_runs_after(self, *names):
         fixes = [self.fixer]
         fixes.extend(names)
-        options = {"print_function" : False}
-        r = support.get_refactorer("lib2to3", fixes, options)
+        r = support.get_refactorer("lib2to3", fixes)
         (pre, post) = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):
@@ -379,18 +376,15 @@ class Test_print(FixerTestCase):
         self.unchanged(s)
 
     def test_idempotency_print_as_function(self):
-        print_stmt = pygram.python_grammar.keywords.pop("print")
-        try:
-            s = """print(1, 1+1, 1+1+1)"""
-            self.unchanged(s)
+        self.refactor.driver.grammar = pygram.python_grammar_no_print_statement
+        s = """print(1, 1+1, 1+1+1)"""
+        self.unchanged(s)
 
-            s = """print()"""
-            self.unchanged(s)
+        s = """print()"""
+        self.unchanged(s)
 
-            s = """print('')"""
-            self.unchanged(s)
-        finally:
-            pygram.python_grammar.keywords["print"] = print_stmt
+        s = """print('')"""
+        self.unchanged(s)
 
     def test_1(self):
         b = """print 1, 1+1, 1+1+1"""
@@ -462,31 +456,15 @@ class Test_print(FixerTestCase):
         a = """print(file=sys.stderr)"""
         self.check(b, a)
 
-    # With from __future__ import print_function
     def test_with_future_print_function(self):
-        # XXX: These tests won't actually do anything until the parser
-        #      is fixed so it won't crash when it sees print(x=y).
-        #      When #2412 is fixed, the try/except block can be taken
-        #      out and the tests can be run like normal.
-        # MvL: disable entirely for now, so that it doesn't print to stdout
-        return
-        try:
-            s = "from __future__ import print_function\n"\
-                "print('Hai!', end=' ')"
-            self.unchanged(s)
+        s = "from __future__ import print_function\n" \
+            "print('Hai!', end=' ')"
+        self.unchanged(s)
 
-            b = "print 'Hello, world!'"
-            a = "print('Hello, world!')"
-            self.check(b, a)
+        b = "print 'Hello, world!'"
+        a = "print('Hello, world!')"
+        self.check(b, a)
 
-            s = "from __future__ import *\n"\
-                "print('Hai!', end=' ')"
-            self.unchanged(s)
-        except:
-            return
-        else:
-            self.assertFalse(True, "#2421 has been fixed -- printing tests "\
-                                   "need to be updated!")
 
 class Test_exec(FixerTestCase):
     fixer = "exec"
@@ -1704,6 +1682,11 @@ class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
         from ..fixes.fix_imports import MAPPING as mapping1
         for key in ('dbhash', 'dumbdbm', 'dbm', 'gdbm'):
             self.modules[key] = mapping1[key]
+
+    def test_after_local_imports_refactoring(self):
+        for fix in ("imports", "imports2"):
+            self.fixer = fix
+            self.assert_runs_after("import")
 
 
 class Test_urllib(FixerTestCase):
@@ -3504,6 +3487,7 @@ class Test_itertools_imports(FixerTestCase):
         s = "from itertools import foo"
         self.unchanged(s)
 
+
 class Test_import(FixerTestCase):
     fixer = "import"
 
@@ -3538,8 +3522,7 @@ class Test_import(FixerTestCase):
 
         self.always_exists = False
         self.present_files = set(['__init__.py'])
-        expected_extensions = ('.py', os.path.pathsep, '.pyc', '.so',
-                               '.sl', '.pyd')
+        expected_extensions = ('.py', os.path.sep, '.pyc', '.so', '.sl', '.pyd')
         names_to_test = (p("/spam/eggs.py"), "ni.py", p("../../shrubbery.py"))
 
         for name in names_to_test:
@@ -3567,6 +3550,13 @@ class Test_import(FixerTestCase):
         a = "from . import bar"
         self.always_exists = False
         self.present_files = set(["__init__.py", "bar.py"])
+        self.check(b, a)
+
+    def test_import_from_package(self):
+        b = "import bar"
+        a = "from . import bar"
+        self.always_exists = False
+        self.present_files = set(["__init__.py", "bar/"])
         self.check(b, a)
 
     def test_comments_and_indent(self):
@@ -4095,3 +4085,26 @@ class Test_getcwdu(FixerTestCase):
         b = """os.getcwdu (  )"""
         a = """os.getcwd (  )"""
         self.check(b, a)
+
+
+class Test_operator(FixerTestCase):
+
+    fixer = "operator"
+
+    def test_operator_isCallable(self):
+        b = "operator.isCallable(x)"
+        a = "hasattr(x, '__call__')"
+        self.check(b, a)
+
+    def test_operator_sequenceIncludes(self):
+        b = "operator.sequenceIncludes(x, y)"
+        a = "operator.contains(x, y)"
+        self.check(b, a)
+
+    def test_bare_isCallable(self):
+        s = "isCallable(x)"
+        self.warns_unchanged(s, "You should use hasattr(x, '__call__') here.")
+
+    def test_bare_sequenceIncludes(self):
+        s = "sequenceIncludes(x, y)"
+        self.warns_unchanged(s, "You should use operator.contains here.")

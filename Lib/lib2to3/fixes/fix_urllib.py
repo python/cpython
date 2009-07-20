@@ -12,13 +12,13 @@ from ..fixer_util import Name, Comma, FromImport, Newline, attr_chain
 MAPPING = {'urllib':  [
                 ('urllib.request',
                     ['URLOpener', 'FancyURLOpener', 'urlretrieve',
-                     '_urlopener', 'urlopen', 'urlcleanup']),
+                     '_urlopener', 'urlopen', 'urlcleanup',
+                     'pathname2url', 'url2pathname']),
                 ('urllib.parse',
                     ['quote', 'quote_plus', 'unquote', 'unquote_plus',
-                     'urlencode', 'pathname2url', 'url2pathname', 'splitattr',
-                     'splithost', 'splitnport', 'splitpasswd', 'splitport',
-                     'splitquery', 'splittag', 'splittype', 'splituser',
-                     'splitvalue', ]),
+                     'urlencode', 'splitattr', 'splithost', 'splitnport',
+                     'splitpasswd', 'splitport', 'splitquery', 'splittag',
+                     'splittype', 'splituser', 'splitvalue', ]),
                 ('urllib.error',
                     ['ContentTooShortError'])],
            'urllib2' : [

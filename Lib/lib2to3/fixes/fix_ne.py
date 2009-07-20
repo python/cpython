@@ -12,9 +12,11 @@ from .. import fixer_base
 class FixNe(fixer_base.BaseFix):
     # This is so simple that we don't need the pattern compiler.
 
+    _accept_type = token.NOTEQUAL
+
     def match(self, node):
         # Override
-        return node.type == token.NOTEQUAL and node.value == u"<>"
+        return node.value == u"<>"
 
     def transform(self, node, results):
         new = pytree.Leaf(token.NOTEQUAL, u"!=", prefix=node.prefix)
