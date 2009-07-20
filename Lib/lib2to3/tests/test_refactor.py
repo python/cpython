@@ -46,6 +46,7 @@ class TestRefactoringTool(unittest.TestCase):
 
     def test_print_function_option(self):
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
             refactor.RefactoringTool(_DEFAULT_FIXERS, {"print_function" : True})
         self.assertEqual(len(w), 1)
         msg, = w

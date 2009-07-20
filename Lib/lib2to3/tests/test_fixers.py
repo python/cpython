@@ -3556,7 +3556,7 @@ class Test_import(FixerTestCase):
         b = "import bar"
         a = "from . import bar"
         self.always_exists = False
-        self.present_files = set(["__init__.py", "bar/"])
+        self.present_files = set(["__init__.py", "bar" + os.path.sep])
         self.check(b, a)
 
     def test_comments_and_indent(self):
