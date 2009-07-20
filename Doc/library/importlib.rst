@@ -202,10 +202,24 @@ are also provided to help in implementing the core ABCs.
         :term:`loader` cannot find the module.
 
 
+.. class:: ExecutionLoader
+
+    An abstract base class which inherits from :class:`InspectLoader` that,
+    when implemented, allows a module to be executed as a script. The ABC
+    represents an optional :pep:`302` protocol.
+
+    .. method:: get_filename(fullname)
+
+        An abstract method that is to return the value for :attr:`__file__` for
+        the specified module. If no path is available, :exc:`ImportError` is
+        raised.
+
+
 .. class:: PyLoader
 
-    An abstract base class inheriting from :class:`importlib.abc.InspectLoader`
-    and :class:`importlib.abc.ResourceLoader` designed to ease the loading of
+    An abstract base class inheriting from
+    :class:`importlib.abc.ExecutionLoader` and
+    :class:`importlib.abc.ResourceLoader` designed to ease the loading of
     Python source modules (bytecode is not handled; see
     :class:`importlib.abc.PyPycLoader` for a source/bytecode ABC). A subclass
     implementing this ABC will only need to worry about exposing how the source
@@ -217,6 +231,13 @@ are also provided to help in implementing the core ABCs.
         An abstract method that returns the path to the source code for a
         module. Should return :keyword:`None` if there is no source code.
         :exc:`ImportError` if the module cannot be found.
+
+    .. method:: get_filename(fullname)
+
+        A concrete implementation of
+        :meth:`importlib.abc.ExecutionLoader.get_filename` that
+        relies on :meth:`source_path`. If :meth:`source_path` returns
+        :keyword:`None`, then :exc:`ImportError` is raised.
 
     .. method:: load_module(fullname)
 
@@ -238,8 +259,8 @@ are also provided to help in implementing the core ABCs.
 
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_source`. Uses
-        :meth:`importlib.abc.InspectLoader.get_data` and :meth:`source_path` to
-        get the source code.  It tries to guess the source encoding using
+        :meth:`importlib.abc.ResourceLoader.get_data` and :meth:`source_path`
+        to get the source code.  It tries to guess the source encoding using
         :func:`tokenize.detect_encoding`.
 
 
@@ -253,7 +274,7 @@ are also provided to help in implementing the core ABCs.
 
         An abstract method which returns the modification time for the source
         code of the specified module. The modification time should be an
-        integer. If there is no source code, return :keyword:`None. If the
+        integer. If there is no source code, return :keyword:`None`. If the
         module cannot be found then :exc:`ImportError` is raised.
 
     .. method:: bytecode_path(fullname)
@@ -262,6 +283,16 @@ are also provided to help in implementing the core ABCs.
         specified module, if it exists. It returns :keyword:`None`
         if no bytecode exists (yet).
         Raises :exc:`ImportError` if the module is not found.
+
+    .. method:: get_filename(fullname)
+
+        A concrete implementation of
+        :meth:`importlib.abc.ExecutionLoader.get_filename` that relies on
+        :meth:`importlib.abc.PyLoader.source_path` and :meth:`bytecode_path`.
+        If :meth:`source_path` returns a path, then that value is returned.
+        Else if :meth:`bytecode_path` returns a path, that path will be
+        returned. If a path is not available from both methods,
+        :exc:`ImportError` is raised.
 
     .. method:: write_bytecode(fullname, bytecode)
 

@@ -76,7 +76,23 @@ InspectLoader.register(machinery.BuiltinImporter)
 InspectLoader.register(machinery.FrozenImporter)
 
 
-class PyLoader(_bootstrap.PyLoader, ResourceLoader, InspectLoader):
+class ExecutionLoader(InspectLoader):
+
+    """Abstract base class for loaders that wish to support the execution of
+    modules as scripts.
+
+    This ABC represents one of the optional protocols specified in PEP 302.
+
+    """
+
+    @abc.abstractmethod
+    def get_filename(self, fullname:str) -> str:
+        """Abstract method which should return the value that __file__ is to be
+        set to."""
+        raise NotImplementedError
+
+
+class PyLoader(_bootstrap.PyLoader, ResourceLoader, ExecutionLoader):
 
     """Abstract base class to assist in loading source code by requiring only
     back-end storage methods to be implemented.

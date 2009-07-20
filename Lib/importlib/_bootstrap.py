@@ -315,16 +315,10 @@ class PyLoader:
 
     @module_for_loader
     def load_module(self, module):
-        """Load a source module."""
-        return self._load_module(module)
-
-    def _load_module(self, module):
-        """Initialize a module from source."""
+        """Initialize the module."""
         name = module.__name__
         code_object = self.get_code(module.__name__)
-        # __file__ may have been set by the caller, e.g. bytecode path.
-        if not hasattr(module, '__file__'):
-            module.__file__ = self.source_path(name)
+        module.__file__ = self.get_filename(name)
         if self.is_package(name):
             module.__path__  = [module.__file__.rsplit(path_sep, 1)[0]]
         module.__package__ = module.__name__
@@ -333,6 +327,15 @@ class PyLoader:
         module.__loader__ = self
         exec(code_object, module.__dict__)
         return module
+
+    def get_filename(self, fullname):
+        """Return the path to the source file, else raise ImportError."""
+        path = self.source_path(fullname)
+        if path is not None:
+            return path
+        else:
+            raise ImportError("no source path available for "
+                                "{0!r}".format(fullname))
 
     def get_code(self, fullname):
         """Get a code object from source."""
@@ -388,15 +391,16 @@ class PyPycLoader(PyLoader):
 
     """
 
-    @module_for_loader
-    def load_module(self, module):
-        """Load a module from source or bytecode."""
-        name = module.__name__
-        source_path = self.source_path(name)
-        bytecode_path = self.bytecode_path(name)
-        # get_code can worry about no viable paths existing.
-        module.__file__ = source_path or bytecode_path
-        return self._load_module(module)
+    def get_filename(self, fullname):
+        """Return the source or bytecode file path."""
+        path = self.source_path(fullname)
+        if path is not None:
+            return path
+        path = self.bytecode_path(fullname)
+        if path is not None:
+            return path
+        raise ImportError("no source or bytecode path available for "
+                            "{0!r}".format(fullname))
 
     def get_code(self, fullname):
         """Get a code object from source or bytecode."""

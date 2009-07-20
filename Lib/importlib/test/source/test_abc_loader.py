@@ -218,6 +218,21 @@ class PyLoaderInterfaceTests(unittest.TestCase):
         with util.uncache(name), self.assertRaises(ImportError):
             mock.load_module(name)
 
+    def test_get_filename_with_source_path(self):
+        # get_filename() should return what source_path() returns.
+        name = 'mod'
+        path = os.path.join('path', 'to', 'source')
+        mock = PyLoaderMock({name: path})
+        with util.uncache(name):
+            self.assertEqual(mock.get_filename(name), path)
+
+    def test_get_filename_no_source_path(self):
+        # get_filename() should raise ImportError if source_path returns None.
+        name = 'mod'
+        mock = PyLoaderMock({name: None})
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.get_filename(name)
+
 
 class PyLoaderGetSourceTests(unittest.TestCase):
 
@@ -281,6 +296,38 @@ class PyPycLoaderTests(PyLoaderTests):
 
     def test_unloadable(self):
         super().test_unloadable()
+
+
+class PyPycLoaderInterfaceTests(unittest.TestCase):
+
+    """Test for the interface of importlib.abc.PyPycLoader."""
+
+    def get_filename_check(self, src_path, bc_path, expect):
+        name = 'mod'
+        mock = PyPycLoaderMock({name: src_path}, {name: {'path': bc_path}})
+        with util.uncache(name):
+            assert mock.source_path(name) == src_path
+            assert mock.bytecode_path(name) == bc_path
+            self.assertEqual(mock.get_filename(name), expect)
+
+    def test_filename_with_source_bc(self):
+        # When source and bytecode paths present, return the source path.
+        self.get_filename_check('source_path', 'bc_path', 'source_path')
+
+    def test_filename_with_source_no_bc(self):
+        # With source but no bc, return source path.
+        self.get_filename_check('source_path', None, 'source_path')
+
+    def test_filename_with_no_source_bc(self):
+        # With not source but bc, return the bc path.
+        self.get_filename_check(None, 'bc_path', 'bc_path')
+
+    def test_filename_with_no_source_or_bc(self):
+        # With no source or bc, raise ImportError.
+        name = 'mod'
+        mock = PyPycLoaderMock({name: None}, {name: {'path': None}})
+        with util.uncache(name), self.assertRaises(ImportError):
+            mock.get_filename(name)
 
 
 class SkipWritingBytecodeTests(unittest.TestCase):
@@ -421,9 +468,9 @@ class MissingPathsTests(unittest.TestCase):
 def test_main():
     from test.support import run_unittest
     run_unittest(PyLoaderTests, PyLoaderInterfaceTests, PyLoaderGetSourceTests,
-                    PyPycLoaderTests, SkipWritingBytecodeTests,
-                    RegeneratedBytecodeTests, BadBytecodeFailureTests,
-                    MissingPathsTests)
+                    PyPycLoaderTests, PyPycLoaderInterfaceTests,
+                    SkipWritingBytecodeTests, RegeneratedBytecodeTests,
+                    BadBytecodeFailureTests, MissingPathsTests)
 
 
 if __name__ == '__main__':

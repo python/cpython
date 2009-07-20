@@ -53,9 +53,15 @@ class InspectLoader(InheritanceTests, unittest.TestCase):
                     machinery.FrozenImporter]
 
 
+class ExecutionLoader(InheritanceTests, unittest.TestCase):
+
+    superclasses = [abc.InspectLoader]
+    subclasses = [abc.PyLoader]
+
+
 class PyLoader(InheritanceTests, unittest.TestCase):
 
-    superclasses = [abc.Loader, abc.ResourceLoader, abc.InspectLoader]
+    superclasses = [abc.Loader, abc.ResourceLoader, abc.ExecutionLoader]
 
 
 class PyPycLoader(InheritanceTests, unittest.TestCase):
