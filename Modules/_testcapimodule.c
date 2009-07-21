@@ -1446,6 +1446,21 @@ argparsing(PyObject *o, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+/* To test that the result of PyCode_NewEmpty has the right members. */
+static PyObject *
+code_newempty(PyObject *self, PyObject *args)
+{
+	const char *filename;
+	const char *funcname;
+        int firstlineno;
+
+	if (!PyArg_ParseTuple(args, "ssi:code_newempty",
+			      &filename, &funcname, &firstlineno))
+		return NULL;
+
+	return (PyObject *)PyCode_NewEmpty(filename, funcname, firstlineno);
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -1498,6 +1513,7 @@ static PyMethodDef TestMethods[] = {
 	{"traceback_print", traceback_print, 	         METH_VARARGS},
 	{"exception_print", exception_print, 	         METH_VARARGS},
 	{"argparsing",     argparsing, METH_VARARGS},
+	{"code_newempty", code_newempty, 	         METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 

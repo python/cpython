@@ -105,3 +105,4 @@ Other Objects
    cell.rst
    gen.rst
    datetime.rst
+   code.rst

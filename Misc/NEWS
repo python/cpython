@@ -40,6 +40,15 @@ C-API
 
 - The code flags for old __future__ features are now available again.
 
+- Issue #5954: Add a PyFrame_GetLineNumber() function to replace most uses of
+  PyCode_Addr2Line().
+
+- Issue #5959: Add a PyCode_NewEmpty() function to create a new empty code
+  object at a specified file, function, and line number.
+
+- Issue #1419652: Change the first argument to PyImport_AppendInittab() to
+  ``const char *`` as the string is stored beyond the call.
+
 Library
 -------
 
