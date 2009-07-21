@@ -2087,6 +2087,38 @@ Explicitly pass resources to child processes
            for i in range(10):
                 Process(target=f, args=(lock,)).start()
 
+Beware replacing sys.stdin with a "file like object"
+
+    :mod:`multiprocessing` originally unconditionally called::
+
+        os.close(sys.stdin.fileno())
+
+    in the :meth:`multiprocessing.Process._bootstrap` method --- this resulted
+    in issues with processes-in-processes. This has been changed to::
+
+        sys.stdin.close()
+        sys.stdin = open(os.devnull)
+
+    Which solves the fundamental issue of processes colliding with each other
+    resulting in a bad file descriptor error, but introduces a potential danger
+    to applications which replace :func:`sys.stdin` with a "file-like object"
+    with output buffering.  This danger is that if multiple processes call
+    :func:`close()` on this file-like object, it could result in the same
+    data being flushed to the object multiple times, resulting in corruption.
+
+    If you write a file-like object and implement your own caching, you can
+    make it fork-safe by storing the pid whenever you append to the cache,
+    and discarding the cache when the pid changes. For example::
+
+       @property
+       def cache(self):
+           pid = os.getpid()
+           if pid != self._pid:
+               self._pid = pid
+               self._cache = []
+           return self._cache
+
+    For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
 
 Windows
 ~~~~~~~
