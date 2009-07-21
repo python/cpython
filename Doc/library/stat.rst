@@ -137,6 +137,131 @@ for polling one of these special files after a non-blocking open.  The meaning
 of the size field for other character and block devices varies more, depending
 on the implementation of the underlying system call.
 
+The variables below define the flags used in the :data:`ST_MODE` field.
+
+Use of the functions above is more portable than use of the first set of flags:
+
+.. data:: S_IFMT
+
+   Bit mask for the file type bit fields.
+
+.. data:: S_IFSOCK
+
+   Socket.
+
+.. data:: S_IFLNK
+
+   Symbolic link.
+
+.. data:: S_IFREG
+
+   Regular file.
+
+.. data:: S_IFBLK
+
+   Block device.
+
+.. data:: S_IFDIR
+
+   Directory.
+
+.. data:: S_IFCHR
+
+   Character device.
+
+.. data:: S_IFIFO
+
+   FIFO.
+
+The following flags can also be used in the *mode* argument of :func:`os.chmod`:
+
+.. data:: S_ISUID
+
+   Set UID bit.
+
+.. data:: S_ISGID
+
+   Set-group-ID bit.  This bit has several special uses.  For a directory
+   it indicates that BSD semantics is to be used for that directory:
+   files created there inherit their group ID from the directory, not
+   from the effective group ID of the creating process, and directories
+   created there will also get the :data:`S_ISGID` bit set.  For a
+   file that does not have the group execution bit (:data:`S_IXGRP`)
+   set, the set-group-ID bit indicates mandatory file/record locking
+   (see also :data:`S_ENFMT`).
+
+.. data:: S_ISVTX
+
+   Sticky bit.  When this bit is set on a directory it means that a file
+   in that directory can be renamed or deleted only by the owner of the
+   file, by the owner of the directory, or by a privileged process.
+
+.. data:: S_IRWXU
+
+   Mask for file owner permissions.
+
+.. data:: S_IRUSR
+
+   Owner has read permission.
+
+.. data:: S_IWUSR
+
+   Owner has write permission.
+
+.. data:: S_IXUSR
+
+   Owner has execute permission.
+
+.. data:: S_IRWXG
+
+   Mask for group permissions.
+
+.. data:: S_IRGRP
+
+   Group has read permission.
+
+.. data:: S_IWGRP
+
+   Group has write permission.
+
+.. data:: S_IXGRP
+
+   Group has execute permission.
+
+.. data:: S_IRWXO
+
+   Mask for permissions for others (not in group).
+
+.. data:: S_IROTH
+
+   Others have read permission.
+
+.. data:: S_IWOTH
+
+   Others have write permission.
+
+.. data:: S_IXOTH
+
+   Others have execute permission.
+
+.. data:: S_ENFMT
+
+   System V file locking enforcement.  This flag is shared with :data:`S_ISGID`:
+   file/record locking is enforced on files that do not have the group
+   execution bit (:data:`S_IXGRP`) set.
+
+.. data:: S_IREAD
+
+   Unix V7 synonym for :data:`S_IRUSR`.
+
+.. data:: S_IWRITE
+
+   Unix V7 synonym for :data:`S_IWUSR`.
+
+.. data:: S_IEXEC
+
+   Unix V7 synonym for :data:`S_IXUSR`.
+
 Example::
 
    import os, sys

@@ -854,25 +854,25 @@ Files and Directories
    combinations of them:
 
 
-   * ``stat.S_ISUID``
-   * ``stat.S_ISGID``
-   * ``stat.S_ENFMT``
-   * ``stat.S_ISVTX``
-   * ``stat.S_IREAD``
-   * ``stat.S_IWRITE``
-   * ``stat.S_IEXEC``
-   * ``stat.S_IRWXU``
-   * ``stat.S_IRUSR``
-   * ``stat.S_IWUSR``
-   * ``stat.S_IXUSR``
-   * ``stat.S_IRWXG``
-   * ``stat.S_IRGRP``
-   * ``stat.S_IWGRP``
-   * ``stat.S_IXGRP``
-   * ``stat.S_IRWXO``
-   * ``stat.S_IROTH``
-   * ``stat.S_IWOTH``
-   * ``stat.S_IXOTH``
+   * :data:`stat.S_ISUID`
+   * :data:`stat.S_ISGID`
+   * :data:`stat.S_ENFMT`
+   * :data:`stat.S_ISVTX`
+   * :data:`stat.S_IREAD`
+   * :data:`stat.S_IWRITE`
+   * :data:`stat.S_IEXEC`
+   * :data:`stat.S_IRWXU`
+   * :data:`stat.S_IRUSR`
+   * :data:`stat.S_IWUSR`
+   * :data:`stat.S_IXUSR`
+   * :data:`stat.S_IRWXG`
+   * :data:`stat.S_IRGRP`
+   * :data:`stat.S_IWGRP`
+   * :data:`stat.S_IXGRP`
+   * :data:`stat.S_IRWXO`
+   * :data:`stat.S_IROTH`
+   * :data:`stat.S_IWOTH`
+   * :data:`stat.S_IXOTH`
 
    Availability: Unix, Windows.
 
