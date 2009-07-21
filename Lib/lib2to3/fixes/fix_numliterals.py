@@ -12,10 +12,11 @@ from ..fixer_util import Number
 class FixNumliterals(fixer_base.BaseFix):
     # This is so simple that we don't need the pattern compiler.
 
+    _accept_type = token.NUMBER
+
     def match(self, node):
         # Override
-        return (node.type == token.NUMBER and
-                (node.value.startswith("0") or node.value[-1] in "Ll"))
+        return (node.value.startswith("0") or node.value[-1] in "Ll")
 
     def transform(self, node, results):
         val = node.value

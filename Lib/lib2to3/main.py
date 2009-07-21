@@ -4,19 +4,31 @@ Main program for 2to3.
 
 import sys
 import os
+import difflib
 import logging
 import shutil
 import optparse
 
 from . import refactor
 
+
+def diff_texts(a, b, filename):
+    """Return a unified diff of two strings."""
+    a = a.splitlines()
+    b = b.splitlines()
+    return difflib.unified_diff(a, b, filename, filename,
+                                "(original)", "(refactored)",
+                                lineterm="")
+
+
 class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
     """
     Prints output to stdout.
     """
 
-    def __init__(self, fixers, options, explicit, nobackups):
+    def __init__(self, fixers, options, explicit, nobackups, show_diffs):
         self.nobackups = nobackups
+        self.show_diffs = show_diffs
         super(StdoutRefactoringTool, self).__init__(fixers, options, explicit)
 
     def log_error(self, msg, *args, **kwargs):
@@ -42,9 +54,17 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         if not self.nobackups:
             shutil.copymode(backup, filename)
 
-    def print_output(self, lines):
-        for line in lines:
-            print(line)
+    def print_output(self, old, new, filename, equal):
+        if equal:
+            self.log_message("No changes to %s", filename)
+        else:
+            self.log_message("Refactored %s", filename)
+            if self.show_diffs:
+                for line in diff_texts(old, new, filename):
+                    print(line)
+
+def warn(msg):
+    print >> sys.stderr, "WARNING: %s" % (msg,)
 
 
 def main(fixer_pkg, args=None):
@@ -70,9 +90,12 @@ def main(fixer_pkg, args=None):
     parser.add_option("-l", "--list-fixes", action="store_true",
                       help="List available transformations (fixes/fix_*.py)")
     parser.add_option("-p", "--print-function", action="store_true",
-                      help="Modify the grammar so that print() is a function")
+                      help="DEPRECATED Modify the grammar so that print() is "
+                          "a function")
     parser.add_option("-v", "--verbose", action="store_true",
                       help="More verbose logging")
+    parser.add_option("--no-diffs", action="store_true",
+                      help="Don't show diffs of the refactoring")
     parser.add_option("-w", "--write", action="store_true",
                       help="Write back modified files")
     parser.add_option("-n", "--nobackups", action="store_true", default=False,
@@ -81,6 +104,11 @@ def main(fixer_pkg, args=None):
     # Parse command line arguments
     refactor_stdin = False
     options, args = parser.parse_args(args)
+    if not options.write and options.no_diffs:
+        warn("not writing files and not printing diffs; that's not very useful")
+    if options.print_function:
+        warn("-p is deprecated; "
+             "detection of from __future__ import print_function is automatic")
     if not options.write and options.nobackups:
         parser.error("Can't use -n without -w")
     if options.list_fixes:
@@ -104,7 +132,6 @@ def main(fixer_pkg, args=None):
     logging.basicConfig(format='%(name)s: %(message)s', level=level)
 
     # Initialize the refactoring tool
-    rt_opts = {"print_function" : options.print_function}
     avail_fixes = set(refactor.get_fixers_from_package(fixer_pkg))
     unwanted_fixes = set(fixer_pkg + ".fix_" + fix for fix in options.nofix)
     explicit = set()
@@ -119,8 +146,8 @@ def main(fixer_pkg, args=None):
     else:
         requested = avail_fixes.union(explicit)
     fixer_names = requested.difference(unwanted_fixes)
-    rt = StdoutRefactoringTool(sorted(fixer_names), rt_opts, sorted(explicit),
-                               options.nobackups)
+    rt = StdoutRefactoringTool(sorted(fixer_names), None, sorted(explicit),
+                               options.nobackups, not options.no_diffs)
 
     # Refactor all files and directories passed as arguments
     if not rt.errors:
