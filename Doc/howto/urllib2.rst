@@ -488,7 +488,7 @@ than the URL you pass to .add_password() will also match. ::
 
 .. note::
 
-    In the above example we only supplied our ``HHTPBasicAuthHandler`` to
+    In the above example we only supplied our ``HTTPBasicAuthHandler`` to
     ``build_opener``. By default openers have the handlers for normal situations
     -- ``ProxyHandler``, ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
