@@ -31,6 +31,7 @@ class TestNodes(support.TestCase):
     def test_deprecated_prefix_methods(self):
         l = pytree.Leaf(100, "foo")
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
             self.assertEqual(l.get_prefix(), "")
             l.set_prefix("hi")
         self.assertEqual(l.prefix, "hi")
