@@ -240,20 +240,5 @@ class BitFieldTest(unittest.TestCase):
             _anonymous_ = ["_"]
             _fields_ = [("_", X)]
 
-    def test_uint32(self):
-        class X(Structure):
-            _fields_ = [("a", c_uint32, 32)]
-        x = X()
-        x.a = 10
-        self.failUnlessEqual(x.a, 10)
-
-    def test_uint64(self):
-        class X(Structure):
-            _fields_ = [("a", c_uint64, 64)]
-        x = X()
-        x.a = 10
-        self.failUnlessEqual(x.a, 10)
-
-
 if __name__ == "__main__":
     unittest.main()
