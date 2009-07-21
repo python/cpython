@@ -426,9 +426,9 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 #define LOW_BIT(x)  ((x) & 0xFFFF)
 #define NUM_BITS(x) ((x) >> 16)
 
-/* This seems more a compiler issue than a Windows/non-Windows one */
+/* This seems nore a compiler issue than a Windows/non-Windows one */
 #ifdef MS_WIN32
-#  define BIT_MASK(size) ((1i64 << NUM_BITS(size))-1)
+#  define BIT_MASK(size) ((1 << NUM_BITS(size))-1)
 #else
 #  define BIT_MASK(size) ((1LL << NUM_BITS(size))-1)
 #endif
