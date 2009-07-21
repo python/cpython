@@ -2839,19 +2839,18 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 fast_block_end:
 		while (why != WHY_NOT && f->f_iblock > 0) {
-			PyTryBlock *b = PyFrame_BlockPop(f);
+			/* Peek at the current block. */
+			PyTryBlock *b = &f->f_blockstack[f->f_iblock - 1];
 
 			assert(why != WHY_YIELD);
 			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
-				/* For a continue inside a try block,
-				   don't pop the block for the loop. */
-				PyFrame_BlockSetup(f, b->b_type, b->b_handler,
-						   b->b_level);
 				why = WHY_NOT;
 				JUMPTO(PyLong_AS_LONG(retval));
 				Py_DECREF(retval);
 				break;
 			}
+			/* Now we have to pop the block. */
+			f->f_iblock--;
 
 			if (b->b_type == EXCEPT_HANDLER) {
 				UNWIND_EXCEPT_HANDLER(b);
