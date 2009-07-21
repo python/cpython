@@ -102,6 +102,9 @@ consts: ('None',)
 
 """
 
+import unittest
+import _testcapi
+
 def consts(t):
     """Yield a doctest-safe sequence of object reprs."""
     for elt in t:
@@ -118,10 +121,21 @@ def dump(co):
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
     print("consts:", tuple(consts(co.co_consts)))
 
+
+class CodeTest(unittest.TestCase):
+
+    def test_newempty(self):
+        co = _testcapi.code_newempty("filename", "funcname", 15)
+        self.assertEquals(co.co_filename, "filename")
+        self.assertEquals(co.co_name, "funcname")
+        self.assertEquals(co.co_firstlineno, 15)
+
+
 def test_main(verbose=None):
-    from test.support import run_doctest
+    from test.support import run_doctest, run_unittest
     from test import test_code
     run_doctest(test_code, verbose)
+    run_unittest(CodeTest)
 
 
 if __name__ == '__main__':
