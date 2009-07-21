@@ -422,6 +422,8 @@ module for more information.
 
    Base class for warnings related to :class:`bytes` and :class:`buffer`.
 
+Exception hierarchy
+-------------------
 
 The class hierarchy for built-in exceptions is:
 
