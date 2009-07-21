@@ -330,7 +330,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
 	/* Bail out if an exception is set */
 	if (PyErr_Occurred())
-		goto exitUnchanged;
+		goto exitError;
 
 	/* Bypass optimization when the lineno table is too complex */
 	assert(PyBytes_Check(lineno_obj));
@@ -348,7 +348,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	/* Make a modifiable copy of the code string */
 	codestr = (unsigned char *)PyMem_Malloc(codelen);
 	if (codestr == NULL)
-		goto exitUnchanged;
+		goto exitError;
 	codestr = (unsigned char *)memcpy(codestr, 
 					  PyBytes_AS_STRING(code), codelen);
 
@@ -363,11 +363,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	/* Mapping to new jump targets after NOPs are removed */
 	addrmap = (int *)PyMem_Malloc(codelen * sizeof(int));
 	if (addrmap == NULL)
-		goto exitUnchanged;
+		goto exitError;
 
 	blocks = markblocks(codestr, codelen);
 	if (blocks == NULL)
-		goto exitUnchanged;
+		goto exitError;
 	assert(PyList_Check(consts));
 
 	for (i=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
@@ -413,7 +413,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				name = _PyUnicode_AsString(PyTuple_GET_ITEM(names, j));
 				h = load_global(codestr, i, name, consts);
 				if (h < 0)
-					goto exitUnchanged;
+					goto exitError;
 				else if (h == 0)
 					continue;
 				cumlc = lastlc + 1;
@@ -667,6 +667,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	PyMem_Free(blocks);
 	return code;
 
+ exitError:
+	code = NULL;
+
  exitUnchanged:
 	if (blocks != NULL)
 		PyMem_Free(blocks);
@@ -674,6 +677,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 		PyMem_Free(addrmap);
 	if (codestr != NULL)
 		PyMem_Free(codestr);
-	Py_INCREF(code);
+	Py_XINCREF(code);
 	return code;
 }
