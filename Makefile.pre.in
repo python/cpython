@@ -838,6 +838,7 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		multiprocessing multiprocessing/dummy \
+		unittest \
 		lib-old \
 		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
