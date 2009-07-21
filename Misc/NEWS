@@ -349,6 +349,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6493: Fix a ctypes problem setting bitfields more than 31 bits wide.
+
 - unittest has been split up into a package.  All old names should still work.
 
 - Issue #6431: Make Fraction type return NotImplemented when it doesn't
