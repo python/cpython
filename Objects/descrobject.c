@@ -92,7 +92,7 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 				     "descriptor '%V' for type '%s' "
 				     "needs either an object or a type",
 				     descr_name((PyDescrObject *)descr), "?",
-				     descr->d_type->tp_name);
+				     PyDescr_TYPE(descr)->tp_name);
 			return NULL;
 		}
 	}
@@ -101,16 +101,16 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 			     "descriptor '%V' for type '%s' "
 			     "needs a type, not a '%s' as arg 2",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name,
+			     PyDescr_TYPE(descr)->tp_name,
 			     type->ob_type->tp_name);
 		return NULL;
 	}
-	if (!PyType_IsSubtype((PyTypeObject *)type, descr->d_type)) {
+	if (!PyType_IsSubtype((PyTypeObject *)type, PyDescr_TYPE(descr))) {
 		PyErr_Format(PyExc_TypeError,
 			     "descriptor '%V' for type '%s' "
 			     "doesn't apply to type '%s'",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name,
+			     PyDescr_TYPE(descr)->tp_name,
 			     ((PyTypeObject *)type)->tp_name);
 		return NULL;
 	}
@@ -149,7 +149,7 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
 	PyErr_Format(PyExc_AttributeError,
 		     "attribute '%V' of '%.100s' objects is not readable",
 		     descr_name((PyDescrObject *)descr), "?",
-		     descr->d_type->tp_name);
+		     PyDescr_TYPE(descr)->tp_name);
 	return NULL;
 }
 
@@ -204,7 +204,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 	PyErr_Format(PyExc_AttributeError,
 		     "attribute '%V' of '%.100s' objects is not writable",
 		     descr_name((PyDescrObject *)descr), "?",
-		     descr->d_type->tp_name);
+		     PyDescr_TYPE(descr)->tp_name);
 	return -1;
 }
 
@@ -222,17 +222,17 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
 			     "descriptor '%V' of '%.100s' "
 			     "object needs an argument",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name);
+			     PyDescr_TYPE(descr)->tp_name);
 		return NULL;
 	}
 	self = PyTuple_GET_ITEM(args, 0);
-	if (!PyObject_IsInstance(self, (PyObject *)(descr->d_type))) {
+	if (!PyObject_IsInstance(self, (PyObject *)PyDescr_TYPE(descr))) {
 		PyErr_Format(PyExc_TypeError,
 			     "descriptor '%V' "
 			     "requires a '%.100s' object "
 			     "but received a '%.100s'",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name,
+			     PyDescr_TYPE(descr)->tp_name,
 			     self->ob_type->tp_name);
 		return NULL;
 	}
@@ -257,7 +257,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
 {
 	PyObject *func, *result;
 
-	func = PyCFunction_New(descr->d_method, (PyObject *)descr->d_type);
+	func = PyCFunction_New(descr->d_method, (PyObject *)PyDescr_TYPE(descr));
 	if (func == NULL)
 		return NULL;
 
@@ -280,17 +280,17 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 			     "descriptor '%V' of '%.100s' "
 			     "object needs an argument",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name);
+			     PyDescr_TYPE(descr)->tp_name);
 		return NULL;
 	}
 	self = PyTuple_GET_ITEM(args, 0);
-	if (!PyObject_IsInstance(self, (PyObject *)(descr->d_type))) {
+	if (!PyObject_IsInstance(self, (PyObject *)PyDescr_TYPE(descr))) {
 		PyErr_Format(PyExc_TypeError,
 			     "descriptor '%V' "
 			     "requires a '%.100s' object "
 			     "but received a '%.100s'",
 			     descr_name((PyDescrObject *)descr), "?",
-			     descr->d_type->tp_name,
+			     PyDescr_TYPE(descr)->tp_name,
 			     self->ob_type->tp_name);
 		return NULL;
 	}
@@ -949,7 +949,7 @@ static PyMemberDef wrapper_members[] = {
 static PyObject *
 wrapper_objclass(wrapperobject *wp)
 {
-	PyObject *c = (PyObject *)wp->descr->d_type;
+	PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
 	Py_INCREF(c);
 	return c;
@@ -1059,7 +1059,7 @@ PyWrapper_New(PyObject *d, PyObject *self)
 
 	assert(PyObject_TypeCheck(d, &PyWrapperDescr_Type));
 	descr = (PyWrapperDescrObject *)d;
-	assert(PyObject_IsInstance(self, (PyObject *)(descr->d_type)));
+	assert(PyObject_IsInstance(self, (PyObject *)PyDescr_TYPE(descr)));
 
 	wp = PyObject_GC_New(wrapperobject, &wrappertype);
 	if (wp != NULL) {
