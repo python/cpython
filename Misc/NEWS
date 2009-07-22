@@ -85,6 +85,8 @@ Library
 - Issue #4005: Fixed a crash of pydoc when there was a zip file present in
   sys.path.
 
+- Issue #6218: io.StringIO and io.BytesIO instances are now picklable.
+
 Extension Modules
 -----------------
 
