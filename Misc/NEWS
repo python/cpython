@@ -892,6 +892,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6545: Removed assert statements in distutils.Extension, so the 
+  behavior is similar when used with -O.
+
 - Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
   "PyInit" prefix, rather than "init". 
 
