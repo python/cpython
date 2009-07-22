@@ -765,6 +765,11 @@ class BytesIO(BufferedIOBase):
         self._buffer = buf
         self._pos = 0
 
+    def __getstate__(self):
+        if self.closed:
+            raise ValueError("__getstate__ on closed file")
+        return self.__dict__.copy()
+
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
         """
