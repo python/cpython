@@ -455,7 +455,7 @@ def open_urlresource(url, *args, **kw):
 
     fn = os.path.join(os.path.dirname(__file__), "data", filename)
     if os.path.exists(fn):
-        return open(fn)
+        return open(fn, *args, **kw)
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
     fn, _ = urllib.request.urlretrieve(url, fn)
