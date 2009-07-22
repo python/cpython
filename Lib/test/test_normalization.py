@@ -8,12 +8,14 @@ from unicodedata import normalize, unidata_version
 TESTDATAFILE = "NormalizationTest.txt"
 TESTDATAURL = "http://www.unicode.org/Public/" + unidata_version + "/ucd/" + TESTDATAFILE
 
-if os.path.exists(TESTDATAFILE):
-    f = open(TESTDATAFILE, encoding='utf-8')
+# Verify we have the correct version of the test data file.
+TESTDATAPATH = os.path.join(os.path.dirname(__file__), "data", TESTDATAFILE)
+if os.path.exists(TESTDATAPATH):
+    f = open(TESTDATAPATH, encoding='utf-8')
     l = f.readline()
     f.close()
     if not unidata_version in l:
-        os.unlink(TESTDATAFILE)
+        os.unlink(testdatafile)
 
 class RangeError(Exception):
     pass
@@ -95,7 +97,7 @@ class NormalizationTest(unittest.TestCase):
 
 
 def test_main():
-    # Hit the exception early
+    # Skip the test early if the 'urlfetch' resource is not enabled.
     open_urlresource(TESTDATAURL)
     run_unittest(NormalizationTest)
 
