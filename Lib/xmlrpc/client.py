@@ -152,23 +152,10 @@ try:
 except ImportError:
     datetime = None
 
-def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
-    # decode non-ascii string (if possible)
-    if encoding and is8bit(data):
-        data = str(data, encoding)
-    return data
-
 def escape(s):
     s = s.replace("&", "&amp;")
     s = s.replace("<", "&lt;")
     return s.replace(">", "&gt;",)
-
-def _stringify(string):
-    # convert to 7-bit ascii if possible
-    try:
-        return string.decode("ascii")
-    except (UnicodeError, TypeError, AttributeError):
-        return string
 
 __version__ = "1.0.1"
 
@@ -755,8 +742,8 @@ class Unmarshaller:
 
     def end_string(self, data):
         if self._encoding:
-            data = _decode(data, self._encoding)
-        self.append(_stringify(data))
+            data = data.decode(self._encoding)
+        self.append(data)
         self._value = 0
     dispatch["string"] = end_string
     dispatch["name"] = end_string # struct keys are always strings
@@ -774,7 +761,7 @@ class Unmarshaller:
         dict = {}
         items = self._stack[mark:]
         for i in range(0, len(items), 2):
-            dict[_stringify(items[i])] = items[i+1]
+            dict[items[i]] = items[i+1]
         self._stack[mark:] = [dict]
         self._value = 0
     dispatch["struct"] = end_struct
@@ -811,7 +798,7 @@ class Unmarshaller:
 
     def end_methodName(self, data):
         if self._encoding:
-            data = _decode(data, self._encoding)
+            data = data.decode(self._encoding)
         self._methodname = data
         self._type = "methodName" # no params
     dispatch["methodName"] = end_methodName
