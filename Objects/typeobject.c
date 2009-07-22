@@ -5648,7 +5648,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 				generic = p->function;
 			d = (PyWrapperDescrObject *)descr;
 			if (d->d_base->wrapper == p->wrapper &&
-			    PyType_IsSubtype(type, d->d_type))
+			    PyType_IsSubtype(type, PyDescr_TYPE(d)))
 			{
 				if (specific == NULL ||
 				    specific == d->d_wrapped)

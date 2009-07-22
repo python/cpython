@@ -37,14 +37,16 @@ struct wrapperbase {
 
 /* Various kinds of descriptor objects */
 
-#define PyDescr_COMMON \
-	PyObject_HEAD \
-	PyTypeObject *d_type; \
-	PyObject *d_name
-
 typedef struct {
-	PyDescr_COMMON;
+	PyObject_HEAD
+	PyTypeObject *d_type;
+	PyObject *d_name;
 } PyDescrObject;
+
+#define PyDescr_COMMON PyDescrObject d_common
+
+#define PyDescr_TYPE(x) (((PyDescrObject *)(x))->d_type)
+#define PyDescr_NAME(x) (((PyDescrObject *)(x))->d_name)
 
 typedef struct {
 	PyDescr_COMMON;
