@@ -10,6 +10,7 @@ import _thread
 import time
 import unittest
 import weakref
+import os
 
 # A trivial mutable counter.
 class Counter(object):
@@ -109,9 +110,8 @@ class ThreadTests(unittest.TestCase):
         try:
             threading.stack_size(262144)
         except _thread.error:
-            if verbose:
-                print('platform does not support changing thread stack size')
-            return
+            raise unittest.SkipTest(
+                'platform does not support changing thread stack size')
         self.test_various_ops()
         threading.stack_size(0)
 
@@ -122,9 +122,8 @@ class ThreadTests(unittest.TestCase):
         try:
             threading.stack_size(0x100000)
         except _thread.error:
-            if verbose:
-                print('platform does not support changing thread stack size')
-            return
+            raise unittest.SkipTest(
+                'platform does not support changing thread stack size')
         self.test_various_ops()
         threading.stack_size(0)
 
@@ -154,9 +153,7 @@ class ThreadTests(unittest.TestCase):
         try:
             import ctypes
         except ImportError:
-            if verbose:
-                print("test_PyThreadState_SetAsyncExc can't import ctypes")
-            return  # can't do anything
+            raise unittest.SkipTest("cannot import ctypes")
 
         set_async_exc = ctypes.pythonapi.PyThreadState_SetAsyncExc
 
@@ -226,9 +223,7 @@ class ThreadTests(unittest.TestCase):
         try:
             import ctypes
         except ImportError:
-            if verbose:
-                print("test_finalize_with_runnning_thread can't import ctypes")
-            return  # can't do anything
+            raise unittest.SkipTest("cannot import ctypes")
 
         import subprocess
         rc = subprocess.call([sys.executable, "-c", """if 1:
@@ -387,11 +382,9 @@ class ThreadJoinOnShutdown(unittest.TestCase):
         self._run_and_join(script)
 
 
+    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
     def test_2_join_in_forked_process(self):
         # Like the test above, but from a forked interpreter
-        import os
-        if not hasattr(os, 'fork'):
-            return
         script = """if 1:
             childpid = os.fork()
             if childpid != 0:
@@ -405,18 +398,15 @@ class ThreadJoinOnShutdown(unittest.TestCase):
             """
         self._run_and_join(script)
 
+    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
-        import os
-        if not hasattr(os, 'fork'):
-            return
+
         # Skip platforms with known problems forking from a worker thread.
         # See http://bugs.python.org/issue3863.
         if sys.platform in ('freebsd4', 'freebsd5', 'freebsd6', 'os2emx'):
-            raise unittest.SkipTest(
-                'test_3_join_in_forked_from_thread due to known OS bugs on ' +
-                sys.platform)
+            raise unittest.SkipTest('due to known OS bugs on ' + sys.platform)
         script = """if 1:
             main_thread = threading.current_thread()
             def worker():
