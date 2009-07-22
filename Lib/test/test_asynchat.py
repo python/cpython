@@ -214,7 +214,7 @@ class TestAsynchat(unittest.TestCase):
         # the server might have been able to send a byte or two back, but this
         # at least checks that it received something and didn't just fail
         # (which could still result in the client not having received anything)
-        self.assertTrue(len(s.buffer) > 0)
+        self.assertGreater(len(s.buffer), 0)
 
 
 class TestAsynchat_WithPoll(TestAsynchat):
