@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
+
 - Issue #1616979: Added the cp720 (Arabic DOS) encoding.
 
 - Issue #6070: On posix platforms import no longer copies the execute bit
