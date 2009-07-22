@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
+
 - Issue #6070: On posix platforms import no longer copies the execute bit
   from the .py file to the .pyc file if it is set.
 
