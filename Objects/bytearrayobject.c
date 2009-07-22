@@ -1458,15 +1458,14 @@ bytes_translate(PyByteArrayObject *self, PyObject *args)
     if (vtable.len != 256) {
         PyErr_SetString(PyExc_ValueError,
                         "translation table must be 256 characters long");
-        result = NULL;
-        goto done;
+        PyBuffer_Release(&vtable);
+        return NULL;
     }
 
     if (delobj != NULL) {
         if (_getbuffer(delobj, &vdel) < 0) {
-            result = NULL;
-            delobj = NULL;  /* don't try to release vdel buffer on exit */
-            goto done;
+            PyBuffer_Release(&vtable);
+	    return NULL;
         }
     }
     else {
