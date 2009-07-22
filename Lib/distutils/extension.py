@@ -103,10 +103,11 @@ class Extension:
                   optional=None,
                   **kw                      # To catch unknown keywords
                  ):
-        assert isinstance(name, str), "'name' must be a string"
-        assert (isinstance(sources, list) and
-                all(isinstance(v, str) for v in sources)), \
-                "'sources' must be a list of strings"
+        if not isinstance(name, str):
+            raise AssertionError("'name' must be a string")
+        if not (isinstance(sources, list) and
+                all(isinstance(v, str) for v in sources)):
+            raise AssertionError("'sources' must be a list of strings")
 
         self.name = name
         self.sources = sources
