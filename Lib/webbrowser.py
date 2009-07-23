@@ -55,7 +55,7 @@ def get(using=None):
 # It is recommended one does "import webbrowser" and uses webbrowser.open(url)
 # instead of "from webbrowser import *".
 
-def open(url, new=0, autoraise=1):
+def open(url, new=0, autoraise=True):
     for name in _tryorder:
         browser = get(name)
         if browser.open(url, new, autoraise):
@@ -144,7 +144,7 @@ class BaseBrowser(object):
         self.name = name
         self.basename = name
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         raise NotImplementedError
 
     def open_new(self, url):
@@ -168,7 +168,7 @@ class GenericBrowser(BaseBrowser):
             self.args = name[1:]
         self.basename = os.path.basename(self.name)
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -185,7 +185,7 @@ class BackgroundBrowser(GenericBrowser):
     """Class for all browsers which are to be started in the
        background."""
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -216,7 +216,7 @@ class UnixBrowser(BaseBrowser):
         raise_opt = []
         if remote and self.raise_opts:
             # use autoraise argument only for remote invocation
-            autoraise = int(bool(autoraise))
+            autoraise = int(autoraise)
             opt = self.raise_opts[autoraise]
             if opt: raise_opt = [opt]
 
@@ -256,7 +256,7 @@ class UnixBrowser(BaseBrowser):
         else:
             return not p.wait()
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -340,7 +340,7 @@ class Konqueror(BaseBrowser):
     for more information on the Konqueror remote-control interface.
     """
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -428,7 +428,7 @@ class Grail(BaseBrowser):
         s.close()
         return 1
 
-    def open(self, url, new=0, autoraise=1):
+    def open(self, url, new=0, autoraise=True):
         if new:
             ok = self._remote("LOADNEW " + url)
         else:
@@ -511,7 +511,7 @@ if os.environ.get("TERM"):
 
 if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
-        def open(self, url, new=0, autoraise=1):
+        def open(self, url, new=0, autoraise=True):
             try:
                 os.startfile(url)
             except WindowsError:
@@ -545,7 +545,7 @@ except ImportError:
     pass
 else:
     class InternetConfig(BaseBrowser):
-        def open(self, url, new=0, autoraise=1):
+        def open(self, url, new=0, autoraise=True):
             ic.launchurl(url)
             return True # Any way to get status?
 
@@ -566,7 +566,7 @@ if sys.platform == 'darwin':
         def __init__(self, name):
             self.name = name
 
-        def open(self, url, new=0, autoraise=1):
+        def open(self, url, new=0, autoraise=True):
             assert "'" not in url
             # hack for local urls
             if not ':' in url:
