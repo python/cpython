@@ -351,7 +351,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #6545: Removed assert statements in distutils.Extension, so the 
+- Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
+  containing incomplete data.
+
+- Issue #6545: Removed assert statements in distutils.Extension, so the
   behavior is similar when used with -O.
 
 - unittest has been split up into a package.  All old names should still work.
@@ -360,7 +363,7 @@ Library
   know how to handle a comparison without loss of precision.  Also add
   correct handling of infinities and nans for comparisons with float.
 
-- Issue #6415: Fixed warnings.warn sagfault on bad formatted string.
+- Issue #6415: Fixed warnings.warn segfault on bad formatted string.
 
 - Issue #6466: now distutils.cygwinccompiler and distutils.emxccompiler
   uses the same refactored function to get gcc/ld/dllwrap versions numbers.

@@ -1,6 +1,7 @@
 import unittest
 import pickle
 import cPickle
+import StringIO
 import cStringIO
 import pickletools
 import copy_reg
@@ -1085,6 +1086,10 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.module.dumps(123, protocol=-1)
         self.module.Pickler(f, -1)
         self.module.Pickler(f, protocol=-1)
+
+    def test_incomplete_input(self):
+        s = StringIO.StringIO("X''.")
+        self.assertRaises(EOFError, self.module.load, s)
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
