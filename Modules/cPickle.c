@@ -663,6 +663,12 @@ read_other(Unpicklerobject *self, char **s, Py_ssize_t  n)
 	self->last_string = str;
 
 	if (! (*s = PyString_AsString(str))) return -1;
+
+	if (PyString_GET_SIZE(str) != n) {
+		PyErr_SetNone(PyExc_EOFError);
+		return -1;
+	}
+
 	return n;
 }
 
