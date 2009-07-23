@@ -28,15 +28,15 @@ Complex coordinates
 
 Complex numbers can be expressed by two important coordinate systems.
 Python's :class:`complex` type uses rectangular coordinates where a number
-on the complex plain is defined by two floats, the real part and the imaginary
+on the complex plane is defined by two floats, the real part and the imaginary
 part.
 
 Definition::
 
    z = x + 1j * y
 
-   x := real(z)
-   y := imag(z)
+   x := z.real
+   y := z.imag
 
 In engineering the polar coordinate system is popular for complex numbers. In
 polar coordinates a complex number is defined by the radius *r* and the phase
@@ -216,7 +216,7 @@ The module also defines two mathematical constants:
 
 .. data:: pi
 
-   The mathematical constant *pi*, as a float.
+   The mathematical constant *π*, as a float.
 
 
 .. data:: e
