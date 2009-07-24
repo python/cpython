@@ -35,7 +35,7 @@ Type Objects
    .. versionadded:: 2.2
 
 
-.. cfunction:: unsigned int PyType_ClearCache(void)
+.. cfunction:: unsigned int PyType_ClearCache()
 
    Clear the internal lookup cache. Return the current version tag.
 

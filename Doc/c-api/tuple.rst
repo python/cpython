@@ -157,7 +157,7 @@ Tuple Objects
       require changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: int PyTuple_ClearFreeList(void)
+.. cfunction:: int PyTuple_ClearFreeList()
 
    Clear the free list. Return the total number of freed items.
 
