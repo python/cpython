@@ -172,13 +172,13 @@ Here is a short script to test three functions from the :mod:`random` module::
    class TestSequenceFunctions(unittest.TestCase):
 
        def setUp(self):
-           self.seq = range(10)
+           self.seq = list(range(10))
 
        def test_shuffle(self):
            # make sure the shuffled sequence does not lose any elements
            random.shuffle(self.seq)
            self.seq.sort()
-           self.assertEqual(self.seq, range(10))
+           self.assertEqual(self.seq, list(range(10)))
 
        def test_choice(self):
            element = random.choice(self.seq)
