@@ -129,7 +129,17 @@ Notes:
 Comparisons
 ===========
 
-.. index:: pair: chaining; comparisons
+.. index::
+   pair: chaining; comparisons
+   pair: operator; comparison
+   operator: ==
+   operator: <
+   operator: <=
+   operator: >
+   operator: >=
+   operator: !=
+   operator: is
+   operator: is not
 
 Comparison operations are supported by all objects.  They all have the same
 priority (which is higher than that of the Boolean operations). Comparisons can
@@ -158,17 +168,6 @@ This table summarizes the comparison operations:
 +------------+-------------------------+-------+
 | ``is not`` | negated object identity |       |
 +------------+-------------------------+-------+
-
-.. index::
-   pair: operator; comparison
-   operator: ==
-   operator: <
-   operator: <=
-   operator: >
-   operator: >=
-   operator: !=
-   operator: is
-   operator: is not
 
 Notes:
 
@@ -262,6 +261,13 @@ part.
    builtin: long
    builtin: float
    builtin: complex
+   operator: +
+   operator: -
+   operator: *
+   operator: /
+   operator: //
+   operator: %
+   operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
@@ -394,7 +400,15 @@ All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 Bit-string Operations on Integer Types
 --------------------------------------
 
-.. _bit-string-operations:
+.. index::
+   triple: operations on; integer; types
+   pair: bit-string; operations
+   pair: shifting; operations
+   pair: masking; operations
+   operator: ^
+   operator: &
+   operator: <<
+   operator: >>
 
 Plain and long integer types support additional operations that make sense only
 for bit-strings.  Negative numbers are treated as their 2's complement value
@@ -425,12 +439,6 @@ This table lists the bit-string operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | ``~x``     | the bits of *x* inverted       |          |
 +------------+--------------------------------+----------+
-
-.. index::
-   triple: operations on; integer; types
-   pair: bit-string; operations
-   pair: shifting; operations
-   pair: masking; operations
 
 Notes:
 
