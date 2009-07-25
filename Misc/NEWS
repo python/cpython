@@ -60,6 +60,9 @@ C-API
 Library
 -------
 
+- Issue #1424152: Fix for httplib, urllib2 to support SSL while working through
+  proxy. Original patch by Christopher Li, changes made by Senthil Kumaran
+
 - Add importlib.abc.ExecutionLoader to represent the PEP 302 protocol for
   loaders that allow for modules to be executed. Both importlib.abc.PyLoader
   and PyPycLoader inherit from this class and provide implementations in

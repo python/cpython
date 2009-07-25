@@ -644,10 +644,16 @@ class HTTPConnection:
         self.__response = None
         self.__state = _CS_IDLE
         self._method = None
+        self._tunnel_host = None
+        self._tunnel_port = None
 
         self._set_hostport(host, port)
         if strict is not None:
             self.strict = strict
+
+    def set_tunnel(self, host, port=None):
+        self._tunnel_host = host
+        self._tunnel_port = port
 
     def _set_hostport(self, host, port):
         if port is None:
@@ -669,10 +675,29 @@ class HTTPConnection:
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def _tunnel(self):
+        self._set_hostport(self._tunnel_host, self._tunnel_port)
+        connect_str = "CONNECT %s:%d HTTP/1.0\r\n\r\n" %(self.host, self.port)
+        connect_bytes = connect_str.encode("ascii")
+        self.send(connect_bytes)
+        response = self.response_class(self.sock, strict = self.strict,
+                                       method= self._method)
+        (version, code, message) = response._read_status()
+        if code != 200:
+            self.close()
+            raise socket.error("Tunnel connection failed: %d %s" % (code,
+                                                                    message.strip()))
+        while True:
+            line = response.fp.readline()
+            if line == b'\r\n':
+                break
+
     def connect(self):
         """Connect to the host and port specified in __init__."""
         self.sock = socket.create_connection((self.host,self.port),
                                              self.timeout)
+        if self._tunnel_host:
+            self._tunnel()
 
     def close(self):
         """Close the connection to the HTTP server."""
@@ -1008,6 +1033,11 @@ else:
 
             sock = socket.create_connection((self.host, self.port),
                                             self.timeout)
+
+            if self._tunnel_host:
+                self.sock = sock
+                self._tunnel()
+
             self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
 
