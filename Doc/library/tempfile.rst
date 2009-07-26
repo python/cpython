@@ -48,7 +48,7 @@ The module defines the following user-callable functions:
    The *dir*, *prefix* and *suffix* parameters are passed to :func:`mkstemp`.
 
    The returned object is a true file object on POSIX platforms.  On other
-   platforms, it is a file-like object whose :attr:`file` attribute is the
+   platforms, it is a file-like object whose :attr:`!file` attribute is the
    underlying true file object. This file-like object can be used in a
    :keyword:`with` statement, just like a normal file.
 
@@ -63,7 +63,7 @@ The module defines the following user-callable functions:
    still open, varies across platforms (it can be so used on Unix; it cannot
    on Windows NT or later).  If *delete* is true (the default), the file is
    deleted as soon as it is closed.
-   The returned object is always a file-like object whose :attr:`file`
+   The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
 

@@ -1578,7 +1578,7 @@ with the :class:`Pool` class.
 
    .. method:: map_async(func, iterable[, chunksize[, callback]])
 
-      A variant of the :meth:`map` method which returns a result object.
+      A variant of the :meth:`.map` method which returns a result object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -1594,7 +1594,7 @@ with the :class:`Pool` class.
       make make the job complete **much** faster than using the default value of
       ``1``.
 
-      Also if *chunksize* is ``1`` then the :meth:`next` method of the iterator
+      Also if *chunksize* is ``1`` then the :meth:`!next` method of the iterator
       returned by the :meth:`imap` method has an optional *timeout* parameter:
       ``next(timeout)`` will raise :exc:`multiprocessing.TimeoutError` if the
       result cannot be returned within *timeout* seconds.

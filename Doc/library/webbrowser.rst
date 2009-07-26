@@ -10,7 +10,7 @@
 
 The :mod:`webbrowser` module provides a high-level interface to allow displaying
 Web-based documents to users. Under most circumstances, simply calling the
-:func:`open` function from this module will do the right thing.
+:func:`.open` function from this module will do the right thing.
 
 Under Unix, graphical browsers are preferred under X11, but text-mode browsers
 will be used if graphical browsers are not available or an X11 display isn't

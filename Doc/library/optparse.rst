@@ -282,7 +282,7 @@ that's rarely necessary: by default it uses ``sys.argv[1:]``.)
 * ``args``, the list of positional arguments leftover after parsing options
 
 This tutorial section only covers the four most important option attributes:
-:attr:`action`, :attr:`type`, :attr:`dest` (destination), and :attr:`help`. Of
+:attr:`action`, :attr:`!type`, :attr:`dest` (destination), and :attr:`help`. Of
 these, :attr:`action` is the most fundamental.
 
 
@@ -829,7 +829,7 @@ this option on the command-line.  The standard option actions hard-coded into
    print a usage message including all options and the documentation for them
 
 (If you don't supply an action, the default is ``store``.  For this action, you
-may also supply :attr:`type` and :attr:`dest` option attributes; see below.)
+may also supply :attr:`!type` and :attr:`dest` option attributes; see below.)
 
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
@@ -860,7 +860,7 @@ then :mod:`optparse`, on seeing this option, will do the equivalent of  ::
 
    options.filename = "foo"
 
-The :attr:`type` and :attr:`dest` option attributes are almost as important as
+The :attr:`!type` and :attr:`dest` option attributes are almost as important as
 :attr:`action`, but :attr:`action` is the only one that makes sense for *all*
 options.
 
@@ -875,18 +875,18 @@ Most actions have several relevant option attributes which you may specify to
 guide :mod:`optparse`'s behaviour; a few have required attributes, which you
 must specify for any option using that action.
 
-* ``store`` [relevant: :attr:`type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``store`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
 
   The option must be followed by an argument, which is converted to a value
-  according to :attr:`type` and stored in :attr:`dest`.  If ``nargs`` > 1,
+  according to :attr:`!type` and stored in :attr:`dest`.  If ``nargs`` > 1,
   multiple arguments will be consumed from the command line; all will be converted
-  according to :attr:`type` and stored to :attr:`dest` as a tuple.  See the
+  according to :attr:`!type` and stored to :attr:`dest` as a tuple.  See the
   "Option types" section below.
 
   If ``choices`` is supplied (a list or tuple of strings), the type defaults to
   ``choice``.
 
-  If :attr:`type` is not supplied, it defaults to ``string``.
+  If :attr:`!type` is not supplied, it defaults to ``string``.
 
   If :attr:`dest` is not supplied, :mod:`optparse` derives a destination from the
   first long option string (e.g., ``"--foo-bar"`` implies ``foo_bar``). If there
@@ -938,7 +938,7 @@ must specify for any option using that action.
      parser.add_option("--clobber", action="store_true", dest="clobber")
      parser.add_option("--no-clobber", action="store_false", dest="clobber")
 
-* ``append`` [relevant: :attr:`type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``append`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
 
   The option must be followed by an argument, which is appended to the list in
   :attr:`dest`.  If no default value for :attr:`dest` is supplied, an empty list
@@ -946,7 +946,7 @@ must specify for any option using that action.
   the command-line.  If ``nargs`` > 1, multiple arguments are consumed, and a
   tuple of length ``nargs`` is appended to :attr:`dest`.
 
-  The defaults for :attr:`type` and :attr:`dest` are the same as for the ``store``
+  The defaults for :attr:`!type` and :attr:`dest` are the same as for the ``store``
   action.
 
   Example::
@@ -988,7 +988,7 @@ must specify for any option using that action.
 
      options.verbosity += 1
 
-* ``callback`` [required: ``callback``; relevant: :attr:`type`, ``nargs``,
+* ``callback`` [required: ``callback``; relevant: :attr:`!type`, ``nargs``,
   ``callback_args``, ``callback_kwargs``]
 
   Call the function specified by ``callback``, which is called as  ::
@@ -1061,7 +1061,7 @@ to a particular option, or fail to pass a required option attribute,
   Determines :mod:`optparse`'s behaviour when this option is seen on the command
   line; the available options are documented above.
 
-* :attr:`type` (default: ``"string"``)
+* :attr:`!type` (default: ``"string"``)
 
   The argument type expected by this option (e.g., ``"string"`` or ``"int"``); the
   available option types are documented below.
@@ -1079,7 +1079,7 @@ to a particular option, or fail to pass a required option attribute,
 
 * ``nargs`` (default: 1)
 
-  How many arguments of type :attr:`type` should be consumed when this option is
+  How many arguments of type :attr:`!type` should be consumed when this option is
   seen.  If > 1, :mod:`optparse` will store a tuple of values to :attr:`dest`.
 
 * ``const``
@@ -1410,15 +1410,15 @@ The four arguments to a callback are described below.
 There are several other option attributes that you can supply when you define a
 callback option:
 
-:attr:`type`
+:attr:`!type`
    has its usual meaning: as with the ``store`` or ``append`` actions, it instructs
-   :mod:`optparse` to consume one argument and convert it to :attr:`type`.  Rather
+   :mod:`optparse` to consume one argument and convert it to :attr:`!type`.  Rather
    than storing the converted value(s) anywhere, though, :mod:`optparse` passes it
    to your callback function.
 
 ``nargs``
    also has its usual meaning: if it is supplied and > 1, :mod:`optparse` will
-   consume ``nargs`` arguments, each of which must be convertible to :attr:`type`.
+   consume ``nargs`` arguments, each of which must be convertible to :attr:`!type`.
    It then passes a tuple of converted values to your callback.
 
 ``callback_args``
@@ -1450,8 +1450,8 @@ where
 
 ``value``
    is the argument to this option seen on the command-line.  :mod:`optparse` will
-   only expect an argument if :attr:`type` is set; the type of ``value`` will be
-   the type implied by the option's type.  If :attr:`type` for this option is
+   only expect an argument if :attr:`!type` is set; the type of ``value`` will be
+   the type implied by the option's type.  If :attr:`!type` for this option is
    ``None`` (no argument expected), then ``value`` will be ``None``.  If ``nargs``
    > 1, ``value`` will be a tuple of values of the appropriate type.
 
@@ -1578,7 +1578,7 @@ Callback example 5: fixed arguments
 Things get slightly more interesting when you define callback options that take
 a fixed number of arguments.  Specifying that a callback option takes arguments
 is similar to defining a ``store`` or ``append`` option: if you define
-:attr:`type`, then the option takes one argument that must be convertible to
+:attr:`!type`, then the option takes one argument that must be convertible to
 that type; if you further define ``nargs``, then the option takes ``nargs``
 arguments.
 
@@ -1757,7 +1757,7 @@ Adding new actions is a bit trickier, because you have to understand that
 "typed" actions
    actions that take a value from the command line and expect it to be of a certain
    type; or rather, a string that can be converted to a certain type.  These
-   options require a :attr:`type` attribute to the Option constructor.
+   options require a :attr:`!type` attribute to the Option constructor.
 
 These are overlapping sets: some default "store" actions are ``store``,
 ``store_const``, ``append``, and ``count``, while the default "typed" actions

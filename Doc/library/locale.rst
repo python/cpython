@@ -432,8 +432,8 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`format`,
-   :func:`atoi`, :func:`atof` and :func:`str` of the :mod:`locale` module are
+   Locale category for formatting numbers.  The functions :func:`.format`,
+   :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
 
@@ -491,7 +491,7 @@ document that your module is not compatible with non-\ ``C`` locale settings.
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`format`, :func:`str`.
+:func:`.format`, :func:`.str`.
 
 There is no way to perform case conversions and character classifications
 according to the locale.  For (Unicode) text strings these are done according
