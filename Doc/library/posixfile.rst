@@ -24,9 +24,8 @@ new file object, the posixfile object.  It has all the standard file object
 methods and adds the methods described below.  This module only works for
 certain flavors of Unix, since it uses :func:`fcntl.fcntl` for file locking.
 
-To instantiate a posixfile object, use the :func:`open` function in the
-:mod:`posixfile` module.  The resulting object looks and feels roughly the same
-as a standard file object.
+To instantiate a posixfile object, use the :func:`posixfile.open` function.  The
+resulting object looks and feels roughly the same as a standard file object.
 
 The :mod:`posixfile` module defines the following constants:
 

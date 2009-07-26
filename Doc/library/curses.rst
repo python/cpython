@@ -186,7 +186,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: filter()
 
-   The :func:`filter` routine, if used, must be called before :func:`initscr` is
+   The :func:`.filter` routine, if used, must be called before :func:`initscr` is
    called.  The effect is that, during those calls, LINES is set to 1; the
    capabilities clear, cup, cud, cud1, cuu1, cuu, vpa are disabled; and the home
    string is set to the value of cr. The effect is that the cursor is confined to

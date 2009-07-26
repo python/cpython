@@ -44,12 +44,12 @@ The :mod:`dl` module defines the following constants:
 
 .. data:: RTLD_LAZY
 
-   Useful as an argument to :func:`open`.
+   Useful as an argument to :func:`.open`.
 
 
 .. data:: RTLD_NOW
 
-   Useful as an argument to :func:`open`.  Note that on systems which do not
+   Useful as an argument to :func:`.open`.  Note that on systems which do not
    support immediate binding, this constant will not appear in the module. For
    maximum portability, use :func:`hasattr` to determine if the system supports
    immediate binding.
@@ -78,7 +78,7 @@ the fact that using this module is usually a bad alternative.
 Dl Objects
 ----------
 
-Dl objects, as returned by :func:`open` above, have the following methods:
+Dl objects, as returned by :func:`.open` above, have the following methods:
 
 
 .. method:: dl.close()

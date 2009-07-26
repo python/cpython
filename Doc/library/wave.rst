@@ -33,7 +33,7 @@ The :mod:`wave` module defines the following function and exception:
 
 .. function:: openfp(file, mode)
 
-   A synonym for :func:`open`, maintained for backwards compatibility.
+   A synonym for :func:`.open`, maintained for backwards compatibility.
 
 
 .. exception:: Error
@@ -47,7 +47,7 @@ The :mod:`wave` module defines the following function and exception:
 Wave_read Objects
 -----------------
 
-Wave_read objects, as returned by :func:`open`, have the following methods:
+Wave_read objects, as returned by :func:`.open`, have the following methods:
 
 
 .. method:: Wave_read.close()
@@ -134,7 +134,7 @@ them, and is otherwise implementation dependent.
 Wave_write Objects
 ------------------
 
-Wave_write objects, as returned by :func:`open`, have the following methods:
+Wave_write objects, as returned by :func:`.open`, have the following methods:
 
 
 .. method:: Wave_write.close()

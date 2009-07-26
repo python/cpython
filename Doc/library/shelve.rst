@@ -108,7 +108,7 @@ Restrictions
 
 .. class:: BsdDbShelf(dict[, protocol=None[, writeback=False]])
 
-   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`next`,
+   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
    :meth:`previous`, :meth:`last` and :meth:`set_location` which are available in
    the :mod:`bsddb` module but not in other database modules.  The *dict* object
    passed to the constructor must support those methods.  This is generally
@@ -122,7 +122,7 @@ Restrictions
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`anydbm.open`.  By
    default, the file will be created and opened for both read and write.  The
-   optional *flag* parameter has the same interpretation as for the :func:`open`
+   optional *flag* parameter has the same interpretation as for the :func:`.open`
    function.  The optional *protocol* and *writeback* parameters have the same
    interpretation as for the :class:`Shelf` class.
 
@@ -174,8 +174,8 @@ object)::
       BSD ``db`` database interface.
 
    Module :mod:`dbhash`
-      Thin layer around the :mod:`bsddb` which provides an :func:`open` function like
-      the other database modules.
+      Thin layer around the :mod:`bsddb` which provides an :func:`~dbhash.open`
+      function like the other database modules.
 
    Module :mod:`dbm`
       Standard Unix database interface.

@@ -62,7 +62,7 @@ these modules is installed, the slow-but-simple implementation in module
    modules, with a unique exception also named :exc:`anydbm.error` as the first
    item --- the latter is used when :exc:`anydbm.error` is raised.
 
-The object returned by :func:`open` supports most of the same functionality as
+The object returned by :func:`.open` supports most of the same functionality as
 dictionaries; keys and their corresponding values can be stored, retrieved, and
 deleted, and the :meth:`has_key` and :meth:`keys` methods are available.  Keys
 and values must always be strings.

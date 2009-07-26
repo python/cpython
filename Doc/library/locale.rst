@@ -454,8 +454,8 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`format`,
-   :func:`atoi`, :func:`atof` and :func:`str` of the :mod:`locale` module are
+   Locale category for formatting numbers.  The functions :func:`.format`,
+   :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
 
@@ -523,7 +523,7 @@ e.g. ``from string import letters``, is not affected by subsequent
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`format`, :func:`str`.
+:func:`.format`, :func:`.str`.
 
 
 .. _embedding-locale:
