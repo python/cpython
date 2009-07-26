@@ -459,7 +459,7 @@ class Telnet:
                             # unless we did a WILL/DO before.
                             self.msg('IAC %d not recognized' % ord(c))
                 elif len(self.iacseq) == 2:
-                    cmd = self.iacseq[1]
+                    cmd = self.iacseq[1:2]
                     self.iacseq = b''
                     opt = c
                     if cmd in (DO, DONT):
