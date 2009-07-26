@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1424152: Fix for httplib, urllib2 to support SSL while working through
+  proxy. Original patch by Christopher Li, changes made by Senthil Kumaran.
+
 - Issues #5155, 5313, 5331: multiprocessing.Process._bootstrap was 
   unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
   descriptor errors
