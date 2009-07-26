@@ -1,4 +1,3 @@
-
 :mod:`threading` --- Higher-level threading interface
 =====================================================
 
@@ -213,7 +212,8 @@ impossible to detect the termination of alien threads.
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={})
 
-   This constructor should always be called with keyword arguments.  Arguments are:
+   This constructor should always be called with keyword arguments.  Arguments
+   are:
 
    *group* should be ``None``; reserved for future extension when a
    :class:`ThreadGroup` class is implemented.
@@ -221,111 +221,103 @@ impossible to detect the termination of alien threads.
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the form
-   "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name.  By default, a unique name is constructed of the
+   form "Thread-*N*" where *N* is a small decimal number.
 
    *args* is the argument tuple for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
 
-   If the subclass overrides the constructor, it must make sure to invoke the base
-   class constructor (``Thread.__init__()``) before doing anything else to the
-   thread.
+   If the subclass overrides the constructor, it must make sure to invoke the
+   base class constructor (``Thread.__init__()``) before doing anything else to
+   the thread.
 
+   .. method:: start()
 
-.. method:: Thread.start()
+      Start the thread's activity.
 
-   Start the thread's activity.
+      It must be called at most once per thread object.  It arranges for the
+      object's :meth:`run` method to be invoked in a separate thread of control.
 
-   It must be called at most once per thread object.  It arranges for the object's
-   :meth:`run` method to be invoked in a separate thread of control.
+      This method will raise a :exc:`RuntimeException` if called more than once
+      on the same thread object.
 
-   This method will raise a :exc:`RuntimeException` if called more than once on the
-   same thread object.
+   .. method:: run()
 
+      Method representing the thread's activity.
 
-.. method:: Thread.run()
+      You may override this method in a subclass.  The standard :meth:`run`
+      method invokes the callable object passed to the object's constructor as
+      the *target* argument, if any, with sequential and keyword arguments taken
+      from the *args* and *kwargs* arguments, respectively.
 
-   Method representing the thread's activity.
+   .. method:: join([timeout])
 
-   You may override this method in a subclass.  The standard :meth:`run` method
-   invokes the callable object passed to the object's constructor as the *target*
-   argument, if any, with sequential and keyword arguments taken from the *args*
-   and *kwargs* arguments, respectively.
+      Wait until the thread terminates. This blocks the calling thread until the
+      thread whose :meth:`join` method is called terminates -- either normally
+      or through an unhandled exception -- or until the optional timeout occurs.
 
+      When the *timeout* argument is present and not ``None``, it should be a
+      floating point number specifying a timeout for the operation in seconds
+      (or fractions thereof). As :meth:`join` always returns ``None``, you must
+      call :meth:`is_alive` after :meth:`join` to decide whether a timeout
+      happened -- if the thread is still alive, the :meth:`join` call timed out.
 
-.. method:: Thread.join([timeout])
+      When the *timeout* argument is not present or ``None``, the operation will
+      block until the thread terminates.
 
-   Wait until the thread terminates. This blocks the calling thread until the
-   thread whose :meth:`join` method is called terminates -- either normally or
-   through an unhandled exception -- or until the optional timeout occurs.
+      A thread can be :meth:`join`\ ed many times.
 
-   When the *timeout* argument is present and not ``None``, it should be a floating
-   point number specifying a timeout for the operation in seconds (or fractions
-   thereof). As :meth:`join` always returns ``None``, you must call :meth:`is_alive`
-   after :meth:`join` to decide whether a timeout happened -- if the thread is
-   still alive, the :meth:`join` call timed out.
+      :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
+      the current thread as that would cause a deadlock. It is also an error to
+      :meth:`join` a thread before it has been started and attempts to do so
+      raises the same exception.
 
-   When the *timeout* argument is not present or ``None``, the operation will block
-   until the thread terminates.
+   .. attribute:: name
 
-   A thread can be :meth:`join`\ ed many times.
+      A string used for identification purposes only. It has no semantics.
+      Multiple threads may be given the same name.  The initial name is set by
+      the constructor.
 
-   :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
-   the current thread as that would cause a deadlock. It is also an error to
-   :meth:`join` a thread before it has been started and attempts to do so
-   raises the same exception.
+   .. method:: getName()
+               setName()
 
+      Old getter/setter API for :attr:`~Thread.name`; use it directly as a
+      property instead.
 
-.. attribute:: Thread.name
+   .. attribute:: ident
 
-   A string used for identification purposes only. It has no semantics.
-   Multiple threads may be given the same name.  The initial name is set by the
-   constructor.
+      The 'thread identifier' of this thread or ``None`` if the thread has not
+      been started.  This is a nonzero integer.  See the
+      :func:`thread.get_ident()` function.  Thread identifiers may be recycled
+      when a thread exits and another thread is created.  The identifier is
+      available even after the thread has exited.
 
+   .. method:: is_alive()
 
-.. method:: Thread.getName()
-            Thread.setName()
+      Return whether the thread is alive.
 
-   Old getter/setter API for :attr:`~Thread.name`; use it directly as a property
-   instead.
+      Roughly, a thread is alive from the moment the :meth:`start` method
+      returns until its :meth:`run` method terminates. The module function
+      :func:`enumerate` returns a list of all alive threads.
 
+   .. attribute:: daemon
 
-.. attribute:: Thread.ident
+      A boolean value indicating whether this thread is a daemon thread (True)
+      or not (False).  This must be set before :meth:`start` is called,
+      otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
+      from the creating thread; the main thread is not a daemon thread and
+      therefore all threads created in the main thread default to :attr:`daemon`
+      = ``False``.
 
-   The 'thread identifier' of this thread or ``None`` if the thread has not been
-   started.  This is a nonzero integer.  See the :func:`thread.get_ident()`
-   function.  Thread identifiers may be recycled when a thread exits and another
-   thread is created.  The identifier is available even after the thread has
-   exited.
+      The entire Python program exits when no alive non-daemon threads are left.
 
+   .. method:: isDaemon()
+               setDaemon()
 
-.. method:: Thread.is_alive()
-
-   Return whether the thread is alive.
-
-   Roughly, a thread is alive from the moment the :meth:`start` method returns
-   until its :meth:`run` method terminates. The module function :func:`enumerate`
-   returns a list of all alive threads.
-
-
-.. attribute:: Thread.daemon
-
-   A boolean value indicating whether this thread is a daemon thread (True) or
-   not (False).  This must be set before :meth:`start` is called, otherwise
-   :exc:`RuntimeError` is raised.  Its initial value is inherited from the
-   creating thread; the main thread is not a daemon thread and therefore all
-   threads created in the main thread default to :attr:`daemon` = ``False``.
-
-   The entire Python program exits when no alive non-daemon threads are left.
-
-
-.. method:: Thread.isDaemon()
-            Thread.setDaemon()
-
-   Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
-   property instead.
+      Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+      property instead.
 
 
 .. _lock-objects:
@@ -496,69 +488,66 @@ needs to wake up one consumer thread.
 
 .. class:: Condition([lock])
 
-   If the *lock* argument is given and not ``None``, it must be a :class:`Lock` or
-   :class:`RLock` object, and it is used as the underlying lock.  Otherwise, a new
-   :class:`RLock` object is created and used as the underlying lock.
+   If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
+   or :class:`RLock` object, and it is used as the underlying lock.  Otherwise,
+   a new :class:`RLock` object is created and used as the underlying lock.
 
+   .. method:: acquire(*args)
 
-.. method:: Condition.acquire(*args)
+      Acquire the underlying lock. This method calls the corresponding method on
+      the underlying lock; the return value is whatever that method returns.
 
-   Acquire the underlying lock. This method calls the corresponding method on the
-   underlying lock; the return value is whatever that method returns.
+   .. method:: release()
 
+      Release the underlying lock. This method calls the corresponding method on
+      the underlying lock; there is no return value.
 
-.. method:: Condition.release()
+   .. method:: wait([timeout])
 
-   Release the underlying lock. This method calls the corresponding method on the
-   underlying lock; there is no return value.
+      Wait until notified or until a timeout occurs. If the calling thread has
+      not acquired the lock when this method is called, a :exc:`RuntimeError` is
+      raised.
 
+      This method releases the underlying lock, and then blocks until it is
+      awakened by a :meth:`notify` or :meth:`notify_all` call for the same
+      condition variable in another thread, or until the optional timeout
+      occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
-.. method:: Condition.wait([timeout])
+      When the *timeout* argument is present and not ``None``, it should be a
+      floating point number specifying a timeout for the operation in seconds
+      (or fractions thereof).
 
-   Wait until notified or until a timeout occurs. If the calling thread has not
-   acquired the lock when this method is called, a :exc:`RuntimeError` is raised.
+      When the underlying lock is an :class:`RLock`, it is not released using
+      its :meth:`release` method, since this may not actually unlock the lock
+      when it was acquired multiple times recursively.  Instead, an internal
+      interface of the :class:`RLock` class is used, which really unlocks it
+      even when it has been recursively acquired several times. Another internal
+      interface is then used to restore the recursion level when the lock is
+      reacquired.
 
-   This method releases the underlying lock, and then blocks until it is awakened
-   by a :meth:`notify` or :meth:`notify_all` call for the same condition variable in
-   another thread, or until the optional timeout occurs.  Once awakened or timed
-   out, it re-acquires the lock and returns.
+   .. method:: notify()
 
-   When the *timeout* argument is present and not ``None``, it should be a floating
-   point number specifying a timeout for the operation in seconds (or fractions
-   thereof).
+      Wake up a thread waiting on this condition, if any.  If the calling thread
+      has not acquired the lock when this method is called, a
+      :exc:`RuntimeError` is raised.
 
-   When the underlying lock is an :class:`RLock`, it is not released using its
-   :meth:`release` method, since this may not actually unlock the lock when it was
-   acquired multiple times recursively.  Instead, an internal interface of the
-   :class:`RLock` class is used, which really unlocks it even when it has been
-   recursively acquired several times. Another internal interface is then used to
-   restore the recursion level when the lock is reacquired.
+      This method wakes up one of the threads waiting for the condition
+      variable, if any are waiting; it is a no-op if no threads are waiting.
 
+      The current implementation wakes up exactly one thread, if any are
+      waiting.  However, it's not safe to rely on this behavior.  A future,
+      optimized implementation may occasionally wake up more than one thread.
 
-.. method:: Condition.notify()
+      Note: the awakened thread does not actually return from its :meth:`wait`
+      call until it can reacquire the lock.  Since :meth:`notify` does not
+      release the lock, its caller should.
 
-   Wake up a thread waiting on this condition, if any.  If the calling thread
-   has not acquired the lock when this method is called, a :exc:`RuntimeError`
-   is raised.
+   .. method:: notify_all()
 
-   This method wakes up one of the threads waiting for the condition variable,
-   if any are waiting; it is a no-op if no threads are waiting.
-
-   The current implementation wakes up exactly one thread, if any are waiting.
-   However, it's not safe to rely on this behavior.  A future, optimized
-   implementation may occasionally wake up more than one thread.
-
-   Note: the awakened thread does not actually return from its :meth:`wait` call
-   until it can reacquire the lock.  Since :meth:`notify` does not release the
-   lock, its caller should.
-
-
-.. method:: Condition.notify_all()
-
-   Wake up all threads waiting on this condition.  This method acts like
-   :meth:`notify`, but wakes up all waiting threads instead of one. If the calling
-   thread has not acquired the lock when this method is called, a
-   :exc:`RuntimeError` is raised.
+      Wake up all threads waiting on this condition.  This method acts like
+      :meth:`notify`, but wakes up all waiting threads instead of one. If the
+      calling thread has not acquired the lock when this method is called, a
+      :exc:`RuntimeError` is raised.
 
 
 .. _semaphore-objects:
@@ -582,33 +571,31 @@ waiting until some other thread calls :meth:`release`.
    defaults to ``1``. If the *value* given is less than 0, :exc:`ValueError` is
    raised.
 
+   .. method:: acquire([blocking])
 
-.. method:: Semaphore.acquire([blocking])
+      Acquire a semaphore.
 
-   Acquire a semaphore.
+      When invoked without arguments: if the internal counter is larger than
+      zero on entry, decrement it by one and return immediately.  If it is zero
+      on entry, block, waiting until some other thread has called
+      :meth:`release` to make it larger than zero.  This is done with proper
+      interlocking so that if multiple :meth:`acquire` calls are blocked,
+      :meth:`release` will wake exactly one of them up.  The implementation may
+      pick one at random, so the order in which blocked threads are awakened
+      should not be relied on.  There is no return value in this case.
 
-   When invoked without arguments: if the internal counter is larger than zero on
-   entry, decrement it by one and return immediately.  If it is zero on entry,
-   block, waiting until some other thread has called :meth:`release` to make it
-   larger than zero.  This is done with proper interlocking so that if multiple
-   :meth:`acquire` calls are blocked, :meth:`release` will wake exactly one of them
-   up.  The implementation may pick one at random, so the order in which blocked
-   threads are awakened should not be relied on.  There is no return value in this
-   case.
+      When invoked with *blocking* set to true, do the same thing as when called
+      without arguments, and return true.
 
-   When invoked with *blocking* set to true, do the same thing as when called
-   without arguments, and return true.
+      When invoked with *blocking* set to false, do not block.  If a call
+      without an argument would block, return false immediately; otherwise, do
+      the same thing as when called without arguments, and return true.
 
-   When invoked with *blocking* set to false, do not block.  If a call without an
-   argument would block, return false immediately; otherwise, do the same thing as
-   when called without arguments, and return true.
+   .. method:: release()
 
-
-.. method:: Semaphore.release()
-
-   Release a semaphore, incrementing the internal counter by one.  When it was zero
-   on entry and another thread is waiting for it to become larger than zero again,
-   wake up that thread.
+      Release a semaphore, incrementing the internal counter by one.  When it
+      was zero on entry and another thread is waiting for it to become larger
+      than zero again, wake up that thread.
 
 
 .. _semaphore-examples:
@@ -655,40 +642,37 @@ An event object manages an internal flag that can be set to true with the
 
    The internal flag is initially false.
 
+   .. method:: is_set()
 
-.. method:: Event.is_set()
+      Return true if and only if the internal flag is true.
 
-   Return true if and only if the internal flag is true.
+   .. method:: set()
 
+      Set the internal flag to true. All threads waiting for it to become true
+      are awakened. Threads that call :meth:`wait` once the flag is true will
+      not block at all.
 
-.. method:: Event.set()
+   .. method:: clear()
 
-   Set the internal flag to true. All threads waiting for it to become true are
-   awakened. Threads that call :meth:`wait` once the flag is true will not block at
-   all.
+      Reset the internal flag to false. Subsequently, threads calling
+      :meth:`wait` will block until :meth:`set` is called to set the internal
+      flag to true again.
 
+   .. method:: wait([timeout])
 
-.. method:: Event.clear()
+      Block until the internal flag is true.  If the internal flag is true on
+      entry, return immediately.  Otherwise, block until another thread calls
+      :meth:`set` to set the flag to true, or until the optional timeout occurs.
 
-   Reset the internal flag to false. Subsequently, threads calling :meth:`wait`
-   will block until :meth:`set` is called to set the internal flag to true again.
+      When the timeout argument is present and not ``None``, it should be a
+      floating point number specifying a timeout for the operation in seconds
+      (or fractions thereof).
 
+      This method returns the internal flag on exit, so it will always return
+      ``True`` except if a timeout is given and the operation times out.
 
-.. method:: Event.wait([timeout])
-
-   Block until the internal flag is true.  If the internal flag is true on entry,
-   return immediately.  Otherwise, block until another thread calls :meth:`set`
-   to set the flag to true, or until the optional timeout occurs.
-
-   When the timeout argument is present and not ``None``, it should be a floating
-   point number specifying a timeout for the operation in seconds (or fractions
-   thereof).
-
-   This method returns the internal flag on exit, so it will always return
-   ``True`` except if a timeout is given and the operation times out.
-
-   .. versionchanged:: 3.1
-      Previously, the method always returned ``None``.
+      .. versionchanged:: 3.1
+         Previously, the method always returned ``None``.
 
 
 .. _timer-objects:
@@ -719,11 +703,10 @@ For example::
    Create a timer that will run *function* with arguments *args* and  keyword
    arguments *kwargs*, after *interval* seconds have passed.
 
+   .. method:: cancel()
 
-.. method:: Timer.cancel()
-
-   Stop the timer, and cancel the execution of the timer's action.  This will only
-   work if the timer is still in its waiting stage.
+      Stop the timer, and cancel the execution of the timer's action.  This will
+      only work if the timer is still in its waiting stage.
 
 
 .. _with-locks:
