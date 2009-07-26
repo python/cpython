@@ -3,6 +3,8 @@ import threading
 import telnetlib
 import time
 import queue
+import sys
+import io
 
 from unittest import TestCase
 from test import support
@@ -304,6 +306,20 @@ class nego_collector(object):
             self.sb_seen += sb_data
 
 tl = telnetlib
+
+class TelnetDebuglevel(tl.Telnet):
+    ''' Telnet-alike that captures messages written to stdout when
+        debuglevel > 0
+    '''
+    _messages = ''
+    def msg(self, msg, *args):
+        orig_stdout = sys.stdout
+        sys.stdout = fake_stdout = io.StringIO()
+        tl.Telnet.msg(self, msg, *args)
+        self._messages += fake_stdout.getvalue()
+        sys.stdout = orig_stdout
+        return
+
 class OptionTests(TestCase):
     setUp = _read_setUp
     tearDown = _read_tearDown
@@ -362,6 +378,36 @@ class OptionTests(TestCase):
         self.assertEqual(nego.sb_seen, want_sb_data)
         self.assertEqual(b'', telnet.read_sb_data())
         nego.sb_getter = None # break the nego => telnet cycle
+
+    def _test_debuglevel(self, data, expected_msg):
+        """ helper for testing debuglevel messages """
+        self.setUp()
+        self.dataq.put(data)
+        telnet = TelnetDebuglevel(HOST, self.port)
+        telnet.set_debuglevel(1)
+        self.dataq.join()
+        txt = telnet.read_all()
+        self.assertTrue(expected_msg in telnet._messages,
+                        msg=(telnet._messages, expected_msg))
+        self.tearDown()
+
+    def test_debuglevel(self):
+        # test all the various places that self.msg(...) is called
+        given_a_expect_b = [
+            # Telnet.fill_rawq
+            (b'a', ": recv b''\n"),
+            # Telnet.process_rawq
+            (tl.IAC + bytes([88]), ": IAC 88 not recognized\n"),
+            (tl.IAC + tl.DO + bytes([1]), ": IAC DO 1\n"),
+            (tl.IAC + tl.DONT + bytes([1]), ": IAC DONT 1\n"),
+            (tl.IAC + tl.WILL + bytes([1]), ": IAC WILL 1\n"),
+            (tl.IAC + tl.WONT + bytes([1]), ": IAC WONT 1\n"),
+            # Telnet.write
+            # XXX, untested
+           ]
+        for a, b in given_a_expect_b:
+            self._test_debuglevel([a, EOF_sigil], b)
+        return
 
 def test_main(verbose=None):
     support.run_unittest(GeneralTests, ReadTests, OptionTests)
