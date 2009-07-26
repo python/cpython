@@ -79,7 +79,7 @@ approach to custom :keyword:`import` functions.
 
 .. class:: BuiltinImporter()
 
-   Emulate the import mechanism for builtin and frozen modules.  This is a
+   Emulate the import mechanism for built-in and frozen modules.  This is a
    sub-class of the :class:`Importer` class.
 
    .. method:: BuiltinImporter.get_code(parent, modname, fqname)

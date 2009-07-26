@@ -113,7 +113,7 @@ BuildApplication to combine all plugin modules to a single executable.
    :deprecated:
 
 
-Importing :mod:`icopen` will replace the builtin :meth:`open` with a version
+Importing :mod:`icopen` will replace the built-in :meth:`open` with a version
 that uses Internet Config to set file type and creator for new files.
 
 .. deprecated:: 2.6

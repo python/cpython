@@ -819,7 +819,7 @@ easily use the :class:`PyTypeObject` it needs. It can be difficult to share
 these :class:`PyTypeObject` structures between extension modules.
 
 In this example we will create a :class:`Shoddy` type that inherits from the
-builtin :class:`list` type. The new type will be completely compatible with
+built-in :class:`list` type. The new type will be completely compatible with
 regular lists, but will have an additional :meth:`increment` method that
 increases an internal counter. ::
 

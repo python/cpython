@@ -31,7 +31,7 @@ cur.execute("select ?", ("this is latin1 and would normally create errors" +
 row = cur.fetchone()
 assert type(row[0]) == unicode
 
-# sqlite3 offers a builtin optimized text_factory that will return bytestring
+# sqlite3 offers a built-in optimized text_factory that will return bytestring
 # objects, if the data is in ASCII only, and otherwise return unicode objects
 con.text_factory = sqlite3.OptimizedUnicode
 cur.execute("select ?", (AUSTRIA,))

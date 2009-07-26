@@ -184,7 +184,7 @@ any iterable as an argument.
 Also note, the module also includes a :meth:`union_update` method which is an
 alias for :meth:`update`.  The method is included for backwards compatibility.
 Programmers should prefer the :meth:`update` method because it is supported by
-the builtin :class:`set()` and :class:`frozenset()` types.
+the built-in :class:`set()` and :class:`frozenset()` types.
 
 
 .. _set-example:

@@ -147,7 +147,7 @@ The module also offers three general purpose functions based on heaps.
 
 The latter two functions perform best for smaller values of *n*.  For larger
 values, it is more efficient to use the :func:`sorted` function.  Also, when
-``n==1``, it is more efficient to use the builtin :func:`min` and :func:`max`
+``n==1``, it is more efficient to use the built-in :func:`min` and :func:`max`
 functions.
 
 

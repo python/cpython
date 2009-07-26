@@ -1437,7 +1437,7 @@ Basic customization
 
    .. index:: builtin: unicode
 
-   Called to implement :func:`unicode` builtin; should return a Unicode object.
+   Called to implement :func:`unicode` built-in; should return a Unicode object.
    When this method is not defined, string conversion is attempted, and the result
    of string conversion is converted to Unicode using the system default encoding.
 
@@ -1516,7 +1516,7 @@ The following methods only apply to new-style classes.
    .. note::
 
       This method may still be bypassed when looking up special methods as the
-      result of implicit invocation via language syntax or builtin functions.
+      result of implicit invocation via language syntax or built-in functions.
       See :ref:`new-style-special-lookup`.
 
 
@@ -1865,12 +1865,12 @@ sequences, it should iterate through the values.
 
 .. method:: object.__reversed__(self)
 
-   Called (if present) by the :func:`reversed` builtin to implement
+   Called (if present) by the :func:`reversed` built-in to implement
    reverse iteration.  It should return a new iterator object that iterates
    over all the objects in the container in reverse order.
 
    If the :meth:`__reversed__` method is not provided, the :func:`reversed`
-   builtin will fall back to using the sequence protocol (:meth:`__len__` and
+   built-in will fall back to using the sequence protocol (:meth:`__len__` and
    :meth:`__getitem__`).  Objects that support the sequence protocol should
    only provide :meth:`__reversed__` if they can provide an implementation
    that is more efficient than the one provided by :func:`reversed`.

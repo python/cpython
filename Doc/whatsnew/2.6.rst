@@ -2819,7 +2819,7 @@ JSON (Javascript Object Notation). JSON is a lightweight interchange format
 often used in web applications. For more information about JSON, see
 http://www.json.org.
 
-:mod:`json` comes with support for decoding and encoding most builtin Python
+:mod:`json` comes with support for decoding and encoding most built-in Python
 types. The following example encodes and decodes a dictionary::
 
        >>> import json
