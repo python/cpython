@@ -705,7 +705,7 @@ the more significant byte last.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``TOS`` is an :term:`iterator`.  Call its :meth:`next` method.  If this
+   ``TOS`` is an :term:`iterator`.  Call its :meth:`!next` method.  If this
    yields a new value, push it on the stack (leaving the iterator below it).  If
    the iterator indicates it is exhausted ``TOS`` is popped, and the bytecode
    counter is incremented by *delta*.

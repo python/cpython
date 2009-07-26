@@ -1012,7 +1012,7 @@ instantiated directly, but always through the module-level function
    Handles a record by passing it to all handlers associated with this logger and
    its ancestors (until a false value of *propagate* is found). This method is used
    for unpickled records received from a socket, as well as those created locally.
-   Logger-level filtering is applied using :meth:`filter`.
+   Logger-level filtering is applied using :meth:`~Logger.filter`.
 
 
 .. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info [, func, extra])

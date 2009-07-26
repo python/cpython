@@ -656,7 +656,7 @@ Decimal objects
 
    .. method:: max_mag(other[, context])
 
-      Similar to the :meth:`max` method, but the comparison is done using the
+      Similar to the :meth:`.max` method, but the comparison is done using the
       absolute values of the operands.
 
       .. versionadded:: 2.6
@@ -670,7 +670,7 @@ Decimal objects
 
    .. method:: min_mag(other[, context])
 
-      Similar to the :meth:`min` method, but the comparison is done using the
+      Similar to the :meth:`.min` method, but the comparison is done using the
       absolute values of the operands.
 
       .. versionadded:: 2.6

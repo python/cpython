@@ -16,8 +16,8 @@ This module provides an interface to the Silicon Graphics CD library. It is
 available only on Silicon Graphics systems.
 
 The way the library works is as follows.  A program opens the CD-ROM device with
-:func:`open` and creates a parser to parse the data from the CD with
-:func:`createparser`.  The object returned by :func:`open` can be used to read
+:func:`.open` and creates a parser to parse the data from the CD with
+:func:`createparser`.  The object returned by :func:`.open` can be used to read
 data from the CD, but also to get status information for the CD-ROM device, and
 to get information about the CD, such as the table of contents.  Data from the
 CD is passed to the parser, which parses the frames, and calls any callback
@@ -133,7 +133,7 @@ The following variables are states as returned by :func:`getstatus`:
 Player Objects
 --------------
 
-Player objects (returned by :func:`open`) have the following methods:
+Player objects (returned by :func:`.open`) have the following methods:
 
 
 .. method:: CD player.allowremoval()

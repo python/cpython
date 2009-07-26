@@ -109,7 +109,7 @@ A :class:`MultiFile` instance has the following methods:
    an input line, it will be interpreted as a section-divider  or end-marker
    (depending on the decoration, see :rfc:`2045`).  All subsequent reads will
    return the empty string to indicate end-of-file, until a call to :meth:`pop`
-   removes the boundary a or :meth:`next` call reenables it.
+   removes the boundary a or :meth:`.next` call reenables it.
 
    It is possible to push more than one boundary.  Encountering the
    most-recently-pushed boundary will return EOF; encountering any other
