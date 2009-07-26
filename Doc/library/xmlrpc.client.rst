@@ -87,7 +87,7 @@ between conformable Python objects and XML on the wire.
    :exc:`ProtocolError` used to signal an error in the HTTP/HTTPS transport layer.
    Both :exc:`Fault` and :exc:`ProtocolError` derive from a base class called
    :exc:`Error`.  Note that the xmlrpc client module currently does not marshal
-   instances of subclasses of builtin types.
+   instances of subclasses of built-in types.
 
    When passing strings, characters special to XML such as ``<``, ``>``, and ``&``
    will be automatically escaped.  However, it's the caller's responsibility to
