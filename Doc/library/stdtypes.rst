@@ -1595,7 +1595,7 @@ set``.  Being an unordered collection, sets do not record element position or
 order of insertion.  Accordingly, sets do not support indexing, slicing, or
 other sequence-like behavior.
 
-There are currently two builtin set types, :class:`set` and :class:`frozenset`.
+There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
 like :meth:`add` and :meth:`remove`.  Since it is mutable, it has no hash value
 and cannot be used as either a dictionary key or as an element of another set.

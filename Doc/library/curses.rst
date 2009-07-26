@@ -606,9 +606,9 @@ the following methods:
    .. note::
 
       A *character* means a C character (an ASCII code), rather then a Python
-      character (a string of length 1). (This note is true whenever the documentation
-      mentions a character.) The builtin :func:`ord` is handy for conveying strings to
-      codes.
+      character (a string of length 1). (This note is true whenever the
+      documentation mentions a character.) The built-in :func:`ord` is handy for
+      conveying strings to codes.
 
    Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
    character previously painter at that location.  By default, the character

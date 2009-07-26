@@ -487,7 +487,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 .. class:: defaultdict([default_factory[, ...]])
 
    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
-   builtin :class:`dict` class.  It overrides one method and adds one writable
+   built-in :class:`dict` class.  It overrides one method and adds one writable
    instance variable.  The remaining functionality is the same as for the
    :class:`dict` class and is not documented here.
 

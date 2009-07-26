@@ -216,7 +216,7 @@ and off individually.  They are described here in more detail.
 .. 2to3fixer:: itertools
 
    Changes usage of :func:`itertools.ifilter`, :func:`itertools.izip`, and
-   :func:`itertools.imap` to their builtin equivalents.
+   :func:`itertools.imap` to their built-in equivalents.
    :func:`itertools.ifilterfalse` is changed to :func:`itertools.filterfalse`.
 
 .. 2to3fixer:: long

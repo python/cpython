@@ -1173,7 +1173,7 @@ Some of the more notable changes are:
      can uncomment them. Gestalt and Internet Config modules are enabled by
      default.
 
-* Keyword arguments passed to builtin functions that don't take them now cause a
+* Keyword arguments passed to built-in functions that don't take them now cause a
   :exc:`TypeError` exception to be raised, with the message "*function* takes no
   keyword arguments".
 

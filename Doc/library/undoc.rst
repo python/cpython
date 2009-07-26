@@ -25,4 +25,3 @@ documented beyond this mention.  There's little need to document these.
 
 :mod:`posixpath`
    --- Implementation of :mod:`os.path` on POSIX.
-

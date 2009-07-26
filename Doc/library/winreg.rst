@@ -399,7 +399,7 @@ detached).
 The object also support comparison semantics, so handle objects will compare
 true if they both reference the same underlying Windows handle value.
 
-Handle objects can be converted to an integer (e.g., using the builtin
+Handle objects can be converted to an integer (e.g., using the built-in
 :func:`int` function), in which case the underlying Windows handle value is
 returned.  You can also use the  :meth:`Detach` method to return the integer
 handle, and also disconnect the Windows handle from the handle object.
