@@ -54,8 +54,9 @@ This module defines the following functions and objects:
    :noindex:
 
    A factory function that returns a new event object.  An event manages a flag
-   that can be set to true with the :meth:`set` method and reset to false with the
-   :meth:`clear` method.  The :meth:`wait` method blocks until the flag is true.
+   that can be set to true with the :meth:`~Event.set` method and reset to false
+   with the :meth:`clear` method.  The :meth:`wait` method blocks until the flag
+   is true.
 
 
 .. class:: local
@@ -634,7 +635,7 @@ This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
 
 An event object manages an internal flag that can be set to true with the
-:meth:`set` method and reset to false with the :meth:`clear` method.  The
+:meth:`~Event.set` method and reset to false with the :meth:`clear` method.  The
 :meth:`wait` method blocks until the flag is true.
 
 
@@ -655,7 +656,7 @@ An event object manages an internal flag that can be set to true with the
    .. method:: clear()
 
       Reset the internal flag to false. Subsequently, threads calling
-      :meth:`wait` will block until :meth:`set` is called to set the internal
+      :meth:`wait` will block until :meth:`.set` is called to set the internal
       flag to true again.
 
    .. method:: wait([timeout])

@@ -58,18 +58,18 @@ The :mod:`sunau` module defines the following functions:
 
 .. function:: openfp(file, mode)
 
-   A synonym for :func:`open`, maintained for backwards compatibility.
+   A synonym for :func:`.open`, maintained for backwards compatibility.
+
 
 The :mod:`sunau` module defines the following exception:
-
 
 .. exception:: Error
 
    An error raised when something is impossible because of Sun AU specs or
    implementation deficiency.
 
-The :mod:`sunau` module defines the following data items:
 
+The :mod:`sunau` module defines the following data items:
 
 .. data:: AUDIO_FILE_MAGIC
 
@@ -104,7 +104,7 @@ The :mod:`sunau` module defines the following data items:
 AU_read Objects
 ---------------
 
-AU_read objects, as returned by :func:`open` above, have the following methods:
+AU_read objects, as returned by :func:`.open` above, have the following methods:
 
 
 .. method:: AU_read.close()
@@ -197,7 +197,7 @@ and don't do anything interesting.
 AU_write Objects
 ----------------
 
-AU_write objects, as returned by :func:`open` above, have the following methods:
+AU_write objects, as returned by :func:`.open` above, have the following methods:
 
 
 .. method:: AU_write.setnchannels(n)

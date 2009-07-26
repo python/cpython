@@ -133,8 +133,8 @@ commas::
 If a field represents an uploaded file, accessing the value via the
 :attr:`value` attribute or the :func:`getvalue` method reads the entire file in
 memory as a string.  This may not be what you want. You can test for an uploaded
-file by testing either the :attr:`filename` attribute or the :attr:`file`
-attribute.  You can then read the data at leisure from the :attr:`file`
+file by testing either the :attr:`filename` attribute or the :attr:`!file`
+attribute.  You can then read the data at leisure from the :attr:`!file`
 attribute::
 
    fileitem = form["userfile"]
@@ -154,7 +154,7 @@ field will be set to the value -1.
 The file upload draft standard entertains the possibility of uploading multiple
 files from one field (using a recursive :mimetype:`multipart/\*` encoding).
 When this occurs, the item will be a dictionary-like :class:`FieldStorage` item.
-This can be determined by testing its :attr:`type` attribute, which should be
+This can be determined by testing its :attr:`!type` attribute, which should be
 :mimetype:`multipart/form-data` (or perhaps another MIME type matching
 :mimetype:`multipart/\*`).  In this case, it can be iterated over recursively
 just like the top-level form object.
@@ -162,7 +162,7 @@ just like the top-level form object.
 When a form is submitted in the "old" format (as the query string or as a single
 data part of type :mimetype:`application/x-www-form-urlencoded`), the items will
 actually be instances of the class :class:`MiniFieldStorage`.  In this case, the
-:attr:`list`, :attr:`file`, and :attr:`filename` attributes are always ``None``.
+:attr:`!list`, :attr:`!file`, and :attr:`filename` attributes are always ``None``.
 
 A form submitted via POST that also has a query string will contain both
 :class:`FieldStorage` and :class:`MiniFieldStorage` items.
