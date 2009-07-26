@@ -39,6 +39,10 @@ C-API
 Library
 -------
 
+- Issue #1424152: Fix for http.client, urllib.request to support SSL while
+  working through proxy. Original patch by Christopher Li, changes made by
+  Senthil Kumaran
+
 - importlib.abc.PyLoader did not inherit from importlib.abc.ResourceLoader like
   the documentation said it did even though the code in PyLoader relied on the
   abstract method required by ResourceLoader.
