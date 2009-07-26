@@ -21,11 +21,11 @@ Python.  It uses the built-in parser and standard :mod:`parser` module to
 generated a concrete syntax tree.  This tree is used to generate an abstract
 syntax tree (AST) and then Python bytecode.
 
-The full functionality of the package duplicates the builtin compiler provided
+The full functionality of the package duplicates the built-in compiler provided
 with the Python interpreter.  It is intended to match its behavior almost
 exactly.  Why implement another compiler that does the same thing?  The package
 is useful for a variety of purposes.  It can be modified more easily than the
-builtin compiler.  The AST it generates is useful for analyzing Python source
+built-in compiler.  The AST it generates is useful for analyzing Python source
 code.
 
 This chapter explains how the various components of the :mod:`compiler` package
@@ -118,7 +118,7 @@ for a construct, there are often several levels of nested nodes that are
 introduced by Python's precedence rules.
 
 The abstract syntax tree is created by the :mod:`compiler.transformer` module.
-The transformer relies on the builtin Python parser to generate a concrete
+The transformer relies on the built-in Python parser to generate a concrete
 syntax tree.  It generates an abstract syntax tree from the concrete tree.
 
 .. index::

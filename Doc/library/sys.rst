@@ -816,7 +816,7 @@ always available.
 
    ``'c_call'``
       A C function is about to be called.  This may be an extension function or
-      a builtin.  *arg* is the C function object.
+      a built-in.  *arg* is the C function object.
 
    ``'c_return'``
       A C function has returned. *arg* is ``None``.

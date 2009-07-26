@@ -665,7 +665,7 @@ the call.
 
 .. note::
 
-   An implementation may provide builtin functions whose positional parameters do
+   An implementation may provide built-in functions whose positional parameters do
    not have names, even if they are 'named' for the purpose of documentation, and
    which therefore cannot be supplied by keyword.  In CPython, this is the case for
    functions implemented in C that use :cfunc:`PyArg_ParseTuple` to parse their
@@ -1032,7 +1032,7 @@ The operators ``<``, ``>``, ``==``, ``>=``, ``<=``, and ``!=`` compare the
 values of two objects.  The objects need not have the same type. If both are
 numbers, they are converted to a common type.  Otherwise, objects of different
 types *always* compare unequal, and are ordered consistently but arbitrarily.
-You can control comparison behavior of objects of non-builtin types by defining
+You can control comparison behavior of objects of non-built-in types by defining
 a ``__cmp__`` method or rich comparison methods like ``__gt__``, described in
 section :ref:`specialnames`.
 
@@ -1063,7 +1063,7 @@ Comparison of objects of the same type depends on the type:
   lists compare equal. [#]_ Outcomes other than equality are resolved
   consistently, but are not otherwise defined. [#]_
 
-* Most other objects of builtin types compare unequal unless they are the same
+* Most other objects of built-in types compare unequal unless they are the same
   object; the choice whether one object is considered smaller or larger than
   another one is made arbitrarily but consistently within one execution of a
   program.
