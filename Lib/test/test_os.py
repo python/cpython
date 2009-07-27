@@ -565,8 +565,9 @@ class TestInvalidFD(unittest.TestCase):
                 else:
                     break
             if i < 2:
-                raise unittest.SkipTest(
-                    "Unable to acquire a range of invalid file descriptors")
+                # Unable to acquire a range of invalid file descriptors,
+                # so skip the test (in 2.6+ this is a unittest.SkipTest).
+                return
             self.assertEqual(os.closerange(fd, fd + i-1), None)
 
     def test_dup2(self):
