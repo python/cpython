@@ -82,6 +82,10 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').union(C('ef')), set('abcef'))
             self.assertEqual(self.thetype('abcba').union(C('ef'), C('fg')), set('abcefg'))
 
+        # Issue #6573
+        x = self.thetype()
+        self.assertEqual(x.union(set([1]), x, set([2])), self.thetype([1, 2]))
+
     def test_or(self):
         i = self.s.union(self.otherword)
         self.assertEqual(self.s | set(self.otherword), i)
