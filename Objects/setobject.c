@@ -1183,7 +1183,7 @@ set_union(PySetObject *so, PyObject *args)
 	for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
 		other = PyTuple_GET_ITEM(args, i);
 		if ((PyObject *)so == other)
-			return (PyObject *)result;
+			continue;
 		if (set_update_internal(result, other) == -1) {
 			Py_DECREF(result);
 			return NULL;
