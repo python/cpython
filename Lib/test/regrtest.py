@@ -746,7 +746,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         False if the test didn't leak references; True if we detected refleaks.
     """
     # This code is hackish and inelegant, but it seems to do the job.
-    import copy_reg, _abcoll, io
+    import copy_reg, _abcoll, _pyio
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -757,7 +757,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     abcs = {}
-    modules = _abcoll, io
+    modules = _abcoll, _pyio
     for abc in [getattr(mod, a) for mod in modules for a in mod.__all__]:
         # XXX isinstance(abc, ABCMeta) leads to infinite recursion
         if not hasattr(abc, '_abc_registry'):
