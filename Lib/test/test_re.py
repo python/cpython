@@ -605,6 +605,27 @@ class ReTests(unittest.TestCase):
         self.assertEqual(next(iter).span(), (4, 4))
         self.assertRaises(StopIteration, next, iter)
 
+    def test_bug_6561(self):
+        # '\d' should match characters in Unicode category 'Nd'
+        # (Number, Decimal Digit), but not those in 'Nl' (Number,
+        # Letter) or 'No' (Number, Other).
+        decimal_digits = [
+            '\u0037', # '\N{DIGIT SEVEN}', category 'Nd'
+            '\u0e58', # '\N{THAI DIGIT SIX}', category 'Nd'
+            '\uff10', # '\N{FULLWIDTH DIGIT ZERO}', category 'Nd'
+            ]
+        for x in decimal_digits:
+            self.assertEqual(re.match('^\d$', x).group(0), x)
+
+        not_decimal_digits = [
+            '\u2165', # '\N{ROMAN NUMERAL SIX}', category 'Nl'
+            '\u3039', # '\N{HANGZHOU NUMERAL TWENTY}', category 'Nl'
+            '\u2082', # '\N{SUBSCRIPT TWO}', category 'No'
+            '\u32b4', # '\N{CIRCLED NUMBER THIRTY NINE}', category 'No'
+            ]
+        for x in not_decimal_digits:
+            self.assertIsNone(re.match('^\d$', x))
+
     def test_empty_array(self):
         # SF buf 1647541
         import array

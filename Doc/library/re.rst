@@ -338,11 +338,12 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
 
 ``\d``
    For Unicode (str) patterns:
-      Matches any Unicode digit (which includes ``[0-9]``, and also many
-      other digit characters). If the :const:`ASCII` flag is used only
-      ``[0-9]`` is matched (but the flag affects the entire regular
-      expression, so in such cases using an explicit ``[0-9]`` may be a
-      better choice).
+      Matches any Unicode decimal digit (that is, any character in
+      Unicode character category [Nd]).  This includes ``[0-9]``, and
+      also many other digit characters.  If the :const:`ASCII` flag is
+      used only ``[0-9]`` is matched (but the flag affects the entire
+      regular expression, so in such cases using an explicit ``[0-9]``
+      may be a better choice).
    For 8-bit (bytes) patterns:
       Matches any decimal digit; this is equivalent to ``[0-9]``.
 
