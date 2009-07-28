@@ -703,6 +703,16 @@ class OtherTests(unittest.TestCase):
         # quickly.
         self.assertRaises(IOError, zipfile.ZipFile, TESTFN)
 
+    def test_empty_file_raises_BadZipFile(self):
+        f = open(TESTFN, 'w')
+        f.close()
+        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN)
+
+        f = open(TESTFN, 'w')
+        f.write("short file")
+        f.close()
+        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN)
+
     def test_closed_zip_raises_RuntimeError(self):
         # Verify that testzip() doesn't swallow inappropriate exceptions.
         data = StringIO()

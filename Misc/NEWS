@@ -354,6 +354,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
+  opening an empty or very small file.
+
 - Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
   containing incomplete data.
 
