@@ -108,6 +108,10 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6561: '\d' in a regex now matches only characters with
+  Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
+  matched characters with category 'No'.
+
 - Issue #4509: Array objects are no longer modified after an operation
   failing due to the resize restriction in-place when the object has exported
   buffers.
