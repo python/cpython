@@ -956,7 +956,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #6545: Removed assert statements in distutils.Extension, so the 
+- Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
+  opening an empty or very small file.
+
+- Issue #6545: Removed assert statements in distutils.Extension, so the
   behavior is similar when used with -O.
 
 - unittest has been split up into a package.  All old names should still work.
