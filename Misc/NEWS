@@ -1205,6 +1205,10 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #6561: '\d' in a regex now matches only characters with
+  Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
+  matched characters with category 'No'.
+
 - Issue #1523: Remove deprecated overflow wrapping for struct.pack
   with an integer format code ('bBhHiIlLqQ').  Packing an out-of-range
   integer now consistently raises struct.error.
