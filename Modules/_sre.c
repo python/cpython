@@ -172,7 +172,7 @@ static unsigned int sre_lower_locale(unsigned int ch)
 
 #if defined(HAVE_UNICODE)
 
-#define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDIGIT((Py_UNICODE)(ch))
+#define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDECIMAL((Py_UNICODE)(ch))
 #define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE((Py_UNICODE)(ch))
 #define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK((Py_UNICODE)(ch))
 #define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM((Py_UNICODE)(ch))

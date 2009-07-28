@@ -332,7 +332,8 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
 ``\d``
    When the :const:`UNICODE` flag is not specified, matches any decimal digit; this
    is equivalent to the set ``[0-9]``.  With :const:`UNICODE`, it will match
-   whatever is classified as a digit in the Unicode character properties database.
+   whatever is classified as a decimal digit in the Unicode character properties
+   database.
 
 ``\D``
    When the :const:`UNICODE` flag is not specified, matches any non-digit
