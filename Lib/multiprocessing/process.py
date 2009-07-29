@@ -221,7 +221,8 @@ class Process(object):
             self._counter = itertools.count(1)
             if sys.stdin is not None:
                 try:
-                    os.close(sys.stdin.fileno())
+                    sys.stdin.close()
+                    sys.stdin = open(os.devnull)
                 except (OSError, ValueError):
                     pass
             _current_process = self
