@@ -1160,6 +1160,7 @@ Number Object Structures
             binaryfunc nb_add;
             binaryfunc nb_subtract;
             binaryfunc nb_multiply;
+            binaryfunc nb_divide;
             binaryfunc nb_remainder;
             binaryfunc nb_divmod;
             ternaryfunc nb_power;
