@@ -6,8 +6,8 @@ Interactive Input Editing and History Substitution
 
 Some versions of the Python interpreter support editing of the current input
 line and history substitution, similar to facilities found in the Korn shell and
-the GNU Bash shell.  This is implemented using the *GNU Readline* library, which
-supports Emacs-style and vi-style editing.  This library has its own
+the GNU Bash shell.  This is implemented using the `GNU Readline`_ library,
+which supports Emacs-style and vi-style editing.  This library has its own
 documentation which I won't duplicate here; however, the basics are easily
 explained.  The interactive editing and history described here are optionally
 available in the Unix and Cygwin versions of the interpreter.
@@ -148,8 +148,8 @@ interpreter. ::
 
 .. _tut-commentary:
 
-Commentary
-==========
+Alternatives to the Interactive Interpreter
+===========================================
 
 This facility is an enormous step forward compared to earlier versions of the
 interpreter; however, some wishes are left: It would be nice if the proper
@@ -158,6 +158,12 @@ token is required next).  The completion mechanism might use the interpreter's
 symbol table.  A command to check (or even suggest) matching parentheses,
 quotes, etc., would also be useful.
 
+One alternative enhanced interactive interpreter that has been around for quite
+some time is `IPython`_, which features tab completion, object exploration and
+advanced history management.  It can also be thoroughly customized and embedded
+into other applications.  Another similar enhanced interactive environment is
+`bpython`_.
+
 
 .. rubric:: Footnotes
 
@@ -165,3 +171,7 @@ quotes, etc., would also be useful.
    :envvar:`PYTHONSTARTUP` environment variable when you start an interactive
    interpreter.
 
+
+.. _GNU Readline: http://tiswww.case.edu/php/chet/readline/rltop.html
+.. _IPython: http://ipython.scipy.org/
+.. _bpython: http://www.bpython-interpreter.org/
