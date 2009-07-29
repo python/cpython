@@ -152,9 +152,9 @@ Positional and keyword arguments can be arbitrarily combined::
                                                           other='Georg'))
    The story of Bill, Manfred, and Georg.
 
-An optional ``':'`` and format specifier can follow the field name. This also
+An optional ``':'`` and format specifier can follow the field name. This allows
 greater control over how the value is formatted.  The following example
-truncates the Pi to three places after the decimal.
+truncates Pi to three places after the decimal.
 
    >>> import math
    >>> print('The value of PI is approximately {0:.3f}.'.format(math.pi))
@@ -208,8 +208,8 @@ operation. For example::
    The value of PI is approximately 3.142.
 
 Since :meth:`str.format` is quite new, a lot of Python code still uses the ``%``
-operator. However, because this old style of formatting will eventually removed
-from the language :meth:`str.format` should generally be used.
+operator. However, because this old style of formatting will eventually be
+removed from the language, :meth:`str.format` should generally be used.
 
 More information can be found in the :ref:`old-string-formatting` section.
 
