@@ -1,4 +1,13 @@
 {% extends "!layout.html" %}
+{% block header %}
+    <div class="related" style="background-color: #600">
+    <div style="padding: 0 10px">
+    <em>This is documentation for Python 3.0, which is not maintained any more.
+    <a style="text-decoration: underline" href="http://docs.python.org/3.1/{{ pagename }}.html">
+    Go to this page in the Python 3.1 documentation</a></em>
+    </div>
+    </div>
+{% endblock %}
 {% block rootrellink %}
         <li><img src="{{ pathto('_static/py.png', 1) }}" alt=""
                  style="vertical-align: middle; margin-top: -1px"/></li>
