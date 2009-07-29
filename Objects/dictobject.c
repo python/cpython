@@ -718,7 +718,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	   running "python -Wi" for an example related to string interning.
 	   Let's just hope that no exception occurs then...  This must be
 	   _PyThreadState_Current and not PyThreadState_GET() because in debug
-	   mode, it complains if tstate is NULL. */
+	   mode, the latter complains if tstate is NULL. */
 	tstate = _PyThreadState_Current;
 	if (tstate != NULL && tstate->curexc_type != NULL) {
 		/* preserve the existing exception */
