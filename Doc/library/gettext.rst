@@ -194,7 +194,7 @@ class can also install themselves in the built-in namespace as the function
    :func:`translation`.
 
    For the *names* parameter, please see the description of the translation
-   object's :meth:`install` method.
+   object's :meth:`~NullTranslations.install` method.
 
    As seen below, you usually mark the strings in your application that are
    candidates for translation, by wrapping them in a call to the :func:`_`

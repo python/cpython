@@ -107,6 +107,6 @@ Tuple Objects
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
-.. cfunction:: int PyTuple_ClearFreeList(void)
+.. cfunction:: int PyTuple_ClearFreeList()
 
    Clear the free list. Return the total number of freed items.

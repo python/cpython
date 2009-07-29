@@ -33,7 +33,7 @@ Type Objects
    standard type object.  Return false in all other cases.
 
 
-.. cfunction:: unsigned int PyType_ClearCache(void)
+.. cfunction:: unsigned int PyType_ClearCache()
 
    Clear the internal lookup cache. Return the current version tag.
 

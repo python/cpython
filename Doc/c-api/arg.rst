@@ -160,7 +160,7 @@ variable(s) whose address should be passed.
    In both cases, *\*buffer_length* is set to the length of the encoded data
    without the trailing NUL byte.
 
-``et#`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer]
+``et#`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer, int \*buffer_length]
    Same as ``es#`` except that string objects are passed through without recoding
    them. Instead, the implementation assumes that the string object uses the
    encoding passed in as parameter.
