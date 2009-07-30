@@ -32,7 +32,7 @@ unknown_presentation_type(STRINGLIB_CHAR presentation_type,
         PyErr_Format(PyExc_ValueError,
                      "Unknown format code '%c' "
                      "for object of type '%.200s'",
-                     presentation_type,
+                     (char)presentation_type,
                      type_name);
 #if STRINGLIB_IS_UNICODE
     else
@@ -41,6 +41,24 @@ unknown_presentation_type(STRINGLIB_CHAR presentation_type,
                      "for object of type '%.200s'",
                      (unsigned int)presentation_type,
                      type_name);
+#endif
+}
+
+static void
+invalid_comma_type(STRINGLIB_CHAR presentation_type)
+{
+#if STRINGLIB_IS_UNICODE
+    /* See comment in unknown_presentation_type */
+    if (presentation_type > 32 && presentation_type < 128)
+#endif
+        PyErr_Format(PyExc_ValueError,
+                     "Cannot specify ',' with '%c'.",
+                     (char)presentation_type);
+#if STRINGLIB_IS_UNICODE
+    else
+        PyErr_Format(PyExc_ValueError,
+                     "Cannot specify ',' with '\\x%x'.",
+                     (unsigned int)presentation_type);
 #endif
 }
 
@@ -253,8 +271,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
             /* These are allowed. See PEP 378.*/
             break;
         default:
-            PyErr_Format(PyExc_ValueError,
-                         "Cannot specify ',' with '%c'.", format->type);
+            invalid_comma_type(format->type);
             return 0;
         }
     }
