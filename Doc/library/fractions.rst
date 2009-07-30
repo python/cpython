@@ -18,7 +18,7 @@ another rational number, or from a string.
            Fraction(string)
 
    The first version requires that *numerator* and *denominator* are
-   instances of :class:`numbers.Integral` and returns a new
+   instances of :class:`numbers.Rational` and returns a new
    :class:`Fraction` instance with value ``numerator/denominator``. If
    *denominator* is :const:`0`, it raises a
    :exc:`ZeroDivisionError`. The second version requires that
