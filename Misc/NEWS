@@ -1483,6 +1483,9 @@ Build
 C-API
 -----
 
+- Issue #6624: yArg_ParseTuple with "s" format when parsing argument with
+  NUL: Bogus TypeError detail string.
+
 - Issue #5175: PyLong_AsUnsignedLongLong now raises OverflowError
   for negative arguments.  Previously, it raised TypeError.
 
