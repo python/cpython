@@ -1180,6 +1180,9 @@ Build
 C-API
 -----
 
+- Issue #6624: yArg_ParseTuple with "s" format when parsing argument with 
+  NUL: Bogus TypeError detail string.
+
 - Issue #5954: Add a PyFrame_GetLineNumber() function to replace most uses of
   PyCode_Addr2Line().
 
