@@ -354,6 +354,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6595: The Decimal constructor now allows arbitrary Unicode
+  decimal digits in input, as recommended by the standard.  Previously
+  it was restricted to accepting [0-9].
+
 - Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
   opening an empty or very small file.
 
