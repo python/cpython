@@ -240,10 +240,6 @@ def isroutine(object):
             or ismethod(object)
             or ismethoddescriptor(object))
 
-def isgenerator(object):
-    """Return true if the object is a generator object."""
-    return isinstance(object, types.GeneratorType)
-
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
     return isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT
