@@ -42,6 +42,10 @@ C-API
 Library
 -------
 
+- Issue #6595: The Decimal constructor now allows arbitrary Unicode
+  decimal digits in input, as recommended by the standard.  Previously
+  it was restricted to accepting [0-9].
+
 - Issues #5155, #5313, #5331: multiprocessing.Process._bootstrap was
   unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
   descriptor errors
