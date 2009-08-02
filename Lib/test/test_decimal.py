@@ -425,9 +425,6 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(Decimal('1.3E4 \n')), '1.3E+4')
         self.assertEqual(str(Decimal('  -7.89')), '-7.89')
 
-        #but alternate unicode digits should not
-        self.assertEqual(str(Decimal('\uff11')), 'NaN')
-
     def test_explicit_from_tuples(self):
 
         #zero
@@ -533,6 +530,15 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(d), '500000123')
         d = nc.create_decimal(prevdec)
         self.assertEqual(str(d), '5.00E+8')
+
+    def test_unicode_digits(self):
+        test_values = {
+            '\uff11': '1',
+            '\u0660.\u0660\u0663\u0667\u0662e-\u0663' : '0.0000372',
+            '-nan\u0c68\u0c6a\u0c66\u0c66' : '-NaN2400',
+            }
+        for input, expected in test_values.items():
+            self.assertEqual(str(Decimal(input)), expected)
 
 
 class DecimalImplicitConstructionTest(unittest.TestCase):
