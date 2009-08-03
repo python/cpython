@@ -416,7 +416,7 @@ generator functions::
    ...         while True:
    ...             try:
    ...                 value = (yield value)
-   ...             except Exception, e:
+   ...             except Exception as e:
    ...                 value = e
    ...     finally:
    ...         print("Don't forget to clean up when 'close()' is called.")
