@@ -60,6 +60,7 @@ class TestDefaultDict(unittest.TestCase):
         d1 = defaultdict()
         self.assertEqual(d1.default_factory, None)
         self.assertEqual(repr(d1), "defaultdict(None, {})")
+        self.assertEqual(eval(repr(d1)), d1)
         d1[11] = 41
         self.assertEqual(repr(d1), "defaultdict(None, {11: 41})")
         d2 = defaultdict(int)
@@ -111,6 +112,12 @@ class TestDefaultDict(unittest.TestCase):
         self.assertEqual(d4, {42: []})
         d4[12]
         self.assertEqual(d4, {42: [], 12: []})
+
+        # Issue 6637: Copy fails for empty default dict
+        d = defaultdict()
+        d['a'] = 42
+        e = d.copy()
+        self.assertEqual(e['a'], 42)
 
     def test_shallow_copy(self):
         d1 = defaultdict(foobar, {1: 1})
