@@ -759,9 +759,11 @@ bytesio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 bytesio_init(bytesio *self, PyObject *args, PyObject *kwds)
 {
+    char *kwlist[] = {"initial_bytes", NULL};
     PyObject *initvalue = NULL;
 
-    if (!PyArg_ParseTuple(args, "|O:BytesIO", &initvalue))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:BytesIO", kwlist,
+                                     &initvalue))
         return -1;
 
     /* In case, __init__ is called multiple times. */

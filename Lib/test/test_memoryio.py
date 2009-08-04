@@ -461,6 +461,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.write(a), 10)
         self.assertEqual(memio.getvalue(), buf)
 
+    def test_issue5449(self):
+        buf = self.buftype("1234567890")
+        self.ioclass(initial_bytes=buf)
+        self.assertRaises(TypeError, self.ioclass, buf, foo=None)
+
 
 class TextIOTestMixin:
 
