@@ -68,7 +68,7 @@ enum special_types {
 	ST_PZERO,	/* 3, +0. */
 	ST_POS,		/* 4, positive finite number (nonzero) */
 	ST_PINF,	/* 5, positive infinity */
-	ST_NAN,		/* 6, Not a Number */
+	ST_NAN		/* 6, Not a Number */
 };
 
 static enum special_types
