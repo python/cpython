@@ -1191,6 +1191,9 @@ defdict_copy(defdictobject *dd)
 	   whose class constructor has the same signature.  Subclasses that
 	   define a different constructor signature must override copy().
 	*/
+
+	if (dd->default_factory == NULL)
+		return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd), Py_None, dd, NULL);
 	return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
 					    dd->default_factory, dd, NULL);
 }
@@ -1354,7 +1357,7 @@ defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
 		Py_ssize_t n = PyTuple_GET_SIZE(args);
 		if (n > 0) {
 			newdefault = PyTuple_GET_ITEM(args, 0);
-			if (!PyCallable_Check(newdefault)) {
+			if (!PyCallable_Check(newdefault) && newdefault != Py_None) {
 				PyErr_SetString(PyExc_TypeError,
 					"first argument must be callable");                           
 				return -1;
