@@ -255,7 +255,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
 
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
-                        "object does not have the buffer interface");
+                        "object does not support the buffer interface");
         return NULL;
     }
 
