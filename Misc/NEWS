@@ -70,6 +70,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6637: defaultdict.copy() did not work when the default factory
+  was left unspecified.  Also, the eval/repr round-trip would fail when
+  the default_factory was None.
+
 - Issue #1424152: Fix for httplib, urllib2 to support SSL while working through
   proxy. Original patch by Christopher Li, changes made by Senthil Kumaran.
 
