@@ -597,4 +597,4 @@ class MethodProxy(object):
 
 
 # XXX KBK 09Sep03  We need a proper unit test for this module.  Previously
-#                  existing test code was removed at Rev 1.27.
+#                  existing test code was removed at Rev 1.27 (r34098).
