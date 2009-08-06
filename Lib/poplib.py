@@ -282,7 +282,7 @@ class POP3:
 
         NB: mailbox is locked by server from here to 'quit()'
         """
-        secret = bytes(secret, self.encoding)
+        secret = bytes(password, self.encoding)
         m = self.timestamp.match(self.welcome)
         if not m:
             raise error_proto('-ERR APOP not supported by server')

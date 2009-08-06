@@ -63,6 +63,9 @@ C-API
 Library
 -------
 
+- Issue #6622: Fix "local variable 'secret' referenced before
+  assignment" bug in POP3.apop.
+
 - Issue #2715: Remove remnants of Carbon.File from binhex module.
 
 - Issue #6595: The Decimal constructor now allows arbitrary Unicode
