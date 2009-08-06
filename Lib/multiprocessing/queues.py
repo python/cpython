@@ -282,9 +282,22 @@ class JoinableQueue(Queue):
         Queue.__setstate__(self, state[:-2])
         self._cond, self._unfinished_tasks = state[-2:]
 
-    def put(self, item, block=True, timeout=None):
-        Queue.put(self, item, block, timeout)
-        self._unfinished_tasks.release()
+    def put(self, obj, block=True, timeout=None):
+        assert not self._closed
+        if not self._sem.acquire(block, timeout):
+            raise Full
+
+        self._notempty.acquire()
+        self._cond.acquire()
+        try:
+            if self._thread is None:
+                self._start_thread()
+            self._buffer.append(obj)
+            self._unfinished_tasks.release()
+            self._notempty.notify()
+        finally:
+            self._cond.release()
+            self._notempty.release()
 
     def task_done(self):
         self._cond.acquire()
