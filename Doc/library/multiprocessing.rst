@@ -1153,11 +1153,6 @@ their parent process exits.  The manager classes are defined in the
 
       Run the server in the current process.
 
-   .. method:: from_address(address, authkey)
-
-      A class method which creates a manager object referring to a pre-existing
-      server process which is using the given address and authentication key.
-
    .. method:: get_server()
 
       Returns a :class:`Server` object which represents the actual server under
