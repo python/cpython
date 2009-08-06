@@ -1336,6 +1336,26 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
             bufio.readinto(bytearray(1))
         self.check_writes(_read)
 
+    def test_write_after_readahead(self):
+        # Issue #6629: writing after the buffer was filled by readahead should
+        # first rewind the raw stream.
+        for overwrite_size in [1, 5]:
+            raw = self.BytesIO(b"A" * 10)
+            bufio = self.tp(raw, 4)
+            # Trigger readahead
+            self.assertEqual(bufio.read(1), b"A")
+            self.assertEqual(bufio.tell(), 1)
+            # Overwriting should rewind the raw stream if it needs so
+            bufio.write(b"B" * overwrite_size)
+            self.assertEqual(bufio.tell(), overwrite_size + 1)
+            # If the write size was smaller than the buffer size, flush() and
+            # check that rewind happens.
+            bufio.flush()
+            self.assertEqual(bufio.tell(), overwrite_size + 1)
+            s = raw.getvalue()
+            self.assertEqual(s,
+                b"A" + b"B" * overwrite_size + b"A" * (9 - overwrite_size))
+
     def test_misbehaved_io(self):
         BufferedReaderTest.test_misbehaved_io(self)
         BufferedWriterTest.test_misbehaved_io(self)
