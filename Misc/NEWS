@@ -354,6 +354,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #6629: Fix a data corruption issue in the new `io` package, which could
+  occur when writing to a BufferedRandom object (e.g. a file opened in "rb+" or
+  "wb+" mode) after having buffered a certain amount of data for reading. This
+  bug was not present in the pure Python implementation.
+
 - Issue #4660: If a multiprocessing.JoinableQueue.put() was preempted, it was
   possible to get a spurious 'task_done() called too many times' error.
 

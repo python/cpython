@@ -1774,6 +1774,19 @@ bufferedwriter_write(buffered *self, PyObject *args)
     }
     Py_CLEAR(res);
 
+    /* Adjust the raw stream position if it is away from the logical stream
+       position. This happens if the read buffer has been filled but not
+       modified (and therefore _bufferedwriter_flush_unlocked() didn't rewind
+       the raw stream by itself).
+       Fixes issue #6629.
+    */
+    n = RAW_OFFSET(self);
+    if (n != 0) {
+        if (_buffered_raw_seek(self, -n, 1) < 0)
+            goto error;
+        self->raw_pos -= n;
+    }
+
     /* Then write buf itself. At this point the buffer has been emptied. */
     remaining = buf.len;
     written = 0;
