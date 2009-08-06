@@ -148,7 +148,7 @@ Buffer related functions
       kind of buffer the caller is prepared to deal with and therefore what
       kind of buffer the exporter is allowed to return.  The buffer interface
       allows for complicated memory sharing possibilities, but some caller may
-      not be able to handle all the complexibity but may want to see if the
+      not be able to handle all the complexity but may want to see if the
       exporter will let them take a simpler view to its memory.
 
       Some exporters may not be able to share memory in every possible way and
@@ -256,7 +256,7 @@ Buffer related functions
 
 .. cfunction:: void PyBuffer_Release(PyObject *obj, Py_buffer *view)
 
-   Release the buffer *view* over *obj*.  This shouldd be called when the buffer
+   Release the buffer *view* over *obj*.  This should be called when the buffer
    is no longer being used as it may free memory from it.
 
 
