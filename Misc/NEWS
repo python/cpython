@@ -283,6 +283,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4660: If a multiprocessing.JoinableQueue.put() was preempted, it was
+  possible to get a spurious 'task_done() called too many times' error.
+
 - Issue #6595: The Decimal constructor now allows arbitrary Unicode
   decimal digits in input, as recommended by the standard.  Previously
   it was restricted to accepting [0-9].
