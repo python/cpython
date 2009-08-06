@@ -42,6 +42,9 @@ C-API
 Library
 -------
 
+- Issue #6622: Fix "local variable 'secret' referenced before
+  assignment" bug in POP3.apop.
+
 - Issue #6637: defaultdict.copy() did not work when the default factory
   was left unspecified.  Also, the eval/repr round-trip would fail when
   the default_factory was None.
