@@ -540,15 +540,15 @@ available.  They are listed here in alphabetical order.
    Consider using the :func:`raw_input` function for general input from users.
 
 
-.. function:: int([x[, radix]])
+.. function:: int([x[, base]])
 
    Convert a string or number to a plain integer.  If the argument is a string,
    it must contain a possibly signed decimal number representable as a Python
-   integer, possibly embedded in whitespace.  The *radix* parameter gives the
+   integer, possibly embedded in whitespace.  The *base* parameter gives the
    base for the conversion (which is 10 by default) and may be any integer in
-   the range [2, 36], or zero.  If *radix* is zero, the proper radix is
+   the range [2, 36], or zero.  If *base* is zero, the proper radix is
    determined based on the contents of string; the interpretation is the same as
-   for integer literals.  (See :ref:`numbers`.)  If *radix* is specified and *x*
+   for integer literals.  (See :ref:`numbers`.)  If *base* is specified and *x*
    is not a string, :exc:`TypeError` is raised. Otherwise, the argument may be a
    plain or long integer or a floating point number.  Conversion of floating
    point numbers to integers truncates (towards zero).  If the argument is
@@ -635,17 +635,18 @@ available.  They are listed here in alphabetical order.
    interpreter.  Free variables are not returned in class blocks.
 
 
-.. function:: long([x[, radix]])
+.. function:: long([x[, base]])
 
    Convert a string or number to a long integer.  If the argument is a string, it
    must contain a possibly signed number of arbitrary size, possibly embedded in
-   whitespace. The *radix* argument is interpreted in the same way as for
+   whitespace. The *base* argument is interpreted in the same way as for
    :func:`int`, and may only be given when *x* is a string. Otherwise, the argument
    may be a plain or long integer or a floating point number, and a long integer
    with the same value is returned.    Conversion of floating point numbers to
    integers truncates (towards zero).  If no arguments are given, returns ``0L``.
 
    The long type is described in :ref:`typesnumeric`.
+
 
 .. function:: map(function, iterable, ...)
 
