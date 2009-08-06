@@ -36,7 +36,7 @@ class DummyPOP3Handler(asynchat.async_chat):
         asynchat.async_chat.__init__(self, conn)
         self.set_terminator(b"\r\n")
         self.in_buffer = []
-        self.push('+OK dummy pop3 server ready.')
+        self.push('+OK dummy pop3 server ready. <timestamp>')
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -104,6 +104,9 @@ class DummyPOP3Handler(asynchat.async_chat):
     def cmd_rpop(self, arg):
         self.push('+OK done nothing.')
 
+    def cmd_apop(self, arg):
+        self.push('+OK done nothing.')
+
 
 class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
 
@@ -169,7 +172,8 @@ class TestPOP3Class(TestCase):
         self.server.stop()
 
     def test_getwelcome(self):
-        self.assertEqual(self.client.getwelcome(), b'+OK dummy pop3 server ready.')
+        self.assertEqual(self.client.getwelcome(),
+                         b'+OK dummy pop3 server ready. <timestamp>')
 
     def test_exceptions(self):
         self.assertRaises(poplib.error_proto, self.client._shortcmd, 'echo -err')
@@ -209,6 +213,9 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
+    def test_apop(self):
+        self.assertOK(self.client.apop('foo', 'dummypassword'))
+
     def test_top(self):
         expected =  (b'+OK 116 bytes',
                      [b'From: postmaster@python.org', b'Content-Type: text/plain',
@@ -239,7 +246,7 @@ if hasattr(poplib, 'POP3_SSL'):
             self.set_socket(ssl_socket)
             self.set_terminator(b"\r\n")
             self.in_buffer = []
-            self.push('+OK dummy pop3 server ready.')
+            self.push('+OK dummy pop3 server ready. <timestamp>')
 
     class TestPOP3_SSLClass(TestPOP3Class):
         # repeat previous tests by using poplib.POP3_SSL
