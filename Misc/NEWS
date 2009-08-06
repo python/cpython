@@ -63,6 +63,11 @@ C-API
 Library
 -------
 
+- Issue #6629: Fix a data corruption issue in the new I/O library, which could
+  occur when writing to a BufferedRandom object (e.g. a file opened in "rb+" or
+  "wb+" mode) after having buffered a certain amount of data for reading. This
+  bug was not present in the pure Python implementation.
+
 - Issue #6622: Fix "local variable 'secret' referenced before
   assignment" bug in POP3.apop.
 
