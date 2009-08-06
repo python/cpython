@@ -74,7 +74,7 @@ It defines the following functions:
    continue without further notice), ``'xmlcharrefreplace'`` (replace with the
    appropriate XML character reference (for encoding only)),
    ``'backslashreplace'`` (replace with backslashed escape sequences (for
-   encoding only)), ``'surrogateescape'`` (replae with surrogate U+DCxx, see
+   encoding only)), ``'surrogateescape'`` (replace with surrogate U+DCxx, see
    :pep:`383`) as well as any other error handling name defined via
    :func:`register_error`.
 
