@@ -725,17 +725,17 @@ class PyBuildExt(build_ext):
                 f = os.path.join(d, "db.h")
                 if db_setup_debug: print("db: looking for db.h in", f)
                 if os.path.exists(f):
-                    f = open(f).read()
-                    m = re.search(r"#define\WDB_VERSION_MAJOR\W(\d+)", f)
+                    f = open(f, "rb").read()
+                    m = re.search(br"#define\WDB_VERSION_MAJOR\W(\d+)", f)
                     if m:
                         db_major = int(m.group(1))
-                        m = re.search(r"#define\WDB_VERSION_MINOR\W(\d+)", f)
+                        m = re.search(br"#define\WDB_VERSION_MINOR\W(\d+)", f)
                         db_minor = int(m.group(1))
                         db_ver = (db_major, db_minor)
 
                         # Avoid 4.6 prior to 4.6.21 due to a BerkeleyDB bug
                         if db_ver == (4, 6):
-                            m = re.search(r"#define\WDB_VERSION_PATCH\W(\d+)", f)
+                            m = re.search(br"#define\WDB_VERSION_PATCH\W(\d+)", f)
                             db_patch = int(m.group(1))
                             if db_patch < 21:
                                 print("db.h:", db_ver, "patch", db_patch,
