@@ -192,7 +192,7 @@ typedef struct {
 
 #define PySocketModule_ImportModuleAndAPI() PyCapsule_Import(PySocket_CAPSULE_NAME, 1)
 
-#ifdef __cpluplus
+#ifdef __cplusplus
 }
 #endif
 #endif /* !Py__SOCKET_H */
