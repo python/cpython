@@ -131,9 +131,9 @@ usage(int exitcode, wchar_t* program)
 	if (exitcode)
 		fprintf(f, "Try `python -h' for more information.\n");
 	else {
-		fprintf(f, usage_1);
-		fprintf(f, usage_2);
-		fprintf(f, usage_3);
+		fputs(usage_1, f);
+		fputs(usage_2, f);
+		fputs(usage_3, f);
 		fprintf(f, usage_4, DELIM);
 		fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
 	}
