@@ -514,7 +514,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. function:: int([number | string[, radix]])
+.. function:: int([number | string[, base]])
 
    Convert a number or string to an integer.  If no arguments are given, return
    ``0``.  If a number is given, return ``number.__int__()``.  Conversion of
@@ -522,10 +522,10 @@ are always available.  They are listed here in alphabetical order.
    a base-radix integer literal optionally preceded by '+' or '-' (with no space
    in between) and optionally surrounded by whitespace.  A base-n literal
    consists of the digits 0 to n-1, with 'a' to 'z' (or 'A' to 'Z') having
-   values 10 to 35.  The default radix is 10. The allowed values are 0 and 2-36.
+   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2-36.
    Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
-   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Radix 0
-   means to interpret exactly as a code literal, so that the actual radix is 2,
+   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
+   means to interpret exactly as a code literal, so that the actual base is 2,
    8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
    ``int('010')`` is, as well as ``int('010', 8)``.
 
