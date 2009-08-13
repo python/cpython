@@ -25,6 +25,8 @@ Importing Modules
    imported module, or *NULL* with an exception set on failure.  A failing
    import of a module doesn't leave the module in :data:`sys.modules`.
 
+   This function always uses absolute imports.
+
 
 .. cfunction:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
@@ -74,6 +76,8 @@ Importing Modules
    invokes the :func:`__import__` function from the ``__builtins__`` of the
    current globals.  This means that the import is done using whatever import
    hooks are installed in the current environment.
+
+   This function always uses absolute imports.
 
 
 .. cfunction:: PyObject* PyImport_ReloadModule(PyObject *m)
