@@ -1699,6 +1699,16 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 	if ((step > 0 && stop < start) ||
 	    (step < 0 && stop > start))
 		stop = start;
+
+	/* Issue #4509: If the array has exported buffers and the slice
+	   assignment would change the size of the array, fail early to make
+	   sure we don't modify it. */
+	if ((needed == 0 || slicelength != needed) && self->ob_exports > 0) {
+		PyErr_SetString(PyExc_BufferError, 
+			"cannot resize an array that is exporting buffers");
+		return -1;
+	}
+
 	if (step == 1) {
 		if (slicelength > needed) {
 			memmove(self->ob_item + (start + needed) * itemsize,
