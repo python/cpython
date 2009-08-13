@@ -61,8 +61,8 @@ formatting numbers with group separators::
    >>> x = 1234567.8
    >>> locale.format("%d", x, grouping=True)
    '1,234,567'
-   >>> locale.format("%s%.*f", (conv['currency_symbol'],
-   ...               conv['frac_digits'], x), grouping=True)
+   >>> locale.format_string("%s%.*f", (conv['currency_symbol'],
+   ...                      conv['frac_digits'], x), grouping=True)
    '$1,234,567.80'
 
 
