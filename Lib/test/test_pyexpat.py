@@ -510,6 +510,24 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, 1)
         self.assertEquals(self.n, 4)
 
+class MalformedInputText(unittest.TestCase):
+    def test1(self):
+        xml = "\0\r\n"
+        parser = expat.ParserCreate()
+        try:
+            parser.Parse(xml, True)
+            self.fail()
+        except expat.ExpatError as e:
+            self.assertEquals(str(e), 'no element found: line 2, column 1')
+
+    def test2(self):
+        xml = "<?xml version\xc2\x85='1.0'?>\r\n"
+        parser = expat.ParserCreate()
+        try:
+            parser.Parse(xml, True)
+            self.fail()
+        except expat.ExpatError as e:
+            self.assertEquals(str(e), 'XML declaration not well-formed: line 1, column 14')
 
 def test_main():
     run_unittest(SetAttributeTest,
@@ -520,7 +538,8 @@ def test_main():
                  HandlerExceptionTest,
                  PositionTest,
                  sf1296433Test,
-                 ChardataBufferTest)
+                 ChardataBufferTest,
+                 MalformedInputText)
 
 if __name__ == "__main__":
     test_main()

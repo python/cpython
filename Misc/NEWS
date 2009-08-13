@@ -122,6 +122,8 @@ Library
 Extension Modules
 -----------------
 
+- Fix a segfault that could be triggered by expat with specially formed input.
+
 - Issue #6561: '\d' in a regex now matches only characters with
   Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
   matched characters with category 'No'.
