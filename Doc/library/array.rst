@@ -52,9 +52,9 @@ through the :attr:`itemsize` attribute.
 The module defines the following type:
 
 
-.. function:: array(typecode[, initializer])
+.. class:: array(typecode[, initializer])
 
-   Return a new array whose items are restricted by *typecode*, and initialized
+   A new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a list, object
    supporting the buffer interface, or iterable over elements of the
    appropriate type.
@@ -67,7 +67,7 @@ The module defines the following type:
 
 .. data:: ArrayType
 
-   Obsolete alias for :func:`array`.
+   Obsolete alias for :class:`array`.
 
 .. data:: typecodes
 
@@ -80,7 +80,6 @@ value must be an array object with the same type code; in all other cases,
 and may be used wherever buffer objects are supported.
 
 The following data items and methods are also supported:
-
 
 .. attribute:: array.typecode
 

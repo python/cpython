@@ -33,16 +33,17 @@ This module provides an interface to the mechanisms used to implement the
 
 .. function:: find_module(name[, path])
 
-   Try to find the module *name* on the search path *path*.  If *path* is a list
-   of directory names, each directory is searched for files with any of the
-   suffixes returned by :func:`get_suffixes` above.  Invalid names in the list
-   are silently ignored (but all list items must be strings).  If *path* is
-   omitted or ``None``, the list of directory names given by ``sys.path`` is
-   searched, but first it searches a few special places: it tries to find a
-   built-in module with the given name (:const:`C_BUILTIN`), then a frozen
-   module (:const:`PY_FROZEN`), and on some systems some other places are looked
-   in as well (on Windows, it looks in the registry which may point to a
-   specific file).
+   Try to find the module *name*.  If *path* is omitted or ``None``, the list of
+   directory names given by ``sys.path`` is searched, but first a few special
+   places are searched: the function tries to find a built-in module with the
+   given name (:const:`C_BUILTIN`), then a frozen module (:const:`PY_FROZEN`),
+   and on some systems some other places are looked in as well (on Windows, it
+   looks in the registry which may point to a specific file).
+
+   Otherwise, *path* must be a list of directory names; each directory is
+   searched for files with any of the suffixes returned by :func:`get_suffixes`
+   above.  Invalid names in the list are silently ignored (but all list items
+   must be strings).
 
    If search is successful, the return value is a 3-element tuple ``(file,
    pathname, description)``:
