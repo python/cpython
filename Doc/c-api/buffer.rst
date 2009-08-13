@@ -144,7 +144,7 @@ Buffer related functions
       kind of buffer the caller is prepared to deal with and therefore what
       kind of buffer the exporter is allowed to return.  The buffer interface
       allows for complicated memory sharing possibilities, but some caller may
-      not be able to handle all the complexibity but may want to see if the
+      not be able to handle all the complexity but may want to see if the
       exporter will let them take a simpler view to its memory.
 
       Some exporters may not be able to share memory in every possible way and
