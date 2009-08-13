@@ -410,7 +410,7 @@ class _TemporaryFileWrapper:
             return result
     else:
         def __exit__(self, exc, value, tb):
-            pass
+            self.file.__exit__(exc, value, tb)
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
