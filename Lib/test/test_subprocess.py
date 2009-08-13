@@ -798,8 +798,24 @@ class CommandTests(unittest.TestCase):
                 if dir is not None:
                     os.rmdir(dir)
 
+
+unit_tests = [ProcessTestCase, CommandTests]
+
+if subprocess._has_poll:
+    class ProcessTestCaseNoPoll(ProcessTestCase):
+        def setUp(self):
+            subprocess._has_poll = False
+            ProcessTestCase.setUp(self)
+
+        def tearDown(self):
+            subprocess._has_poll = True
+            ProcessTestCase.tearDown(self)
+
+    unit_tests.append(ProcessTestCaseNoPoll)
+
+
 def test_main():
-    support.run_unittest(ProcessTestCase, CommandTests)
+    support.run_unittest(*unit_tests)
     support.reap_children()
 
 if __name__ == "__main__":
