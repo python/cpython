@@ -43,8 +43,9 @@ browse the table of contents (in front of the manual), or look for a specific
 function, module or term in the index (in the back).  And finally, if you enjoy
 learning about random subjects, you choose a random page number (see module
 :mod:`random`) and read a section or two.  Regardless of the order in which you
-read the sections of this manual, it helps to start with chapter :ref:`builtin`,
-as the remainder of the manual assumes familiarity with this material.
+read the sections of this manual, it helps to start with chapter
+:ref:`built-in-funcs`, as the remainder of the manual assumes familiarity with
+this material.
 
 Let the show begin!
 
