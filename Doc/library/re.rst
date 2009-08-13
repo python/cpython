@@ -635,9 +635,7 @@ form.
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
       'Baked Beans & Spam'
 
-   The pattern may be a string or an RE object; if you need to specify regular
-   expression flags, you must use a RE object, or use embedded modifiers in a
-   pattern; for example, ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
+   The pattern may be a string or an RE object.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
