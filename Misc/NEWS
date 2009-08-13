@@ -1227,6 +1227,9 @@ C-API
 Extension Modules
 -----------------
 
+- Fix a segfault in expat when given a specially crafted input lead to the
+  tokenizer not stopping.
+
 - Issue #6561: '\d' in a regex now matches only characters with
   Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
   matched characters with category 'No'.
