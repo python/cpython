@@ -169,6 +169,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6126: Fixed pdb command-line usage.
+
 - Issue #6314: logging: performs extra checks on the "level" argument.
 
 - Issue #6274: Fixed possible file descriptors leak in subprocess.py
