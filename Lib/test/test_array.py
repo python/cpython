@@ -723,22 +723,37 @@ class BaseTest(unittest.TestCase):
     def test_buffer(self):
         a = array.array(self.typecode, self.example)
         m = memoryview(a)
-        b = bytes(m)
-        self.assertEqual(b, a.tostring())
-        self.assertEqual(b[0], a.tostring()[0])
-        # Resizing is forbidden when there are buffer exports
+        expected = m.tobytes()
+        self.assertEqual(a.tostring(), expected)
+        self.assertEqual(a.tostring()[0], expected[0])
+        # Resizing is forbidden when there are buffer exports.
+        # For issue 4509, we also check after each error that
+        # the array was not modified.
         self.assertRaises(BufferError, a.append, a[0])
+        self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.extend, a[0:1])
+        self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.remove, a[0])
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, a.pop, 0)
+        self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.fromlist, a.tolist())
+        self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.fromstring, a.tostring())
+        self.assertEqual(m.tobytes(), expected)
         if self.typecode == 'u':
             self.assertRaises(BufferError, a.fromunicode, a.tounicode())
-        self.assertRaises(BufferError, operator.setitem, a, slice(0, 0), a)
-        self.assertRaises(BufferError, operator.delitem, a, 0)
-        self.assertRaises(BufferError, operator.delitem, a, slice(0, 1))
+            self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, operator.imul, a, 2)
+        self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, operator.imul, a, 0)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, operator.setitem, a, slice(0, 0), a)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, operator.delitem, a, 0)
+        self.assertEqual(m.tobytes(), expected)
+        self.assertRaises(BufferError, operator.delitem, a, slice(0, 1))
+        self.assertEqual(m.tobytes(), expected)
 
     def test_weakref(self):
         s = array.array(self.typecode, self.example)
@@ -766,26 +781,6 @@ class BaseTest(unittest.TestCase):
         # generalized to use self.typecode.
         a = array.array('H', b"1234")
         self.assertEqual(len(a) * a.itemsize, 4)
-
-    def test_memoryview_no_resize(self):
-        # Test for issue 4509.
-        a = array.array(self.typecode, self.example)
-        m = memoryview(a)
-        expected = m.tobytes()
-        self.assertRaises(BufferError, a.pop, 0)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.remove, a[0])
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.__setitem__, slice(0, 0), a)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.__delitem__, slice(0, len(a)))
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.__imul__, 2)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.__iadd__, a)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.extend, a)
-        self.assertEqual(m.tobytes(), expected)
 
 
 class StringTest(BaseTest):
