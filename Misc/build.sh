@@ -4,8 +4,10 @@
 ## does this:
 ##   svn up ; ./configure ; make ; make test ; make install ; cd Doc ; make
 ##
-## Logs are kept and rsync'ed to the host.  If there are test failure(s),
+## Logs are kept and rsync'ed to the webhost.  If there are test failure(s),
 ## information about the failure(s) is mailed.
+##
+## The user must be a member of the webmaster group locally and on webhost.
 ##
 ## This script is run on the PSF's machine as user neal via crontab.
 ##
@@ -76,7 +78,8 @@ ALWAYS_SKIP="-x $_ALWAYS_SKIP"
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.
 # test_logging causes hangs, skip it.
-LEAKY_SKIPS="-x test_logging $_ALWAYS_SKIP"
+# KBK 21Apr09: test_httpservers causes hangs, skip for now.
+LEAKY_SKIPS="-x test_compiler test_logging test_httpservers"
 
 # Change this flag to "yes" for old releases to only update/build the docs.
 BUILD_DISABLED="no"
@@ -133,9 +136,14 @@ mail_on_failure() {
 
 ## setup
 cd $DIR
+make clobber /dev/null 2>&1
+cp -p Modules/Setup.dist Modules/Setup
+# But maybe there was no Makefile - we are only building docs. Clear build:
+rm -rf build/
 mkdir -p build
-rm -f $RESULT_FILE build/*.out
 rm -rf $INSTALL_DIR
+## get the path we are building
+repo_path=$(grep "url=" .svn/entries | sed -e s/\\W*url=// -e s/\"//g)
 
 ## create results file
 TITLE="Automated Python Build Results"
@@ -153,6 +161,8 @@ echo "  </tr><tr>" >> $RESULT_FILE
 echo "    <td>Hostname:</td><td>`uname -n`</td>" >> $RESULT_FILE
 echo "  </tr><tr>" >> $RESULT_FILE
 echo "    <td>Platform:</td><td>`uname -srmpo`</td>" >> $RESULT_FILE
+echo "  </tr><tr>" >> $RESULT_FILE
+echo "    <td>URL:</td><td>$repo_path</td>" >> $RESULT_FILE
 echo "  </tr>" >> $RESULT_FILE
 echo "</table>" >> $RESULT_FILE
 echo "<ul>" >> $RESULT_FILE
@@ -223,7 +233,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
-            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network,urlfetch $LEAKY_SKIPS >& build/$F
+            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
             LEAK_PAT="($LEAKY_TESTS|sum=0)"
             NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
             place_summary_first build/$F
@@ -259,13 +269,13 @@ start=`current_time`
 # which will definitely fail with a conflict. 
 #CONFLICTED_FILE=commontex/boilerplate.tex
 #conflict_count=`grep -c "<<<" $CONFLICTED_FILE`
-make clean
 conflict_count=0
 if [ $conflict_count != 0 ]; then
     echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
     err=1
 else
-    make checkout update html >& ../build/$F
+    make clean > ../build/$F 2>&1
+    make checkout update html >> ../build/$F 2>&1
     err=$?
 fi
 update_status "Making doc" "$F" $start
@@ -279,6 +289,8 @@ echo "</body>" >> $RESULT_FILE
 echo "</html>" >> $RESULT_FILE
 
 ## copy results
+chgrp -R webmaster build/html
+chmod -R g+w build/html
 rsync $RSYNC_OPTS build/html/* $REMOTE_SYSTEM:$REMOTE_DIR
 cd ../build
 rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/

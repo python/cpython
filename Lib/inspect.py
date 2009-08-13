@@ -990,7 +990,10 @@ def getinnerframes(tb, context=1):
         tb = tb.tb_next
     return framelist
 
-currentframe = sys._getframe
+if hasattr(sys, '_getframe'):
+    currentframe = sys._getframe
+else:
+    currentframe = lambda _=None: None
 
 def stack(context=1):
     """Return a list of records for the stack above the caller's frame."""
