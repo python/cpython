@@ -140,6 +140,7 @@ class MemoryTestMixin:
         self.assertEqual(memio.getvalue(), buf * 2)
         memio.__init__(buf)
         self.assertEqual(memio.getvalue(), buf)
+        self.assertRaises(TypeError, memio.__init__, [])
 
     def test_read(self):
         buf = self.buftype("1234567890")
@@ -338,6 +339,13 @@ class MemoryTestMixin:
         self.assertEqual(test1(), buf)
         self.assertEqual(test2(), buf)
 
+    def test_instance_dict_leak(self):
+        # Test case for issue #6242.
+        # This will be caught by regrtest.py -R if this leak.
+        for _ in range(100):
+            memio = self.ioclass()
+            memio.foo = 1
+
 
 class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
@@ -526,6 +534,13 @@ class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # StringIO can duplicate newlines in universal newlines mode
         memio = self.ioclass("a\r\nb\r\n", newline=None)
         self.assertEqual(memio.read(5), "a\nb\n")
+
+    def test_newline_argument(self):
+        self.assertRaises(TypeError, self.ioclass, newline=b"\n")
+        self.assertRaises(ValueError, self.ioclass, newline="error")
+        # These should not raise an error
+        for newline in (None, "", "\n", "\r", "\r\n"):
+            self.ioclass(newline=newline)
 
 
 class CBytesIOTest(PyBytesIOTest):

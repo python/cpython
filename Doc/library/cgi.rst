@@ -88,12 +88,13 @@ input or the environment (depending on the value of various environment
 variables set according to the CGI standard).  Since it may consume standard
 input, it should be instantiated only once.
 
-The :class:`FieldStorage` instance can be indexed like a Python dictionary, and
-also supports the standard dictionary methods :meth:`__contains__` and
-:meth:`keys`.  The built-in :func:`len` is also supported.  Form fields
-containing empty strings are ignored and do not appear in the dictionary; to
-keep such values, provide a true value for the optional *keep_blank_values*
-keyword parameter when creating the :class:`FieldStorage` instance.
+The :class:`FieldStorage` instance can be indexed like a Python dictionary.
+It allows membership testing with the :keyword:`in` operator, and also supports
+the standard dictionary method :meth:`keys` and the built-in function
+:func:`len`.  Form fields containing empty strings are ignored and do not appear
+in the dictionary; to keep such values, provide a true value for the optional
+*keep_blank_values* keyword parameter when creating the :class:`FieldStorage`
+instance.
 
 For instance, the following code (which assumes that the
 :mailheader:`Content-Type` header and blank line have already been printed)
@@ -101,7 +102,7 @@ checks that the fields ``name`` and ``addr`` are both set to a non-empty
 string::
 
    form = cgi.FieldStorage()
-   if not ("name" in form and "addr" in form):
+   if "name" not in form or "addr" not in form:
        print("<H1>Error</H1>")
        print("Please fill in the name and addr fields.")
        return
