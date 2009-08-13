@@ -169,7 +169,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assert_(data.startswith(b'x'), data)
+        self.assertTrue(data.startswith(b'x'), data)
 
     def test_large_PYTHONPATH(self):
         with test.support.EnvironmentVarGuard() as env:
@@ -178,8 +178,8 @@ class CmdLineTest(unittest.TestCase):
             env['PYTHONPATH'] = path1 + os.pathsep + path2
             p = _spawn_python('-S', '-c', 'import sys; print(sys.path)')
             stdout, _ = p.communicate()
-            self.assert_(path1.encode('ascii') in stdout)
-            self.assert_(path2.encode('ascii') in stdout)
+            self.assertTrue(path1.encode('ascii') in stdout)
+            self.assertTrue(path2.encode('ascii') in stdout)
 
 
 def test_main():

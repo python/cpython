@@ -82,9 +82,9 @@ class CloseSocketTest(unittest.TestCase):
 
         response = _urlopen_with_retry("http://www.python.org/")
         sock = response.fp
-        self.assert_(not sock.closed)
+        self.assertTrue(not sock.closed)
         response.close()
-        self.assert_(sock.closed)
+        self.assertTrue(sock.closed)
 
 class OtherNetworkTests(unittest.TestCase):
     def setUp(self):
@@ -172,7 +172,7 @@ class OtherNetworkTests(unittest.TestCase):
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                            (expected_err, url, req, type(err), err))
-                    self.assert_(isinstance(err, expected_err), msg)
+                    self.assertTrue(isinstance(err, expected_err), msg)
             else:
                 with support.time_out, \
                      support.socket_peer_reset, \

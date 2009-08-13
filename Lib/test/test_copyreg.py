@@ -51,10 +51,10 @@ class CopyRegTestCase(unittest.TestCase):
                               mod, func, code)
             copyreg.add_extension(mod, func, code)
             # Should be in the registry.
-            self.assert_(copyreg._extension_registry[mod, func] == code)
-            self.assert_(copyreg._inverted_registry[code] == (mod, func))
+            self.assertTrue(copyreg._extension_registry[mod, func] == code)
+            self.assertTrue(copyreg._inverted_registry[code] == (mod, func))
             # Shouldn't be in the cache.
-            self.assert_(code not in copyreg._extension_cache)
+            self.assertTrue(code not in copyreg._extension_cache)
             # Redundant registration should be OK.
             copyreg.add_extension(mod, func, code)  # shouldn't blow up
             # Conflicting code.
@@ -81,7 +81,7 @@ class CopyRegTestCase(unittest.TestCase):
             e.restore()
 
         # Shouldn't be there anymore.
-        self.assert_((mod, func) not in copyreg._extension_registry)
+        self.assertTrue((mod, func) not in copyreg._extension_registry)
         # The code *may* be in copyreg._extension_registry, though, if
         # we happened to pick on a registered code.  So don't check for
         # that.

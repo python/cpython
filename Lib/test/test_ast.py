@@ -116,20 +116,20 @@ eval_tests = [
 
 class AST_Tests(unittest.TestCase):
 
-    def _assert_order(self, ast_node, parent_pos):
+    def _assertTrueorder(self, ast_node, parent_pos):
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
             return
         if isinstance(ast_node, (ast.expr, ast.stmt, ast.excepthandler)):
             node_pos = (ast_node.lineno, ast_node.col_offset)
-            self.assert_(node_pos >= parent_pos)
+            self.assertTrue(node_pos >= parent_pos)
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
             value = getattr(ast_node, name)
             if isinstance(value, list):
                 for child in value:
-                    self._assert_order(child, parent_pos)
+                    self._assertTrueorder(child, parent_pos)
             elif value is not None:
-                self._assert_order(value, parent_pos)
+                self._assertTrueorder(value, parent_pos)
 
     def test_snippets(self):
         for input, output, kind in ((exec_tests, exec_results, "exec"),
@@ -138,7 +138,7 @@ class AST_Tests(unittest.TestCase):
             for i, o in zip(input, output):
                 ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
                 self.assertEquals(to_tuple(ast_tree), o)
-                self._assert_order(ast_tree, (0, 0))
+                self._assertTrueorder(ast_tree, (0, 0))
 
     def test_nodeclasses(self):
         x = ast.BinOp(1, 2, 3, lineno=0)

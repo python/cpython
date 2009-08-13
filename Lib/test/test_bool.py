@@ -8,10 +8,10 @@ import os
 class BoolTest(unittest.TestCase):
 
     def assertIs(self, a, b):
-        self.assert_(a is b)
+        self.assertTrue(a is b)
 
     def assertIsNot(self, a, b):
-        self.assert_(a is not b)
+        self.assertTrue(a is not b)
 
     def test_subclass(self):
         try:
@@ -221,15 +221,15 @@ class BoolTest(unittest.TestCase):
 
     def test_boolean(self):
         self.assertEqual(True & 1, 1)
-        self.assert_(not isinstance(True & 1, bool))
+        self.assertTrue(not isinstance(True & 1, bool))
         self.assertIs(True & True, True)
 
         self.assertEqual(True | 1, 1)
-        self.assert_(not isinstance(True | 1, bool))
+        self.assertTrue(not isinstance(True | 1, bool))
         self.assertIs(True | True, True)
 
         self.assertEqual(True ^ 1, 0)
-        self.assert_(not isinstance(True ^ 1, bool))
+        self.assertTrue(not isinstance(True ^ 1, bool))
         self.assertIs(True ^ True, False)
 
     def test_fileclosed(self):

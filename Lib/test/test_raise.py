@@ -28,7 +28,7 @@ class TestRaise(unittest.TestCase):
         try:
             raise
         except RuntimeError as e:
-            self.failUnless("No active exception" in str(e))
+            self.assertTrue("No active exception" in str(e))
         else:
             self.fail("No exception raised")
 
@@ -40,7 +40,7 @@ class TestRaise(unittest.TestCase):
                 exc1 = e
                 raise
         except IndexError as exc2:
-            self.failUnless(exc1 is exc2)
+            self.assertTrue(exc1 is exc2)
         else:
             self.fail("No exception raised")
 
@@ -127,7 +127,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from 5
         except TypeError as e:
-            self.failUnless("exception cause" in str(e))
+            self.assertTrue("exception cause" in str(e))
         else:
             self.fail("No exception raised")
 
@@ -135,7 +135,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from KeyError
         except IndexError as e:
-            self.failUnless(isinstance(e.__cause__, KeyError))
+            self.assertTrue(isinstance(e.__cause__, KeyError))
         else:
             self.fail("No exception raised")
 
@@ -144,7 +144,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from cause
         except IndexError as e:
-            self.failUnless(e.__cause__ is cause)
+            self.assertTrue(e.__cause__ is cause)
         else:
             self.fail("No exception raised")
 
@@ -166,7 +166,7 @@ class TestTraceback(unittest.TestCase):
         try:
             raise IndexError()
         except IndexError as e:
-            self.failUnless(isinstance(e.__traceback__, types.TracebackType))
+            self.assertTrue(isinstance(e.__traceback__, types.TracebackType))
         else:
             self.fail("No exception raised")
 
@@ -203,7 +203,7 @@ class TestContext(unittest.TestCase):
                 raise OSError()
         except OSError as e:
             self.assertNotEqual(e.__context__, context)
-            self.failUnless(isinstance(e.__context__, context))
+            self.assertTrue(isinstance(e.__context__, context))
         else:
             self.fail("No exception raised")
 
@@ -216,7 +216,7 @@ class TestContext(unittest.TestCase):
                 raise OSError
         except OSError as e:
             self.assertNotEqual(e.__context__, context)
-            self.failUnless(isinstance(e.__context__, context))
+            self.assertTrue(isinstance(e.__context__, context))
         else:
             self.fail("No exception raised")
 
@@ -227,7 +227,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError
         except OSError as e:
-            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+            self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
         else:
             self.fail("No exception raised")
 
@@ -238,7 +238,7 @@ class TestContext(unittest.TestCase):
             except:
                 xyzzy
         except NameError as e:
-            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+            self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
         else:
             self.fail("No exception raised")
 
@@ -249,7 +249,7 @@ class TestContext(unittest.TestCase):
             finally:
                 raise OSError
         except OSError as e:
-            self.failUnless(e.__context__ is None)
+            self.assertTrue(e.__context__ is None)
         else:
             self.fail("No exception raised")
 
@@ -260,7 +260,7 @@ class TestContext(unittest.TestCase):
             finally:
                 raise OSError
         except OSError as e:
-            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+            self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
         else:
             self.fail("No exception raised")
 
@@ -274,7 +274,7 @@ class TestContext(unittest.TestCase):
             with ContextManager():
                 1/0
         except NameError as e:
-            self.failUnless(isinstance(e.__context__, ZeroDivisionError))
+            self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
         else:
             self.fail("No exception raised")
 
@@ -286,7 +286,7 @@ class TestContext(unittest.TestCase):
             except ZeroDivisionError as e:
                 raise e
         except ZeroDivisionError as e:
-            self.failUnless(e.__context__ is None, e.__context__)
+            self.assertTrue(e.__context__ is None, e.__context__)
 
     def test_reraise_cycle_broken(self):
         # Non-trivial context cycles (through re-raising a previous exception)
@@ -300,7 +300,7 @@ class TestContext(unittest.TestCase):
                 except ZeroDivisionError:
                     raise a
         except NameError as e:
-            self.failUnless(e.__context__.__context__ is None)
+            self.assertTrue(e.__context__.__context__ is None)
 
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared
@@ -320,7 +320,7 @@ class TestContext(unittest.TestCase):
                     del g
                     raise KeyError
             except Exception as e:
-                self.assert_(isinstance(e.__context__, ValueError))
+                self.assertTrue(isinstance(e.__context__, ValueError))
 
         f()
 
@@ -344,7 +344,7 @@ class TestContext(unittest.TestCase):
                     raise TypeError
             except Exception as e:
                 self.assertNotEqual(e.__context__, None)
-                self.assert_(isinstance(e.__context__, AttributeError))
+                self.assertTrue(isinstance(e.__context__, AttributeError))
 
         with support.captured_output("stderr"):
             f()

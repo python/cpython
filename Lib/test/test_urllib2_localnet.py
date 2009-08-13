@@ -438,10 +438,10 @@ class TestUrlopen(unittest.TestCase):
         handler = self.start_server()
         open_url = urllib.request.urlopen("http://localhost:%s" % handler.port)
         for attr in ("read", "close", "info", "geturl"):
-            self.assert_(hasattr(open_url, attr), "object returned from "
+            self.assertTrue(hasattr(open_url, attr), "object returned from "
                          "urlopen lacks the %s attribute" % attr)
         try:
-            self.assert_(open_url.read(), "calling 'read' failed")
+            self.assertTrue(open_url.read(), "calling 'read' failed")
         finally:
             open_url.close()
 
@@ -451,7 +451,7 @@ class TestUrlopen(unittest.TestCase):
             open_url = urllib.request.urlopen(
                 "http://localhost:%s" % handler.port)
             info_obj = open_url.info()
-            self.assert_(isinstance(info_obj, email.message.Message),
+            self.assertTrue(isinstance(info_obj, email.message.Message),
                          "object returned by 'info' is not an instance of "
                          "email.message.Message")
             self.assertEqual(info_obj.get_content_subtype(), "plain")

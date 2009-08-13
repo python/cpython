@@ -225,10 +225,10 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         no = ('n', 'no', 'f', 'false', 'off', '0', 'Off', 'No', 'N')
 
         for y in yes:
-            self.assert_(strtobool(y))
+            self.assertTrue(strtobool(y))
 
         for n in no:
-            self.assert_(not strtobool(n))
+            self.assertTrue(not strtobool(n))
 
     def test_rfc822_escape(self):
         header = 'I am a\npoor\nlonesome\nheader\n'

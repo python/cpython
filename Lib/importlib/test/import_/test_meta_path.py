@@ -64,7 +64,7 @@ class CallSignature(unittest.TestCase):
                 self.assertEquals(len(args), 2)
                 self.assertEquals(len(kwargs), 0)
                 self.assertEquals(args[0], mod_name)
-                self.assert_(args[1] is None)
+                self.assertTrue(args[1] is None)
 
     def test_with_path(self):
         # [path set]
@@ -82,9 +82,9 @@ class CallSignature(unittest.TestCase):
                 args = log[1][0]
                 kwargs = log[1][1]
                 # Assuming all arguments are positional.
-                self.assert_(not kwargs)
+                self.assertTrue(not kwargs)
                 self.assertEquals(args[0], mod_name)
-                self.assert_(args[1] is path)
+                self.assertTrue(args[1] is path)
 
 
 

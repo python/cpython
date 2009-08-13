@@ -107,7 +107,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         # what did we send ?
         headers = dict(self.conn.headers)
         self.assertEquals(headers['Content-length'], '2087')
-        self.assert_(headers['Content-type'].startswith('multipart/form-data'))
+        self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
 
         self.assertEquals(self.conn.requests, [('POST', '/pypi')])
         self.assert_((b'xxx') in self.conn.body)

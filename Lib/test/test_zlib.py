@@ -10,7 +10,7 @@ class ChecksumTestCase(unittest.TestCase):
     # checksum test cases
     def test_crc32start(self):
         self.assertEqual(zlib.crc32(b""), zlib.crc32(b"", 0))
-        self.assert_(zlib.crc32(b"abc", 0xffffffff))
+        self.assertTrue(zlib.crc32(b"abc", 0xffffffff))
 
     def test_crc32empty(self):
         self.assertEqual(zlib.crc32(b"", 0), 0)
@@ -19,7 +19,7 @@ class ChecksumTestCase(unittest.TestCase):
 
     def test_adler32start(self):
         self.assertEqual(zlib.adler32(b""), zlib.adler32(b"", 1))
-        self.assert_(zlib.adler32(b"abc", 0xffffffff))
+        self.assertTrue(zlib.adler32(b"abc", 0xffffffff))
 
     def test_adler32empty(self):
         self.assertEqual(zlib.adler32(b"", 0), 0)
@@ -111,8 +111,8 @@ class CompressObjectTestCase(unittest.TestCase):
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(data, y1 + y2)
-        self.assert_(isinstance(dco.unconsumed_tail, bytes))
-        self.assert_(isinstance(dco.unused_data, bytes))
+        self.assertTrue(isinstance(dco.unconsumed_tail, bytes))
+        self.assertTrue(isinstance(dco.unused_data, bytes))
 
     def test_compressoptions(self):
         # specify lots of options to compressobj()
@@ -157,7 +157,7 @@ class CompressObjectTestCase(unittest.TestCase):
 
         decombuf = zlib.decompress(combuf)
         # Test type of return value
-        self.assert_(isinstance(decombuf, bytes))
+        self.assertTrue(isinstance(decombuf, bytes))
 
         self.assertEqual(data, decombuf)
 
@@ -208,7 +208,7 @@ class CompressObjectTestCase(unittest.TestCase):
         while cb:
             #max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, dcx)
-            self.failIf(len(chunk) > dcx,
+            self.assertFalse(len(chunk) > dcx,
                     'chunk too big (%d>%d)' % (len(chunk), dcx))
             bufs.append(chunk)
             cb = dco.unconsumed_tail
@@ -233,7 +233,7 @@ class CompressObjectTestCase(unittest.TestCase):
         while cb:
             max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, max_length)
-            self.failIf(len(chunk) > max_length,
+            self.assertFalse(len(chunk) > max_length,
                         'chunk too big (%d>%d)' % (len(chunk),max_length))
             bufs.append(chunk)
             cb = dco.unconsumed_tail
@@ -242,7 +242,7 @@ class CompressObjectTestCase(unittest.TestCase):
         else:
             while chunk:
                 chunk = dco.decompress('', max_length)
-                self.failIf(len(chunk) > max_length,
+                self.assertFalse(len(chunk) > max_length,
                             'chunk too big (%d>%d)' % (len(chunk),max_length))
                 bufs.append(chunk)
         self.assertEqual(data, b''.join(bufs), 'Wrong data retrieved')
@@ -316,7 +316,7 @@ class CompressObjectTestCase(unittest.TestCase):
         # caused a core dump.)
 
         co = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
-        self.failUnless(co.flush())  # Returns a zlib header
+        self.assertTrue(co.flush())  # Returns a zlib header
         dco = zlib.decompressobj()
         self.assertEqual(dco.flush(), b"") # Returns nothing
 
@@ -356,7 +356,7 @@ class CompressObjectTestCase(unittest.TestCase):
             data = HAMLET_SCENE
             comp = zlib.compress(data)
             # Test type of return value
-            self.assert_(isinstance(comp, bytes))
+            self.assertTrue(isinstance(comp, bytes))
 
             d0 = zlib.decompressobj()
             bufs0 = []

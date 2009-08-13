@@ -14,7 +14,7 @@ class FinderTests(abc.FinderTests):
         # Common case.
         with util.uncache(builtin_util.NAME):
             found = machinery.BuiltinImporter.find_module(builtin_util.NAME)
-            self.assert_(found)
+            self.assertTrue(found)
 
     def test_package(self):
         # Built-in modules cannot be a package.
@@ -35,14 +35,14 @@ class FinderTests(abc.FinderTests):
     def test_failure(self):
         assert 'importlib' not in sys.builtin_module_names
         loader = machinery.BuiltinImporter.find_module('importlib')
-        self.assert_(loader is None)
+        self.assertTrue(loader is None)
 
     def test_ignore_path(self):
         # The value for 'path' should always trigger a failed import.
         with util.uncache(builtin_util.NAME):
             loader = machinery.BuiltinImporter.find_module(builtin_util.NAME,
                                                             ['pkg'])
-            self.assert_(loader is None)
+            self.assertTrue(loader is None)
 
 
 

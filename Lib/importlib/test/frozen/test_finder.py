@@ -15,15 +15,15 @@ class FinderTests(abc.FinderTests):
     def test_module(self):
         name = '__hello__'
         loader = self.find(name)
-        self.assert_(hasattr(loader, 'load_module'))
+        self.assertTrue(hasattr(loader, 'load_module'))
 
     def test_package(self):
         loader = self.find('__phello__')
-        self.assert_(hasattr(loader, 'load_module'))
+        self.assertTrue(hasattr(loader, 'load_module'))
 
     def test_module_in_package(self):
         loader = self.find('__phello__.spam', ['__phello__'])
-        self.assert_(hasattr(loader, 'load_module'))
+        self.assertTrue(hasattr(loader, 'load_module'))
 
     def test_package_in_package(self):
         # No frozen package within another package to test with.
@@ -35,7 +35,7 @@ class FinderTests(abc.FinderTests):
 
     def test_failure(self):
         loader = self.find('<not real>')
-        self.assert_(loader is None)
+        self.assertTrue(loader is None)
 
 
 def test_main():

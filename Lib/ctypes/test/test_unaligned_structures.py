@@ -28,18 +28,18 @@ class TestStructures(unittest.TestCase):
     def test_native(self):
         for typ in structures:
 ##            print typ.value
-            self.failUnlessEqual(typ.value.offset, 1)
+            self.assertEqual(typ.value.offset, 1)
             o = typ()
             o.value = 4
-            self.failUnlessEqual(o.value, 4)
+            self.assertEqual(o.value, 4)
 
     def test_swapped(self):
         for typ in byteswapped_structures:
 ##            print >> sys.stderr, typ.value
-            self.failUnlessEqual(typ.value.offset, 1)
+            self.assertEqual(typ.value.offset, 1)
             o = typ()
             o.value = 4
-            self.failUnlessEqual(o.value, 4)
+            self.assertEqual(o.value, 4)
 
 if __name__ == '__main__':
     unittest.main()

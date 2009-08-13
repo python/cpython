@@ -33,7 +33,7 @@ class CurrentTimeTest(unittest.TestCase):
             delta = dt1 - dt0
         # The difference between the system time here and the system
         # time on the server should not be too big.
-        self.assert_(delta.days <= 1)
+        self.assertTrue(delta.days <= 1)
 
 
 def test_main():

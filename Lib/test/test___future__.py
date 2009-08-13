@@ -15,7 +15,7 @@ class FutureTest(unittest.TestCase):
         for name in dir(__future__):
             obj = getattr(__future__, name, None)
             if obj is not None and isinstance(obj, __future__._Feature):
-                self.assert_(
+                self.assertTrue(
                     name in given_feature_names,
                     "%r should have been in all_feature_names" % name
                 )
@@ -30,7 +30,7 @@ class FutureTest(unittest.TestCase):
             optional = value.getOptionalRelease()
             mandatory = value.getMandatoryRelease()
 
-            a = self.assert_
+            a = self.assertTrue
             e = self.assertEqual
             def check(t, name):
                 a(isinstance(t, tuple), "%s isn't tuple" % name)

@@ -6,20 +6,20 @@ class StringArrayTestCase(unittest.TestCase):
         BUF = c_char * 4
 
         buf = BUF("a", "b", "c")
-        self.failUnlessEqual(buf.value, b"abc")
-        self.failUnlessEqual(buf.raw, b"abc\000")
+        self.assertEqual(buf.value, b"abc")
+        self.assertEqual(buf.raw, b"abc\000")
 
         buf.value = "ABCD"
-        self.failUnlessEqual(buf.value, b"ABCD")
-        self.failUnlessEqual(buf.raw, b"ABCD")
+        self.assertEqual(buf.value, b"ABCD")
+        self.assertEqual(buf.raw, b"ABCD")
 
         buf.value = "x"
-        self.failUnlessEqual(buf.value, b"x")
-        self.failUnlessEqual(buf.raw, b"x\000CD")
+        self.assertEqual(buf.value, b"x")
+        self.assertEqual(buf.raw, b"x\000CD")
 
         buf[1] = "Z"
-        self.failUnlessEqual(buf.value, b"xZCD")
-        self.failUnlessEqual(buf.raw, b"xZCD")
+        self.assertEqual(buf.value, b"xZCD")
+        self.assertEqual(buf.raw, b"xZCD")
 
         self.assertRaises(ValueError, setattr, buf, "value", "aaaaaaaa")
         self.assertRaises(TypeError, setattr, buf, "value", 42)
@@ -28,9 +28,9 @@ class StringArrayTestCase(unittest.TestCase):
         buf = c_buffer(32)
 
         buf.value = b"Hello, World"
-        self.failUnlessEqual(buf.value, b"Hello, World")
+        self.assertEqual(buf.value, b"Hello, World")
 
-        self.failUnlessRaises(TypeError, setattr, buf, "value", memoryview(b"Hello, World"))
+        self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"Hello, World"))
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 
@@ -38,7 +38,7 @@ class StringArrayTestCase(unittest.TestCase):
         buf = c_buffer(32)
 
         buf.raw = memoryview(b"Hello, World")
-        self.failUnlessEqual(buf.value, b"Hello, World")
+        self.assertEqual(buf.value, b"Hello, World")
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 
@@ -63,16 +63,16 @@ else:
             BUF = c_wchar * 4
 
             buf = BUF("a", "b", "c")
-            self.failUnlessEqual(buf.value, "abc")
+            self.assertEqual(buf.value, "abc")
 
             buf.value = "ABCD"
-            self.failUnlessEqual(buf.value, "ABCD")
+            self.assertEqual(buf.value, "ABCD")
 
             buf.value = "x"
-            self.failUnlessEqual(buf.value, "x")
+            self.assertEqual(buf.value, "x")
 
             buf[1] = "Z"
-            self.failUnlessEqual(buf.value, "xZCD")
+            self.assertEqual(buf.value, "xZCD")
 
 class StringTestCase(unittest.TestCase):
     def XX_test_basic_strings(self):
@@ -80,24 +80,24 @@ class StringTestCase(unittest.TestCase):
 
         # Cannot call len on a c_string any longer
         self.assertRaises(TypeError, len, cs)
-        self.failUnlessEqual(sizeof(cs), 7)
+        self.assertEqual(sizeof(cs), 7)
 
         # The value property is the string up to the first terminating NUL.
-        self.failUnlessEqual(cs.value, "abcdef")
-        self.failUnlessEqual(c_string("abc\000def").value, "abc")
+        self.assertEqual(cs.value, "abcdef")
+        self.assertEqual(c_string("abc\000def").value, "abc")
 
         # The raw property is the total buffer contents:
-        self.failUnlessEqual(cs.raw, "abcdef\000")
-        self.failUnlessEqual(c_string("abc\000def").raw, "abc\000def\000")
+        self.assertEqual(cs.raw, "abcdef\000")
+        self.assertEqual(c_string("abc\000def").raw, "abc\000def\000")
 
         # We can change the value:
         cs.value = "ab"
-        self.failUnlessEqual(cs.value, "ab")
-        self.failUnlessEqual(cs.raw, "ab\000\000\000\000\000")
+        self.assertEqual(cs.value, "ab")
+        self.assertEqual(cs.raw, "ab\000\000\000\000\000")
 
         cs.raw = "XY"
-        self.failUnlessEqual(cs.value, "XY")
-        self.failUnlessEqual(cs.raw, "XY\000\000\000\000\000")
+        self.assertEqual(cs.value, "XY")
+        self.assertEqual(cs.raw, "XY\000\000\000\000\000")
 
         self.assertRaises(TypeError, c_string, "123")
 
@@ -108,24 +108,24 @@ class StringTestCase(unittest.TestCase):
 
         # New in releases later than 0.4.0:
         # c_string(number) returns an empty string of size number
-        self.failUnless(len(c_string(32).raw) == 32)
+        self.assertTrue(len(c_string(32).raw) == 32)
         self.assertRaises(ValueError, c_string, -1)
         self.assertRaises(ValueError, c_string, 0)
 
         # These tests fail, because it is no longer initialized
-##        self.failUnless(c_string(2).value == "")
-##        self.failUnless(c_string(2).raw == "\000\000")
-        self.failUnless(c_string(2).raw[-1] == "\000")
-        self.failUnless(len(c_string(2).raw) == 2)
+##        self.assertTrue(c_string(2).value == "")
+##        self.assertTrue(c_string(2).raw == "\000\000")
+        self.assertTrue(c_string(2).raw[-1] == "\000")
+        self.assertTrue(len(c_string(2).raw) == 2)
 
     def XX_test_initialized_strings(self):
 
-        self.failUnless(c_string("ab", 4).raw[:2] == "ab")
-        self.failUnless(c_string("ab", 4).raw[:2:] == "ab")
-        self.failUnless(c_string("ab", 4).raw[:2:-1] == "ba")
-        self.failUnless(c_string("ab", 4).raw[:2:2] == "a")
-        self.failUnless(c_string("ab", 4).raw[-1] == "\000")
-        self.failUnless(c_string("ab", 2).raw == "a\000")
+        self.assertTrue(c_string("ab", 4).raw[:2] == "ab")
+        self.assertTrue(c_string("ab", 4).raw[:2:] == "ab")
+        self.assertTrue(c_string("ab", 4).raw[:2:-1] == "ba")
+        self.assertTrue(c_string("ab", 4).raw[:2:2] == "a")
+        self.assertTrue(c_string("ab", 4).raw[-1] == "\000")
+        self.assertTrue(c_string("ab", 2).raw == "a\000")
 
     def XX_test_toolong(self):
         cs = c_string("abcdef")
@@ -156,22 +156,22 @@ else:
             # XXX This behaviour is about to change:
             # len returns the size of the internal buffer in bytes.
             # This includes the terminating NUL character.
-            self.failUnless(sizeof(cs) == 14)
+            self.assertTrue(sizeof(cs) == 14)
 
             # The value property is the string up to the first terminating NUL.
-            self.failUnless(cs.value == "abcdef")
-            self.failUnless(c_wstring("abc\000def").value == "abc")
+            self.assertTrue(cs.value == "abcdef")
+            self.assertTrue(c_wstring("abc\000def").value == "abc")
 
-            self.failUnless(c_wstring("abc\000def").value == "abc")
+            self.assertTrue(c_wstring("abc\000def").value == "abc")
 
             # The raw property is the total buffer contents:
-            self.failUnless(cs.raw == "abcdef\000")
-            self.failUnless(c_wstring("abc\000def").raw == "abc\000def\000")
+            self.assertTrue(cs.raw == "abcdef\000")
+            self.assertTrue(c_wstring("abc\000def").raw == "abc\000def\000")
 
             # We can change the value:
             cs.value = "ab"
-            self.failUnless(cs.value == "ab")
-            self.failUnless(cs.raw == "ab\000\000\000\000\000")
+            self.assertTrue(cs.value == "ab")
+            self.assertTrue(cs.raw == "ab\000\000\000\000\000")
 
             self.assertRaises(TypeError, c_wstring, "123")
             self.assertRaises(ValueError, c_wstring, 0)

@@ -52,13 +52,13 @@ class IsTestBase(unittest.TestCase):
 
     def istest(self, predicate, exp):
         obj = eval(exp)
-        self.failUnless(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+        self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
 
         for other in self.predicates - set([predicate]):
             if predicate == inspect.isgeneratorfunction and\
                other == inspect.isfunction:
                 continue
-            self.failIf(other(obj), 'not %s(%s)' % (other.__name__, exp))
+            self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
 def generator_function_example(self):
     for i in range(2):
@@ -91,15 +91,15 @@ class TestPredicates(IsTestBase):
             self.istest(inspect.isgetsetdescriptor,
                         'type(tb.tb_frame).f_locals')
         else:
-            self.failIf(inspect.isgetsetdescriptor(type(tb.tb_frame).f_locals))
+            self.assertFalse(inspect.isgetsetdescriptor(type(tb.tb_frame).f_locals))
         if hasattr(types, 'MemberDescriptorType'):
             self.istest(inspect.ismemberdescriptor, 'datetime.timedelta.days')
         else:
-            self.failIf(inspect.ismemberdescriptor(datetime.timedelta.days))
+            self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
 
     def test_isroutine(self):
-        self.assert_(inspect.isroutine(mod.spam))
-        self.assert_(inspect.isroutine([].count))
+        self.assertTrue(inspect.isroutine(mod.spam))
+        self.assertTrue(inspect.isroutine([].count))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
@@ -117,8 +117,8 @@ class TestPredicates(IsTestBase):
         x = C()
         x.a = 42
         members = dict(inspect.getmembers(x))
-        self.assert_('a' in members)
-        self.assert_('b' not in members)
+        self.assertTrue('a' in members)
+        self.assertTrue('b' not in members)
 
 
 class TestInterpreterStack(IsTestBase):
@@ -132,7 +132,7 @@ class TestInterpreterStack(IsTestBase):
         self.istest(inspect.isframe, 'mod.fr')
 
     def test_stack(self):
-        self.assert_(len(mod.st) >= 5)
+        self.assertTrue(len(mod.st) >= 5)
         self.assertEqual(revise(*mod.st[0][1:]),
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
         self.assertEqual(revise(*mod.st[1][1:]),
@@ -449,25 +449,25 @@ class TestClassesAndFunctions(unittest.TestCase):
             datablob = '1'
 
         attrs = attrs_wo_objs(A)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', A) in attrs,
+        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
+        self.assertTrue(('c', 'class method', A) in attrs, 'missing class method')
+        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
+        self.assertTrue(('m', 'method', A) in attrs,
             'missing plain method: %r' % attrs)
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
 
         class B(A):
 
             def m(self): pass
 
         attrs = attrs_wo_objs(B)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
+        self.assertTrue(('c', 'class method', A) in attrs, 'missing class method')
+        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
+        self.assertTrue(('m', 'method', B) in attrs, 'missing plain method')
+        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
 
 
         class C(A):
@@ -476,24 +476,24 @@ class TestClassesAndFunctions(unittest.TestCase):
             def c(self): pass
 
         attrs = attrs_wo_objs(C)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', C) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
+        self.assertTrue(('c', 'method', C) in attrs, 'missing plain method')
+        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
+        self.assertTrue(('m', 'method', C) in attrs, 'missing plain method')
+        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
 
         class D(B, C):
 
             def m1(self): pass
 
         attrs = attrs_wo_objs(D)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', D) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
+        self.assertTrue(('c', 'method', C) in attrs, 'missing plain method')
+        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
+        self.assertTrue(('m', 'method', B) in attrs, 'missing plain method')
+        self.assertTrue(('m1', 'method', D) in attrs, 'missing plain method')
+        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
 
 def test_main():
     run_unittest(TestDecorators, TestRetrievingSourceCode, TestOneliners,

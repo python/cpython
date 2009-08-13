@@ -71,10 +71,10 @@ class TestEPoll(unittest.TestCase):
             ep = select.epoll(16)
         except OSError as e:
             raise AssertionError(str(e))
-        self.assert_(ep.fileno() > 0, ep.fileno())
-        self.assert_(not ep.closed)
+        self.assertTrue(ep.fileno() > 0, ep.fileno())
+        self.assertTrue(not ep.closed)
         ep.close()
-        self.assert_(ep.closed)
+        self.assertTrue(ep.closed)
         self.assertRaises(ValueError, ep.fileno)
 
     def test_badcreate(self):
@@ -141,7 +141,7 @@ class TestEPoll(unittest.TestCase):
         try:
             ep2.poll(1, 4)
         except IOError as e:
-            self.failUnlessEqual(e.args[0], errno.EBADF, e)
+            self.assertEqual(e.args[0], errno.EBADF, e)
         else:
             self.fail("epoll on closed fd didn't raise EBADF")
 
@@ -157,7 +157,7 @@ class TestEPoll(unittest.TestCase):
         now = time.time()
         events = ep.poll(1, 4)
         then = time.time()
-        self.failIf(then - now > 0.1, then - now)
+        self.assertFalse(then - now > 0.1, then - now)
 
         events.sort()
         expected = [(client.fileno(), select.EPOLLOUT),
@@ -165,12 +165,12 @@ class TestEPoll(unittest.TestCase):
         expected.sort()
 
         self.assertEquals(events, expected)
-        self.failIf(then - now > 0.01, then - now)
+        self.assertFalse(then - now > 0.01, then - now)
 
         now = time.time()
         events = ep.poll(timeout=2.1, maxevents=4)
         then = time.time()
-        self.failIf(events)
+        self.assertFalse(events)
 
         client.send(b"Hello!")
         server.send(b"world!!!")
@@ -178,7 +178,7 @@ class TestEPoll(unittest.TestCase):
         now = time.time()
         events = ep.poll(1, 4)
         then = time.time()
-        self.failIf(then - now > 0.01)
+        self.assertFalse(then - now > 0.01)
 
         events.sort()
         expected = [(client.fileno(), select.EPOLLIN | select.EPOLLOUT),
@@ -192,7 +192,7 @@ class TestEPoll(unittest.TestCase):
         now = time.time()
         events = ep.poll(1, 4)
         then = time.time()
-        self.failIf(then - now > 0.01)
+        self.assertFalse(then - now > 0.01)
 
         expected = [(server.fileno(), select.EPOLLOUT)]
         self.assertEquals(events, expected)
@@ -211,7 +211,7 @@ class TestEPoll(unittest.TestCase):
         now = time.time()
         events = ep.poll(1, 4)
         then = time.time()
-        self.failIf(then - now > 0.01)
+        self.assertFalse(then - now > 0.01)
 
         server.close()
         ep.unregister(fd)

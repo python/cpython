@@ -19,7 +19,7 @@ class PathHookTests(unittest.TestCase):
     def test_success(self):
         # Path hook should handle a directory where a known extension module
         # exists.
-        self.assert_(hasattr(self.hook(util.PATH), 'find_module'))
+        self.assertTrue(hasattr(self.hook(util.PATH), 'find_module'))
 
 
 def test_main():

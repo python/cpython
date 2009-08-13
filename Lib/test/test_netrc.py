@@ -34,11 +34,11 @@ class NetrcTestCase(unittest.TestCase):
 
     def test_case_1(self):
         nrc = netrc.netrc(temp_filename)
-        self.assert_(nrc.macros == {'macro1':['line1\n', 'line2\n'],
+        self.assertTrue(nrc.macros == {'macro1':['line1\n', 'line2\n'],
                                            'macro2':['line3\n', 'line4\n']}
                                            )
-        self.assert_(nrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
-        self.assert_(nrc.hosts['default'] == ('log2', None, 'pass2'))
+        self.assertTrue(nrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
+        self.assertTrue(nrc.hosts['default'] == ('log2', None, 'pass2'))
 
 def test_main():
     support.run_unittest(NetrcTestCase)

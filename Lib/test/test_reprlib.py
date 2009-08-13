@@ -123,12 +123,12 @@ class ReprTests(unittest.TestCase):
         eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
-        self.failUnless(s.startswith("<class "))
-        self.failUnless(s.endswith(">"))
-        self.failUnless(s.find("...") in [12, 13])
+        self.assertTrue(s.startswith("<class "))
+        self.assertTrue(s.endswith(">"))
+        self.assertTrue(s.find("...") in [12, 13])
 
     def test_lambda(self):
-        self.failUnless(repr(lambda x: x).startswith(
+        self.assertTrue(repr(lambda x: x).startswith(
             "<function <lambda"))
         # XXX anonymous functions?  see func_repr
 
@@ -137,7 +137,7 @@ class ReprTests(unittest.TestCase):
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
-        self.failUnless(repr(''.split).startswith(
+        self.assertTrue(repr(''.split).startswith(
             '<built-in method split of str object at 0x'))
 
     def test_range(self):
@@ -178,9 +178,9 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.failUnless(repr(x).startswith('<staticmethod object at 0x'))
+        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
         x = classmethod(C.foo)
-        self.failUnless(repr(x).startswith('<classmethod object at 0x'))
+        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
 
     def test_unsortable(self):
         # Repr.repr() used to call sorted() on sets, frozensets and dicts
@@ -267,7 +267,7 @@ class baz:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
-        self.failUnless(repr(ibaz).startswith(
+        self.assertTrue(repr(ibaz).startswith(
             "<%s.baz object at 0x" % baz.__name__))
 
     def test_method(self):
@@ -278,11 +278,11 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
         # Unbound methods first
-        self.failUnless(repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod).startswith(
+        self.assertTrue(repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod).startswith(
         '<function amethod'))
         # Bound method next
         iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
-        self.failUnless(repr(iqux.amethod).startswith(
+        self.assertTrue(repr(iqux.amethod).startswith(
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa object at 0x' \
             % (qux.__name__,) ))
 

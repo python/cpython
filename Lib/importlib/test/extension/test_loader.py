@@ -23,8 +23,8 @@ class LoaderTests(abc.LoaderTests):
                                 ('__file__', ext_util.FILEPATH),
                                 ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
-            self.assert_(ext_util.NAME in sys.modules)
-            self.assert_(isinstance(module.__loader__,
+            self.assertTrue(ext_util.NAME in sys.modules)
+            self.assertTrue(isinstance(module.__loader__,
                                     _bootstrap._ExtensionFileLoader))
 
     def test_package(self):
@@ -39,7 +39,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache(ext_util.NAME):
             module1 = self.load_module(ext_util.NAME)
             module2 = self.load_module(ext_util.NAME)
-            self.assert_(module1 is module2)
+            self.assertTrue(module1 is module2)
 
     def test_state_after_failure(self):
         # No easy way to trigger a failure after a successful import.

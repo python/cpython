@@ -23,7 +23,7 @@ class CodeopTests(unittest.TestCase):
         '''succeed iff str is a valid piece of code'''
         if is_jython:
             code = compile_command(str, "<input>", symbol)
-            self.assert_(code)
+            self.assertTrue(code)
             if symbol == "single":
                 d,r = {},{}
                 saved_stdout = sys.stdout
@@ -52,9 +52,9 @@ class CodeopTests(unittest.TestCase):
             compile_command(str,symbol=symbol)
             self.fail("No exception thrown for invalid code")
         except SyntaxError:
-            self.assert_(is_syntax)
+            self.assertTrue(is_syntax)
         except OverflowError:
-            self.assert_(not is_syntax)
+            self.assertTrue(not is_syntax)
 
     def test_valid(self):
         av = self.assertValid

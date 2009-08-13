@@ -22,9 +22,9 @@ class RobotTestCase(unittest.TestCase):
             url = self.url
             agent = self.agent
         if self.good:
-            self.failUnless(self.parser.can_fetch(agent, url))
+            self.assertTrue(self.parser.can_fetch(agent, url))
         else:
-            self.failIf(self.parser.can_fetch(agent, url))
+            self.assertFalse(self.parser.can_fetch(agent, url))
 
     def __str__(self):
         return self.str

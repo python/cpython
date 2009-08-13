@@ -176,24 +176,24 @@ class BuiltinTest(unittest.TestCase):
 
     def test_neg(self):
         x = -sys.maxsize-1
-        self.assert_(isinstance(x, int))
+        self.assertTrue(isinstance(x, int))
         self.assertEqual(-x, sys.maxsize+1)
 
     # XXX(nnorwitz): This test case for callable should probably be removed.
     def test_callable(self):
-        self.assert_(hasattr(len, '__call__'))
+        self.assertTrue(hasattr(len, '__call__'))
         def f(): pass
-        self.assert_(hasattr(f, '__call__'))
+        self.assertTrue(hasattr(f, '__call__'))
         class C:
             def meth(self): pass
-        self.assert_(hasattr(C, '__call__'))
+        self.assertTrue(hasattr(C, '__call__'))
         x = C()
-        self.assert_(hasattr(x.meth, '__call__'))
-        self.assert_(not hasattr(x, '__call__'))
+        self.assertTrue(hasattr(x.meth, '__call__'))
+        self.assertTrue(not hasattr(x, '__call__'))
         class D(C):
             def __call__(self): pass
         y = D()
-        self.assert_(hasattr(y, '__call__'))
+        self.assertTrue(hasattr(y, '__call__'))
         y()
 
     def test_chr(self):
@@ -220,7 +220,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises((OverflowError, ValueError), chr, 2**32)
 
     def test_cmp(self):
-        self.assert_(not hasattr(builtins, "cmp"))
+        self.assertTrue(not hasattr(builtins, "cmp"))
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -252,11 +252,11 @@ class BuiltinTest(unittest.TestCase):
 
         # dir() - local scope
         local_var = 1
-        self.assert_('local_var' in dir())
+        self.assertTrue('local_var' in dir())
 
         # dir(module)
         import sys
-        self.assert_('exit' in dir(sys))
+        self.assertTrue('exit' in dir(sys))
 
         # dir(module_with_invalid__dict__)
         import types
@@ -266,8 +266,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, dir, f)
 
         # dir(type)
-        self.assert_("strip" in dir(str))
-        self.assert_("__mro__" not in dir(str))
+        self.assertTrue("strip" in dir(str))
+        self.assertTrue("__mro__" not in dir(str))
 
         # dir(obj)
         class Foo(object):
@@ -276,13 +276,13 @@ class BuiltinTest(unittest.TestCase):
                 self.y = 8
                 self.z = 9
         f = Foo()
-        self.assert_("y" in dir(f))
+        self.assertTrue("y" in dir(f))
 
         # dir(obj_no__dict__)
         class Foo(object):
             __slots__ = []
         f = Foo()
-        self.assert_("__repr__" in dir(f))
+        self.assertTrue("__repr__" in dir(f))
 
         # dir(obj_no__class__with__dict__)
         # (an ugly trick to cause getattr(f, "__class__") to fail)
@@ -291,15 +291,15 @@ class BuiltinTest(unittest.TestCase):
             def __init__(self):
                 self.bar = "wow"
         f = Foo()
-        self.assert_("__repr__" not in dir(f))
-        self.assert_("bar" in dir(f))
+        self.assertTrue("__repr__" not in dir(f))
+        self.assertTrue("bar" in dir(f))
 
         # dir(obj_using __dir__)
         class Foo(object):
             def __dir__(self):
                 return ["kan", "ga", "roo"]
         f = Foo()
-        self.assert_(dir(f) == ["ga", "kan", "roo"])
+        self.assertTrue(dir(f) == ["ga", "kan", "roo"])
 
         # dir(obj__dir__not_list)
         class Foo(object):
@@ -334,10 +334,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(divmod(-sys.maxsize-1, -1),
                          (sys.maxsize+1, 0))
 
-        self.assert_(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
-        self.assert_(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
-        self.assert_(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))
-        self.assert_(not fcmp(divmod(-3.25, -1.0), (3.0, -0.25)))
+        self.assertTrue(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
+        self.assertTrue(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
+        self.assertTrue(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))
+        self.assertTrue(not fcmp(divmod(-3.25, -1.0), (3.0, -0.25)))
 
         self.assertRaises(TypeError, divmod)
 
@@ -489,7 +489,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_getattr(self):
         import sys
-        self.assert_(getattr(sys, 'stdout') is sys.stdout)
+        self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
@@ -497,7 +497,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_hasattr(self):
         import sys
-        self.assert_(hasattr(sys, 'stdout'))
+        self.assertTrue(hasattr(sys, 'stdout'))
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
         self.assertEqual(False, hasattr(sys, chr(sys.maxunicode)))
@@ -575,11 +575,11 @@ class BuiltinTest(unittest.TestCase):
         c = C()
         d = D()
         e = E()
-        self.assert_(isinstance(c, C))
-        self.assert_(isinstance(d, C))
-        self.assert_(not isinstance(e, C))
-        self.assert_(not isinstance(c, D))
-        self.assert_(not isinstance('foo', E))
+        self.assertTrue(isinstance(c, C))
+        self.assertTrue(isinstance(d, C))
+        self.assertTrue(not isinstance(e, C))
+        self.assertTrue(not isinstance(c, D))
+        self.assertTrue(not isinstance('foo', E))
         self.assertRaises(TypeError, isinstance, E, 'foo')
         self.assertRaises(TypeError, isinstance)
 
@@ -593,9 +593,9 @@ class BuiltinTest(unittest.TestCase):
         c = C()
         d = D()
         e = E()
-        self.assert_(issubclass(D, C))
-        self.assert_(issubclass(C, C))
-        self.assert_(not issubclass(C, D))
+        self.assertTrue(issubclass(D, C))
+        self.assertTrue(issubclass(C, C))
+        self.assertTrue(not issubclass(C, D))
         self.assertRaises(TypeError, issubclass, 'foo', E)
         self.assertRaises(TypeError, issubclass, E, 'foo')
         self.assertRaises(TypeError, issubclass)
@@ -958,18 +958,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(range(a+4, a, -2)), [a+4, a+2])
 
         seq = list(range(a, b, c))
-        self.assert_(a in seq)
-        self.assert_(b not in seq)
+        self.assertTrue(a in seq)
+        self.assertTrue(b not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(b, a, -c))
-        self.assert_(b in seq)
-        self.assert_(a not in seq)
+        self.assertTrue(b in seq)
+        self.assertTrue(a not in seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(-a, -b, -c))
-        self.assert_(-a in seq)
-        self.assert_(-b not in seq)
+        self.assertTrue(-a in seq)
+        self.assertTrue(-b not in seq)
         self.assertEqual(len(seq), 2)
 
         self.assertRaises(TypeError, range)

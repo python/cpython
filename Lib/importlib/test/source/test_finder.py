@@ -53,7 +53,7 @@ class FinderTests(abc.FinderTests):
                 for name in unlink:
                     os.unlink(mapping[name])
             loader = self.import_(mapping['.root'], test)
-            self.assert_(hasattr(loader, 'load_module'))
+            self.assertTrue(hasattr(loader, 'load_module'))
             return loader
 
     def test_module(self):
@@ -79,7 +79,7 @@ class FinderTests(abc.FinderTests):
         with source_util.create_modules('pkg.__init__', 'pkg.sub') as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
-            self.assert_(hasattr(loader, 'load_module'))
+            self.assertTrue(hasattr(loader, 'load_module'))
 
     # [sub package]
     def test_package_in_package(self):
@@ -87,7 +87,7 @@ class FinderTests(abc.FinderTests):
         with context as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
-            self.assert_(hasattr(loader, 'load_module'))
+            self.assertTrue(hasattr(loader, 'load_module'))
 
     # [sub empty]
     def test_empty_sub_directory(self):
@@ -105,13 +105,13 @@ class FinderTests(abc.FinderTests):
         # XXX This is not a blackbox test!
         name = '_temp'
         loader = self.run_test(name, {'{0}.__init__'.format(name), name})
-        self.assert_('__init__' in loader._base_path)
+        self.assertTrue('__init__' in loader._base_path)
 
 
     def test_failure(self):
         with source_util.create_modules('blah') as mapping:
             nothing = self.import_(mapping['.root'], 'sdfsadsadf')
-            self.assert_(nothing is None)
+            self.assertTrue(nothing is None)
 
     # [empty dir]
     def test_empty_dir(self):

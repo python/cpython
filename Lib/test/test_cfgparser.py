@@ -76,16 +76,16 @@ class TestCaseBase(unittest.TestCase):
         eq(cf.get('Spaces', 'key with spaces'), 'value')
         eq(cf.get('Spaces', 'another with spaces'), 'splat!')
 
-        self.failIf('__name__' in cf.options("Foo Bar"),
+        self.assertFalse('__name__' in cf.options("Foo Bar"),
                     '__name__ "option" should not be exposed by the API!')
 
         # Make sure the right things happen for remove_option();
         # added to include check for SourceForge bug #123324:
-        self.failUnless(cf.remove_option('Foo Bar', 'foo'),
+        self.assertTrue(cf.remove_option('Foo Bar', 'foo'),
                         "remove_option() failed to report existence of option")
-        self.failIf(cf.has_option('Foo Bar', 'foo'),
+        self.assertFalse(cf.has_option('Foo Bar', 'foo'),
                     "remove_option() failed to remove option")
-        self.failIf(cf.remove_option('Foo Bar', 'foo'),
+        self.assertFalse(cf.remove_option('Foo Bar', 'foo'),
                     "remove_option() failed to report non-existence of option"
                     " that was removed")
 
@@ -107,10 +107,10 @@ class TestCaseBase(unittest.TestCase):
         eq(cf.options("a"), ["b"])
         eq(cf.get("a", "b"), "value",
            "could not locate option, expecting case-insensitive option names")
-        self.failUnless(cf.has_option("a", "b"))
+        self.assertTrue(cf.has_option("a", "b"))
         cf.set("A", "A-B", "A-B value")
         for opt in ("a-b", "A-b", "a-B", "A-B"):
-            self.failUnless(
+            self.assertTrue(
                 cf.has_option("A", opt),
                 "has_option() returned false for option which should exist")
         eq(cf.options("A"), ["a-b"])
@@ -127,7 +127,7 @@ class TestCaseBase(unittest.TestCase):
         # SF bug #561822:
         cf = self.fromstring("[section]\nnekey=nevalue\n",
                              defaults={"key":"value"})
-        self.failUnless(cf.has_option("section", "Key"))
+        self.assertTrue(cf.has_option("section", "Key"))
 
 
     def test_default_case_sensitivity(self):
@@ -163,7 +163,7 @@ class TestCaseBase(unittest.TestCase):
         cf = self.newconfig()
         self.assertEqual(cf.sections(), [],
                          "new ConfigParser should have no defined sections")
-        self.failIf(cf.has_section("Foo"),
+        self.assertFalse(cf.has_section("Foo"),
                     "new ConfigParser should have no acknowledged sections")
         self.assertRaises(configparser.NoSectionError,
                           cf.options, "Foo")
@@ -202,8 +202,8 @@ class TestCaseBase(unittest.TestCase):
             "E5=FALSE AND MORE"
             )
         for x in range(1, 5):
-            self.failUnless(cf.getboolean('BOOLTEST', 't%d' % x))
-            self.failIf(cf.getboolean('BOOLTEST', 'f%d' % x))
+            self.assertTrue(cf.getboolean('BOOLTEST', 't%d' % x))
+            self.assertFalse(cf.getboolean('BOOLTEST', 'f%d' % x))
             self.assertRaises(ValueError,
                               cf.getboolean, 'BOOLTEST', 'e%d' % x)
 
