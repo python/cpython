@@ -8,66 +8,66 @@ from stringprep import *
 
 class StringprepTests(unittest.TestCase):
     def test(self):
-        self.failUnless(in_table_a1("\u0221"))
-        self.failIf(in_table_a1("\u0222"))
+        self.assertTrue(in_table_a1("\u0221"))
+        self.assertFalse(in_table_a1("\u0222"))
 
-        self.failUnless(in_table_b1("\u00ad"))
-        self.failIf(in_table_b1("\u00ae"))
+        self.assertTrue(in_table_b1("\u00ad"))
+        self.assertFalse(in_table_b1("\u00ae"))
 
-        self.failUnless(map_table_b2("\u0041"), "\u0061")
-        self.failUnless(map_table_b2("\u0061"), "\u0061")
+        self.assertTrue(map_table_b2("\u0041"), "\u0061")
+        self.assertTrue(map_table_b2("\u0061"), "\u0061")
 
-        self.failUnless(map_table_b3("\u0041"), "\u0061")
-        self.failUnless(map_table_b3("\u0061"), "\u0061")
+        self.assertTrue(map_table_b3("\u0041"), "\u0061")
+        self.assertTrue(map_table_b3("\u0061"), "\u0061")
 
-        self.failUnless(in_table_c11("\u0020"))
-        self.failIf(in_table_c11("\u0021"))
+        self.assertTrue(in_table_c11("\u0020"))
+        self.assertFalse(in_table_c11("\u0021"))
 
-        self.failUnless(in_table_c12("\u00a0"))
-        self.failIf(in_table_c12("\u00a1"))
+        self.assertTrue(in_table_c12("\u00a0"))
+        self.assertFalse(in_table_c12("\u00a1"))
 
-        self.failUnless(in_table_c12("\u00a0"))
-        self.failIf(in_table_c12("\u00a1"))
+        self.assertTrue(in_table_c12("\u00a0"))
+        self.assertFalse(in_table_c12("\u00a1"))
 
-        self.failUnless(in_table_c11_c12("\u00a0"))
-        self.failIf(in_table_c11_c12("\u00a1"))
+        self.assertTrue(in_table_c11_c12("\u00a0"))
+        self.assertFalse(in_table_c11_c12("\u00a1"))
 
-        self.failUnless(in_table_c21("\u001f"))
-        self.failIf(in_table_c21("\u0020"))
+        self.assertTrue(in_table_c21("\u001f"))
+        self.assertFalse(in_table_c21("\u0020"))
 
-        self.failUnless(in_table_c22("\u009f"))
-        self.failIf(in_table_c22("\u00a0"))
+        self.assertTrue(in_table_c22("\u009f"))
+        self.assertFalse(in_table_c22("\u00a0"))
 
-        self.failUnless(in_table_c21_c22("\u009f"))
-        self.failIf(in_table_c21_c22("\u00a0"))
+        self.assertTrue(in_table_c21_c22("\u009f"))
+        self.assertFalse(in_table_c21_c22("\u00a0"))
 
-        self.failUnless(in_table_c3("\ue000"))
-        self.failIf(in_table_c3("\uf900"))
+        self.assertTrue(in_table_c3("\ue000"))
+        self.assertFalse(in_table_c3("\uf900"))
 
-        self.failUnless(in_table_c4("\uffff"))
-        self.failIf(in_table_c4("\u0000"))
+        self.assertTrue(in_table_c4("\uffff"))
+        self.assertFalse(in_table_c4("\u0000"))
 
-        self.failUnless(in_table_c5("\ud800"))
-        self.failIf(in_table_c5("\ud7ff"))
+        self.assertTrue(in_table_c5("\ud800"))
+        self.assertFalse(in_table_c5("\ud7ff"))
 
-        self.failUnless(in_table_c6("\ufff9"))
-        self.failIf(in_table_c6("\ufffe"))
+        self.assertTrue(in_table_c6("\ufff9"))
+        self.assertFalse(in_table_c6("\ufffe"))
 
-        self.failUnless(in_table_c7("\u2ff0"))
-        self.failIf(in_table_c7("\u2ffc"))
+        self.assertTrue(in_table_c7("\u2ff0"))
+        self.assertFalse(in_table_c7("\u2ffc"))
 
-        self.failUnless(in_table_c8("\u0340"))
-        self.failIf(in_table_c8("\u0342"))
+        self.assertTrue(in_table_c8("\u0340"))
+        self.assertFalse(in_table_c8("\u0342"))
 
         # C.9 is not in the bmp
-        # self.failUnless(in_table_c9(u"\U000E0001"))
-        # self.failIf(in_table_c8(u"\U000E0002"))
+        # self.assertTrue(in_table_c9(u"\U000E0001"))
+        # self.assertFalse(in_table_c8(u"\U000E0002"))
 
-        self.failUnless(in_table_d1("\u05be"))
-        self.failIf(in_table_d1("\u05bf"))
+        self.assertTrue(in_table_d1("\u05be"))
+        self.assertFalse(in_table_d1("\u05bf"))
 
-        self.failUnless(in_table_d2("\u0041"))
-        self.failIf(in_table_d2("\u0040"))
+        self.assertTrue(in_table_d2("\u0041"))
+        self.assertFalse(in_table_d2("\u0040"))
 
         # This would generate a hash of all predicates. However, running
         # it is quite expensive, and only serves to detect changes in the

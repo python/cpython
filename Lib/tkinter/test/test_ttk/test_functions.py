@@ -27,12 +27,12 @@ class InternalFunctionsTest(unittest.TestCase):
     def test_format_optdict(self):
         def check_against(fmt_opts, result):
             for i in range(0, len(fmt_opts), 2):
-                self.failUnlessEqual(result.pop(fmt_opts[i]), fmt_opts[i + 1])
+                self.assertEqual(result.pop(fmt_opts[i]), fmt_opts[i + 1])
             if result:
                 self.fail("result still got elements: %s" % result)
 
         # passing an empty dict should return an empty object (tuple here)
-        self.failIf(ttk._format_optdict({}))
+        self.assertFalse(ttk._format_optdict({}))
 
         # check list formatting
         check_against(
@@ -62,7 +62,7 @@ class InternalFunctionsTest(unittest.TestCase):
         # check if giving unicode keys is fine
         check_against(ttk._format_optdict(opts), {'-αβγ': True, '-á': False})
         # opts should remain unchanged
-        self.failUnlessEqual(opts, orig_opts)
+        self.assertEqual(opts, orig_opts)
 
         # passing values with spaces inside a tuple/list
         check_against(
@@ -72,113 +72,113 @@ class InternalFunctionsTest(unittest.TestCase):
 
         # ignore an option
         amount_opts = len(ttk._format_optdict(opts, ignore=('á'))) / 2
-        self.failUnlessEqual(amount_opts, len(opts) - 1)
+        self.assertEqual(amount_opts, len(opts) - 1)
 
         # ignore non-existing options
         amount_opts = len(ttk._format_optdict(opts, ignore=('á', 'b'))) / 2
-        self.failUnlessEqual(amount_opts, len(opts) - 1)
+        self.assertEqual(amount_opts, len(opts) - 1)
 
         # ignore every option
-        self.failIf(ttk._format_optdict(opts, ignore=list(opts.keys())))
+        self.assertFalse(ttk._format_optdict(opts, ignore=list(opts.keys())))
 
 
     def test_format_mapdict(self):
         opts = {'a': [('b', 'c', 'val'), ('d', 'otherval'), ('', 'single')]}
         result = ttk._format_mapdict(opts)
-        self.failUnlessEqual(len(result), len(list(opts.keys())) * 2)
-        self.failUnlessEqual(result, ('-a', '{b c} val d otherval {} single'))
-        self.failUnlessEqual(ttk._format_mapdict(opts, script=True),
+        self.assertEqual(len(result), len(list(opts.keys())) * 2)
+        self.assertEqual(result, ('-a', '{b c} val d otherval {} single'))
+        self.assertEqual(ttk._format_mapdict(opts, script=True),
             ('-a', '{{b c} val d otherval {} single}'))
 
-        self.failUnlessEqual(ttk._format_mapdict({2: []}), ('-2', ''))
+        self.assertEqual(ttk._format_mapdict({2: []}), ('-2', ''))
 
         opts = {'üñíćódè': [('á', 'vãl')]}
         result = ttk._format_mapdict(opts)
-        self.failUnlessEqual(result, ('-üñíćódè', 'á vãl'))
+        self.assertEqual(result, ('-üñíćódè', 'á vãl'))
 
         # empty states
         valid = {'opt': [('', '', 'hi')]}
-        self.failUnlessEqual(ttk._format_mapdict(valid), ('-opt', '{ } hi'))
+        self.assertEqual(ttk._format_mapdict(valid), ('-opt', '{ } hi'))
 
         # when passing multiple states, they all must be strings
         invalid = {'opt': [(1, 2, 'valid val')]}
-        self.failUnlessRaises(TypeError, ttk._format_mapdict, invalid)
+        self.assertRaises(TypeError, ttk._format_mapdict, invalid)
         invalid = {'opt': [([1], '2', 'valid val')]}
-        self.failUnlessRaises(TypeError, ttk._format_mapdict, invalid)
+        self.assertRaises(TypeError, ttk._format_mapdict, invalid)
         # but when passing a single state, it can be anything
         valid = {'opt': [[1, 'value']]}
-        self.failUnlessEqual(ttk._format_mapdict(valid), ('-opt', '1 value'))
+        self.assertEqual(ttk._format_mapdict(valid), ('-opt', '1 value'))
         # special attention to single states which evalute to False
         for stateval in (None, 0, False, '', set()): # just some samples
             valid = {'opt': [(stateval, 'value')]}
-            self.failUnlessEqual(ttk._format_mapdict(valid),
+            self.assertEqual(ttk._format_mapdict(valid),
                 ('-opt', '{} value'))
 
         # values must be iterable
         opts = {'a': None}
-        self.failUnlessRaises(TypeError, ttk._format_mapdict, opts)
+        self.assertRaises(TypeError, ttk._format_mapdict, opts)
 
         # items in the value must have size >= 2
-        self.failUnlessRaises(IndexError, ttk._format_mapdict,
+        self.assertRaises(IndexError, ttk._format_mapdict,
             {'a': [('invalid', )]})
 
 
     def test_format_elemcreate(self):
-        self.failUnless(ttk._format_elemcreate(None), (None, ()))
+        self.assertTrue(ttk._format_elemcreate(None), (None, ()))
 
         ## Testing type = image
         # image type expects at least an image name, so this should raise
         # IndexError since it tries to access the index 0 of an empty tuple
-        self.failUnlessRaises(IndexError, ttk._format_elemcreate, 'image')
+        self.assertRaises(IndexError, ttk._format_elemcreate, 'image')
 
         # don't format returned values as a tcl script
         # minimum acceptable for image type
-        self.failUnlessEqual(ttk._format_elemcreate('image', False, 'test'),
+        self.assertEqual(ttk._format_elemcreate('image', False, 'test'),
             ("test ", ()))
         # specifiyng a state spec
-        self.failUnlessEqual(ttk._format_elemcreate('image', False, 'test',
+        self.assertEqual(ttk._format_elemcreate('image', False, 'test',
             ('', 'a')), ("test {} a", ()))
         # state spec with multiple states
-        self.failUnlessEqual(ttk._format_elemcreate('image', False, 'test',
+        self.assertEqual(ttk._format_elemcreate('image', False, 'test',
             ('a', 'b', 'c')), ("test {a b} c", ()))
         # state spec and options
-        self.failUnlessEqual(ttk._format_elemcreate('image', False, 'test',
+        self.assertEqual(ttk._format_elemcreate('image', False, 'test',
             ('a', 'b'), a='x', b='y'), ("test a b", ("-a", "x", "-b", "y")))
         # format returned values as a tcl script
         # state spec with multiple states and an option with a multivalue
-        self.failUnlessEqual(ttk._format_elemcreate('image', True, 'test',
+        self.assertEqual(ttk._format_elemcreate('image', True, 'test',
             ('a', 'b', 'c', 'd'), x=[2, 3]), ("{test {a b c} d}", "-x {2 3}"))
 
         ## Testing type = vsapi
         # vsapi type expects at least a class name and a part_id, so this
         # should raise an ValueError since it tries to get two elements from
         # an empty tuple
-        self.failUnlessRaises(ValueError, ttk._format_elemcreate, 'vsapi')
+        self.assertRaises(ValueError, ttk._format_elemcreate, 'vsapi')
 
         # don't format returned values as a tcl script
         # minimum acceptable for vsapi
-        self.failUnlessEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b'),
+        self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b'),
             ("a b ", ()))
         # now with a state spec with multiple states
-        self.failUnlessEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
+        self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
             ('a', 'b', 'c')), ("a b {a b} c", ()))
         # state spec and option
-        self.failUnlessEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
+        self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
             ('a', 'b'), opt='x'), ("a b a b", ("-opt", "x")))
         # format returned values as a tcl script
         # state spec with a multivalue and an option
-        self.failUnlessEqual(ttk._format_elemcreate('vsapi', True, 'a', 'b',
+        self.assertEqual(ttk._format_elemcreate('vsapi', True, 'a', 'b',
             ('a', 'b', [1, 2]), opt='x'), ("{a b {a b} {1 2}}", "-opt x"))
 
         # Testing type = from
         # from type expects at least a type name
-        self.failUnlessRaises(IndexError, ttk._format_elemcreate, 'from')
+        self.assertRaises(IndexError, ttk._format_elemcreate, 'from')
 
-        self.failUnlessEqual(ttk._format_elemcreate('from', False, 'a'),
+        self.assertEqual(ttk._format_elemcreate('from', False, 'a'),
             ('a', ()))
-        self.failUnlessEqual(ttk._format_elemcreate('from', False, 'a', 'b'),
+        self.assertEqual(ttk._format_elemcreate('from', False, 'a', 'b'),
             ('a', ('b', )))
-        self.failUnlessEqual(ttk._format_elemcreate('from', True, 'a', 'b'),
+        self.assertEqual(ttk._format_elemcreate('from', True, 'a', 'b'),
             ('{a}', 'b'))
 
 
@@ -207,77 +207,77 @@ class InternalFunctionsTest(unittest.TestCase):
                     spaces(2 * indent_size), spaces(indent_size), spaces()))
 
         # empty layout
-        self.failUnlessEqual(ttk._format_layoutlist([])[0], '')
+        self.assertEqual(ttk._format_layoutlist([])[0], '')
 
         # _format_layoutlist always expects the second item (in every item)
         # to act like a dict (except when the value evalutes to False).
-        self.failUnlessRaises(AttributeError,
+        self.assertRaises(AttributeError,
             ttk._format_layoutlist, [('a', 'b')])
 
         smallest = ttk._format_layoutlist([('a', None)], indent=0)
-        self.failUnlessEqual(smallest,
+        self.assertEqual(smallest,
             ttk._format_layoutlist([('a', '')], indent=0))
-        self.failUnlessEqual(smallest[0], 'a')
+        self.assertEqual(smallest[0], 'a')
 
         # testing indentation levels
-        self.failUnlessEqual(sample(), sample_expected())
+        self.assertEqual(sample(), sample_expected())
         for i in range(4):
-            self.failUnlessEqual(sample(i), sample_expected(i))
-            self.failUnlessEqual(sample(i, i), sample_expected(i, i))
+            self.assertEqual(sample(i), sample_expected(i))
+            self.assertEqual(sample(i, i), sample_expected(i, i))
 
         # invalid layout format, different kind of exceptions will be
         # raised by internal functions
 
         # plain wrong format
-        self.failUnlessRaises(ValueError, ttk._format_layoutlist,
+        self.assertRaises(ValueError, ttk._format_layoutlist,
             ['bad', 'format'])
         # will try to use iteritems in the 'bad' string
-        self.failUnlessRaises(AttributeError, ttk._format_layoutlist,
+        self.assertRaises(AttributeError, ttk._format_layoutlist,
            [('name', 'bad')])
         # bad children formatting
-        self.failUnlessRaises(ValueError, ttk._format_layoutlist,
+        self.assertRaises(ValueError, ttk._format_layoutlist,
             [('name', {'children': {'a': None}})])
 
 
     def test_script_from_settings(self):
         # empty options
-        self.failIf(ttk._script_from_settings({'name':
+        self.assertFalse(ttk._script_from_settings({'name':
             {'configure': None, 'map': None, 'element create': None}}))
 
         # empty layout
-        self.failUnlessEqual(
+        self.assertEqual(
             ttk._script_from_settings({'name': {'layout': None}}),
             "ttk::style layout name {\nnull\n}")
 
         configdict = {'αβγ': True, 'á': False}
-        self.failUnless(
+        self.assertTrue(
             ttk._script_from_settings({'name': {'configure': configdict}}))
 
         mapdict = {'üñíćódè': [('á', 'vãl')]}
-        self.failUnless(
+        self.assertTrue(
             ttk._script_from_settings({'name': {'map': mapdict}}))
 
         # invalid image element
-        self.failUnlessRaises(IndexError,
+        self.assertRaises(IndexError,
             ttk._script_from_settings, {'name': {'element create': ['image']}})
 
         # minimal valid image
-        self.failUnless(ttk._script_from_settings({'name':
+        self.assertTrue(ttk._script_from_settings({'name':
             {'element create': ['image', 'name']}}))
 
         image = {'thing': {'element create':
             ['image', 'name', ('state1', 'state2', 'val')]}}
-        self.failUnlessEqual(ttk._script_from_settings(image),
+        self.assertEqual(ttk._script_from_settings(image),
             "ttk::style element create thing image {name {state1 state2} val} ")
 
         image['thing']['element create'].append({'opt': 30})
-        self.failUnlessEqual(ttk._script_from_settings(image),
+        self.assertEqual(ttk._script_from_settings(image),
             "ttk::style element create thing image {name {state1 state2} val} "
             "-opt 30")
 
         image['thing']['element create'][-1]['opt'] = [MockTclObj(3),
             MockTclObj('2m')]
-        self.failUnlessEqual(ttk._script_from_settings(image),
+        self.assertEqual(ttk._script_from_settings(image),
             "ttk::style element create thing image {name {state1 state2} val} "
             "-opt {3 2m}")
 
@@ -285,28 +285,28 @@ class InternalFunctionsTest(unittest.TestCase):
     def test_dict_from_tcltuple(self):
         fakettuple = ('-a', '{1 2 3}', '-something', 'foo')
 
-        self.failUnlessEqual(ttk._dict_from_tcltuple(fakettuple, False),
+        self.assertEqual(ttk._dict_from_tcltuple(fakettuple, False),
             {'-a': '{1 2 3}', '-something': 'foo'})
 
-        self.failUnlessEqual(ttk._dict_from_tcltuple(fakettuple),
+        self.assertEqual(ttk._dict_from_tcltuple(fakettuple),
             {'a': '{1 2 3}', 'something': 'foo'})
 
         # passing a tuple with a single item should return an empty dict,
         # since it tries to break the tuple by pairs.
-        self.failIf(ttk._dict_from_tcltuple(('single', )))
+        self.assertFalse(ttk._dict_from_tcltuple(('single', )))
 
         sspec = MockStateSpec('a', 'b')
-        self.failUnlessEqual(ttk._dict_from_tcltuple(('-a', (sspec, 'val'))),
+        self.assertEqual(ttk._dict_from_tcltuple(('-a', (sspec, 'val'))),
             {'a': [('a', 'b', 'val')]})
 
-        self.failUnlessEqual(ttk._dict_from_tcltuple((MockTclObj('-padding'),
+        self.assertEqual(ttk._dict_from_tcltuple((MockTclObj('-padding'),
             [MockTclObj('1'), 2, MockTclObj('3m')])),
             {'padding': [1, 2, '3m']})
 
 
     def test_list_from_statespec(self):
         def test_it(sspec, value, res_value, states):
-            self.failUnlessEqual(ttk._list_from_statespec(
+            self.assertEqual(ttk._list_from_statespec(
                 (sspec, value)), [states + (res_value, )])
 
         states_even = tuple('state%d' % i for i in range(6))
@@ -323,19 +323,19 @@ class InternalFunctionsTest(unittest.TestCase):
 
     def test_list_from_layouttuple(self):
         # empty layout tuple
-        self.failIf(ttk._list_from_layouttuple(()))
+        self.assertFalse(ttk._list_from_layouttuple(()))
 
         # shortest layout tuple
-        self.failUnlessEqual(ttk._list_from_layouttuple(('name', )),
+        self.assertEqual(ttk._list_from_layouttuple(('name', )),
             [('name', {})])
 
         # not so interesting ltuple
         sample_ltuple = ('name', '-option', 'value')
-        self.failUnlessEqual(ttk._list_from_layouttuple(sample_ltuple),
+        self.assertEqual(ttk._list_from_layouttuple(sample_ltuple),
             [('name', {'option': 'value'})])
 
         # empty children
-        self.failUnlessEqual(ttk._list_from_layouttuple(
+        self.assertEqual(ttk._list_from_layouttuple(
             ('something', '-children', ())),
             [('something', {'children': []})]
         )
@@ -348,7 +348,7 @@ class InternalFunctionsTest(unittest.TestCase):
                 )
             )
         )
-        self.failUnlessEqual(ttk._list_from_layouttuple(ltuple),
+        self.assertEqual(ttk._list_from_layouttuple(ltuple),
             [('name', {'option': 'niceone', 'children':
                 [('otherone', {'otheropt': 'othervalue', 'children':
                     [('child', {})]
@@ -357,13 +357,13 @@ class InternalFunctionsTest(unittest.TestCase):
         )
 
         # bad tuples
-        self.failUnlessRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple,
             ('name', 'no_minus'))
-        self.failUnlessRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple,
             ('name', 'no_minus', 'value'))
-        self.failUnlessRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple,
             ('something', '-children')) # no children
-        self.failUnlessRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple,
             ('something', '-children', 'value')) # invalid children
 
 
@@ -374,10 +374,10 @@ class InternalFunctionsTest(unittest.TestCase):
             return (opt, val)
 
         options = {'test': None}
-        self.failUnlessEqual(ttk._val_or_dict(options, func), "test val")
+        self.assertEqual(ttk._val_or_dict(options, func), "test val")
 
         options = {'test': 3}
-        self.failUnlessEqual(ttk._val_or_dict(options, func), options)
+        self.assertEqual(ttk._val_or_dict(options, func), options)
 
 
     def test_convert_stringval(self):
@@ -386,34 +386,34 @@ class InternalFunctionsTest(unittest.TestCase):
             (None, 'None')
         )
         for orig, expected in tests:
-            self.failUnlessEqual(ttk._convert_stringval(orig), expected)
+            self.assertEqual(ttk._convert_stringval(orig), expected)
 
 
 class TclObjsToPyTest(unittest.TestCase):
 
     def test_unicode(self):
         adict = {'opt': 'välúè'}
-        self.failUnlessEqual(ttk.tclobjs_to_py(adict), {'opt': 'välúè'})
+        self.assertEqual(ttk.tclobjs_to_py(adict), {'opt': 'välúè'})
 
         adict['opt'] = MockTclObj(adict['opt'])
-        self.failUnlessEqual(ttk.tclobjs_to_py(adict), {'opt': 'välúè'})
+        self.assertEqual(ttk.tclobjs_to_py(adict), {'opt': 'välúè'})
 
     def test_multivalues(self):
         adict = {'opt': [1, 2, 3, 4]}
-        self.failUnlessEqual(ttk.tclobjs_to_py(adict), {'opt': [1, 2, 3, 4]})
+        self.assertEqual(ttk.tclobjs_to_py(adict), {'opt': [1, 2, 3, 4]})
 
         adict['opt'] = [1, 'xm', 3]
-        self.failUnlessEqual(ttk.tclobjs_to_py(adict), {'opt': [1, 'xm', 3]})
+        self.assertEqual(ttk.tclobjs_to_py(adict), {'opt': [1, 'xm', 3]})
 
         adict['opt'] = (MockStateSpec('a', 'b'), 'válũè')
-        self.failUnlessEqual(ttk.tclobjs_to_py(adict),
+        self.assertEqual(ttk.tclobjs_to_py(adict),
             {'opt': [('a', 'b', 'válũè')]})
 
-        self.failUnlessEqual(ttk.tclobjs_to_py({'x': ['y z']}),
+        self.assertEqual(ttk.tclobjs_to_py({'x': ['y z']}),
             {'x': ['y z']})
 
     def test_nosplit(self):
-        self.failUnlessEqual(ttk.tclobjs_to_py({'text': 'some text'}),
+        self.assertEqual(ttk.tclobjs_to_py({'text': 'some text'}),
             {'text': 'some text'})
 
 tests_nogui = (InternalFunctionsTest, TclObjsToPyTest)

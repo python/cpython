@@ -65,7 +65,7 @@ class LongTest(unittest.TestCase):
     # The sign of the number is also random.
 
     def getran(self, ndigits):
-        self.assert_(ndigits > 0)
+        self.assertTrue(ndigits > 0)
         nbits_hi = ndigits * SHIFT
         nbits_lo = nbits_hi - SHIFT + 1
         answer = 0
@@ -74,13 +74,13 @@ class LongTest(unittest.TestCase):
         while nbits < nbits_lo:
             bits = (r >> 1) + 1
             bits = min(bits, nbits_hi - nbits)
-            self.assert_(1 <= bits <= SHIFT)
+            self.assertTrue(1 <= bits <= SHIFT)
             nbits = nbits + bits
             answer = answer << bits
             if r & 1:
                 answer = answer | ((1 << bits) - 1)
             r = int(random.random() * (SHIFT * 2))
-        self.assert_(nbits_lo <= nbits <= nbits_hi)
+        self.assertTrue(nbits_lo <= nbits <= nbits_hi)
         if random.random() < 0.5:
             answer = -answer
         return answer
@@ -106,9 +106,9 @@ class LongTest(unittest.TestCase):
         eq(r, r2, Frm("divmod returns different mod than %% for %r and %r", x, y))
         eq(x, q*y + r, Frm("x != q*y + r after divmod on x=%r, y=%r", x, y))
         if y > 0:
-            self.assert_(0 <= r < y, Frm("bad mod from divmod on %r and %r", x, y))
+            self.assertTrue(0 <= r < y, Frm("bad mod from divmod on %r and %r", x, y))
         else:
-            self.assert_(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
+            self.assertTrue(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
 
     def test_division(self):
         digits = list(range(1, MAXDIGITS+1)) + list(range(KARATSUBA_CUTOFF,
@@ -538,7 +538,7 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(sys.maxsize) + 1) mustn't overflow")
-        self.assert_(isinstance(y, int),
+        self.assertTrue(isinstance(y, int),
             "int(long(sys.maxsize) + 1) should have returned long")
 
         x = hugeneg_aslong - 1
@@ -546,14 +546,14 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(-sys.maxsize-1) - 1) mustn't overflow")
-        self.assert_(isinstance(y, int),
+        self.assertTrue(isinstance(y, int),
                "int(long(-sys.maxsize-1) - 1) should have returned long")
 
         class long2(int):
             pass
         x = long2(1<<100)
         y = int(x)
-        self.assert_(type(y) is int,
+        self.assertTrue(type(y) is int,
             "overflowing int conversion must return long not long subtype")
 
 # ----------------------------------- tests of auto int->long conversion
@@ -958,7 +958,7 @@ class LongTest(unittest.TestCase):
             self.assertEqual(k, len(bin(x).lstrip('-0b')))
             # Behaviour as specified in the docs
             if x != 0:
-                self.assert_(2**(k-1) <= abs(x) < 2**k)
+                self.assertTrue(2**(k-1) <= abs(x) < 2**k)
             else:
                 self.assertEqual(k, 0)
             # Alternative definition: x.bit_length() == 1 + floor(log_2(x))
@@ -995,7 +995,7 @@ class LongTest(unittest.TestCase):
                 got = round(k+offset, -1)
                 expected = v+offset
                 self.assertEqual(got, expected)
-                self.assert_(type(got) is int)
+                self.assertTrue(type(got) is int)
 
         # larger second argument
         self.assertEqual(round(-150, -2), -200)
@@ -1034,7 +1034,7 @@ class LongTest(unittest.TestCase):
             got = round(10**k + 324678, -3)
             expect = 10**k + 325000
             self.assertEqual(got, expect)
-            self.assert_(type(got) is int)
+            self.assertTrue(type(got) is int)
 
         # nonnegative second argument: round(x, n) should just return x
         for n in range(5):
@@ -1042,7 +1042,7 @@ class LongTest(unittest.TestCase):
                 x = random.randrange(-10000, 10000)
                 got = round(x, n)
                 self.assertEqual(got, x)
-                self.assert_(type(got) is int)
+                self.assertTrue(type(got) is int)
         for huge_n in 2**31-1, 2**31, 2**63-1, 2**63, 2**100, 10**100:
             self.assertEqual(round(8979323, huge_n), 8979323)
 
@@ -1051,7 +1051,7 @@ class LongTest(unittest.TestCase):
             x = random.randrange(-10000, 10000)
             got = round(x)
             self.assertEqual(got, x)
-            self.assert_(type(got) is int)
+            self.assertTrue(type(got) is int)
 
         # bad second argument
         bad_exponents = ('brian', 2.0, 0j, None)

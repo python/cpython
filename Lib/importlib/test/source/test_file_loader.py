@@ -23,7 +23,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
                                                     False)
             module = loader.load_module('_temp')
-            self.assert_('_temp' in sys.modules)
+            self.assertTrue('_temp' in sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
                      '__package__': ''}
             for attr, value in check.items():
@@ -35,7 +35,7 @@ class SimpleTest(unittest.TestCase):
                                                  mapping['_pkg.__init__'],
                                                  True)
             module = loader.load_module('_pkg')
-            self.assert_('_pkg' in sys.modules)
+            self.assertTrue('_pkg' in sys.modules)
             check = {'__name__': '_pkg', '__file__': mapping['_pkg.__init__'],
                      '__path__': [os.path.dirname(mapping['_pkg.__init__'])],
                      '__package__': '_pkg'}
@@ -48,7 +48,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap._PyPycFileLoader('_pkg.mod',
                                                     mapping['_pkg.mod'], False)
             module = loader.load_module('_pkg.mod')
-            self.assert_('_pkg.mod' in sys.modules)
+            self.assertTrue('_pkg.mod' in sys.modules)
             check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod'],
                      '__package__': '_pkg'}
             for attr, value in check.items():
@@ -73,7 +73,7 @@ class SimpleTest(unittest.TestCase):
             # than the original mtime.
             loader.source_mtime = self.fake_mtime(loader.source_mtime)
             module = loader.load_module('_temp')
-            self.assert_('testing_var' in module.__dict__,
+            self.assertTrue('testing_var' in module.__dict__,
                          "'testing_var' not in "
                             "{0}".format(list(module.__dict__.keys())))
             self.assertEqual(module, sys.modules['_temp'])
@@ -105,7 +105,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
                                                     False)
             self.assertRaises(SyntaxError, loader.load_module, '_temp')
-            self.assert_('_temp' not in sys.modules)
+            self.assertTrue('_temp' not in sys.modules)
 
 
 class BadBytecodeTest(unittest.TestCase):
@@ -124,7 +124,7 @@ class BadBytecodeTest(unittest.TestCase):
     def import_(self, file, module_name):
         loader = _bootstrap._PyPycFileLoader(module_name, file, False)
         module = loader.load_module(module_name)
-        self.assert_(module_name in sys.modules)
+        self.assertTrue(module_name in sys.modules)
 
     # [bad magic]
     @source_util.writes_bytecode_files
@@ -168,7 +168,7 @@ class BadBytecodeTest(unittest.TestCase):
                 bytecode_file.write(b'AAAA')
             self.assertRaises(ValueError, self.import_, mapping['_temp'],
                                 '_temp')
-            self.assert_('_temp' not in sys.modules)
+            self.assertTrue('_temp' not in sys.modules)
 
 
 def test_main():

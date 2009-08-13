@@ -143,7 +143,7 @@ class CgiTests(unittest.TestCase):
                 # test individual fields
                 for key in expect.keys():
                     expect_val = expect[key]
-                    self.assert_(key in fs)
+                    self.assertTrue(key in fs)
                     if len(expect_val) > 1:
                         self.assertEqual(fs.getvalue(key), expect_val)
                     else:
@@ -194,7 +194,7 @@ class CgiTests(unittest.TestCase):
         # if we're not chunking properly, readline is only called twice
         # (by read_binary); if we are chunking properly, it will be called 5 times
         # as long as the chunksize is 1 << 16.
-        self.assert_(f.numcalls > 2)
+        self.assertTrue(f.numcalls > 2)
 
     def test_fieldstorage_multipart(self):
         #Test basic FieldStorage multipart parsing

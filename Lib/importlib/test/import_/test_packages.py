@@ -13,7 +13,7 @@ class ParentModuleTests(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 module = import_util.import_('pkg.module')
-                self.assert_('pkg' in sys.modules)
+                self.assertTrue('pkg' in sys.modules)
 
     def test_bad_parent(self):
         with util.mock_modules('pkg.module') as mock:

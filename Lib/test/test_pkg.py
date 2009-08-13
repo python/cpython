@@ -130,7 +130,7 @@ class TestPkg(unittest.TestCase):
         self.assertEqual(subsub.__name__, "t2.sub.subsub")
         self.assertEqual(sub.subsub.__name__, "t2.sub.subsub")
         for name in ['spam', 'sub', 'subsub', 't2']:
-            self.failUnless(locals()["name"], "Failed to import %s" % name)
+            self.assertTrue(locals()["name"], "Failed to import %s" % name)
 
         import t2.sub
         import t2.sub.subsub
@@ -140,7 +140,7 @@ class TestPkg(unittest.TestCase):
 
         s = """
             from t2 import *
-            self.failUnless(dir(), ['self', 'sub'])
+            self.assertTrue(dir(), ['self', 'sub'])
             """
         self.run_code(s)
 
@@ -258,25 +258,25 @@ class TestPkg(unittest.TestCase):
         self.assertEqual(fixdir(dir(tas)),
                          ['__doc__', '__file__', '__name__',
                           '__package__', '__path__'])
-        self.failIf(t7)
+        self.assertFalse(t7)
         from t7 import sub as subpar
         self.assertEqual(fixdir(dir(subpar)),
                          ['__doc__', '__file__', '__name__',
                           '__package__', '__path__'])
-        self.failIf(t7)
-        self.failIf(sub)
+        self.assertFalse(t7)
+        self.assertFalse(sub)
         from t7.sub import subsub as subsubsub
         self.assertEqual(fixdir(dir(subsubsub)),
                          ['__doc__', '__file__', '__name__',
                          '__package__', '__path__', 'spam'])
-        self.failIf(t7)
-        self.failIf(sub)
-        self.failIf(subsub)
+        self.assertFalse(t7)
+        self.assertFalse(sub)
+        self.assertFalse(subsub)
         from t7.sub.subsub import spam as ham
         self.assertEqual(ham, 1)
-        self.failIf(t7)
-        self.failIf(sub)
-        self.failIf(subsub)
+        self.assertFalse(t7)
+        self.assertFalse(sub)
+        self.assertFalse(subsub)
 
 
 def test_main():

@@ -63,21 +63,21 @@ class XMLRPCTestCase(unittest.TestCase):
     def test_cmp_datetime_DateTime(self):
         now = datetime.datetime.now()
         dt = xmlrpclib.DateTime(now.timetuple())
-        self.assert_(dt == now)
-        self.assert_(now == dt)
+        self.assertTrue(dt == now)
+        self.assertTrue(now == dt)
         then = now + datetime.timedelta(seconds=4)
-        self.assert_(then >= dt)
-        self.assert_(dt < then)
+        self.assertTrue(then >= dt)
+        self.assertTrue(dt < then)
 
     def test_bug_1164912 (self):
         d = xmlrpclib.DateTime()
         ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,),
                                             methodresponse=True))
-        self.assert_(isinstance(new_d.value, str))
+        self.assertTrue(isinstance(new_d.value, str))
 
         # Check that the output of dumps() is still an 8-bit string
         s = xmlrpclib.dumps((new_d,), methodresponse=True)
-        self.assert_(isinstance(s, str))
+        self.assertTrue(isinstance(s, str))
 
     def test_newstyle_class(self):
         class T(object):
@@ -171,7 +171,7 @@ class FaultTestCase(unittest.TestCase):
         # private methods
         self.assertRaises(AttributeError,
                           xmlrpc.server.resolve_dotted_attribute, str, '__add')
-        self.assert_(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
+        self.assertTrue(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
 
 class DateTimeTestCase(unittest.TestCase):
     def test_default(self):
@@ -473,7 +473,7 @@ class SimpleServerTestCase(unittest.TestCase):
         self.assertRaises(AttributeError,
                           xmlrpc.server.resolve_dotted_attribute, str, '__add')
 
-        self.assert_(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
+        self.assertTrue(xmlrpc.server.resolve_dotted_attribute(str, 'title'))
         # Get the test to run faster by sending a request with test_simple1.
         # This avoids waiting for the socket timeout.
         self.test_simple1()

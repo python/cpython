@@ -133,10 +133,10 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock = self.mocker({name: path})
         with util.uncache(name):
             module = mock.load_module(name)
-            self.assert_(name in sys.modules)
+            self.assertTrue(name in sys.modules)
         self.eq_attrs(module, __name__=name, __file__=path, __package__='',
                         __loader__=mock)
-        self.assert_(not hasattr(module, '__path__'))
+        self.assertTrue(not hasattr(module, '__path__'))
         return mock, name
 
     def test_package(self):
@@ -145,7 +145,7 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock = self.mocker({name: path})
         with util.uncache(name):
             module = mock.load_module(name)
-            self.assert_(name in sys.modules)
+            self.assertTrue(name in sys.modules)
         self.eq_attrs(module, __name__=name, __file__=path,
                 __path__=[os.path.dirname(path)], __package__=name,
                 __loader__=mock)
@@ -171,8 +171,8 @@ class PyLoaderTests(testing_abc.LoaderTests):
         with util.uncache(name):
             sys.modules[name] = module
             loaded_module = mock.load_module(name)
-            self.assert_(loaded_module is module)
-            self.assert_(sys.modules[name] is module)
+            self.assertTrue(loaded_module is module)
+            self.assertTrue(sys.modules[name] is module)
         return mock, name
 
     def test_state_after_failure(self):
@@ -184,8 +184,8 @@ class PyLoaderTests(testing_abc.LoaderTests):
         with util.uncache(name):
             sys.modules[name] = module
             self.assertRaises(ZeroDivisionError, mock.load_module, name)
-            self.assert_(sys.modules[name] is module)
-            self.assert_(hasattr(module, 'blah'))
+            self.assertTrue(sys.modules[name] is module)
+            self.assertTrue(hasattr(module, 'blah'))
         return mock
 
     def test_unloadable(self):
@@ -194,7 +194,7 @@ class PyLoaderTests(testing_abc.LoaderTests):
         mock.source = b"1/0"
         with util.uncache(name):
             self.assertRaises(ZeroDivisionError, mock.load_module, name)
-            self.assert_(name not in sys.modules)
+            self.assertTrue(name not in sys.modules)
         return mock
 
 
@@ -293,7 +293,7 @@ class SkipWritingBytecodeTests(unittest.TestCase):
         sys.dont_write_bytecode = dont_write_bytecode
         with util.uncache(name):
             mock.load_module(name)
-        self.assert_((name in mock.module_bytecode) is not
+        self.assertTrue((name in mock.module_bytecode) is not
                         dont_write_bytecode)
 
     def test_no_bytecode_written(self):
@@ -319,7 +319,7 @@ class RegeneratedBytecodeTests(unittest.TestCase):
                                         'magic': bad_magic}})
         with util.uncache(name):
             mock.load_module(name)
-        self.assert_(name in mock.module_bytecode)
+        self.assertTrue(name in mock.module_bytecode)
         magic = mock.module_bytecode[name][:4]
         self.assertEqual(magic, imp.get_magic())
 
@@ -332,7 +332,7 @@ class RegeneratedBytecodeTests(unittest.TestCase):
                 {name: {'path': 'path/to/mod.bytecode', 'mtime': old_mtime}})
         with util.uncache(name):
             mock.load_module(name)
-        self.assert_(name in mock.module_bytecode)
+        self.assertTrue(name in mock.module_bytecode)
         mtime = importlib._r_long(mock.module_bytecode[name][4:8])
         self.assertEqual(mtime, PyPycLoaderMock.default_mtime)
 

@@ -40,15 +40,15 @@ class SyntaxTracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assert_(err[1].strip() == "return x!")
-        self.assert_("^" in err[2]) # third line has caret
+        self.assertTrue(err[1].strip() == "return x!")
+        self.assertTrue("^" in err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_2,
                                         SyntaxError)
-        self.assert_("^" in err[2]) # third line has caret
-        self.assert_(err[2].count('\n') == 1) # and no additional newline
-        self.assert_(err[1].find("+") == err[2].find("^")) # in the right place
+        self.assertTrue("^" in err[2]) # third line has caret
+        self.assertTrue(err[2].count('\n') == 1) # and no additional newline
+        self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
 
     def test_nocaret(self):
         if is_jython:
@@ -57,14 +57,14 @@ class SyntaxTracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_without_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 3)
-        self.assert_(err[1].strip() == "[x for x in x] = x")
+        self.assertTrue(err[1].strip() == "[x for x in x] = x")
 
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
         self.assertEqual(len(err), 4)
         self.assertEqual(err[1].strip(), "print(2)")
-        self.assert_("^" in err[2])
+        self.assertTrue("^" in err[2])
         self.assertEqual(err[1].find(")"), err[2].find("^"))
 
     def test_base_exception(self):
@@ -131,13 +131,13 @@ class SyntaxTracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assert_(("line %s" % lineno) in stdout[1],
+            self.assertTrue(("line %s" % lineno) in stdout[1],
                 "Invalid line number: {0!r} instead of {1}".format(
                     stdout[1], lineno))
-            self.assert_(stdout[2].endswith(err_line),
+            self.assertTrue(stdout[2].endswith(err_line),
                 "Invalid traceback line: {0!r} instead of {1!r}".format(
                     stdout[2], err_line))
-            self.assert_(stdout[3] == err_msg,
+            self.assertTrue(stdout[3] == err_msg,
                 "Invalid error message: {0!r} instead of {1!r}".format(
                     stdout[3], err_msg))
 
@@ -177,9 +177,9 @@ class TracebackFormatTests(unittest.TestCase):
         tb_lines = python_fmt.splitlines()
         self.assertEquals(len(tb_lines), 3)
         banner, location, source_line = tb_lines
-        self.assert_(banner.startswith('Traceback'))
-        self.assert_(location.startswith('  File'))
-        self.assert_(source_line.startswith('    raise'))
+        self.assertTrue(banner.startswith('Traceback'))
+        self.assertTrue(location.startswith('  File'))
+        self.assertTrue(source_line.startswith('    raise'))
 
 
 cause_message = (
@@ -209,9 +209,9 @@ class BaseExceptionReportingTests:
 
     def check_zero_div(self, msg):
         lines = msg.splitlines()
-        self.assert_(lines[-3].startswith('  File'))
-        self.assert_('1/0 # In zero_div' in lines[-2], lines[-2])
-        self.assert_(lines[-1].startswith('ZeroDivisionError'), lines[-1])
+        self.assertTrue(lines[-3].startswith('  File'))
+        self.assertTrue('1/0 # In zero_div' in lines[-2], lines[-2])
+        self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
 
     def test_simple(self):
         try:
@@ -220,10 +220,10 @@ class BaseExceptionReportingTests:
             e = _
         lines = self.get_report(e).splitlines()
         self.assertEquals(len(lines), 4)
-        self.assert_(lines[0].startswith('Traceback'))
-        self.assert_(lines[1].startswith('  File'))
-        self.assert_('1/0 # Marker' in lines[2])
-        self.assert_(lines[3].startswith('ZeroDivisionError'))
+        self.assertTrue(lines[0].startswith('Traceback'))
+        self.assertTrue(lines[1].startswith('  File'))
+        self.assertTrue('1/0 # Marker' in lines[2])
+        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
 
     def test_cause(self):
         def inner_raise():
@@ -237,7 +237,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
-        self.assert_('inner_raise() # Marker' in blocks[2])
+        self.assertTrue('inner_raise() # Marker' in blocks[2])
 
     def test_context(self):
         def inner_raise():
@@ -251,7 +251,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], context_message)
         self.check_zero_div(blocks[0])
-        self.assert_('inner_raise() # Marker' in blocks[2])
+        self.assertTrue('inner_raise() # Marker' in blocks[2])
 
     def test_cause_recursive(self):
         def inner_raise():
@@ -269,11 +269,11 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], cause_message)
         # The first block is the KeyError raised from the ZeroDivisionError
-        self.assert_('raise KeyError from e' in blocks[0])
-        self.assert_('1/0' not in blocks[0])
+        self.assertTrue('raise KeyError from e' in blocks[0])
+        self.assertTrue('1/0' not in blocks[0])
         # The second block (apart from the boundary) is the ZeroDivisionError
         # re-raised from the KeyError
-        self.assert_('inner_raise() # Marker' in blocks[2])
+        self.assertTrue('inner_raise() # Marker' in blocks[2])
         self.check_zero_div(blocks[2])
 
 

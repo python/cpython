@@ -22,16 +22,16 @@ class LabeledScaleTest(unittest.TestCase):
         x = ttk.LabeledScale()
         var = x._variable._name
         x.destroy()
-        self.failUnlessRaises(tkinter.TclError, x.tk.globalgetvar, var)
+        self.assertRaises(tkinter.TclError, x.tk.globalgetvar, var)
 
         # manually created variable
         myvar = tkinter.DoubleVar()
         name = myvar._name
         x = ttk.LabeledScale(variable=myvar)
         x.destroy()
-        self.failUnlessEqual(x.tk.globalgetvar(name), myvar.get())
+        self.assertEqual(x.tk.globalgetvar(name), myvar.get())
         del myvar
-        self.failUnlessRaises(tkinter.TclError, x.tk.globalgetvar, name)
+        self.assertRaises(tkinter.TclError, x.tk.globalgetvar, name)
 
         # checking that the tracing callback is properly removed
         myvar = tkinter.IntVar()
@@ -45,17 +45,17 @@ class LabeledScaleTest(unittest.TestCase):
         # it tries calling instance attributes not yet defined.
         ttk.LabeledScale(variable=myvar)
         if hasattr(sys, 'last_type'):
-            self.failIf(sys.last_type == tkinter.TclError)
+            self.assertFalse(sys.last_type == tkinter.TclError)
 
 
     def test_initialization(self):
         # master passing
         x = ttk.LabeledScale()
-        self.failUnlessEqual(x.master, tkinter._default_root)
+        self.assertEqual(x.master, tkinter._default_root)
         x.destroy()
         master = tkinter.Frame()
         x = ttk.LabeledScale(master)
-        self.failUnlessEqual(x.master, master)
+        self.assertEqual(x.master, master)
         x.destroy()
 
         # variable initialization/passing
@@ -63,29 +63,29 @@ class LabeledScaleTest(unittest.TestCase):
             (-1, -1), (sys.maxsize + 1, sys.maxsize + 1))
         for pair in passed_expected:
             x = ttk.LabeledScale(from_=pair[0])
-            self.failUnlessEqual(x.value, pair[1])
+            self.assertEqual(x.value, pair[1])
             x.destroy()
         x = ttk.LabeledScale(from_='2.5')
-        self.failUnlessRaises(ValueError, x._variable.get)
+        self.assertRaises(ValueError, x._variable.get)
         x.destroy()
         x = ttk.LabeledScale(from_=None)
-        self.failUnlessRaises(ValueError, x._variable.get)
+        self.assertRaises(ValueError, x._variable.get)
         x.destroy()
         # variable should have its default value set to the from_ value
         myvar = tkinter.DoubleVar(value=20)
         x = ttk.LabeledScale(variable=myvar)
-        self.failUnlessEqual(x.value, 0)
+        self.assertEqual(x.value, 0)
         x.destroy()
         # check that it is really using a DoubleVar
         x = ttk.LabeledScale(variable=myvar, from_=0.5)
-        self.failUnlessEqual(x.value, 0.5)
-        self.failUnlessEqual(x._variable._name, myvar._name)
+        self.assertEqual(x.value, 0.5)
+        self.assertEqual(x._variable._name, myvar._name)
         x.destroy()
 
         # widget positionment
         def check_positions(scale, scale_pos, label, label_pos):
-            self.failUnlessEqual(scale.pack_info()['side'], scale_pos)
-            self.failUnlessEqual(label.place_info()['anchor'], label_pos)
+            self.assertEqual(scale.pack_info()['side'], scale_pos)
+            self.assertEqual(label.place_info()['anchor'], label_pos)
         x = ttk.LabeledScale(compound='top')
         check_positions(x.scale, 'bottom', x.label, 'n')
         x.destroy()
@@ -100,7 +100,7 @@ class LabeledScaleTest(unittest.TestCase):
         x.destroy()
 
         # extra, and invalid, kwargs
-        self.failUnlessRaises(tkinter.TclError, ttk.LabeledScale, a='b')
+        self.assertRaises(tkinter.TclError, ttk.LabeledScale, a='b')
 
 
     def test_horizontal_range(self):
@@ -111,7 +111,7 @@ class LabeledScaleTest(unittest.TestCase):
 
         linfo_1 = lscale.label.place_info()
         prev_xcoord = lscale.scale.coords()[0]
-        self.failUnlessEqual(prev_xcoord, int(linfo_1['x']))
+        self.assertEqual(prev_xcoord, int(linfo_1['x']))
         # change range to: from -5 to 5. This should change the x coord of
         # the scale widget, since 0 is at the middle of the new
         # range.
@@ -120,15 +120,15 @@ class LabeledScaleTest(unittest.TestCase):
         # at the same time this shouldn't affect test outcome
         lscale.update()
         curr_xcoord = lscale.scale.coords()[0]
-        self.failUnless(prev_xcoord != curr_xcoord)
+        self.assertTrue(prev_xcoord != curr_xcoord)
         # the label widget should have been repositioned too
         linfo_2 = lscale.label.place_info()
-        self.failUnlessEqual(lscale.label['text'], 0)
-        self.failUnlessEqual(curr_xcoord, int(linfo_2['x']))
+        self.assertEqual(lscale.label['text'], 0)
+        self.assertEqual(curr_xcoord, int(linfo_2['x']))
         # change the range back
         lscale.scale.configure(from_=0, to=10)
-        self.failUnless(prev_xcoord != curr_xcoord)
-        self.failUnlessEqual(prev_xcoord, int(linfo_1['x']))
+        self.assertTrue(prev_xcoord != curr_xcoord)
+        self.assertEqual(prev_xcoord, int(linfo_1['x']))
 
         lscale.destroy()
 
@@ -145,16 +145,16 @@ class LabeledScaleTest(unittest.TestCase):
         # The following update is needed since the test doesn't use mainloop,
         # at the same time this shouldn't affect test outcome
         x.update()
-        self.failUnlessEqual(x.label['text'], newval)
-        self.failUnless(x.scale.coords()[0] > curr_xcoord)
-        self.failUnlessEqual(x.scale.coords()[0],
+        self.assertEqual(x.label['text'], newval)
+        self.assertTrue(x.scale.coords()[0] > curr_xcoord)
+        self.assertEqual(x.scale.coords()[0],
             int(x.label.place_info()['x']))
 
         # value outside range
         x.value = x.scale['to'] + 1 # no changes shouldn't happen
         x.update()
-        self.failUnlessEqual(x.label['text'], newval)
-        self.failUnlessEqual(x.scale.coords()[0],
+        self.assertEqual(x.label['text'], newval)
+        self.assertEqual(x.scale.coords()[0],
             int(x.label.place_info()['x']))
 
         x.destroy()
@@ -172,7 +172,7 @@ class LabeledScaleTest(unittest.TestCase):
         x.value = 3
         x.update()
         x.master.wm_geometry("%dx%d" % (width_new, height_new))
-        self.failUnlessEqual(int(x.label.place_info()['x']),
+        self.assertEqual(int(x.label.place_info()['x']),
             x.scale.coords()[0])
 
         # Reset geometry
@@ -197,20 +197,20 @@ class OptionMenuTest(unittest.TestCase):
         name = var._name
         optmenu.update_idletasks()
         optmenu.destroy()
-        self.failUnlessEqual(optmenu.tk.globalgetvar(name), var.get())
+        self.assertEqual(optmenu.tk.globalgetvar(name), var.get())
         del var
-        self.failUnlessRaises(tkinter.TclError, optmenu.tk.globalgetvar, name)
+        self.assertRaises(tkinter.TclError, optmenu.tk.globalgetvar, name)
 
 
     def test_initialization(self):
-        self.failUnlessRaises(tkinter.TclError,
+        self.assertRaises(tkinter.TclError,
             ttk.OptionMenu, None, self.textvar, invalid='thing')
 
         optmenu = ttk.OptionMenu(None, self.textvar, 'b', 'a', 'b')
-        self.failUnlessEqual(optmenu._variable.get(), 'b')
+        self.assertEqual(optmenu._variable.get(), 'b')
 
-        self.failUnless(optmenu['menu'])
-        self.failUnless(optmenu['textvariable'])
+        self.assertTrue(optmenu['menu'])
+        self.assertTrue(optmenu['textvariable'])
 
         optmenu.destroy()
 
@@ -222,10 +222,10 @@ class OptionMenuTest(unittest.TestCase):
         found_default = False
         for i in range(len(items)):
             value = optmenu['menu'].entrycget(i, 'value')
-            self.failUnlessEqual(value, items[i])
+            self.assertEqual(value, items[i])
             if value == default:
                 found_default = True
-        self.failUnless(found_default)
+        self.assertTrue(found_default)
         optmenu.destroy()
 
         # default shouldn't be in menu if it is not part of values
@@ -238,26 +238,26 @@ class OptionMenuTest(unittest.TestCase):
             if last == curr:
                 # no more menu entries
                 break
-            self.failIf(curr == default)
+            self.assertFalse(curr == default)
             i += 1
-        self.failUnlessEqual(i, len(items))
+        self.assertEqual(i, len(items))
 
         # check that variable is updated correctly
         optmenu.pack()
         optmenu.wait_visibility()
         optmenu['menu'].invoke(0)
-        self.failUnlessEqual(optmenu._variable.get(), items[0])
+        self.assertEqual(optmenu._variable.get(), items[0])
 
         # changing to an invalid index shouldn't change the variable
-        self.failUnlessRaises(tkinter.TclError, optmenu['menu'].invoke, -1)
-        self.failUnlessEqual(optmenu._variable.get(), items[0])
+        self.assertRaises(tkinter.TclError, optmenu['menu'].invoke, -1)
+        self.assertEqual(optmenu._variable.get(), items[0])
 
         optmenu.destroy()
 
         # specifying a callback
         success = []
         def cb_test(item):
-            self.failUnlessEqual(item, items[1])
+            self.assertEqual(item, items[1])
             success.append(True)
         optmenu = ttk.OptionMenu(None, self.textvar, 'a', command=cb_test,
             *items)

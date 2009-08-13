@@ -23,21 +23,21 @@ class GetoptTests(unittest.TestCase):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)
 
     def test_short_has_arg(self):
-        self.failUnless(getopt.short_has_arg('a', 'a:'))
-        self.failIf(getopt.short_has_arg('a', 'a'))
+        self.assertTrue(getopt.short_has_arg('a', 'a:'))
+        self.assertFalse(getopt.short_has_arg('a', 'a'))
         self.assertError(getopt.short_has_arg, 'a', 'b')
 
     def test_long_has_args(self):
         has_arg, option = getopt.long_has_args('abc', ['abc='])
-        self.failUnless(has_arg)
+        self.assertTrue(has_arg)
         self.assertEqual(option, 'abc')
 
         has_arg, option = getopt.long_has_args('abc', ['abc'])
-        self.failIf(has_arg)
+        self.assertFalse(has_arg)
         self.assertEqual(option, 'abc')
 
         has_arg, option = getopt.long_has_args('abc', ['abcd'])
-        self.failIf(has_arg)
+        self.assertFalse(has_arg)
         self.assertEqual(option, 'abcd')
 
         self.assertError(getopt.long_has_args, 'abc', ['def'])

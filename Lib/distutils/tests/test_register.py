@@ -96,7 +96,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         cmd = self._get_cmd()
 
         # we shouldn't have a .pypirc file yet
-        self.assert_(not os.path.exists(self.rc))
+        self.assertTrue(not os.path.exists(self.rc))
 
         # patching input and getpass.getpass
         # so register gets happy
@@ -115,7 +115,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             del register_module.input
 
         # we should have a brand new .pypirc file
-        self.assert_(os.path.exists(self.rc))
+        self.assertTrue(os.path.exists(self.rc))
 
         # with the content similar to WANTED_PYPIRC
         content = open(self.rc).read()
@@ -133,13 +133,13 @@ class RegisterTestCase(PyPIRCCommandTestCase):
 
         # let's see what the server received : we should
         # have 2 similar requests
-        self.assert_(self.conn.reqs, 2)
+        self.assertTrue(self.conn.reqs, 2)
         req1 = dict(self.conn.reqs[0].headers)
         req2 = dict(self.conn.reqs[1].headers)
 
         self.assertEquals(req1['Content-length'], '1374')
         self.assertEquals(req2['Content-length'], '1374')
-        self.assert_((b'xxx') in self.conn.reqs[1].data)
+        self.assertTrue((b'xxx') in self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
 
@@ -165,11 +165,11 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             del register_module.input
 
         # we should have send a request
-        self.assert_(self.conn.reqs, 1)
+        self.assertTrue(self.conn.reqs, 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEquals(headers['Content-length'], '608')
-        self.assert_((b'tarek') in req.data)
+        self.assertTrue((b'tarek') in req.data)
 
     def test_password_reset(self):
         # this test runs choice 3
@@ -183,11 +183,11 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             del register_module.input
 
         # we should have send a request
-        self.assert_(self.conn.reqs, 1)
+        self.assertTrue(self.conn.reqs, 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEquals(headers['Content-length'], '290')
-        self.assert_((b'tarek') in req.data)
+        self.assertTrue((b'tarek') in req.data)
 
     def test_strict(self):
         # testing the script option

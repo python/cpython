@@ -38,9 +38,9 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertEqual(collections.UserDict().fromkeys('one two'.split()), d4)
         self.assertEqual(collections.UserDict.fromkeys('one two'.split(), 1), d5)
         self.assertEqual(collections.UserDict().fromkeys('one two'.split(), 1), d5)
-        self.assert_(u1.fromkeys('one two'.split()) is not u1)
-        self.assert_(isinstance(u1.fromkeys('one two'.split()), collections.UserDict))
-        self.assert_(isinstance(u2.fromkeys('one two'.split()), collections.UserDict))
+        self.assertTrue(u1.fromkeys('one two'.split()) is not u1)
+        self.assertTrue(isinstance(u1.fromkeys('one two'.split()), collections.UserDict))
+        self.assertTrue(isinstance(u2.fromkeys('one two'.split()), collections.UserDict))
 
         # Test __repr__
         self.assertEqual(str(u0), str(d0))
@@ -95,7 +95,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
         # Test "in".
         for i in u2.keys():
-            self.assert_(i in u2)
+            self.assertTrue(i in u2)
             self.assertEqual(i in u1, i in d1)
             self.assertEqual(i in u0, i in d0)
 
@@ -122,7 +122,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test setdefault
         t = collections.UserDict()
         self.assertEqual(t.setdefault("x", 42), 42)
-        self.assert_("x" in t)
+        self.assertTrue("x" in t)
         self.assertEqual(t.setdefault("x", 23), 42)
 
         # Test pop
@@ -152,8 +152,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         d = D({1: 2, 3: 4})
         self.assertEqual(d[1], 2)
         self.assertEqual(d[3], 4)
-        self.assert_(2 not in d)
-        self.assert_(2 not in d.keys())
+        self.assertTrue(2 not in d)
+        self.assertTrue(2 not in d.keys())
         self.assertEqual(d[2], 42)
         class E(collections.UserDict):
             def __missing__(self, key):

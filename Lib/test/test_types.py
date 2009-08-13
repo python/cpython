@@ -549,13 +549,13 @@ class TypesTests(unittest.TestCase):
             result = f.__format__(fmt)
             self.assertEqual(len(result), 98)
             self.assertEqual(result[-7], '.')
-            self.assert_(result[:12] in ('112340000000', '112339999999'))
+            self.assertTrue(result[:12] in ('112340000000', '112339999999'))
         f = 1.1234e200
         for fmt in 'f', 'F':
             result = f.__format__(fmt)
             self.assertEqual(len(result), 208)
             self.assertEqual(result[-7], '.')
-            self.assert_(result[:12] in ('112340000000', '112339999999'))
+            self.assertTrue(result[:12] in ('112340000000', '112339999999'))
 
 
         test( 1.0, 'e', '1.000000e+00')

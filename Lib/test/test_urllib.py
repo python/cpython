@@ -63,7 +63,7 @@ class urlopen_FileTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines", "fileno",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assert_(hasattr(self.returned_obj, attr),
+            self.assertTrue(hasattr(self.returned_obj, attr),
                          "object returned by urlopen() lacks %s attribute" %
                          attr)
 
@@ -85,7 +85,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def test_fileno(self):
         file_num = self.returned_obj.fileno()
-        self.assert_(isinstance(file_num, int),
+        self.assertTrue(isinstance(file_num, int),
                      "fileno() did not return an int")
         self.assertEqual(os.read(file_num, len(self.text)), self.text,
                          "Reading on the file descriptor returned by fileno() "
@@ -97,7 +97,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.returned_obj.close()
 
     def test_info(self):
-        self.assert_(isinstance(self.returned_obj.info(), email.message.Message))
+        self.assertTrue(isinstance(self.returned_obj.info(), email.message.Message))
 
     def test_geturl(self):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
@@ -246,7 +246,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         # a headers value is returned.
         result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
         self.assertEqual(result[0], support.TESTFN)
-        self.assert_(isinstance(result[1], email.message.Message),
+        self.assertTrue(isinstance(result[1], email.message.Message),
                      "did not get a email.message.Message instance as second "
                      "returned value")
 
@@ -257,7 +257,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         result = urllib.request.urlretrieve(self.constructLocalFileUrl(
             support.TESTFN), second_temp)
         self.assertEqual(second_temp, result[0])
-        self.assert_(os.path.exists(second_temp), "copy of the file was not "
+        self.assertTrue(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
         FILE = open(second_temp, 'rb')
         try:
@@ -271,9 +271,9 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_reporthook(self):
         # Make sure that the reporthook works.
         def hooktester(count, block_size, total_size, count_holder=[0]):
-            self.assert_(isinstance(count, int))
-            self.assert_(isinstance(block_size, int))
-            self.assert_(isinstance(total_size, int))
+            self.assertTrue(isinstance(count, int))
+            self.assertTrue(isinstance(block_size, int))
+            self.assertTrue(isinstance(total_size, int))
             self.assertEqual(count, count_holder[0])
             count_holder[0] = count_holder[0] + 1
         second_temp = "%s.2" % support.TESTFN
@@ -727,7 +727,7 @@ class urlencode_Tests(unittest.TestCase):
         expect_somewhere = ["1st=1", "2nd=2", "3rd=3"]
         result = urllib.parse.urlencode(given)
         for expected in expect_somewhere:
-            self.assert_(expected in result,
+            self.assertTrue(expected in result,
                          "testing %s: %s not found in %s" %
                          (test_type, expected, result))
         self.assertEqual(result.count('&'), 2,
@@ -736,7 +736,7 @@ class urlencode_Tests(unittest.TestCase):
         amp_location = result.index('&')
         on_amp_left = result[amp_location - 1]
         on_amp_right = result[amp_location + 1]
-        self.assert_(on_amp_left.isdigit() and on_amp_right.isdigit(),
+        self.assertTrue(on_amp_left.isdigit() and on_amp_right.isdigit(),
                      "testing %s: '&' not located in proper place in %s" %
                      (test_type, result))
         self.assertEqual(len(result), (5 * 3) + 2, #5 chars per thing and amps
@@ -774,7 +774,7 @@ class urlencode_Tests(unittest.TestCase):
         result = urllib.parse.urlencode(given, True)
         for value in given["sequence"]:
             expect = "sequence=%s" % value
-            self.assert_(expect in result,
+            self.assertTrue(expect in result,
                          "%s not found in %s" % (expect, result))
         self.assertEqual(result.count('&'), 2,
                          "Expected 2 '&'s, got %s" % result.count('&'))
@@ -915,7 +915,7 @@ class URLopener_Tests(unittest.TestCase):
 #     def testTimeoutNone(self):
 #         # global default timeout is ignored
 #         import socket
-#         self.assert_(socket.getdefaulttimeout() is None)
+#         self.assertTrue(socket.getdefaulttimeout() is None)
 #         socket.setdefaulttimeout(30)
 #         try:
 #             ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [])
@@ -927,7 +927,7 @@ class URLopener_Tests(unittest.TestCase):
 #     def testTimeoutDefault(self):
 #         # global default timeout is used
 #         import socket
-#         self.assert_(socket.getdefaulttimeout() is None)
+#         self.assertTrue(socket.getdefaulttimeout() is None)
 #         socket.setdefaulttimeout(30)
 #         try:
 #             ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [])

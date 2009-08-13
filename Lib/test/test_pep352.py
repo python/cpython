@@ -12,7 +12,7 @@ class ExceptionClassTests(unittest.TestCase):
     inheritance hierarchy)"""
 
     def test_builtins_new_style(self):
-        self.failUnless(issubclass(Exception, object))
+        self.assertTrue(issubclass(Exception, object))
 
     def verify_instance_interface(self, ins):
         for attr in ("args", "__str__", "__repr__"):
@@ -38,7 +38,7 @@ class ExceptionClassTests(unittest.TestCase):
                 last_exc = getattr(builtins, superclass_name)
             except AttributeError:
                 self.fail("base class %s not a built-in" % superclass_name)
-            self.failUnless(superclass_name in exc_set,
+            self.assertTrue(superclass_name in exc_set,
                             '%s not found' % superclass_name)
             exc_set.discard(superclass_name)
             superclasses = []  # Loop will insert base exception
@@ -66,20 +66,20 @@ class ExceptionClassTests(unittest.TestCase):
                 elif last_depth > depth:
                     while superclasses[-1][0] >= depth:
                         superclasses.pop()
-                self.failUnless(issubclass(exc, superclasses[-1][1]),
+                self.assertTrue(issubclass(exc, superclasses[-1][1]),
                 "%s is not a subclass of %s" % (exc.__name__,
                     superclasses[-1][1].__name__))
                 try:  # Some exceptions require arguments; just skip them
                     self.verify_instance_interface(exc())
                 except TypeError:
                     pass
-                self.failUnless(exc_name in exc_set)
+                self.assertTrue(exc_name in exc_set)
                 exc_set.discard(exc_name)
                 last_exc = exc
                 last_depth = depth
         finally:
             inheritance_tree.close()
-        self.failUnlessEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
+        self.assertEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
 
     interface_tests = ("length", "args", "str", "repr")
 

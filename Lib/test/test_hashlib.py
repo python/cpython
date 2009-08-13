@@ -36,7 +36,7 @@ class HashLibTestCase(unittest.TestCase):
         except ValueError:
             pass
         else:
-            self.assert_(0 == "hashlib didn't reject bogus hash name")
+            self.assertTrue(0 == "hashlib didn't reject bogus hash name")
 
     def test_hexdigest(self):
         for name in self.supported_hash_names:
