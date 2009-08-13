@@ -105,6 +105,8 @@ syntax error.
 Extension Modules
 -----------------
 
+- Fix a segfault in expat.
+
 - Issue #4509: array.array objects are no longer modified after an operation
   failing due to the resize restriction in-place when the object has exported
   buffers.
