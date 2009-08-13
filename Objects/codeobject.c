@@ -179,7 +179,7 @@ validate_and_copy_tuple(PyObject *tup)
 }
 
 PyDoc_STRVAR(code_doc,
-"code(argcount, kwonlyargcount nlocals, stacksize, flags, codestring,\n\
+"code(argcount, kwonlyargcount, nlocals, stacksize, flags, codestring,\n\
       constants, names, varnames, filename, name, firstlineno,\n\
       lnotab[, freevars[, cellvars]])\n\
 \n\

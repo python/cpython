@@ -206,7 +206,7 @@ check::
         fxn()
         # Verify some things
         assert len(w) == 1
-        assert isinstance(w[-1].category, DeprecationWarning)
+        assert issubclass(w[-1].category, DeprecationWarning)
         assert "deprecated" in str(w[-1].message)
 
 One can also cause all warnings to be exceptions by using ``error`` instead of

@@ -86,13 +86,6 @@ document could also be refactored with this option.
 The :option:`-v` option enables output of more information on the translation
 process.
 
-When the :option:`-p` is passed, the :2to3fixer:`print` fixer ``print`` as a
-function instead of a statement.  This is useful when ``from __future__ import
-print_function`` is being used.  If this option is not given, the print fixer
-will surround print calls in an extra set of parentheses because it cannot
-differentiate between the print statement with parentheses (such as ``print
-("a" + "b" + "c")``) and a true function call.
-
 
 .. _2to3-fixers:
 
@@ -216,7 +209,7 @@ and off individually.  They are described here in more detail.
 .. 2to3fixer:: itertools
 
    Changes usage of :func:`itertools.ifilter`, :func:`itertools.izip`, and
-   :func:`itertools.imap` to their builtin equivalents.
+   :func:`itertools.imap` to their built-in equivalents.
    :func:`itertools.ifilterfalse` is changed to :func:`itertools.filterfalse`.
 
 .. 2to3fixer:: long
@@ -246,8 +239,9 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: next
 
-   Converts the use of iterator's :meth:`next` methods to the :func:`next`
-   function.  It also renames :meth:`next` methods to :meth:`~object.__next__`.
+   Converts the use of iterator's :meth:`~iterator.next` methods to the
+   :func:`next` function.  It also renames :meth:`next` methods to
+   :meth:`~object.__next__`.
 
 .. 2to3fixer:: nonzero
 

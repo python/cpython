@@ -228,7 +228,7 @@ Compare::
 More useful functions in :mod:`os.path`: :func:`basename`,  :func:`dirname` and
 :func:`splitext`.
 
-There are also many useful builtin functions people seem not to be aware of for
+There are also many useful built-in functions people seem not to be aware of for
 some reason: :func:`min` and :func:`max` can find the minimum/maximum of any
 sequence with comparable semantics, for example, yet many people write their own
 :func:`max`/:func:`min`. Another highly useful function is

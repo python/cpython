@@ -249,9 +249,9 @@ The :mod:`urllib.parse` module defines the following functions:
 .. function:: quote_plus(string[, safe[, encoding[, errors]]])
 
    Like :func:`quote`, but also replace spaces by plus signs, as required for
-   quoting HTML form values.  Plus signs in the original string are escaped
-   unless they are included in *safe*.  It also does not have *safe* default to
-   ``'/'``.
+   quoting HTML form values when building up a query string to go into a URL.
+   Plus signs in the original string are escaped unless they are included in
+   *safe*.  It also does not have *safe* default to ``'/'``.
 
    Example: ``quote_plus('/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 

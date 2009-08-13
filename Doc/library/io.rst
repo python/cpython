@@ -12,7 +12,7 @@
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
 The :mod:`io` module provides the Python interfaces to stream handling.  The
-builtin :func:`open` function is defined in this module.
+built-in :func:`open` function is defined in this module.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
@@ -39,7 +39,7 @@ buffered text interface to a buffered raw stream
 stream for text.
 
 Argument names are not part of the specification, and only the arguments of
-:func:`open` are intended to be used as keyword arguments.
+:func:`.open` are intended to be used as keyword arguments.
 
 
 Module Interface
@@ -48,7 +48,7 @@ Module Interface
 .. data:: DEFAULT_BUFFER_SIZE
 
    An int containing the default buffer size used by the module's buffered I/O
-   classes.  :func:`open` uses the file's blksize (as obtained by
+   classes.  :func:`.open` uses the file's blksize (as obtained by
    :func:`os.stat`) if possible.
 
 .. function:: open(file, mode='r', buffering=None, encoding=None, errors=None, newline=None, closefd=True)
@@ -142,8 +142,8 @@ Module Interface
    closed.  If a filename is given *closefd* has no effect and must be ``True``
    (the default).
 
-   The type of file object returned by the :func:`open` function depends on the
-   mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
+   The type of file object returned by the :func:`.open` function depends on the
+   mode.  When :func:`.open` is used to open a file in a text mode (``'w'``,
    ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
    :class:`TextIOBase` (specifically :class:`TextIOWrapper`).  When used to open
    a file in a binary mode with buffering, the returned class is a subclass of
@@ -256,7 +256,7 @@ I/O Base Classes
       most *limit* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
-      the *newlines* argument to :func:`open` can be used to select the line
+      the *newlines* argument to :func:`.open` can be used to select the line
       terminator(s) recognized.
 
    .. method:: readlines(hint=-1)

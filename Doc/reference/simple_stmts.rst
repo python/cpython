@@ -881,7 +881,7 @@ Note that there is nothing special about the statement::
 That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
-Code compiled by calls to the builtin functions :func:`exec` and :func:`compile`
+Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
 that occur in a module :mod:`M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation

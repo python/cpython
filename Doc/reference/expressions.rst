@@ -641,7 +641,7 @@ the call.
 
 .. note::
 
-   An implementation may provide builtin functions whose positional parameters do
+   An implementation may provide built-in functions whose positional parameters do
    not have names, even if they are 'named' for the purpose of documentation, and
    which therefore cannot be supplied by keyword.  In CPython, this is the case for
    functions implemented in C that use :cfunc:`PyArg_ParseTuple` to parse their
@@ -996,7 +996,7 @@ operators *always* consider objects of different types to be unequal, while the
 ``<``, ``>``, ``>=`` and ``<=`` operators raise a :exc:`TypeError` when
 comparing objects of different types that do not implement these operators for
 the given pair of types.  You can control comparison behavior of objects of
-non-builtin types by defining rich comparison methods like :meth:`__gt__`,
+non-built-in types by defining rich comparison methods like :meth:`__gt__`,
 described in section :ref:`customization`.
 
 Comparison of objects of the same type depends on the type:
@@ -1037,7 +1037,7 @@ Comparison of objects of the same type depends on the type:
   which depend on total ordering.  For example, :func:`min`, :func:`max`, and
   :func:`sorted` produce undefined results given a list of sets as inputs.
 
-* Most other objects of builtin types compare unequal unless they are the same
+* Most other objects of built-in types compare unequal unless they are the same
   object; the choice whether one object is considered smaller or larger than
   another one is made arbitrarily but consistently within one execution of a
   program.

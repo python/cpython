@@ -101,7 +101,7 @@ Restrictions
 
 .. class:: BsdDbShelf(dict[, protocol=None[, writeback=False]])
 
-   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`next`,
+   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
    :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
    in the third-party :mod:`bsddb` module from `pybsddb
    <http://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
@@ -117,7 +117,7 @@ Restrictions
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`dbm.open`.  By
    default, the file will be created and opened for both read and write.  The
-   optional *flag* parameter has the same interpretation as for the :func:`open`
+   optional *flag* parameter has the same interpretation as for the :func:`.open`
    function.  The optional *protocol* and *writeback* parameters have the same
    interpretation as for the :class:`Shelf` class.
 

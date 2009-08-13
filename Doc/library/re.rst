@@ -221,7 +221,7 @@ The special characters are:
    flags are described in :ref:`contents-of-module-re`.) This
    is useful if you wish to include the flags as part of the regular
    expression, instead of passing a *flag* argument to the
-   :func:`compile` function.
+   :func:`re.compile` function.
 
    Note that the ``(?x)`` flag changes how the expression is parsed. It should be
    used first in the expression string, or after one or more whitespace characters.
@@ -464,9 +464,9 @@ form.
 
       result = re.match(pattern, string)
 
-   but using :func:`compile` and saving the resulting regular expression object
-   for reuse is more efficient when the expression will be used several times
-   in a single program.
+   but using :func:`re.compile` and saving the resulting regular expression
+   object for reuse is more efficient when the expression will be used several
+   times in a single program.
 
    .. note::
 
@@ -564,7 +564,7 @@ form.
 
    .. note::
 
-      If you want to locate a match anywhere in *string*, use :meth:`search`
+      If you want to locate a match anywhere in *string*, use :func:`search`
       instead.
 
 
@@ -655,9 +655,7 @@ form.
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
       'Baked Beans & Spam'
 
-   The pattern may be a string or an RE object; if you need to specify regular
-   expression flags, you must use a RE object, or use embedded modifiers in a
-   pattern; for example, ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
+   The pattern may be a string or an RE object.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
@@ -720,8 +718,8 @@ attributes:
 
    .. note::
 
-      If you want to locate a match anywhere in *string*, use :meth:`search`
-      instead.
+      If you want to locate a match anywhere in *string*, use
+      :meth:`~RegexObject.search` instead.
 
    The optional second parameter *pos* gives an index in the string where the
    search is to start; it defaults to ``0``.  This is not completely equivalent to
@@ -750,7 +748,7 @@ attributes:
    is different from finding a zero-length match at some point in the string.
 
    The optional *pos* and *endpos* parameters have the same meaning as for the
-   :meth:`match` method.
+   :meth:`~RegexObject.match` method.
 
 
 .. method:: RegexObject.split(string[, maxsplit=0])
@@ -814,10 +812,10 @@ support the following methods and attributes:
 .. method:: MatchObject.expand(template)
 
    Return the string obtained by doing backslash substitution on the template
-   string *template*, as done by the :meth:`sub` method. Escapes such as ``\n`` are
-   converted to the appropriate characters, and numeric backreferences (``\1``,
-   ``\2``) and named backreferences (``\g<1>``, ``\g<name>``) are replaced by the
-   contents of the corresponding group.
+   string *template*, as done by the :meth:`~RegexObject.sub` method.  Escapes
+   such as ``\n`` are converted to the appropriate characters, and numeric
+   backreferences (``\1``, ``\2``) and named backreferences (``\g<1>``,
+   ``\g<name>``) are replaced by the contents of the corresponding group.
 
 
 .. method:: MatchObject.group([group1, ...])
@@ -938,16 +936,16 @@ support the following methods and attributes:
 
 .. attribute:: MatchObject.pos
 
-   The value of *pos* which was passed to the :func:`search` or :func:`match`
-   method of the :class:`RegexObject`.  This is the index into the string at which
-   the RE engine started looking for a match.
+   The value of *pos* which was passed to the :meth:`~RegexObject.search` or
+   :meth:`~RegexObject.match` method of the :class:`RegexObject`.  This is the
+   index into the string at which the RE engine started looking for a match.
 
 
 .. attribute:: MatchObject.endpos
 
-   The value of *endpos* which was passed to the :func:`search` or :func:`match`
-   method of the :class:`RegexObject`.  This is the index into the string beyond
-   which the RE engine will not go.
+   The value of *endpos* which was passed to the :meth:`~RegexObject.search` or
+   :meth:`~RegexObject.match` method of the :class:`RegexObject`.  This is the
+   index into the string beyond which the RE engine will not go.
 
 
 .. attribute:: MatchObject.lastindex
@@ -967,13 +965,15 @@ support the following methods and attributes:
 
 .. attribute:: MatchObject.re
 
-   The regular expression object whose :meth:`match` or :meth:`search` method
-   produced this :class:`MatchObject` instance.
+   The regular expression object whose :meth:`~RegexObject.match` or
+   :meth:`~RegexObject.search` method produced this :class:`MatchObject`
+   instance.
 
 
 .. attribute:: MatchObject.string
 
-   The string passed to :func:`match` or :func:`search`.
+   The string passed to :meth:`~RegexObject.match` or
+   :meth:`~RegexObject.search`.
 
 
 Examples
@@ -1018,8 +1018,9 @@ To match this with a regular expression, one could use backreferences as such:
    >>> displaymatch(pair.match("354aa"))     # Pair of aces.
    "<Match: '354aa', groups=('a',)>"
 
-To find out what card the pair consists of, one could use the :func:`group`
-method of :class:`MatchObject` in the following manner:
+To find out what card the pair consists of, one could use the
+:meth:`~MatchObject.group` method of :class:`MatchObject` in the following
+manner:
 
 .. doctest::
 
