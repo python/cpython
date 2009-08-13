@@ -35,6 +35,9 @@ Core and Builtins
 C-API
 -----
 
+- Issue #6624: yArg_ParseTuple with "s" format when parsing argument with
+  NUL: Bogus TypeError detail string.
+
 - Issue #6405: Remove duplicate type declarations in descrobject.h.
 
 - The code flags for old __future__ features are now available again.
