@@ -163,13 +163,23 @@ Example HTML Parser Application
 As a basic example, below is a very basic HTML parser that uses the
 :class:`HTMLParser` class to print out tags as they are encountered::
 
-   from html.parser import HTMLParser
+   >>> from html.parser import HTMLParser
+   >>>
+   >>> class MyHTMLParser(HTMLParser):
+   ...     def handle_starttag(self, tag, attrs):
+   ...         print("Encountered a {} start tag".format(tag))
+   ...     def handle_endtag(self, tag):
+   ...         print("Encountered a {} end tag".format(tag))
+   ...
+   >>> page = """<html><h1>Title</h1><p>I'm a paragraph!</p></html>"""
+   >>>
+   >>> myparser = MyHTMLParser()
+   >>> myparser.feed(page)
+   Encountered a html start tag
+   Encountered a h1 start tag
+   Encountered a h1 end tag
+   Encountered a p start tag
+   Encountered a p end tag
+   Encountered a html end tag
 
-   class MyHTMLParser(HTMLParser):
-
-       def handle_starttag(self, tag, attrs):
-           print "Encountered the beginning of a %s tag" % tag
-
-       def handle_endtag(self, tag):
-           print "Encountered the end of a %s tag" % tag
 
