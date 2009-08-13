@@ -272,19 +272,8 @@ def f():
             inner()
             y = 1
 
-        try:
-            errorInOuter()
-        except UnboundLocalError:
-            pass
-        else:
-            self.fail()
-
-        try:
-            errorInInner()
-        except NameError:
-            pass
-        else:
-            self.fail()
+        self.assertRaises(UnboundLocalError, errorInOuter)
+        self.assertRaises(NameError, errorInInner)
 
         # test for bug #1501934: incorrect LOAD/STORE_GLOBAL generation
         exec("""
