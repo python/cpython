@@ -549,11 +549,8 @@ such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
 ``__spam`` (at least two leading underscores, at most one trailing underscore)
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with leading underscore(s) stripped.  This mangling is done
-without regard to the syntactic position of the identifier, so it can be used to
-define class-private instance and class variables, methods, variables stored in
-globals, and even variables stored in instances.  Truncation may occur when the
-mangled name would be longer than 255 characters.  Outside classes, or when the
-class name consists of only underscores, no mangling occurs.
+without regard to the syntactic position of the identifier, as long as it
+occurs within the definition of a class.
 
 Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can
