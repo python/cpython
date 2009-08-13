@@ -58,14 +58,14 @@ class TransactionTests(unittest.TestCase):
         self.cur1.execute("create table test2(j)")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 1)
+        self.assertEqual(len(res), 1)
 
     def CheckInsertStartsTransaction(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 0)
+        self.assertEqual(len(res), 0)
 
     def CheckUpdateStartsTransaction(self):
         self.cur1.execute("create table test(i)")
@@ -74,7 +74,7 @@ class TransactionTests(unittest.TestCase):
         self.cur1.execute("update test set i=6")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchone()[0]
-        self.failUnlessEqual(res, 5)
+        self.assertEqual(res, 5)
 
     def CheckDeleteStartsTransaction(self):
         self.cur1.execute("create table test(i)")
@@ -83,7 +83,7 @@ class TransactionTests(unittest.TestCase):
         self.cur1.execute("delete from test")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 1)
+        self.assertEqual(len(res), 1)
 
     def CheckReplaceStartsTransaction(self):
         self.cur1.execute("create table test(i)")
@@ -92,24 +92,24 @@ class TransactionTests(unittest.TestCase):
         self.cur1.execute("replace into test(i) values (6)")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 1)
-        self.failUnlessEqual(res[0][0], 5)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0][0], 5)
 
     def CheckToggleAutoCommit(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         self.con1.isolation_level = None
-        self.failUnlessEqual(self.con1.isolation_level, None)
+        self.assertEqual(self.con1.isolation_level, None)
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 1)
+        self.assertEqual(len(res), 1)
 
         self.con1.isolation_level = "DEFERRED"
-        self.failUnlessEqual(self.con1.isolation_level , "DEFERRED")
+        self.assertEqual(self.con1.isolation_level , "DEFERRED")
         self.cur1.execute("insert into test(i) values (5)")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.failUnlessEqual(len(res), 1)
+        self.assertEqual(len(res), 1)
 
     def CheckRaiseTimeout(self):
         if sqlite.sqlite_version_info < (3, 2, 2):

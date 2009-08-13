@@ -735,6 +735,14 @@ array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 		ihigh = Py_SIZE(a);
 	item = a->ob_item;
 	d = n - (ihigh-ilow);
+	/* Issue #4509: If the array has exported buffers and the slice
+	   assignment would change the size of the array, fail early to make
+	   sure we don't modify it. */
+	if (d != 0 && a->ob_exports > 0) {
+		PyErr_SetString(PyExc_BufferError, 
+			"cannot resize an array that is exporting buffers");
+		return -1;
+	}
 	if (d < 0) { /* Delete -d items */
 		memmove(item + (ihigh+d)*a->ob_descr->itemsize,
 			item + ihigh*a->ob_descr->itemsize,
@@ -802,8 +810,8 @@ array_iter_extend(arrayobject *self, PyObject *bb)
 static int
 array_do_extend(arrayobject *self, PyObject *bb)
 {
-	Py_ssize_t size, oldsize;
-
+	Py_ssize_t size, oldsize, bbsize;
+	
 	if (!array_Check(bb))
 		return array_iter_extend(self, bb);
 #define b ((arrayobject *)bb)
@@ -818,11 +826,13 @@ array_do_extend(arrayobject *self, PyObject *bb)
 		return -1;
 	}
 	oldsize = Py_SIZE(self);
+	/* Get the size of bb before resizing the array since bb could be self. */
+	bbsize = Py_SIZE(bb);
 	size = oldsize + Py_SIZE(b);
 	if (array_resize(self, size) == -1)
 		return -1;
 	memcpy(self->ob_item + oldsize * self->ob_descr->itemsize,
-		b->ob_item, Py_SIZE(b) * b->ob_descr->itemsize);
+		b->ob_item, bbsize * b->ob_descr->itemsize);
 
 	return 0;
 #undef b

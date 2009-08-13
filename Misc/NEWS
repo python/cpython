@@ -92,9 +92,22 @@ reported differently than it did with python 2.x.
 - Issue #6323: The pdb debugger did not exit when running a script with a
 syntax error.
 
+- Issue #3392: The subprocess communicate() method no longer fails in select()
+  when file descriptors are large; communicate() now uses poll() when possible.
+
 - Issue #6369: Fix an RLE decompression bug in the binhex module.
 
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
+
+- Issue #4005: Fixed a crash of pydoc when there was a zip file present in
+  sys.path.
+
+Extension Modules
+-----------------
+
+- Issue #4509: array.array objects are no longer modified after an operation
+  failing due to the resize restriction in-place when the object has exported
+  buffers.
 
 Build
 -----
