@@ -950,6 +950,8 @@ Library
 - Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
   "PyInit" prefix, rather than "init". 
 
+- Issue #6433: fixed issues with multiprocessing.pool.map hanging on empty list
+
 - Issue #6455: Fixed test_build_ext under win32. 
 
 - Issue #6413: Fixed the log level in distutils.dist for announce.
