@@ -143,9 +143,7 @@ do not copy data --- they just bind names to objects.  The same is true for
 deletions: the statement ``del x`` removes the binding of ``x`` from the
 namespace referenced by the local scope.  In fact, all operations that introduce
 new names use the local scope: in particular, :keyword:`import` statements and
-function definitions bind the module or function name in the local scope.  (The
-:keyword:`global` statement can be used to indicate that particular variables
-live in the global scope.)
+function definitions bind the module or function name in the local scope.
 
 The :keyword:`global` statement can be used to indicate that particular
 variables live in the global scope and should be rebound there; the
