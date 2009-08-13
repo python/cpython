@@ -1304,7 +1304,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    .. note::
 
       This method may still be bypassed when looking up special methods as the
-      result of implicit invocation via language syntax or builtin functions.
+      result of implicit invocation via language syntax or built-in functions.
       See :ref:`special-lookup`.
 
 
@@ -1696,12 +1696,12 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 .. method:: object.__reversed__(self)
 
-   Called (if present) by the :func:`reversed` builtin to implement
+   Called (if present) by the :func:`reversed` built-in to implement
    reverse iteration.  It should return a new iterator object that iterates
    over all the objects in the container in reverse order.
 
    If the :meth:`__reversed__` method is not provided, the :func:`reversed`
-   builtin will fall back to using the sequence protocol (:meth:`__len__` and
+   built-in will fall back to using the sequence protocol (:meth:`__len__` and
    :meth:`__getitem__`).  Objects that support the sequence protocol should
    only provide :meth:`__reversed__` if they can provide an implementation
    that is more efficient than the one provided by :func:`reversed`.

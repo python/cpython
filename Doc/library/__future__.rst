@@ -52,7 +52,7 @@ Instances of class :class:`_Feature` have two corresponding methods,
 :meth:`getOptionalRelease` and :meth:`getMandatoryRelease`.
 
 *CompilerFlag* is the (bitfield) flag that should be passed in the fourth
-argument to the builtin function :func:`compile` to enable the feature in
+argument to the built-in function :func:`compile` to enable the feature in
 dynamically compiled code.  This flag is stored in the :attr:`compiler_flag`
 attribute on :class:`_Feature` instances.
 

@@ -29,7 +29,7 @@ end
 # print the local variables of the current frame
 define pylocals
     set $_i = 0
-    while $_i < f->f_nlocals
+    while $_i < f->f_code->co_nlocals
 	if f->f_localsplus + $_i != 0
 	    set $_names = co->co_varnames
 	    set $_name = _PyUnicode_AsString(PyTuple_GetItem($_names, $_i))

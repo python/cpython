@@ -555,6 +555,8 @@ correspond to Unix system calls applicable to sockets.
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface. Please refer to the MSDN documentation for more information.
 
+   On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
+   functions may be used; they accept a socket object as their first argument.
 
 .. method:: socket.listen(backlog)
 

@@ -12,44 +12,41 @@ user not to "break into the definition."  The most important features of classes
 are retained with full power, however: the class inheritance mechanism allows
 multiple base classes, a derived class can override any methods of its base
 class or classes, and a method can call the method of a base class with the same
-name.  Objects can contain an arbitrary amount of private data.
+name.  Objects can contain an arbitrary amount of data.
 
 In C++ terminology, normally class members (including the data members) are
 *public* (except see below :ref:`tut-private`),
-and all member functions are *virtual*.  There are no special constructors or
-destructors.  As in Modula-3, there are no shorthands for referencing the
-object's members from its methods: the method function is declared with an
-explicit first argument representing the object, which is provided implicitly by
-the call.  As in Smalltalk, classes themselves are objects, albeit in the wider
-sense of the word: in Python, all data types are objects.  This provides
-semantics for importing and renaming.  Unlike  C++ and Modula-3, built-in types
-can be used as base classes for extension by the user.  Also, like in C++ but
-unlike in Modula-3, most built-in operators with special syntax (arithmetic
+and all member functions are *virtual*.  As in Modula-3, there are no shorthands
+for referencing the object's members from its methods: the method function is
+declared with an explicit first argument representing the object, which is
+provided implicitly by the call.  As in Smalltalk, classes themselves are
+objects.  This provides semantics for importing and renaming.  Unlike C++ and
+Modula-3, built-in types can be used as base classes for extension by the user.
+Also, like in C++, most built-in operators with special syntax (arithmetic
 operators, subscripting etc.) can be redefined for class instances.
 
-
-.. _tut-terminology:
-
-A Word About Terminology
-========================
-
-Lacking universally accepted terminology to talk about classes, I will make
-occasional use of Smalltalk and C++ terms.  (I would use Modula-3 terms, since
+(Lacking universally accepted terminology to talk about classes, I will make
+occasional use of Smalltalk and C++ terms.  I would use Modula-3 terms, since
 its object-oriented semantics are closer to those of Python than C++, but I
 expect that few readers have heard of it.)
+
+
+.. _tut-object:
+
+A Word About Names and Objects
+==============================
 
 Objects have individuality, and multiple names (in multiple scopes) can be bound
 to the same object.  This is known as aliasing in other languages.  This is
 usually not appreciated on a first glance at Python, and can be safely ignored
 when dealing with immutable basic types (numbers, strings, tuples).  However,
-aliasing has an (intended!) effect on the semantics of Python code involving
-mutable objects such as lists, dictionaries, and most types representing
-entities outside the program (files, windows, etc.).  This is usually used to
-the benefit of the program, since aliases behave like pointers in some respects.
-For example, passing an object is cheap since only a pointer is passed by the
-implementation; and if a function modifies an object passed as an argument, the
-caller will see the change --- this eliminates the need for two different
-argument passing mechanisms as in Pascal.
+aliasing has a possibly surprising effect on the semantics of Python code
+involving mutable objects such as lists, dictionaries, and most other types.
+This is usually used to the benefit of the program, since aliases behave like
+pointers in some respects.  For example, passing an object is cheap since only a
+pointer is passed by the implementation; and if a function modifies an object
+passed as an argument, the caller will see the change --- this eliminates the
+need for two different argument passing mechanisms as in Pascal.
 
 
 .. _tut-scopes:
@@ -73,7 +70,7 @@ built-in exception names); the global names in a module; and the local names in
 a function invocation.  In a sense the set of attributes of an object also form
 a namespace.  The important thing to know about namespaces is that there is
 absolutely no relation between names in different namespaces; for instance, two
-different modules may both define a function "maximize" without confusion ---
+different modules may both define a function ``maximize`` without confusion ---
 users of the modules must prefix it with the module name.
 
 By the way, I use the word *attribute* for any name following a dot --- for
@@ -112,11 +109,13 @@ name attempts to find the name in the namespace.
 
 Although scopes are determined statically, they are used dynamically. At any
 time during execution, there are at least three nested scopes whose namespaces
-are directly accessible: the innermost scope, which is searched first, contains
-the local names; the namespaces of any enclosing functions, which are searched
-starting with the nearest enclosing scope; the middle scope, searched next,
-contains the current module's global names; and the outermost scope (searched
-last) is the namespace containing built-in names.
+are directly accessible:
+
+* the innermost scope, which is searched first, contains the local names
+* the scopes of any enclosing functions, which are searched starting with the
+  nearest enclosing scope, contains non-local, but also non-global names
+* the next-to-last scope contains the current module's global names
+* the outermost scope (searched last) is the namespace containing built-in names
 
 If a name is declared global, then all references and assignments go directly to
 the middle scope containing the module's global names.  To rebind variables
@@ -138,15 +137,15 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that -- if no :keyword:`global` or
-:keyword:`nonlocal` statement is in effect -- assignments to names always go
-into the innermost scope.  Assignments do not copy data --- they just bind names
-to objects.  The same is true for deletions: the statement ``del x`` removes the
-binding of ``x`` from the namespace referenced by the local scope.  In fact, all
-operations that introduce new names use the local scope: in particular, import
-statements and function definitions bind the module or function name in the
-local scope.  (The :keyword:`global` statement can be used to indicate that
-particular variables live in the global scope.)
+A special quirk of Python is that -- if no :keyword:`global` statement is in
+effect -- assignments to names always go into the innermost scope.  Assignments
+do not copy data --- they just bind names to objects.  The same is true for
+deletions: the statement ``del x`` removes the binding of ``x`` from the
+namespace referenced by the local scope.  In fact, all operations that introduce
+new names use the local scope: in particular, :keyword:`import` statements and
+function definitions bind the module or function name in the local scope.  (The
+:keyword:`global` statement can be used to indicate that particular variables
+live in the global scope.)
 
 The :keyword:`global` statement can be used to indicate that particular
 variables live in the global scope and should be rebound there; the
@@ -424,9 +423,9 @@ glancing through a method.
 
 Often, the first argument of a method is called ``self``.  This is nothing more
 than a convention: the name ``self`` has absolutely no special meaning to
-Python.  (Note, however, that by not following the convention your code may be
+Python.  Note, however, that by not following the convention your code may be
 less readable to other Python programmers, and it is also conceivable that a
-*class browser* program might be written that relies upon such a convention.)
+*class browser* program might be written that relies upon such a convention.
 
 Any function object that is a class attribute defines a method for instances of
 that class.  It is not necessary that the function definition is textually
@@ -462,13 +461,13 @@ argument::
 
 Methods may reference global names in the same way as ordinary functions.  The
 global scope associated with a method is the module containing the class
-definition.  (The class itself is never used as a global scope!)  While one
+definition.  (The class itself is never used as a global scope.)  While one
 rarely encounters a good reason for using global data in a method, there are
 many legitimate uses of the global scope: for one thing, functions and modules
 imported into the global scope can be used by methods, as well as functions and
 classes defined in it.  Usually, the class containing the method is itself
 defined in this global scope, and in the next section we'll find some good
-reasons why a method would want to reference its own class!
+reasons why a method would want to reference its own class.
 
 Each value is an object, and therefore has a *class* (also called its *type*).
 It is stored as ``object.__class__``.
@@ -519,12 +518,12 @@ An overriding method in a derived class may in fact want to extend rather than
 simply replace the base class method of the same name. There is a simple way to
 call the base class method directly: just call ``BaseClassName.methodname(self,
 arguments)``.  This is occasionally useful to clients as well.  (Note that this
-only works if the base class is defined or imported directly in the global
+only works if the base class is accessible as ``BaseClassName`` in the global
 scope.)
 
 Python has two built-in functions that work with inheritance:
 
-* Use :func:`isinstance` to check an object's type: ``isinstance(obj, int)``
+* Use :func:`isinstance` to check an instance's type: ``isinstance(obj, int)``
   will be ``True`` only if ``obj.__class__`` is :class:`int` or some class
   derived from :class:`int`.
 
@@ -582,28 +581,30 @@ http://www.python.org/download/releases/2.3/mro/.
 Private Variables
 =================
 
-There is limited support for class-private identifiers.  Any identifier of the
-form ``__spam`` (at least two leading underscores, at most one trailing
-underscore) is textually replaced with ``_classname__spam``, where ``classname``
-is the current class name with leading underscore(s) stripped.  This mangling is
-done without regard to the syntactic position of the identifier, so it can be
-used to define class-private instance and class variables, methods, variables
-stored in globals, and even variables stored in instances. private to this class
-on instances of *other* classes.  Truncation may occur when the mangled name
-would be longer than 255 characters. Outside classes, or when the class name
-consists of only underscores, no mangling occurs.
+"Private" instance variables that cannot be accessed except from inside an
+object, don't exist in Python.  However, there is a convention that is followed
+by most Python code: a name prefixed with an underscore (e.g. ``_spam``) should
+be treated as a non-public part of the API (whether it is a function, a method
+or a data member).  It should be considered an implementation detail and subject
+to change without notice.
 
-Name mangling is intended to give classes an easy way to define "private"
-instance variables and methods, without having to worry about instance variables
-defined by derived classes, or mucking with instance variables by code outside
-the class.  Note that the mangling rules are designed mostly to avoid accidents;
-it still is possible for a determined soul to access or modify a variable that
-is considered private.  This can even be useful in special circumstances, such
-as in the debugger, and that's one reason why this loophole is not closed.
-(Buglet: derivation of a class with the same name as the base class makes use of
-private variables of the base class possible.)
+Since there is a valid use-case for class-private members (namely to avoid name
+clashes of names with names defined by subclasses), there is limited support for
+such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
+``__spam`` (at least two leading underscores, at most one trailing underscore)
+is textually replaced with ``_classname__spam``, where ``classname`` is the
+current class name with leading underscore(s) stripped.  This mangling is done
+without regard to the syntactic position of the identifier, so it can be used to
+define class-private instance and class variables, methods, variables stored in
+globals, and even variables stored in instances.  Truncation may occur when the
+mangled name would be longer than 255 characters.  Outside classes, or when the
+class name consists of only underscores, no mangling occurs.
 
-Notice that code passed to ``exec()`` or ``eval()`` does not
+Note that the mangling rules are designed mostly to avoid accidents; it still is
+possible to access or modify a variable that is considered private.  This can
+even be useful in special circumstances, such as in the debugger.
+
+Notice that code passed to ``exec()``, ``eval()`` or ``execfile()`` does not
 consider the classname of the invoking  class to be the current class; this is
 similar to the effect of the  ``global`` statement, the effect of which is
 likewise restricted to  code that is byte-compiled together.  The same
@@ -654,7 +655,7 @@ Exceptions Are Classes Too
 User-defined exceptions are identified by classes as well.  Using this mechanism
 it is possible to create extensible hierarchies of exceptions.
 
-There are two valid (semantic) forms for the raise statement::
+There are two new valid (semantic) forms for the :keyword:`raise` statement::
 
    raise Class
 
@@ -665,10 +666,10 @@ class derived from it.  The first form is a shorthand for::
 
    raise Class()
 
-A class in an except clause is compatible with an exception if it is the same
-class or a base class thereof (but not the other way around --- an except clause
-listing a derived class is not compatible with a base class).  For example, the
-following code will print B, C, D in that order::
+A class in an :keyword:`except` clause is compatible with an exception if it is
+the same class or a base class thereof (but not the other way around --- an
+except clause listing a derived class is not compatible with a base class).  For
+example, the following code will print B, C, D in that order::
 
    class B(Exception):
        pass

@@ -118,7 +118,7 @@ Alternately, you can use the :meth:`setparameters` method to set all three audio
 parameters at once.  This is more convenient, but may not be as flexible in all
 cases.
 
-The audio device objects returned by :func:`open` define the following methods
+The audio device objects returned by :func:`.open` define the following methods
 and (read-only) attributes:
 
 

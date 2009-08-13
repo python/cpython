@@ -84,9 +84,10 @@ access internal read-only data of Unicode objects:
    :ctype:`PyUnicodeObject` (not checked).
 
 
-.. cfunction:: int PyUnicode_ClearFreeList(void)
+.. cfunction:: int PyUnicode_ClearFreeList()
 
    Clear the free list. Return the total number of freed items.
+
 
 Unicode provides many different character properties. The most often needed ones
 are available through these macros which are mapped to C functions depending on
@@ -372,12 +373,12 @@ the system's :ctype:`wchar_t`.
 Built-in Codecs
 ^^^^^^^^^^^^^^^
 
-Python provides a set of builtin codecs which are written in C for speed. All of
+Python provides a set of built-in codecs which are written in C for speed. All of
 these codecs are directly usable via the following functions.
 
 Many of the following APIs take two arguments encoding and errors. These
 parameters encoding and errors have the same semantics as the ones of the
-builtin unicode() Unicode object constructor.
+built-in :func:`unicode` Unicode object constructor.
 
 Setting encoding to *NULL* causes the default encoding to be used
 which is ASCII.  The file system calls should use
@@ -389,7 +390,7 @@ pointer to a static string, on others, it will change at run-time
 
 Error handling is set by errors which may also be set to *NULL* meaning to use
 the default handling defined for the codec.  Default error handling for all
-builtin codecs is "strict" (:exc:`ValueError` is raised).
+built-in codecs is "strict" (:exc:`ValueError` is raised).
 
 The codecs all use a similar interface.  Only deviation from the following
 generic ones are documented for simplicity.
@@ -403,7 +404,7 @@ These are the generic codec APIs:
 
    Create a Unicode object by decoding *size* bytes of the encoded string *s*.
    *encoding* and *errors* have the same meaning as the parameters of the same name
-   in the :func:`unicode` builtin function.  The codec to be used is looked up
+   in the :func:`unicode` built-in function.  The codec to be used is looked up
    using the Python codec registry.  Return *NULL* if an exception was raised by
    the codec.
 

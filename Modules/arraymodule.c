@@ -1958,7 +1958,6 @@ is a single character.  The following type codes are defined:\n\
     'H'         unsigned integer   2 \n\
     'i'         signed integer     2 \n\
     'I'         unsigned integer   2 \n\
-    'w'         unicode character  4 \n\
     'l'         signed integer     4 \n\
     'L'         unsigned integer   4 \n\
     'f'         floating point     4 \n\

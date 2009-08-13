@@ -72,9 +72,10 @@ It defines the following functions:
    encoding error), ``'replace'`` (replace malformed data with a suitable
    replacement marker, such as ``'?'``), ``'ignore'`` (ignore malformed data and
    continue without further notice), ``'xmlcharrefreplace'`` (replace with the
-   appropriate XML character reference (for encoding only)) and
-   ``'backslashreplace'`` (replace with backslashed escape sequences (for encoding
-   only)) as well as any other error handling name defined via
+   appropriate XML character reference (for encoding only)),
+   ``'backslashreplace'`` (replace with backslashed escape sequences (for
+   encoding only)), ``'surrogateescape'`` (replae with surrogate U+DCxx, see
+   :pep:`383`) as well as any other error handling name defined via
    :func:`register_error`.
 
    In case a search function cannot find a given encoding, it should return

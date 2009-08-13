@@ -64,16 +64,16 @@ Floating Point Objects
    around the header file :file:`float.h`.
 
 
-.. cfunction:: double PyFloat_GetMax(void)
+.. cfunction:: double PyFloat_GetMax()
 
    Return the maximum representable finite float *DBL_MAX* as C :ctype:`double`.
 
 
-.. cfunction:: double PyFloat_GetMin(void)
+.. cfunction:: double PyFloat_GetMin()
 
    Return the minimum normalized positive float *DBL_MIN* as C :ctype:`double`.
 
-.. cfunction:: int PyFloat_ClearFreeList(void)
+.. cfunction:: int PyFloat_ClearFreeList()
 
    Clear the float free list. Return the number of items that could not
    be freed.

@@ -73,7 +73,7 @@ accessible to C code.  They all work with the current interpreter thread's
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
    on error.
 
-.. cfunction:: void PySys_ResetWarnOptions(void)
+.. cfunction:: void PySys_ResetWarnOptions()
 
    Reset :data:`sys.warnoptions` to an empty list.
 

@@ -86,7 +86,7 @@ source.
 
    .. note::
 
-      This option cannot be used with builtin modules and extension modules
+      This option cannot be used with built-in modules and extension modules
       written in C, since they do not have Python module files. However, it
       can still be used for precompiled modules, even if the original source
       file is not available.

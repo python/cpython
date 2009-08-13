@@ -21,7 +21,7 @@ defined:
 +-----------+----------------+-------------------+-----------------------+
 | ``'B'``   | unsigned char  | int               | 1                     |
 +-----------+----------------+-------------------+-----------------------+
-| ``'u'``   | Py_UNICODE     | Unicode character | 2                     |
+| ``'u'``   | Py_UNICODE     | Unicode character | 2 (see note)          |
 +-----------+----------------+-------------------+-----------------------+
 | ``'h'``   | signed short   | int               | 2                     |
 +-----------+----------------+-------------------+-----------------------+
@@ -39,6 +39,11 @@ defined:
 +-----------+----------------+-------------------+-----------------------+
 | ``'d'``   | double         | float             | 8                     |
 +-----------+----------------+-------------------+-----------------------+
+
+.. note::
+
+   The ``'u'`` typecode corresponds to Python's unicode character.  On narrow
+   Unicode builds this is 2-bytes, on wide builds this is 4-bytes.
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed

@@ -23,16 +23,17 @@ This module provides a class, an instance, and a function:
 
 .. data:: aRepr
 
-   This is an instance of :class:`Repr` which is used to provide the :func:`repr`
-   function described below.  Changing the attributes of this object will affect
-   the size limits used by :func:`repr` and the Python debugger.
+   This is an instance of :class:`Repr` which is used to provide the
+   :func:`.repr` function described below.  Changing the attributes of this
+   object will affect the size limits used by :func:`.repr` and the Python
+   debugger.
 
 
 .. function:: repr(obj)
 
-   This is the :meth:`repr` method of ``aRepr``.  It returns a string similar to
-   that returned by the built-in function of the same  name, but with limits on
-   most sizes.
+   This is the :meth:`~Repr.repr` method of ``aRepr``.  It returns a string
+   similar to that returned by the built-in function of the same name, but with
+   limits on most sizes.
 
 
 .. _repr-objects:
@@ -92,7 +93,7 @@ which format specific object types.
 
 .. method:: Repr.repr1(obj, level)
 
-   Recursive implementation used by :meth:`repr`.  This uses the type of *obj* to
+   Recursive implementation used by :meth:`.repr`.  This uses the type of *obj* to
    determine which formatting method to call, passing it *obj* and *level*.  The
    type-specific methods should call :meth:`repr1` to perform recursive formatting,
    with ``level - 1`` for the value of *level* in the recursive  call.

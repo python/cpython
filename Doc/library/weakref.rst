@@ -62,7 +62,7 @@ instances, functions written in Python (but not in C), instance methods, sets,
 frozensets, file objects, :term:`generator`\s, type objects, sockets, arrays,
 deques, and regular expression pattern objects.
 
-Several builtin types such as :class:`list` and :class:`dict` do not directly
+Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
 
    class Dict(dict):

@@ -516,10 +516,10 @@ by file descriptors.
 
    .. note::
 
-      This function is intended for low-level I/O.  For normal usage, use the built-in
-      function :func:`open`, which returns a "file object" with :meth:`~file.read` and
-      :meth:`~file.write` methods (and many more).  To wrap a file descriptor in a "file
-      object", use :func:`fdopen`.
+      This function is intended for low-level I/O.  For normal usage, use the
+      built-in function :func:`open`, which returns a "file object" with
+      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
+      wrap a file descriptor in a "file object", use :func:`fdopen`.
 
 
 .. function:: openpty()
@@ -540,9 +540,9 @@ by file descriptors.
 
 .. function:: read(fd, n)
 
-   Read at most *n* bytes from file descriptor *fd*. Return a string containing the
+   Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
    bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty string is returned. Availability: Unix, Windows.
+   empty bytes object is returned. Availability: Unix, Windows.
 
    .. note::
 
@@ -574,8 +574,8 @@ by file descriptors.
 
 .. function:: write(fd, str)
 
-   Write the string *str* to file descriptor *fd*. Return the number of bytes
-   actually written. Availability: Unix, Windows.
+   Write the bytestring in *str* to file descriptor *fd*. Return the number of
+   bytes actually written. Availability: Unix, Windows.
 
    .. note::
 
@@ -662,10 +662,10 @@ Files and Directories
 
    .. note::
 
-      Using :func:`access` to check if a user is authorized to e.g. open a file before
-      actually doing so using :func:`open` creates a security hole, because the user
-      might exploit the short time interval  between checking and opening the file to
-      manipulate it.
+      Using :func:`access` to check if a user is authorized to e.g. open a file
+      before actually doing so using :func:`open` creates a security hole,
+      because the user might exploit the short time interval between checking
+      and opening the file to manipulate it.
 
    .. note::
 
