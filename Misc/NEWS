@@ -45,6 +45,9 @@ C-API
 Library
 -------
 
+- Issue #6106: telnetlib.Telnet.process_rawq doesn't handle default WILL/WONT
+  DO/DONT correctly.
+
 - Issue #6126: Fixed pdb command-line usage.
 
 - Issue #6629: Fix a data corruption issue in the new I/O library, which could
@@ -62,32 +65,32 @@ Library
 - Issue #2715: Remove remnants of Carbon.File from binhex module.
 
 - Issue #6595: The Decimal constructor now allows arbitrary Unicode
-  decimal digits in input, as recommended by the standard.  Previously
-  it was restricted to accepting [0-9].
+decimal digits in input, as recommended by the standard.  Previously
+it was restricted to accepting [0-9].
 
 - Issues #5155, #5313, #5331: multiprocessing.Process._bootstrap was
-  unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
-  descriptor errors
+unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
+descriptor errors
 
 - Issue #1424152: Fix for http.client, urllib.request to support SSL while
-  working through proxy. Original patch by Christopher Li, changes made by
-  Senthil Kumaran
+working through proxy. Original patch by Christopher Li, changes made by
+Senthil Kumaran
 
 - importlib.abc.PyLoader did not inherit from importlib.abc.ResourceLoader like
-  the documentation said it did even though the code in PyLoader relied on the
-  abstract method required by ResourceLoader.
+the documentation said it did even though the code in PyLoader relied on the
+abstract method required by ResourceLoader.
 
 - Issue #6431: Make Fraction type return NotImplemented when it doesn't
-  know how to handle a comparison without loss of precision.  Also add
-  correct handling of infinities and nans for comparisons with float.
+know how to handle a comparison without loss of precision.  Also add
+correct handling of infinities and nans for comparisons with float.
 
 - Issue #6415: Fixed warnings.warn segfault on bad formatted string.
 
 - Issue #6358: The exit status of a command started with os.popen() was
-  reported differently than it did with python 2.x.
+reported differently than it did with python 2.x.
 
 - Issue #6323: The pdb debugger did not exit when running a script with a
-  syntax error.
+syntax error.
 
 - Issue #6369: Fix an RLE decompression bug in the binhex module.
 
@@ -97,16 +100,16 @@ Build
 -----
 
 - Issue 4601: 'make install' did not set the appropriate permissions on
-  directories.
+directories.
 
 - Issue 5390: Add uninstall icon independent of whether file
-  extensions are installed.
+extensions are installed.
 
 Test
 ----
 
 - Fix a test in importlib.test.source.test_abc_loader that was incorrectly
-  testing when a .pyc file lacked an code object bytecode.
+testing when a .pyc file lacked an code object bytecode.
 
 
 What's New in Python 3.1?
@@ -118,27 +121,27 @@ Core and Builtins
 -----------------
 
 - Issue #6334: Fix bug in range length calculation for ranges with
-  large arguments.
+large arguments.
 
 - Issue #6329: Fixed iteration for memoryview objects (it was being blocked
-  because it wasn't recognized as a sequence).
+because it wasn't recognized as a sequence).
 
 Library
 -------
 
 - Issue #6314: logging.basicConfig() performs extra checks on the "level"
-  argument.
+argument.
 
 - Issue #6274: Fixed possible file descriptors leak in subprocess.py
 
 - Accessing io.StringIO.buffer now raises an AttributeError instead of
-  io.UnsupportedOperation.
+io.UnsupportedOperation.
 
 - Issue #6271: mmap tried to close invalid file handle (-1) when anonymous.
-  (On Unix)
+(On Unix)
 
 - Issue #1202: zipfile module would cause a struct.error when attempting to
-  store files with a CRC32 > 2**31-1.
+store files with a CRC32 > 2**31-1.
 
 Extension Modules
 -----------------
@@ -157,50 +160,50 @@ Core and Builtins
 - Fixed SystemError triggered by "range([], 1, -1)".
 
 - Issue #5924: On Windows, a large PYTHONPATH environment variable
-  (more than 255 characters) would be completely ignored.
+(more than 255 characters) would be completely ignored.
 
 - Issue #4547: When debugging a very large function, it was not always
-  possible to update the lineno attribute of the current frame.
+possible to update the lineno attribute of the current frame.
 
 - Issue #5330: C functions called with keyword arguments were not reported by
-  the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
+the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
 
 Library
 -------
 
 - Issue #6438: Fixed distutils.cygwinccompiler.get_versions : the regular
-  expression string pattern was trying to match against a bytes returned by 
-  Popen. Tested under win32 to build the py-postgresql project.
+expression string pattern was trying to match against a bytes returned by 
+Popen. Tested under win32 to build the py-postgresql project.
 
 - Issue #6258: Support AMD64 in bdist_msi.
 
 - Issue #6195: fixed doctest to no longer try to read 'source' data from
-  binary files.
+binary files.
 
 - Issue #5262: Fixed bug in next rollover time computation in
-  TimedRotatingFileHandler.
+TimedRotatingFileHandler.
 
 - Issue #6217: The C implementation of io.TextIOWrapper didn't include the
-  errors property.  Additionally, the errors and encoding properties of StringIO
-  are always None now.
+errors property.  Additionally, the errors and encoding properties of StringIO
+are always None now.
 
 - Issue #6137: The pickle module now translates module names when loading
-  or dumping pickles with a 2.x-compatible protocol, in order to make data
-  sharing and migration easier. This behaviour can be disabled using the
-  new `fix_imports` optional argument.
+or dumping pickles with a 2.x-compatible protocol, in order to make data
+sharing and migration easier. This behaviour can be disabled using the
+new `fix_imports` optional argument.
 
 - Removed the ipaddr module.
 
 - Issue #3613: base64.{encode,decode}string are now called
-  base64.{encode,decode}bytes which reflects what type they accept and return.
-  The old names are still there as deprecated aliases.
+base64.{encode,decode}bytes which reflects what type they accept and return.
+The old names are still there as deprecated aliases.
 
 - Issue #5767: Remove sgmlop support from xmlrpc.client.
 
 - Issue #6150: Fix test_unicode on wide-unicode builds.
 
 - Issue #6149: Fix initialization of WeakValueDictionary objects from non-empty
-  parameters.
+parameters.
 
 Windows
 -------
