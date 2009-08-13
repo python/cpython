@@ -163,6 +163,8 @@ Library
 Extension Modules
 -----------------
 
+- Fix expat to not segfault with specially crafted input.
+
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
 Build
