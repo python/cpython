@@ -850,7 +850,7 @@ class FileEntry(TixWidget):
         # FIXME: return python object
         pass
 
-class HList(TixWidget):
+class HList(TixWidget, XView, YView):
     """HList - Hierarchy display  widget can be used to display any data
     that have a hierarchical structure, for example, file system directory
     trees. The list entries are indented and connected by branch lines
@@ -1036,12 +1036,6 @@ class HList(TixWidget):
 
     def show_entry(self, entry):
         return self.tk.call(self._w, 'show', 'entry', entry)
-
-    def xview(self, *args):
-        self.tk.call(self._w, 'xview', *args)
-
-    def yview(self, *args):
-        self.tk.call(self._w, 'yview', *args)
 
 class InputOnly(TixWidget):
     """InputOnly - Invisible widget. Unix only.
@@ -1419,7 +1413,7 @@ class StdButtonBox(TixWidget):
         if name in self.subwidget_list:
             self.tk.call(self._w, 'invoke', name)
 
-class TList(TixWidget):
+class TList(TixWidget, XView, YView):
     """TList - Hierarchy display widget which can be
     used to display data in a tabular format. The list entries of a TList
     widget are similar to the entries in the Tk listbox widget. The main
@@ -1501,12 +1495,6 @@ class TList(TixWidget):
 
     def selection_set(self, first, last=None):
         self.tk.call(self._w, 'selection', 'set', first, last)
-
-    def xview(self, *args):
-        self.tk.call(self._w, 'xview', *args)
-
-    def yview(self, *args):
-        self.tk.call(self._w, 'yview', *args)
 
 class Tree(TixWidget):
     """Tree - The tixTree widget can be used to display hierachical
@@ -1777,7 +1765,7 @@ class CObjView(TixWidget):
     pass
 
 
-class Grid(TixWidget):
+class Grid(TixWidget, XView, YView):
     '''The Tix Grid command creates a new window  and makes it into a
     tixGrid widget. Additional options, may be specified on the command
     line or in the option database to configure aspects such as its cursor
@@ -1864,22 +1852,6 @@ class Grid(TixWidget):
 
     # def size dim index ?option value ...?
     # def unset x y
-
-    def xview(self):
-        return self._getdoubles(self.tk.call(self, 'xview'))
-    def xview_moveto(self, fraction):
-        self.tk.call(self,'xview', 'moveto', fraction)
-    def xview_scroll(self, count, what="units"):
-        "Scroll right (count>0) or left <count> of units|pages"
-        self.tk.call(self, 'xview', 'scroll', count, what)
-
-    def yview(self):
-        return self._getdoubles(self.tk.call(self, 'yview'))
-    def yview_moveto(self, fraction):
-        self.tk.call(self,'ysview', 'moveto', fraction)
-    def yview_scroll(self, count, what="units"):
-        "Scroll down (count>0) or up <count> of units|pages"
-        self.tk.call(self, 'yview', 'scroll', count, what)
 
 class ScrolledGrid(Grid):
     '''Scrolled Grid widgets'''

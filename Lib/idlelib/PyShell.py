@@ -55,20 +55,21 @@ except ImportError:
 else:
     def idle_showwarning(message, category, filename, lineno,
                          file=None, line=None):
-        file = warning_stream
+        if file is None:
+            file = warning_stream
         try:
-            file.write(warnings.formatwarning(message, category, filename,\
+            file.write(warnings.formatwarning(message, category, filename,
                                               lineno, file=file, line=line))
         except IOError:
             pass  ## file (probably __stderr__) is invalid, warning dropped.
     warnings.showwarning = idle_showwarning
-    def idle_formatwarning(message, category, filename, lineno,
-                           file=None, line=None):
+    def idle_formatwarning(message, category, filename, lineno, line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
         s += '  File \"%s\", line %s\n' % (filename, lineno)
-        line = linecache.getline(filename, lineno).strip() \
-            if line is None else line
+        if line is None:
+            line = linecache.getline(filename, lineno)
+        line = line.strip()
         if line:
             s += "    %s\n" % line
         s += "%s: %s\n>>> " % (category.__name__, message)
@@ -81,18 +82,17 @@ def extended_linecache_checkcache(filename=None,
 
     Rather than repeating the linecache code, patch it to save the
     <pyshell#...> entries, call the original linecache.checkcache()
-    (which destroys them), and then restore the saved entries.
+    (skipping them), and then restore the saved entries.
 
     orig_checkcache is bound at definition time to the original
     method, allowing it to be patched.
-
     """
     cache = linecache.cache
     save = {}
-    for filename in cache:
-        if filename[:1] + filename[-1:] == '<>':
-            save[filename] = cache[filename]
-    orig_checkcache()
+    for key in list(cache):
+        if key[:1] + key[-1:] == '<>':
+            save[key] = cache.pop(key)
+    orig_checkcache(filename)
     cache.update(save)
 
 # Patch linecache.checkcache():
