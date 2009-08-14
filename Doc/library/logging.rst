@@ -1627,6 +1627,8 @@ sends logging output to a disk file.  It inherits the output functionality from
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely.
 
+   .. versionchanged:: 2.6
+      *delay* was added.
 
    .. method:: close()
 
@@ -1696,6 +1698,9 @@ this value.
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 
+   .. versionchanged:: 2.6
+      *delay* was added.
+
 
    .. method:: emit(record)
 
@@ -1733,6 +1738,8 @@ module, supports rotation of disk log files.
    :file:`app.log.1`, :file:`app.log.2`, etc.  exist, then they are renamed to
    :file:`app.log.2`, :file:`app.log.3` etc.  respectively.
 
+   .. versionchanged:: 2.6
+      *delay* was added.
 
    .. method:: doRollover()
 
@@ -1792,6 +1799,11 @@ timed intervals.
    one is deleted. The deletion logic uses the interval to determine which
    files to delete, so changing the interval may leave old files lying around.
 
+   If *delay* is true, then file opening is deferred until the first call to
+   :meth:`emit`.
+
+   .. versionchanged:: 2.6
+      *delay* was added.
 
    .. method:: doRollover()
 
