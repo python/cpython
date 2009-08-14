@@ -2,7 +2,6 @@ import sys
 import os
 import re
 import imp
-from itertools import count
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
@@ -779,8 +778,8 @@ class EditorWindow(object):
         for instance in self.top.instance_dict.keys():
             menu = instance.recent_files_menu
             menu.delete(1, END)  # clear, and rebuild:
-            for i, file in zip(count(), rf_list):
-                file_name = file[0:-1]  # zap \n
+            for i, file_name in enumerate(rf_list):
+                file_name = file_name.rstrip()  # zap \n
                 # make unicode string to display non-ASCII chars correctly
                 ufile_name = self._filename_to_unicode(file_name)
                 callback = instance.__recent_file_callback(file_name)
