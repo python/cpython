@@ -2420,7 +2420,8 @@ class Entry(Widget, XView):
         self.tk.call(self._w, 'selection', 'from', index)
     select_from = selection_from
     def selection_present(self):
-        """Return whether the widget has the selection."""
+        """Return True if there are characters selected in the entry, False
+        otherwise."""
         return self.tk.getboolean(
             self.tk.call(self._w, 'selection', 'present'))
     select_present = selection_present
