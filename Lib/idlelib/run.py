@@ -25,12 +25,13 @@ except ImportError:
     pass
 else:
     def idle_formatwarning_subproc(message, category, filename, lineno,
-                                   file=None, line=None):
+                                   line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
         s += '  File \"%s\", line %s\n' % (filename, lineno)
-        line = linecache.getline(filename, lineno).strip() \
-            if line is None else line
+        if line is None:
+            line = linecache.getline(filename, lineno)
+        line = line.strip()
         if line:
             s += "    %s\n" % line
         s += "%s: %s\n" % (category.__name__, message)
