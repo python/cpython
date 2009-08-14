@@ -354,6 +354,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1135: Add the XView and YView mix-ins to avoid duplicating
+  the xview* and yview* methods.
+
 - Issue #6629: Fix a data corruption issue in the new `io` package, which could
   occur when writing to a BufferedRandom object (e.g. a file opened in "rb+" or
   "wb+" mode) after having buffered a certain amount of data for reading. This
