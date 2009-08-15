@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6117: Fix O(n**2) performance degradation when outputting lots of
+  small data on a buffered socket.socket.makefile() object.
+
 - Issue #6637: defaultdict.copy() did not work when the default factory
   was left unspecified.  Also, the eval/repr round-trip would fail when
   the default_factory was None.
