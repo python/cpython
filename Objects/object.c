@@ -1806,9 +1806,11 @@ _specialized_dir_module(PyObject *obj)
 		if (PyDict_Check(dict))
 			result = PyDict_Keys(dict);
 		else {
-			PyErr_Format(PyExc_TypeError,
-				     "%.200s.__dict__ is not a dictionary",
-				     PyModule_GetName(obj));
+			char *name = PyModule_GetName(obj);
+			if (name)
+				PyErr_Format(PyExc_TypeError,
+					     "%.200s.__dict__ is not a dictionary",
+					     name);
 		}
 	}
 
