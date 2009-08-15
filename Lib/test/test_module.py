@@ -11,6 +11,7 @@ class ModuleTests(unittest.TestCase):
         # and __doc__ is None
         foo = ModuleType.__new__(ModuleType)
         self.assertTrue(foo.__dict__ is None)
+        self.assertRaises(SystemError, dir, foo)
         try:
             s = foo.__name__
             self.fail("__name__ = %s" % repr(s))
