@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6704: Improve the col_offset in AST for "for" statements with
+  a target of tuple unpacking.
+
 - Issue #6707: dir() on an uninitialized module caused a crash.
 
 - Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
