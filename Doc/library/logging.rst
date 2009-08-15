@@ -1331,6 +1331,12 @@ existing processes to perform this function.) The following section documents
 this approach in more detail and includes a working socket receiver which can
 be used as a starting point for you to adapt in your own applications.
 
+If you are using a recent version of Python which includes the
+:mod:`multiprocessing` module, you can write your own handler which uses the
+:class:`Lock` class from this module to serialize access to the file from
+your processes. The existing :class:`FileHandler` and subclasses do not make
+use of :mod:`multiprocessing` at present, though they may do so in the future.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
