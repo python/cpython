@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6707: dir() on an uninitialized module caused a crash.
+
 - Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
 
 - Issue #6573: set.union() stopped processing inputs if an instance of self
