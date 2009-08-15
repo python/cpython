@@ -582,6 +582,17 @@ class Pathname_Tests(unittest.TestCase):
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
 
+class URLopener_Tests(unittest.TestCase):
+    """Testcase to test the open method of URLopener class."""
+    def test_quoted_open(self):
+        class DummyURLopener(urllib.URLopener):
+            def open_spam(self, url):
+                return url
+
+        self.assertEqual(DummyURLopener().open(
+            'spam://example/ /'),'//example/%20/')
+
+
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
 # Everywhere else they work ok, but on those machines, someteimes
@@ -676,6 +687,7 @@ def test_main():
             UnquotingTests,
             urlencode_Tests,
             Pathname_Tests,
+            URLopener_Tests,
             #FTPWrapperTests,
         )
 
