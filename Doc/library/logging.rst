@@ -1337,6 +1337,22 @@ When this script is run, the output should look something like this::
 
 The :class:`LoggerAdapter` class was not present in previous versions.
 
+.. _multiple-processes:
+
+Logging to a single file from multiple processes
+------------------------------------------------
+
+Although logging is thread-safe, and logging to a single file from multiple
+threads in a single process *is* supported, logging to a single file from
+*multiple processes* is *not* supported, because there is no standard way to
+serialize access to a single file across multiple processes in Python. If you
+need to log to a single file from multiple processes, the best way of doing
+this is to have all the processes log to a :class:`SocketHandler`, and have a
+separate process which implements a socket server which reads from the socket
+and logs to file. (If you prefer, you can dedicate one thread in one of the
+existing processes to perform this function.) The following section documents
+this approach in more detail and includes a working socket receiver which can
+be used as a starting point for you to adapt in your own applications.
 
 .. _network-logging:
 
