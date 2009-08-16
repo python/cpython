@@ -65,6 +65,8 @@ C-API
 Library
 -------
 
+- Issue #6665: Fix fnmatch to properly match filenames with newlines in them.
+
 - Issue #1135: Add the XView and YView mix-ins to avoid duplicating
   the xview* and yview* methods.
 
