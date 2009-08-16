@@ -1153,6 +1153,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
+
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
@@ -2457,8 +2459,6 @@ Tests
 
 Build
 -----
-
-- Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
 - Issue #1496032: On alpha, use -mieee when gcc is the compiler.
 
