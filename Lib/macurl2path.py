@@ -13,7 +13,7 @@ def url2pathname(pathname):
     #
     # XXXX The .. handling should be fixed...
     #
-    tp = urllib.parsesplittype(pathname)[0]
+    tp = urllib.parse.splittype(pathname)[0]
     if tp and tp != 'file':
         raise RuntimeError('Cannot convert non-local URL to pathname')
     # Turn starting /// into /, an empty hostname means current host
@@ -47,7 +47,7 @@ def url2pathname(pathname):
             i = i + 1
         rv = ':' + ':'.join(components)
     # and finally unquote slashes and other funny characters
-    return urllib.parseunquote(rv)
+    return urllib.parse.unquote(rv)
 
 def pathname2url(pathname):
     """OS-specific conversion from a file system path to a relative URL
@@ -74,7 +74,7 @@ def pathname2url(pathname):
 
 def _pncomp2url(component):
     # We want to quote slashes
-    return urllib.parsequote(component[:31], safe='')
+    return urllib.parse.quote(component[:31], safe='')
 
 def test():
     for url in ["index.html",
