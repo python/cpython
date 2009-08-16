@@ -326,6 +326,25 @@ class BaseTest(unittest.TestCase):
                 f.close()
             support.unlink(support.TESTFN)
 
+    def test_filewrite(self):
+        a = array.array(self.typecode, 2*self.example)
+        f = open(support.TESTFN, 'wb')
+        try:
+            f.write(a)
+            f.close()
+            b = array.array(self.typecode)
+            f = open(support.TESTFN, 'rb')
+            b.fromfile(f, len(self.example))
+            self.assertEqual(b, array.array(self.typecode, self.example))
+            self.assertNotEqual(a, b)
+            b.fromfile(f, len(self.example))
+            self.assertEqual(a, b)
+            f.close()
+        finally:
+            if not f.closed:
+                f.close()
+            support.unlink(support.TESTFN)
+
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
         b = array.array(self.typecode)
