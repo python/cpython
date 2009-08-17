@@ -1336,6 +1336,9 @@ If you are using a recent version of Python which includes the
 :class:`Lock` class from this module to serialize access to the file from
 your processes. The existing :class:`FileHandler` and subclasses do not make
 use of :mod:`multiprocessing` at present, though they may do so in the future.
+Note that at present, the :mod:`multiprocessing` module does not provide
+working lock functionality on all platforms (see
+http://bugs.python.org/issue3770).
 
 .. _network-logging:
 
