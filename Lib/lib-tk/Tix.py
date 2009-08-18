@@ -1548,7 +1548,7 @@ class CheckList(TixWidget):
     # FIXME: It should inherit -superclass tixTree
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixCheckList',
-                           ['options'], cnf, kw)
+                           ['options', 'radio'], cnf, kw)
         self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
         self.subwidget_list['vsb'] = _dummyScrollbar(self, 'vsb')
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
