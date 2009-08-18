@@ -359,6 +359,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1522587: New constants and methods for the Tix.Grid widget.
+
 - Issue #1250469: Fix the return value of Tix.PanedWindow.panes.
 
 - Issue #1119673: Do not override Tkinter.Text methods when creating a
