@@ -229,8 +229,8 @@ are also provided to help in implementing the core ABCs.
     .. method:: source_path(fullname)
 
         An abstract method that returns the path to the source code for a
-        module. Should return :keyword:`None` if there is no source code.
-        :exc:`ImportError` if the module cannot be found.
+        module. Should return :keyword:`None` if there is no source code or
+        raise :exc:`ImportError` if the module cannot be found.
 
     .. method:: get_filename(fullname)
 
