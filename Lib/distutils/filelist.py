@@ -115,7 +115,7 @@ class FileList:
         # defined: it's the first word of the line.  Which of the other
         # three are defined depends on the action; it'll be either
         # patterns, (dir and patterns), or (dir_pattern).
-        (action, patterns, dir, dir_pattern) = self._parse_template_line(line)
+        action, patterns, dir, dir_pattern = self._parse_template_line(line)
 
         # OK, now we know that the action is valid and we have the
         # right number of words on the line for that action -- so we
@@ -181,9 +181,6 @@ class FileList:
         else:
             raise DistutilsInternalError, \
                   "this cannot happen: invalid action '%s'" % action
-
-    # process_template_line ()
-
 
     # -- Filtering/selection methods -----------------------------------
 
