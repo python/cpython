@@ -36,7 +36,7 @@ class FileListTestCase(unittest.TestCase):
         file_list = FileList()
 
         # simulated file list
-        file_list.allfiles = ['foo.tmp', 'ok', 'xo', 'four.txt'
+        file_list.allfiles = ['foo.tmp', 'ok', 'xo', 'four.txt',
                               join('global', 'one.txt'),
                               join('global', 'two.txt'),
                               join('global', 'files.x'),
@@ -53,9 +53,9 @@ class FileListTestCase(unittest.TestCase):
                 continue
             file_list.process_template_line(line)
 
-        wanted = ['ok', join('global', 'one.txt'), join('global', 'two.txt'),
-                  'four.txt', join('f', 'o', 'f.oo'), join('dir', 'graft-one'),
-                  join('dir', 'dir2', 'graft2')]
+        wanted = ['ok', 'four.txt', join('global', 'one.txt'),
+                  join('global', 'two.txt'), join('f', 'o', 'f.oo'),
+                  join('dir', 'graft-one'), join('dir', 'dir2', 'graft2')]
 
         self.assertEquals(file_list.files, wanted)
 
