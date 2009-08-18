@@ -65,6 +65,15 @@ C-API
 Library
 -------
 
+- Issue #1356969: Add missing info methods in tix.HList.
+
+- Issue #1522587: New constants and methods for the tix.Grid widget.
+
+- Issue #1250469: Fix the return value of tix.PanedWindow.panes.
+
+- Issue #1119673: Do not override tkinter.Text methods when creating a
+  ScrolledText.
+
 - Issue #6665: Fix fnmatch to properly match filenames with newlines in them.
 
 - Issue #1135: Add the XView and YView mix-ins to avoid duplicating
