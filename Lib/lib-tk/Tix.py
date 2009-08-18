@@ -1201,7 +1201,8 @@ class OptionMenu(TixWidget):
     menu            Menu"""
 
     def __init__(self, master, cnf={}, **kw):
-        TixWidget.__init__(self, master, 'tixOptionMenu', ['options'], cnf, kw)
+        TixWidget.__init__(self, master, 'tixOptionMenu',
+                ['labelside', 'options'], cnf, kw)
         self.subwidget_list['menubutton'] = _dummyMenubutton(self, 'menubutton')
         self.subwidget_list['menu'] = _dummyMenu(self, 'menu')
 
