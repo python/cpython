@@ -1844,16 +1844,19 @@ class Grid(TixWidget, XView, YView):
 
     def entrycget(self, x, y, option):
         "Get the option value for cell at (x,y)"
+        if option and option[0] != '-':
+            option = '-' + option
         return self.tk.call(self, 'entrycget', x, y, option)
 
-    def entryconfigure(self, x, y, **kw):
-        return self.tk.call(self, 'entryconfigure', x, y, *self._options(None, kw))
+    def entryconfigure(self, x, y, cnf=None, **kw):
+        return self._configure(('entryconfigure', x, y), cnf, kw)
+
     # def format
     # def index
 
     def info_exists(self, x, y):
         "Return True if display item exists at (x,y)"
-        return bool(int(self.tk.call(self, 'info', 'exists', x, y)))
+        return self._getboolean(self.tk.call(self, 'info', 'exists', x, y))
 
     def info_bbox(self, x, y):
         # This seems to always return '', at least for 'text' displayitems
