@@ -1235,11 +1235,8 @@ class PanedWindow(TixWidget):
         self.tk.call(self._w, 'paneconfigure', entry, *self._options(cnf, kw))
 
     def panes(self):
-        names = self.tk.call(self._w, 'panes')
-        ret = []
-        for x in names:
-            ret.append(self.subwidget(x))
-        return ret
+        names = self.tk.splitlist(self.tk.call(self._w, 'panes'))
+        return [self.subwidget(x) for x in names]
 
 class PopupMenu(TixWidget):
     """PopupMenu widget can be used as a replacement of the tk_popup command.
