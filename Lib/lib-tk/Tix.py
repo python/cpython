@@ -976,12 +976,22 @@ class HList(TixWidget, XView, YView):
     def info_anchor(self):
         return self.tk.call(self._w, 'info', 'anchor')
 
+    def info_bbox(self, entry):
+        return self._getints(
+                self.tk.call(self._w, 'info', 'bbox', entry)) or None
+
     def info_children(self, entry=None):
         c = self.tk.call(self._w, 'info', 'children', entry)
         return self.tk.splitlist(c)
 
     def info_data(self, entry):
         return self.tk.call(self._w, 'info', 'data', entry)
+
+    def info_dragsite(self):
+        return self.tk.call(self._w, 'info', 'dragsite')
+
+    def info_dropsite(self):
+        return self.tk.call(self._w, 'info', 'dropsite')
 
     def info_exists(self, entry):
         return self.tk.call(self._w, 'info', 'exists', entry)

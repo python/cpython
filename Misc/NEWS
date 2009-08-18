@@ -359,6 +359,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1356969: Add missing info methods in Tix.HList.
+
 - Issue #1522587: New constants and methods for the Tix.Grid widget.
 
 - Issue #1250469: Fix the return value of Tix.PanedWindow.panes.
