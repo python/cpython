@@ -35,10 +35,16 @@ class HelperFunctionsTests(unittest.TestCase):
     def setUp(self):
         """Save a copy of sys.path"""
         self.sys_path = sys.path[:]
+        self.old_base = site.USER_BASE
+        self.old_site = site.USER_SITE
+        self.old_prefixes = site.PREFIXES
 
     def tearDown(self):
         """Restore sys.path"""
         sys.path = self.sys_path
+        site.USER_BASE = self.old_base
+        site.USER_SITE = self.old_site
+        site.PREFIXES = self.old_prefixes
 
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
@@ -123,6 +129,60 @@ class HelperFunctionsTests(unittest.TestCase):
             env=env)
         self.assertEqual(rc, 1)
 
+    def test_getuserbase(self):
+        site.USER_BASE = None
+        user_base = site.getuserbase()
+
+        # the call sets site.USER_BASE
+        self.assertEquals(site.USER_BASE, user_base)
+
+        # let's set PYTHONUSERBASE and see if it uses it
+        site.USER_BASE = None
+        with EnvironmentVarGuard() as environ:
+            environ['PYTHONUSERBASE'] = 'xoxo'
+            self.assertTrue(site.getuserbase().startswith('xoxo'))
+
+    def test_getusersitepackages(self):
+        site.USER_SITE = None
+        site.USER_BASE = None
+        user_site = site.getusersitepackages()
+
+        # the call sets USER_BASE *and* USER_SITE
+        self.assertEquals(site.USER_SITE, user_site)
+        self.assertTrue(user_site.startswith(site.USER_BASE))
+
+    def test_getsitepackages(self):
+        site.PREFIXES = ['xoxo']
+        dirs = site.getsitepackages()
+
+        if sys.platform in ('os2emx', 'riscos'):
+            self.assertTrue(len(dirs), 1)
+            wanted = os.path.join('xoxo', 'Lib', 'site-packages')
+            self.assertEquals(dirs[0], wanted)
+        elif os.sep == '/':
+            self.assertTrue(len(dirs), 2)
+            wanted = os.path.join('xoxo', 'lib', 'python' + sys.version[:3],
+                                  'site-packages')
+            self.assertEquals(dirs[0], wanted)
+            wanted = os.path.join('xoxo', 'lib', 'site-python')
+            self.assertEquals(dirs[1], wanted)
+        else:
+            self.assertTrue(len(dirs), 2)
+            self.assertEquals(dirs[0], 'xoxo')
+            wanted = os.path.join('xoxo', 'Lib', 'site-packages')
+            self.assertEquals(dirs[1], wanted)
+
+        # let's try the specific Apple location
+        if sys.platform == "darwin":
+            site.PREFIXES = ['Python.framework']
+            dirs = site.getsitepackages()
+            self.assertTrue(len(dirs), 4)
+            wanted = os.path.join('~', 'Library', 'Python',
+                                  sys.version[:3], 'site-packages')
+            self.assertEquals(dirs[2], os.path.expanduser(wanted))
+            wanted = os.path.join('/Library', 'Python', sys.version[:3],
+                                  'site-packages')
+            self.assertEquals(dirs[3], wanted)
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""

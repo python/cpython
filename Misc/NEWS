@@ -359,6 +359,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6693: New functions in site.py to get user/global site packages paths.
+
 - The thread.lock type now supports weak references.
 
 - Issue #1356969: Add missing info methods in Tix.HList.
