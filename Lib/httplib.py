@@ -328,7 +328,7 @@ class HTTPResponse:
     def __init__(self, sock, debuglevel=0, strict=0, method=None, buffering=False):
         if buffering:
             # The caller won't be using any sock.recv() calls, so buffering
-            # is fine and recommendef for performance
+            # is fine and recommended for performance.
             self.fp = sock.makefile('rb')
         else:
             # The buffer size is specified as zero, because the headers of
