@@ -116,6 +116,32 @@ empty, and the path manipulations are skipped; however the import of
 
    Adds a directory to sys.path and processes its pth files.
 
+.. function:: getsitepackages()
+
+   Returns a list containing all global site-packages directories
+   (and possibly site-python).
+
+   .. versionadded:: 2.7
+
+.. function:: getuserbase()
+
+   Returns the `user base` directory path.
+
+   The `user base` directory can be used to store data. If the global
+   variable ``USER_BASE`` is not initialized yet, this function will also set
+   it.
+
+   .. versionadded:: 2.7
+
+.. function:: getusersitepackages()
+
+   Returns the user-specific site-packages directory path.
+
+   If the global variable ``USER_SITE`` is not initialized yet, this
+   function will also set it.
+
+   .. versionadded:: 2.7
 
 XXX Update documentation
 XXX document python -m site --user-base --user-site
+

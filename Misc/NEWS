@@ -992,6 +992,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6693: New functions in site.py to get user/global site packages paths.
+
 - Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
   opening an empty or very small file.
 
