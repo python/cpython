@@ -359,6 +359,8 @@ Core and Builtins
 Library
 -------
 
+- The thread.lock type now supports weak references.
+
 - Issue #1356969: Add missing info methods in Tix.HList.
 
 - Issue #1522587: New constants and methods for the Tix.Grid widget.
