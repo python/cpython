@@ -122,6 +122,12 @@ directories.
 - Issue 5390: Add uninstall icon independent of whether file
 extensions are installed.
 
+Documentation
+-------------
+
+- Issue #6556: Fixed the Distutils configuration files location explanation
+  for Windows.
+
 Test
 ----
 
