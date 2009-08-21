@@ -183,6 +183,12 @@ Build
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
+Documentation
+-------------
+
+- Issue #6556: Fixed the Distutils configuration files location explanation
+  for Windows.
+
 Tests
 -----
 
@@ -1236,9 +1242,6 @@ Build
 
 Documentation
 -------------
-
-- Issue #6556: Fixed the Distutils configuration files location explanation
-  for Windows.
 
 - Issue #2235: the C API function PyObject_HashNotImplemented and its
   interaction with the tp_hash slot (added in 2.6b2) are now documented
