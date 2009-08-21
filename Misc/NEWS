@@ -1783,6 +1783,9 @@ Build
 Documentation
 -------------
 
+- Issue #6556: Fixed the Distutils configuration files location explanation
+  for Windows.
+
 - Issue #2235: the C API function PyObject_HashNotImplemented and its
   interaction with the tp_hash slot (added in 2.6b2) are now documented
 
