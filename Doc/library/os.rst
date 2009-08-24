@@ -1121,7 +1121,10 @@ Files and Directories
 
 .. function:: rmdir(path)
 
-   Remove the directory *path*. Availability: Unix, Windows.
+   Remove (delete) the directory *path*.  Only works when the directory is
+   empty, otherwise, :exc:`OSError` is raised.  In order to remove whole
+   directory trees, :func:`shutil.rmtree` can be used.  Availability: Unix,
+   Windows.
 
 
 .. function:: stat(path)
