@@ -50,8 +50,8 @@ need for two different argument passing mechanisms as in Pascal.
 
 .. _tut-scopes:
 
-Python Scopes and Name Spaces
-=============================
+Python Scopes and Namespaces
+============================
 
 Before introducing classes, I first have to tell you something about Python's
 scope rules.  Class definitions play some neat tricks with namespaces, and you
@@ -86,7 +86,7 @@ attributes is possible.  Module attributes are writable: you can write
 :keyword:`del` statement.  For example, ``del modname.the_answer`` will remove
 the attribute :attr:`the_answer` from the object named by ``modname``.
 
-Name spaces are created at different moments and have different lifetimes.  The
+Namespaces are created at different moments and have different lifetimes.  The
 namespace containing the built-in names is created when the Python interpreter
 starts up, and is never deleted.  The global namespace for a module is created
 when the module definition is read in; normally, module namespaces also last
