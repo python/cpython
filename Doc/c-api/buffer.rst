@@ -10,7 +10,6 @@ Buffer Objects
 
 
 .. index::
-   object: buffer
    single: buffer interface
 
 Python objects implemented in C can export a "buffer interface."  These
@@ -297,14 +296,25 @@ Buffer related functions
    length.  Return 0 on success and -1 (with raising an error) on error.
 
 
+.. index::
+   object: memoryview
+
+
 MemoryView objects
 ==================
 
-A memoryview object is an extended buffer object that could replace the buffer
-object (but doesn't have to as that could be kept as a simple 1-d memoryview
-object).  It, unlike :ctype:`Py_buffer`, is a Python object (exposed as
-:class:`memoryview` in :mod:`builtins`), so it can be used with Python code.
+A memoryview object exposes the C level buffer interface to Python.
+
 
 .. cfunction:: PyObject* PyMemoryView_FromObject(PyObject *obj)
 
    Return a memoryview object from an object that defines the buffer interface.
+
+
+.. cfunction:: PyObject * PyMemoryView_GetContiguous(PyObject *obj,  int buffertype, char order)
+
+   Return a memoryview object to a contiguous chunk of memory (in either
+   'C' or 'F'ortran order) from an object that defines the buffer
+   interface. If memory is contiguous, the memoryview object points to the
+   original memory. Otherwise copy is made and the memoryview points to a
+   new bytes object.
