@@ -81,7 +81,8 @@ class EncodingTest(unittest.TestCase):
     # [BOM conflict]
     def test_bom_conflict(self):
         source = codecs.BOM_UTF8 + self.create_source('latin-1')
-        self.assertRaises(SyntaxError, self.run_test, source)
+        with self.assertRaises(SyntaxError):
+            self.run_test(source)
 
 
 class LineEndingTest(unittest.TestCase):

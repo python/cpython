@@ -63,7 +63,8 @@ class ImportModuleTests(unittest.TestCase):
     def test_relative_import_wo_package(self):
         # Relative imports cannot happen without the 'package' argument being
         # set.
-        self.assertRaises(TypeError, importlib.import_module, '.support')
+        with self.assertRaises(TypeError):
+            importlib.import_module('.support')
 
 
 def test_main():

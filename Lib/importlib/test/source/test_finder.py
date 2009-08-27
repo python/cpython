@@ -97,8 +97,8 @@ class FinderTests(abc.FinderTests):
             with context as mapping:
                 os.unlink(mapping['pkg.sub.__init__'])
                 pkg_dir = os.path.dirname(mapping['pkg.__init__'])
-                self.assertRaises(ImportWarning, self.import_, pkg_dir,
-                                    'pkg.sub')
+                with self.assertRaises(ImportWarning):
+                    self.import_(pkg_dir, 'pkg.sub')
 
     # [package over modules]
     def test_package_over_module(self):
@@ -117,8 +117,8 @@ class FinderTests(abc.FinderTests):
     def test_empty_dir(self):
         with warnings.catch_warnings():
             warnings.simplefilter("error", ImportWarning)
-            self.assertRaises(ImportWarning, self.run_test, 'pkg',
-            {'pkg.__init__'}, unlink={'pkg.__init__'})
+            with self.assertRaises(ImportWarning):
+                self.run_test('pkg', {'pkg.__init__'}, unlink={'pkg.__init__'})
 
 
 def test_main():
