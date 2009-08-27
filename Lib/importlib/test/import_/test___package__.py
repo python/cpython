@@ -56,15 +56,16 @@ class Using__package__(unittest.TestCase):
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
-        self.assertRaises(SystemError, import_util.import_,'', globals, {},
-                            ['relimport'], 1)
+        with self.assertRaises(SystemError):
+            import_util.import_('', globals, {}, ['relimport'], 1)
 
     def test_bunk__package__(self):
         globals = {'__package__': 42}
-        self.assertRaises(ValueError, import_util.import_, '', globals, {},
-                            ['relimport'], 1)
+        with self.assertRaises(ValueError):
+            import_util.import_('', globals, {}, ['relimport'], 1)
 
 
+@import_util.importlib_only
 class Setting__package__(unittest.TestCase):
 
     """Because __package__ is a new feature, it is not always set by a loader.
