@@ -329,6 +329,66 @@ def http_server(evt, numrequests, requestHandler=None):
         PORT = None
         evt.set()
 
+def http_multi_server(evt, numrequests, requestHandler=None):
+    class TestInstanceClass:
+        def div(self, x, y):
+            return x // y
+
+        def _methodHelp(self, name):
+            if name == 'div':
+                return 'This is the div function'
+
+    def my_function():
+        '''This is my function'''
+        return True
+
+    class MyXMLRPCServer(SimpleXMLRPCServer.MultiPathXMLRPCServer):
+        def get_request(self):
+            # Ensure the socket is always non-blocking.  On Linux, socket
+            # attributes are not inherited like they are on *BSD and Windows.
+            s, port = self.socket.accept()
+            s.setblocking(True)
+            return s, port
+
+    if not requestHandler:
+        requestHandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
+    class MyRequestHandler(requestHandler):
+        rpc_paths = []
+
+    serv = MyXMLRPCServer(("localhost", 0), MyRequestHandler,
+                          logRequests=False, bind_and_activate=False)
+    serv.socket.settimeout(3)
+    serv.server_bind()
+    try:
+        global ADDR, PORT, URL
+        ADDR, PORT = serv.socket.getsockname()
+        #connect to IP address directly.  This avoids socket.create_connection()
+        #trying to connect to to "localhost" using all address families, which
+        #causes slowdown e.g. on vista which supports AF_INET6.  The server listens
+        #on AF_INET only.
+        URL = "http://%s:%d"%(ADDR, PORT)
+        serv.server_activate()
+        paths = ["/foo", "/foo/bar"]
+        for path in paths:
+            d = serv.add_dispatcher(path, SimpleXMLRPCServer.SimpleXMLRPCDispatcher())
+            d.register_introspection_functions()
+            d.register_multicall_functions()
+        serv.get_dispatcher(paths[0]).register_function(pow)
+        serv.get_dispatcher(paths[1]).register_function(lambda x,y: x+y, 'add')
+        evt.set()
+
+        # handle up to 'numrequests' requests
+        while numrequests > 0:
+            serv.handle_request()
+            numrequests -= 1
+
+    except socket.timeout:
+        pass
+    finally:
+        serv.socket.close()
+        PORT = None
+        evt.set()
+
 # This function prevents errors like:
 #    <ProtocolError for localhost:57527/RPC2: 500 Internal Server Error>
 def is_unavailable_exception(e):
@@ -353,6 +413,7 @@ def is_unavailable_exception(e):
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
+    threadFunc = staticmethod(http_server)
     def setUp(self):
         # enable traceback reporting
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
@@ -360,7 +421,7 @@ class BaseServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, self.request_count, self.requestHandler)
-        threading.Thread(target=http_server, args=serv_args).start()
+        threading.Thread(target=self.threadFunc, args=serv_args).start()
 
         # wait for the server to be ready
         self.evt.wait(10)
@@ -516,6 +577,18 @@ class SimpleServerTestCase(BaseServerTestCase):
         # Get the test to run faster by sending a request with test_simple1.
         # This avoids waiting for the socket timeout.
         self.test_simple1()
+
+class MultiPathServerTestCase(BaseServerTestCase):
+    threadFunc = staticmethod(http_multi_server)
+    request_count = 2
+    def test_path1(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo")
+        self.assertEqual(p.pow(6,8), 6**8)
+        self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
+    def test_path2(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo/bar")
+        self.assertEqual(p.add(6,8), 6+8)
+        self.assertRaises(xmlrpclib.Fault, p.pow, 6, 8)
 
 #A test case that verifies that a server using the HTTP/1.1 keep-alive mechanism
 #does indeed serve subsequent requests on the same connection
@@ -923,6 +996,7 @@ def test_main():
         xmlrpc_tests.append(GzipServerTestCase)
     except ImportError:
         pass #gzip not supported in this build
+    xmlrpc_tests.append(MultiPathServerTestCase)
     xmlrpc_tests.append(ServerProxyTestCase)
     xmlrpc_tests.append(FailingServerTestCase)
     xmlrpc_tests.append(CGIHandlerTestCase)

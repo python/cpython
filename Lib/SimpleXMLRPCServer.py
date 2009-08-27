@@ -161,8 +161,9 @@ class SimpleXMLRPCDispatcher:
     """Mix-in class that dispatches XML-RPC requests.
 
     This class is used to register XML-RPC method handlers
-    and then to dispatch them. There should never be any
-    reason to instantiate this class directly.
+    and then to dispatch them. This class doesn't need to be
+    instanced directly when used by SimpleXMLRPCServer but it
+    can be instanced when used by the MultiPathXMLRPCServer
     """
 
     def __init__(self, allow_none=False, encoding=None):
@@ -237,7 +238,7 @@ class SimpleXMLRPCDispatcher:
 
         self.funcs.update({'system.multicall' : self.system_multicall})
 
-    def _marshaled_dispatch(self, data, dispatch_method = None):
+    def _marshaled_dispatch(self, data, dispatch_method = None, path = None):
         """Dispatches an XML-RPC method from marshalled (XML) data.
 
         XML-RPC methods are dispatched from the marshalled (XML) data
@@ -499,7 +500,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # check to see if a subclass implements _dispatch and dispatch
             # using that method if present.
             response = self.server._marshaled_dispatch(
-                    data, getattr(self, '_dispatch', None)
+                    data, getattr(self, '_dispatch', None), self.path
                 )
         except Exception, e: # This should only happen if the module is buggy
             # internal error, report as HTTP server error
@@ -595,6 +596,44 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
             flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
             fcntl.fcntl(self.fileno(), fcntl.F_SETFD, flags)
+
+class MultiPathXMLRPCServer(SimpleXMLRPCServer):
+    """Multipath XML-RPC Server
+    This specialization of SimpleXMLRPCServer allows the user to create
+    multiple Dispatcher instances and assign them to different
+    HTTP request paths.  This makes it possible to run two or more
+    'virtual XML-RPC servers' at the same port.
+    Make sure that the requestHandler accepts the paths in question.
+    """
+    def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
+                 logRequests=True, allow_none=False, encoding=None, bind_and_activate=True):
+
+        SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests, allow_none,
+                                    encoding, bind_and_activate)
+        self.dispatchers = {}
+        self.allow_none = allow_none
+        self.encoding = encoding
+
+    def add_dispatcher(self, path, dispatcher):
+        self.dispatchers[path] = dispatcher
+        return dispatcher
+
+    def get_dispatcher(self, path):
+        return self.dispatchers[path]
+
+    def _marshaled_dispatch(self, data, dispatch_method = None, path = None):
+        try:
+            response = self.dispatchers[path]._marshaled_dispatch(
+               data, dispatch_method, path)
+        except:
+            # report low level exception back to server
+            # (each dispatcher should have handled their own
+            # exceptions)
+            exc_type, exc_value = sys.exc_info()[:2]
+            response = xmlrpclib.dumps(
+                xmlrpclib.Fault(1, "%s:%s" % (exc_type, exc_value)),
+                encoding=self.encoding, allow_none=self.allow_none)
+        return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
