@@ -2821,6 +2821,21 @@ test case
                 self.assertRaisesRegexp, Exception,
                 re.compile('^Expected$'), Stub)
 
+    def testAssertRaisesExcValue(self):
+        class ExceptionMock(Exception):
+            pass
+
+        def Stub(foo):
+            raise ExceptionMock(foo)
+        v = "particular value"
+
+        ctx = self.assertRaises(ExceptionMock)
+        with ctx:
+            Stub(v)
+        e = ctx.exc_value
+        self.assertTrue(isinstance(e, ExceptionMock))
+        self.assertEqual(e.args[0], v)
+
     def testSynonymAssertMethodNames(self):
         """Test undocumented method name synonyms.
 
