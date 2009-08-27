@@ -46,7 +46,8 @@ class LoaderTests(abc.LoaderTests):
         pass
 
     def test_unloadable(self):
-        self.assertRaises(ImportError, self.load_module, 'asdfjkl;')
+        with self.assertRaises(ImportError):
+            self.load_module('asdfjkl;')
 
 
 def test_main():

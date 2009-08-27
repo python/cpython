@@ -18,8 +18,8 @@ class ParentModuleTests(unittest.TestCase):
     def test_bad_parent(self):
         with util.mock_modules('pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
-                self.assertRaises(ImportError,
-                                    import_util.import_, 'pkg.module')
+                with self.assertRaises(ImportError):
+                    import_util.import_('pkg.module')
 
 
 def test_main():

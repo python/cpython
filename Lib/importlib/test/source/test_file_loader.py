@@ -93,7 +93,8 @@ class SimpleTest(unittest.TestCase):
                 file.write('+++ bad syntax +++')
             loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
                                                     False)
-            self.assertRaises(SyntaxError, loader.load_module, name)
+            with self.assertRaises(SyntaxError):
+                loader.load_module(name)
             for attr in attributes:
                 self.assertEqual(getattr(orig_module, attr), value)
 
@@ -104,7 +105,8 @@ class SimpleTest(unittest.TestCase):
                 file.write('=')
             loader = _bootstrap._PyPycFileLoader('_temp', mapping['_temp'],
                                                     False)
-            self.assertRaises(SyntaxError, loader.load_module, '_temp')
+            with self.assertRaises(SyntaxError):
+                loader.load_module('_temp')
             self.assertTrue('_temp' not in sys.modules)
 
 
@@ -166,8 +168,8 @@ class BadBytecodeTest(unittest.TestCase):
                 bytecode_file.write(imp.get_magic())
                 bytecode_file.write(source_timestamp)
                 bytecode_file.write(b'AAAA')
-            self.assertRaises(ValueError, self.import_, mapping['_temp'],
-                                '_temp')
+            with self.assertRaises(ValueError):
+                self.import_(mapping['_temp'], '_temp')
             self.assertTrue('_temp' not in sys.modules)
 
 

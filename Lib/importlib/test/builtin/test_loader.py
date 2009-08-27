@@ -54,13 +54,15 @@ class LoaderTests(abc.LoaderTests):
     def test_unloadable(self):
         name = 'dssdsdfff'
         assert name not in sys.builtin_module_names
-        self.assertRaises(ImportError, self.load_module, name)
+        with self.assertRaises(ImportError):
+            self.load_module(name)
 
     def test_already_imported(self):
         # Using the name of a module already imported but not a built-in should
         # still fail.
         assert hasattr(importlib, '__file__')  # Not a built-in.
-        self.assertRaises(ImportError, self.load_module, 'importlib')
+        with self.assertRaises(ImportError):
+            self.load_module('importlib')
 
 
 class InspectLoaderTests(unittest.TestCase):
@@ -86,7 +88,8 @@ class InspectLoaderTests(unittest.TestCase):
         # Modules not built-in should raise ImportError.
         for meth_name in ('get_code', 'get_source', 'is_package'):
             method = getattr(machinery.BuiltinImporter, meth_name)
-        self.assertRaises(ImportError, method, builtin_util.BAD_NAME)
+        with self.assertRaises(ImportError):
+            method(builtin_util.BAD_NAME)
 
 
 

@@ -154,8 +154,9 @@ class RelativeImports(unittest.TestCase):
                     {'__name__': 'pkg', '__path__': ['blah']})
         def callback(global_):
             import_util.import_('pkg')
-            self.assertRaises(ValueError, import_util.import_, '', global_,
-                                fromlist=['top_level'], level=2)
+            with self.assertRaises(ValueError):
+                import_util.import_('', global_, fromlist=['top_level'],
+                                    level=2)
         self.relative_import_test(create, globals_, callback)
 
     def test_too_high_from_module(self):
@@ -164,13 +165,15 @@ class RelativeImports(unittest.TestCase):
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.module'}
         def callback(global_):
             import_util.import_('pkg')
-            self.assertRaises(ValueError, import_util.import_, '', global_,
-                                fromlist=['top_level'], level=2)
+            with self.assertRaises(ValueError):
+                import_util.import_('', global_, fromlist=['top_level'],
+                                    level=2)
         self.relative_import_test(create, globals_, callback)
 
     def test_empty_name_w_level_0(self):
         # [empty name]
-        self.assertRaises(ValueError, import_util.import_, '')
+        with self.assertRaises(ValueError):
+            import_util.import_('')
 
     def test_import_from_different_package(self):
         # Test importing from a different package than the caller.
