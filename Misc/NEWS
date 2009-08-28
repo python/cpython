@@ -65,6 +65,9 @@ C-API
 Library
 -------
 
+- Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
+  payloads are now ordered by integer value rather than lexicographically.
+
 - Issue #1356969: Add missing info methods in tix.HList.
 
 - Issue #1522587: New constants and methods for the tix.Grid widget.
