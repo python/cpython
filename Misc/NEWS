@@ -47,6 +47,9 @@ C-API
 Library
 -------
 
+- Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
+  payloads are now ordered by integer value rather than lexicographically.
+
 - Issue #6106: telnetlib.Telnet.process_rawq doesn't handle default WILL/WONT
   DO/DONT correctly.
 
