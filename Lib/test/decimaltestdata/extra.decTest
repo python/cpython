@@ -154,6 +154,22 @@ extr1301 fma Inf 0 sNaN456 -> NaN Invalid_operation
 extr1302 fma 0E123 -Inf sNaN789 -> NaN Invalid_operation
 extr1302 fma -Inf 0E-456 sNaN148 -> NaN Invalid_operation
 
+-- Issue #6794: when comparing NaNs using compare_total, payloads
+-- should be compared as though positive integers; not
+-- lexicographically as strings.
+extr1400 comparetotal NaN123 NaN45 -> 1
+extr1401 comparetotal sNaN123 sNaN45 -> 1
+extr1402 comparetotal -NaN123 -NaN45 -> -1
+extr1403 comparetotal -sNaN123 -sNaN45 -> -1
+extr1404 comparetotal NaN45 NaN123 -> -1
+extr1405 comparetotal sNaN45 sNaN123 -> -1
+extr1406 comparetotal -NaN45 -NaN123 -> 1
+extr1407 comparetotal -sNaN45 -sNaN123 -> 1
+
+extr1410 comparetotal -sNaN63450748854172416 -sNaN911993 -> -1
+extr1411 comparetotmag NaN1222222222222 -NaN999999 -> 1
+
+
 -- max/min/max_mag/min_mag bug in 2.5.2/2.6/3.0: max(NaN, finite) gave
 -- incorrect answers when the finite number required rounding; similarly
 -- for the other thre functions
