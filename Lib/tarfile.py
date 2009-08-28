@@ -309,11 +309,6 @@ def filemode(mode):
             perm.append("-")
     return "".join(perm)
 
-if os.sep != "/":
-    normpath = lambda path: os.path.normpath(path).replace(os.sep, "/")
-else:
-    normpath = os.path.normpath
-
 class TarError(Exception):
     """Base exception."""
     pass
@@ -955,7 +950,7 @@ class TarInfo(object):
         """Return the TarInfo's attributes as a dictionary.
         """
         info = {
-            "name":     normpath(self.name),
+            "name":     self.name,
             "mode":     self.mode & 0o7777,
             "uid":      self.uid,
             "gid":      self.gid,
@@ -963,7 +958,7 @@ class TarInfo(object):
             "mtime":    self.mtime,
             "chksum":   self.chksum,
             "type":     self.type,
-            "linkname": normpath(self.linkname) if self.linkname else "",
+            "linkname": self.linkname,
             "uname":    self.uname,
             "gname":    self.gname,
             "devmajor": self.devmajor,
@@ -1795,10 +1790,9 @@ class TarFile(object):
         # Absolute paths are turned to relative paths.
         if arcname is None:
             arcname = name
-        arcname = normpath(arcname)
         drv, arcname = os.path.splitdrive(arcname)
-        while arcname[0:1] == "/":
-            arcname = arcname[1:]
+        arcname = arcname.replace(os.sep, "/")
+        arcname = arcname.lstrip("/")
 
         # Now, fill the TarInfo object with
         # information specific for the file.
@@ -1925,16 +1919,6 @@ class TarFile(object):
         # Skip if somebody tries to archive the archive...
         if self.name is not None and os.path.abspath(name) == self.name:
             self._dbg(2, "tarfile: Skipped %r" % name)
-            return
-
-        # Special case: The user wants to add the current
-        # working directory.
-        if name == ".":
-            if recursive:
-                if arcname == ".":
-                    arcname = ""
-                for f in os.listdir(name):
-                    self.add(f, os.path.join(arcname, f), recursive, exclude)
             return
 
         self._dbg(1, name)
@@ -2103,9 +2087,8 @@ class TarFile(object):
         # Fetch the TarInfo object for the given name
         # and build the destination pathname, replacing
         # forward slashes to platform specific separators.
-        if targetpath[-1:] == "/":
-            targetpath = targetpath[:-1]
-        targetpath = os.path.normpath(targetpath)
+        targetpath = targetpath.rstrip("/")
+        targetpath = targetpath.replace("/", os.sep)
 
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
@@ -2200,23 +2183,23 @@ class TarFile(object):
           (platform limitation), we try to make a copy of the referenced file
           instead of a link.
         """
-        linkpath = tarinfo.linkname
         try:
             if tarinfo.issym():
-                os.symlink(linkpath, targetpath)
+                os.symlink(tarinfo.linkname, targetpath)
             else:
                 # See extract().
                 os.link(tarinfo._link_target, targetpath)
         except AttributeError:
             if tarinfo.issym():
-                linkpath = os.path.join(os.path.dirname(tarinfo.name),
-                                        linkpath)
-                linkpath = normpath(linkpath)
+                linkpath = os.path.dirname(tarinfo.name) + "/" + \
+                                        tarinfo.linkname
+            else:
+                linkpath = tarinfo.linkname
 
             try:
                 self._extract_member(self.getmember(linkpath), targetpath)
             except (EnvironmentError, KeyError) as e:
-                linkpath = os.path.normpath(linkpath)
+                linkpath = linkpath.replace("/", os.sep)
                 try:
                     shutil.copy2(linkpath, targetpath)
                 except EnvironmentError as e:

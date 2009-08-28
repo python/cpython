@@ -65,6 +65,8 @@ C-API
 Library
 -------
 
+- Issue #6054: Do not normalize stored pathnames in tarfile.
+
 - Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
   payloads are now ordered by integer value rather than lexicographically.
 
