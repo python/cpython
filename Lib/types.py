@@ -42,11 +42,7 @@ DictType = DictionaryType = dict
 def _f(): pass
 FunctionType = type(_f)
 LambdaType = type(lambda: None)         # Same as FunctionType
-try:
-    CodeType = type(_f.func_code)
-except RuntimeError:
-    # Execution in restricted environment
-    pass
+CodeType = type(_f.func_code)
 
 def _g():
     yield 1
