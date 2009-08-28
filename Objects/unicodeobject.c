@@ -8212,14 +8212,16 @@ formatfloat(Py_UNICODE *buf,
         return -1;
     if (prec < 0)
         prec = 6;
+#if SIZEOF_INT > 4
     /* make sure that the decimal representation of precision really does
        need at most 10 digits: platforms with sizeof(int) == 8 exist! */
-    if (prec > 0x7fffffffL) {
+    if (prec > 0x7fffffff) {
         PyErr_SetString(PyExc_OverflowError,
                         "outrageously large precision "
                         "for formatted float");
         return -1;
     }
+#endif
 
     if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
