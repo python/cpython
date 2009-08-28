@@ -660,6 +660,76 @@ class WriteTest(WriteTestBase):
         finally:
             shutil.rmtree(tempdir)
 
+    # Guarantee that stored pathnames are not modified. Don't
+    # remove ./ or ../ or double slashes. Still make absolute
+    # pathnames relative.
+    # For details see bug #6054.
+    def _test_pathname(self, path, cmp_path=None, dir=False):
+        # Create a tarfile with an empty member named path
+        # and compare the stored name with the original.
+        foo = os.path.join(TEMPDIR, "foo")
+        if not dir:
+            open(foo, "w").close()
+        else:
+            os.mkdir(foo)
+
+        tar = tarfile.open(tmpname, self.mode)
+        tar.add(foo, arcname=path)
+        tar.close()
+
+        tar = tarfile.open(tmpname, "r")
+        t = tar.next()
+        tar.close()
+
+        if not dir:
+            os.remove(foo)
+        else:
+            os.rmdir(foo)
+
+        self.assertEqual(t.name, cmp_path or path.replace(os.sep, "/"))
+
+    def test_pathnames(self):
+        self._test_pathname("foo")
+        self._test_pathname(os.path.join("foo", ".", "bar"))
+        self._test_pathname(os.path.join("foo", "..", "bar"))
+        self._test_pathname(os.path.join(".", "foo"))
+        self._test_pathname(os.path.join(".", "foo", "."))
+        self._test_pathname(os.path.join(".", "foo", ".", "bar"))
+        self._test_pathname(os.path.join(".", "foo", "..", "bar"))
+        self._test_pathname(os.path.join(".", "foo", "..", "bar"))
+        self._test_pathname(os.path.join("..", "foo"))
+        self._test_pathname(os.path.join("..", "foo", ".."))
+        self._test_pathname(os.path.join("..", "foo", ".", "bar"))
+        self._test_pathname(os.path.join("..", "foo", "..", "bar"))
+
+        self._test_pathname("foo" + os.sep + os.sep + "bar")
+        self._test_pathname("foo" + os.sep + os.sep, "foo", dir=True)
+
+    def test_abs_pathnames(self):
+        if sys.platform == "win32":
+            self._test_pathname("C:\\foo", "foo")
+        else:
+            self._test_pathname("/foo", "foo")
+            self._test_pathname("///foo", "foo")
+
+    def test_cwd(self):
+        # Test adding the current working directory.
+        cwd = os.getcwd()
+        os.chdir(TEMPDIR)
+        try:
+            open("foo", "w").close()
+
+            tar = tarfile.open(tmpname, self.mode)
+            tar.add(".")
+            tar.close()
+
+            tar = tarfile.open(tmpname, "r")
+            for t in tar:
+                self.assert_(t.name == "." or t.name.startswith("./"))
+            tar.close()
+        finally:
+            os.chdir(cwd)
+
 
 class StreamWriteTest(WriteTestBase):
 
