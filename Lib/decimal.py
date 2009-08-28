@@ -2819,12 +2819,15 @@ class Decimal(object):
         other_nan = other._isnan()
         if self_nan or other_nan:
             if self_nan == other_nan:
-                if self._int < other._int:
+                # compare payloads as though they're integers
+                self_key = len(self._int), self._int
+                other_key = len(other._int), other._int
+                if self_key < other_key:
                     if sign:
                         return _One
                     else:
                         return _NegativeOne
-                if self._int > other._int:
+                if self_key > other_key:
                     if sign:
                         return _NegativeOne
                     else:
