@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
+  payloads are now ordered by integer value rather than lexicographically.
+
 - Issue #6117: Fix O(n**2) performance degradation when outputting lots of
   small data on a buffered socket.socket.makefile() object.
 
