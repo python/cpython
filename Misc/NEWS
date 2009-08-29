@@ -192,6 +192,9 @@ Documentation
 - Issue #6556: Fixed the Distutils configuration files location explanation
   for Windows.
 
+- Issue #6801 : symmetric_difference_update also accepts |.
+  Thanks to Carl Chenet.
+
 Tests
 -----
 
