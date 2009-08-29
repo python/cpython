@@ -1189,11 +1189,18 @@ findchar(const Py_UNICODE *s, Py_ssize_t size, Py_UNICODE ch)
 static int
 _textiowrapper_writeflush(textio *self)
 {
-    PyObject *b, *ret;
+    PyObject *pending, *b, *ret;
 
     if (self->pending_bytes == NULL)
         return 0;
-    b = _PyBytes_Join(_PyIO_empty_bytes, self->pending_bytes);
+
+    pending = self->pending_bytes;
+    Py_INCREF(pending);
+    self->pending_bytes_count = 0;
+    Py_CLEAR(self->pending_bytes);
+
+    b = _PyBytes_Join(_PyIO_empty_bytes, pending);
+    Py_DECREF(pending);
     if (b == NULL)
         return -1;
     ret = PyObject_CallMethodObjArgs(self->buffer,
@@ -1202,8 +1209,6 @@ _textiowrapper_writeflush(textio *self)
     if (ret == NULL)
         return -1;
     Py_DECREF(ret);
-    Py_CLEAR(self->pending_bytes);
-    self->pending_bytes_count = 0;
     return 0;
 }
 

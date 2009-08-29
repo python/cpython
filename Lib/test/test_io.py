@@ -2061,6 +2061,27 @@ class TextIOWrapperTest(unittest.TestCase):
             self.assertEqual(f.errors, "replace")
 
 
+    def test_threads_write(self):
+        # Issue6750: concurrent writes could duplicate data
+        event = threading.Event()
+        with self.open(support.TESTFN, "w", buffering=1) as f:
+            def run(n):
+                text = "Thread%03d\n" % n
+                event.wait()
+                f.write(text)
+            threads = [threading.Thread(target=lambda n=x: run(n))
+                       for x in range(20)]
+            for t in threads:
+                t.start()
+            time.sleep(0.02)
+            event.set()
+            for t in threads:
+                t.join()
+        with self.open(support.TESTFN) as f:
+            content = f.read()
+            for n in range(20):
+                self.assertEquals(content.count("Thread%03d\n" % n), 1)
+
 class CTextIOWrapperTest(TextIOWrapperTest):
 
     def test_initialization(self):
