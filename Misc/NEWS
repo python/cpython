@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6750: A text file opened with io.open() could duplicate its output
+  when writing from multiple threads at the same time.
+
 - Issue #6704: Improve the col_offset in AST for "for" statements with
   a target of tuple unpacking.
 
