@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6750: A text file opened with io.open() could duplicate its output
+  when writing from multiple threads at the same time.
+
 - Issue #6707: dir() on an uninitialized module caused a crash.
 
 - Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
