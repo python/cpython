@@ -25,9 +25,11 @@ if __name__ == '__main__':
                 'test_pkg',  # Does not expect __loader__ attribute
                 'test_pydoc', # Does not expect __loader__ attribute
               ]
-    # No programmatic way to specify tests to exclude
-    sys.argv.extend(exclude)
 
-    # verbose=True, quiet=False for all failure info
-    # tests=[...] for specific tests to run
+    # Switching on --exclude implies running all test but the ones listed, so
+    # only use it when one is not running an explicit test
+    if len(sys.argv) == 1:
+        # No programmatic way to specify tests to exclude
+        sys.argv.extend(exclude)
+
     regrtest.main(quiet=True)
