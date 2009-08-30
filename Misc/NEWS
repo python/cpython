@@ -68,6 +68,9 @@ C-API
 Library
 -------
 
+- Trying to import a submodule from a module that is not a package, ImportError
+  should be raised, not AttributeError.
+
 - When the globals past to importlib.__import__() has __package__ set to None,
   fall back to computing what __package__ should be instead of giving up.
 
