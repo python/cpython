@@ -50,6 +50,9 @@ C-API
 Library
 -------
 
+- Have importlib raise ImportError if None is found in sys.modules for a
+  module.
+
 - Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
   payloads are now ordered by integer value rather than lexicographically.
 

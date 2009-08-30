@@ -860,7 +860,12 @@ def _gcd_import(name, package=None, level=0):
             name = package[:dot]
     with _ImportLockContext():
         try:
-            return sys.modules[name]
+            module = sys.modules[name]
+            if module is None:
+                message = ("import of {} halted; "
+                            "None in sys.modules".format(name))
+                raise ImportError(message)
+            return module
         except KeyError:
             pass
         parent = name.rpartition('.')[0]
