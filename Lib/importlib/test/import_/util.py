@@ -12,7 +12,7 @@ def import_(*args, **kwargs):
     if using___import__:
         return __import__(*args, **kwargs)
     else:
-        return importlib._bootstrap.__import__(*args, **kwargs)
+        return importlib.__import__(*args, **kwargs)
 
 
 importlib_only = unittest.skipIf(using___import__, "importlib-specific test")
