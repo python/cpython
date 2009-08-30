@@ -68,6 +68,8 @@ C-API
 Library
 -------
 
+- Have importlib raise ImportError if None is found in sys.modules.
+
 - Issue #6054: Do not normalize stored pathnames in tarfile.
 
 - Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
