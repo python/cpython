@@ -1740,7 +1740,7 @@ The constructors for both classes work the same:
          Accepts multiple input iterables.
 
    .. method:: symmetric_difference_update(other)
-               set ^= other | ...
+               set ^= other
 
       Update the set, keeping only elements found in either set, but not in both.
 
