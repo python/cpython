@@ -15,7 +15,9 @@ def import_(*args, **kwargs):
         return importlib.__import__(*args, **kwargs)
 
 
-importlib_only = unittest.skipIf(using___import__, "importlib-specific test")
+def importlib_only(fxn):
+    """Decorator to skip a test if using __builtins__.__import__."""
+    return unittest.skipIf(using___import__, "importlib-specific test")(fxn)
 
 
 def mock_path_hook(*entries, importer):
