@@ -6,7 +6,6 @@ Otherwise all command-line options valid for test.regrtest are also valid for
 this script.
 
 XXX FAILING
-    test_builtin  # Wanting a TypeError for an integer name
     test_import  # execution bit, exception name differing, file name differing
                     between code and module (?)
     test_importhooks  # package not set in _gcd_import() but level > 0
