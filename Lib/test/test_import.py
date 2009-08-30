@@ -252,8 +252,7 @@ class ImportTest(unittest.TestCase):
         try:
             __import__(path)
         except ImportError as err:
-            self.assertEqual("Import by filename is not supported.",
-                              err.args[0])
+            pass
         else:
             self.fail("import by path didn't raise an exception")
 
