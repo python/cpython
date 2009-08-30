@@ -668,7 +668,9 @@ Once the name of the module is known (unless otherwise specified, the term
 "module" will refer to both packages and modules), searching
 for the module or package can begin. The first place checked is
 :data:`sys.modules`, the cache of all modules that have been imported
-previously. If the module is found there then it is used in step (2) of import.
+previously. If the module is found there then it is used in step (2) of import
+unless :keyword:`None` is found in :data:`sys.modules`, in which case
+:exc:`ImportError` is raised.
 
 .. index::
     single: sys.meta_path
