@@ -943,6 +943,7 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         # If a package was imported, try to import stuff from fromlist.
         if hasattr(module, '__path__'):
             if '*' in fromlist and hasattr(module, '__all__'):
+                fromlist = list(fromlist)
                 fromlist.remove('*')
                 fromlist.extend(module.__all__)
             for x in (y for y in fromlist if not hasattr(module,y)):
