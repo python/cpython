@@ -68,6 +68,8 @@ C-API
 Library
 -------
 
+- Allow the fromlist passed into importlib.__import__ to be any iterable.
+
 - Have importlib raise ImportError if None is found in sys.modules.
 
 - Issue #6054: Do not normalize stored pathnames in tarfile.

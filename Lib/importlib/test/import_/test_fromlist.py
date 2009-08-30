@@ -84,15 +84,22 @@ class HandlingFromlist(unittest.TestCase):
                 module = import_util.import_('pkg.mod', fromlist=[''])
                 self.assertEquals(module.__name__, 'pkg.mod')
 
-    def test_using_star(self):
+    def basic_star_test(self, fromlist=['*']):
         # [using *]
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
-                module = import_util.import_('pkg', fromlist=['*'])
+                module = import_util.import_('pkg', fromlist=fromlist)
                 self.assertEquals(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
+
+    def test_using_star(self):
+        # [using *]
+        self.basic_star_test()
+
+    def test_fromlist_as_tuple(self):
+        self.basic_star_test(('*',))
 
     def test_star_with_others(self):
         # [using * with others]
