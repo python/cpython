@@ -8,7 +8,6 @@ this script.
 XXX FAILING
     test_import  # execution bit, exception name differing, file name differing
                     between code and module (?)
-    test_pep3120  # Difference in exception
     test_runpy  # Importing sys.imp.eric raises AttributeError instead of
                     ImportError (as does any attempt to import a sub-module
                     from a non-package, e.g. tokenize.menotreal)
