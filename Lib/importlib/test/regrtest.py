@@ -1,8 +1,11 @@
 """Run Python's standard test suite using importlib.__import__.
 
+Tests known to fail because of assumptions that importlib (properly)
+invalidates are automatically skipped if the entire test suite is run.
+Otherwise all command-line options valid for test.regrtest are also valid for
+this script.
+
 XXX FAILING
-    test___all__  # tuple being given for fromlist (looks like interpreter is
-                    doing it)
     test_builtin  # Wanting a TypeError for an integer name
     test_import  # execution bit, exception name differing, file name differing
                     between code and module (?)
