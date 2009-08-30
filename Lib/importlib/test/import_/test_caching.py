@@ -17,15 +17,25 @@ class UseCache(unittest.TestCase):
     loader returns) [from cache on return]. This also applies to imports of
     things contained within a package and thus get assigned as an attribute
     [from cache to attribute] or pulled in thanks to a fromlist import
-    [from cache for fromlist].
+    [from cache for fromlist]. But if sys.modules contains None then
+    ImportError is raised [None in cache].
 
     """
     def test_using_cache(self):
         # [use cache]
         module_to_use = "some module found!"
-        sys.modules['some_module'] = module_to_use
-        module = import_util.import_('some_module')
-        self.assertEqual(id(module_to_use), id(module))
+        with util.uncache(module_to_use):
+            sys.modules['some_module'] = module_to_use
+            module = import_util.import_('some_module')
+            self.assertEqual(id(module_to_use), id(module))
+
+    def test_None_in_cache(self):
+        #[None in cache]
+        name = 'using_None'
+        with util.uncache(name):
+            sys.modules[name] = None
+            with self.assertRaises(ImportError):
+                import_util.import_(name)
 
     def create_mock(self, *names, return_=None):
         mock = util.mock_modules(*names)
