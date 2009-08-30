@@ -19,8 +19,9 @@ class Using__package__(unittest.TestCase):
           base = package.rsplit('.', level)[0]
           return '{0}.{1}'.format(base, name)
 
-    But since there is no guarantee that __package__ has been set, there has to
-    be a way to calculate the attribute's value [__name__]::
+    But since there is no guarantee that __package__ has been set (or not been
+    set to None [None]), there has to be a way to calculate the attribute's value
+    [__name__]::
 
       def calc_package(caller_name, has___path__):
           if has__path__:
@@ -43,16 +44,21 @@ class Using__package__(unittest.TestCase):
                                             fromlist=['attr'], level=2)
         self.assertEquals(module.__name__, 'pkg')
 
-    def test_using___name__(self):
+    def test_using___name__(self, package_as_None=False):
         # [__name__]
+        globals_ = {'__name__': 'pkg.fake', '__path__': []}
+        if package_as_None:
+            globals_['__package__'] = None
         with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
                 import_util.import_('pkg.fake')
-                module = import_util.import_('',
-                                 globals={'__name__': 'pkg.fake',
-                                          '__path__': []},
-                                 fromlist=['attr'], level=2)
+                module = import_util.import_('', globals= globals_,
+                                                fromlist=['attr'], level=2)
             self.assertEquals(module.__name__, 'pkg')
+
+    def test_None_as___package__(self):
+        # [None]
+        self.test_using___name__(package_as_None=True)
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}

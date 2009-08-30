@@ -922,10 +922,10 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
     if level == 0:
         module = _gcd_import(name)
     else:
-        # __package__ is not guaranteed to be defined.
-        try:
-            package = globals['__package__']
-        except KeyError:
+        # __package__ is not guaranteed to be defined or could be set to None
+        # to represent that it's proper value is unknown
+        package = globals.get('__package__')
+        if package is None:
             package = globals['__name__']
             if '__path__' not in globals:
                 package = package.rpartition('.')[0]

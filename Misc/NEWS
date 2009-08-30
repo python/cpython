@@ -68,6 +68,9 @@ C-API
 Library
 -------
 
+- When the globals past to importlib.__import__() has __package__ set to None,
+  fall back to computing what __package__ should be instead of giving up.
+
 - Raise a TypeError when the name of a module to be imported for
   importlib.__import__ is not a string (was raising an
   AttributeError before).
