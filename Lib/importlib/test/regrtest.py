@@ -6,8 +6,9 @@ Otherwise all command-line options valid for test.regrtest are also valid for
 this script.
 
 XXX FAILING
-    test_import  # execution bit, exception name differing, file name differing
-                    between code and module (?)
+    test_import
+        execution bit
+        file name differing between __file__ and co_filename (r68360 on trunk)
 
 """
 import importlib
