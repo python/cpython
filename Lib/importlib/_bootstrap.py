@@ -879,7 +879,11 @@ def _gcd_import(name, package=None, level=0):
                 _gcd_import(parent)
             # Backwards-compatibility; be nicer to skip the dict lookup.
             parent_module = sys.modules[parent]
-            path = parent_module.__path__
+            try:
+                path = parent_module.__path__
+            except AttributeError:
+                raise ImportError("no module named {}; "
+                                    "{} is not a package".format(name, parent))
         meta_path = sys.meta_path + _IMPLICIT_META_PATH
         for finder in meta_path:
             loader = finder.find_module(name, path)

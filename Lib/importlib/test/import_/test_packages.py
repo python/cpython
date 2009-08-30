@@ -21,6 +21,12 @@ class ParentModuleTests(unittest.TestCase):
                 with self.assertRaises(ImportError):
                     import_util.import_('pkg.module')
 
+    def test_module_not_package(self):
+        # Try to import a submodule from a non-package should raise ImportError.
+        assert not hasattr(sys, '__path__')
+        with self.assertRaises(ImportError):
+            import_util.import_('sys.no_submodules_here')
+
 
 def test_main():
     from test.support import run_unittest
