@@ -226,7 +226,8 @@ The :mod:`urllib.parse` module defines the following functions:
 .. function:: quote(string[, safe[, encoding[, errors]]])
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
-   digits, and the characters ``'_.-'`` are never quoted. The optional *safe*
+   digits, and the characters ``'_.-'`` are never quoted. By default, this
+   function is intended for quoting the path section of URL. The optional *safe*
    parameter specifies additional ASCII characters that should not be quoted
    --- its default value is ``'/'``.
 
