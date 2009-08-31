@@ -1184,7 +1184,8 @@ clobber: clean profile-removal
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
 distclean: clobber
 	-rm -f core Makefile Makefile.pre config.status \
-		Modules/Setup Modules/Setup.local Modules/Setup.config
+		Modules/Setup Modules/Setup.local Modules/Setup.config \
+		Misc/python.pc
 	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
 			   -o -name '[@,#]*' -o -name '*.old' \
 			   -o -name '*.orig' -o -name '*.rej' \
