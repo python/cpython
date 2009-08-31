@@ -203,9 +203,10 @@ Utility functions
 .. function:: quote(string[, safe])
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
-   digits, and the characters ``'_.-'`` are never quoted. The optional *safe*
-   parameter specifies additional characters that should not be quoted --- its
-   default value is ``'/'``.
+   digits, and the characters ``'_.-'`` are never quoted. By default, this
+   function is intended for quoting the path section of the URL.The optional
+   *safe* parameter specifies additional characters that should not be quoted
+   --- its default value is ``'/'``.
 
    Example: ``quote('/~connolly/')`` yields ``'/%7econnolly/'``.
 
