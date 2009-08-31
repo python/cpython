@@ -1765,7 +1765,7 @@ The constructors for both classes work the same:
    .. method:: update(other, ...)
                set |= other | ...
 
-      Update the set, adding elements from *other*.
+      Update the set, adding elements from all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
@@ -1773,7 +1773,7 @@ The constructors for both classes work the same:
    .. method:: intersection_update(other, ...)
                set &= other & ...
 
-      Update the set, keeping only elements found in it and *other*.
+      Update the set, keeping only elements found in it and all others.
 
       .. versionchanged:: 2.6
          Accepts multiple input iterables.
