@@ -331,9 +331,9 @@ data attribute, its class is searched.  If the name denotes a valid class
 attribute that is a function object, a method object is created by packing
 (pointers to) the instance object and the function object just found together in
 an abstract object: this is the method object.  When the method object is called
-with an argument list, it is unpacked again, a new argument list is constructed
-from the instance object and the original argument list, and the function object
-is called with this new argument list.
+with an argument list, a new argument list is constructed from the instance
+object and the argument list, and the function object is called with this new
+argument list.
 
 
 .. _tut-remarks:
