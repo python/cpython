@@ -194,7 +194,7 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 The grammar for a replacement field is as follows:
 
    .. productionlist:: sf
-      replacement_field: "{" `field_name` ["!" `conversion`] [":" `format_spec`] "}"
+      replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
       arg_name: (`identifier` | `integer`)?
       attribute_name: `identifier`
@@ -202,7 +202,7 @@ The grammar for a replacement field is as follows:
       conversion: "r" | "s" | "a"
       format_spec: <described in the next section>
 
-In less formal terms, the replacement field starts with a *field_name* that specifies
+In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
 into the output instead of the replacement field.
 The *field_name* is optionally followed by a  *conversion* field, which is
@@ -223,7 +223,7 @@ Some simple format string examples::
 
    "First, thou shalt count to {0}" # References first positional argument
    "Bring me a {}"                  # Implicitly references the first positional argument
-   "From {} to {}"                  # Same as "From {0] to {1}"
+   "From {} to {}"                  # Same as "From {0} to {1}"
    "My quest is {name}"             # References keyword argument 'name'
    "Weight in tons {0.weight}"      # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"  # First element of keyword argument 'players'.
@@ -243,6 +243,7 @@ Some examples::
 
    "Harold's a clever {0!s}"        # Calls str() on the argument first
    "Bring out the holy {name!r}"    # Calls repr() on the argument first
+   "More {!a}"                      # Calls ascii() on the argument first
 
 The *format_spec* field contains a specification of how the value should be
 presented, including such details as field width, alignment, padding, decimal

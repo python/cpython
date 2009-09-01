@@ -606,7 +606,7 @@ from time import clock as now
 
 def fill(n):
     from random import random
-    return [random() for i in xrange(n)]
+    return [random() for i in range(n)]
 
 def mycmp(x, y):
     global ncmp

@@ -98,17 +98,17 @@ def test():
 
     t = time.time()
     A = list(map(pow3, range(N)))
-    print('\tmap(pow3, xrange(%d)):\n\t\t%s seconds' % \
+    print('\tmap(pow3, range(%d)):\n\t\t%s seconds' % \
           (N, time.time() - t))
 
     t = time.time()
     B = pool.map(pow3, range(N))
-    print('\tpool.map(pow3, xrange(%d)):\n\t\t%s seconds' % \
+    print('\tpool.map(pow3, range(%d)):\n\t\t%s seconds' % \
           (N, time.time() - t))
 
     t = time.time()
     C = list(pool.imap(pow3, range(N), chunksize=N//8))
-    print('\tlist(pool.imap(pow3, xrange(%d), chunksize=%d)):\n\t\t%s' \
+    print('\tlist(pool.imap(pow3, range(%d), chunksize=%d)):\n\t\t%s' \
           ' seconds' % (N, N//8, time.time() - t))
 
     assert A == B == C, (len(A), len(B), len(C))
