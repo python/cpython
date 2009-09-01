@@ -2226,10 +2226,6 @@ PyObject *
 PyMethod_New(PyObject *func, PyObject *self, PyObject *klass)
 {
 	register PyMethodObject *im;
-	if (!PyCallable_Check(func)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
 	im = free_list;
 	if (im != NULL) {
 		free_list = (PyMethodObject *)(im->im_self);
