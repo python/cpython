@@ -1724,12 +1724,12 @@ The constructors for both classes work the same:
    .. method:: update(other, ...)
                set |= other | ...
 
-      Update the set, adding elements from *other*.
+      Update the set, adding elements from all others.
 
    .. method:: intersection_update(other, ...)
                set &= other & ...
 
-      Update the set, keeping only elements found in it and *other*.
+      Update the set, keeping only elements found in it and all others.
 
    .. method:: difference_update(other, ...)
                set -= other | ...
@@ -2478,9 +2478,9 @@ decimal arithmetic context. The specific types are not treated specially beyond
 their implementation of the context management protocol. See the
 :mod:`contextlib` module for some examples.
 
-Python's :term:`generator`\s and the ``contextlib.contextfactory`` :term:`decorator`
+Python's :term:`generator`\s and the ``contextlib.contextmanager`` :term:`decorator`
 provide a convenient way to implement these protocols.  If a generator function is
-decorated with the ``contextlib.contextfactory`` decorator, it will return a
+decorated with the ``contextlib.contextmanager`` decorator, it will return a
 context manager implementing the necessary :meth:`__enter__` and
 :meth:`__exit__` methods, rather than the iterator produced by an undecorated
 generator function.

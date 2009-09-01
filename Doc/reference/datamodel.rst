@@ -864,6 +864,8 @@ Internal types
       If a code object represents a function, the first item in :attr:`co_consts` is
       the documentation string of the function, or ``None`` if undefined.
 
+   .. _frame-objects:
+
    Frame objects
       .. index:: object: frame
 
