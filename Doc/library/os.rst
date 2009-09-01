@@ -396,7 +396,7 @@ by file descriptors.
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
    ignoring errors. Availability: Unix, Windows. Equivalent to::
 
-      for fd in xrange(fd_low, fd_high):
+      for fd in range(fd_low, fd_high):
           try:
               os.close(fd)
           except OSError:
@@ -947,12 +947,12 @@ Files and Directories
 
 .. function:: remove(path)
 
-   Remove the file *path*.  If *path* is a directory, :exc:`OSError` is raised; see
-   :func:`rmdir` below to remove a directory.  This is identical to the
-   :func:`unlink` function documented below.  On Windows, attempting to remove a
-   file that is in use causes an exception to be raised; on Unix, the directory
-   entry is removed but the storage allocated to the file is not made available
-   until the original file is no longer in use. Availability: Unix,
+   Remove (delete) the file *path*.  If *path* is a directory, :exc:`OSError` is
+   raised; see :func:`rmdir` below to remove a directory.  This is identical to
+   the :func:`unlink` function documented below.  On Windows, attempting to
+   remove a file that is in use causes an exception to be raised; on Unix, the
+   directory entry is removed but the storage allocated to the file is not made
+   available until the original file is no longer in use. Availability: Unix,
    Windows.
 
 
@@ -997,7 +997,10 @@ Files and Directories
 
 .. function:: rmdir(path)
 
-   Remove the directory *path*. Availability: Unix, Windows.
+   Remove (delete) the directory *path*.  Only works when the directory is
+   empty, otherwise, :exc:`OSError` is raised.  In order to remove whole
+   directory trees, :func:`shutil.rmtree` can be used.  Availability: Unix,
+   Windows.
 
 
 .. function:: stat(path)
@@ -1099,9 +1102,9 @@ Files and Directories
 
 .. function:: unlink(path)
 
-   Remove the file *path*.  This is the same function as :func:`remove`; the
-   :func:`unlink` name is its traditional Unix name. Availability: Unix,
-   Windows.
+   Remove (delete) the file *path*.  This is the same function as
+   :func:`remove`; the :func:`unlink` name is its traditional Unix
+   name. Availability: Unix, Windows.
 
 
 .. function:: utime(path, times)

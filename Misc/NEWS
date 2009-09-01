@@ -1462,6 +1462,9 @@ Build
 - Issue #4204: Fixed module build errors on FreeBSD 4.
 
 
+- Issue #6801 : symmetric_difference_update also accepts |.
+  Thanks to Carl Chenet. 
+
 C-API
 -----
 
