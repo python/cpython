@@ -396,7 +396,7 @@ by file descriptors.
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
    ignoring errors. Availability: Unix, Windows. Equivalent to::
 
-      for fd in xrange(fd_low, fd_high):
+      for fd in range(fd_low, fd_high):
           try:
               os.close(fd)
           except OSError:

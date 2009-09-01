@@ -260,10 +260,7 @@ class IntegerCounting(Test):
 
         # Run test rounds
 	#
-        # NOTE: Use xrange() for all test loops unless you want to face
-	# a 20MB process !
-	#
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             # Repeat the operations per round to raise the run-time
             # per operation significantly above the noise level of the
@@ -305,7 +302,7 @@ class IntegerCounting(Test):
         a = 1
 
         # Run test rounds (without actually doing any operation)
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
 	    # Skip the actual execution of the operations, since we
 	    # only want to measure the test's administration overhead.
