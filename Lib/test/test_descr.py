@@ -1391,13 +1391,9 @@ order (MRO) for bases """
         self.assertEqual(super(D,D).goo(), (D,))
         self.assertEqual(super(D,d).goo(), (D,))
 
-        # Verify that argument is checked for callability (SF bug 753451)
-        try:
-            classmethod(1).__get__(1)
-        except TypeError:
-            pass
-        else:
-            self.fail("classmethod should check for callability")
+        # Verify that a non-callable will raise
+        meth = classmethod(1).__get__(1)
+        self.assertRaises(TypeError, meth)
 
         # Verify that classmethod() doesn't allow keyword args
         try:

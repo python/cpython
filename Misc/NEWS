@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- classmethod no longer checks if its argument is callable.
+
 - Issue #6750: A text file opened with io.open() could duplicate its output
   when writing from multiple threads at the same time.
 
