@@ -431,7 +431,7 @@ PyTypeObject PyRangeIter_Type = {
 	rangeiter_new,				/* tp_new */
 };
 
-/* Return number of items in range/xrange (lo, hi, step).  step > 0
+/* Return number of items in range (lo, hi, step).  step > 0
  * required.  Return a value < 0 if & only if the true value is too
  * large to fit in a signed long.
  */
