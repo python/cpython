@@ -126,12 +126,12 @@ with zeros.  It understands about plus and minus signs::
 
 Basic usage of the :meth:`str.format` method looks like this::
 
-   >>> print('We are the {0} who say "{1}!"'.format('knights', 'Ni'))
+   >>> print('We are the {} who say "{}!"'.format('knights', 'Ni'))
    We are the knights who say "Ni!"
 
 The brackets and characters within them (called format fields) are replaced with
-the objects passed into the :meth:`~str.format` method.  The number in the
-brackets refers to the position of the object passed into the
+the objects passed into the :meth:`~str.format` method.  A number in the
+brackets can be used to refer to the position of the object passed into the
 :meth:`~str.format` method. ::
 
    >>> print('{0} and {1}'.format('spam', 'eggs'))
@@ -151,6 +151,15 @@ Positional and keyword arguments can be arbitrarily combined::
    >>> print('The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred',
                                                           other='Georg'))
    The story of Bill, Manfred, and Georg.
+
+``'!a'`` (apply :func:`ascii`), ``'!s'`` (apply :func:`str`) and ``'!r'``
+(apply :func:`repr`) can be used to convert the value before it is formatted::
+
+   >>> import math
+   >>> print('The value of PI is approximately {}.'.format(math.pi))
+   The value of PI is approximately 3.14159265359.
+   >>> print('The value of PI is approximately {!r}.'.format(math.pi))
+   The value of PI is approximately 3.141592653589793.
 
 An optional ``':'`` and format specifier can follow the field name. This allows
 greater control over how the value is formatted.  The following example
