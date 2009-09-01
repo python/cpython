@@ -1171,19 +1171,20 @@ where the input parameters are
    the list of arguments to process (default: ``sys.argv[1:]``)
 
 ``values``
-   object to store option arguments in (default: a new instance of optparse.Values)
+   object to store option arguments in (default: a new instance of
+   :class:`optparse.Values`)
 
 and the return values are
 
 ``options``
-   the same object that was passed in as ``options``, or the optparse.Values
+   the same object that was passed in as ``values``, or the optparse.Values
    instance created by :mod:`optparse`
 
 ``args``
    the leftover positional arguments after all options have been processed
 
 The most common usage is to supply neither keyword argument.  If you supply
-``options``, it will be modified with repeated ``setattr()`` calls (roughly one
+``values``, it will be modified with repeated ``setattr()`` calls (roughly one
 for every option argument stored to an option destination) and returned by
 :meth:`parse_args`.
 
