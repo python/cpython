@@ -95,4 +95,5 @@ PyInit_shoddy(void)
 
     Py_INCREF(&ShoddyType);
     PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+    return m;
 }
