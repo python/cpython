@@ -666,7 +666,7 @@ Modules
    of the shared library file.
 
 Custom classes
-   Custon class types are typically created by class definitions (see section
+   Custom class types are typically created by class definitions (see section
    :ref:`class`).  A class has a namespace implemented by a dictionary object.
    Class attribute references are translated to lookups in this dictionary, e.g.,
    ``C.x`` is translated to ``C.__dict__["x"]`` (although there are a number of
