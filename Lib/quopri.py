@@ -41,7 +41,7 @@ def quote(c):
 
 
 
-def encode(input, output, quotetabs, header = 0):
+def encode(input, output, quotetabs, header=False):
     """Read 'input', apply quoted-printable encoding, and write to 'output'.
 
     'input' and 'output' are files with readline() and write() methods.
@@ -54,7 +54,7 @@ def encode(input, output, quotetabs, header = 0):
 
     if b2a_qp is not None:
         data = input.read()
-        odata = b2a_qp(data, quotetabs = quotetabs, header = header)
+        odata = b2a_qp(data, quotetabs=quotetabs, header=header)
         output.write(odata)
         return
 
@@ -105,9 +105,9 @@ def encode(input, output, quotetabs, header = 0):
     if prevline is not None:
         write(prevline, lineEnd=stripped)
 
-def encodestring(s, quotetabs = 0, header = 0):
+def encodestring(s, quotetabs=False, header=False):
     if b2a_qp is not None:
-        return b2a_qp(s, quotetabs = quotetabs, header = header)
+        return b2a_qp(s, quotetabs=quotetabs, header=header)
     from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
@@ -116,14 +116,14 @@ def encodestring(s, quotetabs = 0, header = 0):
 
 
 
-def decode(input, output, header = 0):
+def decode(input, output, header=False):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
     'input' and 'output' are files with readline() and write() methods.
     If 'header' is true, decode underscore as space (per RFC 1522)."""
 
     if a2b_qp is not None:
         data = input.read()
-        odata = a2b_qp(data, header = header)
+        odata = a2b_qp(data, header=header)
         output.write(odata)
         return
 
@@ -159,13 +159,13 @@ def decode(input, output, header = 0):
     if new:
         output.write(new)
 
-def decodestring(s, header = 0):
+def decodestring(s, header=False):
     if a2b_qp is not None:
-        return a2b_qp(s, header = header)
+        return a2b_qp(s, header=header)
     from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
-    decode(infp, outfp, header = header)
+    decode(infp, outfp, header=header)
     return outfp.getvalue()
 
 
