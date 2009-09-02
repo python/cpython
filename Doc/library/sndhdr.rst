@@ -1,4 +1,3 @@
-
 :mod:`sndhdr` --- Determine type of sound file
 ==============================================
 

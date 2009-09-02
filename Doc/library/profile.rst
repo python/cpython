@@ -1,4 +1,3 @@
-
 .. _profile:
 
 ********************
@@ -235,7 +234,7 @@ discussion of how to derive "better" profilers from the classes presented, or
 reading the source code for these modules.
 
 
-.. function:: run(command[, filename])
+.. function:: run(command, filename=None, sort=-1)
 
    This function takes a single argument that can be passed to the :func:`exec`
    function, and an optional file name.  In all cases this routine attempts to
@@ -264,8 +263,8 @@ reading the source code for these modules.
       for the number of calls,
 
    tottime
-      for the total time spent in the given function (and excluding time made in calls
-      to sub-functions),
+      for the total time spent in the given function (and excluding time made in
+      calls to sub-functions),
 
    percall
       is the quotient of ``tottime`` divided by ``ncalls``
@@ -285,24 +284,25 @@ reading the source code for these modules.
    calls.  Note that when the function does not recurse, these two values are the
    same, and only the single figure is printed.
 
+   If *sort* is given, it can be one of ``'stdname'`` (sort by filename:lineno),
+   ``'calls'`` (sort by number of calls), ``'time'`` (sort by total time) or
+   ``'cumulative'`` (sort by cumulative time).  The default is ``'stdname'``.
 
-.. function:: runctx(command, globals, locals[, filename])
+
+.. function:: runctx(command, globals, locals, filename=None)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string.
 
-Analysis of the profiler data is done using the :class:`Stats` class.
 
-.. note::
-
-   The :class:`Stats` class is defined in the :mod:`pstats` module.
+Analysis of the profiler data is done using the :class:`pstats.Stats` class.
 
 
 .. module:: pstats
    :synopsis: Statistics object for use with the profiler.
 
 
-.. class:: Stats(filename[, stream=sys.stdout[, ...]])
+.. class:: Stats(*filenames, stream=sys.stdout)
 
    This class constructor creates an instance of a "statistics object" from a
    *filename* (or set of filenames).  :class:`Stats` objects are manipulated by
@@ -342,7 +342,7 @@ The :class:`Stats` Class
    accumulated into a single entry.
 
 
-.. method:: Stats.add(filename[, ...])
+.. method:: Stats.add(*filenames)
 
    This method of the :class:`Stats` class accumulates additional profiling
    information into the current profiling object.  Its arguments should refer to
@@ -359,7 +359,7 @@ The :class:`Stats` Class
    :class:`profile.Profile` and :class:`cProfile.Profile` classes.
 
 
-.. method:: Stats.sort_stats(key[, ...])
+.. method:: Stats.sort_stats(*keys)
 
    This method modifies the :class:`Stats` object by sorting it according to the
    supplied criteria.  The argument is typically a string identifying the basis of
@@ -426,7 +426,7 @@ The :class:`Stats` Class
    .. This method is provided primarily for compatibility with the old profiler.
 
 
-.. method:: Stats.print_stats([restriction, ...])
+.. method:: Stats.print_stats(*restrictions)
 
    This method for the :class:`Stats` class prints out a report as described in the
    :func:`profile.run` definition.
@@ -455,7 +455,7 @@ The :class:`Stats` Class
    then proceed to only print the first 10% of them.
 
 
-.. method:: Stats.print_callers([restriction, ...])
+.. method:: Stats.print_callers(*restrictions)
 
    This method for the :class:`Stats` class prints a list of all functions that
    called each function in the profiled database.  The ordering is identical to
@@ -473,7 +473,7 @@ The :class:`Stats` Class
      the current function while it was invoked by this specific caller.
 
 
-.. method:: Stats.print_callees([restriction, ...])
+.. method:: Stats.print_callees(*restrictions)
 
    This method for the :class:`Stats` class prints a list of all function that were
    called by the indicated function.  Aside from this reversal of direction of

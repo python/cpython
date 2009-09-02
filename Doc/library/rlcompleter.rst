@@ -1,4 +1,3 @@
-
 :mod:`rlcompleter` --- Completion function for GNU readline
 ===========================================================
 

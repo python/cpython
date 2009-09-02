@@ -1,4 +1,3 @@
-
 :mod:`parser` --- Access Python parse trees
 ===========================================
 
@@ -165,7 +164,7 @@ executable code objects.  Parse trees may be extracted with or without line
 numbering information.
 
 
-.. function:: st2list(st[, line_info])
+.. function:: st2list(st, line_info=False, col_info=False)
 
    This function accepts an ST object from the caller in *st* and returns a
    Python list representing the equivalent parse tree.  The resulting list
@@ -183,7 +182,7 @@ numbering information.
    This information is omitted if the flag is false or omitted.
 
 
-.. function:: st2tuple(st[, line_info])
+.. function:: st2tuple(st, line_info=False, col_info=False)
 
    This function accepts an ST object from the caller in *st* and returns a
    Python tuple representing the equivalent parse tree.  Other than returning a
@@ -194,7 +193,7 @@ numbering information.
    information is omitted if the flag is false or omitted.
 
 
-.. function:: compilest(st[, filename='<syntax-tree>'])
+.. function:: compilest(st, filename='<syntax-tree>')
 
    .. index::
       builtin: exec
@@ -293,7 +292,7 @@ ST objects (using the :mod:`pickle` module) is also supported.
 ST objects have the following methods:
 
 
-.. method:: ST.compile([filename])
+.. method:: ST.compile(filename='<syntax-tree>')
 
    Same as ``compilest(st, filename)``.
 
@@ -308,14 +307,14 @@ ST objects have the following methods:
    Same as ``issuite(st)``.
 
 
-.. method:: ST.tolist([line_info])
+.. method:: ST.tolist(line_info=False, col_info=False)
 
-   Same as ``st2list(st, line_info)``.
+   Same as ``st2list(st, line_info, col_info)``.
 
 
-.. method:: ST.totuple([line_info])
+.. method:: ST.totuple(line_info=False, col_info=False)
 
-   Same as ``st2tuple(st, line_info)``.
+   Same as ``st2tuple(st, line_info, col_info)``.
 
 
 .. _st-examples:

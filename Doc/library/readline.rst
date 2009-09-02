@@ -1,4 +1,3 @@
-
 :mod:`readline` --- GNU readline interface
 ==========================================
 

@@ -218,7 +218,7 @@ applications should use string objects to access all files.
    links encountered in the path (if they are supported by the operating system).
 
 
-.. function:: relpath(path[, start])
+.. function:: relpath(path, start=None)
 
    Return a relative filepath to *path* either from the current directory or from
    an optional *start* point.

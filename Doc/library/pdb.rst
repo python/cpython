@@ -79,7 +79,7 @@ The typical usage to inspect a crashed program is::
 The module defines the following functions; each enters the debugger in a
 slightly different way:
 
-.. function:: run(statement[, globals[, locals]])
+.. function:: run(statement, globals=None, locals=None)
 
    Execute the *statement* (given as a string) under debugger control.  The
    debugger prompt appears before any code is executed; you can set breakpoints and
@@ -90,14 +90,14 @@ slightly different way:
    explanation of the built-in :func:`exec` or :func:`eval` functions.)
 
 
-.. function:: runeval(expression[, globals[, locals]])
+.. function:: runeval(expression, globals=None, locals=None)
 
    Evaluate the *expression* (given as a string) under debugger control.  When
    :func:`runeval` returns, it returns the value of the expression.  Otherwise this
    function is similar to :func:`run`.
 
 
-.. function:: runcall(function[, argument, ...])
+.. function:: runcall(function, *args, **kwds)
 
    Call the *function* (a function or method object, not a string) with the given
    arguments.  When :func:`runcall` returns, it returns whatever the function call
@@ -111,7 +111,7 @@ slightly different way:
    being debugged (e.g. when an assertion fails).
 
 
-.. function:: post_mortem([traceback])
+.. function:: post_mortem(traceback=None)
 
    Enter post-mortem debugging of the given *traceback* object.  If no
    *traceback* is given, it uses the one of the exception that is currently
@@ -147,9 +147,9 @@ access further features, you have to do this yourself:
    .. versionadded:: 3.1
       The *skip* argument.
 
-   .. method:: run(statement[, globals[, locals]])
-               runeval(expression[, globals[, locals]])
-               runcall(function[, argument, ...])
+   .. method:: run(statement, globals=None, locals=None)
+               runeval(expression, globals=None, locals=None)
+               runcall(function, *args, **kwds)
                set_trace()
 
       See the documentation for the functions explained above.

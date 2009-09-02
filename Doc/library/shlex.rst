@@ -1,4 +1,3 @@
-
 :mod:`shlex` --- Simple lexical analysis
 ========================================
 
@@ -18,7 +17,7 @@ applications) or for parsing quoted strings.
 The :mod:`shlex` module defines the following functions:
 
 
-.. function:: split(s[, comments[, posix]])
+.. function:: split(s, comments=False, posix=True)
 
    Split the string *s* using shell-like syntax. If *comments* is :const:`False`
    (the default), the parsing of comments in the given string will be disabled
@@ -28,13 +27,14 @@ The :mod:`shlex` module defines the following functions:
 
    .. note::
 
-      Since the :func:`split` function instantiates a :class:`shlex` instance, passing
-      ``None`` for *s* will read the string to split from standard input.
+      Since the :func:`split` function instantiates a :class:`shlex` instance,
+      passing ``None`` for *s* will read the string to split from standard
+      input.
 
 The :mod:`shlex` module defines the following class:
 
 
-.. class:: shlex([instream[, infile[, posix]]])
+.. class:: shlex(instream=None, infile=None, posix=False)
 
    A :class:`shlex` instance or subclass instance is a lexical analyzer object.
    The initialization argument, if present, specifies where to read characters
@@ -111,7 +111,7 @@ A :class:`shlex` instance has the following methods:
    :meth:`pop_source` methods.
 
 
-.. method:: shlex.push_source(stream[, filename])
+.. method:: shlex.push_source(newstream, newfile=None)
 
    Push an input source stream onto the input stack.  If the filename argument is
    specified it will later be available for use in error messages.  This is the
@@ -124,7 +124,7 @@ A :class:`shlex` instance has the following methods:
    used internally when the lexer reaches EOF on a stacked input stream.
 
 
-.. method:: shlex.error_leader([file[, line]])
+.. method:: shlex.error_leader(infile=None, lineno=None)
 
    This method generates an error message leader in the format of a Unix C compiler
    error label; the format is ``'"%s", line %d: '``, where the ``%s`` is replaced

@@ -1,4 +1,3 @@
-
 :mod:`queue` --- A synchronized queue class
 ===========================================
 
@@ -100,7 +99,7 @@ provide the public methods described below.
    guarantee that a subsequent call to put() will not block.
 
 
-.. method:: Queue.put(item[, block[, timeout]])
+.. method:: Queue.put(item, block=True, timeout=None)
 
    Put *item* into the queue. If optional args *block* is true and *timeout* is
    None (the default), block if necessary until a free slot is available. If
@@ -116,7 +115,7 @@ provide the public methods described below.
    Equivalent to ``put(item, False)``.
 
 
-.. method:: Queue.get([block[, timeout]])
+.. method:: Queue.get(block=True, timeout=None)
 
    Remove and return an item from the queue. If optional args *block* is true and
    *timeout* is None (the default), block if necessary until an item is available.

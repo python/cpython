@@ -14,7 +14,7 @@ This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
 
-.. function:: open(filename[, flag='c'[, protocol=None[, writeback=False]]])
+.. function:: open(filename, flag='c', protocol=None, writeback=False)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
@@ -84,7 +84,7 @@ Restrictions
   implementation used.
 
 
-.. class:: Shelf(dict[, protocol=None[, writeback=False]])
+.. class:: Shelf(dict, protocol=None, writeback=False)
 
    A subclass of :class:`collections.MutableMapping` which stores pickled values
    in the *dict* object.
@@ -99,7 +99,7 @@ Restrictions
    memory and make sync and close take a long time.
 
 
-.. class:: BsdDbShelf(dict[, protocol=None[, writeback=False]])
+.. class:: BsdDbShelf(dict, protocol=None, writeback=False)
 
    A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
    :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
@@ -112,7 +112,7 @@ Restrictions
    as for the :class:`Shelf` class.
 
 
-.. class:: DbfilenameShelf(filename[, flag='c'[, protocol=None[, writeback=False]]])
+.. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False)
 
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`dbm.open`.  By

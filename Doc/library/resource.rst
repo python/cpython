@@ -1,4 +1,3 @@
-
 :mod:`resource` --- Resource usage information
 ==============================================
 

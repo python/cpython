@@ -204,18 +204,17 @@ process and user.
    Return the current process's user id. Availability: Unix.
 
 
-.. function:: getenv(varname[, value])
+.. function:: getenv(key, default=None)
 
-   Return the value of the environment variable *varname* if it exists, or *value*
-   if it doesn't.  *value* defaults to ``None``. Availability: most flavors of
-   Unix, Windows.
+   Return the value of the environment variable *key* if it exists, or
+   *default* if it doesn't.  Availability: most flavors of Unix, Windows.
 
 
-.. function:: putenv(varname, value)
+.. function:: putenv(key, value)
 
    .. index:: single: environment variables; setting
 
-   Set the environment variable named *varname* to the string *value*.  Such
+   Set the environment variable named *key* to the string *value*.  Such
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`. Availability: most flavors of
    Unix, Windows.
@@ -326,11 +325,11 @@ process and user.
    Unix.
 
 
-.. function:: unsetenv(varname)
+.. function:: unsetenv(key)
 
    .. index:: single: environment variables; deleting
 
-   Unset (delete) the environment variable named *varname*. Such changes to the
+   Unset (delete) the environment variable named *key*. Such changes to the
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`. Availability: most flavors of Unix, Windows.
 
@@ -847,15 +846,14 @@ Files and Directories
    doesn't open the FIFO --- it just creates the rendezvous point.
 
 
-.. function:: mknod(filename[, mode=0o600, device])
+.. function:: mknod(filename[, mode=0o600[, device]])
 
    Create a filesystem node (file, device special file or named pipe) named
-   *filename*. *mode* specifies both the permissions to use and the type of node to
-   be created, being combined (bitwise OR) with one of ``stat.S_IFREG``,
-   ``stat.S_IFCHR``, ``stat.S_IFBLK``,
-   and ``stat.S_IFIFO`` (those constants are available in :mod:`stat`).
-   For ``stat.S_IFCHR`` and
-   ``stat.S_IFBLK``, *device* defines the newly created device special file (probably using
+   *filename*. *mode* specifies both the permissions to use and the type of node
+   to be created, being combined (bitwise OR) with one of ``stat.S_IFREG``,
+   ``stat.S_IFCHR``, ``stat.S_IFBLK``, and ``stat.S_IFIFO`` (those constants are
+   available in :mod:`stat`).  For ``stat.S_IFCHR`` and ``stat.S_IFBLK``,
+   *device* defines the newly created device special file (probably using
    :func:`os.makedev`), otherwise it is ignored.
 
 
@@ -1123,7 +1121,7 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: walk(top[, topdown=True [, onerror=None[, followlinks=False]]])
+.. function:: walk(top, topdown=True, onerror=None, followlinks=False)
 
    .. index::
       single: directory; walking

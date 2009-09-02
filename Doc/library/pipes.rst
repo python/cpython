@@ -1,4 +1,3 @@
-
 :mod:`pipes` --- Interface to shell pipelines
 =============================================
 

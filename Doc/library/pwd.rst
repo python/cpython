@@ -1,4 +1,3 @@
-
 :mod:`pwd` --- The password database
 ====================================
 

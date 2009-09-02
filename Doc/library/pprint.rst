@@ -1,4 +1,3 @@
-
 :mod:`pprint` --- Data pretty printer
 =====================================
 
@@ -27,7 +26,7 @@ The :mod:`pprint` module defines one class:
 .. First the implementation class:
 
 
-.. class:: PrettyPrinter(...)
+.. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.  An output stream may be set using the *stream*
@@ -62,21 +61,20 @@ The :mod:`pprint` module defines one class:
       >>> pp.pprint(tup)
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
+
 The :class:`PrettyPrinter` class supports several derivative functions:
 
-.. Now the derivative functions:
-
-.. function:: pformat(object[, indent[, width[, depth]]])
+.. function:: pformat(object, indent=1, width=80, depth=None)
 
    Return the formatted representation of *object* as a string.  *indent*, *width*
    and *depth* will be passed to the :class:`PrettyPrinter` constructor as
    formatting parameters.
 
 
-.. function:: pprint(object[, stream[, indent[, width[, depth]]]])
+.. function:: pprint(object, stream=None, indent=1, width=80, depth=None)
 
    Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is omitted, ``sys.stdout`` is used.  This may be used
+   newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
    within a scope).  *indent*, *width* and *depth* will be passed to the
@@ -191,7 +189,8 @@ are converted to strings.  The default implementation uses the internals of the
 pprint Example
 --------------
 
-This example demonstrates several uses of the :func:`pprint` function and its parameters.
+This example demonstrates several uses of the :func:`pprint` function and its
+parameters.
 
    >>> import pprint
    >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',

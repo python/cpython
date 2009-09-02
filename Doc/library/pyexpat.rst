@@ -1,4 +1,3 @@
-
 :mod:`xml.parsers.expat` --- Fast XML parsing using Expat
 =========================================================
 
@@ -56,7 +55,7 @@ The :mod:`xml.parsers.expat` module contains two functions:
    Returns an explanatory string for a given error number *errno*.
 
 
-.. function:: ParserCreate([encoding[, namespace_separator]])
+.. function:: ParserCreate(encoding=None, namespace_separator=None)
 
    Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
    must be a string naming the encoding  used by the XML data.  Expat doesn't
