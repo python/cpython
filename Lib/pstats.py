@@ -70,20 +70,8 @@ class Stats:
                             print_stats(5).print_callers(5)
     """
 
-    def __init__(self, *args, **kwds):
-        # I can't figure out how to explictly specify a stream keyword arg
-        # with *args:
-        #   def __init__(self, *args, stream=sys.stdout): ...
-        # so I use **kwds and sqauwk if something unexpected is passed in.
-        self.stream = sys.stdout
-        if "stream" in kwds:
-            self.stream = kwds["stream"]
-            del kwds["stream"]
-        if kwds:
-            keys = kwds.keys()
-            keys.sort()
-            extras = ", ".join(["%s=%s" % (k, kwds[k]) for k in keys])
-            raise ValueError("unrecognized keyword args: %s" % extras)
+    def __init__(self, *args, stream=None):
+        self.stream = stream or sys.stdout
         if not len(args):
             arg = None
         else:
