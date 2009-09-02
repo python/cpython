@@ -1,4 +1,3 @@
-
 :mod:`shutil` --- High-level file operations
 ============================================
 
@@ -86,7 +85,7 @@ copying and removal. For operations on individual files, see also the
    match one of the glob-style *patterns* provided.  See the example below.
 
 
-.. function:: copytree(src, dst[, symlinks=False[, ignore=None]])
+.. function:: copytree(src, dst, symlinks=False, ignore=None)
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
    directory, named by *dst*, must not already exist; it will be created as well
@@ -114,7 +113,7 @@ copying and removal. For operations on individual files, see also the
    ultimate tool.
 
 
-.. function:: rmtree(path[, ignore_errors[, onerror]])
+.. function:: rmtree(path, ignore_errors=False, onerror=None)
 
    .. index:: single: directory; deleting
 

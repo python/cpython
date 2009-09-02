@@ -1,4 +1,3 @@
-
 :mod:`socketserver` --- A framework for network servers
 =======================================================
 

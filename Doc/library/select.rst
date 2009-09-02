@@ -1,4 +1,3 @@
-
 :mod:`select` --- Waiting for I/O completion
 ============================================
 
@@ -24,7 +23,7 @@ The module defines the following:
    string, as would be printed by the C function :cfunc:`perror`.
 
 
-.. function:: epoll([sizehint=-1])
+.. function:: epoll(sizehint=-1)
 
    (Only supported on Linux 2.5.44 and newer.)  Returns an edge polling object,
    which can be used as Edge or Level Triggered interface for I/O events; see

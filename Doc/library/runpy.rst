@@ -19,7 +19,7 @@ When executed as a script, the module effectively operates as follows::
 The :mod:`runpy` module provides a single function:
 
 
-.. function:: run_module(mod_name[, init_globals] [, run_name][, alter_sys])
+.. function:: run_module(mod_name, init_globals=None, run_name=None, alter_sys=False)
 
    Execute the code of the specified module and return the resulting module globals
    dictionary. The module's code is first located using the standard import

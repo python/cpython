@@ -1,4 +1,3 @@
-
 :mod:`signal` --- Set handlers for asynchronous events
 ======================================================
 
@@ -82,7 +81,8 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: ITIMER_REAL
 
-   Decrements interval timer in real time, and delivers :const:`SIGALRM` upon expiration.
+   Decrements interval timer in real time, and delivers :const:`SIGALRM` upon
+   expiration.
 
 
 .. data:: ITIMER_VIRTUAL
@@ -182,14 +182,14 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: siginterrupt(signalnum, flag)
 
-   Change system call restart behaviour: if *flag* is :const:`False`, system calls
-   will be restarted when interrupted by signal *signalnum*, otherwise system calls will
-   be interrupted. Returns nothing. Availability: Unix (see the man page
-   :manpage:`siginterrupt(3)` for further information).
+   Change system call restart behaviour: if *flag* is :const:`False`, system
+   calls will be restarted when interrupted by signal *signalnum*, otherwise
+   system calls will be interrupted. Returns nothing. Availability: Unix (see
+   the man page :manpage:`siginterrupt(3)` for further information).
 
-   Note that installing a signal handler with :func:`signal` will reset the restart
-   behaviour to interruptible by implicitly calling :cfunc:`siginterrupt` with a true *flag*
-   value for the given signal.
+   Note that installing a signal handler with :func:`signal` will reset the
+   restart behaviour to interruptible by implicitly calling
+   :cfunc:`siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)

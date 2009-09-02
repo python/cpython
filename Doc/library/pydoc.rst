@@ -1,4 +1,3 @@
-
 :mod:`pydoc` --- Documentation generator and online help system
 ===============================================================
 

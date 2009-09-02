@@ -1,4 +1,3 @@
-
 :mod:`pkgutil` --- Package extension utility
 ============================================
 

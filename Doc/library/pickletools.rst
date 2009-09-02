@@ -2,7 +2,8 @@
 ==================================================
 
 .. module:: pickletools
-   :synopsis: Contains extensive comments about the pickle protocols and pickle-machine opcodes, as well as some useful functions.
+   :synopsis: Contains extensive comments about the pickle protocols and
+              pickle-machine opcodes, as well as some useful functions.
 
 This module contains various constants relating to the intimate details of the
 :mod:`pickle` module, some lengthy comments about the implementation, and a
@@ -12,7 +13,7 @@ ordinary users of the :mod:`pickle` module probably won't find the
 :mod:`pickletools` module relevant.
 
 
-.. function:: dis(pickle[, out=None, memo=None, indentlevel=4])
+.. function:: dis(pickle, out=None, memo=None, indentlevel=4)
 
    Outputs a symbolic disassembly of the pickle to the file-like object *out*,
    defaulting to ``sys.stdout``.  *pickle* can be a string or a file-like object.

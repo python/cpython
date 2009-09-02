@@ -141,7 +141,7 @@ an unpickler, then you call the unpickler's :meth:`load` method.  The
 The :mod:`pickle` module provides the following functions to make the pickling
 process more convenient:
 
-.. function:: dump(obj, file[, protocol, \*, fix_imports=True])
+.. function:: dump(obj, file, protocol=None, \*, fix_imports=True)
 
    Write a pickled representation of *obj* to the open file object *file*.  This
    is equivalent to ``Pickler(file, protocol).dump(obj)``.
@@ -162,7 +162,7 @@ process more convenient:
    map the new Python 3.x names to the old module names used in Python 2.x,
    so that the pickle data stream is readable with Python 2.x.
 
-.. function:: dumps(obj[, protocol, \*, fix_imports=True])
+.. function:: dumps(obj, protocol=None, \*, fix_imports=True)
 
    Return the pickled representation of the object as a :class:`bytes`
    object, instead of writing it to a file.
@@ -179,7 +179,7 @@ process more convenient:
    map the new Python 3.x names to the old module names used in Python 2.x,
    so that the pickle data stream is readable with Python 2.x.
 
-.. function:: load(file, [\*, fix_imports=True, encoding="ASCII", errors="strict"])
+.. function:: load(file, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
    Read a pickled object representation from the open file object *file* and
    return the reconstituted object hierarchy specified therein.  This is
@@ -202,7 +202,7 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2.x; these default to 'ASCII' and 'strict', respectively.
 
-.. function:: loads(bytes_object, [\*, fix_imports=True, encoding="ASCII", errors="strict"])
+.. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
    Read a pickled object hierarchy from a :class:`bytes` object and return the
    reconstituted object hierarchy specified therein
@@ -247,7 +247,7 @@ The :mod:`pickle` module defines three exceptions:
 The :mod:`pickle` module exports two classes, :class:`Pickler` and
 :class:`Unpickler`:
 
-.. class:: Pickler(file[, protocol, \*, fix_imports=True])
+.. class:: Pickler(file, protocol=None, \*, fix_imports=True)
 
    This takes a binary file for writing a pickle data stream.
 
@@ -295,7 +295,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
 
-.. class:: Unpickler(file, [\*, fix_imports=True, encoding="ASCII", errors="strict"])
+.. class:: Unpickler(file, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
    This takes a binary file for reading a pickle data stream.
 

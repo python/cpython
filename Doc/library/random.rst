@@ -1,4 +1,3 @@
-
 :mod:`random` --- Generate pseudo-random numbers
 ================================================
 

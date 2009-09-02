@@ -1,4 +1,3 @@
-
 :mod:`pty` --- Pseudo-terminal utilities
 ========================================
 

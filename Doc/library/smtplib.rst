@@ -1,4 +1,3 @@
-
 :mod:`smtplib` --- SMTP protocol client
 =======================================
 
@@ -17,7 +16,7 @@ details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
 
-.. class:: SMTP([host[, port[, local_hostname[, timeout]]]])
+.. class:: SMTP(host='', port=0, local_hostname=None[, timeout])
 
    A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
@@ -32,13 +31,13 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
 
 
-.. class:: SMTP_SSL([host[, port[, local_hostname[, keyfile[, certfile[, timeout]]]]]])
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout])
 
    A :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
    required from the beginning of the connection and using :meth:`starttls` is
    not appropriate. If *host* is not specified, the local host is used. If
-   *port* is omitted, the standard SMTP-over-SSL port (465) is used. *keyfile*
+   *port* is zero, the standard SMTP-over-SSL port (465) is used. *keyfile*
    and *certfile* are also optional, and can contain a PEM formatted private key
    and certificate chain file for the SSL connection. The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
@@ -46,7 +45,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    will be used).
 
 
-.. class:: LMTP([host[, port[, local_hostname]]])
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None)
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our :meth:`connect`
@@ -142,7 +141,7 @@ An :class:`SMTP` instance has the following methods:
    for connection and for all messages sent to and received from the server.
 
 
-.. method:: SMTP.connect([host[, port]])
+.. method:: SMTP.connect(host='localhost', port=0)
 
    Connect to a host on a given port.  The defaults are to connect to the local
    host at the standard SMTP port (25). If the hostname ends with a colon (``':'``)
@@ -151,9 +150,9 @@ An :class:`SMTP` instance has the following methods:
    the constructor if a host is specified during instantiation.
 
 
-.. method:: SMTP.docmd(cmd, [, argstring])
+.. method:: SMTP.docmd(cmd, args='')
 
-   Send a command *cmd* to the server.  The optional argument *argstring* is simply
+   Send a command *cmd* to the server.  The optional argument *args* is simply
    concatenated to the command, separated by a space.
 
    This returns a 2-tuple composed of a numeric response code and the actual
@@ -167,7 +166,7 @@ An :class:`SMTP` instance has the following methods:
    :exc:`SMTPServerDisconnected` will be raised.
 
 
-.. method:: SMTP.helo([hostname])
+.. method:: SMTP.helo(name='')
 
    Identify yourself to the SMTP server using ``HELO``.  The hostname argument
    defaults to the fully qualified domain name of the local host.
@@ -178,7 +177,7 @@ An :class:`SMTP` instance has the following methods:
    It will be implicitly called by the :meth:`sendmail` when necessary.
 
 
-.. method:: SMTP.ehlo([hostname])
+.. method:: SMTP.ehlo(name='')
 
    Identify yourself to an ESMTP server using ``EHLO``.  The hostname argument
    defaults to the fully qualified domain name of the local host.  Examine the
@@ -239,7 +238,7 @@ An :class:`SMTP` instance has the following methods:
       No suitable authentication method was found.
 
 
-.. method:: SMTP.starttls([keyfile[, certfile]])
+.. method:: SMTP.starttls(keyfile=None, certfile=None)
 
    Put the SMTP connection in TLS (Transport Layer Security) mode.  All SMTP
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
@@ -261,7 +260,7 @@ An :class:`SMTP` instance has the following methods:
      SSL/TLS support is not available to your python interpreter.
 
 
-.. method:: SMTP.sendmail(from_addr, to_addrs, msg[, mail_options, rcpt_options])
+.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
 
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1

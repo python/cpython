@@ -1,4 +1,3 @@
-
 :mod:`site` --- Site-specific configuration hook
 ================================================
 
@@ -142,6 +141,6 @@ empty, and the path manipulations are skipped; however the import of
 
    .. versionadded:: 2.7
 
-XXX Update documentation
-XXX document python -m site --user-base --user-site
+.. XXX Update documentation
+.. XXX document python -m site --user-base --user-site
 

@@ -1,4 +1,3 @@
-
 :mod:`re` --- Regular expression operations
 ===========================================
 
@@ -446,7 +445,7 @@ regular expressions.  Most non-trivial applications always use the compiled
 form.
 
 
-.. function:: compile(pattern[, flags])
+.. function:: compile(pattern, flags=0)
 
    Compile a regular expression pattern into a regular expression object, which
    can be used for matching using its :func:`match` and :func:`search` methods,
@@ -556,7 +555,7 @@ form.
    string.
 
 
-.. function:: match(pattern, string[, flags])
+.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`MatchObject` instance.
@@ -569,7 +568,7 @@ form.
       instead.
 
 
-.. function:: split(pattern, string[, maxsplit=0, flags=0])
+.. function:: split(pattern, string, maxsplit=0, flags=0)
 
    Split *string* by the occurrences of *pattern*.  If capturing parentheses are
    used in *pattern*, then the text of all groups in the pattern are also returned
@@ -609,7 +608,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: findall(pattern, string[, flags])
+.. function:: findall(pattern, string, flags=0)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
    strings.  The *string* is scanned left-to-right, and matches are returned in
@@ -619,7 +618,7 @@ form.
    beginning of another match.
 
 
-.. function:: finditer(pattern, string[, flags])
+.. function:: finditer(pattern, string, flags=0)
 
    Return an :term:`iterator` yielding :class:`MatchObject` instances over all
    non-overlapping matches for the RE *pattern* in *string*.  The *string* is
@@ -628,7 +627,7 @@ form.
    match.
 
 
-.. function:: sub(pattern, repl, string[, count, flags])
+.. function:: sub(pattern, repl, string, count=0, flags=0)
 
    Return the string obtained by replacing the leftmost non-overlapping occurrences
    of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
@@ -677,7 +676,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: subn(pattern, repl, string[, count, flags])
+.. function:: subn(pattern, repl, string, count=0, flags=0)
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
@@ -752,7 +751,7 @@ attributes:
    :meth:`~RegexObject.match` method.
 
 
-.. method:: RegexObject.split(string[, maxsplit=0])
+.. method:: RegexObject.split(string, maxsplit=0)
 
    Identical to the :func:`split` function, using the compiled pattern.
 
@@ -767,12 +766,12 @@ attributes:
    Identical to the :func:`finditer` function, using the compiled pattern.
 
 
-.. method:: RegexObject.sub(repl, string[, count=0])
+.. method:: RegexObject.sub(repl, string, count=0)
 
    Identical to the :func:`sub` function, using the compiled pattern.
 
 
-.. method:: RegexObject.subn(repl, string[, count=0])
+.. method:: RegexObject.subn(repl, string, count=0)
 
    Identical to the :func:`subn` function, using the compiled pattern.
 
@@ -870,7 +869,7 @@ support the following methods and attributes:
       'c3'
 
 
-.. method:: MatchObject.groups([default])
+.. method:: MatchObject.groups(default=None)
 
    Return a tuple containing all the subgroups of the match, from 1 up to however
    many groups are in the pattern.  The *default* argument is used for groups that
@@ -893,7 +892,7 @@ support the following methods and attributes:
       ('24', '0')
 
 
-.. method:: MatchObject.groupdict([default])
+.. method:: MatchObject.groupdict(default=None)
 
    Return a dictionary containing all the *named* subgroups of the match, keyed by
    the subgroup name.  The *default* argument is used for groups that did not
@@ -904,8 +903,8 @@ support the following methods and attributes:
       {'first_name': 'Malcom', 'last_name': 'Reynolds'}
 
 
-.. method:: MatchObject.start([group])
-            MatchObject.end([group])
+.. method:: MatchObject.start(group=0)
+            MatchObject.end(group=0)
 
    Return the indices of the start and end of the substring matched by *group*;
    *group* defaults to zero (meaning the whole matched substring). Return ``-1`` if
@@ -928,7 +927,7 @@ support the following methods and attributes:
       'tony@tiger.net'
 
 
-.. method:: MatchObject.span([group])
+.. method:: MatchObject.span(group=0)
 
    For :class:`MatchObject` *m*, return the 2-tuple ``(m.start(group),
    m.end(group))``. Note that if *group* did not contribute to the match, this is
