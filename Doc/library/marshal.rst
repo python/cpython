@@ -37,12 +37,14 @@ supports a substantially wider range of objects than marshal.
 
 Not all Python object types are supported; in general, only objects whose value
 is independent from a particular invocation of Python can be written and read by
-this module.  The following types are supported: ``None``, integers, long
-integers, floating point numbers, strings, Unicode objects, tuples, lists, sets,
-dictionaries, and code objects, where it should be understood that tuples, lists
-and dictionaries are only supported as long as the values contained therein are
-themselves supported; and recursive lists and dictionaries should not be written
-(they will cause infinite loops).
+this module.  The following types are supported: booleans, integers, long
+integers, floating point numbers, complex numbers, strings, Unicode objects,
+tuples, lists, sets, frozensets, dictionaries, and code objects, where it should
+be understood that tuples, lists, sets, frozensets and dictionaries are only
+supported as long as the values contained therein are themselves supported; and
+recursive lists, sets and dictionaries should not be written (they will cause
+infinite loops).  The singletons :const:`None`, :const:`Ellipsis` and
+:exc:`StopIteration` can also be marshalled and unmarshalled.
 
 .. warning::
 
