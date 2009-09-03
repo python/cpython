@@ -138,7 +138,6 @@ its magnitude (as a float) or ``z.real`` to get its real part. ::
    4.0
    >>> abs(a)  # sqrt(a.real**2 + a.imag**2)
    5.0
-   >>>
 
 In interactive mode, the last printed expression is assigned to the variable
 ``_``.  This means that when you are using Python as a desk calculator, it is
@@ -152,7 +151,6 @@ somewhat easier to continue calculations, for example::
    113.0625
    >>> round(_, 2)
    113.06
-   >>>
 
 This variable should be treated as read-only by the user.  Don't explicitly
 assign a value to it --- you would create an independent local variable with the
@@ -193,7 +191,9 @@ next line is a logical continuation of the line::
 
 Note that newlines still need to be embedded in the string using ``\n``; the
 newline following the trailing backslash is discarded.  This example would print
-the following::
+the following:
+
+.. code-block:: text
 
    This is a rather long string containing
    several lines of text just as you would do in C.
@@ -209,7 +209,9 @@ they will be included in the string. ::
         -H hostname               Hostname to connect to
    """
 
-produces the following output::
+produces the following output:
+
+.. code-block:: text
 
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
@@ -224,7 +226,9 @@ in the source, are both included in the string as data.  Thus, the example::
 
    print hello
 
-would print::
+would print:
+
+.. code-block:: text
 
    This is a rather long string containing\n\
    several lines of text much as you would do in C.
