@@ -1,69 +1,70 @@
+"""Benchmark some basic import use-cases."""
+# XXX
+#    - Bench from source (turn off bytecode generation)
+#    - Bench from bytecode (remove existence of source)
+#    - Bench bytecode generation
+#    - Bench extensions
 from . import util
 from .source import util as source_util
-import gc
-import decimal
 import imp
 import importlib
 import sys
 import timeit
 
 
-def bench_cache(import_, repeat, number):
-    """Measure the time it takes to pull from sys.modules."""
+def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
+    """Bench the given statement as many times as necessary until total
+    executions take one second."""
+    stmt = "__import__({!r})".format(name)
+    timer = timeit.Timer(stmt)
+    for x in range(repeat):
+        total_time = 0
+        count = 0
+        while total_time < seconds:
+            try:
+                total_time += timer.timeit(1)
+            finally:
+                cleanup()
+            count += 1
+        else:
+            # One execution too far
+            if total_time > seconds:
+                count -= 1
+        yield count
+
+def from_cache(repeat):
+    """sys.modules"""
     name = '<benchmark import>'
+    module = imp.new_module(name)
+    module.__file__ = '<test>'
+    module.__package__ = ''
     with util.uncache(name):
-        module = imp.new_module(name)
         sys.modules[name] = module
-        runs = []
-        for x in range(repeat):
-            start_time = timeit.default_timer()
-            for y in range(number):
-                import_(name)
-            end_time = timeit.default_timer()
-            runs.append(end_time - start_time)
-        return min(runs)
+        for result in bench(name, repeat=repeat):
+            yield result
 
 
-def bench_importing_source(import_, repeat, number, loc=100000):
-    """Measure importing source from disk.
-
-    For worst-case scenario, the line endings are \\r\\n and thus require
-    universal newline translation.
-
-    """
-    name = '__benchmark'
-    with source_util.create_modules(name) as mapping:
-        with open(mapping[name], 'w') as file:
-            for x in range(loc):
-                file.write("{0}\r\n".format(x))
-        with util.import_state(path=[mapping['.root']]):
-            runs = []
-            for x in range(repeat):
-                start_time = timeit.default_timer()
-                for y in range(number):
-                    try:
-                        import_(name)
-                    finally:
-                        del sys.modules[name]
-                end_time = timeit.default_timer()
-                runs.append(end_time - start_time)
-            return min(runs)
+def builtin_mod(repeat):
+    """Built-in module"""
+    name = 'errno'
+    if name in sys.modules:
+        del sys.modules[name]
+    for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat):
+        yield result
 
 
-def main(import_):
-    args = [('sys.modules', bench_cache, 5, 500000),
-            ('source', bench_importing_source, 5, 10000)]
-    test_msg = "{test}, {number} times (best of {repeat}):"
-    result_msg = "{result:.2f} secs"
-    gc.disable()
-    try:
-        for name, meth, repeat, number in args:
-            result = meth(import_, repeat, number)
-            print(test_msg.format(test=name, repeat=repeat,
-                    number=number).ljust(40),
-                    result_msg.format(result=result).rjust(10))
-    finally:
-        gc.enable()
+def main(import_, repeat=3):
+    __builtins__.__import__ = import_
+    benchmarks = from_cache, builtin_mod
+    for benchmark in benchmarks:
+        print(benchmark.__doc__, "[", end=' ')
+        sys.stdout.flush()
+        results = []
+        for result in benchmark(repeat):
+            results.append(result)
+            print(result, end=' ')
+            sys.stdout.flush()
+        print("]", "best is", max(results))
 
 
 if __name__ == '__main__':
