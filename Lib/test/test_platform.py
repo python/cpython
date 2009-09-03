@@ -156,7 +156,13 @@ class PlatformTest(unittest.TestCase):
                     break
             fd.close()
             self.assertFalse(real_ver is None)
-            self.assertEquals(res[0], real_ver)
+            result_list = res[0].split('.')
+            expect_list = real_ver.split('.')
+            len_diff = len(result_list) - len(expect_list)
+            # On Snow Leopard, sw_vers reports 10.6.0 as 10.6
+            if len_diff > 0:
+                expect_list.extend(['0'] * len_diff)
+            self.assertEquals(result_list, expect_list)
 
             # res[1] claims to contain
             # (version, dev_stage, non_release_version)

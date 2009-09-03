@@ -1328,6 +1328,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #6806: test_platform failed under OS X 10.6.0 because ``sw_ver`` leaves
+  off the trailing 0 in the version number.
+
 - Issue #5450: Moved tests involving loading tk from Lib/test/test_tcl to
   Lib/lib-tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate
   the same behaviour as test_ttkguionly (and now also test_tk) which is to
