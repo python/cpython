@@ -305,6 +305,48 @@ class nego_collector(object):
             sb_data = self.sb_getter()
             self.sb_seen += sb_data
 
+class SocketProxy(object):
+    ''' a socket proxy that re-defines sendall() '''
+    def __init__(self, real_sock):
+        self.socket = real_sock
+        self._raw_sent = b''
+    def __getattr__(self, k):
+        return getattr(self.socket, k)
+    def sendall(self, data):
+        self._raw_sent += data
+        self.socket.sendall(data)
+
+class TelnetSockSendall(telnetlib.Telnet):
+    def open(self, *args, **opts):
+        telnetlib.Telnet.open(self, *args, **opts)
+        self.sock = SocketProxy(self.sock)
+
+class WriteTests(TestCase):
+    '''The only thing that write does is replace each tl.IAC for
+    tl.IAC+tl.IAC'''
+    setUp = _read_setUp
+    tearDown = _read_tearDown
+
+    def _test_write(self, data):
+        self.telnet.sock._raw_sent = b''
+        self.telnet.write(data)
+        after_write = self.telnet.sock._raw_sent
+        self.assertEqual(data.replace(tl.IAC,tl.IAC+tl.IAC),
+                         after_write)
+
+    def test_write(self):
+        self.telnet = TelnetSockSendall()
+        data_sample = [b'data sample without IAC',
+                       b'data sample with' + tl.IAC + b' one IAC',
+                       b'a few' + tl.IAC + tl.IAC + b' iacs' + tl.IAC,
+                       tl.IAC,
+                       b'']
+        self.telnet.open(HOST, self.port)
+        for d in data_sample:
+            self.dataq.put([b''])
+            self._test_write(d)
+        self.telnet.close()
+
 tl = telnetlib
 
 class TelnetDebuglevel(tl.Telnet):
@@ -382,16 +424,17 @@ class OptionTests(TestCase):
     def _test_debuglevel(self, data, expected_msg):
         """ helper for testing debuglevel messages """
         self.setUp()
-        self.dataq.put(data)
+        self.dataq.put(data + [EOF_sigil])
         telnet = TelnetDebuglevel(HOST, self.port)
         telnet.set_debuglevel(1)
         self.dataq.join()
         txt = telnet.read_all()
         self.assertTrue(expected_msg in telnet._messages,
                         msg=(telnet._messages, expected_msg))
+        telnet.close()
         self.tearDown()
 
-    def test_debuglevel(self):
+    def test_debuglevel_reads(self):
         # test all the various places that self.msg(...) is called
         given_a_expect_b = [
             # Telnet.fill_rawq
@@ -402,15 +445,26 @@ class OptionTests(TestCase):
             (tl.IAC + tl.DONT + bytes([1]), ": IAC DONT 1\n"),
             (tl.IAC + tl.WILL + bytes([1]), ": IAC WILL 1\n"),
             (tl.IAC + tl.WONT + bytes([1]), ": IAC WONT 1\n"),
-            # Telnet.write
-            # XXX, untested
            ]
         for a, b in given_a_expect_b:
             self._test_debuglevel([a, EOF_sigil], b)
         return
 
+    def test_debuglevel_write(self):
+        self.setUp()
+        telnet = TelnetDebuglevel(HOST, self.port)
+        telnet.set_debuglevel(1)
+        self.dataq.put([b'', EOF_sigil])
+        self.dataq.join()
+        telnet.write(b'xxx')
+        expected = "send b'xxx'\n"
+        self.assertTrue(expected in telnet._messages,
+                        msg=(telnet._messages, expected))
+        telnet.close()
+        self.tearDown()
+
 def test_main(verbose=None):
-    support.run_unittest(GeneralTests, ReadTests, OptionTests)
+    support.run_unittest(GeneralTests, ReadTests, WriteTests, OptionTests)
 
 if __name__ == '__main__':
     test_main()
