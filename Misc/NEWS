@@ -72,6 +72,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #6838: Use a list to accumulate the value instead of
+  repeatedly concatenating strings in httplib's
+  HTTPResponse._read_chunked providing a significant speed increase
+  when downloading large files servend with a Transfer-Encoding of 'chunked'.
+
 - Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
   payloads are now ordered by integer value rather than lexicographically.
 
