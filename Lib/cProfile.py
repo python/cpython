@@ -4,7 +4,7 @@
    Compatible with the 'profile' module.
 """
 
-__all__ = ["run", "runctx", "help", "Profile"]
+__all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 
