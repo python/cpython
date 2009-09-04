@@ -94,15 +94,15 @@ else:
 
         def test_ascii_ignore(self):
             ctypes.set_conversion_mode("ascii", "ignore")
-            self.assertEqual(func("abc"), "abc")
-            self.assertEqual(func("abc"), "abc")
-            self.assertEqual(func("\xe4\xf6\xfc\xdf"), "")
+            self.assertEqual(func("abc"), b"abc")
+            self.assertEqual(func("abc"), b"abc")
+            self.assertEqual(func("\xe4\xf6\xfc\xdf"), b"")
 
         def test_ascii_replace(self):
             ctypes.set_conversion_mode("ascii", "replace")
-            self.assertEqual(func("abc"), "abc")
-            self.assertEqual(func("abc"), "abc")
-            self.assertEqual(func("\xe4\xf6\xfc\xdf"), "????")
+            self.assertEqual(func("abc"), b"abc")
+            self.assertEqual(func("abc"), b"abc")
+            self.assertEqual(func("\xe4\xf6\xfc\xdf"), b"????")
 
         def test_buffers(self):
             ctypes.set_conversion_mode("ascii", "strict")
