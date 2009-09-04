@@ -518,10 +518,7 @@ class HTTPResponse(io.RawIOBase):
     def _read_chunked(self, amt):
         assert self.chunked != _UNKNOWN
         chunk_left = self.chunk_left
-        value = b""
-
-        # XXX This accumulates chunks by repeated string concatenation,
-        # which is not efficient as the number or size of chunks gets big.
+        value = []
         while True:
             if chunk_left is None:
                 line = self.fp.readline()
@@ -534,22 +531,22 @@ class HTTPResponse(io.RawIOBase):
                     # close the connection as protocol synchronisation is
                     # probably lost
                     self.close()
-                    raise IncompleteRead(value)
+                    raise IncompleteRead(b''.join(value))
                 if chunk_left == 0:
                     break
             if amt is None:
-                value += self._safe_read(chunk_left)
+                value.append(self._safe_read(chunk_left))
             elif amt < chunk_left:
-                value += self._safe_read(amt)
+                value.append(self._safe_read(amt))
                 self.chunk_left = chunk_left - amt
-                return value
+                return b''.join(value)
             elif amt == chunk_left:
-                value += self._safe_read(amt)
+                value.append(self._safe_read(amt))
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
                 self.chunk_left = None
-                return value
+                return b''.join(value)
             else:
-                value += self._safe_read(chunk_left)
+                value.append(self._safe_read(chunk_left))
                 amt -= chunk_left
 
             # we read the whole chunk, get another
@@ -570,7 +567,7 @@ class HTTPResponse(io.RawIOBase):
         # we read everything; close the "file"
         self.close()
 
-        return value
+        return b''.join(value)
 
     def _safe_read(self, amt):
         """Read the number of bytes requested, compensating for partial reads.
