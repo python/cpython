@@ -226,12 +226,12 @@ _Translator       = {
     }
 
 def _quote(str, LegalChars=_LegalChars):
-    #
-    # If the string does not need to be double-quoted,
-    # then just return the string.  Otherwise, surround
-    # the string in doublequotes and precede quote (with a \)
-    # special characters.
-    #
+    r"""Quote a string for use in a cookie header.
+
+    If the string does not need to be double-quoted, then just return the
+    string.  Otherwise, surround the string in doublequotes and quote
+    (with a \) special characters.
+    """
     if all(c in LegalChars for c in str):
         return str
     else:
@@ -304,18 +304,15 @@ def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
            (weekdayname[wd], day, monthname[month], year, hh, mm, ss)
 
 
-#
-# A class to hold ONE key,value pair.
-# In a cookie, each such pair may have several attributes.
-#       so this class is used to keep the attributes associated
-#       with the appropriate key,value pair.
-# This class also includes a coded_value attribute, which
-#       is used to hold the network representation of the
-#       value.  This is most useful when Python objects are
-#       pickled for network transit.
-#
-
 class Morsel(dict):
+    """A class to hold ONE key,value pair.
+
+    In a cookie, each such pair may have several attributes, so this class is
+    used to keep the attributes associated with the appropriate key,value pair.
+    This class also includes a coded_value attribute, which is used to hold
+    the network representation of the value.  This is most useful when Python
+    objects are pickled for network transit.
+    """
     # RFC 2109 lists these attributes as reserved:
     #   path       comment         domain
     #   max-age    secure      version
@@ -449,8 +446,7 @@ _CookiePattern = re.compile(
 # See this module's docstring for example usage.
 #
 class BaseCookie(dict):
-    # A container class for a set of Morsels
-    #
+    """A container class for a set of Morsels."""
 
     def value_decode(self, val):
         """real_value, coded_value = value_decode(STRING)
@@ -551,7 +547,7 @@ class BaseCookie(dict):
 
 
 class SimpleCookie(BaseCookie):
-    """SimpleCookie
+    """
     SimpleCookie supports strings as cookie values.  When setting
     the value using the dictionary assignment notation, SimpleCookie
     calls the builtin str() to convert the value to a string.  Values
