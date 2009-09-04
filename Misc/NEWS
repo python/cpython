@@ -50,6 +50,11 @@ C-API
 Library
 -------
 
+- Issue #6838: Use a list to accumulate the value instead of
+  repeatedly concatenating strings in http.client's
+  HTTPResponse._read_chunked providing a significant speed increase
+  when downloading large files servend with a Transfer-Encoding of 'chunked'.
+
 - Have importlib raise ImportError if None is found in sys.modules for a
   module.
 
