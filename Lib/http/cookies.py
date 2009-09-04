@@ -236,7 +236,6 @@ def _quote(str, LegalChars=_LegalChars):
         return str
     else:
         return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
-# end _quote
 
 
 _OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
@@ -282,7 +281,6 @@ def _unquote(str):
             res.append( chr( int(str[j+1:j+4], 8) ) )
             i = j+4
     return _nulljoin(res)
-# end _unquote
 
 # The _getdate() routine is used to set the expiration time in
 # the cookie's HTTP header.      By default, _getdate() returns the
@@ -348,18 +346,15 @@ class Morsel(dict):
         # Set default attributes
         for K in self._reserved:
             dict.__setitem__(self, K, "")
-    # end __init__
 
     def __setitem__(self, K, V):
         K = K.lower()
         if not K in self._reserved:
             raise CookieError("Invalid Attribute %s" % K)
         dict.__setitem__(self, K, V)
-    # end __setitem__
 
     def isReservedKey(self, K):
         return K.lower() in self._reserved
-    # end isReservedKey
 
     def set(self, key, val, coded_val, LegalChars=_LegalChars):
         # First we verify that the key isn't a reserved word
@@ -373,7 +368,6 @@ class Morsel(dict):
         self.key                 = key
         self.value               = val
         self.coded_value         = coded_val
-    # end set
 
     def output(self, attrs=None, header = "Set-Cookie:"):
         return "%s %s" % ( header, self.OutputString(attrs) )
@@ -393,7 +387,6 @@ class Morsel(dict):
         // end hiding -->
         </script>
         """ % ( self.OutputString(attrs).replace('"',r'\"'))
-    # end js_output()
 
     def OutputString(self, attrs=None):
         # Build up our result
@@ -424,9 +417,6 @@ class Morsel(dict):
 
         # Return the result
         return _semispacejoin(result)
-    # end OutputString
-# end Morsel class
-
 
 
 #
@@ -470,7 +460,6 @@ class BaseCookie(dict):
         Override this function to modify the behavior of cookies.
         """
         return val, val
-    # end value_encode
 
     def value_encode(self, val):
         """real_value, coded_value = value_encode(VALUE)
@@ -480,24 +469,20 @@ class BaseCookie(dict):
         """
         strval = str(val)
         return strval, strval
-    # end value_encode
 
     def __init__(self, input=None):
         if input: self.load(input)
-    # end __init__
 
     def __set(self, key, real_value, coded_value):
         """Private method for setting a cookie's value"""
         M = self.get(key, Morsel())
         M.set(key, real_value, coded_value)
         dict.__setitem__(self, key, M)
-    # end __set
 
     def __setitem__(self, key, value):
         """Dictionary style assignment."""
         rval, cval = self.value_encode(value)
         self.__set(key, rval, cval)
-    # end __setitem__
 
     def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
         """Return a string suitable for HTTP."""
@@ -506,7 +491,6 @@ class BaseCookie(dict):
         for K,V in items:
             result.append( V.output(attrs, header) )
         return sep.join(result)
-    # end output
 
     __str__ = output
 
@@ -524,7 +508,6 @@ class BaseCookie(dict):
         for K,V in items:
             result.append( V.js_output(attrs) )
         return _nulljoin(result)
-    # end js_output
 
     def load(self, rawdata):
         """Load cookies from a string (presumably HTTP_COOKIE) or
@@ -537,7 +520,6 @@ class BaseCookie(dict):
         else:
             self.update(rawdata)
         return
-    # end load()
 
     def __ParseString(self, str, patt=_CookiePattern):
         i = 0            # Our starting point
@@ -566,8 +548,7 @@ class BaseCookie(dict):
                 rval, cval = self.value_decode(V)
                 self.__set(K, rval, cval)
                 M = self[K]
-    # end __ParseString
-# end BaseCookie class
+
 
 class SimpleCookie(BaseCookie):
     """SimpleCookie
@@ -581,9 +562,7 @@ class SimpleCookie(BaseCookie):
     def value_encode(self, val):
         strval = str(val)
         return strval, _quote( strval )
-# end SimpleCookie
 
-#
 ###########################################################
 
 def _test():
