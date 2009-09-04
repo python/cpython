@@ -109,7 +109,7 @@ class SlicesTestCase(unittest.TestCase):
         dll.my_strdup.errcheck = errcheck
         try:
             res = dll.my_strdup(s)
-            self.assertEqual(res, s.decode())
+            self.assertEqual(res, s)
         finally:
             del dll.my_strdup.errcheck
 

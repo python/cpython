@@ -73,7 +73,7 @@ class Test(unittest.TestCase):
         # This didn't work: bad argument to internal function
         s = c_char_p("hiho")
         self.assertEqual(cast(cast(s, c_void_p), c_char_p).value,
-                             "hiho")
+                             b"hiho")
 
     try:
         c_wchar_p
