@@ -177,7 +177,7 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = None
         f.restype = c_char_p
         result = f(b"123")
-        self.assertEqual(result, "123")
+        self.assertEqual(result, b"123")
 
         result = f(None)
         self.assertEqual(result, None)

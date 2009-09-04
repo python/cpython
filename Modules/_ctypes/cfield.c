@@ -1428,7 +1428,8 @@ z_get(void *ptr, Py_ssize_t size)
 			return NULL;
 		}
 #endif
-		return PyUnicode_FromString(*(char **)ptr);
+		return PyBytes_FromStringAndSize(*(char **)ptr,
+						 strlen(*(char **)ptr));
 	} else {
 		Py_INCREF(Py_None);
 		return Py_None;
