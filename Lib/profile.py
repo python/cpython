@@ -92,11 +92,6 @@ def runctx(statement, globals, locals, filename=None):
     else:
         return prof.print_stats()
 
-# Backwards compatibility.
-def help():
-    print("Documentation for the profile module can be found ")
-    print("in the Python Library Reference, section 'The Python Profiler'.")
-
 if os.name == "mac":
     import MacOS
     def _get_time_mac(timer=MacOS.GetTicks):
@@ -588,8 +583,6 @@ class Profile:
         return mean
 
 #****************************************************************************
-def Stats(*args):
-    print('Report generating functions are in the "pstats" module\a')
 
 def main():
     usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."

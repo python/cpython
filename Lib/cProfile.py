@@ -56,11 +56,6 @@ def runctx(statement, globals, locals, filename=None):
             result = prof.print_stats()
     return result
 
-# Backwards compatibility.
-def help():
-    print("Documentation for the profile/cProfile modules can be found ")
-    print("in the Python Library Reference, section 'The Python Profiler'.")
-
 # ____________________________________________________________
 
 class Profile(_lsprof.Profiler):
