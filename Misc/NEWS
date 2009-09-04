@@ -364,6 +364,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2666: Handle BROWSER environment variable properly for unknown browser
+  names in the webbrowser module.
+
 - Issue #6054: Do not normalize stored pathnames in tarfile.
 
 - Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
