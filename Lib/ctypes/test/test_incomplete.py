@@ -17,9 +17,9 @@ class MyTestCase(unittest.TestCase):
         SetPointerType(lpcell, cell)
 
         c1 = cell()
-        c1.name = "foo"
+        c1.name = b"foo"
         c2 = cell()
-        c2.name = "bar"
+        c2.name = b"bar"
 
         c1.next = pointer(c2)
         c2.next = pointer(c1)
@@ -30,7 +30,7 @@ class MyTestCase(unittest.TestCase):
         for i in range(8):
             result.append(p.name)
             p = p.next[0]
-        self.assertEqual(result, ["foo", "bar"] * 4)
+        self.assertEqual(result, [b"foo", b"bar"] * 4)
 
         # to not leak references, we must clean _pointer_type_cache
         from ctypes import _pointer_type_cache

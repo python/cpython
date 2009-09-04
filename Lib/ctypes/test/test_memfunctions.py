@@ -37,7 +37,7 @@ class MemFunctionsTest(unittest.TestCase):
 
     def test_cast(self):
         a = (c_ubyte * 32)(*map(ord, "abcdef"))
-        self.assertEqual(cast(a, c_char_p).value, "abcdef")
+        self.assertEqual(cast(a, c_char_p).value, b"abcdef")
         self.assertEqual(cast(a, POINTER(c_byte))[:7],
                              [97, 98, 99, 100, 101, 102, 0])
         self.assertEqual(cast(a, POINTER(c_byte))[:7:],

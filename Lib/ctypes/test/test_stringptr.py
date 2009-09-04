@@ -35,10 +35,10 @@ class StringPtrTestCase(unittest.TestCase):
         # c_char_p and Python string is compatible
         # c_char_p and c_buffer is NOT compatible
         self.assertEqual(x.str, None)
-        x.str = "Hello, World"
-        self.assertEqual(x.str, "Hello, World")
-        b = c_buffer("Hello, World")
-        self.assertRaises(TypeError, setattr, x, "str", b)
+        x.str = b"Hello, World"
+        self.assertEqual(x.str, b"Hello, World")
+        b = c_buffer(b"Hello, World")
+        self.assertRaises(TypeError, setattr, x, b"str", b)
 
 
     def test_functions(self):
@@ -48,15 +48,15 @@ class StringPtrTestCase(unittest.TestCase):
         # c_char_p and Python string is compatible
         # c_char_p and c_buffer are now compatible
         strchr.argtypes = c_char_p, c_char
-        self.assertEqual(strchr("abcdef", "c"), "cdef")
-        self.assertEqual(strchr(c_buffer("abcdef"), "c"), "cdef")
+        self.assertEqual(strchr(b"abcdef", b"c"), b"cdef")
+        self.assertEqual(strchr(c_buffer(b"abcdef"), b"c"), b"cdef")
 
         # POINTER(c_char) and Python string is NOT compatible
         # POINTER(c_char) and c_buffer() is compatible
         strchr.argtypes = POINTER(c_char), c_char
-        buf = c_buffer("abcdef")
-        self.assertEqual(strchr(buf, "c"), "cdef")
-        self.assertEqual(strchr("abcdef", "c"), "cdef")
+        buf = c_buffer(b"abcdef")
+        self.assertEqual(strchr(buf, b"c"), b"cdef")
+        self.assertEqual(strchr(b"abcdef", b"c"), b"cdef")
 
         # XXX These calls are dangerous, because the first argument
         # to strchr is no longer valid after the function returns!

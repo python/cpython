@@ -140,10 +140,10 @@ class PointersTestCase(unittest.TestCase):
         func.restype = c_char_p
         argv = (c_char_p * 2)()
         argc = c_int( 2 )
-        argv[0] = 'hello'
-        argv[1] = 'world'
+        argv[0] = b'hello'
+        argv[1] = b'world'
         result = func( byref(argc), argv )
-        assert result == 'world', result
+        self.assertEqual(result, b'world')
 
     def test_bug_1467852(self):
         # http://sourceforge.net/tracker/?func=detail&atid=532154&aid=1467852&group_id=71702

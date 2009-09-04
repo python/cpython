@@ -68,6 +68,8 @@ C-API
 Library
 -------
 
+- Issue #6239: ctypes.c_char_p return value must return bytes.
+
 - Issue #6838: Use a list to accumulate the value instead of
   repeatedly concatenating strings in http.client's
   HTTPResponse._read_chunked providing a significant speed increase
