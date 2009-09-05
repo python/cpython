@@ -165,6 +165,12 @@
 /* Define if you have the 'epoll' functions. */
 #undef HAVE_EPOLL
 
+/* Define to 1 if you have the `erf' function. */
+#undef HAVE_ERF
+
+/* Define to 1 if you have the `erfc' function. */
+#undef HAVE_ERFC
+
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
@@ -230,6 +236,9 @@
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
+
+/* Define to 1 if you have the `gamma' function. */
+#undef HAVE_GAMMA
 
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
@@ -356,6 +365,9 @@
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
+
+/* Define to 1 if you have the `lgamma' function. */
+#undef HAVE_LGAMMA
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
@@ -750,6 +762,9 @@
 
 /* Define to 1 if you have the <term.h> header file. */
 #undef HAVE_TERM_H
+
+/* Define to 1 if you have the `tgamma' function. */
+#undef HAVE_TGAMMA
 
 /* Define to 1 if you have the <thread.h> header file. */
 #undef HAVE_THREAD_H
