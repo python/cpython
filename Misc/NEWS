@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6846: Fix bug where bytearray.pop() returns negative integers.
+
 - Issue #6750: A text file opened with io.open() could duplicate its output
   when writing from multiple threads at the same time.
 
