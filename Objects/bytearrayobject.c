@@ -2705,7 +2705,7 @@ bytearray_pop(PyByteArrayObject *self, PyObject *args)
     if (PyByteArray_Resize((PyObject *)self, n - 1) < 0)
         return NULL;
 
-    return PyLong_FromLong(value);
+    return PyLong_FromLong((unsigned char)value);
 }
 
 PyDoc_STRVAR(remove__doc__,
