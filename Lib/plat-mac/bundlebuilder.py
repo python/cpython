@@ -337,7 +337,6 @@ PYTHONFRAMEWORKGOODIES = [
     "Python",  # the Python core library
     "Resources/English.lproj",
     "Resources/Info.plist",
-    "Resources/version.plist",
 ]
 
 def isFramework():
