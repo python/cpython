@@ -125,6 +125,8 @@ syntax error.
 Extension Modules
 -----------------
 
+- Issue #6848: Fix curses module build failure on OS X 10.6.
+
 - Fix a segfault in expat.
 
 - Issue #4509: array.array objects are no longer modified after an operation

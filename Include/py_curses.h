@@ -10,7 +10,12 @@
 #ifdef	_BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
-#endif
+
+/* the following define is necessary for OS X 10.6; without it, the
+   Apple-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
+   can't get at the WINDOW flags field. */
+#define NCURSES_OPAQUE 0
+#endif /* __APPLE__ */
 
 #ifdef __FreeBSD__
 /*
