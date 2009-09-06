@@ -366,6 +366,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4937: plat-mac/bundlebuilder revers to non-existing version.plist
+
 - Issue #6838: Use a list to accumulate the value instead of
   repeatedly concatenating strings in httplib's
   HTTPResponse._read_chunked providing a significant speed increase
@@ -1191,6 +1193,11 @@ Tools/Demos
 Build
 -----
 
+- Add 2 new options to ``--with-universal-archs`` on MacOSX: 
+  ``intel`` builds a distribution with ``i386`` and ``x86_64`` architectures,
+  while ``3-way`` builds a distribution with the ``ppc``, ``i386`` 
+  and ``x86_64`` architectures. 
+  
 - Issue #6802: Fix build issues on MacOSX 10.6
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
