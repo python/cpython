@@ -180,6 +180,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6848: Fix curses module build failure on OS X 10.6.
+
 - Fix expat to not segfault with specially crafted input.
 
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
