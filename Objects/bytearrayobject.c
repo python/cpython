@@ -2620,7 +2620,7 @@ bytearray_insert(PyByteArrayObject *self, PyObject *args)
 
     if (n == PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot add more objects to bytes");
+                        "cannot add more objects to bytearray");
         return NULL;
     }
     if (!_getbytevalue(value, &ival))
@@ -2655,7 +2655,7 @@ bytearray_append(PyByteArrayObject *self, PyObject *arg)
         return NULL;
     if (n == PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot add more objects to bytes");
+                        "cannot add more objects to bytearray");
         return NULL;
     }
     if (PyByteArray_Resize((PyObject *)self, n + 1) < 0)
@@ -2756,7 +2756,7 @@ bytearray_pop(PyByteArrayObject *self, PyObject *args)
 
     if (n == 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot pop an empty bytes");
+                        "cannot pop an empty bytearray");
         return NULL;
     }
     if (where < 0)
@@ -2794,7 +2794,7 @@ bytearray_remove(PyByteArrayObject *self, PyObject *arg)
             break;
     }
     if (where == n) {
-        PyErr_SetString(PyExc_ValueError, "value not found in bytes");
+        PyErr_SetString(PyExc_ValueError, "value not found in bytearray");
         return NULL;
     }
     if (!_canresize(self))
