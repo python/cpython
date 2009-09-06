@@ -169,6 +169,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6848: Fix curses module build failure on OS X 10.6.
+
 - Fix a segfault that could be triggered by expat with specially formed input.
 
 - Issue #6561: '\d' in a regex now matches only characters with
