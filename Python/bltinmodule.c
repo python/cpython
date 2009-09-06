@@ -968,14 +968,8 @@ builtin_map(PyObject *self, PyObject *args)
 		/* Get iterator. */
 		curseq = PyTuple_GetItem(args, i+1);
 		sqp->it = PyObject_GetIter(curseq);
-		if (sqp->it == NULL) {
-			static char errmsg[] =
-			    "argument %d to map() must support iteration";
-			char errbuf[sizeof(errmsg) + 25];
-			PyOS_snprintf(errbuf, sizeof(errbuf), errmsg, i+2);
-			PyErr_SetString(PyExc_TypeError, errbuf);
+		if (sqp->it == NULL)
 			goto Fail_2;
-		}
 
 		/* Update len. */
 		curlen = _PyObject_LengthHint(curseq, 8);
@@ -2463,13 +2457,8 @@ builtin_zip(PyObject *self, PyObject *args)
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
 		PyObject *it = PyObject_GetIter(item);
-		if (it == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_TypeError))
-				PyErr_Format(PyExc_TypeError,
-				    "zip argument #%zd must support iteration",
-				    i+1);
+		if (it == NULL)
 			goto Fail_ret_itlist;
-		}
 		PyTuple_SET_ITEM(itlist, i, it);
 	}
 
