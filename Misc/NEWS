@@ -185,6 +185,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6802: Fix build issues on MacOSX 10.6
+
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
