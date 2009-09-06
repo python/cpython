@@ -12,7 +12,10 @@ sys.stdout = sys.stderr
 
 import os
 import MacOS
-import EasyDialogs
+try:
+    import EasyDialogs
+except ImportError:
+    EasyDialogs = None
 import buildtools
 import getopt
 
@@ -32,7 +35,10 @@ def main():
     try:
         buildapplet()
     except buildtools.BuildError, detail:
-        EasyDialogs.Message(detail)
+        if EasyDialogs is None:
+            print detail
+        else:
+            EasyDialogs.Message(detail)
 
 
 def buildapplet():
@@ -46,6 +52,10 @@ def buildapplet():
     # Ask for source text if not specified in sys.argv[1:]
 
     if not sys.argv[1:]:
+        if EasyDialogs is None:
+            usage()
+            sys.exit(1)
+
         filename = EasyDialogs.AskFileForOpen(message='Select Python source or applet:',
                 typeList=('TEXT', 'APPL'))
         if not filename:

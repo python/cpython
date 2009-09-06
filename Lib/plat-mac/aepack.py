@@ -58,7 +58,11 @@ unpacker_coercions = {
 # Some python types we need in the packer:
 #
 AEDescType = AE.AEDescType
-FSSType = Carbon.File.FSSpecType
+try:
+    FSSType = Carbon.File.FSSpecType
+except AttributeError:
+    class FSSType:
+        pass
 FSRefType = Carbon.File.FSRefType
 AliasType = Carbon.File.AliasType
 

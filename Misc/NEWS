@@ -1189,6 +1189,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #6802: Fix build issues on MacOSX 10.6
+
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
 - Issue 5390: Add uninstall icon independent of whether file

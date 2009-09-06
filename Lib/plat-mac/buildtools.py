@@ -15,7 +15,10 @@ import Carbon.File
 import MacOS
 import macostools
 import macresource
-import EasyDialogs
+try:
+    import EasyDialogs
+except ImportError:
+    EasyDialogs = None
 import shutil
 
 
@@ -67,9 +70,13 @@ def process(template, filename, destname, copy_codefragment=0,
         rsrcname=None, others=[], raw=0, progress="default", destroot=""):
 
     if progress == "default":
-        progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
-        progress.label("Compiling...")
-        progress.inc(0)
+        if EasyDialogs is None:
+            print "Compiling %s"%(os.path.split(filename)[1],)
+            process = None
+        else:
+            progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
+            progress.label("Compiling...")
+            progress.inc(0)
     # check for the script name being longer than 32 chars. This may trigger a bug
     # on OSX that can destroy your sourcefile.
     if '#' in os.path.split(filename)[1]:
@@ -119,7 +126,11 @@ def update(template, filename, output):
     if MacOS.runtimemodel == 'macho':
         raise BuildError, "No updating yet for MachO applets"
     if progress:
-        progress = EasyDialogs.ProgressBar("Updating %s..."%os.path.split(filename)[1], 120)
+        if EasyDialogs is None:
+            print "Updating %s"%(os.path.split(filename)[1],)
+            progress = None
+        else:
+            progress = EasyDialogs.ProgressBar("Updating %s..."%os.path.split(filename)[1], 120)
     else:
         progress = None
     if not output:
