@@ -107,7 +107,7 @@ def resource_pathname(pathname, verbose=0):
         refno = Res.FSpOpenResFile(pathname, 1)
         Res.CloseResFile(refno)
     except (AttributeError, Res.Error), arg:
-        if instance(arg, AttributeError), or arg[0] in (-37, -39):
+        if isinstance(arg, AttributeError) or arg[0] in (-37, -39):
             # No resource fork. We may be on OSX, and this may be either
             # a data-fork based resource file or a AppleSingle file
             # from the CVS repository.
