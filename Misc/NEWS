@@ -134,6 +134,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6802: Fix build issues on MacOSX 10.6
+
 - Issue 4601: 'make install' did not set the appropriate permissions on
 directories.
 
