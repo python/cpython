@@ -1862,7 +1862,6 @@ long_from_binary_base(char **str, int base)
 	for (bits_per_char = -1; n; ++bits_per_char)
 		n >>= 1;
 	/* n <- total # of bits needed, while setting p to end-of-string */
-	n = 0;
 	while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base)
 		++p;
 	*str = p;
