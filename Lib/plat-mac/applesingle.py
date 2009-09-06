@@ -119,8 +119,13 @@ def decode(infile, outpath, resonly=False, verbose=False):
     if not hasattr(infile, 'read'):
         if isinstance(infile, Carbon.File.Alias):
             infile = infile.ResolveAlias()[0]
-        if isinstance(infile, (Carbon.File.FSSpec, Carbon.File.FSRef)):
-            infile = infile.as_pathname()
+
+        if hasattr(Carbon.File, "FSSpec"):
+            if isinstance(infile, (Carbon.File.FSSpec, Carbon.File.FSRef)):
+                infile = infile.as_pathname()
+        else:
+            if isinstance(infile, Carbon.File.FSRef):
+                infile = infile.as_pathname()
         infile = open(infile, 'rb')
 
     asfile = AppleSingle(infile, verbose=verbose)

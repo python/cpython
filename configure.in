@@ -92,7 +92,6 @@ AC_ARG_ENABLE(universalsdk,
 ])
 AC_SUBST(UNIVERSALSDK)
 
-ARCH_RUN_32BIT=
 AC_SUBST(ARCH_RUN_32BIT)
 
 UNIVERSAL_ARCHS="32-bit"
@@ -921,6 +920,7 @@ yes)
 
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
+		   ARCH_RUN_32BIT="true"
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
@@ -944,12 +944,22 @@ yes)
 	    cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
 	    if test ${cur_target} '>' 10.2; then
 		    cur_target=10.3
-	    fi
-	    if test "${UNIVERSAL_ARCHS}" = "all"; then
-		    # Ensure that the default platform for a 4-way
-		    # universal build is OSX 10.5, that's the first
-		    # OS release where 4-way builds make sense.
-		    cur_target='10.5'
+		    if test ${enable_universalsdk}; then
+			    if test "${UNIVERSAL_ARCHS}" = "all"; then
+				    # Ensure that the default platform for a 
+				    # 4-way universal build is OSX 10.5, 
+				    # that's the first OS release where 
+				    # 4-way builds make sense.
+				    cur_target='10.5'
+			    fi
+		    else
+			    if test `arch` = "i386"; then
+				    # On Intel macs default to a deployment
+				    # target of 10.4, that's the first OSX
+				    # release with Intel support.
+				    cur_target="10.4"
+			    fi
+		    fi
 	    fi
 	    CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
 	    
@@ -1519,6 +1529,8 @@ case $ac_sys_system/$ac_sys_release in
     ;;
 esac
 
+
+ARCH_RUN_32BIT=""
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/@<:@01567@:>@\..*) 
@@ -1526,7 +1538,7 @@ case $ac_sys_system/$ac_sys_release in
     if test "${enable_universalsdk}"; then
 	    :
     else
-	LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `arch`"
+        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `arch`"
     fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
@@ -1538,7 +1550,48 @@ case $ac_sys_system/$ac_sys_release in
         else 
             LIBTOOL_CRUFT=""
     fi
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only `arch`"
+    AC_TRY_RUN([[
+    #include <unistd.h>
+    int main(int argc, char*argv[])
+    {
+      if (sizeof(long) == 4) {
+    	  return 0;
+      } else {
+      	  return 1;
+      }
+    ]], ac_osx_32bit=yes,
+       ac_osx_32bit=no,
+       ac_osx_32bit=no)
+    
+    if test "${ac_osx_32bit}" = "yes"; then
+    	case `arch` in
+    	i386) 
+    		MACOSX_DEFAULT_ARCH="i386" 
+    		;;
+    	ppc) 
+    		MACOSX_DEFAULT_ARCH="ppc" 
+    		;;
+    	*)
+    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		;;
+    	esac
+    else
+    	case `arch` in
+    	i386) 
+    		MACOSX_DEFAULT_ARCH="x86_64" 
+    		;;
+    	ppc) 
+    		MACOSX_DEFAULT_ARCH="ppc64" 
+    		;;
+    	*)
+    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		;;
+    	esac
+
+	#ARCH_RUN_32BIT="true"
+    fi
+
+    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only ${MACOSX_DEFAULT_ARCH}"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
 esac
