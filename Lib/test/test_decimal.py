@@ -716,6 +716,9 @@ class DecimalFormatTest(unittest.TestCase):
             ('>6', '123', '   123'),
             ('^6', '123', ' 123  '),
             ('=+6', '123', '+  123'),
+
+            # issue 6850
+            ('a=-7.0', '0.12345', 'aaaa0.1'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)
