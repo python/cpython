@@ -366,6 +366,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
+  with no type specifier.
+
 - Issue #4937: plat-mac/bundlebuilder revers to non-existing version.plist
 
 - Issue #6838: Use a list to accumulate the value instead of
