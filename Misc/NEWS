@@ -70,6 +70,10 @@ C-API
 Library
 -------
 
+- Issue #6795: int(Decimal('nan')) now raises ValueError instead of
+  returning NaN or raising InvalidContext.  Also, fix infinite recursion
+  in long(Decimal('nan')).
+
 - Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
   with no type specifier.
 
