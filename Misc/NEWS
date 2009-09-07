@@ -52,6 +52,9 @@ C-API
 Library
 -------
 
+- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
+  with no type specifier.
+
 - Issue #6239: ctypes.c_char_p return value must return bytes.
 
 - Issue #6838: Use a list to accumulate the value instead of
