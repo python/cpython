@@ -5447,7 +5447,7 @@ def _parse_format_specifier(format_spec):
     # if format type is 'g' or 'G' then a precision of 0 makes little
     # sense; convert it to 1.  Same if format type is unspecified.
     if format_dict['precision'] == 0:
-        if format_dict['type'] in 'gG' or format_dict['type'] is None:
+        if format_dict['type'] is None or format_dict['type'] in 'gG':
             format_dict['precision'] = 1
 
     # record whether return type should be str or unicode
