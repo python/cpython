@@ -1553,10 +1553,9 @@ class Decimal(object):
         """Converts self to an int, truncating if necessary."""
         if self._is_special:
             if self._isnan():
-                context = getcontext()
-                return context._raise_error(InvalidContext)
+                raise ValueError("Cannot convert NaN to integer")
             elif self._isinfinity():
-                raise OverflowError("Cannot convert infinity to int")
+                raise OverflowError("Cannot convert infinity to integer")
         s = (-1)**self._sign
         if self._exp >= 0:
             return s*int(self._int)*10**self._exp
