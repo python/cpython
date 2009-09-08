@@ -106,7 +106,7 @@ AC_SUBST(ARCH_RUN_32BIT)
 UNIVERSAL_ARCHS="32-bit"
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
-    AC_HELP_STRING(--with-universal-archs=ARCH, select architectures for universal build ("32-bit", "64-bit" or "all")),
+    AC_HELP_STRING(--with-universal-archs=ARCH, select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")),
 [
 	AC_MSG_RESULT($withval)
 	UNIVERSAL_ARCHS="$withval"
@@ -916,6 +916,14 @@ yes)
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
 		   ARCH_RUN_32BIT="arch -i386 -ppc"
 
+	         elif test "$UNIVERSAL_ARCHS" = "intel" ; then
+		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
+		   ARCH_RUN_32BIT="arch -i386"
+
+	         elif test "$UNIVERSAL_ARCHS" = "3-way" ; then
+		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
+		   ARCH_RUN_32BIT="arch -i386 -ppc"
+
 		 else
 	           AC_MSG_ERROR([proper usage is --with-universalarch=32-bit|64-bit|all])
 
@@ -940,6 +948,15 @@ yes)
 				    # 4-way universal build is OSX 10.5, 
 				    # that's the first OS release where 
 				    # 4-way builds make sense.
+				    cur_target='10.5'
+
+			    elif test "${UNIVERSAL_ARCHS}" = "3-way"; then
+				    cur_target='10.5'
+
+			    elif test "${UNIVERSAL_ARCHS}" = "intel"; then
+				    cur_target='10.5'
+
+			    elif test "${UNIVERSAL_ARCHS}" = "64-bit"; then
 				    cur_target='10.5'
 			    fi
 		    else
@@ -1519,7 +1536,7 @@ case $ac_sys_system/$ac_sys_release in
         else 
             LIBTOOL_CRUFT=""
     fi
-    AC_TRY_RUN([[
+    AC_TRY_RUN([
     #include <unistd.h>
     int main(int argc, char*argv[])
     {
@@ -1528,9 +1545,10 @@ case $ac_sys_system/$ac_sys_release in
       } else {
       	  return 1;
       }
-    ]], ac_osx_32bit=yes,
+    }
+    ], ac_osx_32bit=yes,
        ac_osx_32bit=no,
-       ac_osx_32bit=no)
+       ac_osx_32bit=yes)
     
     if test "${ac_osx_32bit}" = "yes"; then
     	case `arch` in
