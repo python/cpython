@@ -1565,6 +1565,7 @@ case $ac_sys_system/$ac_sys_release in
       } else {
       	  return 1;
       }
+    }
     ], ac_osx_32bit=yes,
        ac_osx_32bit=no,
        ac_osx_32bit=yes)
