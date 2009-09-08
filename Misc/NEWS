@@ -1303,6 +1303,9 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #6865: Fix reference counting issue in the initialization of the pwd
+  module.
+
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
 - Fix a segfault in expat when given a specially crafted input lead to the

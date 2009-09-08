@@ -194,6 +194,7 @@ initpwd(void)
 	Py_INCREF((PyObject *) &StructPwdType);
 	PyModule_AddObject(m, "struct_passwd", (PyObject *) &StructPwdType);
 	/* And for b/w compatibility (this was defined by mistake): */
+        Py_INCREF((PyObject *) &StructPwdType);
 	PyModule_AddObject(m, "struct_pwent", (PyObject *) &StructPwdType);
 	initialized = 1;
 }
