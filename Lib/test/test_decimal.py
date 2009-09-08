@@ -1372,6 +1372,16 @@ class DecimalPythonAPItests(unittest.TestCase):
             r = d.to_integral(ROUND_DOWN)
             self.assertEqual(Decimal(int(d)), r)
 
+        self.assertRaises(ValueError, int, Decimal('-nan'))
+        self.assertRaises(ValueError, int, Decimal('snan'))
+        self.assertRaises(OverflowError, int, Decimal('inf'))
+        self.assertRaises(OverflowError, int, Decimal('-inf'))
+
+        self.assertRaises(ValueError, long, Decimal('-nan'))
+        self.assertRaises(ValueError, long, Decimal('snan'))
+        self.assertRaises(OverflowError, long, Decimal('inf'))
+        self.assertRaises(OverflowError, long, Decimal('-inf'))
+
     def test_trunc(self):
         for x in range(-250, 250):
             s = '%0.2f' % (x / 100.0)
