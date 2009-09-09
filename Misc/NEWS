@@ -778,6 +778,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6865: Fix reference counting issue in the initialization of the pwd
+  module.
+
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
 
