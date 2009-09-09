@@ -322,6 +322,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6163: Fixed HP-UX runtime library dir options in
+  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
+  Michael Haubenwallner.
+
 - Issue #4660: If a multiprocessing.JoinableQueue.put() was preempted, it was
   possible to get a spurious 'task_done() called too many times' error.
 
