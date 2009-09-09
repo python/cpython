@@ -283,7 +283,9 @@ class UnixCCompiler(CCompiler):
             # MacOSX's linker doesn't understand the -R flag at all
             return "-L" + dir
         elif sys.platform[:5] == "hp-ux":
-            return "+s -L" + dir
+            if "gcc" in compiler or "g++" in compiler:
+                return ["-Wl,+s", "-L" + dir]
+            return ["+s", "-L" + dir]
         elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
             return ["-rpath", dir]
         elif compiler[:3] == "gcc" or compiler[:3] == "g++":
