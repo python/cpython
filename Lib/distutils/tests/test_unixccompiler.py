@@ -36,7 +36,23 @@ class UnixCCompilerTestCase(unittest.TestCase):
 
         # hp-ux
         sys.platform = 'hp-ux'
-        self.assertEqual(self.cc.rpath_foo(), '+s -L/foo')
+        old_gcv = sysconfig.get_config_var
+        def gcv(v):
+            return 'xxx'
+        sysconfig.get_config_var = gcv
+        self.assertEqual(self.cc.rpath_foo(), ['+s', '-L/foo'])
+
+        def gcv(v):
+            return 'gcc'
+        sysconfig.get_config_var = gcv
+        self.assertEqual(self.cc.rpath_foo(), ['-Wl,+s', '-L/foo'])
+
+        def gcv(v):
+            return 'g++'
+        sysconfig.get_config_var = gcv
+        self.assertEqual(self.cc.rpath_foo(), ['-Wl,+s', '-L/foo'])
+
+        sysconfig.get_config_var = old_gcv
 
         # irix646
         sys.platform = 'irix646'

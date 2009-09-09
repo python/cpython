@@ -983,6 +983,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6163: Fixed HP-UX runtime library dir options in
+  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
+  Michael Haubenwallner.
+
 - Issue #6545: Removed assert statements in distutils.Extension, so the 
   behavior is similar when used with -O.
 
