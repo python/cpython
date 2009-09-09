@@ -1046,6 +1046,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6163: Fixed HP-UX runtime library dir options in
+  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
+  Michael Haubenwallner.
+
 - Issue #6693: New functions in site.py to get user/global site packages paths.
 
 - Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
