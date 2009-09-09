@@ -21,6 +21,50 @@ class TracebackCases(unittest.TestCase):
         else:
             raise ValueError, "call did not raise exception"
 
+    def test_tb_next(self):
+        def f():
+            raise Exception
+        def g():
+            f()
+        try:
+            g()
+        except Exception:
+            tb = sys.exc_info()[2]
+            self.assertEqual(tb.tb_frame.f_code.co_name, "test_tb_next")
+            g_tb = tb.tb_next
+            self.assertEqual(g_tb.tb_frame.f_code.co_name, "g")
+            f_tb = g_tb.tb_next
+            self.assertEqual(f_tb.tb_frame.f_code.co_name, "f")
+            self.assertIsNone(f_tb.tb_next)
+            tb.tb_next = None
+            self.assertIsNone(tb.tb_next)
+            self.assertRaises(ValueError, setattr, f_tb, "tb_next", g_tb)
+            self.assertRaises(TypeError, setattr, tb, "tb_next", 4)
+            g_tb.tb_next = None
+            f_tb.tb_next = g_tb
+            self.assertIs(f_tb.tb_next, g_tb)
+            self.assertRaises(ValueError, setattr, f_tb, "tb_next", f_tb)
+            self.assertRaises(TypeError, delattr, tb, "tb_next")
+
+    def test_tb_frame(self):
+        def f():
+            x = 2
+            raise Exception
+        try:
+            f()
+        except Exception:
+            tb = sys.exc_info()[2]
+            self.assertIs(sys._getframe(), tb.tb_frame)
+            f_tb = tb.tb_next
+            self.assertEqual(f_tb.tb_frame.f_code.co_name, "f")
+            self.assertEqual(f_tb.tb_frame.f_locals["x"], 2)
+            f_tb.tb_frame = None
+            self.assertIsNone(f_tb.tb_frame)
+            self.assertRaises(TypeError, setattr, t_tb, "tb_frame", 4)
+            self.assertRaises(TypeError, delattr, t_tb, "tb_frame")
+            t_tb.tb_frame = sys._getframe()
+            self.assertIs(t_tb.tb_frame, tb.tb_frame)
+
     def syntax_error_with_caret(self):
         compile("def fact(x):\n\treturn x!\n", "?", "exec")
 
