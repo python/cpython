@@ -12,6 +12,8 @@
 #define OFF(x) offsetof(PyTracebackObject, x)
 
 static PyMemberDef tb_memberlist[] = {
+	{"tb_next",	T_OBJECT,	OFF(tb_next), READONLY},
+	{"tb_frame",	T_OBJECT,	OFF(tb_frame), READONLY},
 	{"tb_lasti",	T_INT,		OFF(tb_lasti), READONLY},
 	{"tb_lineno",	T_INT,		OFF(tb_lineno), READONLY},
 	{NULL}	/* Sentinel */
@@ -43,81 +45,6 @@ tb_clear(PyTracebackObject *tb)
 	Py_CLEAR(tb->tb_frame);
 }
 
-static PyObject *
-tb_get_next(PyTracebackObject *tb) {
-	if (tb->tb_next) {
-		Py_INCREF(tb->tb_next);
-		return (PyObject *)tb->tb_next;
-	}
-	Py_RETURN_NONE;
-}
-
-static int
-tb_set_next(PyTracebackObject *tb, PyObject *new, void *context) {
-	if (!new) {
-		PyErr_SetString(PyExc_TypeError, "can't delete tb_next");
-		return -1;
-	}
-	else if (new == Py_None) {
-		new = NULL;
-	}
-	else if (PyTraceBack_Check(new)) {
-		/* Check for cycles in the traceback. */
-		PyTracebackObject *current = (PyTracebackObject *)new;
-		do {
-			if (tb == current) {
-				PyErr_SetString(PyExc_ValueError, "cycle in traceback");
-				return -1;
-			}
-		} while ((current = current->tb_next));
-		Py_INCREF(new);
-	}
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"tb_next must be an traceback object");
-		return -1;
-	}
-	Py_XDECREF(tb->tb_next);
-	tb->tb_next = (PyTracebackObject *)new;
-	return 0;
-}
-
-static PyObject *
-tb_get_frame(PyTracebackObject *tb) {
-	if (tb->tb_frame) {
-		Py_INCREF(tb->tb_frame);
-		return (PyObject *)tb->tb_frame;
-	}
-	Py_RETURN_NONE;
-}
-
-static int
-tb_set_frame(PyTracebackObject *tb, PyObject *new, void *context) {
-	if (!new) {
-		PyErr_SetString(PyExc_TypeError,
-				"can't delete tb_frame attribute");
-		return -1;
-	}
-	else if (new == Py_None) {
-		new = NULL;
-	}
-	else if (PyFrame_Check(new)) {
-		Py_INCREF(new);
-	}
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"tb_frame must be a frame object");
-		return -1;
-	}
-	tb->tb_frame = (PyFrameObject *)new;
-	return 0;
-}
-
-static PyGetSetDef tb_getset[] = {
-	{"tb_next", (getter)tb_get_next, (setter)tb_set_next, NULL},
-	{"tb_frame", (getter)tb_get_frame, (setter)tb_set_frame, NULL},
-};
-
 PyTypeObject PyTraceBack_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"traceback",
@@ -148,7 +75,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	tb_memberlist,			        /* tp_members */
-	tb_getset,			        /* tp_getset */
+	0,			                /* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 };
@@ -318,16 +245,11 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
 	}
 	while (tb != NULL && err == 0) {
 		if (depth <= limit) {
-			PyFrameObject *frame = tb->tb_frame;
-			char *filename, *name;
-			if (frame) {
-				filename = PyString_AS_STRING(frame->f_code->co_filename);
-				name = PyString_AS_STRING(frame->f_code->co_name);
-			}
-			else {
-				filename = name = "unkown (no frame on traceback)";
-			}
-			err = tb_displayline(f, filename, tb->tb_lineno, name);
+			err = tb_displayline(f,
+			    PyString_AsString(
+				    tb->tb_frame->f_code->co_filename),
+			    tb->tb_lineno,
+			    PyString_AsString(tb->tb_frame->f_code->co_name));
 		}
 		depth--;
 		tb = tb->tb_next;
