@@ -329,6 +329,19 @@ class BuildExtTestCase(support.TempdirManager,
         wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap' + ext)
         self.assertEquals(wanted, path)
 
+    def test_build_ext_inplace(self):
+        etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
+        etree_ext = Extension('lxml.etree', [etree_c])
+        dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+        cmd = build_ext(dist)
+        cmd.inplace = 1
+        cmd.distribution.package_dir = {'': 'src'}
+        cmd.distribution.packages = ['lxml', 'lxml.html']
+        curdir = os.getcwd()
+        wanted = os.path.join(curdir, 'src', 'lxml', 'etree.so')
+        path = cmd.get_ext_fullpath('lxml.etree')
+        self.assertEquals(wanted, path)
+
 def test_suite():
     if not sysconfig.python_build:
         if test_support.verbose:

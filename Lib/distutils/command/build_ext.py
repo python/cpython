@@ -642,9 +642,6 @@ class build_ext (Command):
         # the inplace option requires to find the package directory
         # using the build_py command for that
         package = '.'.join(modpath[0:-1])
-        modpath = fullname.split('.')
-        package = '.'.join(modpath[0:-1])
-        base = modpath[-1]
         build_py = self.get_finalized_command('build_py')
         package_dir = os.path.abspath(build_py.get_package_dir(package))
 
