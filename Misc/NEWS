@@ -70,6 +70,8 @@ C-API
 Library
 -------
 
+- Issue #6888: pdb's alias command was broken when no arguments were given.
+
 - Issue #6857: Default format() alignment should be '>' for Decimal
   instances.
 

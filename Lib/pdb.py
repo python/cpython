@@ -841,8 +841,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_alias(self, arg):
         args = arg.split()
         if len(args) == 0:
-            keys = self.aliases.keys()
-            keys.sort()
+            keys = sorted(self.aliases.keys())
             for alias in keys:
                 print("%s = %s" % (alias, self.aliases[alias]), file=self.stdout)
             return
