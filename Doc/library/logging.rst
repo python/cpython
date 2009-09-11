@@ -1316,6 +1316,7 @@ When this script is run, the output should look something like this::
    2008-01-18 14:49:54,033 d.e.f WARNING  IP: 127.0.0.1       User: jim      A message at WARNING level with 2 parameters
 
 
+
 .. _network-logging:
 
 Sending and receiving logging events across a network

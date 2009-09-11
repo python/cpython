@@ -208,7 +208,7 @@ The problem with the code is that you should never expect that a client will
 provide valid input to your scripts.  For example, if a curious user appends
 another ``user=foo`` pair to the query string, then the script would crash,
 because in this situation the ``getvalue("user")`` method call returns a list
-instead of a string.  Calling the :meth:`toupper` method on a list is not valid
+instead of a string.  Calling the :meth:`~str.upper` method on a list is not valid
 (since lists do not have a method of this name) and results in an
 :exc:`AttributeError` exception.
 
