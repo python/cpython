@@ -1362,6 +1362,7 @@ Note that at present, the :mod:`multiprocessing` module does not provide
 working lock functionality on all platforms (see
 http://bugs.python.org/issue3770).
 
+
 .. _network-logging:
 
 Sending and receiving logging events across a network

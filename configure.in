@@ -233,7 +233,7 @@ AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" -o "$ac_sys_system" = "Monterey64" \
+	if test "$ac_sys_system" = "AIX" \
 	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
 		ac_sys_release=`uname -v`
 	else
@@ -415,9 +415,6 @@ AC_ARG_WITH(gcc,
 	case $ac_sys_system in
 	AIX*)   CC=cc_r
 		without_gcc=;;
-    Monterey*)
-        RANLIB=:
-        without_gcc=;;
 	*)	without_gcc=no;;
 	esac])
 AC_MSG_RESULT($without_gcc)
@@ -539,10 +536,6 @@ hp*|HP*)
     case $CC in
     cc|*/cc) CC="$CC -Ae";;
     esac;;
-Monterey*)
-    case $CC in
-    cc) CC="$CC -Wl,-Bexport";;
-    esac;;
 SunOS*)
     # Some functions have a prototype only with that define, e.g. confstr
     AC_DEFINE(__EXTENSIONS__, 1, [Defined on Solaris to see additional function prototypes.])
@@ -603,8 +596,6 @@ then
 	       exp_extra="."
 	   fi
 	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
-	Monterey64*)
-	   LINKCC="$LINKCC -L/usr/lib/ia64l64";;
 	QNX*)
 	   # qcc must be used because the other compilers do not
 	   # support -N.
@@ -854,15 +845,6 @@ then
 	OPT="-O"
 	;;
     esac
-
-    # The current (beta) Monterey compiler dies with optimizations
-    # XXX what is Monterey? Does it still die w/ -O? Can we get rid of this?
-    case $ac_sys_system in
-	Monterey*)
-	    OPT=""
-	    ;;
-    esac
-
 fi
 
 AC_SUBST(BASECFLAGS)
@@ -1718,7 +1700,6 @@ then
 		else LDSHARED='$(CC) -G'
 		fi;;
 	SCO_SV*) LDSHARED='$(CC) -Wl,-G,-Bexport';;
-	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
 	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
 	atheos*) LDSHARED="gcc -shared";;
 	*)	LDSHARED="ld";;
@@ -1755,7 +1736,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	Monterey*) CCSHARED="-G";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
 		   *) CCSHARED="";;

@@ -514,7 +514,9 @@ class BaseCookie(dict):
         if type(rawdata) == type(""):
             self.__ParseString(rawdata)
         else:
-            self.update(rawdata)
+            # self.update() wouldn't call our custom __setitem__
+            for k, v in rawdata.items():
+                self[k] = v
         return
 
     def __ParseString(self, str, patt=_CookiePattern):
