@@ -52,6 +52,8 @@ C-API
 Library
 -------
 
+- Issue #6888: pdb's alias command was broken when no arguments were given.
+
 - Issue #6795: int(Decimal('nan')) now raises ValueError instead of
   returning NaN or raising InvalidContext.  Also, fix infinite recursion
   in long(Decimal('nan')).
