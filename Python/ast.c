@@ -1192,7 +1192,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
     for (i = 0; i < n_fors; i++) {
         comprehension_ty comp;
         asdl_seq *t;
-        expr_ty expression;
+        expr_ty expression, first;
         node *for_ch;
         
         REQ(n, comp_for);
@@ -1207,14 +1207,13 @@ ast_for_comprehension(struct compiling *c, const node *n)
 
         /* Check the # of children rather than the length of t, since
            (x for x, in ...) has 1 element in t, but still requires a Tuple. */
+        first = (expr_ty)asdl_seq_GET(t, 0);
         if (NCH(for_ch) == 1)
-            comp = comprehension((expr_ty)asdl_seq_GET(t, 0), expression,
-                                 NULL, c->c_arena);
+            comp = comprehension(first, expression, NULL, c->c_arena);
         else
-            comp = comprehension(Tuple(t, Store, LINENO(n), n->n_col_offset,
-                                       c->c_arena),
-                                 expression, NULL, c->c_arena);
-
+            comp = comprehension(Tuple(t, Store, first->lineno, first->col_offset,
+                                     c->c_arena),
+                               expression, NULL, c->c_arena);
         if (!comp)
             return NULL;
 
@@ -1294,7 +1293,6 @@ ast_for_dictcomp(struct compiling *c, const node *n)
     key = ast_for_expr(c, CHILD(n, 0));
     if (!key)
         return NULL;
-
     value = ast_for_expr(c, CHILD(n, 2));
     if (!value)
         return NULL;
@@ -2802,7 +2800,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
 {
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
-    expr_ty target;
+    expr_ty target, first;
     const node *node_target;
     /* for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite] */
     REQ(n, for_stmt);
@@ -2819,10 +2817,11 @@ ast_for_for_stmt(struct compiling *c, const node *n)
         return NULL;
     /* Check the # of children rather than the length of _target, since
        for x, in ... has 1 element in _target, but still requires a Tuple. */
+    first = (expr_ty)asdl_seq_GET(_target, 0);
     if (NCH(node_target) == 1)
-        target = (expr_ty)asdl_seq_GET(_target, 0);
+        target = first;
     else
-        target = Tuple(_target, Store, LINENO(n), n->n_col_offset, c->c_arena);
+        target = Tuple(_target, Store, first->lineno, first->col_offset, c->c_arena);
 
     expression = ast_for_testlist(c, CHILD(n, 3));
     if (!expression)
