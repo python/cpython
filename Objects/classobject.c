@@ -43,10 +43,6 @@ PyObject *
 PyMethod_New(PyObject *func, PyObject *self)
 {
 	register PyMethodObject *im;
-	if (!PyCallable_Check(func)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
 	if (self == NULL) {
 		PyErr_BadInternalCall();
 		return NULL;

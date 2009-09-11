@@ -9,7 +9,7 @@ def runningAsOSXApp():
     """
     Returns True if Python is running from within an app on OSX.
     If so, assume that Python was built with Aqua Tcl/Tk rather than
-    X11 Tck/Tk.
+    X11 Tcl/Tk.
     """
     return (sys.platform == 'darwin' and '.app' in sys.executable)
 
