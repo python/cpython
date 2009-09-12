@@ -538,7 +538,7 @@ sequence of key-value pairs into a dictionary of lists:
    >>> for k, v in s:
    ...     d[k].append(v)
    ...
-   >>> d.items()
+   >>> list(d.items())
    [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 When each key is encountered for the first time, it is not already in the
@@ -553,7 +553,7 @@ simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
    >>> for k, v in s:
    ...     d.setdefault(k, []).append(v)
    ...
-   >>> d.items()
+   >>> list(d.items())
    [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 Setting the :attr:`default_factory` to :class:`int` makes the
@@ -565,7 +565,7 @@ languages):
    >>> for k in s:
    ...     d[k] += 1
    ...
-   >>> d.items()
+   >>> list(d.items())
    [('i', 4), ('p', 2), ('s', 4), ('m', 1)]
 
 When a letter is first encountered, it is missing from the mapping, so the
@@ -592,7 +592,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
    >>> for k, v in s:
    ...     d[k].add(v)
    ...
-   >>> d.items()
+   >>> list(d.items())
    [('blue', set([2, 4])), ('red', set([1, 3]))]
 
 
