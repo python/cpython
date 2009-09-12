@@ -4,6 +4,13 @@ import unittest
 import sys
 import os
 
+# zlib is not used here, but if it's not available
+# test_simple_built will fail
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
 from distutils.tests import support
@@ -31,6 +38,7 @@ class BuildDumbTestCase(support.TempdirManager,
         sys.argv = self.old_sys_argv[:]
         super(BuildDumbTestCase, self).tearDown()
 
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_simple_built(self):
 
         # let's create a simple package

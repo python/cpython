@@ -19,10 +19,18 @@ try:
 except ImportError:
     ZIP_SUPPORT = find_executable('zip')
 
+# some tests will fail if zlib is not available
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
+
 class ArchiveUtilTestCase(support.TempdirManager,
                           support.LoggingSilencer,
                           unittest.TestCase):
 
+    @unittest.skipUnless(zlib, "Requires zlib")
     def test_make_tarball(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
@@ -83,6 +91,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         base_name = os.path.join(tmpdir2, 'archive')
         return tmpdir, tmpdir2, base_name
 
+    @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(find_executable('tar') and find_executable('gzip'),
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
@@ -168,6 +177,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assertTrue(not os.path.exists(tarball))
         self.assertEquals(len(w.warnings), 1)
 
+    @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile(self):
         # creating something to tar

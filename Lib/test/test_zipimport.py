@@ -6,10 +6,16 @@ import struct
 import time
 import unittest
 
-import zlib # implied prerequisite
-from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 from test import test_support
 from test.test_importhooks import ImportHooksBaseTestCase, test_src, test_co
+
+# some tests can be ran even without zlib
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
+from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
 import zipimport
 import linecache
@@ -52,6 +58,7 @@ TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142" + os.extsep + "zip")
+
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
@@ -357,7 +364,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def testDoctestSuite(self):
         self.runDoctest(self.doDoctestSuite)
 
-
     def doTraceback(self, module):
         try:
             module.do_raise()
@@ -381,6 +387,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.doTest(None, files, TESTMOD, call=self.doTraceback)
 
 
+@unittest.skipUnless(zlib, "requires zlib")
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
