@@ -659,6 +659,34 @@ class WriteTest(WriteTestBase):
         finally:
             shutil.rmtree(tempdir)
 
+    def test_filter(self):
+        tempdir = os.path.join(TEMPDIR, "filter")
+        os.mkdir(tempdir)
+        try:
+            for name in ("foo", "bar", "baz"):
+                name = os.path.join(tempdir, name)
+                open(name, "wb").close()
+
+            def filter(tarinfo):
+                if os.path.basename(tarinfo.name) == "bar":
+                    return
+                tarinfo.uid = 123
+                tarinfo.uname = "foo"
+                return tarinfo
+
+            tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
+            tar.add(tempdir, arcname="empty_dir", filter=filter)
+            tar.close()
+
+            tar = tarfile.open(tmpname, "r")
+            for tarinfo in tar:
+                self.assertEqual(tarinfo.uid, 123)
+                self.assertEqual(tarinfo.uname, "foo")
+            self.assertEqual(len(tar.getmembers()), 3)
+            tar.close()
+        finally:
+            shutil.rmtree(tempdir)
+
     # Guarantee that stored pathnames are not modified. Don't
     # remove ./ or ../ or double slashes. Still make absolute
     # pathnames relative.

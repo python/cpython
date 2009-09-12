@@ -357,7 +357,7 @@ object, see :ref:`tarinfo-objects` for details.
       and :meth:`close`, and also supports iteration over its lines.
 
 
-.. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None)
+.. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None, filter=None)
 
    Add the file *name* to the archive. *name* may be any type of file (directory,
    fifo, symbolic link, etc.). If given, *arcname* specifies an alternative name
@@ -365,7 +365,18 @@ object, see :ref:`tarinfo-objects` for details.
    can be avoided by setting *recursive* to :const:`False`. If *exclude* is given,
    it must be a function that takes one filename argument and returns a boolean
    value. Depending on this value the respective file is either excluded
-   (:const:`True`) or added (:const:`False`).
+   (:const:`True`) or added (:const:`False`). If *filter* is specified it must
+   be a function that takes a :class:`TarInfo` object argument and returns the
+   changed TarInfo object. If it instead returns :const:`None` the TarInfo
+   object will be excluded from the archive. See :ref:`tar-examples` for an
+   example.
+
+   .. versionchanged:: 3.2
+      Added the *filter* parameter.
+
+   .. deprecated:: 3.2
+      The *exclude* parameter is deprecated, please use the *filter* parameter
+      instead.
 
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)
@@ -597,6 +608,18 @@ How to read a gzip compressed tar archive and display some member information::
        else:
            print("something else.")
    tar.close()
+
+How to create an archive and reset the user information using the *filter*
+parameter in :meth:`TarFile.add`::
+
+    import tarfile
+    def reset(tarinfo):
+        tarinfo.uid = tarinfo.gid = 0
+        tarinfo.uname = tarinfo.gname = "root"
+        return tarinfo
+    tar = tarfile.open("sample.tar.gz", "w:gz")
+    tar.add("foo", filter=reset)
+    tar.close()
 
 
 .. _tar-formats:
