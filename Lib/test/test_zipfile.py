@@ -307,6 +307,7 @@ class TestsWithSourceFile(unittest.TestCase):
         self.assertEqual(zipfp.read(TESTFN), open(TESTFN, "rb").read())
         zipfp.close()
 
+    @skipUnless(zlib, "requires zlib")
     def test_per_file_compression(self):
         # Check that files within a Zip archive can have different compression options
         zipfp = zipfile.ZipFile(TESTFN2, "w")
@@ -881,6 +882,7 @@ class DecryptionTests(unittest.TestCase):
         self.zip2.setpassword(b"perl")
         self.assertRaises(RuntimeError, self.zip2.read, "zero")
 
+    @skipUnless(zlib, "requires zlib")
     def test_good_password(self):
         self.zip.setpassword(b"python")
         self.assertEquals(self.zip.read("test.txt"), self.plain)
@@ -982,6 +984,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
             self.zip_random_open_test(f, zipfile.ZIP_STORED)
 
 
+@skipUnless(zlib, "requires zlib")
 class TestsWithMultipleOpens(unittest.TestCase):
     def setUp(self):
         # Create the ZIP archive

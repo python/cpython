@@ -3,6 +3,14 @@ import os
 import unittest
 import shutil
 import zipfile
+
+# zlib is not used here, but if it's not available
+# the tests that use zipfile may fail
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
 from os.path import join
 import sys
 import tempfile
@@ -79,6 +87,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.warn = _warn
         return dist, cmd
 
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_prune_file_list(self):
         # this test creates a package with some vcs dirs in it
         # and launch sdist to make sure they get pruned
@@ -120,6 +129,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # making sure everything has been pruned correctly
         self.assertEquals(len(content), 4)
 
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_make_distribution(self):
 
         # check if tar and gzip are installed
@@ -156,6 +166,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEquals(result,
                 ['fake-1.0.tar', 'fake-1.0.tar.gz'])
 
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_add_defaults(self):
 
         # http://bugs.python.org/issue2279
@@ -217,6 +228,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
         self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
 
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_metadata_check_option(self):
         # testing the `medata-check` option
         dist, cmd = self.get_cmd(metadata={})
