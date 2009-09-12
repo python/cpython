@@ -5,9 +5,8 @@
 import unittest
 from test import support
 import os
-import gzip
 import struct
-
+gzip = support.import_module('gzip')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;

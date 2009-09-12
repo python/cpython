@@ -21,9 +21,14 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import zlib, datetime
+import datetime
 import unittest
 import sqlite3 as sqlite
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
 
 class SqliteTypeTests(unittest.TestCase):
     def setUp(self):
@@ -312,6 +317,7 @@ class ObjectAdaptationTests(unittest.TestCase):
         val = self.cur.fetchone()[0]
         self.assertEqual(type(val), float)
 
+@unittest.skipUnless(zlib, "requires zlib")
 class BinaryConverterTests(unittest.TestCase):
     def convert(s):
         return zlib.decompress(s)
