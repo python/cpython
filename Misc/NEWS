@@ -74,6 +74,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6635: Fix profiler printing usage message.
+
 - Issue #6795: int(Decimal('nan')) now raises ValueError instead of
   returning NaN or raising InvalidContext.  Also, fix infinite recursion
   in long(Decimal('nan')).
