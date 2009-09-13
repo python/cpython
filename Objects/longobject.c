@@ -1659,7 +1659,7 @@ _PyLong_Format(PyObject *aa, int base)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyObject *str;
-	Py_ssize_t i, j, sz;
+	Py_ssize_t i, sz;
 	Py_ssize_t size_a;
 	Py_UNICODE *p;
 	int bits;
@@ -1680,13 +1680,14 @@ _PyLong_Format(PyObject *aa, int base)
 		i >>= 1;
 	}
 	i = 5;
-	j = size_a*PyLong_SHIFT + bits-1;
-	sz = i + j / bits;
-	if (j / PyLong_SHIFT < size_a || sz < i) {
+	/* ensure we don't get signed overflow in sz calculation */
+	if (size_a > (PY_SSIZE_T_MAX - i) / PyLong_SHIFT) {
 		PyErr_SetString(PyExc_OverflowError,
 				"int is too large to format");
 		return NULL;
 	}
+	sz = i + 1 + (size_a * PyLong_SHIFT - 1) / bits;
+	assert(sz >= 0);
 	str = PyUnicode_FromUnicode(NULL, sz);
 	if (str == NULL)
 		return NULL;
@@ -1719,7 +1720,7 @@ _PyLong_Format(PyObject *aa, int base)
 				accumbits -= basebits;
 				accum >>= basebits;
 			} while (i < size_a-1 ? accumbits >= basebits :
-					 	accum > 0);
+						accum > 0);
 		}
 	}
 	else {
@@ -1734,7 +1735,8 @@ _PyLong_Format(PyObject *aa, int base)
 		int power = 1;
 		for (;;) {
 			twodigits newpow = powbase * (twodigits)base;
-			if (newpow >> PyLong_SHIFT)  /* doesn't fit in a digit */
+			if (newpow >> PyLong_SHIFT)
+				/* doesn't fit in a digit */
 				break;
 			powbase = (digit)newpow;
 			++power;
@@ -1805,7 +1807,8 @@ _PyLong_Format(PyObject *aa, int base)
 		do {
 		} while ((*q++ = *p++) != '\0');
 		q--;
-		if (PyUnicode_Resize(&str, (Py_ssize_t) (q - PyUnicode_AS_UNICODE(str)))) {
+		if (PyUnicode_Resize(&str,(Py_ssize_t) (q -
+						PyUnicode_AS_UNICODE(str)))) {
 			Py_DECREF(str);
 			return NULL;
 		}
