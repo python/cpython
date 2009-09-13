@@ -510,13 +510,13 @@ Return code handling translates as follows::
    ...
    rc = pipe.close()
    if  rc != None and rc % 256:
-       print "There were some errors"
+       print("There were some errors")
    ==>
    process = Popen(cmd, 'w', stdin=PIPE)
    ...
    process.stdin.close()
    if process.wait() != 0:
-       print "There were some errors"
+       print("There were some errors")
 
 
 Replacing functions from the :mod:`popen2` module

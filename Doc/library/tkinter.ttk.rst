@@ -1228,7 +1228,7 @@ option. If you don't know the class name of a widget, use the method
 
          from tkinter import ttk
 
-         print ttk.Style().lookup("TButton", "font")
+         print(ttk.Style().lookup("TButton", "font"))
 
 
    .. method:: layout(style[, layoutspec=None])
