@@ -70,6 +70,8 @@ C-API
 Library
 -------
 
+- Issue #6635: Fix profiler printing usage message.
+
 - Issue #6856: Add a filter keyword argument to TarFile.add().
 
 - Issue #6888: pdb's alias command was broken when no arguments were given.
