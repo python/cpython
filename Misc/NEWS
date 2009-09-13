@@ -186,6 +186,62 @@ Library
 - Issue #1202: zipfile module would cause a DeprecationWarning when storing
   files with a CRC32 > 2**31-1.
 
+- Issue #6163: Fixed HP-UX runtime library dir options in
+  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
+  Michael Haubenwallner.
+
+- Issue #4660: If a multiprocessing.JoinableQueue.put() was preempted, it was
+  possible to get a spurious 'task_done() called too many times' error.
+
+- Issue #6595: The Decimal constructor now allows arbitrary Unicode
+  decimal digits in input, as recommended by the standard.  Previously
+  it was restricted to accepting [0-9].
+
+- Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
+  containing incomplete data.
+
+- Issue #2622: Fixed an ImportError when importing email.messsage from a
+  standalone application built with py2exe or py2app.
+
+- Issue #6455: Fixed test_build_ext under win32. 
+
+- Issue #6403: Fixed package path usage in build_ext.
+
+- Issue #6287: Added the license field in Distutils documentation.
+
+- Issue #6263: Fixed syntax error in distutils.cygwincompiler.
+
+- Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
+  in Makefiles. This prevents compile errors when using syntax like:
+  `LDFLAGS='-rpath=\$$LIB:/some/other/path'`. Patch by Floris Bruynooghe.
+
+- Issue #6062: In distutils, fixed the package option of build_ext. Feedback
+  and tests on pywin32 by Tim Golden.
+
+- Issue #1309567: Fix linecache behavior of stripping subdirectories when
+  looking for files given by a relative filename.
+
+- Issue #6046: Fixed the library extension when distutils build_ext is used
+  inplace. Initial patch by Roumen Petrov.
+
+- Issue #6022: a test file was created in the current working directory by
+  test_get_outputs in Distutils.
+
+- Issue #5977: distutils build_ext.get_outputs was not taking into account the
+  inplace option. Initial patch by kxroberto.
+
+- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
+  for old-style extensions.
+
+- Issue #5854: Updated __all__ to include some missing names and remove some
+  names which should not be exported.
+
+- Issue #5810: Fixed Distutils test_build_scripts so it uses
+  sysconfig.get_config_vars.
+
+- Issue #6865: Fix reference counting issue in the initialization of the pwd
+  module.
+
 Extension Modules
 -----------------
 
@@ -208,6 +264,9 @@ Build
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
+- Issue 5809: Specifying both --enable-framework and --enable-shared is
+  an error. Configure now explicity tells you about this.
+
 Documentation
 -------------
 
@@ -223,6 +282,12 @@ Tests
 - Issue #5837: Certain sequences of calls to set() and unset() for
   support.EnvironmentVarGuard objects restored the environment variables
   incorrectly on __exit__.
+
+
+What's New in Python 2.6.2
+==========================
+
+*Release date: 14-Apr-2009*
 
 
 What's New in Python 2.6.2 rc 1
@@ -323,59 +388,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #6163: Fixed HP-UX runtime library dir options in
-  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
-  Michael Haubenwallner.
-
-- Issue #4660: If a multiprocessing.JoinableQueue.put() was preempted, it was
-  possible to get a spurious 'task_done() called too many times' error.
-
-- Issue #6595: The Decimal constructor now allows arbitrary Unicode
-  decimal digits in input, as recommended by the standard.  Previously
-  it was restricted to accepting [0-9].
-
-- Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
-  containing incomplete data.
-
-- Issue #2622: Fixed an ImportError when importing email.messsage from a
-  standalone application built with py2exe or py2app.
-
-- Issue #6455: Fixed test_build_ext under win32. 
-
-- Issue #6403: Fixed package path usage in build_ext.
-
-- Issue #6287: Added the license field in Distutils documentation.
-
-- Issue #6263: Fixed syntax error in distutils.cygwincompiler.
-
-- Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
-  in Makefiles. This prevents compile errors when using syntax like:
-  `LDFLAGS='-rpath=\$$LIB:/some/other/path'`. Patch by Floris Bruynooghe.
-
-- Issue #6062: In distutils, fixed the package option of build_ext. Feedback
-  and tests on pywin32 by Tim Golden.
-
-- Issue #1309567: Fix linecache behavior of stripping subdirectories when
-  looking for files given by a relative filename.
-
-- Issue #6046: Fixed the library extension when distutils build_ext is used
-  inplace. Initial patch by Roumen Petrov.
-
-- Issue #6022: a test file was created in the current working directory by
-  test_get_outputs in Distutils.
-
-- Issue #5977: distutils build_ext.get_outputs was not taking into account the
-  inplace option. Initial patch by kxroberto.
-
-- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
-  for old-style extensions.
-
-- Issue #5854: Updated __all__ to include some missing names and remove some
-  names which should not be exported.
-
-- Issue #5810: Fixed Distutils test_build_scripts so it uses
-  sysconfig.get_config_vars.
 
 - Issue #5741: don't disallow "%%" (which is an escape for "%") when setting
   a value in SafeConfigParser.
@@ -697,9 +709,6 @@ Extension Modules
 Build
 -----
 
-- Issue 5809: Specifying both --enable-framework and --enable-shared is
-  an error. Configure now explicity tells you about this.
-
 - Link the shared python library with $(MODLIBS).
 
 - Issue #5134: Silence compiler warnings when compiling sqlite with VC++.
@@ -779,9 +788,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #6865: Fix reference counting issue in the initialization of the pwd
-  module.
 
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
