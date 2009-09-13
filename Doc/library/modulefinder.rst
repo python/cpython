@@ -84,7 +84,7 @@ The script that will output the report of bacon.py::
    print('Loaded modules:')
    for name, mod in finder.modules.items():
        print('%s: ' % name, end='')
-       print(','.join(mod.globalnames.keys()[:3]))
+       print(','.join(list(mod.globalnames.keys())[:3]))
 
    print('-'*50)
    print('Modules not imported:')
