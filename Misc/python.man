@@ -368,7 +368,7 @@ The Python Software Foundation: http://www.python.org/psf
 .SH INTERNET RESOURCES
 Main website:  http://www.python.org/
 .br
-Documentation:  http://docs.python.org/
+Documentation:  http://docs.python.org/py3k/
 .br
 Developer resources:  http://www.python.org/dev/
 .br
