@@ -130,12 +130,12 @@ This module offers the following functions:
    +-------+--------------------------------------------+
 
 
-.. function:: ExpandEnvironmentStrings(unicode)
+.. function:: ExpandEnvironmentStrings(str)
 
-   Expands environment strings %NAME% in unicode string like const:`REG_EXPAND_SZ`::
+   Expands environment strings %NAME% in unicode string like :const:`REG_EXPAND_SZ`::
 
-      >>> ExpandEnvironmentStrings(u"%windir%")
-      u"C:\\Windows"
+      >>> ExpandEnvironmentStrings('%windir%')
+      'C:\\Windows'
 
 
 .. function:: FlushKey(key)

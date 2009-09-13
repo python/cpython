@@ -118,7 +118,7 @@ Basic Usage
    file-like object).
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
-   of a basic type (:class:`str`, :class:`unicode`, :class:`int`,
+   of a basic type (:class:`bytes`, :class:`str`, :class:`int`,
    :class:`float`, :class:`bool`, ``None``) will be skipped instead of raising a
    :exc:`TypeError`.
 
@@ -201,13 +201,13 @@ Basic Usage
 
 .. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *s* (a :class:`str` or :class:`unicode` instance containing a JSON
+   Deserialize *s* (a :class:`bytes` or :class:`str` instance containing a JSON
    document) to a Python object.
 
-   If *s* is a :class:`str` instance and is encoded with an ASCII based encoding
+   If *s* is a :class:`bytes` instance and is encoded with an ASCII based encoding
    other than UTF-8 (e.g. latin-1), then an appropriate *encoding* name must be
    specified.  Encodings that are not ASCII based (such as UCS-2) are not
-   allowed and should be decoded to :class:`unicode` first.
+   allowed and should be decoded to :class:`str` first.
 
    The other arguments have the same meaning as in :func:`dump`.
 
