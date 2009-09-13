@@ -417,7 +417,8 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   This function should be used for internal and specialized purposes only.
+   This function should be used for internal and specialized purposes only. It
+   is not guaranteed to exist in all implementations of Python.
 
 
 .. function:: getprofile()
