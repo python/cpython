@@ -20,7 +20,7 @@ top level object is a dictionary.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
 (but only with string keys), :class:`Data` or :class:`datetime.datetime`
-objects.  String values (including dictionary keys) has to be unicode strings --
+objects.  String values (including dictionary keys) have to be unicode strings --
 they will be written out as UTF-8.
 
 The ``<data>`` plist type is supported through the :class:`Data` class.  This is
