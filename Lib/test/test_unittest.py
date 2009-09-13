@@ -2989,6 +2989,11 @@ class Test_Assertions(TestCase):
         self.assertRaises(self.failureException,
                           self.assertNotAlmostEqual, 0, .1+.1j, places=0)
 
+        self.assertAlmostEqual(float('inf'), float('inf'))
+        self.assertRaises(self.failureException, self.assertNotAlmostEqual,
+                          float('inf'), float('inf'))
+
+
     def test_assertRaises(self):
         def _raise(e):
             raise e
