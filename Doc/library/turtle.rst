@@ -645,7 +645,7 @@ Tell Turtle's state
       >>> turtle.forward(100)
       >>> turtle.pos()
       (64.28,76.60)
-      >>> print turtle.xcor()
+      >>> print(turtle.xcor())
       64.2787609687
 
 
@@ -658,9 +658,9 @@ Tell Turtle's state
       >>> turtle.home()
       >>> turtle.left(60)
       >>> turtle.forward(100)
-      >>> print turtle.pos()
+      >>> print(turtle.pos())
       (50.00,86.60)
-      >>> print turtle.ycor()
+      >>> print(turtle.ycor())
       86.6025403784
 
 
