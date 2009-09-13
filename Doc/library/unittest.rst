@@ -1257,11 +1257,16 @@ Loading and running tests
 
       Find and return all test modules from the specified start directory,
       recursing into subdirectories to find them. Only test files that match
-      *pattern* will be loaded. (Using shell style pattern matching.)
+      *pattern* will be loaded. (Using shell style pattern matching.) Only
+      module names that are importable (i.e. are valid Python identifiers) will
+      be loaded.
 
       All test modules must be importable from the top level of the project. If
       the start directory is not the top level directory then the top level
       directory must be specified separately.
+
+      If importing a module fails, for example due to a syntax error, then this
+      will be recorded as a single error and discovery will continue.
 
       If a test package name (directory with :file:`__init__.py`) matches the
       pattern then the package will be checked for a ``load_tests``

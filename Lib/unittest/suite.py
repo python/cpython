@@ -1,6 +1,7 @@
 """TestSuite"""
 
 from . import case
+from . import util
 
 
 class TestSuite(object):
@@ -17,7 +18,7 @@ class TestSuite(object):
         self.addTests(tests)
 
     def __repr__(self):
-        return "<%s tests=%s>" % (_strclass(self.__class__), list(self))
+        return "<%s tests=%s>" % (util.strclass(self.__class__), list(self))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
