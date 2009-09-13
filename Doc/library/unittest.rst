@@ -733,6 +733,9 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      .. versionchanged:: 2.7
+         Objects that compare equal are automatically almost equal.
+
       .. deprecated:: 2.7
          :meth:`failUnlessAlmostEqual`.
 
@@ -748,6 +751,9 @@ Test cases
       comparing a given number of significant digits. If the values do not
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
+
+      .. versionchanged:: 2.7
+         Objects that compare equal automatically fail.
 
       .. deprecated:: 2.7
          :meth:`failIfAlmostEqual`.
