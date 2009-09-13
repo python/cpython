@@ -141,8 +141,8 @@ object)::
                    # such key)
    del d[key]      # delete data stored at key (raises KeyError
                    # if no such key)
-   flag = key in d   # true if the key exists
-   klist = d.keys() # a list of all existing keys (slow!)
+   flag = key in d        # true if the key exists
+   klist = list(d.keys()) # a list of all existing keys (slow!)
 
    # as d was opened WITHOUT writeback=True, beware:
    d['xx'] = range(4)  # this works as expected, but...
