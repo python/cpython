@@ -85,7 +85,7 @@ class TestLoader(object):
         elif (isinstance(obj, types.UnboundMethodType) and
               isinstance(parent, type) and
               issubclass(parent, case.TestCase)):
-            return suite.TestSuite([parent(obj.__name__)])
+            return self.suiteClass([parent(obj.__name__)])
         elif isinstance(obj, suite.TestSuite):
             return obj
         elif hasattr(obj, '__call__'):
@@ -93,7 +93,7 @@ class TestLoader(object):
             if isinstance(test, suite.TestSuite):
                 return test
             elif isinstance(test, case.TestCase):
-                return suite.TestSuite([test])
+                return self.suiteClass([test])
             else:
                 raise TypeError("calling %s returned %s, not a test" %
                                 (obj, test))

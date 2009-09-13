@@ -509,6 +509,9 @@ changes, or look through the Subversion logs for all the details.
     (automatically pass or fail without checking decimal places) if the objects
     are equal.
 
+  * :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
+    the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
+
   * A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
     function.  The :meth:`assertEqual` method will use the function
     when both of the objects being compared are of the specified type.
