@@ -370,13 +370,11 @@ Main website:  http://www.python.org/
 .br
 Documentation:  http://docs.python.org/
 .br
-Community website:  http://starship.python.net/
-.br
 Developer resources:  http://www.python.org/dev/
 .br
-FTP:  ftp://ftp.python.org/pub/python/
+Downloads:  http://python.org/download/
 .br
-Module repository:  http://www.vex.net/parnassus/
+Module repository:  http://pypi.python.org/
 .br
 Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING
