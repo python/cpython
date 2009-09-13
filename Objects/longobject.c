@@ -1371,7 +1371,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
-	Py_ssize_t i, j, sz;
+	Py_ssize_t i, sz;
 	Py_ssize_t size_a;
 	char *p;
 	int bits;
@@ -1392,20 +1392,21 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 		i >>= 1;
 	}
 	i = 5 + (addL ? 1 : 0);
-	j = size_a*PyLong_SHIFT + bits-1;
-	sz = i + j / bits;
-	if (j / PyLong_SHIFT < size_a || sz < i) {
+	/* ensure we don't get signed overflow in sz calculation */
+	if (size_a > (PY_SSIZE_T_MAX - i) / PyLong_SHIFT) {
 		PyErr_SetString(PyExc_OverflowError,
 				"long is too large to format");
 		return NULL;
 	}
+	sz = i + 1 + (size_a * PyLong_SHIFT - 1) / bits;
+	assert(sz >= 0);
 	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, sz);
 	if (str == NULL)
 		return NULL;
 	p = PyString_AS_STRING(str) + sz;
 	*p = '\0';
-        if (addL)
-                *--p = 'L';
+	if (addL)
+		*--p = 'L';
 	if (a->ob_size < 0)
 		sign = '-';
 
@@ -1433,7 +1434,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 				accumbits -= basebits;
 				accum >>= basebits;
 			} while (i < size_a-1 ? accumbits >= basebits :
-					 	accum > 0);
+						accum > 0);
 		}
 	}
 	else {
@@ -1448,7 +1449,8 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 		int power = 1;
 		for (;;) {
 			twodigits newpow = powbase * (twodigits)base;
-			if (newpow >> PyLong_SHIFT)  /* doesn't fit in a digit */
+			if (newpow >> PyLong_SHIFT)
+				/* doesn't fit in a digit */
 				break;
 			powbase = (digit)newpow;
 			++power;
@@ -1498,7 +1500,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
 		*--p = '0';
 	}
 	else if (base == 8) {
- 		if (newstyle) {
+		if (newstyle) {
 			*--p = 'o';
 			*--p = '0';
 		}
