@@ -248,8 +248,8 @@ writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
 On Windows, ``'b'`` appended to the mode opens the file in binary mode, so there
-are also modes like ``'rb'``, ``'wb'``, and ``'r+b'``.  Windows makes a
-distinction between text and binary files; the end-of-line characters in text
+are also modes like ``'rb'``, ``'wb'``, and ``'r+b'``.  Python on Windows makes
+a distinction between text and binary files; the end-of-line characters in text
 files are automatically altered slightly when data is read or written.  This
 behind-the-scenes modification to file data is fine for ASCII text files, but
 it'll corrupt binary data like that in :file:`JPEG` or :file:`EXE` files.  Be
