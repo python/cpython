@@ -569,7 +569,7 @@ line.
 
    This function relies on Python stack frame support in the interpreter, which
    isn't guaranteed to exist in all implementations of Python. If running in
-   an implmentation without Python stack frame support this function returns
+   an implementation without Python stack frame support this function returns
    ``None``.
 
 
