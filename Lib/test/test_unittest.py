@@ -555,6 +555,47 @@ class Test_TestLoader(TestCase):
         self.assertEqual(list(suite), [testcase_1])
 
     # "The specifier name is a ``dotted name'' that may resolve ... to
+    # ... a callable object which returns a TestCase ... instance"
+    #*****************************************************************
+    #Override the suiteClass attribute to ensure that the suiteClass
+    #attribute is used
+    def test_loadTestsFromName__callable__TestCase_instance_ProperSuiteClass(self):
+        class SubTestSuite(unittest.TestSuite):
+            pass
+        m = types.ModuleType('m')
+        testcase_1 = unittest.FunctionTestCase(lambda: None)
+        def return_TestCase():
+            return testcase_1
+        m.return_TestCase = return_TestCase
+
+        loader = unittest.TestLoader()
+        loader.suiteClass = SubTestSuite
+        suite = loader.loadTestsFromName('return_TestCase', m)
+        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertEqual(list(suite), [testcase_1])
+
+    # "The specifier name is a ``dotted name'' that may resolve ... to
+    # ... a test method within a test case class"
+    #*****************************************************************
+    #Override the suiteClass attribute to ensure that the suiteClass
+    #attribute is used
+    def test_loadTestsFromName__relative_testmethod_ProperSuiteClass(self):
+        class SubTestSuite(unittest.TestSuite):
+            pass
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
+
+        loader = unittest.TestLoader()
+        loader.suiteClass=SubTestSuite
+        suite = loader.loadTestsFromName('testcase_1.test', m)
+        self.assertTrue(isinstance(suite, loader.suiteClass))
+
+        self.assertEqual(list(suite), [MyTestCase('test')])
+
+    # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a TestCase or TestSuite instance"
     #
     # What happens if the callable returns something else?
