@@ -79,12 +79,12 @@ This example uses the iterator form::
    >>> c = conn.cursor()
    >>> c.execute('select * from stocks order by price')
    >>> for row in c:
-   ...    print(row)
+   ...     print(row)
    ...
-   (u'2006-01-05', u'BUY', u'RHAT', 100, 35.14)
-   (u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
-   (u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
-   (u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
+   ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
+   ('2006-03-28', 'BUY', 'IBM', 1000, 45.0)
+   ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
+   ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.0)
    >>>
 
 
@@ -589,18 +589,19 @@ Now we plug :class:`Row` in::
     <sqlite3.Cursor object at 0x7f4e7dd8fa80>
     >>> r = c.fetchone()
     >>> type(r)
-    <type 'sqlite3.Row'>
-    >>> r
-    (u'2006-01-05', u'BUY', u'RHAT', 100.0, 35.14)
+    <class 'sqlite3.Row'>
+    >>> tuple(r)
+    ('2006-01-05', 'BUY', 'RHAT', 100.0, 35.14)
     >>> len(r)
     5
     >>> r[2]
-    u'RHAT'
+    'RHAT'
     >>> r.keys()
     ['date', 'trans', 'symbol', 'qty', 'price']
     >>> r['qty']
     100.0
-    >>> for member in r: print member
+    >>> for member in r:
+    ...     print(member)
     ...
     2006-01-05
     BUY
@@ -647,7 +648,7 @@ This is how SQLite types are converted to Python types by default:
 +=============+=============================================+
 | ``NULL``    | :const:`None`                               |
 +-------------+---------------------------------------------+
-| ``INTEGER`` | :class`int`                                 |
+| ``INTEGER`` | :class:`int`                                |
 +-------------+---------------------------------------------+
 | ``REAL``    | :class:`float`                              |
 +-------------+---------------------------------------------+
