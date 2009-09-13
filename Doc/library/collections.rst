@@ -669,7 +669,7 @@ Example:
                'Return a new Point object replacing specified fields with new values'
                result = _self._make(map(kwds.pop, ('x', 'y'), _self))
                if kwds:
-                   raise ValueError('Got unexpected field names: %r' % kwds.keys())
+                   raise ValueError('Got unexpected field names: %r' % list(kwds.keys()))
                return result
    <BLANKLINE>
            def __getnewargs__(self):

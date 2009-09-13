@@ -701,8 +701,7 @@ is vulnerable!  One workaround is to do ::
 
 instead.  Another is to do ::
 
-   >>> d = foo().items()
-   >>> d.sort()
+   >>> d = sorted(foo().items())
    >>> d
    [('Harry', 'broomstick'), ('Hermione', 'hippogryph')]
 
