@@ -1,7 +1,9 @@
 """Loading unittests."""
 
 import os
+import re
 import sys
+import traceback
 import types
 
 from fnmatch import fnmatch
@@ -17,6 +19,26 @@ def _CmpToKey(mycmp):
         def __lt__(self, other):
             return mycmp(self.obj, other.obj) == -1
     return K
+
+
+# what about .pyc or .pyo (etc)
+# we would need to avoid loading the same tests multiple times
+# from '.py', '.pyc' *and* '.pyo'
+VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
+
+
+def _make_failed_import_test(name, suiteClass):
+    message = 'Failed to import test module: %s' % name
+    if hasattr(traceback, 'format_exc'):
+        # Python 2.3 compatibility
+        # format_exc returns two frames of discover.py as well
+        message += '\n%s' % traceback.format_exc()
+
+    def testImportFailure(self):
+        raise ImportError(message)
+    attrs = {name: testImportFailure}
+    ModuleImportFailure = type('ModuleImportFailure', (case.TestCase,), attrs)
+    return suiteClass((ModuleImportFailure(name),))
 
 
 class TestLoader(object):
@@ -161,17 +183,17 @@ class TestLoader(object):
         tests = list(self._find_tests(start_dir, pattern))
         return self.suiteClass(tests)
 
-
-    def _get_module_from_path(self, path):
-        """Load a module from a path relative to the top-level directory
-        of a project. Used by discovery."""
+    def _get_name_from_path(self, path):
         path = os.path.splitext(os.path.normpath(path))[0]
 
-        relpath = os.path.relpath(path, self._top_level_dir)
-        assert not os.path.isabs(relpath), "Path must be within the project"
-        assert not relpath.startswith('..'), "Path must be within the project"
+        _relpath = os.path.relpath(path, self._top_level_dir)
+        assert not os.path.isabs(_relpath), "Path must be within the project"
+        assert not _relpath.startswith('..'), "Path must be within the project"
 
-        name = relpath.replace(os.path.sep, '.')
+        name = _relpath.replace(os.path.sep, '.')
+        return name
+
+    def _get_module_from_name(self, name):
         __import__(name)
         return sys.modules[name]
 
@@ -181,14 +203,20 @@ class TestLoader(object):
 
         for path in paths:
             full_path = os.path.join(start_dir, path)
-            # what about __init__.pyc or pyo (etc)
-            # we would need to avoid loading the same tests multiple times
-            # from '.py', '.pyc' *and* '.pyo'
-            if os.path.isfile(full_path) and path.lower().endswith('.py'):
+            if os.path.isfile(full_path):
+                if not VALID_MODULE_NAME.match(path):
+                    # valid Python identifiers only
+                    continue
+
                 if fnmatch(path, pattern):
                     # if the test file matches, load it
-                    module = self._get_module_from_path(full_path)
-                    yield self.loadTestsFromModule(module)
+                    name = self._get_name_from_path(full_path)
+                    try:
+                        module = self._get_module_from_name(name)
+                    except:
+                        yield _make_failed_import_test(name, self.suiteClass)
+                    else:
+                        yield self.loadTestsFromModule(module)
             elif os.path.isdir(full_path):
                 if not os.path.isfile(os.path.join(full_path, '__init__.py')):
                     continue
@@ -197,7 +225,8 @@ class TestLoader(object):
                 tests = None
                 if fnmatch(path, pattern):
                     # only check load_tests if the package directory itself matches the filter
-                    package = self._get_module_from_path(full_path)
+                    name = self._get_name_from_path(full_path)
+                    package = self._get_module_from_name(name)
                     load_tests = getattr(package, 'load_tests', None)
                     tests = self.loadTestsFromModule(package, use_load_tests=False)
 
