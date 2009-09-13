@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 3.1.1?
+What's New in Python 3.1.2?
 ===========================
 
-*Release date: 2009-08-13*
+*Release date: 20xx-xx-xx*
 
 Core and Builtins
 -----------------
@@ -16,6 +16,64 @@ Core and Builtins
 
 - Issue #6750: A text file opened with io.open() could duplicate its output
   when writing from multiple threads at the same time.
+
+
+Library
+-------
+
+- Issue #6888: pdb's alias command was broken when no arguments were given.
+
+- Issue #6795: int(Decimal('nan')) now raises ValueError instead of
+  returning NaN or raising InvalidContext.  Also, fix infinite recursion
+  in long(Decimal('nan')).
+
+- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
+  with no type specifier.
+
+- Issue #6239: ctypes.c_char_p return value must return bytes.
+
+- Issue #6838: Use a list to accumulate the value instead of
+  repeatedly concatenating strings in http.client's
+  HTTPResponse._read_chunked providing a significant speed increase
+  when downloading large files servend with a Transfer-Encoding of 'chunked'.
+
+- Have importlib raise ImportError if None is found in sys.modules for a
+  module.
+
+- Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
+  payloads are now ordered by integer value rather than lexicographically.
+
+- Issue #6163: Fixed HP-UX runtime library dir options in
+  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
+  Michael Haubenwallner.
+
+Extension Modules
+-----------------
+
+- Issue #6848: Fix curses module build failure on OS X 10.6.
+
+Build
+-----
+
+- Issue #6802: Fix build issues on MacOSX 10.6
+
+- Issue #6801 : symmetric_difference_update also accepts |.
+  Thanks to Carl Chenet. 
+
+Documentation
+-------------
+
+- Issue #6556: Fixed the Distutils configuration files location explanation
+  for Windows.
+
+
+What's New in Python 3.1.1?
+===========================
+
+*Release date: 2009-08-13*
+
+Core and Builtins
+-----------------
 
 - Issue #6707: dir() on an uninitialized module caused a crash.
 
@@ -51,28 +109,6 @@ C-API
 
 Library
 -------
-
-- Issue #6888: pdb's alias command was broken when no arguments were given.
-
-- Issue #6795: int(Decimal('nan')) now raises ValueError instead of
-  returning NaN or raising InvalidContext.  Also, fix infinite recursion
-  in long(Decimal('nan')).
-
-- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
-  with no type specifier.
-
-- Issue #6239: ctypes.c_char_p return value must return bytes.
-
-- Issue #6838: Use a list to accumulate the value instead of
-  repeatedly concatenating strings in http.client's
-  HTTPResponse._read_chunked providing a significant speed increase
-  when downloading large files servend with a Transfer-Encoding of 'chunked'.
-
-- Have importlib raise ImportError if None is found in sys.modules for a
-  module.
-
-- Issue #6794: Fix Decimal.compare_total and Decimal.compare_total_mag: NaN
-  payloads are now ordered by integer value rather than lexicographically.
 
 - Issue #6106: telnetlib.Telnet.process_rawq doesn't handle default WILL/WONT
   DO/DONT correctly.
@@ -134,8 +170,6 @@ syntax error.
 Extension Modules
 -----------------
 
-- Issue #6848: Fix curses module build failure on OS X 10.6.
-
 - Fix a segfault in expat.
 
 - Issue #4509: array.array objects are no longer modified after an operation
@@ -145,19 +179,11 @@ Extension Modules
 Build
 -----
 
-- Issue #6802: Fix build issues on MacOSX 10.6
-
 - Issue 4601: 'make install' did not set the appropriate permissions on
 directories.
 
 - Issue 5390: Add uninstall icon independent of whether file
 extensions are installed.
-
-Documentation
--------------
-
-- Issue #6556: Fixed the Distutils configuration files location explanation
-  for Windows.
 
 Test
 ----
@@ -985,10 +1011,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #6163: Fixed HP-UX runtime library dir options in
-  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
-  Michael Haubenwallner.
-
 - Issue #6545: Removed assert statements in distutils.Extension, so the 
   behavior is similar when used with -O.
 
@@ -1487,9 +1509,6 @@ Build
 
 - Issue #4204: Fixed module build errors on FreeBSD 4.
 
-
-- Issue #6801 : symmetric_difference_update also accepts |.
-  Thanks to Carl Chenet. 
 
 C-API
 -----
