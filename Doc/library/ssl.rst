@@ -311,12 +311,12 @@ SSLSocket Objects
    name-value pairs::
 
       {'notAfter': 'Feb 16 16:54:50 2013 GMT',
-       'subject': ((('countryName', u'US'),),
-                   (('stateOrProvinceName', u'Delaware'),),
-                   (('localityName', u'Wilmington'),),
-                   (('organizationName', u'Python Software Foundation'),),
-                   (('organizationalUnitName', u'SSL'),),
-                   (('commonName', u'somemachine.python.org'),))}
+       'subject': ((('countryName', 'US'),),
+                   (('stateOrProvinceName', 'Delaware'),),
+                   (('localityName', 'Wilmington'),),
+                   (('organizationName', 'Python Software Foundation'),),
+                   (('organizationalUnitName', 'SSL'),),
+                   (('commonName', 'somemachine.python.org'),))}
 
    If the ``binary_form`` parameter is :const:`True`, and a
    certificate was provided, this method returns the DER-encoded form
@@ -522,20 +522,20 @@ As of September 6, 2007, the certificate printed by this program
 looked like this::
 
       {'notAfter': 'May  8 23:59:59 2009 GMT',
-       'subject': ((('serialNumber', u'2497886'),),
-                   (('1.3.6.1.4.1.311.60.2.1.3', u'US'),),
-                   (('1.3.6.1.4.1.311.60.2.1.2', u'Delaware'),),
-                   (('countryName', u'US'),),
-                   (('postalCode', u'94043'),),
-                   (('stateOrProvinceName', u'California'),),
-                   (('localityName', u'Mountain View'),),
-                   (('streetAddress', u'487 East Middlefield Road'),),
-                   (('organizationName', u'VeriSign, Inc.'),),
+       'subject': ((('serialNumber', '2497886'),),
+                   (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
+                   (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
+                   (('countryName', 'US'),),
+                   (('postalCode', '94043'),),
+                   (('stateOrProvinceName', 'California'),),
+                   (('localityName', 'Mountain View'),),
+                   (('streetAddress', '487 East Middlefield Road'),),
+                   (('organizationName', 'VeriSign, Inc.'),),
                    (('organizationalUnitName',
-                     u'Production Security Services'),),
+                     'Production Security Services'),),
                    (('organizationalUnitName',
-                     u'Terms of use at www.verisign.com/rpa (c)06'),),
-                   (('commonName', u'www.verisign.com'),))}
+                     'Terms of use at www.verisign.com/rpa (c)06'),),
+                   (('commonName', 'www.verisign.com'),))}
 
 which is a fairly poorly-formed ``subject`` field.
 

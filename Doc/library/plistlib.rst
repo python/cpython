@@ -20,7 +20,7 @@ top level object is a dictionary.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
 (but only with string keys), :class:`Data` or :class:`datetime.datetime`
-objects.  String values (including dictionary keys) may be unicode strings --
+objects.  String values (including dictionary keys) has to be unicode strings --
 they will be written out as UTF-8.
 
 The ``<data>`` plist type is supported through the :class:`Data` class.  This is
@@ -83,22 +83,20 @@ Examples
 Generating a plist::
 
     pl = dict(
-        aString="Doodah",
-        aList=["A", "B", 12, 32.1, [1, 2, 3]],
+        aString = "Doodah",
+        aList = ["A", "B", 12, 32.1, [1, 2, 3]],
         aFloat = 0.1,
         anInt = 728,
-        aDict=dict(
-            anotherString="<hello & hi there!>",
-            aUnicodeValue=u'M\xe4ssig, Ma\xdf',
-            aTrueValue=True,
-            aFalseValue=False,
+        aDict = dict(
+            anotherString = "<hello & hi there!>",
+            aThirdString = "M\xe4ssig, Ma\xdf",
+            aTrueValue = True,
+            aFalseValue = False,
         ),
         someData = Data("<binary gunk>"),
         someMoreData = Data("<lots of binary gunk>" * 10),
         aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
     )
-    # unicode keys are possible, but a little awkward to use:
-    pl[u'\xc5benraa'] = "That was a unicode key."
     writePlist(pl, fileName)
 
 Parsing a plist::
