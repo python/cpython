@@ -605,9 +605,9 @@ def main():
         sys.exit(2)
 
     (options, args) = parser.parse_args()
-    sys.argv[:] = args
 
-    if (len(sys.argv) > 0):
+    if (len(args) > 0):
+        sys.argv[:] = args
         sys.path.insert(0, os.path.dirname(sys.argv[0]))
         fp = open(sys.argv[0])
         try:
