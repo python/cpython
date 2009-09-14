@@ -10,9 +10,9 @@
 * To avoid confusing existing tools that analyze import statements and expect to
   find the modules they're importing.
 
-* To ensure that future_statements run under releases prior to 2.1 at least
-  yield runtime exceptions (the import of :mod:`__future__` will fail, because
-  there was no module of that name prior to 2.1).
+* To ensure that :ref:`future statements <future>` run under releases prior to
+  2.1 at least yield runtime exceptions (the import of :mod:`__future__` will
+  fail, because there was no module of that name prior to 2.1).
 
 * To document when incompatible changes were introduced, and when they will be
   --- or were --- made mandatory.  This is a form of executable documentation, and
@@ -56,7 +56,34 @@ argument to the built-in function :func:`compile` to enable the feature in
 dynamically compiled code.  This flag is stored in the :attr:`compiler_flag`
 attribute on :class:`_Feature` instances.
 
-No feature description will ever be deleted from :mod:`__future__`.
+No feature description will ever be deleted from :mod:`__future__`. Since its
+introduction in Python 2.1 the following features have found their way into the
+language using this mechanism:
+
++------------------+-------------+--------------+---------------------------------------------+
+| feature          | optional in | mandatory in | effect                                      |
++==================+=============+==============+=============================================+
+| nested_scopes    | 2.1.0b1     | 2.2          | :pep:`227`:                                 |
+|                  |             |              | *Statically Nested Scopes*                  |
++------------------+-------------+--------------+---------------------------------------------+
+| generators       | 2.2.0a1     | 2.3          | :pep:`255`:                                 |
+|                  |             |              | *Simple Generators*                         |
++------------------+-------------+--------------+---------------------------------------------+
+| division         | 2.2.0a2     | 3.0          | :pep:`238`:                                 |
+|                  |             |              | *Changing the Division Operator*            |
++------------------+-------------+--------------+---------------------------------------------+
+| absolute_import  | 2.5.0a1     | 2.7          | :pep:`328`:                                 |
+|                  |             |              | *Imports: Multi-Line and Absolute/Relative* |
++------------------+-------------+--------------+---------------------------------------------+
+| with_statement   | 2.5.0a1     | 2.6          | :pep:`343`:                                 |
+|                  |             |              | *The "with" Statement*                      |
++------------------+-------------+--------------+---------------------------------------------+
+| print_function   | 2.6.0a2     | 3.0          | :pep:`3105`:                                |
+|                  |             |              | *Make print a function*                     |
++------------------+-------------+--------------+---------------------------------------------+
+| unicode_literals | 2.6.0a2     | 3.0          | :pep:`3112`:                                |
+|                  |             |              | *Bytes literals in Python 3000*             |
++------------------+-------------+--------------+---------------------------------------------+
 
 .. seealso::
 
