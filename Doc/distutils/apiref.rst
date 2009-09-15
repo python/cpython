@@ -1095,7 +1095,10 @@ other utility module.
    the univeral binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
-   for 4-way universal binaries the architecture is ``universal``.
+   for 4-way universal binaries the architecture is ``universal``. Starting
+   from Python 2.7 and Python 3.2 the architecture ``fat3`` is used for
+   a 3-way universal build (ppc, i386, x86_64) and ``intel`` is used for
+   a univeral build with the i386 and x86_64 architectures
 
    Examples of returned values on Mac OS X:
 
@@ -1104,6 +1107,8 @@ other utility module.
    * ``macosx-10.3-fat``
 
    * ``macosx-10.5-universal``
+
+   * ``macosx-10.6-intel``
 
    .. % XXX isn't this also provided by some other non-distutils module?
 
