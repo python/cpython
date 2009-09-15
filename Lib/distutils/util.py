@@ -141,11 +141,26 @@ def get_platform ():
                 machine = 'fat'
                 cflags = get_config_vars().get('CFLAGS')
 
-                if '-arch x86_64' in cflags:
-                    if '-arch i386' in cflags:
-                        machine = 'universal'
-                    else:
-                        machine = 'fat64'
+                archs = re.findall('-arch\s+(\S+)', cflags)
+                archs.sort()
+                archs = tuple(archs)
+
+                if len(archs) == 1:
+                    machine = archs[0]
+                elif archs == ('i386', 'ppc'):
+                    machine = 'fat'
+                elif archs == ('i386', 'x86_64'):
+                    machine = 'intel'
+                elif archs == ('i386', 'ppc', 'x86_64'):
+                    machine = 'fat3'
+                elif archs == ('ppc64', 'x86_64'):
+                    machine = 'fat64'
+                elif archs == ('i386', 'ppc', 'ppc64', 'x86_64'):
+                    machine = 'universal'
+                else:
+                    raise ValueError(
+                       "Don't know machine value for archs=%r"%(archs,))
+
 
             elif machine in ('PowerPC', 'Power_Macintosh'):
                 # Pick a sane name for the PPC architecture.
