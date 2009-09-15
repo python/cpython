@@ -1274,19 +1274,26 @@ class PyBuildExt(build_ext):
         # architectures.
         cflags = sysconfig.get_config_vars('CFLAGS')[0]
         archs = re.findall('-arch\s+(\w+)', cflags)
-        if 'x86_64' in archs or 'ppc64' in archs:
-            try:
-                archs.remove('x86_64')
-            except ValueError:
-                pass
-            try:
-                archs.remove('ppc64')
-            except ValueError:
-                pass
 
-            for a in archs:
-                frameworks.append('-arch')
-                frameworks.append(a)
+        tmpfile = os.path.join(self.build_temp, 'tk.arch')
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+
+        # Note: cannot use os.popen or subprocess here, that
+        # requires extensions that are not available here.
+        os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
+        fp = open(tmpfile)
+        detected_archs = []
+        for ln in fp:
+            a = ln.split()[-1]
+            if a in archs:
+                detected_archs.append(ln.split()[-1])
+        fp.close()
+        os.unlink(tmpfile)
+
+        for a in detected_archs:
+            frameworks.append('-arch')
+            frameworks.append(a)
 
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                         define_macros=[('WITH_APPINIT', 1)],
