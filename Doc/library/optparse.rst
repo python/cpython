@@ -1019,7 +1019,10 @@ must specify for any option using that action.
 
      from optparse import OptionParser, SUPPRESS_HELP
 
-     parser = OptionParser()
+     # usually, a help option is added automatically, but that can
+     # be suppressed using the add_help_option argument
+     parser = OptionParser(add_help_option=False)
+
      parser.add_option("-h", "--help", action="help")
      parser.add_option("-v", action="store_true", dest="verbose",
                        help="Be moderately verbose")
