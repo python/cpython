@@ -26,6 +26,38 @@ class PdbTestInput(object):
         sys.stdin = self.real_stdin
 
 
+def write(x):
+    print x
+
+def test_pdb_displayhook():
+    """This tests the custom displayhook for pdb.
+
+    >>> def test_function(foo, bar):
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'foo',
+    ...     'bar',
+    ...     'for i in range(5): write(i)',
+    ...     'continue',
+    ... ]):
+    ...     test_function(1, None)
+    > <doctest test.test_pdb.test_pdb_displayhook[0]>(3)test_function()
+    -> pass
+    (Pdb) foo
+    1
+    (Pdb) bar
+    (Pdb) for i in range(5): write(i)
+    0
+    1
+    2
+    3
+    4
+    (Pdb) continue
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 
@@ -36,7 +68,7 @@ def test_pdb_skip_modules():
 
     >>> with PdbTestInput([
     ...     'step',
-    ...     'continue'
+    ...     'continue',
     ... ]):
     ...     skip_module()
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()
