@@ -796,7 +796,7 @@ modules which were imported and used within the module).
 
 The :keyword:`from` form with ``*`` may only occur in a module scope.  The wild
 card form of import --- ``import *`` --- is only allowed at the module level.
-Attempting to use it in class for function definitions will raise a
+Attempting to use it in class or function definitions will raise a
 :exc:`SyntaxError`.
 
 .. index::
