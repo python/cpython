@@ -1,4 +1,3 @@
-
 :mod:`xml.dom` --- The Document Object Model API
 ================================================
 
@@ -96,7 +95,7 @@ The :mod:`xml.dom` contains the following functions:
    implementation supports some customization).
 
 
-.. function:: getDOMImplementation([name[, features]])
+.. function:: getDOMImplementation(name=None, features=())
 
    Return a suitable DOM implementation. The *name* is either well-known, the
    module name of a DOM implementation, or ``None``. If it is not ``None``, imports

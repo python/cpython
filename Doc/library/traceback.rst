@@ -20,7 +20,7 @@ the :data:`sys.last_traceback` variable and returned as the third item from
 The module defines the following functions:
 
 
-.. function:: print_tb(traceback[, limit[, file]])
+.. function:: print_tb(traceback, limit=None, file=None)
 
    Print up to *limit* stack trace entries from *traceback*.  If *limit* is omitted
    or ``None``, all entries are printed. If *file* is omitted or ``None``, the
@@ -28,7 +28,7 @@ The module defines the following functions:
    object to receive the output.
 
 
-.. function:: print_exception(type, value, traceback[, limit[, file[, chain]]])
+.. function:: print_exception(type, value, traceback, limit=None, file=None, chain=True)
 
    Print exception information and up to *limit* stack trace entries from
    *traceback* to *file*. This differs from :func:`print_tb` in the following
@@ -47,19 +47,19 @@ The module defines the following functions:
    exception.
 
 
-.. function:: print_exc([limit[, file[, chain]]])
+.. function:: print_exc(limit=None, file=None, chain=True)
 
    This is a shorthand for ``print_exception(*sys.exc_info())``.
 
 
-.. function:: print_last([limit[, file[, chain]]])
+.. function:: print_last(limit=None, file=None, chain=True)
 
    This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
    sys.last_traceback, limit, file)``.  In general it will work only after
    an exception has reached an interactive prompt (see :data:`sys.last_type`).
 
 
-.. function:: print_stack([f[, limit[, file]]])
+.. function:: print_stack(f=None, limit=None, file=None)
 
    This function prints a stack trace from its invocation point.  The optional *f*
    argument can be used to specify an alternate stack frame to start.  The optional
@@ -67,7 +67,7 @@ The module defines the following functions:
    :func:`print_exception`.
 
 
-.. function:: extract_tb(traceback[, limit])
+.. function:: extract_tb(traceback, limit=None)
 
    Return a list of up to *limit* "pre-processed" stack trace entries extracted
    from the traceback object *traceback*.  It is useful for alternate formatting of
@@ -78,7 +78,7 @@ The module defines the following functions:
    stripped; if the source is not available it is ``None``.
 
 
-.. function:: extract_stack([f[, limit]])
+.. function:: extract_stack(f=None, limit=None)
 
    Extract the raw traceback from the current stack frame.  The return value has
    the same format as for :func:`extract_tb`.  The optional *f* and *limit*
@@ -105,7 +105,7 @@ The module defines the following functions:
    occurred is the always last string in the list.
 
 
-.. function:: format_exception(type, value, tb[, limit[, chain]])
+.. function:: format_exception(type, value, tb, limit=None, chain=True)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
@@ -114,18 +114,18 @@ The module defines the following functions:
    same text is printed as does :func:`print_exception`.
 
 
-.. function:: format_exc([limit[, chain]])
+.. function:: format_exc(limit=None, chain=True)
 
    This is like ``print_exc(limit)`` but returns a string instead of printing to a
    file.
 
 
-.. function:: format_tb(tb[, limit])
+.. function:: format_tb(tb, limit=None)
 
    A shorthand for ``format_list(extract_tb(tb, limit))``.
 
 
-.. function:: format_stack([f[, limit]])
+.. function:: format_stack(f=None, limit=None)
 
    A shorthand for ``format_list(extract_stack(f, limit))``.
 

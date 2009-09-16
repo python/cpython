@@ -97,7 +97,7 @@ class _RLock(_Verbose):
                 owner and owner.name,
                 self._count)
 
-    def acquire(self, blocking=1):
+    def acquire(self, blocking=True):
         me = current_thread()
         if self._owner is me:
             self._count = self._count + 1
@@ -289,7 +289,7 @@ class _Semaphore(_Verbose):
         self._cond = Condition(Lock())
         self._value = value
 
-    def acquire(self, blocking=1):
+    def acquire(self, blocking=True):
         rc = False
         self._cond.acquire()
         while self._value == 0:

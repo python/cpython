@@ -1,4 +1,3 @@
-
 :mod:`xdrlib` --- Encode and decode XDR data
 ============================================
 

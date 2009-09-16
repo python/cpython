@@ -1,4 +1,3 @@
-
 :mod:`syslog` --- Unix syslog library routines
 ==============================================
 

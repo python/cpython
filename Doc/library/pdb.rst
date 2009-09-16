@@ -41,7 +41,7 @@ of the debugger is::
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
 
-   python -m pdb myscript.py
+   python3 -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally. After post-mortem debugging (or

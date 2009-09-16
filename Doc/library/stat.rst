@@ -1,9 +1,9 @@
-
 :mod:`stat` --- Interpreting :func:`stat` results
 =================================================
 
 .. module:: stat
-   :synopsis: Utilities for interpreting the results of os.stat(), os.lstat() and os.fstat().
+   :synopsis: Utilities for interpreting the results of os.stat(),
+              os.lstat() and os.fstat().
 .. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
 

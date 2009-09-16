@@ -329,7 +329,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
         res[-1] = b''.join(pct_sequence).decode(encoding, errors)
     return ''.join(res)
 
-def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
+def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -355,7 +355,7 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
             dict[name] = [value]
     return dict
 
-def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
+def parse_qsl(qs, keep_blank_values=False, strict_parsing=False):
     """Parse a query given as a string argument.
 
     Arguments:
@@ -509,7 +509,7 @@ def quote_from_bytes(bs, safe='/'):
         _safe_quoters[cachekey] = quoter
     return ''.join([quoter[char] for char in bs])
 
-def urlencode(query, doseq=0):
+def urlencode(query, doseq=False):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each

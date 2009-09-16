@@ -1,4 +1,3 @@
-
 :mod:`timeit` --- Measure execution time of small code snippets
 ===============================================================
 
@@ -18,7 +17,7 @@ for measuring execution times.  See also Tim Peters' introduction to the
 The module defines the following public class:
 
 
-.. class:: Timer([stmt='pass' [, setup='pass' [, timer=<timer function>]]])
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>)
 
    Class for timing execution speed of small code snippets.
 
@@ -38,7 +37,7 @@ The module defines the following public class:
    little larger in this case because of the extra function calls.
 
 
-.. method:: Timer.print_exc([file=None])
+.. method:: Timer.print_exc(file=None)
 
    Helper to print a traceback from the timed code.
 
@@ -55,7 +54,7 @@ The module defines the following public class:
    traceback is sent; it defaults to ``sys.stderr``.
 
 
-.. method:: Timer.repeat([repeat=3 [, number=1000000]])
+.. method:: Timer.repeat(repeat=3, number=1000000)
 
    Call :meth:`timeit` a few times.
 
@@ -76,7 +75,7 @@ The module defines the following public class:
       and apply common sense rather than statistics.
 
 
-.. method:: Timer.timeit([number=1000000])
+.. method:: Timer.timeit(number=1000000)
 
    Time *number* executions of the main statement. This executes the setup
    statement once, and then returns the time it takes to execute the main statement
@@ -98,14 +97,14 @@ The module defines the following public class:
 
 The module also defines two convenience functions:
 
-.. function:: repeat(stmt[, setup[, timer[, repeat=3 [, number=1000000]]]])
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
    function and run its :meth:`repeat` method with the given repeat count and
    *number* executions.
 
 
-.. function:: timeit(stmt[, setup[, timer[, number=1000000]]])
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000)
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
    function and run its :meth:`timeit` method with *number* executions.

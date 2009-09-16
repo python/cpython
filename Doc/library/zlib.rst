@@ -1,10 +1,9 @@
-
 :mod:`zlib` --- Compression compatible with :program:`gzip`
 ===========================================================
 
 .. module:: zlib
-   :synopsis: Low-level interface to compression and decompression routines compatible with
-              gzip.
+   :synopsis: Low-level interface to compression and decompression routines
+              compatible with gzip.
 
 
 For applications that require data compression, the functions in this module

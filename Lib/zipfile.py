@@ -1255,7 +1255,7 @@ class ZipFile:
 class PyZipFile(ZipFile):
     """Class to create ZIP archives with Python library files and packages."""
 
-    def writepy(self, pathname, basename = ""):
+    def writepy(self, pathname, basename=""):
         """Add all files from "pathname" to the ZIP archive.
 
         If pathname is a package directory, search the directory and

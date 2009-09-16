@@ -1,4 +1,3 @@
-
 :mod:`zipfile` --- Work with ZIP archives
 =========================================
 
@@ -49,7 +48,7 @@ The module defines the following items:
    Class for creating ZIP archives containing Python libraries.
 
 
-.. class:: ZipInfo([filename[, date_time]])
+.. class:: ZipInfo(filename='NoName', date_time=(1980,1,1,0,0,0))
 
    Class used to represent information about a member of an archive. Instances
    of this class are returned by the :meth:`getinfo` and :meth:`infolist`
@@ -98,7 +97,7 @@ ZipFile Objects
 ---------------
 
 
-.. class:: ZipFile(file[, mode[, compression[, allowZip64]]])
+.. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=False)
 
    Open a ZIP file, where *file* can be either a path to a file (a string) or a
    file-like object.  The *mode* parameter should be ``'r'`` to read an existing
@@ -149,7 +148,7 @@ ZipFile Objects
    Return a list of archive members by name.
 
 
-.. method:: ZipFile.open(name[, mode[, pwd]])
+.. method:: ZipFile.open(name, mode='r', pwd=None)
 
    Extract a member from the archive as a file-like object (ZipExtFile). *name* is
    the name of the file in the archive, or a :class:`ZipInfo` object. The *mode*
@@ -182,7 +181,7 @@ ZipFile Objects
       ZIP file that contains members with duplicate names.
 
 
-.. method:: ZipFile.extract(member[, path[, pwd]])
+.. method:: ZipFile.extract(member, path=None, pwd=None)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object).  Its file information is
@@ -191,7 +190,7 @@ ZipFile Objects
    *pwd* is the password used for encrypted files.
 
 
-.. method:: ZipFile.extractall([path[, members[, pwd]]])
+.. method:: ZipFile.extractall(path=None, members=None, pwd=None)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
@@ -209,7 +208,7 @@ ZipFile Objects
    Set *pwd* as default password to extract encrypted files.
 
 
-.. method:: ZipFile.read(name[, pwd])
+.. method:: ZipFile.read(name, pwd=None)
 
    Return the bytes of the file *name* in the archive.  *name* is the name of the
    file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
@@ -225,7 +224,7 @@ ZipFile Objects
    :meth:`testzip` on a closed ZipFile will raise a :exc:`RuntimeError`.
 
 
-.. method:: ZipFile.write(filename[, arcname[, compress_type]])
+.. method:: ZipFile.write(filename, arcname=None, compress_type=None)
 
    Write the file named *filename* to the archive, giving it the archive name
    *arcname* (by default, this will be the same as *filename*, but without a drive
@@ -297,7 +296,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 :class:`ZipFile` objects.
 
 
-.. method:: PyZipFile.writepy(pathname[, basename])
+.. method:: PyZipFile.writepy(pathname, basename='')
 
    Search for files :file:`\*.py` and add the corresponding file to the archive.
    The corresponding file is a :file:`\*.pyo` file if available, else a

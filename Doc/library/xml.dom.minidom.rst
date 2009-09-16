@@ -1,4 +1,3 @@
-
 :mod:`xml.dom.minidom` --- Lightweight DOM implementation
 =========================================================
 
@@ -28,7 +27,7 @@ DOM applications typically start by parsing some XML into a DOM.  With
 The :func:`parse` function can take either a filename or an open file object.
 
 
-.. function:: parse(filename_or_file[, parser[, bufsize]])
+.. function:: parse(filename_or_file, parser=None, bufsize=None)
 
    Return a :class:`Document` from the given input. *filename_or_file* may be
    either a file name, or a file-like object. *parser*, if given, must be a SAX2
@@ -40,7 +39,7 @@ If you have XML in a string, you can use the :func:`parseString` function
 instead:
 
 
-.. function:: parseString(string[, parser])
+.. function:: parseString(string, parser=None)
 
    Return a :class:`Document` that represents the *string*. This method creates a
    :class:`StringIO` object for the string and passes that on to :func:`parse`.
@@ -126,7 +125,7 @@ module documentation.  This section lists the differences between the API and
    to discard children of that node.
 
 
-.. method:: Node.writexml(writer[, indent=""[, addindent=""[, newl=""[, encoding=""]]]])
+.. method:: Node.writexml(writer, indent="", addindent="", newl="", encoding="")
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
@@ -138,7 +137,7 @@ module documentation.  This section lists the differences between the API and
    used to specify the encoding field of the XML header.
 
 
-.. method:: Node.toxml([encoding])
+.. method:: Node.toxml(encoding=None)
 
    Return the XML that the DOM represents as a string.
 
@@ -153,7 +152,7 @@ module documentation.  This section lists the differences between the API and
    encoding argument should be specified as "utf-8".
 
 
-.. method:: Node.toprettyxml([indent=""[, newl=""[, encoding=""]]])
+.. method:: Node.toprettyxml(indent="", newl="", encoding="")
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string

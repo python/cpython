@@ -1,4 +1,3 @@
-
 :mod:`xml.etree.ElementTree` --- The ElementTree XML API
 ========================================================
 
@@ -41,7 +40,7 @@ Functions
 ---------
 
 
-.. function:: Comment([text])
+.. function:: Comment(text=None)
 
    Comment element factory.  This factory function creates a special element
    that will be serialized as an XML comment. The comment string can be either
@@ -61,7 +60,7 @@ Functions
    *elem* is an element tree or an individual element.
 
 
-.. function:: Element(tag[, attrib][, **extra])
+.. function:: Element(tag, attrib={}, **extra)
 
    Element factory.  This function returns an object implementing the standard
    Element interface.  The exact class or type of that object is implementation
@@ -87,7 +86,7 @@ Functions
    element instance. Returns a true value if this is an element object.
 
 
-.. function:: iterparse(source[, events])
+.. function:: iterparse(source, events=None)
 
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user. *source* is a filename or file object containing XML data.
@@ -105,7 +104,7 @@ Functions
       If you need a fully populated element, look for "end" events instead.
 
 
-.. function:: parse(source[, parser])
+.. function:: parse(source, parser=None)
 
    Parses an XML section into an element tree. *source* is a filename or file
    object containing XML data. *parser* is an optional parser instance.  If not
@@ -113,7 +112,7 @@ Functions
    instance.
 
 
-.. function:: ProcessingInstruction(target[, text])
+.. function:: ProcessingInstruction(target, text=None)
 
    PI element factory.  This factory function creates a special element that will
    be serialized as an XML processing instruction. *target* is a string containing
@@ -121,7 +120,7 @@ Functions
    an element instance, representing a processing instruction.
 
 
-.. function:: SubElement(parent, tag[, attrib[,  **extra]])
+.. function:: SubElement(parent, tag, attrib={}, **extra)
 
    Subelement factory.  This function creates an element instance, and appends it
    to an existing element.
@@ -133,7 +132,7 @@ Functions
    as keyword arguments. Returns an element instance.
 
 
-.. function:: tostring(element[, encoding])
+.. function:: tostring(element, encoding=None)
 
    Generates a string representation of an XML element, including all subelements.
    *element* is an Element instance. *encoding* is the output encoding (default is
@@ -202,7 +201,7 @@ The following dictionary-like methods work on the element attributes.
    attributes, and sets the text and tail attributes to None.
 
 
-.. method:: Element.get(key[, default=None])
+.. method:: Element.get(key, default=None)
 
    Gets the element attribute named *key*.
 
@@ -246,7 +245,7 @@ The following methods work on the element's children (subelements).
    Returns an iterable yielding all matching elements in document order.
 
 
-.. method:: Element.findtext(condition[, default=None])
+.. method:: Element.findtext(condition, default=None)
 
    Finds text for the first subelement matching *condition*.  *condition* may be a
    tag name or path. Returns the text content of the first matching element, or
@@ -259,7 +258,7 @@ The following methods work on the element's children (subelements).
    Returns all subelements.  The elements are returned in document order.
 
 
-.. method:: Element.getiterator([tag=None])
+.. method:: Element.getiterator(tag=None)
 
    Creates a tree iterator with the current element as the root.   The iterator
    iterates over this element and all elements below it, in document (depth first)
@@ -305,7 +304,7 @@ ElementTree Objects
 -------------------
 
 
-.. class:: ElementTree([element,] [file])
+.. class:: ElementTree(element=None, file=None)
 
    ElementTree wrapper class.  This class represents an entire element hierarchy,
    and adds some extra support for serialization to and from standard XML.
@@ -336,7 +335,7 @@ ElementTree Objects
       order.
 
 
-   .. method:: findtext(path[, default])
+   .. method:: findtext(path, default=None)
 
       Finds the element text for the first toplevel element with given tag.
       Same as getroot().findtext(path). *path* is the toplevel element to look
@@ -346,7 +345,7 @@ ElementTree Objects
       found, but has no text content, this method returns an empty string.
 
 
-   .. method:: getiterator([tag])
+   .. method:: getiterator(tag=None)
 
       Creates and returns a tree iterator for the root element.  The iterator
       loops over all elements in this tree, in section order. *tag* is the tag
@@ -358,7 +357,7 @@ ElementTree Objects
       Returns the root element for this tree.
 
 
-   .. method:: parse(source[, parser])
+   .. method:: parse(source, parser=None)
 
       Loads an external XML section into this element tree. *source* is a file
       name or file object. *parser* is an optional parser instance.  If not
@@ -366,7 +365,7 @@ ElementTree Objects
       root element.
 
 
-   .. method:: write(file[, encoding])
+   .. method:: write(file, encoding=None)
 
       Writes the element tree to a file, as XML. *file* is a file name, or a
       file object opened for writing. *encoding* [1]_ is the output encoding
@@ -406,7 +405,7 @@ QName Objects
 -------------
 
 
-.. class:: QName(text_or_uri[, tag])
+.. class:: QName(text_or_uri, tag=None)
 
    QName wrapper.  This can be used to wrap a QName attribute value, in order to
    get proper namespace handling on output. *text_or_uri* is a string containing
@@ -422,7 +421,7 @@ TreeBuilder Objects
 -------------------
 
 
-.. class:: TreeBuilder([element_factory])
+.. class:: TreeBuilder(element_factory=None)
 
    Generic element structure builder.  This builder converts a sequence of start,
    data, and end method calls to a well-formed element structure. You can use this
@@ -461,7 +460,7 @@ XMLTreeBuilder Objects
 ----------------------
 
 
-.. class:: XMLTreeBuilder([html,] [target])
+.. class:: XMLTreeBuilder(html=0, target=None)
 
    Element structure builder for XML source data, based on the expat parser. *html*
    are predefined HTML entities.  This flag is not supported by the current

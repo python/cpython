@@ -1,4 +1,3 @@
-
 :mod:`tempfile` --- Generate temporary files and directories
 ============================================================
 
@@ -29,7 +28,7 @@ is recommended to use keyword arguments for clarity.
 The module defines the following user-callable functions:
 
 
-.. function:: TemporaryFile([mode='w+b'[, bufsize=-1[, suffix=''[, prefix='tmp'[, dir=None]]]]])
+.. function:: TemporaryFile(mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None)
 
    Return a file-like object that can be used as a temporary storage area.
    The file is created using :func:`mkstemp`. It will be destroyed as soon
@@ -53,7 +52,7 @@ The module defines the following user-callable functions:
    :keyword:`with` statement, just like a normal file.
 
 
-.. function:: NamedTemporaryFile([mode='w+b'[, bufsize=-1[, suffix=''[, prefix='tmp'[, dir=None[, delete=True]]]]]])
+.. function:: NamedTemporaryFile(mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None, delete=True)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -68,7 +67,7 @@ The module defines the following user-callable functions:
    be used in a :keyword:`with` statement, just like a normal file.
 
 
-.. function:: SpooledTemporaryFile([max_size=0, [mode='w+b'[, bufsize=-1[, suffix=''[, prefix='tmp'[, dir=None]]]]]])
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -85,7 +84,7 @@ The module defines the following user-callable functions:
    used in a :keyword:`with` statement, just like a normal file.
 
 
-.. function:: mkstemp([suffix=''[, prefix='tmp'[, dir=None[, text=False]]]])
+.. function:: mkstemp(suffix='', prefix='tmp', dir=None, text=False)
 
    Creates a temporary file in the most secure manner possible.  There are
    no race conditions in the file's creation, assuming that the platform
@@ -123,7 +122,7 @@ The module defines the following user-callable functions:
    of that file, in that order.
 
 
-.. function:: mkdtemp([suffix=''[, prefix='tmp'[, dir=None]]])
+.. function:: mkdtemp(suffix='', prefix='tmp', dir=None)
 
    Creates a temporary directory in the most secure manner possible. There
    are no race conditions in the directory's creation.  The directory is
@@ -138,7 +137,7 @@ The module defines the following user-callable functions:
    :func:`mkdtemp` returns the absolute pathname of the new directory.
 
 
-.. function:: mktemp([suffix=''[, prefix='tmp'[, dir=None]]])
+.. function:: mktemp(suffix='', prefix='tmp', dir=None)
 
    .. deprecated:: 2.3
       Use :func:`mkstemp` instead.
