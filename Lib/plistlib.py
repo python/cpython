@@ -1,6 +1,6 @@
 r"""plistlib.py -- a tool to generate and parse MacOSX .plist files.
 
-The PropertList (.plist) file format is a simple XML pickle supporting
+The property list (.plist) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.
 Usually the top level object is a dictionary.
 
@@ -16,32 +16,31 @@ To work with plist data in bytes objects, you can use readPlistFromBytes()
 and writePlistToBytes().
 
 Values can be strings, integers, floats, booleans, tuples, lists,
-dictionaries, Data or datetime.datetime objects. String values (including
-dictionary keys) may be unicode strings -- they will be written out as
-UTF-8.
+dictionaries (but only with string keys), Data or datetime.datetime objects.
+String values (including dictionary keys) have to be unicode strings -- they
+will be written out as UTF-8.
 
 The <data> plist type is supported through the Data class. This is a
-thin wrapper around a Python bytes object.
+thin wrapper around a Python bytes object. Use 'Data' if your strings
+contain control characters.
 
 Generate Plist example:
 
     pl = dict(
-        aString="Doodah",
-        aList=["A", "B", 12, 32.1, [1, 2, 3]],
+        aString = "Doodah",
+        aList = ["A", "B", 12, 32.1, [1, 2, 3]],
         aFloat = 0.1,
         anInt = 728,
-        aDict=dict(
-            anotherString="<hello & hi there!>",
-            aUnicodeValue=u'M\xe4ssig, Ma\xdf',
-            aTrueValue=True,
-            aFalseValue=False,
+        aDict = dict(
+            anotherString = "<hello & hi there!>",
+            aUnicodeValue = "M\xe4ssig, Ma\xdf",
+            aTrueValue = True,
+            aFalseValue = False,
         ),
         someData = Data(b"<binary gunk>"),
         someMoreData = Data(b"<lots of binary gunk>" * 10),
         aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
     )
-    # unicode keys are possible, but a little awkward to use:
-    pl[u'\xc5benraa'] = "That was a unicode key."
     writePlist(pl, fileName)
 
 Parse Plist example:
@@ -220,7 +219,7 @@ class PlistWriter(DumbXMLWriter):
         elif isinstance(value, (tuple, list)):
             self.writeArray(value)
         else:
-            raise TypeError("unsuported type: %s" % type(value))
+            raise TypeError("unsupported type: %s" % type(value))
 
     def writeData(self, data):
         self.beginElement("data")
