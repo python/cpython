@@ -523,6 +523,22 @@ supports the creation of additional interpreters (using
 :cfunc:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :cfunc:`PyGILState_\*` API is unsupported.
 
+Another important thing to note about threads is their behaviour in the face
+of the C :cfunc:`fork` call. On most systems with :cfunc:`fork`, after a
+process forks only the thread that issued the fork will exist. That also
+means any locks held by other threads will never be released. Python solves
+this for :func:`os.fork` by acquiring the locks it uses internally before
+the fork, and releasing them afterwards. In addition, it resets any
+:ref:`lock-objects` in the child. When extending or embedding Python, there
+is no way to inform Python of additional (non-Python) locks that need to be
+acquired before or reset after a fork. OS facilities such as
+:cfunc:`posix_atfork` would need to be used to accomplish the same thing.
+Additionally, when extending or embedding Python, calling :cfunc:`fork`
+directly rather than through :func:`os.fork` (and returning to or calling
+into Python) may result in a deadlock by one of Python's internal locks
+being held by a thread that is defunct after the fork.
+:cfunc:`PyOS_AfterFork` tries to reset the necessary locks, but is not
+always able to.
 
 .. ctype:: PyInterpreterState
 
