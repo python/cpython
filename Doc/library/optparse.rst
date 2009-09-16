@@ -467,7 +467,7 @@ user-friendly (documented) options::
                      action="store_false", dest="verbose",
                      help="be vewwy quiet (I'm hunting wabbits)")
    parser.add_option("-f", "--filename",
-                     metavar="FILE", help="write output to FILE"),
+                     metavar="FILE", help="write output to FILE")
    parser.add_option("-m", "--mode",
                      default="intermediate",
                      help="interaction mode: novice, intermediate, "
@@ -1014,12 +1014,15 @@ must specify for any option using that action.
 
      from optparse import OptionParser, SUPPRESS_HELP
 
-     parser = OptionParser()
-     parser.add_option("-h", "--help", action="help"),
+     # usually, a help option is added automatically, but that can
+     # be suppressed using the add_help_option argument
+     parser = OptionParser(add_help_option=False)
+
+     parser.add_option("-h", "--help", action="help")
      parser.add_option("-v", action="store_true", dest="verbose",
                        help="Be moderately verbose")
      parser.add_option("--file", dest="filename",
-                       help="Input file to read data from"),
+                       help="Input file to read data from")
      parser.add_option("--secret", help=SUPPRESS_HELP)
 
   If :mod:`optparse` sees either ``"-h"`` or ``"--help"`` on the command line, it
