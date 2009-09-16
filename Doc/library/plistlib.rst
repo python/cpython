@@ -18,18 +18,24 @@ The property list (``.plist``) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
 top level object is a dictionary.
 
+To write out and to parse a plist file, use the :func:`writePlist` and
+:func:`readPlist` functions.
+
+To work with plist data in bytes objects, use :func:`writePlistToBytes`
+and :func:`readPlistFromBytes`.
+
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
 (but only with string keys), :class:`Data` or :class:`datetime.datetime`
 objects.  String values (including dictionary keys) have to be unicode strings --
 they will be written out as UTF-8.
 
 The ``<data>`` plist type is supported through the :class:`Data` class.  This is
-a thin wrapper around a Python string.  Use :class:`Data` if your strings
+a thin wrapper around a Python bytes object.  Use :class:`Data` if your strings
 contain control characters.
 
 .. seealso::
 
-   `PList manual page <http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`
+   `PList manual page <http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
       Apple's documentation of the file format.
 
 
@@ -55,26 +61,26 @@ This module defines the following functions:
     a container that contains objects of unsupported types.
 
 
-.. function:: readPlistFromString(data)
+.. function:: readPlistFromBytes(data)
 
-   Read a plist from a string.  Return the root object.
+   Read a plist data from a bytes object.  Return the root object.
 
 
-.. function:: writePlistToString(rootObject)
+.. function:: writePlistToBytes(rootObject)
 
-   Return *rootObject* as a plist-formatted string.
+   Return *rootObject* as a plist-formatted bytes object.
 
 
 The following class is available:
 
 .. class:: Data(data)
 
-   Return a "data" wrapper object around the string *data*.  This is used in
-   functions converting from/to plists to represent the ``<data>`` type
+   Return a "data" wrapper object around the bytes object *data*.  This is used
+   in functions converting from/to plists to represent the ``<data>`` type
    available in plists.
 
    It has one attribute, :attr:`data`, that can be used to retrieve the Python
-   string stored in it.
+   bytes object stored in it.
 
 
 Examples
@@ -93,8 +99,8 @@ Generating a plist::
             aTrueValue = True,
             aFalseValue = False,
         ),
-        someData = Data("<binary gunk>"),
-        someMoreData = Data("<lots of binary gunk>" * 10),
+        someData = Data(b"<binary gunk>"),
+        someMoreData = Data(b"<lots of binary gunk>" * 10),
         aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
     )
     writePlist(pl, fileName)
