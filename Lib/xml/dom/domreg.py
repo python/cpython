@@ -36,7 +36,7 @@ def _good_enough(dom, features):
             return 0
     return 1
 
-def getDOMImplementation(name = None, features = ()):
+def getDOMImplementation(name=None, features=()):
     """getDOMImplementation(name = None, features = ()) -> DOM implementation.
 
     Return a suitable DOM implementation. The name is either

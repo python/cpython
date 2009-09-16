@@ -29,7 +29,7 @@ def formatwarning(message, category, filename, lineno, line=None):
     return s
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
-                   append=0):
+                   append=False):
     """Insert an entry into the list of warnings filters (at the front).
 
     Use assertions to check that all arguments have the right type."""
@@ -49,7 +49,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     else:
         filters.insert(0, item)
 
-def simplefilter(action, category=Warning, lineno=0, append=0):
+def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
 
     A simple filter matches all modules and messages.
