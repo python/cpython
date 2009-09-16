@@ -205,7 +205,7 @@ support history save/restore. ::
    class HistoryConsole(code.InteractiveConsole):
        def __init__(self, locals=None, filename="<console>",
                     histfile=os.path.expanduser("~/.console-history")):
-           code.InteractiveConsole.__init__(self)
+           code.InteractiveConsole.__init__(self, locals, filename)
            self.init_history(histfile)
 
        def init_history(self, histfile):

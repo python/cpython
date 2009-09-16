@@ -20,6 +20,20 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
+# monkey-patch HTML translator to give versionmodified paragraphs a class
+def new_visit_versionmodified(self, node):
+    self.body.append(self.starttag(node, 'p', CLASS=node['type']))
+    text = versionlabels[node['type']] % node['version']
+    if len(node):
+        text += ': '
+    else:
+        text += '.'
+    self.body.append('<span class="versionmodified">%s</span>' % text)
+
+from sphinx.writers.html import HTMLTranslator
+from sphinx.locale import versionlabels
+HTMLTranslator.visit_versionmodified = new_visit_versionmodified
+
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
