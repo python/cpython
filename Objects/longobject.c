@@ -1650,6 +1650,119 @@ divrem1(PyLongObject *a, digit n, digit *prem)
 	return long_normalize(z);
 }
 
+/* Convert a long integer to a base 10 string.  Returns a new non-shared
+   string.  (Return value is non-shared so that callers can modify the
+   returned value if necessary.) */
+
+static PyObject *
+long_to_decimal_string(PyObject *aa)
+{
+	PyLongObject *scratch, *a;
+	PyObject *str;
+	Py_ssize_t size, strlen, size_a, i, j;
+	digit *pout, *pin, rem, tenpow;
+	Py_UNICODE *p;
+	int negative;
+
+	a = (PyLongObject *)aa;
+	if (a == NULL || !PyLong_Check(a)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	size_a = ABS(Py_SIZE(a));
+	negative = Py_SIZE(a) < 0;
+
+	/* quick and dirty upper bound for the number of digits
+	   required to express a in base _PyLong_DECIMAL_BASE:
+
+	     #digits = 1 + floor(log2(a) / log2(_PyLong_DECIMAL_BASE))
+
+	   But log2(a) < size_a * PyLong_SHIFT, and
+	   log2(_PyLong_DECIMAL_BASE) = log2(10) * _PyLong_DECIMAL_SHIFT
+				      > 3 * _PyLong_DECIMAL_SHIFT
+	*/
+	if (size_a > PY_SSIZE_T_MAX / PyLong_SHIFT) {
+		PyErr_SetString(PyExc_OverflowError,
+				"long is too large to format");
+		return NULL;
+	}
+	/* the expression size_a * PyLong_SHIFT is now safe from overflow */
+	size = 1 + size_a * PyLong_SHIFT / (3 * _PyLong_DECIMAL_SHIFT);
+	scratch = _PyLong_New(size);
+	if (scratch == NULL)
+		return NULL;
+
+	/* convert array of base _PyLong_BASE digits in pin to an array of
+	   base _PyLong_DECIMAL_BASE digits in pout, following Knuth (TAOCP,
+	   Volume 2 (3rd edn), section 4.4, Method 1b). */
+	pin = a->ob_digit;
+	pout = scratch->ob_digit;
+	size = 0;
+	for (i = size_a; --i >= 0; ) {
+		digit hi = pin[i];
+		for (j = 0; j < size; j++) {
+			twodigits z = (twodigits)pout[j] << PyLong_SHIFT | hi;
+			hi = z / _PyLong_DECIMAL_BASE;
+			pout[j] = z - (twodigits)hi * _PyLong_DECIMAL_BASE;
+		}
+		while (hi) {
+			pout[size++] = hi % _PyLong_DECIMAL_BASE;
+			hi /= _PyLong_DECIMAL_BASE;
+		}
+		/* check for keyboard interrupt */
+		SIGCHECK({
+			Py_DECREF(scratch);
+			return NULL;
+		})
+	}
+	/* pout should have at least one digit, so that the case when a = 0
+	   works correctly */
+	if (size == 0)
+		pout[size++] = 0;
+
+	/* calculate exact length of output string, and allocate */
+	strlen = negative + 1 + (size - 1) * _PyLong_DECIMAL_SHIFT;
+	tenpow = 10;
+	rem = pout[size-1];
+	while (rem >= tenpow) {
+		tenpow *= 10;
+		strlen++;
+	}
+	str = PyUnicode_FromUnicode(NULL, strlen);
+	if (str == NULL) {
+		Py_DECREF(scratch);
+		return NULL;
+	}
+
+	/* fill the string right-to-left */
+	p = PyUnicode_AS_UNICODE(str) + strlen;
+	*p = '\0';
+	/* pout[0] through pout[size-2] contribute exactly
+	   _PyLong_DECIMAL_SHIFT digits each */
+	for (i=0; i < size - 1; i++) {
+		rem = pout[i];
+		for (j = 0; j < _PyLong_DECIMAL_SHIFT; j++) {
+			*--p = '0' + rem % 10;
+			rem /= 10;
+		}
+	}
+	/* pout[size-1]: always produce at least one decimal digit */
+	rem = pout[i];
+	do {
+		*--p = '0' + rem % 10;
+		rem /= 10;
+	} while (rem != 0);
+
+	/* and sign */
+	if (negative)
+		*--p = '-';
+
+	/* check we've counted correctly */
+	assert(p == PyUnicode_AS_UNICODE(str));
+	Py_DECREF(scratch);
+	return (PyObject *)str;
+}
+
 /* Convert a long int object to a string, using a given conversion base.
    Return a string object.
    If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'. */
@@ -1664,6 +1777,9 @@ _PyLong_Format(PyObject *aa, int base)
 	Py_UNICODE *p;
 	int bits;
 	char sign = '\0';
+
+	if (base == 10)
+		return long_to_decimal_string((PyObject *)a);
 
 	if (a == NULL || !PyLong_Check(a)) {
 		PyErr_BadInternalCall();
