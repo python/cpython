@@ -218,11 +218,9 @@ exception to occur. For example::
      File "<stdin>", line 1, in ?
    NameError: HiThere
 
-The argument to :keyword:`raise` is an exception class or instance to be
-raised.  There is a deprecated alternate syntax that separates class and
-constructor arguments; the above could be written as ``raise NameError,
-'HiThere'``.  Since it once was the only one available, the latter form is
-prevalent in older code.
+The sole argument to :keyword:`raise` indicates the exception to be raised.
+This must be either an exception instance or an exception class (a class that
+derives from :class:`Exception`).
 
 If you need to determine whether an exception was raised but don't intend to
 handle it, a simpler form of the :keyword:`raise` statement allows you to
