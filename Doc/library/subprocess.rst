@@ -1,4 +1,3 @@
-
 :mod:`subprocess` --- Subprocess management
 ===========================================
 
@@ -121,9 +120,10 @@ This module defines one class called :class:`Popen`:
 
    .. note::
 
-      This feature is only available if Python is built with universal newline support
-      (the default).  Also, the newlines attribute of the file objects :attr:`stdout`,
-      :attr:`stdin` and :attr:`stderr` are not updated by the :meth:`communicate` method.
+      This feature is only available if Python is built with universal newline
+      support (the default).  Also, the newlines attribute of the file objects
+      :attr:`stdout`, :attr:`stdin` and :attr:`stderr` are not updated by the
+      :meth:`communicate` method.
 
    The *startupinfo* and *creationflags*, if given, will be passed to the
    underlying CreateProcess() function.  They can specify things such as appearance

@@ -480,7 +480,7 @@ class Marshaller:
     # by the way, if you don't understand what's going on in here,
     # that's perfectly ok.
 
-    def __init__(self, encoding=None, allow_none=0):
+    def __init__(self, encoding=None, allow_none=False):
         self.memo = {}
         self.data = None
         self.encoding = encoding
@@ -653,7 +653,7 @@ class Unmarshaller:
     # and again, if you don't understand what's going on in here,
     # that's perfectly ok.
 
-    def __init__(self, use_datetime=0):
+    def __init__(self, use_datetime=False):
         self._type = None
         self._stack = []
         self._marks = []
@@ -886,7 +886,7 @@ FastMarshaller = FastParser = FastUnmarshaller = None
 #
 # return A (parser, unmarshaller) tuple.
 
-def getparser(use_datetime=0):
+def getparser(use_datetime=False):
     """getparser() -> parser, unmarshaller
 
     Create an instance of the fastest available parser, and attach it
@@ -923,7 +923,7 @@ def getparser(use_datetime=0):
 # @return A string containing marshalled data.
 
 def dumps(params, methodname=None, methodresponse=None, encoding=None,
-          allow_none=0):
+          allow_none=False):
     """data [,options] -> marshalled data
 
     Convert an argument tuple or a Fault instance to an XML-RPC
@@ -999,7 +999,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
 #     (None if not present).
 # @see Fault
 
-def loads(data, use_datetime=0):
+def loads(data, use_datetime=False):
     """data -> unmarshalled data, method name
 
     Convert an XML-RPC packet to unmarshalled data plus a method
@@ -1040,7 +1040,7 @@ class Transport:
     # client identifier (may be overridden)
     user_agent = "xmlrpclib.py/%s (by www.pythonware.com)" % __version__
 
-    def __init__(self, use_datetime=0):
+    def __init__(self, use_datetime=False):
         self._use_datetime = use_datetime
 
     ##
@@ -1052,7 +1052,7 @@ class Transport:
     # @param verbose Debugging flag.
     # @return Parsed response.
 
-    def request(self, host, handler, request_body, verbose=0):
+    def request(self, host, handler, request_body, verbose=False):
         # issue XML-RPC request
 
         http_conn = self.send_request(host, handler, request_body, verbose)
@@ -1234,8 +1234,8 @@ class ServerProxy:
     the given encoding.
     """
 
-    def __init__(self, uri, transport=None, encoding=None, verbose=0,
-                 allow_none=0, use_datetime=0):
+    def __init__(self, uri, transport=None, encoding=None, verbose=False,
+                 allow_none=False, use_datetime=False):
         # establish a "logical" server connection
 
         # get the url

@@ -13,7 +13,7 @@ servers written in Python.  Servers can either be free standing, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
-.. class:: SimpleXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[, encoding[, bind_and_activate]]]]])
+.. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler, logRequests=True, allow_none=False, encoding=None, bind_and_activate=True)
 
    Create a new server instance.  This class provides methods for registration of
    functions that can be called by the XML-RPC protocol.  The *requestHandler*
@@ -29,7 +29,7 @@ servers written in Python.  Servers can either be free standing, using
    the *allow_reuse_address* class variable before the address is bound.
 
 
-.. class:: CGIXMLRPCRequestHandler([allow_none[, encoding]])
+.. class:: CGIXMLRPCRequestHandler(allow_none=False, encoding=None)
 
    Create a new instance to handle XML-RPC requests in a CGI environment.  The
    *allow_none* and *encoding* parameters are passed on to :mod:`xmlrpc.client`
@@ -53,7 +53,7 @@ The :class:`SimpleXMLRPCServer` class is based on
 alone XML-RPC servers.
 
 
-.. method:: SimpleXMLRPCServer.register_function(function[, name])
+.. method:: SimpleXMLRPCServer.register_function(function, name=None)
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
@@ -62,7 +62,7 @@ alone XML-RPC servers.
    the period character.
 
 
-.. method:: SimpleXMLRPCServer.register_instance(instance[, allow_dotted_names])
+.. method:: SimpleXMLRPCServer.register_instance(instance, allow_dotted_names=False)
 
    Register an object which is used to expose method names which have not been
    registered using :meth:`register_function`.  If *instance* contains a
@@ -167,7 +167,7 @@ The :class:`CGIXMLRPCRequestHandler` class can be used to  handle XML-RPC
 requests sent to Python CGI scripts.
 
 
-.. method:: CGIXMLRPCRequestHandler.register_function(function[, name])
+.. method:: CGIXMLRPCRequestHandler.register_function(function, name=None)
 
    Register a function that can respond to XML-RPC requests. If  *name* is given,
    it will be the method name associated with  function, otherwise
@@ -201,7 +201,7 @@ requests sent to Python CGI scripts.
    Register the XML-RPC multicall function ``system.multicall``.
 
 
-.. method:: CGIXMLRPCRequestHandler.handle_request([request_text = None])
+.. method:: CGIXMLRPCRequestHandler.handle_request(request_text=None)
 
    Handle a XML-RPC request. If *request_text* is given, it  should be the POST
    data provided by the HTTP server,  otherwise the contents of stdin will be used.
@@ -229,7 +229,7 @@ to HTTP GET requests.  Servers can either be free standing, using
 :class:`DocCGIXMLRPCRequestHandler`.
 
 
-.. class:: DocXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[,  encoding[, bind_and_activate]]]]])
+.. class:: DocXMLRPCServer(addr, requestHandler=DocXMLRPCRequestHandler, logRequests=True, allow_none=False, encoding=None, bind_and_activate=True)
 
    Create a new server instance. All parameters have the same meaning as for
    :class:`SimpleXMLRPCServer`; *requestHandler* defaults to

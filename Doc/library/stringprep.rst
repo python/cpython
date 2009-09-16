@@ -1,4 +1,3 @@
-
 :mod:`stringprep` --- Internet String Preparation
 =================================================
 

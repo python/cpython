@@ -1,4 +1,3 @@
-
 :mod:`unicodedata` --- Unicode Database
 =======================================
 

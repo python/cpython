@@ -201,7 +201,7 @@ class SimpleXMLRPCDispatcher:
         self.instance = instance
         self.allow_dotted_names = allow_dotted_names
 
-    def register_function(self, function, name = None):
+    def register_function(self, function, name=None):
         """Registers a function to respond to XML-RPC requests.
 
         The optional name argument can be used to set a Unicode name
@@ -578,7 +578,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         sys.stdout.buffer.write(response)
         sys.stdout.buffer.flush()
 
-    def handle_request(self, request_text = None):
+    def handle_request(self, request_text=None):
         """Handle a single XML-RPC request passed through a CGI post method.
 
         If no XML data is given then it is read from stdin. The resulting
@@ -837,7 +837,7 @@ class DocXMLRPCServer(  SimpleXMLRPCServer,
     """
 
     def __init__(self, addr, requestHandler=DocXMLRPCRequestHandler,
-                 logRequests=1, allow_none=False, encoding=None,
+                 logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=True):
         SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests,
                                     allow_none, encoding, bind_and_activate)

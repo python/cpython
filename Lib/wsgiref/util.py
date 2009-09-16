@@ -67,7 +67,7 @@ def application_uri(environ):
     url += quote(environ.get('SCRIPT_NAME') or '/')
     return url
 
-def request_uri(environ, include_query=1):
+def request_uri(environ, include_query=True):
     """Return the full request URI, optionally including the query string"""
     url = application_uri(environ)
     from urllib.parse import quote

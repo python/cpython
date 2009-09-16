@@ -268,7 +268,7 @@ class XMLFilterBase(xmlreader.XMLReader):
 
 # --- Utility functions
 
-def prepare_input_source(source, base = ""):
+def prepare_input_source(source, base=""):
     """This function takes an InputSource and an optional base URL and
     returns a fully resolved InputSource object ready for reading."""
 

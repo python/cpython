@@ -1,4 +1,3 @@
-
 :mod:`time` --- Time access and conversions
 ===========================================
 

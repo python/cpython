@@ -170,6 +170,25 @@ Assignment of an object to a single target is recursively defined as follows.
   perform the assignment, it raises an exception (usually but not necessarily
   :exc:`AttributeError`).
 
+  .. _attr-target-note:
+
+  Note: If the object is a class instance and the attribute reference occurs on
+  both sides of the assignment operator, the RHS expression, ``a.x`` can access
+  either an instance attribute or (if no instance attribute exists) a class
+  attribute.  The LHS target ``a.x`` is always set as an instance attribute,
+  creating it if necessary.  Thus, the two occurrences of ``a.x`` do not
+  necessarily refer to the same attribute: if the RHS expression refers to a
+  class attribute, the LHS creates a new instance attribute as the target of the
+  assignment::
+
+     class Cls:
+         x = 3             # class variable
+     inst = Cls()
+     inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
+
+  This description does not necessarily apply to descriptor attributes, such as
+  properties created with :func:`property`.
+
   .. index::
      pair: subscription; assignment
      object: mutable
@@ -276,16 +295,8 @@ same way as normal assignments. Similarly, with the exception of the possible
 *in-place* behavior, the binary operation performed by augmented assignment is
 the same as the normal binary operations.
 
-For targets which are attribute references, the initial value is retrieved with
-a :meth:`getattr` and the result is assigned with a :meth:`setattr`.  Notice
-that the two methods do not necessarily refer to the same variable.  When
-:meth:`getattr` refers to a class variable, :meth:`setattr` still writes to an
-instance variable. For example::
-
-   class A:
-       x = 3    # class variable
-   a = A()
-   a.x += 1     # writes a.x as 4 leaving A.x as 3
+For targets which are attribute references, the same :ref:`caveat about class
+and instance attributes <attr-target-note>` applies as for regular assignments.
 
 
 .. _assert:

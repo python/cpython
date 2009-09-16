@@ -70,11 +70,11 @@ def print_tb(tb, limit=None, file=None):
         tb = tb.tb_next
         n = n+1
 
-def format_tb(tb, limit = None):
+def format_tb(tb, limit=None):
     """A shorthand for 'format_list(extract_stack(f, limit))."""
     return format_list(extract_tb(tb, limit))
 
-def extract_tb(tb, limit = None):
+def extract_tb(tb, limit=None):
     """Return list of up to limit pre-processed entries from traceback.
 
     This is useful for alternate formatting of stack traces.  If
@@ -304,7 +304,7 @@ def format_stack(f=None, limit=None):
             f = sys.exc_info()[2].tb_frame.f_back
     return format_list(extract_stack(f, limit))
 
-def extract_stack(f=None, limit = None):
+def extract_stack(f=None, limit=None):
     """Extract the raw traceback from the current stack frame.
 
     The return value has the same format as for extract_tb().  The

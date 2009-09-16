@@ -1,4 +1,3 @@
-
 :mod:`xml.sax.saxutils` --- SAX Utilities
 =========================================
 
@@ -13,7 +12,7 @@ that are commonly useful when creating SAX applications, either in direct use,
 or as base classes.
 
 
-.. function:: escape(data[, entities])
+.. function:: escape(data, entities={})
 
    Escape ``'&'``, ``'<'``, and ``'>'`` in a string of data.
 
@@ -23,7 +22,7 @@ or as base classes.
    ``'>'`` are always escaped, even if *entities* is provided.
 
 
-.. function:: unescape(data[, entities])
+.. function:: unescape(data, entities={})
 
    Unescape ``'&amp;'``, ``'&lt;'``, and ``'&gt;'`` in a string of data.
 
@@ -33,7 +32,7 @@ or as base classes.
    are always unescaped, even if *entities* is provided.
 
 
-.. function:: quoteattr(data[, entities])
+.. function:: quoteattr(data, entities={})
 
    Similar to :func:`escape`, but also prepares *data* to be used as an
    attribute value.  The return value is a quoted version of *data* with any
@@ -51,7 +50,7 @@ or as base classes.
    using the reference concrete syntax.
 
 
-.. class:: XMLGenerator([out[, encoding]])
+.. class:: XMLGenerator(out=None, encoding='iso-8859-1')
 
    This class implements the :class:`ContentHandler` interface by writing SAX
    events back into an XML document. In other words, using an :class:`XMLGenerator`
@@ -69,7 +68,7 @@ or as base classes.
    requests as they pass through.
 
 
-.. function:: prepare_input_source(source[, base])
+.. function:: prepare_input_source(source, base='')
 
    This function takes an input source and an optional base URL and returns a fully
    resolved :class:`InputSource` object ready for reading.  The input source can be

@@ -242,9 +242,10 @@ re-raise the exception::
 User-defined Exceptions
 =======================
 
-Programs may name their own exceptions by creating a new exception class.
-Exceptions should typically be derived from the :exc:`Exception` class, either
-directly or indirectly.  For example::
+Programs may name their own exceptions by creating a new exception class (see
+:ref:`tut-classes` for more about Python classes).  Exceptions should typically
+be derived from the :exc:`Exception` class, either directly or indirectly.  For
+example::
 
    >>> class MyError(Exception):
    ...     def __init__(self, value):

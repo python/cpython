@@ -1,4 +1,3 @@
-
 :mod:`test` --- Regression tests package for Python
 ===================================================
 
@@ -180,7 +179,7 @@ tests.
 
 
 :mod:`test.support` --- Utility functions for tests
-========================================================
+===================================================
 
 .. module:: test.support
    :synopsis: Support for Python regression tests.
@@ -247,7 +246,7 @@ The :mod:`test.support` module defines the following functions:
    tests.
 
 
-.. function:: requires(resource[, msg])
+.. function:: requires(resource, msg=None)
 
    Raises :exc:`ResourceDenied` if *resource* is not available. *msg* is the
    argument to :exc:`ResourceDenied` if it is raised. Always returns true if called
@@ -372,7 +371,7 @@ The :mod:`test.support` module defines the following functions:
 
 The :mod:`test.support` module defines the following classes:
 
-.. class:: TransientResource(exc[, **kwargs])
+.. class:: TransientResource(exc, **kwargs)
 
    Instances are a context manager that raises :exc:`ResourceDenied` if the
    specified exception type is raised.  Any keyword arguments are treated as

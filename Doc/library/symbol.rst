@@ -1,4 +1,3 @@
-
 :mod:`symbol` --- Constants used with Python parse trees
 ========================================================
 
