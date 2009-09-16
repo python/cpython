@@ -1,4 +1,3 @@
-
 :mod:`uuid` --- UUID objects according to RFC 4122
 ==================================================
 
@@ -18,7 +17,7 @@ a UUID containing the computer's network address.  :func:`uuid4` creates a
 random UUID.
 
 
-.. class:: UUID([hex[, bytes[, bytes_le[, fields[, int[, version]]]]]])
+.. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None)
 
    Create a UUID from either a string of 32 hexadecimal digits, a string of 16
    bytes as the *bytes* argument, a string of 16 bytes in little-endian order as
@@ -43,8 +42,8 @@ random UUID.
    variant and version number set according to RFC 4122, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
-:class:`UUID` instances have these read-only attributes:
 
+:class:`UUID` instances have these read-only attributes:
 
 .. attribute:: UUID.bytes
 
@@ -126,7 +125,7 @@ The :mod:`uuid` module defines the following functions:
 .. index:: single: getnode
 
 
-.. function:: uuid1([node[, clock_seq]])
+.. function:: uuid1(node=None, clock_seq=None)
 
    Generate a UUID from a host ID, sequence number, and the current time. If *node*
    is not given, :func:`getnode` is used to obtain the hardware address. If

@@ -1,4 +1,3 @@
-
 :mod:`sunau` --- Read and write Sun AU files
 ============================================
 

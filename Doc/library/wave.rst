@@ -12,7 +12,7 @@ It does not support compression/decompression, but it does support mono/stereo.
 The :mod:`wave` module defines the following function and exception:
 
 
-.. function:: open(file[, mode])
+.. function:: open(file, mode=None)
 
    If *file* is a string, open the file by that name, other treat it as a seekable
    file-like object. *mode* can be any of

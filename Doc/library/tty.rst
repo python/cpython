@@ -1,4 +1,3 @@
-
 :mod:`tty` --- Terminal control functions
 =========================================
 
@@ -17,14 +16,14 @@ Because it requires the :mod:`termios` module, it will work only on Unix.
 The :mod:`tty` module defines the following functions:
 
 
-.. function:: setraw(fd[, when])
+.. function:: setraw(fd, when=termios.TCSAFLUSH)
 
    Change the mode of the file descriptor *fd* to raw. If *when* is omitted, it
    defaults to :const:`termios.TCSAFLUSH`, and is passed to
    :func:`termios.tcsetattr`.
 
 
-.. function:: setcbreak(fd[, when])
+.. function:: setcbreak(fd, when=termios.TCSAFLUSH)
 
    Change the mode of file descriptor *fd* to cbreak. If *when* is omitted, it
    defaults to :const:`termios.TCSAFLUSH`, and is passed to

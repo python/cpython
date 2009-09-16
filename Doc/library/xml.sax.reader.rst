@@ -1,4 +1,3 @@
-
 :mod:`xml.sax.xmlreader` --- Interface for XML parsers
 ======================================================
 
@@ -48,7 +47,7 @@ a new  parser object.
    methods may return ``None``.
 
 
-.. class:: InputSource([systemId])
+.. class:: InputSource(system_id=None)
 
    Encapsulation of the information needed by the :class:`XMLReader` to read
    entities.

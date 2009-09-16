@@ -479,19 +479,19 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-   .. method:: substitute(mapping[, **kws])
+   .. method:: substitute(mapping, **kwds)
 
       Performs the template substitution, returning a new string.  *mapping* is
       any dictionary-like object with keys that match the placeholders in the
       template.  Alternatively, you can provide keyword arguments, where the
-      keywords are the placeholders.  When both *mapping* and *kws* are given
-      and there are duplicates, the placeholders from *kws* take precedence.
+      keywords are the placeholders.  When both *mapping* and *kwds* are given
+      and there are duplicates, the placeholders from *kwds* take precedence.
 
 
-   .. method:: safe_substitute(mapping[, **kws])
+   .. method:: safe_substitute(mapping, **kwds)
 
       Like :meth:`substitute`, except that if placeholders are missing from
-      *mapping* and *kws*, instead of raising a :exc:`KeyError` exception, the
+      *mapping* and *kwds*, instead of raising a :exc:`KeyError` exception, the
       original placeholder will appear in the resulting string intact.  Also,
       unlike with :meth:`substitute`, any other appearances of the ``$`` will
       simply return ``$`` instead of raising :exc:`ValueError`.

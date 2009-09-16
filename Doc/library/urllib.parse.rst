@@ -26,7 +26,7 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 
 The :mod:`urllib.parse` module defines the following functions:
 
-.. function:: urlparse(urlstring[, default_scheme[, allow_fragments]])
+.. function:: urlparse(urlstring, default_scheme='', allow_fragments=True)
 
    Parse a URL into six components, returning a 6-tuple.  This corresponds to the
    general structure of a URL: ``scheme://netloc/path;parameters?query#fragment``.
@@ -89,7 +89,7 @@ The :mod:`urllib.parse` module defines the following functions:
    object.
 
 
-.. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False)
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a
@@ -110,7 +110,7 @@ The :mod:`urllib.parse` module defines the following functions:
    dictionaries into query strings.
 
 
-.. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a list of
@@ -139,7 +139,7 @@ The :mod:`urllib.parse` module defines the following functions:
    states that these are equivalent).
 
 
-.. function:: urlsplit(urlstring[, default_scheme[, allow_fragments]])
+.. function:: urlsplit(urlstring, default_scheme='', allow_fragments=True)
 
    This is similar to :func:`urlparse`, but does not split the params from the URL.
    This should generally be used instead of :func:`urlparse` if the more recent URL
@@ -187,7 +187,7 @@ The :mod:`urllib.parse` module defines the following functions:
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url[, allow_fragments])
+.. function:: urljoin(base, url, allow_fragments=True)
 
    Construct a full ("absolute") URL by combining a "base URL" (*base*) with
    another URL (*url*).  Informally, this uses components of the base URL, in
@@ -223,7 +223,8 @@ The :mod:`urllib.parse` module defines the following functions:
    string.  If there is no fragment identifier in *url*, return *url* unmodified
    and an empty string.
 
-.. function:: quote(string[, safe[, encoding[, errors]]])
+
+.. function:: quote(string, safe='/', encoding=None, errors=None)
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
    digits, and the characters ``'_.-'`` are never quoted. By default, this
@@ -247,7 +248,7 @@ The :mod:`urllib.parse` module defines the following functions:
    Example: ``quote('/El Niño/')`` yields ``'/El%20Ni%C3%B1o/'``.
 
 
-.. function:: quote_plus(string[, safe[, encoding[, errors]]])
+.. function:: quote_plus(string, safe='', encoding=None, errors=None)
 
    Like :func:`quote`, but also replace spaces by plus signs, as required for
    quoting HTML form values when building up a query string to go into a URL.
@@ -256,7 +257,8 @@ The :mod:`urllib.parse` module defines the following functions:
 
    Example: ``quote_plus('/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 
-.. function:: quote_from_bytes(bytes[, safe])
+
+.. function:: quote_from_bytes(bytes, safe='/')
 
    Like :func:`quote`, but accepts a :class:`bytes` object rather than a
    :class:`str`, and does not perform string-to-bytes encoding.
@@ -264,7 +266,8 @@ The :mod:`urllib.parse` module defines the following functions:
    Example: ``quote_from_bytes(b'a&\xef')`` yields
    ``'a%26%EF'``.
 
-.. function:: unquote(string[, encoding[, errors]])
+
+.. function:: unquote(string, encoding='utf-8', errors='replace')
 
    Replace ``%xx`` escapes by their single-character equivalent.
    The optional *encoding* and *errors* parameters specify how to decode
@@ -280,7 +283,7 @@ The :mod:`urllib.parse` module defines the following functions:
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
 
-.. function:: unquote_plus(string[, encoding[, errors]])
+.. function:: unquote_plus(string, encoding='utf-8', errors='replace')
 
    Like :func:`unquote`, but also replace plus signs by spaces, as required for
    unquoting HTML form values.
@@ -288,6 +291,7 @@ The :mod:`urllib.parse` module defines the following functions:
    *string* must be a :class:`str`.
 
    Example: ``unquote_plus('/El+Ni%C3%B1o/')`` yields ``'/El Niño/'``.
+
 
 .. function:: unquote_to_bytes(string)
 
@@ -303,7 +307,7 @@ The :mod:`urllib.parse` module defines the following functions:
    ``b'a&\xef'``.
 
 
-.. function:: urlencode(query[, doseq])
+.. function:: urlencode(query, doseq=False)
 
    Convert a mapping object or a sequence of two-element tuples  to a "url-encoded"
    string, suitable to pass to :func:`urlopen` above as the optional *data*

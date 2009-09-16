@@ -1,4 +1,3 @@
-
 :mod:`token` --- Constants used with Python parse trees
 =======================================================
 

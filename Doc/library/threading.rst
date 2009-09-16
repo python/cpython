@@ -89,7 +89,7 @@ This module defines the following functions and objects:
    thread must release it once for each time it has acquired it.
 
 
-.. function:: Semaphore([value])
+.. function:: Semaphore(value=1)
    :noindex:
 
    A factory function that returns a new semaphore object.  A semaphore manages a
@@ -99,7 +99,7 @@ This module defines the following functions and objects:
    given, *value* defaults to 1.
 
 
-.. function:: BoundedSemaphore([value])
+.. function:: BoundedSemaphore(value=1)
 
    A factory function that returns a new bounded semaphore object.  A bounded
    semaphore checks to make sure its current value doesn't exceed its initial
@@ -253,7 +253,7 @@ impossible to detect the termination of alien threads.
       the *target* argument, if any, with sequential and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
-   .. method:: join([timeout])
+   .. method:: join(timeout=None)
 
       Wait until the thread terminates. This blocks the calling thread until the
       thread whose :meth:`join` method is called terminates -- either normally
@@ -349,7 +349,7 @@ and may vary across implementations.
 All methods are executed atomically.
 
 
-.. method:: Lock.acquire([blocking=1])
+.. method:: Lock.acquire(blocking=True)
 
    Acquire a lock, blocking or non-blocking.
 
@@ -396,7 +396,7 @@ pair) resets the lock to unlocked and allows another thread blocked in
 :meth:`acquire` to proceed.
 
 
-.. method:: RLock.acquire([blocking=1])
+.. method:: RLock.acquire(blocking=True)
 
    Acquire a lock, blocking or non-blocking.
 
@@ -487,7 +487,7 @@ in a typical producer-consumer situation, adding one item to the buffer only
 needs to wake up one consumer thread.
 
 
-.. class:: Condition([lock])
+.. class:: Condition(lock=None)
 
    If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
    or :class:`RLock` object, and it is used as the underlying lock.  Otherwise,
@@ -503,7 +503,7 @@ needs to wake up one consumer thread.
       Release the underlying lock. This method calls the corresponding method on
       the underlying lock; there is no return value.
 
-   .. method:: wait([timeout])
+   .. method:: wait(timeout=None)
 
       Wait until notified or until a timeout occurs. If the calling thread has
       not acquired the lock when this method is called, a :exc:`RuntimeError` is
@@ -566,13 +566,13 @@ can never go below zero; when :meth:`acquire` finds that it is zero, it blocks,
 waiting until some other thread calls :meth:`release`.
 
 
-.. class:: Semaphore([value])
+.. class:: Semaphore(value=1)
 
    The optional argument gives the initial *value* for the internal counter; it
    defaults to ``1``. If the *value* given is less than 0, :exc:`ValueError` is
    raised.
 
-   .. method:: acquire([blocking])
+   .. method:: acquire(blocking=True)
 
       Acquire a semaphore.
 
@@ -659,7 +659,7 @@ An event object manages an internal flag that can be set to true with the
       :meth:`wait` will block until :meth:`.set` is called to set the internal
       flag to true again.
 
-   .. method:: wait([timeout])
+   .. method:: wait(timeout=None)
 
       Block until the internal flag is true.  If the internal flag is true on
       entry, return immediately.  Otherwise, block until another thread calls

@@ -1,4 +1,3 @@
-
 :mod:`telnetlib` --- Telnet client
 ==================================
 
@@ -23,7 +22,7 @@ SE (Subnegotiation End), NOP (No Operation), DM (Data Mark), BRK (Break), IP
 Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
 
 
-.. class:: Telnet([host[, port[, timeout]]])
+.. class:: Telnet(host=None, port=0[, timeout])
 
    :class:`Telnet` represents a connection to a Telnet server. The instance is
    initially not connected by default; the :meth:`open` method must be used to
@@ -60,7 +59,7 @@ Telnet Objects
 :class:`Telnet` instances have the following methods:
 
 
-.. method:: Telnet.read_until(expected[, timeout])
+.. method:: Telnet.read_until(expected, timeout=None)
 
    Read until a given byte string, *expected*, is encountered or until *timeout*
    seconds have passed.
@@ -123,7 +122,7 @@ Telnet Objects
    This method never blocks.
 
 
-.. method:: Telnet.open(host[, port[, timeout]])
+.. method:: Telnet.open(host, port=0[, timeout])
 
    Connect to a host. The optional second argument is the port number, which
    defaults to the standard Telnet port (23). The optional *timeout* parameter
@@ -133,7 +132,7 @@ Telnet Objects
    Do not try to reopen an already connected instance.
 
 
-.. method:: Telnet.msg(msg[, *args])
+.. method:: Telnet.msg(msg, *args)
 
    Print a debug message when the debug level is ``>`` 0. If extra arguments are
    present, they are substituted in the message using the standard string
@@ -178,7 +177,7 @@ Telnet Objects
    Multithreaded version of :meth:`interact`.
 
 
-.. method:: Telnet.expect(list[, timeout])
+.. method:: Telnet.expect(list, timeout=None)
 
    Read until one from a list of a regular expressions matches.
 
