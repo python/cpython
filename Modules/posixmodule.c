@@ -3603,11 +3603,21 @@ Return 0 to child process and PID of child to parent process.");
 static PyObject *
 posix_fork1(PyObject *self, PyObject *noargs)
 {
-	pid_t pid = fork1();
+	pid_t pid;
+	int result;
+	_PyImport_AcquireLock();
+	pid = fork1();
+	result = _PyImport_ReleaseLock();
 	if (pid == -1)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
+	if (result < 0) {
+		/* Don't clobber the OSError if the fork failed. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"not holding the import lock");
+		return NULL;
+	}
 	return PyLong_FromPid(pid);
 }
 #endif
@@ -3622,11 +3632,21 @@ Return 0 to child process and PID of child to parent process.");
 static PyObject *
 posix_fork(PyObject *self, PyObject *noargs)
 {
-	pid_t pid = fork();
+	pid_t pid;
+	int result;
+	_PyImport_AcquireLock();
+	pid = fork();
+	result = _PyImport_ReleaseLock();
 	if (pid == -1)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
+	if (result < 0) {
+		/* Don't clobber the OSError if the fork failed. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"not holding the import lock");
+		return NULL;
+	}
 	return PyLong_FromPid(pid);
 }
 #endif
@@ -3729,14 +3749,22 @@ To both, return fd of newly opened pseudo-terminal.\n");
 static PyObject *
 posix_forkpty(PyObject *self, PyObject *noargs)
 {
-	int master_fd = -1;
+	int master_fd = -1, result;
 	pid_t pid;
 
+	_PyImport_AcquireLock();
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
+	result = _PyImport_ReleaseLock();
 	if (pid == -1)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
+	if (result < 0) {
+		/* Don't clobber the OSError if the fork failed. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"not holding the import lock");
+		return NULL;
+	}
 	return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif
