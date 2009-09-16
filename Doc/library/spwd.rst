@@ -1,4 +1,3 @@
-
 :mod:`spwd` --- The shadow password database
 ============================================
 
@@ -48,7 +47,7 @@ below, see ``<shadow.h>``):
 The sp_nam and sp_pwd items are strings, all others are integers.
 :exc:`KeyError` is raised if the entry asked for cannot be found.
 
-It defines the following items:
+The following functions are defined:
 
 
 .. function:: getspnam(name)

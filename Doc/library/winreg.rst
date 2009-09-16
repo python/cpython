@@ -183,7 +183,7 @@ This module offers the following functions:
    :const:`HKEY_LOCAL_MACHINE` tree. This may or may not be true.
 
 
-.. function:: OpenKey(key, sub_key[, res=0][, sam=KEY_READ])
+.. function:: OpenKey(key, sub_key, res=0, sam=KEY_READ)
 
    Opens the specified key, returning a :dfn:`handle object`
 
@@ -195,7 +195,7 @@ This module offers the following functions:
    *res* is a reserved integer, and must be zero.  The default is zero.
 
    *sam* is an integer that specifies an access mask that describes  the desired
-   security access for the key.  Default is :const:`KEY_READ`
+   security access for the key.  Default is :const:`KEY_READ`.
 
    The result is a new handle to the specified key.
 

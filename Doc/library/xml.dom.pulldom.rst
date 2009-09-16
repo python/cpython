@@ -1,4 +1,3 @@
-
 :mod:`xml.dom.pulldom` --- Support for building partial DOM trees
 =================================================================
 
@@ -11,7 +10,7 @@
 Object Model representation of a document from SAX events.
 
 
-.. class:: PullDOM([documentFactory])
+.. class:: PullDOM(documentFactory=None)
 
    :class:`xml.sax.handler.ContentHandler` implementation that ...
 
@@ -21,17 +20,17 @@ Object Model representation of a document from SAX events.
    ...
 
 
-.. class:: SAX2DOM([documentFactory])
+.. class:: SAX2DOM(documentFactory=None)
 
    :class:`xml.sax.handler.ContentHandler` implementation that ...
 
 
-.. function:: parse(stream_or_string[, parser[, bufsize]])
+.. function:: parse(stream_or_string, parser=None, bufsize=None)
 
    ...
 
 
-.. function:: parseString(string[, parser])
+.. function:: parseString(string, parser=None)
 
    ...
 

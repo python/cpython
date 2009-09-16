@@ -1,4 +1,3 @@
-
 :mod:`termios` --- POSIX style tty control
 ==========================================
 
@@ -80,10 +79,10 @@ The module defines the following functions:
       Convenience functions for common terminal control operations.
 
 
+.. _termios-example:
+
 Example
 -------
-
-.. _termios-example:
 
 Here's a function that prompts for a password with echoing turned off.  Note the
 technique using a separate :func:`tcgetattr` call and a :keyword:`try` ...

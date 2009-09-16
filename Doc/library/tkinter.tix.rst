@@ -45,7 +45,7 @@ Using Tix
 ---------
 
 
-.. class:: Tix(screenName[, baseName[, className]])
+.. class:: Tk(screenName=None, baseName=None, className='Tix')
 
    Toplevel widget of Tix which represents mostly the main window of an
    application. It has an associated Tcl interpreter.

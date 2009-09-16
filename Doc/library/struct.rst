@@ -1,6 +1,5 @@
-
 :mod:`struct` --- Interpret bytes as packed binary data
-=========================================================
+=======================================================
 
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
@@ -46,7 +45,7 @@ The module defines the following exception and functions:
    (``len(bytes)`` must equal ``calcsize(fmt)``).
 
 
-.. function:: unpack_from(fmt, buffer[,offset=0])
+.. function:: unpack_from(fmt, buffer, offset=0)
 
    Unpack the *buffer* according to the given format. The result is a tuple even
    if it contains exactly one item. The *buffer* must contain at least the amount
@@ -286,7 +285,7 @@ The :mod:`struct` module also defines the following type:
       (``len(bytes)`` must equal :attr:`self.size`).
 
 
-   .. method:: unpack_from(buffer[, offset=0])
+   .. method:: unpack_from(buffer, offset=0)
 
       Identical to the :func:`unpack_from` function, using the compiled format.
       (``len(buffer[offset:])`` must be at least :attr:`self.size`).

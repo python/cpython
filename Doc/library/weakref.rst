@@ -1,4 +1,3 @@
-
 :mod:`weakref` --- Weak references
 ==================================
 
@@ -92,10 +91,10 @@ Extension types can easily be made to support weak references; see
    but cannot be propagated; they are handled in exactly the same way as exceptions
    raised from an object's :meth:`__del__` method.
 
-   Weak references are :term:`hashable` if the *object* is hashable.  They will maintain
-   their hash value even after the *object* was deleted.  If :func:`hash` is called
-   the first time only after the *object* was deleted, the call will raise
-   :exc:`TypeError`.
+   Weak references are :term:`hashable` if the *object* is hashable.  They will
+   maintain their hash value even after the *object* was deleted.  If
+   :func:`hash` is called the first time only after the *object* was deleted,
+   the call will raise :exc:`TypeError`.
 
    Weak references support tests for equality, but not ordering.  If the referents
    are still alive, two references have the same equality relationship as their

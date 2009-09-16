@@ -1,5 +1,3 @@
-.. _tarfile-mod:
-
 :mod:`tarfile` --- Read and write tar archive files
 ===================================================
 

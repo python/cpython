@@ -1,4 +1,3 @@
-
 :mod:`xml.sax.handler` --- Base classes for SAX handlers
 ========================================================
 

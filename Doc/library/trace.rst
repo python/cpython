@@ -1,4 +1,3 @@
-
 :mod:`trace` --- Trace or track Python statement execution
 ==========================================================
 
@@ -80,7 +79,7 @@ Programming Interface
 ---------------------
 
 
-.. class:: Trace([count=1[, trace=1[, countfuncs=0[, countcallers=0[, ignoremods=()[, ignoredirs=()[, infile=None[, outfile=None[, timing=False]]]]]]]]])
+.. class:: Trace(count=1, trace=1, countfuncs=0, countcallers=0, ignoremods=(), ignoredirs=(), infile=None, outfile=None, timing=False)
 
    Create an object to trace execution of a single statement or expression. All
    parameters are optional.  *count* enables counting of line numbers. *trace*
@@ -98,7 +97,7 @@ Programming Interface
    Run *cmd* under control of the Trace object with the current tracing parameters.
 
 
-.. method:: Trace.runctx(cmd[, globals=None[, locals=None]])
+.. method:: Trace.runctx(cmd, globals=None, locals=None)
 
    Run *cmd* under control of the Trace object with the current tracing parameters
    in the defined global and local environments.  If not defined, *globals* and

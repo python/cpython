@@ -1,4 +1,3 @@
-
 :mod:`textwrap` --- Text wrapping and filling
 =============================================
 
@@ -15,16 +14,17 @@ or two  text strings, the convenience functions should be good enough;
 otherwise,  you should use an instance of :class:`TextWrapper` for efficiency.
 
 
-.. function:: wrap(text[, width[, ...]])
+.. function:: wrap(text, width=70, **kwargs)
 
-   Wraps the single paragraph in *text* (a string) so every line is at most *width*
-   characters long.  Returns a list of output lines, without final newlines.
+   Wraps the single paragraph in *text* (a string) so every line is at most
+   *width* characters long.  Returns a list of output lines, without final
+   newlines.
 
    Optional keyword arguments correspond to the instance attributes of
    :class:`TextWrapper`, documented below.  *width* defaults to ``70``.
 
 
-.. function:: fill(text[, width[, ...]])
+.. function:: fill(text, width=70, **kwargs)
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -70,11 +70,11 @@ indentation from strings that have unwanted whitespace to the left of the text.
           print(repr(dedent(s)))  # prints 'hello\n  world\n'
 
 
-.. class:: TextWrapper(...)
+.. class:: TextWrapper(**kwargs)
 
    The :class:`TextWrapper` constructor accepts a number of optional keyword
-   arguments.  Each argument corresponds to one instance attribute, so for example
-   ::
+   arguments.  Each keyword argument corresponds to an instance attribute, so
+   for example ::
 
       wrapper = TextWrapper(initial_indent="* ")
 
