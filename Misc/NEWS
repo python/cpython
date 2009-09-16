@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6713: Improve performance of integer -> string conversions.
+
 - Issue #1590864: Fix potential deadlock when mixing threads and fork().
 
 - Issue #6844: Do not emit DeprecationWarnings when accessing a "message"
