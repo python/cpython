@@ -43,7 +43,7 @@ class Node(xml.dom.Node):
     def __bool__(self):
         return True
 
-    def toxml(self, encoding = None):
+    def toxml(self, encoding=None):
         return self.toprettyxml("", "", encoding)
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None):

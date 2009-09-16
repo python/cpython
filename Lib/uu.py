@@ -80,7 +80,7 @@ def encode(in_file, out_file, name=None, mode=None):
     out_file.write(b' \nend\n')
 
 
-def decode(in_file, out_file=None, mode=None, quiet=0):
+def decode(in_file, out_file=None, mode=None, quiet=False):
     """Decode uuencoded file"""
     #
     # Open the input file, if needed.
