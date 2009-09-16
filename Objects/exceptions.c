@@ -300,30 +300,51 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
 static PyObject *
 BaseException_get_message(PyBaseExceptionObject *self)
 {
-	int ret;
-	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
-				"BaseException.message has been deprecated as "
-				"of Python 2.6", 1);
-	if (ret < 0)
-		return NULL;
+    PyObject *msg;
+    
+    /* if "message" is in self->dict, accessing a user-set message attribute */
+    if (self->dict &&
+        (msg = PyDict_GetItemString(self->dict, "message"))) {
+        Py_INCREF(msg);
+        return msg;
+    }
 
-	Py_INCREF(self->message);
-	return self->message;
+    if (self->message == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "message attribute was deleted");
+        return NULL;
+    }
+
+    /* accessing the deprecated "builtin" message attribute of Exception */
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "BaseException.message has been deprecated as "
+                     "of Python 2.6", 1) < 0)
+        return NULL;
+
+    Py_INCREF(self->message);
+    return self->message;
 }
 
 static int
 BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
 {
-	int ret;
-	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
-				"BaseException.message has been deprecated as "
-				"of Python 2.6", 1);
-	if (ret < 0)
-		return -1;
-	Py_INCREF(val);
-	Py_DECREF(self->message);
-	self->message = val;
-	return 0;
+    /* if val is NULL, delete the message attribute */
+    if (val == NULL) {
+        if (self->dict && PyDict_GetItemString(self->dict, "message")) {
+            if (PyDict_DelItemString(self->dict, "message") < 0)
+                return -1;
+        }
+        Py_XDECREF(self->message);
+        self->message = NULL;
+        return 0;
+    }
+    
+    /* else set it in __dict__, but may need to create the dict first */
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+        if (!self->dict)
+            return -1;
+    }
+    return PyDict_SetItemString(self->dict, "message", val);
 }
 
 static PyGetSetDef BaseException_getset[] = {

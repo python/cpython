@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6844: Do not emit DeprecationWarnings when accessing a "message"
+  attribute on exceptions that was set explicitly.
+
 - Issue #6846: Fix bug where bytearray.pop() returns negative integers.
 
 - classmethod no longer checks if its argument is callable.

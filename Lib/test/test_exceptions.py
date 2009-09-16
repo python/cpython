@@ -303,6 +303,46 @@ class ExceptionTests(unittest.TestCase):
                                                   'pickled "%r", attribute "%s"' %
                                                   (e, checkArgName))
 
+
+    def testDeprecatedMessageAttribute(self):
+        # Accessing BaseException.message and relying on its value set by
+        # BaseException.__init__ triggers a deprecation warning.
+        exc = BaseException("foo")
+        with warnings.catch_warnings(record=True) as w:
+            self.assertEquals(exc.message, "foo")
+        self.assertEquals(len(w), 1)
+        self.assertEquals(w[0].category, DeprecationWarning)
+        self.assertEquals(
+            str(w[0].message),
+            "BaseException.message has been deprecated as of Python 2.6")
+
+
+    def testRegularMessageAttribute(self):
+        # Accessing BaseException.message after explicitly setting a value
+        # for it does not trigger a deprecation warning.
+        exc = BaseException("foo")
+        exc.message = "bar"
+        with warnings.catch_warnings(record=True) as w:
+            self.assertEquals(exc.message, "bar")
+        self.assertEquals(len(w), 0)
+        # Deleting the message is supported, too.
+        del exc.message
+        with self.assertRaises(AttributeError):
+            exc.message
+
+    def testPickleMessageAttribute(self):
+        # Pickling with message attribute must work, as well.
+        e = Exception("foo")
+        f = Exception("foo")
+        f.message = "bar"
+        for p in pickle, cPickle:
+            ep = p.loads(p.dumps(e))
+            with warnings.catch_warnings():
+                ignore_message_warning()
+                self.assertEqual(ep.message, "foo")
+            fp = p.loads(p.dumps(f))
+            self.assertEqual(fp.message, "bar")
+
     def testSlicing(self):
         # Test that you can slice an exception directly instead of requiring
         # going through the 'args' attribute.
