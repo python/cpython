@@ -12,6 +12,49 @@ from test import support
 from test.test_doctest import _FakeInput
 
 
+class PdbTestInput(object):
+    """Context manager that makes testing Pdb in doctests easier."""
+
+    def __init__(self, input):
+        self.input = input
+
+    def __enter__(self):
+        self.real_stdin = sys.stdin
+        sys.stdin = _FakeInput(self.input)
+
+    def __exit__(self, *exc):
+        sys.stdin = self.real_stdin
+
+
+def test_pdb_displayhook():
+    """This tests the custom displayhook for pdb.
+
+    >>> def test_function(foo, bar):
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'foo',
+    ...     'bar',
+    ...     'for i in range(5): print(i)',
+    ...     'continue',
+    ... ]):
+    ...     test_function(1, None)
+    > <doctest test.test_pdb.test_pdb_displayhook[0]>(3)test_function()
+    -> pass
+    (Pdb) foo
+    1
+    (Pdb) bar
+    (Pdb) for i in range(5): print(i)
+    0
+    1
+    2
+    3
+    4
+    (Pdb) continue
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 
@@ -19,16 +62,12 @@ def test_pdb_skip_modules():
     ...     import string
     ...     import pdb; pdb.Pdb(skip=['stri*']).set_trace()
     ...     string.capwords('FOO')
-    >>> real_stdin = sys.stdin
-    >>> sys.stdin = _FakeInput([
-    ...    'step',
-    ...    'continue',
-    ...    ])
 
-    >>> try:
+    >>> with PdbTestInput([
+    ...     'step',
+    ...     'continue',
+    ... ]):
     ...     skip_module()
-    ... finally:
-    ...     sys.stdin = real_stdin
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()
     -> string.capwords('FOO')
     (Pdb) step
@@ -36,7 +75,7 @@ def test_pdb_skip_modules():
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
     (Pdb) continue
-"""
+    """
 
 
 # Module for testing skipping of module that makes a callback
@@ -50,22 +89,19 @@ def test_pdb_skip_modules_with_callback():
     >>> def skip_module():
     ...     def callback():
     ...         return None
-    ...     import pdb;pdb.Pdb(skip=['module_to_skip*']).set_trace()
+    ...     import pdb; pdb.Pdb(skip=['module_to_skip*']).set_trace()
     ...     mod.foo_pony(callback)
-    >>> real_stdin = sys.stdin
-    >>> sys.stdin = _FakeInput([
-    ...    'step',
-    ...    'step',
-    ...    'step',
-    ...    'step',
-    ...    'step',
-    ...    'continue',
-    ...    ])
 
-    >>> try:
+    >>> with PdbTestInput([
+    ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'continue',
+    ... ]):
     ...     skip_module()
-    ... finally:
-    ...     sys.stdin = real_stdin
+    ...     pass  # provides something to "step" to
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()
     -> mod.foo_pony(callback)
     (Pdb) step
@@ -84,10 +120,10 @@ def test_pdb_skip_modules_with_callback():
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()->None
     -> mod.foo_pony(callback)
     (Pdb) step
-    > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[3]>(4)<module>()
-    -> sys.stdin = real_stdin
+    > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[1]>(10)<module>()
+    -> pass  # provides something to "step" to
     (Pdb) continue
-"""
+    """
 
 
 def test_main():
