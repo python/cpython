@@ -2207,7 +2207,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         if (unicode_decode_call_errorhandler(
                 errors, &errorHandler,
                 "utf32", errmsg,
-                starts, size, &startinpos, &endinpos, &exc, &s,
+                starts, size, &startinpos, &endinpos, &exc, (const char **)&q,
                 &unicode, &outpos, &p))
             goto onError;
     }
