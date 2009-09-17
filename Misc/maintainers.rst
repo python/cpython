@@ -57,7 +57,7 @@ base64
 bdb
 binascii
 binhex
-bisect
+bisect              rhettinger
 builtins
 bz2
 calendar
@@ -87,7 +87,7 @@ decimal             facundobatista, rhettinger, mark.dickinson
 difflib
 dis
 distutils           tarek
-doctest
+doctest             tim_one (inactive)
 dummy_threading     brett.cannon
 email               barry
 encodings           lemburg, loewis
@@ -105,12 +105,12 @@ functools
 gc
 getopt
 getpass
-gettext
+gettext             loewis
 glob
 grp
 gzip
 hashlib
-heapq
+heapq               rhettinger
 hmac
 html
 http
@@ -121,7 +121,7 @@ importlib           brett.cannon
 inspect
 io                  pitrou, benjamin.peterson
 itertools           rhettinger
-json
+json                bob.ippolito (inactive)
 keyword
 lib2to3             benjamin.peterson
 linecache
@@ -156,7 +156,7 @@ platform            lemburg
 plistlib
 poplib
 posix
-pprint
+pprint              fdrake
 pstats
 pty
 pwd
@@ -186,7 +186,7 @@ sndhdr
 socket
 socketserver
 spwd
-sqlite3
+sqlite3             ghaering
 ssl                 janssen
 stat
 string
