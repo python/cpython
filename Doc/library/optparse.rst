@@ -806,31 +806,31 @@ An option's *action* determines what :mod:`optparse` does when it encounters
 this option on the command-line.  The standard option actions hard-coded into
 :mod:`optparse` are:
 
-``store``
+``'store'``
    store this option's argument (default)
 
-``store_const``
+``'store_const'``
    store a constant value
 
-``store_true``
+``'store_true'``
    store a true value
 
-``store_false``
+``'store_false'``
    store a false value
 
-``append``
+``'append'``
    append this option's argument to a list
 
-``append_const``
+``'append_const'``
    append a constant value to a list
 
-``count``
+``'count'``
    increment a counter by one
 
-``callback``
+``'callback'``
    call a specified function
 
-:attr:`help`
+``'help'``
    print a usage message including all options and the documentation for them
 
 (If you don't supply an action, the default is ``store``.  For this action, you
@@ -880,7 +880,7 @@ Most actions have several relevant option attributes which you may specify to
 guide :mod:`optparse`'s behaviour; a few have required attributes, which you
 must specify for any option using that action.
 
-* ``store`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``'store'`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
 
   The option must be followed by an argument, which is converted to a value
   according to :attr:`!type` and stored in :attr:`dest`.  If ``nargs`` > 1,
@@ -889,7 +889,7 @@ must specify for any option using that action.
   "Option types" section below.
 
   If ``choices`` is supplied (a list or tuple of strings), the type defaults to
-  ``choice``.
+  ``'choice'``.
 
   If :attr:`!type` is not supplied, it defaults to ``string``.
 
@@ -913,7 +913,7 @@ must specify for any option using that action.
      options.point = (1.0, -3.5, 4.0)
      options.f = "bar.txt"
 
-* ``store_const`` [required: ``const``; relevant: :attr:`dest`]
+* ``'store_const'`` [required: ``const``; relevant: :attr:`dest`]
 
   The value ``const`` is stored in :attr:`dest`.
 
@@ -930,11 +930,11 @@ must specify for any option using that action.
 
      options.verbose = 2
 
-* ``store_true`` [relevant: :attr:`dest`]
+* ``'store_true'`` [relevant: :attr:`dest`]
 
   A special case of ``store_const`` that stores a true value to :attr:`dest`.
 
-* ``store_false`` [relevant: :attr:`dest`]
+* ``'store_false'`` [relevant: :attr:`dest`]
 
   Like ``store_true``, but stores a false value.
 
@@ -943,7 +943,7 @@ must specify for any option using that action.
      parser.add_option("--clobber", action="store_true", dest="clobber")
      parser.add_option("--no-clobber", action="store_false", dest="clobber")
 
-* ``append`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``'append'`` [relevant: :attr:`!type`, :attr:`dest`, ``nargs``, ``choices``]
 
   The option must be followed by an argument, which is appended to the list in
   :attr:`dest`.  If no default value for :attr:`dest` is supplied, an empty list
@@ -968,13 +968,13 @@ must specify for any option using that action.
 
      options.tracks.append(int("4"))
 
-* ``append_const`` [required: ``const``; relevant: :attr:`dest`]
+* ``'append_const'`` [required: ``const``; relevant: :attr:`dest`]
 
   Like ``store_const``, but the value ``const`` is appended to :attr:`dest`; as
   with ``append``, :attr:`dest` defaults to ``None``, and an empty list is
   automatically created the first time the option is encountered.
 
-* ``count`` [relevant: :attr:`dest`]
+* ``'count'`` [relevant: :attr:`dest`]
 
   Increment the integer stored at :attr:`dest`.  If no default value is supplied,
   :attr:`dest` is set to zero before being incremented the first time.
@@ -993,8 +993,8 @@ must specify for any option using that action.
 
      options.verbosity += 1
 
-* ``callback`` [required: ``callback``; relevant: :attr:`!type`, ``nargs``,
-  ``callback_args``, ``callback_kwargs``]
+* ``'callback'`` [required: ``callback``; relevant: :attr:`!type`, ``nargs``,
+  ``'callback_args'``, ``callback_kwargs``]
 
   Call the function specified by ``callback``, which is called as  ::
 
@@ -1002,7 +1002,7 @@ must specify for any option using that action.
 
   See section :ref:`optparse-option-callbacks` for more detail.
 
-* :attr:`help`
+* ``'help'``
 
   Prints a complete help message for all the options in the current option parser.
   The help message is constructed from the ``usage`` string passed to
@@ -1044,7 +1044,7 @@ must specify for any option using that action.
   After printing the help message, :mod:`optparse` terminates your process with
   ``sys.exit(0)``.
 
-* ``version``
+* ``'version'``
 
   Prints the version number supplied to the OptionParser to stdout and exits.  The
   version number is actually formatted and printed by the ``print_version()``
@@ -1262,10 +1262,10 @@ or with a separate call::
 
 The available conflict handlers are:
 
-   ``error`` (default)
+   ``'error'`` (default)
       assume option conflicts are a programming error and raise :exc:`OptionConflictError`
 
-   ``resolve``
+   ``'resolve'``
       resolve option conflicts intelligently (see below)
 
 
