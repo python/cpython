@@ -83,7 +83,7 @@ ctypes              theller
 curses
 datetime
 dbm
-decimal             mark,dickinson
+decimal             mark.dickinson
 difflib
 dis
 distutils           tarek
