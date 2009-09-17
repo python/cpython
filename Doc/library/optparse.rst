@@ -1207,18 +1207,27 @@ and you can also poke around your option parser and see what's there.
 OptionParser provides several methods to help you out:
 
 ``disable_interspersed_args()``
-  Set parsing to stop on the first non-option. Use this if you have a
-  command processor which runs another command which has options of
-  its own and you want to make sure these options don't get
-  confused. For example, each command might have a different
-  set of options.
+  Set parsing to stop on the first non-option.  For example, if ``"-a"`` and
+  ``"-b"`` are both simple options that take no arguments, :mod:`optparse`
+  normally accepts this syntax::
+
+     prog -a arg1 -b arg2
+
+  and treats it as equivalent to  ::
+
+     prog -a -b arg1 arg2
+
+  To disable this feature, call ``disable_interspersed_args()``.  This restores
+  traditional Unix syntax, where option parsing stops with the first non-option
+  argument.
+
+  Use this if you have a command processor which runs another command which has
+  options of its own and you want to make sure these options don't get confused.
+  For example, each command might have a different set of options.
 
 ``enable_interspersed_args()``
-  Set parsing to not stop on the first non-option, allowing
-  interspersing switches with command arguments.  For example,
-  ``"-s arg1 --long arg2"`` would return ``["arg1", "arg2"]``
-  as the command arguments and ``-s, --long`` as options.
-  This is the default behavior.
+  Set parsing to not stop on the first non-option, allowing interspersing
+  switches with command arguments.  This is the default behavior.
 
 ``get_option(opt_str)``
    Returns the Option instance with the option string ``opt_str``, or ``None`` if
@@ -1328,23 +1337,6 @@ OptionParser supports several other public methods:
   Set the usage string according to the rules described above for the ``usage``
   constructor keyword argument.  Passing ``None`` sets the default usage string;
   use ``SUPPRESS_USAGE`` to suppress a usage message.
-
-* ``enable_interspersed_args()``, ``disable_interspersed_args()``
-
-  Enable/disable positional arguments interspersed with options, similar to GNU
-  getopt (enabled by default).  For example, if ``"-a"`` and ``"-b"`` are both
-  simple options that take no arguments, :mod:`optparse` normally accepts this
-  syntax::
-
-     prog -a arg1 -b arg2
-
-  and treats it as equivalent to  ::
-
-     prog -a -b arg1 arg2
-
-  To disable this feature, call ``disable_interspersed_args()``.  This restores
-  traditional Unix syntax, where option parsing stops with the first non-option
-  argument.
 
 * ``set_defaults(dest=value, ...)``
 
