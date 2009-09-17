@@ -11,14 +11,14 @@
 .. sectionauthor:: Greg Ward <gward@python.net>
 
 
-``optparse`` is a more convenient, flexible, and powerful library for parsing
-command-line options than the old :mod:`getopt` module.  ``optparse`` uses a more declarative
-style of command-line parsing: you create an instance of :class:`OptionParser`,
-populate it with options, and parse the command line. ``optparse`` allows users
-to specify options in the conventional GNU/POSIX syntax, and additionally
-generates usage and help messages for you.
+:mod:`optparse` is a more convenient, flexible, and powerful library for parsing
+command-line options than the old :mod:`getopt` module.  :mod:`optparse` uses a
+more declarative style of command-line parsing: you create an instance of
+:class:`OptionParser`, populate it with options, and parse the command
+line. :mod:`optparse` allows users to specify options in the conventional
+GNU/POSIX syntax, and additionally generates usage and help messages for you.
 
-Here's an example of using ``optparse`` in a simple script::
+Here's an example of using :mod:`optparse` in a simple script::
 
    from optparse import OptionParser
    [...]
@@ -36,11 +36,11 @@ on the command-line, for example::
 
    <yourscript> --file=outfile -q
 
-As it parses the command line, ``optparse`` sets attributes of the ``options``
-object returned by :meth:`parse_args` based on user-supplied command-line
-values.  When :meth:`parse_args` returns from parsing this command line,
-``options.filename`` will be ``"outfile"`` and ``options.verbose`` will be
-``False``.  ``optparse`` supports both long and short options, allows short
+As it parses the command line, :mod:`optparse` sets attributes of the
+``options`` object returned by :meth:`parse_args` based on user-supplied
+command-line values.  When :meth:`parse_args` returns from parsing this command
+line, ``options.filename`` will be ``"outfile"`` and ``options.verbose`` will be
+``False``.  :mod:`optparse` supports both long and short options, allows short
 options to be merged together, and allows options to be associated with their
 arguments in a variety of ways.  Thus, the following command lines are all
 equivalent to the above example::
@@ -55,7 +55,7 @@ Additionally, users can run one of  ::
    <yourscript> -h
    <yourscript> --help
 
-and ``optparse`` will print out a brief summary of your script's options::
+and :mod:`optparse` will print out a brief summary of your script's options::
 
    usage: <yourscript> [options]
 
@@ -86,10 +86,10 @@ Terminology
 ^^^^^^^^^^^
 
 argument
-   a string entered on the command-line, and passed by the shell to ``execl()`` or
-   ``execv()``.  In Python, arguments are elements of ``sys.argv[1:]``
-   (``sys.argv[0]`` is the name of the program being executed).  Unix shells also
-   use the term "word".
+   a string entered on the command-line, and passed by the shell to ``execl()``
+   or ``execv()``.  In Python, arguments are elements of ``sys.argv[1:]``
+   (``sys.argv[0]`` is the name of the program being executed).  Unix shells
+   also use the term "word".
 
    It is occasionally desirable to substitute an argument list other than
    ``sys.argv[1:]``, so you should read "argument" as "an element of
@@ -97,14 +97,14 @@ argument
    ``sys.argv[1:]``".
 
 option
-   an argument used to supply extra information to guide or customize the execution
-   of a program.  There are many different syntaxes for options; the traditional
-   Unix syntax is a hyphen ("-") followed by a single letter, e.g. ``"-x"`` or
-   ``"-F"``.  Also, traditional Unix syntax allows multiple options to be merged
-   into a single argument, e.g.  ``"-x -F"`` is equivalent to ``"-xF"``.  The GNU
-   project introduced ``"--"`` followed by a series of hyphen-separated words, e.g.
-   ``"--file"`` or ``"--dry-run"``.  These are the only two option syntaxes
-   provided by :mod:`optparse`.
+   an argument used to supply extra information to guide or customize the
+   execution of a program.  There are many different syntaxes for options; the
+   traditional Unix syntax is a hyphen ("-") followed by a single letter,
+   e.g. ``"-x"`` or ``"-F"``.  Also, traditional Unix syntax allows multiple
+   options to be merged into a single argument, e.g.  ``"-x -F"`` is equivalent
+   to ``"-xF"``.  The GNU project introduced ``"--"`` followed by a series of
+   hyphen-separated words, e.g.  ``"--file"`` or ``"--dry-run"``.  These are the
+   only two option syntaxes provided by :mod:`optparse`.
 
    Some other option syntaxes that the world has seen include:
 
@@ -121,15 +121,16 @@ option
    * a slash followed by a letter, or a few letters, or a word, e.g. ``"/f"``,
      ``"/file"``
 
-   These option syntaxes are not supported by :mod:`optparse`, and they never will
-   be.  This is deliberate: the first three are non-standard on any environment,
-   and the last only makes sense if you're exclusively targeting VMS, MS-DOS,
-   and/or Windows.
+   These option syntaxes are not supported by :mod:`optparse`, and they never
+   will be.  This is deliberate: the first three are non-standard on any
+   environment, and the last only makes sense if you're exclusively targeting
+   VMS, MS-DOS, and/or Windows.
 
 option argument
-   an argument that follows an option, is closely associated with that option, and
-   is consumed from the argument list when that option is. With :mod:`optparse`,
-   option arguments may either be in a separate argument from their option::
+   an argument that follows an option, is closely associated with that option,
+   and is consumed from the argument list when that option is. With
+   :mod:`optparse`, option arguments may either be in a separate argument from
+   their option::
 
       -f foo
       --file foo
@@ -139,25 +140,26 @@ option argument
       -ffoo
       --file=foo
 
-   Typically, a given option either takes an argument or it doesn't. Lots of people
-   want an "optional option arguments" feature, meaning that some options will take
-   an argument if they see it, and won't if they don't.  This is somewhat
-   controversial, because it makes parsing ambiguous: if ``"-a"`` takes an optional
-   argument and ``"-b"`` is another option entirely, how do we interpret ``"-ab"``?
-   Because of this ambiguity, :mod:`optparse` does not support this feature.
+   Typically, a given option either takes an argument or it doesn't. Lots of
+   people want an "optional option arguments" feature, meaning that some options
+   will take an argument if they see it, and won't if they don't.  This is
+   somewhat controversial, because it makes parsing ambiguous: if ``"-a"`` takes
+   an optional argument and ``"-b"`` is another option entirely, how do we
+   interpret ``"-ab"``?  Because of this ambiguity, :mod:`optparse` does not
+   support this feature.
 
 positional argument
    something leftover in the argument list after options have been parsed, i.e.
-   after options and their arguments have been parsed and removed from the argument
-   list.
+   after options and their arguments have been parsed and removed from the
+   argument list.
 
 required option
    an option that must be supplied on the command-line; note that the phrase
    "required option" is self-contradictory in English.  :mod:`optparse` doesn't
-   prevent you from implementing required options, but doesn't give you much help
-   at it either.  See ``examples/required_1.py`` and ``examples/required_2.py`` in
-   the :mod:`optparse` source distribution for two ways to implement required
-   options with :mod:`optparse`.
+   prevent you from implementing required options, but doesn't give you much
+   help at it either.  See ``examples/required_1.py`` and
+   ``examples/required_2.py`` in the :mod:`optparse` source distribution for two
+   ways to implement required options with :mod:`optparse`.
 
 For example, consider this hypothetical command-line::
 
@@ -286,8 +288,9 @@ that's rarely necessary: by default it uses ``sys.argv[1:]``.)
 * ``args``, the list of positional arguments leftover after parsing options
 
 This tutorial section only covers the four most important option attributes:
-:attr:`action`, :attr:`type`, :attr:`dest` (destination), and :attr:`help`. Of
-these, :attr:`action` is the most fundamental.
+:attr:`~Option.action`, :attr:`~Option.type`, :attr:`~Option.dest`
+(destination), and :attr:`~Option.help`. Of these, :attr:`~Option.action` is the
+most fundamental.
 
 
 .. _optparse-understanding-option-actions:
@@ -298,9 +301,9 @@ Understanding option actions
 Actions tell :mod:`optparse` what to do when it encounters an option on the
 command line.  There is a fixed set of actions hard-coded into :mod:`optparse`;
 adding new actions is an advanced topic covered in section
-:ref:`optparse-extending-optparse`. Most actions tell
-:mod:`optparse` to store a value in some variable---for example, take a string
-from the command line and store it in an attribute of ``options``.
+:ref:`optparse-extending-optparse`.  Most actions tell :mod:`optparse` to store
+a value in some variable---for example, take a string from the command line and
+store it in an attribute of ``options``.
 
 If you don't specify an option action, :mod:`optparse` defaults to ``store``.
 
@@ -338,7 +341,7 @@ Also, there's no explicit action, since the default is ``store``.
 
 Let's parse another fake command-line.  This time, we'll jam the option argument
 right up against the option: since ``"-n42"`` (one argument) is equivalent to
-``"-n 42"`` (two arguments), the code  ::
+``"-n 42"`` (two arguments), the code ::
 
    (options, args) = parser.parse_args(["-n42"])
    print options.num
@@ -390,16 +393,16 @@ Other actions
 
 Some other actions supported by :mod:`optparse` are:
 
-``store_const``
+``"store_const"``
    store a constant value
 
-``append``
+``"append"``
    append this option's argument to a list
 
-``count``
+``"count"``
    increment a counter by one
 
-``callback``
+``"callback"``
    call a specified function
 
 These are covered in section :ref:`optparse-reference-guide`, Reference Guide
@@ -458,8 +461,8 @@ Generating help
 
 :mod:`optparse`'s ability to generate help and usage text automatically is
 useful for creating user-friendly command-line interfaces.  All you have to do
-is supply a :attr:`help` value for each option, and optionally a short usage
-message for your whole program.  Here's an OptionParser populated with
+is supply a :attr:`~Option.help` value for each option, and optionally a short
+usage message for your whole program.  Here's an OptionParser populated with
 user-friendly (documented) options::
 
    usage = "usage: %prog [options] arg1 arg2"
@@ -471,7 +474,7 @@ user-friendly (documented) options::
                      action="store_false", dest="verbose",
                      help="be vewwy quiet (I'm hunting wabbits)")
    parser.add_option("-f", "--filename",
-                     metavar="FILE", help="write output to FILE"),
+                     metavar="FILE", help="write output to FILE")
    parser.add_option("-m", "--mode",
                      default="intermediate",
                      help="interaction mode: novice, intermediate, "
@@ -503,12 +506,12 @@ help message:
      usage = "usage: %prog [options] arg1 arg2"
 
   :mod:`optparse` expands ``"%prog"`` in the usage string to the name of the
-  current program, i.e. ``os.path.basename(sys.argv[0])``.  The expanded string is
-  then printed before the detailed option help.
+  current program, i.e. ``os.path.basename(sys.argv[0])``.  The expanded string
+  is then printed before the detailed option help.
 
   If you don't supply a usage string, :mod:`optparse` uses a bland but sensible
-  default: ``"usage: %prog [options]"``, which is fine if your script doesn't take
-  any positional arguments.
+  default: ``"usage: %prog [options]"``, which is fine if your script doesn't
+  take any positional arguments.
 
 * every option defines a help string, and doesn't worry about line-wrapping---
   :mod:`optparse` takes care of wrapping lines and making the help output look
@@ -522,17 +525,17 @@ help message:
   Here, "MODE" is called the meta-variable: it stands for the argument that the
   user is expected to supply to :option:`-m`/:option:`--mode`.  By default,
   :mod:`optparse` converts the destination variable name to uppercase and uses
-  that for the meta-variable.  Sometimes, that's not what you want---for example,
-  the :option:`--filename` option explicitly sets ``metavar="FILE"``, resulting in
-  this automatically-generated option description::
+  that for the meta-variable.  Sometimes, that's not what you want---for
+  example, the :option:`--filename` option explicitly sets ``metavar="FILE"``,
+  resulting in this automatically-generated option description::
 
      -f FILE, --filename=FILE
 
-  This is important for more than just saving space, though: the manually written
-  help text uses the meta-variable "FILE" to clue the user in that there's a
-  connection between the semi-formal syntax "-f FILE" and the informal semantic
-  description "write output to FILE". This is a simple but effective way to make
-  your help text a lot clearer and more useful for end users.
+  This is important for more than just saving space, though: the manually
+  written help text uses the meta-variable "FILE" to clue the user in that
+  there's a connection between the semi-formal syntax "-f FILE" and the informal
+  semantic description "write output to FILE". This is a simple but effective
+  way to make your help text a lot clearer and more useful for end users.
 
 .. versionadded:: 2.4
    Options that have a default value can include ``%default`` in the help
@@ -540,12 +543,12 @@ help message:
    default value.  If an option has no default value (or the default value is
    ``None``), ``%default`` expands to ``none``.
 
-When dealing with many options, it is convenient to group these
-options for better help output.  An :class:`OptionParser` can contain
-several option groups, each of which can contain several options.
+When dealing with many options, it is convenient to group these options for
+better help output.  An :class:`OptionParser` can contain several option groups,
+each of which can contain several options.
 
-Continuing with the parser defined above, adding an
-:class:`OptionGroup` to a parser is easy::
+Continuing with the parser defined above, adding an :class:`OptionGroup` to a
+parser is easy::
 
     group = OptionGroup(parser, "Dangerous Options",
                         "Caution: use these options at your own risk.  "
@@ -600,17 +603,17 @@ How :mod:`optparse` handles errors
 
 There are two broad classes of errors that :mod:`optparse` has to worry about:
 programmer errors and user errors.  Programmer errors are usually erroneous
-calls to ``parser.add_option()``, e.g. invalid option strings, unknown option
-attributes, missing option attributes, etc.  These are dealt with in the usual
-way: raise an exception (either ``optparse.OptionError`` or :exc:`TypeError`) and
-let the program crash.
+calls to :func:`OptionParser.add_option`, e.g. invalid option strings, unknown
+option attributes, missing option attributes, etc.  These are dealt with in the
+usual way: raise an exception (either :exc:`optparse.OptionError` or
+:exc:`TypeError`) and let the program crash.
 
 Handling user errors is much more important, since they are guaranteed to happen
 no matter how stable your code is.  :mod:`optparse` can automatically detect
 some user errors, such as bad option arguments (passing ``"-n 4x"`` where
 :option:`-n` takes an integer argument), missing arguments (``"-n"`` at the end
 of the command line, where :option:`-n` takes an argument of any type).  Also,
-you can call ``parser.error()`` to signal an application-defined error
+you can call :func:`OptionParser.error` to signal an application-defined error
 condition::
 
    (options, args) = parser.parse_args()
@@ -639,7 +642,7 @@ Or, where the user fails to pass a value at all::
 
 :mod:`optparse`\ -generated error messages take care always to mention the
 option involved in the error; be sure to do the same when calling
-``parser.error()`` from your application code.
+:func:`OptionParser.error` from your application code.
 
 If :mod:`optparse`'s default error-handling behaviour does not suit your needs,
 you'll need to subclass OptionParser and override its :meth:`exit` and/or
@@ -687,49 +690,51 @@ Reference Guide
 Creating the parser
 ^^^^^^^^^^^^^^^^^^^
 
-The first step in using :mod:`optparse` is to create an OptionParser instance::
+The first step in using :mod:`optparse` is to create an OptionParser instance.
 
-   parser = OptionParser(...)
+.. class:: OptionParser(...)
 
-The OptionParser constructor has no required arguments, but a number of optional
-keyword arguments.  You should always pass them as keyword arguments, i.e. do
-not rely on the order in which the arguments are declared.
+   The OptionParser constructor has no required arguments, but a number of
+   optional keyword arguments.  You should always pass them as keyword
+   arguments, i.e. do not rely on the order in which the arguments are declared.
 
    ``usage`` (default: ``"%prog [options]"``)
-      The usage summary to print when your program is run incorrectly or with a help
-      option.  When :mod:`optparse` prints the usage string, it expands ``%prog`` to
-      ``os.path.basename(sys.argv[0])`` (or to ``prog`` if you passed that keyword
-      argument).  To suppress a usage message, pass the special value
-      ``optparse.SUPPRESS_USAGE``.
+      The usage summary to print when your program is run incorrectly or with a
+      help option.  When :mod:`optparse` prints the usage string, it expands
+      ``%prog`` to ``os.path.basename(sys.argv[0])`` (or to ``prog`` if you
+      passed that keyword argument).  To suppress a usage message, pass the
+      special value :data:`optparse.SUPPRESS_USAGE`.
 
    ``option_list`` (default: ``[]``)
       A list of Option objects to populate the parser with.  The options in
-      ``option_list`` are added after any options in ``standard_option_list`` (a class
-      attribute that may be set by OptionParser subclasses), but before any version or
-      help options. Deprecated; use :meth:`add_option` after creating the parser
-      instead.
+      ``option_list`` are added after any options in ``standard_option_list`` (a
+      class attribute that may be set by OptionParser subclasses), but before
+      any version or help options. Deprecated; use :meth:`add_option` after
+      creating the parser instead.
 
    ``option_class`` (default: optparse.Option)
       Class to use when adding options to the parser in :meth:`add_option`.
 
    ``version`` (default: ``None``)
-      A version string to print when the user supplies a version option. If you supply
-      a true value for ``version``, :mod:`optparse` automatically adds a version
-      option with the single option string ``"--version"``.  The substring ``"%prog"``
-      is expanded the same as for ``usage``.
+      A version string to print when the user supplies a version option. If you
+      supply a true value for ``version``, :mod:`optparse` automatically adds a
+      version option with the single option string ``"--version"``.  The
+      substring ``"%prog"`` is expanded the same as for ``usage``.
 
    ``conflict_handler`` (default: ``"error"``)
-      Specifies what to do when options with conflicting option strings are added to
-      the parser; see section :ref:`optparse-conflicts-between-options`.
+      Specifies what to do when options with conflicting option strings are
+      added to the parser; see section
+      :ref:`optparse-conflicts-between-options`.
 
    ``description`` (default: ``None``)
-      A paragraph of text giving a brief overview of your program.  :mod:`optparse`
-      reformats this paragraph to fit the current terminal width and prints it when
-      the user requests help (after ``usage``, but before the list of options).
+      A paragraph of text giving a brief overview of your program.
+      :mod:`optparse` reformats this paragraph to fit the current terminal width
+      and prints it when the user requests help (after ``usage``, but before the
+      list of options).
 
-   ``formatter`` (default: a new IndentedHelpFormatter)
-      An instance of optparse.HelpFormatter that will be used for printing help text.
-      :mod:`optparse` provides two concrete classes for this purpose:
+   ``formatter`` (default: a new :class:`IndentedHelpFormatter`)
+      An instance of optparse.HelpFormatter that will be used for printing help
+      text.  :mod:`optparse` provides two concrete classes for this purpose:
       IndentedHelpFormatter and TitledHelpFormatter.
 
    ``add_help_option`` (default: ``True``)
@@ -748,14 +753,14 @@ Populating the parser
 ^^^^^^^^^^^^^^^^^^^^^
 
 There are several ways to populate the parser with options.  The preferred way
-is by using ``OptionParser.add_option()``, as shown in section
+is by using :meth:`OptionParser.add_option`, as shown in section
 :ref:`optparse-tutorial`.  :meth:`add_option` can be called in one of two ways:
 
 * pass it an Option instance (as returned by :func:`make_option`)
 
 * pass it any combination of positional and keyword arguments that are
-  acceptable to :func:`make_option` (i.e., to the Option constructor), and it will
-  create the Option instance for you
+  acceptable to :func:`make_option` (i.e., to the Option constructor), and it
+  will create the Option instance for you
 
 The other alternative is to pass a list of pre-constructed Option instances to
 the OptionParser constructor, as in::
@@ -783,66 +788,67 @@ Each Option instance represents a set of synonymous command-line option strings,
 e.g. :option:`-f` and :option:`--file`.  You can specify any number of short or
 long option strings, but you must specify at least one overall option string.
 
-The canonical way to create an Option instance is with the :meth:`add_option`
-method of :class:`OptionParser`::
+The canonical way to create an :class:`Option` instance is with the
+:meth:`add_option` method of :class:`OptionParser`.
 
-   parser.add_option(opt_str[, ...], attr=value, ...)
+.. method:: OptionParser.add_option(opt_str[, ...], attr=value, ...)
 
-To define an option with only a short option string::
+   To define an option with only a short option string::
 
-   parser.add_option("-f", attr=value, ...)
+      parser.add_option("-f", attr=value, ...)
 
-And to define an option with only a long option string::
+   And to define an option with only a long option string::
 
-   parser.add_option("--foo", attr=value, ...)
+      parser.add_option("--foo", attr=value, ...)
 
-The keyword arguments define attributes of the new Option object.  The most
-important option attribute is :attr:`action`, and it largely determines which
-other attributes are relevant or required.  If you pass irrelevant option
-attributes, or fail to pass required ones, :mod:`optparse` raises an
-:exc:`OptionError` exception explaining your mistake.
+   The keyword arguments define attributes of the new Option object.  The most
+   important option attribute is :attr:`~Option.action`, and it largely
+   determines which other attributes are relevant or required.  If you pass
+   irrelevant option attributes, or fail to pass required ones, :mod:`optparse`
+   raises an :exc:`OptionError` exception explaining your mistake.
 
-An option's *action* determines what :mod:`optparse` does when it encounters
-this option on the command-line.  The standard option actions hard-coded into
-:mod:`optparse` are:
+   An option's *action* determines what :mod:`optparse` does when it encounters
+   this option on the command-line.  The standard option actions hard-coded into
+   :mod:`optparse` are:
 
-``store``
-   store this option's argument (default)
+   ``"store"``
+      store this option's argument (default)
 
-``store_const``
-   store a constant value
+   ``"store_const"``
+      store a constant value
 
-``store_true``
-   store a true value
+   ``"store_true"``
+      store a true value
 
-``store_false``
-   store a false value
+   ``"store_false"``
+      store a false value
 
-``append``
-   append this option's argument to a list
+   ``"append"``
+      append this option's argument to a list
 
-``append_const``
-   append a constant value to a list
+   ``"append_const"``
+      append a constant value to a list
 
-``count``
-   increment a counter by one
+   ``"count"``
+      increment a counter by one
 
-``callback``
-   call a specified function
+   ``"callback"``
+      call a specified function
 
-:attr:`help`
-   print a usage message including all options and the documentation for them
+   ``"help"``
+      print a usage message including all options and the documentation for them
 
-(If you don't supply an action, the default is ``store``.  For this action, you
-may also supply :attr:`type` and :attr:`dest` option attributes; see below.)
+   (If you don't supply an action, the default is ``"store"``.  For this action,
+   you may also supply :attr:`~Option.type` and :attr:`~Option.dest` option
+   attributes; see :ref:`optparse-standard-option-actions`.)
 
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
-``options`` (it happens to be an instance of ``optparse.Values``).  Option
+``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
 arguments (and various other values) are stored as attributes of this object,
-according to the :attr:`dest` (destination) option attribute.
+according to the :attr:`~Option.dest` (destination) option attribute.
 
-For example, when you call  ::
+For example, when you call ::
 
    parser.parse_args()
 
@@ -850,7 +856,7 @@ one of the first things :mod:`optparse` does is create the ``options`` object::
 
    options = Values()
 
-If one of the options in this parser is defined with  ::
+If one of the options in this parser is defined with ::
 
    parser.add_option("-f", "--file", action="store", type="string", dest="filename")
 
@@ -861,13 +867,97 @@ and the command-line being parsed includes any of the following::
    --file=foo
    --file foo
 
-then :mod:`optparse`, on seeing this option, will do the equivalent of  ::
+then :mod:`optparse`, on seeing this option, will do the equivalent of ::
 
    options.filename = "foo"
 
-The :attr:`type` and :attr:`dest` option attributes are almost as important as
-:attr:`action`, but :attr:`action` is the only one that makes sense for *all*
-options.
+The :attr:`~Option.type` and :attr:`~Option.dest` option attributes are almost
+as important as :attr:`~Option.action`, but :attr:`~Option.action` is the only
+one that makes sense for *all* options.
+
+
+.. _optparse-option-attributes:
+
+Option attributes
+^^^^^^^^^^^^^^^^^
+
+The following option attributes may be passed as keyword arguments to
+:meth:`OptionParser.add_option`.  If you pass an option attribute that is not
+relevant to a particular option, or fail to pass a required option attribute,
+:mod:`optparse` raises :exc:`OptionError`.
+
+.. attribute:: Option.action
+
+   (default: ``"store"``)
+
+   Determines :mod:`optparse`'s behaviour when this option is seen on the
+   command line; the available options are documented :ref:`here
+   <optparse-standard-option-actions>`.
+
+.. attribute:: Option.type
+
+   (default: ``"string"``)
+
+   The argument type expected by this option (e.g., ``"string"`` or ``"int"``);
+   the available option types are documented :ref:`here
+   <optparse-standard-option-types>`.
+
+.. attribute:: Option.dest
+
+   (default: derived from option strings)
+
+   If the option's action implies writing or modifying a value somewhere, this
+   tells :mod:`optparse` where to write it: :attr:`~Option.dest` names an
+   attribute of the ``options`` object that :mod:`optparse` builds as it parses
+   the command line.
+
+.. attribute:: Option.default
+
+   The value to use for this option's destination if the option is not seen on
+   the command line.  See also :meth:`OptionParser.set_defaults`.
+
+.. attribute:: Option.nargs
+
+   (default: 1)
+
+   How many arguments of type :attr:`~Option.type` should be consumed when this
+   option is seen.  If > 1, :mod:`optparse` will store a tuple of values to
+   :attr:`~Option.dest`.
+
+.. attribute:: Option.const
+
+   For actions that store a constant value, the constant value to store.
+
+.. attribute:: Option.choices
+
+   For options of type ``"choice"``, the list of strings the user may choose
+   from.
+
+.. attribute:: Option.callback
+
+   For options with action ``"callback"``, the callable to call when this option
+   is seen.  See section :ref:`optparse-option-callbacks` for detail on the
+   arguments passed to the callable.
+
+.. attribute:: Option.callback_args
+               Option.callback_kwargs
+
+   Additional positional and keyword arguments to pass to ``callback`` after the
+   four standard callback arguments.
+
+.. attribute:: Option.help
+
+   Help text to print for this option when listing all available options after
+   the user supplies a :attr:`~Option.help` option (such as ``"--help"``).  If
+   no help text is supplied, the option will be listed without help text.  To
+   hide this option, use the special value :data:`optparse.SUPPRESS_HELP`.
+
+.. attribute:: Option.metavar
+
+   (default: derived from option strings)
+
+   Stand-in for the option argument(s) to use when printing help text.  See
+   section :ref:`optparse-tutorial` for an example.
 
 
 .. _optparse-standard-option-actions:
@@ -880,42 +970,45 @@ Most actions have several relevant option attributes which you may specify to
 guide :mod:`optparse`'s behaviour; a few have required attributes, which you
 must specify for any option using that action.
 
-* ``store`` [relevant: :attr:`type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``"store"`` [relevant: :attr:`~Option.type`, :attr:`~Option.dest`,
+  :attr:`~Option.nargs`, :attr:`~Option.choices`]
 
   The option must be followed by an argument, which is converted to a value
-  according to :attr:`type` and stored in :attr:`dest`.  If ``nargs`` > 1,
-  multiple arguments will be consumed from the command line; all will be converted
-  according to :attr:`type` and stored to :attr:`dest` as a tuple.  See the
-  "Option types" section below.
+  according to :attr:`~Option.type` and stored in :attr:`~Option.dest`.  If
+  :attr:`~Option.nargs` > 1, multiple arguments will be consumed from the
+  command line; all will be converted according to :attr:`~Option.type` and
+  stored to :attr:`~Option.dest` as a tuple.  See the
+  :ref:`optparse-standard-option-types` section.
 
-  If ``choices`` is supplied (a list or tuple of strings), the type defaults to
-  ``choice``.
+  If :attr:`~Option.choices` is supplied (a list or tuple of strings), the type
+  defaults to ``"choice"``.
 
-  If :attr:`type` is not supplied, it defaults to ``string``.
+  If :attr:`~Option.type` is not supplied, it defaults to ``"string"``.
 
-  If :attr:`dest` is not supplied, :mod:`optparse` derives a destination from the
-  first long option string (e.g., ``"--foo-bar"`` implies ``foo_bar``). If there
-  are no long option strings, :mod:`optparse` derives a destination from the first
-  short option string (e.g., ``"-f"`` implies ``f``).
+  If :attr:`~Option.dest` is not supplied, :mod:`optparse` derives a destination
+  from the first long option string (e.g., ``"--foo-bar"`` implies
+  ``foo_bar``). If there are no long option strings, :mod:`optparse` derives a
+  destination from the first short option string (e.g., ``"-f"`` implies ``f``).
 
   Example::
 
      parser.add_option("-f")
      parser.add_option("-p", type="float", nargs=3, dest="point")
 
-  As it parses the command line  ::
+  As it parses the command line ::
 
      -f foo.txt -p 1 -3.5 4 -fbar.txt
 
-  :mod:`optparse` will set  ::
+  :mod:`optparse` will set ::
 
      options.f = "foo.txt"
      options.point = (1.0, -3.5, 4.0)
      options.f = "bar.txt"
 
-* ``store_const`` [required: ``const``; relevant: :attr:`dest`]
+* ``"store_const"`` [required: :attr:`~Option.const`; relevant:
+  :attr:`~Option.dest`]
 
-  The value ``const`` is stored in :attr:`dest`.
+  The value :attr:`~Option.const` is stored in :attr:`~Option.dest`.
 
   Example::
 
@@ -930,29 +1023,32 @@ must specify for any option using that action.
 
      options.verbose = 2
 
-* ``store_true`` [relevant: :attr:`dest`]
+* ``"store_true"`` [relevant: :attr:`~Option.dest`]
 
-  A special case of ``store_const`` that stores a true value to :attr:`dest`.
+  A special case of ``"store_const"`` that stores a true value to
+  :attr:`~Option.dest`.
 
-* ``store_false`` [relevant: :attr:`dest`]
+* ``"store_false"`` [relevant: :attr:`~Option.dest`]
 
-  Like ``store_true``, but stores a false value.
+  Like ``"store_true"``, but stores a false value.
 
   Example::
 
      parser.add_option("--clobber", action="store_true", dest="clobber")
      parser.add_option("--no-clobber", action="store_false", dest="clobber")
 
-* ``append`` [relevant: :attr:`type`, :attr:`dest`, ``nargs``, ``choices``]
+* ``"append"`` [relevant: :attr:`~Option.type`, :attr:`~Option.dest`,
+  :attr:`~Option.nargs`, :attr:`~Option.choices`]
 
   The option must be followed by an argument, which is appended to the list in
-  :attr:`dest`.  If no default value for :attr:`dest` is supplied, an empty list
-  is automatically created when :mod:`optparse` first encounters this option on
-  the command-line.  If ``nargs`` > 1, multiple arguments are consumed, and a
-  tuple of length ``nargs`` is appended to :attr:`dest`.
+  :attr:`~Option.dest`.  If no default value for :attr:`~Option.dest` is
+  supplied, an empty list is automatically created when :mod:`optparse` first
+  encounters this option on the command-line.  If :attr:`~Option.nargs` > 1,
+  multiple arguments are consumed, and a tuple of length :attr:`~Option.nargs`
+  is appended to :attr:`~Option.dest`.
 
-  The defaults for :attr:`type` and :attr:`dest` are the same as for the ``store``
-  action.
+  The defaults for :attr:`~Option.type` and :attr:`~Option.dest` are the same as
+  for the ``"store"`` action.
 
   Example::
 
@@ -968,16 +1064,19 @@ must specify for any option using that action.
 
      options.tracks.append(int("4"))
 
-* ``append_const`` [required: ``const``; relevant: :attr:`dest`]
+* ``"append_const"`` [required: :attr:`~Option.const`; relevant:
+  :attr:`~Option.dest`]
 
-  Like ``store_const``, but the value ``const`` is appended to :attr:`dest`; as
-  with ``append``, :attr:`dest` defaults to ``None``, and an empty list is
-  automatically created the first time the option is encountered.
+  Like ``"store_const"``, but the value :attr:`~Option.const` is appended to
+  :attr:`~Option.dest`; as with ``"append"``, :attr:`~Option.dest` defaults to
+  ``None``, and an empty list is automatically created the first time the option
+  is encountered.
 
-* ``count`` [relevant: :attr:`dest`]
+* ``"count"`` [relevant: :attr:`~Option.dest`]
 
-  Increment the integer stored at :attr:`dest`.  If no default value is supplied,
-  :attr:`dest` is set to zero before being incremented the first time.
+  Increment the integer stored at :attr:`~Option.dest`.  If no default value is
+  supplied, :attr:`~Option.dest` is set to zero before being incremented the
+  first time.
 
   Example::
 
@@ -993,42 +1092,47 @@ must specify for any option using that action.
 
      options.verbosity += 1
 
-* ``callback`` [required: ``callback``; relevant: :attr:`type`, ``nargs``,
-  ``callback_args``, ``callback_kwargs``]
+* ``"callback"`` [required: :attr:`~Option.callback`; relevant:
+  :attr:`~Option.type`, :attr:`~Option.nargs`, :attr:`~Option.callback_args`,
+  :attr:`~Option.callback_kwargs`]
 
-  Call the function specified by ``callback``, which is called as  ::
+  Call the function specified by :attr:`~Option.callback`, which is called as ::
 
      func(option, opt_str, value, parser, *args, **kwargs)
 
   See section :ref:`optparse-option-callbacks` for more detail.
 
-* :attr:`help`
+* ``"help"``
 
-  Prints a complete help message for all the options in the current option parser.
-  The help message is constructed from the ``usage`` string passed to
-  OptionParser's constructor and the :attr:`help` string passed to every option.
+  Prints a complete help message for all the options in the current option
+  parser.  The help message is constructed from the ``usage`` string passed to
+  OptionParser's constructor and the :attr:`~Option.help` string passed to every
+  option.
 
-  If no :attr:`help` string is supplied for an option, it will still be listed in
-  the help message.  To omit an option entirely, use the special value
-  ``optparse.SUPPRESS_HELP``.
+  If no :attr:`~Option.help` string is supplied for an option, it will still be
+  listed in the help message.  To omit an option entirely, use the special value
+  :data:`optparse.SUPPRESS_HELP`.
 
-  :mod:`optparse` automatically adds a :attr:`help` option to all OptionParsers,
-  so you do not normally need to create one.
+  :mod:`optparse` automatically adds a :attr:`~Option.help` option to all
+  OptionParsers, so you do not normally need to create one.
 
   Example::
 
      from optparse import OptionParser, SUPPRESS_HELP
 
-     parser = OptionParser()
-     parser.add_option("-h", "--help", action="help"),
+     # usually, a help option is added automatically, but that can
+     # be suppressed using the add_help_option argument
+     parser = OptionParser(add_help_option=False)
+
+     parser.add_option("-h", "--help", action="help")
      parser.add_option("-v", action="store_true", dest="verbose",
                        help="Be moderately verbose")
      parser.add_option("--file", dest="filename",
-                       help="Input file to read data from"),
+                       help="Input file to read data from")
      parser.add_option("--secret", help=SUPPRESS_HELP)
 
-  If :mod:`optparse` sees either ``"-h"`` or ``"--help"`` on the command line, it
-  will print something like the following help message to stdout (assuming
+  If :mod:`optparse` sees either ``"-h"`` or ``"--help"`` on the command line,
+  it will print something like the following help message to stdout (assuming
   ``sys.argv[0]`` is ``"foo.py"``)::
 
      usage: foo.py [options]
@@ -1041,82 +1145,14 @@ must specify for any option using that action.
   After printing the help message, :mod:`optparse` terminates your process with
   ``sys.exit(0)``.
 
-* ``version``
+* ``"version"``
 
-  Prints the version number supplied to the OptionParser to stdout and exits.  The
-  version number is actually formatted and printed by the ``print_version()``
-  method of OptionParser.  Generally only relevant if the ``version`` argument is
-  supplied to the OptionParser constructor.  As with :attr:`help` options, you
-  will rarely create ``version`` options, since :mod:`optparse` automatically adds
-  them when needed.
-
-
-.. _optparse-option-attributes:
-
-Option attributes
-^^^^^^^^^^^^^^^^^
-
-The following option attributes may be passed as keyword arguments to
-``parser.add_option()``.  If you pass an option attribute that is not relevant
-to a particular option, or fail to pass a required option attribute,
-:mod:`optparse` raises :exc:`OptionError`.
-
-* :attr:`action` (default: ``"store"``)
-
-  Determines :mod:`optparse`'s behaviour when this option is seen on the command
-  line; the available options are documented above.
-
-* :attr:`type` (default: ``"string"``)
-
-  The argument type expected by this option (e.g., ``"string"`` or ``"int"``); the
-  available option types are documented below.
-
-* :attr:`dest` (default: derived from option strings)
-
-  If the option's action implies writing or modifying a value somewhere, this
-  tells :mod:`optparse` where to write it: :attr:`dest` names an attribute of the
-  ``options`` object that :mod:`optparse` builds as it parses the command line.
-
-* ``default``
-
-  The value to use for this option's destination if the option is not seen on the
-  command line.  See also ``parser.set_defaults()``.
-
-* ``nargs`` (default: 1)
-
-  How many arguments of type :attr:`type` should be consumed when this option is
-  seen.  If > 1, :mod:`optparse` will store a tuple of values to :attr:`dest`.
-
-* ``const``
-
-  For actions that store a constant value, the constant value to store.
-
-* ``choices``
-
-  For options of type ``"choice"``, the list of strings the user may choose from.
-
-* ``callback``
-
-  For options with action ``"callback"``, the callable to call when this option
-  is seen.  See section :ref:`optparse-option-callbacks` for detail on the
-  arguments passed to ``callable``.
-
-* ``callback_args``, ``callback_kwargs``
-
-  Additional positional and keyword arguments to pass to ``callback`` after the
-  four standard callback arguments.
-
-* :attr:`help`
-
-  Help text to print for this option when listing all available options after the
-  user supplies a :attr:`help` option (such as ``"--help"``). If no help text is
-  supplied, the option will be listed without help text.  To hide this option, use
-  the special value ``SUPPRESS_HELP``.
-
-* ``metavar`` (default: derived from option strings)
-
-  Stand-in for the option argument(s) to use when printing help text. See section
-  :ref:`optparse-tutorial` for an example.
+  Prints the version number supplied to the OptionParser to stdout and exits.
+  The version number is actually formatted and printed by the
+  ``print_version()`` method of OptionParser.  Generally only relevant if the
+  ``version`` argument is supplied to the OptionParser constructor.  As with
+  :attr:`~Option.help` options, you will rarely create ``version`` options,
+  since :mod:`optparse` automatically adds them when needed.
 
 
 .. _optparse-standard-option-types:
@@ -1124,14 +1160,14 @@ to a particular option, or fail to pass a required option attribute,
 Standard option types
 ^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`optparse` has six built-in option types: ``string``, ``int``, ``long``,
-``choice``, ``float`` and ``complex``.  If you need to add new option types, see
-section :ref:`optparse-extending-optparse`.
+:mod:`optparse` has six built-in option types: ``"string"``, ``"int"``,
+``"long"``, ``"choice"``, ``"float"`` and ``"complex"``.  If you need to add new
+option types, see section :ref:`optparse-extending-optparse`.
 
 Arguments to string options are not checked or converted in any way: the text on
 the command line is stored in the destination (or passed to the callback) as-is.
 
-Integer arguments (type ``int`` or ``long``) are parsed as follows:
+Integer arguments (type ``"int"`` or ``"long"``) are parsed as follows:
 
 * if the number starts with ``0x``, it is parsed as a hexadecimal number
 
@@ -1142,17 +1178,18 @@ Integer arguments (type ``int`` or ``long``) are parsed as follows:
 * otherwise, the number is parsed as a decimal number
 
 
-The conversion is done by calling either ``int()`` or ``long()`` with the
+The conversion is done by calling either :func:`int` or :func:`long` with the
 appropriate base (2, 8, 10, or 16).  If this fails, so will :mod:`optparse`,
 although with a more useful error message.
 
-``float`` and ``complex`` option arguments are converted directly with
-``float()`` and ``complex()``, with similar error-handling.
+``"float"`` and ``"complex"`` option arguments are converted directly with
+:func:`float` and :func:`complex`, with similar error-handling.
 
-``choice`` options are a subtype of ``string`` options.  The ``choices`` option
-attribute (a sequence of strings) defines the set of allowed option arguments.
-``optparse.check_choice()`` compares user-supplied option arguments against this
-master list and raises :exc:`OptionValueError` if an invalid string is given.
+``"choice"`` options are a subtype of ``"string"`` options.  The
+:attr:`~Option.choices`` option attribute (a sequence of strings) defines the
+set of allowed option arguments.  :func:`optparse.check_choice` compares
+user-supplied option arguments against this master list and raises
+:exc:`OptionValueError` if an invalid string is given.
 
 
 .. _optparse-parsing-arguments:
@@ -1171,19 +1208,20 @@ where the input parameters are
    the list of arguments to process (default: ``sys.argv[1:]``)
 
 ``values``
-   object to store option arguments in (default: a new instance of optparse.Values)
+   object to store option arguments in (default: a new instance of
+   :class:`optparse.Values`)
 
 and the return values are
 
 ``options``
-   the same object that was passed in as ``options``, or the optparse.Values
+   the same object that was passed in as ``values``, or the optparse.Values
    instance created by :mod:`optparse`
 
 ``args``
    the leftover positional arguments after all options have been processed
 
 The most common usage is to supply neither keyword argument.  If you supply
-``options``, it will be modified with repeated ``setattr()`` calls (roughly one
+``values``, it will be modified with repeated :func:`setattr` calls (roughly one
 for every option argument stored to an option destination) and returned by
 :meth:`parse_args`.
 
@@ -1198,37 +1236,51 @@ traditional Unix exit status for command-line errors).
 Querying and manipulating your option parser
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default behavior of the option parser can be customized slightly,
-and you can also poke around your option parser and see what's there.
-OptionParser provides several methods to help you out:
+The default behavior of the option parser can be customized slightly, and you
+can also poke around your option parser and see what's there.  OptionParser
+provides several methods to help you out:
 
-``disable_interspersed_args()``
-  Set parsing to stop on the first non-option. Use this if you have a
-  command processor which runs another command which has options of
-  its own and you want to make sure these options don't get
-  confused. For example, each command might have a different
-  set of options.
+.. method:: OptionParser.disable_interspersed_args()
 
-``enable_interspersed_args()``
-  Set parsing to not stop on the first non-option, allowing
-  interspersing switches with command arguments.  For example,
-  ``"-s arg1 --long arg2"`` would return ``["arg1", "arg2"]``
-  as the command arguments and ``-s, --long`` as options.
-  This is the default behavior.
+   Set parsing to stop on the first non-option.  For example, if ``"-a"`` and
+   ``"-b"`` are both simple options that take no arguments, :mod:`optparse`
+   normally accepts this syntax::
 
-``get_option(opt_str)``
-   Returns the Option instance with the option string ``opt_str``, or ``None`` if
+      prog -a arg1 -b arg2
+
+   and treats it as equivalent to  ::
+
+      prog -a -b arg1 arg2
+
+   To disable this feature, call :meth:`disable_interspersed_args`.  This
+   restores traditional Unix syntax, where option parsing stops with the first
+   non-option argument.
+
+   Use this if you have a command processor which runs another command which has
+   options of its own and you want to make sure these options don't get
+   confused.  For example, each command might have a different set of options.
+
+.. method:: OptionParser.enable_interspersed_args()
+
+   Set parsing to not stop on the first non-option, allowing interspersing
+   switches with command arguments.  This is the default behavior.
+
+.. method:: OptionParser.get_option(opt_str)
+
+   Returns the Option instance with the option string *opt_str*, or ``None`` if
    no options have that option string.
 
-``has_option(opt_str)``
-   Return true if the OptionParser has an option with option string ``opt_str``
+.. method:: OptionParser.has_option(opt_str)
+
+   Return true if the OptionParser has an option with option string *opt_str*
    (e.g., ``"-q"`` or ``"--verbose"``).
 
-``remove_option(opt_str)``
-   If the :class:`OptionParser` has an option corresponding to ``opt_str``, that option is
-   removed.  If that option provided any other option strings, all of those option
-   strings become invalid. If ``opt_str`` does not occur in any option belonging to
-   this :class:`OptionParser`, raises :exc:`ValueError`.
+.. method:: OptionParser.remove_option(opt_str)
+
+   If the :class:`OptionParser` has an option corresponding to *opt_str*, that
+   option is removed.  If that option provided any other option strings, all of
+   those option strings become invalid. If *opt_str* does not occur in any
+   option belonging to this :class:`OptionParser`, raises :exc:`ValueError`.
 
 
 .. _optparse-conflicts-between-options:
@@ -1258,10 +1310,11 @@ or with a separate call::
 
 The available conflict handlers are:
 
-   ``error`` (default)
-      assume option conflicts are a programming error and raise :exc:`OptionConflictError`
+   ``"error"`` (default)
+      assume option conflicts are a programming error and raise
+      :exc:`OptionConflictError`
 
-   ``resolve``
+   ``"resolve"``
       resolve option conflicts intelligently (see below)
 
 
@@ -1307,9 +1360,10 @@ Cleanup
 
 OptionParser instances have several cyclic references.  This should not be a
 problem for Python's garbage collector, but you may wish to break the cyclic
-references explicitly by calling ``destroy()`` on your OptionParser once you are
-done with it.  This is particularly useful in long-running applications where
-large object graphs are reachable from your OptionParser.
+references explicitly by calling :meth:`~OptionParser.destroy` on your
+OptionParser once you are done with it.  This is particularly useful in
+long-running applications where large object graphs are reachable from your
+OptionParser.
 
 
 .. _optparse-other-methods:
@@ -1319,51 +1373,34 @@ Other methods
 
 OptionParser supports several other public methods:
 
-* ``set_usage(usage)``
+.. method:: OptionParser.set_usage(usage)
 
-  Set the usage string according to the rules described above for the ``usage``
-  constructor keyword argument.  Passing ``None`` sets the default usage string;
-  use ``SUPPRESS_USAGE`` to suppress a usage message.
+   Set the usage string according to the rules described above for the ``usage``
+   constructor keyword argument.  Passing ``None`` sets the default usage
+   string; use :data:`optparse.SUPPRESS_USAGE` to suppress a usage message.
 
-* ``enable_interspersed_args()``, ``disable_interspersed_args()``
+.. method:: OptionParser.set_defaults(dest=value, ...)
 
-  Enable/disable positional arguments interspersed with options, similar to GNU
-  getopt (enabled by default).  For example, if ``"-a"`` and ``"-b"`` are both
-  simple options that take no arguments, :mod:`optparse` normally accepts this
-  syntax::
+   Set default values for several option destinations at once.  Using
+   :meth:`set_defaults` is the preferred way to set default values for options,
+   since multiple options can share the same destination.  For example, if
+   several "mode" options all set the same destination, any one of them can set
+   the default, and the last one wins::
 
-     prog -a arg1 -b arg2
+      parser.add_option("--advanced", action="store_const",
+                        dest="mode", const="advanced",
+                        default="novice")    # overridden below
+      parser.add_option("--novice", action="store_const",
+                        dest="mode", const="novice",
+                        default="advanced")  # overrides above setting
 
-  and treats it as equivalent to  ::
+   To avoid this confusion, use :meth:`set_defaults`::
 
-     prog -a -b arg1 arg2
-
-  To disable this feature, call ``disable_interspersed_args()``.  This restores
-  traditional Unix syntax, where option parsing stops with the first non-option
-  argument.
-
-* ``set_defaults(dest=value, ...)``
-
-  Set default values for several option destinations at once.  Using
-  :meth:`set_defaults` is the preferred way to set default values for options,
-  since multiple options can share the same destination.  For example, if several
-  "mode" options all set the same destination, any one of them can set the
-  default, and the last one wins::
-
-     parser.add_option("--advanced", action="store_const",
-                       dest="mode", const="advanced",
-                       default="novice")    # overridden below
-     parser.add_option("--novice", action="store_const",
-                       dest="mode", const="novice",
-                       default="advanced")  # overrides above setting
-
-  To avoid this confusion, use :meth:`set_defaults`::
-
-     parser.set_defaults(mode="advanced")
-     parser.add_option("--advanced", action="store_const",
-                       dest="mode", const="advanced")
-     parser.add_option("--novice", action="store_const",
-                       dest="mode", const="novice")
+      parser.set_defaults(mode="advanced")
+      parser.add_option("--advanced", action="store_const",
+                        dest="mode", const="advanced")
+      parser.add_option("--novice", action="store_const",
+                        dest="mode", const="novice")
 
 
 .. _optparse-option-callbacks:
@@ -1378,7 +1415,7 @@ cases.  Quite often a simple callback is all you need.
 
 There are two steps to defining a callback option:
 
-* define the option itself using the ``callback`` action
+* define the option itself using the ``"callback"`` action
 
 * write the callback; this is a function (or method) that takes at least four
   arguments, as described below
@@ -1390,8 +1427,8 @@ Defining a callback option
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As always, the easiest way to define a callback option is by using the
-``parser.add_option()`` method.  Apart from :attr:`action`, the only option
-attribute you must specify is ``callback``, the function to call::
+:meth:`OptionParser.add_option` method.  Apart from :attr:`~Option.action`, the
+only option attribute you must specify is ``callback``, the function to call::
 
    parser.add_option("-c", action="callback", callback=my_callback)
 
@@ -1405,8 +1442,9 @@ number of command-line arguments.  This is where writing callbacks gets tricky;
 it's covered later in this section.
 
 :mod:`optparse` always passes four particular arguments to your callback, and it
-will only pass additional arguments if you specify them via ``callback_args``
-and ``callback_kwargs``.  Thus, the minimal callback function signature is::
+will only pass additional arguments if you specify them via
+:attr:`~Option.callback_args` and :attr:`~Option.callback_kwargs`.  Thus, the
+minimal callback function signature is::
 
    def my_callback(option, opt, value, parser):
 
@@ -1415,21 +1453,22 @@ The four arguments to a callback are described below.
 There are several other option attributes that you can supply when you define a
 callback option:
 
-:attr:`type`
-   has its usual meaning: as with the ``store`` or ``append`` actions, it instructs
-   :mod:`optparse` to consume one argument and convert it to :attr:`type`.  Rather
-   than storing the converted value(s) anywhere, though, :mod:`optparse` passes it
-   to your callback function.
+:attr:`~Option.type`
+   has its usual meaning: as with the ``"store"`` or ``"append"`` actions, it
+   instructs :mod:`optparse` to consume one argument and convert it to
+   :attr:`~Option.type`.  Rather than storing the converted value(s) anywhere,
+   though, :mod:`optparse` passes it to your callback function.
 
-``nargs``
+:attr:`~Option.nargs`
    also has its usual meaning: if it is supplied and > 1, :mod:`optparse` will
-   consume ``nargs`` arguments, each of which must be convertible to :attr:`type`.
-   It then passes a tuple of converted values to your callback.
+   consume :attr:`~Option.nargs` arguments, each of which must be convertible to
+   :attr:`~Option.type`.  It then passes a tuple of converted values to your
+   callback.
 
-``callback_args``
+:attr:`~Option.callback_args`
    a tuple of extra positional arguments to pass to the callback
 
-``callback_kwargs``
+:attr:`~Option.callback_kwargs`
    a dictionary of extra keyword arguments to pass to the callback
 
 
@@ -1449,45 +1488,48 @@ where
 
 ``opt_str``
    is the option string seen on the command-line that's triggering the callback.
-   (If an abbreviated long option was used, ``opt_str`` will be the full, canonical
-   option string---e.g. if the user puts ``"--foo"`` on the command-line as an
-   abbreviation for ``"--foobar"``, then ``opt_str`` will be ``"--foobar"``.)
+   (If an abbreviated long option was used, ``opt_str`` will be the full,
+   canonical option string---e.g. if the user puts ``"--foo"`` on the
+   command-line as an abbreviation for ``"--foobar"``, then ``opt_str`` will be
+   ``"--foobar"``.)
 
 ``value``
    is the argument to this option seen on the command-line.  :mod:`optparse` will
-   only expect an argument if :attr:`type` is set; the type of ``value`` will be
-   the type implied by the option's type.  If :attr:`type` for this option is
-   ``None`` (no argument expected), then ``value`` will be ``None``.  If ``nargs``
+   only expect an argument if :attr:`~Option.type` is set; the type of ``value`` will be
+   the type implied by the option's type.  If :attr:`~Option.type` for this option is
+   ``None`` (no argument expected), then ``value`` will be ``None``.  If :attr:`~Option.nargs`
    > 1, ``value`` will be a tuple of values of the appropriate type.
 
 ``parser``
-   is the OptionParser instance driving the whole thing, mainly useful because you
-   can access some other interesting data through its instance attributes:
+   is the OptionParser instance driving the whole thing, mainly useful because
+   you can access some other interesting data through its instance attributes:
 
    ``parser.largs``
-      the current list of leftover arguments, ie. arguments that have been consumed
-      but are neither options nor option arguments. Feel free to modify
-      ``parser.largs``, e.g. by adding more arguments to it.  (This list will become
-      ``args``, the second return value of :meth:`parse_args`.)
+      the current list of leftover arguments, ie. arguments that have been
+      consumed but are neither options nor option arguments. Feel free to modify
+      ``parser.largs``, e.g. by adding more arguments to it.  (This list will
+      become ``args``, the second return value of :meth:`parse_args`.)
 
    ``parser.rargs``
-      the current list of remaining arguments, ie. with ``opt_str`` and ``value`` (if
-      applicable) removed, and only the arguments following them still there.  Feel
-      free to modify ``parser.rargs``, e.g. by consuming more arguments.
+      the current list of remaining arguments, ie. with ``opt_str`` and
+      ``value`` (if applicable) removed, and only the arguments following them
+      still there.  Feel free to modify ``parser.rargs``, e.g. by consuming more
+      arguments.
 
    ``parser.values``
       the object where option values are by default stored (an instance of
-      optparse.OptionValues).  This lets callbacks use the same mechanism as the rest
-      of :mod:`optparse` for storing option values; you don't need to mess around with
-      globals or closures.  You can also access or modify the value(s) of any options
-      already encountered on the command-line.
+      optparse.OptionValues).  This lets callbacks use the same mechanism as the
+      rest of :mod:`optparse` for storing option values; you don't need to mess
+      around with globals or closures.  You can also access or modify the
+      value(s) of any options already encountered on the command-line.
 
 ``args``
-   is a tuple of arbitrary positional arguments supplied via the ``callback_args``
-   option attribute.
+   is a tuple of arbitrary positional arguments supplied via the
+   :attr:`~Option.callback_args` option attribute.
 
 ``kwargs``
-   is a dictionary of arbitrary keyword arguments supplied via ``callback_kwargs``.
+   is a dictionary of arbitrary keyword arguments supplied via
+   :attr:`~Option.callback_kwargs`.
 
 
 .. _optparse-raising-errors-in-callback:
@@ -1495,11 +1537,11 @@ where
 Raising errors in a callback
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The callback function should raise :exc:`OptionValueError` if there are any problems
-with the option or its argument(s).  :mod:`optparse` catches this and terminates
-the program, printing the error message you supply to stderr.  Your message
-should be clear, concise, accurate, and mention the option at fault.  Otherwise,
-the user will have a hard time figuring out what he did wrong.
+The callback function should raise :exc:`OptionValueError` if there are any
+problems with the option or its argument(s).  :mod:`optparse` catches this and
+terminates the program, printing the error message you supply to stderr.  Your
+message should be clear, concise, accurate, and mention the option at fault.
+Otherwise, the user will have a hard time figuring out what he did wrong.
 
 
 .. _optparse-callback-example-1:
@@ -1515,7 +1557,7 @@ records that the option was seen::
 
    parser.add_option("--foo", action="callback", callback=record_foo_seen)
 
-Of course, you could do that with the ``store_true`` action.
+Of course, you could do that with the ``"store_true"`` action.
 
 
 .. _optparse-callback-example-2:
@@ -1582,12 +1624,12 @@ Callback example 5: fixed arguments
 
 Things get slightly more interesting when you define callback options that take
 a fixed number of arguments.  Specifying that a callback option takes arguments
-is similar to defining a ``store`` or ``append`` option: if you define
-:attr:`type`, then the option takes one argument that must be convertible to
-that type; if you further define ``nargs``, then the option takes ``nargs``
-arguments.
+is similar to defining a ``"store"`` or ``"append"`` option: if you define
+:attr:`~Option.type`, then the option takes one argument that must be
+convertible to that type; if you further define :attr:`~Option.nargs`, then the
+option takes :attr:`~Option.nargs` arguments.
 
-Here's an example that just emulates the standard ``store`` action::
+Here's an example that just emulates the standard ``"store"`` action::
 
    def store_value(option, opt_str, value, parser):
        setattr(parser.values, option.dest, value)
@@ -1674,32 +1716,36 @@ Adding new types
 ^^^^^^^^^^^^^^^^
 
 To add new types, you need to define your own subclass of :mod:`optparse`'s
-Option class.  This class has a couple of attributes that define
-:mod:`optparse`'s types: :attr:`TYPES` and :attr:`TYPE_CHECKER`.
+:class:`Option` class.  This class has a couple of attributes that define
+:mod:`optparse`'s types: :attr:`~Option.TYPES` and :attr:`~Option.TYPE_CHECKER`.
 
-:attr:`TYPES` is a tuple of type names; in your subclass, simply define a new
-tuple :attr:`TYPES` that builds on the standard one.
+.. attribute:: Option.TYPES
 
-:attr:`TYPE_CHECKER` is a dictionary mapping type names to type-checking
-functions.  A type-checking function has the following signature::
+   A tuple of type names; in your subclass, simply define a new tuple
+   :attr:`TYPES` that builds on the standard one.
 
-   def check_mytype(option, opt, value)
+.. attribute:: Option.TYPE_CHECKER
 
-where ``option`` is an :class:`Option` instance, ``opt`` is an option string
-(e.g., ``"-f"``), and ``value`` is the string from the command line that must be
-checked and converted to your desired type.  ``check_mytype()`` should return an
-object of the hypothetical type ``mytype``.  The value returned by a
-type-checking function will wind up in the OptionValues instance returned by
-:meth:`OptionParser.parse_args`, or be passed to a callback as the ``value``
-parameter.
+   A dictionary mapping type names to type-checking functions.  A type-checking
+   function has the following signature::
 
-Your type-checking function should raise :exc:`OptionValueError` if it encounters any
-problems.  :exc:`OptionValueError` takes a single string argument, which is passed
-as-is to :class:`OptionParser`'s :meth:`error` method, which in turn prepends the program
-name and the string ``"error:"`` and prints everything to stderr before
-terminating the process.
+      def check_mytype(option, opt, value)
 
-Here's a silly example that demonstrates adding a ``complex`` option type to
+   where ``option`` is an :class:`Option` instance, ``opt`` is an option string
+   (e.g., ``"-f"``), and ``value`` is the string from the command line that must
+   be checked and converted to your desired type.  ``check_mytype()`` should
+   return an object of the hypothetical type ``mytype``.  The value returned by
+   a type-checking function will wind up in the OptionValues instance returned
+   by :meth:`OptionParser.parse_args`, or be passed to a callback as the
+   ``value`` parameter.
+
+   Your type-checking function should raise :exc:`OptionValueError` if it
+   encounters any problems.  :exc:`OptionValueError` takes a single string
+   argument, which is passed as-is to :class:`OptionParser`'s :meth:`error`
+   method, which in turn prepends the program name and the string ``"error:"``
+   and prints everything to stderr before terminating the process.
+
+Here's a silly example that demonstrates adding a ``"complex"`` option type to
 parse Python-style complex numbers on the command line.  (This is even sillier
 than it used to be, because :mod:`optparse` 1.3 added built-in support for
 complex numbers, but never mind.)
@@ -1710,7 +1756,7 @@ First, the necessary imports::
    from optparse import Option, OptionValueError
 
 You need to define your type-checker first, since it's referred to later (in the
-:attr:`TYPE_CHECKER` class attribute of your Option subclass)::
+:attr:`~Option.TYPE_CHECKER` class attribute of your Option subclass)::
 
    def check_complex(option, opt, value):
        try:
@@ -1727,9 +1773,9 @@ Finally, the Option subclass::
        TYPE_CHECKER["complex"] = check_complex
 
 (If we didn't make a :func:`copy` of :attr:`Option.TYPE_CHECKER`, we would end
-up modifying the :attr:`TYPE_CHECKER` attribute of :mod:`optparse`'s Option
-class. This being Python, nothing stops you from doing that except good manners
-and common sense.)
+up modifying the :attr:`~Option.TYPE_CHECKER` attribute of :mod:`optparse`'s
+Option class.  This being Python, nothing stops you from doing that except good
+manners and common sense.)
 
 That's it!  Now you can write a script that uses the new option type just like
 any other :mod:`optparse`\ -based script, except you have to instruct your
@@ -1756,45 +1802,50 @@ Adding new actions is a bit trickier, because you have to understand that
 
 "store" actions
    actions that result in :mod:`optparse` storing a value to an attribute of the
-   current OptionValues instance; these options require a :attr:`dest` attribute to
-   be supplied to the Option constructor
+   current OptionValues instance; these options require a :attr:`~Option.dest`
+   attribute to be supplied to the Option constructor.
 
 "typed" actions
-   actions that take a value from the command line and expect it to be of a certain
-   type; or rather, a string that can be converted to a certain type.  These
-   options require a :attr:`type` attribute to the Option constructor.
+   actions that take a value from the command line and expect it to be of a
+   certain type; or rather, a string that can be converted to a certain type.
+   These options require a :attr:`~Option.type` attribute to the Option
+   constructor.
 
-These are overlapping sets: some default "store" actions are ``store``,
-``store_const``, ``append``, and ``count``, while the default "typed" actions
-are ``store``, ``append``, and ``callback``.
+These are overlapping sets: some default "store" actions are ``"store"``,
+``"store_const"``, ``"append"``, and ``"count"``, while the default "typed"
+actions are ``"store"``, ``"append"``, and ``"callback"``.
 
 When you add an action, you need to categorize it by listing it in at least one
 of the following class attributes of Option (all are lists of strings):
 
-:attr:`ACTIONS`
-   all actions must be listed in ACTIONS
+.. attribute:: Option.ACTIONS
 
-:attr:`STORE_ACTIONS`
-   "store" actions are additionally listed here
+   All actions must be listed in ACTIONS.
 
-:attr:`TYPED_ACTIONS`
-   "typed" actions are additionally listed here
+.. attribute:: Option.STORE_ACTIONS
 
-``ALWAYS_TYPED_ACTIONS``
-   actions that always take a type (i.e. whose options always take a value) are
+   "store" actions are additionally listed here.
+
+.. attribute:: Option.TYPED_ACTIONS
+
+   "typed" actions are additionally listed here.
+
+.. attribute:: Option.ALWAYS_TYPED_ACTIONS
+
+   Actions that always take a type (i.e. whose options always take a value) are
    additionally listed here.  The only effect of this is that :mod:`optparse`
-   assigns the default type, ``string``, to options with no explicit type whose
-   action is listed in ``ALWAYS_TYPED_ACTIONS``.
+   assigns the default type, ``"string"``, to options with no explicit type
+   whose action is listed in :attr:`ALWAYS_TYPED_ACTIONS`.
 
 In order to actually implement your new action, you must override Option's
 :meth:`take_action` method and add a case that recognizes your action.
 
-For example, let's add an ``extend`` action.  This is similar to the standard
-``append`` action, but instead of taking a single value from the command-line
-and appending it to an existing list, ``extend`` will take multiple values in a
-single comma-delimited string, and extend an existing list with them.  That is,
-if ``"--names"`` is an ``extend`` option of type ``string``, the command line
-::
+For example, let's add an ``"extend"`` action.  This is similar to the standard
+``"append"`` action, but instead of taking a single value from the command-line
+and appending it to an existing list, ``"extend"`` will take multiple values in
+a single comma-delimited string, and extend an existing list with them.  That
+is, if ``"--names"`` is an ``"extend"`` option of type ``"string"``, the command
+line ::
 
    --names=foo,bar --names blah --names ding,dong
 
@@ -1821,29 +1872,30 @@ Again we define a subclass of Option::
 
 Features of note:
 
-* ``extend`` both expects a value on the command-line and stores that value
-  somewhere, so it goes in both :attr:`STORE_ACTIONS` and :attr:`TYPED_ACTIONS`
+* ``"extend"`` both expects a value on the command-line and stores that value
+  somewhere, so it goes in both :attr:`~Option.STORE_ACTIONS` and
+  :attr:`~Option.TYPED_ACTIONS`.
 
-* to ensure that :mod:`optparse` assigns the default type of ``string`` to
-  ``extend`` actions, we put the ``extend`` action in ``ALWAYS_TYPED_ACTIONS`` as
-  well
+* to ensure that :mod:`optparse` assigns the default type of ``"string"`` to
+  ``"extend"`` actions, we put the ``"extend"`` action in
+  :attr:`~Option.ALWAYS_TYPED_ACTIONS` as well.
 
 * :meth:`MyOption.take_action` implements just this one new action, and passes
   control back to :meth:`Option.take_action` for the standard :mod:`optparse`
-  actions
+  actions.
 
-* ``values`` is an instance of the optparse_parser.Values class, which
-  provides the very useful :meth:`ensure_value` method. :meth:`ensure_value` is
-  essentially :func:`getattr` with a safety valve; it is called as  ::
+* ``values`` is an instance of the optparse_parser.Values class, which provides
+  the very useful :meth:`ensure_value` method. :meth:`ensure_value` is
+  essentially :func:`getattr` with a safety valve; it is called as ::
 
      values.ensure_value(attr, value)
 
   If the ``attr`` attribute of ``values`` doesn't exist or is None, then
-  ensure_value() first sets it to ``value``, and then returns 'value. This is very
-  handy for actions like ``extend``, ``append``, and ``count``, all of which
-  accumulate data in a variable and expect that variable to be of a certain type
-  (a list for the first two, an integer for the latter).  Using
+  ensure_value() first sets it to ``value``, and then returns 'value. This is
+  very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
+  of which accumulate data in a variable and expect that variable to be of a
+  certain type (a list for the first two, an integer for the latter).  Using
   :meth:`ensure_value` means that scripts using your action don't have to worry
-  about setting a default value for the option destinations in question; they can
-  just leave the default as None and :meth:`ensure_value` will take care of
+  about setting a default value for the option destinations in question; they
+  can just leave the default as None and :meth:`ensure_value` will take care of
   getting it right when it's needed.
