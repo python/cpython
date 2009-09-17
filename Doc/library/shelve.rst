@@ -30,27 +30,39 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
    Because of Python semantics, a shelf cannot know when a mutable
    persistent-dictionary entry is modified.  By default modified objects are
-   written only when assigned to the shelf (see :ref:`shelve-example`).  If
-   the optional *writeback* parameter is set to *True*, all entries accessed
-   are cached in memory, and written back at close time; this can make it
-   handier to mutate mutable entries in the persistent dictionary, but, if
-   many entries are accessed, it can consume vast amounts of memory for the
-   cache, and it can make the close operation very slow since all accessed
-   entries are written back (there is no way to determine which accessed
-   entries are mutable, nor which ones were actually mutated).
+   written only when assigned to the shelf (see :ref:`shelve-example`).  If the
+   optional *writeback* parameter is set to *True*, all entries accessed are
+   cached in memory, and written back on :meth:`sync` and :meth:`close`; this
+   can make it handier to mutate mutable entries in the persistent dictionary,
+   but, if many entries are accessed, it can consume vast amounts of memory for
+   the cache, and it can make the close operation very slow since all accessed
+   entries are written back (there is no way to determine which accessed entries
+   are mutable, nor which ones were actually mutated).
+
+   .. note::
+
+      Do not rely on the shelf being closed automatically; always call
+      :meth:`close` explicitly when you don't need it any more, or use a
+      :keyword:`with` statement with :func:`contextlib.closing`.
+
 
 Shelf objects support all methods supported by dictionaries.  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
-One additional method is supported:
-
+Two additional methods are supported:
 
 .. method:: Shelf.sync()
 
-   Write back all entries in the cache if the shelf was opened with *writeback* set
-   to *True*. Also empty the cache and synchronize the persistent dictionary on
-   disk, if feasible.  This is called automatically when the shelf is closed with
-   :meth:`close`.
+   Write back all entries in the cache if the shelf was opened with *writeback*
+   set to :const:`True`.  Also empty the cache and synchronize the persistent
+   dictionary on disk, if feasible.  This is called automatically when the shelf
+   is closed with :meth:`close`.
+
+.. method:: Shelf.close()
+
+   Synchronize and close the persistent *dict* object.  Operations on a closed
+   shelf will fail with a :exc:`ValueError`.
+
 
 .. seealso::
 
@@ -74,11 +86,6 @@ Restrictions
   this means that (the pickled representation of) the objects stored in the
   database should be fairly small, and in rare cases key collisions may cause the
   database to refuse updates.
-
-* Depending on the implementation, closing a persistent dictionary may or may
-  not be necessary to flush changes to disk.  The :meth:`__del__` method of the
-  :class:`Shelf` class calls the :meth:`close` method, so the programmer generally
-  need not do this explicitly.
 
 * The :mod:`shelve` module does not support *concurrent* read/write access to
   shelved objects.  (Multiple simultaneous read accesses are safe.)  When a
