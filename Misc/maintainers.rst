@@ -69,7 +69,7 @@ cmd
 code
 codecs
 codeop
-collections
+collections         rhettinger
 colorsys
 compileall
 configparser
@@ -120,7 +120,7 @@ imp
 importlib           brett.cannon
 inspect
 io                  pitrou, benjamin.peterson
-itertools
+itertools           rhettinger
 json
 keyword
 lib2to3             benjamin.peterson
@@ -166,13 +166,13 @@ pyclbr
 pydoc
 queue
 quopri
-random
+random              rhettinger
 re
 readline
 reprlib
 resource
 rlcompleter
-runpy
+runpy               ncoghlan
 sched
 select
 shelve
