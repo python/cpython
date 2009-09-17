@@ -2515,12 +2515,6 @@ long_dealloc(PyObject *v)
 	Py_TYPE(v)->tp_free(v);
 }
 
-static PyObject *
-long_repr(PyObject *v)
-{
-	return _PyLong_Format(v, 10);
-}
-
 static int
 long_compare(PyLongObject *a, PyLongObject *b)
 {
@@ -4289,13 +4283,13 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_reserved */
-	long_repr,				/* tp_repr */
+	long_to_decimal_string,			/* tp_repr */
 	&long_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)long_hash,			/* tp_hash */
 	0,					/* tp_call */
-	long_repr,				/* tp_str */
+	long_to_decimal_string,			/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
