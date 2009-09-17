@@ -257,7 +257,7 @@ HP-UX
 Interest Area       Maintainers
 ------------------  -----------
 algorithms
-ast/compiler        ncoghlan
+ast/compiler        ncoghlan, benjamin.peterson
 autoconf
 bsd
 buildbots
