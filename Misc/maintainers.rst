@@ -67,7 +67,7 @@ chunk
 cmath               mark.dickinson
 cmd
 code
-codecs
+codecs              lemburg, doerwalter
 codeop
 collections         rhettinger
 colorsys
@@ -90,7 +90,7 @@ distutils           tarek
 doctest
 dummy_threading     brett.cannon
 email               barry
-encodings
+encodings           lemburg, loewis
 errno
 exceptions
 fcntl
@@ -125,7 +125,7 @@ json
 keyword
 lib2to3             benjamin.peterson
 linecache
-locale
+locale              loewis, lemburg
 logging             vsajip
 macpath
 mailbox             andrew.kuchling
@@ -135,7 +135,7 @@ math                mark.dickinson
 mimetypes
 mmap
 modulefinder        theller, jvr
-msilib
+msilib              loewis
 msvcrt
 multiprocessing     jnoller
 netrc
@@ -144,7 +144,7 @@ nntplib
 numbers
 operator
 optparse            aronacher
-os
+os                  loewis
 ossaudiodev
 parser
 pdb
@@ -167,7 +167,7 @@ pydoc
 queue
 quopri
 random              rhettinger
-re
+re                  effbot (inactive)
 readline
 reprlib
 resource
@@ -187,7 +187,7 @@ socket
 socketserver
 spwd
 sqlite3
-ssl
+ssl                 janssen
 stat
 string
 stringprep
@@ -198,7 +198,7 @@ symbol
 symtable
 sys
 syslog
-tabnanny
+tabnanny            tim_one
 tarfile             lars.gustaebel
 telnetlib
 tempfile
@@ -216,17 +216,17 @@ traceback
 tty
 turtle              gregorlingl
 types
-unicodedata
+unicodedata         loewis, lemburg
 unittest            michael.foord
 urllib
 uu
 uuid
 warnings
 wave
-weakref
+weakref             fdrake
 webbrowser          georg.brandl
 winreg
-winsound
+winsound            effbot
 wsgiref             pje
 xdrlib
 xml                 loewis
@@ -262,23 +262,23 @@ autoconf
 bsd
 buildbots
 data formats        mark.dickinson
-database
+database            lemburg
 documentation       georg.brandl
 GUI
-i18n
+i18n                lemburg
 import machinery    brett.cannon
 io                  pitrou, benjamin.peterson
-locale
+locale              lemburg, loewis
 makefiles
-mathematics         mark.dickinson, eric.smith
-memory management
+mathematics         mark.dickinson, eric.smith, lemburg
+memory management   tim_one, lemburg
 networking
-packaging
-release management
+packaging           tarek, lemburg
+release management  tarek, lemburg
 str.format          eric.smith
-time and dates
+time and dates      lemburg
 testing             michael.foord
 threads
-unicode
+unicode             lemburg
 windows
 ==================  ===========
