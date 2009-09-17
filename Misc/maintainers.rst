@@ -257,7 +257,7 @@ HP-UX
 Interest Area       Maintainers
 ------------------  -----------
 algorithms
-ast/compiler
+ast/compiler        ncoghlan
 autoconf
 bsd
 buildbots
@@ -266,7 +266,7 @@ database            lemburg
 documentation       georg.brandl
 GUI
 i18n                lemburg
-import machinery    brett.cannon
+import machinery    brett.cannon, ncoghlan
 io                  pitrou, benjamin.peterson
 locale              lemburg, loewis
 makefiles
