@@ -20,6 +20,13 @@ source file by including the header ``"Python.h"``.
 The compilation of an extension module depends on its intended use as well as on
 your system setup; details are given in later chapters.
 
+Do note that if your use case is calling C library functions or system calls,
+you should consider using the :mod:`ctypes` module rather than writing custom
+C code. Not only does :mod:`ctypes` let you write Python code to interface
+with C code, but it is more portable between implementations of Python than
+writing and compiling an extension module which typically ties you to CPython.
+
+
 
 .. _extending-simpleexample:
 
