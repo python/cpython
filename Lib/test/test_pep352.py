@@ -143,13 +143,6 @@ class ExceptionClassTests(unittest.TestCase):
             else:
                 self.fail("BaseException.message not deprecated")
 
-            exc = BaseException()
-            try:
-                exc.message = ''
-            except DeprecationWarning:
-                pass
-            else:
-                self.fail("BaseException.message assignment not deprecated")
 
 class UsageTests(unittest.TestCase):
 
