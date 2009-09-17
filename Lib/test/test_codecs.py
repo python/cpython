@@ -338,6 +338,12 @@ class UTF32Test(ReadTest):
             ]
         )
 
+    def test_handlers(self):
+        self.assertEqual(('\ufffd', 1),
+                         codecs.utf_32_decode(b'\x01', 'replace', True))
+        self.assertEqual(('', 1),
+                         codecs.utf_32_decode(b'\x01', 'ignore', True))
+
     def test_errors(self):
         self.assertRaises(UnicodeDecodeError, codecs.utf_32_decode,
                           b"\xff", "strict", True)
@@ -460,6 +466,12 @@ class UTF16Test(ReadTest):
                 "\x00\xff\u0100\uffff",
             ]
         )
+
+    def test_handlers(self):
+        self.assertEqual(('\ufffd', 1),
+                         codecs.utf_16_decode(b'\x01', 'replace', True))
+        self.assertEqual(('', 1),
+                         codecs.utf_16_decode(b'\x01', 'ignore', True))
 
     def test_errors(self):
         self.assertRaises(UnicodeDecodeError, codecs.utf_16_decode,
