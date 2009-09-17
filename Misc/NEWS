@@ -214,7 +214,7 @@ Build
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
-Documenation
+Documentation
 ------------
 
 - Document that importing a module that has None in sys.modules triggers an
