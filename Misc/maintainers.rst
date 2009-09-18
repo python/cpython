@@ -74,8 +74,8 @@ colorsys
 compileall
 configparser
 contextlib
-copy
-copyreg
+copy                alexandre.vassalotti
+copyreg             alexandre.vassalotti
 cProfile
 crypt
 csv
@@ -148,8 +148,8 @@ os                  loewis
 ossaudiodev
 parser
 pdb
-pickle
-pickletools
+pickle              alexandre.vassalotti
+pickletools         alexandre.vassalotti
 pipes
 pkgutil
 platform            lemburg
