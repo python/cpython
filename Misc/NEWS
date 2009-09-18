@@ -82,6 +82,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5042: Structure sub-subclass does now initialize correctly
+  with base class positional arguments.
+
 - Issue #6938: Fix a TypeError in string formatting of a multiprocessing
   debug message.
 

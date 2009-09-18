@@ -4017,17 +4017,81 @@ IBUG(char *msg)
 	return -1;
 }
 
+/*
+  This function is called to initialize a Structure or Union with positional
+  arguments. It calls itself recursively for all Structure or Union base
+  classes, then retrieves the _fields_ member to associate the argument
+  position with the correct field name.
+
+  Returns -1 on error, or the index of next argument on success.
+ */
+static int
+_init_pos_args(PyObject *self, PyTypeObject *type,
+	       PyObject *args, PyObject *kwds,
+	       int index)
+{
+	StgDictObject *dict;
+	PyObject *fields;
+	int i;
+
+	if (PyType_stgdict((PyObject *)type->tp_base)) {
+		index = _init_pos_args(self, type->tp_base,
+				       args, kwds,
+				       index);
+		if (index == -1)
+			return -1;
+	}
+
+	dict = PyType_stgdict((PyObject *)type);
+	fields = PyDict_GetItemString((PyObject *)dict, "_fields_");
+	if (fields == NULL)
+		return index;
+
+	for (i = 0;
+	     i < dict->length && (i+index) < PyTuple_GET_SIZE(args);
+	     ++i) {
+		PyObject *pair = PySequence_GetItem(fields, i);
+		PyObject *name, *val;
+		int res;
+		if (!pair)
+			return -1;
+		name = PySequence_GetItem(pair, 0);
+		if (!name) {
+			Py_DECREF(pair);
+			return -1;
+		}
+		val = PyTuple_GET_ITEM(args, i + index);
+		if (kwds && PyDict_GetItem(kwds, name)) {
+			char *field = PyString_AsString(name);
+			if (field == NULL) {
+				PyErr_Clear();
+				field = "???";
+			}
+			PyErr_Format(PyExc_TypeError,
+				     "duplicate values for field '%s'",
+				     field);
+			Py_DECREF(pair);
+			Py_DECREF(name);
+			return -1;
+		}
+		
+		res = PyObject_SetAttr(self, name, val);
+		Py_DECREF(pair);
+		Py_DECREF(name);
+		if (res == -1)
+			return -1;
+	}
+	return index + dict->length;
+}
+
 static int
 Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	int i;
-	PyObject *fields;
+	StgDictObject *stgdict = PyObject_stgdict(self);
 
 /* Optimization possible: Store the attribute names _fields_[x][0]
  * in C accessible fields somewhere ?
  */
-
-/* Check this code again for correctness! */
 
 	if (!PyTuple_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4035,64 +4099,15 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 	}
 	if (PyTuple_GET_SIZE(args)) {
-		fields = PyObject_GetAttrString(self, "_fields_");
-		if (!fields) {
-			PyErr_Clear();
-			fields = PyTuple_New(0);
-			if (!fields)
-				return -1;
-		}
-
-		if (PyTuple_GET_SIZE(args) > PySequence_Length(fields)) {
-			Py_DECREF(fields);
+		int res = _init_pos_args(self, Py_TYPE(self),
+					 args, kwds, 0);
+		if (res == -1)
+			return -1;
+		if (res < PyTuple_GET_SIZE(args)) {
 			PyErr_SetString(PyExc_TypeError,
 					"too many initializers");
 			return -1;
 		}
-
-		for (i = 0; i < PyTuple_GET_SIZE(args); ++i) {
-			PyObject *pair = PySequence_GetItem(fields, i);
-			PyObject *name;
-			PyObject *val;
-			if (!pair) {
-				Py_DECREF(fields);
-				return IBUG("_fields_[i] failed");
-			}
-
-			name = PySequence_GetItem(pair, 0);
-			if (!name) {
-				Py_DECREF(pair);
-				Py_DECREF(fields);
-				return IBUG("_fields_[i][0] failed");
-			}
-
-			if (kwds && PyDict_GetItem(kwds, name)) {
-				char *field = PyString_AsString(name);
-				if (field == NULL) {
-					PyErr_Clear();
-					field = "???";
-				}
-				PyErr_Format(PyExc_TypeError,
-					     "duplicate values for field %s",
-					     field);
-				Py_DECREF(pair);
-				Py_DECREF(name);
-				Py_DECREF(fields);
-				return -1;
-			}
-
-			val = PyTuple_GET_ITEM(args, i);
-			if (-1 == PyObject_SetAttr(self, name, val)) {
-				Py_DECREF(pair);
-				Py_DECREF(name);
-				Py_DECREF(fields);
-				return -1;
-			}
-
-			Py_DECREF(name);
-			Py_DECREF(pair);
-		}
-		Py_DECREF(fields);
 	}
 
 	if (kwds) {
