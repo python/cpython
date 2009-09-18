@@ -546,6 +546,7 @@ PyTypeObject PyCArg_Type = {
  * C function call.
  *
  * 1. Python integers are converted to C int and passed by value.
+ *    Py_None is converted to a C NULL pointer.
  *
  * 2. 3-tuples are expected to have a format character in the first
  *    item, which must be 'i', 'f', 'd', 'q', or 'P'.
