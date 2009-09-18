@@ -274,6 +274,7 @@ mathematics         mark.dickinson, eric.smith, lemburg
 memory management   tim_one, lemburg
 networking
 packaging           tarek, lemburg
+py3 transition      benjamin.peterson
 release management  tarek, lemburg
 str.format          eric.smith
 time and dates      lemburg
