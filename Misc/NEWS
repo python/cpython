@@ -82,6 +82,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6938: Fix a TypeError in string formatting of a multiprocessing
+  debug message.
+
 - Issue #6635: Fix profiler printing usage message.
 
 - Issue #6795: int(Decimal('nan')) now raises ValueError instead of
