@@ -226,7 +226,7 @@ wave
 weakref             fdrake
 webbrowser          georg.brandl
 winreg
-winsound            effbot
+winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
 xml                 loewis
@@ -263,7 +263,7 @@ bsd
 buildbots
 data formats        mark.dickinson, georg.brandl
 database            lemburg
-documentation       georg.brandl
+documentation       georg.brandl, ezio.melotti
 GUI
 i18n                lemburg
 import machinery    brett.cannon, ncoghlan
