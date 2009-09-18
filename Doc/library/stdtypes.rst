@@ -788,11 +788,10 @@ String Methods
 
 .. index:: pair: string; methods
 
-String objects support the methods listed below.  Note that none of these
-methods take keyword arguments.
+String objects support the methods listed below.
 
-In addition, Python's strings support the sequence type methods described in
-the :ref:`typesseq` section. To output formatted strings, see the
+In addition, Python's strings support the sequence type methods described in the
+:ref:`typesseq` section. To output formatted strings, see the
 :ref:`string-formatting` section. Also, see the :mod:`re` module for string
 functions based on regular expressions.
 
@@ -825,6 +824,8 @@ functions based on regular expressions.
    :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   .. versionchanged:: 3.1
+      Added support for keyword arguments added.
 
 .. method:: str.endswith(suffix[, start[, end]])
 
@@ -1538,6 +1539,9 @@ Wherever one of these methods needs to interpret the bytes as characters
    ``'ignore'``, ``'replace'`` and any other name registered via
    :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
+
+   .. versionchanged:: 3.1
+      Added support for keyword arguments.
 
 
 The bytes and bytearray types have an additional class method:
