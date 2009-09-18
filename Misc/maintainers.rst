@@ -280,7 +280,7 @@ time and dates      lemburg
 testing             michael.foord, pitrou
 threads
 tracker
-unicode             lemburg, haypo
+unicode             lemburg
 svn/hg
 windows
 ==================  ===========
