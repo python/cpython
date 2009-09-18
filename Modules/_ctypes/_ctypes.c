@@ -936,8 +936,11 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
 {
 	StgDictObject *typedict;
 
-	if (value == Py_None)
-		return PyLong_FromLong(0); /* NULL pointer */
+	if (value == Py_None) {
+		/* ConvParam will convert to a NULL pointer later */
+		Py_INCREF(value);
+		return value;
+	}
 
 	typedict = PyType_stgdict(type);
 	assert(typedict); /* Cannot be NULL for pointer types */
