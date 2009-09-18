@@ -281,6 +281,6 @@ testing             michael.foord, pitrou
 threads
 tracker
 unicode             lemburg
-svn/hg
+version control
 windows
 ==================  ===========
