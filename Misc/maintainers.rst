@@ -206,7 +206,7 @@ termios
 test
 textwrap
 threading
-time
+time                brett.cannon
 timeit
 tkinter             gpolo
 token
@@ -257,7 +257,7 @@ HP-UX
 Interest Area       Maintainers
 ------------------  -----------
 algorithms
-ast/compiler        ncoghlan, benjamin.peterson
+ast/compiler        ncoghlan, benjamin.peterson, brett.cannon
 autoconf
 bsd
 buildbots
