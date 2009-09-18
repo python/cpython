@@ -97,7 +97,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.failUnlessEqual(x.contents.value, 42)
         self.failUnlessEqual(LPINT(c_int(42)).contents.value, 42)
 
-        self.failUnlessEqual(LPINT.from_param(None), 0)
+        self.assertEqual(LPINT.from_param(None), None)
 
         if c_int != c_long:
             self.assertRaises(TypeError, LPINT.from_param, pointer(c_long(42)))
