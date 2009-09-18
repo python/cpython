@@ -195,7 +195,7 @@ struct              mark.dickinson
 subprocess          astrand (inactive)
 sunau
 symbol
-symtable
+symtable            benjamin.peterson
 sys
 syslog
 tabnanny            tim_one
