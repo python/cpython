@@ -3332,13 +3332,15 @@ a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
 codecs.register_error that is able to handle UnicodeEncodeErrors.");
 
 static PyObject *
-string_encode(PyStringObject *self, PyObject *args)
+string_encode(PyStringObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"encoding", "errors", 0};
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:encode",
+				     kwlist, &encoding, &errors))
         return NULL;
     v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
@@ -3369,13 +3371,15 @@ as well as any other name registered with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
-string_decode(PyStringObject *self, PyObject *args)
+string_decode(PyStringObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"encoding", "errors", 0};
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode",
+				     kwlist, &encoding, &errors))
         return NULL;
     v = PyString_AsDecodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
@@ -4053,8 +4057,8 @@ string_methods[] = {
 	{"__format__", (PyCFunction) string__format__, METH_VARARGS, p_format__doc__},
 	{"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
 	{"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
-	{"encode", (PyCFunction)string_encode, METH_VARARGS, encode__doc__},
-	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
+	{"encode", (PyCFunction)string_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
+	{"decode", (PyCFunction)string_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
 	{"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,
 	 expandtabs__doc__},
 	{"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,
