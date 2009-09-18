@@ -955,6 +955,10 @@ class UnicodeTest(
         self.assertRaises(UnicodeError, 'Andr\202 x'.encode, 'ascii','strict')
         self.assertEqual('Andr\202 x'.encode('ascii','ignore'), b"Andr x")
         self.assertEqual('Andr\202 x'.encode('ascii','replace'), b"Andr? x")
+        self.assertEqual('Andr\202 x'.encode('ascii', 'replace'),
+                         'Andr\202 x'.encode('ascii', errors='replace'))
+        self.assertEqual('Andr\202 x'.encode('ascii', 'ignore'),
+                         'Andr\202 x'.encode(encoding='ascii', errors='ignore'))
 
         # Error handling (decoding)
         self.assertRaises(UnicodeError, str, b'Andr\202 x', 'ascii')

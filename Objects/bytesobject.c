@@ -2725,12 +2725,13 @@ as well as any other name registerd with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
-bytes_decode(PyObject *self, PyObject *args)
+bytes_decode(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	const char *encoding = NULL;
 	const char *errors = NULL;
+	static char *kwlist[] = {"encoding", "errors", 0};
 
-	if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", kwlist, &encoding, &errors))
 		return NULL;
 	if (encoding == NULL)
 		encoding = PyUnicode_GetDefaultEncoding();
@@ -2831,7 +2832,7 @@ bytes_methods[] = {
 	 _Py_capitalize__doc__},
 	{"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
 	{"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
-	{"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode__doc__},
+	{"decode", (PyCFunction)bytes_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
 	{"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
          endswith__doc__},
 	{"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
