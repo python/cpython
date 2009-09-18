@@ -402,12 +402,12 @@ def getfile(object):
     if ismodule(object):
         if hasattr(object, '__file__'):
             return object.__file__
-        raise TypeError('%r is a built-in module' % object)
+        raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         object = sys.modules.get(object.__module__)
         if hasattr(object, '__file__'):
             return object.__file__
-        raise TypeError('%r is a built-in class' % object)
+        raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.im_func
     if isfunction(object):
@@ -418,8 +418,8 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('%r is not a module, class, method, '
-                    'function, traceback, frame, or code object' % object)
+    raise TypeError('{!r} is not a module, class, method, '
+                    'function, traceback, frame, or code object'.format(object))
 
 ModuleInfo = namedtuple('ModuleInfo', 'name suffix mode module_type')
 
@@ -741,7 +741,7 @@ def getargs(co):
     'varargs' and 'varkw' are the names of the * and ** arguments or None."""
 
     if not iscode(co):
-        raise TypeError('%r is not a code object' % co)
+        raise TypeError('{!r} is not a code object'.format(co))
 
     nargs = co.co_argcount
     names = co.co_varnames
@@ -805,7 +805,7 @@ def getargspec(func):
     if ismethod(func):
         func = func.im_func
     if not isfunction(func):
-        raise TypeError('%r is not a Python function' % func)
+        raise TypeError('{!r} is not a Python function'.format(func))
     args, varargs, varkw = getargs(func.func_code)
     return ArgSpec(args, varargs, varkw, func.func_defaults)
 
@@ -902,7 +902,7 @@ def getframeinfo(frame, context=1):
     else:
         lineno = frame.f_lineno
     if not isframe(frame):
-        raise TypeError('%r is not a frame or traceback object' % frame)
+        raise TypeError('{!r} is not a frame or traceback object'.format(frame))
 
     filename = getsourcefile(frame) or getfile(frame)
     if context > 0:
