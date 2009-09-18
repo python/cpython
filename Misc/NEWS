@@ -72,6 +72,9 @@ C-API
 Library
 -------
 
+- Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
+  does now always result in NULL.
+
 - Issue #5042: Structure sub-subclass does now initialize correctly
   with base class positional arguments.
 
