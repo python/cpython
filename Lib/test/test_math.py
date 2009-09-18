@@ -13,6 +13,11 @@ NAN = float('nan')
 INF = float('inf')
 NINF = float('-inf')
 
+# decorator for skipping tests on non-IEEE 754 platforms
+requires_IEEE_754 = unittest.skipUnless(
+    float.__getformat__("double").startswith("IEEE"),
+    "test requires IEEE 754 doubles")
+
 # detect evidence of double-rounding: fsum is not always correctly
 # rounded on machines that suffer from double rounding.
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
@@ -209,33 +214,33 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.ceil, t)
         self.assertRaises(TypeError, math.ceil, t, 0)
 
-    if float.__getformat__("double").startswith("IEEE"):
-        def testCopysign(self):
-            self.assertRaises(TypeError, math.copysign)
-            # copysign should let us distinguish signs of zeros
-            self.assertEquals(copysign(1., 0.), 1.)
-            self.assertEquals(copysign(1., -0.), -1.)
-            self.assertEquals(copysign(INF, 0.), INF)
-            self.assertEquals(copysign(INF, -0.), NINF)
-            self.assertEquals(copysign(NINF, 0.), INF)
-            self.assertEquals(copysign(NINF, -0.), NINF)
-            # and of infinities
-            self.assertEquals(copysign(1., INF), 1.)
-            self.assertEquals(copysign(1., NINF), -1.)
-            self.assertEquals(copysign(INF, INF), INF)
-            self.assertEquals(copysign(INF, NINF), NINF)
-            self.assertEquals(copysign(NINF, INF), INF)
-            self.assertEquals(copysign(NINF, NINF), NINF)
-            self.assertTrue(math.isnan(copysign(NAN, 1.)))
-            self.assertTrue(math.isnan(copysign(NAN, INF)))
-            self.assertTrue(math.isnan(copysign(NAN, NINF)))
-            self.assertTrue(math.isnan(copysign(NAN, NAN)))
-            # copysign(INF, NAN) may be INF or it may be NINF, since
-            # we don't know whether the sign bit of NAN is set on any
-            # given platform.
-            self.assertTrue(math.isinf(copysign(INF, NAN)))
-            # similarly, copysign(2., NAN) could be 2. or -2.
-            self.assertEquals(abs(copysign(2., NAN)), 2.)
+    @requires_IEEE_754
+    def testCopysign(self):
+        self.assertRaises(TypeError, math.copysign)
+        # copysign should let us distinguish signs of zeros
+        self.assertEquals(copysign(1., 0.), 1.)
+        self.assertEquals(copysign(1., -0.), -1.)
+        self.assertEquals(copysign(INF, 0.), INF)
+        self.assertEquals(copysign(INF, -0.), NINF)
+        self.assertEquals(copysign(NINF, 0.), INF)
+        self.assertEquals(copysign(NINF, -0.), NINF)
+        # and of infinities
+        self.assertEquals(copysign(1., INF), 1.)
+        self.assertEquals(copysign(1., NINF), -1.)
+        self.assertEquals(copysign(INF, INF), INF)
+        self.assertEquals(copysign(INF, NINF), NINF)
+        self.assertEquals(copysign(NINF, INF), INF)
+        self.assertEquals(copysign(NINF, NINF), NINF)
+        self.assertTrue(math.isnan(copysign(NAN, 1.)))
+        self.assertTrue(math.isnan(copysign(NAN, INF)))
+        self.assertTrue(math.isnan(copysign(NAN, NINF)))
+        self.assertTrue(math.isnan(copysign(NAN, NAN)))
+        # copysign(INF, NAN) may be INF or it may be NINF, since
+        # we don't know whether the sign bit of NAN is set on any
+        # given platform.
+        self.assertTrue(math.isinf(copysign(INF, NAN)))
+        # similarly, copysign(2., NAN) could be 2. or -2.
+        self.assertEquals(abs(copysign(2., NAN)), 2.)
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
@@ -364,8 +369,7 @@ class MathTests(unittest.TestCase):
         self.assertEquals(math.frexp(NINF)[0], NINF)
         self.assertTrue(math.isnan(math.frexp(NAN)[0]))
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "fsum is not exact on machines with double rounding")
     def testFsum(self):
@@ -857,9 +861,8 @@ class MathTests(unittest.TestCase):
             else:
                 self.fail("sqrt(-1) didn't raise ValueError")
 
+    @requires_IEEE_754
     def test_testfile(self):
-        if not float.__getformat__("double").startswith("IEEE"):
-            return
         for id, fn, ar, ai, er, ei, flags in parse_testfile(test_file):
             # Skip if either the input or result is complex, or if
             # flags is nonempty
