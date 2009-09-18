@@ -102,12 +102,12 @@ prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
    $ python3.1
-   Python 3.1a1 (py3k, Sep 12 2007, 12:21:02)
+   Python 3.1 (py3k, Sep 12 2007, 12:21:02)
    [GCC 3.4.6 20060404 (Red Hat 3.4.6-8)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
-.. XXX update for final release of Python 3.1
+.. XXX update for new releases
 
 Continuation lines are needed when entering a multi-line construct. As an
 example, take a look at this :keyword:`if` statement::
@@ -243,7 +243,7 @@ in the script::
 
 .. rubric:: Footnotes
 
-.. [#] On Unix, the 3.1 interpreter is by default not installed with the
+.. [#] On Unix, the Python 3.x interpreter is by default not installed with the
    executable named ``python``, so that it does not conflict with a
    simultaneously installed Python 2.x executable.
 
