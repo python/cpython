@@ -1763,8 +1763,8 @@ long_to_decimal_string(PyObject *aa)
 	return (PyObject *)str;
 }
 
-/* Convert a long int object to a string, using a given conversion base.
-   Return a string object.
+/* Convert a long int object to a string, using a given conversion base,
+   which should be one of 2, 8, 10 or 16.  Return a string object.
    If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'. */
 
 PyObject *
@@ -1774,10 +1774,10 @@ _PyLong_Format(PyObject *aa, int base)
 	PyObject *str;
 	Py_ssize_t i, sz;
 	Py_ssize_t size_a;
-	Py_UNICODE *p;
+	Py_UNICODE *p, sign = '\0';
 	int bits;
-	char sign = '\0';
 
+	assert(base == 2 || base == 8 || base == 10 || base == 16);
 	if (base == 10)
 		return long_to_decimal_string((PyObject *)a);
 
@@ -1785,24 +1785,33 @@ _PyLong_Format(PyObject *aa, int base)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	assert(base >= 2 && base <= 36);
 	size_a = ABS(Py_SIZE(a));
 
 	/* Compute a rough upper bound for the length of the string */
-	i = base;
-	bits = 0;
-	while (i > 1) {
-		++bits;
-		i >>= 1;
+	switch (base) {
+	case 16:
+		bits = 4;
+		break;
+	case 8:
+		bits = 3;
+		break;
+	case 2:
+		bits = 1;
+		break;
+	default:
+		assert(0); /* shouldn't ever get here */
+		bits = 0; /* to silence gcc warning */
 	}
-	i = 5;
-	/* ensure we don't get signed overflow in sz calculation */
-	if (size_a > (PY_SSIZE_T_MAX - i) / PyLong_SHIFT) {
+	/* compute length of output string: allow 2 characters for prefix and
+	   1 for possible '-' sign. */
+	if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT) {
 		PyErr_SetString(PyExc_OverflowError,
 				"int is too large to format");
 		return NULL;
 	}
-	sz = i + 1 + (size_a * PyLong_SHIFT - 1) / bits;
+	/* now size_a * PyLong_SHIFT + 3 <= PY_SSIZE_T_MAX, so the RHS below
+	   is safe from overflow */
+	sz = 3 + (size_a * PyLong_SHIFT + (bits - 1)) / bits;
 	assert(sz >= 0);
 	str = PyUnicode_FromUnicode(NULL, sz);
 	if (str == NULL)
@@ -1815,106 +1824,32 @@ _PyLong_Format(PyObject *aa, int base)
 	if (Py_SIZE(a) == 0) {
 		*--p = '0';
 	}
-	else if ((base & (base - 1)) == 0) {
+	else {
 		/* JRH: special case for power-of-2 bases */
 		twodigits accum = 0;
 		int accumbits = 0;	/* # of bits in accum */
-		int basebits = 1;	/* # of bits in base-1 */
-		i = base;
-		while ((i >>= 1) > 1)
-			++basebits;
-
 		for (i = 0; i < size_a; ++i) {
 			accum |= (twodigits)a->ob_digit[i] << accumbits;
 			accumbits += PyLong_SHIFT;
-			assert(accumbits >= basebits);
+			assert(accumbits >= bits);
 			do {
-				char cdigit = (char)(accum & (base - 1));
+				Py_UNICODE cdigit = accum & (base - 1);
 				cdigit += (cdigit < 10) ? '0' : 'a'-10;
 				assert(p > PyUnicode_AS_UNICODE(str));
 				*--p = cdigit;
-				accumbits -= basebits;
-				accum >>= basebits;
-			} while (i < size_a-1 ? accumbits >= basebits :
-						accum > 0);
+				accumbits -= bits;
+				accum >>= bits;
+			} while (i < size_a-1 ? accumbits >= bits : accum > 0);
 		}
 	}
-	else {
-		/* Not 0, and base not a power of 2.  Divide repeatedly by
-		   base, but for speed use the highest power of base that
-		   fits in a digit. */
-		Py_ssize_t size = size_a;
-		digit *pin = a->ob_digit;
-		PyLongObject *scratch;
-		/* powbasw <- largest power of base that fits in a digit. */
-		digit powbase = base;  /* powbase == base ** power */
-		int power = 1;
-		for (;;) {
-			twodigits newpow = powbase * (twodigits)base;
-			if (newpow >> PyLong_SHIFT)
-				/* doesn't fit in a digit */
-				break;
-			powbase = (digit)newpow;
-			++power;
-		}
 
-		/* Get a scratch area for repeated division. */
-		scratch = _PyLong_New(size);
-		if (scratch == NULL) {
-			Py_DECREF(str);
-			return NULL;
-		}
-
-		/* Repeatedly divide by powbase. */
-		do {
-			int ntostore = power;
-			digit rem = inplace_divrem1(scratch->ob_digit,
-						     pin, size, powbase);
-			pin = scratch->ob_digit; /* no need to use a again */
-			if (pin[size - 1] == 0)
-				--size;
-			SIGCHECK({
-				Py_DECREF(scratch);
-				Py_DECREF(str);
-				return NULL;
-			})
-
-			/* Break rem into digits. */
-			assert(ntostore > 0);
-			do {
-				digit nextrem = (digit)(rem / base);
-				char c = (char)(rem - nextrem * base);
-				assert(p > PyUnicode_AS_UNICODE(str));
-				c += (c < 10) ? '0' : 'a'-10;
-				*--p = c;
-				rem = nextrem;
-				--ntostore;
-				/* Termination is a bit delicate:  must not
-				   store leading zeroes, so must get out if
-				   remaining quotient and rem are both 0. */
-			} while (ntostore && (size || rem));
-		} while (size != 0);
-		Py_DECREF(scratch);
-	}
-
-	if (base == 16) {
+	if (base == 16)
 		*--p = 'x';
-		*--p = '0';
-	}
-	else if (base == 8) {
+	else if (base == 8)
 		*--p = 'o';
-		*--p = '0';
-	}
-	else if (base == 2) {
+	else /* (base == 2) */
 		*--p = 'b';
-		*--p = '0';
-	}
-	else if (base != 10) {
-		*--p = '#';
-		*--p = '0' + base%10;
-		if (base > 10)
-			*--p = '0' + base/10;
-	}
+	*--p = '0';
 	if (sign)
 		*--p = sign;
 	if (p != PyUnicode_AS_UNICODE(str)) {
