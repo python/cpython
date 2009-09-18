@@ -216,12 +216,12 @@ traceback
 tty
 turtle              gregorlingl
 types
-unicodedata         loewis, lemburg
+unicodedata         loewis, lemburg, ezio.melotti
 unittest            michael.foord
-urllib
+urllib              orsenthil
 uu
 uuid
-warnings
+warnings            brett.cannon
 wave
 weakref             fdrake
 webbrowser          georg.brandl
@@ -258,7 +258,7 @@ Interest Area       Maintainers
 ------------------  -----------
 algorithms
 ast/compiler        ncoghlan, benjamin.peterson, brett.cannon, georg.brandl
-autoconf
+autoconf/makefiles
 bsd
 buildbots
 bytecode            pitrou
@@ -270,7 +270,6 @@ i18n                lemburg
 import machinery    brett.cannon, ncoghlan
 io                  pitrou, benjamin.peterson
 locale              lemburg, loewis
-makefiles
 mathematics         mark.dickinson, eric.smith, lemburg
 memory management   tim_one, lemburg
 networking
@@ -280,6 +279,8 @@ str.format          eric.smith
 time and dates      lemburg
 testing             michael.foord, pitrou
 threads
-unicode             lemburg
+tracker
+unicode             lemburg, haypo
+svn/hg
 windows
 ==================  ===========
