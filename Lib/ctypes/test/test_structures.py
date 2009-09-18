@@ -349,6 +349,25 @@ class StructureTestCase(unittest.TestCase):
         self.assertTrue("from_address" in dir(type(Structure)))
         self.assertTrue("in_dll" in dir(type(Structure)))
 
+    def test_positional_args(self):
+        # see also http://bugs.python.org/issue5042
+        class W(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+        class X(W):
+            _fields_ = [("c", c_int)]
+        class Y(X):
+            pass
+        class Z(Y):
+            _fields_ = [("d", c_int), ("e", c_int), ("f", c_int)]
+
+        z = Z(1, 2, 3, 4, 5, 6)
+        self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
+                         (1, 2, 3, 4, 5, 6))
+        z = Z(1)
+        self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
+                         (1, 0, 0, 0, 0, 0))
+        self.assertRaises(TypeError, lambda: Z(1, 2, 3, 4, 5, 6, 7))
+
 class PointerMemberTestCase(unittest.TestCase):
 
     def test(self):
