@@ -257,11 +257,11 @@ HP-UX
 Interest Area       Maintainers
 ------------------  -----------
 algorithms
-ast/compiler        ncoghlan, benjamin.peterson, brett.cannon
+ast/compiler        ncoghlan, benjamin.peterson, brett.cannon, georg.brandl
 autoconf
 bsd
 buildbots
-data formats        mark.dickinson
+data formats        mark.dickinson, georg.brandl
 database            lemburg
 documentation       georg.brandl
 GUI
