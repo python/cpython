@@ -401,6 +401,17 @@ class StrTest(
     def test_buffer_is_readonly(self):
         self.assertRaises(TypeError, sys.stdin.readinto, b"")
 
+    def test_encode_and_decode_kwargs(self):
+        self.assertEqual('abcde'.encode('ascii', 'replace'),
+                         'abcde'.encode('ascii', errors='replace'))
+        self.assertEqual('abcde'.encode('ascii', 'ignore'),
+                         'abcde'.encode(encoding='ascii', errors='ignore'))
+        self.assertEqual('Andr\202 x'.decode('ascii', 'ignore'),
+                         'Andr\202 x'.decode('ascii', errors='ignore'))
+        self.assertEqual('Andr\202 x'.decode('ascii', 'replace'),
+                         'Andr\202 x'.decode(encoding='ascii', errors='replace'))
+
+
 
 def test_main():
     test_support.run_unittest(StrTest)

@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6300: unicode.encode, unicode.docode, str.decode, and str.encode now
+  take keyword arguments.
+
 - Issue #6922: Fix an infinite loop when trying to decode an invalid
   UTF-32 stream with a non-raising error handler like "replace" or "ignore".
 

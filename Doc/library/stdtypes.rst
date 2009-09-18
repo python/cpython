@@ -815,8 +815,8 @@ String Methods
 
 .. index:: pair: string; methods
 
-Below are listed the string methods which both 8-bit strings and Unicode objects
-support. Note that none of these methods take keyword arguments.
+Below are listed the string methods which both 8-bit strings and
+Unicode objects support.
 
 In addition, Python's strings support the sequence type methods
 described in the :ref:`typesseq` section. To output formatted strings
@@ -861,6 +861,8 @@ string functions based on regular expressions.
    .. versionchanged:: 2.3
       Support for other error handling schemes added.
 
+   .. versionchanged:: 2.7
+      Support for keyword arguments added.
 
 .. method:: str.encode([encoding[,errors]])
 
@@ -879,6 +881,8 @@ string functions based on regular expressions.
       Support for ``'xmlcharrefreplace'`` and ``'backslashreplace'`` and other error
       handling schemes added.
 
+   .. versionchanged:: 2.7
+      Support for keyword arguments added.
 
 .. method:: str.endswith(suffix[, start[, end]])
 

@@ -593,12 +593,20 @@ class UnicodeTest(
         self.assertRaises(UnicodeError, u'Andr\202 x'.encode, 'ascii','strict')
         self.assertEqual(u'Andr\202 x'.encode('ascii','ignore'), "Andr x")
         self.assertEqual(u'Andr\202 x'.encode('ascii','replace'), "Andr? x")
+        self.assertEqual(u'Andr\202 x'.encode('ascii', 'replace'),
+                         u'Andr\202 x'.encode('ascii', errors='replace'))
+        self.assertEqual(u'Andr\202 x'.encode('ascii', 'ignore'),
+                         u'Andr\202 x'.encode(encoding='ascii', errors='ignore'))
 
         # Error handling (decoding)
         self.assertRaises(UnicodeError, unicode, 'Andr\202 x', 'ascii')
         self.assertRaises(UnicodeError, unicode, 'Andr\202 x', 'ascii','strict')
         self.assertEqual(unicode('Andr\202 x','ascii','ignore'), u"Andr x")
         self.assertEqual(unicode('Andr\202 x','ascii','replace'), u'Andr\uFFFD x')
+        self.assertEqual(u'abcde'.decode('ascii', 'ignore'),
+                         u'abcde'.decode('ascii', errors='ignore'))
+        self.assertEqual(u'abcde'.decode('ascii', 'replace'),
+                         u'abcde'.decode(encoding='ascii', errors='replace'))
 
         # Error handling (unknown character names)
         self.assertEqual("\\N{foo}xx".decode("unicode-escape", "ignore"), u"xx")

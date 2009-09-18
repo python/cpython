@@ -6610,13 +6610,15 @@ a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
 codecs.register_error that can handle UnicodeEncodeErrors.");
 
 static PyObject *
-unicode_encode(PyUnicodeObject *self, PyObject *args)
+unicode_encode(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"encoding", "errors", 0};
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:encode",
+                                     kwlist, &encoding, &errors))
         return NULL;
     v = PyUnicode_AsEncodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
@@ -6646,13 +6648,15 @@ as well as any other name registerd with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
-unicode_decode(PyUnicodeObject *self, PyObject *args)
+unicode_decode(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"encoding", "errors", 0};
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode",
+                                     kwlist, &encoding, &errors))
         return NULL;
     v = PyUnicode_AsDecodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
@@ -8054,7 +8058,7 @@ static PyMethodDef unicode_methods[] = {
     /* Order is according to common usage: often used methods should
        appear first, since lookup is done sequentially. */
 
-    {"encode", (PyCFunction) unicode_encode, METH_VARARGS, encode__doc__},
+    {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
     {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
@@ -8070,7 +8074,7 @@ static PyMethodDef unicode_methods[] = {
     {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},
     {"lstrip", (PyCFunction) unicode_lstrip, METH_VARARGS, lstrip__doc__},
-    {"decode", (PyCFunction) unicode_decode, METH_VARARGS, decode__doc__},
+    {"decode", (PyCFunction) unicode_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
 /*  {"maketrans", (PyCFunction) unicode_maketrans, METH_VARARGS, maketrans__doc__}, */
     {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
     {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
