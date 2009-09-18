@@ -813,7 +813,7 @@ functions based on regular expressions.
    interpreted as in slice notation.
 
 
-.. method:: str.encode([encoding[, errors]])
+.. method:: str.encode(encoding=sys.getdefaultencoding(), errors="strict")
 
    Return an encoded version of the string as a bytes object.  Default encoding
    is the current default string encoding.  *errors* may be given to set a
@@ -1529,8 +1529,8 @@ Wherever one of these methods needs to interpret the bytes as characters
       b = a.replace(b"a", b"f")
 
 
-.. method:: bytes.decode([encoding[, errors]])
-            bytearray.decode([encoding[, errors]])
+.. method:: bytes.decode(encoding=sys.getdefaultencoding(), errors="strict")
+            bytearray.decode(encoding=sys.getdefaultencoding(), errors="strict")
 
    Return a string decoded from the given bytes.  Default encoding is the
    current default string encoding.  *errors* may be given to set a different
