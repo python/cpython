@@ -102,7 +102,7 @@ fpectl
 fractions           mark.dickinson
 ftplib
 functools
-gc
+gc                  pitrou
 getopt
 getpass
 gettext             loewis
@@ -148,7 +148,7 @@ os                  loewis
 ossaudiodev
 parser
 pdb
-pickle              alexandre.vassalotti
+pickle              alexandre.vassalotti, pitrou
 pickletools         alexandre.vassalotti
 pipes
 pkgutil
@@ -161,13 +161,13 @@ pstats
 pty
 pwd
 py_compile
-pybench             lemburg
+pybench             lemburg, pitrou
 pyclbr
 pydoc
 queue
 quopri
 random              rhettinger
-re                  effbot (inactive)
+re                  effbot (inactive), pitrou
 readline
 reprlib
 resource
@@ -261,6 +261,7 @@ ast/compiler        ncoghlan, benjamin.peterson, brett.cannon, georg.brandl
 autoconf
 bsd
 buildbots
+bytecode            pitrou
 data formats        mark.dickinson, georg.brandl
 database            lemburg
 documentation       georg.brandl, ezio.melotti
@@ -277,7 +278,7 @@ packaging           tarek, lemburg
 release management  tarek, lemburg
 str.format          eric.smith
 time and dates      lemburg
-testing             michael.foord
+testing             michael.foord, pitrou
 threads
 unicode             lemburg
 windows
