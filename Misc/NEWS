@@ -72,6 +72,9 @@ C-API
 Library
 -------
 
+- Issue #5042: Structure sub-subclass does now initialize correctly
+  with base class positional arguments.
+
 - Issue #6882: Import uuid creates zombies processes.
 
 - Issue #6635: Fix profiler printing usage message.
