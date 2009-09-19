@@ -209,10 +209,10 @@ threading
 time                brett.cannon
 timeit
 tkinter             gpolo
-token
+token               georg.brandl
 tokenize
 trace
-traceback
+traceback           georg.brandl
 tty
 turtle              gregorlingl
 types
