@@ -275,7 +275,8 @@ memory management   tim_one, lemburg
 networking
 packaging           tarek, lemburg
 py3 transition      benjamin.peterson
-release management  tarek, lemburg
+release management  tarek, lemburg, benjamin.peterson, barry, loewis,
+                    gvanrossum, anthonybaxter
 str.format          eric.smith
 time and dates      lemburg
 testing             michael.foord, pitrou
