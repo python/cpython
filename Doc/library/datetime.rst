@@ -65,6 +65,7 @@ Available Types
 
 
 .. class:: date
+   :noindex:
 
    An idealized naive date, assuming the current Gregorian calendar always was, and
    always will be, in effect. Attributes: :attr:`year`, :attr:`month`, and
@@ -72,6 +73,7 @@ Available Types
 
 
 .. class:: time
+   :noindex:
 
    An idealized time, independent of any particular day, assuming that every day
    has exactly 24\*60\*60 seconds (there is no notion of "leap seconds" here).
@@ -80,6 +82,7 @@ Available Types
 
 
 .. class:: datetime
+   :noindex:
 
    A combination of a date and a time. Attributes: :attr:`year`, :attr:`month`,
    :attr:`day`, :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
@@ -87,6 +90,7 @@ Available Types
 
 
 .. class:: timedelta
+   :noindex:
 
    A duration expressing the difference between two :class:`date`, :class:`time`,
    or :class:`datetime` instances to microsecond resolution.
