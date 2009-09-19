@@ -262,6 +262,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6944: Fix a SystemError when socket.getnameinfo() was called
+  with something other than a tuple as first argument.
+
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
 - Fix expat to not segfault with specially crafted input.
