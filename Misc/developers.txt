@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Doug Hellmann was given SVN access on September 19 2009 by GFB, at
+  suggestion of Jesse Noller, for documentation work.
+
 - Ezio Melotti was given SVN access on June 7 2009 by GFB, for work on and
   fixes to the documentation.
 
