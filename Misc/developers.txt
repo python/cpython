@@ -112,6 +112,9 @@ Permissions History
 - Jeffrey Yasskin was given SVN access on 9 August 2007 by NCN,
   for his work on PEPs and other general patches. 
 
+- Mark Summerfield was given SVN access on 1 August 2007 by GFB,
+  for work on documentation.
+
 - Armin Ronacher was given SVN access on 23 July 2007 by GFB,
   for work on the documentation toolset.  He now maintains the
   ast module.
