@@ -82,6 +82,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6947: Fix distutils test on windows. Patch by Hirokazu Yamamoto.
+
 - Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
   does now always result in NULL.
 

@@ -338,7 +338,8 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.distribution.package_dir = {'': 'src'}
         cmd.distribution.packages = ['lxml', 'lxml.html']
         curdir = os.getcwd()
-        wanted = os.path.join(curdir, 'src', 'lxml', 'etree.so')
+        ext = sysconfig.get_config_var("SO")
+        wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEquals(wanted, path)
 
