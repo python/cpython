@@ -3931,14 +3931,6 @@ PyTypeObject PyCFuncPtr_Type = {
 /*
   Struct_Type
 */
-static int
-IBUG(char *msg)
-{
-	PyErr_Format(PyExc_RuntimeError,
-			"inconsistent state in CDataObject (%s)", msg);
-	return -1;
-}
-
 /*
   This function is called to initialize a Structure or Union with positional
   arguments. It calls itself recursively for all Structure or Union base
@@ -4009,12 +4001,9 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
 static int
 Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	StgDictObject *stgdict = PyObject_stgdict(self);
-
 /* Optimization possible: Store the attribute names _fields_[x][0]
  * in C accessible fields somewhere ?
  */
-
 	if (!PyTuple_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
 				"args not a tuple?");
