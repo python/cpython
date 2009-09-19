@@ -1333,6 +1333,9 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #6944: Fix a SystemError when socket.getnameinfo() was called
+  with something other than a tuple as first argument.
+
 - Issue #6865: Fix reference counting issue in the initialization of the pwd
   module.
 
