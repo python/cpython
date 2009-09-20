@@ -82,6 +82,7 @@ def overrideRootMenu(root, flist):
 
     def config_dialog(event=None):
         import configDialog
+        root.instance_dict = flist.inversedict
         configDialog.ConfigDialog(root, 'Settings')
 
 
@@ -95,7 +96,7 @@ def overrideRootMenu(root, flist):
     tkversion = root.tk.eval('info patchlevel')
     # Note: we cannot check if the string tkversion >= '8.4.14', because
     # the string '8.4.7' is greater than the string '8.4.14'.
-    if map(int, tkversion.split('.')) >= (8, 4, 14):
+    if tuple(map(int, tkversion.split('.'))) >= (8, 4, 14):
         Bindings.menudefs[0] =  ('application', [
                 ('About IDLE', '<<about-idle>>'),
                 None,
