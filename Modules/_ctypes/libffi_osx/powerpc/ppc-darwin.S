@@ -1,7 +1,7 @@
 #if defined(__ppc__) || defined(__ppc64__) 
 
 /* -----------------------------------------------------------------------
-   darwin.S - Copyright (c) 2000 John Hornkvist
+   ppc-darwin.S - Copyright (c) 2000 John Hornkvist
 	      Copyright (c) 2004 Free Software Foundation, Inc.
 
    PowerPC Assembly glue.
@@ -294,7 +294,7 @@ LSCIE1:
 	.byte	0x7c		; sleb128 -4; CIE Data Alignment Factor
 	.byte	0x41		; CIE RA Column
 	.byte	0x1			; uleb128 0x1; Augmentation size
-	.byte	0x90		; FDE Encoding (indirect pcrel)
+	.byte	0x10		; FDE Encoding (pcrel)
 	.byte	0xc			; DW_CFA_def_cfa
 	.byte	0x1			; uleb128 0x1
 	.byte	0x0			; uleb128 0x0
@@ -308,7 +308,7 @@ LSFDE1:
 
 LASFDE1:
 	.long	LASFDE1-EH_frame1		; FDE CIE offset
-	.g_long	LLFB0$non_lazy_ptr-.	; FDE initial location
+	.g_long	LFB0-.					; FDE initial location
 	.set	L$set$3,LFE1-LFB0
 	.g_long	L$set$3					; FDE address range
 	.byte   0x0     				; uleb128 0x0; Augmentation size
@@ -338,10 +338,6 @@ LASFDE1:
 	.byte	0x1c					; uleb128 0x1c
 	.align LOG2_GPR_BYTES
 LEFDE1:
-.data
-	.align LOG2_GPR_BYTES
-LLFB0$non_lazy_ptr:
-	.g_long LFB0
 
 #if defined(__ppc64__)
 .section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
