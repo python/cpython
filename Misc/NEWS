@@ -1335,6 +1335,9 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #6877: Make it possible to link the readline extension to libedit
+  on OSX.
+
 - Issue #6944: Fix a SystemError when socket.getnameinfo() was called
   with something other than a tuple as first argument.
 
