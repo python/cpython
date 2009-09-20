@@ -379,6 +379,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6851: Fix urllib.urlopen crash on secondairy threads on OSX 10.6
+
 - Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
   does now always result in NULL.
 
