@@ -28,13 +28,13 @@
    OTHER DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
-#include "ffi.h"
-#include "ffi_common.h"
+#include <ffi.h>
+#include <ffi_common.h>
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "ppc-darwin.h"
+#include <ppc-darwin.h>
 #include <architecture/ppc/mode_independent_asm.h>
 
 #if 0
@@ -42,16 +42,13 @@
 #include <libkern/OSCacheControl.h>	// for sys_icache_invalidate()
 #endif
 
-#else 
-
-/* Explicit prototype instead of including a header to allow compilation
- * on Tiger systems.
- */
+#else
 
 #pragma weak sys_icache_invalidate
 extern void sys_icache_invalidate(void *start, size_t len);
 
 #endif
+
 
 extern void ffi_closure_ASM(void);
 
@@ -760,9 +757,7 @@ ffi_prep_closure(
 
 			// Flush the icache. Only necessary on Darwin.
 #if defined(POWERPC_DARWIN)
-			if (sys_icache_invalidate) {
-				sys_icache_invalidate(closure->tramp, FFI_TRAMPOLINE_SIZE);
-			}
+			sys_icache_invalidate(closure->tramp, FFI_TRAMPOLINE_SIZE);
 #else
 			flush_range(closure->tramp, FFI_TRAMPOLINE_SIZE);
 #endif
@@ -804,6 +799,12 @@ ffi_prep_closure(
 	} ldu;
 #endif
 
+typedef union
+{
+	float	f;
+	double	d;
+} ffi_dblfl;
+
 /*	The trampoline invokes ffi_closure_ASM, and on entry, r11 holds the
 	address of the closure. After storing the registers that could possibly
 	contain parameters to be passed into the stack frame and setting up space
@@ -829,7 +830,7 @@ ffi_closure_helper_DARWIN(
 	unsigned int		nf = 0;	/* number of FPRs already used.  */
 	unsigned int		ng = 0;	/* number of GPRs already used.  */
 	ffi_cif*			cif = closure->cif;
-	unsigned int				avn = cif->nargs;
+	long				avn = cif->nargs;
 	void**				avalue = alloca(cif->nargs * sizeof(void*));
 	ffi_type**			arg_types = cif->arg_types;
 
@@ -906,9 +907,9 @@ ffi_closure_helper_DARWIN(
 						size_al = ALIGN(arg_types[i]->size, 8);
 
 					if (size_al < 3)
-						avalue[i] = (char*)pgr + MODE_CHOICE(4,8) - size_al;
+						avalue[i] = (void*)pgr + MODE_CHOICE(4,8) - size_al;
 					else
-						avalue[i] = (char*)pgr;
+						avalue[i] = (void*)pgr;
 
 					ng	+= (size_al + 3) / sizeof(long);
 					pgr += (size_al + 3) / sizeof(long);
@@ -988,8 +989,8 @@ ffi_closure_helper_DARWIN(
 					We use a union to pass the long double to avalue[i].  */
 				else if (nf == NUM_FPR_ARG_REGISTERS - 1)
 				{
-					memcpy (&temp_ld.lb[0], pfr, sizeof(ldbits));
-					memcpy (&temp_ld.lb[1], pgr + 2, sizeof(ldbits));
+					memcpy (&temp_ld.lb[0], pfr, sizeof(temp_ld.lb[0]));
+					memcpy (&temp_ld.lb[1], pgr + 2, sizeof(temp_ld.lb[1]));
 					avalue[i] = &temp_ld.ld;
 				}
 #else

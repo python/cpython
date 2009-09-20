@@ -22,7 +22,6 @@
    OTHER DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
-
 #define L(x) x
 
 #define SF_ARG9		MODE_CHOICE(56,112)
@@ -57,7 +56,6 @@
 	((x) == FFI_TYPE_UINT32 || (x) == FFI_TYPE_SINT32 ||\
 	(x) == FFI_TYPE_INT || (x) == FFI_TYPE_FLOAT)
 
-
 #if !defined(LIBFFI_ASM)
 
 enum {
@@ -75,20 +73,6 @@ enum {
 	FLAG_RETVAL_REFERENCE	= 1 << (31 - 4)
 };
 
-
-void ffi_prep_args(extended_cif*   inEcif, unsigned *const stack);
-
-typedef union
-{
-        float   f;
-        double  d;
-} ffi_dblfl;
-
-int ffi_closure_helper_DARWIN( ffi_closure*    closure,
-        void*                   rvalue, unsigned long*  pgr,
-        ffi_dblfl*              pfr);
-
-
 #if defined(__ppc64__)
 void ffi64_struct_to_ram_form(const ffi_type*, const char*, unsigned int*,
 	const char*, unsigned int*, unsigned int*, char*, unsigned int*);
@@ -96,11 +80,6 @@ void ffi64_struct_to_reg_form(const ffi_type*, const char*, unsigned int*,
 	unsigned int*, char*, unsigned int*, char*, unsigned int*);
 bool ffi64_stret_needs_ptr(const ffi_type* inType,
 	unsigned short*, unsigned short*);
-bool ffi64_struct_contains_fp(const ffi_type* inType);
-unsigned int ffi64_data_size(const ffi_type* inType);
-
-
-
 #endif
 
 #endif	// !defined(LIBFFI_ASM)
