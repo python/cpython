@@ -1402,6 +1402,17 @@ class PyBuildExt(build_ext):
             addMacExtension('_CF', core_kwds, ['cf/pycfbridge.c'])
             addMacExtension('autoGIL', core_kwds)
 
+            # _scproxy
+            sc_kwds = {
+                'extra_compile_args': carbon_extra_compile_args,
+                'extra_link_args': [
+                    '-framework', 'SystemConfiguration',
+                    '-framework', 'CoreFoundation'
+                ],
+            }
+            addMacExtension("_scproxy", sc_kwds)
+
+
             # Carbon
             carbon_kwds = {'extra_compile_args': carbon_extra_compile_args,
                            'extra_link_args': ['-framework', 'Carbon'],
