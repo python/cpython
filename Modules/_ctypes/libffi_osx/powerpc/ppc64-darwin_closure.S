@@ -1,7 +1,7 @@
 #if defined(__ppc64__)
 
 /* -----------------------------------------------------------------------
-   darwin_closure.S - Copyright (c) 2002, 2003, 2004, Free Software Foundation,
+   ppc64-darwin_closure.S - Copyright (c) 2002, 2003, 2004, Free Software Foundation,
    Inc. based on ppc_closure.S
 
    PowerPC Assembly glue.
@@ -297,8 +297,8 @@ Lret_struct:
 
 // case done
 Lfinish:
-	lg		r1,0(r1)	// Restore stack pointer.
-	ld		r31,-8(r1)	// Restore registers we used.
+	lg		r1,0(r1)			// Restore stack pointer.
+	ld		r31,-8(r1)			// Restore registers we used.
 	ld		r30,-16(r1)
 	lg		r0,SF_RETURN(r1)	// Get return address.
 	mtlr	r0					// Reset link register.
@@ -318,7 +318,7 @@ LSCIE1:
 	.byte	0x7c		; sleb128 -4; CIE Data Alignment Factor
 	.byte	0x41		; CIE RA Column
 	.byte	0x1			; uleb128 0x1; Augmentation size
-	.byte	0x90		; FDE Encoding (indirect pcrel)
+	.byte	0x10		; FDE Encoding (pcrel)
 	.byte	0xc			; DW_CFA_def_cfa
 	.byte	0x1			; uleb128 0x1
 	.byte	0x0			; uleb128 0x0
@@ -332,7 +332,7 @@ LSFDE1:
 
 LASFDE1:
 	.long	LASFDE1-EH_frame1		; FDE CIE offset
-	.g_long	LLFB1$non_lazy_ptr-.	; FDE initial location
+	.g_long	LFB1-.					; FDE initial location
 	.set	L$set$3,LFE1-LFB1
 	.g_long	L$set$3					; FDE address range
 	.byte   0x0						; uleb128 0x0; Augmentation size
@@ -373,11 +373,6 @@ LO$ffi_closure_helper_DARWIN:
 L_ffi_closure_helper_DARWIN$lazy_ptr:
 	.indirect_symbol _ffi_closure_helper_DARWIN
 	.g_long dyld_stub_binding_helper
-
-.data
-	.align LOG2_GPR_BYTES
-LLFB1$non_lazy_ptr:
-	.g_long LFB1
 
 .section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
 	.align	LOG2_GPR_BYTES
