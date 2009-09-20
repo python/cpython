@@ -1358,9 +1358,8 @@ if sys.platform == 'darwin':
             if proxy_settings['exclude_simple']:
                 return True
 
-        for value in proxy_settings.get('exceptions'):
+        for value in proxy_settings.get('exceptions', ()):
             # Items in the list are strings like these: *.local, 169.254/16
-            value = sc.CFArrayGetValueAtIndex(exceptions, index)
             if not value: continue
 
             m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
