@@ -55,7 +55,7 @@ ffi_call_unix64(
 /*	Register class used for passing given 64bit part of the argument.
 	These represent classes as documented by the PS ABI, with the exception
 	of SSESF, SSEDF classes, that are basically SSE class, just gcc will
-	use SF or DFmode move instead of DImode to avoid reformatting penalties.
+	use SF or DFmode move instead of DImode to avoid reformating penalties.
 
 	Similary we play games with INTEGERSI_CLASS to use cheaper SImode moves
 	whenever possible (upper half does contain padding).  */
