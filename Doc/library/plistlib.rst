@@ -33,7 +33,7 @@ contain control characters.
 
 .. seealso::
 
-   `PList manual page <http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`
+   `PList manual page <http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
       Apple's documentation of the file format.
 
 
