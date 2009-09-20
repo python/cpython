@@ -18,6 +18,8 @@ Byte Array Objects
    This instance of :ctype:`PyTypeObject` represents the Python bytearray type;
    it is the same object as ``bytearray`` in the Python layer.
 
+Type check macros
+^^^^^^^^^^^^^^^^^
 
 .. cfunction:: int PyByteArray_Check(PyObject *o)
 
@@ -30,6 +32,9 @@ Byte Array Objects
    Return true if the object *o* is a bytearray object, but not an instance of a
    subtype of the bytearray type.
 
+
+Direct API functions
+^^^^^^^^^^^^^^^^^^^^
 
 .. cfunction:: PyObject* PyByteArray_FromObject(PyObject *o)
 
@@ -45,14 +50,14 @@ Byte Array Objects
    failure, *NULL* is returned.
 
 
+.. cfunction:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
+
+   Concat bytearrays *a* and *b* and return a new bytearray with the result.
+
+
 .. cfunction:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
 
    Return the size of *bytearray* after checking for a *NULL* pointer.
-
-
-.. cfunction:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
-
-   Macro version of :cfunc:`PyByteArray_Size` that doesn't do pointer checking.
 
 
 .. cfunction:: char* PyByteArray_AsString(PyObject *bytearray)
@@ -61,16 +66,20 @@ Byte Array Objects
    *NULL* pointer.
 
 
-.. cfunction:: char* PyByteArray_AS_STRING(PyObject *bytearray)
-
-   Macro version of :cfunc:`PyByteArray_AsString` that doesn't check pointers.
-
-
-.. cfunction:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
-
-   Concat bytearrays *a* and *b* and return a new bytearray with the result.
-
-
-.. cfunction:: PyObject* PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
+.. cfunction:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
 
    Resize the internal buffer of *bytearray* to *len*.
+
+Macros
+^^^^^^
+
+These macros trade safety for speed and they don't check pointers.
+
+.. cfunction:: char* PyByteArray_AS_STRING(PyObject *bytearray)
+
+   Macro version of :cfunc:`PyByteArray_AsString`.
+
+
+.. cfunction:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
+
+   Macro version of :cfunc:`PyByteArray_Size`.
