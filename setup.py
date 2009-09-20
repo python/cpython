@@ -493,16 +493,16 @@ class PyBuildExt(build_ext):
 
         # readline
         do_readline = self.compiler_obj.find_library_file(lib_dirs, 'readline')
-        if platform == 'darwin': # and os.uname()[2] < '9.':
-            # MacOSX 10.4 has a broken readline. Don't try to build
-            # the readline module unless the user has installed a fixed
-            # readline package
-            # FIXME: The readline emulation on 10.5 is better, but the
-            # readline module doesn't compile out of the box.
-            if find_file('readline/rlconf.h', inc_dirs, []) is None:
-                do_readline = False
+        if platform == 'darwin':
+            os_release = int(os.uname()[2].split('.')[0])
+            if os_release < 9:
+                # MacOSX 10.4 has a broken readline. Don't try to build
+                # the readline module unless the user has installed a fixed
+                # readline package
+                if find_file('readline/rlconf.h', inc_dirs, []) is None:
+                    do_readline = False
         if do_readline:
-            if sys.platform == 'darwin':
+            if platform == 'darwin' and os_release < 9:
                 # In every directory on the search path search for a dynamic
                 # library and then a static library, instead of first looking
                 # for dynamic libraries on the entire path.
