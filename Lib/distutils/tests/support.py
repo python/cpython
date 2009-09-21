@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 from distutils import log
+from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
 from distutils.core import Distribution
 from test.support import EnvironmentVarGuard
 
@@ -25,6 +26,8 @@ class LoggingSilencer(object):
         super().tearDown()
 
     def _log(self, level, msg, args):
+        if level not in (DEBUG, INFO, WARN, ERROR, FATAL):
+            raise ValueError('%s wrong log level' % str(level))
         self.logs.append((level, msg, args))
 
     def get_logs(self, *levels):

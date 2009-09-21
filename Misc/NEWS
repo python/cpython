@@ -1064,6 +1064,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6954: Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
+
 - Issue #6163: Fixed HP-UX runtime library dir options in
   distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
   Michael Haubenwallner.
