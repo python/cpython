@@ -8,6 +8,7 @@ import warnings
 
 from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
+import distutils.dist
 
 from test.support import TESTFN, captured_stdout
 from distutils.tests import support
@@ -54,6 +55,27 @@ class DistributionTestCase(support.LoggingSilencer,
         d.parse_config_files()
         d.parse_command_line()
         return d
+
+    def test_debug_mode(self):
+        with open(TESTFN, "w") as f:
+            f.write("[global]")
+            f.write("command_packages = foo.bar, splat")
+
+        files = [TESTFN]
+        sys.argv.append("build")
+
+        with captured_stdout() as stdout:
+            self.create_distribution(files)
+        stdout.seek(0)
+        self.assertEquals(stdout.read(), '')
+        distutils.dist.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                self.create_distribution(files)
+            stdout.seek(0)
+            self.assertEquals(stdout.read(), '')
+        finally:
+            distutils.dist.DEBUG = False
 
     def test_command_packages_unspecified(self):
         sys.argv.append("build")
