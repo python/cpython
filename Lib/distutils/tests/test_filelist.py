@@ -1,7 +1,10 @@
 """Tests for distutils.filelist."""
 from os.path import join
 import unittest
+from test.support import captured_stdout
+
 from distutils.filelist import glob_to_re, FileList
+from distutils import debug
 
 MANIFEST_IN = """\
 include ok
@@ -58,6 +61,22 @@ class FileListTestCase(unittest.TestCase):
                   join('dir', 'graft-one'), join('dir', 'dir2', 'graft2')]
 
         self.assertEquals(file_list.files, wanted)
+
+    def test_debug_print(self):
+        file_list = FileList()
+        with captured_stdout() as stdout:
+            file_list.debug_print('xxx')
+        stdout.seek(0)
+        self.assertEquals(stdout.read(), '')
+
+        debug.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                file_list.debug_print('xxx')
+            stdout.seek(0)
+            self.assertEquals(stdout.read(), 'xxx\n')
+        finally:
+            debug.DEBUG = False
 
 def test_suite():
     return unittest.makeSuite(FileListTestCase)
