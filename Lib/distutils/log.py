@@ -17,6 +17,9 @@ class Log:
         self.threshold = threshold
 
     def _log(self, level, msg, args):
+        if level not in (DEBUG, INFO, WARN, ERROR, FATAL):
+            raise ValueError('%s wrong log level' % str(level))
+
         if level >= self.threshold:
             if args:
                 msg = msg % args

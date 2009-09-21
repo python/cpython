@@ -359,7 +359,7 @@ Common commands: (see '--help-commands' for more)
         parser = ConfigParser()
         for filename in filenames:
             if DEBUG:
-                self.announce("  reading", filename)
+                self.announce("  reading %s" % filename)
             parser.read(filename)
             for section in parser.sections():
                 options = parser.options(section)
