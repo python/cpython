@@ -1702,8 +1702,9 @@ long_to_decimal_string(PyObject *aa)
 		digit hi = pin[i];
 		for (j = 0; j < size; j++) {
 			twodigits z = (twodigits)pout[j] << PyLong_SHIFT | hi;
-			hi = z / _PyLong_DECIMAL_BASE;
-			pout[j] = z - (twodigits)hi * _PyLong_DECIMAL_BASE;
+			hi = (digit)(z / _PyLong_DECIMAL_BASE);
+			pout[j] = (digit)(z - (twodigits)hi *
+					  _PyLong_DECIMAL_BASE);
 		}
 		while (hi) {
 			pout[size++] = hi % _PyLong_DECIMAL_BASE;
