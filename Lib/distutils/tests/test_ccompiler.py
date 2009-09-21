@@ -1,8 +1,10 @@
 """Tests for distutils.ccompiler."""
 import os
 import unittest
+from test.support import captured_stdout
 
-from distutils.ccompiler import gen_lib_options
+from distutils.ccompiler import gen_lib_options, CCompiler
+from distutils import debug
 
 class FakeCompiler(object):
     def library_dir_option(self, dir):
@@ -29,6 +31,26 @@ class CCompilerTestCase(unittest.TestCase):
         wanted = ['-Llib1', '-Llib2', '-cool', '-Rrunlib1', 'found',
                   '-lname2']
         self.assertEquals(opts, wanted)
+
+    def test_debug_print(self):
+
+        class MyCCompiler(CCompiler):
+            executables = {}
+
+        compiler = MyCCompiler()
+        with captured_stdout() as stdout:
+            compiler.debug_print('xxx')
+        stdout.seek(0)
+        self.assertEquals(stdout.read(), '')
+
+        debug.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                compiler.debug_print('xxx')
+            stdout.seek(0)
+            self.assertEquals(stdout.read(), 'xxx\n')
+        finally:
+            debug.DEBUG = False
 
 def test_suite():
     return unittest.makeSuite(CCompilerTestCase)

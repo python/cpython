@@ -26,7 +26,7 @@ neg_alias_re = re.compile("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
 
 # This is used to translate long options to legitimate Python identifiers
 # (for use as attributes of some object).
-longopt_xlate = lambda s: s.replace('-', '_')
+longopt_xlate = str.maketrans('-', '_')
 
 class FancyGetopt:
     """Wrapper around the standard 'getopt()' module that provides some
@@ -107,7 +107,7 @@ class FancyGetopt:
         """Translate long option name 'long_option' to the form it
         has as an attribute of some object: ie., translate hyphens
         to underscores."""
-        return longopt_xlate(long_option)
+        return long_option.translate(longopt_xlate)
 
     def _check_alias_dict(self, aliases, what):
         assert isinstance(aliases, dict)
@@ -432,7 +432,7 @@ def translate_longopt(opt):
     """Convert a long option name to a valid Python identifier by
     changing "-" to "_".
     """
-    return longopt_xlate(opt)
+    return opt.translate(longopt_xlate)
 
 
 class OptionDummy:
