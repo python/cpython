@@ -190,9 +190,9 @@ typedef struct {
     PyObject_HEAD
     PyObject *decoder;
     PyObject *errors;
-    int pendingcr:1;
-    int translate:1;
-    unsigned int seennl:3;
+    signed int pendingcr: 1;
+    signed int translate: 1;
+    unsigned int seennl: 3;
 } nldecoder_object;
 
 static int
