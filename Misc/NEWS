@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6236, #6348: Fix various failures in the I/O library under AIX
+  and other platforms, when using a non-gcc compiler. Patch by egreen.
+
 - Issue #6954: Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
 
 - Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
