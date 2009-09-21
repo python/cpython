@@ -30,10 +30,10 @@
 typedef struct {
 	PyObject_HEAD
 	int fd;
-	unsigned readable : 1;
-	unsigned writable : 1;
-	int seekable : 2; /* -1 means unknown */
-	int closefd : 1;
+	unsigned int readable : 1;
+	unsigned int writable : 1;
+	signed int seekable : 2; /* -1 means unknown */
+	signed int closefd : 1;
 	PyObject *weakreflist;
 } PyFileIOObject;
 
