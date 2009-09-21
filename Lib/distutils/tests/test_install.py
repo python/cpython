@@ -6,6 +6,8 @@ import sys
 import unittest
 import site
 
+from test.support import captured_stdout
+
 from distutils.command.install import install
 from distutils.command import install as install_module
 from distutils.command.install import INSTALL_SCHEMES
@@ -13,7 +15,6 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsOptionError
 
 from distutils.tests import support
-
 
 class InstallTestCase(support.TempdirManager,
                       support.LoggingSilencer,
@@ -182,6 +183,17 @@ class InstallTestCase(support.TempdirManager,
         # line (the egg info file)
         with open(cmd.record) as f:
             self.assertEquals(len(f.readlines()), 1)
+
+    def test_debug_mode(self):
+        # this covers the code called when DEBUG is set
+        old_logs_len = len(self.logs)
+        install_module.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                self.test_record()
+        finally:
+            install_module.DEBUG = False
+        self.assertTrue(len(self.logs) > old_logs_len)
 
 def test_suite():
     return unittest.makeSuite(InstallTestCase)

@@ -1,6 +1,9 @@
 """Tests for distutils.filelist."""
 import unittest
-from distutils.filelist import glob_to_re
+
+from distutils.filelist import glob_to_re, FileList
+from test.support import captured_stdout
+from distutils import debug
 
 class FileListTestCase(unittest.TestCase):
 
@@ -15,6 +18,22 @@ class FileListTestCase(unittest.TestCase):
         self.assertEquals(glob_to_re(r'foo\\\*'), r'foo\\\\\\[^/]*$')
         self.assertEquals(glob_to_re('foo????'), r'foo[^/][^/][^/][^/]$')
         self.assertEquals(glob_to_re(r'foo\\??'), r'foo\\\\[^/][^/]$')
+
+    def test_debug_print(self):
+        file_list = FileList()
+        with captured_stdout() as stdout:
+            file_list.debug_print('xxx')
+        stdout.seek(0)
+        self.assertEquals(stdout.read(), '')
+
+        debug.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                file_list.debug_print('xxx')
+            stdout.seek(0)
+            self.assertEquals(stdout.read(), 'xxx\n')
+        finally:
+            debug.DEBUG = False
 
 def test_suite():
     return unittest.makeSuite(FileListTestCase)

@@ -157,7 +157,7 @@ class Command:
         self.announce(indent + header, level=log.INFO)
         indent = indent + "  "
         for (option, _, _) in self.user_options:
-            option = longopt_xlate(option)
+            option = option.translate(longopt_xlate)
             if option[-1] == "=":
                 option = option[:-1]
             value = getattr(self, option)

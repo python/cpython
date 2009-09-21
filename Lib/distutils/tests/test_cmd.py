@@ -1,10 +1,12 @@
 """Tests for distutils.cmd."""
 import unittest
 import os
+from test.support import captured_stdout
 
 from distutils.cmd import Command
 from distutils.dist import Distribution
 from distutils.errors import DistutilsOptionError
+from distutils import debug
 
 class MyCmd(Command):
     def initialize_options(self):
@@ -101,6 +103,22 @@ class CommandTestCase(unittest.TestCase):
         cmd.ensure_dirname('option1')
         cmd.option2 = 'xxx'
         self.assertRaises(DistutilsOptionError, cmd.ensure_dirname, 'option2')
+
+    def test_debug_print(self):
+        cmd = self.cmd
+        with captured_stdout() as stdout:
+            cmd.debug_print('xxx')
+        stdout.seek(0)
+        self.assertEquals(stdout.read(), '')
+
+        debug.DEBUG = True
+        try:
+            with captured_stdout() as stdout:
+                cmd.debug_print('xxx')
+            stdout.seek(0)
+            self.assertEquals(stdout.read(), 'xxx\n')
+        finally:
+            debug.DEBUG = False
 
 def test_suite():
     return unittest.makeSuite(CommandTestCase)
