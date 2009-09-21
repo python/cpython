@@ -150,7 +150,7 @@ Generally people don't use this encoding, instead choosing other encodings that
 are more efficient and convenient.
 
 Encodings don't have to handle every possible Unicode character, and most
-encodings don't.  For example, Python's default encoding is the 'ascii'
+encodings don't.  For example, Python's default encoding is the 'UTF-8'
 encoding.  The rules for converting a Unicode string into the ASCII encoding are
 simple; for each code point:
 
