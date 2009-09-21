@@ -200,6 +200,13 @@ class DistributionTestCase(support.TempdirManager,
         self.assertEquals(cmds, ['distutils.command', 'one', 'two'])
 
 
+    def test_announce(self):
+        # make sure the level is known
+        dist = Distribution()
+        args = ('ok',)
+        kwargs = {'level': 'ok2'}
+        self.assertRaises(ValueError, dist.announce, args, kwargs)
+
 class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                        unittest.TestCase):
 
