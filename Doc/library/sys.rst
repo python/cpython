@@ -341,7 +341,7 @@ always available.
    if the object type does not provide means to retrieve the size and would
    cause a `TypeError`.
 
-   func:`getsizeof` calls the object's __sizeof__ method and adds an additional
+   :func:`getsizeof` calls the object's __sizeof__ method and adds an additional
    garbage collector overhead if the object is managed by the garbage collector.
 
 
