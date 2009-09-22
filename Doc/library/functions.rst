@@ -925,6 +925,10 @@ are always available.  They are listed here in alphabetical order.
       >>> list(range(1, 0))
       []
 
+   .. versionchanged:: 3.2
+      Testing integers for membership takes constant time instead of
+      iterating through all items.
+
 
 .. function:: repr(object)
 

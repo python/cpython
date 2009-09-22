@@ -78,6 +78,56 @@ class RangeTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             range([], 1, -1)
 
+    def test_types(self):
+        # Non-integer objects *equal* to any of the range's items are supposed
+        # to be contained in the range.
+        self.assertTrue(1.0 in range(3))
+        self.assertTrue(True in range(3))
+        self.assertTrue(1+0j in range(3))
+
+        class C1:
+            def __eq__(self, other): return True
+        self.assertTrue(C1() in range(3))
+
+        # Objects are never coerced into other types for comparison.
+        class C2:
+            def __int__(self): return 1
+            def __index__(self): return 1
+        self.assertFalse(C2() in range(3))
+        # ..except if explicitly told so.
+        self.assertTrue(int(C2()) in range(3))
+
+
+    def test_strided_limits(self):
+        r = range(0, 101, 2)
+        self.assertTrue(0 in r)
+        self.assertFalse(1 in r)
+        self.assertTrue(2 in r)
+        self.assertFalse(99 in r)
+        self.assertTrue(100 in r)
+        self.assertFalse(101 in r)
+
+        r = range(0, -20, -1)
+        self.assertTrue(0 in r)
+        self.assertTrue(-1 in r)
+        self.assertTrue(-19 in r)
+        self.assertFalse(-20 in r)
+
+        r = range(0, -20, -2)
+        self.assertTrue(-18 in r)
+        self.assertFalse(-19 in r)
+        self.assertFalse(-20 in r)
+
+    def test_empty(self):
+        r = range(0)
+        self.assertFalse(0 in r)
+        self.assertFalse(1 in r)
+
+        r = range(0, -10)
+        self.assertFalse(0 in r)
+        self.assertFalse(-1 in r)
+        self.assertFalse(1 in r)
+
 def test_main():
     test.support.run_unittest(RangeTest)
 

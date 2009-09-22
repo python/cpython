@@ -273,12 +273,69 @@ range_reduce(rangeobject *r, PyObject *args)
                          r->start, r->stop, r->step);
 }
 
+static int
+range_contains(rangeobject *r, PyObject *ob) {
+    if (PyLong_Check(ob)) {
+        int cmp1, cmp2, cmp3;
+        PyObject *tmp1 = NULL;
+        PyObject *tmp2 = NULL;
+        PyObject *zero = NULL;
+        int result = -1;
+
+        zero = PyLong_FromLong(0);
+        if (zero == NULL) /* MemoryError in int(0) */
+            goto end;
+
+        /* Check if the value can possibly be in the range. */
+
+        cmp1 = PyObject_RichCompareBool(r->step, zero, Py_GT);
+        if (cmp1 == -1)
+            goto end;
+        if (cmp1 == 1) { /* positive steps: start <= ob < stop */
+            cmp2 = PyObject_RichCompareBool(r->start, ob, Py_LE);
+            cmp3 = PyObject_RichCompareBool(ob, r->stop, Py_LT);
+        }
+        else { /* negative steps: stop < ob <= start */
+            cmp2 = PyObject_RichCompareBool(ob, r->start, Py_LE);
+            cmp3 = PyObject_RichCompareBool(r->stop, ob, Py_LT);
+        }
+
+        if (cmp2 == -1 || cmp3 == -1) /* TypeError */
+            goto end;
+        if (cmp2 == 0 || cmp3 == 0) { /* ob outside of range */
+            result = 0;
+            goto end;
+        }
+
+        /* Check that the stride does not invalidate ob's membership. */
+        tmp1 = PyNumber_Subtract(ob, r->start);
+        if (tmp1 == NULL)
+            goto end;
+        tmp2 = PyNumber_Remainder(tmp1, r->step);
+        if (tmp2 == NULL)
+            goto end;
+        /* result = (int(ob) - start % step) == 0 */
+        result = PyObject_RichCompareBool(tmp2, zero, Py_EQ);
+      end:
+        Py_XDECREF(tmp1);
+        Py_XDECREF(tmp2);
+        Py_XDECREF(zero);
+        return result;
+    }
+    /* Fall back to iterative search. */
+    return (int)_PySequence_IterSearch((PyObject*)r, ob,
+                                       PY_ITERSEARCH_CONTAINS);
+}
+
 static PySequenceMethods range_as_sequence = {
     (lenfunc)range_length,	/* sq_length */
     0,			/* sq_concat */
     0,			/* sq_repeat */
     (ssizeargfunc)range_item, /* sq_item */
     0,			/* sq_slice */
+    0, /* sq_ass_item */
+    0, /* sq_ass_slice */
+    (objobjproc)range_contains, /* sq_contains */
 };
 
 static PyObject * range_iter(PyObject *seq);
