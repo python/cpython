@@ -1340,6 +1340,10 @@ C-API
 Extension Modules
 -----------------
 
+- Issue #6823: Allow time.strftime() to accept a tuple with a isdst field
+  outside of the range of [-1, 1] by normalizing the value to within that
+  range.
+
 - Issue #6877: Make it possible to link the readline extension to libedit
   on OSX.
 

@@ -87,11 +87,6 @@ class TimeTestCase(unittest.TestCase):
                             (1900, 1, 1, 0, 0, 0, 0, -1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, 0, 0, 367, -1))
-        # Check daylight savings flag [-1, 1]
-        self.assertRaises(ValueError, time.strftime, '',
-                            (1900, 1, 1, 0, 0, 0, 0, 1, -2))
-        self.assertRaises(ValueError, time.strftime, '',
-                            (1900, 1, 1, 0, 0, 0, 0, 1, 2))
 
     def test_default_values_for_zero(self):
         # Make sure that using all zeros uses the proper default values.
