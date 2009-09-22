@@ -115,14 +115,34 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
 
+        self.assertEquals(get_platform(), 'macosx-10.4-intel')
+
+        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc -arch i386 -isysroot '
+                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                       '-fno-strict-aliasing -fno-common '
+                                       '-dynamic -DNDEBUG -g -O3')
+        self.assertEquals(get_platform(), 'macosx-10.4-fat3')
+
+        get_config_vars()['CFLAGS'] = ('-arch ppc64 -arch x86_64 -arch ppc -arch i386 -isysroot '
+                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                       '-fno-strict-aliasing -fno-common '
+                                       '-dynamic -DNDEBUG -g -O3')
         self.assertEquals(get_platform(), 'macosx-10.4-universal')
 
-        get_config_vars()['CFLAGS'] = ('-arch x86_64 -isysroot '
+        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc64 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
 
         self.assertEquals(get_platform(), 'macosx-10.4-fat64')
+
+        for arch in ('ppc', 'i386', 'x86_64', 'ppc64'):
+            get_config_vars()['CFLAGS'] = ('-arch %s -isysroot '
+                                           '/Developer/SDKs/MacOSX10.4u.sdk  '
+                                           '-fno-strict-aliasing -fno-common '
+                                           '-dynamic -DNDEBUG -g -O3'%(arch,))
+
+            self.assertEquals(get_platform(), 'macosx-10.4-%s'%(arch,))
 
         # linux debian sarge
         os.name = 'posix'
