@@ -464,11 +464,13 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "day of year out of range");
             return NULL;
         }
-        if (buf.tm_isdst < -1 || buf.tm_isdst > 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "daylight savings flag out of range");
-            return NULL;
-        }
+	/* Normalize tm_isdst just in case someone foolishly implements %Z
+	   based on the assumption that tm_isdst falls within the range of
+	   [-1, 1] */
+        if (buf.tm_isdst < -1)
+	    buf.tm_isdst = -1;
+	else if (buf.tm_isdst > 1)
+	    buf.tm_isdst = 1;
 
 #ifdef MS_WINDOWS
 	/* check that the format string contains only valid directives */
