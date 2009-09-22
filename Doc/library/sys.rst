@@ -400,12 +400,12 @@ always available.
    does not have to hold true for third-party extensions as it is implementation
    specific.
 
-   The *default* argument allows to define a value which will be returned
-   if the object type does not provide means to retrieve the size and would
-   cause a `TypeError`.
+   If given, *default* will be returned if the object does not provide means to
+   retrieve the size.  Otherwise a `TypeError` will be raised.
 
-   :func:`getsizeof` calls the object's __sizeof__ method and adds an additional
-   garbage collector overhead if the object is managed by the garbage collector.
+   :func:`getsizeof` calls the object's ``__sizeof__`` method and adds an
+   additional garbage collector overhead if the object is managed by the garbage
+   collector.
 
    .. versionadded:: 2.6
 
