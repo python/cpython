@@ -281,6 +281,9 @@ Extension Modules
 Build
 -----
 
+- Issue #6980: Fix ctypes build failure on armel-linux-gnueabi with
+  -mfloat-abi=softfp.
+
 - Issue #6802: Fix build issues on MacOSX 10.6
 
 - Issue 5390: Add uninstall icon independent of whether file
