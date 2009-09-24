@@ -544,7 +544,7 @@ will produce the following output::
 The first list contains UTF-8-encoded filenames, and the second list contains
 the Unicode versions.
 
-Note that in most occasions, the Uniode APIs should be used.  The bytes APIs
+Note that in most occasions, the Unicode APIs should be used.  The bytes APIs
 should only be used on systems where undecodable file names can be present,
 i.e. Unix systems.
 
