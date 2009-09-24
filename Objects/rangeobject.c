@@ -275,7 +275,7 @@ range_reduce(rangeobject *r, PyObject *args)
 
 static int
 range_contains(rangeobject *r, PyObject *ob) {
-    if (PyLong_Check(ob)) {
+    if (PyLong_CheckExact(ob) || PyBool_Check(ob)) {
         int cmp1, cmp2, cmp3;
         PyObject *tmp1 = NULL;
         PyObject *tmp2 = NULL;

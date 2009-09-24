@@ -97,6 +97,12 @@ class RangeTest(unittest.TestCase):
         # ..except if explicitly told so.
         self.assertTrue(int(C2()) in range(3))
 
+        # Check that the range.__contains__ optimization is only
+        # used for ints, not for instances of subclasses of int.
+        class C3(int):
+            def __eq__(self, other): return True
+        self.assertTrue(C3(11) in range(10))
+        self.assertTrue(C3(11) in list(range(10)))
 
     def test_strided_limits(self):
         r = range(0, 101, 2)
