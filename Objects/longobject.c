@@ -1834,7 +1834,8 @@ _PyLong_Format(PyObject *aa, int base)
 			accumbits += PyLong_SHIFT;
 			assert(accumbits >= bits);
 			do {
-				Py_UNICODE cdigit = accum & (base - 1);
+				Py_UNICODE cdigit;
+				cdigit = (Py_UNICODE)(accum & (base - 1));
 				cdigit += (cdigit < 10) ? '0' : 'a'-10;
 				assert(p > PyUnicode_AS_UNICODE(str));
 				*--p = cdigit;
