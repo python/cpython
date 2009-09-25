@@ -222,11 +222,11 @@ Or, strings can be surrounded in a pair of matching triple-quotes: ``"""`` or
 ``'''``.  End of lines do not need to be escaped when using triple-quotes, but
 they will be included in the string. ::
 
-   print """
+   print("""
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """
+   """)
 
 produces the following output:
 
