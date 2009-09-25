@@ -2863,24 +2863,43 @@ static PyObject*
 sock_ioctl(PySocketSockObject *s, PyObject *arg)
 {
 	unsigned long cmd = SIO_RCVALL;
-	unsigned int option = RCVALL_ON;
-        DWORD recv;
+	PyObject *argO;
+	DWORD recv;
 
-	if (!PyArg_ParseTuple(arg, "kI:ioctl", &cmd, &option))
+	if (!PyArg_ParseTuple(arg, "kO:ioctl", &cmd, &argO))
 		return NULL;
 
-	if (WSAIoctl(s->sock_fd, cmd, &option, sizeof(option), 
-		     NULL, 0, &recv, NULL, NULL) == SOCKET_ERROR) {
-		return set_error();
+	switch (cmd) {
+	case SIO_RCVALL: {
+		unsigned int option = RCVALL_ON;
+		if (!PyArg_ParseTuple(arg, "kI:ioctl", &cmd, &option))
+			return NULL;
+		if (WSAIoctl(s->sock_fd, cmd, &option, sizeof(option), 
+				 NULL, 0, &recv, NULL, NULL) == SOCKET_ERROR) {
+			return set_error();
+		}
+		return PyLong_FromUnsignedLong(recv); }
+	case SIO_KEEPALIVE_VALS: {
+		struct tcp_keepalive ka;
+		if (!PyArg_ParseTuple(arg, "k(kkk):ioctl", &cmd,
+				&ka.onoff, &ka.keepalivetime, &ka.keepaliveinterval))
+			return NULL;
+		if (WSAIoctl(s->sock_fd, cmd, &ka, sizeof(ka), 
+				 NULL, 0, &recv, NULL, NULL) == SOCKET_ERROR) {
+			return set_error();
+		}
+		return PyLong_FromUnsignedLong(recv); }
+	default:
+		PyErr_Format(PyExc_ValueError, "invalid ioctl command %d", cmd);
+		return NULL;
 	}
-	return PyLong_FromUnsignedLong(recv);
 }
 PyDoc_STRVAR(sock_ioctl_doc,
 "ioctl(cmd, option) -> long\n\
 \n\
-Control the socket with WSAIoctl syscall. Currently only socket.SIO_RCVALL\n\
-is supported as control. Options must be one of the socket.RCVALL_*\n\
-constants.");
+Control the socket with WSAIoctl syscall. Currently supported 'cmd' values are\n\
+SIO_RCVALL:  'option' must be one of the socket.RCVALL_* constants.\n\
+SIO_KEEPALIVE_VALS:  'option' is a tuple of (onoff, timeout, interval).");
 
 #endif
 
@@ -5290,11 +5309,16 @@ init_socket(void)
 
 #ifdef SIO_RCVALL
 	{
-		PyObject *tmp;
-		tmp = PyLong_FromUnsignedLong(SIO_RCVALL);
-		if (tmp == NULL)
-			return;
-		PyModule_AddObject(m, "SIO_RCVALL", tmp);
+		DWORD codes[] = {SIO_RCVALL, SIO_KEEPALIVE_VALS};
+		const char *names[] = {"SIO_RCVALL", "SIO_KEEPALIVE_VALS"};
+		int i;
+		for(i = 0; i<sizeof(codes)/sizeof(*codes); ++i) {
+			PyObject *tmp;
+			tmp = PyLong_FromUnsignedLong(codes[i]);
+			if (tmp == NULL)
+				return;
+			PyModule_AddObject(m, names[i], tmp);
+		}
 	}
 	PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
 	PyModule_AddIntConstant(m, "RCVALL_ON", RCVALL_ON);
