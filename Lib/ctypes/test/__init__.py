@@ -58,7 +58,7 @@ def get_tests(package, mask, verbosity, exclude=()):
         if modname.split(".")[-1] in exclude:
             skipped.append(modname)
             if verbosity > 1:
-                print >> sys.stderr, "Skipped %s: excluded" % modname
+                print("Skipped %s: excluded" % modname, file=sys.stderr)
             continue
         try:
             mod = __import__(modname, globals(), locals(), ['*'])
