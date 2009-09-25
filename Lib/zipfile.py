@@ -1188,22 +1188,21 @@ class ZipFile:
                 try:
                     filename, flag_bits = zinfo._encodeFilenameFlags()
                     centdir = struct.pack(structCentralDir,
-                     stringCentralDir, create_version,
-                     zinfo.create_system, extract_version, zinfo.reserved,
-                     flag_bits, zinfo.compress_type, dostime, dosdate,
-                     zinfo.CRC, compress_size, file_size,
-                     len(filename), len(extra_data), len(zinfo.comment),
-                     0, zinfo.internal_attr, zinfo.external_attr,
-                     header_offset)
+                        stringCentralDir, create_version,
+                        zinfo.create_system, extract_version, zinfo.reserved,
+                        flag_bits, zinfo.compress_type, dostime, dosdate,
+                        zinfo.CRC, compress_size, file_size,
+                        len(filename), len(extra_data), len(zinfo.comment),
+                        0, zinfo.internal_attr, zinfo.external_attr,
+                        header_offset)
                 except DeprecationWarning:
-                    print >>sys.stderr, (structCentralDir,
-                     stringCentralDir, create_version,
-                     zinfo.create_system, extract_version, zinfo.reserved,
-                     zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                     zinfo.CRC, compress_size, file_size,
-                     len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                     0, zinfo.internal_attr, zinfo.external_attr,
-                     header_offset)
+                    print((structCentralDir, stringCentralDir, create_version,
+                        zinfo.create_system, extract_version, zinfo.reserved,
+                        zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
+                        zinfo.CRC, compress_size, file_size,
+                        len(zinfo.filename), len(extra_data), len(zinfo.comment),
+                        0, zinfo.internal_attr, zinfo.external_attr,
+                        header_offset), file=sys.stderr)
                     raise
                 self.fp.write(centdir)
                 self.fp.write(filename)
