@@ -1681,9 +1681,9 @@ file-like object (or, more precisely, any object which supports :meth:`write`
 and :meth:`flush` methods).
 
 
-.. class:: StreamHandler([strm])
+.. class:: StreamHandler([stream])
 
-   Returns a new instance of the :class:`StreamHandler` class. If *strm* is
+   Returns a new instance of the :class:`StreamHandler` class. If *stream* is
    specified, the instance will use it for logging output; otherwise, *sys.stderr*
    will be used.
 
