@@ -565,7 +565,7 @@ rule:
 Helper functions
 ----------------
 
-.. function:: capwords(s[, sep])
+.. function:: capwords(s, sep=' ')
 
    Split the argument into words using :meth:`str.split`, capitalize each word
    using :meth:`str.capitalize`, and join the capitalized words using
