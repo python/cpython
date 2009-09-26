@@ -565,12 +565,14 @@ rule:
 Helper functions
 ----------------
 
-.. function:: capwords(s)
+.. function:: capwords(s[, sep])
 
-   Split the argument into words using :func:`split`, capitalize each word using
-   :func:`capitalize`, and join the capitalized words using :func:`join`.  Note
-   that this replaces runs of whitespace characters by a single space, and removes
-   leading and trailing whitespace.
+   Split the argument into words using :meth:`str.split`, capitalize each word
+   using :meth:`str.capitalize`, and join the capitalized words using
+   :meth:`str.join`.  If the optional second argument *sep* is absent
+   or ``None``, runs of whitespace characters are replaced by a single space
+   and leading and trailing whitespace are removed, otherwise *sep* is used to
+   split and join the words.
 
 
 .. function:: maketrans(frm, to)
