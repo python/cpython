@@ -745,16 +745,16 @@ class StreamHandler(Handler):
     sys.stdout or sys.stderr may be used.
     """
 
-    def __init__(self, strm=None):
+    def __init__(self, stream=None):
         """
         Initialize the handler.
 
-        If strm is not specified, sys.stderr is used.
+        If stream is not specified, sys.stderr is used.
         """
         Handler.__init__(self)
-        if strm is None:
-            strm = sys.stderr
-        self.stream = strm
+        if stream is None:
+            stream = sys.stderr
+        self.stream = stream
 
     def flush(self):
         """
