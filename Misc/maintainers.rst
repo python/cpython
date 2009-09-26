@@ -80,7 +80,7 @@ cProfile
 crypt
 csv
 ctypes              theller
-curses
+curses              andrew.kuchling
 datetime
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
