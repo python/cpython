@@ -105,6 +105,9 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(string.capwords('ABC DEF GHI'), 'Abc Def Ghi')
         self.assertEqual(string.capwords('ABC-DEF-GHI', '-'), 'Abc-Def-Ghi')
         self.assertEqual(string.capwords('ABC-def DEF-ghi GHI'), 'Abc-def Def-ghi Ghi')
+        self.assertEqual(string.capwords('   aBc  DeF   '), 'Abc Def')
+        self.assertEqual(string.capwords('\taBc\tDeF\t'), 'Abc Def')
+        self.assertEqual(string.capwords('\taBc\tDeF\t', '\t'), '\tAbc\tDef\t')
 
     def test_formatter(self):
         fmt = string.Formatter()
