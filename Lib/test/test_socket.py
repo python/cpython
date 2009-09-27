@@ -553,6 +553,10 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertTrue(hasattr(socket, 'SIO_RCVALL'))
         self.assertTrue(hasattr(socket, 'RCVALL_ON'))
         self.assertTrue(hasattr(socket, 'RCVALL_OFF'))
+        self.assertTrue(hasattr(socket, 'SIO_KEEPALIVE_VALS'))
+        s = socket.socket()
+        self.assertRaises(ValueError, s.ioctl, -1, None)
+        s.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 100, 100))
 
 
 class BasicTCPTest(SocketConnectedTest):
