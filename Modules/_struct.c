@@ -213,9 +213,6 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 
 #endif
 
-#define get_wrapped_long get_long
-#define get_wrapped_ulong get_ulong
-
 /* Floating point helpers */
 
 static PyObject *
@@ -525,7 +522,7 @@ np_uint(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
 	unsigned int y;
-	if (get_wrapped_ulong(v, &x) < 0)
+	if (get_ulong(v, &x) < 0)
 		return -1;
 	y = (unsigned int)x;
 #if (SIZEOF_LONG > SIZEOF_INT)
@@ -550,7 +547,7 @@ static int
 np_ulong(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
-	if (get_wrapped_ulong(v, &x) < 0)
+	if (get_ulong(v, &x) < 0)
 		return -1;
 	memcpy(p, (char *)&x, sizeof x);
 	return 0;
@@ -757,7 +754,7 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 {
 	long x;
 	Py_ssize_t i;
-	if (get_wrapped_long(v, &x) < 0)
+	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
 	if (i != SIZEOF_LONG) {
@@ -780,7 +777,7 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
 	Py_ssize_t i;
-	if (get_wrapped_ulong(v, &x) < 0)
+	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
 	if (i != SIZEOF_LONG) {
@@ -975,7 +972,7 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 {
 	long x;
 	Py_ssize_t i;
-	if (get_wrapped_long(v, &x) < 0)
+	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
 	if (i != SIZEOF_LONG) {
@@ -998,7 +995,7 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
 	Py_ssize_t i;
-	if (get_wrapped_ulong(v, &x) < 0)
+	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
 	if (i != SIZEOF_LONG) {
