@@ -31,7 +31,7 @@ unknown_presentation_type(STRINGLIB_CHAR presentation_type,
         PyErr_Format(PyExc_ValueError,
                      "Unknown format code '%c' "
                      "for object of type '%.200s'",
-                     presentation_type,
+                     (char)presentation_type,
                      type_name);
 #if STRINGLIB_IS_UNICODE
     else
