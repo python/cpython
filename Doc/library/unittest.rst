@@ -1281,6 +1281,7 @@ Loading and running tests
       ``load_tests`` does not need to pass this argument in to
       ``loader.discover()``.
 
+      .. versionadded:: 2.7
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1544,6 +1545,10 @@ Loading and running tests
 
 load_tests Protocol
 ###################
+
+
+.. versionadded:: 2.7
+
 
 Modules or packages can customize how tests are loaded from them during normal
 test runs or test discovery by implementing a function called ``load_tests``.
