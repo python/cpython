@@ -603,20 +603,23 @@ ast_for_comp_op(struct compiling *c, const node *n)
 static asdl_seq *
 seq_for_testlist(struct compiling *c, const node *n)
 {
-    /* testlist: test (',' test)* [','] */
+    /* testlist: test (',' test)* [','] 
+       testlist_star_expr: test|star_expr (',' test|star_expr)* [',']
+    */
     asdl_seq *seq;
     expr_ty expression;
     int i;
-    assert(TYPE(n) == testlist || TYPE(n) == testlist_comp);
+    assert(TYPE(n) == testlist || TYPE(n) == testlist_star_expr || TYPE(n) == testlist_comp);
 
     seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
         return NULL;
 
     for (i = 0; i < NCH(n); i += 2) {
-        assert(TYPE(CHILD(n, i)) == test || TYPE(CHILD(n, i)) == test_nocond);
+	const node *ch = CHILD(n, i);
+        assert(TYPE(ch) == test || TYPE(ch) == test_nocond || TYPE(ch) == star_expr);
 
-        expression = ast_for_expr(c, CHILD(n, i));
+        expression = ast_for_expr(c, ch);
         if (!expression)
             return NULL;
 
@@ -1886,10 +1889,9 @@ ast_for_expr(struct compiling *c, const node *n)
             break;
 
         case star_expr:
-            if (TYPE(CHILD(n, 0)) == STAR) {
-                return ast_for_starred(c, n);
-            }
-            /* Fallthrough */
+            if (TYPE(CHILD(n, 0)) == STAR)
+	         return ast_for_starred(c, n);
+            /* Fall through to generic case. */
         /* The next five cases all handle BinOps.  The main body of code
            is the same in each case, but the switch turned inside out to
            reuse the code for each type of operator.
@@ -2067,7 +2069,6 @@ ast_for_testlist(struct compiling *c, const node* n)
 {
     /* testlist_comp: test (comp_for | (',' test)* [',']) */
     /* testlist: test (',' test)* [','] */
-    /* testlist1: test (',' test)* */
     assert(NCH(n) > 0);
     if (TYPE(n) == testlist_comp) {
         if (NCH(n) > 1)
@@ -2075,7 +2076,7 @@ ast_for_testlist(struct compiling *c, const node* n)
     }
     else {
         assert(TYPE(n) == testlist ||
-               TYPE(n) == testlist1);
+               TYPE(n) == testlist_star_expr);
     }
     if (NCH(n) == 1)
         return ast_for_expr(c, CHILD(n, 0));
@@ -2091,9 +2092,9 @@ static stmt_ty
 ast_for_expr_stmt(struct compiling *c, const node *n)
 {
     REQ(n, expr_stmt);
-    /* expr_stmt: testlist (augassign (yield_expr|testlist) 
+    /* expr_stmt: testlist_star_expr (augassign (yield_expr|testlist) 
                 | ('=' (yield_expr|testlist))*)
-       testlist: test (',' test)* [',']
+       testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
        augassign: '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^='
                 | '<<=' | '>>=' | '**=' | '//='
        test: ... here starts the operator precendence dance
@@ -2161,7 +2162,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             asdl_seq_SET(targets, i / 2, e);
         }
         value = CHILD(n, NCH(n) - 1);
-        if (TYPE(value) == testlist)
+        if (TYPE(value) == testlist_star_expr)
             expression = ast_for_testlist(c, value);
         else
             expression = ast_for_expr(c, value);
