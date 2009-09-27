@@ -1212,7 +1212,6 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del,
 		PyObject *doc)
 {
 	propertyobject *pold = (propertyobject *)old;
-	propertyobject *pnew = NULL;
 	PyObject *new, *type;
 
 	type = PyObject_Type(old);
