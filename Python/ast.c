@@ -1889,9 +1889,7 @@ ast_for_expr(struct compiling *c, const node *n)
             break;
 
         case star_expr:
-            if (TYPE(CHILD(n, 0)) == STAR)
-	         return ast_for_starred(c, n);
-            /* Fall through to generic case. */
+	    return ast_for_starred(c, n);
         /* The next five cases all handle BinOps.  The main body of code
            is the same in each case, but the switch turned inside out to
            reuse the code for each type of operator.
