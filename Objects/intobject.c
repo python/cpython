@@ -436,12 +436,6 @@ int_print(PyIntObject *v, FILE *fp, int flags)
 	return 0;
 }
 
-static PyObject *
-int_repr(PyIntObject *v)
-{
-	return _PyInt_Format(v, 10, 0);
-}
-
 static int
 int_compare(PyIntObject *v, PyIntObject *w)
 {
@@ -1113,6 +1107,26 @@ int_get1(PyIntObject *v, void *context) {
 	return PyInt_FromLong(1L);
 }
 
+/* Convert an integer to a decimal string.  On many platforms, this
+   will be significantly faster than the general arbitrary-base
+   conversion machinery in _PyInt_Format, thanks to optimization
+   opportunities offered by division by a compile-time constant. */
+static PyObject *
+int_to_decimal_string(PyIntObject *v) {
+	char buf[sizeof(long)*CHAR_BIT/3+6], *p, *bufend;
+	long n = v->ob_ival;
+	unsigned long absn;
+	p = bufend = buf + sizeof(buf);
+	absn = n < 0 ? -(unsigned long)n : n;
+	do {
+		*--p = '0' + absn % 10;
+		absn /= 10;
+	} while (absn);
+	if (n < 0)
+		*--p = '-';
+	return PyString_FromStringAndSize(p, bufend - p);
+}
+
 /* Convert an integer to the given base.  Returns a string.
    If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'.
    If newstyle is zero, then use the pre-2.6 behavior of octal having
@@ -1136,6 +1150,10 @@ _PyInt_Format(PyIntObject *v, int base, int newstyle)
 	char* p = &buf[sizeof(buf)];
 
 	assert(base >= 2 && base <= 36);
+
+	/* Special case base 10, for speed */
+	if (base == 10)
+		return int_to_decimal_string(v);
 
 	do {
 		/* I'd use i_divmod, except it doesn't produce the results
@@ -1169,7 +1187,7 @@ _PyInt_Format(PyIntObject *v, int base, int newstyle)
 		*--p = 'x';
 		*--p = '0';
 	}
-	else if (base != 10) {
+	else {
 		*--p = '#';
 		*--p = '0' + base%10;
 		if (base > 10)
@@ -1341,13 +1359,13 @@ PyTypeObject PyInt_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	(cmpfunc)int_compare,			/* tp_compare */
-	(reprfunc)int_repr,			/* tp_repr */
+	(reprfunc)int_to_decimal_string,	/* tp_repr */
 	&int_as_number,				/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)int_hash,			/* tp_hash */
-        0,					/* tp_call */
-        (reprfunc)int_repr,			/* tp_str */
+	0,					/* tp_call */
+	(reprfunc)int_to_decimal_string,	/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */

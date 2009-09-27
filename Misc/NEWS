@@ -18,7 +18,8 @@ Core and Builtins
 - Issue #6922: Fix an infinite loop when trying to decode an invalid
   UTF-32 stream with a non-raising error handler like "replace" or "ignore".
 
-- Issue #6713: Improve performance of integer -> string conversions.
+- Issue #6713: Improve performance of base 10 int -> string and
+  long -> string conversions.
 
 - Issue #1590864: Fix potential deadlock when mixing threads and fork().
 
