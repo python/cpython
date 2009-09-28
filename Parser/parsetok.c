@@ -243,16 +243,24 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			err_ret->text = text;
 		}
 	} else if (tok->encoding != NULL) {
+		/* 'nodes->n_str' uses PyObject_*, while 'tok->encoding' was
+		 * allocated using PyMem_
+		 */
 		node* r = PyNode_New(encoding_decl);
-		if (!r) {
+		if (r)
+			r->n_str = PyObject_MALLOC(strlen(tok->encoding)+1);
+		if (!r || !r->n_str) {
 			err_ret->error = E_NOMEM;
+			if (r)
+				PyObject_FREE(r);
 			n = NULL;
 			goto done;
 		}
-		r->n_str = tok->encoding;
+		strcpy(r->n_str, tok->encoding);
+		PyMem_FREE(tok->encoding);
+		tok->encoding = NULL;
 		r->n_nchildren = 1;
 		r->n_child = n;
-		tok->encoding = NULL;
 		n = r;
 	}
 
