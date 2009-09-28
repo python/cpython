@@ -59,9 +59,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
 /* Macros. */
 #ifdef PYMALLOC_DEBUG
 /* Redirect all memory operations to Python's debugging allocator. */
-#define PyMem_MALLOC		PyObject_MALLOC
-#define PyMem_REALLOC		PyObject_REALLOC
-#define PyMem_FREE		PyObject_FREE
+#define PyMem_MALLOC		_PyMem_DebugMalloc
+#define PyMem_REALLOC		_PyMem_DebugRealloc
+#define PyMem_FREE		_PyMem_DebugFree
 
 #else	/* ! PYMALLOC_DEBUG */
 
