@@ -308,6 +308,16 @@ Hyperbolic functions
    Return the hyperbolic tangent of *x*.
 
 
+Special functions
+-----------------
+
+.. function:: gamma(x)
+
+   Return the Gamma function at *x*.
+
+   .. versionadded:: 2.7
+
+
 Constants
 ---------
 
