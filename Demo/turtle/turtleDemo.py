@@ -98,6 +98,7 @@ class DemoWindow(object):
         turtle._Screen._canvas = turtle.ScrolledCanvas(g_frame, 800, 600, 1000, 800)
         #xturtle.Screen._canvas.pack(expand=1, fill="both")
         self.screen = _s_ = turtle.Screen()
+        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
         self.scanvas = _s_._canvas
         #xturtle.RawTurtle.canvases = [self.scanvas]
         turtle.RawTurtle.screens = [_s_]

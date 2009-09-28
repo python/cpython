@@ -1,8 +1,8 @@
 #
 # turtle.py: a Tkinter based turtle graphics module for Python
-# Version 1.0b1 - 31. 5. 2008
+# Version 1.0.1 - 24. 9. 2009
 #
-# Copyright (C) 2006 - 2008  Gregor Lingl
+# Copyright (C) 2006 - 2009  Gregor Lingl
 # email: glingl@aon.at
 #
 # This software is provided 'as-is', without any express or implied
@@ -1244,9 +1244,12 @@ class TurtleScreen(TurtleScreenBase):
     def update(self):
         """Perform a TurtleScreen update.
         """
+        tracing = self._tracing
+        self._tracing = True
         for t in self.turtles():
             t._update_data()
             t._drawturtle()
+        self._tracing = tracing
         self._update()
 
     def window_width(self):
@@ -1337,7 +1340,8 @@ class TurtleScreen(TurtleScreenBase):
         ### consequently drawing a hexagon
         """
         if fun == None:
-            self._keys.remove(key)
+            if key in self._keys:
+                self._keys.remove(key)
         elif key not in self._keys:
             self._keys.append(key)
         self._onkey(fun, key)
@@ -3574,8 +3578,8 @@ class _Screen(TurtleScreen):
             topbottom = _CFG["topbottom"]
             self._root.setupcanvas(width, height, canvwidth, canvheight)
             _Screen._canvas = self._root._getcanvas()
+            TurtleScreen.__init__(self, _Screen._canvas)
             self.setup(width, height, leftright, topbottom)
-        TurtleScreen.__init__(self, _Screen._canvas)
 
     def setup(self, width=_CFG["width"], height=_CFG["height"],
               startx=_CFG["leftright"], starty=_CFG["topbottom"]):
@@ -3615,6 +3619,7 @@ class _Screen(TurtleScreen):
         if starty is None:
             starty = (sh - height) / 2
         self._root.set_geometry(width, height, startx, starty)
+        self.update()
 
     def title(self, titlestring):
         """Set title of turtle-window
