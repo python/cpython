@@ -1369,7 +1369,7 @@ _PyObject_DebugFree(void *p)
 	_PyObject_DebugFreeApi(_PYMALLOC_OBJ_ID, p);
 }
 void
-_PyObject_DebugCheckAddress(void *p)
+_PyObject_DebugCheckAddress(const void *p)
 {
 	_PyObject_DebugCheckAddressApi(_PYMALLOC_OBJ_ID, p);
 }
