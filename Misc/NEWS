@@ -201,6 +201,9 @@ Library
 
 Extension Modules
 -----------------
+
+- Issue #3366: Add gamma function to math module.
+
 - Issue #6877: It is now possible to link the readline extension to the
   libedit readline emulation on OSX 10.5 or later.
 

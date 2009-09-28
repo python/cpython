@@ -1,0 +1,146 @@
+-- Testcases for functions in math.
+--
+-- Each line takes the form:
+--
+-- <testid> <function> <input_value> -> <output_value> <flags>
+--
+-- where:
+--
+--   <testid> is a short name identifying the test,
+--
+--   <function> is the function to be tested (exp, cos, asinh, ...),
+--
+--   <input_value> is a string representing a floating-point value
+--
+--   <output_value> is the expected (ideal) output value, again
+--     represented as a string.
+--
+--   <flags> is a list of the floating-point flags required by C99
+--
+-- The possible flags are:
+--
+--   divide-by-zero : raised when a finite input gives a
+--     mathematically infinite result.
+--
+--   overflow : raised when a finite input gives a finite result that
+--     is too large to fit in the usual range of an IEEE 754 double.
+--
+--   invalid : raised for invalid inputs (e.g., sqrt(-1))
+--
+--   ignore-sign : indicates that the sign of the result is
+--     unspecified; e.g., if the result is given as inf,
+--     then both -inf and inf should be accepted as correct.
+--
+-- Flags may appear in any order.
+--
+-- Lines beginning with '--' (like this one) start a comment, and are
+-- ignored.  Blank lines, or lines containing only whitespace, are also
+-- ignored.
+
+-- Many of the values below were computed with the help of
+-- version 2.4 of the MPFR library for multiple-precision
+-- floating-point computations with correct rounding.  All output
+-- values in this file are (modulo yet-to-be-discovered bugs)
+-- correctly rounded, provided that each input and output decimal
+-- floating-point value below is interpreted as a representation of
+-- the corresponding nearest IEEE 754 double-precision value.  See the
+-- MPFR homepage at http://www.mpfr.org for more information about the
+-- MPFR project.
+
+---------------------------
+-- gamma: Gamma function --
+---------------------------
+
+-- special values
+gam0000 gamma 0.0 -> inf        divide-by-zero
+gam0001 gamma -0.0 -> -inf      divide-by-zero
+gam0002 gamma inf -> inf
+gam0003 gamma -inf -> nan       invalid
+gam0004 gamma nan -> nan
+
+-- negative integers inputs are invalid
+gam0010 gamma -1 -> nan         invalid
+gam0011 gamma -2 -> nan         invalid
+gam0012 gamma -1e16 -> nan      invalid
+gam0013 gamma -1e300 -> nan     invalid
+
+-- small positive integers give factorials
+gam0020 gamma 1 -> 1
+gam0021 gamma 2 -> 1
+gam0022 gamma 3 -> 2
+gam0023 gamma 4 -> 6
+gam0024 gamma 5 -> 24
+gam0025 gamma 6 -> 120
+
+-- half integers
+gam0030 gamma 0.5 -> 1.7724538509055161
+gam0031 gamma 1.5 -> 0.88622692545275805
+gam0032 gamma 2.5 -> 1.3293403881791370
+gam0033 gamma 3.5 -> 3.3233509704478426
+gam0034 gamma -0.5 -> -3.5449077018110322
+gam0035 gamma -1.5 -> 2.3632718012073548
+gam0036 gamma -2.5 -> -0.94530872048294190
+gam0037 gamma -3.5 -> 0.27008820585226911
+
+-- values near 0
+gam0040 gamma 0.1 -> 9.5135076986687306
+gam0041 gamma 0.01 -> 99.432585119150602
+gam0042 gamma 1e-8 -> 99999999.422784343
+gam0043 gamma 1e-16 -> 10000000000000000
+gam0044 gamma 1e-30 -> 9.9999999999999988e+29
+gam0045 gamma 1e-160 -> 1.0000000000000000e+160
+gam0046 gamma 1e-308 -> 1.0000000000000000e+308
+gam0047 gamma 5.6e-309 -> 1.7857142857142848e+308
+gam0048 gamma 5.5e-309 -> inf   overflow
+gam0049 gamma 1e-309 -> inf     overflow
+gam0050 gamma 1e-323 -> inf     overflow
+gam0051 gamma 5e-324 -> inf     overflow
+gam0060 gamma -0.1 -> -10.686287021193193
+gam0061 gamma -0.01 -> -100.58719796441078
+gam0062 gamma -1e-8 -> -100000000.57721567
+gam0063 gamma -1e-16 -> -10000000000000000
+gam0064 gamma -1e-30 -> -9.9999999999999988e+29
+gam0065 gamma -1e-160 -> -1.0000000000000000e+160
+gam0066 gamma -1e-308 -> -1.0000000000000000e+308
+gam0067 gamma -5.6e-309 -> -1.7857142857142848e+308
+gam0068 gamma -5.5e-309 -> -inf overflow
+gam0069 gamma -1e-309 -> -inf   overflow
+gam0070 gamma -1e-323 -> -inf   overflow
+gam0071 gamma -5e-324 -> -inf   overflow
+
+-- values near negative integers
+gam0080 gamma -0.99999999999999989 -> -9007199254740992.0
+gam0081 gamma -1.0000000000000002 -> 4503599627370495.5
+gam0082 gamma -1.9999999999999998 -> 2251799813685248.5
+gam0083 gamma -2.0000000000000004 -> -1125899906842623.5
+gam0084 gamma -100.00000000000001 -> -7.5400833348831090e-145
+gam0085 gamma -99.999999999999986 -> 7.5400833348840962e-145
+
+-- large inputs
+gam0100 gamma 170 -> 4.2690680090047051e+304
+gam0101 gamma 171 -> 7.2574156153079990e+306
+gam0102 gamma 171.624 -> 1.7942117599248104e+308
+gam0103 gamma 171.625 -> inf    overflow
+gam0104 gamma 172 -> inf        overflow
+gam0105 gamma 2000 -> inf       overflow
+gam0106 gamma 1.7e308 -> inf    overflow
+
+-- inputs for which gamma(x) is tiny
+gam0120 gamma -100.5 -> -3.3536908198076787e-159
+gam0121 gamma -160.5 -> -5.2555464470078293e-286
+gam0122 gamma -170.5 -> -3.3127395215386074e-308
+gam0123 gamma -171.5 -> 1.9316265431711902e-310
+gam0124 gamma -176.5 -> -1.1956388629358166e-321
+gam0125 gamma -177.5 -> 4.9406564584124654e-324
+gam0126 gamma -178.5 -> -0.0
+gam0127 gamma -179.5 -> 0.0
+gam0128 gamma -201.0001 -> 0.0
+gam0129 gamma -202.9999 -> -0.0
+gam0130 gamma -1000.5 -> -0.0
+gam0131 gamma -1000000000.3 -> -0.0
+gam0132 gamma -4503599627370495.5 -> 0.0
+
+-- inputs that cause problems for the standard reflection formula,
+-- thanks to loss of accuracy in 1-x
+gam0140 gamma -63.349078729022985 -> 4.1777971677761880e-88
+gam0141 gamma -127.45117632943295 -> 1.1831110896236810e-214

@@ -7,6 +7,7 @@ import math
 import os
 import sys
 import random
+import struct
 
 eps = 1E-05
 NAN = float('nan')
@@ -29,7 +30,49 @@ if __name__ == '__main__':
 else:
     file = __file__
 test_dir = os.path.dirname(file) or os.curdir
+math_testcases = os.path.join(test_dir, 'math_testcases.txt')
 test_file = os.path.join(test_dir, 'cmath_testcases.txt')
+
+def to_ulps(x):
+    """Convert a non-NaN float x to an integer, in such a way that
+    adjacent floats are converted to adjacent integers.  Then
+    abs(ulps(x) - ulps(y)) gives the difference in ulps between two
+    floats.
+
+    The results from this function will only make sense on platforms
+    where C doubles are represented in IEEE 754 binary64 format.
+
+    """
+    n = struct.unpack('q', struct.pack('<d', x))[0]
+    if n < 0:
+        n = ~(n+2**63)
+    return n
+
+
+def parse_mtestfile(fname):
+    """Parse a file with test values
+
+    -- starts a comment
+    blank lines, or lines containing only a comment, are ignored
+    other lines are expected to have the form
+      id fn arg -> expected [flag]*
+
+    """
+    with open(fname) as fp:
+        for line in fp:
+            # strip comments, and skip blank lines
+            if '--' in line:
+                line = line[:line.index('--')]
+            if not line.strip():
+                continue
+
+            lhs, rhs = line.split('->')
+            id, fn, arg = lhs.split()
+            rhs_pieces = rhs.split()
+            exp = rhs_pieces[0]
+            flags = rhs_pieces[1:]
+
+            yield (id, fn, float(arg), float(exp), flags)
 
 def parse_testfile(fname):
     """Parse a file with test values
@@ -883,6 +926,51 @@ class MathTests(unittest.TestCase):
                            "test %s:%s(%r)\n" % (id, fn, ar))
                 self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
+
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_mtestfile(self):
+        ALLOWED_ERROR = 20  # permitted error, in ulps
+        fail_fmt = "{}:{}({!r}): expected {!r}, got {!r}"
+
+        failures = []
+        for id, fn, arg, expected, flags in parse_mtestfile(math_testcases):
+            func = getattr(math, fn)
+
+            if 'invalid' in flags or 'divide-by-zero' in flags:
+                expected = 'ValueError'
+            elif 'overflow' in flags:
+                expected = 'OverflowError'
+
+            try:
+                got = func(arg)
+            except ValueError:
+                got = 'ValueError'
+            except OverflowError:
+                got = 'OverflowError'
+
+            diff_ulps = None
+            if isinstance(got, float) and isinstance(expected, float):
+                if math.isnan(expected) and math.isnan(got):
+                    continue
+                if not math.isnan(expected) and not math.isnan(got):
+                    diff_ulps = to_ulps(expected) - to_ulps(got)
+                    if diff_ulps <= ALLOWED_ERROR:
+                        continue
+
+            if isinstance(got, str) and isinstance(expected, str):
+                if got == expected:
+                    continue
+
+            fail_msg = fail_fmt.format(id, fn, arg, expected, got)
+            if diff_ulps is not None:
+                fail_msg += ' ({} ulps)'.format(diff_ulps)
+            failures.append(fail_msg)
+
+        if failures:
+            self.fail('Failures in test_mtestfile:\n  ' +
+                      '\n  '.join(failures))
+
 
 def test_main():
     from doctest import DocFileSuite
