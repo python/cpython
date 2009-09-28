@@ -891,7 +891,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
 'Harry''s':'Arlington Heights':'IL':'2/1/03':'Kimi Hayes'
 'Shark City':'Glendale Heights':'IL':'12/28/02':'Prezence'
 'Tommy''s Place':'Blue Island':'IL':'12/28/02':'Blue Sunday/White Crow'
-'Stonecutters Seafood and Chop House':'Lemont':'IL':'12/19/02':'Week Back'
+'Stonecutters ''Seafood'' and Chop House':'Lemont':'IL':'12/19/02':'Week Back'
 """
     header = '''\
 "venue","city","state","date","performers"
@@ -949,6 +949,13 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         dialect = sniffer.sniff(self.sample7)
         self.assertEqual(dialect.delimiter, "|")
         self.assertEqual(dialect.quotechar, "'")
+
+    def test_doublequote(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(self.header)
+        self.assertFalse(dialect.doublequote)
+        dialect = sniffer.sniff(self.sample2)
+        self.assertTrue(dialect.doublequote)
 
 if not hasattr(sys, "gettotalrefcount"):
     if test_support.verbose: print "*** skipping leakage tests ***"
