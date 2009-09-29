@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #6990: Fix threading.local subclasses leaving old state around
+  after a reference cycle GC which could be recycled by new locals.
+
 - Issue #6300: unicode.encode, unicode.decode, str.decode, and str.encode now
   take keyword arguments.
 
