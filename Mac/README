@@ -5,6 +5,39 @@ MacOSX Notes
 This document provides a quick overview of some Mac OS X specific features in
 the Python distribution.
 
+Mac-specific arguments to configure
+===================================
+
+* ``--enable-framework``
+
+  If this argument is specified the build will create a Python.framework rather
+  than a traditional Unix install. See the section
+  _`Building and using a framework-based Python on Mac OS X` for more 
+  information on frameworks.
+
+* ``--with-framework-name=NAME``
+
+  Specify the name for the python framework, defaults to ``Python``. This option
+  is only valid when ``--enable-framework`` is specified.
+
+* ``--enable-universalsdk[=PATH]``
+
+  Create a universal binary build of of Python. This can be used with both
+  regular and framework builds.
+
+  The optional argument specifies with OSX SDK should be used to perform the
+  build. This defaults to ``/Developer/SDKs/MacOSX.10.4u.sdk``, specify 
+  ``/`` when building on a 10.5 system, especially when building 64-bit code.
+
+  See the section _`Building and using a universal binary of Python on Mac OS X`
+  for more information.
+
+* ``--with-univeral-archs=VALUE``
+
+  Specify the kind of universal binary that should be created. This option is 
+  only valid when ``--enable-universalsdk`` is specified.
+
+  
 
 Building and using a universal binary of Python on Mac OS X
 ===========================================================
@@ -30,6 +63,34 @@ This flag can be used a framework build of python, but also with a classic
 unix build. Either way you will have to build python on Mac OS X 10.4 (or later)
 with Xcode 2.1 (or later). You also have to install the 10.4u SDK when 
 installing Xcode.
+
+The option ``--enable-universalsdk`` has an optional argument to specify an
+SDK, which defaults to the 10.4u SDK. When you build on OSX 10.5 or later 
+you can use the system headers instead of an SDK::
+
+  $ ./configure --enable-universalsdk=/
+
+2.1 Flavours of universal binaries
+..................................
+
+It is possible to build a number of flavours of the universal binary build,
+the default is a 32-bit only binary (i386 and ppc). The flavour can be
+specified using the option ``--with-universal-archs=VALUE``. The following
+values are available:
+
+  * ``32-bit``:   ``ppc``, ``i386``
+
+  * ``64-bit``:   ``ppc64``, ``x86_64``
+
+  * ``all``:      ``ppc``, ``ppc64``, ``i386``, ``x86_64``
+
+  * ``3-way``:	  ``ppc``, ``i386`` and ``x86_64``
+
+  * ``intel``:	  ``i386``, ``x86_64``
+
+To build a universal binary that includes a 64-bit architecture you must build
+on a system running OSX 10.5 or later. The ``all`` flavour can only be build on
+OSX 10.5.
 
 
 Building and using a framework-based Python on Mac OS X.
@@ -81,17 +142,19 @@ inside the Python.framework, and unix tools "python" and "pythonw" into
 the relevant portions of the Mac subtree into the Python.framework.
 
 It is normally invoked indirectly through the main Makefile, as the last step
-in the sequence
+in the sequence::
 
- 1. ./configure --enable-framework
-
- 2. make
- 
- 3. make install
+ $ ./configure --enable-framework
+ $ make
+ $ make install
 
 This sequence will put the framework in /Library/Framework/Python.framework,
 the applications in "/Applications/MacPython 2.6" and the unix tools in 
 /usr/local/bin.
+
+It is possible to select a different name for the framework using the configure 
+option ``--with-framework-name=NAME``. This makes it possible to have several
+parallel installs of a Python framework.
 
 Installing in another place, for instance $HOME/Library/Frameworks if you have
 no admin privileges on your machine, has only been tested very lightly. This
@@ -100,14 +163,6 @@ The other two directories, "/Applications/MacPython-2.6" and /usr/local/bin,
 will then also be deposited in $HOME. This is sub-optimal for the unix tools, 
 which you would want in $HOME/bin, but there is no easy way to fix this right 
 now.
-
-If you want to install some part, but not all, read the main Makefile. The
-frameworkinstall is composed of a couple of sub-targets that install the
-framework itself, the Mac subtree, the applications and the unix tools.
-
-There is an extra target frameworkinstallextras that is not part of the
-normal frameworkinstall which installs the Demo and Tools directories
-into "/Applications/MacPython 2.6", this is useful for binary distributions.
 
 What do all these programs do?
 ===============================
