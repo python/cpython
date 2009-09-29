@@ -1,6 +1,7 @@
 import errno
 from http import client
 import io
+import array
 import socket
 
 from unittest import TestCase
@@ -173,6 +174,20 @@ class BasicTest(TestCase):
         conn.request('GET', '/foo', body)
         self.assertTrue(sock.data.startswith(expected), '%r != %r' %
                 (sock.data[:len(expected)], expected))
+
+    def test_send(self):
+        expected = b'this is a test this is only a test'
+        conn = client.HTTPConnection('example.com')
+        sock = FakeSocket(None)
+        conn.sock = sock
+        conn.send(expected)
+        self.assertEquals(expected, sock.data)
+        sock.data = b''
+        conn.send(array.array('b', expected))
+        self.assertEquals(expected, sock.data)
+        sock.data = b''
+        conn.send(io.BytesIO(expected))
+        self.assertEquals(expected, sock.data)
 
     def test_chunked(self):
         chunked_start = (
