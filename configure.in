@@ -118,6 +118,11 @@ AC_ARG_WITH(universal-archs,
 [
 	AC_MSG_RESULT($withval)
 	UNIVERSAL_ARCHS="$withval"
+        if test "${enable_universalsdk}" ; then
+		:
+	else
+		AC_MSG_ERROR([--with-universal-archs without --enable-universalsdk. See Mac/README])
+	fi
 ],
 [
  	AC_MSG_RESULT(32-bit)
@@ -129,6 +134,11 @@ AC_ARG_WITH(framework-name,
               AC_HELP_STRING(--with-framework-name=FRAMEWORK, 
                              specify an alternate name of the framework built with --enable-framework),
 [
+    if test "${enable_framework}"; then
+	    :
+    else
+	AC_MSG_ERROR([--with-framework-name without --enable-framework. See Mac/README])
+    fi
     PYTHONFRAMEWORK=${withval}
     PYTHONFRAMEWORKDIR=${withval}.framework
     PYTHONFRAMEWORKIDENTIFIER=org.python.`echo $withval | tr '[A-Z]' '[a-z]'`
@@ -1615,7 +1625,7 @@ then
 	AC_MSG_RESULT(yes)
 	if test $enable_shared = "yes"
 	then
-		AC_MSG_ERROR([Specifying both --enable-shared and --enable-framework is not supported, use only --enable-framework instead])
+		AC_MSG_ERROR([Specifying both --enable-shared and --enable-framework is not supported, use only --enable-framework instead. See Mac/README.])
 	fi
 else
 	AC_MSG_RESULT(no)
