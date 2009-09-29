@@ -1182,8 +1182,28 @@ string functions based on regular expressions.
 
 .. method:: str.title()
 
-   Return a titlecased version of the string: words start with uppercase
-   characters, all remaining cased characters are lowercase.
+   Return a titlecased version of the string where words start with an uppercase
+   character and the remaining characters are lowercase.
+
+   The algorithm uses a simple language-independent definition of a word as
+   groups of consecutive letters.  The definition works in many contexts but
+   it means that apostrophes in contractions and possessives form word
+   boundaries, which may not be the desired result::
+
+        >>> "they're bill's friends from the UK".title()
+        "They'Re Bill'S Friends From The Uk"
+
+   A workaround for apostrophes can be constructed using regular expressions::
+
+        >>> import re
+        >>> def titlecase(s):
+                return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
+                              lambda mo: mo.group(0)[0].upper() +
+                                         mo.group(0)[1:].lower(),
+                              s)
+
+        >>> titlecase("they're bill's friends.")
+        "They're Bill's Friends."
 
    For 8-bit strings, this method is locale-dependent.
 
