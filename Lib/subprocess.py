@@ -287,54 +287,80 @@ Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 Replacing os.popen*
 -------------------
-pipe = os.popen(cmd, mode='r', bufsize)
+pipe = os.popen("cmd", mode='r', bufsize)
 ==>
-pipe = Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
+pipe = Popen("cmd", shell=True, bufsize=bufsize, stdout=PIPE).stdout
 
-pipe = os.popen(cmd, mode='w', bufsize)
+pipe = os.popen("cmd", mode='w', bufsize)
 ==>
-pipe = Popen(cmd, shell=True, bufsize=bufsize, stdin=PIPE).stdin
+pipe = Popen("cmd", shell=True, bufsize=bufsize, stdin=PIPE).stdin
 
 
-(child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
+(child_stdin, child_stdout) = os.popen2("cmd", mode, bufsize)
 ==>
-p = Popen(cmd, shell=True, bufsize=bufsize,
+p = Popen("cmd", shell=True, bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, close_fds=True)
 (child_stdin, child_stdout) = (p.stdin, p.stdout)
 
 
 (child_stdin,
  child_stdout,
- child_stderr) = os.popen3(cmd, mode, bufsize)
+ child_stderr) = os.popen3("cmd", mode, bufsize)
 ==>
-p = Popen(cmd, shell=True, bufsize=bufsize,
+p = Popen("cmd", shell=True, bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 (child_stdin,
  child_stdout,
  child_stderr) = (p.stdin, p.stdout, p.stderr)
 
 
-(child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
+(child_stdin, child_stdout_and_stderr) = os.popen4("cmd", mode,
+                                                   bufsize)
 ==>
-p = Popen(cmd, shell=True, bufsize=bufsize,
+p = Popen("cmd", shell=True, bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+
+On Unix, os.popen2, os.popen3 and os.popen4 also accept a sequence as
+the command to execute, in which case arguments will be passed
+directly to the program without shell intervention.  This usage can be
+replaced as follows:
+
+(child_stdin, child_stdout) = os.popen2(["/bin/ls", "-l"], mode,
+                                        bufsize)
+==>
+p = Popen(["/bin/ls", "-l"], bufsize=bufsize, stdin=PIPE, stdout=PIPE)
+(child_stdin, child_stdout) = (p.stdin, p.stdout)
+
+Return code handling translates as follows:
+
+pipe = os.popen("cmd", 'w')
+...
+rc = pipe.close()
+if rc != None and rc % 256:
+    print "There were some errors"
+==>
+process = Popen("cmd", 'w', shell=True, stdin=PIPE)
+...
+process.stdin.close()
+if process.wait() != 0:
+    print "There were some errors"
 
 
 Replacing popen2.*
 ------------------
-Note: If the cmd argument to popen2 functions is a string, the command
-is executed through /bin/sh.  If it is a list, the command is directly
-executed.
-
 (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
 ==>
 p = Popen(["somestring"], shell=True, bufsize=bufsize
           stdin=PIPE, stdout=PIPE, close_fds=True)
 (child_stdout, child_stdin) = (p.stdout, p.stdin)
 
+On Unix, popen2 also accepts a sequence as the command to execute, in
+which case arguments will be passed directly to the program without
+shell intervention.  This usage can be replaced as follows:
 
-(child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
+(child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize,
+                                            mode)
 ==>
 p = Popen(["mycmd", "myarg"], bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, close_fds=True)
