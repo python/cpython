@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #5329: Fix os.popen* regression from 2.5 with commands as a
+  sequence running through the shell.  Patch by Jean-Paul Calderone
+  and Jani Hakala.
+
 - Issue #7019: Raise ValueError when unmarshalling bad long data, instead
   of producing internally inconsistent Python longs.
 

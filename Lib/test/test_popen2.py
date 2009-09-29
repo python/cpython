@@ -78,6 +78,14 @@ class Popen2Test(unittest.TestCase):
 
     def test_os_popen2(self):
         # same test as test_popen2(), but using the os.popen*() API
+        if os.name == 'posix':
+            w, r = os.popen2([self.cmd])
+            self.validate_output(self.teststr, self.expected, r, w)
+
+            w, r = os.popen2(["echo", self.teststr])
+            got = r.read()
+            self.assertEquals(got, self.teststr + "\n")
+
         w, r = os.popen2(self.cmd)
         self.validate_output(self.teststr, self.expected, r, w)
 
@@ -87,8 +95,26 @@ class Popen2Test(unittest.TestCase):
             w, r, e = os.popen3([self.cmd])
             self.validate_output(self.teststr, self.expected, r, w, e)
 
+            w, r, e = os.popen3(["echo", self.teststr])
+            got = r.read()
+            self.assertEquals(got, self.teststr + "\n")
+            got = e.read()
+            self.assertFalse(got, "unexpected %r on stderr" % got)
+
         w, r, e = os.popen3(self.cmd)
         self.validate_output(self.teststr, self.expected, r, w, e)
+
+    def test_os_popen4(self):
+        if os.name == 'posix':
+            w, r = os.popen4([self.cmd])
+            self.validate_output(self.teststr, self.expected, r, w)
+
+            w, r = os.popen4(["echo", self.teststr])
+            got = r.read()
+            self.assertEquals(got, self.teststr + "\n")
+
+        w, r = os.popen4(self.cmd)
+        self.validate_output(self.teststr, self.expected, r, w)
 
 
 def test_main():
