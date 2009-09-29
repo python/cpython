@@ -66,6 +66,7 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
+from array import array
 import socket
 from sys import py3kwarning
 from urlparse import urlsplit
@@ -747,7 +748,7 @@ class HTTPConnection:
             print "send:", repr(str)
         try:
             blocksize=8192
-            if hasattr(str,'read') :
+            if hasattr(str,'read') and not isinstance(str, array):
                 if self.debuglevel > 0: print "sendIng a read()able"
                 data=str.read(blocksize)
                 while data:
