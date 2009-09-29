@@ -556,7 +556,7 @@ static PyObject *
 r_PyLong(RFILE *p)
 {
 	PyLongObject *ob;
-	int size, i, j, md;
+	int size, i, j, md, shorts_in_top_digit;
 	long n;
 	digit d;
 
@@ -569,7 +569,8 @@ r_PyLong(RFILE *p)
 		return NULL;
 	}
 
-	size = 1 + (ABS(n)-1) / PyLong_MARSHAL_RATIO;
+	size = 1 + (ABS(n) - 1) / PyLong_MARSHAL_RATIO;
+	shorts_in_top_digit = 1 + (ABS(n) - 1) % PyLong_MARSHAL_RATIO;
 	ob = _PyLong_New(size);
 	if (ob == NULL)
 		return NULL;
@@ -586,12 +587,21 @@ r_PyLong(RFILE *p)
 		ob->ob_digit[i] = d;
 	}
 	d = 0;
-	for (j=0; j < (ABS(n)-1)%PyLong_MARSHAL_RATIO + 1; j++) {
+	for (j=0; j < shorts_in_top_digit; j++) {
 		md = r_short(p);
 		if (md < 0 || md > PyLong_MARSHAL_BASE)
 			goto bad_digit;
+		/* topmost marshal digit should be nonzero */
+		if (md == 0 && j == shorts_in_top_digit - 1) {
+			Py_DECREF(ob);
+			PyErr_SetString(PyExc_ValueError,
+				"bad marshal data (unnormalized long data)");
+			return NULL;
+		}
 		d += (digit)md << j*PyLong_MARSHAL_SHIFT;
 	}
+	/* top digit should be nonzero, else the resulting PyLong won't be
+	   normalized */
 	ob->ob_digit[size-1] = d;
 	return (PyObject *)ob;
   bad_digit:
