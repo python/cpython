@@ -9,6 +9,12 @@ What's New in Python 2.5.5?
 
 *Release date: XX-XXX-20XX*
 
+Core and builtins
+-----------------
+
+- Issue #6990: Fix threading.local subclasses leaving old state around
+  after a reference cycle GC which could be recycled by new locals.
+
 Library
 -------
 
