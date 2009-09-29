@@ -61,13 +61,21 @@ DEPSRC = os.path.join(WORKDIR, 'third-party')
 DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
 # Location of the preferred SDK
-if int(os.uname()[2].split('.')[0]) == 8:
-    # Explicitly use the 10.4u (universal) SDK when
-    # building on 10.4, the system headers are not
-    # useable for a universal build
-    SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
-else:
-    SDKPATH = "/"
+
+### There are some issues with the SDK selection below here,
+### The resulting binary doesn't work on all platforms that
+### it should. Always default to the 10.4u SDK until that
+### isue is resolved.
+###
+##if int(os.uname()[2].split('.')[0]) == 8:
+##    # Explicitly use the 10.4u (universal) SDK when
+##    # building on 10.4, the system headers are not
+##    # useable for a universal build
+##    SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
+##else:
+##    SDKPATH = "/"
+
+SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
 
 universal_opts_map = { '32-bit': ('i386', 'ppc',),
                        '64-bit': ('x86_64', 'ppc64',),
@@ -96,6 +104,15 @@ SRCDIR = os.path.dirname(
 
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.3'
+
+target_cc_map = {
+        '10.3': 'gcc-4.0',
+        '10.4': 'gcc-4.0',
+        '10.5': 'gcc-4.0',
+        '10.6': 'gcc-4.2',
+}
+
+CC = target_cc_map[DEPTARGET]
 
 USAGE = textwrap.dedent("""\
     Usage: build_python [options]
@@ -126,7 +143,8 @@ def library_recipes():
               url="http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz",
               checksum='3c15a0c8d1d3ee1c46a1634d00617b1a',
               configure=None,
-              install='make install PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+              install='make install CC=%s PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC,
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
                   ' -arch '.join(ARCHLIST),
                   SDKPATH,
@@ -137,7 +155,8 @@ def library_recipes():
               url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
               checksum='debc62758716a169df9f62e6ab2bc634',
               configure=None,
-              install='make install prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+              install='make install CC=%s prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC,
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
                   ' -arch '.join(ARCHLIST),
                   SDKPATH,
@@ -354,7 +373,7 @@ def checkEnvironment():
     if platform.system() != 'Darwin':
         fatal("This script should be run on a Mac OS X 10.4 (or later) system")
 
-    if int(platform.release().split('.')[0]) <= 8:
+    if int(platform.release().split('.')[0]) < 8:
         fatal("This script should be run on a Mac OS X 10.4 (or later) system")
 
     if not os.path.exists(SDKPATH):
@@ -368,7 +387,7 @@ def parseOptions(args=None):
     Parse arguments and update global settings.
     """
     global WORKDIR, DEPSRC, SDKPATH, SRCDIR, DEPTARGET
-    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST
+    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC
 
     if args is None:
         args = sys.argv[1:]
@@ -426,6 +445,8 @@ def parseOptions(args=None):
     SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
+    CC=target_cc_map[DEPTARGET]
+
     print "Settings:"
     print " * Source directory:", SRCDIR
     print " * Build directory: ", WORKDIR
@@ -433,6 +454,7 @@ def parseOptions(args=None):
     print " * Third-party source:", DEPSRC
     print " * Deployment target:", DEPTARGET
     print " * Universal architectures:", ARCHLIST
+    print " * C compiler:", CC
     print ""
 
 
@@ -652,8 +674,7 @@ def buildPythonDocs():
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'),
-            os.path.join(docdir, 'python-docs-html'))
+    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():
@@ -1039,6 +1060,7 @@ def main():
     checkEnvironment()
 
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = DEPTARGET
+    os.environ['CC'] = CC
 
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
