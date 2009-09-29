@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6990: Fix threading.local subclasses leaving old state around
+  after a reference cycle GC which could be recycled by new locals.
+
 - Issue #5460: Fix an ambiguity in the grammar.
 
 - Issue #1766304: Improve performance of membership tests on range objects.
