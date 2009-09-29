@@ -262,6 +262,11 @@ class BugsTestCase(unittest.TestCase):
         testString = 'abc' * size
         marshal.dumps(testString)
 
+    def test_invalid_longs(self):
+        # Issue #7019: marshal.loads shouldn't produce unnormalized PyLongs
+        invalid_string = 'l\x02\x00\x00\x00\x00\x00\x00\x00'
+        self.assertRaises(ValueError, marshal.loads, invalid_string)
+
 
 def test_main():
     test_support.run_unittest(IntTestCase,
