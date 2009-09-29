@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7019: Raise ValueError when unmarshalling bad long data, instead
+  of producing internally inconsistent Python longs.
+
 - Issue #6990: Fix threading.local subclasses leaving old state around
   after a reference cycle GC which could be recycled by new locals.
 
