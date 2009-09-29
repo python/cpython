@@ -1,3 +1,4 @@
+import array
 import httplib
 import StringIO
 import socket
@@ -15,7 +16,7 @@ class FakeSocket:
         self.data = ''
 
     def sendall(self, data):
-        self.data += data
+        self.data += ''.join(data)
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
@@ -161,6 +162,20 @@ class BasicTest(TestCase):
         conn.sock = sock
         conn.request('GET', '/foo', body)
         self.assertTrue(sock.data.startswith(expected))
+
+    def test_send(self):
+        expected = 'this is a test this is only a test'
+        conn = httplib.HTTPConnection('example.com')
+        sock = FakeSocket(None)
+        conn.sock = sock
+        conn.send(expected)
+        self.assertEquals(expected, sock.data)
+        sock.data = ''
+        conn.send(array.array('c', expected))
+        self.assertEquals(expected, sock.data)
+        sock.data = ''
+        conn.send(StringIO.StringIO(expected))
+        self.assertEquals(expected, sock.data)
 
     def test_chunked(self):
         chunked_start = (
