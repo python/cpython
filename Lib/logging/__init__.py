@@ -282,11 +282,14 @@ class LogRecord:
         else:
             self.thread = None
             self.threadName = None
-        if logMultiprocessing:
-            from multiprocessing import current_process
-            self.processName = current_process().name
-        else:
+        if not logMultiprocessing:
             self.processName = None
+        else:
+            try:
+                from multiprocessing import current_process
+                self.processName = current_process().name
+            except ImportError:
+                self.processName = None
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
@@ -1125,7 +1128,11 @@ class Logger(Filterer):
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
         """
-        f = currentframe().f_back
+        f = currentframe()
+        #On some versions of IronPython, currentframe() returns None if
+        #IronPython isn't run with -X:Frames.
+        if f is not None:
+            f = f.f_back
         rv = "(unknown file)", 0, "(unknown function)"
         while hasattr(f, "f_code"):
             co = f.f_code
@@ -1157,7 +1164,8 @@ class Logger(Filterer):
         """
         if _srcfile:
             #IronPython doesn't track Python frames, so findCaller throws an
-            #exception. We trap it here so that IronPython can use logging.
+            #exception on some versions of IronPython. We trap it here so that
+            #IronPython can use logging.
             try:
                 fn, lno, func = self.findCaller()
             except ValueError:
