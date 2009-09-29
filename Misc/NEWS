@@ -85,6 +85,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6790: Make it possible again to pass an `array.array` to
+  `httplib.HTTPConnection.send`. Patch by Kirk McDonald.
+
 - Issue #6236, #6348: Fix various failures in the `io` module under AIX
   and other platforms, when using a non-gcc compiler. Patch by egreen.
 
