@@ -228,7 +228,6 @@ local_traverse(localobject *self, visitproc visit, void *arg)
 static int
 local_clear(localobject *self)
 {
-	Py_CLEAR(self->key);
 	Py_CLEAR(self->args);
 	Py_CLEAR(self->kw);
 	Py_CLEAR(self->dict);
@@ -250,6 +249,7 @@ local_dealloc(localobject *self)
 				PyDict_DelItem(tstate->dict, self->key);
 	}
 
+	Py_XDECREF(self->key);
 	local_clear(self);
 	self->ob_type->tp_free((PyObject*)self);
 }
