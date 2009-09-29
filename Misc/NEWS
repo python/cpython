@@ -12,6 +12,10 @@ What's New in Python 2.6.3
 Core and Builtins
 -----------------
 
+- Issue #5329: Fix os.popen* regression from 2.5 with commands as a
+  sequence running through the shell.  Patch by Jean-Paul Calderone
+  and Jani Hakala.
+
 - Issue #6990: Fix threading.local subclasses leaving old state around
   after a reference cycle GC which could be recycled by new locals.
 
