@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #6990: Fix threading.local subclasses leaving old state around
+  after a reference cycle GC which could be recycled by new locals.
+
 - Issue #6846: Fix bug where bytearray.pop() returns negative integers.
 
 - Issue #6750: A text file opened with io.open() could duplicate its output
