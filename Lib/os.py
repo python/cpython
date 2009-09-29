@@ -666,8 +666,9 @@ if _exists("fork"):
 
             import subprocess
             PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE, close_fds=True)
+            p = subprocess.Popen(cmd, shell=isinstance(cmd, basestring),
+                                 bufsize=bufsize, stdin=PIPE, stdout=PIPE,
+                                 close_fds=True)
             return p.stdin, p.stdout
         __all__.append("popen2")
 
@@ -685,9 +686,9 @@ if _exists("fork"):
 
             import subprocess
             PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                 close_fds=True)
+            p = subprocess.Popen(cmd, shell=isinstance(cmd, basestring),
+                                 bufsize=bufsize, stdin=PIPE, stdout=PIPE,
+                                 stderr=PIPE, close_fds=True)
             return p.stdin, p.stdout, p.stderr
         __all__.append("popen3")
 
@@ -705,8 +706,8 @@ if _exists("fork"):
 
             import subprocess
             PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE,
+            p = subprocess.Popen(cmd, shell=isinstance(cmd, basestring),
+                                 bufsize=bufsize, stdin=PIPE, stdout=PIPE,
                                  stderr=subprocess.STDOUT, close_fds=True)
             return p.stdin, p.stdout
         __all__.append("popen4")
