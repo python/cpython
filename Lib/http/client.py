@@ -726,10 +726,17 @@ class HTTPConnection:
             if self.debuglevel > 0:
                 print("sendIng a read()able")
             encode = False
-            if "b" not in str.mode:
-                encode = True
-                if self.debuglevel > 0:
-                    print("encoding file using iso-8859-1")
+            try:
+                mode = str.mode
+            except AttributeError:
+                # io.BytesIO and other file-like objects don't have a `mode`
+                # attribute.
+                pass
+            else:
+                if "b" not in mode:
+                    encode = True
+                    if self.debuglevel > 0:
+                        print("encoding file using iso-8859-1")
             while 1:
                 data = str.read(blocksize)
                 if not data:
