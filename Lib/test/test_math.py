@@ -955,7 +955,7 @@ class MathTests(unittest.TestCase):
                     continue
                 if not math.isnan(expected) and not math.isnan(got):
                     diff_ulps = to_ulps(expected) - to_ulps(got)
-                    if diff_ulps <= ALLOWED_ERROR:
+                    if abs(diff_ulps) <= ALLOWED_ERROR:
                         continue
 
             if isinstance(got, str) and isinstance(expected, str):
