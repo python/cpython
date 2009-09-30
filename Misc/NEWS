@@ -45,11 +45,11 @@ Core and Builtins
 - Issue #4618: When unicode arguments are passed to print(), the default
   separator and end should be unicode also.
 
-- Issue #6119: Fixed a incorrect Py3k warning about order comparisons of builtin
-  functions and methods.
+- Issue #6119: Fixed a incorrect Py3k warning about order comparisons of
+  builtin functions and methods.
 
 - Issue #5330: C functions called with keyword arguments were not reported by
-  the various profiling modules (profile, cProfile). Patch by Hagen F�rstenau.
+  the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
 
 - Issue #6089: str.format can raise SystemError with certain invalid
   field specifiers.
@@ -264,8 +264,8 @@ Library
 - Issue #5977: distutils build_ext.get_outputs was not taking into account the
   inplace option. Initial patch by kxroberto.
 
-- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
-  for old-style extensions.
+- Issue #5984: distutils.command.build_ext.check_extensions_list checks were
+  broken for old-style extensions.
 
 - Issue #5854: Updated __all__ to include some missing names and remove some
   names which should not be exported.
