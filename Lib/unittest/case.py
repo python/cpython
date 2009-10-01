@@ -608,8 +608,9 @@ class TestCase(object):
                 except (TypeError, IndexError, NotImplementedError):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
-        standardMsg = differing + '\n' + '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                                            pprint.pformat(seq2).splitlines()))
+        standardMsg = differing + '\n' + '\n'.join(
+            difflib.ndiff(pprint.pformat(seq1).splitlines(),
+                          pprint.pformat(seq2).splitlines()))
         msg = self._formatMessage(msg, standardMsg)
         self.fail(msg)
 
@@ -722,7 +723,8 @@ class TestCase(object):
             if key not in actual:
                 missing.append(key)
             elif value != actual[key]:
-                mismatched.append('%s, expected: %s, actual: %s' % (key, value,                                                                                                       actual[key]))
+                mismatched.append('%s, expected: %s, actual: %s' %
+                                  (key, value, actual[key]))
 
         if not (missing or mismatched):
             return
@@ -775,7 +777,8 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
-            standardMsg = '\n' + ''.join(difflib.ndiff(first.splitlines(True), second.splitlines(True)))
+            standardMsg = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
+                                                       second.splitlines(True)))
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertLess(self, a, b, msg=None):
