@@ -120,7 +120,7 @@ empty, and the path manipulations are skipped; however the import of
    Returns a list containing all global site-packages directories
    (and possibly site-python).
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 .. function:: getuserbase()
 
@@ -130,7 +130,7 @@ empty, and the path manipulations are skipped; however the import of
    variable ``USER_BASE`` is not initialized yet, this function will also set
    it.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 .. function:: getusersitepackages()
 
@@ -139,7 +139,7 @@ empty, and the path manipulations are skipped; however the import of
    If the global variable ``USER_SITE`` is not initialized yet, this
    function will also set it.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 .. XXX Update documentation
 .. XXX document python -m site --user-base --user-site
