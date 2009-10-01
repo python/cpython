@@ -390,6 +390,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7031: Add TestCase.assert(Not)IsInstance() methods.
+
 - Issue #6790: Make it possible again to pass an `array.array` to
   `httplib.HTTPConnection.send`. Patch by Kirk McDonald.
 
