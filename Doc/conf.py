@@ -86,7 +86,7 @@ html_additional_pages = {
 }
 
 # Output an OpenSearch description file.
-html_use_opensearch = 'http://docs.python.org/dev/3.0'
+html_use_opensearch = 'http://docs.python.org/3.1'
 
 # Additional static files.
 html_static_path = ['tools/sphinxext/static']
