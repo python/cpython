@@ -384,7 +384,7 @@ HTTPConnection Objects
    Set the debugging level (the amount of debugging output printed). The default
    debug level is ``0``, meaning no debugging output is printed.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
 
 
 .. method:: HTTPConnection.connect()
