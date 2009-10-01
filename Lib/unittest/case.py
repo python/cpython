@@ -817,6 +817,19 @@ class TestCase(object):
             standardMsg = 'unexpectedly None'
             self.fail(self._formatMessage(msg, standardMsg))
 
+    def assertIsInstance(self, obj, cls, msg=None):
+        """Same as self.assertTrue(isinstance(obj, cls)), with a nicer
+        default message."""
+        if not isinstance(obj, cls):
+            standardMsg = '%r is not an instance of %r' % (obj, cls)
+            self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertNotIsInstance(self, obj, cls, msg=None):
+        """Included for symmetry with assertIsInstance."""
+        if isinstance(obj, cls):
+            standardMsg = '%r is an instance of %r' % (obj, cls)
+            self.fail(self._formatMessage(msg, standardMsg))
+
     def assertRaisesRegexp(self, expected_exception, expected_regexp,
                            callable_obj=None, *args, **kwargs):
         """Asserts that the message in a raised exception matches a regexp.
