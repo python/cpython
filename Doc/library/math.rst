@@ -285,7 +285,7 @@ Special functions
 
    Return the Gamma function at *x*.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 
 Constants
