@@ -6,11 +6,23 @@
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 .. moduleauthor:: Mike Verdone <mike.verdone@gmail.com>
 .. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
+.. moduleauthor:: Antoine Pitrou <solipsis@pitrou.net>
+.. moduleauthor:: Amaury Forgeot d'Arc <amauryfa@gmail.com>
+.. moduleauthor:: Benjamin Peterson <benjamin@python.org>
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
-.. versionadded:: 2.6
 
-The :mod:`io` module provides the Python interfaces to stream handling.  The
-built-in :func:`open` function is defined in this module.
+The :mod:`io` module provides the Python interfaces to stream handling.
+Under Python 2.x, this is proposed as an alternative to the built-in
+:class:`file` object, but in Python 3.x it is the default interface to
+access files and streams.
+
+.. note::
+
+   Since this module has been designed primarily for Python 3.x, you have to
+   be aware that all uses of "bytes" in this document refer to the
+   :class:`str` type (of which :class:`bytes` is an alias), and all uses
+   of "text" refer to the :class:`unicode` type.  Furthermore, those two
+   types are not interchangeable in the :mod:`io` APIs.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
@@ -31,10 +43,10 @@ streams.  :class:`BytesIO` is a simple stream of in-memory bytes.
 
 Another :class:`IOBase` subclass, :class:`TextIOBase`, deals with
 streams whose bytes represent text, and handles encoding and decoding
-from and to strings. :class:`TextIOWrapper`, which extends it, is a
-buffered text interface to a buffered raw stream
+from and to :class:`unicode` strings.  :class:`TextIOWrapper`, which extends
+it, is a buffered text interface to a buffered raw stream
 (:class:`BufferedIOBase`). Finally, :class:`StringIO` is an in-memory
-stream for text.
+stream for unicode text.
 
 Argument names are not part of the specification, and only the arguments of
 :func:`.open` are intended to be used as keyword arguments.
@@ -49,16 +61,16 @@ Module Interface
    classes.  :func:`.open` uses the file's blksize (as obtained by
    :func:`os.stat`) if possible.
 
-.. function:: open(file[, mode[, buffering[, encoding[, errors[, newline[, closefd=True]]]]]])
+.. function:: open(file, mode='r', buffering=None, encoding=None, errors=None, newline=None, closefd=True)
 
-   Open *file* and return a stream.  If the file cannot be opened, an
-   :exc:`IOError` is raised.
+   Open *file* and return a corresponding stream.  If the file cannot be opened,
+   an :exc:`IOError` is raised.
 
-   *file* is either a string giving the name (and the path if the file isn't in
-   the current working directory) of the file to be opened or a file
-   descriptor of the file to be opened.  (If a file descriptor is given,
-   for example, from :func:`os.fdopen`, it is closed when the returned
-   I/O object is closed, unless *closefd* is set to ``False``.)
+   *file* is either a string giving the name (and the path if the file isn't
+   in the current working directory) of the file to be opened or an integer
+   file descriptor of the file to be wrapped.  (If a file descriptor is given,
+   for example, from :func:`os.fdopen`, it is closed when the returned I/O
+   object is closed, unless *closefd* is set to ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
    opened.  It defaults to ``'r'`` which means open for reading in text mode.
@@ -88,11 +100,11 @@ Module Interface
 
    Python distinguishes between files opened in binary and text modes, even when
    the underlying operating system doesn't.  Files opened in binary mode
-   (including ``'b'`` in the *mode* argument) return contents as ``bytes``
+   (including ``'b'`` in the *mode* argument) return contents as :class:`bytes`
    objects without any decoding.  In text mode (the default, or when ``'t'`` is
    included in the *mode* argument), the contents of the file are returned as
-   strings, the bytes having been first decoded using a platform-dependent
-   encoding or using the specified *encoding* if given.
+   :class:`unicode` strings, the bytes having been first decoded using a
+   platform-dependent encoding or using the specified *encoding* if given.
 
    *buffering* is an optional integer used to set the buffering policy.  By
    default full buffering is on.  Pass 0 to switch buffering off (only allowed
@@ -101,19 +113,21 @@ Module Interface
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent, but any encoding supported by Python can be used.  See the
-   :mod:`codecs` module for the list of supported encodings.
+   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
+   encoding supported by Python can be used.  See the :mod:`codecs` module for
+   the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
-   exception if there is an encoding error (the default of ``None`` has the same
-   effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
-   errors can lead to data loss.)  ``'replace'`` causes a replacement marker
-   (such as ``'?'``) to be inserted where there is malformed data.  When
-   writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
-   reference) or ``'backslashreplace'`` (replace with backslashed escape
-   sequences) can be used.  Any other error handling name that has been
-   registered with :func:`codecs.register_error` is also valid.
+   errors are to be handled--this cannot be used in binary mode.  Pass
+   ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
+   error (the default of ``None`` has the same effect), or pass ``'ignore'`` to
+   ignore errors.  (Note that ignoring encoding errors can lead to data loss.)
+   ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
+   where there is malformed data.  When writing, ``'xmlcharrefreplace'``
+   (replace with the appropriate XML character reference) or
+   ``'backslashreplace'`` (replace with backslashed escape sequences) can be
+   used.  Any other error handling name that has been registered with
+   :func:`codecs.register_error` is also valid.
 
    *newline* controls how universal newlines works (it only applies to text
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
@@ -133,23 +147,26 @@ Module Interface
      the other legal values, any ``'\n'`` characters written are translated to
      the given string.
 
-   If *closefd* is ``False`` and a file descriptor rather than a
-   filename was given, the underlying file descriptor will be kept open
-   when the file is closed.  If a filename is given *closefd* has no
-   effect but must be ``True`` (the default).
+   If *closefd* is ``False`` and a file descriptor rather than a filename was
+   given, the underlying file descriptor will be kept open when the file is
+   closed.  If a filename is given *closefd* has no effect and must be ``True``
+   (the default).
 
-   The type of file object returned by the :func:`.open` function depends
-   on the mode.  When :func:`.open` is used to open a file in a text mode
-   (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a
-   :class:`TextIOWrapper`. When used to open a file in a binary mode,
-   the returned class varies: in read binary mode, it returns a
-   :class:`BufferedReader`; in write binary and append binary modes, it
-   returns a :class:`BufferedWriter`, and in read/write mode, it returns
-   a :class:`BufferedRandom`.
+   The type of file object returned by the :func:`.open` function depends on the
+   mode.  When :func:`.open` is used to open a file in a text mode (``'w'``,
+   ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
+   :class:`TextIOBase` (specifically :class:`TextIOWrapper`).  When used to open
+   a file in a binary mode with buffering, the returned class is a subclass of
+   :class:`BufferedIOBase`.  The exact class varies: in read binary mode, it
+   returns a :class:`BufferedReader`; in write binary and append binary modes,
+   it returns a :class:`BufferedWriter`, and in read/write mode, it returns a
+   :class:`BufferedRandom`.  When buffering is disabled, the raw stream, a
+   subclass of :class:`RawIOBase`, :class:`FileIO`, is returned.
 
-   It is also possible to use a string or bytearray as a file for both reading
-   and writing.  For strings :class:`StringIO` can be used like a file opened in
-   a text mode, and for bytearrays a :class:`BytesIO` can be used like a
+   It is also possible to use an :class:`unicode` or :class:`bytes` string
+   as a file for both reading and writing.  For :class:`unicode` strings
+   :class:`StringIO` can be used like a file opened in text mode,
+   and for :class:`bytes` a :class:`BytesIO` can be used like a
    file opened in a binary mode.
 
 
@@ -193,22 +210,25 @@ I/O Base Classes
    support are called.
 
    The basic type used for binary data read from or written to a file is
-   :class:`bytes`.  :class:`bytearray`\s are accepted too, and in some cases
-   (such as :class:`readinto`) required.  Text I/O classes work with
-   :class:`str` data.
+   :class:`bytes` (also known as :class:`str`).  :class:`bytearray`\s are
+   accepted too, and in some cases (such as :class:`readinto`) required.
+   Text I/O classes work with :class:`unicode` data.
 
    Note that calling any method (even inquiries) on a closed stream is
    undefined.  Implementations may raise :exc:`IOError` in this case.
 
    IOBase (and its subclasses) support the iterator protocol, meaning that an
    :class:`IOBase` object can be iterated over yielding the lines in a stream.
+   Lines are defined slightly differently depending on whether the stream is
+   a binary stream (yielding :class:`bytes`), or a text stream (yielding
+   :class:`unicode` strings).  See :meth:`readline` below.
 
    IOBase is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
    :keyword:`with` statement's suite is finished---even if an exception occurs::
 
-      with open('spam.txt', 'w') as file:
-          file.write('Spam and eggs!')
+      with io.open('spam.txt', 'w') as file:
+          file.write(u'Spam and eggs!')
 
    :class:`IOBase` provides these data attributes and methods:
 
@@ -244,7 +264,7 @@ I/O Base Classes
       Return ``True`` if the stream can be read from.  If False, :meth:`read`
       will raise :exc:`IOError`.
 
-   .. method:: readline([limit])
+   .. method:: readline(limit=-1)
 
       Read and return one line from the stream.  If *limit* is specified, at
       most *limit* bytes will be read.
@@ -253,13 +273,13 @@ I/O Base Classes
       the *newlines* argument to :func:`.open` can be used to select the line
       terminator(s) recognized.
 
-   .. method:: readlines([hint])
+   .. method:: readlines(hint=-1)
 
       Read and return a list of lines from the stream.  *hint* can be specified
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
 
-   .. method:: seek(offset[, whence])
+   .. method:: seek(offset, whence=SEEK_SET)
 
       Change the stream position to the given byte *offset*.  *offset* is
       interpreted relative to the position indicated by *whence*.  Values for
@@ -286,7 +306,7 @@ I/O Base Classes
 
       Return the current stream position.
 
-   .. method:: truncate([size])
+   .. method:: truncate(size=None)
 
       Truncate the file to at most *size* bytes.  *size* defaults to the current
       file position, as returned by :meth:`tell`.
@@ -308,15 +328,23 @@ I/O Base Classes
    Base class for raw binary I/O.  It inherits :class:`IOBase`.  There is no
    public constructor.
 
+   Raw binary I/O typically provides low-level access to an underlying OS
+   device or API, and does not try to encapsulate it in high-level primitives
+   (this is left to Buffered I/O and Text I/O, described later in this page).
+
    In addition to the attributes and methods from :class:`IOBase`,
    RawIOBase provides the following methods:
 
-   .. method:: read([n])
+   .. method:: read(n=-1)
 
-      Read and return all the bytes from the stream until EOF, or if *n* is
-      specified, up to *n* bytes.  Only one system call is ever made.  An empty
-      bytes object is returned on EOF; ``None`` is returned if the object is set
-      not to block and has no data to read.
+      Read up to *n* bytes from the object and return them.  As a convenience,
+      if *n* is unspecified or -1, :meth:`readall` is called.  Otherwise,
+      only one system call is ever made.  Fewer than *n* bytes may be
+      returned if the operating system call returns fewer than *n* bytes.
+
+      If 0 bytes are returned, and *n* was not 0, this indicates end of file.
+      If the object is in non-blocking mode and no bytes are available,
+      ``None`` is returned.
 
    .. method:: readall()
 
@@ -331,32 +359,58 @@ I/O Base Classes
    .. method:: write(b)
 
       Write the given bytes or bytearray object, *b*, to the underlying raw
-      stream and return the number of bytes written (This is never less than
-      ``len(b)``, since if the write fails, an :exc:`IOError` will be raised).
+      stream and return the number of bytes written.  This can be less than
+      ``len(b)``, depending on specifics of the underlying raw stream, and
+      especially if it is in non-blocking mode.  ``None`` is returned if the
+      raw stream is set not to block and no single byte could be readily
+      written to it.
 
 
 .. class:: BufferedIOBase
 
-   Base class for streams that support buffering.  It inherits :class:`IOBase`.
-   There is no public constructor.
+   Base class for binary streams that support some kind of buffering.
+   It inherits :class:`IOBase`. There is no public constructor.
 
-   The main difference with :class:`RawIOBase` is that the :meth:`read` method
-   supports omitting the *size* argument, and does not have a default
+   The main difference with :class:`RawIOBase` is that methods :meth:`read`,
+   :meth:`readinto` and :meth:`write` will try (respectively) to read as much
+   input as requested or to consume all given output, at the expense of
+   making perhaps more than one system call.
+
+   In addition, those methods can raise :exc:`BlockingIOError` if the
+   underlying raw stream is in non-blocking mode and cannot take or give
+   enough data; unlike their :class:`RawIOBase` counterparts, they will
+   never return ``None``.
+
+   Besides, the :meth:`read` method does not have a default
    implementation that defers to :meth:`readinto`.
 
-   In addition, :meth:`read`, :meth:`readinto`, and :meth:`write` may raise
-   :exc:`BlockingIOError` if the underlying raw stream is in non-blocking mode
-   and not ready; unlike their raw counterparts, they will never return
-   ``None``.
+   A typical :class:`BufferedIOBase` implementation should not inherit from a
+   :class:`RawIOBase` implementation, but wrap one, like
+   :class:`BufferedWriter` and :class:`BufferedReader` do.
 
-   A typical implementation should not inherit from a :class:`RawIOBase`
-   implementation, but wrap one like :class:`BufferedWriter` and
-   :class:`BufferedReader`.
-
-   :class:`BufferedIOBase` provides or overrides these methods in addition to
+   :class:`BufferedIOBase` provides or overrides these members in addition to
    those from :class:`IOBase`:
 
-   .. method:: read([n])
+   .. attribute:: raw
+
+      The underlying raw stream (a :class:`RawIOBase` instance) that
+      :class:`BufferedIOBase` deals with.  This is not part of the
+      :class:`BufferedIOBase` API and may not exist on some implementations.
+
+   .. method:: detach()
+
+      Separate the underlying raw stream from the buffer and return it.
+
+      After the raw stream has been detached, the buffer is in an unusable
+      state.
+
+      Some buffers, like :class:`BytesIO`, do not have the concept of a single
+      raw stream to return from this method.  They raise
+      :exc:`UnsupportedOperation`.
+
+      .. versionadded:: 2.7
+
+   .. method:: read(n=-1)
 
       Read and return up to *n* bytes.  If the argument is omitted, ``None``, or
       negative, data is read and returned until EOF is reached.  An empty bytes
@@ -368,8 +422,15 @@ I/O Base Classes
       one raw read will be issued, and a short result does not imply that EOF is
       imminent.
 
-      A :exc:`BlockingIOError` is raised if the underlying raw stream has no
-      data at the moment.
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
+      non blocking-mode, and has no data available at the moment.
+
+   .. method:: read1(n=-1)
+
+      Read and return up to *n* bytes, with at most one call to the underlying
+      raw stream's :meth:`~RawIOBase.read` method.  This can be useful if you
+      are implementing your own buffering on top of a :class:`BufferedIOBase`
+      object.
 
    .. method:: readinto(b)
 
@@ -377,34 +438,46 @@ I/O Base Classes
       read.
 
       Like :meth:`read`, multiple reads may be issued to the underlying raw
-      stream, unless the latter is 'interactive.'
+      stream, unless the latter is 'interactive'.
 
-      A :exc:`BlockingIOError` is raised if the underlying raw stream has no
-      data at the moment.
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
+      non blocking-mode, and has no data available at the moment.
 
    .. method:: write(b)
 
-      Write the given bytes or bytearray object, *b*, to the underlying raw
-      stream and return the number of bytes written (never less than ``len(b)``,
-      since if the write fails an :exc:`IOError` will be raised).
+      Write the given bytes or bytearray object, *b* and return the number
+      of bytes written (never less than ``len(b)``, since if the write fails
+      an :exc:`IOError` will be raised).  Depending on the actual
+      implementation, these bytes may be readily written to the underlying
+      stream, or held in a buffer for performance and latency reasons.
 
-      A :exc:`BlockingIOError` is raised if the buffer is full, and the
-      underlying raw stream cannot accept more data at the moment.
+      When in non-blocking mode, a :exc:`BlockingIOError` is raised if the
+      data needed to be written to the raw stream but it couldn't accept
+      all the data without blocking.
 
 
 Raw File I/O
 ------------
 
-.. class:: FileIO(name[, mode])
+.. class:: FileIO(name, mode='r', closefd=True)
 
-   :class:`FileIO` represents a file containing bytes data.  It implements
-   the :class:`RawIOBase` interface (and therefore the :class:`IOBase`
-   interface, too).
+   :class:`FileIO` represents an OS-level file containing bytes data.
+   It implements the :class:`RawIOBase` interface (and therefore the
+   :class:`IOBase` interface, too).
+
+   The *name* can be one of two things:
+
+   * a string representing the path to the file which will be opened;
+   * an integer representing the number of an existing OS-level file descriptor
+     to which the resulting :class:`FileIO` object will give access.
 
    The *mode* can be ``'r'``, ``'w'`` or ``'a'`` for reading (default), writing,
    or appending.  The file will be created if it doesn't exist when opened for
    writing or appending; it will be truncated when opened for writing.  Add a
    ``'+'`` to the mode to allow simultaneous reading and writing.
+
+   The :meth:`read` (when called with a positive argument), :meth:`readinto`
+   and :meth:`write` methods on this class will only make one system call.
 
    In addition to the attributes and methods from :class:`IOBase` and
    :class:`RawIOBase`, :class:`FileIO` provides the following data
@@ -419,38 +492,19 @@ Raw File I/O
       The file name.  This is the file descriptor of the file when no name is
       given in the constructor.
 
-   .. method:: read([n])
-
-      Read and return at most *n* bytes.  Only one system call is made, so it is
-      possible that less data than was requested is returned.  Use :func:`len`
-      on the returned bytes object to see how many bytes were actually returned.
-      (In non-blocking mode, ``None`` is returned when no data is available.)
-
-   .. method:: readall()
-
-      Read and return the entire file's contents in a single bytes object.  As
-      much as immediately available is returned in non-blocking mode.  If the
-      EOF has been reached, ``b''`` is returned.
-
-   .. method:: write(b)
-
-      Write the bytes or bytearray object, *b*, to the file, and return
-      the number actually written. Only one system call is made, so it
-      is possible that only some of the data is written.
-
-   Note that the inherited ``readinto()`` method should not be used on
-   :class:`FileIO` objects.
-
 
 Buffered Streams
 ----------------
+
+In many situations, buffered I/O streams will provide higher performance
+(bandwidth and latency) than raw I/O streams.  Their API is also more usable.
 
 .. class:: BytesIO([initial_bytes])
 
    A stream implementation using an in-memory bytes buffer.  It inherits
    :class:`BufferedIOBase`.
 
-   The argument *initial_bytes* is an optional initial bytearray.
+   The argument *initial_bytes* is an optional initial :class:`bytes`.
 
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
@@ -469,10 +523,13 @@ Buffered Streams
       current stream position, as returned by :meth:`tell`.
 
 
-.. class:: BufferedReader(raw[, buffer_size])
+.. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffer for a readable, sequential :class:`RawIOBase` object.  It inherits
-   :class:`BufferedIOBase`.
+   A buffer providing higher-level access to a readable, sequential
+   :class:`RawIOBase` object.  It inherits :class:`BufferedIOBase`.
+   When reading data from this object, a larger amount of data may be
+   requested from the underlying raw stream, and kept in an internal buffer.
+   The buffered data can then be returned directly on subsequent reads.
 
    The constructor creates a :class:`BufferedReader` for the given readable
    *raw* stream and *buffer_size*.  If *buffer_size* is omitted,
@@ -483,11 +540,9 @@ Buffered Streams
 
    .. method:: peek([n])
 
-      Return 1 (or *n* if specified) bytes from a buffer without advancing the
-      position.  Only a single read on the raw stream is done to satisfy the
-      call. The number of bytes returned may be less than requested since at
-      most all the buffer's bytes from the current position to the end are
-      returned.
+      Return bytes from the stream without advancing the position.  At most one
+      single read on the raw stream is done to satisfy the call. The number of
+      bytes returned may be less or more than requested.
 
    .. method:: read([n])
 
@@ -501,15 +556,24 @@ Buffered Streams
       Otherwise, one raw stream read call is made.
 
 
-.. class:: BufferedWriter(raw[, buffer_size[, max_buffer_size]])
+.. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffer for a writeable sequential RawIO object.  It inherits
-   :class:`BufferedIOBase`.
+   A buffer providing higher-level access to a writeable, sequential
+   :class:`RawIOBase` object.  It inherits :class:`BufferedIOBase`.
+   When writing to this object, data is normally held into an internal
+   buffer.  The buffer will be written out to the underlying :class:`RawIOBase`
+   object under various conditions, including:
+
+   * when the buffer gets too small for all pending data;
+   * when :meth:`flush()` is called;
+   * when a :meth:`seek()` is requested (for :class:`BufferedRandom` objects);
+   * when the :class:`BufferedWriter` object is closed or destroyed.
 
    The constructor creates a :class:`BufferedWriter` for the given writeable
    *raw* stream.  If the *buffer_size* is not given, it defaults to
-   :data:`DEAFULT_BUFFER_SIZE`.  If *max_buffer_size* is omitted, it defaults to
-   twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   A third argument, *max_buffer_size*, is supported, but unused and deprecated.
 
    :class:`BufferedWriter` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
@@ -521,35 +585,41 @@ Buffered Streams
 
    .. method:: write(b)
 
-      Write the bytes or bytearray object, *b*, onto the raw stream and return
-      the number of bytes written.  A :exc:`BlockingIOError` is raised when the
-      raw stream blocks.
+      Write the bytes or bytearray object, *b* and return the number of bytes
+      written.  When in non-blocking mode, a :exc:`BlockingIOError` is raised
+      if the buffer needs to be written out but the raw stream blocks.
 
 
-.. class:: BufferedRWPair(reader, writer[, buffer_size[, max_buffer_size]])
+.. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A combined buffered writer and reader object for a raw stream that can be
-   written to and read from.  It has and supports both :meth:`read`, :meth:`write`,
-   and their variants.  This is useful for sockets and two-way pipes.
-   It inherits :class:`BufferedIOBase`.
+   A buffered I/O object giving a combined, higher-level access to two
+   sequential :class:`RawIOBase` objects: one readable, the other writeable.
+   It is useful for pairs of unidirectional communication channels
+   (pipes, for instance).  It inherits :class:`BufferedIOBase`.
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.  The *max_buffer_size* (for the buffered writer)
-   defaults to twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
 
-   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods.
+   A fourth argument, *max_buffer_size*, is supported, but unused and
+   deprecated.
+
+   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
+   except for :meth:`~BufferedIOBase.detach`, which raises
+   :exc:`UnsupportedOperation`.
 
 
-.. class:: BufferedRandom(raw[, buffer_size[, max_buffer_size]])
+.. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered interface to random access streams.  It inherits
-   :class:`BufferedReader` and :class:`BufferedWriter`.
+   :class:`BufferedReader` and :class:`BufferedWriter`, and further supports
+   :meth:`seek` and :meth:`tell` functionality.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.  The *max_buffer_size* (for the buffered writer)
-   defaults to twice the buffer size.
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   A third argument, *max_buffer_size*, is supported, but unused and deprecated.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
    :class:`BufferedWriter` can do.
@@ -560,10 +630,10 @@ Text I/O
 
 .. class:: TextIOBase
 
-   Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  There is no :meth:`readinto` method because
-   Python's character strings are immutable.  It inherits :class:`IOBase`.
-   There is no public constructor.
+   Base class for text streams.  This class provides an unicode character
+   and line based interface to stream I/O.  There is no :meth:`readinto`
+   method because Python's :class:`unicode` strings are immutable.
+   It inherits :class:`IOBase`.  There is no public constructor.
 
    :class:`TextIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:
@@ -580,27 +650,48 @@ Text I/O
    .. attribute:: newlines
 
       A string, a tuple of strings, or ``None``, indicating the newlines
-      translated so far.
+      translated so far.  Depending on the implementation and the initial
+      constructor flags, this may not be available.
+
+   .. attribute:: buffer
+
+      The underlying binary buffer (a :class:`BufferedIOBase` instance) that
+      :class:`TextIOBase` deals with.  This is not part of the
+      :class:`TextIOBase` API and may not exist on some implementations.
+
+   .. method:: detach()
+
+      Separate the underlying binary buffer from the :class:`TextIOBase` and
+      return it.
+
+      After the underlying buffer has been detached, the :class:`TextIOBase` is
+      in an unusable state.
+
+      Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
+      have the concept of an underlying buffer and calling this method will
+      raise :exc:`UnsupportedOperation`.
+
+      .. versionadded:: 2.7
 
    .. method:: read(n)
 
       Read and return at most *n* characters from the stream as a single
-      :class:`str`.  If *n* is negative or ``None``, reads to EOF.
+      :class:`unicode`.  If *n* is negative or ``None``, reads until EOF.
 
    .. method:: readline()
 
-      Read until newline or EOF and return a single ``str``.  If the stream is
-      already at EOF, an empty string is returned.
+      Read until newline or EOF and return a single ``unicode``.  If the
+      stream is already at EOF, an empty string is returned.
 
    .. method:: write(s)
 
-      Write the string *s* to the stream and return the number of characters
-      written.
+      Write the :class:`unicode` string *s* to the stream and return the
+      number of characters written.
 
 
-.. class:: TextIOWrapper(buffer[, encoding[, errors[, newline[, line_buffering]]]])
+.. class:: TextIOWrapper(buffer, encoding=None, errors=None, newline=None, line_buffering=False)
 
-   A buffered text stream over a :class:`BufferedIOBase` raw stream, *buffer*.
+   A buffered text stream over a :class:`BufferedIOBase` binary stream.
    It inherits :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
@@ -637,21 +728,39 @@ Text I/O
       Whether line buffering is enabled.
 
 
-.. class:: StringIO([initial_value[, encoding[, errors[, newline]]]])
+.. class:: StringIO(initial_value=u'', newline=None)
 
-   An in-memory stream for text.  It inherits :class:`TextIOWrapper`.
+   An in-memory stream for unicode text.  It inherits :class:`TextIOWrapper`.
 
-   Create a new StringIO stream with an inital value, encoding, error handling,
-   and newline setting.  See :class:`TextIOWrapper`\'s constructor for more
-   information.
+   The initial value of the buffer (an empty unicode string by default) can
+   be set by providing *initial_value*.  The *newline* argument works like
+   that of :class:`TextIOWrapper`.  The default is to do no newline
+   translation.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOWrapper` and its parents:
 
    .. method:: getvalue()
 
-      Return a ``str`` containing the entire contents of the buffer.
+      Return a ``unicode`` containing the entire contents of the buffer at any
+      time before the :class:`StringIO` object's :meth:`close` method is
+      called.
 
+   Example usage::
+
+      import io
+
+      output = io.StringIO()
+      output.write(u'First line.\n')
+      output.write(u'Second line.\n')
+
+      # Retrieve file contents -- this will be
+      # u'First line.\nSecond line.\n'
+      contents = output.getvalue()
+
+      # Close object and discard memory buffer --
+      # .getvalue() will now raise an exception.
+      output.close()
 
 .. class:: IncrementalNewlineDecoder
 
