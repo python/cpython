@@ -326,11 +326,14 @@ I/O Base Classes
 
    .. method:: read(n=-1)
 
-      Read and return up to *n* bytes from the stream.  As a convenience, if
-      *n* is unspecified or -1, :meth:`readall` is called.  Otherwise,
-      only one system call is ever made.  An empty bytes object is returned
-      on EOF; ``None`` is returned if the object is set not to block and has
-      no data to read.
+      Read up to *n* bytes from the object and return them.  As a convenience,
+      if *n* is unspecified or -1, :meth:`readall` is called.  Otherwise,
+      only one system call is ever made.  Fewer than *n* bytes may be
+      returned if the operating system call returns fewer than *n* bytes.
+
+      If 0 bytes are returned, and *n* was not 0, this indicates end of file.
+      If the object is in non-blocking mode and no bytes are available,
+      ``None`` is returned.
 
    .. method:: readall()
 
