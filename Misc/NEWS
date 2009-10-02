@@ -1080,6 +1080,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6516: Added owner/group support when creating tar archives in 
+  Distutils.
+
 - Issue #6954: Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
 
 - Issue #6163: Fixed HP-UX runtime library dir options in
