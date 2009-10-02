@@ -390,6 +390,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6516: Added owner/group support when creating tar archives in 
+  Distutils.
+
 - Issue #7031: Add TestCase.assert(Not)IsInstance() methods.
 
 - Issue #6790: Make it possible again to pass an `array.array` to
