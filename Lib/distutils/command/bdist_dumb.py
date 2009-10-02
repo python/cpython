@@ -36,6 +36,12 @@ class bdist_dumb (Command):
                     ('relative', None,
                      "build the archive using relative paths"
                      "(default: false)"),
+                    ('owner=', 'u',
+                     "Owner name used when creating a tar file"
+                     " [default: current user]"),
+                    ('group=', 'g',
+                     "Group name used when creating a tar file"
+                     " [default: current group]"),
                    ]
 
     boolean_options = ['keep-temp', 'skip-build', 'relative']
@@ -53,6 +59,8 @@ class bdist_dumb (Command):
         self.dist_dir = None
         self.skip_build = 0
         self.relative = 0
+        self.owner = None
+        self.group = None
 
     def finalize_options(self):
         if self.bdist_dir is None:
@@ -71,7 +79,7 @@ class bdist_dumb (Command):
                                    ('dist_dir', 'dist_dir'),
                                    ('plat_name', 'plat_name'))
 
-    def run (self):
+    def run(self):
         if not self.skip_build:
             self.run_command('build')
 
@@ -110,7 +118,8 @@ class bdist_dumb (Command):
 
         # Make the archive
         filename = self.make_archive(pseudoinstall_root,
-                                     self.format, root_dir=archive_root)
+                                     self.format, root_dir=archive_root,
+                                     owner=self.owner, group=self.group)
         if self.distribution.has_ext_modules():
             pyversion = get_python_version()
         else:
