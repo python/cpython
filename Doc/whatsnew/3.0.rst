@@ -804,8 +804,8 @@ Builtins
   ``f(*args)``.
 
 * Removed :func:`callable`.  Instead of ``callable(f)`` you can use
-  ``hasattr(type(f), '__call__')``.  The :func:`operator.isCallable` function is
-  also gone.
+  ``hasattr(f, '__call__')``.  The :func:`operator.isCallable` function
+  is also gone.
 
 * Removed :func:`coerce`.  This function no longer serves a purpose
   now that classic classes are gone.
