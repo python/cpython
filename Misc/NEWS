@@ -12,6 +12,9 @@ What's New in Python 2.6.4a1?
 Core and Builtins
 -----------------
 
+- Issue #7019: Raise ValueError when unmarshalling bad long data, instead
+  of producing internally inconsistent Python longs.
+
 Library
 -------
 
