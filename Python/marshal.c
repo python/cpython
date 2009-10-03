@@ -589,7 +589,8 @@ r_object(RFILE *p)
 			ob->ob_size = n;
 			for (i = 0; i < size; i++) {
 				int digit = r_short(p);
-				if (digit < 0) {
+				if (digit < 0 ||
+				    (digit == 0 && i == size-1)) {
 					Py_DECREF(ob);
 					PyErr_SetString(PyExc_ValueError,
 							"bad marshal data");
