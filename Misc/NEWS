@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7050: Fix a SystemError when trying to use unpacking and augmented
+  assignment.
+
 - Issue #5329: Fix os.popen* regression from 2.5 with commands as a
   sequence running through the shell.  Patch by Jean-Paul Calderone
   and Jani Hakala.
