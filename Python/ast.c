@@ -2115,6 +2115,19 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             return NULL;
         if(!set_context(c, expr1, Store, ch))
             return NULL;
+        /* set_context checks that most expressions are not the left side.
+          Augmented assignments can only have a name, a subscript, or an
+          attribute on the left, though, so we have to explicitly check for
+          those. */
+        switch (expr1->kind) {
+            case Name_kind:
+            case Attribute_kind:
+            case Subscript_kind:
+                break;
+            default:
+                ast_error(ch, "illegal expression for augmented assignment");
+                return NULL;
+        }
 
         ch = CHILD(n, 2);
         if (TYPE(ch) == testlist)
