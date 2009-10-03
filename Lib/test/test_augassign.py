@@ -19,6 +19,9 @@ class AugAssignTest(unittest.TestCase):
         x /= 2
         self.assertEquals(x, 3.0)
 
+    def test_with_unpacking(self):
+        self.assertRaises(SyntaxError, compile, "x, b += 3", "<test>", "exec")
+
     def testInList(self):
         x = [2]
         x[0] += 1
