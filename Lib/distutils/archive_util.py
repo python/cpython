@@ -16,12 +16,12 @@ from distutils import log
 
 try:
     from pwd import getpwnam
-except AttributeError:
+except ImportError:
     getpwnam = None
 
 try:
     from grp import getgrnam
-except AttributeError:
+except ImportError:
     getgrnam = None
 
 def _get_gid(name):
