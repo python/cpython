@@ -2509,13 +2509,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			PyObject *exit_func;
 			u = TOP();
 			if (u == Py_None) {
-				POP();
+				(void)POP();
 				exit_func = TOP();
 				SET_TOP(u);
 				v = w = Py_None;
 			}
 			else if (PyLong_Check(u)) {
-				POP();
+				(void)POP();
 				switch(PyLong_AsLong(u)) {
 				case WHY_RETURN:
 				case WHY_CONTINUE:
