@@ -510,6 +510,11 @@ available.  They are listed here in alphabetical order.
    Convert an integer number (of any size) to a hexadecimal string. The result is a
    valid Python expression.
 
+   .. note::
+
+      To obtain a hexadecimal string representation for a float, use the
+      :meth:`float.hex` method.
+
    .. versionchanged:: 2.4
       Formerly only returned an unsigned literal.
 
