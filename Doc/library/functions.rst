@@ -489,6 +489,11 @@ are always available.  They are listed here in alphabetical order.
    expression.  If *x* is not a Python :class:`int` object, it has to define an
    :meth:`__index__` method that returns an integer.
 
+   .. note::
+
+      To obtain a hexadecimal string representation for a float, use the
+      :meth:`float.hex` method.
+
 
 .. function:: id(object)
 
