@@ -73,6 +73,11 @@ Extension Modules
 
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
+Tests
+-----
+
+- Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
 Build
 -----
 
