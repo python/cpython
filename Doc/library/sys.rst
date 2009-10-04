@@ -337,12 +337,12 @@ always available.
    does not have to hold true for third-party extensions as it is implementation
    specific.
 
-   The *default* argument allows to define a value which will be returned
-   if the object type does not provide means to retrieve the size and would
-   cause a `TypeError`.
+   If given, *default* will be returned if the object does not provide means to
+   retrieve the size.  Otherwise a `TypeError` will be raised.
 
-   :func:`getsizeof` calls the object's __sizeof__ method and adds an additional
-   garbage collector overhead if the object is managed by the garbage collector.
+   :func:`getsizeof` calls the object's ``__sizeof__`` method and adds an
+   additional garbage collector overhead if the object is managed by the garbage
+   collector.
 
 
 .. function:: _getframe([depth])
@@ -352,7 +352,8 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   This function should be used for internal and specialized purposes only.
+   This function should be used for internal and specialized purposes only. It
+   is not guaranteed to exist in all implementations of Python.
 
 
 .. function:: getprofile()
