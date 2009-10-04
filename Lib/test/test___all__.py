@@ -82,6 +82,7 @@ class AllTest(unittest.TestCase):
         self.check_all("keyword")
         self.check_all("linecache")
         self.check_all("locale")
+        self.check_all("logging")
         self.check_all("macpath")
         self.check_all("macurl2path")
         self.check_all("mailbox")

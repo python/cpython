@@ -3890,8 +3890,13 @@ socket_getnameinfo(PyObject *self, PyObject *args)
 	flags = flowinfo = scope_id = 0;
 	if (!PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags))
 		return NULL;
-	if  (!PyArg_ParseTuple(sa, "si|ii",
-			       &hostp, &port, &flowinfo, &scope_id))
+	if (!PyTuple_Check(sa)) {
+		PyErr_SetString(PyExc_TypeError,
+				"getnameinfo() argument 1 must be a tuple");
+		return NULL;
+	}
+	if (!PyArg_ParseTuple(sa, "si|ii",
+			      &hostp, &port, &flowinfo, &scope_id))
 		return NULL;
 	PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
 	memset(&hints, 0, sizeof(hints));
@@ -3914,9 +3919,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
 	switch (res->ai_family) {
 	case AF_INET:
 	    {
-		char *t1;
-		int t2;
-		if (PyArg_ParseTuple(sa, "si", &t1, &t2) == 0) {
+		if (PyTuple_GET_SIZE(sa) != 2) {
 			PyErr_SetString(socket_error,
 				"IPv4 sockaddr must be 2 tuple");
 			goto fail;

@@ -51,7 +51,7 @@ def unix_getpass(prompt='Password: ', stream=None):
         # If that fails, see if stdin can be controlled.
         try:
             fd = sys.stdin.fileno()
-        except:
+        except (AttributeError, ValueError):
             passwd = fallback_getpass(prompt, stream)
         input = sys.stdin
         if not stream:
