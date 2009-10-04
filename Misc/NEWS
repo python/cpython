@@ -23,6 +23,11 @@ Library
 - Issue #7039: Fixed distutils.tests.test_sysconfig when running on
   installation with no build.
 
+Tests
+-----
+
+- Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
 
 What's New in Python 2.6.3
 ==========================
