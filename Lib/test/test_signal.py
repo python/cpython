@@ -361,6 +361,8 @@ class ItimerTest(unittest.TestCase):
         signal.setitimer(self.itimer, 0.3, 0.2)
 
         for i in xrange(100000000):
+            # use up some virtual time by doing real work
+            _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_vtalrm handler stopped this itimer
 
