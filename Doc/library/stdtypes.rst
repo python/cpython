@@ -1148,8 +1148,6 @@ functions based on regular expressions.
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.translate(map)
 
