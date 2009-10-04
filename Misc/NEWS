@@ -1436,6 +1436,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
 - Issue #6806: test_platform failed under OS X 10.6.0 because ``sw_ver`` leaves
   off the trailing 0 in the version number.
 
