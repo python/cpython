@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Doug Hellmann was given SVN access on September 19 2009 by GFB, at
+  suggestion of Jesse Noller, for documentation work.
+
 - Ezio Melotti was given SVN access on June 7 2009 by GFB, for work on and
   fixes to the documentation.
 
@@ -108,6 +111,13 @@ Permissions History
 
 - Jeffrey Yasskin was given SVN access on 9 August 2007 by NCN,
   for his work on PEPs and other general patches. 
+
+- Mark Summerfield was given SVN access on 1 August 2007 by GFB,
+  for work on documentation.
+
+- Armin Ronacher was given SVN access on 23 July 2007 by GFB,
+  for work on the documentation toolset.  He now maintains the
+  ast module.
 
 - Senthil Kumaran was given SVN access on 16 June 2007 by MvL,
   for his Summer-of-Code project, mentored by Skip Montanaro.

@@ -468,7 +468,13 @@ class TestCase(object):
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
+
+           If the two objects compare equal then they will automatically
+           compare almost equal.
         """
+        if first == second:
+            # shortcut for ite
+            return
         if round(abs(second-first), places) != 0:
             standardMsg = '%r != %r within %r places' % (first, second, places)
             msg = self._formatMessage(msg, standardMsg)
@@ -481,8 +487,10 @@ class TestCase(object):
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
+
+           Objects that are equal automatically fail.
         """
-        if round(abs(second-first), places) == 0:
+        if (first == second) or round(abs(second-first), places) == 0:
             standardMsg = '%r == %r within %r places' % (first, second, places)
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)

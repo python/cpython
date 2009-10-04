@@ -413,7 +413,7 @@ class Server(object):
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_obj[ident], self.id_to_refcount[ident]
-                util.debug('disposing of obj with id %d', ident)
+                util.debug('disposing of obj with id %r', ident)
         finally:
             self.mutex.release()
 

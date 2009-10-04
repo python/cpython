@@ -57,7 +57,7 @@ default handler so that debug messages are written to a file::
 
    import logging
    LOG_FILENAME = '/tmp/logging_example.out'
-   logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+   logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
    logging.debug('This message should go to the log file')
 
@@ -1493,6 +1493,55 @@ printed on the console; on the server side, you should see something like::
       69 myapp.area2     WARNING  Jail zesty vixen who grabbed pay from quack.
       69 myapp.area2     ERROR    The five boxing wizards jump quickly.
 
+Using arbitrary objects as messages
+-----------------------------------
+
+In the preceding sections and examples, it has been assumed that the message
+passed when logging the event is a string. However, this is not the only
+possibility. You can pass an arbitrary object as a message, and its
+:meth:`__str__` method will be called when the logging system needs to convert
+it to a string representation. In fact, if you want to, you can avoid
+computing a string representation altogether - for example, the
+:class:`SocketHandler` emits an event by pickling it and sending it over the
+wire.
+
+Optimization
+------------
+
+Formatting of message arguments is deferred until it cannot be avoided.
+However, computing the arguments passed to the logging method can also be
+expensive, and you may want to avoid doing it if the logger will just throw
+away your event. To decide what to do, you can call the :meth:`isEnabledFor`
+method which takes a level argument and returns true if the event would be
+created by the Logger for that level of call. You can write code like this::
+
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("Message with %s, %s", expensive_func1(),
+                                            expensive_func2())
+
+so that if the logger's threshold is set above ``DEBUG``, the calls to
+:func:`expensive_func1` and :func:`expensive_func2` are never made.
+
+There are other optimizations which can be made for specific applications which
+need more precise control over what logging information is collected. Here's a
+list of things you can do to avoid processing during logging which you don't
+need:
+
++-----------------------------------------------+----------------------------------------+
+| What you don't want to collect                | How to avoid collecting it             |
++===============================================+========================================+
+| Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.  |
++-----------------------------------------------+----------------------------------------+
+| Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
++-----------------------------------------------+----------------------------------------+
+| Process information.                          | Set ``logging.logProcesses`` to ``0``. |
++-----------------------------------------------+----------------------------------------+
+
+Also note that the core logging module only includes the basic handlers. If
+you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
+take up any memory.
+
+.. _handler:
 
 Handler Objects
 ---------------
@@ -1608,9 +1657,9 @@ file-like object (or, more precisely, any object which supports :meth:`write`
 and :meth:`flush` methods).
 
 
-.. class:: StreamHandler(strm=None)
+.. class:: StreamHandler(stream=None)
 
-   Returns a new instance of the :class:`StreamHandler` class. If *strm* is
+   Returns a new instance of the :class:`StreamHandler` class. If *stream* is
    specified, the instance will use it for logging output; otherwise, *sys.stderr*
    will be used.
 

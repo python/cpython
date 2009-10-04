@@ -728,6 +728,9 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      .. versionchanged:: 3.2
+         Objects that compare equal are automatically almost equal.
+
       .. deprecated:: 3.1
          :meth:`failUnlessAlmostEqual`.
 
@@ -743,6 +746,9 @@ Test cases
       comparing a given number of significant digits. If the values do not
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
+
+      .. versionchanged:: 3.2
+         Objects that compare equal automatically fail.
 
       .. deprecated:: 3.1
          :meth:`failIfAlmostEqual`.
@@ -1244,18 +1250,23 @@ Loading and running tests
 
       Find and return all test modules from the specified start directory,
       recursing into subdirectories to find them. Only test files that match
-      *pattern* will be loaded. (Using shell style pattern matching.)
+      *pattern* will be loaded. (Using shell style pattern matching.) Only
+      module names that are importable (i.e. are valid Python identifiers) will
+      be loaded.
 
       All test modules must be importable from the top level of the project. If
       the start directory is not the top level directory then the top level
       directory must be specified separately.
+
+      If importing a module fails, for example due to a syntax error, then this
+      will be recorded as a single error and discovery will continue.
 
       If a test package name (directory with :file:`__init__.py`) matches the
       pattern then the package will be checked for a ``load_tests``
       function. If this exists then it will be called with *loader*, *tests*,
       *pattern*.
 
-      If load_tests exists then discovery does  *not* recurse into the package,
+      If load_tests exists then discovery does *not* recurse into the package,
       ``load_tests`` is responsible for loading all tests in the package.
 
       The pattern is deliberately not stored as a loader attribute so that
@@ -1263,6 +1274,7 @@ Loading and running tests
       ``load_tests`` does not need to pass this argument in to
       ``loader.discover()``.
 
+      .. versionadded:: 2.7
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1517,6 +1529,10 @@ Loading and running tests
 
 load_tests Protocol
 ###################
+
+
+.. versionadded:: 2.7
+
 
 Modules or packages can customize how tests are loaded from them during normal
 test runs or test discovery by implementing a function called ``load_tests``.

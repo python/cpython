@@ -555,6 +555,47 @@ class Test_TestLoader(TestCase):
         self.assertEqual(list(suite), [testcase_1])
 
     # "The specifier name is a ``dotted name'' that may resolve ... to
+    # ... a callable object which returns a TestCase ... instance"
+    #*****************************************************************
+    #Override the suiteClass attribute to ensure that the suiteClass
+    #attribute is used
+    def test_loadTestsFromName__callable__TestCase_instance_ProperSuiteClass(self):
+        class SubTestSuite(unittest.TestSuite):
+            pass
+        m = types.ModuleType('m')
+        testcase_1 = unittest.FunctionTestCase(lambda: None)
+        def return_TestCase():
+            return testcase_1
+        m.return_TestCase = return_TestCase
+
+        loader = unittest.TestLoader()
+        loader.suiteClass = SubTestSuite
+        suite = loader.loadTestsFromName('return_TestCase', m)
+        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertEqual(list(suite), [testcase_1])
+
+    # "The specifier name is a ``dotted name'' that may resolve ... to
+    # ... a test method within a test case class"
+    #*****************************************************************
+    #Override the suiteClass attribute to ensure that the suiteClass
+    #attribute is used
+    def test_loadTestsFromName__relative_testmethod_ProperSuiteClass(self):
+        class SubTestSuite(unittest.TestSuite):
+            pass
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
+
+        loader = unittest.TestLoader()
+        loader.suiteClass=SubTestSuite
+        suite = loader.loadTestsFromName('testcase_1.test', m)
+        self.assertTrue(isinstance(suite, loader.suiteClass))
+
+        self.assertEqual(list(suite), [MyTestCase('test')])
+
+    # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a TestCase or TestSuite instance"
     #
     # What happens if the callable returns something else?
@@ -2953,6 +2994,11 @@ class Test_Assertions(TestCase):
         self.assertRaises(self.failureException,
                           self.assertNotAlmostEqual, 0, .1+.1j, places=0)
 
+        self.assertAlmostEqual(float('inf'), float('inf'))
+        self.assertRaises(self.failureException, self.assertNotAlmostEqual,
+                          float('inf'), float('inf'))
+
+
     def test_assertRaises(self):
         def _raise(e):
             raise e
@@ -3387,31 +3433,18 @@ class Test_TextTestRunner(TestCase):
 class TestDiscovery(TestCase):
 
     # Heavily mocked tests so I can avoid hitting the filesystem
-    def test_get_module_from_path(self):
+    def test_get_name_from_path(self):
         loader = unittest.TestLoader()
-
-        old_import = __import__
-        def restore_import():
-            builtins.__import__ = old_import
-        builtins.__import__ = lambda *_: None
-        self.addCleanup(restore_import)
-
-        expected_module = object()
-        def del_module():
-            del sys.modules['bar.baz']
-        sys.modules['bar.baz'] = expected_module
-        self.addCleanup(del_module)
-
         loader._top_level_dir = '/foo'
-        module = loader._get_module_from_path('/foo/bar/baz.py')
-        self.assertEqual(module, expected_module)
+        name = loader._get_name_from_path('/foo/bar/baz.py')
+        self.assertEqual(name, 'bar.baz')
 
         if not __debug__:
             # asserts are off
             return
 
         with self.assertRaises(AssertionError):
-            loader._get_module_from_path('/bar/baz.py')
+            loader._get_name_from_path('/bar/baz.py')
 
     def test_find_tests(self):
         loader = unittest.TestLoader()
@@ -3427,7 +3460,7 @@ class TestDiscovery(TestCase):
             os.path.isdir = original_isdir
 
         path_lists = [['test1.py', 'test2.py', 'not_a_test.py', 'test_dir',
-                       'test.foo', 'another_dir'],
+                       'test.foo', 'test-not-a-module.py', 'another_dir'],
                       ['test3.py', 'test4.py', ]]
         os.listdir = lambda path: path_lists.pop(0)
         self.addCleanup(restore_listdir)
@@ -3443,16 +3476,16 @@ class TestDiscovery(TestCase):
         os.path.isfile = isfile
         self.addCleanup(restore_isfile)
 
-        loader._get_module_from_path = lambda path: path + ' module'
+        loader._get_module_from_name = lambda path: path + ' module'
         loader.loadTestsFromModule = lambda module: module + ' tests'
 
         loader._top_level_dir = '/foo'
         suite = list(loader._find_tests('/foo', 'test*.py'))
 
-        expected = [os.path.join('/foo', name) + ' module tests' for name in
-                    ('test1.py', 'test2.py')]
-        expected.extend([os.path.join('/foo', 'test_dir', name) + ' module tests' for name in
-                    ('test3.py', 'test4.py')])
+        expected = [name + ' module tests' for name in
+                    ('test1', 'test2')]
+        expected.extend([('test_dir.%s' % name) + ' module tests' for name in
+                    ('test3', 'test4')])
         self.assertEqual(suite, expected)
 
     def test_find_tests_with_package(self):
@@ -3495,7 +3528,7 @@ class TestDiscovery(TestCase):
             def __eq__(self, other):
                 return self.path == other.path
 
-        loader._get_module_from_path = lambda path: Module(path)
+        loader._get_module_from_name = lambda name: Module(name)
         def loadTestsFromModule(module, use_load_tests):
             if use_load_tests:
                 raise self.failureException('use_load_tests should be False for packages')
@@ -3510,15 +3543,12 @@ class TestDiscovery(TestCase):
         # We should have loaded tests from the test_directory package by calling load_tests
         # and directly from the test_directory2 package
         self.assertEqual(suite,
-                         ['load_tests',
-                          os.path.join('/foo', 'test_directory2') + ' module tests'])
-        self.assertEqual(Module.paths, [os.path.join('/foo', 'test_directory'),
-                                        os.path.join('/foo', 'test_directory2')])
+                         ['load_tests', 'test_directory2' + ' module tests'])
+        self.assertEqual(Module.paths, ['test_directory', 'test_directory2'])
 
         # load_tests should have been called once with loader, tests and pattern
         self.assertEqual(Module.load_tests_args,
-                         [(loader, os.path.join('/foo', 'test_directory') + ' module tests',
-                           'test*')])
+                         [(loader, 'test_directory' + ' module tests', 'test*')])
 
     def test_discover(self):
         loader = unittest.TestLoader()
@@ -3557,6 +3587,25 @@ class TestDiscovery(TestCase):
         self.assertEqual(suite, "['tests']")
         self.assertEqual(loader._top_level_dir, top_level_dir)
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
+
+    def test_discover_with_modules_that_fail_to_import(self):
+        loader = unittest.TestLoader()
+
+        listdir = os.listdir
+        os.listdir = lambda _: ['test_this_does_not_exist.py']
+        isfile = os.path.isfile
+        os.path.isfile = lambda _: True
+        def restore():
+            os.path.isfile = isfile
+            os.listdir = listdir
+        self.addCleanup(restore)
+
+        suite = loader.discover('.')
+        self.assertEqual(suite.countTestCases(), 1)
+        test = list(list(suite)[0])[0] # extract test from suite
+
+        with self.assertRaises(ImportError):
+            test.test_this_does_not_exist()
 
     def test_command_line_handling_parseArgs(self):
         # Haha - take that uninstantiable class

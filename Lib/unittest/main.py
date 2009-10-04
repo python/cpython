@@ -109,9 +109,9 @@ class TestProgram(object):
                 if opt in ('-v','--verbose'):
                     self.verbosity = 2
             if len(args) == 0 and self.defaultTest is None:
-                self.test = self.testLoader.loadTestsFromModule(self.module)
-                return
-            if len(args) > 0:
+                # createTests will load tests from self.module
+                self.testNames = None
+            elif len(args) > 0:
                 self.testNames = args
                 if __name__ == '__main__':
                     # to support python -m unittest ...
@@ -123,8 +123,11 @@ class TestProgram(object):
             self.usageExit(msg)
 
     def createTests(self):
-        self.test = self.testLoader.loadTestsFromNames(self.testNames,
-                                                       self.module)
+        if self.testNames is None:
+            self.test = self.testLoader.loadTestsFromModule(self.module)
+        else:
+            self.test = self.testLoader.loadTestsFromNames(self.testNames,
+                                                           self.module)
 
     def _do_discovery(self, argv, Loader=loader.TestLoader):
         # handle command line args for test discovery
