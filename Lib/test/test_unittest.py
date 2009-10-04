@@ -2510,6 +2510,18 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertIsNot(thing, object())
         self.assertRaises(self.failureException, self.assertIsNot, thing, thing)
 
+    def testAssertIsInstance(self):
+        thing = []
+        self.assertIsInstance(thing, list)
+        self.assertRaises(self.failureException, self.assertIsInstance,
+                          thing, dict)
+
+    def testAssertNotIsInstance(self):
+        thing = []
+        self.assertNotIsInstance(thing, dict)
+        self.assertRaises(self.failureException, self.assertNotIsInstance,
+                          thing, list)
+
     def testAssertIn(self):
         animals = {'monkey': 'banana', 'cow': 'grass', 'seal': 'fish'}
 

@@ -952,6 +952,22 @@ Test cases
       .. versionadded:: 3.1
 
 
+   .. method:: assertIsInstance(obj, cls[, msg])
+
+      This signals a test failure if *obj* is not an instance of *cls* (which
+      can be a class or a tuple of classes, as supported by :func:`isinstance`).
+
+      .. versionadded:: 3.2
+
+
+   .. method:: assertNotIsInstance(obj, cls[, msg])
+
+      The inverse of the :meth:`assertIsInstance` method.  This signals a test
+      failure if *obj* is an instance of *cls*.
+
+      .. versionadded:: 3.2
+
+
    .. method:: assertFalse(expr, msg=None)
                failIf(expr, msg=None)
 
