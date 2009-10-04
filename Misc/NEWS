@@ -252,6 +252,8 @@ Documentation
 Tests
 -----
 
+- Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
 - Fixed tests in importlib.test.source.test_abc_loader that were masking
   the proper exceptions that should be raised for missing or improper code
   object bytecode.
