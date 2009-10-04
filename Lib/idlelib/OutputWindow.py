@@ -60,9 +60,12 @@ class OutputWindow(EditorWindow):
     ]
 
     file_line_pats = [
+        # order of patterns matters
         r'file "([^"]*)", line (\d+)',
         r'([^\s]+)\((\d+)\)',
-        r'([^\s]+):\s*(\d+):',
+        r'^(\s*\S.*?):\s*(\d+):',  # Win filename, maybe starting with spaces
+        r'([^\s]+):\s*(\d+):',     # filename or path, ltrim
+        r'^\s*(\S.*?):\s*(\d+):',  # Win abs path with embedded spaces, ltrim
     ]
 
     file_line_progs = None
@@ -96,16 +99,16 @@ class OutputWindow(EditorWindow):
 
     def _file_line_helper(self, line):
         for prog in self.file_line_progs:
-            m = prog.search(line)
-            if m:
-                break
+            match = prog.search(line)
+            if match:
+                filename, lineno = match.group(1, 2)
+                try:
+                    f = open(filename, "r")
+                    f.close()
+                    break
+                except IOError:
+                    continue
         else:
-            return None
-        filename, lineno = m.group(1, 2)
-        try:
-            f = open(filename, "r")
-            f.close()
-        except IOError:
             return None
         try:
             return filename, int(lineno)
@@ -139,19 +142,3 @@ class OnDemandOutputWindow:
                 text.tag_configure(tag, **cnf)
         text.tag_raise('sel')
         self.write = self.owin.write
-
-#class PseudoFile:
-#
-#      def __init__(self, owin, tags, mark="end"):
-#          self.owin = owin
-#          self.tags = tags
-#          self.mark = mark
-
-#      def write(self, s):
-#          self.owin.write(s, self.tags, self.mark)
-
-#      def writelines(self, l):
-#          map(self.write, l)
-
-#      def flush(self):
-#          pass
