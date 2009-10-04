@@ -88,10 +88,10 @@ next = {}
 next['if'] = next['elif'] = 'elif', 'else', 'end'
 next['while'] = next['for'] = 'else', 'end'
 next['try'] = 'except', 'finally'
-next['except'] = 'except', 'else', 'end'
+next['except'] = 'except', 'else', 'finally', 'end'
 next['else'] = next['finally'] = next['def'] = next['class'] = 'end'
 next['end'] = ()
-start = 'if', 'while', 'for', 'try', 'def', 'class'
+start = 'if', 'while', 'for', 'try', 'with', 'def', 'class'
 
 class PythonIndenter:
 
