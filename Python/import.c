@@ -262,8 +262,8 @@ static PyThread_type_lock import_lock = 0;
 static long import_lock_thread = -1;
 static int import_lock_level = 0;
 
-static void
-lock_import(void)
+void
+_PyImport_AcquireLock(void)
 {
 	long me = PyThread_get_thread_ident();
 	if (me == -1)
@@ -287,8 +287,8 @@ lock_import(void)
 	import_lock_level = 1;
 }
 
-static int
-unlock_import(void)
+int
+_PyImport_ReleaseLock(void)
 {
 	long me = PyThread_get_thread_ident();
 	if (me == -1 || import_lock == NULL)
@@ -303,22 +303,15 @@ unlock_import(void)
 	return 1;
 }
 
-/* This function is called from PyOS_AfterFork to ensure that newly
-   created child processes do not share locks with the parent. */
+/* This function used to be called from PyOS_AfterFork to ensure that newly
+   created child processes do not share locks with the parent, but for some
+   reason only on AIX systems. Instead of re-initializing the lock, we now
+   acquire the import lock around fork() calls. */
 
 void
 _PyImport_ReInitLock(void)
 {
-#ifdef _AIX
-	if (import_lock != NULL)
-		import_lock = PyThread_allocate_lock();
-#endif
 }
-
-#else
-
-#define lock_import()
-#define unlock_import() 0
 
 #endif
 
@@ -336,7 +329,7 @@ static PyObject *
 imp_acquire_lock(PyObject *self, PyObject *noargs)
 {
 #ifdef WITH_THREAD
-	lock_import();
+	_PyImport_AcquireLock();
 #endif
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -346,7 +339,7 @@ static PyObject *
 imp_release_lock(PyObject *self, PyObject *noargs)
 {
 #ifdef WITH_THREAD
-	if (unlock_import() < 0) {
+	if (_PyImport_ReleaseLock() < 0) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"not holding the import lock");
 		return NULL;
@@ -2201,9 +2194,9 @@ PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
 			 PyObject *fromlist, int level)
 {
 	PyObject *result;
-	lock_import();
+	_PyImport_AcquireLock();
 	result = import_module_level(name, globals, locals, fromlist, level);
-	if (unlock_import() < 0) {
+	if (_PyImport_ReleaseLock() < 0) {
 		Py_XDECREF(result);
 		PyErr_SetString(PyExc_RuntimeError,
 				"not holding the import lock");
