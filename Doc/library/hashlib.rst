@@ -86,11 +86,11 @@ The following values are provided as constant attributes of the hash objects
 returned by the constructors:
 
 
-.. data:: digest_size
+.. data:: hash.digest_size
 
    The size of the resulting hash in bytes.
 
-.. data:: block_size
+.. data:: hash.block_size
 
    The internal block size of the hash algorithm in bytes.
 

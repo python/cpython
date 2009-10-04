@@ -476,10 +476,13 @@ These are the UTF-32 codec APIs:
       *byteorder == 0:  native order
       *byteorder == 1:  big endian
 
-   and then switches if the first four bytes of the input data are a byte order mark
-   (BOM) and the specified byte order is native order.  This BOM is not copied into
-   the resulting Unicode string.  After completion, *\*byteorder* is set to the
-   current byte order at the end of input data.
+   If ``*byteorder`` is zero, and the first four bytes of the input data are a
+   byte order mark (BOM), the decoder switches to this byte order and the BOM is
+   not copied into the resulting Unicode string.  If ``*byteorder`` is ``-1`` or
+   ``1``, any byte order mark is copied to the output.
+
+   After completion, *\*byteorder* is set to the current byte order at the end
+   of input data.
 
    In a narrow build codepoints outside the BMP will be decoded as surrogate pairs.
 
@@ -500,8 +503,7 @@ These are the UTF-32 codec APIs:
 .. cfunction:: PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE *s, Py_ssize_t size, const char *errors, int byteorder)
 
    Return a Python bytes object holding the UTF-32 encoded value of the Unicode
-   data in *s*.  If *byteorder* is not ``0``, output is written according to the
-   following byte order::
+   data in *s*.  Output is written according to the following byte order::
 
       byteorder == -1: little endian
       byteorder == 0:  native byte order (writes a BOM mark)
@@ -541,10 +543,14 @@ These are the UTF-16 codec APIs:
       *byteorder == 0:  native order
       *byteorder == 1:  big endian
 
-   and then switches if the first two bytes of the input data are a byte order mark
-   (BOM) and the specified byte order is native order.  This BOM is not copied into
-   the resulting Unicode string.  After completion, *\*byteorder* is set to the
-   current byte order at the end of input data.
+   If ``*byteorder`` is zero, and the first two bytes of the input data are a
+   byte order mark (BOM), the decoder switches to this byte order and the BOM is
+   not copied into the resulting Unicode string.  If ``*byteorder`` is ``-1`` or
+   ``1``, any byte order mark is copied to the output (where it will result in
+   either a ``\ufeff`` or a ``\ufffe`` character).
+
+   After completion, *\*byteorder* is set to the current byte order at the end
+   of input data.
 
    If *byteorder* is *NULL*, the codec starts in native order mode.
 
@@ -563,8 +569,7 @@ These are the UTF-16 codec APIs:
 .. cfunction:: PyObject* PyUnicode_EncodeUTF16(const Py_UNICODE *s, Py_ssize_t size, const char *errors, int byteorder)
 
    Return a Python bytes object holding the UTF-16 encoded value of the Unicode
-   data in *s*.  If *byteorder* is not ``0``, output is written according to the
-   following byte order::
+   data in *s*.  Output is written according to the following byte order::
 
       byteorder == -1: little endian
       byteorder == 0:  native byte order (writes a BOM mark)
