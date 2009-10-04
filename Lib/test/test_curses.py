@@ -259,6 +259,10 @@ def test_resize_term(stdscr):
         if curses.LINES != lines - 1 or curses.COLS != cols + 1:
             raise RuntimeError("Expected resizeterm to update LINES and COLS")
 
+def test_issue6243(stdscr):
+    curses.ungetch(1025)
+    stdscr.getkey()
+
 def main(stdscr):
     curses.savetty()
     try:
@@ -266,6 +270,7 @@ def main(stdscr):
         window_funcs(stdscr)
         test_userptr_without_set(stdscr)
         test_resize_term(stdscr)
+        test_issue6243(stdscr)
     finally:
         curses.resetty()
 
