@@ -200,8 +200,7 @@ separator and the grouping is always into three-digit groups.  The
 comma-formatting mechanism isn't as general as the :mod:`locale`
 module, but it's easier to use.
 
-.. XXX "Format String Syntax" in string.rst doesn't describe ',';
-   could use many more examples.
+.. XXX "Format String Syntax" in string.rst could use many more examples.
 
 .. seealso::
 
@@ -663,9 +662,6 @@ changes, or look through the Subversion logs for all the details.
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
   (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
-
-  .. XXX the documentation for this attr was silently dropped from
-  .. Doc/library/socketserver.rst.
 
 * The :mod:`struct` module will no longer silently ignore overflow
   errors when a value is too large for a particular integer format
