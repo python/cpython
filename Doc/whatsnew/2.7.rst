@@ -49,46 +49,191 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.7.
-No release schedule has been decided yet for 2.7.
+This article explains the new features in Python 2.7.  No release
+schedule has been decided yet for 2.7; the schedule will eventually be
+described in :pep:`373`.
 
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
 
-Python 3.1
-================
+.. _whatsnew27-python31:
+
+Python 3.1 Features
+=======================
 
 Much as Python 2.6 incorporated features from Python 3.0,
-version 2.7 is influenced by features from 3.1.
+version 2.7 incorporates some of the new features
+in Python 3.1.  The 2.x series continues to provide tools
+for migrating to the 3.x series.
 
-XXX mention importlib; anything else?
+A partial list of 3.1 features that were backported to 2.7:
+
+* A version of the :mod:`io` library, rewritten in C for performance.
+* The ordered-dictionary type described in :ref:`pep-0372`.
+* The new format specified described in :ref:`pep-0378`.
+* The :class:`memoryview` object.
+* A small subset of the :mod:`importlib` module `described below <#importlib-section>`__.
 
 One porting change: the :option:`-3` switch now automatically
 enables the :option:`-Qwarn` switch that causes warnings
 about using classic division with integers and long integers.
 
+Other new Python3-mode warnings include:
+
+* :func:`operator.isCallable` and :func:`operator.sequenceIncludes`,
+  which are not supported in 3.x.
+
 .. ========================================================================
 .. Large, PEP-level features and changes should be described here.
 .. ========================================================================
 
+.. _pep-0372:
+
 PEP 372: Adding an ordered dictionary to collections
 ====================================================
 
-XXX write this
+Regular Python dictionaries iterate over key/value pairs in arbitrary order.
+Over the years, a number of authors have written alternative implementations
+that remember the order that the keys were originally inserted.  Based on
+the experiences from those implementations, a new
+:class:`collections.OrderedDict` class has been introduced.
 
-Several modules will now use :class:`OrderedDict` by default.  The
-:mod:`ConfigParser` module uses :class:`OrderedDict` for the list
-of sections and the options within a section.
-The :meth:`namedtuple._asdict` method returns an :class:`OrderedDict`
-as well.
+The :class:`OrderedDict` API is substantially the same as regular dictionaries
+but will iterate over keys and values in a guaranteed order depending on
+when a key was first inserted::
 
+    >>> from collections import OrderedDict
+    >>> d = OrderedDict([('first', 1), ('second', 2),
+    ...                  ('third', 3)])
+    >>> d.items()
+    [('first', 1), ('second', 2), ('third', 3)]
+
+If a new entry overwrites an existing entry, the original insertion
+position is left unchanged::
+
+    >>> d['second'] = 4
+    >>> d.items()
+    [('first', 1), ('second', 4), ('third', 3)]
+
+Deleting an entry and reinserting it will move it to the end::
+
+    >>> del d['second']
+    >>> d['second'] = 5
+    >>> d.items()
+    [('first', 1), ('third', 3), ('second', 5)]
+
+The :meth:`popitem` method has an optional *last* argument
+that defaults to True.  If *last* is True, the most recently
+added key is returned and removed; if it's False, the
+oldest key is selected::
+
+    >>> od = OrderedDict([(x,0) for x in range(20)])
+    >>> od.popitem()
+    (19, 0)
+    >>> od.popitem()
+    (18, 0)
+    >>> od.popitem(False)
+    (0, 0)
+    >>> od.popitem(False)
+    (1, 0)
+
+Comparing two ordered dictionaries checks both the keys and values,
+and requires that the insertion order was the same::
+
+    >>> od1 = OrderedDict([('first', 1), ('second', 2),
+    ...                    ('third', 3)])
+    >>> od2 = OrderedDict([('third', 3), ('first', 1),
+    ...                    ('second', 2)])
+    >>> od1==od2
+    False
+    >>> # Move 'third' key to the end
+    >>> del od2['third'] ; od2['third'] = 3
+    >>> od1==od2
+    True
+
+Comparing an :class:`OrderedDict` with a regular dictionary
+ignores the insertion order and just compares the keys and values.
+
+How does the :class:`OrderedDict` work?  It maintains a doubly-linked
+list of keys, appending new keys to the list as they're inserted.  A
+secondary dictionary maps keys to their corresponding list node, so
+deletion doesn't have to traverse the entire linked list and therefore
+remains O(1).
+
+.. XXX check O(1)-ness with Raymond
+
+The standard library now supports use of ordered dictionaries in several
+modules.  The :mod:`configparser` module uses them by default.  This lets
+configuration files be read, modified, and then written back in their original
+order.  The *_asdict()* method for :func:`collections.namedtuple` now
+returns an ordered dictionary with the values appearing in the same order as
+the underlying tuple indicies.  The :mod:`json` module is being built-out with
+an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
+Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
+
+
+.. _pep-0378:
+
+PEP 378: Format Specifier for Thousands Separator
+====================================================
+
+To make program output more readable, it can be useful to add
+separators to large numbers and render them as
+18,446,744,073,709,551,616 instead of 18446744073709551616.
+
+The fully general solution for doing this is the :mod:`locale` module,
+which can use different separators ("," in North America, "." in
+Europe) and different grouping sizes, but :mod:`locale` is complicated
+to use and unsuitable for multi-threaded applications where different
+threads are producing output for different locales.
+
+Therefore, a simple comma-grouping mechanism has been added to the
+mini-language used by the string :meth:`format` method.  When
+formatting a floating-point number, simply include a comma between the
+width and the precision::
+
+   >>> '{:20,.2}'.format(f)
+   '18,446,744,073,709,551,616.00'
+
+This mechanism is not adaptable at all; commas are always used as the
+separator and the grouping is always into three-digit groups.  The
+comma-formatting mechanism isn't as general as the :mod:`locale`
+module, but it's easier to use.
+
+.. XXX "Format String Syntax" in string.rst doesn't describe ',';
+   could use many more examples.
+
+.. seealso::
+
+   :pep:`378` - Format Specifier for Thousands Separator
+     PEP written by Raymond Hettinger; implemented by Eric Smith.
 
 Other Language Changes
 ======================
 
 Some smaller changes made to the core Python language are:
 
-* :meth:`str.format` method now supports automatic numbering of the replacement
+* The :keyword:`with` statement can now use multiple context managers
+  in one statement.  Context managers are processed from left to right
+  and each one is treated as beginning a new :keyword:`with` statement.
+  This means that::
+
+   with A() as a, B() as b:
+       ... suite of statements ...
+
+  is equivalent to::
+
+   with A() as a:
+       with B() as b:
+           ... suite of statements ...
+
+  The :func:`contextlib.nested` function provides a very similar
+  function, so it's no longer necessary and has been deprecated.
+
+  (Proposed in http://codereview.appspot.com/53094; implemented by
+  Georg Brandl.)
+
+* The :meth:`str.format` method now supports automatic numbering of the replacement
   fields.  This makes using :meth:`str.format` more closely resemble using
   ``%s`` formatting::
 
@@ -102,7 +247,13 @@ Some smaller changes made to the core Python language are:
   specifier will use the next argument, and so on.  You can't mix auto-numbering
   and explicit numbering -- either number all of your specifier fields or none
   of them -- but you can mix auto-numbering and named fields, as in the second
-  example above.  (Contributed by Eric Smith; :issue`5237`.)
+  example above.  (Contributed by Eric Smith; :issue:`5237`.)
+
+  Complex numbers now correctly support usage with :func:`format`.
+  Specifying a precision or comma-separation applies to both the real
+  and imaginary parts of the number, but a specified field width and
+  alignment is applied to the whole of the resulting ``1.5+3j``
+  output.  (Contributed by Eric Smith; :issue:`1588`.)
 
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
@@ -125,7 +276,7 @@ Some smaller changes made to the core Python language are:
   point now round differently, returning the floating-point number
   closest to the number.  This doesn't matter for small integers that
   can be converted exactly, but for large numbers that will
-  unavoidably lose precision, Python 2.7 will now approximate more
+  unavoidably lose precision, Python 2.7 now approximates more
   closely.  For example, Python 2.6 computed the following::
 
     >>> n = 295147905179352891391
@@ -146,9 +297,19 @@ Some smaller changes made to the core Python language are:
 
   (Implemented by Mark Dickinson; :issue:`3166`.)
 
-* The :class:`bytearray` type's :meth:`translate` method will
-  now accept ``None`` as its first argument.  (Fixed by Georg Brandl;
+* The :class:`bytearray` type's :meth:`translate` method now accepts
+  ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
+
+* When using ``@classmethod`` and ``@staticmethod`` to wrap
+  methods as class or static methods, the wrapper object now
+  exposes the wrapped function as their :attr:`__func__` attribute.
+  (Contributed by Amaury Forgeot d'Arc, after a suggestion by
+  George Sakkis; :issue:`5982`.)
+
+* A new encoding named "cp720", used primarily for Arabic text, is now
+  supported.  (Contributed by Alexander Belchenko and Amaury Forgeot
+  d'Arc; :issue:`1616979`.)
 
 .. ======================================================================
 
@@ -163,6 +324,10 @@ Several performance enhancements have been added:
    mechanism that gives speedups of up to 20%, depending on the system
    and benchmark.  The new mechanism is only supported on certain
    compilers, such as gcc, SunPro, and icc.
+
+* A new opcode was added to perform the initial setup for
+  :keyword:`with` statements, looking up the :meth:`__enter__` and
+  :meth:`__exit__` methods.  (Contributed by Benjamin Peterson.)
 
 * The garbage collector now performs better when many objects are
   being allocated without deallocating any.  A full garbage collection
@@ -184,7 +349,7 @@ Several performance enhancements have been added:
   considered and traversed by the collector.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
-* Integers are now stored internally either in base 2**15 or in base
+* Long integers are now stored internally either in base 2**15 or in base
   2**30, the base being determined at build time.  Previously, they
   were always stored in base 2**15.  Using base 2**30 gives
   significant performance improvements on 64-bit machines, but
@@ -227,6 +392,21 @@ Several performance enhancements have been added:
   faster bytecode.  (Patch by Antoine Pitrou, back-ported to 2.7
   by Jeffrey Yasskin; :issue:`4715`.)
 
+* The :mod:`pickle` and :mod:`cPickle` modules now automatically
+  intern the strings used for attribute names, reducing memory usage
+  of the objects resulting from unpickling.  (Contributed by Jake
+  McGuire; :issue:`5084`.)
+
+* The :mod:`cPickle` module now special-cases dictionaries,
+  nearly halving the time required to pickle them.
+  (Contributed by Collin Winter; :issue:`5670`.)
+
+* Converting an integer or long integer to a decimal string was made
+  faster by special-casing base 10 instead of using a generalized
+  conversion function that supports arbitrary bases.
+  (Patch by Gawain Bolton; :issue:`6713`.)
+
+
 .. ======================================================================
 
 New, Improved, and Deprecated Modules
@@ -237,6 +417,14 @@ enhancements and bug fixes.  Here's a partial list of the most notable
 changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
+
+* The :mod:`bdb` module's base debugging class :class:`Bdb`
+  gained a feature for skipping modules.  The constructor
+  now takes an iterable containing glob-style patterns such as
+  ``django.*``; the debugger will not step into stack frames
+  from a module that matches one of these patterns.
+  (Contributed by Maru Newby after a suggestion by
+  Senthil Kumaran; :issue:`5142`.)
 
 * The :mod:`bz2` module's :class:`BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
@@ -279,6 +467,9 @@ changes, or look through the Subversion logs for all the details.
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
+  The new `OrderedDict` class is described in the earlier section
+  :ref:`pep-0372`.
+
   The :class:`namedtuple` class now has an optional *rename* parameter.
   If *rename* is true, field names that are invalid because they've
   been repeated or that aren't legal Python identifiers will be
@@ -295,10 +486,42 @@ changes, or look through the Subversion logs for all the details.
   The :class:`deque` data type now exposes its maximum length as the
   read-only :attr:`maxlen` attribute.  (Added by Raymond Hettinger.)
 
-* In Distutils, :func:`distutils.sdist.add_defaults` now uses
+* The :mod:`ctypes` module now always converts ``None`` to a C NULL
+  pointer for arguments declared as pointers.  (Changed by Thomas
+  Heller; :issue:`4606`.)
+
+* New method: the :class:`Decimal` class gained a
+  :meth:`from_float` class method that performs an exact conversion
+  of a floating-point number to a :class:`Decimal`.
+  Note that this is an **exact** conversion that strives for the
+  closest decimal approximation to the floating-point representation's value;
+  the resulting decimal value will therefore still include the inaccuracy,
+  if any.
+  For example, ``Decimal.from_float(0.1)`` returns
+  ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
+  (Implemented by Raymond Hettinger; :issue:`4796`.)
+
+  The constructor for :class:`Decimal` now accepts non-European
+  Unicode characters, such as Arabic-Indic digits.  (Contributed by
+  Mark Dickinson; :issue:`6595`.)
+
+  When using :class:`Decimal` instances with a string's
+  :meth:`format` method, the default alignment was previously
+  left-alignment.  This has been changed to right-alignment, which seems
+  more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
+
+* Distutils is being more actively developed, thanks to Tarek Ziade
+  has taken over maintenance of the package.  A new
+  :file:`setup.py` subcommand, ``check``, will
+  check that the arguments being passed to the :func:`setup` function
+  are complete and correct (:issue:`5732`).
+
+  :func:`distutils.sdist.add_defaults` now uses
   *package_dir* and *data_files* to create the MANIFEST file.
-  :mod:`distutils.sysconfig` will now read the :envvar:`AR`
-  environment variable.
+  :mod:`distutils.sysconfig` now reads the :envvar:`AR` and
+  :envvar:`ARFLAGS` environment variables.
+
+  .. ARFLAGS done in #5941
 
   It is no longer mandatory to store clear-text passwords in the
   :file:`.pypirc` file when registering and uploading packages to PyPI. As long
@@ -312,18 +535,7 @@ changes, or look through the Subversion logs for all the details.
   process, but instead simply not install the failing extension.
   (Contributed by Georg Brandl; :issue:`5583`.)
 
-* New method: the :class:`Decimal` class gained a
-  :meth:`from_float` class method that performs an exact conversion
-  of a floating-point number to a :class:`Decimal`.
-  Note that this is an **exact** conversion that strives for the
-  closest decimal approximation to the floating-point representation's value;
-  the resulting decimal value will therefore still include the inaccuracy,
-  if any.
-  For example, ``Decimal.from_float(0.1)`` returns
-  ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
-  (Implemented by Raymond Hettinger; :issue:`4796`.)
-
-* The :class:`Fraction` class will now accept two rational numbers
+* The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
 
@@ -338,7 +550,32 @@ changes, or look through the Subversion logs for all the details.
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
 
-* The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
+* The :mod:`hashlib` module was inconsistent about accepting
+  input as a Unicode object or an object that doesn't support
+  the buffer protocol.  The behavior was different depending on
+  whether :mod:`hashlib` was using an external OpenSSL library
+  or its built-in implementations.  Python 2.7 makes the
+  behavior consistent, always rejecting such objects by raising a
+  :exc:`TypeError`.  (Fixed by Gregory P. Smith; :issue:`3745`.)
+
+* The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
+  supports buffering, resulting in much faster reading of HTTP responses.
+  (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
+
+* The :mod:`imaplib` module now supports IPv6 addresses.
+  (Contributed by Derek Morr; :issue:`1655`.)
+
+* The :mod:`io` library has been upgraded to the version shipped with
+  Python 3.1.  For 3.1, the I/O library was entirely rewritten in C
+  and is 2 to 20 times faster depending on the task at hand.  The
+  original Python version was renamed to the :mod:`_pyio` module.
+
+  One minor resulting change: the :class:`io.TextIOBase` class now
+  has an :attr:`errors` attribute giving the error setting
+  used for encoding and decoding errors (one of ``'strict'``, ``'replace'``,
+  ``'ignore'``).
+
+  The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
   :issue:`4991`.)
 
@@ -382,11 +619,18 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
+* New functions: the :mod:`math` module now has
+  a :func:`gamma` function.
+  (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
+
 * The :mod:`multiprocessing` module's :class:`Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
   (Contributed by lekma; :issue:`5585`.)
+
+* The :mod:`nntplib` module now supports IPv6 addresses.
+  (Contributed by Derek Morr; :issue:`1664`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -395,6 +639,39 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`re` module's :func:`split`, :func:`sub`, and :func:`subn`
   now accept an optional *flags* argument, for consistency with the
   other functions in the module.  (Added by Gregory P. Smith.)
+
+* The :mod:`shutil` module's :func:`copyfile` and :func:`copytree`
+  functions now raises a :exc:`SpecialFileError` exception when
+  asked to copy a named pipe.  Previously the code would treat
+  named pipes like a regular file by opening them for reading, and
+  this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
+
+* New functions: in the :mod:`site` module, three new functions
+  return various site- and user-specific paths.
+  :func:`getsitepackages` returns a list containing all
+  global site-packages directories, and
+  :func:`getusersitepackages` returns the path of the user's
+  site-packages directory.
+  :func:`getuserbase` returns the value of the :envvar:``USER_BASE``
+  environment variable, giving the path to a directory that can be used
+  to store data.
+  (Contributed by Tarek Ziade; :issue:`6693`.)
+
+* The :mod:`SocketServer` module's :class:`TCPServer` class now
+  has a :attr:`disable_nagle_algorithm` class attribute.
+  The default value is False; if overridden to be True,
+  new request connections will have the TCP_NODELAY option set to
+  prevent buffering many small sends into a single TCP packet.
+  (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
+
+  .. XXX the documentation for this attr was silently dropped from
+  .. Doc/library/socketserver.rst.
+
+* The :mod:`struct` module will no longer silently ignore overflow
+  errors when a value is too large for a particular integer format
+  code (one of ``bBhHiIlLqQ``); it now always raises a
+  :exc:`struct.error` exception.  (Changed by Mark Dickinson;
+  :issue:`1523`.)
 
 * New function: the :mod:`subprocess` module's
   :func:`check_output` runs a command with a specified set of arguments
@@ -422,114 +699,25 @@ changes, or look through the Subversion logs for all the details.
   named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
   (Contributed by Ross Light; :issue:`4285`.)
 
+* The :mod:`tarfile` module now supports filtering the :class:`TarInfo`
+  objects being added to a tar file.  When you call :meth:`TarFile.add`,
+  instance, you may supply an optional *filter* argument
+  that's a callable.  The *filter* callable will be passed the
+  :class:`TarInfo` for every file being added, and can modify and return it.
+  If the callable returns ``None``, the file will be excluded from the
+  resulting archive.  This is more powerful than the existing
+  *exclude* argument, which has therefore been deprecated.
+  (Added by Lars Gustaebel; :issue:`6856`.)
+
 * The :mod:`threading` module's :meth:`Event.wait` method now returns
   the internal flag on exit.  This means the method will usually
   return true because :meth:`wait` is supposed to block until the
   internal flag becomes true.  The return value will only be false if
   a timeout was provided and the operation timed out.
-  (Contributed by XXX; :issue:`1674032`.)
+  (Contributed by Tim Lesher; :issue:`1674032`.)
 
-* The :mod:`unittest` module was enhanced in several ways.
-  The progress messages will now show 'x' for expected failures
-  and 'u' for unexpected successes when run in verbose mode.
-  (Contributed by Benjamin Peterson.)
-  Test cases can raise the :exc:`SkipTest` exception to skip a test.
-  (:issue:`1034053`.)
-
-  The error messages for :meth:`assertEqual`,
-  :meth:`assertTrue`, and :meth:`assertFalse`
-  failures now provide more information.  If you set the
-  :attr:`longMessage` attribute of your :class:`TestCase` classes to
-  true, both the standard error message and any additional message you
-  provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
-
-  The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
-  return a context handler when called without providing a callable
-  object to run.  For example, you can write this::
-
-    with self.assertRaises(KeyError):
-        raise ValueError
-
-  (Implemented by Antoine Pitrou; :issue:`4444`.)
-
-  The methods :meth:`addCleanup` and :meth:`doCleanups` were added.
-  :meth:`addCleanup` allows you to add cleanup functions that
-  will be called unconditionally (after :meth:`setUp` if
-  :meth:`setUp` fails, otherwise after :meth:`tearDown`). This allows
-  for much simpler resource allocation and deallocation during tests.
-  :issue:`5679`
-
-  A number of new methods were added that provide more specialized
-  tests.  Many of these methods were written by Google engineers
-  for use in their test suites; Gregory P. Smith, Michael Foord, and
-  GvR worked on merging them into Python's version of :mod:`unittest`.
-
-  * :meth:`assertIsNone` and :meth:`assertIsNotNone` take one
-    expression and verify that the result is or is not ``None``.
-
-  * :meth:`assertIs` and :meth:`assertIsNot` take two values and check
-    whether the two values evaluate to the same object or not.
-    (Added by Michael Foord; :issue:`2578`.)
-
-  * :meth:`assertGreater`, :meth:`assertGreaterEqual`,
-    :meth:`assertLess`, and :meth:`assertLessEqual` compare
-    two quantities.
-
-  * :meth:`assertMultiLineEqual` compares two strings, and if they're
-    not equal, displays a helpful comparison that highlights the
-    differences in the two strings.
-
-  * :meth:`assertRegexpMatches` checks whether its first argument is a
-    string matching a regular expression provided as its second argument.
-
-  * :meth:`assertRaisesRegexp` checks whether a particular exception
-    is raised, and then also checks that the string representation of
-    the exception matches the provided regular expression.
-
-  * :meth:`assertIn` and :meth:`assertNotIn` tests whether
-    *first* is or is not in  *second*.
-
-  * :meth:`assertSameElements` tests whether two provided sequences
-    contain the same elements.
-
-  * :meth:`assertSetEqual` compares whether two sets are equal, and
-    only reports the differences between the sets in case of error.
-
-  * Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
-    compare the specified types and explain the differences.
-    More generally, :meth:`assertSequenceEqual` compares two sequences
-    and can optionally check whether both sequences are of a
-    particular type.
-
-  * :meth:`assertDictEqual` compares two dictionaries and reports the
-    differences.  :meth:`assertDictContainsSubset` checks whether
-    all of the key/value pairs in *first* are found in *second*.
-
-  * :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` short-circuit
-    (automatically pass or fail without checking decimal places) if the objects
-    are equal.
-
-  * :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
-    the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
-
-  * A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
-    function.  The :meth:`assertEqual` method will use the function
-    when both of the objects being compared are of the specified type.
-    This function should compare the two objects and raise an
-    exception if they don't match; it's a good idea for the function
-    to provide additional information about why the two objects are
-    matching, much as the new sequence comparison methods do.
-
-  :func:`unittest.main` now takes an optional ``exit`` argument.
-  If False ``main`` doesn't call :func:`sys.exit` allowing it to
-  be used from the interactive interpreter. :issue:`3379`.
-
-  :class:`TestResult` has new :meth:`startTestRun` and
-  :meth:`stopTestRun` methods; called immediately before
-  and after a test run. :issue:`5728` by Robert Collins.
-
-* The :func:`is_zipfile` function in the :mod:`zipfile` module will now
-  accept a file object, in addition to the path names accepted in earlier
+* The :func:`is_zipfile` function in the :mod:`zipfile` module now
+  accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
   :mod:`zipfile` now supports archiving empty directories and
@@ -537,6 +725,118 @@ changes, or look through the Subversion logs for all the details.
 
 .. ======================================================================
 .. whole new modules get described in subsections here
+
+Unit Testing Enhancements
+---------------------------------
+
+The :mod:`unittest` module was enhanced in several ways.
+The progress messages now shows 'x' for expected failures
+and 'u' for unexpected successes when run in verbose mode.
+(Contributed by Benjamin Peterson.)
+Test cases can raise the :exc:`SkipTest` exception to skip a test.
+(:issue:`1034053`.)
+
+.. XXX describe test discovery (Contributed by Michael Foord; :issue:`6001`.)
+
+The error messages for :meth:`assertEqual`,
+:meth:`assertTrue`, and :meth:`assertFalse`
+failures now provide more information.  If you set the
+:attr:`longMessage` attribute of your :class:`TestCase` classes to
+true, both the standard error message and any additional message you
+provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
+
+The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
+return a context handler when called without providing a callable
+object to run.  For example, you can write this::
+
+  with self.assertRaises(KeyError):
+      raise ValueError
+
+(Implemented by Antoine Pitrou; :issue:`4444`.)
+
+The methods :meth:`addCleanup` and :meth:`doCleanups` were added.
+:meth:`addCleanup` allows you to add cleanup functions that
+will be called unconditionally (after :meth:`setUp` if
+:meth:`setUp` fails, otherwise after :meth:`tearDown`). This allows
+for much simpler resource allocation and deallocation during tests.
+:issue:`5679`
+
+A number of new methods were added that provide more specialized
+tests.  Many of these methods were written by Google engineers
+for use in their test suites; Gregory P. Smith, Michael Foord, and
+GvR worked on merging them into Python's version of :mod:`unittest`.
+
+* :meth:`assertIsNone` and :meth:`assertIsNotNone` take one
+  expression and verify that the result is or is not ``None``.
+
+* :meth:`assertIs` and :meth:`assertIsNot` take two values and check
+  whether the two values evaluate to the same object or not.
+  (Added by Michael Foord; :issue:`2578`.)
+
+* :meth:`assertGreater`, :meth:`assertGreaterEqual`,
+  :meth:`assertLess`, and :meth:`assertLessEqual` compare
+  two quantities.
+
+* :meth:`assertMultiLineEqual` compares two strings, and if they're
+  not equal, displays a helpful comparison that highlights the
+  differences in the two strings.
+
+* :meth:`assertRegexpMatches` checks whether its first argument is a
+  string matching a regular expression provided as its second argument.
+
+* :meth:`assertRaisesRegexp` checks whether a particular exception
+  is raised, and then also checks that the string representation of
+  the exception matches the provided regular expression.
+
+* :meth:`assertIn` and :meth:`assertNotIn` tests whether
+  *first* is or is not in  *second*.
+
+* :meth:`assertSameElements` tests whether two provided sequences
+  contain the same elements.
+
+* :meth:`assertSetEqual` compares whether two sets are equal, and
+  only reports the differences between the sets in case of error.
+
+* Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
+  compare the specified types and explain the differences.
+  More generally, :meth:`assertSequenceEqual` compares two sequences
+  and can optionally check whether both sequences are of a
+  particular type.
+
+* :meth:`assertDictEqual` compares two dictionaries and reports the
+  differences.  :meth:`assertDictContainsSubset` checks whether
+  all of the key/value pairs in *first* are found in *second*.
+
+* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` short-circuit
+  (automatically pass or fail without checking decimal places) if the objects
+  are equal.
+
+* :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
+  the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
+
+* A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
+  function.  The :meth:`assertEqual` method will use the function
+  when both of the objects being compared are of the specified type.
+  This function should compare the two objects and raise an
+  exception if they don't match; it's a good idea for the function
+  to provide additional information about why the two objects are
+  matching, much as the new sequence comparison methods do.
+
+:func:`unittest.main` now takes an optional ``exit`` argument.
+If False ``main`` doesn't call :func:`sys.exit` allowing it to
+be used from the interactive interpreter. :issue:`3379`.
+
+:class:`TestResult` has new :meth:`startTestRun` and
+:meth:`stopTestRun` methods; called immediately before
+and after a test run. :issue:`5728` by Robert Collins.
+
+With all these changes, the :file:`unittest.py` was becoming awkwardly
+large, so the module was turned into a package and the code split into
+several files (by Benjamin Peterson).  This doesn't affect how the
+module is imported.
+
+
+.. _importlib-section:
 
 importlib: Importing Modules
 ------------------------------
@@ -549,7 +849,7 @@ import process.  Python 2.7 doesn't contain the complete
 :mod:`importlib` package, but instead has a tiny subset that contains
 a single function, :func:`import_module`.
 
-``import_module(*name*, *package*=None)`` imports a module.  *name* is
+``import_module(name, package=None)`` imports a module.  *name* is
 a string containing the module or package's name.  It's possible to do
 relative imports by providing a string that begins with a ``.``
 character, such as ``..utils.errors``.  For relative imports, the
@@ -599,8 +899,8 @@ Build and C API Changes
 Changes to Python's build process and to the C API include:
 
 * If you use the :file:`.gdbinit` file provided with Python,
-  the "pyo" macro in the 2.7 version will now work when the thread being
-  debugged doesn't hold the GIL; the macro will now acquire it before printing.
+  the "pyo" macro in the 2.7 version now works correctly when the thread being
+  debugged doesn't hold the GIL; the macro now acquires it before printing.
   (Contributed by Victor Stinner; :issue:`3632`.)
 
 * :cfunc:`Py_AddPendingCall` is now thread-safe, letting any
@@ -608,8 +908,57 @@ Changes to Python's build process and to the C API include:
   is particularly useful for asynchronous IO operations.
   (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
 
+* New function: :cfunc:`PyCode_NewEmpty` creates an empty code object;
+  only the filename, function name, and first line number are required.
+  This is useful to extension modules that are attempting to
+  construct a more useful traceback stack.  Previously such
+  extensions needed to call :cfunc:`PyCode_New`, which had many
+  more arguments.  (Added by Jeffrey Yasskin.)
+
+* New function: :cfunc:`PyFrame_GetLineNumber` takes a frame object
+  and returns the line number that the frame is currently executing.
+  Previously code would need to get the index of the bytecode
+  instruction currently executing, and then look up the line number
+  corresponding to that address.  (Added by Jeffrey Yasskin.)
+
+* New macros: the Python header files now define the following macros:
+  :cmacro:`Py_ISALNUM`,
+  :cmacro:`Py_ISALPHA`,
+  :cmacro:`Py_ISDIGIT`,
+  :cmacro:`Py_ISLOWER`,
+  :cmacro:`Py_ISSPACE`,
+  :cmacro:`Py_ISUPPER`,
+  :cmacro:`Py_ISXDIGIT`,
+  and :cmacro:`Py_TOLOWER`, :cmacro:`Py_TOUPPER`.
+  All of these functions are analogous to the C
+  standard macros for classifying characters, but ignore the current
+  locale setting, because in
+  several places Python needs to analyze characters in a
+  locale-independent way.  (Added by Eric Smith;
+  :issue:`5793`.)
+
+  .. XXX these macros don't seem to be described in the c-api docs.
+
+* The complicated interaction between threads and process forking has
+  been changed.  Previously, the child process created by
+  :func:`os.fork` might fail because the child is created with only a
+  single thread running, the thread performing the :func:`os.fork`.
+  If other threads were holding a lock, such as Python's import lock,
+  when the fork was performed, the lock would still be marked as
+  "held" in the new process.  But in the child process nothing would
+  ever release the lock, since the other threads weren't replicated,
+  and the child process would no longer be able to perform imports.
+
+  Python 2.7 now acquires the import lock before performing an
+  :func:`os.fork`, and will also clean up any locks created using the
+  :mod:`threading` module.  C extension modules that have internal
+  locks, or that call :cfunc:`fork()` themselves, will not benefit
+  from this clean-up.
+
+  (Fixed by Thomas Wouters; :issue:`1590864`.)
+
 * Global symbols defined by the :mod:`ctypes` module are now prefixed
-  with ``Py`, or with ``_ctypes``.  (Implemented by Thomas
+  with ``Py``, or with ``_ctypes``.  (Implemented by Thomas
   Heller; :issue:`3102`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
@@ -617,6 +966,12 @@ Changes to Python's build process and to the C API include:
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
+
+* The build process now creates the necessary files for pkg-config
+  support.  (Contributed by Clinton Roy; :issue:`3585`.)
+
+* The build process now supports Subversion 1.7.  (Contributed by
+  Arfrever Frehtes Taifersar Arahesis; :issue:`6094`.)
 
 .. ======================================================================
 
@@ -634,12 +989,15 @@ Port-Specific Changes: Windows
   the native thread-local storage functions are now used.
   (Contributed by Kristjan Valur Jonsson; :issue:`3582`.)
 
+* The :func:`os.listdir` function now correctly fails
+  for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
+
 .. ======================================================================
 
 Port-Specific Changes: Mac OS X
 -----------------------------------
 
-* The ``/Library/Python/2.7/site-packages`` is now appended to
+* The path ``/Library/Python/2.7/site-packages`` is now appended to
   ``sys.path``, in order to share added packages between the system
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
@@ -658,12 +1016,12 @@ Other Changes and Fixes
 * The :file:`regrtest.py` script now takes a :option:`--randseed=`
   switch that takes an integer that will be used as the random seed
   for the :option:`-r` option that executes tests in random order.
-  The :option:`-r` option also now reports the seed that was used
+  The :option:`-r` option also reports the seed that was used
   (Added by Collin Winter.)
 
 * The :file:`regrtest.py` script now takes a :option:`-j` switch
   that takes an integer specifying how many tests run in parallel. This
-  allows to shorten the total runtime on multi-core machines.
+  allows reducing the total runtime on multi-core machines.
   This option is compatible with several other options, including the
   :option:`-R` switch which is known to produce long runtimes.
   (Added by Antoine Pitrou, :issue:`6152`.)
@@ -675,6 +1033,17 @@ Porting to Python 2.7
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
+
+* When using :class:`Decimal` instances with a string's
+  :meth:`format` method, the default alignment was previously
+  left-alignment.  This has been changed to right-alignment, which might
+  change the output of your programs.
+  (Changed by Mark Dickinson; :issue:`6857`.)
+
+  Another :meth:`format`-related change: the default precision used
+  for floating-point and complex numbers was changed from 6 decimal
+  places to 12, which matches the precision used by :func:`str`.
+  (Changed by Eric Smith; :issue:`5920`.)
 
 * Because of an optimization for the :keyword:`with` statement, the special
   methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
