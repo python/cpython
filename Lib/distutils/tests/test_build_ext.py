@@ -13,6 +13,7 @@ from distutils.errors import DistutilsSetupError
 import unittest
 from test import test_support
 
+
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
@@ -334,6 +335,25 @@ class BuildExtTestCase(support.TempdirManager,
         etree_ext = Extension('lxml.etree', [etree_c])
         dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
         cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        cmd.inplace = 1
+        cmd.distribution.package_dir = {'': 'src'}
+        cmd.distribution.packages = ['lxml', 'lxml.html']
+        curdir = os.getcwd()
+        ext = sysconfig.get_config_var("SO")
+        wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
+        path = cmd.get_ext_fullpath('lxml.etree')
+        self.assertEquals(wanted, path)
+
+    def test_setuptools_compat(self):
+        from setuptools_build_ext import build_ext as setuptools_build_ext
+        from setuptools_extension import Extension
+
+        etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
+        etree_ext = Extension('lxml.etree', [etree_c])
+        dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+        cmd = setuptools_build_ext(dist)
+        cmd.ensure_finalized()
         cmd.inplace = 1
         cmd.distribution.package_dir = {'': 'src'}
         cmd.distribution.packages = ['lxml', 'lxml.html']

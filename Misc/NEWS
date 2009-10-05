@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7064: Fixed the incompatibility with Setuptools in distutils 
+  when running the build_ext command.
+
 - Issue #7052: Removed nonexisting NullHandler from logging.__all__.
 
 - Issue #7039: Fixed distutils.tests.test_sysconfig when running on
