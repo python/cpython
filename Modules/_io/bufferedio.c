@@ -1705,7 +1705,8 @@ bufferedwriter_write(buffered *self, PyObject *args)
 {
     PyObject *res = NULL;
     Py_buffer buf;
-    Py_ssize_t written, avail, remaining, n;
+    Py_ssize_t written, avail, remaining;
+    Py_off_t offset;
 
     CHECK_INITIALIZED(self)
     if (!PyArg_ParseTuple(args, "s*:write", &buf)) {
@@ -1780,18 +1781,18 @@ bufferedwriter_write(buffered *self, PyObject *args)
        the raw stream by itself).
        Fixes issue #6629.
     */
-    n = RAW_OFFSET(self);
-    if (n != 0) {
-        if (_buffered_raw_seek(self, -n, 1) < 0)
+    offset = RAW_OFFSET(self);
+    if (offset != 0) {
+        if (_buffered_raw_seek(self, -offset, 1) < 0)
             goto error;
-        self->raw_pos -= n;
+        self->raw_pos -= offset;
     }
 
     /* Then write buf itself. At this point the buffer has been emptied. */
     remaining = buf.len;
     written = 0;
     while (remaining > self->buffer_size) {
-        n = _bufferedwriter_raw_write(
+        Py_ssize_t n = _bufferedwriter_raw_write(
             self, (char *) buf.buf + written, buf.len - written);
         if (n == -1) {
             Py_ssize_t *w = _buffered_check_blocking_error();
