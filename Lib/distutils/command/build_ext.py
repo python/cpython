@@ -630,7 +630,8 @@ class build_ext (Command):
         """
         fullname = self.get_ext_fullname(ext_name)
         modpath = fullname.split('.')
-        filename = self.get_ext_filename(modpath[-1])
+        filename = self.get_ext_filename(ext_name)
+        filename = os.path.split(filename)[-1]
 
         if not self.inplace:
             # no further work needed
