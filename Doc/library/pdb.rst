@@ -58,7 +58,7 @@ insert ::
    import pdb; pdb.set_trace()
 
 at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without debugger using
+the code following this statement, and continue running without the debugger using
 the ``c`` command.
 
 The typical usage to inspect a crashed program is::
