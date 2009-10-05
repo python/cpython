@@ -236,10 +236,10 @@ With exactly the same source tree layout, this extension can be put in the
 Checking a package
 ==================
 
-The ``check`` command allows you to verify if your package meta-data are
-meeting the minimum requirements to build a distribution.
+The ``check`` command allows you to verify if your package meta-data
+meet the minimum requirements to build a distribution.
 
-To run it, just call it over your :file:`setup.py` script. If something is
+To run it, just call it using your :file:`setup.py` script. If something is
 missing, ``check`` will display a warning.
 
 Let's take an example with a simple script::
@@ -252,7 +252,7 @@ Running the ``check`` command will display some warnings::
 
     $ python setup.py check
     running check
-    warning: check: missing required meta-data: version ,url
+    warning: check: missing required meta-data: version, url
     warning: check: missing meta-data: either (author and author_email) or
              (maintainer and maintainer_email) must be supplied
 
