@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1571184: The Unicode database contains properties for more characters.
+  The tables for code points representing numeric values, white spaces or line
+  breaks are now generated from the official Unicode Character Database files,
+  and include information from the Unihan.txt file.
+
 - Issue #7050: Fix a SystemError when trying to use unpacking and augmented
   assignment.
 
