@@ -303,7 +303,7 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler(compiler=None,
+        self.compiler = new_compiler(compiler=self.compiler,
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
