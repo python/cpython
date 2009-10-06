@@ -264,7 +264,7 @@ class BuildExtTestCase(support.TempdirManager,
                           sysconfig.get_config_var('SO'))
         so_dir = os.path.dirname(so_file)
         self.assertEquals(so_dir, other_tmp_dir)
-
+        cmd.compiler = None
         cmd.inplace = 0
         cmd.run()
         so_file = cmd.get_outputs()[0]
