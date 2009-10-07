@@ -398,6 +398,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7048: Force Decimal.logb to round its result when that result
+  is too large to fit in the current precision.
+
 - Issue #6516: Added owner/group support when creating tar archives in 
   Distutils.
 
