@@ -682,6 +682,10 @@ def runtest_inner(test, verbose, quiet,
     refleak = False  # True if the test leaked references.
     try:
         save_stdout = sys.stdout
+        # Save various things that tests may mess up so we can restore
+        # them afterward.
+        save_environ = dict(os.environ)
+        save_argv = sys.argv[:]
         try:
             if test.startswith('test.'):
                 abstest = test
@@ -702,6 +706,17 @@ def runtest_inner(test, verbose, quiet,
             test_time = time.time() - start_time
         finally:
             sys.stdout = save_stdout
+            # Restore what we saved if needed, but also complain if the test
+            # changed it so that the test may eventually get fixed.
+            if not os.environ == save_environ:
+                if not quiet:
+                    print("Warning: os.environ was modified by", test)
+                os.environ.clear()
+                os.environ.update(save_environ)
+            if not sys.argv == save_argv:
+                if not quiet:
+                    print("Warning: argv was modified by", test)
+                sys.argv[:] = save_argv
     except support.ResourceDenied as msg:
         if not quiet:
             print(test, "skipped --", msg)
