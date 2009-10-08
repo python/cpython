@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.58
+version: 2.59
 
 extended:    1
 precision:   9
@@ -3811,6 +3811,16 @@ minexponent: -9
 precision: 15
 clamp: 1
 sqtx9045 squareroot  1 -> 1.00000  Clamped
+
+-- other
+maxexponent: 999
+minexponent: -999
+precision: 16
+sqtx9046 squareroot  10    -> 3.162277660168379          inexact rounded
+sqtx9047 squareroot  10E-1 -> 1.0
+sqtx9048 squareroot  10E-2 -> 0.3162277660168379         inexact rounded
+sqtx9049 squareroot  10E-3 -> 0.10
+
 
 -- High-precision exact and inexact
 maxexponent: 999
