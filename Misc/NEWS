@@ -74,6 +74,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #7078: Set struct.__doc__ from _struct.__doc__.
+
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
 Tests
