@@ -1349,6 +1349,15 @@ class PyBuildExt(build_ext):
         else:
             missing.append('sunaudiodev')
 
+        if platform == 'darwin':
+            # _scproxy
+            exts.append(Extension("_scproxy", [os.path.join(srcdir, "Mac/Modules/_scproxy.c")],
+                extra_link_args= [
+                    '-framework', 'SystemConfiguration',
+                    '-framework', 'CoreFoundation'
+                ]))
+
+
         if platform == 'darwin' and ("--disable-toolbox-glue" not in
                 sysconfig.get_config_var("CONFIG_ARGS")):
 
@@ -1402,15 +1411,6 @@ class PyBuildExt(build_ext):
             addMacExtension('_CF', core_kwds, ['cf/pycfbridge.c'])
             addMacExtension('autoGIL', core_kwds)
 
-            # _scproxy
-            sc_kwds = {
-                'extra_compile_args': carbon_extra_compile_args,
-                'extra_link_args': [
-                    '-framework', 'SystemConfiguration',
-                    '-framework', 'CoreFoundation'
-                ],
-            }
-            addMacExtension("_scproxy", sc_kwds)
 
 
             # Carbon
