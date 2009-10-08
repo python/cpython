@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.58
+version: 2.59
 
 -- Most of the tests here assume a "regular pattern", where the
 -- sign and coefficient are +1.
@@ -357,8 +357,6 @@ dqqua387 quantize  -1122334455667788991234567352364506  1e-2 -> NaN Invalid_oper
 
 rounding: down
 dqqua389 quantize   112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
--- ? should that one instead have been:
--- dqqua389 quantize   112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
 rounding: half_up
 
 -- and a few more from e-mail discussions
