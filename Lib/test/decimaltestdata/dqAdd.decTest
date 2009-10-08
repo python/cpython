@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.58
+version: 2.59
 
 -- This set of tests are for decQuads only; all arguments are
 -- representable in a decQuad
@@ -637,7 +637,7 @@ dqadd7730 add -00.   0E+3  -> 0
 dqadd7732 add  0     0     ->  0
 dqadd7733 add  0    -0     ->  0
 dqadd7734 add -0     0     ->  0
-dqadd7735 add -0    -0     -> -0     -- IEEE 854 special case
+dqadd7735 add -0    -0     -> -0     -- IEEE 754 special case
 
 dqadd7736 add  1    -1     ->  0
 dqadd7737 add -1    -1     -> -2

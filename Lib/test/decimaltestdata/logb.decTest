@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- logb.decTest -- return integral adjusted exponent as per 754r      --
--- Copyright (c) IBM Corporation, 2005, 2008.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 2005, 2009.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.58
+version: 2.59
 
 -- This emphasises the testing of notable cases, as they will often
 -- have unusual paths (especially the 10**n results).
@@ -143,7 +143,33 @@ logbx1418 logb 100E2    ->  4
 logbx1419 logb 1000E2   ->  5
 logbx1420 logb 10000E2  ->  6
 
+-- inexacts
+precision: 2
+logbx1500 logb 10000E2       ->  6
+logbx1501 logb 1E+99         ->  99
+logbx1502 logb 1E-99         -> -99
+logbx1503 logb 1E+100        ->  1.0E+2  Rounded
+logbx1504 logb 1E+999        ->  1.0E+3  Inexact Rounded
+logbx1505 logb 1E-100        -> -1.0E+2  Rounded
+logbx1506 logb 1E-999        -> -1.0E+3  Inexact Rounded
+logbx1507 logb 1E-1111       -> -1.1E+3  Inexact Rounded
+logbx1508 logb 1E-3333       -> -3.3E+3  Inexact Rounded
+logbx1509 logb 1E-6666       -> -6.7E+3  Inexact Rounded
+logbx1510 logb 1E+999999999  ->  1.0E+9  Inexact Rounded
+logbx1511 logb 1E-999999999  -> -1.0E+9  Inexact Rounded
+precision: 1
+logbx1517 logb 1E-1111       -> -1E+3    Inexact Rounded
+logbx1518 logb 1E-3333       -> -3E+3    Inexact Rounded
+logbx1519 logb 1E-6666       -> -7E+3    Inexact Rounded
+precision: 8
+logbx1520 logb 1E+999999999  ->  1.0000000E+9 Inexact Rounded
+logbx1521 logb 1E-999999999  -> -1.0000000E+9 Inexact Rounded
+precision: 9
+logbx1523 logb 1E+999999999  ->  999999999
+logbx1524 logb 1E-999999999  -> -999999999
+
 -- special values
+precision: 9
 logbx820  logb   Infinity ->   Infinity
 logbx821  logb  -Infinity ->   Infinity
 logbx822  logb   0        ->  -Infinity Division_by_zero
