@@ -18,7 +18,7 @@
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
 -- [Previously called decimal64.decTest]
-version: 2.58
+version: 2.59
 
 -- This set of tests is for the eight-byte concrete representation.
 -- Its characteristics are:

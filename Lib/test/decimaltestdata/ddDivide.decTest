@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.58
+version: 2.59
 
 precision:   16
 maxExponent: 384
@@ -160,7 +160,7 @@ dddiv221 divide 391  -597 -> -0.6549413735343384  Inexact Rounded
 dddiv222 divide -391  597 -> -0.6549413735343384  Inexact Rounded
 dddiv223 divide -391 -597 ->  0.6549413735343384  Inexact Rounded
 
--- test some cases that are close to exponent overflow
+-- test some cases that are close to exponent overflow, some with coefficient padding
 dddiv270 divide 1 1e384                  -> 1E-384                 Subnormal
 dddiv271 divide 1 0.9e384                -> 1.11111111111111E-384  Rounded Inexact Subnormal Underflow
 dddiv272 divide 1 0.99e384               -> 1.01010101010101E-384  Rounded Inexact Subnormal Underflow
@@ -168,7 +168,16 @@ dddiv273 divide 1 0.9999999999999999e384 -> 1.00000000000000E-384  Rounded Inexa
 dddiv274 divide 9e384    1               -> 9.000000000000000E+384 Clamped
 dddiv275 divide 9.9e384  1               -> 9.900000000000000E+384 Clamped
 dddiv276 divide 9.99e384 1               -> 9.990000000000000E+384 Clamped
-dddiv277 divide 9.999999999999999e384 1  -> 9.999999999999999E+384
+dddiv277 divide 9.9999999999999e384 1    -> 9.999999999999900E+384 Clamped
+dddiv278 divide 9.99999999999999e384 1   -> 9.999999999999990E+384 Clamped
+dddiv279 divide 9.999999999999999e384 1  -> 9.999999999999999E+384
+
+dddiv285 divide 9.9e384  1.1              -> 9.000000000000000E+384 Clamped
+dddiv286 divide 9.99e384 1.1              -> 9.081818181818182E+384 Inexact Rounded
+dddiv287 divide 9.9999999999999e384 1.1   -> 9.090909090909000E+384 Clamped
+dddiv288 divide 9.99999999999999e384 1.1  -> 9.090909090909082E+384 Inexact Rounded
+dddiv289 divide 9.999999999999999e384 1.1 -> 9.090909090909090E+384 Clamped
+
 
 -- Divide into 0 tests
 dddiv301 divide    0    7     -> 0
