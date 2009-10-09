@@ -570,7 +570,7 @@ def _getmethods(obj, methods):
     # Adds names to dictionary argument 'methods'
     for name in dir(obj):
         attr = getattr(obj, name)
-        if callable(attr):
+        if hasattr(attr, '__call__'):
             methods[name] = 1
     if type(obj) == types.InstanceType:
         _getmethods(obj.__class__, methods)
@@ -581,7 +581,7 @@ def _getmethods(obj, methods):
 def _getattributes(obj, attributes):
     for name in dir(obj):
         attr = getattr(obj, name)
-        if not callable(attr):
+        if not hasattr(attr, '__call__'):
             attributes[name] = 1
 
 class MethodProxy(object):
