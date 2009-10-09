@@ -3,7 +3,6 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "structmember.h" /* offsetof */
 
 #ifndef WITH_THREAD
 #error "Error!  The rest of Python is not compiled with thread support."
@@ -21,15 +20,12 @@ static PyObject *ThreadError;
 typedef struct {
 	PyObject_HEAD
 	PyThread_type_lock lock_lock;
-	PyObject *in_weakreflist;
 } lockobject;
 
 static void
 lock_dealloc(lockobject *self)
 {
 	assert(self->lock_lock);
-	if (self->in_weakreflist != NULL)
-		PyObject_ClearWeakRefs((PyObject *) self);
 	/* Unlock the lock so it's safe to free it */
 	PyThread_acquire_lock(self->lock_lock, 0);
 	PyThread_release_lock(self->lock_lock);
@@ -144,12 +140,12 @@ static PyTypeObject Locktype = {
 	0,				/*tp_getattro*/
 	0,				/*tp_setattro*/
 	0,				/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,             /*tp_flags*/
+	Py_TPFLAGS_DEFAULT,		/*tp_flags*/
 	0,				/*tp_doc*/
 	0,				/*tp_traverse*/
 	0,				/*tp_clear*/
 	0,				/*tp_richcompare*/
-	offsetof(lockobject, in_weakreflist),	/*tp_weaklistoffset*/
+	0,				/*tp_weaklistoffset*/
 	0,				/*tp_iter*/
 	0,				/*tp_iternext*/
 	lock_methods,			/*tp_methods*/
@@ -163,7 +159,6 @@ newlockobject(void)
 	if (self == NULL)
 		return NULL;
 	self->lock_lock = PyThread_allocate_lock();
-	self->in_weakreflist = NULL;
 	if (self->lock_lock == NULL) {
 		PyObject_Del(self);
 		self = NULL;
