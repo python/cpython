@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Make tokenize.detect_coding() normalize utf-8 and iso-8859-1 variants like the
+  builtin tokenizer.
+
 - Issue #7048: Force Decimal.logb to round its result when that result
   is too large to fit in the current precision.
 
