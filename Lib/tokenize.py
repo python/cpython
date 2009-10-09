@@ -279,6 +279,17 @@ def untokenize(iterable):
     return out
 
 
+def _get_normal_name(orig_enc):
+    """Imitates get_normal_name in tokenizer.c."""
+    # Only care about the first 12 characters.
+    enc = orig_enc[:12].lower().replace("_", "-")
+    if enc == "utf-8" or enc.startswith("utf-8-"):
+        return "utf-8"
+    if enc in ("latin-1", "iso-8859-1", "iso-latin-1") or \
+       enc.startswith(("latin-1-", "iso-8859-1-", "iso-latin-1-")):
+        return "iso-8859-1"
+    return orig_enc
+
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
@@ -313,7 +324,7 @@ def detect_encoding(readline):
         matches = cookie_re.findall(line_string)
         if not matches:
             return None
-        encoding = matches[0]
+        encoding = _get_normal_name(matches[0])
         try:
             codec = lookup(encoding)
         except LookupError:
