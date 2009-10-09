@@ -16,16 +16,14 @@ X-Oblique-Strategy: Make a door into a window
 
 
 --h90VIIIKmx
-Content-Type: text/plain
-Content-Disposition: inline; name="msg.txt"
+Content-Type: text/plain; name="msg.txt"
 Content-Transfer-Encoding: 7bit
 
 a simple kind of mirror
 to reflect upon our own
 
 --h90VIIIKmx
-Content-Type: text/plain
-Content-Disposition: inline; name="msg.txt"
+Content-Type: text/plain; name="msg.txt"
 Content-Transfer-Encoding: 7bit
 
 a simple kind of mirror
