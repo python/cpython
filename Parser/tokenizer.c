@@ -180,20 +180,26 @@ get_normal_name(char *s)	/* for utf-8 and latin-1 */
 	int i;
 	for (i = 0; i < 12; i++) {
 		int c = s[i];
-		if (c == '\0') break;
-		else if (c == '_') buf[i] = '-';
-		else buf[i] = tolower(c);
+		if (c == '\0')
+			break;
+		else if (c == '_')
+			buf[i] = '-';
+		else
+			buf[i] = tolower(c);
 	}
 	buf[i] = '\0';
 	if (strcmp(buf, "utf-8") == 0 ||
-	    strncmp(buf, "utf-8-", 6) == 0) return "utf-8";
+	    strncmp(buf, "utf-8-", 6) == 0)
+		return "utf-8";
 	else if (strcmp(buf, "latin-1") == 0 ||
 		 strcmp(buf, "iso-8859-1") == 0 ||
 		 strcmp(buf, "iso-latin-1") == 0 ||
 		 strncmp(buf, "latin-1-", 8) == 0 ||
 		 strncmp(buf, "iso-8859-1-", 11) == 0 ||
-		 strncmp(buf, "iso-latin-1-", 12) == 0) return "iso-8859-1";
-	else return s;
+		 strncmp(buf, "iso-latin-1-", 12) == 0)
+		return "iso-8859-1";
+	else
+		return s;
 }
 
 /* Return the coding spec in S, or NULL if none is found.  */
@@ -309,18 +315,28 @@ check_bom(int get_char(struct tok_state *),
 	if (ch == EOF) {
 		return 1;
 	} else if (ch == 0xEF) {
-		ch = get_char(tok); if (ch != 0xBB) goto NON_BOM;
-		ch = get_char(tok); if (ch != 0xBF) goto NON_BOM;
+		ch = get_char(tok);
+		if (ch != 0xBB)
+			goto NON_BOM;
+		ch = get_char(tok);
+		if (ch != 0xBF)
+			goto NON_BOM;
 #if 0
 	/* Disable support for UTF-16 BOMs until a decision
 	   is made whether this needs to be supported.  */
 	} else if (ch == 0xFE) {
-		ch = get_char(tok); if (ch != 0xFF) goto NON_BOM;
-		if (!set_readline(tok, "utf-16-be")) return 0;
+		ch = get_char(tok);
+		if (ch != 0xFF)
+			goto NON_BOM;
+		if (!set_readline(tok, "utf-16-be"))
+			return 0;
 		tok->decoding_state = -1;
 	} else if (ch == 0xFF) {
-		ch = get_char(tok); if (ch != 0xFE) goto NON_BOM;
-		if (!set_readline(tok, "utf-16-le")) return 0;
+		ch = get_char(tok);
+		if (ch != 0xFE)
+			goto NON_BOM;
+		if (!set_readline(tok, "utf-16-le"))
+			return 0;
 		tok->decoding_state = -1;
 #endif
 	} else {
@@ -397,7 +413,8 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	memcpy(s, str, utf8len);
 	s[utf8len] = '\0';
 	Py_DECREF(utf8);
-	if (utf8len == 0) return NULL; /* EOF */
+	if (utf8len == 0)
+		return NULL; /* EOF */
 	return s;
 #endif
 }
