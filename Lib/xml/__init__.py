@@ -19,12 +19,6 @@ etree -- The ElementTree XML library.  This is a subset of the full
 
 __all__ = ["dom", "parsers", "sax", "etree"]
 
-# When being checked-out without options, this has the form
-# "<dollar>Revision: x.y </dollar>"
-# When exported using -kv, it is "x.y".
-__version__ = "$Revision$".split()[-2:][0]
-
-
 _MINIMUM_XMLPLUS_VERSION = (0, 8, 4)
 
 
