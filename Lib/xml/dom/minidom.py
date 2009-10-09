@@ -491,9 +491,9 @@ class NamedNodeMap(object):
 
     def has_key(self, key):
         if isinstance(key, StringTypes):
-            return self._attrs.has_key(key)
+            return key in self._attrs
         else:
-            return self._attrsNS.has_key(key)
+            return key in self._attrsNS
 
     def keys(self):
         return self._attrs.keys()
@@ -775,10 +775,10 @@ class Element(Node):
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
-        return self._attrs.has_key(name)
+        return name in self._attrs
 
     def hasAttributeNS(self, namespaceURI, localName):
-        return self._attrsNS.has_key((namespaceURI, localName))
+        return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
         return _get_elements_by_tagName_helper(self, name, NodeList())

@@ -107,7 +107,7 @@ class FileDialog:
         self.top.bind('<Alt-W>', self.cancel_command)
 
     def go(self, dir_or_file=os.curdir, pattern="*", default="", key=None):
-        if key and dialogstates.has_key(key):
+        if key and key in dialogstates:
             self.directory, pattern = dialogstates[key]
         else:
             dir_or_file = os.path.expanduser(dir_or_file)

@@ -335,10 +335,10 @@ def __forwardmethods(fromClass, toClass, toPart, exclude = ()):
         if ex[:1] == '_' or ex[-1:] == '_':
             del _dict[ex]
     for ex in exclude:
-        if _dict.has_key(ex):
+        if ex in _dict:
             del _dict[ex]
     for ex in __methods(fromClass):
-        if _dict.has_key(ex):
+        if ex in _dict:
             del _dict[ex]
 
     for method, func in _dict.items():
