@@ -409,7 +409,7 @@ class FileTreeItem(TreeItem):
 
 class ScrolledCanvas:
     def __init__(self, master, **opts):
-        if not opts.has_key('yscrollincrement'):
+        if 'yscrollincrement' not in opts:
             opts['yscrollincrement'] = 17
         self.master = master
         self.frame = Frame(master)

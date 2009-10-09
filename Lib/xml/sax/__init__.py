@@ -59,7 +59,7 @@ if _false:
     import xml.sax.expatreader
 
 import os, sys
-if os.environ.has_key("PY_SAX_PARSER"):
+if "PY_SAX_PARSER" in os.environ:
     default_parser_list = os.environ["PY_SAX_PARSER"].split(",")
 del os
 
