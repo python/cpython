@@ -87,6 +87,9 @@ C-API
 Library
 -------
 
+- Issue #7086: Added TCP support to SysLogHandler, and tidied up some
+  anachronisms in the code which were a relic of 1.5.2 compatibility.
+  
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
 
