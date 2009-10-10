@@ -891,10 +891,6 @@ Test cases
          with self.failUnlessRaises(some_error_class):
              do_something()
 
-      The context manager will store the caught exception object in its
-      :attr:`exc_value` attribute.  This can be useful if the intention
-      is to perform additional checks on the exception raised.
-
       .. versionchanged:: 3.1
          Added the ability to use :meth:`assertRaises` as a context manager.
 
