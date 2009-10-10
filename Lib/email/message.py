@@ -681,7 +681,7 @@ class Message:
         missing = object()
         filename = self.get_param('filename', missing, 'content-disposition')
         if filename is missing:
-            filename = self.get_param('name', missing, 'content-disposition')
+            filename = self.get_param('name', missing, 'content-type')
         if filename is missing:
             return failobj
         return utils.collapse_rfc2231_value(filename).strip()

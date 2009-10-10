@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7082: When falling back to the MIME 'name' parameter, the
+  correct place to look for it is the Content-Type header.
+
 - Make tokenize.detect_coding() normalize utf-8 and iso-8859-1 variants like the
   builtin tokenizer.
 
