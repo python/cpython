@@ -46,8 +46,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.7"
-__date__    = "20 January 2009"
+__version__ = "0.5.0.9"
+__date__    = "09 October 2009"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data

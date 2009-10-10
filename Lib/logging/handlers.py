@@ -1,4 +1,4 @@
-# Copyright 2001-2007 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2009 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -41,6 +41,7 @@ DEFAULT_UDP_LOGGING_PORT    = 9021
 DEFAULT_HTTP_LOGGING_PORT   = 9022
 DEFAULT_SOAP_LOGGING_PORT   = 9023
 SYSLOG_UDP_PORT             = 514
+SYSLOG_TCP_PORT             = 514
 
 _MIDNIGHT = 24 * 60 * 60  # number of seconds in a day
 
@@ -155,7 +156,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=0, utc=False):
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False):
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
         self.when = when.upper()
         self.backupCount = backupCount
@@ -690,7 +691,8 @@ class SysLogHandler(logging.Handler):
         "CRITICAL" : "critical"
     }
 
-    def __init__(self, address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER):
+    def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
+                 facility=LOG_USER, socktype=socket.SOCK_DGRAM):
         """
         Initialize a handler.
 
@@ -702,13 +704,16 @@ class SysLogHandler(logging.Handler):
 
         self.address = address
         self.facility = facility
+        self.socktype = socktype
+
         if isinstance(address, str):
             self.unixsocket = 1
             self._connect_unixsocket(address)
         else:
             self.unixsocket = 0
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+            self.socket = socket.socket(socket.AF_INET, socktype)
+            if socktype == socket.SOCK_STREAM:
+                self.socket.connect(address)
         self.formatter = None
 
     def _connect_unixsocket(self, address):
@@ -781,8 +786,10 @@ class SysLogHandler(logging.Handler):
                 except socket.error:
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
-            else:
+            elif self.socktype == socket.SOCK_DGRAM:
                 self.socket.sendto(msg, self.address)
+            else:
+                self.socket.sendall(msg)
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
