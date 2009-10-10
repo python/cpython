@@ -24,7 +24,7 @@ Copyright (C) 2001-2009 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import logging, socket, types, os, string, cPickle, struct, time, re
+import logging, socket, os, cPickle, struct, time, re
 from stat import ST_DEV, ST_INO
 
 try:
@@ -41,6 +41,7 @@ DEFAULT_UDP_LOGGING_PORT    = 9021
 DEFAULT_HTTP_LOGGING_PORT   = 9022
 DEFAULT_SOAP_LOGGING_PORT   = 9023
 SYSLOG_UDP_PORT             = 514
+SYSLOG_TCP_PORT             = 514
 
 _MIDNIGHT = 24 * 60 * 60  # number of seconds in a day
 
@@ -155,9 +156,9 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=0, utc=0):
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False):
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
-        self.when = string.upper(when)
+        self.when = when.upper()
         self.backupCount = backupCount
         self.utc = utc
         # Calculate the real rollover interval, which is just the number of
@@ -203,8 +204,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         self.extMatch = re.compile(self.extMatch)
         self.interval = self.interval * interval # multiply by units requested
         self.rolloverAt = self.computeRollover(int(time.time()))
-
-        #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
 
     def computeRollover(self, currentTime):
         """
@@ -692,7 +691,8 @@ class SysLogHandler(logging.Handler):
         "CRITICAL" : "critical"
     }
 
-    def __init__(self, address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER):
+    def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
+                 facility=LOG_USER, socktype=socket.SOCK_DGRAM):
         """
         Initialize a handler.
 
@@ -704,13 +704,16 @@ class SysLogHandler(logging.Handler):
 
         self.address = address
         self.facility = facility
-        if type(address) == types.StringType:
+        self.socktype = socktype
+
+        if isinstance(address, basestring):
             self.unixsocket = 1
             self._connect_unixsocket(address)
         else:
             self.unixsocket = 0
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+            self.socket = socket.socket(socket.AF_INET, socktype)
+            if socktype == socket.SOCK_STREAM:
+                self.socket.connect(address)
         self.formatter = None
 
     def _connect_unixsocket(self, address):
@@ -736,9 +739,9 @@ class SysLogHandler(logging.Handler):
         priority_names mapping dictionaries are used to convert them to
         integers.
         """
-        if type(facility) == types.StringType:
+        if isinstance(facility, basestring):
             facility = self.facility_names[facility]
-        if type(priority) == types.StringType:
+        if isinstance(priority, basestring):
             priority = self.priority_names[priority]
         return (facility << 3) | priority
 
@@ -783,8 +786,10 @@ class SysLogHandler(logging.Handler):
                 except socket.error:
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
-            else:
+            elif self.socktype == socket.SOCK_DGRAM:
                 self.socket.sendto(msg, self.address)
+            else:
+                self.socket.sendall(msg)
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
@@ -805,16 +810,16 @@ class SMTPHandler(logging.Handler):
         for the credentials argument.
         """
         logging.Handler.__init__(self)
-        if type(mailhost) == types.TupleType:
+        if isinstance(mailhost, tuple):
             self.mailhost, self.mailport = mailhost
         else:
             self.mailhost, self.mailport = mailhost, None
-        if type(credentials) == types.TupleType:
+        if isinstance(credentials, tuple):
             self.username, self.password = credentials
         else:
             self.username = None
         self.fromaddr = fromaddr
-        if type(toaddrs) == types.StringType:
+        if isinstance(toaddrs, basestring):
             toaddrs = [toaddrs]
         self.toaddrs = toaddrs
         self.subject = subject
@@ -865,7 +870,7 @@ class SMTPHandler(logging.Handler):
             msg = self.format(record)
             msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
                             self.fromaddr,
-                            string.join(self.toaddrs, ","),
+                            ",".join(self.toaddrs),
                             self.getSubject(record),
                             formatdate(), msg)
             if self.username:
@@ -909,8 +914,8 @@ class NTEventLogHandler(logging.Handler):
                 logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
          }
         except ImportError:
-            print "The Python Win32 extensions for NT (service, event "\
-                        "logging) appear not to be available."
+            print("The Python Win32 extensions for NT (service, event "\
+                        "logging) appear not to be available.")
             self._welu = None
 
     def getMessageID(self, record):
@@ -988,9 +993,9 @@ class HTTPHandler(logging.Handler):
         ("GET" or "POST")
         """
         logging.Handler.__init__(self)
-        method = string.upper(method)
+        method = method.upper()
         if method not in ["GET", "POST"]:
-            raise ValueError, "method must be GET or POST"
+            raise ValueError("method must be GET or POST")
         self.host = host
         self.url = url
         self.method = method
@@ -1016,7 +1021,7 @@ class HTTPHandler(logging.Handler):
             url = self.url
             data = urllib.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
-                if (string.find(url, '?') >= 0):
+                if (url.find('?') >= 0):
                     sep = '&'
                 else:
                     sep = '?'
@@ -1024,7 +1029,7 @@ class HTTPHandler(logging.Handler):
             h.putrequest(self.method, url)
             # support multiple hosts on one IP address...
             # need to strip optional :port from host, if present
-            i = string.find(host, ":")
+            i = host.find(":")
             if i >= 0:
                 host = host[:i]
             h.putheader("Host", host)

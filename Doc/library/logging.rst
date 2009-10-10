@@ -764,12 +764,12 @@ functions.
 
    Does basic configuration for the logging system by creating a
    :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
-   root logger. The function does nothing if any handlers have been defined for
-   the root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
+   root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
 
-   This function does nothing if the root logger already has handlers configured.
+   This function does nothing if the root logger already has handlers
+   configured for it.
 
    .. versionchanged:: 2.4
       Formerly, :func:`basicConfig` did not take any keyword arguments.
@@ -2008,16 +2008,22 @@ The :class:`SysLogHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to a remote or local Unix syslog.
 
 
-.. class:: SysLogHandler([address[, facility]])
+.. class:: SysLogHandler([address[, facility[, socktype]]])
 
    Returns a new instance of the :class:`SysLogHandler` class intended to
    communicate with a remote Unix machine whose address is given by *address* in
    the form of a ``(host, port)`` tuple.  If *address* is not specified,
-   ``('localhost', 514)`` is used.  The address is used to open a UDP socket.  An
+   ``('localhost', 514)`` is used.  The address is used to open a socket.  An
    alternative to providing a ``(host, port)`` tuple is providing an address as a
    string, for example "/dev/log". In this case, a Unix domain socket is used to
    send the message to the syslog. If *facility* is not specified,
-   :const:`LOG_USER` is used.
+   :const:`LOG_USER` is used. The type of socket opened depends on the
+   *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
+   opens a UDP socket. To open a TCP socket (for use with the newer syslog
+   daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
+
+   .. versionchanged:: 2.7
+      *socktype* was added.
 
 
    .. method:: close()
