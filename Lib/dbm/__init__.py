@@ -36,7 +36,7 @@ Note: 'r' and 'w' fail if the database doesn't exist; 'c' creates it
 only if it doesn't exist; and 'n' always creates a new database.
 """
 
-__all__ = ['open', 'whichdb', 'error', 'errors']
+__all__ = ['open', 'whichdb', 'error', 'error']
 
 import io
 import os
