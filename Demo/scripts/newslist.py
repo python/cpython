@@ -32,22 +32,22 @@
 # fraser@europarc.xerox.com                     qs101@cl.cam.ac.uk
 #                                                                     #
 #######################################################################
-import sys,nntplib, string, marshal, time, os, posix, string
+import sys, nntplib, marshal, time, os
 
 #######################################################################
 # Check these variables before running!                               #
 
 # Top directory.
 # Filenames which don't start with / are taken as being relative to this.
-topdir='/anfs/qsbigdisc/web/html/newspage'
+topdir = os.path.expanduser('~/newspage')
 
 # The name of your NNTP host
 # eg.
 #    newshost = 'nntp-serv.cl.cam.ac.uk'
 # or use following to get the name from the NNTPSERVER environment
 # variable:
-#    newshost = posix.environ['NNTPSERVER']
-newshost = 'nntp-serv.cl.cam.ac.uk'
+#    newshost = os.environ['NNTPSERVER']
+newshost = 'news.example.com'
 
 # The filename for a local cache of the newsgroup list
 treefile = 'grouptree'
@@ -81,7 +81,7 @@ skipempty = 1
 # pagelinkicon can contain html to put an icon after links to
 # further pages. This helps to make important links stand out.
 # Set to '' if not wanted, or '...' is quite a good one.
-pagelinkicon='... <img src="http://pelican.cl.cam.ac.uk/icons/page.xbm"> '
+pagelinkicon = '... <img src="http://pelican.cl.cam.ac.uk/icons/page.xbm"> '
 
 # ---------------------------------------------------------------------
 # Less important personal preferences:
@@ -106,7 +106,7 @@ from nntplib import NNTP
 from stat import *
 
 rcsrev = '$Revision$'
-rcsrev = string.join([s for s in string.split(rcsrev) if '$' not in s])
+rcsrev = ' '.join([s for s in rcsrev.split() if '$' not in s])
 desc = {}
 
 # Make (possibly) relative filenames into absolute ones
@@ -120,7 +120,7 @@ page = os.path.join(topdir,pagedir)
 def addtotree(tree, groups):
     print('Updating tree...')
     for i in groups:
-        parts = string.splitfields(i,'.')
+        parts = i.split('.')
         makeleaf(tree, parts)
 
 # Makeleaf makes a leaf and the branch leading to it if necessary
@@ -141,34 +141,38 @@ def makeleaf(tree,path):
 # to those groups beginning with <root>.
 
 def createpage(root, tree, p):
-    filename = os.path.join(pagedir,root+'.html')
+    filename = os.path.join(pagedir, root+'.html')
     if root == rootpage:
         detail = ''
     else:
         detail = ' under ' + root
-    f = open(filename,'w')
-    # f.write('Content-Type: text/html\n')
-    f.write('<TITLE>Newsgroups available' + detail + '</TITLE>\n')
-    f.write('<H1>Newsgroups available' + detail +'</H1>\n')
-    f.write('<A HREF="'+httppref+rootpage+'.html">Back to top level</A><P>\n')
-    printtree(f,tree,0,p)
-    f.write('<I>This page automatically created by \'newslist\' v. '+rcsrev+'.')
-    f.write(time.ctime(time.time()) + '</I><P>')
-    f.close()
+    with open(filename, 'w') as f:
+        # f.write('Content-Type: text/html\n')
+        f.write('<html>\n<head>\n')
+        f.write('<title>Newsgroups available%s</title>\n' % detail)
+        f.write('</head>\n<body>\n')
+        f.write('<h1>Newsgroups available%s</h1>\n' % detail)
+        f.write('<a href="%s%s.html">Back to top level</a><p>\n' %
+                (httppref, rootpage))
+        printtree(f, tree, 0, p)
+        f.write('\n<p>')
+        f.write("<i>This page automatically created by 'newslist' v. %s." %
+                rcsrev)
+        f.write(time.ctime(time.time()) + '</i>\n')
+        f.write('</body>\n</html>\n')
 
 # Printtree prints the groups as a bulleted list.  Groups with
 # more than <sublistsize> subgroups will be put on a separate page.
 # Other sets of subgroups are just indented.
 
 def printtree(f, tree, indent, p):
-    global desc
     l = len(tree)
 
-    if l > sublistsize and indent>0:
+    if l > sublistsize and indent > 0:
         # Create a new page and a link to it
-        f.write('<LI><B><A HREF="'+httppref+p[1:]+'.html">')
-        f.write(p[1:]+'.*')
-        f.write('</A></B>'+pagelinkicon+'\n')
+        f.write('<li><b><a href="%s%s.html">' % (httppref, p[1:]))
+        f.write(p[1:] + '.*')
+        f.write('</a></b>%s\n' % pagelinkicon)
         createpage(p[1:], tree, p)
         return
 
@@ -177,67 +181,64 @@ def printtree(f, tree, indent, p):
     if l > 1:
         if indent > 0:
             # Create a sub-list
-            f.write('<LI>'+p[1:]+'\n<UL>')
+            f.write('<li>%s\n<ul>' % p[1:])
         else:
             # Create a main list
-            f.write('<UL>')
+            f.write('<ul>')
         indent = indent + 1
 
     for i in kl:
         if i == '.':
             # Output a newsgroup
-            f.write('<LI><A HREF="news:' + p[1:] + '">'+ p[1:] + '</A> ')
+            f.write('<li><a href="news:%s">%s</a> ' % (p[1:], p[1:]))
             if p[1:] in desc:
-                f.write('     <I>'+desc[p[1:]]+'</I>\n')
+                f.write('     <i>%s</i>\n' % desc[p[1:]])
             else:
                 f.write('\n')
         else:
             # Output a hierarchy
-            printtree(f,tree[i], indent, p+'.'+i)
+            printtree(f, tree[i], indent, p+'.'+i)
 
     if l > 1:
-        f.write('\n</UL>')
+        f.write('\n</ul>')
 
 # Reading descriptions file ---------------------------------------
 
-# This returns an array mapping group name to its description
+# This returns a dict mapping group name to its description
 
 def readdesc(descfile):
     global desc
-
     desc = {}
 
     if descfile == '':
         return
 
     try:
-        d = open(descfile, 'r')
-        print('Reading descriptions...')
-    except (IOError):
+        with open(descfile, 'r') as d:
+            print('Reading descriptions...')
+            for l in d:
+                bits = l.split()
+                try:
+                    grp = bits[0]
+                    dsc = ' '.join(bits[1:])
+                    if len(dsc) > 1:
+                        desc[grp] = dsc
+                except IndexError:
+                    pass
+    except IOError:
         print('Failed to open description file ' + descfile)
         return
-    l = d.readline()
-    while l != '':
-        bits = string.split(l)
-        try:
-            grp = bits[0]
-            dsc = string.join(bits[1:])
-            if len(dsc)>1:
-                desc[grp] = dsc
-        except (IndexError):
-            pass
-        l = d.readline()
 
 # Check that ouput directory exists, ------------------------------
 # and offer to create it if not
 
 def checkopdir(pagedir):
     if not os.path.isdir(pagedir):
-        print('Directory '+pagedir+' does not exist.')
+        print('Directory %s does not exist.' % pagedir)
         print('Shall I create it for you? (y/n)')
         if sys.stdin.readline()[0] == 'y':
             try:
-                os.mkdir(pagedir,0o777)
+                os.mkdir(pagedir, 0o777)
             except:
                 print('Sorry - failed!')
                 sys.exit(1)
@@ -257,23 +258,21 @@ def readlocallist(treefile):
         print('If this is the first time you have run newslist, then')
         print('use the -a option to create it.')
         sys.exit(1)
-    treedate = '%02d%02d%02d' % (treetime[0] % 100 ,treetime[1], treetime[2])
+    treedate = '%02d%02d%02d' % (treetime[0] % 100, treetime[1], treetime[2])
     try:
-        dump = open(treefile,'r')
-        tree = marshal.load(dump)
-        dump.close()
-    except (IOError):
+        with open(treefile, 'rb') as dump:
+            tree = marshal.load(dump)
+    except IOError:
         print('Cannot open local group list ' + treefile)
     return (tree, treedate)
 
 def writelocallist(treefile, tree):
     try:
-        dump = open(treefile,'w')
-        groups = marshal.dump(tree,dump)
-        dump.close()
-        print('Saved list to '+treefile+'\n')
+        with open(treefile, 'wb') as dump:
+            groups = marshal.dump(tree, dump)
+        print('Saved list to %s\n' % treefile)
     except:
-        print('Sorry - failed to write to local group cache '+treefile)
+        print('Sorry - failed to write to local group cache', treefile)
         print('Does it (or its directory) have the correct permissions?')
         sys.exit(1)
 
@@ -281,18 +280,18 @@ def writelocallist(treefile, tree):
 
 def getallgroups(server):
     print('Getting list of all groups...')
-    treedate='010101'
+    treedate = '010101'
     info = server.list()[1]
     groups = []
     print('Processing...')
     if skipempty:
         print('\nIgnoring following empty groups:')
     for i in info:
-        grpname = string.split(i[0])[0]
-        if skipempty and string.atoi(i[1]) < string.atoi(i[2]):
-            print(grpname+' ', end=' ')
+        grpname = i[0].split()[0]
+        if skipempty and int(i[1]) < int(i[2]):
+            print(grpname.decode() + ' ', end=' ')
         else:
-            groups.append(grpname)
+            groups.append(grpname.decode())
     print('\n')
     if skipempty:
         print('(End of empty groups)')
@@ -301,42 +300,39 @@ def getallgroups(server):
 # Return list of new groups on server -----------------------------
 
 def getnewgroups(server, treedate):
-    print('Getting list of new groups since start of '+treedate+'...', end=' ')
-    info = server.newgroups(treedate,'000001')[1]
+    print('Getting list of new groups since start of %s...' % treedate, end=' ')
+    info = server.newgroups(treedate, '000001')[1]
     print('got %d.' % len(info))
     print('Processing...', end=' ')
     groups = []
     for i in info:
-        grpname = string.split(i)[0]
-        groups.append(grpname)
+        grpname = i.split()[0]
+        groups.append(grpname.decode())
     print('Done')
     return groups
 
 # Now the main program --------------------------------------------
 
 def main():
-    global desc
-
-    tree={}
+    tree = {}
 
     # Check that the output directory exists
     checkopdir(pagedir)
 
     try:
-        print('Connecting to '+newshost+'...')
+        print('Connecting to %s...' % newshost)
         if sys.version[0] == '0':
             s = NNTP.init(newshost)
         else:
             s = NNTP(newshost)
-        connected = 1
+        connected = True
     except (nntplib.error_temp, nntplib.error_perm) as x:
         print('Error connecting to host:', x)
         print('I\'ll try to use just the local list.')
-        connected = 0
+        connected = False
 
     # If -a is specified, read the full list of groups from server
     if connected and len(sys.argv) > 1 and sys.argv[1] == '-a':
-
         groups = getallgroups(s)
 
     # Otherwise just read the local file and then add
