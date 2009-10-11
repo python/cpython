@@ -398,6 +398,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
+
 - Issue #7086: Added TCP support to SysLogHandler, and tidied up some
   anachronisms in the code which were a relic of 1.5.2 compatibility.
   
