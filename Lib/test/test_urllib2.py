@@ -943,6 +943,22 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "http_open")],
                          [tup[0:2] for tup in o.calls])
 
+    def test_proxy_no_proxy(self):
+        os.environ['no_proxy'] = 'python.org'
+        o = OpenerDirector()
+        ph = urllib2.ProxyHandler(dict(http="proxy.example.com"))
+        o.add_handler(ph)
+        req = Request("http://www.perl.org/")
+        self.assertEqual(req.get_host(), "www.perl.org")
+        r = o.open(req)
+        self.assertEqual(req.get_host(), "proxy.example.com")
+        req = Request("http://www.python.org")
+        self.assertEqual(req.get_host(), "www.python.org")
+        r = o.open(req)
+        self.assertEqual(req.get_host(), "www.python.org")
+        del os.environ['no_proxy']
+
+
     def test_proxy_https(self):
         o = OpenerDirector()
         ph = urllib2.ProxyHandler(dict(https='proxy.example.com:3128'))

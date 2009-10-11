@@ -111,7 +111,7 @@ from urllib import (unwrap, unquote, splittype, splithost, quote,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
-from urllib import localhost, url2pathname, getproxies
+from urllib import localhost, url2pathname, getproxies, proxy_bypass
 
 # used in User-Agent header sent
 __version__ = sys.version[:3]
@@ -698,14 +698,20 @@ class ProxyHandler(BaseHandler):
     def proxy_open(self, req, proxy, type):
         orig_type = req.get_type()
         proxy_type, user, password, hostport = _parse_proxy(proxy)
+
         if proxy_type is None:
             proxy_type = orig_type
+
+        if req.host and proxy_bypass(req.host):
+            return None
+
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
             creds = base64.b64encode(user_pass).strip()
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
+
         if orig_type == proxy_type or orig_type == 'https':
             # let other handlers take care of it
             return None
