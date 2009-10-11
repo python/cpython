@@ -12,7 +12,7 @@ import pty
 
 def read(fd):
     data = os.read(fd, 1024)
-    file.write(data)
+    script.write(data)
     return data
 
 shell = 'sh'
