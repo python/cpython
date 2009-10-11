@@ -940,7 +940,8 @@ following steps.
 These compilers require some special libraries. This task is more complex than
 for Borland's C++, because there is no program to convert the library.  First
 you have to create a list of symbols which the Python DLL exports. (You can find
-a good program for this task at http://www.emmestech.com/software/cygwin/pexports-0.43/download_pexports.html)
+a good program for this task at
+http://www.emmestech.com/software/pexports-0.43/download_pexports.html).
 
 .. I don't understand what the next line means. --amk
 .. (inclusive the references on data structures.)
