@@ -2,7 +2,7 @@ This directory contains a collection of executable Python scripts.
 
 See also the Tools/scripts directory!
 
-beer.py			Print the classic 'bottles of beer' list.
+beer.py			Print the classic 'bottles of beer' list
 eqfix.py		Fix .py files to use the correct equality test operator
 fact.py			Factorize numbers
 find-uname.py		Search for Unicode characters using regexps
