@@ -1022,8 +1022,8 @@ order (MRO) for bases """
         import sys,gc
         if hasattr(gc, 'get_objects'):
             class G(object):
-                def __cmp__(self, other):
-                    return 0
+                def __eq__(self, other):
+                    return False
             g = G()
             orig_objects = len(gc.get_objects())
             for i in range(10):
