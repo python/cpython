@@ -319,6 +319,7 @@ list_print(PyListObject *op, FILE *fp, int flags)
 {
 	int rc;
 	Py_ssize_t i;
+	PyObject *item;
 
 	rc = Py_ReprEnter((PyObject*)op);
 	if (rc != 0) {
@@ -333,15 +334,19 @@ list_print(PyListObject *op, FILE *fp, int flags)
 	fprintf(fp, "[");
 	Py_END_ALLOW_THREADS
 	for (i = 0; i < Py_SIZE(op); i++) {
+		item = op->ob_item[i];
+		Py_INCREF(item);
 		if (i > 0) {
 			Py_BEGIN_ALLOW_THREADS
 			fprintf(fp, ", ");
 			Py_END_ALLOW_THREADS
 		}
-		if (PyObject_Print(op->ob_item[i], fp, 0) != 0) {
+		if (PyObject_Print(item, fp, 0) != 0) {
+			Py_DECREF(item);
 			Py_ReprLeave((PyObject *)op);
 			return -1;
 		}
+		Py_DECREF(item);
 	}
 	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "]");
