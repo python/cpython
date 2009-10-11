@@ -61,7 +61,7 @@ def mkwave(octave):
     sinewave = ''
     for i in range(100):
         val = int(math.sin(math.pi * i * octave / 50.0) * 30000)
-        sinewave = sinewave + chr((val >> 8) & 255) + chr(val & 255)
+        sinewave += chr((val >> 8) & 255) + chr(val & 255)
     return sinewave
 
 defaultwave = mkwave(OCTAVE)
