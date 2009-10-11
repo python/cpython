@@ -7,7 +7,6 @@ eqfix.py		Fix .py files to use the correct equality test operator
 fact.py			Factorize numbers
 find-uname.py		Search for Unicode characters using regexps
 from.py			Summarize mailbox
-ftpstats.py		Summarize ftp daemon log file
 lpwatch.py		Watch BSD line printer queues
 makedir.py		Like mkdir -p
 markov.py		Markov chain simulation of words or characters
