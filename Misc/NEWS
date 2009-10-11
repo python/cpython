@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
+
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
 

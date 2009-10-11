@@ -657,6 +657,10 @@ class ProxyHandler(BaseHandler):
         proxy_type, user, password, hostport = _parse_proxy(proxy)
         if proxy_type is None:
             proxy_type = orig_type
+
+        if req.host and proxy_bypass(req.host):
+            return None
+
         if user and password:
             user_pass = '%s:%s' % (unquote(user),
                                    unquote(password))
