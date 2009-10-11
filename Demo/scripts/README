@@ -13,7 +13,7 @@ makedir.py		Like mkdir -p
 markov.py		Markov chain simulation of words or characters
 mboxconvvert.py		Convert MH or MMDF mailboxes to unix mailbox format
 mkrcs.py		Fix symlinks named RCS into parallel tree
-morse.py		Produce morse code (audible or on AIFF file)
+morse.py		Produce morse code (as an AIFF file)
 pi.py			Print all digits of pi -- given enough time and memory
 pp.py			Emulate some Perl command line options
 primes.py		Print prime numbers
