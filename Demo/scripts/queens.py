@@ -19,8 +19,8 @@ class Queens:
 
     def reset(self):
         n = self.n
-        self.y = [None]*n               # Where is the queen in column x
-        self.row = [0]*n                # Is row[y] safe?
+        self.y = [None] * n             # Where is the queen in column x
+        self.row = [0] * n              # Is row[y] safe?
         self.up = [0] * (2*n-1)         # Is upward diagonal[x-y] safe?
         self.down = [0] * (2*n-1)       # Is downward diagonal[x+y] safe?
         self.nfound = 0                 # Instrumentation
@@ -50,7 +50,7 @@ class Queens:
         self.up[x-y] = 0
         self.down[x+y] = 0
 
-    silent = 0                          # If set, count solutions only
+    silent = 0                          # If true, count solutions only
 
     def display(self):
         self.nfound = self.nfound + 1
