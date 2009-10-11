@@ -1566,7 +1566,7 @@ Extension Modules
 Tools/Demos
 -----------
 
-- Issue #3850: recursion tests in Misc/find_recursion_limit.py can raise
+- Issue #3850: recursion tests in Tools/scripts/find_recursion_limit.py can raise
   AttributeError instead of RuntimeError, depending in which C API call
   exactly the recursion limit is exceeded. Consequently, both exception types
   are caught and silenced.

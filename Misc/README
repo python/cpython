@@ -12,7 +12,6 @@ AIX-NOTES	Notes for building Python on AIX
 BeOS-NOTES	Notes for building on BeOS
 BeOS-setup.py	setup.py replacement for BeOS, see BeOS-NOTES
 cheatsheet	Quick summary of Python by Ken Manheimer
-find_recursionlimit.py  Script to find a value for sys.maxrecursionlimit
 gdbinit		Handy stuff to put in your .gdbinit file, if you use gdb
 HISTORY		News from previous releases -- oldest last
 HPUX-NOTES	Notes about dynamic loading under HP-UX

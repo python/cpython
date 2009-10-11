@@ -9050,7 +9050,7 @@ limit is the maximum number of recursive calls that can be made by
 Python code.  The limit exists to prevent infinite recursion from
 overflowing the C stack and causing a core dump.  The default value is
 1000.  The maximum safe value for a particular platform can be found
-by running Misc/find_recursionlimit.py.
+by running Tools/scripts/find_recursionlimit.py.
 
 New Modules and Packages
 ------------------------
