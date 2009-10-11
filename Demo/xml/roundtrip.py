@@ -3,7 +3,7 @@ A simple demo that reads in an XML document and spits out an equivalent,
 but not necessarily identical, document.
 """
 
-import sys, string
+import sys
 
 from xml.sax import saxutils, handler, make_parser
 
@@ -11,7 +11,7 @@ from xml.sax import saxutils, handler, make_parser
 
 class ContentGenerator(handler.ContentHandler):
 
-    def __init__(self, out = sys.stdout):
+    def __init__(self, out=sys.stdout):
         handler.ContentHandler.__init__(self)
         self._out = out
 
@@ -40,6 +40,7 @@ class ContentGenerator(handler.ContentHandler):
 
 # --- The main program
 
-parser = make_parser()
-parser.setContentHandler(ContentGenerator())
-parser.parse(sys.argv[1])
+if __name__ == '__main__':
+    parser = make_parser()
+    parser.setContentHandler(ContentGenerator())
+    parser.parse(sys.argv[1])
