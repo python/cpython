@@ -1,45 +1,50 @@
+"""
+A demo that reads in an RSS XML document and emits an HTML file containing
+a list of the individual items in the feed.
+"""
+
 import sys
+import codecs
 
 from xml.sax import make_parser, handler
 
 # --- Templates
 
-top = \
-"""
+top = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
-<HEAD>
-  <TITLE>%s</TITLE>
-</HEAD>
+<html>
+<head>
+  <title>%s</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
 
-<BODY>
-<H1>%s</H1>
+<body>
+<h1>%s</h1>
 """
 
-bottom = \
-"""
+bottom = """
 </ul>
 
-<HR>
-<ADDRESS>
-Converted to HTML by sax_rss2html.py.
-</ADDRESS>
+<hr>
+<address>
+Converted to HTML by rss2html.py.
+</address>
 
-</BODY>
-</HTML>
+</body>
+</html>
 """
 
 # --- The ContentHandler
 
 class RSSHandler(handler.ContentHandler):
 
-    def __init__(self, out = sys.stdout):
+    def __init__(self, out=sys.stdout):
         handler.ContentHandler.__init__(self)
-        self._out = out
+        self._out = codecs.getwriter('utf-8')(out)
 
         self._text = ""
         self._parent = None
-        self._list_started = 0
+        self._list_started = False
         self._title = None
         self._link = None
         self._descr = ""
@@ -69,7 +74,7 @@ class RSSHandler(handler.ContentHandler):
             elif name == "item":
                 if not self._list_started:
                     self._out.write("<ul>\n")
-                    self._list_started = 1
+                    self._list_started = True
 
                 self._out.write('  <li><a href="%s">%s</a> %s\n' %
                                 (self._link, self._title, self._descr))
@@ -86,6 +91,7 @@ class RSSHandler(handler.ContentHandler):
 
 # --- Main program
 
-parser = make_parser()
-parser.setContentHandler(RSSHandler())
-parser.parse(sys.argv[1])
+if __name__ == '__main__':
+    parser = make_parser()
+    parser.setContentHandler(RSSHandler())
+    parser.parse(sys.argv[1])
