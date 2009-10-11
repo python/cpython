@@ -67,8 +67,8 @@ plug-ins to add a custom feature.  In addition to the bug checking that
 PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
-http://www.logilab.org/projects/pylint/documentation provides a full list of
-Pylint's features.
+http://www.logilab.org/card/pylint_manual provides a full list of Pylint's
+features.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -1141,7 +1141,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `Numeric Python
-<http://www.pfdubois.com/numpy/>`_ is the best known.
+<http://numpy.scipy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?

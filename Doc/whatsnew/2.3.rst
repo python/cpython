@@ -1855,10 +1855,10 @@ and bundle it with the source of your extension.
 
 .. seealso::
 
-   http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/python/python/dist/src/Objects/obmalloc.c
-      For the full details of the pymalloc implementation, see the comments at the top
-      of the file :file:`Objects/obmalloc.c` in the Python source code.  The above
-      link points to the file within the SourceForge CVS browser.
+   http://svn.python.org/view/python/trunk/Objects/obmalloc.c
+      For the full details of the pymalloc implementation, see the comments at
+      the top of the file :file:`Objects/obmalloc.c` in the Python source code.
+      The above link points to the file within the python.org SVN browser.
 
 .. ======================================================================
 

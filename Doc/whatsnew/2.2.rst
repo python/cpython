@@ -30,7 +30,7 @@ understand the complete implementation and design rationale for a change, refer
 to the PEP for a particular new feature.
 
 
-.. seealso::
+.. seealso (now defunct)
 
    http://www.unixreview.com/documents/s=1356/urm0109h/0109h.htm
       "What's So Special About Python 2.2?" is also about the new 2.2 features, and
@@ -49,14 +49,14 @@ amazing new capabilities. Before beginning this, the longest and most
 complicated section of this article, I'll provide an overview of the changes and
 offer some comments.
 
-A long time ago I wrote a Web page (http://www.amk.ca/python/writing/warts.html)
-listing flaws in Python's design.  One of the most significant flaws was that
-it's impossible to subclass Python types implemented in C.  In particular, it's
-not possible to subclass built-in types, so you can't just subclass, say, lists
-in order to add a single useful method to them. The :mod:`UserList` module
-provides a class that supports all of the methods of lists and that can be
-subclassed further, but there's lots of C code that expects a regular Python
-list and won't accept a :class:`UserList` instance.
+A long time ago I wrote a Web page listing flaws in Python's design.  One of the
+most significant flaws was that it's impossible to subclass Python types
+implemented in C.  In particular, it's not possible to subclass built-in types,
+so you can't just subclass, say, lists in order to add a single useful method to
+them. The :mod:`UserList` module provides a class that supports all of the
+methods of lists and that can be subclassed further, but there's lots of C code
+that expects a regular Python list and won't accept a :class:`UserList`
+instance.
 
 Python 2.2 fixes this, and in the process adds some exciting new capabilities.
 A brief summary:
