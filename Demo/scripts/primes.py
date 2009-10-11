@@ -3,7 +3,7 @@
 # Print prime numbers in a given range
 
 def primes(min, max):
-    if 2 >= min:
+    if max >= 2 >= min:
         print 2
     primes = [2]
     i = 3
