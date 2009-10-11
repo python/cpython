@@ -128,7 +128,7 @@ def makeleaf(tree,path):
     j = path[0]
     l = len(path)
 
-    if not tree.has_key(j):
+    if j not in tree:
         tree[j] = {}
     if l == 1:
         tree[j]['.'] = '.'
