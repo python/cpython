@@ -363,6 +363,16 @@ class BuildExtTestCase(support.TempdirManager,
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEquals(wanted, path)
 
+    def test_build_ext_path_with_os_sep(self):
+        dist = Distribution({'name': 'UpdateManager'})
+        cmd = build_ext(dist)
+        cmd.ensure_finalized()
+        ext = sysconfig.get_config_var("SO")
+        ext_name = os.path.join('UpdateManager', 'fdsend')
+        ext_path = cmd.get_ext_fullpath(ext_name)
+        wanted = os.path.join(cmd.build_lib, 'UpdateManager', 'fdsend' + ext)
+        self.assertEquals(ext_path, wanted)
+
 def test_suite():
     if not sysconfig.python_build:
         if test_support.verbose:
