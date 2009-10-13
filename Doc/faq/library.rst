@@ -232,11 +232,9 @@ Threads
 How do I program using threads?
 -------------------------------
 
-.. XXX it's _thread in py3k
-
-Be sure to use the :mod:`threading` module and not the :mod:`thread` module.
+Be sure to use the :mod:`threading` module and not the :mod:`_thread` module.
 The :mod:`threading` module builds convenient abstractions on top of the
-low-level primitives provided by the :mod:`thread` module.
+low-level primitives provided by the :mod:`_thread` module.
 
 Aahz has a set of slides from his threading tutorial that are helpful; see
 http://starship.python.net/crew/aahz/OSCON2001/.
@@ -280,7 +278,7 @@ A simple fix is to add a tiny sleep to the start of the run function::
 
 Instead of trying to guess how long a :func:`time.sleep` delay will be enough,
 it's better to use some kind of semaphore mechanism.  One idea is to use the
-:mod:`Queue` module to create a queue object, let each thread append a token to
+:mod:`queue` module to create a queue object, let each thread append a token to
 the queue when it finishes, and let the main thread read as many tokens from the
 queue as there are threads.
 
@@ -288,8 +286,8 @@ queue as there are threads.
 How do I parcel out work among a bunch of worker threads?
 ---------------------------------------------------------
 
-Use the :mod:`Queue` module to create a queue containing a list of jobs.  The
-:class:`~Queue.Queue` class maintains a list of objects with ``.put(obj)`` to
+Use the :mod:`queue` module to create a queue containing a list of jobs.  The
+:class:`~queue.Queue` class maintains a list of objects with ``.put(obj)`` to
 add an item to the queue and ``.get()`` to return an item.  The class will take
 care of the locking necessary to ensure that each job is handed out exactly
 once.
@@ -777,11 +775,10 @@ Are there any interfaces to database packages in Python?
 
 Yes.
 
-.. XXX remove bsddb in py3k, fix other module names
-
-Python 2.3 includes the :mod:`bsddb` package which provides an interface to the
-BerkeleyDB library.  Interfaces to disk-based hashes such as :mod:`DBM <dbm>`
-and :mod:`GDBM <gdbm>` are also included with standard Python.
+Interfaces to disk-based hashes such as :mod:`DBM <dbm.ndbm>` and :mod:`GDBM
+<dbm.gnu>` are also included with standard Python.  There is also the
+:mod:`sqlite3` module, which provides a lightweight disk-based relational
+database.
 
 Support for most relational databases is available.  See the
 `DatabaseProgramming wiki page
@@ -794,8 +791,7 @@ How do you implement persistent objects in Python?
 The :mod:`pickle` library module solves this in a very general way (though you
 still can't store things like open files, sockets or windows), and the
 :mod:`shelve` library module uses pickle and (g)dbm to create persistent
-mappings containing arbitrary Python objects.  For better performance, you can
-use the :mod:`cPickle` module.
+mappings containing arbitrary Python objects.
 
 A more awkward way of doing things is to use pickle's little sister, marshal.
 The :mod:`marshal` module provides very fast ways to store noncircular basic

@@ -364,7 +364,7 @@ What are the "best practices" for using import in a module?
 In general, don't use ``from modulename import *``.  Doing so clutters the
 importer's namespace.  Some people avoid this idiom even with the few modules
 that were designed to be imported in this manner.  Modules designed in this
-manner include :mod:`Tkinter`, and :mod:`threading`.
+manner include :mod:`tkinter`, and :mod:`threading`.
 
 Import modules at the top of a file.  Doing so makes it clear what other modules
 your code requires and avoids questions of whether the module name is in scope.
