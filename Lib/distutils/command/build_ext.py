@@ -628,8 +628,10 @@ class build_ext (Command):
         The file is located in `build_lib` or directly in the package
         (inplace option).
         """
-        if os.sep in ext_name:
-            ext_name = ext_name.replace(os.sep, '.')
+        # makes sure the extension name is only using dots
+        all_dots = string.maketrans('/'+os.sep, '..')
+        ext_name = ext_name.translate(all_dots)
+
         fullname = self.get_ext_fullname(ext_name)
         modpath = fullname.split('.')
         filename = self.get_ext_filename(ext_name)
