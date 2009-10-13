@@ -171,6 +171,11 @@ the underlying tuple indicies.  The :mod:`json` module is being built-out with
 an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
 Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
 
+.. seealso::
+
+   :pep:`372` - Adding an ordered dictionary to collections
+     PEP written by Armin Ronacher and Raymond Hettinger;
+     implemented by Raymond Hettinger.
 
 .. _pep-0378:
 
