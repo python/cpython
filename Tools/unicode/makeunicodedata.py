@@ -479,6 +479,11 @@ def makeunicodetype(unicode, trace):
     print('{', file=fp)
     print('    switch (ch) {', file=fp)
     for value, codepoints in numeric_items:
+        # Turn text into float literals
+        parts = value.split('/')
+        parts = [repr(float(part)) for part in parts]
+        value = '/'.join(parts)
+
         haswide = False
         hasnonewide = False
         codepoints.sort()
