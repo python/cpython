@@ -5049,6 +5049,33 @@ noload_extension(Unpicklerobject *self, int nbytes)
 	return 0;
 }
 
+static int
+noload_append(Unpicklerobject *self)
+{
+	return Pdata_clear(self->stack, self->stack->length - 1);
+}
+
+static int
+noload_appends(Unpicklerobject *self)
+{
+	int i;
+	if ((i = marker(self)) < 0) return -1;
+	return Pdata_clear(self->stack, i);
+}
+
+static int
+noload_setitem(Unpicklerobject *self)
+{
+	return Pdata_clear(self->stack, self->stack->length - 2);
+}
+
+static int
+noload_setitems(Unpicklerobject *self)
+{
+	int i;
+	if ((i = marker(self)) < 0) return -1;
+	return Pdata_clear(self->stack, i);
+}
 
 static PyObject *
 noload(Unpicklerobject *self)
@@ -5207,12 +5234,12 @@ noload(Unpicklerobject *self)
 			continue;
 
 		case APPEND:
-			if (load_append(self) < 0)
+			if (noload_append(self) < 0)
 				break;
 			continue;
 
 		case APPENDS:
-			if (load_appends(self) < 0)
+			if (noload_appends(self) < 0)
 				break;
 			continue;
 
@@ -5287,12 +5314,12 @@ noload(Unpicklerobject *self)
 			continue;
 
 		case SETITEM:
-			if (load_setitem(self) < 0)
+			if (noload_setitem(self) < 0)
 				break;
 			continue;
 
 		case SETITEMS:
-			if (load_setitems(self) < 0)
+			if (noload_setitems(self) < 0)
 				break;
 			continue;
 
