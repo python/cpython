@@ -100,7 +100,7 @@ def test_au(h, f):
     else:
         sample_bits = '?'
     frame_size = sample_size * nchannels
-    return type, rate, nchannels, data_size/frame_size, sample_bits
+    return type, rate, nchannels, data_size//frame_size, sample_bits
 
 tests.append(test_au)
 
@@ -109,7 +109,7 @@ def test_hcom(h, f):
     if h[65:69] != 'FSSD' or h[128:132] != 'HCOM':
         return None
     divisor = get_long_be(h[128+16:128+20])
-    return 'hcom', 22050/divisor, 1, -1, 8
+    return 'hcom', 22050//divisor, 1, -1, 8
 
 tests.append(test_hcom)
 
