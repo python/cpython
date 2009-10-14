@@ -46,7 +46,7 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 from functools import partial
-from new import instancemethod
+from types import MethodType
 
 try:
     import _ssl
@@ -224,7 +224,7 @@ for _m in _socketmethods:
     p = partial(meth,_m)
     p.__name__ = _m
     p.__doc__ = getattr(_realsocket,_m).__doc__
-    m = instancemethod(p,None,_socketobject)
+    m = MethodType(p,None,_socketobject)
     setattr(_socketobject,_m,m)
 
 socket = SocketType = _socketobject
@@ -294,14 +294,15 @@ class _fileobject(object):
             buffer_size = max(self._rbufsize, self.default_bufsize)
             data_size = len(data)
             write_offset = 0
+            view = memoryview(data)
             try:
                 while write_offset < data_size:
-                    self._sock.sendall(buffer(data, write_offset, buffer_size))
+                    self._sock.sendall(view[write_offset:write_offset+buffer_size])
                     write_offset += buffer_size
             finally:
                 if write_offset < data_size:
                     remainder = data[write_offset:]
-                    del data  # explicit free
+                    del view, data  # explicit free
                     self._wbuf.append(remainder)
                     self._wbuf_len = len(remainder)
 
@@ -346,7 +347,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -375,7 +376,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(left)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -430,7 +431,7 @@ class _fileobject(object):
                     except error, e:
                         # The try..except to catch EINTR was moved outside the
                         # recv loop to avoid the per byte overhead.
-                        if e[0] == EINTR:
+                        if e.args[0] == EINTR:
                             continue
                         raise
                     break
@@ -442,7 +443,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(self._rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -471,7 +472,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(self._rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
