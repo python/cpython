@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1754094: Improve the stack depth calculation in the compiler.
+  There should be no other effect than a small decrease in memory use.
+  Patch by Christopher Tur Lesniewski-Laas.
+
 - Issue #7084: Fix a (very unlikely) crash when printing a list from one
   thread, and mutating it from another one.  Patch by Scott Dial.
 
