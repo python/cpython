@@ -405,6 +405,8 @@ Core and Builtins
 Library
 -------
 
+- Add support to the `ihooks` module for relative imports.
+
 - Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
 
 - Issue #7086: Added TCP support to SysLogHandler, and tidied up some
