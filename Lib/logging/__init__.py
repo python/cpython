@@ -273,12 +273,10 @@ class LogRecord:
             self.threadName = None
         if not logMultiprocessing:
             self.processName = None
+        elif 'multiprocessing' not in sys.modules:
+            self.processName = 'MainProcess'
         else:
-            try:
-                from multiprocessing import current_process
-                self.processName = current_process().name
-            except ImportError:
-                self.processName = None
+            self.processName = sys.modules['multiprocessing'].current_process().name
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
