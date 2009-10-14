@@ -996,10 +996,11 @@ string functions based on regular expressions.
    For 8-bit strings, this method is locale-dependent.
 
 
-.. method:: str.join(seq)
+.. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the sequence *seq*.
-   The separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in the
+   :term:`iterable` *iterable*.  The separator between elements is the string
+   providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])

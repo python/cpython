@@ -1814,10 +1814,10 @@ onError:
 
 
 PyDoc_STRVAR(join__doc__,
-"S.join(sequence) -> string\n\
+"S.join(iterable) -> string\n\
 \n\
 Return a string which is the concatenation of the strings in the\n\
-sequence.  The separator between elements is S.");
+iterable.  The separator between elements is S.");
 
 static PyObject *
 string_join(PyStringObject *self, PyObject *orig)
