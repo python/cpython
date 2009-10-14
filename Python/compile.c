@@ -772,7 +772,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case UNPACK_EX:
 			return (oparg&0xFF) + (oparg>>8);
 		case FOR_ITER:
-			return 1;
+			return 1; /* or -1, at end of iterator */
 
 		case STORE_ATTR:
 			return -2;
@@ -799,7 +799,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case COMPARE_OP:
 			return -1;
 		case IMPORT_NAME:
-			return 0;
+			return -1;
 		case IMPORT_FROM:
 			return 1;
 
@@ -3546,7 +3546,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 static int
 stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
-	int i;
+	int i, target_depth;
 	struct instr *instr;
 	if (b->b_seen || b->b_startdepth >= depth)
 		return maxdepth;
@@ -3559,8 +3559,17 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 			maxdepth = depth;
 		assert(depth >= 0); /* invalid code or bug in stackdepth() */
 		if (instr->i_jrel || instr->i_jabs) {
+			target_depth = depth;
+			if (instr->i_opcode == FOR_ITER) {
+				target_depth = depth-2;
+			} else if (instr->i_opcode == SETUP_FINALLY ||
+				   instr->i_opcode == SETUP_EXCEPT) {
+				target_depth = depth+3;
+				if (target_depth > maxdepth)
+					maxdepth = target_depth;
+			}
 			maxdepth = stackdepth_walk(c, instr->i_target,
-						   depth, maxdepth);
+						   target_depth, maxdepth);
 			if (instr->i_opcode == JUMP_ABSOLUTE ||
 			    instr->i_opcode == JUMP_FORWARD) {
 				goto out; /* remaining code is dead */

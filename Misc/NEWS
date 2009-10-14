@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1754094: Improve the stack depth calculation in the compiler.
+  There should be no other effect than a small decrease in memory use.
+  Patch by Christopher Tur Lesniewski-Laas.
+
 - Issue #7065: Fix a crash in bytes.maketrans and bytearray.maketrans when
   using byte values greater than 127.  Patch by egreen.
 
