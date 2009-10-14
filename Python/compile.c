@@ -692,13 +692,13 @@ opcode_stack_effect(int opcode, int oparg)
 			return -1;
 
 		case SLICE+0:
-			return 1;
+			return 0;
 		case SLICE+1:
-			return 0;
-		case SLICE+2:
-			return 0;
-		case SLICE+3:
 			return -1;
+		case SLICE+2:
+			return -1;
+		case SLICE+3:
+			return -2;
 
 		case STORE_SLICE+0:
 			return -2;
@@ -778,7 +778,8 @@ opcode_stack_effect(int opcode, int oparg)
 		case POP_BLOCK:
 			return 0;
 		case END_FINALLY:
-			return -1; /* or -2 or -3 if exception occurred */
+			return -3; /* or -1 or -2 if no exception occurred or
+				      return/break/continue */
 		case BUILD_CLASS:
 			return -2;
 
@@ -789,7 +790,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case UNPACK_SEQUENCE:
 			return oparg-1;
 		case FOR_ITER:
-			return 1;
+			return 1; /* or -1, at end of iterator */
 
 		case STORE_ATTR:
 			return -2;
@@ -815,7 +816,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case COMPARE_OP:
 			return -1;
 		case IMPORT_NAME:
-			return 0;
+			return -1;
 		case IMPORT_FROM:
 			return 1;
 
@@ -835,10 +836,9 @@ opcode_stack_effect(int opcode, int oparg)
 		case CONTINUE_LOOP:
 			return 0;
 		case SETUP_LOOP:
-			return 0;
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
-			return 3; /* actually pushed by an exception */
+			return 0;
 
 		case LOAD_FAST:
 			return 1;
@@ -867,7 +867,7 @@ opcode_stack_effect(int opcode, int oparg)
 				return -1;
 
 		case MAKE_CLOSURE:
-			return -oparg;
+			return -oparg-1;
 		case LOAD_CLOSURE:
 			return 1;
 		case LOAD_DEREF:
@@ -3328,7 +3328,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 static int
 stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
-	int i;
+	int i, target_depth;
 	struct instr *instr;
 	if (b->b_seen || b->b_startdepth >= depth)
 		return maxdepth;
@@ -3341,8 +3341,17 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 			maxdepth = depth;
 		assert(depth >= 0); /* invalid code or bug in stackdepth() */
 		if (instr->i_jrel || instr->i_jabs) {
+			target_depth = depth;
+			if (instr->i_opcode == FOR_ITER) {
+				target_depth = depth-2;
+			} else if (instr->i_opcode == SETUP_FINALLY ||
+				   instr->i_opcode == SETUP_EXCEPT) {
+				target_depth = depth+3;
+				if (target_depth > maxdepth)
+					maxdepth = target_depth;
+			}
 			maxdepth = stackdepth_walk(c, instr->i_target,
-						   depth, maxdepth);
+						   target_depth, maxdepth);
 			if (instr->i_opcode == JUMP_ABSOLUTE ||
 			    instr->i_opcode == JUMP_FORWARD) {
 				goto out; /* remaining code is dead */
