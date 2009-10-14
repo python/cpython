@@ -427,7 +427,7 @@ _Py_bytes_maketrans(PyObject *args)
 {
 	PyObject *frm, *to, *res = NULL;
 	Py_buffer bfrm, bto;
-	int i;
+	Py_ssize_t i;
 	char *p;
 
 	bfrm.len = -1;
@@ -452,7 +452,7 @@ _Py_bytes_maketrans(PyObject *args)
 	for (i = 0; i < 256; i++)
 		p[i] = i;
 	for (i = 0; i < bfrm.len; i++) {
-		p[(int)((char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
+		p[((unsigned char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
 	}
 
   done:
