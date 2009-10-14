@@ -312,7 +312,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             try:
                 result = runtest(*args, **kwargs)
             except BaseException, e:
-                result = -3, e.__class__.__name__
+                result = -4, e.__class__.__name__
             print   # Force a newline (just in case)
             print json.dumps(result)
             sys.exit(0)
@@ -327,6 +327,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     bad = []
     skipped = []
     resource_denieds = []
+    environment_changed = []
 
     if findleaks:
         try:
@@ -395,11 +396,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_times.append((test_time, test))
         if ok > 0:
             good.append(test)
-        elif ok == 0:
+        elif -2 < ok <= 0:
             bad.append(test)
+            if ok == -1:
+                environment_changed.append(test)
         else:
             skipped.append(test)
-            if ok == -2:
+            if ok == -3:
                 resource_denieds.append(test)
 
     if use_mp:
@@ -452,7 +455,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 continue
             if out:
                 print out
-            if result[0] == -3:
+            if result[0] == -4:
                 assert result[1] == 'KeyboardInterrupt'
                 pending.clear()
                 raise KeyboardInterrupt   # What else?
@@ -498,6 +501,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     good.sort()
     bad.sort()
     skipped.sort()
+    environment_changed.sort()
 
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
@@ -509,8 +513,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for time, test in test_times[:10]:
             print "%s: %.1fs" % (test, time)
     if bad:
-        print count(len(bad), "test"), "failed:"
-        printlist(bad)
+        bad = set(bad) - set(environment_changed)
+        if bad:
+            print count(len(bad), "test"), "failed:"
+            printlist(bad)
+        if environment_changed:
+            print "{} altered the execution environment:".format(
+                count(len(environment_changed), "test"))
+            printlist(environment_changed)
     if skipped and not quiet:
         print count(len(skipped), "test"), "skipped:"
         printlist(skipped)
@@ -612,8 +622,10 @@ def runtest(test, verbose, quiet,
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
     Return:
-        -2  test skipped because resource denied
-        -1  test skipped for some other reason
+        -4  KeyboardInterrupt when run under -j
+        -3  test skipped because resource denied
+        -2  test skipped for some other reason
+        -1  test failed because it changed the execution environment
          0  test failed
          1  test passed
     """
@@ -626,6 +638,96 @@ def runtest(test, verbose, quiet,
                              testdir, huntrleaks)
     finally:
         cleanup_test_droppings(test, verbose)
+
+
+# Unit tests are supposed to leave the execution environment unchanged
+# once they complete.  But sometimes tests have bugs, especially when
+# tests fail, and the changes to environment go on to mess up other
+# tests.  This can cause issues with buildbot stability, since tests
+# are run in random order and so problems may appear to come and go.
+# There are a few things we can save and restore to mitigate this, and
+# the following context manager handles this task.
+
+class saved_test_environment:
+    """Save bits of the test environment and restore them at block exit.
+
+        with saved_test_environment(testname, quiet):
+            #stuff
+
+    Unless quiet is True, a warning is printed to stderr if any of
+    the saved items was changed by the test.  The attribute 'changed'
+    is initially False, but is set to True if a change is detected.
+    """
+
+    changed = False
+
+    def __init__(self, testname, quiet=False):
+        self.testname = testname
+        self.quiet = quiet
+
+    # To add things to save and restore, add a name XXX to the resources list
+    # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
+    # return the value to be saved and compared against a second call to the
+    # get function when test execution completes.  restore_XXX should accept
+    # the saved value and restore the resource using it.  It will be called if
+    # and only if a change in the value is detected.  XXX will have any '_'
+    # replaced with '.' characters and will then be used in the error messages
+    # as the name of the resource that changed.
+
+    resources = ('sys_argv', 'cwd', 'sys_stdin', 'sys_stdout', 'sys_stderr',
+                 'os_environ', 'sys_path')
+
+    def get_sys_argv(self):
+        return sys.argv[:]
+    def restore_sys_argv(self, saved_argv):
+        sys.argv[:] = saved_argv
+
+    def get_cwd(self):
+        return os.getcwd()
+    def restore_cwd(self, saved_cwd):
+        os.chdir(saved_cwd)
+
+    def get_sys_stdout(self):
+        return sys.stdout
+    def restore_sys_stdout(self, saved_stdout):
+        sys.stdout = saved_stdout
+
+    def get_sys_stderr(self):
+        return sys.stderr
+    def restore_sys_stderr(self, saved_stderr):
+        sys.stderr = saved_stderr
+
+    def get_sys_stdin(self):
+        return sys.stdin
+    def restore_sys_stdin(self, saved_stdin):
+        sys.stdin = saved_stdin
+
+    def get_os_environ(self):
+        return dict(os.environ)
+    def restore_os_environ(self, saved_environ):
+        os.environ.clear()
+        os.environ.update(saved_environ)
+
+    def get_sys_path(self):
+        return sys.path[:]
+    def restore_sys_path(self, saved_path):
+        sys.path[:] = saved_path
+
+    def __enter__(self):
+        self.saved_values = dict((name, getattr(self, 'get_'+name)())
+            for name in self.resources)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for name in self.resources:
+            if not getattr(self, 'get_'+name)() == self.saved_values[name]:
+                self.changed = True
+                getattr(self, 'restore_'+name)(self.saved_values[name])
+                if not self.quiet:
+                    print >>sys.stderr, ("Warning -- {} was modified "
+                        "by {}").format(name.replace('_', '.'), self.testname)
+        return False
+
 
 def runtest_inner(test, verbose, quiet,
                   testdir=None, huntrleaks=False):
@@ -641,10 +743,6 @@ def runtest_inner(test, verbose, quiet,
     refleak = False  # True if the test leaked references.
     try:
         save_stdout = sys.stdout
-        # Save various things that tests may mess up so we can restore
-        # them afterward.
-        save_environ = dict(os.environ)
-        save_argv = sys.argv[:]
         try:
             if capture_stdout:
                 sys.stdout = capture_stdout
@@ -653,41 +751,32 @@ def runtest_inner(test, verbose, quiet,
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
-            start_time = time.time()
-            the_package = __import__(abstest, globals(), locals(), [])
-            the_module = getattr(the_package, test)
-            # Old tests run to completion simply as a side-effect of
-            # being imported.  For tests based on unittest or doctest,
-            # explicitly invoke their test_main() function (if it exists).
-            indirect_test = getattr(the_module, "test_main", None)
-            if indirect_test is not None:
-                indirect_test()
-            if huntrleaks:
-                refleak = dash_R(the_module, test, indirect_test, huntrleaks)
-            test_time = time.time() - start_time
+            with saved_test_environment(test, quiet) as environment:
+                start_time = time.time()
+                the_package = __import__(abstest, globals(), locals(), [])
+                the_module = getattr(the_package, test)
+                # Old tests run to completion simply as a side-effect of
+                # being imported.  For tests based on unittest or doctest,
+                # explicitly invoke their test_main() function (if it exists).
+                indirect_test = getattr(the_module, "test_main", None)
+                if indirect_test is not None:
+                    indirect_test()
+                if huntrleaks:
+                    refleak = dash_R(the_module, test, indirect_test,
+                        huntrleaks)
+                test_time = time.time() - start_time
         finally:
             sys.stdout = save_stdout
-            # Restore what we saved if needed, but also complain if the test
-            # changed it so that the test may eventually get fixed.
-            if not os.environ == save_environ:
-                if not quiet:
-                    print "Warning: os.environ was modified by", test
-                os.environ.clear()
-                os.environ.update(save_environ)
-            if not sys.argv == save_argv:
-                if not quiet:
-                    print "Warning: argv was modified by", test
-                sys.argv[:] = save_argv
     except test_support.ResourceDenied, msg:
         if not quiet:
             print test, "skipped --", msg
             sys.stdout.flush()
-        return -2, test_time
+        return -3, test_time
     except unittest.SkipTest, msg:
         if not quiet:
             print test, "skipped --", msg
             sys.stdout.flush()
-        return -1, test_time
+        return -2, test_time
     except KeyboardInterrupt:
         raise
     except test_support.TestFailed, msg:
@@ -705,6 +794,8 @@ def runtest_inner(test, verbose, quiet,
     else:
         if refleak:
             return 0, test_time
+        if environment.changed:
+            return -1, test_time
         # Except in verbose mode, tests should not print anything
         if verbose or huntrleaks:
             return 1, test_time
