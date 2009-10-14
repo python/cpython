@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7065: Fix a crash in bytes.maketrans and bytearray.maketrans when
+  using byte values greater than 127.  Patch by egreen.
+
 - Issue #7019: Raise ValueError when unmarshalling bad long data, instead
   of producing internally inconsistent Python longs.
 
