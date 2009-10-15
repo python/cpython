@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7140: The __dict__ of a module should not be cleared unless the module
+  is the only object holding a reference to it.
+
 - Issue #1754094: Improve the stack depth calculation in the compiler.
   There should be no other effect than a small decrease in memory use.
   Patch by Christopher Tur Lesniewski-Laas.
