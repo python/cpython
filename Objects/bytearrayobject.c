@@ -3120,7 +3120,7 @@ bytearray_reduce(PyByteArrayObject *self)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
                                         Py_SIZE(self), NULL);
 #else
-        latin1 = PyString_FromStringAndSize(self->ob_bytes, Py_SIZE(self))
+        latin1 = PyString_FromStringAndSize(self->ob_bytes, Py_SIZE(self));
 #endif
     else
 #ifdef Py_USING_UNICODE
