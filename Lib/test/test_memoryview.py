@@ -54,6 +54,12 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_repr(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            self.assertIsInstance(m.__repr__(), str)
+
     def test_setitem_readonly(self):
         if not self.ro_type:
             return
@@ -156,6 +162,7 @@ class AbstractMemoryTests:
     def check_attributes_with_type(self, tp):
         m = self._view(tp(self._source))
         self.assertEquals(m.format, self.format)
+        self.assertIsInstance(m.format, str)
         self.assertEquals(m.itemsize, self.itemsize)
         self.assertEquals(m.ndim, 1)
         self.assertEquals(m.shape, (6,))
