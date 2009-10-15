@@ -319,7 +319,7 @@ def generate_tokens(readline):
                 if line[pos] == ' ':
                     column = column + 1
                 elif line[pos] == '\t':
-                    column = (column/tabsize + 1)*tabsize
+                    column = (column//tabsize + 1)*tabsize
                 elif line[pos] == '\f':
                     column = 0
                 else:
