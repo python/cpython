@@ -510,7 +510,7 @@ pass the '-ucompiler' option to process the full directory.
     True
 
 Evil tabs
-    >>> dump_tokens("def f():\\n\\tif x\\n        \tpass")
+    >>> dump_tokens("def f():\\n\\tif x\\n        \\tpass")
     NAME       'def'         (1, 0) (1, 3)
     NAME       'f'           (1, 4) (1, 5)
     OP         '('           (1, 5) (1, 6)
@@ -521,7 +521,7 @@ Evil tabs
     NAME       'if'          (2, 1) (2, 3)
     NAME       'x'           (2, 4) (2, 5)
     NEWLINE    '\\n'          (2, 5) (2, 6)
-    INDENT     '         '   (3, 0) (3, 9)
+    INDENT     '        \\t'  (3, 0) (3, 9)
     NAME       'pass'        (3, 9) (3, 13)
     DEDENT     ''            (4, 0) (4, 0)
     DEDENT     ''            (4, 0) (4, 0)
