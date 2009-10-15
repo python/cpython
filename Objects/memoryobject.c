@@ -335,7 +335,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
 static PyObject *
 memory_format_get(PyMemoryViewObject *self)
 {
-    return PyUnicode_FromString(self->view.format);
+    return PyString_FromString(self->view.format);
 }
 
 static PyObject *
@@ -503,7 +503,7 @@ memory_dealloc(PyMemoryViewObject *self)
 static PyObject *
 memory_repr(PyMemoryViewObject *self)
 {
-    return PyUnicode_FromFormat("<memory at %p>", self);
+    return PyString_FromFormat("<memory at %p>", self);
 }
 
 /* Sequence methods */
