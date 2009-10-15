@@ -1,6 +1,3 @@
-import sys
-sys.path = ['.'] + sys.path
-
 from test.test_support import verbose, run_unittest
 import re
 from re import Scanner
