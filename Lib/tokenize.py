@@ -23,15 +23,15 @@ function to which the 5 fields described above are passed as 5 arguments,
 each time a new token is found."""
 
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
-__credits__ = \
-    'GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro, Raymond Hettinger'
+__credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
+               'Skip Montanaro, Raymond Hettinger')
 
 import string, re
 from token import *
 
 import token
-__all__ = [x for x in dir(token) if x[0] != '_'] + ["COMMENT", "tokenize",
-           "generate_tokens", "NL", "untokenize"]
+__all__ = [x for x in dir(token) if not x.startswith("_")]
+__all__ += ["COMMENT", "tokenize", "generate_tokens", "NL", "untokenize"]
 del x
 del token
 
@@ -288,7 +288,7 @@ def generate_tokens(readline):
             line = readline()
         except StopIteration:
             line = ''
-        lnum = lnum + 1
+        lnum += 1
         pos, max = 0, len(line)
 
         if contstr:                            # continued string
@@ -317,14 +317,14 @@ def generate_tokens(readline):
             column = 0
             while pos < max:                   # measure leading whitespace
                 if line[pos] == ' ':
-                    column = column + 1
+                    column += 1
                 elif line[pos] == '\t':
                     column = (column//tabsize + 1)*tabsize
                 elif line[pos] == '\f':
                     column = 0
                 else:
                     break
-                pos = pos + 1
+                pos += 1
             if pos == max:
                 break
 
@@ -403,14 +403,14 @@ def generate_tokens(readline):
                     continued = 1
                 else:
                     if initial in '([{':
-                        parenlev = parenlev + 1
+                        parenlev += 1
                     elif initial in ')]}':
-                        parenlev = parenlev - 1
+                        parenlev -= 1
                     yield (OP, token, spos, epos, line)
             else:
                 yield (ERRORTOKEN, line[pos],
                            (lnum, pos), (lnum, pos+1), line)
-                pos = pos + 1
+                pos += 1
 
     for indent in indents[1:]:                 # pop remaining indent levels
         yield (DEDENT, '', (lnum, 0), (lnum, 0), '')
