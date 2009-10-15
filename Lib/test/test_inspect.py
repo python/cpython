@@ -115,6 +115,29 @@ class TestPredicates(IsTestBase):
         self.assertTrue('a' in members)
         self.assertTrue('b' not in members)
 
+    def test_isabstract(self):
+        from abc import ABCMeta, abstractmethod
+
+        class AbstractClassExample(object):
+            __metaclass__ = ABCMeta
+
+            @abstractmethod
+            def foo(self):
+                pass
+
+        class ClassExample(AbstractClassExample):
+            def foo(self):
+                pass
+
+        a = ClassExample()
+
+        # Test general behaviour.
+        self.assertTrue(inspect.isabstract(AbstractClassExample))
+        self.assertFalse(inspect.isabstract(ClassExample))
+        self.assertFalse(inspect.isabstract(a))
+        self.assertFalse(inspect.isabstract(int))
+        self.assertFalse(inspect.isabstract(5))
+
 
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):

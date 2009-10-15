@@ -242,7 +242,7 @@ def isroutine(object):
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
-    return isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT
+    return bool(isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT)
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
