@@ -2012,15 +2012,21 @@ PyFloat_Fini(void)
 			     i++, p++) {
 				if (PyFloat_CheckExact(p) &&
 				    Py_REFCNT(p) != 0) {
-					char buf[100];
-					PyFloat_AsString(buf, p);
-					/* XXX(twouters) cast refcount to
-					   long until %zd is universally
-					   available
-					 */
-					fprintf(stderr,
+					char *buf = PyOS_double_to_string(
+						PyFloat_AS_DOUBLE(p), 'r',
+						0, 0, NULL);
+					if (buf) {
+						/* XXX(twouters) cast
+						   refcount to long
+						   until %zd is
+						   universally
+						   available
+						*/
+						fprintf(stderr,
 			     "#   <float at %p, refcnt=%ld, val=%s>\n",
 						p, (long)Py_REFCNT(p), buf);
+						PyMem_Free(buf);
+					}
 				}
 			}
 			list = list->next;
