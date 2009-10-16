@@ -209,6 +209,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         base_name = os.path.join(tmpdir, 'archive')
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
+    @unittest.skipUnless(zlib, "Requires zlib")
     def test_make_archive_owner_group(self):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
