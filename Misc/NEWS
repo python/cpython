@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7120: logging: Removed import of multiprocessing which is causing
+  crash in GAE.
+
 - Issue #1754094: Improve the stack depth calculation in the compiler.
   There should be no other effect than a small decrease in memory use.
   Patch by Christopher Tur Lesniewski-Laas.
@@ -94,11 +97,11 @@ C-API
 Library
 -------
 
-- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment
 
 - Issue #7086: Added TCP support to SysLogHandler, and tidied up some
   anachronisms in the code which were a relic of 1.5.2 compatibility.
-  
+
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
 
@@ -1116,7 +1119,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #6516: Added owner/group support when creating tar archives in 
+- Issue #6516: Added owner/group support when creating tar archives in
   Distutils.
 
 - Issue #6954: Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
