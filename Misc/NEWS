@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7120: logging: Removed import of multiprocessing which is causing
+  crash in GAE.
+
 - Issue #7140: The __dict__ of a module should not be cleared unless the module
   is the only object holding a reference to it.
 
@@ -412,18 +415,18 @@ Library
 
 - Add support to the `ihooks` module for relative imports.
 
-- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment
 
 - Issue #7086: Added TCP support to SysLogHandler, and tidied up some
   anachronisms in the code which were a relic of 1.5.2 compatibility.
-  
+
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
 
 - Issue #7048: Force Decimal.logb to round its result when that result
   is too large to fit in the current precision.
 
-- Issue #6516: Added owner/group support when creating tar archives in 
+- Issue #6516: Added owner/group support when creating tar archives in
   Distutils.
 
 - Issue #7031: Add TestCase.assert(Not)IsInstance() methods.
@@ -1292,11 +1295,11 @@ Tools/Demos
 Build
 -----
 
-- Add 2 new options to ``--with-universal-archs`` on MacOSX: 
+- Add 2 new options to ``--with-universal-archs`` on MacOSX:
   ``intel`` builds a distribution with ``i386`` and ``x86_64`` architectures,
-  while ``3-way`` builds a distribution with the ``ppc``, ``i386`` 
-  and ``x86_64`` architectures. 
-  
+  while ``3-way`` builds a distribution with the ``ppc``, ``i386``
+  and ``x86_64`` architectures.
+
 - Issue #6802: Fix build issues on MacOSX 10.6
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
@@ -1356,12 +1359,12 @@ Documentation
   for Windows.
 
 - Issue #6801 : symmetric_difference_update also accepts |.
-  Thanks to Carl Chenet. 
+  Thanks to Carl Chenet.
 
 C-API
 -----
 
-- Issue #6624: PyArg_ParseTuple with "s" format when parsing argument with 
+- Issue #6624: PyArg_ParseTuple with "s" format when parsing argument with
   NULL: Bogus TypeError detail string.
 
 - Issue #5954: Add a PyFrame_GetLineNumber() function to replace most uses of
