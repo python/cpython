@@ -43,7 +43,7 @@ def to_ulps(x):
     where C doubles are represented in IEEE 754 binary64 format.
 
     """
-    n = struct.unpack('q', struct.pack('<d', x))[0]
+    n = struct.unpack('<q', struct.pack('<d', x))[0]
     if n < 0:
         n = ~(n+2**63)
     return n
