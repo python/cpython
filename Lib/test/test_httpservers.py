@@ -50,6 +50,7 @@ class TestServerThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        os.environ = test_support.EnvironmentVarGuard()
         self.lock = threading.Lock()
         self.thread = TestServerThread(self, self.request_handler)
         self.thread.start()
@@ -58,6 +59,8 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self):
         self.lock.release()
         self.thread.stop()
+        os.environ.__exit__()
+        os.environ = os.environ._environ
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = httplib.HTTPConnection('localhost', self.PORT)
@@ -390,9 +393,9 @@ def test_main(verbose=None):
     try:
         cwd = os.getcwd()
         test_support.run_unittest(BaseHTTPServerTestCase,
-                                  SimpleHTTPServerTestCase,
-                                  CGIHTTPServerTestCase
-                                  )
+                                SimpleHTTPServerTestCase,
+                                CGIHTTPServerTestCase
+                                )
     finally:
         os.chdir(cwd)
 
