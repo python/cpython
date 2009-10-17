@@ -659,6 +659,9 @@ def captured_output(stream_name):
 def captured_stdout():
     return captured_output("stdout")
 
+def captured_stdin():
+    return captured_output("stdin")
+
 def gc_collect():
     """Force as many objects as possible to be collected.
 
