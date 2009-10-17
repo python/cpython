@@ -41,7 +41,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def tearDown(self):
         """Restore sys.path"""
-        sys.path = self.sys_path
+        sys.path[:] = self.sys_path
         site.USER_BASE = self.old_base
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
@@ -248,7 +248,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def tearDown(self):
         """Restore sys.path"""
-        sys.path = self.sys_path
+        sys.path[:] = self.sys_path
 
     def test_abs__file__(self):
         # Make sure all imported modules have their __file__ attribute
