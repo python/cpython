@@ -744,8 +744,8 @@ class saved_test_environment:
                                                  name, self.testname))
                     if self.verbose > 1:
                         print >>sys.stderr, (
-                              "  Before: {}\n  After: {} ".format(
-                                                 original, current))
+                              "  Before: {}\n  After:  {} ".format(
+                                                  original, current))
             # XXX (ncoghlan): for most resources (e.g. sys.path) identity
             # matters at least as much as value. For others (e.g. cwd),
             # identity is irrelevant. Should we add a mechanism to check
