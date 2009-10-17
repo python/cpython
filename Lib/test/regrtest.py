@@ -683,9 +683,10 @@ class saved_test_environment:
                  'os.environ', 'sys.path')
 
     def get_sys_argv(self):
-        return sys.argv[:]
+        return id(sys.argv), sys.argv, sys.argv[:]
     def restore_sys_argv(self, saved_argv):
-        sys.argv[:] = saved_argv
+        sys.argv = saved_argv[1]
+        sys.argv[:] = saved_argv[2]
 
     def get_cwd(self):
         return os.getcwd()
@@ -708,15 +709,17 @@ class saved_test_environment:
         sys.stdin = saved_stdin
 
     def get_os_environ(self):
-        return dict(os.environ)
+        return id(os.environ), os.environ, dict(os.environ)
     def restore_os_environ(self, saved_environ):
+        os.environ = saved_environ[1]
         os.environ.clear()
-        os.environ.update(saved_environ)
+        os.environ.update(saved_environ[2])
 
     def get_sys_path(self):
-        return sys.path[:]
+        return id(sys.path), sys.path, sys.path[:]
     def restore_sys_path(self, saved_path):
-        sys.path[:] = saved_path
+        sys.path = saved_path[1]
+        sys.path[:] = saved_path[2]
 
     def resource_info(self):
         for name in self.resources:
