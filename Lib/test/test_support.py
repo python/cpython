@@ -576,6 +576,7 @@ class EnvironmentVarGuard(UserDict.DictMixin):
                     del self._environ[k]
             else:
                 self._environ[k] = v
+        os.environ = self._environ
 
 
 class DirsOnSysPath(object):

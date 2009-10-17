@@ -60,7 +60,6 @@ class BaseTestCase(unittest.TestCase):
         self.lock.release()
         self.thread.stop()
         os.environ.__exit__()
-        os.environ = os.environ._environ
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = httplib.HTTPConnection('localhost', self.PORT)
