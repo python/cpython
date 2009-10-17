@@ -160,17 +160,17 @@ class XMLRPCTestCase(unittest.TestCase):
                   """
 
         # sys.setdefaultencoding() normally doesn't exist after site.py is
-        # loaded.  reload(sys) is the way to get it back.
+        # loaded.  Import a temporary fresh copy to get access to it
+        # but then restore the original copy to avoid messing with
+        # other potentially modified sys module attributes
         old_encoding = sys.getdefaultencoding()
-        setdefaultencoding_existed = hasattr(sys, "setdefaultencoding")
-        reload(sys) # ugh!
-        sys.setdefaultencoding("iso-8859-1")
-        try:
-            (s, d), m = xmlrpclib.loads(utf8)
-        finally:
-            sys.setdefaultencoding(old_encoding)
-            if not setdefaultencoding_existed:
-                del sys.setdefaultencoding
+        with test_support.CleanImport('sys'):
+            import sys as temp_sys
+            temp_sys.setdefaultencoding("iso-8859-1")
+            try:
+                (s, d), m = xmlrpclib.loads(utf8)
+            finally:
+                temp_sys.setdefaultencoding(old_encoding)
 
         items = d.items()
         if have_unicode:
@@ -831,54 +831,45 @@ class CGIHandlerTestCase(unittest.TestCase):
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
-            tmp = sys.stdout
-            sys.stdout = open(test_support.TESTFN, "w")
-            self.cgi.handle_request()
-            sys.stdout.close()
-            sys.stdout = tmp
+            with test_support.captured_stdout() as data_out:
+                self.cgi.handle_request()
 
             # parse Status header
-            handle = open(test_support.TESTFN, "r").read()
+            data_out.seek(0)
+            handle = data_out.read()
             status = handle.split()[1]
             message = ' '.join(handle.split()[2:4])
 
             self.assertEqual(status, '400')
             self.assertEqual(message, 'Bad Request')
 
-            os.remove(test_support.TESTFN)
 
     def test_cgi_xmlrpc_response(self):
         data = """<?xml version='1.0'?>
-<methodCall>
-    <methodName>test_method</methodName>
-    <params>
-        <param>
-            <value><string>foo</string></value>
-        </param>
-        <param>
-            <value><string>bar</string></value>
-        </param>
-     </params>
-</methodCall>
-"""
-        open("xmldata.txt", "w").write(data)
-        tmp1 = sys.stdin
-        tmp2 = sys.stdout
+        <methodCall>
+            <methodName>test_method</methodName>
+            <params>
+                <param>
+                    <value><string>foo</string></value>
+                </param>
+                <param>
+                    <value><string>bar</string></value>
+                </param>
+            </params>
+        </methodCall>
+        """
 
-        sys.stdin = open("xmldata.txt", "r")
-        sys.stdout = open(test_support.TESTFN, "w")
-
-        with test_support.EnvironmentVarGuard() as env:
+        with test_support.EnvironmentVarGuard() as env, \
+             test_support.captured_stdout() as data_out, \
+             test_support.captured_stdin() as data_in:
+            data_in.write(data)
+            data_in.seek(0)
             env['CONTENT_LENGTH'] = str(len(data))
             self.cgi.handle_request()
-
-        sys.stdin.close()
-        sys.stdout.close()
-        sys.stdin = tmp1
-        sys.stdout = tmp2
+        data_out.seek(0)
 
         # will respond exception, if so, our goal is achieved ;)
-        handle = open(test_support.TESTFN, "r").read()
+        handle = data_out.read()
 
         # start with 44th char so as not to get http header, we just need only xml
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, handle[44:])
@@ -894,9 +885,6 @@ class CGIHandlerTestCase(unittest.TestCase):
             int(re.search('Content-Length: (\d+)', handle).group(1)),
             len(content))
 
-
-        os.remove("xmldata.txt")
-        os.remove(test_support.TESTFN)
 
 class FakeSocket:
 
