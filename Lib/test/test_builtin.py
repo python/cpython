@@ -1286,6 +1286,10 @@ class BuiltinTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, sum, BadSeq())
 
+        empty = []
+        sum(([x] for x in range(10)), empty)
+        self.assertEqual(empty, [])
+
     def test_type(self):
         self.assertEqual(type(''),  type('123'))
         self.assertNotEqual(type(''), type(()))
