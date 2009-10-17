@@ -651,18 +651,22 @@ def runtest(test, verbose, quiet,
 class saved_test_environment:
     """Save bits of the test environment and restore them at block exit.
 
-        with saved_test_environment(testname, quiet):
+        with saved_test_environment(testname, verbose, quiet):
             #stuff
 
     Unless quiet is True, a warning is printed to stderr if any of
     the saved items was changed by the test.  The attribute 'changed'
     is initially False, but is set to True if a change is detected.
+
+    If verbose is more than 1, the before and after state of changed
+    items is also printed.
     """
 
     changed = False
 
-    def __init__(self, testname, quiet=False):
+    def __init__(self, testname, verbose=0, quiet=False):
         self.testname = testname
+        self.verbose = verbose
         self.quiet = quiet
 
     # To add things to save and restore, add a name XXX to the resources list
@@ -670,12 +674,13 @@ class saved_test_environment:
     # return the value to be saved and compared against a second call to the
     # get function when test execution completes.  restore_XXX should accept
     # the saved value and restore the resource using it.  It will be called if
-    # and only if a change in the value is detected.  XXX will have any '_'
-    # replaced with '.' characters and will then be used in the error messages
-    # as the name of the resource that changed.
+    # and only if a change in the value is detected.
+    #
+    # Note: XXX will have any '.' replaced with '_' characters when determining
+    # the corresponding method names.
 
-    resources = ('sys_argv', 'cwd', 'sys_stdin', 'sys_stdout', 'sys_stderr',
-                 'os_environ', 'sys_path')
+    resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
+                 'os.environ', 'sys.path')
 
     def get_sys_argv(self):
         return sys.argv[:]
@@ -713,19 +718,38 @@ class saved_test_environment:
     def restore_sys_path(self, saved_path):
         sys.path[:] = saved_path
 
+    def resource_info(self):
+        for name in self.resources:
+            method_suffix = name.replace('.', '_')
+            get_name = 'get_' + method_suffix
+            restore_name = 'restore_' + method_suffix
+            yield name, getattr(self, get_name), getattr(self, restore_name)
+
     def __enter__(self):
-        self.saved_values = dict((name, getattr(self, 'get_'+name)())
-            for name in self.resources)
+        self.saved_values = dict((name, get()) for name, get, restore
+                                                   in self.resource_info())
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for name in self.resources:
-            if not getattr(self, 'get_'+name)() == self.saved_values[name]:
+        for name, get, restore in self.resource_info():
+            current = get()
+            original = self.saved_values[name]
+            # Check for changes to the resource's value
+            if current != original:
                 self.changed = True
-                getattr(self, 'restore_'+name)(self.saved_values[name])
+                restore(original)
                 if not self.quiet:
-                    print >>sys.stderr, ("Warning -- {} was modified "
-                        "by {}").format(name.replace('_', '.'), self.testname)
+                    print >>sys.stderr, (
+                          "Warning -- {} was modified by {}".format(
+                                                 name, self.testname))
+                    if self.verbose > 1:
+                        print >>sys.stderr, (
+                              "  Before: {}\n  After: {} ".format(
+                                                 original, current))
+            # XXX (ncoghlan): for most resources (e.g. sys.path) identity
+            # matters at least as much as value. For others (e.g. cwd),
+            # identity is irrelevant. Should we add a mechanism to check
+            # for substitution in the cases where it matters?
         return False
 
 
@@ -751,7 +775,7 @@ def runtest_inner(test, verbose, quiet,
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
-            with saved_test_environment(test, quiet) as environment:
+            with saved_test_environment(test, verbose, quiet) as environment:
                 start_time = time.time()
                 the_package = __import__(abstest, globals(), locals(), [])
                 the_module = getattr(the_package, test)
