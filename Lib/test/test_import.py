@@ -8,7 +8,7 @@ import py_compile
 import warnings
 import marshal
 from test.test_support import (unlink, TESTFN, unload, run_unittest,
-    check_warnings, TestFailed)
+    check_warnings, TestFailed, CleanImport)
 
 
 def remove_files(name):
@@ -122,8 +122,9 @@ class ImportTest(unittest.TestCase):
     def testImpModule(self):
         # Verify that the imp module can correctly load and find .py files
         import imp
-        x = imp.find_module("os")
-        os = imp.load_module("os", *x)
+        with CleanImport("os"):
+            x = imp.find_module("os")
+            os = imp.load_module("os", *x)
 
     def test_module_with_large_stack(self, module='longlist'):
         # create module w/list of 65000 elements to test bug #561858
@@ -361,7 +362,7 @@ class PathsTests(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.path)
-        sys.path = self.syspath
+        sys.path[:] = self.syspath
 
     # http://bugs.python.org/issue1293
     def test_trailing_slash(self):

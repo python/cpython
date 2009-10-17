@@ -43,16 +43,19 @@ class ReloadTests(unittest.TestCase):
     reload()."""
 
     def test_source(self):
-        import os
-        imp.reload(os)
+        with test_support.CleanImport('os'):
+            import os
+            imp.reload(os)
 
     def test_extension(self):
-        import time
-        imp.reload(time)
+        with test_support.CleanImport('time'):
+            import time
+            imp.reload(time)
 
     def test_builtin(self):
-        import marshal
-        imp.reload(marshal)
+        with test_support.CleanImport('marshal'):
+            import marshal
+            imp.reload(marshal)
 
 
 def test_main():
