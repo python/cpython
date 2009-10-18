@@ -49,6 +49,9 @@ The :mod:`urllib.request` module defines the following functions:
    the default installed global :class:`OpenerDirector` uses
    :class:`UnknownHandler` to ensure this never happens).
 
+   In addition, default installed :class:`ProxyHandler` makes sure the requests
+   are handled through the proxy when they are set.
+
    The legacy ``urllib.urlopen`` function from Python 2.6 and earlier has been
    discontinued; :func:`urlopen` corresponds to the old ``urllib2.urlopen``.
    Proxy handling, which was done by passing a dictionary parameter to
@@ -350,6 +353,11 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read the
    list of proxies from the environment variables :envvar:`<protocol>_proxy`.
+   If no proxy environment variables are set, in a Windows environment, proxy
+   settings are obtained from the registry's Internet Settings section and in a
+   Mac OS X environment, proxy information is retrieved from the OS X System
+   Configuration Framework.
+
    To disable autodetected proxy pass an empty dictionary.
 
 
