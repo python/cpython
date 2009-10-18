@@ -1383,10 +1383,8 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			c = tok_nextc(tok);
 			if (c == '.')
 				goto fraction;
-#ifndef WITHOUT_COMPLEX
 			if (c == 'j' || c == 'J')
 				goto imaginary;
-#endif
 			if (c == 'x' || c == 'X') {
 
 				/* Hex */
@@ -1438,10 +1436,8 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 					goto fraction;
 				else if (c == 'e' || c == 'E')
 					goto exponent;
-#ifndef WITHOUT_COMPLEX
 				else if (c == 'j' || c == 'J')
 					goto imaginary;
-#endif
 				else if (nonzero) {
 					tok->done = E_TOKEN;
 					tok_backup(tok, c);
@@ -1478,12 +1474,10 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 						c = tok_nextc(tok);
 					} while (isdigit(c));
 				}
-#ifndef WITHOUT_COMPLEX
 				if (c == 'j' || c == 'J')
 					/* Imaginary part */
 		imaginary:
 					c = tok_nextc(tok);
-#endif
 			}
 		}
 		tok_backup(tok, c);

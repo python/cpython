@@ -279,11 +279,9 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 			return PyFloat_FromDouble(
 				(double)va_arg(*p_va, va_double));
 
-#ifndef WITHOUT_COMPLEX
 		case 'D':
 			return PyComplex_FromCComplex(
 				*((Py_complex *)va_arg(*p_va, Py_complex *)));
-#endif /* WITHOUT_COMPLEX */
 
 		case 'c':
 		{

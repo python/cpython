@@ -2302,9 +2302,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("bytearray",		&PyByteArray_Type);
 	SETBUILTIN("bytes",		&PyBytes_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
-#ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
-#endif
 	SETBUILTIN("dict",		&PyDict_Type);
  	SETBUILTIN("enumerate",		&PyEnum_Type);
  	SETBUILTIN("filter",		&PyFilter_Type);

@@ -73,9 +73,7 @@
 #include "longintrepr.h"
 #include "boolobject.h"
 #include "floatobject.h"
-#ifndef WITHOUT_COMPLEX
 #include "complexobject.h"
-#endif
 #include "rangeobject.h"
 #include "memoryobject.h"
 #include "tupleobject.h"
