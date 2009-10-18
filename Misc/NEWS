@@ -289,8 +289,9 @@ Tests
 - Issue #7055: test___all__ now greedily detects all modules which have an
   __all__ attribute, rather than using a hardcoded and incomplete list.
 
-- Issue #7058: Added save/restore for argv and os.environ to runtest_inner
-  in regrtest, with warnings if the called test modifies them.
+- Issue #7058: Added save/restore for things like sys.argv and cwd to
+  runtest_inner in regrtest, with warnings if the called test modifies them,
+  and a new section in the summary report at the end.
 
 - Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
 

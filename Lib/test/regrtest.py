@@ -337,7 +337,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             try:
                 result = runtest(*args, **kwargs)
             except BaseException as e:
-                result = -3, e.__class__.__name__
+                result = -4, e.__class__.__name__
             sys.stdout.flush()
             print()   # Force a newline (just in case)
             print(json.dumps(result))
@@ -496,7 +496,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if test is None:
                 finished += 1
                 continue
-            if result[0] == -3:
+            if result[0] == -4:
                 assert result[1] == 'KeyboardInterrupt'
                 pending.clear()
                 raise KeyboardInterrupt   # What else?
@@ -805,44 +805,25 @@ def runtest_inner(test, verbose, quiet,
     test_time = 0.0
     refleak = False  # True if the test leaked references.
     try:
-        save_stdout = sys.stdout
-        # Save various things that tests may mess up so we can restore
-        # them afterward.
-        save_environ = dict(os.environ)
-        save_argv = sys.argv[:]
-        try:
-            if test.startswith('test.'):
-                abstest = test
-            else:
-                # Always import it from the test package
-                abstest = 'test.' + test
-            with saved_test_environment(test, verbose, quiet) as environment:
-                start_time = time.time()
-                the_package = __import__(abstest, globals(), locals(), [])
-                the_module = getattr(the_package, test)
-                # Old tests run to completion simply as a side-effect of
-                # being imported.  For tests based on unittest or doctest,
-                # explicitly invoke their test_main() function (if it exists).
-                indirect_test = getattr(the_module, "test_main", None)
-                if indirect_test is not None:
-                    indirect_test()
-                if huntrleaks:
-                    refleak = dash_R(the_module, test, indirect_test,
-                        huntrleaks)
-                test_time = time.time() - start_time
-        finally:
-            sys.stdout = save_stdout
-            # Restore what we saved if needed, but also complain if the test
-            # changed it so that the test may eventually get fixed.
-            if not os.environ == save_environ:
-                if not quiet:
-                    print("Warning: os.environ was modified by", test)
-                os.environ.clear()
-                os.environ.update(save_environ)
-            if not sys.argv == save_argv:
-                if not quiet:
-                    print("Warning: argv was modified by", test)
-                sys.argv[:] = save_argv
+        if test.startswith('test.'):
+            abstest = test
+        else:
+            # Always import it from the test package
+            abstest = 'test.' + test
+        with saved_test_environment(test, verbose, quiet) as environment:
+            start_time = time.time()
+            the_package = __import__(abstest, globals(), locals(), [])
+            the_module = getattr(the_package, test)
+            # Old tests run to completion simply as a side-effect of
+            # being imported.  For tests based on unittest or doctest,
+            # explicitly invoke their test_main() function (if it exists).
+            indirect_test = getattr(the_module, "test_main", None)
+            if indirect_test is not None:
+                indirect_test()
+            if huntrleaks:
+                refleak = dash_R(the_module, test, indirect_test,
+                    huntrleaks)
+            test_time = time.time() - start_time
     except support.ResourceDenied as msg:
         if not quiet:
             print(test, "skipped --", msg)
