@@ -19,16 +19,18 @@ setup(name='foo', version='0.1', py_modules=['foo'],
 
 class BuildDumbTestCase(support.TempdirManager,
                         support.LoggingSilencer,
+                        support.EnvironGuard,
                         unittest.TestCase):
 
     def setUp(self):
         super(BuildDumbTestCase, self).setUp()
         self.old_location = os.getcwd()
-        self.old_sys_argv = sys.argv[:]
+        self.old_sys_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
         os.chdir(self.old_location)
-        sys.argv = self.old_sys_argv[:]
+        sys.argv = self.old_sys_argv[0]
+        sys.argv[:] = self.old_sys_argv[1]
         super(BuildDumbTestCase, self).tearDown()
 
     def test_simple_built(self):

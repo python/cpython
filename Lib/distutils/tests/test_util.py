@@ -94,7 +94,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
-        self.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
@@ -102,7 +102,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertEquals(get_platform(), 'macosx-10.3-i386')
 
         # macbook with fat binaries (fat, universal or fat64)
-        self.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
         get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
@@ -223,17 +223,18 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_check_environ(self):
         util._environ_checked = 0
+        if 'HOME' in os.environ:
+            del os.environ['HOME']
 
         # posix without HOME
         if os.name == 'posix':  # this test won't run on windows
             check_environ()
             import pwd
-            self.assertEquals(self.environ['HOME'],
-                            pwd.getpwuid(os.getuid())[5])
+            self.assertEquals(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
         else:
             check_environ()
 
-        self.assertEquals(self.environ['PLAT'], get_platform())
+        self.assertEquals(os.environ['PLAT'], get_platform())
         self.assertEquals(util._environ_checked, 1)
 
     def test_split_quoted(self):

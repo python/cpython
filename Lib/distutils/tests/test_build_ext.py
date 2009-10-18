@@ -32,7 +32,7 @@ class BuildExtTestCase(TempdirManager,
         # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
-        self.sys_path = sys.path[:]
+        self.sys_path = sys.path, sys.path[:]
         sys.path.append(self.tmp_dir)
         shutil.copy(_get_source_filename(), self.tmp_dir)
         if sys.version > "2.6":
@@ -87,7 +87,8 @@ class BuildExtTestCase(TempdirManager,
     def tearDown(self):
         # Get everything back to normal
         support.unload('xx')
-        sys.path = self.sys_path
+        sys.path = self.sys_path[0]
+        sys.path[:] = self.sys_path[1]
         if sys.version > "2.6":
             import site
             site.USER_BASE = self.old_user_base
