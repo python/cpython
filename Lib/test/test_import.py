@@ -8,7 +8,7 @@ import py_compile
 import warnings
 import marshal
 from test.test_support import (unlink, TESTFN, unload, run_unittest,
-    check_warnings, TestFailed, CleanImport)
+    check_warnings, TestFailed, EnvironmentVarGuard)
 
 
 def remove_files(name):
@@ -121,10 +121,22 @@ class ImportTest(unittest.TestCase):
 
     def testImpModule(self):
         # Verify that the imp module can correctly load and find .py files
-        import imp
-        with CleanImport("os"):
+        import imp, os
+        # XXX (ncoghlan): It would be nice to use test_support.CleanImport
+        # here, but that breaks because the os module registers some
+        # handlers in copy_reg on import. Since CleanImport doesn't
+        # revert that registration, the module is left in a broken
+        # state after reversion. Reinitialising the module contents
+        # and just reverting os.environ to its previous state is an OK
+        # workaround
+        orig_path = os.path
+        orig_getenv = os.getenv
+        with EnvironmentVarGuard():
             x = imp.find_module("os")
-            os = imp.load_module("os", *x)
+            new_os = imp.load_module("os", *x)
+            self.assertIs(os, new_os)
+            self.assertIs(orig_path, new_os.path)
+            self.assertIsNot(orig_getenv, new_os.getenv)
 
     def test_module_with_large_stack(self, module='longlist'):
         # create module w/list of 65000 elements to test bug #561858

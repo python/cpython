@@ -43,7 +43,14 @@ class ReloadTests(unittest.TestCase):
     reload()."""
 
     def test_source(self):
-        with test_support.CleanImport('os'):
+        # XXX (ncoghlan): It would be nice to use test_support.CleanImport
+        # here, but that breaks because the os module registers some
+        # handlers in copy_reg on import. Since CleanImport doesn't
+        # revert that registration, the module is left in a broken
+        # state after reversion. Reinitialising the module contents
+        # and just reverting os.environ to its previous state is an OK
+        # workaround
+        with test_support.EnvironmentVarGuard():
             import os
             imp.reload(os)
 
