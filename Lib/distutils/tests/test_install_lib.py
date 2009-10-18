@@ -10,8 +10,8 @@ from distutils.errors import DistutilsOptionError
 
 class InstallLibTestCase(support.TempdirManager,
                          support.LoggingSilencer,
+                         support.EnvironGuard,
                          unittest.TestCase):
-
 
     def test_finalize_options(self):
         pkg_dir, dist = self.create_dist()

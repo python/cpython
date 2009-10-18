@@ -9,6 +9,7 @@ from distutils.tests import support
 
 class InstallHeadersTestCase(support.TempdirManager,
                              support.LoggingSilencer,
+                             support.EnvironGuard,
                              unittest.TestCase):
 
     def test_simple_run(self):
