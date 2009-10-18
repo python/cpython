@@ -630,13 +630,15 @@ class TransientResource(object):
                 raise ResourceDenied("an optional resource is not available")
 
 
+@contextlib.contextmanager
 def transient_internet():
     """Return a context manager that raises ResourceDenied when various issues
     with the Internet connection manifest themselves as exceptions."""
     time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
     socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
     ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
-    return contextlib.nested(time_out, socket_peer_reset, ioerror_peer_reset)
+    with time_out, socket_peer_reset, ioerror_peer_reset:
+        yield
 
 
 @contextlib.contextmanager
