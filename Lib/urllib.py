@@ -1340,6 +1340,8 @@ if sys.platform == 'darwin':
         import socket
         from fnmatch import fnmatch
 
+        hostonly, port = splitport(host)
+
         def ip2num(ipAddr):
             parts = ipAddr.split('.')
             parts = map(int, parts)
@@ -1354,6 +1356,8 @@ if sys.platform == 'darwin':
             if proxy_settings['exclude_simple']:
                 return True
 
+        hostIP = None
+
         for value in proxy_settings.get('exceptions', ()):
             # Items in the list are strings like these: *.local, 169.254/16
             if not value: continue
@@ -1361,8 +1365,11 @@ if sys.platform == 'darwin':
             m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
             if m is not None:
                 if hostIP is None:
-                    hostIP = socket.gethostbyname(host)
-                    hostIP = ip2num(hostIP)
+                    try:
+                        hostIP = socket.gethostbyname(hostonly)
+                        hostIP = ip2num(hostIP)
+                    except socket.error:
+                        continue
 
                 base = ip2num(m.group(1))
                 mask = int(m.group(2)[1:])
