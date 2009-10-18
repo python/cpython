@@ -38,15 +38,17 @@ class TestDistribution(Distribution):
 
 
 class DistributionTestCase(support.LoggingSilencer,
+                           support.EnvironGuard,
                            unittest.TestCase):
 
     def setUp(self):
         super(DistributionTestCase, self).setUp()
-        self.argv = sys.argv[:]
+        self.argv = sys.argv, sys.argv[:]
         del sys.argv[1:]
 
     def tearDown(self):
-        sys.argv[:] = self.argv
+        sys.argv = self.argv[0]
+        sys.argv[:] = self.argv[1]
         super(DistributionTestCase, self).tearDown()
 
     def create_distribution(self, configfiles=()):
@@ -181,6 +183,15 @@ class DistributionTestCase(support.LoggingSilencer,
 class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                        unittest.TestCase):
 
+    def setUp(self):
+        super(MetadataTestCase, self).setUp()
+        self.argv = sys.argv, sys.argv[:]
+
+    def tearDown(self):
+        sys.argv = self.argv[0]
+        sys.argv[:] = self.argv[1]
+        super(MetadataTestCase, self).tearDown()
+
     def test_simple_metadata(self):
         attrs = {"name": "package",
                  "version": "1.0"}
@@ -279,14 +290,14 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
 
             # linux-style
             if sys.platform in ('linux', 'darwin'):
-                self.environ['HOME'] = temp_dir
+                os.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assertTrue(user_filename in files)
 
             # win32-style
             if sys.platform == 'win32':
                 # home drive should be found
-                self.environ['HOME'] = temp_dir
+                os.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assertTrue(user_filename in files,
                              '%r not found in %r' % (user_filename, files))
@@ -302,15 +313,11 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
     def test_show_help(self):
         # smoke test, just makes sure some help is displayed
         dist = Distribution()
-        old_argv = sys.argv
         sys.argv = []
-        try:
-            dist.help = 1
-            dist.script_name = 'setup.py'
-            with captured_stdout() as s:
-                dist.parse_command_line()
-        finally:
-            sys.argv = old_argv
+        dist.help = 1
+        dist.script_name = 'setup.py'
+        with captured_stdout() as s:
+            dist.parse_command_line()
 
         output = [line for line in s.getvalue().split('\n')
                   if line.strip() != '']

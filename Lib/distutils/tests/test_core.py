@@ -8,7 +8,7 @@ import sys
 import test.support
 from test.support import captured_stdout
 import unittest
-
+from distutils.tests import support
 
 # setup script that uses __file__
 setup_using___file__ = """\
@@ -29,17 +29,20 @@ setup()
 """
 
 
-class CoreTestCase(unittest.TestCase):
+class CoreTestCase(support.EnvironGuard, unittest.TestCase):
 
     def setUp(self):
+        super(CoreTestCase, self).setUp()
         self.old_stdout = sys.stdout
         self.cleanup_testfn()
-        self.old_argv = sys.argv[:]
+        self.old_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
         sys.stdout = self.old_stdout
         self.cleanup_testfn()
-        sys.argv = self.old_argv[:]
+        sys.argv = self.old_argv[0]
+        sys.argv[:] = self.old_argv[1]
+        super(CoreTestCase, self).tearDown()
 
     def cleanup_testfn(self):
         path = test.support.TESTFN
