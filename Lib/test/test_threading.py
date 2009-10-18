@@ -176,11 +176,13 @@ class ThreadTests(unittest.TestCase):
         except AsyncExc:
             pass
         else:
+            # This code is unreachable but it reflects the intent. If we wanted
+            # to be smarter the above loop wouldn't be infinite.
             self.fail("AsyncExc not raised")
         try:
             self.assertEqual(result, 1) # one thread state modified
         except UnboundLocalError:
-            # The exception was raised to quickly for us to get the result.
+            # The exception was raised too quickly for us to get the result.
             pass
 
         # `worker_started` is set by the thread when it's inside a try/except
