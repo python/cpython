@@ -146,18 +146,38 @@ class ImportTests(unittest.TestCase):
                 support.rmtree(test_package_name)
 
 
-    def test_reload(self):
-        import marshal
-        imp.reload(marshal)
-        import string
-        imp.reload(string)
-        ## import sys
-        ## self.assertRaises(ImportError, reload, sys)
+class ReloadTests(unittest.TestCase):
+
+    """Very basic tests to make sure that imp.reload() operates just like
+    reload()."""
+
+    def test_source(self):
+        # XXX (ncoghlan): It would be nice to use test_support.CleanImport
+        # here, but that breaks because the os module registers some
+        # handlers in copy_reg on import. Since CleanImport doesn't
+        # revert that registration, the module is left in a broken
+        # state after reversion. Reinitialising the module contents
+        # and just reverting os.environ to its previous state is an OK
+        # workaround
+        with support.EnvironmentVarGuard():
+            import os
+            imp.reload(os)
+
+    def test_extension(self):
+        with support.CleanImport('time'):
+            import time
+            imp.reload(time)
+
+    def test_builtin(self):
+        with support.CleanImport('marshal'):
+            import marshal
+            imp.reload(marshal)
 
 
 def test_main():
     tests = [
         ImportTests,
+        ReloadTests,
     ]
     try:
         import _thread
