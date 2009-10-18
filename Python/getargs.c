@@ -818,7 +818,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 
-#ifndef WITHOUT_COMPLEX
 	case 'D': {/* complex double */
 		Py_complex *p = va_arg(*p_va, Py_complex *);
 		Py_complex cval;
@@ -829,7 +828,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			*p = cval;
 		break;
 	}
-#endif /* WITHOUT_COMPLEX */
 
 	case 'c': {/* char */
 		char *p = va_arg(*p_va, char *);
@@ -1772,9 +1770,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 #endif
 	case 'f': /* float */
 	case 'd': /* double */
-#ifndef WITHOUT_COMPLEX
 	case 'D': /* complex double */
-#endif
 	case 'c': /* char */
 		{
 			(void) va_arg(*p_va, void *);

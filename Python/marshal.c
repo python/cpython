@@ -254,7 +254,6 @@ w_object(PyObject *v, WFILE *p)
 			PyMem_Free(buf);
 		}
 	}
-#ifndef WITHOUT_COMPLEX
 	else if (PyComplex_CheckExact(v)) {
 		if (p->version > 1) {
 			unsigned char buf[8];
@@ -297,7 +296,6 @@ w_object(PyObject *v, WFILE *p)
 			PyMem_Free(buf);
 		}
 	}
-#endif
 	else if (PyBytes_CheckExact(v)) {
 		w_byte(TYPE_STRING, p);
 		n = PyBytes_GET_SIZE(v);
@@ -714,7 +712,6 @@ r_object(RFILE *p)
 			break;
 		}
 
-#ifndef WITHOUT_COMPLEX
 	case TYPE_COMPLEX:
 		{
 			char buf[256];
@@ -773,7 +770,6 @@ r_object(RFILE *p)
 			retval = PyComplex_FromCComplex(c);
 			break;
 		}
-#endif
 
 	case TYPE_STRING:
 		n = r_long(p);

@@ -1536,10 +1536,9 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyStaticMethod_Type) < 0)
 		Py_FatalError("Can't initialize static method type");
 
-#ifndef WITHOUT_COMPLEX
 	if (PyType_Ready(&PyComplex_Type) < 0)
 		Py_FatalError("Can't initialize complex type");
-#endif
+
 	if (PyType_Ready(&PyFloat_Type) < 0)
 		Py_FatalError("Can't initialize float type");
 

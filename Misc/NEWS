@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue *7147: Remove support for compiling Python without complex number
+  support.
+
 - Issue #7120: logging: Removed import of multiprocessing which is causing
   crash in GAE.
 

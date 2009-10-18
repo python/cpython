@@ -3177,17 +3177,13 @@ parsenumber(struct compiling *c, const char *s)
     const char *end;
     long x;
     double dx;
-#ifndef WITHOUT_COMPLEX
     Py_complex compl;
     int imflag;
-#endif
 
     assert(s != NULL);
     errno = 0;
     end = s + strlen(s) - 1;
-#ifndef WITHOUT_COMPLEX
     imflag = *end == 'j' || *end == 'J';
-#endif
     if (s[0] == '0') {
         x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
         if (x < 0 && errno == 0) {
@@ -3204,7 +3200,6 @@ parsenumber(struct compiling *c, const char *s)
         return PyLong_FromLong(x);
     }
     /* XXX Huge floats may silently fail */
-#ifndef WITHOUT_COMPLEX
     if (imflag) {
         compl.real = 0.;
         compl.imag = PyOS_string_to_double(s, (char **)&end, NULL);
@@ -3213,7 +3208,6 @@ parsenumber(struct compiling *c, const char *s)
         return PyComplex_FromCComplex(compl);
     }
     else
-#endif
     {
         dx = PyOS_string_to_double(s, NULL, NULL);
         if (dx == -1.0 && PyErr_Occurred())

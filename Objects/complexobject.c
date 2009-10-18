@@ -12,8 +12,6 @@
 #include <ieeefp.h>
 #endif
 
-#ifndef WITHOUT_COMPLEX
-
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
@@ -1108,5 +1106,3 @@ PyTypeObject PyComplex_Type = {
 	complex_new,				/* tp_new */
 	PyObject_Del,           		/* tp_free */
 };
-
-#endif
