@@ -195,7 +195,7 @@ The following classes are provided:
    :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, in a
    Windows environment, proxy settings are obtained from the registry's
    Internet Settings section and in a Mac OS X  environment, proxy information
-   is retrieved from from the OS X System Configuration Framework.
+   is retrieved from the OS X System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
 
