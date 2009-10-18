@@ -17,6 +17,7 @@ from distutils.errors import DistutilsOptionError
 from distutils.tests import support
 
 class InstallTestCase(support.TempdirManager,
+                      support.EnvironGuard,
                       support.LoggingSilencer,
                       unittest.TestCase):
 

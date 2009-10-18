@@ -29,11 +29,12 @@ class BuildRpmTestCase(support.TempdirManager,
     def setUp(self):
         super(BuildRpmTestCase, self).setUp()
         self.old_location = os.getcwd()
-        self.old_sys_argv = sys.argv[:]
+        self.old_sys_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
         os.chdir(self.old_location)
-        sys.argv = self.old_sys_argv[:]
+        sys.argv = self.old_sys_argv[0]
+        sys.argv[:] = self.old_sys_argv[1]
         super(BuildRpmTestCase, self).tearDown()
 
     def test_quiet(self):
