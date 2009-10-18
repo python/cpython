@@ -9,8 +9,6 @@
 #define FORMAT_STRING  _PyUnicode_FormatAdvanced
 #define FORMAT_LONG    _PyLong_FormatAdvanced
 #define FORMAT_FLOAT   _PyFloat_FormatAdvanced
-#ifndef WITHOUT_COMPLEX
 #define FORMAT_COMPLEX _PyComplex_FormatAdvanced
-#endif
 
 #include "../Objects/stringlib/formatter.h"

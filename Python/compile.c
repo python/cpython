@@ -911,7 +911,6 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 		else
 			t = PyTuple_Pack(2, o, o->ob_type);
 	}
-#ifndef WITHOUT_COMPLEX
 	else if (PyComplex_Check(o)) {
 		Py_complex z;
 		int real_part_zero, imag_part_zero;
@@ -945,7 +944,6 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 			t = PyTuple_Pack(2, o, o->ob_type);
 		}
         }
-#endif /* WITHOUT_COMPLEX */
 	else {
 		t = PyTuple_Pack(2, o, o->ob_type);
         }
