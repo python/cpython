@@ -96,8 +96,10 @@ High-level interface
 
    .. index:: single: Internet Config
 
-   In a Macintosh environment, :func:`urlopen` will retrieve proxy information from
-   Internet Config.
+   In a Mac OS X  environment, :func:`urlopen` will retrieve proxy information
+   from the OS X System Configuration Framework, which can be managed with
+   Network System Preferences panel.
+
 
    Alternatively, the optional *proxies* argument may be used to explicitly specify
    proxies.  It must be a dictionary mapping scheme names to proxy URLs, where an
