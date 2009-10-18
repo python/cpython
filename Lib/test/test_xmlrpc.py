@@ -725,54 +725,45 @@ class CGIHandlerTestCase(unittest.TestCase):
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
-            tmp = sys.stdout
-            sys.stdout = open(support.TESTFN, "w")
-            self.cgi.handle_request()
-            sys.stdout.close()
-            sys.stdout = tmp
+            with support.captured_stdout() as data_out:
+                self.cgi.handle_request()
 
             # parse Status header
-            handle = open(support.TESTFN, "r").read()
+            data_out.seek(0)
+            handle = data_out.read()
             status = handle.split()[1]
             message = ' '.join(handle.split()[2:4])
 
             self.assertEqual(status, '400')
             self.assertEqual(message, 'Bad Request')
 
-            os.remove(support.TESTFN)
 
     def test_cgi_xmlrpc_response(self):
         data = """<?xml version='1.0'?>
-<methodCall>
-    <methodName>test_method</methodName>
-    <params>
-        <param>
-            <value><string>foo</string></value>
-        </param>
-        <param>
-            <value><string>bar</string></value>
-        </param>
-     </params>
-</methodCall>
-"""
-        open("xmldata.txt", "w").write(data)
-        tmp1 = sys.stdin
-        tmp2 = sys.stdout
+        <methodCall>
+            <methodName>test_method</methodName>
+            <params>
+                <param>
+                    <value><string>foo</string></value>
+                </param>
+                <param>
+                    <value><string>bar</string></value>
+                </param>
+            </params>
+        </methodCall>
+        """
 
-        sys.stdin = open("xmldata.txt", "r")
-        sys.stdout = open(support.TESTFN, "w")
-
-        with support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env, \
+             support.captured_stdout() as data_out, \
+             support.captured_stdin() as data_in:
+            data_in.write(data)
+            data_in.seek(0)
             env['CONTENT_LENGTH'] = str(len(data))
             self.cgi.handle_request()
-
-        sys.stdin.close()
-        sys.stdout.close()
-        sys.stdin = tmp1
-        sys.stdout = tmp2
+        data_out.seek(0)
 
         # will respond exception, if so, our goal is achieved ;)
-        handle = open(support.TESTFN, "r").read()
+        handle = data_out.read()
 
         # start with 44th char so as not to get http header, we just
         # need only xml
@@ -788,9 +779,6 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.assertEquals(
             int(re.search('Content-Length: (\d+)', handle).group(1)),
             len(content))
-
-        os.remove("xmldata.txt")
-        os.remove(support.TESTFN)
 
 
 def test_main():

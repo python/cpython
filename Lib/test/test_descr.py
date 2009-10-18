@@ -4001,6 +4001,7 @@ order (MRO) for bases """
     def test_file_fault(self):
         # Testing sys.stdout is changed in getattr...
         import sys
+        test_stdout = sys.stdout
         class StdoutGuard:
             def __getattr__(self, attr):
                 sys.stdout = sys.__stdout__
@@ -4010,6 +4011,8 @@ order (MRO) for bases """
             print("Oops!")
         except RuntimeError:
             pass
+        finally:
+            sys.stdout = test_stdout
 
     def test_vicious_descriptor_nonsense(self):
         # Testing vicious_descriptor_nonsense...

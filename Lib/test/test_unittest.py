@@ -3572,12 +3572,12 @@ class TestDiscovery(TestCase):
         os.path.isfile = lambda path: False
         self.addCleanup(restore_isfile)
 
-        full_path = os.path.abspath(os.path.normpath('/foo'))
-        def clean_path():
-            if sys.path[-1] == full_path:
-                sys.path.pop(-1)
-        self.addCleanup(clean_path)
+        orig_sys_path = sys.path[:]
+        def restore_path():
+            sys.path[:] = orig_sys_path
+        self.addCleanup(restore_path)
 
+        full_path = os.path.abspath(os.path.normpath('/foo'))
         with self.assertRaises(ImportError):
             loader.discover('/foo/bar', top_level_dir='/foo')
 
@@ -3599,6 +3599,7 @@ class TestDiscovery(TestCase):
         self.assertEqual(suite, "['tests']")
         self.assertEqual(loader._top_level_dir, top_level_dir)
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
+        self.assertIn(top_level_dir, sys.path)
 
     def test_discover_with_modules_that_fail_to_import(self):
         loader = unittest.TestLoader()
@@ -3607,12 +3608,15 @@ class TestDiscovery(TestCase):
         os.listdir = lambda _: ['test_this_does_not_exist.py']
         isfile = os.path.isfile
         os.path.isfile = lambda _: True
+        orig_sys_path = sys.path[:]
         def restore():
             os.path.isfile = isfile
             os.listdir = listdir
+            sys.path[:] = orig_sys_path
         self.addCleanup(restore)
 
         suite = loader.discover('.')
+        self.assertIn(os.getcwd(), sys.path)
         self.assertEqual(suite.countTestCases(), 1)
         test = list(list(suite)[0])[0] # extract test from suite
 

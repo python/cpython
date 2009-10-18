@@ -353,6 +353,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     bad = []
     skipped = []
     resource_denieds = []
+    environment_changed = []
 
     if findleaks:
         try:
@@ -429,11 +430,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_times.append((test_time, test))
         if ok > 0:
             good.append(test)
-        elif ok == 0:
+        elif -2 < ok <= 0:
             bad.append(test)
+            if ok == -1:
+                environment_changed.append(test)
         else:
             skipped.append(test)
-            if ok == -2:
+            if ok == -3:
                 resource_denieds.append(test)
 
     if use_mp:
@@ -539,6 +542,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     good.sort()
     bad.sort()
     skipped.sort()
+    environment_changed.sort()
 
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
@@ -553,8 +557,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for time, test in test_times[:10]:
             print("%s: %.1fs" % (test, time))
     if bad:
-        print(count(len(bad), "test"), "failed:")
-        printlist(bad)
+        bad = sorted(set(bad) - set(environment_changed))
+        if bad:
+            print(count(len(bad), "test"), "failed:")
+            printlist(bad)
+        if environment_changed:
+            print("{} altered the execution environment:".format(
+                     count(len(environment_changed), "test")))
+            printlist(environment_changed)
     if skipped and not quiet:
         print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
@@ -657,8 +667,10 @@ def runtest(test, verbose, quiet,
     debug -- if true, print tracebacks for failed tests regardless of
              verbose setting
     Return:
-        -2  test skipped because resource denied
-        -1  test skipped for some other reason
+        -4  KeyboardInterrupt when run under -j
+        -3  test skipped because resource denied
+        -2  test skipped for some other reason
+        -1  test failed because it changed the execution environment
          0  test failed
          1  test passed
     """
@@ -671,6 +683,118 @@ def runtest(test, verbose, quiet,
                              testdir, huntrleaks, debug)
     finally:
         cleanup_test_droppings(test, verbose)
+
+# Unit tests are supposed to leave the execution environment unchanged
+# once they complete.  But sometimes tests have bugs, especially when
+# tests fail, and the changes to environment go on to mess up other
+# tests.  This can cause issues with buildbot stability, since tests
+# are run in random order and so problems may appear to come and go.
+# There are a few things we can save and restore to mitigate this, and
+# the following context manager handles this task.
+
+class saved_test_environment:
+    """Save bits of the test environment and restore them at block exit.
+
+        with saved_test_environment(testname, verbose, quiet):
+            #stuff
+
+    Unless quiet is True, a warning is printed to stderr if any of
+    the saved items was changed by the test.  The attribute 'changed'
+    is initially False, but is set to True if a change is detected.
+
+    If verbose is more than 1, the before and after state of changed
+    items is also printed.
+    """
+
+    changed = False
+
+    def __init__(self, testname, verbose=0, quiet=False):
+        self.testname = testname
+        self.verbose = verbose
+        self.quiet = quiet
+
+    # To add things to save and restore, add a name XXX to the resources list
+    # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
+    # return the value to be saved and compared against a second call to the
+    # get function when test execution completes.  restore_XXX should accept
+    # the saved value and restore the resource using it.  It will be called if
+    # and only if a change in the value is detected.
+    #
+    # Note: XXX will have any '.' replaced with '_' characters when determining
+    # the corresponding method names.
+
+    resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
+                 'os.environ', 'sys.path')
+
+    def get_sys_argv(self):
+        return id(sys.argv), sys.argv, sys.argv[:]
+    def restore_sys_argv(self, saved_argv):
+        sys.argv = saved_argv[1]
+        sys.argv[:] = saved_argv[2]
+
+    def get_cwd(self):
+        return os.getcwd()
+    def restore_cwd(self, saved_cwd):
+        os.chdir(saved_cwd)
+
+    def get_sys_stdout(self):
+        return sys.stdout
+    def restore_sys_stdout(self, saved_stdout):
+        sys.stdout = saved_stdout
+
+    def get_sys_stderr(self):
+        return sys.stderr
+    def restore_sys_stderr(self, saved_stderr):
+        sys.stderr = saved_stderr
+
+    def get_sys_stdin(self):
+        return sys.stdin
+    def restore_sys_stdin(self, saved_stdin):
+        sys.stdin = saved_stdin
+
+    def get_os_environ(self):
+        return id(os.environ), os.environ, dict(os.environ)
+    def restore_os_environ(self, saved_environ):
+        os.environ = saved_environ[1]
+        os.environ.clear()
+        os.environ.update(saved_environ[2])
+
+    def get_sys_path(self):
+        return id(sys.path), sys.path, sys.path[:]
+    def restore_sys_path(self, saved_path):
+        sys.path = saved_path[1]
+        sys.path[:] = saved_path[2]
+
+    def resource_info(self):
+        for name in self.resources:
+            method_suffix = name.replace('.', '_')
+            get_name = 'get_' + method_suffix
+            restore_name = 'restore_' + method_suffix
+            yield name, getattr(self, get_name), getattr(self, restore_name)
+
+    def __enter__(self):
+        self.saved_values = dict((name, get()) for name, get, restore
+                                                   in self.resource_info())
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for name, get, restore in self.resource_info():
+            current = get()
+            original = self.saved_values[name]
+            # Check for changes to the resource's value
+            if current != original:
+                self.changed = True
+                restore(original)
+                if not self.quiet:
+                    print("Warning -- {} was modified by {}".format(
+                                                 name, self.testname),
+                                                 file=sys.stderr)
+                    if self.verbose > 1:
+                        print("  Before: {}\n  After:  {} ".format(
+                                                  original, current),
+                                                  file=sys.stderr)
+        return False
+
 
 def runtest_inner(test, verbose, quiet,
                   testdir=None, huntrleaks=False, debug=False):
@@ -692,18 +816,20 @@ def runtest_inner(test, verbose, quiet,
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
-            start_time = time.time()
-            the_package = __import__(abstest, globals(), locals(), [])
-            the_module = getattr(the_package, test)
-            # Old tests run to completion simply as a side-effect of
-            # being imported.  For tests based on unittest or doctest,
-            # explicitly invoke their test_main() function (if it exists).
-            indirect_test = getattr(the_module, "test_main", None)
-            if indirect_test is not None:
-                indirect_test()
-            if huntrleaks:
-                refleak = dash_R(the_module, test, indirect_test, huntrleaks)
-            test_time = time.time() - start_time
+            with saved_test_environment(test, verbose, quiet) as environment:
+                start_time = time.time()
+                the_package = __import__(abstest, globals(), locals(), [])
+                the_module = getattr(the_package, test)
+                # Old tests run to completion simply as a side-effect of
+                # being imported.  For tests based on unittest or doctest,
+                # explicitly invoke their test_main() function (if it exists).
+                indirect_test = getattr(the_module, "test_main", None)
+                if indirect_test is not None:
+                    indirect_test()
+                if huntrleaks:
+                    refleak = dash_R(the_module, test, indirect_test,
+                        huntrleaks)
+                test_time = time.time() - start_time
         finally:
             sys.stdout = save_stdout
             # Restore what we saved if needed, but also complain if the test
@@ -721,12 +847,12 @@ def runtest_inner(test, verbose, quiet,
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
-        return -2, test_time
+        return -3, test_time
     except unittest.SkipTest as msg:
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
-        return -1, test_time
+        return -2, test_time
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
@@ -744,6 +870,8 @@ def runtest_inner(test, verbose, quiet,
     else:
         if refleak:
             return 0, test_time
+        if environment.changed:
+            return -1, test_time
         return 1, test_time
 
 def cleanup_test_droppings(testname, verbose):

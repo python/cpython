@@ -65,16 +65,6 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-Qwarnall')
 
     def test_site_flag(self):
-        if os.name == 'posix':
-            # Workaround bug #586680 by adding the extension dir to PYTHONPATH
-            from distutils.util import get_platform
-            s = "./build/lib.%s-%.3s" % (get_platform(), sys.version)
-            if hasattr(sys, 'gettotalrefcount'):
-                s += '-pydebug'
-            p = os.environ.get('PYTHONPATH', '')
-            if p:
-                p += ':'
-            os.environ['PYTHONPATH'] = p + s
         self.verify_valid_flag('-S')
 
     def test_usage(self):
