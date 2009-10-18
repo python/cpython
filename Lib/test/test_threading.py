@@ -162,6 +162,25 @@ class ThreadTests(unittest.TestCase):
 
         exception = ctypes.py_object(AsyncExc)
 
+        # First check it works when setting the exception from the same thread.
+        tid = _thread.get_ident()
+
+        try:
+            result = set_async_exc(ctypes.c_long(tid), exception)
+            # The exception is async, so we might have to keep the VM busy until
+            # it notices.
+            while True:
+                pass
+        except AsyncExc:
+            pass
+        else:
+            self.fail("AsyncExc not raised")
+        try:
+            self.assertEqual(result, 1) # one thread state modified
+        except UnboundLocalError:
+            # The exception was raised to quickly for us to get the result.
+            pass
+
         # `worker_started` is set by the thread when it's inside a try/except
         # block waiting to catch the asynchronously set AsyncExc exception.
         # `worker_saw_exception` is set by the thread upon catching that
