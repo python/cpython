@@ -53,6 +53,9 @@ The :mod:`urllib2` module defines the following functions:
    default installed global :class:`OpenerDirector` uses :class:`UnknownHandler` to
    ensure this never happens).
 
+   In addition, default installed :class:`ProxyHandler` makes sure the requests
+   are handled through the proxy when they are set.
+
    .. versionchanged:: 2.6
       *timeout* was added.
 
@@ -187,8 +190,13 @@ The following classes are provided:
 .. class:: ProxyHandler([proxies])
 
    Cause requests to go through a proxy. If *proxies* is given, it must be a
-   dictionary mapping protocol names to URLs of proxies. The default is to read the
-   list of proxies from the environment variables :envvar:`<protocol>_proxy`.
+   dictionary mapping protocol names to URLs of proxies. The default is to read
+   the list of proxies from the environment variables
+   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, in a
+   Windows environment, proxy settings are obtained from the registry's
+   Internet Settings section and in a Mac OS X  environment, proxy information
+   is retrieved from from the OS X System Configuration Framework.
+
    To disable autodetected proxy pass an empty dictionary.
 
 
