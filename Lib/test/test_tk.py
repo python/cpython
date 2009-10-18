@@ -17,10 +17,9 @@ except Tkinter.TclError, msg:
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
     'lib-tk', 'test'))
-if lib_tk_test not in sys.path:
-    sys.path.append(lib_tk_test)
 
-import runtktests
+with test_support.DirsOnSysPath(lib_tk_test):
+    import runtktests
 
 def test_main(enable_gui=False):
     if enable_gui:
@@ -29,7 +28,8 @@ def test_main(enable_gui=False):
         elif 'gui' not in test_support.use_resources:
             test_support.use_resources.append('gui')
 
-    test_support.run_unittest(
+    with test_support.DirsOnSysPath(lib_tk_test):
+        test_support.run_unittest(
             *runtktests.get_tests(text=False, packages=['test_tkinter']))
 
 if __name__ == '__main__':
