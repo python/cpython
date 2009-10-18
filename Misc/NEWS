@@ -4,6 +4,26 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6.4rc2?
+==============================
+
+*Release date: 18-Oct-2009*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #7115: Fixed the extension module builds that is failing when using
+  paths in the extension name instead of dotted names.
+
+- Issue #7120: logging: Removed import of multiprocessing which is causing
+  crash in GAE.
+
+- Issue #7149: fix exception in urllib when detecting proxy settings on OSX.
+
+
 What's New in Python 2.6.4rc1?
 ==============================
 
@@ -17,14 +37,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #7149: fix exception in urllib when detecting proxy settings on OSX.
-
-- Issue #7120: logging: Removed import of multiprocessing which is causing
-  crash in GAE.
-
-- Issue #7115: Fixed the extension module builds that is failing when using
-  paths in the extension name instead of dotted names.
 
 - Issue #7068: Fixed the partial renaming that occured in r72594.
 
