@@ -17,7 +17,14 @@ class SysconfigTestCase(support.EnvironGuard,
     def tearDown(self):
         if self.makefile is not None:
             os.unlink(self.makefile)
+        self.cleanup_testfn()
         super(SysconfigTestCase, self).tearDown()
+
+    def cleanup_testfn(self):
+        if os.path.isfile(TESTFN):
+            os.remove(TESTFN)
+        elif os.path.isdir(TESTFN):
+            shutil.rmtree(TESTFN)
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
@@ -51,8 +58,8 @@ class SysconfigTestCase(support.EnvironGuard,
         if get_default_compiler() != 'unix':
             return
 
-        self.environ['AR'] = 'my_ar'
-        self.environ['ARFLAGS'] = '-arflags'
+        os.environ['AR'] = 'my_ar'
+        os.environ['ARFLAGS'] = '-arflags'
 
         # make sure AR gets caught
         class compiler:

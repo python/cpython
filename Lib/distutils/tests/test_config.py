@@ -55,7 +55,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         """Patches the environment."""
         super(PyPIRCCommandTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
-        self.environ['HOME'] = self.tmp_dir
+        os.environ['HOME'] = self.tmp_dir
         self.rc = os.path.join(self.tmp_dir, '.pypirc')
         self.dist = Distribution()
 
