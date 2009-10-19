@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5833: Fix extra space character in readline completion with the
+  GNU readline library version 6.0.
+
 - Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
 
 - Issue #7082: When falling back to the MIME 'name' parameter, the
