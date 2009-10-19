@@ -414,6 +414,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5833: Fix extra space character in readline completion with the
+  GNU readline library version 6.0.
+
 - Issue #7133: SSL objects now support the new buffer API.
 
 - Issue #7149: urllib fails on OSX in the proxy detection code
