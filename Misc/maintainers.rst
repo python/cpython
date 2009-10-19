@@ -114,6 +114,7 @@ heapq               rhettinger
 hmac
 html
 http
+idlelib
 imaplib
 imghdr
 imp
@@ -239,7 +240,13 @@ zlib
 
 
 ==================  ===========
-Platform            Maintainer
+Tool                Maintainers
+------------------  -----------
+pybench             lemburg
+
+
+==================  ===========
+Platform            Maintainers
 ------------------  -----------
 AIX
 Cygwin              jlt63
