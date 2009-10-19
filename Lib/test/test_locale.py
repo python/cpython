@@ -8,12 +8,10 @@ enUS_locale = None
 
 def get_enUS_locale():
     global enUS_locale
-    if sys.platform == 'darwin':
-        raise unittest.SkipTest("Locale support on MacOSX is minimal")
     if sys.platform.startswith("win"):
         tlocs = ("En", "English")
     else:
-        tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
+        tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US.US-ASCII", "en_US")
     oldlocale = locale.setlocale(locale.LC_NUMERIC)
     for tloc in tlocs:
         try:
@@ -309,6 +307,39 @@ class TestFrFRNumberFormatting(FrFRCookedTest, BaseFormattingTest):
             grouping=True, international=True)
 
 
+class TestCollation(unittest.TestCase):
+    # Test string collation functions
+
+    def test_strcoll(self):
+        self.assertLess(locale.strcoll('a', 'b'), 0)
+        self.assertEqual(locale.strcoll('a', 'a'), 0)
+        self.assertGreater(locale.strcoll('b', 'a'), 0)
+
+    def test_strxfrm(self):
+        self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+
+
+class TestEnUSCollation(BaseLocalizedTest, TestCollation):
+    # Test string collation functions with a real English locale
+
+    locale_type = locale.LC_ALL
+
+    def setUp(self):
+        BaseLocalizedTest.setUp(self)
+        enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
+        if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
+            raise unittest.SkipTest('encoding not suitable')
+        if enc != 'iso8859-1' and (sys.platform == 'darwin' or
+                                   sys.platform.startswith('freebsd')):
+            raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
+
+    def test_strcoll_with_diacritic(self):
+        self.assertLess(locale.strcoll('à', 'b'), 0)
+
+    def test_strxfrm_with_diacritic(self):
+        self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
+
+
 class TestMiscellaneous(unittest.TestCase):
     def test_getpreferredencoding(self):
         # Invoke getpreferredencoding to make sure it does not cause exceptions.
@@ -317,11 +348,10 @@ class TestMiscellaneous(unittest.TestCase):
             # If encoding non-empty, make sure it is valid
             codecs.lookup(enc)
 
-    if hasattr(locale, "strcoll"):
-        def test_strcoll_3303(self):
-            # test crasher from bug #3303
-            self.assertRaises(TypeError, locale.strcoll, "a", None)
-            self.assertRaises(TypeError, locale.strcoll, b"a", None)
+    def test_strcoll_3303(self):
+        # test crasher from bug #3303
+        self.assertRaises(TypeError, locale.strcoll, "a", None)
+        self.assertRaises(TypeError, locale.strcoll, b"a", None)
 
 
 def test_main():
@@ -331,6 +361,7 @@ def test_main():
         TestEnUSNumberFormatting,
         TestCNumberFormatting,
         TestFrFRNumberFormatting,
+        TestCollation
     ]
     # SkipTest can't be raised inside unittests, handle it manually instead
     try:
@@ -339,7 +370,7 @@ def test_main():
         if verbose:
             print("Some tests will be disabled: %s" % e)
     else:
-        tests += [TestNumberFormatting]
+        tests += [TestNumberFormatting, TestEnUSCollation]
     run_unittest(*tests)
 
 if __name__ == '__main__':

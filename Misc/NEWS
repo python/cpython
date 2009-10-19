@@ -100,6 +100,9 @@ C-API
 Library
 -------
 
+- Issue #7080: locale.strxfrm() raises a MemoryError on 64-bit non-Windows
+  platforms, and assorted locale fixes by Derk Drukker.
+
 - Issue #5833: Fix extra space character in readline completion with the
   GNU readline library version 6.0.
 
@@ -118,7 +121,7 @@ Library
   is too large to fit in the current precision.
 
 - Issue #6236, #6348: Fix various failures in the I/O library under AIX
-  and other platforms, when using a non-gcc compiler. Patch by egreen.
+  and other platforms, when using a non-gcc compiler. Patch by Derk Drukker.
 
 - Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
   does now always result in NULL.
