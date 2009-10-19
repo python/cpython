@@ -9,6 +9,7 @@ This software comes with no warranty. Use at your own risk.
 
 ******************************************************************/
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include <stdio.h>
@@ -315,7 +316,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     result = PyUnicode_FromWideChar(buf, n2);
  exit:
     if (buf) PyMem_Free(buf);
-#ifdef HAVE_USABLE_WCHAR_T
+#ifndef HAVE_USABLE_WCHAR_T
     PyMem_Free(s);
 #endif
     return result;
