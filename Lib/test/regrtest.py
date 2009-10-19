@@ -548,9 +548,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if not bad and not skipped and len(good) > 1:
             print("All", end=' ')
         print(count(len(good), "test"), "OK.")
-        if verbose:
-            print("CAUTION:  stdout isn't compared in verbose mode:")
-            print("a test that passes in verbose mode may fail without it.")
     if print_slow:
         test_times.sort(reverse=True)
         print("10 slowest tests:")
