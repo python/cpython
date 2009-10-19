@@ -84,7 +84,7 @@ curses              andrew.kuchling
 datetime
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
-difflib
+difflib             tim_one
 dis
 distutils           tarek
 doctest             tim_one (inactive)
@@ -99,7 +99,7 @@ fileinput
 fnmatch
 formatter
 fpectl
-fractions           mark.dickinson
+fractions           mark.dickinson rhettinger
 ftplib
 functools
 gc                  pitrou
@@ -132,7 +132,7 @@ macpath
 mailbox             andrew.kuchling
 mailcap
 marshal
-math                mark.dickinson
+math                mark.dickinson rhettinger
 mimetypes
 mmap
 modulefinder        theller, jvr
@@ -165,7 +165,7 @@ py_compile
 pybench             lemburg, pitrou
 pyclbr
 pydoc
-queue
+queue               rhettinger
 quopri
 random              rhettinger
 re                  effbot (inactive), pitrou
