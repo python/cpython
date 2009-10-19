@@ -1368,6 +1368,4 @@ if __name__ == '__main__':
         i -= 1
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             del sys.path[i]
-    if '--slaveargs' not in sys.argv and len(sys.path) == pathlen:
-        print('Could not find %r in sys.path to remove it' % mydir)
     main()
