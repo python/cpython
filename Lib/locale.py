@@ -575,14 +575,13 @@ else:
                     # returning nothing will crash the
                     # interpreter.
                     result = 'UTF-8'
-
                 setlocale(LC_CTYPE, oldloc)
-                return result
             else:
                 result = nl_langinfo(CODESET)
                 if not result and sys.platform == 'darwin':
                     # See above for explanation
                     result = 'UTF-8'
+            return result
 
 
 ### Database
