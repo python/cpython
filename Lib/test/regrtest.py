@@ -440,13 +440,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 resource_denieds.append(test)
 
     if use_mp:
-        from threading import Thread, Lock
+        from threading import Thread
         from queue import Queue, Empty
         from subprocess import Popen, PIPE, STDOUT
         from collections import deque
         # TextIOWrapper is not entirely thread-safe now,
         # it can produce duplicate output when printing from several threads.
-        print_lock = Lock()
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         pending = deque()
         output = Queue()
