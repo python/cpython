@@ -275,6 +275,8 @@ def main(stdscr):
         curses.resetty()
 
 def test_main():
+    if not sys.stdout.isatty():
+        raise unittest.SkipTest("sys.stdout is not a tty")
     # testing setupterm() inside initscr/endwin
     # causes terminal breakage
     curses.setupterm(fd=sys.stdout.fileno())
