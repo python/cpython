@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7168: Document PyFloat_AsString and PyFloat_AsReprString, and
+  note that they are unsafe and deprecated.
+
 - Issue #7120: logging: Removed import of multiprocessing which is causing
   crash in GAE.
 
