@@ -286,6 +286,9 @@ Documentation
 Tests
 -----
 
+- Issue #7151: fixed regrtest -j so that output to stderr from a test no
+  longer runs the risk of causing the worker thread to fail.
+
 - Issue #7055: test___all__ now greedily detects all modules which have an
   __all__ attribute, rather than using a hardcoded and incomplete list.
 

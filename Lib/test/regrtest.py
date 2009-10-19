@@ -464,38 +464,38 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     try:
                         test, args_tuple = pending.popleft()
                     except IndexError:
-                        output.put((None, None, None))
+                        output.put((None, None, None, None))
                         return
-                    if not quiet:
-                        with print_lock:
-                            print(test)
-                            sys.stdout.flush()
                     # -E is needed by some tests, e.g. test_import
                     popen = Popen([sys.executable, '-E', '-m', 'test.regrtest',
                                    '--slaveargs', json.dumps(args_tuple)],
-                                   stdout=PIPE, stderr=STDOUT,
+                                   stdout=PIPE, stderr=PIPE,
                                    universal_newlines=True, close_fds=True)
-                    out = popen.communicate()[0].strip()
-                    out = debug_output_pat.sub("", out)
-                    out, _, result = out.strip().rpartition("\n")
+                    stdout, stderr = popen.communicate()
+                    # Strip last refcount output line if it exists, since it
+                    # comes from the shutdown of the interpreter in the subcommand.
+                    stderr = debug_output_pat.sub("", stderr)
+                    stdout, _, result = stdout.strip().rpartition("\n")
                     result = json.loads(result)
-                    output.put((test, out.strip(), result))
+                    if not quiet:
+                        stdout = test+'\n'+stdout
+                    output.put((test, stdout.rstrip(), stderr.rstrip(), result))
             except BaseException:
-                output.put((None, None, None))
+                output.put((None, None, None, None))
                 raise
         workers = [Thread(target=work) for i in range(use_mp)]
         for worker in workers:
             worker.start()
         finished = 0
         while finished < use_mp:
-            test, out, result = output.get()
-            if out:
-                with print_lock:
-                    print(out)
-                    sys.stdout.flush()
+            test, stdout, stderr, result = output.get()
             if test is None:
                 finished += 1
                 continue
+            if stdout:
+                print(stdout)
+            if stderr:
+                print(stderr, file=sys.stderr)
             if result[0] == -4:
                 assert result[1] == 'KeyboardInterrupt'
                 pending.clear()
