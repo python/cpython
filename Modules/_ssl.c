@@ -1144,14 +1144,13 @@ normal_return:
 
 static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 {
-	char *data;
+	Py_buffer buf;
 	int len;
-	int count;
 	int sockstate;
 	int err;
         int nonblocking;
 
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &count))
+	if (!PyArg_ParseTuple(args, "s*:write", &buf))
 		return NULL;
 
         /* just in case the blocking state of the socket has been changed */
@@ -1163,24 +1162,24 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	if (sockstate == SOCKET_HAS_TIMED_OUT) {
 		PyErr_SetString(PySSLErrorObject,
                                 "The write operation timed out");
-		return NULL;
+		goto error;
 	} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
 		PyErr_SetString(PySSLErrorObject,
                                 "Underlying socket has been closed.");
-		return NULL;
+		goto error;
 	} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
 		PyErr_SetString(PySSLErrorObject,
                                 "Underlying socket too large for select().");
-		return NULL;
+		goto error;
 	}
 	do {
 		err = 0;
 		PySSL_BEGIN_ALLOW_THREADS
-		len = SSL_write(self->ssl, data, count);
+		len = SSL_write(self->ssl, buf.buf, buf.len);
 		err = SSL_get_error(self->ssl, len);
 		PySSL_END_ALLOW_THREADS
-		if(PyErr_CheckSignals()) {
-			return NULL;
+		if (PyErr_CheckSignals()) {
+			goto error;
 		}
 		if (err == SSL_ERROR_WANT_READ) {
 			sockstate =
@@ -1194,19 +1193,25 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
                                         "The write operation timed out");
-			return NULL;
+			goto error;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
 			PyErr_SetString(PySSLErrorObject,
                                         "Underlying socket has been closed.");
-			return NULL;
+			goto error;
 		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
 			break;
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+
+	PyBuffer_Release(&buf);
 	if (len > 0)
 		return PyInt_FromLong(len);
 	else
 		return PySSL_SetError(self, len, __FILE__, __LINE__);
+
+error:
+	PyBuffer_Release(&buf);
+	return NULL;
 }
 
 PyDoc_STRVAR(PySSL_SSLwrite_doc,

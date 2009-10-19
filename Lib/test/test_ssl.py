@@ -662,20 +662,21 @@ else:
             except Exception, x:
                 raise test_support.TestFailed("Unexpected exception:  " + str(x))
             else:
-                if connectionchatty:
-                    if test_support.verbose:
-                        sys.stdout.write(
-                            " client:  sending %s...\n" % (repr(indata)))
-                s.write(indata)
-                outdata = s.read()
-                if connectionchatty:
-                    if test_support.verbose:
-                        sys.stdout.write(" client:  read %s\n" % repr(outdata))
-                if outdata != indata.lower():
-                    raise test_support.TestFailed(
-                        "bad data <<%s>> (%d) received; expected <<%s>> (%d)\n"
-                        % (outdata[:min(len(outdata),20)], len(outdata),
-                           indata[:min(len(indata),20)].lower(), len(indata)))
+                for arg in [indata, bytearray(indata), memoryview(indata)]:
+                    if connectionchatty:
+                        if test_support.verbose:
+                            sys.stdout.write(
+                                " client:  sending %s...\n" % (repr(arg)))
+                    s.write(arg)
+                    outdata = s.read()
+                    if connectionchatty:
+                        if test_support.verbose:
+                            sys.stdout.write(" client:  read %s\n" % repr(outdata))
+                    if outdata != indata.lower():
+                        raise test_support.TestFailed(
+                            "bad data <<%s>> (%d) received; expected <<%s>> (%d)\n"
+                            % (outdata[:min(len(outdata),20)], len(outdata),
+                               indata[:min(len(indata),20)].lower(), len(indata)))
                 s.write("over\n")
                 if connectionchatty:
                     if test_support.verbose:
