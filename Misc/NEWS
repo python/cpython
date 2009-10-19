@@ -12,7 +12,7 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue *7147: Remove support for compiling Python without complex number
+- Issue #7147: Remove support for compiling Python without complex number
   support.
 
 - Issue #7120: logging: Removed import of multiprocessing which is causing
@@ -23,7 +23,7 @@ Core and Builtins
   Patch by Christopher Tur Lesniewski-Laas.
 
 - Issue #7065: Fix a crash in bytes.maketrans and bytearray.maketrans when
-  using byte values greater than 127.  Patch by egreen.
+  using byte values greater than 127.  Patch by Derk Drukker.
 
 - Issue #1571184: The Unicode database contains properties for more characters.
   The tables for code points representing numeric values, white spaces or line
