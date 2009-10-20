@@ -321,7 +321,7 @@ class ThreadTests(unittest.TestCase):
             stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(stdout, b"Woke up, sleep function is: <built-in function sleep>\n")
-        stderr = re.sub(br"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
+        stderr = re.sub(br"^\[\d+ refs\]", b"", stderr, re.MULTILINE).strip()
         self.assertEqual(stderr, b"")
 
     def test_enumerate_after_join(self):
