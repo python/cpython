@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7099: Decimal.is_normal now returns True for numbers with exponent
+  larger than emax.
+
 - Issue #7080: locale.strxfrm() raises a MemoryError on 64-bit non-Windows
   platforms, and assorted locale fixes by Derk Drukker.
 
