@@ -414,6 +414,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7099: Decimal.is_normal now returns True for numbers with exponent
+  larger than emax.
+
 - Issue #5833: Fix extra space character in readline completion with the
   GNU readline library version 6.0.
 
