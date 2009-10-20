@@ -444,8 +444,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         from queue import Queue, Empty
         from subprocess import Popen, PIPE, STDOUT
         from collections import deque
-        # TextIOWrapper is not entirely thread-safe now,
-        # it can produce duplicate output when printing from several threads.
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         pending = deque()
         output = Queue()
