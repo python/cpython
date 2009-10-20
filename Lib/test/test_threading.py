@@ -327,6 +327,7 @@ class ThreadTests(unittest.TestCase):
             stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(stdout, "Woke up, sleep function is: <built-in function sleep>\n")
+        stderr = re.sub(r"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
         self.assertEqual(stderr, "")
 
 
