@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
+  fixes the problem of some exceptions being thrown at shutdown when the
+  interpreter is killed. Patch by Adam Olsen.
+
 - Issue #7147: Remove support for compiling Python without complex number
   support.
 
