@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
+  fixes the problem of some exceptions being thrown at shutdown when the
+  interpreter is killed. Patch by Adam Olsen.
+
 - Issue #7168: Document PyFloat_AsString and PyFloat_AsReprString, and
   note that they are unsafe and deprecated.
 
