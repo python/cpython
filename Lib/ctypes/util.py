@@ -96,8 +96,10 @@ elif os.name == "posix":
               '$CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
         try:
             f = os.popen(cmd)
-            trace = f.read()
-            rv = f.close()
+            try:
+                trace = f.read()
+            finally:
+                rv = f.close()
         finally:
             try:
                 os.unlink(ccout)
@@ -118,7 +120,12 @@ elif os.name == "posix":
             if not f:
                 return None
             cmd = "/usr/ccs/bin/dump -Lpv 2>/dev/null " + f
-            res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+            f = os.popen(cmd)
+            try:
+                data = f.read()
+            finally:
+                f.close()
+            res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
             return res.group(1)
@@ -134,7 +141,12 @@ elif os.name == "posix":
             rv = f.close()
             if rv == 10:
                 raise OSError, 'objdump command not found'
-            res = re.search(r'\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+            f = os.popen(cmd)
+            try:
+                data = f.read()
+            finally:
+                f.close()
+            res = re.search(r'\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
             return res.group(1)
@@ -157,8 +169,12 @@ elif os.name == "posix":
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
-            res = re.findall(expr,
-                             os.popen('/sbin/ldconfig -r 2>/dev/null').read())
+            f = os.popen('/sbin/ldconfig -r 2>/dev/null')
+            try:
+                data = f.read()
+            finally:
+                f.close()
+            res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
             res.sort(cmp= lambda x,y: cmp(_num_version(x), _num_version(y)))
@@ -169,12 +185,21 @@ elif os.name == "posix":
         def _findLib_ldconfig(name):
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'/[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-            res = re.search(expr,
-                            os.popen('/sbin/ldconfig -p 2>/dev/null').read())
+            f = os.popen('/sbin/ldconfig -p 2>/dev/null')
+            try:
+                data = f.read()
+            finally:
+                f.close()
+            res = re.search(expr, data)
             if not res:
                 # Hm, this works only for libs needed by the python executable.
                 cmd = 'ldd %s 2>/dev/null' % sys.executable
-                res = re.search(expr, os.popen(cmd).read())
+                f = os.popen(cmd)
+                try:
+                    data = f.read()
+                finally:
+                    f.close()
+                res = re.search(expr, data)
                 if not res:
                     return None
             return res.group(0)
@@ -197,8 +222,12 @@ elif os.name == "posix":
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
                    % (abi_type, re.escape(name))
-            res = re.search(expr,
-                            os.popen('/sbin/ldconfig -p 2>/dev/null').read())
+            f = os.popen('/sbin/ldconfig -p 2>/dev/null')
+            try:
+                data = f.read()
+            finally:
+                f.close()
+            res = re.search(expr, data)
             if not res:
                 return None
             return res.group(1)
