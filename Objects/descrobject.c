@@ -1280,25 +1280,28 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	/* if no docstring given and the getter has one, use that one */
 	if ((doc == NULL || doc == Py_None) && get != NULL) {
 		PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
-		if (get_doc != NULL) {
-			/* get_doc already INCREF'd by GetAttr */
+		if (get_doc) {
 			if (Py_TYPE(self) == &PyProperty_Type) {
 				Py_XDECREF(prop->prop_doc);
 				prop->prop_doc = get_doc;
-			} else {
-				/* Put __doc__ in dict of the subclass instance instead,
-				otherwise it gets shadowed by class's __doc__. */
-				if (PyObject_SetAttrString(self, "__doc__", get_doc) != 0)
-				{
-					/* DECREF for props handled by _dealloc */
-					Py_DECREF(get_doc);
+			}
+			else {
+				/* If this is a property subclass, put __doc__
+				in dict of the subclass instance instead,
+				otherwise it gets shadowed by __doc__ in the
+				class's dict. */
+				int err = PyObject_SetAttrString(self, "__doc__", get_doc);
+				Py_DECREF(get_doc);
+				if (err < 0)
 					return -1;
-	                        }
-                                Py_DECREF(get_doc);
 			}
 			prop->getter_doc = 1;
-		} else {
+		}
+		else if (PyErr_ExceptionMatches(PyExc_Exception)) {
 			PyErr_Clear();
+		}
+		else {
+			return -1;
 		}
 	}
 
