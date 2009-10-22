@@ -331,7 +331,7 @@ Constants
    The mathematical constant *e*.
 
 
-.. note::
+.. impl-detail::
 
    The :mod:`math` module consists mostly of thin wrappers around the platform C
    math library functions.  Behavior in exceptional cases is loosely specified

@@ -8,7 +8,7 @@ Command line and environment
 The CPython interpreter scans the command line and the environment for various
 settings.
 
-.. note::
+.. impl-detail::
 
    Other implementations' command line schemes may differ.  See
    :ref:`implementations` for further resources.

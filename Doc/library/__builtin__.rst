@@ -33,9 +33,10 @@ that wants to implement an :func:`open` function that wraps the built-in
 
        # ...
 
-As an implementation detail, most modules have the name ``__builtins__`` (note
-the ``'s'``) made available as part of their globals.  The value of
-``__builtins__`` is normally either this module or the value of this modules's
-:attr:`__dict__` attribute.  Since this is an implementation detail, it may not
-be used by alternate implementations of Python.
+.. impl-detail::
 
+   Most modules have the name ``__builtins__`` (note the ``'s'``) made available
+   as part of their globals.  The value of ``__builtins__`` is normally either
+   this module or the value of this modules's :attr:`__dict__` attribute.  Since
+   this is an implementation detail, it may not be used by alternate
+   implementations of Python.
