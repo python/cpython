@@ -345,6 +345,17 @@ p.deprecated {
     background-color: #ffa
 }
 
+.impl-detail {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 7px;
+    border: 1px solid #ccc;
+}
+
+.impl-detail p {
+    margin: 0;
+}
+
 /* -- code displays --------------------------------------------------------- */
 
 pre {
