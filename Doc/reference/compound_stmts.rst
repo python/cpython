@@ -610,9 +610,9 @@ which is then bound to the class name.
 .. [#] The exception is propagated to the invocation stack only if there is no
    :keyword:`finally` clause that negates the exception.
 
-.. [#] Currently, control "flows off the end" except in the case of an exception or the
-   execution of a :keyword:`return`, :keyword:`continue`, or :keyword:`break`
-   statement.
+.. [#] Currently, control "flows off the end" except in the case of an exception
+   or the execution of a :keyword:`return`, :keyword:`continue`, or
+   :keyword:`break` statement.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the
