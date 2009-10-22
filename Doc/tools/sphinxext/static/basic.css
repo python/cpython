@@ -420,7 +420,7 @@ span.eqno {
     div.document,
     div.documentwrapper,
     div.bodywrapper {
-        margin: 0;
+        margin: 0 !important;
         width: 100%;
     }
 
