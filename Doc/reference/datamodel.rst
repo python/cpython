@@ -1675,14 +1675,14 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
+* The action of a *__slots__* declaration is limited to the class where it is
+  defined.  As a result, subclasses will have a *__dict__* unless they also define
+  *__slots__* (which must only contain names of any *additional* slots).
+
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
-
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__*.
 
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`long`, :class:`str` and :class:`tuple`.
