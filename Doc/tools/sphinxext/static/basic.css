@@ -352,8 +352,12 @@ p.deprecated {
     border: 1px solid #ccc;
 }
 
-.impl-detail p {
-    margin: 0;
+.impl-detail .compound-first {
+    margin-top: 0;
+}
+
+.impl-detail .compound-last {
+    margin-bottom: 0;
 }
 
 /* -- code displays --------------------------------------------------------- */
