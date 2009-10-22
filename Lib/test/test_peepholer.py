@@ -150,6 +150,7 @@ class TestTranforms(unittest.TestCase):
         for line, elem in (
             ('-0.5', '(-0.5)'),                     # unary negative
             ('~-2', '(1)'),                         # unary invert
+            ('+1', '(1)'),                          # unary positive
         ):
             asm = dis_single(line)
             self.assertTrue(elem in asm, asm)
