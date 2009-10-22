@@ -1068,6 +1068,8 @@ Comparison of objects of the same type depends on the type:
   another one is made arbitrarily but consistently within one execution of a
   program.
 
+.. _membership-test-details:
+
 The operators :keyword:`in` and :keyword:`not in` test for collection
 membership.  ``x in s`` evaluates to true if *x* is a member of the collection
 *s*, and false otherwise.  ``x not in s`` returns the negation of ``x in s``.
@@ -1092,7 +1094,12 @@ string, so ``"" in "abc"`` will return ``True``.
 For user-defined classes which define the :meth:`__contains__` method, ``x in
 y`` is true if and only if ``y.__contains__(x)`` is true.
 
-For user-defined classes which do not define :meth:`__contains__` and do define
+For user-defined classes which do not define :meth:`__contains__` but do define
+:meth:`__iter__`, ``x in y`` is true if some value ``z`` with ``x == z`` is
+produced while iterating over ``y``.  If an exception is raised during the
+iteration, it is as if :keyword:`in` raised that exception.
+
+Lastly, the old-style iteration protocol is tried: if a class defines
 :meth:`__getitem__`, ``x in y`` is true if and only if there is a non-negative
 integer index *i* such that ``x == y[i]``, and all lower integer indices do not
 raise :exc:`IndexError` exception. (If any other exception is raised, it is as
