@@ -157,7 +157,7 @@ The :mod:`signal` module defines the following functions:
 
    The old values are returned as a tuple: (delay, interval).
 
-   Attempting to pass an invalid interval timer will cause a
+   Attempting to pass an invalid interval timer will cause an
    :exc:`ItimerError`.
 
    .. versionadded:: 2.6
