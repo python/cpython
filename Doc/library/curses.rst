@@ -3,7 +3,7 @@
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable terminal
-   handling.
+              handling.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
