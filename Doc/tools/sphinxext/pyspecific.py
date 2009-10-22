@@ -60,6 +60,9 @@ class ImplementationDetail(Directive):
         content = self.content
         add_text = nodes.strong('CPython implementation detail:',
                                 'CPython implementation detail:')
+        if self.arguments:
+            n, m = self.state.inline_text(self.arguments[0], self.lineno)
+            pnode.append(nodes.paragraph('', '', *(n + m)))
         self.state.nested_parse(content, self.content_offset, pnode)
         if pnode.children and isinstance(pnode[0], nodes.paragraph):
             pnode[0].insert(0, add_text)
