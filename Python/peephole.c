@@ -197,6 +197,9 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 		case UNARY_INVERT:
 			newconst = PyNumber_Invert(v);
 			break;
+		case UNARY_POSITIVE:
+			newconst = PyNumber_Positive(v);
+			break;
 		default:
 			/* Called with an unknown opcode */
 			PyErr_Format(PyExc_SystemError,
@@ -500,6 +503,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				   LOAD_CONST c1  UNARY_OP -->	LOAD_CONST unary_op(c) */
 			case UNARY_NEGATIVE:
 			case UNARY_INVERT:
+			case UNARY_POSITIVE:
 				if (lastlc >= 1	 &&
 				    ISBASICBLOCK(blocks, i-3, 4)  &&
 				    fold_unaryops_on_constants(&codestr[i-3], consts))	{
