@@ -24,6 +24,7 @@ class BasicThreadTest(unittest.TestCase):
         self.done_mutex.acquire()
         self.running_mutex = thread.allocate_lock()
         self.random_mutex = thread.allocate_lock()
+        self.created = 0
         self.running = 0
         self.next_ident = 0
 
@@ -35,6 +36,7 @@ class ThreadRunningTests(BasicThreadTest):
             self.next_ident += 1
             verbose_print("creating task %s" % self.next_ident)
             thread.start_new_thread(self.task, (self.next_ident,))
+            self.created += 1
             self.running += 1
 
     def task(self, ident):
@@ -45,7 +47,7 @@ class ThreadRunningTests(BasicThreadTest):
         verbose_print("task %s done" % ident)
         with self.running_mutex:
             self.running -= 1
-            if self.running == 0:
+            if self.created == NUMTASKS and self.running == 0:
                 self.done_mutex.release()
 
     def test_starting_threads(self):
@@ -87,6 +89,7 @@ class ThreadRunningTests(BasicThreadTest):
             for tss in (262144, 0x100000):
                 verbose_print("trying stack_size = (%d)" % tss)
                 self.next_ident = 0
+                self.created = 0
                 for i in range(NUMTASKS):
                     self.newtask()
 
