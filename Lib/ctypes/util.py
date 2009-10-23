@@ -1,4 +1,5 @@
 import sys, os
+import contextlib
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -117,11 +118,8 @@ elif os.name == "posix":
             if not f:
                 return None
             cmd = "/usr/ccs/bin/dump -Lpv 2>/dev/null " + f
-            f = os.popen(cmd)
-            try:
+            with contextlib.closing(os.popen(cmd)) as f:
                 data = f.read()
-            finally:
-                f.close()
             res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
@@ -138,11 +136,8 @@ elif os.name == "posix":
             rv = f.close()
             if rv == 10:
                 raise OSError('objdump command not found')
-            f = os.popen(cmd)
-            try:
+            with contextlib.closing(os.popen(cmd)) as f:
                 data = f.read()
-            finally:
-                f.close()
             res = re.search(r'\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
@@ -166,11 +161,8 @@ elif os.name == "posix":
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
-            f = os.popen('/sbin/ldconfig -r 2>/dev/null')
-            try:
+            with contextlib.closing(os.popen('/sbin/ldconfig -r 2>/dev/null')) as f:
                 data = f.read()
-            finally:
-                f.close()
             res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
@@ -182,20 +174,14 @@ elif os.name == "posix":
         def _findLib_ldconfig(name):
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'/[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-            f = os.popen('/sbin/ldconfig -p 2>/dev/null')
-            try:
+            with contextlib.closing(os.popen('/sbin/ldconfig -p 2>/dev/null')) as f:
                 data = f.read()
-            finally:
-                f.close()
             res = re.search(expr, data)
             if not res:
                 # Hm, this works only for libs needed by the python executable.
                 cmd = 'ldd %s 2>/dev/null' % sys.executable
-                f = os.popen(cmd)
-                try:
+                with contextlib.closing(os.popen(cmd)) as f:
                     data = f.read()
-                finally:
-                    f.close()
                 res = re.search(expr, data)
                 if not res:
                     return None
@@ -219,11 +205,8 @@ elif os.name == "posix":
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
                    % (abi_type, re.escape(name))
-            f = os.popen('/sbin/ldconfig -p 2>/dev/null')
-            try:
+            with contextlib.closing(os.popen('/sbin/ldconfig -p 2>/dev/null')) as f:
                 data = f.read()
-            finally:
-                f.close()
             res = re.search(expr, data)
             if not res:
                 return None
