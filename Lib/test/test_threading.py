@@ -326,11 +326,10 @@ class ThreadTests(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
-        self.assertEqual(stdout, "Woke up, sleep function is: <built-in function sleep>\n")
+        self.assertEqual(stdout.strip(),
+            "Woke up, sleep function is: <built-in function sleep>")
         stderr = re.sub(r"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
         self.assertEqual(stderr, "")
-
-
 
     def test_enumerate_after_join(self):
         # Try hard to trigger #1703448: a thread is still returned in
