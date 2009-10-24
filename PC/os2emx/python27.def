@@ -306,7 +306,6 @@ EXPORTS
   "PyFloat_AsReprString"
   "PyFloat_AsString"
   "_PyFloat_Init"
-  "PyFloat_AsStringEx"
   "PyFloat_Type"
 
 ; From python27_s.lib(frameobject)
