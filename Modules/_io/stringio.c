@@ -515,11 +515,15 @@ static void
 stringio_dealloc(stringio *self)
 {
     _PyObject_GC_UNTRACK(self);
+    self->ok = 0;
+    if (self->buf) {
+        PyMem_Free(self->buf);
+        self->buf = NULL;
+    }
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
-    if (self->buf)
-        PyMem_Free(self->buf);
+    Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);

@@ -345,6 +345,13 @@ class MemoryTestMixin:
         self.assertEqual(test1(), buf)
         self.assertEqual(test2(), buf)
 
+    def test_instance_dict_leak(self):
+        # Test case for issue #6242.
+        # This will be caught by regrtest.py -R if this leak.
+        for _ in range(100):
+            memio = self.ioclass()
+            memio.foo = 1
+
 
 class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
