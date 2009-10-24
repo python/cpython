@@ -1069,6 +1069,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7066: archive_util.make_archive now restores the cwd if an error is
+  raised. Initial patch by Ezio Melotti.
+
 - Issue #6545: Removed assert statements in distutils.Extension, so the 
   behavior is similar when used with -O.
 

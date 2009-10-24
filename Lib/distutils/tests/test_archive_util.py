@@ -8,7 +8,8 @@ from os.path import splitdrive
 import warnings
 
 from distutils.archive_util import (check_archive_formats, make_tarball,
-                                    make_zipfile, make_archive)
+                                    make_zipfile, make_archive,
+                                    ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
 from test.support import check_warnings
@@ -191,6 +192,20 @@ class ArchiveUtilTestCase(support.TempdirManager,
         tmpdir = self.mkdtemp()
         base_name = os.path.join(tmpdir, 'archive')
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
+
+    def test_make_archive_cwd(self):
+        current_dir = os.getcwd()
+        def _breaks(*args, **kw):
+            raise RuntimeError()
+        ARCHIVE_FORMATS['xxx'] = (_breaks, [], 'xxx file')
+        try:
+            try:
+                make_archive('xxx', 'xxx', root_dir=self.mkdtemp())
+            except:
+                pass
+            self.assertEquals(os.getcwd(), current_dir)
+        finally:
+            del ARCHIVE_FORMATS['xxx']
 
 def test_suite():
     return unittest.makeSuite(ArchiveUtilTestCase)
