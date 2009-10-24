@@ -114,6 +114,7 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef HAVE_PTH
+#error GNU pth threads are now unsupported, and code will be removed in 3.3.
 #include "thread_pth.h"
 #undef _POSIX_THREADS
 #endif
