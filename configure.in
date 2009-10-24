@@ -3348,7 +3348,9 @@ fi
 # mode is round-to-nearest and double rounding issues are present, and
 # 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
 AC_MSG_CHECKING(for x87-style double rounding)
-AC_CACHE_VAL(ac_cv_x87_double_rounding, [
+# $BASECFLAGS may affect the result
+ac_save_cc="$CC"
+CC="$CC $BASECFLAGS"
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <math.h>
@@ -3371,7 +3373,8 @@ int main() {
 ],
 ac_cv_x87_double_rounding=no,
 ac_cv_x87_double_rounding=yes,
-ac_cv_x87_double_rounding=no)])
+ac_cv_x87_double_rounding=no)
+CC="$ac_save_cc"
 AC_MSG_RESULT($ac_cv_x87_double_rounding)
 if test "$ac_cv_x87_double_rounding" = yes
 then
