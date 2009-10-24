@@ -903,6 +903,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\dtoa.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\Python-ast.h"
 				>
 			</File>
@@ -1796,6 +1800,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\pystrtod.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\dtoa.c"
 				>
 			</File>
 			<File
