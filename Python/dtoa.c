@@ -116,8 +116,6 @@
 
 #include "Python.h"
 
-#define IEEE_8087
-
 /* if PY_NO_SHORT_FLOAT_REPR is defined, then don't even try to compile
    the following code */
 #ifndef PY_NO_SHORT_FLOAT_REPR
