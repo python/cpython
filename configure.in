@@ -2018,17 +2018,6 @@ yes
     AC_DEFINE(MACH_C_THREADS, 1,
     [Define if you are using Mach cthreads under mach /])
     THREADOBJ="Python/thread.o"],[
-    AC_MSG_CHECKING(for --with-pth)
-    AC_ARG_WITH([pth],
-                AC_HELP_STRING(--with-pth, use GNU pth threading libraries),
-                [AC_MSG_RESULT($withval)
-                  AC_DEFINE([WITH_THREAD])
-                  AC_DEFINE([HAVE_PTH], 1,
-                            [Define if you have GNU PTH threads.])
-                  LIBS="-lpth $LIBS"
-                  THREADOBJ="Python/thread.o"],
-	        [AC_MSG_RESULT(no)
-
     # Just looking for pthread_create in libpthread is not enough:
     # on HP/UX, pthread.h renames pthread_create to a different symbol name.
     # So we really have to include pthread.h, and then link.
@@ -2064,7 +2053,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])
+    ])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
