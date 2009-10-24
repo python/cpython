@@ -350,7 +350,7 @@ RawConfigParser Objects
       cfgparser.optionxform = str
 
    Note that when reading configuration files, whitespace around the
-   option names are stripped before :meth:``optionxform`` is called.
+   option names are stripped before :meth:`optionxform` is called.
 
 
 .. _configparser-objects:
