@@ -13,6 +13,7 @@ from distutils.dep_util import newer
 from distutils.spawn import spawn, find_executable
 from distutils import log
 from distutils.version import LooseVersion
+from distutils.errors import DistutilsByteCompileError
 
 def get_platform():
     """Return a string that identifies the current platform.
@@ -445,6 +446,10 @@ def byte_compile(py_files, optimize=0, force=0, prefix=None, base_dir=None,
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
     """
+    # nothing is done if sys.dont_write_bytecode is True
+    if sys.dont_write_bytecode:
+        raise DistutilsByteCompileError('byte-compiling not supported.')
+
     # First, if the caller didn't force us into direct or indirect mode,
     # figure out which mode we should be in.  We take a conservative
     # approach: choose direct mode *only* if the current interpreter is

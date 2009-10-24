@@ -5,6 +5,7 @@ Implements the Distutils 'build_py' command."""
 __revision__ = "$Id$"
 
 import os
+import sys
 from glob import glob
 
 from distutils.core import Command
@@ -372,6 +373,10 @@ class build_py(Command):
                 self.build_module(module, module_file, package)
 
     def byte_compile(self, files):
+        if sys.dont_write_bytecode:
+            self.warn('byte-compile not supported on this platform, skipping.')
+            return
+
         from distutils.util import byte_compile
         prefix = self.build_lib
         if prefix[-1] != os.sep:

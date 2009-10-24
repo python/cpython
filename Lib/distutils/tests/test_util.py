@@ -1,7 +1,4 @@
 """Tests for distutils.util."""
-# not covered yet:
-#    - byte_compile
-#
 import os
 import sys
 import unittest
@@ -9,11 +6,12 @@ from copy import copy
 from StringIO import StringIO
 import subprocess
 
-from distutils.errors import DistutilsPlatformError
+from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
                             check_environ, split_quoted, strtobool,
                             rfc822_escape, get_compiler_versions,
-                            _find_exe_version, _MAC_OS_X_LD_VERSION)
+                            _find_exe_version, _MAC_OS_X_LD_VERSION,
+                            byte_compile)
 from distutils import util
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
@@ -348,6 +346,16 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self._exes['dllwrap'] = 'Cheese Wrap'
         res = get_compiler_versions()
         self.assertEquals(res[2], None)
+
+    def test_dont_write_bytecode(self):
+        # makes sure byte_compile raise a DistutilsError
+        # if sys.dont_write_bytecode is True
+        old_dont_write_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+        try:
+            self.assertRaises(DistutilsByteCompileError, byte_compile, [])
+        finally:
+            sys.dont_write_bytecode = False
 
 def test_suite():
     return unittest.makeSuite(UtilTestCase)
