@@ -418,6 +418,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6218: io.StringIO and io.BytesIO instances are now picklable with
+  protocol 2.
+
 - Issue #7077: logging: SysLogHandler now treats Unicode as per RFC 5424.
 
 - Issue #7099: Decimal.is_normal now returns True for numbers with exponent
