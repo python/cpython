@@ -122,6 +122,7 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef C_THREADS
+#error Mach C Threads are now unsupported, and code will be removed in 3.3.
 #include "thread_cthread.h"
 #endif
 
