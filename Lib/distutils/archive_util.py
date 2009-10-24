@@ -233,9 +233,11 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
         kwargs['owner'] = owner
         kwargs['group'] = group
 
-    filename = func(base_name, base_dir, **kwargs)
-    if root_dir is not None:
-        log.debug("changing back to '%s'", save_cwd)
-        os.chdir(save_cwd)
+    try:
+        filename = func(base_name, base_dir, **kwargs)
+    finally:
+        if root_dir is not None:
+            log.debug("changing back to '%s'", save_cwd)
+            os.chdir(save_cwd)
 
     return filename
