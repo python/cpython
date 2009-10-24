@@ -109,6 +109,7 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef SUN_LWP
+#error SunOS lightweight processes are now unsupported, and code will be removed in 3.3.
 #include "thread_lwp.h"
 #endif
 
