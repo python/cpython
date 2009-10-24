@@ -1188,19 +1188,6 @@ _expectations = {
         test_zipfile
         test_zlib
         """,
-    'atheos':
-        """
-        test_curses
-        test_dbm_gnu
-        test_epoll
-        test_largefile
-        test_locale
-        test_kqueue
-        test_mhlib
-        test_mmap
-        test_poll
-        test_resource
-        """,
     'cygwin':
         """
         test_curses

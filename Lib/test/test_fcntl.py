@@ -16,15 +16,12 @@ fcntl = import_module('fcntl')
 # TODO - Write tests for flock() and lockf().
 
 def get_lockdata():
-    if sys.platform.startswith('atheos'):
-        start_len = "qq"
+    try:
+        os.O_LARGEFILE
+    except AttributeError:
+        start_len = "ll"
     else:
-        try:
-            os.O_LARGEFILE
-        except AttributeError:
-            start_len = "ll"
-        else:
-            start_len = "qq"
+        start_len = "qq"
 
     if sys.platform in ('netbsd1', 'netbsd2', 'netbsd3',
                         'Darwin1.2', 'darwin',

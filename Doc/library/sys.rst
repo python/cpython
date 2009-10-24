@@ -576,7 +576,6 @@ always available.
    Mac OS X         ``'darwin'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
-   AtheOS           ``'atheos'``
    ================ ===========================
 
 

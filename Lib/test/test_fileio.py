@@ -96,8 +96,6 @@ class AutoFileTests(unittest.TestCase):
         methods = ['fileno', 'isatty', 'read', 'readinto',
                    'seek', 'tell', 'truncate', 'write', 'seekable',
                    'readable', 'writable']
-        if sys.platform.startswith('atheos'):
-            methods.remove('truncate')
 
         self.f.close()
         self.assertTrue(self.f.closed)

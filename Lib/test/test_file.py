@@ -106,8 +106,7 @@ class AutoFileTests(unittest.TestCase):
                    ('writelines', ([],)),
                    ('__iter__', ()),
                    ]
-        if not sys.platform.startswith('atheos'):
-            methods.append(('truncate', ()))
+        methods.append(('truncate', ()))
 
         # __exit__ should close the file
         self.f.__exit__(None, None, None)
