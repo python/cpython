@@ -355,7 +355,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         try:
             self.assertRaises(DistutilsByteCompileError, byte_compile, [])
         finally:
-            sys.dont_write_bytecode = False
+            sys.dont_write_bytecode = old_dont_write_bytecode
 
 def test_suite():
     return unittest.makeSuite(UtilTestCase)
