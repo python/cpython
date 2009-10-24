@@ -18,6 +18,18 @@
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
+   mixed-endian order (byte order 45670123) */
+#undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
+
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
+   significant byte first */
+#undef DOUBLE_IS_BIG_ENDIAN_IEEE754
+
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored with the
+   least significant byte first */
+#undef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
+
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
@@ -239,6 +251,10 @@
 
 /* Define to 1 if you have the `gamma' function. */
 #undef HAVE_GAMMA
+
+/* Define if we can use gcc inline assembler to get and set x87 control word
+   */
+#undef HAVE_GCC_ASM_FOR_X87
 
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
