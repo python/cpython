@@ -23,12 +23,6 @@
 
 #include <stdlib.h>
 
-#ifdef __sgi
-#ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.in */
-#undef _POSIX_THREADS
-#endif
-#endif
-
 #include "pythread.h"
 
 #ifndef _POSIX_THREADS
@@ -101,6 +95,7 @@ PyThread_init_thread(void)
 static size_t _pythread_stacksize = 0;
 
 #ifdef SGI_THREADS
+#error SGI Irix threads are now unsupported, and code will be removed in 3.3.
 #include "thread_sgi.h"
 #endif
 
