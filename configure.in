@@ -3240,12 +3240,107 @@ else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT(default LIBC="$LIBC")])
 
-# ************************************
-# * Check for mathematical functions *
-# ************************************
+# **************************************************
+# * Check for various properties of floating point *
+# **************************************************
 
-LIBS_SAVE=$LIBS
-LIBS="$LIBS $LIBM"
+AC_MSG_CHECKING(whether C doubles are little-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_little_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_little_endian_double=yes,
+ac_cv_little_endian_double=no,
+ac_cv_little_endian_double=no)])
+AC_MSG_RESULT($ac_cv_little_endian_double)
+if test "$ac_cv_little_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the least significant byte first])
+fi
+
+AC_MSG_CHECKING(whether C doubles are big-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_big_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_big_endian_double=yes,
+ac_cv_big_endian_double=no,
+ac_cv_big_endian_double=no)])
+AC_MSG_RESULT($ac_cv_big_endian_double)
+if test "$ac_cv_big_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_BIG_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the most significant byte first])
+fi
+
+# Some ARM platforms use a mixed-endian representation for doubles.
+# While Python doesn't currently have full support for these platforms
+# (see e.g., issue 1762561), we can at least make sure that float <-> string
+# conversions work.
+AC_MSG_CHECKING(whether C doubles are ARM mixed-endian IEEE 754 binary64)
+AC_CACHE_VAL(ac_cv_mixed_endian_double, [
+AC_TRY_RUN([
+#include <string.h>
+int main() {
+    double x = 9006104071832581.0;
+    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
+        return 0;
+    else
+        return 1;
+}
+],
+ac_cv_mixed_endian_double=yes,
+ac_cv_mixed_endian_double=no,
+ac_cv_mixed_endian_double=no)])
+AC_MSG_RESULT($ac_cv_mixed_endian_double)
+if test "$ac_cv_mixed_endian_double" = yes
+then
+  AC_DEFINE(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   in ARM mixed-endian order (byte order 45670123)])
+fi
+
+# The short float repr introduced in Python 3.1 requires the
+# correctly-rounded string <-> double conversion functions from
+# Python/dtoa.c, which in turn require that the FPU uses 53-bit
+# rounding; this is a problem on x86, where the x87 FPU has a default
+# rounding precision of 64 bits.  For gcc/x86, we try to fix this by
+# using inline assembler to get and set the x87 FPU control word.
+if test "$GCC" = yes && test -n "`$CC -dM -E - </dev/null | grep i386`"
+then
+    # Check that it's okay to use gcc inline assembler to get and set
+    # x87 control word.  It should be, but you never know...
+    AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set x87 control word)
+    AC_TRY_COMPILE([], [
+      unsigned short cw;
+      __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
+      __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
+    ],
+    [have_gcc_asm_for_x87=yes], [have_gcc_asm_for_x87=no])
+    AC_MSG_RESULT($have_gcc_asm_for_x87)
+    if test "$have_gcc_asm_for_x87" = yes
+    then
+        AC_DEFINE(HAVE_GCC_ASM_FOR_X87, 1,
+        [Define if we can use gcc inline assembler to get and set x87 control word])
+    fi
+fi
 
 # Detect whether system arithmetic is subject to x87-style double
 # rounding issues.  The result of this test has little meaning on non
@@ -3283,6 +3378,13 @@ then
   AC_DEFINE(X87_DOUBLE_ROUNDING, 1,
   [Define if arithmetic is subject to x87-style double rounding issue])
 fi
+
+# ************************************
+# * Check for mathematical functions *
+# ************************************
+
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
 
 # Multiprocessing check for broken sem_getvalue
 AC_MSG_CHECKING(for broken sem_getvalue)
