@@ -6,6 +6,8 @@ Implements the Distutils 'install_lib' command
 __revision__ = "$Id$"
 
 import os
+import sys
+
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 
@@ -118,6 +120,10 @@ class install_lib(Command):
         return outfiles
 
     def byte_compile(self, files):
+        if sys.dont_write_bytecode:
+            self.warn('byte-compile not supported on this platform, skipping.')
+            return
+
         from distutils.util import byte_compile
 
         # Get the "--root" directory supplied to the "install" command,

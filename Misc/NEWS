@@ -418,6 +418,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7071: byte-compilation in Distutils is now done with respect to
+  sys.dont_write_bytecode.
+
 - Issue #7066: archive_util.make_archive now restores the cwd if an error is 
   raised. Initial patch by Ezio Melotti.
 

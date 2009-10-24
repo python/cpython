@@ -74,6 +74,8 @@ class DistutilsInternalError (DistutilsError):
 class DistutilsTemplateError (DistutilsError):
     """Syntax error in a file list template."""
 
+class DistutilsByteCompileError(DistutilsError):
+    """Byte compile error."""
 
 # Exception classes used by the CCompiler implementation classes
 class CCompilerError (Exception):
