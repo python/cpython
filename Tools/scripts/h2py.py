@@ -49,13 +49,7 @@ except KeyError:
     try:
         searchdirs=os.environ['INCLUDE'].split(';')
     except KeyError:
-        try:
-            if sys.platform.startswith("atheos"):
-                searchdirs=os.environ['C_INCLUDE_PATH'].split(':')
-            else:
-                raise KeyError
-        except KeyError:
-            searchdirs=['/usr/include']
+        searchdirs=['/usr/include']
 
 def main():
     global filedict

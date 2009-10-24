@@ -248,7 +248,6 @@ then
 	case $MACHDEP in
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	atheos*) MACHDEP="atheos";;
         irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
 	esac
@@ -630,7 +629,7 @@ AC_ARG_ENABLE(shared,
 if test -z "$enable_shared"
 then 
   case $ac_sys_system in
-  CYGWIN* | atheos*)
+  CYGWIN*)
     enable_shared="yes";;
   *)
     enable_shared="no";;
@@ -716,11 +715,6 @@ if test $enable_shared = "yes"; then
 	  BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  ;;
-    atheos*)
-	  LDLIBRARY='libpython$(VERSION).so'
-	  BLDLIBRARY='-L. -lpython$(VERSION)'
-	  RUNSHARED=DLL_PATH=`pwd`:${DLL_PATH:-/atheos/sys/libs:/atheos/autolnk/lib}
-	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(VERSION).dylib'
 	BLDLIBRARY='-L. -lpython$(VERSION)'
@@ -774,7 +768,6 @@ AC_SUBST(LN)
 if test -z "$LN" ; then
 	case $ac_sys_system in
 		CYGWIN*) LN="ln -s";;
-		atheos*) LN="ln -s";;
 		*) LN=ln;;
 	esac
 fi
@@ -1701,7 +1694,6 @@ then
 		fi;;
 	SCO_SV*) LDSHARED='$(CC) -Wl,-G,-Bexport';;
 	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
-	atheos*) LDSHARED="gcc -shared";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -1740,7 +1732,6 @@ then
 		   *gcc*) CCSHARED="-shared";;
 		   *) CCSHARED="";;
 		   esac;;
-	atheos*) CCSHARED="-fPIC";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2056,10 +2047,6 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"],[
-    AC_CHECK_HEADER(atheos/threads.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(ATHEOS_THREADS, 1,
-    [Define this if you have AtheOS threads.])
-    THREADOBJ="Python/thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
@@ -2077,7 +2064,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])])
+    ])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
@@ -2409,7 +2396,6 @@ then
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
 	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
-	atheos*) DYNLOADFILE="dynload_atheos.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading

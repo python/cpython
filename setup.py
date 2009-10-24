@@ -288,7 +288,7 @@ class PyBuildExt(build_ext):
 
     def get_platform(self):
         # Get value of sys.platform
-        for platform in ['cygwin', 'darwin', 'atheos', 'osf1']:
+        for platform in ['cygwin', 'darwin', 'osf1']:
             if sys.platform.startswith(platform):
                 return platform
         return sys.platform
@@ -354,13 +354,6 @@ class PyBuildExt(build_ext):
 
         platform = self.get_platform()
         srcdir = sysconfig.get_config_var('srcdir')
-
-        # Check for AtheOS which has libraries in non-standard locations
-        if platform == 'atheos':
-            lib_dirs += ['/system/libs', '/atheos/autolnk/lib']
-            lib_dirs += os.getenv('LIBRARY_PATH', '').split(os.pathsep)
-            inc_dirs += ['/system/include', '/atheos/autolnk/include']
-            inc_dirs += os.getenv('C_INCLUDE_PATH', '').split(os.pathsep)
 
         # OSF/1 and Unixware have some stuff in /usr/ccs/lib (like -ldb)
         if platform in ['osf1', 'unixware7', 'openunix8']:
@@ -465,7 +458,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('parser', ['parsermodule.c']) )
 
         # Memory-mapped files (also works on Win32).
-        if platform not in ['atheos', 'mac']:
+        if platform not in ['mac']:
             exts.append( Extension('mmap', ['mmapmodule.c']) )
         else:
             missing.append('mmap')
@@ -975,13 +968,10 @@ class PyBuildExt(build_ext):
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
-            if platform not in ['atheos']:
-                exts.append( Extension('resource', ['resource.c']) )
-            else:
-                missing.append('resource')
+            exts.append( Extension('resource', ['resource.c']) )
 
             # Sun yellow pages. Some systems have the functions in libc.
-            if platform not in ['cygwin', 'atheos', 'qnx6']:
+            if platform not in ['cygwin', 'qnx6']:
                 if (self.compiler_obj.find_library_file(lib_dirs, 'nsl')):
                     libs = ['nsl']
                 else:

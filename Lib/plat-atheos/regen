@@ -1,3 +1,0 @@
-#! /bin/sh
-set -v
-python$EXE ../../Tools/scripts/h2py.py -i '\(u_long\)' -i '\(uint32_t\)' -i '\(int\)' -i '\(unsigned int\)' /include/netinet/in.h /include/sys/types.h
