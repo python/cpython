@@ -299,17 +299,6 @@ PyFloat_AsDouble(PyObject *op)
 
 /* Methods */
 
-/* XXX PyFloat_AsStringEx should not be a public API function (for one
-   XXX thing, its signature passes a buffer without a length; for another,
-   XXX it isn't useful outside this file).
-*/
-void
-PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
-{
-	_PyOS_double_to_string(buf, 100, v->ob_fval, 'g', precision,
-			       Py_DTSF_ADD_DOT_0, NULL);
-}
-
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl; this replaces the functionality of the coercion
    slot function.  If conversion to double raises an exception, obj is
