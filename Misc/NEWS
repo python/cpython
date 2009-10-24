@@ -12,6 +12,13 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Support for AtheOS has been completely removed from the code base. It was
+  disabled since Python 3.0.
+
+- Support for several legacy threading libraries has been disabled. These
+  libraries are: Mach C threads, SunOS LWP, GNU pth, Irix threads. Support code
+  will be entirely removed in 3.3.
+
 - Peephole constant folding had missed UNARY_POSITIVE.
 
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
