@@ -583,9 +583,6 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
 
-    assert((newline != NULL && newline_obj != Py_None) ||
-           (newline == NULL && newline_obj == Py_None));
-
     if (newline) {
         self->readnl = PyString_FromString(newline);
         if (self->readnl == NULL)
