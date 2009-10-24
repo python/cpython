@@ -616,11 +616,14 @@ bytesio_close(bytesio *self)
 static void
 bytesio_dealloc(bytesio *self)
 {
+    _PyObject_GC_UNTRACK(self);
     if (self->buf != NULL) {
         PyMem_Free(self->buf);
         self->buf = NULL;
     }
-    Py_TYPE(self)->tp_clear((PyObject *)self);
+    Py_CLEAR(self->dict);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -674,7 +677,6 @@ static int
 bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
-    Py_VISIT(self->weakreflist);
     return 0;
 }
 
@@ -682,8 +684,6 @@ static int
 bytesio_clear(bytesio *self)
 {
     Py_CLEAR(self->dict);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
     return 0;
 }
 
