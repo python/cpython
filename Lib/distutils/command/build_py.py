@@ -374,7 +374,7 @@ class build_py(Command):
 
     def byte_compile(self, files):
         if sys.dont_write_bytecode:
-            self.warn('byte-compile not supported on this platform, skipping.')
+            self.warn('byte-compiling is disabled, skipping.')
             return
 
         from distutils.util import byte_compile
