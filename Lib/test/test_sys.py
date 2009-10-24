@@ -372,6 +372,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(vi[3], vi.releaselevel)
         self.assertEqual(vi[4], vi.serial)
         self.assertTrue(vi > (1,0,0))
+        self.assertIsInstance(sys.float_repr_style, str)
+        self.assertTrue(sys.float_repr_style in ('short', 'legacy'))
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
