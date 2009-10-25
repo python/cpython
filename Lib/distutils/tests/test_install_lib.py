@@ -31,6 +31,8 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.finalize_options()
         self.assertEquals(cmd.optimize, 2)
 
+    @unittest.skipUnless(not sys.dont_write_bytecode,
+                         'byte-compile not supported')
     def test_byte_compile(self):
         pkg_dir, dist = self.create_dist()
         cmd = install_lib(dist)
@@ -76,6 +78,21 @@ class InstallLibTestCase(support.TempdirManager,
         # get_input should return 2 elements
         self.assertEquals(len(cmd.get_inputs()), 2)
 
+    def test_dont_write_bytecode(self):
+        # makes sure byte_compile is not used
+        pkg_dir, dist = self.create_dist()
+        cmd = install_lib(dist)
+        cmd.compile = 1
+        cmd.optimize = 1
+
+        old_dont_write_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+        try:
+            cmd.byte_compile([])
+        finally:
+            sys.dont_write_bytecode = old_dont_write_bytecode
+
+        self.assertTrue('byte-compiling is disabled' in self.logs[0][1])
 
 def test_suite():
     return unittest.makeSuite(InstallLibTestCase)
