@@ -12,9 +12,6 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
-/* Define this if you have AtheOS threads. */
-#undef ATHEOS_THREADS
-
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
