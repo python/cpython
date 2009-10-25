@@ -1,16 +1,13 @@
 """Tests for distutils.util."""
-# not covered yet:
-#    - byte_compile
-#
 import os
 import sys
 import unittest
 from copy import copy
 
-from distutils.errors import DistutilsPlatformError
+from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
                             check_environ, split_quoted, strtobool,
-                            rfc822_escape)
+                            rfc822_escape, byte_compile)
 from distutils import util # used to patch _environ_checked
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
@@ -257,6 +254,16 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         wanted = ('I am a%(8s)spoor%(8s)slonesome%(8s)s'
                   'header%(8s)s') % {'8s': '\n'+8*' '}
         self.assertEquals(res, wanted)
+
+    def test_dont_write_bytecode(self):
+        # makes sure byte_compile raise a DistutilsError
+        # if sys.dont_write_bytecode is True
+        old_dont_write_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+        try:
+            self.assertRaises(DistutilsByteCompileError, byte_compile, [])
+        finally:
+            sys.dont_write_bytecode = old_dont_write_bytecode
 
 def test_suite():
     return unittest.makeSuite(UtilTestCase)
