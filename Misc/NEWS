@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1087418: Boost performance of bitwise operations for longs.
+
 - Support for AtheOS has been completely removed from the code base. It was
   disabled since Python 3.0.
 
