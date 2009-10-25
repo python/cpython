@@ -3411,6 +3411,22 @@ lshift_error:
 	return (PyObject *) z;
 }
 
+/* Compute two's complement of digit vector a[0:m], writing result to
+   z[0:m].  The digit vector a need not be normalized, but should not
+   be entirely zero.  a and z may point to the same digit vector. */
+
+static void
+v_complement(digit *z, digit *a, Py_ssize_t m)
+{
+	Py_ssize_t i;
+	digit carry = 1;
+	for (i = 0; i < m; ++i) {
+		carry += a[i] ^ PyLong_MASK;
+		z[i] = carry & PyLong_MASK;
+		carry >>= PyLong_SHIFT;
+	}
+	assert(carry == 0);
+}
 
 /* Bitwise and/xor/or operations */
 
@@ -3419,60 +3435,49 @@ long_bitwise(PyLongObject *a,
 	     int op,  /* '&', '|', '^' */
 	     PyLongObject *b)
 {
-	digit maska, maskb; /* 0 or PyLong_MASK */
-	int negz;
+	int nega, negb, negz;
 	Py_ssize_t size_a, size_b, size_z, i;
 	PyLongObject *z;
-	digit diga, digb;
-	PyObject *v;
 
-	if (Py_SIZE(a) < 0) {
-		a = (PyLongObject *) long_invert(a);
-		if (a == NULL)
+	/* Bitwise operations for negative numbers operate as though
+	   on a two's complement representation.  So convert arguments
+	   from sign-magnitude to two's complement, and convert the
+	   result back to sign-magnitude at the end. */
+
+	/* If a is negative, replace it by its two's complement. */
+	size_a = ABS(Py_SIZE(a));
+	nega = Py_SIZE(a) < 0;
+	if (nega) {
+		z = _PyLong_New(size_a);
+		if (z == NULL)
 			return NULL;
-		maska = PyLong_MASK;
+		v_complement(z->ob_digit, a->ob_digit, size_a);
+		a = z;
 	}
-	else {
+	else
+		/* Keep reference count consistent. */
 		Py_INCREF(a);
-		maska = 0;
-	}
-	if (Py_SIZE(b) < 0) {
-		b = (PyLongObject *) long_invert(b);
-		if (b == NULL) {
+
+	/* Same for b. */
+	size_b = ABS(Py_SIZE(b));
+	negb = Py_SIZE(b) < 0;
+	if (negb) {
+		z = _PyLong_New(size_b);
+		if (z == NULL) {
 			Py_DECREF(a);
 			return NULL;
 		}
-		maskb = PyLong_MASK;
+		v_complement(z->ob_digit, b->ob_digit, size_b);
+		b = z;
 	}
-	else {
+	else
 		Py_INCREF(b);
-		maskb = 0;
-	}
 
-	negz = 0;
-	switch (op) {
-	case '^':
-		if (maska != maskb) {
-			maska ^= PyLong_MASK;
-			negz = -1;
-		}
-		break;
-	case '&':
-		if (maska && maskb) {
-			op = '|';
-			maska ^= PyLong_MASK;
-			maskb ^= PyLong_MASK;
-			negz = -1;
-		}
-		break;
-	case '|':
-		if (maska || maskb) {
-			op = '&';
-			maska ^= PyLong_MASK;
-			maskb ^= PyLong_MASK;
-			negz = -1;
-		}
-		break;
+	/* Swap a and b if necessary to ensure size_a >= size_b. */
+	if (size_a < size_b) {
+		z = a; a = b; b = z;
+		size_z = size_a; size_a = size_b; size_b = size_z;
+		negz = nega; nega = negb; negb = negz;
 	}
 
 	/* JRH: The original logic here was to allocate the result value (z)
@@ -3480,43 +3485,72 @@ long_bitwise(PyLongObject *a,
 	   where the result is guaranteed to be shorter than that: AND of two
 	   positives, OR of two negatives: use the shorter number.  AND with
 	   mixed signs: use the positive number.  OR with mixed signs: use the
-	   negative number.  After the transformations above, op will be '&'
-	   iff one of these cases applies, and mask will be non-0 for operands
-	   whose length should be ignored.
+	   negative number.
 	*/
+	switch (op) {
+	case '^':
+		negz = nega ^ negb;
+		size_z = size_a;
+		break;
+	case '&':
+		negz = nega & negb;
+		size_z = negb ? size_a : size_b;
+		break;
+	case '|':
+		negz = nega | negb;
+		size_z = negb ? size_b : size_a;
+		break;
+	default:
+		PyErr_BadArgument();
+		return NULL;
+	}
 
-	size_a = Py_SIZE(a);
-	size_b = Py_SIZE(b);
-	size_z = op == '&'
-		? (maska
-		   ? size_b
-		   : (maskb ? size_a : MIN(size_a, size_b)))
-		: MAX(size_a, size_b);
-	z = _PyLong_New(size_z);
+	/* We allow an extra digit if z is negative, to make sure that
+	   the final two's complement of z doesn't overflow. */
+	z = _PyLong_New(size_z + negz);
 	if (z == NULL) {
 		Py_DECREF(a);
 		Py_DECREF(b);
 		return NULL;
 	}
 
-	for (i = 0; i < size_z; ++i) {
-		diga = (i < size_a ? a->ob_digit[i] : 0) ^ maska;
-		digb = (i < size_b ? b->ob_digit[i] : 0) ^ maskb;
-		switch (op) {
-		case '&': z->ob_digit[i] = diga & digb; break;
-		case '|': z->ob_digit[i] = diga | digb; break;
-		case '^': z->ob_digit[i] = diga ^ digb; break;
-		}
+	/* Compute digits for overlap of a and b. */
+	switch(op) {
+	case '&':
+		for (i = 0; i < size_b; ++i)
+			z->ob_digit[i] = a->ob_digit[i] & b->ob_digit[i];
+		break;
+	case '|':
+		for (i = 0; i < size_b; ++i)
+			z->ob_digit[i] = a->ob_digit[i] | b->ob_digit[i];
+		break;
+	case '^':
+		for (i = 0; i < size_b; ++i)
+			z->ob_digit[i] = a->ob_digit[i] ^ b->ob_digit[i];
+		break;
+	default:
+		PyErr_BadArgument();
+		return NULL;
+	}
+
+	/* Copy any remaining digits of a, inverting if necessary. */
+	if (op == '^' && negb)
+		for (; i < size_z; ++i)
+			z->ob_digit[i] = a->ob_digit[i] ^ PyLong_MASK;
+	else if (i < size_z)
+		memcpy(&z->ob_digit[i], &a->ob_digit[i],
+		       (size_z-i)*sizeof(digit));
+
+	/* Complement result if negative. */
+	if (negz) {
+		Py_SIZE(z) = -(Py_SIZE(z));
+		z->ob_digit[size_z] = PyLong_MASK;
+		v_complement(z->ob_digit, z->ob_digit, size_z+1);
 	}
 
 	Py_DECREF(a);
 	Py_DECREF(b);
-	z = long_normalize(z);
-	if (negz == 0)
-		return (PyObject *) z;
-	v = long_invert(z);
-	Py_DECREF(z);
-	return v;
+	return (PyObject *)long_normalize(z);
 }
 
 static PyObject *
