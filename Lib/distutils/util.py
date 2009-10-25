@@ -11,6 +11,7 @@ from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
 from distutils import log
+from distutils.errors import DistutilsByteCompileError
 
 def get_platform ():
     """Return a string that identifies the current platform.  This is used
@@ -443,6 +444,9 @@ def byte_compile (py_files,
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
     """
+    # nothing is done if sys.dont_write_bytecode is True
+    if sys.dont_write_bytecode:
+        raise DistutilsByteCompileError('byte-compiling is disabled.')
 
     # First, if the caller didn't force us into direct or indirect mode,
     # figure out which mode we should be in.  We take a conservative
