@@ -181,9 +181,10 @@ PyFloat_FromString(PyObject *v, char **pend)
 	double x;
 	char buffer[256]; /* for errors */
 #ifdef Py_USING_UNICODE
-	char s_buffer[256]; /* for objects convertible to a char buffer */
+	char *s_buffer = NULL;
 #endif
 	Py_ssize_t len;
+	PyObject *result = NULL;
 
 	if (pend)
 		*pend = NULL;
@@ -193,23 +194,21 @@ PyFloat_FromString(PyObject *v, char **pend)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
-			PyErr_SetString(PyExc_ValueError,
-				"Unicode float() literal too long to convert");
-			return NULL;
-		}
+		s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v)+1);
+		if (s_buffer == NULL)
+			return PyErr_NoMemory();
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
 					    NULL))
-			return NULL;
+			goto error;
 		s = s_buffer;
 		len = strlen(s);
 	}
 #endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
-				"float() argument must be a string or a number");
+			"float() argument must be a string or a number");
 		return NULL;
 	}
 	last = s + len;
@@ -219,36 +218,26 @@ PyFloat_FromString(PyObject *v, char **pend)
 	/* We don't care about overflow or underflow.  If the platform
 	 * supports them, infinities and signed zeroes (on underflow) are
 	 * fine. */
-	errno = 0;
-	PyFPE_START_PROTECT("strtod", return NULL)
-	x = PyOS_ascii_strtod(s, (char **)&end);
-	PyFPE_END_PROTECT(x)
-	if (end == s) {
-		if (errno == ENOMEM)
-			PyErr_NoMemory();
-		else {
-			PyOS_snprintf(buffer, sizeof(buffer),
-				"invalid literal for float(): %.200s", s);
-			PyErr_SetString(PyExc_ValueError, buffer);
-		}
-		return NULL;
-	}
-	/* Since end != s, the platform made *some* kind of sense out
-	   of the input.  Trust it. */
+	x = PyOS_string_to_double(s, (char **)&end, NULL);
+	if (x == -1.0 && PyErr_Occurred())
+		goto error;
 	while (Py_ISSPACE(*end))
 		end++;
-	if (end != last) {
-		if (*end == '\0')
-			PyErr_SetString(PyExc_ValueError,
-					"null byte in argument for float()");
-		else {
-			PyOS_snprintf(buffer, sizeof(buffer),
-				"invalid literal for float(): %.200s", s);
-			PyErr_SetString(PyExc_ValueError, buffer);
-		}
-		return NULL;
+	if (end == last)
+		result = PyFloat_FromDouble(x);
+	else {
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for float(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		result = NULL;
 	}
-	return PyFloat_FromDouble(x);
+
+  error:
+#ifdef Py_USING_UNICODE
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
+#endif
+	return result;
 }
 
 static void
