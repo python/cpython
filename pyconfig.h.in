@@ -529,6 +529,9 @@
 /* Define if you have readline 4.2 */
 #undef HAVE_RL_COMPLETION_MATCHES
 
+/* Define if you have rl_completion_suppress_append */
+#undef HAVE_RL_COMPLETION_SUPPRESS_APPEND
+
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK
 
