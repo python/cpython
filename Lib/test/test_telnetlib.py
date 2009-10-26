@@ -12,12 +12,14 @@ from test import support
 HOST = support.HOST
 EOF_sigil = object()
 
-def server(evt, serv, dataq=None):
-    """ Open a tcp server in three steps
+def server(evt, serv, dataq=None, test_done=None):
+    """ Open a tcp server in four steps
         1) set evt to true to let the parent know we are ready
         2) [optional] if is not False, write the list of data from dataq.get()
            to the socket.
-        3) set evt to true to let the parent know we're done
+        3) [optional] if test_done is not None, it's an event;  wait
+           for parent to set test_done before closing connection
+        4) set evt to true to let the parent know we're done
     """
     serv.listen(5)
     evt.set()
@@ -39,6 +41,8 @@ def server(evt, serv, dataq=None):
     except socket.timeout:
         pass
     finally:
+        if test_done is not None:
+            test_done.wait()
         serv.close()
         evt.set()
 
@@ -324,8 +328,24 @@ class TelnetSockSendall(telnetlib.Telnet):
 class WriteTests(TestCase):
     '''The only thing that write does is replace each tl.IAC for
     tl.IAC+tl.IAC'''
-    setUp = _read_setUp
-    tearDown = _read_tearDown
+    def setUp(self):
+        self.evt = threading.Event()
+        self.test_done = threading.Event()
+        self.dataq = queue.Queue()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(3)
+        self.port = support.bind_port(self.sock)
+        self.thread = threading.Thread(target=server, args=(
+                self.evt, self.sock, self.dataq, self.test_done))
+        self.thread.start()
+        self.evt.wait()
+        self.evt.clear()
+        time.sleep(.1)
+
+    def tearDown(self):
+        self.test_done.set()
+        self.evt.wait()
+        self.thread.join()
 
     def _test_write(self, data):
         self.telnet.sock._raw_sent = b''
