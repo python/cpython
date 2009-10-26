@@ -1170,15 +1170,29 @@ save_float(Picklerobject *self, PyObject *args)
 			return -1;
 	}
 	else {
-		char c_str[250];
-		c_str[0] = FLOAT;
-		_PyOS_double_to_string(c_str + 1, sizeof(c_str) - 2, x, 'g',
-                                       17, 0, NULL);
-		/* Extend the formatted string with a newline character */
-		strcat(c_str, "\n");
+		int result = -1;
+		char *buf = NULL;
+		char op = FLOAT;
 
-		if (self->write_func(self, c_str, strlen(c_str)) < 0)
-			return -1;
+		if (self->write_func(self, &op, 1) < 0)
+			goto done;
+
+		buf = PyOS_double_to_string(x, 'g', 17, 0, NULL);
+		if (!buf) {
+			PyErr_NoMemory();
+			goto done;
+		}
+
+		if (self->write_func(self, buf, strlen(buf)) < 0)
+			goto done;
+
+		if (self->write_func(self, "\n", 1) < 0)
+			goto done;
+
+		result = 0;
+done:
+		PyMem_Free(buf);
+		return result;
 	}
 
 	return 0;
