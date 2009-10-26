@@ -4336,7 +4336,10 @@ Py_LOCAL_INLINE(int)
 formatfloat(char *buf, size_t buflen, int flags,
             int prec, int type, PyObject *v)
 {
+	char *tmp;
 	double x;
+	Py_ssize_t len;
+
 	x = PyFloat_AsDouble(v);
 	if (x == -1.0 && PyErr_Occurred()) {
 		PyErr_Format(PyExc_TypeError, "float argument required, "
@@ -4381,9 +4384,20 @@ formatfloat(char *buf, size_t buflen, int flags,
 			"formatted float is too long (precision too large?)");
 		return -1;
 	}
-	_PyOS_double_to_string(buf, buflen, x, type, prec,
-                            (flags&F_ALT)?Py_DTSF_ALT:0, NULL);
-	return (int)strlen(buf);
+	tmp = PyOS_double_to_string(x, type, prec,
+				    (flags&F_ALT)?Py_DTSF_ALT:0, NULL);
+	if (!tmp)
+		return -1;
+	len = strlen(tmp);
+	if (len >= buflen) {
+		PyErr_SetString(PyExc_OverflowError,
+			"formatted float is too long (precision too large?)");
+		PyMem_Free(tmp);
+		return -1;
+	}
+	strcpy(buf, tmp);
+	PyMem_Free(tmp);
+	return (int)len;
 }
 
 /* _PyString_FormatLong emulates the format codes d, u, o, x and X, and
