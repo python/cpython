@@ -284,7 +284,6 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, "1+2j)")
         self.assertRaises(ValueError, complex, "1+(2j)")
         self.assertRaises(ValueError, complex, "(1+2j)123")
-        self.assertRaises(ValueError, complex, "1"*500)
         self.assertRaises(ValueError, complex, "x")
         self.assertRaises(ValueError, complex, "1j+2")
         self.assertRaises(ValueError, complex, "1e1ej")
@@ -294,6 +293,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, "1..1j")
         self.assertRaises(ValueError, complex, "1.11.1j")
         self.assertRaises(ValueError, complex, "1e1.1j")
+
+        # check that complex accepts long unicode strings
+        self.assertEqual(type(complex("1"*500)), complex)
 
         class EvilExc(Exception):
             pass
