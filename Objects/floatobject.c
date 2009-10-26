@@ -335,58 +335,72 @@ convert_to_double(PyObject **v, double *dbl)
 	return 0;
 }
 
-/* XXX PyFloat_AsString and PyFloat_AsReprString should be deprecated:
+/* XXX PyFloat_AsString and PyFloat_AsReprString are deprecated:
    XXX they pass a char buffer without passing a length.
 */
 void
 PyFloat_AsString(char *buf, PyFloatObject *v)
 {
-	_PyOS_double_to_string(buf, 100, v->ob_fval, 'g', PyFloat_STR_PRECISION,
-			       Py_DTSF_ADD_DOT_0, NULL);
+	char *tmp = PyOS_double_to_string(v->ob_fval, 'g',
+			PyFloat_STR_PRECISION,
+			Py_DTSF_ADD_DOT_0, NULL);
+	strcpy(buf, tmp);
+	PyMem_Free(tmp);
 }
 
 void
 PyFloat_AsReprString(char *buf, PyFloatObject *v)
 {
-	_PyOS_double_to_string(buf, 100, v->ob_fval, 'r', 0,
-			       Py_DTSF_ADD_DOT_0, NULL);
+	char * tmp = PyOS_double_to_string(v->ob_fval, 'r', 0,
+			Py_DTSF_ADD_DOT_0, NULL);
+	strcpy(buf, tmp);
+	PyMem_Free(tmp);
 }
 
 /* ARGSUSED */
 static int
 float_print(PyFloatObject *v, FILE *fp, int flags)
 {
-	char buf[100];
-        if (flags & Py_PRINT_RAW)
-            _PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
-                                   'g', PyFloat_STR_PRECISION,
-                                   Py_DTSF_ADD_DOT_0, NULL);
-        else
-            _PyOS_double_to_string(buf, sizeof(buf), v->ob_fval,
-                                   'r', 0, Py_DTSF_ADD_DOT_0, NULL);
+	char *buf;
+	if (flags & Py_PRINT_RAW)
+		buf = PyOS_double_to_string(v->ob_fval,
+					    'g', PyFloat_STR_PRECISION,
+					    Py_DTSF_ADD_DOT_0, NULL);
+	else
+		buf = PyOS_double_to_string(v->ob_fval,
+				    'r', 0, Py_DTSF_ADD_DOT_0, NULL);
 	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
 	Py_END_ALLOW_THREADS
+	PyMem_Free(buf);
 	return 0;
+}
+
+static PyObject *
+float_str_or_repr(PyFloatObject *v, int precision, char format_code)
+{
+	PyObject *result;
+	char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
+				      format_code, precision,
+				      Py_DTSF_ADD_DOT_0,
+				      NULL);
+	if (!buf)
+		return PyErr_NoMemory();
+	result = PyString_FromString(buf);
+	PyMem_Free(buf);
+	return result;
 }
 
 static PyObject *
 float_repr(PyFloatObject *v)
 {
-	char buf[100];
-	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 'r', 0,
-			       Py_DTSF_ADD_DOT_0, NULL);
-	return PyString_FromString(buf);
+	return float_str_or_repr(v, 0, 'r');
 }
 
 static PyObject *
 float_str(PyFloatObject *v)
 {
-	char buf[100];
-	_PyOS_double_to_string(buf, sizeof(buf), v->ob_fval, 'g',
-                               PyFloat_STR_PRECISION,
-			       Py_DTSF_ADD_DOT_0, NULL);
-	return PyString_FromString(buf);
+	return float_str_or_repr(v, PyFloat_STR_PRECISION, 'g');
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
