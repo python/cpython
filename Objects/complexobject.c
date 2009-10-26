@@ -740,20 +740,20 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	char *end;
 	double x=0.0, y=0.0, z;
 	int got_bracket=0;
-	char s_buffer[256];
+	char *s_buffer = NULL;
 	Py_ssize_t len;
 
 	if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
-			PyErr_SetString(PyExc_ValueError,
-				 "complex() literal too large to convert");
-			return NULL;
-		}
+		s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v) + 1);
+		if (s_buffer == NULL)
+			return PyErr_NoMemory();
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
-					    NULL))
+					    NULL)) {
+			PyMem_FREE(s_buffer);
 			return NULL;
+		}
 		s = s_buffer;
 		len = strlen(s);
 	}
@@ -870,9 +870,13 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	if (s-start != len)
 		goto parse_error;
 
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
 	return complex_subtype_from_doubles(type, x, y);
 
   parse_error:
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
 	PyErr_SetString(PyExc_ValueError,
 			"complex() arg is a malformed string");
 	return NULL;

@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Remove length limitation when constructing a complex number from a string.
+
 - Issue #1087418: Boost performance of bitwise operations for longs.
 
 - Support for AtheOS has been completely removed from the code base. It was
