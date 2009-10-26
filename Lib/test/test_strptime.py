@@ -493,9 +493,9 @@ class CacheTests(unittest.TestCase):
         _strptime._strptime_time("10", "%d")
         _strptime._strptime_time("2005", "%Y")
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
-        original_time_re = id(_strptime._TimeRE_cache)
+        original_time_re = _strptime._TimeRE_cache
         _strptime._strptime_time("10", "%d")
-        self.assertNotEqual(original_time_re, id(_strptime._TimeRE_cache))
+        self.assertIsNot(original_time_re, _strptime._TimeRE_cache)
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_regex_cleanup(self):
@@ -514,11 +514,10 @@ class CacheTests(unittest.TestCase):
     def test_new_localetime(self):
         # A new LocaleTime instance should be created when a new TimeRE object
         # is created.
-        locale_time_id = id(_strptime._TimeRE_cache.locale_time)
+        locale_time_id = _strptime._TimeRE_cache.locale_time
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
         _strptime._strptime_time("10", "%d")
-        self.assertNotEqual(locale_time_id,
-                         id(_strptime._TimeRE_cache.locale_time))
+        self.assertIsNot(locale_time_id, _strptime._TimeRE_cache.locale_time)
 
     def test_TimeRE_recreation(self):
         # The TimeRE instance should be recreated upon changing the locale.
@@ -530,15 +529,15 @@ class CacheTests(unittest.TestCase):
         try:
             _strptime._strptime_time('10', '%d')
             # Get id of current cache object.
-            first_time_re_id = id(_strptime._TimeRE_cache)
+            first_time_re = _strptime._TimeRE_cache
             try:
                 # Change the locale and force a recreation of the cache.
                 locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
                 _strptime._strptime_time('10', '%d')
                 # Get the new cache object's id.
-                second_time_re_id = id(_strptime._TimeRE_cache)
+                second_time_re = _strptime._TimeRE_cache
                 # They should not be equal.
-                self.assertNotEqual(first_time_re_id, second_time_re_id)
+                self.assertIsNot(first_time_re, second_time_re)
             # Possible test locale is not supported while initial locale is.
             # If this is the case just suppress the exception and fall-through
             # to the reseting to the original locale.
