@@ -3,11 +3,8 @@
 #include <Python.h>
 #include <locale.h>
 
-/* _Py_parse_inf_or_nan: Attempt to parse a string of the form "nan", "inf" or
-   "infinity", with an optional leading sign of "+" or "-".  On success,
-   return the NaN or Infinity as a double and set *endptr to point just beyond
-   the successfully parsed portion of the string.  On failure, return -1.0 and
-   set *endptr to point to the start of the string. */
+/* Case-insensitive string match used for nan and inf detection; t should be
+   lower-case.  Returns 1 for a successful match, 0 otherwise. */
 
 static int
 case_insensitive_match(const char *s, const char *t)
@@ -18,6 +15,12 @@ case_insensitive_match(const char *s, const char *t)
 	}
 	return *t ? 0 : 1;
 }
+
+/* _Py_parse_inf_or_nan: Attempt to parse a string of the form "nan", "inf" or
+   "infinity", with an optional leading sign of "+" or "-".  On success,
+   return the NaN or Infinity as a double and set *endptr to point just beyond
+   the successfully parsed portion of the string.  On failure, return -1.0 and
+   set *endptr to point to the start of the string. */
 
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
