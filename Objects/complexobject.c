@@ -750,10 +750,8 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
-					    NULL)) {
-			PyMem_FREE(s_buffer);
-			return NULL;
-		}
+					    NULL))
+			goto error;
 		s = s_buffer;
 		len = strlen(s);
 	}
@@ -802,7 +800,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		if (PyErr_ExceptionMatches(PyExc_ValueError))
 			PyErr_Clear();
 		else
-			return NULL;
+			goto error;
 	}
 	if (end != s) {
 		/* all 4 forms starting with <float> land here */
@@ -815,7 +813,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 				if (PyErr_ExceptionMatches(PyExc_ValueError))
 					PyErr_Clear();
 				else
-					return NULL;
+					goto error;
 			}
 			if (end != s)
 				/* <float><signed-float>j */
@@ -875,10 +873,11 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	return complex_subtype_from_doubles(type, x, y);
 
   parse_error:
-	if (s_buffer)
-		PyMem_FREE(s_buffer);
 	PyErr_SetString(PyExc_ValueError,
 			"complex() arg is a malformed string");
+  error:
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
 	return NULL;
 }
 
