@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Removed _PyOS_double_to_string. Use PyOS_double_to_string
+  instead. This is in preparation for (but not strictly related to)
+  issue #7117, short float repr.
+
 - Issue #1087418: Boost performance of bitwise operations for longs.
 
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
