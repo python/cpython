@@ -2350,6 +2350,15 @@ builtin_sum(PyObject *self, PyObject *args)
 			}
 			break;
 		}
+		/* It's tempting to use PyNumber_InPlaceAdd instead of
+		   PyNumber_Add here, to avoid quadratic running time
+		   when doing 'sum(list_of_lists, [])'.  However, this
+		   would produce a change in behaviour: a snippet like
+
+		     empty = []
+		     sum([[x] for x in range(10)], empty)
+
+		   would change the value of empty. */
 		temp = PyNumber_Add(result, item);
 		Py_DECREF(result);
 		Py_DECREF(item);
