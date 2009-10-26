@@ -183,7 +183,7 @@ PyFloat_FromString(PyObject *v)
 	}
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
-				"float() argument must be a string or a number");
+			"float() argument must be a string or a number");
 		return NULL;
 	}
 	last = s + len;
