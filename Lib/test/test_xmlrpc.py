@@ -10,6 +10,8 @@ import http.client
 import socket
 import os
 import re
+import io
+import contextlib
 from test import support
 
 alist = [{'astring': 'foo@bar.baz.spam',
@@ -713,6 +715,21 @@ class FailingServerTestCase(unittest.TestCase):
         else:
             self.fail('ProtocolError not raised')
 
+
+@contextlib.contextmanager
+def captured_stdout(encoding='utf-8'):
+    """A variation on support.captured_stdout() which gives a text stream
+    having a `buffer` attribute.
+    """
+    import io
+    orig_stdout = sys.stdout
+    sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding=encoding)
+    try:
+        yield sys.stdout
+    finally:
+        sys.stdout = orig_stdout
+
+
 class CGIHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.cgi = xmlrpc.server.CGIXMLRPCRequestHandler()
@@ -725,7 +742,7 @@ class CGIHandlerTestCase(unittest.TestCase):
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
-            with support.captured_stdout() as data_out:
+            with captured_stdout(encoding=self.cgi.encoding) as data_out:
                 self.cgi.handle_request()
 
             # parse Status header
@@ -754,7 +771,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         """
 
         with support.EnvironmentVarGuard() as env, \
-             support.captured_stdout() as data_out, \
+             captured_stdout(encoding=self.cgi.encoding) as data_out, \
              support.captured_stdin() as data_in:
             data_in.write(data)
             data_in.seek(0)
