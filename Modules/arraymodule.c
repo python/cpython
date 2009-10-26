@@ -1850,6 +1850,8 @@ array_reconstructor(PyObject *self, PyObject *args)
 		/* Impossible, but needed to shut up GCC about the unhandled
 		 * enumeration value.
 		 */
+	default:
+		PyErr_BadArgument();
 		return NULL;
 	}
 
