@@ -78,26 +78,30 @@ typedef PY_LONG_LONG Py_off_t;
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       PY_LLONG_MAX
 # define PY_OFF_T_MIN       PY_LLONG_MIN
+# define PY_PRIdOFF         "lld" /* format to use in printf with type off_t */
 
 #else
 
 /* Other platforms use off_t */
 typedef off_t Py_off_t;
-#if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
-# define PyLong_AsOff_t     PyLong_AsSsize_t
-# define PyLong_FromOff_t   PyLong_FromSsize_t
-# define PY_OFF_T_MAX       PY_SSIZE_T_MAX
-# define PY_OFF_T_MIN       PY_SSIZE_T_MIN
-#elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
+#if (HAVE_LONG_LONG && SIZEOF_OFF_T == SIZEOF_LONG_LONG)
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       PY_LLONG_MAX
 # define PY_OFF_T_MIN       PY_LLONG_MIN
+# define PY_PRIdOFF         "lld"
 #elif (SIZEOF_OFF_T == SIZEOF_LONG)
 # define PyLong_AsOff_t     PyLong_AsLong
 # define PyLong_FromOff_t   PyLong_FromLong
 # define PY_OFF_T_MAX       LONG_MAX
 # define PY_OFF_T_MIN       LONG_MIN
+# define PY_PRIdOFF         "ld"
+#elif (SIZEOF_OFF_T == SIZEOF_SIZE_T)
+# define PyLong_AsOff_t     PyLong_AsSsize_t
+# define PyLong_FromOff_t   PyLong_FromSsize_t
+# define PY_OFF_T_MAX       PY_SSIZE_T_MAX
+# define PY_OFF_T_MIN       PY_SSIZE_T_MIN
+# define PY_PRIdOFF         "zd"
 #else
 # error off_t does not match either size_t, long, or long long!
 #endif
