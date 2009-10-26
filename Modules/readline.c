@@ -760,6 +760,8 @@ flex_complete(char *text, int start, int end)
 {
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
 	rl_completion_append_character ='\0';
+#endif
+#ifdef HAVE_RL_COMPLETION_SUPPRESS_APPEND
 	rl_completion_suppress_append = 0;
 #endif
 	Py_XDECREF(begidx);
