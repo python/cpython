@@ -12,6 +12,9 @@ PyAPI_FUNC(double) PyOS_ascii_atof(const char *str);
 /* Deprecated in 2.7 and 3.1. Will disappear in 2.8 (if it exists) and 3.2 */
 PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, size_t buf_len,
                                       const char *format, double d);
+PyAPI_FUNC(double) PyOS_string_to_double(const char *str,
+                                         char **endptr,
+                                         PyObject *overflow_exception);
 
 /* The caller is responsible for calling PyMem_Free to free the buffer
    that's is returned. */
@@ -20,6 +23,8 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                                          int precision,
                                          int flags,
                                          int *type);
+
+PyAPI_FUNC(double) _Py_parse_inf_or_nan(const char *p, char **endptr);
 
 
 /* PyOS_double_to_string's "flags" parameter can be set to 0 or more of: */
