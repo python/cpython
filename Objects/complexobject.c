@@ -921,7 +921,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	double x=0.0, y=0.0, z;
 	int got_bracket=0;
 #ifdef Py_USING_UNICODE
-	char s_buffer[256];
+	char *s_buffer = NULL;
 #endif
 	Py_ssize_t len;
 
@@ -931,16 +931,14 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
-			PyErr_SetString(PyExc_ValueError,
-				 "complex() literal too large to convert");
-			return NULL;
-		}
+		s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v)+1);
+		if (s_buffer == NULL)
+			return PyErr_NoMemory();
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
 					    NULL))
-			return NULL;
+			goto error;
 		s = s_buffer;
 		len = strlen(s);
 	}
@@ -985,21 +983,26 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	*/
 
 	/* first look for forms starting with <float> */
-	errno = 0;
-	z = PyOS_ascii_strtod(s, &end);
-	if (end == s && errno == ENOMEM)
-		return PyErr_NoMemory();
-
+	z = PyOS_string_to_double(s, &end, NULL);
+	if (z == -1.0 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_ValueError))
+			PyErr_Clear();
+		else
+			goto error;
+	}
 	if (end != s) {
 		/* all 4 forms starting with <float> land here */
 		s = end;
 		if (*s == '+' || *s == '-') {
 			/* <float><signed-float>j | <float><sign>j */
 			x = z;
-			errno = 0;
-			y = PyOS_ascii_strtod(s, &end);
-			if (end == s && errno == ENOMEM)
-				return PyErr_NoMemory();
+			y = PyOS_string_to_double(s, &end, NULL);
+			if (y == -1.0 && PyErr_Occurred()) {
+				if (PyErr_ExceptionMatches(PyExc_ValueError))
+					PyErr_Clear();
+				else
+					goto error;
+			}
 			if (end != s)
 				/* <float><signed-float>j */
 				s = end;
@@ -1053,11 +1056,21 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	if (s-start != len)
 		goto parse_error;
 
+
+#ifdef Py_USING_UNICODE
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
+#endif
 	return complex_subtype_from_doubles(type, x, y);
 
   parse_error:
 	PyErr_SetString(PyExc_ValueError,
 			"complex() arg is a malformed string");
+  error:
+#ifdef Py_USING_UNICODE
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
+#endif
 	return NULL;
 }
 

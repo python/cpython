@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Remove length limitation when constructing a complex number from a
+  unicode string.
+
 - Removed _PyOS_double_to_string. Use PyOS_double_to_string
   instead. This is in preparation for (but not strictly related to)
   issue #7117, short float repr.
