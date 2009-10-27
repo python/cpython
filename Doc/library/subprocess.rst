@@ -369,7 +369,7 @@ Replacing :func:`os.system`
    sts = os.system("mycmd" + " myarg")
    ==>
    p = Popen("mycmd" + " myarg", shell=True)
-   sts = os.waitpid(p.pid, 0)
+   sts = os.waitpid(p.pid, 0)[1]
 
 Notes:
 

@@ -262,9 +262,9 @@ The following methods work on the element's children (subelements).
 .. method:: Element.getiterator([tag=None])
 
    Creates a tree iterator with the current element as the root.   The iterator
-   iterates over this element and all elements below it  that match the given tag.
-   If tag is ``None`` or ``'*'`` then all elements are iterated over. Returns an
-   iterable that provides element objects in document (depth first) order.
+   iterates over this element and all elements below it, in document (depth first)
+   order.  If *tag* is not ``None`` or ``'*'``, only elements whose tag equals
+   *tag* are returned from the iterator.
 
 
 .. method:: Element.insert(index, element)
