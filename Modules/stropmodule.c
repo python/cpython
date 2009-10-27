@@ -879,21 +879,17 @@ strop_atof(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_ValueError, "empty string for atof()");
 		return NULL;
 	}
-	errno = 0;
+
 	PyFPE_START_PROTECT("strop_atof", return 0)
-	x = PyOS_ascii_strtod(s, &end);
+	x = PyOS_string_to_double(s, &end, PyExc_OverflowError);
 	PyFPE_END_PROTECT(x)
+	if (x == -1 && PyErr_Occurred())
+		return NULL;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "invalid literal for atof(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (errno != 0) {
-		PyOS_snprintf(buffer, sizeof(buffer), 
-			      "atof() literal too large: %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
