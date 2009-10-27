@@ -846,7 +846,7 @@ available.  They are listed here in alphabetical order.
 
    .. note::
 
-      This function is not normally available as a builtin since the name
+      This function is not normally available as a built-in since the name
       ``print`` is recognized as the :keyword:`print` statement.  To disable the
       statement and use the :func:`print` function, use this future statement at
       the top of your module::

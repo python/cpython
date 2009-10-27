@@ -13,7 +13,7 @@ Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
 types, the representation may not be loadable.  This may be the case if objects
 such as files, sockets, classes, or instances are included, as well as many
-other builtin objects which are not representable as Python constants.
+other built-in objects which are not representable as Python constants.
 
 The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width.

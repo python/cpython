@@ -1540,8 +1540,8 @@ with the :class:`Pool` class.
 
    .. method:: apply(func[, args[, kwds]])
 
-      Equivalent of the :func:`apply` builtin function.  It blocks till the
-      result is ready. Given this blocks - :meth:`apply_async` is better suited
+      Equivalent of the :func:`apply` built-in function.  It blocks till the
+      result is ready.  Given this blocks, :meth:`apply_async` is better suited
       for performing work in parallel. Additionally, the passed
       in function is only executed in one of the workers of the pool.
 
@@ -1556,7 +1556,7 @@ with the :class:`Pool` class.
 
    .. method:: map(func, iterable[, chunksize])
 
-      A parallel equivalent of the :func:`map` builtin function (it supports only
+      A parallel equivalent of the :func:`map` built-in function (it supports only
       one *iterable* argument though).  It blocks till the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
