@@ -51,6 +51,7 @@ class TestServerThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        self._threads = support.threading_setup()
         os.environ = support.EnvironmentVarGuard()
         self.lock = threading.Lock()
         self.thread = TestServerThread(self, self.request_handler)
@@ -61,6 +62,7 @@ class BaseTestCase(unittest.TestCase):
         self.lock.release()
         self.thread.stop()
         os.environ.__exit__()
+        support.threading_cleanup(*self._threads)
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = http.client.HTTPConnection('localhost', self.PORT)
