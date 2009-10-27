@@ -1,4 +1,3 @@
-
 :mod:`weakref` --- Weak references
 ==================================
 
@@ -72,6 +71,11 @@ support weak references but can add support through subclassing::
        pass
 
    obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
+
+.. impl-detail::
+
+   Other built-in types such as :class:`tuple` and :class:`long` do not support
+   weak references even when subclassed.
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.

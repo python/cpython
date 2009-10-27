@@ -69,7 +69,7 @@ key features:
 `ActivePython <http://www.activestate.com/Products/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Python Enthought Edition <http://code.enthought.com/enthon/>`_
+`Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
     Popular modules (such as PyWin32) with their respective documentation, tool
     suite for building extensible python applications
 
@@ -223,8 +223,7 @@ utilities for:
 * Win32 API calls
 * Registry
 * Event log
-* `Microsoft Foundation Classes <http://msdn.microsoft.com/library/
-  en-us/vclib/html/_mfc_Class_Library_Reference_Introduction.asp>`_ (MFC)
+* `Microsoft Foundation Classes <http://msdn.microsoft.com/en-us/library/fe1cf721%28VS.80%29.aspx>`_ (MFC)
   user interfaces
 
 `PythonWin <http://web.archive.org/web/20060524042422/
@@ -301,7 +300,7 @@ For extension modules, consult :ref:`building-on-windows`.
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
-   `MingW -- Python extensions <http://www.mingw.org/MinGWiki/index.php/Python%20extensions>`_
+   `MingW -- Python extensions <http://oldwiki.mingw.org/index.php/Python%20extensions>`_
       by Trent Apted et al, 2007
 
 

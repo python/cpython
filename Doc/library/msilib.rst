@@ -396,10 +396,10 @@ Directory Objects
 
 .. seealso::
 
-   `Directory Table <http://msdn.microsoft.com/library/en-us/msi/setup/directory_table.asp>`_
-   `File Table <http://msdn.microsoft.com/library/en-us/msi/setup/file_table.asp>`_
-   `Component Table <http://msdn.microsoft.com/library/en-us/msi/setup/component_table.asp>`_
-   `FeatureComponents Table <http://msdn.microsoft.com/library/en-us/msi/setup/featurecomponents_table.asp>`_
+   `Directory Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/directory_table.asp>`_
+   `File Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/file_table.asp>`_
+   `Component Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/component_table.asp>`_
+   `FeatureComponents Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/featurecomponents_table.asp>`_
 
 .. _features:
 
@@ -424,7 +424,7 @@ Features
 
 .. seealso::
 
-   `Feature Table <http://msdn.microsoft.com/library/en-us/msi/setup/feature_table.asp>`_
+   `Feature Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/feature_table.asp>`_
 
 .. _msi-gui:
 
@@ -518,13 +518,13 @@ to create MSI files with a user-interface for installing Python packages.
 
 .. seealso::
 
-   `Dialog Table <http://msdn.microsoft.com/library/en-us/msi/setup/dialog_table.asp>`_
-   `Control Table <http://msdn.microsoft.com/library/en-us/msi/setup/control_table.asp>`_
-   `Control Types <http://msdn.microsoft.com/library/en-us/msi/setup/controls.asp>`_
-   `ControlCondition Table <http://msdn.microsoft.com/library/en-us/msi/setup/controlcondition_table.asp>`_
-   `ControlEvent Table <http://msdn.microsoft.com/library/en-us/msi/setup/controlevent_table.asp>`_
-   `EventMapping Table <http://msdn.microsoft.com/library/en-us/msi/setup/eventmapping_table.asp>`_
-   `RadioButton Table <http://msdn.microsoft.com/library/en-us/msi/setup/radiobutton_table.asp>`_
+   `Dialog Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/dialog_table.asp>`_
+   `Control Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/control_table.asp>`_
+   `Control Types <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/controls.asp>`_
+   `ControlCondition Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/controlcondition_table.asp>`_
+   `ControlEvent Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/controlevent_table.asp>`_
+   `EventMapping Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/eventmapping_table.asp>`_
+   `RadioButton Table <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/radiobutton_table.asp>`_
 
 .. _msi-tables:
 
@@ -553,5 +553,3 @@ definitions. Currently, these definitions are based on MSI version 2.0.
 
    This module contains definitions for the UIText and ActionText tables, for the
    standard installer actions.
-
-

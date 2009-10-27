@@ -523,8 +523,10 @@ available.  They are listed here in alphabetical order.
 
    Return the "identity" of an object.  This is an integer (or long integer) which
    is guaranteed to be unique and constant for this object during its lifetime.
-   Two objects with non-overlapping lifetimes may have the same :func:`id` value.
-   (Implementation note: this is the address of the object.)
+   Two objects with non-overlapping lifetimes may have the same :func:`id`
+   value.
+
+   .. impl-detail:: This is the address of the object.
 
 
 .. function:: input([prompt])
@@ -1377,14 +1379,15 @@ available.  They are listed here in alphabetical order.
    elements are never used (such as when the loop is usually terminated with
    :keyword:`break`).
 
-   .. note::
+   .. impl-detail::
 
-      :func:`xrange` is intended to be simple and fast. Implementations may impose
-      restrictions to achieve this. The C implementation of Python restricts all
-      arguments to native C longs ("short" Python integers), and also requires that
-      the number of elements fit in a native C long.  If a larger range is needed,
-      an alternate version can be crafted using the :mod:`itertools` module:
-      ``islice(count(start, step), (stop-start+step-1)//step)``.
+      :func:`xrange` is intended to be simple and fast.  Implementations may
+      impose restrictions to achieve this.  The C implementation of Python
+      restricts all arguments to native C longs ("short" Python integers), and
+      also requires that the number of elements fit in a native C long.  If a
+      larger range is needed, an alternate version can be crafted using the
+      :mod:`itertools` module: ``islice(count(start, step),
+      (stop-start+step-1)//step)``.
 
 
 .. function:: zip([iterable, ...])

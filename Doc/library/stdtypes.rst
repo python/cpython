@@ -195,9 +195,11 @@ Instances of a class normally compare as non-equal unless the class defines the
 :meth:`__cmp__` method.  Refer to :ref:`customization`) for information on the
 use of this method to effect object comparisons.
 
-**Implementation note:** Objects of different types except numbers are ordered
-by their type names; objects of the same types that don't support proper
-comparison are ordered by their address.
+.. impl-detail::
+
+   Objects of different types except numbers are ordered by their type names;
+   objects of the same types that don't support proper comparison are ordered by
+   their address.
 
 .. index::
    operator: in
@@ -765,13 +767,15 @@ Notes:
    If *k* is ``None``, it is treated like ``1``.
 
 (6)
-   If *s* and *t* are both strings, some Python implementations such as CPython can
-   usually perform an in-place optimization for assignments of the form ``s=s+t``
-   or ``s+=t``.  When applicable, this optimization makes quadratic run-time much
-   less likely.  This optimization is both version and implementation dependent.
-   For performance sensitive code, it is preferable to use the :meth:`str.join`
-   method which assures consistent linear concatenation performance across versions
-   and implementations.
+   .. impl-detail::
+
+      If *s* and *t* are both strings, some Python implementations such as
+      CPython can usually perform an in-place optimization for assignments of
+      the form ``s = s + t`` or ``s += t``.  When applicable, this optimization
+      makes quadratic run-time much less likely.  This optimization is both
+      version and implementation dependent.  For performance sensitive code, it
+      is preferable to use the :meth:`str.join` method which assures consistent
+      linear concatenation performance across versions and implementations.
 
    .. versionchanged:: 2.4
       Formerly, string concatenation never occurred in-place.
@@ -961,10 +965,11 @@ string functions based on regular expressions.
    For 8-bit strings, this method is locale-dependent.
 
 
-.. method:: str.join(seq)
+.. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the sequence *seq*.
-   The separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in the
+   :term:`iterable` *iterable*.  The separator between elements is the string
+   providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -1593,10 +1598,13 @@ Notes:
    example, sort by department, then by salary grade).
 
 (10)
-   While a list is being sorted, the effect of attempting to mutate, or even
-   inspect, the list is undefined.  The C implementation of Python 2.3 and newer
-   makes the list appear empty for the duration, and raises :exc:`ValueError` if it
-   can detect that the list has been mutated during a sort.
+   .. impl-detail::
+
+      While a list is being sorted, the effect of attempting to mutate, or even
+      inspect, the list is undefined.  The C implementation of Python 2.3 and
+      newer makes the list appear empty for the duration, and raises
+      :exc:`ValueError` if it can detect that the list has been mutated during a
+      sort.
 
 
 .. _types-set:
@@ -1970,20 +1978,21 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a copy of the dictionary's list of ``(key, value)`` pairs.
 
-      .. note::
+      .. impl-detail::
 
          Keys and values are listed in an arbitrary order which is non-random,
          varies across Python implementations, and depends on the dictionary's
-         history of insertions and deletions. If :meth:`items`, :meth:`keys`,
-         :meth:`values`, :meth:`iteritems`, :meth:`iterkeys`, and
-         :meth:`itervalues` are called with no intervening modifications to the
-         dictionary, the lists will directly correspond.  This allows the
-         creation of ``(value, key)`` pairs using :func:`zip`: ``pairs =
-         zip(d.values(), d.keys())``.  The same relationship holds for the
-         :meth:`iterkeys` and :meth:`itervalues` methods: ``pairs =
-         zip(d.itervalues(), d.iterkeys())`` provides the same value for
-         ``pairs``. Another way to create the same list is ``pairs = [(v, k) for
-         (k, v) in d.iteritems()]``.
+         history of insertions and deletions.
+
+      If :meth:`items`, :meth:`keys`, :meth:`values`, :meth:`iteritems`,
+      :meth:`iterkeys`, and :meth:`itervalues` are called with no intervening
+      modifications to the dictionary, the lists will directly correspond.  This
+      allows the creation of ``(value, key)`` pairs using :func:`zip`: ``pairs =
+      zip(d.values(), d.keys())``.  The same relationship holds for the
+      :meth:`iterkeys` and :meth:`itervalues` methods: ``pairs =
+      zip(d.itervalues(), d.iterkeys())`` provides the same value for
+      ``pairs``. Another way to create the same list is ``pairs = [(v, k) for
+      (k, v) in d.iteritems()]``.
 
    .. method:: iteritems()
 

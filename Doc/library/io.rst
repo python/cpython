@@ -96,8 +96,8 @@ Module Interface
 
    *buffering* is an optional integer used to set the buffering policy.  By
    default full buffering is on.  Pass 0 to switch buffering off (only allowed
-   in binary mode), 1 to set line buffering, and an integer > 1 for full
-   buffering.
+   in binary mode), 1 to set line buffering, and an integer > 1 to indicate the
+   size of the buffer.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform

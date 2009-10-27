@@ -1,12 +1,12 @@
-
 :mod:`curses` --- Terminal handling for character-cell displays
 ===============================================================
 
 .. module:: curses
-   :synopsis: An interface to the curses library, providing portable terminal handling.
+   :synopsis: An interface to the curses library, providing portable terminal
+              handling.
+   :platform: Unix
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
-
 
 .. versionchanged:: 1.6
    Added support for the ``ncurses`` library and converted to a package.

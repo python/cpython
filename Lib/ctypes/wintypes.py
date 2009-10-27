@@ -179,7 +179,7 @@ __all__ = ['ATOM', 'BOOL', 'BOOLEAN', 'BYTE', 'COLORREF', 'DOUBLE', 'DWORD',
            'MSG', 'OLESTR', 'POINT', 'POINTL', 'RECT', 'RECTL', 'RGB',
            'SC_HANDLE', 'SERVICE_STATUS_HANDLE', 'SHORT', 'SIZE', 'SIZEL',
            'SMALL_RECT', 'UINT', 'ULARGE_INTEGER', 'ULONG', 'USHORT',
-           'VARIANT_BOOL', 'WCHAR', 'WIN32_FIND_DATAA', 'WIN32_FIND_DATAW',
+           'WCHAR', 'WIN32_FIND_DATAA', 'WIN32_FIND_DATAW',
            'WORD', 'WPARAM', '_COORD', '_FILETIME', '_LARGE_INTEGER',
            '_POINTL', '_RECTL', '_SMALL_RECT', '_ULARGE_INTEGER', 'tagMSG',
            'tagPOINT', 'tagRECT', 'tagSIZE']
