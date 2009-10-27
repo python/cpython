@@ -3083,7 +3083,8 @@ class Decimal(object):
         # otherwise, simply return the adjusted exponent of self, as a
         # Decimal.  Note that no attempt is made to fit the result
         # into the current context.
-        return Decimal(self.adjusted())
+        ans = Decimal(self.adjusted())
+        return ans._fix(context)
 
     def _islogical(self):
         """Return True if self is a logical operand.
