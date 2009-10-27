@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore", "integer argument expected",
 
 # count the number of test runs.
 # used to skip running test_execfile() multiple times
+# and to create unique strings to intern in test_intern()
 numruns = 0
 
 class Squares:
@@ -646,7 +647,9 @@ class BuiltinTest(unittest.TestCase):
 
     def test_intern(self):
         self.assertRaises(TypeError, intern)
-        s = "never interned before"
+        # This fails if the test is run twice with a constant string,
+        # therefore append the run counter
+        s = "never interned before " + str(numruns)
         self.assert_(intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assert_(intern(s2) is s)
