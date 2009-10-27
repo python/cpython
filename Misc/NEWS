@@ -22,6 +22,12 @@ Core and Builtins
 Library
 -------
 
+Tests
+-----
+
+- Issue #7055: test___all__ now greedily detects all modules which have an
+  __all__ attribute, rather than using a hardcoded and incomplete list.
+
 
 What's New in Python 2.6.4 final?
 =================================
