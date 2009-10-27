@@ -2874,7 +2874,7 @@ class Decimal(object):
             return False
         if context is None:
             context = getcontext()
-        return context.Emin <= self.adjusted() <= context.Emax
+        return context.Emin <= self.adjusted()
 
     def is_qnan(self):
         """Return True if self is a quiet NaN; otherwise return False."""
