@@ -18,7 +18,7 @@
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
 -- [Previously called decimal128.decTest]
-version: 2.58
+version: 2.59
 
 -- This set of tests is for the sixteen-byte concrete representation.
 -- Its characteristics are:

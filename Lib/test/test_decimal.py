@@ -64,6 +64,13 @@ directory = testdir + os.sep + TESTDATADIR + os.sep
 
 skip_expected = not os.path.isdir(directory)
 
+# list of individual .decTest test ids that correspond to tests that
+# we're skipping for one reason or another.
+skipped_test_ids = [
+    'scbx164',  # skipping apparently implementation-specific scaleb
+    'scbx165',  # tests, pending clarification of scaleb rules.
+]
+
 # Make sure it actually raises errors when not expected and caught in flags
 # Slower, since it runs some things several times.
 EXTENDEDERRORTEST = False
@@ -263,6 +270,10 @@ class DecimalTest(unittest.TestCase):
             val = val.replace("'", '').replace('"', '')
             val = val.replace('SingleQuote', "'").replace('DoubleQuote', '"')
             return val
+
+        if id in skipped_test_ids:
+            return
+
         fname = nameAdapter.get(funct, funct)
         if fname == 'rescale':
             return
