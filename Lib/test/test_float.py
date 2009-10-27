@@ -32,6 +32,11 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
             self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
 
+        # extra long strings should no longer be a problem
+        # (in 2.6, long unicode inputs to float raised ValueError)
+        float('.' + '1'*1000)
+        float(unicode('.' + '1'*1000))
+
     @test_support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
