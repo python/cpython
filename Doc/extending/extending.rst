@@ -1219,16 +1219,23 @@ like this::
    static int
    import_spam(void)
    {
-       PyObject *module = PyImport_ImportModule("spam");
+       PyObject *c_api_object;
+       PyObject *module;
 
-       if (module != NULL) {
-           PyObject *c_api_object = PyObject_GetAttrString(module, "_C_API");
-           if (c_api_object == NULL)
-               return -1;
-           if (PyCObject_Check(c_api_object))
-               PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object);
-           Py_DECREF(c_api_object);
+       module = PyImport_ImportModule("spam");
+       if (module == NULL)
+           return -1;
+
+       c_api_object = PyObject_GetAttrString(module, "_C_API");
+       if (c_api_object == NULL) {
+           Py_DECREF(module);
+           return -1;
        }
+       if (PyCObject_Check(c_api_object))
+           PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object);
+
+       Py_DECREF(c_api_object);
+       Py_DECREF(module);
        return 0;
    }
 

@@ -796,7 +796,8 @@ the following methods:
 
    Get a character. Note that the integer returned does *not* have to be in ASCII
    range: function keys, keypad keys and so on return numbers higher than 256. In
-   no-delay mode, -1 is returned if there is  no input.
+   no-delay mode, -1 is returned if there is no input, else :func:`getch` waits
+   until a key is pressed.
 
 
 .. method:: window.getkey([y, x])

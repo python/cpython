@@ -73,7 +73,11 @@ This module defines one class called :class:`Popen`:
    needed: Usually, the program to execute is defined by the *args* argument. If
    ``shell=True``, the *executable* argument specifies which shell to use. On Unix,
    the default shell is :file:`/bin/sh`.  On Windows, the default shell is
-   specified by the :envvar:`COMSPEC` environment variable.
+   specified by the :envvar:`COMSPEC` environment variable. The only reason you
+   would need to specify ``shell=True`` on Windows is where the command you
+   wish to execute is actually built in to the shell, eg ``dir``, ``copy``.
+   You don't need ``shell=True`` to run a batch file, nor to run a console-based
+   executable.
 
    *stdin*, *stdout* and *stderr* specify the executed programs' standard input,
    standard output and standard error file handles, respectively.  Valid values

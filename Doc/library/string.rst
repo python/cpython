@@ -825,14 +825,15 @@ not be removed until Python 3.0.  The functions defined in this module are:
    Return a copy of *s*, but with lower case letters converted to upper case.
 
 
-.. function:: ljust(s, width)
-              rjust(s, width)
-              center(s, width)
+.. function:: ljust(s, width[, fillchar])
+              rjust(s, width[, fillchar])
+              center(s, width[, fillchar])
 
    These functions respectively left-justify, right-justify and center a string in
    a field of given width.  They return a string that is at least *width*
-   characters wide, created by padding the string *s* with spaces until the given
-   width on the right, left or both sides.  The string is never truncated.
+   characters wide, created by padding the string *s* with the character *fillchar*
+   (default is a space) until the given width on the right, left or both sides.
+   The string is never truncated.
 
 
 .. function:: zfill(s, width)

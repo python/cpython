@@ -24,7 +24,7 @@ defined:
 +-----------+----------------+-------------------+-----------------------+
 | ``'B'``   | unsigned char  | int               | 1                     |
 +-----------+----------------+-------------------+-----------------------+
-| ``'u'``   | Py_UNICODE     | Unicode character | 2                     |
+| ``'u'``   | Py_UNICODE     | Unicode character | 2 (see note)          |
 +-----------+----------------+-------------------+-----------------------+
 | ``'h'``   | signed short   | int               | 2                     |
 +-----------+----------------+-------------------+-----------------------+
@@ -43,6 +43,11 @@ defined:
 | ``'d'``   | double         | float             | 8                     |
 +-----------+----------------+-------------------+-----------------------+
 
+.. note::
+
+   The ``'u'`` typecode corresponds to Python's unicode character.  On narrow
+   Unicode builds this is 2-bytes, on wide builds this is 4-bytes.
+
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
 through the :attr:`itemsize` attribute.  The values stored  for ``'L'`` and
@@ -53,9 +58,9 @@ unsigned (long) integers.
 The module defines the following type:
 
 
-.. function:: array(typecode[, initializer])
+.. class:: array(typecode[, initializer])
 
-   Return a new array whose items are restricted by *typecode*, and initialized
+   A new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a list, string, or iterable
    over elements of the appropriate type.
 
@@ -70,7 +75,7 @@ The module defines the following type:
 
 .. data:: ArrayType
 
-   Obsolete alias for :func:`array`.
+   Obsolete alias for :class:`array`.
 
 Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned
@@ -79,7 +84,6 @@ value must be an array object with the same type code; in all other cases,
 and may be used wherever buffer objects are supported.
 
 The following data items and methods are also supported:
-
 
 .. attribute:: array.typecode
 
