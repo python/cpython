@@ -352,8 +352,10 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   This function should be used for internal and specialized purposes only. It
-   is not guaranteed to exist in all implementations of Python.
+   .. impl-detail::
+
+      This function should be used for internal and specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
 
 
 .. function:: getprofile()
@@ -373,12 +375,12 @@ always available.
 
    Get the trace function as set by :func:`settrace`.
 
-   .. note::
+   .. impl-detail::
 
       The :func:`gettrace` function is intended only for implementing debuggers,
-      profilers, coverage tools and the like. Its behavior is part of the
-      implementation platform, rather than part of the language definition,
-      and thus may not be available in all Python implementations.
+      profilers, coverage tools and the like.  Its behavior is part of the
+      implementation platform, rather than part of the language definition, and
+      thus may not be available in all Python implementations.
 
 
 .. function:: getwindowsversion()
@@ -749,12 +751,12 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
-   .. note::
+   .. impl-detail::
 
       The :func:`settrace` function is intended only for implementing debuggers,
-      profilers, coverage tools and the like. Its behavior is part of the
-      implementation platform, rather than part of the language definition, and thus
-      may not be available in all Python implementations.
+      profilers, coverage tools and the like.  Its behavior is part of the
+      implementation platform, rather than part of the language definition, and
+      thus may not be available in all Python implementations.
 
 
 .. function:: settscdump(on_flag)

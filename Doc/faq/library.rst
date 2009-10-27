@@ -16,14 +16,10 @@ Check :ref:`the Library Reference <library-index>` to see if there's a relevant
 standard library module.  (Eventually you'll learn what's in the standard
 library and will able to skip this step.)
 
-Search the `Python Package Index <http://pypi.python.org/pypi>`_.
-
-Next, check the `Vaults of Parnassus <http://www.vex.net/parnassus/>`_, an older
-index of packages.
-
-Finally, try `Google <http://www.google.com>`_ or other Web search engine.
-Searching for "Python" plus a keyword or two for your topic of interest will
-usually find something helpful.
+For third-party packages, search the `Python Package Index
+<http://pypi.python.org/pypi>`_ or try `Google <http://www.google.com>`_ or
+another Web search engine.  Searching for "Python" plus a keyword or two for
+your topic of interest will usually find something helpful.
 
 
 Where is the math.py (socket.py, regex.py, etc.) source file?
@@ -181,11 +177,10 @@ in Python.
 How do I create documentation from doc strings?
 -----------------------------------------------
 
-.. XXX mention Sphinx/epydoc
-
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
-source code.  An alternative is `pythondoc
-<http://starship.python.net/crew/danilo/pythondoc/>`_.
+source code.  An alternative for creating API documentation purely from
+docstrings is `epydoc <http://epydoc.sf.net/>`_.  `Sphinx
+<http://sphinx.pocoo.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -237,7 +232,7 @@ The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
 Aahz has a set of slides from his threading tutorial that are helpful; see
-http://starship.python.net/crew/aahz/OSCON2001/.
+http://www.pythoncraft.com/OSCON2001/.
 
 
 None of my threads seem to run: why?
@@ -397,6 +392,7 @@ Can't we get rid of the Global Interpreter Lock?
 ------------------------------------------------
 
 .. XXX mention multiprocessing
+.. XXX link to dbeazley's talk about GIL?
 
 The Global Interpreter Lock (GIL) is often seen as a hindrance to Python's
 deployment on high-end multiprocessor server machines, because a multi-threaded
@@ -583,7 +579,7 @@ substituted for standard input and output.  You will have to use pseudo ttys
 ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
 "expect" library.  A Python extension that interfaces to expect is called "expy"
 and available from http://expectpy.sourceforge.net.  A pure Python solution that
-works like expect is ` pexpect <http://pexpect.sourceforge.net>`_.
+works like expect is `pexpect <http://pypi.python.org/pypi/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?

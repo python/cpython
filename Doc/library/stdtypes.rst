@@ -772,13 +772,15 @@ Notes:
    If *k* is ``None``, it is treated like ``1``.
 
 (6)
-   If *s* and *t* are both strings, some Python implementations such as CPython can
-   usually perform an in-place optimization for assignments of the form ``s=s+t``
-   or ``s+=t``.  When applicable, this optimization makes quadratic run-time much
-   less likely.  This optimization is both version and implementation dependent.
-   For performance sensitive code, it is preferable to use the :meth:`str.join`
-   method which assures consistent linear concatenation performance across versions
-   and implementations.
+   .. impl-detail::
+
+      If *s* and *t* are both strings, some Python implementations such as
+      CPython can usually perform an in-place optimization for assignments of
+      the form ``s = s + t`` or ``s += t``.  When applicable, this optimization
+      makes quadratic run-time much less likely.  This optimization is both
+      version and implementation dependent.  For performance sensitive code, it
+      is preferable to use the :meth:`str.join` method which assures consistent
+      linear concatenation performance across versions and implementations.
 
 
 .. _string-methods:
@@ -950,12 +952,12 @@ functions based on regular expressions.
    least one cased character, false otherwise.
 
 
-.. method:: str.join(seq)
+.. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the sequence
-   *seq*.  A :exc:`TypeError` will be raised if there are any non-string values
-   in *seq*, including :class:`bytes` objects.  The separator between elements
-   is the string providing this method.
+   Return a string which is the concatenation of the strings in the
+   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
+   any non-string values in *seq*, including :class:`bytes` objects.  The
+   separator between elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -1509,13 +1511,16 @@ Notes:
    that compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
 
-   While a list is being sorted, the effect of attempting to mutate, or even
-   inspect, the list is undefined.  The C implementation
-   makes the list appear empty for the duration, and raises :exc:`ValueError` if it
-   can detect that the list has been mutated during a sort.
+   .. impl-detail::
+
+      While a list is being sorted, the effect of attempting to mutate, or even
+      inspect, the list is undefined.  The C implementation of Python makes the
+      list appear empty for the duration, and raises :exc:`ValueError` if it can
+      detect that the list has been mutated during a sort.
 
 (8)
    :meth:`sort` is not supported by :class:`bytearray` objects.
+
 
 .. _bytes-methods:
 

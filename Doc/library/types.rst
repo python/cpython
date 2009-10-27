@@ -77,5 +77,8 @@ The module defines the following names:
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
-   In other implementations of Python, this type may be identical to
-   ``GetSetDescriptorType``.
+
+   .. impl-detail::
+
+      In other implementations of Python, this type may be identical to
+      ``GetSetDescriptorType``.

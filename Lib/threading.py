@@ -119,7 +119,7 @@ class _RLock(_Verbose):
 
     def release(self):
         if self._owner is not current_thread():
-            raise RuntimeError("cannot release un-aquired lock")
+            raise RuntimeError("cannot release un-acquired lock")
         self._count = count = self._count - 1
         if not count:
             self._owner = None
@@ -211,7 +211,7 @@ class _Condition(_Verbose):
 
     def wait(self, timeout=None):
         if not self._is_owned():
-            raise RuntimeError("cannot wait on un-aquired lock")
+            raise RuntimeError("cannot wait on un-acquired lock")
         waiter = _allocate_lock()
         waiter.acquire()
         self._waiters.append(waiter)
@@ -253,7 +253,7 @@ class _Condition(_Verbose):
 
     def notify(self, n=1):
         if not self._is_owned():
-            raise RuntimeError("cannot notify on un-aquired lock")
+            raise RuntimeError("cannot notify on un-acquired lock")
         __waiters = self._waiters
         waiters = __waiters[:n]
         if not waiters:
