@@ -11,6 +11,7 @@ import test.test_support
 
 def test_main():
     test.test_support.run_unittest(distutils.tests.test_suite())
+    test.test_support.reap_children()
 
 
 if __name__ == "__main__":
