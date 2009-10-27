@@ -221,7 +221,15 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 # Test cases
 
-class ProxyAuthTests(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
+    def setUp(self):
+        self._threads = test_support.threading_setup()
+
+    def tearDown(self):
+        test_support.threading_cleanup(*self._threads)
+
+
+class ProxyAuthTests(BaseTestCase):
     URL = "http://localhost"
 
     USER = "tester"
@@ -329,7 +337,7 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-class TestUrlopen(unittest.TestCase):
+class TestUrlopen(BaseTestCase):
     """Tests urllib2.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
