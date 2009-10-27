@@ -577,8 +577,15 @@ If you want to know how to change the first sequence into the second, use
    insert a[8:8] b[8:17]
     equal a[8:29] b[17:38]
 
-See also the function :func:`get_close_matches` in this module, which shows how
-simple code building on :class:`SequenceMatcher` can be used to do useful work.
+.. seealso::
+
+   * The :func:`get_close_matches` function in this module which shows how
+     simple code building on :class:`SequenceMatcher` can be used to do useful
+     work.
+
+   * `Simple version control recipe
+     <http://code.activestate.com/recipes/576729/>`_ for a small application
+     built with :class:`SequenceMatcher`.
 
 
 .. _differ-objects:
