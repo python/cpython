@@ -215,8 +215,9 @@ Utility functions
 .. function:: quote_plus(string[, safe])
 
    Like :func:`quote`, but also replaces spaces by plus signs, as required for
-   quoting HTML form values.  Plus signs in the original string are escaped unless
-   they are included in *safe*.  It also does not have *safe* default to ``'/'``.
+   quoting HTML form values when building up a query string to go into a URL.
+   Plus signs in the original string are escaped unless they are included in
+   *safe*.  It also does not have *safe* default to ``'/'``.
 
 
 .. function:: unquote(string)
