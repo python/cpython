@@ -2042,20 +2042,22 @@ static struct PyMethodDef module_functions[] = {
 /* Module initialization */
 
 PyDoc_STRVAR(module_doc,
-"Functions to convert between Python values and C structs.\n\
-Python strings are used to hold the data representing the C struct\n\
-and also as format strings to describe the layout of data in the C struct.\n\
+"Functions to convert between Python values and C structs represented\n\
+as Python strings. It uses format strings (explained below) as compact\n\
+descriptions of the lay-out of the C structs and the intended conversion\n\
+to/from Python values.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
- @: native order, size & alignment (default)\n\
- =: native order, std. size & alignment\n\
- <: little-endian, std. size & alignment\n\
- >: big-endian, std. size & alignment\n\
- !: same as >\n\
+  @: native order, size & alignment (default)\n\
+  =: native order, std. size & alignment\n\
+  <: little-endian, std. size & alignment\n\
+  >: big-endian, std. size & alignment\n\
+  !: same as >\n\
 \n\
 The remaining chars indicate types of args and must match exactly;\n\
 these can be preceded by a decimal repeat count:\n\
   x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
+  ?: _Bool (requires C99; if not available, char is used instead)\n\
   h:short; H:unsigned short; i:int; I:unsigned int;\n\
   l:long; L:unsigned long; f:float; d:double.\n\
 Special cases (preceding decimal count indicates length):\n\
