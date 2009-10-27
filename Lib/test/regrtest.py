@@ -8,26 +8,41 @@ additional facilities.
 
 Command line options:
 
--v: verbose    -- run tests in verbose mode with output to stdout
--w: verbose2   -- re-run failed tests in verbose mode
--W: verbose3   -- re-run failed tests in verbose mode immediately
--q: quiet      -- don't print anything except if a test fails
--x: exclude    -- arguments are tests to *exclude*
--s: single     -- run only a single test (see below)
--S: slow       -- print the slowest 10 tests
--r: random     -- randomize test execution order
--f: fromfile   -- read names of tests to run from a file (see below)
--l: findleaks  -- if GC is available detect tests that leak memory
--u: use        -- specify which special resource intensive tests to run
--h: help       -- print this text and exit
--t: threshold  -- call gc.set_threshold(N)
--T: coverage   -- turn on code coverage using the trace module
--D: coverdir   -- Directory where coverage files are put
--N: nocoverdir -- Put coverage files alongside modules
--L: runleaks   -- run the leaks(1) command just before exit
--R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
--M: memlimit   -- run very large memory-consuming tests
--j: multiprocess -- run several processes at once
+-h/--help       -- print this text and exit
+
+Verbosity
+
+-v/--verbose    -- run tests in verbose mode with output to stdout
+-w/--verbose2   -- re-run failed tests in verbose mode
+-W/--verbose3   -- re-run failed tests in verbose mode immediately
+-q/--quiet      -- don't print anything except if a test fails
+-S/--slow       -- print the slowest 10 tests
+
+Selecting tests
+
+-r/--random     -- randomize test execution order
+-f/--fromfile   -- read names of tests to run from a file (see below)
+-x/--exclude    -- arguments are tests to *exclude*
+-s/--single     -- run only a single test (see below)
+-u/--use RES1,RES2,...
+                -- specify which special resource intensive tests to run
+-M/--memlimit LIMIT
+                -- run very large memory-consuming tests
+
+Special runs
+
+-l/--findleaks  -- if GC is available detect tests that leak memory
+-L/--runleaks   -- run the leaks(1) command just before exit
+-R/--huntrleaks RUNCOUNTS
+                -- search for reference leaks (needs debug build, v. slow)
+-j/--multiprocess PROCESSES
+                -- run PROCESSES processes at once
+-T/--coverage   -- turn on code coverage using the trace module
+-D/--coverdir DIRECTORY
+                -- Directory where coverage files are put
+-N/--nocoverdir -- Put coverage files alongside modules
+-t/--threshold THRESHOLD
+                -- call gc.set_threshold(THRESHOLD)
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
