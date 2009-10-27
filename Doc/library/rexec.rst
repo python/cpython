@@ -272,11 +272,11 @@ Let us say that we want a slightly more relaxed policy than the standard
            elif mode in ('w', 'wb', 'a', 'ab'):
                # check filename : must begin with /tmp/
                if file[:5]!='/tmp/':
-                   raise IOError, "can't write outside /tmp"
+                   raise IOError("can't write outside /tmp")
                elif (string.find(file, '/../') >= 0 or
                     file[:3] == '../' or file[-3:] == '/..'):
-                   raise IOError, "'..' in filename forbidden"
-           else: raise IOError, "Illegal open() mode"
+                   raise IOError("'..' in filename forbidden")
+           else: raise IOError("Illegal open() mode")
            return open(file, mode, buf)
 
 Notice that the above code will occasionally forbid a perfectly valid filename;

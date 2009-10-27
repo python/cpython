@@ -216,7 +216,7 @@ provided by this module. ::
        except OSError, why:
            errors.extend((src, dst, str(why)))
        if errors:
-           raise Error, errors
+           raise Error(errors)
 
 Another example that uses the :func:`ignore_patterns` helper::
 

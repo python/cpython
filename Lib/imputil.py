@@ -14,7 +14,7 @@ warnpy3k("the imputil module has been removed in Python 3.0", stacklevel=2)
 del warnpy3k
 
 # note: avoid importing non-builtin modules
-import imp                      ### not available in JPython?
+import imp                      ### not available in Jython?
 import sys
 import __builtin__
 
@@ -25,7 +25,7 @@ import marshal
 __all__ = ["ImportManager","Importer","BuiltinImporter"]
 
 _StringType = type('')
-_ModuleType = type(sys)         ### doesn't work in JPython...
+_ModuleType = type(sys)         ### doesn't work in Jython...
 
 class ImportManager:
     "Manage the import process."
@@ -639,8 +639,8 @@ def _test_revamp():
 # TODO
 #
 # from Finn Bock:
-#   type(sys) is not a module in JPython. what to use instead?
-#   imp.C_EXTENSION is not in JPython. same for get_suffixes and new_module
+#   type(sys) is not a module in Jython. what to use instead?
+#   imp.C_EXTENSION is not in Jython. same for get_suffixes and new_module
 #
 #   given foo.py of:
 #      import sys

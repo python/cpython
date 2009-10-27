@@ -528,6 +528,9 @@ by file descriptors.
    Force write of file with filedescriptor *fd* to disk. Does not force update of
    metadata. Availability: Unix.
 
+   .. note::
+      This function is not available on MacOS.
+
 
 .. function:: fpathconf(fd, name)
 
