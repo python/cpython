@@ -16,6 +16,7 @@ class SysModuleTest(unittest.TestCase):
         sys.stdout = self.orig_stdout
         sys.stderr = self.orig_stderr
         sys.displayhook = self.orig_displayhook
+        test.support.reap_children()
 
     def test_original_displayhook(self):
         import builtins
@@ -261,6 +262,7 @@ class SysModuleTest(unittest.TestCase):
             self.current_frames_without_threads()
 
     # Test sys._current_frames() in a WITH_THREADS build.
+    @test.support.reap_threads
     def current_frames_with_threads(self):
         import threading, _thread
         import traceback
@@ -424,13 +426,13 @@ class SysModuleTest(unittest.TestCase):
         env["PYTHONIOENCODING"] = "cp424"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
                              stdout = subprocess.PIPE, env=env)
-        out = p.stdout.read()
+        out = p.communicate()[0].strip()
         self.assertEqual(out, "\xa2\n".encode("cp424"))
 
         env["PYTHONIOENCODING"] = "ascii:replace"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
                              stdout = subprocess.PIPE, env=env)
-        out = p.stdout.read().strip()
+        out = p.communicate()[0].strip()
         self.assertEqual(out, b'?')
 
 
