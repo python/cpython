@@ -310,7 +310,7 @@ date format string, the default date format is::
 with the milliseconds tacked on at the end.
 
 The message format string uses ``%(<dictionary key>)s`` styled string
-substitution; the possible keys are documented in :ref:`formatter-objects`.
+substitution; the possible keys are documented in :ref:`formatter`.
 
 The following message format string will log the time in a human-readable
 format, the severity of the message, and the contents of the message, in that
@@ -524,46 +524,44 @@ Useful Handlers
 In addition to the base :class:`Handler` class, many useful subclasses are
 provided:
 
-#. :class:`StreamHandler` instances send error messages to streams (file-like
+#. :ref:`stream-handler` instances send error messages to streams (file-like
    objects).
 
-#. :class:`FileHandler` instances send error messages to disk files.
-
-.. module:: logging.handlers
+#. :ref:`file-handler` instances send error messages to disk files.
 
 #. :class:`BaseRotatingHandler` is the base class for handlers that
    rotate log files at a certain point. It is not meant to be  instantiated
-   directly. Instead, use :class:`RotatingFileHandler` or
-   :class:`TimedRotatingFileHandler`.
+   directly. Instead, use :ref:`rotating-file-handler` or
+   :ref:`timed-rotating-file-handler`.
 
-#. :class:`RotatingFileHandler` instances send error messages to disk
+#. :ref:`rotating-file-handler` instances send error messages to disk
    files, with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send error messages to
+#. :ref:`timed-rotating-file-handler` instances send error messages to
    disk files, rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send error messages to TCP/IP
+#. :ref:`socket-handler` instances send error messages to TCP/IP
    sockets.
 
-#. :class:`DatagramHandler` instances send error messages to UDP
+#. :ref:`datagram-handler` instances send error messages to UDP
    sockets.
 
-#. :class:`SMTPHandler` instances send error messages to a designated
+#. :ref:`smtp-handler` instances send error messages to a designated
    email address.
 
-#. :class:`SysLogHandler` instances send error messages to a Unix
+#. :ref:`syslog-handler` instances send error messages to a Unix
    syslog daemon, possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send error messages to a
+#. :ref:`nt-eventlog-handler` instances send error messages to a
    Windows NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send error messages to a buffer
+#. :ref:`memory-handler` instances send error messages to a buffer
    in memory, which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send error messages to an HTTP
+#. :ref:`http-handler` instances send error messages to an HTTP
    server using either ``GET`` or ``POST`` semantics.
 
-#. :class:`WatchedFileHandler` instances watch the file they are
+#. :ref:`watched-file-handler` instances watch the file they are
    logging to. If the file changes, it is closed and reopened using the file
    name. This handler is only useful on Unix-like systems; Windows does not
    support the underlying mechanism used.
@@ -816,6 +814,7 @@ functions.
       and 2.2.x, which do not include the :mod:`logging` package in the standard
       library.
 
+.. _logger:
 
 Logger Objects
 --------------
@@ -1454,6 +1453,8 @@ printed on the console; on the server side, you should see something like::
       69 myapp.area2     ERROR    The five boxing wizards jump quickly.
 
 
+.. _handler:
+
 Handler Objects
 ---------------
 
@@ -1559,6 +1560,8 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
    :exc:`NotImplementedError`.
 
 
+.. _stream-handler:
+
 StreamHandler
 ^^^^^^^^^^^^^
 
@@ -1592,6 +1595,8 @@ and :meth:`flush` methods).
       no output, so an explicit :meth:`flush` call may be needed at times.
 
 
+.. _file-handler:
+
 FileHandler
 ^^^^^^^^^^^
 
@@ -1618,9 +1623,12 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+.. _null-handler:
 
 See :ref:`library-config` for more information on how to use
 :class:`NullHandler`.
+
+.. _watched-file-handler:
 
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
@@ -1660,6 +1668,7 @@ this value.
       changed.  If it has, the existing stream is flushed and closed and the
       file opened again, before outputting the record to the file.
 
+.. _rotating-file-handler:
 
 RotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^
@@ -1700,6 +1709,7 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+.. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1758,6 +1768,8 @@ timed intervals.
       Outputs the record to the file, catering for rollover as described above.
 
 
+.. _socket-handler:
+
 SocketHandler
 ^^^^^^^^^^^^^
 
@@ -1811,6 +1823,8 @@ sends logging output to a network socket. The base class uses a TCP socket.
       partial sends which can happen when the network is busy.
 
 
+.. _datagram-handler:
+
 DatagramHandler
 ^^^^^^^^^^^^^^^
 
@@ -1843,6 +1857,8 @@ over UDP sockets.
 
       Send a pickled string to a socket.
 
+
+.. _syslog-handler:
 
 SysLogHandler
 ^^^^^^^^^^^^^
@@ -1880,6 +1896,8 @@ supports sending logging messages to a remote or local Unix syslog.
       or integers - if strings are passed, internal mapping dictionaries are
       used to convert them to integers.
 
+
+.. _nt-eventlog-handler:
 
 NTEventLogHandler
 ^^^^^^^^^^^^^^^^^
@@ -1946,6 +1964,7 @@ extensions for Python installed.
       lookup to get the message ID. This version returns 1, which is the base
       message ID in :file:`win32service.pyd`.
 
+.. _smtp-handler:
 
 SMTPHandler
 ^^^^^^^^^^^
@@ -1977,6 +1996,7 @@ supports sending logging messages to an email address via SMTP.
       If you want to specify a subject line which is record-dependent, override
       this method.
 
+.. _memory-handler:
 
 MemoryHandler
 ^^^^^^^^^^^^^
@@ -2047,6 +2067,8 @@ should, then :meth:`flush` is expected to do the needful.
       Checks for buffer full or a record at the *flushLevel* or higher.
 
 
+.. _http-handler:
+
 HTTPHandler
 ^^^^^^^^^^^
 
@@ -2068,7 +2090,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
       Sends the record to the Web server as an URL-encoded dictionary.
 
 
-.. _formatter-objects:
+.. _formatter:
 
 Formatter Objects
 -----------------
@@ -2192,11 +2214,12 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
       just uses :func:`traceback.print_exception`. The resulting string is
       returned.
 
+.. _filter:
 
 Filter Objects
 --------------
 
-:class:`Filter`\ s can be used by :class:`Handler`\ s and :class:`Logger`\ s for
+Filters can be used by :class:`Handler`\ s and :class:`Logger`\ s for
 more sophisticated filtering than is provided by levels. The base filter class
 only allows events which are below a certain point in the logger hierarchy. For
 example, a filter initialized with "A.B" will allow events logged by loggers
@@ -2217,6 +2240,7 @@ initialized with the empty string, all events are passed.
       yes. If deemed appropriate, the record may be modified in-place by this
       method.
 
+.. _log-record:
 
 LogRecord Objects
 -----------------
@@ -2251,6 +2275,7 @@ made, and any exception information to be logged.
       Returns the message for this :class:`LogRecord` instance after merging any
       user-supplied arguments with the message.
 
+.. _logger-adapter:
 
 LoggerAdapter Objects
 ---------------------
