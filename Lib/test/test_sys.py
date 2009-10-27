@@ -5,6 +5,11 @@ import struct
 import subprocess
 import textwrap
 
+# count the number of test runs, used to create unique
+# strings to intern in test_intern()
+numruns = 0
+
+
 class SysModuleTest(unittest.TestCase):
 
     def setUp(self):
@@ -379,8 +384,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
+        global numruns
+        numruns += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before"
+        s = "never interned before" + str(numruns)
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
