@@ -284,6 +284,30 @@ class ThreadTests(unittest.TestCase):
         self.failIf(rc == 2, "interpreted was blocked")
         self.failUnless(rc == 0, "Unexpected error")
 
+    def test_join_nondaemon_on_shutdown(self):
+        # Issue 1722344
+        # Raising SystemExit skipped threading._shutdown
+        import subprocess
+        p = subprocess.Popen([sys.executable, "-c", """if 1:
+                import threading
+                from time import sleep
+
+                def child():
+                    sleep(1)
+                    # As a non-daemon thread we SHOULD wake up and nothing
+                    # should be torn down yet
+                    print "Woke up, sleep function is:", sleep
+
+                threading.Thread(target=child).start()
+                raise SystemExit
+            """],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        self.assertEqual(stdout.strip(),
+            "Woke up, sleep function is: <built-in function sleep>")
+        stderr = re.sub(r"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
+        self.assertEqual(stderr, "")
 
     def test_enumerate_after_join(self):
         # Try hard to trigger #1703448: a thread is still returned in
