@@ -374,6 +374,7 @@ class FileThreadingTests(unittest.TestCase):
     # See #815646, #595601
 
     def setUp(self):
+        self._threads = test_support.threading_setup()
         self.f = None
         self.filename = TESTFN
         with open(self.filename, "w") as f:
@@ -392,6 +393,7 @@ class FileThreadingTests(unittest.TestCase):
             os.remove(self.filename)
         except EnvironmentError:
             pass
+        test_support.threading_cleanup(*self._threads)
 
     def _create_file(self):
         self.f = open(self.filename, "w+")
