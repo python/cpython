@@ -524,7 +524,7 @@ defined in the :mod:`Tkinter` module.
 There are many useful subclasses of Variable already defined:
 :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
 :class:`BooleanVar`.  To read the current value of such a variable, call the
-:meth:`get` method on it, and to change its value you call the :meth:`set`
+:meth:`get` method on it, and to change its value you call the :meth:`!set`
 method.  If you follow this protocol, the widget will always track the value of
 the variable, with no further intervention on your part.
 
@@ -665,7 +665,7 @@ relief
    ``"raised"``, ``"sunken"``, ``"flat"``, ``"groove"``, and ``"ridge"``.
 
 scrollcommand
-   This is almost always the :meth:`set` method of some scrollbar widget, but can
+   This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.   Refer to the file
    :file:`Demo/tkinter/matt/canvas-with-scrollbars.py` in the Python source
    distribution for an example.

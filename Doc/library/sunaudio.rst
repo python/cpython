@@ -54,7 +54,7 @@ This module defines the following variables and functions:
 Audio Device Objects
 --------------------
 
-The audio device objects are returned by :func:`open` define the following
+The audio device objects are returned by :func:`.open` define the following
 methods (except ``control`` objects which only provide :meth:`getinfo`,
 :meth:`setinfo`, :meth:`fileno`, and :meth:`drain`):
 

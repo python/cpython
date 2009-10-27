@@ -78,7 +78,7 @@ members:
 .. attribute:: Class.lineno
 
    The line number of the ``class`` statement within the file named by
-   :attr:`file`.
+   :attr:`~Class.file`.
 
 
 .. _pyclbr-function-objects:
@@ -109,5 +109,5 @@ The :class:`Function` objects used as values in the dictionary returned by
 .. attribute:: Function.lineno
 
    The line number of the ``def`` statement within the file named by
-   :attr:`file`.
+   :attr:`~Function.file`.
 
