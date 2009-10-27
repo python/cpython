@@ -7,6 +7,7 @@ from cStringIO import StringIO
 import os
 import subprocess
 import sys
+import threading
 
 import bz2
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
@@ -283,6 +284,23 @@ class BZ2FileTest(BaseTest):
         xlines = list(bz2f.xreadlines())
         bz2f.close()
         self.assertEqual(xlines, ['Test'])
+
+    def testThreading(self):
+        # Using a BZ2File from several threads doesn't deadlock (issue #7205).
+        data = "1" * 2**20
+        nthreads = 10
+        f = bz2.BZ2File(self.filename, 'wb')
+        try:
+            def comp():
+                for i in range(5):
+                    f.write(data)
+            threads = [threading.Thread(target=comp) for i in range(nthreads)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+        finally:
+            f.close()
 
 
 class BZ2CompressorTest(BaseTest):
