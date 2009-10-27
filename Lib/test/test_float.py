@@ -39,7 +39,6 @@ class GeneralFloatCases(unittest.TestCase):
         float('.' + '1'*1000)
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
-
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
