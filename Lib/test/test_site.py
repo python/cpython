@@ -168,7 +168,7 @@ class HelperFunctionsTests(unittest.TestCase):
         else:
             self.assertTrue(len(dirs), 2)
             self.assertEquals(dirs[0], 'xoxo')
-            wanted = os.path.join('xoxo', 'Lib', 'site-packages')
+            wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEquals(dirs[1], wanted)
 
         # let's try the specific Apple location
