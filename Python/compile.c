@@ -909,10 +909,8 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
 	PyObject *t, *v;
 	Py_ssize_t arg;
-	unsigned char *p, *q;
-	Py_complex z;
+	unsigned char *p;
 	double d;
-	int real_part_zero, imag_part_zero;
 
 	/* necessary to make sure types aren't coerced (e.g., int and long) */
         /* _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms */
@@ -927,7 +925,11 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 		else
 			t = PyTuple_Pack(2, o, o->ob_type);
 	}
+#ifndef WITHOUT_COMPLEX
 	else if (PyComplex_Check(o)) {
+		Py_complex z;
+		int real_part_zero, imag_part_zero;
+		unsigned char *q;
 		/* complex case is even messier: we need to make complex(x,
 		   0.) different from complex(x, -0.) and complex(0., y)
 		   different from complex(-0., y), for any x and y.  In
@@ -957,6 +959,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 			t = PyTuple_Pack(2, o, o->ob_type);
 		}
         }
+#endif /* WITHOUT_COMPLEX */
 	else {
 		t = PyTuple_Pack(2, o, o->ob_type);
         }
