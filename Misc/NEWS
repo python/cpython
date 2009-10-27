@@ -12,6 +12,8 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #7078: Set struct.__doc__ from _struct.__doc__.
+
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
   fixes the problem of some exceptions being thrown at shutdown when the
   interpreter is killed. Patch by Adam Olsen.
