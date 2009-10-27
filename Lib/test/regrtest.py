@@ -8,27 +8,43 @@ additional facilities.
 
 Command line options:
 
--v: verbose    -- run tests in verbose mode with output to stdout
--w: verbose2   -- re-run failed tests in verbose mode
--d: debug      -- print traceback for failed tests
--q: quiet      -- don't print anything except if a test fails
--x: exclude    -- arguments are tests to *exclude*
--s: single     -- run only a single test (see below)
--S: slow       -- print the slowest 10 tests
--r: random     -- randomize test execution order
--f: fromfile   -- read names of tests to run from a file (see below)
--l: findleaks  -- if GC is available detect tests that leak memory
--u: use        -- specify which special resource intensive tests to run
--h: help       -- print this text and exit
--t: threshold  -- call gc.set_threshold(N)
--T: coverage   -- turn on code coverage using the trace module
--D: coverdir   -- Directory where coverage files are put
--N: nocoverdir -- Put coverage files alongside modules
--L: runleaks   -- run the leaks(1) command just before exit
--R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
--M: memlimit   -- run very large memory-consuming tests
--n: nowindows  -- suppress error message boxes on Windows
--j: multiprocess -- run several processes at once
+-h/--help       -- print this text and exit
+
+Verbosity
+
+-v/--verbose    -- run tests in verbose mode with output to stdout
+-w/--verbose2   -- re-run failed tests in verbose mode
+-W/--verbose3   -- re-run failed tests in verbose mode immediately
+-d/--debug      -- print traceback for failed tests
+-q/--quiet      -- don't print anything except if a test fails
+-S/--slow       -- print the slowest 10 tests
+
+Selecting tests
+
+-r/--random     -- randomize test execution order
+-f/--fromfile   -- read names of tests to run from a file (see below)
+-x/--exclude    -- arguments are tests to *exclude*
+-s/--single     -- run only a single test (see below)
+-u/--use RES1,RES2,...
+                -- specify which special resource intensive tests to run
+-M/--memlimit LIMIT
+                -- run very large memory-consuming tests
+
+Special runs
+
+-l/--findleaks  -- if GC is available detect tests that leak memory
+-L/--runleaks   -- run the leaks(1) command just before exit
+-R/--huntrleaks RUNCOUNTS
+                -- search for reference leaks (needs debug build, v. slow)
+-j/--multiprocess PROCESSES
+                -- run PROCESSES processes at once
+-T/--coverage   -- turn on code coverage using the trace module
+-D/--coverdir DIRECTORY
+                -- Directory where coverage files are put
+-N/--nocoverdir -- Put coverage files alongside modules
+-t/--threshold THRESHOLD
+                -- call gc.set_threshold(THRESHOLD)
+-n/--nowindows  -- suppress error message boxes on Windows
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -193,7 +209,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None):
+         random_seed=None, use_mp=None, verbose3=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -219,15 +235,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:wM:nj:',
-                                   ['help', 'verbose', 'quiet', 'exclude',
-                                    'single', 'slow', 'random', 'fromfile',
-                                    'findleaks', 'use=', 'threshold=', 'trace',
-                                    'coverdir=', 'nocoverdir', 'runleaks',
-                                    'huntrleaks=', 'verbose2', 'memlimit=',
-                                    'debug', 'start=', 'nowindows',
-                                    'randseed=', 'multiprocess=', 'slaveargs=',
-                                    ])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:wWM:nj:',
+            ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
+             'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
+             'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
+             'runleaks', 'huntrleaks=', 'memlimit=', 'debug', 'start=',
+             'nowindows', 'randseed=', 'multiprocess=', 'slaveargs='])
     except getopt.error as msg:
         usage(msg)
 
@@ -248,6 +261,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             verbose2 = True
         elif o in ('-d', '--debug'):
             debug = True
+        elif o in ('-W', '--verbose3'):
+            verbose3 = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -430,14 +445,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_times.append((test_time, test))
         if ok > 0:
             good.append(test)
+            return 'good'
         elif -2 < ok <= 0:
             bad.append(test)
             if ok == -1:
                 environment_changed.append(test)
+            return 'bad'
         else:
             skipped.append(test)
             if ok == -3:
                 resource_denieds.append(test)
+            return 'skipped'
 
     if use_mp:
         from threading import Thread
@@ -514,7 +532,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 try:
                     result = runtest(test, verbose, quiet,
                                      testdir, huntrleaks, debug)
-                    accumulate_result(test, result)
+                    which = accumulate_result(test, result)
+                    if verbose3 and which == 'bad':
+                        print("Re-running test {} in verbose mode".format(test))
+                        runtest(test, True, quiet, testdir, huntrleaks, debug)
                 except KeyboardInterrupt:
                     # print a newline separate from the ^C
                     print()
