@@ -1958,9 +1958,9 @@ it so that it's implementing the class :class:`peel_banana`, a subclass of
 Subclasses of :class:`Command` must define the following methods.
 
 
-.. method:: Command.initialize_options()(S)
+.. method:: Command.initialize_options()
 
-   et default values for all the options that this command supports.  Note that
+   Set default values for all the options that this command supports.  Note that
    these defaults may be overridden by other commands, by the setup script, by
    config files, or by the command-line.  Thus, this is not the place to code
    dependencies between options; generally, :meth:`initialize_options`
