@@ -3552,11 +3552,11 @@ load_float(Unpicklerobject *self)
 	if (len < 2) return bad_readline();
 	if (!( s=pystrndup(s,len)))  return -1;
 
-	errno = 0;
-	d = PyOS_ascii_strtod(s, &endptr);
+	d = PyOS_string_to_double(s, &endptr, PyExc_OverflowError);
 
-	if ((errno == ERANGE && !(fabs(d) <= 1.0)) ||
-	    (endptr[0] != '\n') || (endptr[1] != '\0')) {
+	if (d == -1.0 && PyErr_Occurred()) {
+		goto finally;
+        } else if ((endptr[0] != '\n') || (endptr[1] != '\0')) {
 		PyErr_SetString(PyExc_ValueError,
 				"could not convert string to float");
 		goto finally;
