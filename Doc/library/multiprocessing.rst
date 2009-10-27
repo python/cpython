@@ -374,7 +374,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       Note that a daemonic process is not allowed to create child processes.
       Otherwise a daemonic process would leave its children orphaned if it gets
-      terminated when its parent process exits.
+      terminated when its parent process exits. Additionally, these are **not**
+      Unix daemons or services, they are normal processes that will be
+      terminated (and not joined) if non-dameonic processes have exited.
 
    In addition to the  :class:`Threading.Thread` API, :class:`Process` objects
    also support the following attributes and methods:
@@ -1700,7 +1702,7 @@ authentication* using the :mod:`hmac` module.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authentication* is ``True`` or *authkey* is a string then digest
+   If *authenticate* is ``True`` or *authkey* is a string then digest
    authentication is used.  The key used for authentication will be either
    *authkey* or ``current_process().authkey)`` if *authkey* is ``None``.
    If authentication fails then :exc:`AuthenticationError` is raised.  See
@@ -1742,7 +1744,7 @@ authentication* using the :mod:`hmac` module.
 
    If *authkey* is ``None`` and *authenticate* is ``True`` then
    ``current_process().authkey`` is used as the authentication key.  If
-   *authkey* is ``None`` and *authentication* is ``False`` then no
+   *authkey* is ``None`` and *authenticate* is ``False`` then no
    authentication is done.  If authentication fails then
    :exc:`AuthenticationError` is raised.  See :ref:`multiprocessing-auth-keys`.
 

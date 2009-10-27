@@ -1,6 +1,5 @@
-
-:mod:`cgi` --- Common Gateway Interface support.
-================================================
+:mod:`cgi` --- Common Gateway Interface support
+===============================================
 
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.

@@ -607,10 +607,9 @@ Decimal objects
 
       .. versionadded:: 2.6
 
-   .. method:: logical_invert(other[, context])
+   .. method:: logical_invert([context])
 
-      :meth:`logical_invert` is a logical operation.  The argument must
-      be a *logical operand* (see :ref:`logical_operands_label`).  The
+      :meth:`logical_invert` is a logical operation.  The
       result is the digit-wise inversion of the operand.
 
       .. versionadded:: 2.6
