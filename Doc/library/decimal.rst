@@ -108,7 +108,7 @@ reset them before monitoring a calculation.
 .. seealso::
 
    * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
-     Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
+     Specification <http://speleotrove.com/decimal/>`_.
 
    * IEEE standard 854-1987, `Unofficial IEEE 854 Text
      <http://754r.ucbtest.org/standards/854.pdf>`_.
@@ -531,8 +531,11 @@ Decimal objects
 
    .. method:: is_normal()
 
-      Return :const:`True` if the argument is a *normal* finite number.  Return
-      :const:`False` if the argument is zero, subnormal, infinite or a NaN.
+      Return :const:`True` if the argument is a *normal* finite non-zero
+      number with an adjusted exponent greater than or equal to *Emin*.
+      Return :const:`False` if the argument is zero, subnormal, infinite or a
+      NaN.  Note, the term *normal* is used here in a different sense with
+      the :meth:`normalize` method which is used to create canonical values.
 
       .. versionadded:: 2.6
 
@@ -560,7 +563,8 @@ Decimal objects
    .. method:: is_subnormal()
 
       Return :const:`True` if the argument is subnormal, and :const:`False`
-      otherwise.
+      otherwise. A number is subnormal is if it is nonzero, finite, and has an
+      adjusted exponent less than *Emin*.
 
       .. versionadded:: 2.6
 
