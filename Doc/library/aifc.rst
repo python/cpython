@@ -48,7 +48,7 @@ Module :mod:`aifc` defines the following function:
    time how many samples you are going to write in total and use
    :meth:`writeframesraw` and :meth:`setnframes`.
 
-Objects returned by :func:`open` when a file is opened for reading have the
+Objects returned by :func:`.open` when a file is opened for reading have the
 following methods:
 
 
@@ -131,7 +131,7 @@ following methods:
    Close the AIFF file.  After calling this method, the object can no longer be
    used.
 
-Objects returned by :func:`open` when a file is opened for writing have all the
+Objects returned by :func:`.open` when a file is opened for writing have all the
 above methods, except for :meth:`readframes` and :meth:`setpos`.  In addition
 the following methods exist.  The :meth:`get\*` methods can only be called after
 the corresponding :meth:`set\*` methods have been called.  Before the first

@@ -239,8 +239,9 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: next
 
-   Converts the use of iterator's :meth:`next` methods to the :func:`next`
-   function.  It also renames :meth:`next` methods to :meth:`~object.__next__`.
+   Converts the use of iterator's :meth:`~iterator.next` methods to the
+   :func:`next` function.  It also renames :meth:`next` methods to
+   :meth:`~object.__next__`.
 
 .. 2to3fixer:: nonzero
 
