@@ -33,7 +33,7 @@ This module defines the following functions and objects:
               activeCount()
 
    Return the number of :class:`Thread` objects currently alive.  The returned
-   count is equal to the length of the list returned by :func:`enumerate`.
+   count is equal to the length of the list returned by :func:`.enumerate`.
 
 
 .. function:: Condition()
@@ -321,7 +321,7 @@ impossible to detect the termination of alien threads.
 
       Roughly, a thread is alive from the moment the :meth:`start` method
       returns until its :meth:`run` method terminates. The module function
-      :func:`enumerate` returns a list of all alive threads.
+      :func:`.enumerate` returns a list of all alive threads.
 
    .. method:: isDaemon()
                setDaemon()

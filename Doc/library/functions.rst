@@ -637,15 +637,13 @@ available.  They are listed here in alphabetical order.
 .. function:: locals()
 
    Update and return a dictionary representing the current local symbol table.
+   Free variables are returned by :func:`locals` when it is called in function
+   blocks, but not in class blocks.
 
    .. note::
 
-      The contents of this dictionary should not be modified; changes may not affect
-      the values of local variables used by the interpreter.
-
-   Free variables are returned by :func:`locals` when it is called in a function block.
-   Modifications of free variables may not affect the values used by the
-   interpreter.  Free variables are not returned in class blocks.
+      The contents of this dictionary should not be modified; changes may not
+      affect the values of local and free variables used by the interpreter.
 
 
 .. function:: long([x[, base]])
@@ -1357,10 +1355,10 @@ available.  They are listed here in alphabetical order.
 
 .. function:: vars([object])
 
-   Without arguments, return a dictionary corresponding to the current local symbol
-   table.  With a module, class or class instance object as argument (or anything
-   else that has a :attr:`__dict__` attribute), returns a dictionary corresponding
-   to the object's symbol table.
+   Without an argument, act like :func:`locals`.
+
+   With a module, class or class instance object as argument (or anything else that
+   has a :attr:`__dict__` attribute), return that attribute.
 
    .. note::
 
