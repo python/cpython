@@ -565,17 +565,17 @@ correspond to Unix system calls applicable to sockets.
    is system-dependent (usually 5).
 
 
-.. method:: socket.makefile([mode[, bufsize]])
+.. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, newline=None)
 
    .. index:: single: I/O control; buffering
 
    Return a :dfn:`file object` associated with the socket.  (File objects are
-   described in :ref:`bltin-file-objects`.) The file object
-   references a :cfunc:`dup`\ ped version of the socket file descriptor, so the
-   file object and socket object may be closed or garbage-collected independently.
-   The socket must be in blocking mode (it can not have a timeout). The optional
-   *mode* and *bufsize* arguments are interpreted the same way as by the built-in
-   :func:`file` function.
+   described in :ref:`bltin-file-objects`.)  The file object references a
+   :cfunc:`dup`\ ped version of the socket file descriptor, so the file object
+   and socket object may be closed or garbage-collected independently.  The
+   socket must be in blocking mode (it can not have a timeout).  The optional
+   arguments are interpreted the same way as by the built-in :func:`open`
+   function.
 
 
 .. method:: socket.recv(bufsize[, flags])

@@ -1532,7 +1532,7 @@ returning an ordered dictionary.
 
 The appropriate metaclass is determined by the following precedence rules:
 
-* If the ``metaclass`` keyword argument is based with the bases, it is used.
+* If the ``metaclass`` keyword argument is passed with the bases, it is used.
 
 * Otherwise, if there is at least one base class, its metaclass is used.
 
