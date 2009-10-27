@@ -34,8 +34,12 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, ".")
         self.assertRaises(ValueError, float, "-.")
         self.assertEqual(float(b"  \u0663.\u0661\u0664  ".decode('raw-unicode-escape')), 3.14)
+        # extra long strings should not be a problem
+        float(b'.' + b'1'*1000)
+        float('.' + '1'*1000)
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
