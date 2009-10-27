@@ -21,10 +21,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
 # monkey-patch HTML translator to give versionmodified paragraphs a class
-from sphinx.writers.html import HTMLTranslator
-from sphinx.locale import versionlabels
-HTMLTranslator.visit_versionmodified = new_visit_versionmodified
-
 def new_visit_versionmodified(self, node):
     self.body.append(self.starttag(node, 'p', CLASS=node['type']))
     text = versionlabels[node['type']] % node['version']
@@ -34,6 +30,9 @@ def new_visit_versionmodified(self, node):
         text += '.'
     self.body.append('<span class="versionmodified">%s</span>' % text)
 
+from sphinx.writers.html import HTMLTranslator
+from sphinx.locale import versionlabels
+HTMLTranslator.visit_versionmodified = new_visit_versionmodified
 
 # Support for marking up and linking to bugs.python.org issues
 
