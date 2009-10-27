@@ -4,21 +4,25 @@
 .. module:: copy
    :synopsis: Shallow and deep copy operations.
 
-
-.. index::
-   single: copy() (in copy)
-   single: deepcopy() (in copy)
-
 This module provides generic (shallow and deep) copying operations.
 
-Interface summary::
 
-   import copy
+Interface summary:
 
-   x = copy.copy(y)        # make a shallow copy of y
-   x = copy.deepcopy(y)    # make a deep copy of y
+.. function:: copy(x)
 
-For module specific errors, :exc:`copy.error` is raised.
+   Return a shallow copy of *x*.
+
+
+.. function:: deepcopy(x)
+
+   Return a deep copy of *x*.
+
+
+.. exception:: error
+
+   Raised for module specific errors.
+
 
 The difference between shallow and deep copying is only relevant for compound
 objects (objects that contain other objects, like lists or class instances):

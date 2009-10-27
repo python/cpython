@@ -208,7 +208,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Custom displayhook for the exec in default(), which prevents
         assignment of the _ variable in the builtins.
         """
-        print(repr(obj))
+        # reproduce the behavior of the standard displayhook, not printing None
+        if obj is not None:
+            print(repr(obj))
 
     def default(self, line):
         if line[:1] == '!': line = line[1:]
