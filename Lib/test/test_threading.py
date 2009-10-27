@@ -54,7 +54,16 @@ class TestThread(threading.Thread):
                     print '%s is finished. %d tasks are running' % (
                         self.name, self.nrunning.get())
 
-class ThreadTests(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
+    def setUp(self):
+        self._threads = test.test_support.threading_setup()
+
+    def tearDown(self):
+        test.test_support.threading_cleanup(*self._threads)
+        test.test_support.reap_children()
+
+
+class ThreadTests(BaseTestCase):
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -382,7 +391,7 @@ class ThreadTests(unittest.TestCase):
                                sys.getrefcount(weak_raising_cyclic_object())))
 
 
-class ThreadJoinOnShutdown(unittest.TestCase):
+class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
         script = """if 1:
@@ -465,7 +474,7 @@ class ThreadJoinOnShutdown(unittest.TestCase):
         self._run_and_join(script)
 
 
-class ThreadingExceptionTests(unittest.TestCase):
+class ThreadingExceptionTests(BaseTestCase):
     # A RuntimeError should be raised if Thread.start() is called
     # multiple times.
     def test_start_thread_again(self):
