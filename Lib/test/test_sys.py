@@ -5,6 +5,9 @@ import struct
 
 class SysModuleTest(unittest.TestCase):
 
+    def tearDown(self):
+        test.test_support.reap_children()
+
     def test_original_displayhook(self):
         import __builtin__
         savestdout = sys.stdout
@@ -257,6 +260,7 @@ class SysModuleTest(unittest.TestCase):
             self.current_frames_without_threads()
 
     # Test sys._current_frames() in a WITH_THREADS build.
+    @test.test_support.reap_threads
     def current_frames_with_threads(self):
         import threading, thread
         import traceback
@@ -401,13 +405,13 @@ class SysModuleTest(unittest.TestCase):
         env["PYTHONIOENCODING"] = "cp424"
         p = subprocess.Popen([sys.executable, "-c", 'print unichr(0xa2)'],
                              stdout = subprocess.PIPE, env=env)
-        out = p.stdout.read().strip()
+        out = p.communicate()[0].strip()
         self.assertEqual(out, unichr(0xa2).encode("cp424"))
 
         env["PYTHONIOENCODING"] = "ascii:replace"
         p = subprocess.Popen([sys.executable, "-c", 'print unichr(0xa2)'],
                              stdout = subprocess.PIPE, env=env)
-        out = p.stdout.read().strip()
+        out = p.communicate()[0].strip()
         self.assertEqual(out, '?')
 
 
