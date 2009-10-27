@@ -236,9 +236,11 @@ Assignment of an object to a single target is recursively defined as follows.
   from the length of the assigned sequence, thus changing the length of the
   target sequence, if the object allows it.
 
-(In the current implementation, the syntax for targets is taken to be the same
-as for expressions, and invalid syntax is rejected during the code generation
-phase, causing less detailed error messages.)
+.. impl-detail::
+
+   In the current implementation, the syntax for targets is taken to be the same
+   as for expressions, and invalid syntax is rejected during the code generation
+   phase, causing less detailed error messages.
 
 WARNING: Although the definition of assignment implies that overlaps between the
 left-hand side and the right-hand side are 'safe' (for example ``a, b = b, a``
@@ -935,9 +937,11 @@ Names listed in a :keyword:`global` statement must not be defined as formal
 parameters or in a :keyword:`for` loop control target, :keyword:`class`
 definition, function definition, or :keyword:`import` statement.
 
-(The current implementation does not enforce the latter two restrictions, but
-programs should not abuse this freedom, as future implementations may enforce
-them or silently change the meaning of the program.)
+.. impl-detail::
+
+   The current implementation does not enforce the latter two restrictions, but
+   programs should not abuse this freedom, as future implementations may enforce
+   them or silently change the meaning of the program.
 
 .. index::
    builtin: exec

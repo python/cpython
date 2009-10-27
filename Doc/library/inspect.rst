@@ -290,18 +290,22 @@ attributes:
 
    Return true if the object is a getset descriptor.
 
-   getsets are attributes defined in extension modules via ``PyGetSetDef``
-   structures.  For Python implementations without such types, this method will
-   always return ``False``.
+   .. impl-detail::
+
+      getsets are attributes defined in extension modules via
+      :ctype:`PyGetSetDef` structures.  For Python implementations without such
+      types, this method will always return ``False``.
 
 
 .. function:: ismemberdescriptor(object)
 
    Return true if the object is a member descriptor.
 
-   Member descriptors are attributes defined in extension modules via
-   ``PyMemberDef`` structures.  For Python implementations without such types,
-   this method will always return ``False``.
+   .. impl-detail::
+
+      Member descriptors are attributes defined in extension modules via
+      :ctype:`PyMemberDef` structures.  For Python implementations without such
+      types, this method will always return ``False``.
 
 
 .. _inspect-source:
@@ -508,10 +512,12 @@ line.
 
    Return the frame object for the caller's stack frame.
 
-   This function relies on Python stack frame support in the interpreter, which
-   isn't guaranteed to exist in all implementations of Python. If running in
-   an implementation without Python stack frame support this function returns
-   ``None``.
+   .. impl-detail::
+
+      This function relies on Python stack frame support in the interpreter,
+      which isn't guaranteed to exist in all implementations of Python.  If
+      running in an implementation without Python stack frame support this
+      function returns ``None``.
 
 
 .. function:: stack(context=1)

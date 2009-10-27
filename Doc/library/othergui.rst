@@ -43,7 +43,7 @@ also available for Python:
       `PythonCAD <http://www.pythoncad.org/>`_. An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
-   `PyQt <http://www.riverbankcomputing.co.uk/pyqt/index.php>`_
+   `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/>`_
       PyQt is a :program:`sip`\ -wrapped binding to the Qt toolkit.  Qt is an
       extensive C++ GUI application development framework that is
       available for Unix, Windows and Mac OS X. :program:`sip` is a tool

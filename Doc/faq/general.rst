@@ -164,9 +164,10 @@ Sphinx-formatted documentation, Python library modules, example programs, and
 several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
-Consult the `Developer FAQ
-<http://www.python.org/dev/devfaq.html#subversion-svn>`__ for more information
-on getting the source code and compiling it.
+.. XXX update link once the dev faq is relocated
+
+Consult the `Developer FAQ <http://www.python.org/dev/faq/>`__ for more
+information on getting the source code and compiling it.
 
 
 How do I get documentation on Python?
@@ -176,7 +177,7 @@ How do I get documentation on Python?
 
 The standard documentation for the current stable version of Python is available
 at http://docs.python.org/.  PDF, plain text, and downloadable HTML versions are
-also available at http://docs.python.org/download/.
+also available at http://docs.python.org/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
 documentation tool <http://sphinx.pocoo.org/>`__.  The reStructuredText source
@@ -220,8 +221,10 @@ releases are announced on the comp.lang.python and comp.lang.python.announce
 newsgroups and on the Python home page at http://www.python.org/; an RSS feed of
 news is available.
 
+.. XXX update link once the dev faq is relocated
+
 You can also access the development version of Python through Subversion.  See
-http://www.python.org/dev/devfaq.html#subversion-svn for details.
+http://www.python.org/dev/faq/ for details.
 
 
 How do I submit bug reports and patches for Python?

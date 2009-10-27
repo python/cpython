@@ -1828,7 +1828,7 @@ changes, or look through the Subversion logs for all the details.
 
   The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
-  (Contributed by W. Barnes; :issue:`1551443`.)
+  (Contributed by W. Barnes.)
 
 * The :mod:`cgi` module will now read variables from the query string
   of an HTTP POST request.  This makes it possible to use form actions
@@ -2977,7 +2977,7 @@ Changes to Python's build process and to the C API include:
 * The BerkeleyDB module now has a C API object, available as
   ``bsddb.db.api``.   This object can be used by other C extensions
   that wish to use the :mod:`bsddb` module for their own purposes.
-  (Contributed by Duncan Grisby; :issue:`1551895`.)
+  (Contributed by Duncan Grisby.)
 
 * The new buffer interface, previously described in
   `the PEP 3118 section <#pep-3118-revised-buffer-protocol>`__,

@@ -680,9 +680,6 @@ includes a quick-start tutorial and a reference.
       Written by Facundo Batista and implemented by Facundo Batista, Eric Price,
       Raymond Hettinger, Aahz, and Tim Peters.
 
-   http://research.microsoft.com/~hollasch/cgindex/coding/ieeefloat.html
-      A more detailed overview of the IEEE-754 representation.
-
    http://www.lahey.com/float.htm
       The article uses Fortran code to illustrate many of the problems that floating-
       point inaccuracy can cause.
@@ -756,7 +753,7 @@ API that perform ASCII-only conversions, ignoring the locale setting:
   :ctype:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
-(http://developer.gnome.org/arch/gtk/glib.html), whose developers kindly
+(http://library.gnome.org/devel/glib/stable/), whose developers kindly
 relicensed the relevant functions and donated them to the Python Software
 Foundation.  The :mod:`locale` module  can now change the numeric locale,
 letting extensions such as GTK+  produce the correct results.

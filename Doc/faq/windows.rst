@@ -389,10 +389,10 @@ need)::
     .py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 
 This line will allow you to call your script with a simple reference like:
-http://yourserver/scripts/yourscript.py provided "scripts" is an "executable"
-directory for your server (which it usually is by default).  The "-u" flag
-specifies unbuffered and binary mode for stdin - needed when working with binary
-data.
+``http://yourserver/scripts/yourscript.py`` provided "scripts" is an
+"executable" directory for your server (which it usually is by default).  The
+:option:`-u` flag specifies unbuffered and binary mode for stdin - needed when
+working with binary data.
 
 In addition, it is recommended that using ".py" may not be a good idea for the
 file extensions when used in this context (you might want to reserve ``*.py``
@@ -517,7 +517,7 @@ Why doesn't os.popen()/win32pipe.popen() work on Win9x?
 There is a bug in Win9x that prevents os.popen/win32pipe.popen* from
 working. The good news is there is a way to work around this problem.  The
 Microsoft Knowledge Base article that you need to lookup is: Q150956. You will
-find links to the knowledge base at: http://www.microsoft.com/kb.
+find links to the knowledge base at: http://support.microsoft.com/.
 
 
 PyRun_SimpleFile() crashes on Windows but not on Unix; why?
@@ -604,4 +604,4 @@ Tim Peters:
    we can't fix it).
 
 David A Burton has written a little program to fix this.  Go to
-http://www.burtonsys.com/download.html and click on "ctl3dfix.zip".
+http://www.burtonsys.com/downloads.html and click on "ctl3dfix.zip".
