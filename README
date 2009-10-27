@@ -107,26 +107,26 @@ Newsgroups and Mailing Lists
 Read comp.lang.python, a high-volume discussion newsgroup about
 Python, or comp.lang.python.announce, a low-volume moderated newsgroup
 for Python-related announcements.  These are also accessible as
-mailing lists: see http://www.python.org/community/lists.html for an
+mailing lists: see http://www.python.org/community/lists/ for an
 overview of these and many other Python-related mailing lists.
 
 Archives are accessible via the Google Groups Usenet archive; see
 http://groups.google.com/.  The mailing lists are also archived, see
-http://www.python.org/community/lists.html for details.
+http://www.python.org/community/lists/ for details.
 
 
 Bug reports
 -----------
 
 To report or search for bugs, please use the Python Bug
-Tracker at http://bugs.python.org.
+Tracker at http://bugs.python.org/.
 
 
 Patches and contributions
 -------------------------
 
 To submit a patch or other contribution, please use the Python Patch
-Manager at http://bugs.python.org.  Guidelines
+Manager at http://bugs.python.org/.  Guidelines
 for patch submission may be found at http://www.python.org/dev/patches/.
 
 If you have a proposal to change Python, you may want to send an email to the
@@ -188,7 +188,7 @@ Troubleshooting
 See also the platform specific notes in the next section.
 
 If you run into other trouble, see the FAQ
-(http://www.python.org/doc/faq) for hints on what can go wrong, and
+(http://www.python.org/doc/faq/) for hints on what can go wrong, and
 how to fix it.
 
 If you rerun the configure script with different options, remove all
@@ -404,7 +404,7 @@ HP-UX:  When using threading, you may have to add -D_REENTRANT to the
 HP-UX ia64: When building on the ia64 (Itanium) platform using HP's
         compiler, some experience has shown that the compiler's
         optimiser produces a completely broken version of python
-        (see http://www.python.org/sf/814976). To work around this,
+        (see http://bugs.python.org/814976). To work around this,
         edit the Makefile and remove -O from the OPT line.
 
         To build a 64-bit executable on an Itanium 2 system using HP's
@@ -424,7 +424,7 @@ HP-UX ia64: When building on the ia64 (Itanium) platform using HP's
         if it remains set.)  You still have to edit the Makefile and
         remove -O from the OPT line.
 
-HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
+HP PA-RISC 2.0: A recent bug report (http://bugs.python.org/546117)
         suggests that the C compiler in this 64-bit system has bugs
         in the optimizer that break Python.  Compiling without
         optimization solves the problems.
@@ -1171,9 +1171,9 @@ Misc/python-mode.el.  Originally written by the famous Tim Peters, it
 is now maintained by the equally famous Barry Warsaw (it's no
 coincidence that they now both work on the same team).  The latest
 version, along with various other contributed Python-related Emacs
-goodies, is online at http://www.python.org/emacs/python-mode.  And
+goodies, is online at http://www.python.org/emacs/python-mode/.  And
 if you are planning to edit the Python C code, please pick up the
-latest version of CC Mode http://www.python.org/emacs/cc-mode; it
+latest version of CC Mode http://www.python.org/emacs/cc-mode/; it
 contains a "python" style used throughout most of the Python C source
 files.  (Newer versions of Emacs or XEmacs may already come with the
 latest version of python-mode.)
