@@ -581,7 +581,7 @@ _buffered_raw_tell(buffered *self)
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_IOError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
-			 n);
+			 (PY_OFF_T_COMPAT)n);
         return -1;
     }
     self->abs_pos = n;
@@ -614,7 +614,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_IOError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
-			 n);
+			 (PY_OFF_T_COMPAT)n);
         return -1;
     }
     self->abs_pos = n;
