@@ -1865,16 +1865,15 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 	fmt = _ctypes_get_fielddesc(proto_str);
 	if (fmt == NULL) {
-		Py_DECREF((PyObject *)result);
 		PyErr_Format(PyExc_ValueError,
 			     "_type_ '%s' not supported", proto_str);
-		return NULL;
+		goto error;
 	}
 
 	stgdict = (StgDictObject *)PyObject_CallObject(
 		(PyObject *)&PyCStgDict_Type, NULL);
 	if (!stgdict)
-		return NULL;
+		goto error;
 
 	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
@@ -1889,6 +1888,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
 	if (stgdict->format == NULL) {
 		Py_DECREF(result);
+		Py_DECREF(proto);
 		Py_DECREF((PyObject *)stgdict);
 		return NULL;
 	}

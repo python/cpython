@@ -639,13 +639,13 @@ slots for which no default value is specified, a :exc:`TypeError` exception is
 raised.  Otherwise, the list of filled slots is used as the argument list for
 the call.
 
-.. note::
+.. impl-detail::
 
-   An implementation may provide built-in functions whose positional parameters do
-   not have names, even if they are 'named' for the purpose of documentation, and
-   which therefore cannot be supplied by keyword.  In CPython, this is the case for
-   functions implemented in C that use :cfunc:`PyArg_ParseTuple` to parse their
-   arguments.
+   An implementation may provide built-in functions whose positional parameters
+   do not have names, even if they are 'named' for the purpose of documentation,
+   and which therefore cannot be supplied by keyword.  In CPython, this is the
+   case for functions implemented in C that use :cfunc:`PyArg_ParseTuple` to
+   parse their arguments.
 
 If there are more positional arguments than there are formal parameter slots, a
 :exc:`TypeError` exception is raised, unless a formal parameter using the syntax
@@ -1053,6 +1053,8 @@ cross-type comparison is not supported, the comparison method returns
 supported cross-type comparisons and unsupported comparisons.  For example,
 ``Decimal(2) == 2`` and `2 == float(2)`` but ``Decimal(2) != float(2)``.
 
+.. _membership-test-details:
+
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
 in s`` returns the negation of ``x in s``.  All built-in sequences and set types
@@ -1069,7 +1071,12 @@ return ``True``.
 For user-defined classes which define the :meth:`__contains__` method, ``x in
 y`` is true if and only if ``y.__contains__(x)`` is true.
 
-For user-defined classes which do not define :meth:`__contains__` and do define
+For user-defined classes which do not define :meth:`__contains__` but do define
+:meth:`__iter__`, ``x in y`` is true if some value ``z`` with ``x == z`` is
+produced while iterating over ``y``.  If an exception is raised during the
+iteration, it is as if :keyword:`in` raised that exception.
+
+Lastly, the old-style iteration protocol is tried: if a class defines
 :meth:`__getitem__`, ``x in y`` is true if and only if there is a non-negative
 integer index *i* such that ``x == y[i]``, and all lower integer indices do not
 raise :exc:`IndexError` exception.  (If any other exception is raised, it is as

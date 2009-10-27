@@ -7710,10 +7710,10 @@ unicode_isprintable(PyObject *self)
 }
 
 PyDoc_STRVAR(join__doc__,
-             "S.join(sequence) -> str\n\
+             "S.join(iterable) -> str\n\
 \n\
 Return a string which is the concatenation of the strings in the\n\
-sequence.  The separator between elements is S.");
+iterable.  The separator between elements is S.");
 
 static PyObject*
 unicode_join(PyObject *self, PyObject *data)

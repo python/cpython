@@ -345,6 +345,21 @@ p.deprecated {
     background-color: #ffa
 }
 
+.impl-detail {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 7px;
+    border: 1px solid #ccc;
+}
+
+.impl-detail .compound-first {
+    margin-top: 0;
+}
+
+.impl-detail .compound-last {
+    margin-bottom: 0;
+}
+
 /* -- code displays --------------------------------------------------------- */
 
 pre {
@@ -405,7 +420,7 @@ span.eqno {
     div.document,
     div.documentwrapper,
     div.bodywrapper {
-        margin: 0;
+        margin: 0 !important;
         width: 100%;
     }
 

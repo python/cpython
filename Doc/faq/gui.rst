@@ -45,11 +45,12 @@ Qt
 '''
 
 There are bindings available for the Qt toolkit (`PyQt
-<http://www.riverbankcomputing.co.uk/pyqt/>`_) and for KDE (PyKDE).  If you're
-writing open source software, you don't need to pay for PyQt, but if you want to
-write proprietary applications, you must buy a PyQt license from `Riverbank
-Computing <http://www.riverbankcomputing.co.uk>`_ and a Qt license from
-`Trolltech <http://www.trolltech.com>`_.
+<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (PyKDE).  If
+you're writing open source software, you don't need to pay for PyQt, but if you
+want to write proprietary applications, you must buy a PyQt license from
+`Riverbank Computing <http://www.riverbankcomputing.co.uk>`_ and (up to Qt 4.4;
+Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
+<http://www.trolltech.com>`_.
 
 Gtk+
 ''''
