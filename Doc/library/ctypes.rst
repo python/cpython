@@ -1210,8 +1210,7 @@ constructs a new Python object each time!
 Variable-sized data types
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``ctypes`` provides some support for variable-sized arrays and structures (this
-was added in version 0.9.9.7).
+``ctypes`` provides some support for variable-sized arrays and structures.
 
 The ``resize`` function can be used to resize the memory buffer of an existing
 ctypes object.  The function takes the object as first argument, and the
