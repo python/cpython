@@ -99,10 +99,10 @@ memory but does not update the underlying file.
       import mmap
 
       # write a simple example file
-      with open("hello.txt", "w") as f:
+      with open("hello.txt", "wb") as f:
           f.write("Hello Python!\n")
 
-      with open("hello.txt", "r+") as f:
+      with open("hello.txt", "r+b") as f:
           # memory-map the file, size 0 means whole file
           map = mmap.mmap(f.fileno(), 0)
           # read content via standard file methods
