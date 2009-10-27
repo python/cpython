@@ -208,10 +208,10 @@ the built-in namespace as the function :func:`_`.
    This installs the function :func:`_` in Python's builtins namespace, based on
    *domain*, *localedir*, and *codeset* which are passed to the function
    :func:`translation`.  The *unicode* flag is passed to the resulting translation
-   object's :meth:`install` method.
+   object's :meth:`~NullTranslations.install` method.
 
    For the *names* parameter, please see the description of the translation
-   object's :meth:`install` method.
+   object's :meth:`~NullTranslations.install` method.
 
    As seen below, you usually mark the strings in your application that are
    candidates for translation, by wrapping them in a call to the :func:`_`
