@@ -320,40 +320,44 @@ class DispatcherWithSendTests(unittest.TestCase):
     def tearDown(self):
         asyncore.close_all()
 
+    @support.reap_threads
     def test_send(self):
-        self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(3)
-        self.port = support.bind_port(self.sock)
+        evt = threading.Event()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3)
+        port = support.bind_port(sock)
 
         cap = BytesIO()
-        args = (self.evt, cap, self.sock)
-        threading.Thread(target=capture_server, args=args).start()
+        args = (evt, cap, sock)
+        t = threading.Thread(target=capture_server, args=args)
+        t.start()
+        try:
+            # wait a little longer for the server to initialize (it sometimes
+            # refuses connections on slow machines without this wait)
+            time.sleep(0.2)
 
-        # wait a little longer for the server to initialize (it sometimes
-        # refuses connections on slow machines without this wait)
-        time.sleep(0.2)
+            data = b"Suppose there isn't a 16-ton weight?"
+            d = dispatcherwithsend_noread()
+            d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            d.connect((HOST, port))
 
-        data = b"Suppose there isn't a 16-ton weight?"
-        d = dispatcherwithsend_noread()
-        d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        d.connect((HOST, self.port))
+            # give time for socket to connect
+            time.sleep(0.1)
 
-        # give time for socket to connect
-        time.sleep(0.1)
+            d.send(data)
+            d.send(data)
+            d.send(b'\n')
 
-        d.send(data)
-        d.send(data)
-        d.send(b'\n')
+            n = 1000
+            while d.out_buffer and n > 0:
+                asyncore.poll()
+                n -= 1
 
-        n = 1000
-        while d.out_buffer and n > 0:
-            asyncore.poll()
-            n -= 1
+            evt.wait()
 
-        self.evt.wait()
-
-        self.assertEqual(cap.getvalue(), data*2)
+            self.assertEqual(cap.getvalue(), data*2)
+        finally:
+            t.join()
 
 
 class DispatcherWithSendTests_UsePoll(DispatcherWithSendTests):
