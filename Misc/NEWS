@@ -108,6 +108,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #7055: test___all__ now greedily detects all modules which have an
+  __all__ attribute, rather than using a hardcoded and incomplete list.
+
 - Issue #7058: Added save/restore for argv and os.environ to runtest_inner
   in regrtest, with warnings if the called test modifies them.
 
