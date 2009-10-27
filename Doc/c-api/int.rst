@@ -131,7 +131,7 @@ Plain Integer Objects
    (:const:`LONG_MAX`, as defined in the system header files).
 
 
-.. cfunction:: int PyInt_ClearFreeList(void)
+.. cfunction:: int PyInt_ClearFreeList()
 
    Clear the integer free list. Return the number of items that could not
    be freed.
