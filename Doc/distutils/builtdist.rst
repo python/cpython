@@ -241,7 +241,8 @@ tedious and error-prone, so it's usually best to put them in the setup
 configuration file, :file:`setup.cfg`\ ---see section :ref:`setup-config`.  If
 you distribute or package many Python module distributions, you might want to
 put options that apply to all of them in your personal Distutils configuration
-file (:file:`~/.pydistutils.cfg`).
+file (:file:`~/.pydistutils.cfg`).  If you want to temporarily disable
+this file, you can pass the --no-user-cfg option to setup.py.
 
 There are three steps to building a binary RPM package, all of which are
 handled automatically by the Distutils:

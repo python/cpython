@@ -117,6 +117,9 @@ C-API
 Library
 -------
 
+- Issue #1180: Added a new global option to ignore ~/.pydistutils.cfg in
+  Distutils.
+
 - Issue #7218: Fix test_site for win32, the directory comparison was done with
   an uppercase.
 
