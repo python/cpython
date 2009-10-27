@@ -7,6 +7,7 @@ from io import BytesIO
 import os
 import subprocess
 import sys
+import threading
 
 # Skip tests if the bz2 module doesn't exist.
 bz2 = support.import_module('bz2')
@@ -281,6 +282,23 @@ class BZ2FileTest(BaseTest):
             pass
         else:
             self.fail("1/0 didn't raise an exception")
+
+    def testThreading(self):
+        # Using a BZ2File from several threads doesn't deadlock (issue #7205).
+        data = b"1" * 2**20
+        nthreads = 10
+        f = bz2.BZ2File(self.filename, 'wb')
+        try:
+            def comp():
+                for i in range(5):
+                    f.write(data)
+            threads = [threading.Thread(target=comp) for i in range(nthreads)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+        finally:
+            f.close()
 
 
 class BZ2CompressorTest(BaseTest):

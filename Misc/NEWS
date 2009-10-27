@@ -117,6 +117,9 @@ C-API
 Library
 -------
 
+- Issue #7205: Fix a possible deadlock when using a BZ2File object from
+  several threads at once.
+
 - Issue #7077: logging: SysLogHandler now treats Unicode as per RFC 5424.
 
 - Issue #7099: Decimal.is_normal now returns True for numbers with exponent
