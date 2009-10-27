@@ -731,12 +731,13 @@ correspond to Unix system calls applicable to sockets.
 
 Some notes on socket blocking and timeouts: A socket object can be in one of
 three modes: blocking, non-blocking, or timeout.  Sockets are always created in
-blocking mode.  In blocking mode, operations block until complete.  In
+blocking mode.  In blocking mode, operations block until complete or
+the system returns an error (such as connection timed out).  In
 non-blocking mode, operations fail (with an error that is unfortunately
 system-dependent) if they cannot be completed immediately.  In timeout mode,
 operations fail if they cannot be completed within the timeout specified for the
-socket.  The :meth:`setblocking` method is simply a shorthand for certain
-:meth:`settimeout` calls.
+socket or if the system returns an error.  The :meth:`setblocking` method is simply
+a shorthand for certain :meth:`settimeout` calls.
 
 Timeout mode internally sets the socket in non-blocking mode.  The blocking and
 timeout modes are shared between file descriptors and socket objects that refer
@@ -747,7 +748,9 @@ completed immediately will fail.
 
 Note that the :meth:`connect` operation is subject to the timeout setting, and
 in general it is recommended to call :meth:`settimeout` before calling
-:meth:`connect`.
+:meth:`connect` or pass a timeout parameter to :meth:`create_connection`.
+The system network stack may return a connection timeout error
+of its own regardless of any python socket timeout setting.
 
 
 .. method:: socket.setsockopt(level, optname, value)

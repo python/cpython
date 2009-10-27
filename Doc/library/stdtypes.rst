@@ -2114,6 +2114,11 @@ Files have the following methods:
    Flush the internal buffer, like ``stdio``'s :cfunc:`fflush`.  This may be a
    no-op on some file-like objects.
 
+   .. note::
+
+      :meth:`flush` does not necessarily write the file's data to disk.  Use
+      :meth:`flush` followed by :func:`os.fsync` to ensure this behavior.
+
 
 .. method:: file.fileno()
 
