@@ -3236,17 +3236,17 @@ parsenumber(struct compiling *c, const char *s)
 #ifndef WITHOUT_COMPLEX
         if (imflag) {
                 complex.real = 0.;
-                PyFPE_START_PROTECT("atof", return 0)
-                complex.imag = PyOS_ascii_atof(s);
-                PyFPE_END_PROTECT(complex)
+                complex.imag = PyOS_string_to_double(s, (char **)&end, NULL);
+                if (complex.imag == -1.0 && PyErr_Occurred())
+                        return NULL;
                 return PyComplex_FromCComplex(complex);
         }
         else
 #endif
         {
-                PyFPE_START_PROTECT("atof", return 0)
-                dx = PyOS_ascii_atof(s);
-                PyFPE_END_PROTECT(dx)
+                dx = PyOS_string_to_double(s, NULL, NULL);
+                if (dx == -1.0 && PyErr_Occurred())
+                        return NULL;
                 return PyFloat_FromDouble(dx);
         }
 }
