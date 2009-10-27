@@ -329,59 +329,6 @@ I/O Base Classes
       ``len(b)``, since if the write fails, an :exc:`IOError` will be raised).
 
 
-Raw File I/O
-------------
-
-.. class:: FileIO(name[, mode])
-
-   :class:`FileIO` represents a file containing bytes data.  It implements
-   the :class:`RawIOBase` interface (and therefore the :class:`IOBase`
-   interface, too).
-
-   The *mode* can be ``'r'``, ``'w'`` or ``'a'`` for reading (default), writing,
-   or appending.  The file will be created if it doesn't exist when opened for
-   writing or appending; it will be truncated when opened for writing.  Add a
-   ``'+'`` to the mode to allow simultaneous reading and writing.
-
-   In addition to the attributes and methods from :class:`IOBase` and
-   :class:`RawIOBase`, :class:`FileIO` provides the following data
-   attributes and methods:
-
-   .. attribute:: mode
-
-      The mode as given in the constructor.
-
-   .. attribute:: name
-
-      The file name.  This is the file descriptor of the file when no name is
-      given in the constructor.
-
-   .. method:: read([n])
-
-      Read and return at most *n* bytes.  Only one system call is made, so it is
-      possible that less data than was requested is returned.  Use :func:`len`
-      on the returned bytes object to see how many bytes were actually returned.
-      (In non-blocking mode, ``None`` is returned when no data is available.)
-
-   .. method:: readall()
-
-      Read and return the entire file's contents in a single bytes object.  As
-      much as immediately available is returned in non-blocking mode.  If the
-      EOF has been reached, ``b''`` is returned.
-
-   .. method:: write(b)
-
-      Write the bytes or bytearray object, *b*, to the file, and return
-      the number actually written. Only one system call is made, so it
-      is possible that only some of the data is written.
-
-   Note that the inherited ``readinto()`` method should not be used on
-   :class:`FileIO` objects.
-
-
-Buffered Streams
-----------------
-
 .. class:: BufferedIOBase
 
    Base class for streams that support buffering.  It inherits :class:`IOBase`.
@@ -438,6 +385,59 @@ Buffered Streams
       A :exc:`BlockingIOError` is raised if the buffer is full, and the
       underlying raw stream cannot accept more data at the moment.
 
+
+Raw File I/O
+------------
+
+.. class:: FileIO(name[, mode])
+
+   :class:`FileIO` represents a file containing bytes data.  It implements
+   the :class:`RawIOBase` interface (and therefore the :class:`IOBase`
+   interface, too).
+
+   The *mode* can be ``'r'``, ``'w'`` or ``'a'`` for reading (default), writing,
+   or appending.  The file will be created if it doesn't exist when opened for
+   writing or appending; it will be truncated when opened for writing.  Add a
+   ``'+'`` to the mode to allow simultaneous reading and writing.
+
+   In addition to the attributes and methods from :class:`IOBase` and
+   :class:`RawIOBase`, :class:`FileIO` provides the following data
+   attributes and methods:
+
+   .. attribute:: mode
+
+      The mode as given in the constructor.
+
+   .. attribute:: name
+
+      The file name.  This is the file descriptor of the file when no name is
+      given in the constructor.
+
+   .. method:: read([n])
+
+      Read and return at most *n* bytes.  Only one system call is made, so it is
+      possible that less data than was requested is returned.  Use :func:`len`
+      on the returned bytes object to see how many bytes were actually returned.
+      (In non-blocking mode, ``None`` is returned when no data is available.)
+
+   .. method:: readall()
+
+      Read and return the entire file's contents in a single bytes object.  As
+      much as immediately available is returned in non-blocking mode.  If the
+      EOF has been reached, ``b''`` is returned.
+
+   .. method:: write(b)
+
+      Write the bytes or bytearray object, *b*, to the file, and return
+      the number actually written. Only one system call is made, so it
+      is possible that only some of the data is written.
+
+   Note that the inherited ``readinto()`` method should not be used on
+   :class:`FileIO` objects.
+
+
+Buffered Streams
+----------------
 
 .. class:: BytesIO([initial_bytes])
 
