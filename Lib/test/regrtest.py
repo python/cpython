@@ -10,6 +10,7 @@ Command line options:
 
 -v: verbose    -- run tests in verbose mode with output to stdout
 -w: verbose2   -- re-run failed tests in verbose mode
+-W: verbose3   -- re-run failed tests in verbose mode immediately
 -q: quiet      -- don't print anything except if a test fails
 -x: exclude    -- arguments are tests to *exclude*
 -s: single     -- run only a single test (see below)
@@ -195,7 +196,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None):
+         random_seed=None, use_mp=None, verbose3=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -220,14 +221,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:j:',
-                                   ['help', 'verbose', 'quiet', 'exclude',
-                                    'single', 'slow', 'random', 'fromfile',
-                                    'findleaks', 'use=', 'threshold=', 'trace',
-                                    'coverdir=', 'nocoverdir', 'runleaks',
-                                    'huntrleaks=', 'verbose2', 'memlimit=',
-                                    'randseed=', 'multiprocess=', 'slaveargs=',
-                                    ])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wWM:j:',
+            ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
+             'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
+             'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
+             'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
+             'multiprocess=', 'slaveargs='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -243,6 +242,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             verbose += 1
         elif o in ('-w', '--verbose2'):
             verbose2 = True
+        elif o in ('-W', '--verbose3'):
+            verbose3 = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -396,14 +397,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_times.append((test_time, test))
         if ok > 0:
             good.append(test)
+            return 'good'
         elif -2 < ok <= 0:
             bad.append(test)
             if ok == -1:
                 environment_changed.append(test)
+            return 'bad'
         else:
             skipped.append(test)
             if ok == -3:
                 resource_denieds.append(test)
+            return 'skipped'
 
     if use_mp:
         from threading import Thread
@@ -479,7 +483,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 try:
                     result = runtest(test, verbose, quiet,
                                      testdir, huntrleaks)
-                    accumulate_result(test, result)
+                    which = accumulate_result(test, result)
+                    if verbose3 and which == 'bad':
+                        print "Re-running test %r in verbose mode" % test
+                        runtest(test, True, quiet, testdir, huntrleaks)
                 except KeyboardInterrupt:
                     # print a newline separate from the ^C
                     print
