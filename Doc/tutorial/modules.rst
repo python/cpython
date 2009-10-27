@@ -103,6 +103,10 @@ There is even a variant to import all names that a module defines::
 
 This imports all names except those beginning with an underscore (``_``).
 
+Note that in general the practice of importing ``*`` from a module or package is
+frowned upon, since it often causes poorly readable code. However, it is okay to
+use it to save typing in interactive sessions.
+
 .. note::
 
    For efficiency reasons, each module is only imported once per interpreter
@@ -443,14 +447,9 @@ Importing \* From a Package
 
 Now what happens when the user writes ``from sound.effects import *``?  Ideally,
 one would hope that this somehow goes out to the filesystem, finds which
-submodules are present in the package, and imports them all.  Unfortunately,
-this operation does not work very well on Windows platforms, where the
-filesystem does not always have accurate information about the case of a
-filename.  On these platforms, there is no guaranteed way to know whether a file
-:file:`ECHO.PY` should be imported as a module :mod:`echo`, :mod:`Echo` or
-:mod:`ECHO`.  (For example, Windows 95 has the annoying practice of showing all
-file names with a capitalized first letter.)  The DOS 8+3 filename restriction
-adds another interesting problem for long module names.
+submodules are present in the package, and imports them all.  This could take a
+long time and importing sub-modules might have unwanted side-effects that should
+only happen when the sub-module is explicitly imported.
 
 The only solution is for the package author to provide an explicit index of the
 package.  The :keyword:`import` statement uses the following convention: if a package's
@@ -485,10 +484,9 @@ current namespace because they are defined in the :mod:`sound.effects` package
 when the ``from...import`` statement is executed.  (This also works when
 ``__all__`` is defined.)
 
-Note that in general the practice of importing ``*`` from a module or package is
-frowned upon, since it often causes poorly readable code. However, it is okay to
-use it to save typing in interactive sessions, and certain modules are designed
-to export only names that follow certain patterns.
+Although certain modules are designed to export only names that follow certain
+patterns when you use ``import *``, it is still considered bad practise in
+production code.
 
 Remember, there is nothing wrong with using ``from Package import
 specific_submodule``!  In fact, this is the recommended notation unless the

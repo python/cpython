@@ -567,6 +567,11 @@ line.
 
    Return the frame object for the caller's stack frame.
 
+   This function relies on Python stack frame support in the interpreter, which
+   isn't guaranteed to exist in all implementations of Python. If running in
+   an implementation without Python stack frame support this function returns
+   ``None``.
+
 
 .. function:: stack([context])
 

@@ -1195,6 +1195,28 @@ are sent to both destinations.
 This example uses console and file handlers, but you can use any number and
 combination of handlers you choose.
 
+.. _logging-exceptions:
+
+Exceptions raised during logging
+--------------------------------
+
+The logging package is designed to swallow exceptions which occur while logging
+in production. This is so that errors which occur while handling logging events
+- such as logging misconfiguration, network or other similar errors - do not
+cause the application using logging to terminate prematurely.
+
+:class:`SystemExit` and :class:`KeyboardInterrupt` exceptions are never
+swallowed. Other exceptions which occur during the :meth:`emit` method of a
+:class:`Handler` subclass are passed to its :meth:`handleError` method.
+
+The default implementation of :meth:`handleError` in :class:`Handler` checks
+to see if a module-level variable, `raiseExceptions`, is set. If set, a
+traceback is printed to `sys.stderr`. If not set, the exception is swallowed.
+
+**Note:** The default value of `raiseExceptions` is `True`. This is because
+during development, you typically want to be notified of any exceptions that
+occur. It's advised that you set `raiseExceptions` to `False` for production
+usage.
 
 .. _context-info:
 

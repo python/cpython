@@ -147,7 +147,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    ``'anonymous@'``.  This function should be called only once for each instance,
    after a connection has been established; it should not be called at all if a
    host and user were given when the instance was created.  Most FTP commands are
-   only allowed after the client has logged in.
+   only allowed after the client has logged in.  The *acct* parameter supplies
+   "accounting information"; few systems implement this.
 
 
 .. method:: FTP.abort()

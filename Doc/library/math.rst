@@ -166,8 +166,10 @@ Power and logarithmic functions
 
 .. function:: log(x[, base])
 
-   Return the logarithm of *x* to the given *base*. If the *base* is not specified,
-   return the natural logarithm of *x* (that is, the logarithm to base *e*).
+   With one argument, return the natural logarithm of *x* (to base *e*).
+
+   With two arguments, return the logarithm of *x* to the given *base*,
+   calculated as ``log(x)/log(base)``.
 
    .. versionchanged:: 2.3
       *base* argument added.
@@ -183,7 +185,8 @@ Power and logarithmic functions
 
 .. function:: log10(x)
 
-   Return the base-10 logarithm of *x*.
+   Return the base-10 logarithm of *x*.  This is usually more accurate
+   than ``log(x, 10)``.
 
 
 .. function:: pow(x, y)
