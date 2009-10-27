@@ -16,6 +16,9 @@ Core and Builtins
   fixes the problem of some exceptions being thrown at shutdown when the
   interpreter is killed. Patch by Adam Olsen.
 
+- Issue #7084: Fix a (very unlikely) crash when printing a list from one
+  thread, and mutating it from another one.  Patch by Scott Dial.
+
 Library
 -------
 
