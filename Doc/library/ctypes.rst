@@ -1601,7 +1601,7 @@ type and the argument types of the function.
    The returned function prototype creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.  If
    *use_errno* is set to True, the ctypes private copy of the system
-   :data:`errno` variable is exchanged with the real :data:`errno` value bafore
+   :data:`errno` variable is exchanged with the real :data:`errno` value before
    and after the call; *use_last_error* does the same for the Windows error
    code.
 
