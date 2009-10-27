@@ -45,7 +45,7 @@ class _LocaleTests(unittest.TestCase):
         except Error:
             set_locale = "<not able to determine>"
         known_value = known_numerics.get(used_locale,
-                                    ('', ''))[data_type is 'thousands_sep']
+                                    ('', ''))[data_type == 'thousands_sep']
         if known_value and calc_value:
             self.assertEquals(calc_value, known_value,
                                 self.lc_numeric_err_msg % (
