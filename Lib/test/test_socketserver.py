@@ -16,7 +16,7 @@ import unittest
 import SocketServer
 
 import test.test_support
-from test.test_support import reap_children, verbose
+from test.test_support import reap_children, reap_threads, verbose
 from test.test_support import TESTFN as TEST_FILE
 
 test.test_support.requires("network")
@@ -122,6 +122,7 @@ class SocketServerTest(unittest.TestCase):
         self.assertEquals(server.server_address, server.socket.getsockname())
         return server
 
+    @reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),
                                   svrcls, hdlrbase)
