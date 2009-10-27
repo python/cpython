@@ -277,7 +277,7 @@ numbers of mixed type use the same rule. [#]_ The constructors :func:`int`,
 :func:`long`, :func:`float`, and :func:`complex` can be used to produce numbers
 of a specific type.
 
-All builtin numeric types support the following operations. See
+All built-in numeric types support the following operations. See
 :ref:`power` and later sections for the operators' priorities.
 
 +--------------------+---------------------------------+--------+
@@ -644,7 +644,7 @@ must have the enclosing parentheses, such as ``a, b, c`` or ``()``.  A
 single item tuple must have a trailing comma, such as ``(d,)``.
 
 Buffer objects are not directly supported by Python syntax, but can be created
-by calling the builtin function :func:`buffer`.  They don't support
+by calling the built-in function :func:`buffer`.  They don't support
 concatenation or repetition.
 
 Objects of type xrange are similar to buffers in that there is no specific syntax to
@@ -1621,7 +1621,7 @@ set``.  Being an unordered collection, sets do not record element position or
 order of insertion.  Accordingly, sets do not support indexing, slicing, or
 other sequence-like behavior.
 
-There are currently two builtin set types, :class:`set` and :class:`frozenset`.
+There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
 like :meth:`add` and :meth:`remove`.  Since it is mutable, it has no hash value
 and cannot be used as either a dictionary key or as an element of another set.

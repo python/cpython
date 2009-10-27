@@ -28,11 +28,11 @@ Glossary
 
    abstract base class
       Abstract Base Classes (abbreviated ABCs) complement :term:`duck-typing` by
-      providing a way to define interfaces when other techniques like :func:`hasattr`
-      would be clumsy. Python comes with many builtin ABCs for data structures
-      (in the :mod:`collections` module), numbers (in the :mod:`numbers`
-      module), and streams (in the :mod:`io` module). You can create your own
-      ABC with the :mod:`abc` module.
+      providing a way to define interfaces when other techniques like
+      :func:`hasattr` would be clumsy. Python comes with many built-in ABCs for
+      data structures (in the :mod:`collections` module), numbers (in the
+      :mod:`numbers` module), and streams (in the :mod:`io` module). You can
+      create your own ABC with the :mod:`abc` module.
 
    argument
       A value passed to a function or method, assigned to a named local
@@ -79,7 +79,7 @@ Glossary
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
       will raise a ``TypeError``.  Coercion between two operands can be
-      performed with the ``coerce`` builtin function; thus, ``3+4.5`` is
+      performed with the ``coerce`` built-in function; thus, ``3+4.5`` is
       equivalent to calling ``operator.add(*coerce(3, 4.5))`` and results in
       ``operator.add(3.0, 4.5)``.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
@@ -90,7 +90,7 @@ Glossary
       expressed as a sum of a real part and an imaginary part.  Imaginary
       numbers are real multiples of the imaginary unit (the square root of
       ``-1``), often written ``i`` in mathematics or ``j`` in
-      engineering. Python has builtin support for complex numbers, which are
+      engineering.  Python has built-in support for complex numbers, which are
       written with this latter notation; the imaginary part is written with a
       ``j`` suffix, e.g., ``3+1j``.  To get access to complex equivalents of the
       :mod:`math` module, use :mod:`cmath`.  Use of complex numbers is a fairly
@@ -322,7 +322,7 @@ Glossary
       define with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables
       can be used in a :keyword:`for` loop and in many other places where a
       sequence is needed (:func:`zip`, :func:`map`, ...).  When an iterable
-      object is passed as an argument to the builtin function :func:`iter`, it
+      object is passed as an argument to the built-in function :func:`iter`, it
       returns an iterator for the object.  This iterator is good for one pass
       over the set of values.  When using iterables, it is usually not necessary
       to call :func:`iter` or deal with iterator objects yourself.  The ``for``
@@ -424,7 +424,7 @@ Glossary
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
-      dictionaries.  There are the local, global and builtin namespaces as well
+      dictionaries.  There are the local, global and built-in namespaces as well
       as nested namespaces in objects (in methods).  Namespaces support
       modularity by preventing naming conflicts.  For instance, the functions
       :func:`__builtin__.open` and :func:`os.open` are distinguished by their

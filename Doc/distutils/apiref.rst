@@ -1623,7 +1623,7 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
 
    Note that since *rstrip_ws* can strip the trailing newline, the semantics of
-   :meth:`readline` must differ from those of the builtin file object's
+   :meth:`readline` must differ from those of the built-in file object's
    :meth:`readline` method!  In particular, :meth:`readline`  returns ``None`` for
    end-of-file: an empty string might just be a  blank line (or an all-whitespace
    line), if *rstrip_ws* is true  but *skip_blanks* is not.
@@ -1631,8 +1631,8 @@ lines, and joining lines with backslashes.
 
    .. method:: TextFile.open(filename)
 
-      Open a new file *filename*. This overrides any *file* or  *filename* constructor
-      arguments.
+      Open a new file *filename*.  This overrides any *file* or *filename*
+      constructor arguments.
 
 
    .. method:: TextFile.close()

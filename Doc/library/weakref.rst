@@ -65,7 +65,7 @@ and regular expression pattern objects.
 .. versionchanged:: 2.4
    Added support for files, sockets, arrays, and patterns.
 
-Several builtin types such as :class:`list` and :class:`dict` do not directly
+Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
 
    class Dict(dict):
