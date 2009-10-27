@@ -270,8 +270,7 @@ Depending on the web server you need to have a special module.
 * lighttpd ships its own `FastCGI module
   <http://trac.lighttpd.net/trac/wiki/Docs%3AModFastCGI>`_ as well as an `SCGI
   module <http://trac.lighttpd.net/trac/wiki/Docs%3AModSCGI>`_.
-* nginx also supports `FastCGI
-  <http://wiki.codemongers.com/NginxSimplePythonFCGI>`_.
+* nginx also supports `FastCGI <http://wiki.nginx.org/NginxSimplePythonFCGI>`_.
 
 Once you have installed and configured the module, you can test it with the
 following WSGI-application::
@@ -524,7 +523,7 @@ the text of a wiki page.  As always, there are different ways to store
 informations on a web server.
 
 Often relational database engines like `MySQL <http://www.mysql.com/>`_ or
-`PostgreSQL <http://http://www.postgresql.org/>`_ are used due to their good
+`PostgreSQL <http://www.postgresql.org/>`_ are used due to their good
 performance handling very large databases consisting of up to millions of
 entries.  These are *queried* using a language called `SQL
 <http://en.wikipedia.org/wiki/SQL>`_.  Python programmers in general do not like
@@ -628,7 +627,7 @@ which make it possible to write web sites nearly without any Python code.
 It has a big, international community which has created many sites using Django.
 There are also quite a lot of add-on projects which extend Django's normal
 functionality.  This is partly due to Django's well written `online
-documentation <http://doc.djangoproject.com/>`_ and the `Django book
+documentation <http://docs.djangoproject.com/>`_ and the `Django book
 <http://www.djangobook.com/>`_.
 
 

@@ -98,7 +98,7 @@ Cross Platform
 .. function:: python_implementation()
 
    Returns a string identifying the Python implementation. Possible return values
-   are: 'CPython', 'IronPython', 'Jython'
+   are: 'CPython', 'IronPython', 'Jython'.
 
    .. versionadded:: 2.6
 

@@ -1836,9 +1836,9 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: system(command)
 
    Execute the command (a string) in a subshell.  This is implemented by calling
-   the Standard C function :cfunc:`system`, and has the same limitations.  Changes
-   to :data:`os.environ`, :data:`sys.stdin`, etc. are not reflected in the
-   environment of the executed command.
+   the Standard C function :cfunc:`system`, and has the same limitations.
+   Changes to :data:`sys.stdin`, etc. are not reflected in the environment of the
+   executed command.
 
    On Unix, the return value is the exit status of the process encoded in the
    format specified for :func:`wait`.  Note that POSIX does not specify the meaning

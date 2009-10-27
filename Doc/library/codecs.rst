@@ -54,7 +54,7 @@ It defines the following functions:
    *incrementalencoder* and *incrementaldecoder*: These have to be factory
    functions providing the following interface:
 
-   ``factory(errors='strict')``
+      ``factory(errors='strict')``
 
    The factory functions must return objects providing the interfaces defined by
    the base classes :class:`IncrementalEncoder` and :class:`IncrementalDecoder`,
@@ -63,20 +63,24 @@ It defines the following functions:
    *streamreader* and *streamwriter*: These have to be factory functions providing
    the following interface:
 
-   ``factory(stream, errors='strict')``
+      ``factory(stream, errors='strict')``
 
    The factory functions must return objects providing the interfaces defined by
    the base classes :class:`StreamWriter` and :class:`StreamReader`, respectively.
    Stream codecs can maintain state.
 
-   Possible values for errors are ``'strict'`` (raise an exception in case of an
-   encoding error), ``'replace'`` (replace malformed data with a suitable
-   replacement marker, such as ``'?'``), ``'ignore'`` (ignore malformed data and
-   continue without further notice), ``'xmlcharrefreplace'`` (replace with the
-   appropriate XML character reference (for encoding only)) and
-   ``'backslashreplace'`` (replace with backslashed escape sequences (for encoding
-   only)) as well as any other error handling name defined via
-   :func:`register_error`.
+   Possible values for errors are
+
+   * ``'strict'``: raise an exception in case of an encoding error
+   * ``'replace'``: replace malformed data with a suitable replacement marker,
+     such as ``'?'`` or ``'\ufffd'``
+   * ``'ignore'``: ignore malformed data and continue without further notice
+   * ``'xmlcharrefreplace'``: replace with the appropriate XML character
+     reference (for encoding only)
+   * ``'backslashreplace'``: replace with backslashed escape sequences (for
+     encoding only
+
+   as well as any other error handling name defined via :func:`register_error`.
 
    In case a search function cannot find a given encoding, it should return
    ``None``.
@@ -177,27 +181,33 @@ functions which use :func:`lookup` for the codec lookup:
 
 .. function:: strict_errors(exception)
 
-   Implements the ``strict`` error handling.
+   Implements the ``strict`` error handling: each encoding or decoding error
+   raises a :exc:`UnicodeError`.
 
 
 .. function:: replace_errors(exception)
 
-   Implements the ``replace`` error handling.
+   Implements the ``replace`` error handling: malformed data is replaced with a
+   suitable replacement character such as ``'?'`` in bytestrings and
+   ``'\ufffd'`` in Unicode strings.
 
 
 .. function:: ignore_errors(exception)
 
-   Implements the ``ignore`` error handling.
+   Implements the ``ignore`` error handling: malformed data is ignored and
+   encoding or decoding is continued without further notice.
 
 
 .. function:: xmlcharrefreplace_errors(exception)
 
-   Implements the ``xmlcharrefreplace`` error handling.
+   Implements the ``xmlcharrefreplace`` error handling (for encoding only): the
+   unencodable character is replaced by an appropriate XML character reference.
 
 
 .. function:: backslashreplace_errors(exception)
 
-   Implements the ``backslashreplace`` error handling.
+   Implements the ``backslashreplace`` error handling (for encoding only): the
+   unencodable character is replaced by a backslashed escape sequence.
 
 To simplify working with encoded files or stream, the module also defines these
 utility functions:

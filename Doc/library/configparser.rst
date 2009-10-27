@@ -317,12 +317,23 @@ RawConfigParser Objects
 
 .. method:: RawConfigParser.optionxform(option)
 
-   Transforms the option name *option* as found in an input file or as passed in by
-   client code to the form that should be used in the internal structures.  The
-   default implementation returns a lower-case version of *option*; subclasses may
-   override this or client code can set an attribute of this name on instances to
-   affect this behavior.  Setting this to :func:`str`, for example, would make
-   option names case sensitive.
+   Transforms the option name *option* as found in an input file or as passed in
+   by client code to the form that should be used in the internal structures.
+   The default implementation returns a lower-case version of *option*;
+   subclasses may override this or client code can set an attribute of this name
+   on instances to affect this behavior.
+
+   You don't necessarily need to subclass a ConfigParser to use this method, you
+   can also re-set it on an instance, to a function that takes a string
+   argument.  Setting it to ``str``, for example, would make option names case
+   sensitive::
+
+      cfgparser = ConfigParser()
+      ...
+      cfgparser.optionxform = str
+
+   Note that when reading configuration files, whitespace around the
+   option names are stripped before :meth:`optionxform` is called.
 
 
 .. _configparser-objects:

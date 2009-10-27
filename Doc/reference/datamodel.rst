@@ -56,13 +56,16 @@ Objects are never explicitly destroyed; however, when they become unreachable
 they may be garbage-collected.  An implementation is allowed to postpone garbage
 collection or omit it altogether --- it is a matter of implementation quality
 how garbage collection is implemented, as long as no objects are collected that
-are still reachable.  (Implementation note: CPython currently uses a
-reference-counting scheme with (optional) delayed detection of cyclically linked
-garbage, which collects most objects as soon as they become unreachable, but is
-not guaranteed to collect garbage containing circular references.  See the
-documentation of the :mod:`gc` module for information on controlling the
-collection of cyclic garbage.  Other implementations act differently and CPython
-may change.)
+are still reachable.
+
+.. impl-detail::
+
+   CPython currently uses a reference-counting scheme with (optional) delayed
+   detection of cyclically linked garbage, which collects most objects as soon
+   as they become unreachable, but is not guaranteed to collect garbage
+   containing circular references.  See the documentation of the :mod:`gc`
+   module for information on controlling the collection of cyclic garbage.
+   Other implementations act differently and CPython may change.
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
@@ -1672,14 +1675,14 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
+* The action of a *__slots__* declaration is limited to the class where it is
+  defined.  As a result, subclasses will have a *__dict__* unless they also define
+  *__slots__* (which must only contain names of any *additional* slots).
+
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
-
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__*.
 
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`long`, :class:`str` and :class:`tuple`.
@@ -1885,12 +1888,16 @@ implemented as an iteration through a sequence.  However, container objects can
 supply the following special method with a more efficient implementation, which
 also does not require the object be a sequence.
 
-
 .. method:: object.__contains__(self, item)
 
-   Called to implement membership test operators.  Should return true if *item* is
-   in *self*, false otherwise.  For mapping objects, this should consider the keys
-   of the mapping rather than the values or the key-item pairs.
+   Called to implement membership test operators.  Should return true if *item*
+   is in *self*, false otherwise.  For mapping objects, this should consider the
+   keys of the mapping rather than the values or the key-item pairs.
+
+   For objects that don't define :meth:`__contains__`, the membership test first
+   tries iteration via :meth:`__iter__`, then the old sequence iteration
+   protocol via :meth:`__getitem__`, see :ref:`this section in the language
+   reference <membership-test-details>`.
 
 
 .. _sequence-methods:

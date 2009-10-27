@@ -128,7 +128,7 @@ the built-in module :mod:`__builtin__` (note: no 's'); when in any other module,
 itself.  ``__builtins__`` can be set to a user-created dictionary to create a
 weak form of restricted execution.
 
-.. note::
+.. impl-detail::
 
    Users should not touch ``__builtins__``; it is strictly an implementation
    detail.  Users wanting to override values in the built-in namespace should

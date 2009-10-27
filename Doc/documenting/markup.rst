@@ -626,6 +626,24 @@ units as well as normal text:
 
 --------------
 
+.. describe:: impl-detail
+
+   This directive is used to mark CPython-specific information.  Use either with
+   a block content or a single sentence as an argument, i.e. either ::
+
+      .. impl-detail::
+
+         This describes some implementation detail.
+
+         More explanation.
+
+   or ::
+
+      .. impl-detail:: This shortly mentions an implementation detail.
+
+   "\ **CPython implementation detail:**\ " is automatically prepended to the
+   content.
+
 .. describe:: seealso
 
    Many sections include a list of references to module documentation or
