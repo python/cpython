@@ -178,7 +178,7 @@ Basic Usage
    to a :class:`unicode` object and passed to :func:`loads`.
 
    *object_hook* is an optional function that will be called with the result of
-   any object literal decode (a :class:`dict`).  The return value of
+   any object literal decoded (a :class:`dict`).  The return value of
    *object_hook* will be used instead of the :class:`dict`.  This feature can be used
    to implement custom decoders (e.g. JSON-RPC class hinting).
 
