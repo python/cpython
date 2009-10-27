@@ -1557,7 +1557,7 @@ class Helper:
         'global': ('global', 'NAMESPACES'),
         'if': ('if', 'TRUTHVALUE'),
         'import': ('import', 'MODULES'),
-        'in': ('in', 'SEQUENCEMETHODS2'),
+        'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
         'not': 'BOOLEAN',
@@ -1643,12 +1643,12 @@ class Helper:
         'PRECEDENCE': 'EXPRESSIONS',
         'OBJECTS': ('objects', 'TYPES'),
         'SPECIALMETHODS': ('specialnames', 'BASICMETHODS ATTRIBUTEMETHODS '
-                           'CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS '
-                           'SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
+                           'CALLABLEMETHODS SEQUENCEMETHODS MAPPINGMETHODS '
+                           'NUMBERMETHODS CLASSES'),
         'BASICMETHODS': ('customization', 'hash repr str SPECIALMETHODS'),
         'ATTRIBUTEMETHODS': ('attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
         'CALLABLEMETHODS': ('callable-types', 'CALLS SPECIALMETHODS'),
-        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS2 '
+        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS '
                              'SPECIALMETHODS'),
         'MAPPINGMETHODS': ('sequence-types', 'MAPPINGS SPECIALMETHODS'),
         'NUMBERMETHODS': ('numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT '
@@ -1672,8 +1672,8 @@ class Helper:
         'DICTIONARIES': ('typesmapping', 'DICTIONARYLITERALS'),
         'DICTIONARYLITERALS': ('dict', 'DICTIONARIES LITERALS'),
         'ATTRIBUTES': ('attribute-references', 'getattr hasattr setattr ATTRIBUTEMETHODS'),
-        'SUBSCRIPTS': ('subscriptions', 'SEQUENCEMETHODS1'),
-        'SLICINGS': ('slicings', 'SEQUENCEMETHODS2'),
+        'SUBSCRIPTS': ('subscriptions', 'SEQUENCEMETHODS'),
+        'SLICINGS': ('slicings', 'SEQUENCEMETHODS'),
         'CALLS': ('calls', 'EXPRESSIONS'),
         'POWER': ('power', 'EXPRESSIONS'),
         'UNARY': ('unary', 'EXPRESSIONS'),

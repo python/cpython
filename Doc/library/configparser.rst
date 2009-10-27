@@ -231,9 +231,11 @@ RawConfigParser Objects
 .. method:: RawConfigParser.readfp(fp, filename=None)
 
    Read and parse configuration data from the file or file-like object in *fp*
-   (only the :meth:`readline` method is used).  If *filename* is omitted and *fp*
-   has a :attr:`name` attribute, that is used for *filename*; the default is
-   ``<???>``.
+   (only the :meth:`readline` method is used).  The file-like object must
+   operate in text mode, i.e. return strings from :meth:`readline`.
+
+   If *filename* is omitted and *fp* has a :attr:`name` attribute, that is used
+   for *filename*; the default is ``<???>``.
 
 
 .. method:: RawConfigParser.get(section, option)
@@ -279,8 +281,9 @@ RawConfigParser Objects
 
 .. method:: RawConfigParser.write(fileobject)
 
-   Write a representation of the configuration to the specified file object.  This
-   representation can be parsed by a future :meth:`read` call.
+   Write a representation of the configuration to the specified file object,
+   which must be opened in text mode (accepting strings).  This representation
+   can be parsed by a future :meth:`read` call.
 
 
 .. method:: RawConfigParser.remove_option(section, option)
@@ -370,7 +373,7 @@ An example of writing to a configuration file::
    config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
 
    # Writing our configuration file to 'example.cfg'
-   with open('example.cfg', 'wb') as configfile:
+   with open('example.cfg', 'w') as configfile:
        config.write(configfile)
 
 An example of reading the configuration file again::
