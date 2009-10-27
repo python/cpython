@@ -162,6 +162,22 @@ class TestKQueue(unittest.TestCase):
         server.close()
         serverSocket.close()
 
+    def testPair(self):
+        kq = select.kqueue()
+        a, b = socket.socketpair()
+
+        a.send(b'foo')
+        event1 = select.kevent(a, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+        event2 = select.kevent(b, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+        r = kq.control([event1, event2], 1, 1)
+        self.assertTrue(r)
+        self.assertFalse(r[0].flags & select.KQ_EV_ERROR)
+        self.assertEquals(b.recv(r[0].data), b'foo')
+
+        a.close()
+        b.close()
+        kq.close()
+
 def test_main():
     test_support.run_unittest(TestKQueue)
 

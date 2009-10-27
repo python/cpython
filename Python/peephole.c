@@ -297,7 +297,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
 	/* Bail out if an exception is set */
 	if (PyErr_Occurred())
-		goto exitUnchanged;
+		goto exitError;
 
 	/* Bypass optimization when the lineno table is too complex */
 	assert(PyString_Check(lineno_obj));
@@ -315,7 +315,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	/* Make a modifiable copy of the code string */
 	codestr = (unsigned char *)PyMem_Malloc(codelen);
 	if (codestr == NULL)
-		goto exitUnchanged;
+		goto exitError;
 	codestr = (unsigned char *)memcpy(codestr, 
 					  PyString_AS_STRING(code), codelen);
 
@@ -330,11 +330,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	/* Mapping to new jump targets after NOPs are removed */
 	addrmap = (int *)PyMem_Malloc(codelen * sizeof(int));
 	if (addrmap == NULL)
-		goto exitUnchanged;
+		goto exitError;
 
 	blocks = markblocks(codestr, codelen);
 	if (blocks == NULL)
-		goto exitUnchanged;
+		goto exitError;
 	assert(PyList_Check(consts));
 
 	for (i=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
@@ -391,7 +391,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				}
 				if (j == PyList_GET_SIZE(consts)) {
 					if (PyList_Append(consts, Py_None) == -1)
-					        goto exitUnchanged;                                        
+					        goto exitError;
 				}
 				assert(PyList_GET_ITEM(consts, j) == Py_None);
 				codestr[i] = LOAD_CONST;
@@ -618,6 +618,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 	PyMem_Free(blocks);
 	return code;
 
+ exitError:
+	code = NULL;
+
  exitUnchanged:
 	if (blocks != NULL)
 		PyMem_Free(blocks);
@@ -625,6 +628,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 		PyMem_Free(addrmap);
 	if (codestr != NULL)
 		PyMem_Free(codestr);
-	Py_INCREF(code);
+	Py_XINCREF(code);
 	return code;
 }

@@ -24,7 +24,6 @@
 # - Handles blank input lines correctly
 
 import re
-import string
 import sys
 
 def main():
@@ -32,18 +31,13 @@ def main():
     def makekey(item, prog=prog):
         match = prog.match(item)
         if match:
-            var, num = match.group(1, 2)
-            return string.atoi(num), var
+            var, num = match.groups()
+            return int(num), var
         else:
             # Bad input -- pretend it's a var with value 0
             return 0, item
-    while 1:
-        line = sys.stdin.readline()
-        if not line:
-            break
-        items = line.split()
-        items = map(makekey, items)
-        items.sort()
+    for line in sys.stdin:
+        items = sorted(makekey(item) for item in line.split())
         for num, var in items:
             print "%s=%s" % (var, num),
         print
