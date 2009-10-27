@@ -4,6 +4,22 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6.5
+==========================
+
+*Release date: XX-XXX-20XX*
+
+Core and Builtins
+-----------------
+
+- Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
+  fixes the problem of some exceptions being thrown at shutdown when the
+  interpreter is killed. Patch by Adam Olsen.
+
+Library
+-------
+
+
 What's New in Python 2.6.4 final?
 =================================
 
