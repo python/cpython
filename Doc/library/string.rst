@@ -435,15 +435,33 @@ The available presentation types for floating point and decimal values are:
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed point. Same as ``'f'``.                            |
    +---------+----------------------------------------------------------+
-   | ``'g'`` | General format. This prints the number as a fixed-point  |
-   |         | number, unless the number is too large, in which case    |
-   |         | it switches to ``'e'`` exponent notation. Infinity and   |
-   |         | NaN values are formatted as ``inf``, ``-inf`` and        |
-   |         | ``nan``, respectively.                                   |
+   | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
+   |         | this rounds the number to ``p`` significant digits and   |
+   |         | then formats the result in either fixed-point format     |
+   |         | or in scientific notation, depending on its magnitude.   |
+   |         |                                                          |
+   |         | The precise rules are as follows: suppose that the       |
+   |         | result formatted with presentation type ``'e'`` and      |
+   |         | precision ``p-1`` would have exponent ``exp``.  Then     |
+   |         | if ``-4 <= exp < p``, the number is formatted            |
+   |         | with presentation type ``'f'`` and precision             |
+   |         | ``p-1-exp``.  Otherwise, the number is formatted         |
+   |         | with presentation type ``'e'`` and precision ``p-1``.    |
+   |         | In both cases insignificant trailing zeros are removed   |
+   |         | from the significand, and the decimal point is also      |
+   |         | removed if there are no remaining digits following it.   |
+   |         |                                                          |
+   |         | Postive and negative infinity, positive and negative     |
+   |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
+   |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
+   |         | the precision.                                           |
+   |         |                                                          |
+   |         | A precision of ``0`` is treated as equivalent to a       |
+   |         | precision of ``1``.                                      |
    +---------+----------------------------------------------------------+
    | ``'G'`` | General format. Same as ``'g'`` except switches to       |
-   |         | ``'E'`` if the number gets to large. The representations |
-   |         | of infinity and NaN are uppercased, too.                 |
+   |         | ``'E'`` if the number gets too large. The                |
+   |         | representations of infinity and NaN are uppercased, too. |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |

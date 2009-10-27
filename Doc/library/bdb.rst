@@ -62,14 +62,22 @@ The :mod:`bdb` module also defines two classes:
       * The breakpoint hit count.
 
 
-.. class:: Bdb()
+.. class:: Bdb(skip=None)
 
-   The :class:`Bdb` acts as a generic Python debugger base class.
+   The :class:`Bdb` class acts as a generic Python debugger base class.
 
    This class takes care of the details of the trace facility; a derived class
    should implement user interaction.  The standard debugger class
    (:class:`pdb.Pdb`) is an example.
 
+   The *skip* argument, if given, must be an iterable of glob-style
+   module name patterns.  The debugger will not step into frames that
+   originate in a module that matches one of these patterns. Whether a
+   frame is considered to originate in a certain module is determined
+   by the ``__name__`` in the frame globals.
+
+   .. versionadded:: 2.7
+      The *skip* argument.
 
    The following methods of :class:`Bdb` normally don't need to be overridden.
 
