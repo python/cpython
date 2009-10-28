@@ -1405,7 +1405,11 @@ _match_number_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_ssiz
             rval = PyObject_CallFunctionObjArgs(s->parse_float, numstr, NULL);
         }
         else {
-            rval = PyFloat_FromDouble(PyOS_ascii_atof(PyString_AS_STRING(numstr)));
+            double d = PyOS_string_to_double(PyString_AS_STRING(numstr),
+                                             NULL, NULL);
+            if (d == -1.0 && PyErr_Occurred())
+                return NULL;
+            rval = PyFloat_FromDouble(d);
         }
     }
     else {
