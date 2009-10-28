@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #3297: On wide unicode builds, do not split unicode characters into
+  surrogates.
+
 - Remove length limitation when constructing a complex number from a string.
 
 - Issue #1087418: Boost performance of bitwise operations for longs.
