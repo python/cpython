@@ -87,7 +87,7 @@ typedef PY_LONG_LONG Py_off_t;
 # define PY_OFF_T_MAX       PY_LLONG_MAX
 # define PY_OFF_T_MIN       PY_LLONG_MIN
 # define PY_PRIdOFF         "lld" /* format to use in printf with type off_t */
-# define PY_OFF_T_COMPAT    long long /* standard type compatible with off_t */
+# define PY_OFF_T_COMPAT    PY_LONG_LONG /* type compatible with off_t */
 #else
 
 /* Other platforms use off_t */
@@ -98,7 +98,7 @@ typedef off_t Py_off_t;
 # define PY_OFF_T_MAX       PY_LLONG_MAX
 # define PY_OFF_T_MIN       PY_LLONG_MIN
 # define PY_PRIdOFF         "lld"
-# define PY_OFF_T_COMPAT    long long
+# define PY_OFF_T_COMPAT    PY_LONG_LONG
 #elif (SIZEOF_OFF_T == SIZEOF_LONG)
 # define PyLong_AsOff_t     PyLong_AsLong
 # define PyLong_FromOff_t   PyLong_FromLong
