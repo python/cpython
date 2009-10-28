@@ -1187,7 +1187,7 @@ if __name__ == '__main__':
     # much of the testing framework relies on the globals in the
     # test.test_support module.
     mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
-    i = pathlen = len(sys.path)
+    i = len(sys.path)
     while i >= 0:
         i -= 1
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
