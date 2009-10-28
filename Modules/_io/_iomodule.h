@@ -86,7 +86,7 @@ typedef PY_LONG_LONG Py_off_t;
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       PY_LLONG_MAX
 # define PY_OFF_T_MIN       PY_LLONG_MIN
-# define PY_PRIdOFF         "lld" /* format to use in printf with type off_t */
+# define PY_PRIdOFF         "I64d" /* format to use in printf with type off_t */
 # define PY_OFF_T_COMPAT    PY_LONG_LONG /* type compatible with off_t */
 #else
 
