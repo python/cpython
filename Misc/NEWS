@@ -24,6 +24,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #7233: Fix a number of two-argument Decimal methods to make
+  sure that they accept an int or long as the second argument.  Also
+  fix buggy handling of large arguments (those with coefficient longer
+  than the current precision) in shift and rotate.
+
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
 

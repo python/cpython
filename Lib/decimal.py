@@ -2680,6 +2680,8 @@ class Decimal(object):
         value. Note that a total ordering is defined for all possible abstract
         representations.
         """
+        other = _convert_other(other, raiseit=True)
+
         # if one is negative and the other is positive, it's easy
         if self._sign and not other._sign:
             return _NegativeOne
@@ -2749,6 +2751,8 @@ class Decimal(object):
 
         Like compare_total, but with operand's sign ignored and assumed to be 0.
         """
+        other = _convert_other(other, raiseit=True)
+
         s = self.copy_abs()
         o = other.copy_abs()
         return s.compare_total(o)
@@ -3117,6 +3121,9 @@ class Decimal(object):
         """Applies an 'and' operation between self and other's digits."""
         if context is None:
             context = getcontext()
+
+        other = _convert_other(other, raiseit=True)
+
         if not self._islogical() or not other._islogical():
             return context._raise_error(InvalidOperation)
 
@@ -3138,6 +3145,9 @@ class Decimal(object):
         """Applies an 'or' operation between self and other's digits."""
         if context is None:
             context = getcontext()
+
+        other = _convert_other(other, raiseit=True)
+
         if not self._islogical() or not other._islogical():
             return context._raise_error(InvalidOperation)
 
@@ -3152,6 +3162,9 @@ class Decimal(object):
         """Applies an 'xor' operation between self and other's digits."""
         if context is None:
             context = getcontext()
+
+        other = _convert_other(other, raiseit=True)
+
         if not self._islogical() or not other._islogical():
             return context._raise_error(InvalidOperation)
 
@@ -3365,6 +3378,8 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
+        other = _convert_other(other, raiseit=True)
+
         ans = self._check_nans(other, context)
         if ans:
             return ans
@@ -3381,18 +3396,22 @@ class Decimal(object):
         torot = int(other)
         rotdig = self._int
         topad = context.prec - len(rotdig)
-        if topad:
+        if topad > 0:
             rotdig = '0'*topad + rotdig
+        elif topad < 0:
+            rotdig = rotdig[-topad:]
 
         # let's rotate!
         rotated = rotdig[torot:] + rotdig[:torot]
         return _dec_from_triple(self._sign,
                                 rotated.lstrip('0') or '0', self._exp)
 
-    def scaleb (self, other, context=None):
+    def scaleb(self, other, context=None):
         """Returns self operand after adding the second value to its exp."""
         if context is None:
             context = getcontext()
+
+        other = _convert_other(other, raiseit=True)
 
         ans = self._check_nans(other, context)
         if ans:
@@ -3417,6 +3436,8 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
+        other = _convert_other(other, raiseit=True)
+
         ans = self._check_nans(other, context)
         if ans:
             return ans
@@ -3431,22 +3452,22 @@ class Decimal(object):
 
         # get values, pad if necessary
         torot = int(other)
-        if not torot:
-            return Decimal(self)
         rotdig = self._int
         topad = context.prec - len(rotdig)
-        if topad:
+        if topad > 0:
             rotdig = '0'*topad + rotdig
+        elif topad < 0:
+            rotdig = rotdig[-topad:]
 
         # let's shift!
         if torot < 0:
-            rotated = rotdig[:torot]
+            shifted = rotdig[:torot]
         else:
-            rotated = rotdig + '0'*torot
-            rotated = rotated[-context.prec:]
+            shifted = rotdig + '0'*torot
+            shifted = shifted[-context.prec:]
 
         return _dec_from_triple(self._sign,
-                                    rotated.lstrip('0') or '0', self._exp)
+                                    shifted.lstrip('0') or '0', self._exp)
 
     # Support for pickling, copy, and deepcopy
     def __reduce__(self):
