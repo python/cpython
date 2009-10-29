@@ -120,6 +120,11 @@ C-API
 Library
 -------
 
+- Issue #7233: Fix a number of two-argument Decimal methods to make
+  sure that they accept an int or long as the second argument.  Also
+  fix buggy handling of large arguments (those with coefficient longer
+  than the current precision) in shift and rotate.
+
 - Issue #4750: Store the basename of the original filename in the gzip FNAME
   header as required by RFC 1952.
 
