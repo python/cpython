@@ -625,7 +625,7 @@ FUNC1(ceil, ceil, 0,
       "ceil(x)\n\nReturn the ceiling of x as a float.\n"
       "This is the smallest integral value >= x.")
 FUNC2(copysign, copysign,
-      "copysign(x,y)\n\nReturn x with the sign of y.")
+      "copysign(x, y)\n\nReturn x with the sign of y.")
 FUNC1(cos, cos, 0,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh, 1,
@@ -640,8 +640,8 @@ FUNC1(floor, floor, 0,
 FUNC1A(gamma, m_tgamma,
       "gamma(x)\n\nGamma function at x.")
 FUNC1(log1p, log1p, 1,
-      "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n\
-      The result is computed in a way which is accurate for x near zero.")
+      "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n"
+      "The result is computed in a way which is accurate for x near zero.")
 FUNC1(sin, sin, 0,
       "sin(x)\n\nReturn the sine of x (measured in radians).")
 FUNC1(sinh, sinh, 1,
@@ -1028,7 +1028,8 @@ math_ldexp(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(math_ldexp_doc,
-"ldexp(x, i) -> x * (2**i)");
+"ldexp(x, i)\n\n\
+Return x * (2**i).");
 
 static PyObject *
 math_modf(PyObject *self, PyObject *arg)
@@ -1119,7 +1120,8 @@ math_log(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(math_log_doc,
-"log(x[, base]) -> the logarithm of x to the given base.\n\
+"log(x[, base])\n\n\
+Return the logarithm of x to the given base.\n\
 If the base not specified, returns the natural logarithm (base e) of x.");
 
 static PyObject *
@@ -1129,7 +1131,7 @@ math_log10(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(math_log10_doc,
-"log10(x) -> the base 10 logarithm of x.");
+"log10(x)\n\nReturn the base 10 logarithm of x.");
 
 static PyObject *
 math_fmod(PyObject *self, PyObject *args)
@@ -1162,7 +1164,7 @@ math_fmod(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(math_fmod_doc,
-"fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
+"fmod(x, y)\n\nReturn fmod(x, y), according to platform C."
 "  x % y may differ.");
 
 static PyObject *
@@ -1204,7 +1206,7 @@ math_hypot(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(math_hypot_doc,
-"hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).");
+"hypot(x, y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).");
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -1291,7 +1293,7 @@ math_pow(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(math_pow_doc,
-"pow(x,y)\n\nReturn x**y (x to the power of y).");
+"pow(x, y)\n\nReturn x**y (x to the power of y).");
 
 static const double degToRad = Py_MATH_PI / 180.0;
 static const double radToDeg = 180.0 / Py_MATH_PI;
@@ -1306,7 +1308,8 @@ math_degrees(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(math_degrees_doc,
-"degrees(x) -> converts angle x from radians to degrees");
+"degrees(x)\n\n\
+Convert angle x from radians to degrees.");
 
 static PyObject *
 math_radians(PyObject *self, PyObject *arg)
@@ -1318,7 +1321,8 @@ math_radians(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(math_radians_doc,
-"radians(x) -> converts angle x from degrees to radians");
+"radians(x)\n\n\
+Convert angle x from degrees to radians.");
 
 static PyObject *
 math_isnan(PyObject *self, PyObject *arg)
@@ -1330,8 +1334,8 @@ math_isnan(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(math_isnan_doc,
-"isnan(x) -> bool\n\
-Checks if float x is not a number (NaN)");
+"isnan(x) -> bool\n\n\
+Check if float x is not a number (NaN).");
 
 static PyObject *
 math_isinf(PyObject *self, PyObject *arg)
@@ -1343,8 +1347,8 @@ math_isinf(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(math_isinf_doc,
-"isinf(x) -> bool\n\
-Checks if float x is infinite (positive or negative)");
+"isinf(x) -> bool\n\n\
+Check if float x is infinite (positive or negative).");
 
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_O,		math_acos_doc},
