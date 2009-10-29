@@ -23,6 +23,13 @@ class PEP263Test(unittest.TestCase):
         self.assertEqual(d['u'], u'\xf3')
 
 
+    def test_issue3297(self):
+        c = compile("a, b = '\U0001010F', '\\U0001010F'", "dummy", "exec")
+        d = {}
+        exec(c, d)
+        self.assertEqual(d['a'], d['b'])
+        self.assertEqual(len(d['a']), len(d['b']))
+
 def test_main():
     test_support.run_unittest(PEP263Test)
 
