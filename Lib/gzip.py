@@ -5,7 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import struct, sys, time
+import struct, sys, time, os
 import zlib
 import builtins
 
@@ -158,7 +158,8 @@ class GzipFile:
         try:
             # RFC 1952 requires the FNAME field to be Latin-1. Do not
             # include filenames that cannot be represented that way.
-            fname = self.name.encode('latin-1')
+            fname = os.path.basename(self.name)
+            fname = fname.encode('latin-1')
             if fname.endswith(b'.gz'):
                 fname = fname[:-3]
         except UnicodeEncodeError:

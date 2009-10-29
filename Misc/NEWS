@@ -120,6 +120,9 @@ C-API
 Library
 -------
 
+- Issue #4750: Store the basename of the original filename in the gzip FNAME
+  header as required by RFC 1952.
+
 - Issue #1180: Added a new global option to ignore ~/.pydistutils.cfg in
   Distutils.
 
