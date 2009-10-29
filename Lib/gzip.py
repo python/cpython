@@ -5,7 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import struct, sys, time
+import struct, sys, time, os
 import zlib
 import __builtin__
 
@@ -143,7 +143,7 @@ class GzipFile:
     def _write_gzip_header(self):
         self.fileobj.write('\037\213')             # magic header
         self.fileobj.write('\010')                 # compression method
-        fname = self.name
+        fname = os.path.basename(self.name)
         if fname.endswith(".gz"):
             fname = fname[:-3]
         flags = 0
