@@ -870,7 +870,7 @@ _fsum_error:
 #undef NUM_PARTIALS
 
 PyDoc_STRVAR(math_fsum_doc,
-"sum(iterable)\n\n\
+"fsum(iterable)\n\n\
 Return an accurate floating point sum of values in the iterable.\n\
 Assumes IEEE-754 floating point arithmetic.");
 
