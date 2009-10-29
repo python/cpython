@@ -154,22 +154,6 @@ extr1301 fma Inf 0 sNaN456 -> NaN Invalid_operation
 extr1302 fma 0E123 -Inf sNaN789 -> NaN Invalid_operation
 extr1302 fma -Inf 0E-456 sNaN148 -> NaN Invalid_operation
 
--- Issue #6794: when comparing NaNs using compare_total, payloads
--- should be compared as though positive integers; not
--- lexicographically as strings.
-extr1400 comparetotal NaN123 NaN45 -> 1
-extr1401 comparetotal sNaN123 sNaN45 -> 1
-extr1402 comparetotal -NaN123 -NaN45 -> -1
-extr1403 comparetotal -sNaN123 -sNaN45 -> -1
-extr1404 comparetotal NaN45 NaN123 -> -1
-extr1405 comparetotal sNaN45 sNaN123 -> -1
-extr1406 comparetotal -NaN45 -NaN123 -> 1
-extr1407 comparetotal -sNaN45 -sNaN123 -> 1
-
-extr1410 comparetotal -sNaN63450748854172416 -sNaN911993 -> -1
-extr1411 comparetotmag NaN1222222222222 -NaN999999 -> 1
-
-
 -- max/min/max_mag/min_mag bug in 2.5.2/2.6/3.0: max(NaN, finite) gave
 -- incorrect answers when the finite number required rounding; similarly
 -- for the other thre functions
@@ -186,6 +170,50 @@ extr1420 max_mag 0.1111111 -NaN123 -> 0.111111 Inexact Rounded
 extr1421 max_mag NaN999999999 0.001234567 -> 0.00123457 Inexact Rounded
 extr1430 min_mag 9181716151 -NaN -> 9.18172E+9 Inexact Rounded
 extr1431 min_mag NaN4 1.818180E100 -> 1.81818E+100 Rounded
+
+-- Issue #6794: when comparing NaNs using compare_total, payloads
+-- should be compared as though positive integers; not
+-- lexicographically as strings.
+extr1500 comparetotal NaN123 NaN45 -> 1
+extr1501 comparetotal sNaN123 sNaN45 -> 1
+extr1502 comparetotal -NaN123 -NaN45 -> -1
+extr1503 comparetotal -sNaN123 -sNaN45 -> -1
+extr1504 comparetotal NaN45 NaN123 -> -1
+extr1505 comparetotal sNaN45 sNaN123 -> -1
+extr1506 comparetotal -NaN45 -NaN123 -> 1
+extr1507 comparetotal -sNaN45 -sNaN123 -> 1
+
+extr1510 comparetotal -sNaN63450748854172416 -sNaN911993 -> -1
+extr1511 comparetotmag NaN1222222222222 -NaN999999 -> 1
+
+-- Issue #7233: rotate and scale should truncate an argument
+-- of length greater than the current precision.
+precision: 4
+extr1600 rotate 1234567 -5 -> NaN Invalid_operation
+extr1601 rotate 1234567 -4 -> 4567
+extr1602 rotate 1234567 -3 -> 5674
+extr1603 rotate 1234567 -2 -> 6745
+extr1604 rotate 1234567 -1 -> 7456
+extr1605 rotate 1234567 0 -> 4567
+extr1606 rotate 1234567 1 -> 5674
+extr1607 rotate 1234567 2 -> 6745
+extr1608 rotate 1234567 3 -> 7456
+extr1609 rotate 1234567 4 -> 4567
+extr1610 rotate 1234567 5 -> NaN Invalid_operation
+
+extr1650 shift 1234567 -5 -> NaN Invalid_operation
+extr1651 shift 1234567 -4 -> 0
+extr1652 shift 1234567 -3 -> 4
+extr1653 shift 1234567 -2 -> 45
+extr1654 shift 1234567 -1 -> 456
+extr1655 shift 1234567 0 -> 4567
+extr1656 shift 1234567 1 -> 5670
+extr1657 shift 1234567 2 -> 6700
+extr1658 shift 1234567 3 -> 7000
+extr1659 shift 1234567 4 -> 0
+extr1660 shift 1234567 5 -> NaN Invalid_operation
+
+
 
 -- Tests for the is_* boolean operations
 precision: 9
