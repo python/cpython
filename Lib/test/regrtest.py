@@ -854,7 +854,7 @@ def runtest_inner(test, verbose, quiet,
         if refleak:
             return FAILED, test_time
         if environment.changed:
-            return ENVIRONMENT_CHANGED, test_time
+            return ENV_CHANGED, test_time
         # Except in verbose mode, tests should not print anything
         if verbose or huntrleaks:
             return PASSED, test_time
