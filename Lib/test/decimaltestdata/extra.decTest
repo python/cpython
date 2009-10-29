@@ -186,6 +186,35 @@ extr1507 comparetotal -sNaN45 -sNaN123 -> 1
 extr1510 comparetotal -sNaN63450748854172416 -sNaN911993 -> -1
 extr1511 comparetotmag NaN1222222222222 -NaN999999 -> 1
 
+-- Issue #7233: rotate and scale should truncate an argument
+-- of length greater than the current precision.
+precision: 4
+extr1600 rotate 1234567 -5 -> NaN Invalid_operation
+extr1601 rotate 1234567 -4 -> 4567
+extr1602 rotate 1234567 -3 -> 5674
+extr1603 rotate 1234567 -2 -> 6745
+extr1604 rotate 1234567 -1 -> 7456
+extr1605 rotate 1234567 0 -> 4567
+extr1606 rotate 1234567 1 -> 5674
+extr1607 rotate 1234567 2 -> 6745
+extr1608 rotate 1234567 3 -> 7456
+extr1609 rotate 1234567 4 -> 4567
+extr1610 rotate 1234567 5 -> NaN Invalid_operation
+
+extr1650 shift 1234567 -5 -> NaN Invalid_operation
+extr1651 shift 1234567 -4 -> 0
+extr1652 shift 1234567 -3 -> 4
+extr1653 shift 1234567 -2 -> 45
+extr1654 shift 1234567 -1 -> 456
+extr1655 shift 1234567 0 -> 4567
+extr1656 shift 1234567 1 -> 5670
+extr1657 shift 1234567 2 -> 6700
+extr1658 shift 1234567 3 -> 7000
+extr1659 shift 1234567 4 -> 0
+extr1660 shift 1234567 5 -> NaN Invalid_operation
+
+
+
 -- Tests for the is_* boolean operations
 precision: 9
 maxExponent: 999

@@ -3439,8 +3439,10 @@ class Decimal(object):
         torot = int(other)
         rotdig = self._int
         topad = context.prec - len(rotdig)
-        if topad:
+        if topad > 0:
             rotdig = '0'*topad + rotdig
+        elif topad < 0:
+            rotdig = rotdig[-topad:]
 
         # let's rotate!
         rotated = rotdig[torot:] + rotdig[:torot]
@@ -3493,22 +3495,22 @@ class Decimal(object):
 
         # get values, pad if necessary
         torot = int(other)
-        if not torot:
-            return Decimal(self)
         rotdig = self._int
         topad = context.prec - len(rotdig)
-        if topad:
+        if topad > 0:
             rotdig = '0'*topad + rotdig
+        elif topad < 0:
+            rotdig = rotdig[-topad:]
 
         # let's shift!
         if torot < 0:
-            rotated = rotdig[:torot]
+            shifted = rotdig[:torot]
         else:
-            rotated = rotdig + '0'*torot
-            rotated = rotated[-context.prec:]
+            shifted = rotdig + '0'*torot
+            shifted = shifted[-context.prec:]
 
         return _dec_from_triple(self._sign,
-                                    rotated.lstrip('0') or '0', self._exp)
+                                    shifted.lstrip('0') or '0', self._exp)
 
     # Support for pickling, copy, and deepcopy
     def __reduce__(self):
