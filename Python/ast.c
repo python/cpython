@@ -3217,10 +3217,11 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
         u = NULL;
     } else {
         /* check for integer overflow */
-        if (len > PY_SIZE_MAX / 4)
+        if (len > PY_SIZE_MAX / 6)
             return NULL;
-        /* "\XX" may become "\u005c\uHHLL" (12 bytes) */
-        u = PyBytes_FromStringAndSize((char *)NULL, len * 4);
+        /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
+           "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
+        u = PyBytes_FromStringAndSize((char *)NULL, len * 6);
         if (u == NULL)
             return NULL;
         p = buf = PyBytes_AsString(u);
@@ -3237,20 +3238,24 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                 PyObject *w;
                 char *r;
                 Py_ssize_t rn, i;
-                w = decode_utf8(c, &s, end, "utf-16-be");
+                w = decode_utf8(c, &s, end, "utf-32-be");
                 if (w == NULL) {
                     Py_DECREF(u);
                     return NULL;
                 }
                 r = PyBytes_AS_STRING(w);
                 rn = Py_SIZE(w);
-                assert(rn % 2 == 0);
-                for (i = 0; i < rn; i += 2) {
-                    sprintf(p, "\\u%02x%02x",
+                assert(rn % 4 == 0);
+                for (i = 0; i < rn; i += 4) {
+                    sprintf(p, "\\U%02x%02x%02x%02x",
                             r[i + 0] & 0xFF,
-                            r[i + 1] & 0xFF);
-                    p += 6;
+                            r[i + 1] & 0xFF,
+                            r[i + 2] & 0xFF,
+                            r[i + 3] & 0xFF);
+                    p += 10;
                 }
+                /* Should be impossible to overflow */
+                assert(p - buf <= Py_SIZE(u));
                 Py_DECREF(w);
             } else {
                 *p++ = *s++;

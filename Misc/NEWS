@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #3297: On wide unicode builds, do not split unicode characters into
+  surrogates.
+
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
   fixes the problem of some exceptions being thrown at shutdown when the
   interpreter is killed. Patch by Adam Olsen.
