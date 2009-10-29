@@ -36,6 +36,14 @@ class PEP263Test(unittest.TestCase):
         exec(c, d)
         self.assertEquals(d['\xc6'], '\xc6')
 
+    def test_issue3297(self):
+        c = compile("a, b = '\U0001010F', '\\U0001010F'", "dummy", "exec")
+        d = {}
+        exec(c, d)
+        self.assertEqual(d['a'], d['b'])
+        self.assertEqual(len(d['a']), len(d['b']))
+        self.assertEqual(ascii(d['a']), ascii(d['b']))
+
 def test_main():
     support.run_unittest(PEP263Test)
 
