@@ -314,6 +314,7 @@ class TestUUID(TestCase):
         import sys
         print("""    WARNING: uuid._ifconfig_getnode is unreliable on many platforms.
         It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
+        sys.__stdout__.flush()
         return
 
         import os
@@ -342,6 +343,7 @@ class TestUUID(TestCase):
         import sys
         print("""    WARNING: uuid._unixdll_getnode is unreliable on many platforms.
         It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
+        sys.__stdout__.flush()
         return
 
         import os
@@ -357,6 +359,7 @@ class TestUUID(TestCase):
         import sys
         print("""    WARNING: uuid.getnode is unreliable on many platforms.
         It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
+        sys.__stdout__.flush()
         return
 
         node1 = uuid.getnode()
