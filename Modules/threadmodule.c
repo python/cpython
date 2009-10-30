@@ -14,7 +14,7 @@
 #include "pythread.h"
 
 static PyObject *ThreadError;
-
+static long nb_threads = 0;
 
 /* Lock objects */
 
@@ -439,6 +439,7 @@ t_bootstrap(void *boot_raw)
 	tstate = PyThreadState_New(boot->interp);
 
 	PyEval_AcquireThread(tstate);
+	nb_threads++;
 	res = PyEval_CallObjectWithKeywords(
 		boot->func, boot->args, boot->keyw);
 	if (res == NULL) {
@@ -463,6 +464,7 @@ t_bootstrap(void *boot_raw)
 	Py_DECREF(boot->args);
 	Py_XDECREF(boot->keyw);
 	PyMem_DEL(boot_raw);
+	nb_threads--;
 	PyThreadState_Clear(tstate);
 	PyThreadState_DeleteCurrent();
 	PyThread_exit_thread();
@@ -606,6 +608,18 @@ be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
 static PyObject *
+thread__count(PyObject *self)
+{
+	return PyInt_FromLong(nb_threads);
+}
+
+PyDoc_STRVAR(_count_doc,
+"_count() -> integer\n\
+\n\
+Return the number of currently running (sub)threads.\n\
+This excludes the main thread.");
+
+static PyObject *
 thread_stack_size(PyObject *self, PyObject *args)
 {
 	size_t old_size;
@@ -678,6 +692,8 @@ static PyMethodDef thread_methods[] = {
 	 METH_NOARGS, interrupt_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
+	{"_count",		(PyCFunction)thread__count, 
+	 METH_NOARGS, _count_doc},
 	{"stack_size",		(PyCFunction)thread_stack_size,
 				METH_VARARGS,
 				stack_size_doc},
@@ -734,6 +750,8 @@ initthread(void)
 	Py_INCREF(&localtype);
 	if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
 		return;
+
+	nb_threads = 0;
 
 	/* Initialize the C thread library */
 	PyThread_init_thread();
