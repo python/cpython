@@ -616,8 +616,14 @@ thread__count(PyObject *self)
 PyDoc_STRVAR(_count_doc,
 "_count() -> integer\n\
 \n\
-Return the number of currently running (sub)threads.\n\
-This excludes the main thread.");
+\
+Return the number of currently running Python threads, excluding \n\
+the main thread. The returned number comprises all threads created\n\
+through `start_new_thread()` as well as `threading.Thread`, and not\n\
+yet finished.\n\
+\n\
+This function is meant for internal and specialized purposes only.\n\
+In most applications `threading.enumerate()` should be used instead.");
 
 static PyObject *
 thread_stack_size(PyObject *self, PyObject *args)
