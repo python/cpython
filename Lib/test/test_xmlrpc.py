@@ -973,6 +973,7 @@ class TransportSubclassTestCase(unittest.TestCase):
         req = self.issue_request(TestTransport)
         self.assertTrue("X-Test: test_send_content\r\n" in req)
 
+@test_support.reap_threads
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase, TransportSubclassTestCase]
