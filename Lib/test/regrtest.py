@@ -996,6 +996,12 @@ def dash_R_cleanup(fs, ps, pic, abcs):
             obj._abc_cache.clear()
             obj._abc_negative_cache.clear()
 
+    # Flush standard output, so that buffered data is sent to the OS and
+    # associated Python objects are reclaimed.
+    for stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
+        if stream is not None:
+            stream.flush()
+
     # Clear assorted module caches.
     _path_created.clear()
     re.purge()
