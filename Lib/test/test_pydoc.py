@@ -9,7 +9,8 @@ import inspect
 import unittest
 import test.support
 from contextlib import contextmanager
-from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard
+from test.support import (
+    TESTFN, forget, rmtree, EnvironmentVarGuard, reap_children)
 
 from test import pydoc_mod
 
@@ -195,8 +196,11 @@ def run_pydoc(module_name, *args):
     output of pydoc.
     """
     cmd = [sys.executable, pydoc.__file__, " ".join(args), module_name]
-    output = subprocess.Popen(cmd, stdout=subprocess.PIPE).stdout.read()
-    return output.strip()
+    try:
+        output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+        return output.strip()
+    finally:
+        reap_children()
 
 def get_pydoc_html(module):
     "Returns pydoc generated output as html"
