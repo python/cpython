@@ -4,6 +4,7 @@ import random
 from test import support
 import _thread as thread
 import time
+import weakref
 
 
 NUMTASKS = 10
@@ -98,6 +99,32 @@ class ThreadRunningTests(BasicThreadTest):
                 verbose_print("all tasks done")
 
             thread.stack_size(0)
+
+    def test__count(self):
+        # Test the _count() function.
+        orig = thread._count()
+        mut = thread.allocate_lock()
+        mut.acquire()
+        started = []
+        def task():
+            started.append(None)
+            mut.acquire()
+            mut.release()
+        thread.start_new_thread(task, ())
+        while not started:
+            time.sleep(0.01)
+        self.assertEquals(thread._count(), orig + 1)
+        # Allow the task to finish.
+        mut.release()
+        # The only reliable way to be sure that the thread ended from the
+        # interpreter's point of view is to wait for the function object to be
+        # destroyed.
+        done = []
+        wr = weakref.ref(task, lambda _: done.append(None))
+        del task
+        while not done:
+            time.sleep(0.01)
+        self.assertEquals(thread._count(), orig)
 
 
 class Barrier:

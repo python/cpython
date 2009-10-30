@@ -334,6 +334,12 @@ Documentation
 Tests
 -----
 
+- Issue #7222: Make thread "reaping" more reliable so that reference
+  leak-chasing test runs give sensible results. The previous method of
+  reaping threads could return successfully while some Thread objects were
+  still referenced. This also introduces a new private function:
+  :func:`_thread._count()`.
+
 - Issue #7151: fixed regrtest -j so that output to stderr from a test no
   longer runs the risk of causing the worker thread to fail.
 
