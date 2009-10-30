@@ -53,6 +53,7 @@ POSTing to /RPC2. Try self.add, too.""")
 
 class DocXMLRPCHTTPGETServer(unittest.TestCase):
     def setUp(self):
+        self._threads = support.threading_setup()
         # Enable server feedback
         DocXMLRPCServer._send_traceback_header = True
 
@@ -74,6 +75,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
 
         # Disable server feedback
         DocXMLRPCServer._send_traceback_header = False
+        support.threading_cleanup(*self._threads)
 
     def test_valid_get_response(self):
         self.client.request("GET", "/")
