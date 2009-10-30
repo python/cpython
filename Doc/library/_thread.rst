@@ -103,19 +103,6 @@ It defines the following constant and functions:
    Availability: Windows, systems with POSIX threads.
 
 
-.. function:: _count()
-
-   Return the number of currently running Python threads, excluding the main
-   thread.  The returned number comprises all threads created through
-   :func:`start_new_thread` as well as :class:`threading.Thread`, and not
-   yet finished.
-
-   This function is meant for internal and specialized purposes only. In
-   most applications :func:`threading.enumerate()` should be used instead.
-
-   .. versionadded:: 3.2
-
-
 Lock objects have the following methods:
 
 
