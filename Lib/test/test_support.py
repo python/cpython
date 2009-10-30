@@ -952,24 +952,29 @@ def run_doctest(module, verbosity=None):
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
-def threading_setup():
-    import threading
-    return len(threading._active), len(threading._limbo)
+# NOTE: we use thread._count() rather than threading.enumerate() (or the
+# moral equivalent thereof) because a threading.Thread object is still alive
+# until its __bootstrap() method has returned, even after it has been
+# unregistered from the threading module.
+# thread._count(), on the other hand, only gets decremented *after* the
+# __bootstrap() method has returned, which gives us reliable reference counts
+# at the end of a test run.
 
-def threading_cleanup(num_active, num_limbo):
-    import threading
+def threading_setup():
+    import thread
+    return thread._count(),
+
+def threading_cleanup(nb_threads):
+    import thread
     import time
 
     _MAX_COUNT = 10
-    count = 0
-    while len(threading._active) != num_active and count < _MAX_COUNT:
-        count += 1
+    for count in range(_MAX_COUNT):
+        n = thread._count()
+        if n == nb_threads:
+            break
         time.sleep(0.1)
-
-    count = 0
-    while len(threading._limbo) != num_limbo and count < _MAX_COUNT:
-        count += 1
-        time.sleep(0.1)
+    # XXX print a warning in case of failure?
 
 def reap_threads(func):
     @functools.wraps(func)
