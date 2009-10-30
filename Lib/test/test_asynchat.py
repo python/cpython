@@ -93,10 +93,10 @@ class TestAsynchat(unittest.TestCase):
     usepoll = False
 
     def setUp (self):
-        pass
+        self._threads = support.threading_setup()
 
     def tearDown (self):
-        pass
+        support.threading_cleanup(*self._threads)
 
     def line_terminator_check(self, term, server_chunk):
         event = threading.Event()

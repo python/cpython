@@ -798,6 +798,7 @@ class CGIHandlerTestCase(unittest.TestCase):
             len(content))
 
 
+@support.reap_threads
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase]
