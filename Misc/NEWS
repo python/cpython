@@ -41,6 +41,13 @@ Library
 - Issue #7048: Force Decimal.logb to round its result when that result
   is too large to fit in the current precision.
 
+Build
+-----
+
+- Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
+  compiles correctly under gcc on x86-64.  This fixes a reported
+  problem with the --with-tsc build on x86-64.
+
 Tests
 -----
 
