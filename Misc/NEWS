@@ -1414,6 +1414,9 @@ Documentation
 C-API
 -----
 
+- Add new C-API function PyOS_string_to_double, and deprecated
+  PyOS_ascii_atof and PyOS_ascii_strtod.
+
 - Removed _PyOS_double_to_string. Use PyOS_double_to_string
   instead. This is in preparation for (but not strictly related to)
   issue #7117, short float repr.

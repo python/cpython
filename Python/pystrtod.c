@@ -270,12 +270,20 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 #endif
 
+/* PyOS_ascii_strtod is DEPRECATED in Python 2.7 and 3.1 */
+
 double
 PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
 	char *fail_pos;
 	const char *p;
 	double x;
+
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "PyOS_ascii_strtod and PyOS_ascii_atof are "
+			 "deprecated.  Use PyOS_string_to_double "
+			 "instead.", 1) < 0)
+		return -1.0;
 
 	/* _PyOS_ascii_strtod already does everything that we want,
 	   except that it doesn't parse leading whitespace */
@@ -290,13 +298,15 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	return x;
 }
 
+/* PyOS_ascii_strtod is DEPRECATED in Python 2.7 and 3.1 */
+
 double
 PyOS_ascii_atof(const char *nptr)
 {
 	return PyOS_ascii_strtod(nptr, NULL);
 }
 
-/* PyOS_string_to_double is the recommended replacement for the
+/* PyOS_string_to_double is the recommended replacement for the deprecated
    PyOS_ascii_strtod and PyOS_ascii_atof functions.  It converts a
    null-terminated byte string s (interpreted as a string of ASCII characters)
    to a float.  The string should not have leading or trailing whitespace (in
@@ -332,7 +342,7 @@ PyOS_string_to_double(const char *s,
 
 	errno = 0;
 	PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
-	x = PyOS_ascii_strtod(s, &fail_pos);
+	x = _PyOS_ascii_strtod(s, &fail_pos);
 	PyFPE_END_PROTECT(x)
 
 	if (errno == ENOMEM) {
