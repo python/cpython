@@ -15,10 +15,6 @@ Core and Builtins
 - Remove length limitation when constructing a complex number from a
   unicode string.
 
-- Removed _PyOS_double_to_string. Use PyOS_double_to_string
-  instead. This is in preparation for (but not strictly related to)
-  issue #7117, short float repr.
-
 - Issue #1087418: Boost performance of bitwise operations for longs.
 
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
@@ -1417,6 +1413,10 @@ Documentation
 
 C-API
 -----
+
+- Removed _PyOS_double_to_string. Use PyOS_double_to_string
+  instead. This is in preparation for (but not strictly related to)
+  issue #7117, short float repr.
 
 - Issue #6624: PyArg_ParseTuple with "s" format when parsing argument with
   NULL: Bogus TypeError detail string.
