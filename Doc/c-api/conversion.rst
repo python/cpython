@@ -155,7 +155,7 @@ The following functions provide locale-independent string to number conversions.
    See the Unix man page :manpage:`atof(2)` for details.
 
    .. deprecated:: 3.1
-      Use PyOS_string_to_double instead.
+      Use :cfunc:`PyOS_string_to_double` instead.
 
 
 .. cfunction:: char* PyOS_stricmp(char *s1, char *s2)
