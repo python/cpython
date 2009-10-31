@@ -130,6 +130,10 @@ Tests
 Build
 -----
 
+- Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
+  compiles correctly under gcc on x86-64.  This fixes a reported
+  problem with the --with-tsc build on x86-64.
+
 - Issue #6802: Fix build issues on MacOSX 10.6
 
 - Issue #6801 : symmetric_difference_update also accepts |.
