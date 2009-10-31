@@ -20,8 +20,7 @@ class FormatDeprecationTests(unittest.TestCase):
                                c_double(10.0))
             self.assertEqual(buf.value, b'+10.0000000000')
 
-        self.assertEqual(str(w.message), 'PyOS_ascii_formatd is deprecated, '
-                         'use PyOS_double_to_string instead')
+        self.assertEqual(w.category, DeprecationWarning)
 
 class FormatTests(unittest.TestCase):
     # ensure that, for the restricted set of format codes,
