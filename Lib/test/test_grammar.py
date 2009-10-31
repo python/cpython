@@ -966,6 +966,14 @@ hello world
         self.assertEqual((6 / 2 if 1 else 3), 3)
         self.assertEqual((6 < 4 if 0 else 2), 2)
 
+    def test_paren_evaluation(self):
+        self.assertEqual(16 // (4 // 2), 8)
+        self.assertEqual((16 // 4) // 2, 2)
+        self.assertEqual(16 // 4 // 2, 2)
+        self.assertTrue(False is (2 is 3))
+        self.assertFalse((False is 2) is 3)
+        self.assertFalse(False is 2 is 3)
+
 
 def test_main():
     run_unittest(TokenTests, GrammarTests)
