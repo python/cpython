@@ -1345,6 +1345,10 @@ Tools/Demos
 Build
 -----
 
+- Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
+  compiles correctly under gcc on x86-64.  This fixes a reported
+  problem with the --with-tsc build on x86-64.
+
 - Add 2 new options to ``--with-universal-archs`` on MacOSX:
   ``intel`` builds a distribution with ``i386`` and ``x86_64`` architectures,
   while ``3-way`` builds a distribution with the ``ppc``, ``i386``
