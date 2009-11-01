@@ -385,6 +385,14 @@ class GeneralModuleTests(unittest.TestCase):
         # Check that setting it to an invalid type raises TypeError
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
+    def testIPv4_inet_aton_fourbytes(self):
+        if not hasattr(socket, 'inet_aton'):
+            return  # No inet_aton, nothing to check
+        # Test that issue1008086 and issue767150 are fixed.
+        # It must return 4 bytes.
+        self.assertEquals('\x00'*4, socket.inet_aton('0.0.0.0'))
+        self.assertEquals('\xff'*4, socket.inet_aton('255.255.255.255'))
+
     def testIPv4toString(self):
         if not hasattr(socket, 'inet_pton'):
             return # No inet_pton() on this platform
