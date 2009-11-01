@@ -455,9 +455,16 @@ def open_urlresource(url, *args, **kw):
             return open(fn, *args, **kw)
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
-    fn, _ = urllib.request.urlretrieve(url, filename)
-    return open(fn, *args, **kw)
-
+    f = urllib.request.urlopen(url, timeout=15)
+    try:
+        with open(filename, "wb") as out:
+            s = f.read()
+            while s:
+                out.write(s)
+                s = f.read()
+    finally:
+        f.close()
+    return open(filename, *args, **kw)
 
 class WarningsRecorder(object):
     """Convenience wrapper for the warnings list returned on
