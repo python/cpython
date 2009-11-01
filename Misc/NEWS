@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7244: itertools.izip_longest() no longer ignores exceptions
+  raised during the formation of an output tuple.
+
 - Issue #3297: On wide unicode builds, do not split unicode characters into
   surrogates.
 
