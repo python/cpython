@@ -3407,26 +3407,26 @@ izip_longest_next(iziplongestobject *lz)
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-                        if (it == NULL) {
-                                Py_INCREF(lz->fillvalue);
-                                item = lz->fillvalue;
+            if (it == NULL) {
+                Py_INCREF(lz->fillvalue);
+                item = lz->fillvalue;
+            } else {
+                assert(PyIter_Check(it));
+                item = PyIter_Next(it);
+                if (item == NULL) {
+                    lz->numactive -= 1;
+                    if (lz->numactive == 0 || PyErr_Occurred()) {
+							lz->numactive = 0;
+                            Py_DECREF(result);
+                            return NULL;
                         } else {
-                                assert(PyIter_Check(it));
-                                item = PyIter_Next(it);
-                                if (item == NULL) {
-                                        lz->numactive -= 1;
-                                        if (lz->numactive == 0 || PyErr_Occurred()) {
-												lz->numactive = 0;
-                                                Py_DECREF(result);
-                                                return NULL;
-                                        } else {
-                                                Py_INCREF(lz->fillvalue);
-                                                item = lz->fillvalue;                                        
-                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                                                Py_DECREF(it);
-                                        }
-                                }
+                            Py_INCREF(lz->fillvalue);
+                            item = lz->fillvalue;                                        
+                            PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                            Py_DECREF(it);
                         }
+                }
+            }
 			olditem = PyTuple_GET_ITEM(result, i);
 			PyTuple_SET_ITEM(result, i, item);
 			Py_DECREF(olditem);
@@ -3437,26 +3437,26 @@ izip_longest_next(iziplongestobject *lz)
 			return NULL;
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-                        if (it == NULL) {
-                                Py_INCREF(lz->fillvalue);
-                                item = lz->fillvalue;
-                        } else {
-                                assert(PyIter_Check(it));
-                                item = PyIter_Next(it);
-                                if (item == NULL) {
-                                        lz->numactive -= 1;      
-                                        if (lz->numactive == 0 || PyErr_Occurred()) {
-												lz->numactive = 0;
-                                                Py_DECREF(result);
-                                                return NULL;
-                                        } else {
-                                                Py_INCREF(lz->fillvalue);
-                                                item = lz->fillvalue;                                        
-                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                                                Py_DECREF(it);
-                                        }
-                                }
-                        }
+            if (it == NULL) {
+                Py_INCREF(lz->fillvalue);
+                item = lz->fillvalue;
+            } else {
+                assert(PyIter_Check(it));
+                item = PyIter_Next(it);
+                if (item == NULL) {
+                    lz->numactive -= 1;
+                    if (lz->numactive == 0 || PyErr_Occurred()) {
+						lz->numactive = 0;
+                        Py_DECREF(result);
+                        return NULL;
+                    } else {
+                        Py_INCREF(lz->fillvalue);
+                        item = lz->fillvalue;                                        
+                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                        Py_DECREF(it);
+                    }
+                }
+            }
 			PyTuple_SET_ITEM(result, i, item);
 		}
 	}
