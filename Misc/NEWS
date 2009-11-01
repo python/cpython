@@ -120,6 +120,12 @@ C-API
 Library
 -------
 
+- Issue #7246 & Issue #7208: getpass now properly flushes input before
+  reading from stdin so that existing input does not confuse it and
+  lead to incorrect entry or an IOError.  It also properly flushes it
+  afterwards to avoid the terminal echoing the input afterwards on
+  OSes such as Solaris.
+
 - Issue #7233: Fix a number of two-argument Decimal methods to make
   sure that they accept an int or long as the second argument.  Also
   fix buggy handling of large arguments (those with coefficient longer
