@@ -32,10 +32,17 @@ class FnmatchTestCase(unittest.TestCase):
         check('a', 'b', 0)
 
         # these test that '\' is handled correctly in character sets;
-        # see SF bug #???
+        # see SF bug #409651
         check('\\', r'[\]')
         check('a', r'[!\]')
         check('\\', r'[!\]', 0)
+
+        # test that filenames with newlines in them are handled correctly.
+        # http://bugs.python.org/issue6665
+        check('foo\nbar', 'foo*')
+        check('foo\nbar\n', 'foo*')
+        check('\nfoo', 'foo*', False)
+        check('\n', '*')
 
 
 def test_main():

@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6665: Fix fnmatch to properly match filenames with newlines in them.
+
 - Issue #1008086: Fixed socket.inet_aton() to always return 4 bytes even on
   LP64 platforms (most 64-bit Linux, bsd, unix systems).
 
