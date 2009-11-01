@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, open_urlresource
+from test.test_support import run_unittest, open_urlresource, TestSkipped
 import unittest
 
 import sys
@@ -96,7 +96,10 @@ class NormalizationTest(unittest.TestCase):
 
 def test_main():
     # Hit the exception early
-    open_urlresource(TESTDATAURL)
+    try:
+        open_urlresource(TESTDATAURL)
+    except IOError:
+        raise TestSkipped("could not retrieve " + TESTDATAURL)
     run_unittest(NormalizationTest)
 
 if __name__ == "__main__":
