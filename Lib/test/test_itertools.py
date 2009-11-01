@@ -398,6 +398,42 @@ class TestBasicOps(unittest.TestCase):
         ids = map(id, list(izip_longest('abc', 'def')))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
+    def test_bug_7244(self):
+
+        class Repeater(object):
+            # this class is similar to itertools.repeat
+            def __init__(self, o, t, e):
+                self.o = o
+                self.t = int(t)
+                self.e = e
+            def __iter__(self): # its iterator is itself
+                return self
+            def next(self):
+                if self.t > 0:
+                    self.t -= 1
+                    return self.o
+                else:
+                    raise self.e
+
+        # Formerly this code in would fail in debug mode
+        # with Undetected Error and Stop Iteration
+        r1 = Repeater(1, 3, StopIteration)
+        r2 = Repeater(2, 4, StopIteration)
+        def run(r1, r2):
+            result = []
+            for i, j in izip_longest(r1, r2, fillvalue=0):
+                print(i, j)
+                result.append((i, j))
+            return result
+        self.assertEqual(run(r1, r2), [(1,2), (1,2), (1,2), (0,2)])
+
+        # Formerly, the RuntimeError would be lost
+        # and StopIteration would stop as expected
+        r1 = Repeater(1, 3, RuntimeError)
+        r2 = Repeater(2, 4, StopIteration)
+        mylist = lambda it: [v for v in it]
+        self.assertRaises(RuntimeError, mylist, izip_longest(r1, r2, fillvalue=0))
+
     def test_product(self):
         for args, result in [
             ([], [()]),                     # zero iterables
@@ -686,6 +722,7 @@ class TestBasicOps(unittest.TestCase):
         for f in (ifilter, ifilterfalse, imap, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, f(lambda x:x, []).next)
             self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
+
 
 class TestExamples(unittest.TestCase):
 
