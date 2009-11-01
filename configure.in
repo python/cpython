@@ -918,9 +918,8 @@ yes)
      ac_save_cc="$CC"
      CC="$CC -fno-strict-aliasing"
      AC_CACHE_VAL(ac_cv_no_strict_aliasing_ok,
-     AC_TRY_RUN([int main() { return 0; }],
+     AC_TRY_COMPILE([],[int main() { return 0; }],
      ac_cv_no_strict_aliasing_ok=yes,
-     ac_cv_no_strict_aliasing_ok=no,
      ac_cv_no_strict_aliasing_ok=no))
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_no_strict_aliasing_ok)
@@ -1067,10 +1066,10 @@ AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
 AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 [ac_save_cc="$CC"
 CC="$CC -OPT:Olimit=0"
-AC_TRY_RUN([int main() { return 0; }],
+AC_TRY_COMPILE([],[int main() { return 0; }],
   ac_cv_opt_olimit_ok=yes,
   ac_cv_opt_olimit_ok=no,
-  ac_cv_opt_olimit_ok=no)
+  )
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
 if test $ac_cv_opt_olimit_ok = yes; then
@@ -1089,10 +1088,10 @@ else
   AC_CACHE_VAL(ac_cv_olimit_ok,
   [ac_save_cc="$CC"
   CC="$CC -Olimit 1500"
-  AC_TRY_RUN([int main() { return 0; }],
+  AC_TRY_COMPILE([],[int main() { return 0; }],
     ac_cv_olimit_ok=yes,
     ac_cv_olimit_ok=no,
-    ac_cv_olimit_ok=no)
+    )
   CC="$ac_save_cc"])
   AC_MSG_RESULT($ac_cv_olimit_ok)
   if test $ac_cv_olimit_ok = yes; then
