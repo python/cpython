@@ -60,6 +60,8 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         util.find_executable = self._find_executable
         self._exes = {}
         self.old_popen = subprocess.Popen
+        self.old_stdout  = sys.stdout
+        self.old_stderr = sys.stderr
         FakePopen.test_class = self
         subprocess.Popen = FakePopen
 
@@ -79,6 +81,8 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         sysconfig._config_vars = copy(self._config_vars)
         util.find_executable = self.old_find_executable
         subprocess.Popen = self.old_popen
+        sys.old_stdout  = self.old_stdout
+        sys.old_stderr = self.old_stderr
         super(UtilTestCase, self).tearDown()
 
     def _set_uname(self, uname):
