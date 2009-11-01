@@ -422,7 +422,8 @@ class TestBasicOps(unittest.TestCase):
         def run(r1, r2):
             result = []
             for i, j in izip_longest(r1, r2, fillvalue=0):
-                print(i, j)
+                with test_support.captured_output('stdout'):
+                    print (i, j)
                 result.append((i, j))
             return result
         self.assertEqual(run(r1, r2), [(1,2), (1,2), (1,2), (0,2)])
@@ -431,8 +432,11 @@ class TestBasicOps(unittest.TestCase):
         # and StopIteration would stop as expected
         r1 = Repeater(1, 3, RuntimeError)
         r2 = Repeater(2, 4, StopIteration)
-        mylist = lambda it: [v for v in it]
-        self.assertRaises(RuntimeError, mylist, izip_longest(r1, r2, fillvalue=0))
+        it = izip_longest(r1, r2, fillvalue=0)
+        self.assertEqual(next(it), (1, 2))
+        self.assertEqual(next(it), (1, 2))
+        self.assertEqual(next(it), (1, 2))
+        self.assertRaises(RuntimeError, next, it)
 
     def test_product(self):
         for args, result in [
@@ -722,7 +726,6 @@ class TestBasicOps(unittest.TestCase):
         for f in (ifilter, ifilterfalse, imap, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, f(lambda x:x, []).next)
             self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
-
 
 class TestExamples(unittest.TestCase):
 
