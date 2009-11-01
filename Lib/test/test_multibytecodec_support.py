@@ -279,7 +279,7 @@ class TestBase_Mapping(unittest.TestCase):
         try:
             self.open_mapping_file() # test it to report the error early
         except IOError:
-            raise support.TestSkipped("Could not retrieve "+self.mapfileurl)
+            self.skipTest("Could not retrieve "+self.mapfileurl)
 
     def open_mapping_file(self):
         return support.open_urlresource(self.mapfileurl)

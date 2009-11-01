@@ -935,7 +935,7 @@ class AssortedBytesTest(unittest.TestCase):
             self.assertRaises(BytesWarning, operator.eq, bytearray(b''), '')
             self.assertRaises(BytesWarning, operator.ne, bytearray(b''), '')
         else:
-            # raise test.support.TestSkipped("BytesWarning is needed for this test: use -bb option")
+            # self.skipTest("BytesWarning is needed for this test: use -bb option")
             pass
 
     # Optimizations:
