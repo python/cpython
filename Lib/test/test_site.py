@@ -70,9 +70,9 @@ class HelperFunctionsTests(unittest.TestCase):
     def pth_file_tests(self, pth_file):
         """Contain common code for testing results of reading a .pth file"""
         self.assertTrue(pth_file.imported in sys.modules,
-                "%s not in sys.path" % pth_file.imported)
-        self.assertTrue(site.makepath(pth_file.good_dir_path)[0] in sys.path)
-        self.assertTrue(not os.path.exists(pth_file.bad_dir_path))
+                "%s not in sys.modules" % pth_file.imported)
+        self.assertIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+        self.assertFalse(os.path.exists(pth_file.bad_dir_path))
 
     def test_addpackage(self):
         # Make sure addpackage() imports if the line starts with 'import',
@@ -104,7 +104,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_s_option(self):
         usersite = site.USER_SITE
-        self.assertTrue(usersite in sys.path)
+        self.assertIn(usersite, sys.path)
 
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite])
@@ -139,7 +139,8 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_BASE = None
         with EnvironmentVarGuard() as environ:
             environ['PYTHONUSERBASE'] = 'xoxo'
-            self.assertTrue(site.getuserbase().startswith('xoxo'))
+            self.assertTrue(site.getuserbase().startswith('xoxo'),
+                            site.getuserbase())
 
     def test_getusersitepackages(self):
         site.USER_SITE = None
@@ -148,14 +149,14 @@ class HelperFunctionsTests(unittest.TestCase):
 
         # the call sets USER_BASE *and* USER_SITE
         self.assertEquals(site.USER_SITE, user_site)
-        self.assertTrue(user_site.startswith(site.USER_BASE))
+        self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
 
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()
 
         if sys.platform in ('os2emx', 'riscos'):
-            self.assertTrue(len(dirs), 1)
+            self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'Lib', 'site-packages')
             self.assertEquals(dirs[0], wanted)
         elif os.sep == '/':
@@ -175,7 +176,7 @@ class HelperFunctionsTests(unittest.TestCase):
         if sys.platform == "darwin":
             site.PREFIXES = ['Python.framework']
             dirs = site.getsitepackages()
-            self.assertTrue(len(dirs), 4)
+            self.assertEqual(len(dirs), 4)
             wanted = os.path.join('~', 'Library', 'Python',
                                   sys.version[:3], 'site-packages')
             self.assertEquals(dirs[2], os.path.expanduser(wanted))
