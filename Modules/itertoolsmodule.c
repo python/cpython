@@ -3392,75 +3392,75 @@ izip_longest_traverse(iziplongestobject *lz, visitproc visit, void *arg)
 static PyObject *
 izip_longest_next(iziplongestobject *lz)
 {
-	Py_ssize_t i;
-	Py_ssize_t tuplesize = lz->tuplesize;
-	PyObject *result = lz->result;
-	PyObject *it;
-	PyObject *item;
-	PyObject *olditem;
+        Py_ssize_t i;
+        Py_ssize_t tuplesize = lz->tuplesize;
+        PyObject *result = lz->result;
+        PyObject *it;
+        PyObject *item;
+        PyObject *olditem;
 
-	if (tuplesize == 0)
-		return NULL;
+        if (tuplesize == 0)
+                return NULL;
         if (lz->numactive == 0)
                 return NULL;
-	if (Py_REFCNT(result) == 1) {
-		Py_INCREF(result);
-		for (i=0 ; i < tuplesize ; i++) {
-			it = PyTuple_GET_ITEM(lz->ittuple, i);
-            if (it == NULL) {
-                Py_INCREF(lz->fillvalue);
-                item = lz->fillvalue;
-            } else {
-                assert(PyIter_Check(it));
-                item = PyIter_Next(it);
-                if (item == NULL) {
-                    lz->numactive -= 1;
-                    if (lz->numactive == 0 || PyErr_Occurred()) {
-							lz->numactive = 0;
-                            Py_DECREF(result);
-                            return NULL;
+        if (Py_REFCNT(result) == 1) {
+                Py_INCREF(result);
+                for (i=0 ; i < tuplesize ; i++) {
+                        it = PyTuple_GET_ITEM(lz->ittuple, i);
+                        if (it == NULL) {
+                                Py_INCREF(lz->fillvalue);
+                                item = lz->fillvalue;
                         } else {
-                            Py_INCREF(lz->fillvalue);
-                            item = lz->fillvalue;                                        
-                            PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                            Py_DECREF(it);
+                                assert(PyIter_Check(it));
+                                item = PyIter_Next(it);
+                                if (item == NULL) {
+                                        lz->numactive -= 1;
+                                        if (lz->numactive == 0 || PyErr_Occurred()) {
+                                                lz->numactive = 0;
+                                                Py_DECREF(result);
+                                                return NULL;
+                                        } else {
+                                                Py_INCREF(lz->fillvalue);
+                                                item = lz->fillvalue;                                        
+                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                                                Py_DECREF(it);
+                                        }
+                                }
                         }
+                        olditem = PyTuple_GET_ITEM(result, i);
+                        PyTuple_SET_ITEM(result, i, item);
+                        Py_DECREF(olditem);
                 }
-            }
-			olditem = PyTuple_GET_ITEM(result, i);
-			PyTuple_SET_ITEM(result, i, item);
-			Py_DECREF(olditem);
-		}
-	} else {
-		result = PyTuple_New(tuplesize);
-		if (result == NULL)
-			return NULL;
-		for (i=0 ; i < tuplesize ; i++) {
-			it = PyTuple_GET_ITEM(lz->ittuple, i);
-            if (it == NULL) {
-                Py_INCREF(lz->fillvalue);
-                item = lz->fillvalue;
-            } else {
-                assert(PyIter_Check(it));
-                item = PyIter_Next(it);
-                if (item == NULL) {
-                    lz->numactive -= 1;
-                    if (lz->numactive == 0 || PyErr_Occurred()) {
-						lz->numactive = 0;
-                        Py_DECREF(result);
+        } else {
+                result = PyTuple_New(tuplesize);
+                if (result == NULL)
                         return NULL;
-                    } else {
-                        Py_INCREF(lz->fillvalue);
-                        item = lz->fillvalue;                                        
-                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                        Py_DECREF(it);
-                    }
+                for (i=0 ; i < tuplesize ; i++) {
+                        it = PyTuple_GET_ITEM(lz->ittuple, i);
+                        if (it == NULL) {
+                                Py_INCREF(lz->fillvalue);
+                                item = lz->fillvalue;
+                        } else {
+                                assert(PyIter_Check(it));
+                                item = PyIter_Next(it);
+                                if (item == NULL) {
+                                        lz->numactive -= 1;
+                                        if (lz->numactive == 0 || PyErr_Occurred()) {
+                                                lz->numactive = 0;
+                                                Py_DECREF(result);
+                                                return NULL;
+                                        } else {
+                                                Py_INCREF(lz->fillvalue);
+                                                item = lz->fillvalue;                                        
+                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                                                Py_DECREF(it);
+                                        }
+                                }
+                        }
+                        PyTuple_SET_ITEM(result, i, item);
                 }
-            }
-			PyTuple_SET_ITEM(result, i, item);
-		}
-	}
-	return result;
+        }
+        return result;
 }
 
 PyDoc_STRVAR(izip_longest_doc,
