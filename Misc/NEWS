@@ -15,6 +15,9 @@ Core and Builtins
 - Remove length limitation when constructing a complex number from a
   unicode string.
 
+- Issue #7244: itertools.izip_longest() no longer ignores exceptions
+  raised during the formation of an output tuple.
+
 - Issue #1087418: Boost performance of bitwise operations for longs.
 
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
