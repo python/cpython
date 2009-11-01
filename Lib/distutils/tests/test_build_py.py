@@ -69,6 +69,7 @@ class BuildPyTestCase(support.TempdirManager,
         open(os.path.join(testdir, "testfile"), "w").close()
 
         os.chdir(sources)
+        old_stdout = sys.stdout
         sys.stdout = StringIO.StringIO()
 
         try:
@@ -87,7 +88,7 @@ class BuildPyTestCase(support.TempdirManager,
         finally:
             # Restore state.
             os.chdir(cwd)
-            sys.stdout = sys.__stdout__
+            sys.stdout = old_stdout
 
 def test_suite():
     return unittest.makeSuite(BuildPyTestCase)
