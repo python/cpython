@@ -42,6 +42,11 @@ def unistr(data):
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
         part1_data = {}
+        # Hit the exception early
+        try:
+            open_urlresource(TESTDATAURL, encoding="utf-8")
+        except IOError:
+            self.skipTest("Could not retrieve " + TESTDATAURL)
         for line in open_urlresource(TESTDATAURL, encoding="utf-8"):
             if '#' in line:
                 line = line.split('#')[0]
@@ -97,8 +102,6 @@ class NormalizationTest(unittest.TestCase):
 
 
 def test_main():
-    # Skip the test early if the 'urlfetch' resource is not enabled.
-    open_urlresource(TESTDATAURL)
     run_unittest(NormalizationTest)
 
 if __name__ == "__main__":
