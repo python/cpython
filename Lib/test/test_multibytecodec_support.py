@@ -266,7 +266,10 @@ class TestBase_Mapping(unittest.TestCase):
 
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
-        self.open_mapping_file() # test it to report the error early
+        try:
+            self.open_mapping_file() # test it to report the error early
+        except IOError:
+            self.skipTest("Could not retrieve "+self.mapfileurl)
 
     def open_mapping_file(self):
         return test_support.open_urlresource(self.mapfileurl)
