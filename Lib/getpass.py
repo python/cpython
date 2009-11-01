@@ -62,12 +62,16 @@ def unix_getpass(prompt='Password: ', stream=None):
         try:
             old = termios.tcgetattr(fd)     # a copy to save
             new = old[:]
-            new[3] &= ~termios.ECHO  # 3 == 'lflags'
+            new[3] &= ~(termios.ECHO|termios.ISIG)  # 3 == 'lflags'
+            tcsetattr_flags = termios.TCSAFLUSH
+            if hasattr(termios, 'TCSASOFT'):
+                tcsetattr_flags |= termios.TCSASOFT
             try:
-                termios.tcsetattr(fd, termios.TCSADRAIN, new)
+                termios.tcsetattr(fd, tcsetattr_flags, new)
                 passwd = _raw_input(prompt, stream, input=input)
             finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+                termios.tcsetattr(fd, tcsetattr_flags, old)
+                stream.flush()  # issue7208
         except termios.error as e:
             if passwd is not None:
                 # _raw_input succeeded.  The final tcsetattr failed.  Reraise
@@ -124,6 +128,7 @@ def _raw_input(prompt="", stream=None, input=None):
     if prompt:
         stream.write(prompt)
         stream.flush()
+    # NOTE: The Python C API calls flockfile() (and unlock) during readline.
     line = input.readline()
     if not line:
         raise EOFError
