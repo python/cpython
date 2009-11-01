@@ -3745,8 +3745,11 @@ socket_inet_aton(PyObject *self, PyObject *args)
 #endif
 
 #if !defined(HAVE_INET_ATON) || defined(USE_INET_ATON_WEAKLINK)
+#if (SIZEOF_INT != 4)
+#error "Not sure if in_addr_t exists and int is not 32-bits."
+#endif
 	/* Have to use inet_addr() instead */
-	unsigned long packed_addr;
+	unsigned int packed_addr;
 #endif
 	char *ip_addr;
 
@@ -5284,7 +5287,10 @@ int
 inet_pton(int af, const char *src, void *dst)
 {
 	if (af == AF_INET) {
-		long packed_addr;
+#if (SIZEOF_INT != 4)
+#error "Not sure if in_addr_t exists and int is not 32-bits."
+#endif
+		unsigned int packed_addr;
 		packed_addr = inet_addr(src);
 		if (packed_addr == INADDR_NONE)
 			return 0;
