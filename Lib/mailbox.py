@@ -462,12 +462,21 @@ class Maildir(Mailbox):
 
     def _refresh(self):
         """Update table of contents mapping."""
-        new_mtime = os.path.getmtime(os.path.join(self._path, 'new'))
-        cur_mtime = os.path.getmtime(os.path.join(self._path, 'cur'))
+        if self._last_read is not None:
+            for subdir in ('new', 'cur'):
+                mtime = os.path.getmtime(os.path.join(self._path, subdir))
+                if mtime > self._last_read:
+                    break
+            else:
+                return
 
-        if (self._last_read is not None and
-            new_mtime <= self._last_read and cur_mtime <= self._last_read):
-            return
+        # We record the current time - 1sec so that, if _refresh() is called
+        # again in the same second, we will always re-read the mailbox
+        # just in case it's been modified.  (os.path.mtime() only has
+        # 1sec resolution.)  This results in a few unnecessary re-reads
+        # when _refresh() is called multiple times in the same second,
+        # but once the clock ticks over, we will only re-read as needed.
+        now = time.time() - 1
 
         self._toc = {}
         def update_dir (subdir):
@@ -482,14 +491,7 @@ class Maildir(Mailbox):
         update_dir('new')
         update_dir('cur')
 
-        # We record the current time - 1sec so that, if _refresh() is called
-        # again in the same second, we will always re-read the mailbox
-        # just in case it's been modified.  (os.path.mtime() only has
-        # 1sec resolution.)  This results in a few unnecessary re-reads
-        # when _refresh() is called multiple times in the same second,
-        # but once the clock ticks over, we will only re-read as needed.
-        now = int(time.time() - 1)
-        self._last_read = time.time() - 1
+        self._last_read = now
 
     def _lookup(self, key):
         """Use TOC to return subpath for given key, or raise a KeyError."""
