@@ -463,7 +463,7 @@ def check_syntax_error(testcase, statement):
                           '<test string>', 'exec')
 
 def open_urlresource(url):
-    import urllib, urlparse
+    import urlparse, urllib2
 
     requires('urlfetch')
     filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
@@ -473,7 +473,15 @@ def open_urlresource(url):
         return open(fn)
 
     print >> get_original_stdout(), '\tfetching %s ...' % url
-    fn, _ = urllib.urlretrieve(url, fn)
+    f = urllib2.urlopen(url, timeout=15)
+    try:
+        with open(fn, "wb") as out:
+            s = f.read()
+            while s:
+                out.write(s)
+                s = f.read()
+    finally:
+        f.close()
     return open(fn)
 
 
