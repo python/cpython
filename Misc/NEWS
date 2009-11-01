@@ -24,6 +24,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #7246 & Issue #7208: getpass now properly flushes input before
+  reading from stdin so that existing input does not confuse it and
+  lead to incorrect entry or an IOError.  It also properly flushes it
+  afterwards to avoid the terminal echoing the input afterwards on
+  OSes such as Solaris.
+
 - Issue #7244: itertools.izip_longest() no longer ignores exceptions
   raised during the formation of an output tuple.
 
