@@ -3412,10 +3412,11 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*Py_TYPE(it)->tp_iternext)(it);
+                                item = PyIter_Next(it);
                                 if (item == NULL) {
-                                        lz->numactive -= 1;      
-                                        if (lz->numactive == 0) {
+                                        lz->numactive -= 1;
+                                        if (lz->numactive == 0 || PyErr_Occurred()) {
+												lz->numactive = 0;
                                                 Py_DECREF(result);
                                                 return NULL;
                                         } else {
@@ -3441,10 +3442,11 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*Py_TYPE(it)->tp_iternext)(it);
+                                item = PyIter_Next(it);
                                 if (item == NULL) {
                                         lz->numactive -= 1;      
-                                        if (lz->numactive == 0) {
+                                        if (lz->numactive == 0 || PyErr_Occurred()) {
+												lz->numactive = 0;
                                                 Py_DECREF(result);
                                                 return NULL;
                                         } else {
