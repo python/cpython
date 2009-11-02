@@ -147,7 +147,6 @@ class TestParserIdempotency(support.TestCase):
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            print("Parsing %s..." % filepath)
             with open(filepath, "rb") as fp:
                 encoding = tokenize.detect_encoding(fp.readline)[0]
                 fp.seek(0)
@@ -161,6 +160,11 @@ class TestParserIdempotency(support.TestCase):
             if diff(filepath, new):
                 self.fail("Idempotency failed: %s" % filepath)
 
+    def test_extended_unpacking(self):
+        driver.parse_string("a, *b, c = x\n")
+        driver.parse_string("[*a, b] = x\n")
+        driver.parse_string("(z, *y, w) = m\n")
+        driver.parse_string("for *z, m in d: pass\n")
 
 class TestLiterals(GrammarTest):
 
