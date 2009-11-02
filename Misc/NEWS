@@ -123,6 +123,10 @@ C-API
 Library
 -------
 
+- Issue #6896: mailbox.Maildir now invalidates its internal cache each time
+  a modification is done through it.  This fixes inconsistencies and test
+  failures on systems with slightly bogus mtime behaviour.
+
 - Issue #7246 & Issue #7208: getpass now properly flushes input before
   reading from stdin so that existing input does not confuse it and
   lead to incorrect entry or an IOError.  It also properly flushes it
