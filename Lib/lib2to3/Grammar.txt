@@ -53,8 +53,9 @@ stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 small_stmt: (expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt |
              import_stmt | global_stmt | exec_stmt | assert_stmt)
-expr_stmt: testlist (augassign (yield_expr|testlist) |
-                     ('=' (yield_expr|testlist))*)
+expr_stmt: testlist_star_expr (augassign (yield_expr|testlist) |
+                     ('=' (yield_expr|testlist_star_expr))*)
+testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
 augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
             '<<=' | '>>=' | '**=' | '//=')
 # For normal assignments, additional restrictions enforced by the interpreter
@@ -112,6 +113,7 @@ and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
 comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+star_expr: '*' expr
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
@@ -125,14 +127,14 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: test ( comp_for | (',' test)* [','] )
-testlist_gexp: test ( comp_for | (',' test)* [','] )
+listmaker: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+testlist_gexp: test ( comp_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
-exprlist: expr (',' expr)* [',']
+exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
 dictsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
                 (test (comp_for | (',' test)* [','])) )

@@ -161,6 +161,11 @@ class TestParserIdempotency(support.TestCase):
             if diff(filepath, new):
                 self.fail("Idempotency failed: %s" % filepath)
 
+    def test_extended_unpacking(self):
+        driver.parse_string("a, *b, c = x\n")
+        driver.parse_string("[*a, b] = x\n")
+        driver.parse_string("(z, *y, w) = m\n")
+        driver.parse_string("for *z, m in d: pass\n")
 
 class TestLiterals(GrammarTest):
 
