@@ -219,8 +219,8 @@ bytesio_read(BytesIOObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:read", &arg))
         return NULL;
 
-    if (PyInt_Check(arg)) {
-        size = PyInt_AsSsize_t(arg);
+    if (PyIndex_Check(arg)) {
+        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred())
             return NULL;
     }
@@ -288,8 +288,8 @@ bytesio_readline(BytesIOObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:readline", &arg))
         return NULL;
 
-    if (PyInt_Check(arg)) {
-        size = PyInt_AsSsize_t(arg);
+    if (PyIndex_Check(arg)) {
+        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred())
             return NULL;
     }
@@ -334,8 +334,8 @@ bytesio_readlines(BytesIOObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:readlines", &arg))
         return NULL;
 
-    if (PyInt_Check(arg)) {
-        maxsize = PyInt_AsSsize_t(arg);
+    if (PyIndex_Check(arg)) {
+        maxsize = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (maxsize == -1 && PyErr_Occurred())
             return NULL;
     }
@@ -419,8 +419,8 @@ bytesio_truncate(BytesIOObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:truncate", &arg))
         return NULL;
 
-    if (PyInt_Check(arg)) {
-        size = PyInt_AsSsize_t(arg);
+    if (PyIndex_Check(arg)) {
+        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred())
             return NULL;
     }
