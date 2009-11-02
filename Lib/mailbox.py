@@ -234,6 +234,9 @@ class Maildir(Mailbox):
                 raise NoSuchMailboxError(self._path)
         self._toc = {}
         self._last_read = None          # Records last time we read cur/new
+        # NOTE: we manually invalidate _last_read each time we do any
+        # modifications ourselves, otherwise we might get tripped up by
+        # bogus mtime behaviour on some systems (see issue #6896).
 
     def add(self, message):
         """Add message and return assigned key."""
@@ -267,11 +270,15 @@ class Maildir(Mailbox):
                 raise
         if isinstance(message, MaildirMessage):
             os.utime(dest, (os.path.getatime(dest), message.get_date()))
+        # Invalidate cached toc
+        self._last_read = None
         return uniq
 
     def remove(self, key):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
         os.remove(os.path.join(self._path, self._lookup(key)))
+        # Invalidate cached toc (only on success)
+        self._last_read = None
 
     def discard(self, key):
         """If the keyed message exists, remove it."""
@@ -306,6 +313,8 @@ class Maildir(Mailbox):
         if isinstance(message, MaildirMessage):
             os.utime(new_path, (os.path.getatime(new_path),
                                 message.get_date()))
+        # Invalidate cached toc
+        self._last_read = None
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
@@ -360,7 +369,9 @@ class Maildir(Mailbox):
 
     def flush(self):
         """Write any pending changes to disk."""
-        return  # Maildir changes are always written immediately.
+        # Maildir changes are always written immediately, so there's nothing
+        # to do except invalidate our cached toc.
+        self._last_read = None
 
     def lock(self):
         """Lock the mailbox."""
