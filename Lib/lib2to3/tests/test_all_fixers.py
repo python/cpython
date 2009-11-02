@@ -15,8 +15,7 @@ from . import support
 
 class Test_all(support.TestCase):
     def setUp(self):
-        options = {"print_function" : False}
-        self.refactor = support.get_refactorer(options=options)
+        self.refactor = support.get_refactorer()
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():

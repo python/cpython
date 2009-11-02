@@ -229,6 +229,17 @@ class Untokenizer:
 
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
 
+def _get_normal_name(orig_enc):
+    """Imitates get_normal_name in tokenizer.c."""
+    # Only care about the first 12 characters.
+    enc = orig_enc[:12].lower().replace("_", "-")
+    if enc == "utf-8" or enc.startswith("utf-8-"):
+        return "utf-8"
+    if enc in ("latin-1", "iso-8859-1", "iso-latin-1") or \
+       enc.startswith(("latin-1-", "iso-8859-1-", "iso-latin-1-")):
+        return "iso-8859-1"
+    return orig_enc
+
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
@@ -263,7 +274,7 @@ def detect_encoding(readline):
         matches = cookie_re.findall(line_string)
         if not matches:
             return None
-        encoding = matches[0]
+        encoding = _get_normal_name(matches[0])
         try:
             codec = lookup(encoding)
         except LookupError:
@@ -373,7 +384,7 @@ def generate_tokens(readline):
             column = 0
             while pos < max:                   # measure leading whitespace
                 if line[pos] == ' ': column = column + 1
-                elif line[pos] == '\t': column = (column/tabsize + 1)*tabsize
+                elif line[pos] == '\t': column = (column//tabsize + 1)*tabsize
                 elif line[pos] == '\f': column = 0
                 else: break
                 pos = pos + 1

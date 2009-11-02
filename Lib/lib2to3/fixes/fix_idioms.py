@@ -29,7 +29,7 @@ into
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import Call, Comma, Name, Node, syms
+from ..fixer_util import Call, Comma, Name, Node, BlankLine, syms
 
 CMP = "(n='!=' | '==' | 'is' | n=comp_op< 'is' 'not' >)"
 TYPE = "power< 'type' trailer< '(' x=any ')' > >"
@@ -130,5 +130,24 @@ class FixIdioms(fixer_base.BaseFix):
         else:
             raise RuntimeError("should not have reached here")
         sort_stmt.remove()
-        if next_stmt:
-            next_stmt[0].prefix = sort_stmt.prefix
+
+        btwn = sort_stmt.prefix
+        # Keep any prefix lines between the sort_stmt and the list_call and
+        # shove them right after the sorted() call.
+        if u"\n" in btwn:
+            if next_stmt:
+                # The new prefix should be everything from the sort_stmt's
+                # prefix up to the last newline, then the old prefix after a new
+                # line.
+                prefix_lines = (btwn.rpartition(u"\n")[0], next_stmt[0].prefix)
+                next_stmt[0].prefix = u"\n".join(prefix_lines)
+            else:
+                assert list_call.parent
+                assert list_call.next_sibling is None
+                # Put a blank line after list_call and set its prefix.
+                end_line = BlankLine()
+                list_call.parent.append_child(end_line)
+                assert list_call.next_sibling is end_line
+                # The new prefix should be everything up to the first new line
+                # of sort_stmt's prefix.
+                end_line.prefix = btwn.rpartition(u"\n")[0]
