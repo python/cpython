@@ -341,13 +341,17 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
 
 def test_main(verbose=None):
+    cwd = os.getcwd()
+    env = os.environ.copy()
     try:
-        cwd = os.getcwd()
         test_support.run_unittest(BaseHTTPServerTestCase,
                                   SimpleHTTPServerTestCase,
                                   CGIHTTPServerTestCase
                                   )
     finally:
+        test_support.reap_children()
+        os.environ.clear()
+        os.environ.update(env)
         os.chdir(cwd)
 
 if __name__ == '__main__':
