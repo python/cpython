@@ -673,6 +673,9 @@ class TestMaildir(TestMailbox):
         self.assertEqual(self._box._lookup(key0), os.path.join('new', key0))
         os.remove(os.path.join(self._path, 'new', key0))
         self.assertEqual(self._box._toc, {key0: os.path.join('new', key0)})
+        # Be sure that the TOC is read back from disk (see issue #6896
+        # about bad mtime behaviour on some systems).
+        self._box.flush()
         self.assertRaises(KeyError, lambda: self._box._lookup(key0))
         self.assertEqual(self._box._toc, {})
 
