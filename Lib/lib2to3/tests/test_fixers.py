@@ -339,6 +339,12 @@ class Test_reduce(FixerTestCase):
         a = "from functools import reduce\nreduce(a, b, c)"
         self.check(b, a)
 
+    def test_bug_7253(self):
+        # fix_tuple_params was being bad and orphaning nodes in the tree.
+        b = "def x(arg): reduce(sum, [])"
+        a = "from functools import reduce\ndef x(arg): reduce(sum, [])"
+        self.check(b, a)
+
     def test_call_with_lambda(self):
         b = "reduce(lambda x, y: x + y, seq)"
         a = "from functools import reduce\nreduce(lambda x, y: x + y, seq)"
@@ -2834,6 +2840,11 @@ class Test_map(FixerTestCase):
         a = """x = list(map(f, 'abc'))   #   foo"""
         self.check(b, a)
 
+    def test_None_with_multiple_arguments(self):
+        s = """x = map(None, a, b, c)"""
+        self.warns_unchanged(s, "cannot convert map(None, ...) with "
+                             "multiple arguments")
+
     def test_map_basic(self):
         b = """x = map(f, 'abc')"""
         a = """x = list(map(f, 'abc'))"""
@@ -2845,10 +2856,6 @@ class Test_map(FixerTestCase):
 
         b = """x = map(None, 'abc')"""
         a = """x = list('abc')"""
-        self.check(b, a)
-
-        b = """x = map(None, 'abc', 'def')"""
-        a = """x = list(map(None, 'abc', 'def'))"""
         self.check(b, a)
 
         b = """x = map(lambda x: x+1, range(4))"""
@@ -3236,6 +3243,46 @@ class Test_idioms(FixerTestCase):
             v = sorted(   t)
             foo(v)
             """
+        self.check(b, a)
+
+        b = r"""
+            try:
+                m = list(s)
+                m.sort()
+            except: pass
+            """
+
+        a = r"""
+            try:
+                m = sorted(s)
+            except: pass
+            """
+        self.check(b, a)
+
+        b = r"""
+            try:
+                m = list(s)
+                # foo
+                m.sort()
+            except: pass
+            """
+
+        a = r"""
+            try:
+                m = sorted(s)
+                # foo
+            except: pass
+            """
+        self.check(b, a)
+
+        b = r"""
+            m = list(s)
+            # more comments
+            m.sort()"""
+
+        a = r"""
+            m = sorted(s)
+            # more comments"""
         self.check(b, a)
 
     def test_sort_simple_expr(self):

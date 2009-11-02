@@ -96,6 +96,8 @@ class FixTupleParams(fixer_base.BaseFix):
             new_lines[0].prefix = indent
             after = start + 1
 
+        for line in new_lines:
+            line.parent = suite[0]
         suite[0].children[after:after] = new_lines
         for i in range(after+1, after+len(new_lines)+1):
             suite[0].children[i].prefix = indent
