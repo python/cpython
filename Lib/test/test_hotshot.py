@@ -3,6 +3,7 @@ import hotshot.log
 import os
 import pprint
 import unittest
+import tempfile
 import _hotshot
 import gc
 
@@ -127,7 +128,12 @@ class HotShotTestCase(unittest.TestCase):
                 os.remove(test_support.TESTFN)
 
     def test_logreader_eof_error(self):
-        self.assertRaises((IOError, EOFError), _hotshot.logreader, ".")
+        emptyfile = tempfile.NamedTemporaryFile()
+        try:
+            self.assertRaises((IOError, EOFError), _hotshot.logreader,
+                              emptyfile.name)
+        finally:
+            emptyfile.close()
         gc.collect()
 
 def test_main():
