@@ -20,5 +20,4 @@ class Test_all(support.TestCase):
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            print("Fixing %s..." % filepath)
             self.refactor.refactor_file(filepath)
