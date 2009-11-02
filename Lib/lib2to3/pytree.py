@@ -63,6 +63,8 @@ class Base(object):
             return NotImplemented
         return self._eq(other)
 
+    __hash__ = None # For Py3 compatibility.
+
     def __ne__(self, other):
         """
         Compare two nodes for inequality.

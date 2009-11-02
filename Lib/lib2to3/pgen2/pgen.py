@@ -379,6 +379,8 @@ class DFAState(object):
                 return False
         return True
 
+    __hash__ = None # For Py3 compatibility.
+
 def generate_grammar(filename="Grammar.txt"):
     p = ParserGenerator(filename)
     return p.make_grammar()
