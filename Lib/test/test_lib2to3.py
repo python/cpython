@@ -7,7 +7,7 @@ from test.test_support import run_unittest
 def suite():
     tests = unittest.TestSuite()
     loader = unittest.TestLoader()
-    for m in (test_fixers,test_pytree,test_util, test_refactor):
+    for m in (test_fixers, test_pytree,test_util, test_refactor):
         tests.addTests(loader.loadTestsFromModule(m))
     return tests
 
