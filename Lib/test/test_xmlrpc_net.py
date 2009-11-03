@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import collections
 import errno
 import socket
 import sys
@@ -17,8 +18,7 @@ class CurrentTimeTest(unittest.TestCase):
         try:
             t0 = server.currentTime.getCurrentTime()
         except socket.error as e:
-            print("    test_current_time: skipping test, got error: %s" % e,
-                  file=sys.stderr)
+            self.skipTest("network error: %s" % e)
             return
 
         # Perform a minimal sanity check on the result, just to be sure
@@ -34,6 +34,21 @@ class CurrentTimeTest(unittest.TestCase):
         # The difference between the system time here and the system
         # time on the server should not be too big.
         self.assertTrue(delta.days <= 1)
+
+    def test_python_builders(self):
+        # Get the list of builders from the XMLRPC buildbot interface at
+        # python.org.
+        server = xmlrpclib.ServerProxy("http://www.python.org/dev/buildbot/all/xmlrpc/")
+        try:
+            builders = server.getAllBuilders()
+        except socket.error as e:
+            self.skipTest("network error: %s" % e)
+            return
+
+        # Perform a minimal sanity check on the result, just to be sure
+        # the request means what we think it means.
+        self.assertIsInstance(builders, collections.Sequence)
+        self.assertTrue([x for x in builders if "trunk" in x], builders)
 
 
 def test_main():
