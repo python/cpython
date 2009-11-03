@@ -269,6 +269,8 @@ if __name__ == '__main__':
     curses.wrapper(main)
     unit_tests()
 else:
+    if not sys.__stdout__.isatty():
+        raise unittest.SkipTest("sys.__stdout__ is not a tty")
     # testing setupterm() inside initscr/endwin
     # causes terminal breakage
     curses.setupterm(fd=sys.__stdout__.fileno())
