@@ -9,7 +9,9 @@ from wsgiref.simple_server import WSGIServer, WSGIRequestHandler, demo_app
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
 from SocketServer import BaseServer
-import re, sys
+import os
+import re
+import sys
 
 from test import test_support
 
@@ -385,6 +387,11 @@ class HeaderTests(TestCase):
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
+
+    # BaseHandler records the OS environment at import time, but envvars
+    # might have been changed later by other tests, which trips up
+    # HandlerTests.testEnviron().
+    os_environ = dict(os.environ.items())
 
     def __init__(self,**kw):
         setup_testing_defaults(kw)
