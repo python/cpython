@@ -121,6 +121,9 @@ The :mod:`urlparse` module defines the following functions:
    Use the :func:`urllib.urlencode` function to convert such dictionaries into
    query strings.
 
+   .. versionadded:: 2.6
+      Copied from the :mod:`cgi` module.
+
 
 .. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
 
@@ -140,6 +143,10 @@ The :mod:`urlparse` module defines the following functions:
 
    Use the :func:`urllib.urlencode` function to convert such lists of pairs into
    query strings.
+
+   .. versionadded:: 2.6
+      Copied from the :mod:`cgi` module.
+
 
 .. function:: urlunparse(parts)
 
