@@ -7,7 +7,7 @@ PyDoc_STRVAR(operator_doc,
 This module exports a set of functions implemented in C corresponding\n\
 to the intrinsic operators of Python.  For example, operator.add(x, y)\n\
 is equivalent to the expression x+y.  The function names are those\n\
-used for special class methods; variants without leading and trailing\n\
+used for special methods; variants without leading and trailing\n\
 '__' are also provided for convenience.");
 
 #define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a1) { \
@@ -277,26 +277,26 @@ spam2o(not_,__not__, "not_(a) -- Same as not a.")
 spam2(and_,__and__, "and_(a, b) -- Same as a & b.")
 spam2(xor,__xor__, "xor(a, b) -- Same as a ^ b.")
 spam2(or_,__or__, "or_(a, b) -- Same as a | b.")
-spam2(iadd,__iadd__, "iadd(a, b) -- Same as a += b.")
-spam2(isub,__isub__, "isub(a, b) -- Same as a -= b.")
-spam2(imul,__imul__, "imul(a, b) -- Same as a *= b.")
-spam2(idiv,__idiv__, "idiv(a, b) -- Same as a /= b when __future__.division is not in effect.")
-spam2(ifloordiv,__ifloordiv__, "ifloordiv(a, b) -- Same as a //= b.")
-spam2(itruediv,__itruediv__, "itruediv(a, b) -- Same as a /= b when __future__.division is in effect.")
-spam2(imod,__imod__, "imod(a, b) -- Same as a %= b.")
-spam2(ilshift,__ilshift__, "ilshift(a, b) -- Same as a <<= b.")
-spam2(irshift,__irshift__, "irshift(a, b) -- Same as a >>= b.")
-spam2(iand,__iand__, "iand(a, b) -- Same as a &= b.")
-spam2(ixor,__ixor__, "ixor(a, b) -- Same as a ^= b.")
-spam2(ior,__ior__, "ior(a, b) -- Same as a |= b.")
+spam2(iadd,__iadd__, "a = iadd(a, b) -- Same as a += b.")
+spam2(isub,__isub__, "a = isub(a, b) -- Same as a -= b.")
+spam2(imul,__imul__, "a = imul(a, b) -- Same as a *= b.")
+spam2(idiv,__idiv__, "a = idiv(a, b) -- Same as a /= b when __future__.division is not in effect.")
+spam2(ifloordiv,__ifloordiv__, "a = ifloordiv(a, b) -- Same as a //= b.")
+spam2(itruediv,__itruediv__, "a = itruediv(a, b) -- Same as a /= b when __future__.division is in effect.")
+spam2(imod,__imod__, "a = imod(a, b) -- Same as a %= b.")
+spam2(ilshift,__ilshift__, "a = ilshift(a, b) -- Same as a <<= b.")
+spam2(irshift,__irshift__, "a = irshift(a, b) -- Same as a >>= b.")
+spam2(iand,__iand__, "a = iand(a, b) -- Same as a &= b.")
+spam2(ixor,__ixor__, "a = ixor(a, b) -- Same as a ^= b.")
+spam2(ior,__ior__, "a = ior(a, b) -- Same as a |= b.")
 spam2(concat,__concat__,
  "concat(a, b) -- Same as a + b, for a and b sequences.")
 spam2(repeat,__repeat__,
  "repeat(a, b) -- Return a * b, where a is a sequence, and b is an integer.")
 spam2(iconcat,__iconcat__,
- "iconcat(a, b) -- Same as a += b, for a and b sequences.")
+ "a = iconcat(a, b) -- Same as a += b, for a and b sequences.")
 spam2(irepeat,__irepeat__,
- "irepeat(a, b) -- Same as a *= b, where a is a sequence, and b is an integer.")
+ "a = irepeat(a, b) -- Same as a *= b, where a is a sequence, and b is an integer.")
 spam2(getitem,__getitem__,
  "getitem(a, b) -- Same as a[b].")
 spam2(setitem,__setitem__,
@@ -304,7 +304,7 @@ spam2(setitem,__setitem__,
 spam2(delitem,__delitem__,
  "delitem(a, b) -- Same as del a[b].")
 spam2(pow,__pow__, "pow(a, b) -- Same as a ** b.")
-spam2(ipow,__ipow__, "ipow(a, b) -- Same as a **= b.")
+spam2(ipow,__ipow__, "a = ipow(a, b) -- Same as a **= b.")
 spam2(getslice,__getslice__,
  "getslice(a, b, c) -- Same as a[b:c].")
 spam2(setslice,__setslice__,
