@@ -426,6 +426,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7211: Allow 64-bit values for the `ident` and `data` fields of kevent
+  objects on 64-bit systems.  Patch by Michael Broghton.
+
 - Issue #6896: mailbox.Maildir now invalidates its internal cache each time
   a modification is done through it.  This fixes inconsistencies and test
   failures on systems with slightly bogus mtime behaviour.
