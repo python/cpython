@@ -12,6 +12,7 @@ from .support import driver, test_dir
 
 # Python imports
 import os
+import io
 
 # Local imports
 from lib2to3.pgen2 import tokenize
@@ -149,15 +150,13 @@ class TestParserIdempotency(support.TestCase):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
                 encoding = tokenize.detect_encoding(fp.readline)[0]
-                fp.seek(0)
+            self.assertTrue(encoding is not None,
+                            "can't detect encoding for %s" % filepath)
+            with io.open(filepath, "r", encoding=encoding) as fp:
                 source = fp.read()
-                if encoding:
-                    source = source.decode(encoding)
             tree = driver.parse_string(source)
             new = unicode(tree)
-            if encoding:
-                new = new.encode(encoding)
-            if diff(filepath, new):
+            if diff(filepath, new, encoding):
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -199,8 +198,8 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-def diff(fn, result):
-    f = open("@", "wb")
+def diff(fn, result, encoding):
+    f = io.open("@", "w", encoding=encoding)
     try:
         f.write(result)
     finally:
