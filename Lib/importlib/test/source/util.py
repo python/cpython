@@ -55,6 +55,8 @@ def create_modules(*names):
     source = 'attr = {0!r}'
     created_paths = []
     mapping = {}
+    state_manager = None
+    uncache_manager = None
     try:
         temp_dir = tempfile.gettempdir()
         mapping['.root'] = temp_dir
@@ -85,8 +87,10 @@ def create_modules(*names):
         state_manager.__enter__()
         yield mapping
     finally:
-        state_manager.__exit__(None, None, None)
-        uncache_manager.__exit__(None, None, None)
+        if state_manager is not None:
+            state_manager.__exit__(None, None, None)
+        if uncache_manager is not None:
+            uncache_manager.__exit__(None, None, None)
         # Reverse the order for path removal to unroll directory creation.
         for path in reversed(created_paths):
             if file_path.endswith('.py'):
