@@ -354,6 +354,10 @@ Documentation
 Tests
 -----
 
+- Issue #7248: In importlib.test.source.util a try/finally block did not make
+  sure that some referenced objects actually were created in the block before
+  calling methods on the object.
+
 - Issue #7222: Make thread "reaping" more reliable so that reference
   leak-chasing test runs give sensible results. The previous method of
   reaping threads could return successfully while some Thread objects were
