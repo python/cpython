@@ -798,6 +798,10 @@ def active_count():
 
 activeCount = active_count
 
+def _enumerate():
+    # Same as enumerate(), but without the lock. Internal use only.
+    return list(_active.values()) + list(_limbo.values())
+
 def enumerate():
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
