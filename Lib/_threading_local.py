@@ -218,10 +218,12 @@ class local(_localbase):
         key = object.__getattribute__(self, '_local__key')
 
         try:
-            threads = list(threading.enumerate())
+            # We use the non-locking API since we might already hold the lock
+            # (__del__ can be called at any point by the cyclic GC).
+            threads = threading._enumerate()
         except:
-            # If enumerate fails, as it seems to do during
-            # shutdown, we'll skip cleanup under the assumption
+            # If enumerating the current threads fails, as it seems to do
+            # during shutdown, we'll skip cleanup under the assumption
             # that there is nothing to clean up.
             return
 

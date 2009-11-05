@@ -426,6 +426,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7264: Fix a possible deadlock when deallocating thread-local objects
+  which are part of a reference cycle.
+
 - Issue #7211: Allow 64-bit values for the `ident` and `data` fields of kevent
   objects on 64-bit systems.  Patch by Michael Broghton.
 
