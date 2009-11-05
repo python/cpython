@@ -42,8 +42,8 @@ def create_modules(*names):
     that contains the name passed into the context manager that caused the
     creation of the module.
 
-    All files are created in a temporary directory specified by
-    tempfile.gettempdir(). This directory is inserted at the beginning of
+    All files are created in a temporary directory returned by
+    tempfile.mkdtemp(). This directory is inserted at the beginning of
     sys.path. When the context manager exits all created files (source and
     bytecode) are explicitly deleted.
 
@@ -58,7 +58,7 @@ def create_modules(*names):
     state_manager = None
     uncache_manager = None
     try:
-        temp_dir = tempfile.gettempdir()
+        temp_dir = tempfile.mkdtemp()
         mapping['.root'] = temp_dir
         import_names = set()
         for name in names:
@@ -91,11 +91,4 @@ def create_modules(*names):
             state_manager.__exit__(None, None, None)
         if uncache_manager is not None:
             uncache_manager.__exit__(None, None, None)
-        # Reverse the order for path removal to unroll directory creation.
-        for path in reversed(created_paths):
-            if file_path.endswith('.py'):
-                support.unlink(path)
-                support.unlink(path + 'c')
-                support.unlink(path + 'o')
-            else:
-                os.rmdir(path)
+        support.rmtree(temp_dir)
