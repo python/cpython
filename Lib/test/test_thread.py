@@ -6,6 +6,7 @@ import thread
 import time
 import weakref
 
+from test import lock_tests
 
 NUMTASKS = 10
 NUMTRIPS = 3
@@ -191,8 +192,12 @@ class BarrierTest(BasicThreadTest):
             self.done_mutex.release()
 
 
+class LockTests(lock_tests.LockTests):
+    locktype = thread.allocate_lock
+
+
 def test_main():
-    test_support.run_unittest(ThreadRunningTests, BarrierTest)
+    test_support.run_unittest(ThreadRunningTests, BarrierTest, LockTests)
 
 if __name__ == "__main__":
     test_main()

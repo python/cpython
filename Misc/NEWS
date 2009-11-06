@@ -1551,6 +1551,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #7270: Add some dedicated unit tests for multi-thread synchronization
+  primitives such as Lock, RLock, Condition, Event and Semaphore.
+
 - Issue #7222: Make thread "reaping" more reliable so that reference
   leak-chasing test runs give sensible results. The previous method of
   reaping threads could return successfully while some Thread objects were
