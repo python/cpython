@@ -357,6 +357,9 @@ Documentation
 Tests
 -----
 
+- Issue #7270: Add some dedicated unit tests for multi-thread synchronization
+  primitives such as Lock, RLock, Condition, Event and Semaphore.
+
 - Issue #7248 (part 2): Use a unique temporary directory for importlib source
   tests instead of tempfile.tempdir. This prevents the tests from sharing state
   between concurrent executions on the same system.
