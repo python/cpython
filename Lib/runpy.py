@@ -24,7 +24,7 @@ __all__ = [
 def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_fname=None,
               mod_loader=None, pkg_name=None):
-    """Helper for _run_module_code"""
+    """Helper to run code in nominated namespace"""
     if init_globals is not None:
         run_globals.update(init_globals)
     run_globals.update(__name__ = mod_name,
@@ -37,7 +37,7 @@ def _run_code(code, run_globals, init_globals=None,
 def _run_module_code(code, init_globals=None,
                     mod_name=None, mod_fname=None,
                     mod_loader=None, pkg_name=None):
-    """Helper for run_module"""
+    """Helper to run code in new namespace with sys modified"""
     # Set up the top level namespace dictionary
     temp_module = imp.new_module(mod_name)
     mod_globals = temp_module.__dict__
@@ -81,7 +81,7 @@ def _get_module_details(mod_name):
         raise ImportError("No module named %s" % mod_name)
     if loader.is_package(mod_name):
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
-            raise ImportError(("Cannot use package as __main__ module"))
+            raise ImportError("Cannot use package as __main__ module")
         try:
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name)
@@ -99,19 +99,25 @@ def _get_module_details(mod_name):
 # (Current thoughts: don't repeat the mistake that lead to its
 # creation when run_module() no longer met the needs of
 # mainmodule.c, but couldn't be changed because it was public)
-def _run_module_as_main(mod_name, set_argv0=True):
+def _run_module_as_main(mod_name, alter_argv=True):
     """Runs the designated module in the __main__ namespace
 
-       These __*__ magic variables will be overwritten:
+       Note that the executed module will have full access to the
+       __main__ namespace. If this is not desirable, the run_module()
+       function sbould be used to run the module code in a fresh namespace.
+
+       At the very least, these variables in __main__ will be overwritten:
+           __name__
            __file__
            __loader__
+           __package__
     """
     try:
         mod_name, loader, code, fname = _get_module_details(mod_name)
     except ImportError as exc:
         # Try to provide a good error message
         # for directories, zip files and the -m switch
-        if set_argv0:
+        if alter_argv:
             # For -m switch, just display the exception
             info = str(exc)
         else:
@@ -122,7 +128,7 @@ def _run_module_as_main(mod_name, set_argv0=True):
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
-    if set_argv0:
+    if alter_argv:
         sys.argv[0] = fname
     return _run_code(code, main_globals, None,
                      "__main__", fname, loader, pkg_name)
