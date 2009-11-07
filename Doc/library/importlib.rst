@@ -342,7 +342,7 @@ find and load modules.
     terms of :data:`sys.path`. No implicit path hooks are assumed for
     simplification of the class and its semantics.
 
-    Only class method are defined by this class to alleviate the need for
+    Only class methods are defined by this class to alleviate the need for
     instantiation.
 
     .. classmethod:: find_module(fullname, path=None)
