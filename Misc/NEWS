@@ -123,6 +123,9 @@ C-API
 Library
 -------
 
+- Issue #7187: Importlib would not silence the IOError raised when trying to
+  write new bytecode when it was made read-only.
+
 - Issue #7264: Fix a possible deadlock when deallocating thread-local objects
   which are part of a reference cycle.
 

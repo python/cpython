@@ -526,9 +526,9 @@ class _PyPycFileLoader(PyPycLoader, _PyFileLoader):
         bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
             bytecode_path = self._base_path + _suffix_list(imp.PY_COMPILED)[0]
-        file = _io.FileIO(bytecode_path, 'w')  # Assuming bytes.
         try:
-            with _closing(file) as bytecode_file:
+            # Assuming bytes.
+            with _closing(_io.FileIO(bytecode_path, 'w')) as bytecode_file:
                 bytecode_file.write(data)
                 return True
         except IOError as exc:
