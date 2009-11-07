@@ -6,6 +6,7 @@ from . import util as source_util
 import imp
 import os
 import py_compile
+import stat
 import sys
 import unittest
 
@@ -121,6 +122,10 @@ class BadBytecodeTest(unittest.TestCase):
     But if the marshal data is bad, even if the magic number and timestamp
     work, a ValueError is raised and the source is not used [bad marshal].
 
+    The case of not being able to write out the bytecode must also be handled
+    as it's possible it was made read-only. In that instance the attempt to
+    write the bytecode should fail silently [bytecode read-only].
+
     """
 
     def import_(self, file, module_name):
@@ -159,6 +164,7 @@ class BadBytecodeTest(unittest.TestCase):
                 self.assertEqual(bytecode_file.read(4), source_timestamp)
 
     # [bad marshal]
+    @source_util.writes_bytecode_files
     def test_bad_marshal(self):
         with source_util.create_modules('_temp') as mapping:
             bytecode_path = source_util.bytecode_path(mapping['_temp'])
@@ -171,6 +177,26 @@ class BadBytecodeTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.import_(mapping['_temp'], '_temp')
             self.assertTrue('_temp' not in sys.modules)
+
+    # [bytecode read-only]
+    @source_util.writes_bytecode_files
+    def test_read_only_bytecode(self):
+        with source_util.create_modules('_temp') as mapping:
+            # Create bytecode that will need to be re-created.
+            py_compile.compile(mapping['_temp'])
+            bytecode_path = source_util.bytecode_path(mapping['_temp'])
+            with open(bytecode_path, 'r+b') as bytecode_file:
+                bytecode_file.seek(0)
+                bytecode_file.write(b'\x00\x00\x00\x00')
+            # Make the bytecode read-only.
+            os.chmod(bytecode_path,
+                        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            try:
+                # Should not raise IOError!
+                self.import_(mapping['_temp'], '_temp')
+            finally:
+                # Make writable for eventual clean-up.
+                os.chmod(bytecode_path, stat.S_IWUSR)
 
 
 def test_main():
