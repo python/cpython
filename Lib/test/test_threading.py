@@ -113,6 +113,8 @@ class ThreadTests(BaseTestCase):
         _thread.start_new_thread(f, ())
         done.wait()
         self.assertFalse(ident[0] is None)
+        # Kill the "immortal" _DummyThread
+        del threading._active[ident[0]]
 
     # run with a small(ish) thread stack size (256kB)
     def test_various_ops_small_stack(self):
