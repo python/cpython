@@ -15,31 +15,29 @@
 " Only basic settings needed to enforce the style guidelines are set.
 " Some suggested options are listed but commented out at the end of this file.
 
-
-" Number of spaces to use for an indent.
-" This will affect Ctrl-T and 'autoindent'.
-" Python: 4 spaces
-" C: 8 spaces (pre-existing files) or 4 spaces (new files)
-au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
-au BufRead *.c,*.h set shiftwidth=8
-au BufNewFile *.c,*.h set shiftwidth=4
-
 " Number of spaces that a pre-existing tab is equal to.
 " For the amount of space used for a new tab use shiftwidth.
-" Python: 8
-" C: 8
 au BufRead,BufNewFile *py,*pyw,*.c,*.h set tabstop=8
 
-" Replace tabs with the equivalent number of spaces.
-" Also have an autocmd for Makefiles since they require hard tabs.
-" Python: yes
-" C: no
-" Makefile: no
+" What to use for an indent.
+" This will affect Ctrl-T and 'autoindent'.
+" Python: 4 spaces
+" C: tabs (pre-existing files) or 4 spaces (new files)
+au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
 au BufRead,BufNewFile *.py,*.pyw set expandtab
-au BufRead,BufNewFile *.c,*.h set noexpandtab
+fu Select_c_style()
+    if search('^\t', 'n', 150)
+        set shiftwidth=8
+        set noexpandtab
+    el 
+        set shiftwidth=4
+        set expandtab
+    en
+endf
+au BufRead,BufNewFile *.c,*.h call Select_c_style()
 au BufRead,BufNewFile Makefile* set noexpandtab
 
-" Use the below highlight group when displaying bad whitespace is desired
+" Use the below highlight group when displaying bad whitespace is desired.
 highlight BadWhitespace ctermbg=red guibg=red
 
 " Display tabs at the beginning of a line in Python mode as bad.

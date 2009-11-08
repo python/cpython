@@ -1607,6 +1607,11 @@ Tests
 
 - Issue #2389: Array objects are now pickled in a portable manner.
 
+Misc
+----
+
+- Issue #5611: Auto-detect whether a C file uses tabs or spaces in Vim.
+
 
 What's New in Python 2.6 final
 ==============================
