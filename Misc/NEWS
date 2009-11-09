@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7282: Fix a memory leak when an RLock was used in a thread other
+  than those started through `threading.Thread` (for example, using
+  `_thread.start_new_thread()`).
+
 - Issue #7187: Importlib would not silence the IOError raised when trying to
   write new bytecode when it was made read-only.
 
@@ -139,6 +143,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #7270: Add some dedicated unit tests for multi-thread synchronization
+  primitives such as Lock, RLock, Condition, Event and Semaphore.
 
 - Issue #7248 (part 2): Use a unique temporary directory for importlib source
   tests instead of tempfile.tempdir. This prevents the tests from sharing state
