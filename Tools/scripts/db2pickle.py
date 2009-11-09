@@ -33,12 +33,12 @@ try:
 except ImportError:
     gdbm = None
 try:
-    import dbm as anydbm
+    import dbm.ndbm as anydbm
 except ImportError:
     anydbm = None
 import sys
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

@@ -1,6 +1,6 @@
 """Basic regular expression demostration facility (Perl style syntax)."""
 
-from Tkinter import *
+from tkinter import *
 import re
 
 class ReDemo:
