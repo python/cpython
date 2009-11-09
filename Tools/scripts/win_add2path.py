@@ -45,13 +45,13 @@ def modify():
 def main():
     paths, envpath = modify()
     if len(paths) > 1:
-        print "Path(s) added:"
-        print '\n'.join(paths[1:])
+        print("Path(s) added:")
+        print('\n'.join(paths[1:]))
     else:
-        print "No path was added"
-    print "\nPATH is now:\n%s\n" % envpath
-    print "Expanded:"
-    print winreg.ExpandEnvironmentStrings(envpath)
+        print("No path was added")
+    print("\nPATH is now:\n%s\n" % envpath)
+    print("Expanded:")
+    print(winreg.ExpandEnvironmentStrings(envpath))
 
 if __name__ == '__main__':
     main()
