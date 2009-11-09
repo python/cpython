@@ -1,5 +1,6 @@
 # Python test set -- built-in functions
 
+import platform
 import test.support, unittest
 from test.support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
@@ -1122,6 +1123,27 @@ class BuiltinTest(unittest.TestCase):
         t.__round__ = lambda *args: args
         self.assertRaises(TypeError, round, t)
         self.assertRaises(TypeError, round, t, 0)
+
+    # Some versions of glibc for alpha have a bug that affects
+    # float -> integer rounding (floor, ceil, rint, round) for
+    # values in the range [2**52, 2**53).  See:
+    #
+    #   http://sources.redhat.com/bugzilla/show_bug.cgi?id=5350
+    #
+    # We skip this test on Linux/alpha if it would fail.
+    linux_alpha = (platform.system().startswith('Linux') and
+                   platform.machine().startswith('alpha'))
+    system_round_bug = round(5e15+1) != 5e15+1
+    @unittest.skipIf(linux_alpha and system_round_bug,
+                     "test will fail;  failure is probably due to a "
+                     "buggy system round function")
+    def test_round_large(self):
+        # Issue #1869: integral floats should remain unchanged
+        self.assertEqual(round(5e15-1), 5e15-1)
+        self.assertEqual(round(5e15), 5e15)
+        self.assertEqual(round(5e15+1), 5e15+1)
+        self.assertEqual(round(5e15+2), 5e15+2)
+        self.assertEqual(round(5e15+3), 5e15+3)
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
