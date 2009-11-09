@@ -92,14 +92,16 @@ class _RLock(_Verbose):
 
     def __repr__(self):
         owner = self._owner
-        return "<%s(%s, %d)>" % (
-                self.__class__.__name__,
-                owner and owner.name,
-                self._count)
+        try:
+            owner = _active[owner].name
+        except KeyError:
+            pass
+        return "<%s owner=%r count=%d>" % (
+                self.__class__.__name__, owner, self._count)
 
     def acquire(self, blocking=True):
-        me = current_thread()
-        if self._owner is me:
+        me = _get_ident()
+        if self._owner == me:
             self._count = self._count + 1
             if __debug__:
                 self._note("%s.acquire(%s): recursive success", self, blocking)
@@ -118,7 +120,7 @@ class _RLock(_Verbose):
     __enter__ = acquire
 
     def release(self):
-        if self._owner is not current_thread():
+        if self._owner != _get_ident():
             raise RuntimeError("cannot release un-acquired lock")
         self._count = count = self._count - 1
         if not count:
@@ -152,7 +154,7 @@ class _RLock(_Verbose):
         return (count, owner)
 
     def _is_owned(self):
-        return self._owner is current_thread()
+        return self._owner == _get_ident()
 
 
 def Condition(*args, **kwargs):
