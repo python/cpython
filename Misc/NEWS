@@ -123,6 +123,10 @@ C-API
 Library
 -------
 
+- Issue #7282: Fix a memory leak when an RLock was used in a thread other
+  than those started through `threading.Thread` (for example, using
+  `_thread.start_new_thread()`).
+
 - Issue #7187: Importlib would not silence the IOError raised when trying to
   write new bytecode when it was made read-only.
 

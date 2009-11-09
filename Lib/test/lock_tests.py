@@ -130,6 +130,19 @@ class BaseLockTests(BaseTestCase):
         # Check the lock is unacquired
         Bunch(f, 1).wait_for_finished()
 
+    def test_thread_leak(self):
+        # The lock shouldn't leak a Thread instance when used from a foreign
+        # (non-threading) thread.
+        lock = self.locktype()
+        def f():
+            lock.acquire()
+            lock.release()
+        n = len(threading.enumerate())
+        # We run many threads in the hope that existing threads ids won't
+        # be recycled.
+        Bunch(f, 15).wait_for_finished()
+        self.assertEqual(n, len(threading.enumerate()))
+
 
 class LockTests(BaseLockTests):
     """
