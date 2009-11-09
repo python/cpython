@@ -367,7 +367,9 @@ class ItimerTest(unittest.TestCase):
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_vtalrm handler stopped this itimer
         else:
-            self.fail('timeout waiting for sig_vtalrm signal')
+            self.fail('timeout waiting for sig_vtalrm signal; '
+                      'signal.getitimer(self.itimer) gives: %s' %
+                       (signal.getitimer(self.itimer),))
 
         # virtual itimer should be (0.0, 0.0) now
         self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
