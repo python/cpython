@@ -564,7 +564,9 @@ def list2cmdline(seq):
     """
 
     # See
-    # http://msdn.microsoft.com/library/en-us/vccelng/htm/progs_12.asp
+    # http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
+    # or search http://msdn.microsoft.com for
+    # "Parsing C++ Command-Line Arguments"
     result = []
     needquote = False
     for arg in seq:
