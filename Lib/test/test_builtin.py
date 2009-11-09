@@ -1,5 +1,6 @@
 # Python test set -- built-in functions
 
+import platform
 import test.test_support, unittest
 from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
                               run_unittest, run_with_locale
@@ -1258,6 +1259,14 @@ class BuiltinTest(unittest.TestCase):
         t.__float__ = lambda *args: args
         self.assertRaises(TypeError, round, t)
         self.assertRaises(TypeError, round, t, 0)
+
+    def test_round_large(self):
+        # Issue #1869: integral floats should remain unchanged
+        self.assertEqual(round(5e15-1), 5e15-1)
+        self.assertEqual(round(5e15), 5e15)
+        self.assertEqual(round(5e15+1), 5e15+1)
+        self.assertEqual(round(5e15+2), 5e15+2)
+        self.assertEqual(round(5e15+3), 5e15+3)
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)

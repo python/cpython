@@ -2120,7 +2120,7 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	double number;
+	double number, abs_number, abs_result;
 	double f;
 	int ndigits = 0;
 	int i;
@@ -2137,10 +2137,14 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 		number /= f;
 	else
 		number *= f;
-	if (number >= 0.0)
-		number = floor(number + 0.5);
-	else
-		number = ceil(number - 0.5);
+
+	/* round `number` to nearest integer, rounding halves away from zero */
+	abs_number = fabs(number);
+	abs_result = floor(abs_number);
+	if (abs_number - abs_result >= 0.5)
+		abs_result += 1.0;
+	number = copysign(abs_result, number);
+
 	if (ndigits < 0)
 		number *= f;
 	else
