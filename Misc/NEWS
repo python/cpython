@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7282: Fix a memory leak when an RLock was used in a thread other
+  than those started through `threading.Thread` (for example, using
+  `thread.start_new_thread()`.
+
 - Issue #7264: Fix a possible deadlock when deallocating thread-local objects
   which are part of a reference cycle.
 
@@ -70,6 +74,9 @@ Build
 
 Tests
 -----
+
+- Issue #7270: Add some dedicated unit tests for multi-thread synchronization
+  primitives such as Lock, RLock, Condition, Event and Semaphore.
 
 - Issue #7055: test___all__ now greedily detects all modules which have an
   __all__ attribute, rather than using a hardcoded and incomplete list.
