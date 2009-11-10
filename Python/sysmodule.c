@@ -448,10 +448,18 @@ Return the profiling function set with sys.setprofile.\n\
 See the profiler chapter in the library manual."
 );
 
+/* TODO: deprecate */
+static int _check_interval = 100;
+
 static PyObject *
 sys_setcheckinterval(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &_Py_CheckInterval))
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "sys.getcheckinterval() and sys.setcheckinterval() "
+			 "are deprecated.  Use sys.setswitchinterval() "
+			 "instead.", 1) < 0)
+		return NULL;
+	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &_check_interval))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -467,12 +475,58 @@ n instructions.  This also affects how often thread switches occur."
 static PyObject *
 sys_getcheckinterval(PyObject *self, PyObject *args)
 {
-	return PyLong_FromLong(_Py_CheckInterval);
+	if (PyErr_WarnEx(PyExc_DeprecationWarning,
+			 "sys.getcheckinterval() and sys.setcheckinterval() "
+			 "are deprecated.  Use sys.getswitchinterval() "
+			 "instead.", 1) < 0)
+		return NULL;
+	return PyLong_FromLong(_check_interval);
 }
 
 PyDoc_STRVAR(getcheckinterval_doc,
 "getcheckinterval() -> current check interval; see setcheckinterval()."
 );
+
+#ifdef WITH_THREAD
+static PyObject *
+sys_setswitchinterval(PyObject *self, PyObject *args)
+{
+	double d;
+	if (!PyArg_ParseTuple(args, "d:setswitchinterval", &d))
+		return NULL;
+	if (d <= 0.0) {
+		PyErr_SetString(PyExc_ValueError,
+				"switch interval must be strictly positive");
+		return NULL;
+	}
+	_PyEval_SetSwitchInterval((unsigned long) (1e6 * d));
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(setswitchinterval_doc,
+"setswitchinterval(n)\n\
+\n\
+Set the ideal thread switching delay inside the Python interpreter\n\
+The actual frequency of switching threads can be lower if the\n\
+interpreter executes long sequences of uninterruptible code\n\
+(this is implementation-specific and workload-dependent).\n\
+\n\
+The parameter must represent the desired switching delay in seconds\n\
+A typical value is 0.005 (5 milliseconds)."
+);
+
+static PyObject *
+sys_getswitchinterval(PyObject *self, PyObject *args)
+{
+	return PyFloat_FromDouble(1e-6 * _PyEval_GetSwitchInterval());
+}
+
+PyDoc_STRVAR(getswitchinterval_doc,
+"getswitchinterval() -> current thread switch interval; see setswitchinterval()."
+);
+
+#endif /* WITH_THREAD */
 
 #ifdef WITH_TSC
 static PyObject *
@@ -895,6 +949,12 @@ static PyMethodDef sys_methods[] = {
 	 setcheckinterval_doc},
 	{"getcheckinterval",	sys_getcheckinterval, METH_NOARGS,
 	 getcheckinterval_doc},
+#ifdef WITH_THREAD
+	{"setswitchinterval",	sys_setswitchinterval, METH_VARARGS,
+	 setswitchinterval_doc},
+	{"getswitchinterval",	sys_getswitchinterval, METH_NOARGS,
+	 getswitchinterval_doc},
+#endif
 #ifdef HAVE_DLOPEN
 	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
 	 setdlopenflags_doc},

@@ -18,7 +18,6 @@ PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
 			Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 
 PyAPI_DATA(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
-PyAPI_DATA(int) _PySys_CheckInterval;
 
 PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);

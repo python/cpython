@@ -154,6 +154,21 @@ class SysModuleTest(unittest.TestCase):
             sys.setcheckinterval(n)
             self.assertEquals(sys.getcheckinterval(), n)
 
+    def test_switchinterval(self):
+        self.assertRaises(TypeError, sys.setswitchinterval)
+        self.assertRaises(TypeError, sys.setswitchinterval, "a")
+        self.assertRaises(ValueError, sys.setswitchinterval, -1.0)
+        self.assertRaises(ValueError, sys.setswitchinterval, 0.0)
+        orig = sys.getswitchinterval()
+        # sanity check
+        self.assertTrue(orig < 0.5, orig)
+        try:
+            for n in 0.00001, 0.05, 3.0, orig:
+                sys.setswitchinterval(n)
+                self.assertAlmostEquals(sys.getswitchinterval(), n)
+        finally:
+            sys.setswitchinterval(orig)
+
     def test_recursionlimit(self):
         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
         oldlimit = sys.getrecursionlimit()
