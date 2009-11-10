@@ -123,6 +123,11 @@ C-API
 Library
 -------
 
+- Issue #3001: Add a C implementation of recursive locks which is used by
+  default when instantiating a `threading.RLock` object. This makes 
+  recursive locks as fast as regular non-recursive locks (previously,
+  they were slower by 10x to 15x).
+
 - Issue #7282: Fix a memory leak when an RLock was used in a thread other
   than those started through `threading.Thread` (for example, using
   `_thread.start_new_thread()`).
