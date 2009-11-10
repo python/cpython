@@ -96,10 +96,7 @@ maybe_small_long(PyLongObject *v)
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
 #define SIGCHECK(PyTryBlock) \
-	if (--_Py_Ticker < 0) { \
-		_Py_Ticker = _Py_CheckInterval; \
-		if (PyErr_CheckSignals()) PyTryBlock \
-	}
+	if (PyErr_CheckSignals()) PyTryBlock \
 
 /* forward declaration */
 static int bits_in_digit(digit d);

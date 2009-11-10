@@ -216,6 +216,28 @@ PyEval_GetCallStats(PyObject *self)
 #endif
 
 
+#define COMPUTE_EVAL_BREAKER() \
+	(eval_breaker = gil_drop_request | pendingcalls_to_do | pending_async_exc)
+
+#define SET_GIL_DROP_REQUEST() \
+	do { gil_drop_request = 1; eval_breaker = 1; } while (0)
+
+#define RESET_GIL_DROP_REQUEST() \
+	do { gil_drop_request = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+
+#define SIGNAL_PENDING_CALLS() \
+	do { pendingcalls_to_do = 1; eval_breaker = 1; } while (0)
+
+#define UNSIGNAL_PENDING_CALLS() \
+	do { pendingcalls_to_do = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+
+#define SIGNAL_ASYNC_EXC() \
+	do { pending_async_exc = 1; eval_breaker = 1; } while (0)
+
+#define UNSIGNAL_ASYNC_EXC() \
+	do { pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+
+
 #ifdef WITH_THREAD
 
 #ifdef HAVE_ERRNO_H
@@ -223,36 +245,55 @@ PyEval_GetCallStats(PyObject *self)
 #endif
 #include "pythread.h"
 
-static PyThread_type_lock interpreter_lock = 0; /* This is the GIL */
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
 static long main_thread = 0;
+/* This single variable consolidates all requests to break out of the fast path
+   in the eval loop. */
+static volatile int eval_breaker = 0;
+/* Request for droppping the GIL */
+static volatile int gil_drop_request = 0;
+/* Request for running pending calls */
+static volatile int pendingcalls_to_do = 0; 
+/* Request for looking at the `async_exc` field of the current thread state */
+static volatile int pending_async_exc = 0;
+
+#include "ceval_gil.h"
 
 int
 PyEval_ThreadsInitialized(void)
 {
-	return interpreter_lock != 0;
+	return gil_created();
 }
 
 void
 PyEval_InitThreads(void)
 {
-	if (interpreter_lock)
+	if (gil_created())
 		return;
-	interpreter_lock = PyThread_allocate_lock();
-	PyThread_acquire_lock(interpreter_lock, 1);
+	create_gil();
+	take_gil(PyThreadState_GET());
 	main_thread = PyThread_get_thread_ident();
+	if (!pending_lock)
+		pending_lock = PyThread_allocate_lock();
 }
 
 void
 PyEval_AcquireLock(void)
 {
-	PyThread_acquire_lock(interpreter_lock, 1);
+	PyThreadState *tstate = PyThreadState_GET();
+	if (tstate == NULL)
+		Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
+	take_gil(tstate);
 }
 
 void
 PyEval_ReleaseLock(void)
 {
-	PyThread_release_lock(interpreter_lock);
+	/* This function must succeed when the current thread state is NULL.
+	   We therefore avoid PyThreadState_GET() which dumps a fatal error
+	   in debug mode.
+	*/
+	drop_gil(_PyThreadState_Current);
 }
 
 void
@@ -261,8 +302,8 @@ PyEval_AcquireThread(PyThreadState *tstate)
 	if (tstate == NULL)
 		Py_FatalError("PyEval_AcquireThread: NULL new thread state");
 	/* Check someone has called PyEval_InitThreads() to create the lock */
-	assert(interpreter_lock);
-	PyThread_acquire_lock(interpreter_lock, 1);
+	assert(gil_created());
+	take_gil(tstate);
 	if (PyThreadState_Swap(tstate) != NULL)
 		Py_FatalError(
 			"PyEval_AcquireThread: non-NULL old thread state");
@@ -275,7 +316,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 		Py_FatalError("PyEval_ReleaseThread: NULL thread state");
 	if (PyThreadState_Swap(NULL) != tstate)
 		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
-	PyThread_release_lock(interpreter_lock);
+	drop_gil(tstate);
 }
 
 /* This function is called from PyOS_AfterFork to ensure that newly
@@ -287,17 +328,17 @@ void
 PyEval_ReInitThreads(void)
 {
 	PyObject *threading, *result;
-	PyThreadState *tstate;
+	PyThreadState *tstate = PyThreadState_GET();
 
-	if (!interpreter_lock)
+	if (!gil_created())
 		return;
 	/*XXX Can't use PyThread_free_lock here because it does too
 	  much error-checking.  Doing this cleanly would require
 	  adding a new function to each thread_*.h.  Instead, just
 	  create a new lock and waste a little bit of memory */
-	interpreter_lock = PyThread_allocate_lock();
+	recreate_gil();
 	pending_lock = PyThread_allocate_lock();
-	PyThread_acquire_lock(interpreter_lock, 1);
+	take_gil(tstate);
 	main_thread = PyThread_get_thread_ident();
 
 	/* Update the threading module with the new state.
@@ -317,7 +358,21 @@ PyEval_ReInitThreads(void)
 		Py_DECREF(result);
 	Py_DECREF(threading);
 }
-#endif
+
+#else
+static int eval_breaker = 0;
+static int gil_drop_request = 0;
+static int pending_async_exc = 0;
+#endif /* WITH_THREAD */
+
+/* This function is used to signal that async exceptions are waiting to be
+   raised, therefore it is also useful in non-threaded builds. */
+
+void
+_PyEval_SignalAsyncExc(void)
+{
+	SIGNAL_ASYNC_EXC();
+}
 
 /* Functions save_thread and restore_thread are always defined so
    dynamically loaded modules needn't be compiled separately for use
@@ -330,8 +385,8 @@ PyEval_SaveThread(void)
 	if (tstate == NULL)
 		Py_FatalError("PyEval_SaveThread: NULL tstate");
 #ifdef WITH_THREAD
-	if (interpreter_lock)
-		PyThread_release_lock(interpreter_lock);
+	if (gil_created())
+		drop_gil(tstate);
 #endif
 	return tstate;
 }
@@ -342,9 +397,9 @@ PyEval_RestoreThread(PyThreadState *tstate)
 	if (tstate == NULL)
 		Py_FatalError("PyEval_RestoreThread: NULL tstate");
 #ifdef WITH_THREAD
-	if (interpreter_lock) {
+	if (gil_created()) {
 		int err = errno;
-		PyThread_acquire_lock(interpreter_lock, 1);
+		take_gil(tstate);
 		errno = err;
 	}
 #endif
@@ -390,7 +445,6 @@ static struct {
 } pendingcalls[NPENDINGCALLS];
 static int pendingfirst = 0;
 static int pendinglast = 0;
-static volatile int pendingcalls_to_do = 1; /* trigger initialization of lock */
 static char pendingbusy = 0;
 
 int
@@ -429,8 +483,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 		pendinglast = j;
 	}
 	/* signal main loop */
-	_Py_Ticker = 0;
-	pendingcalls_to_do = 1;
+	SIGNAL_PENDING_CALLS();
 	if (lock != NULL)
 		PyThread_release_lock(lock);
 	return result;
@@ -472,7 +525,10 @@ Py_MakePendingCalls(void)
 			arg = pendingcalls[j].arg;
 			pendingfirst = (j + 1) % NPENDINGCALLS;
 		}
-		pendingcalls_to_do = pendingfirst != pendinglast;
+		if (pendingfirst != pendinglast)
+			SIGNAL_PENDING_CALLS();
+		else
+			UNSIGNAL_PENDING_CALLS();
 		PyThread_release_lock(pending_lock);
 		/* having released the lock, perform the callback */
 		if (func == NULL)
@@ -538,8 +594,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 	pendingcalls[i].arg = arg;
 	pendinglast = j;
 
-	_Py_Ticker = 0;
-	pendingcalls_to_do = 1; /* Signal main loop */
+	SIGNAL_PENDING_CALLS();
 	busy = 0;
 	/* XXX End critical section */
 	return 0;
@@ -552,7 +607,7 @@ Py_MakePendingCalls(void)
 	if (busy)
 		return 0;
 	busy = 1;
-	pendingcalls_to_do = 0;
+	UNSIGNAL_PENDING_CALLS();
 	for (;;) {
 		int i;
 		int (*func)(void *);
@@ -565,7 +620,7 @@ Py_MakePendingCalls(void)
 		pendingfirst = (i + 1) % NPENDINGCALLS;
 		if (func(arg) < 0) {
 			busy = 0;
-			pendingcalls_to_do = 1; /* We're not done yet */
+			SIGNAL_PENDING_CALLS(); /* We're not done yet */
 			return -1;
 		}
 	}
@@ -658,10 +713,7 @@ static int unpack_iterable(PyObject *, int, int, PyObject **);
    fast_next_opcode*/
 static int _Py_TracingPossible = 0;
 
-/* for manipulating the thread switch and periodic "stuff" - used to be
-   per thread, now just a pair o' globals */
-int _Py_CheckInterval = 100;
-volatile int _Py_Ticker = 0; /* so that we hit a "tick" first thing */
+
 
 PyObject *
 PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
@@ -791,10 +843,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
 	{ \
-		/* Avoid multiple loads from _Py_Ticker despite `volatile` */ \
-		int _tick = _Py_Ticker - 1; \
-		_Py_Ticker = _tick; \
-		if (_tick >= 0) { \
+		if (!eval_breaker) { \
 			FAST_DISPATCH(); \
 		} \
 		continue; \
@@ -1168,13 +1217,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		   async I/O handler); see Py_AddPendingCall() and
 		   Py_MakePendingCalls() above. */
 
-		if (--_Py_Ticker < 0) {
+		if (eval_breaker) {
 			if (*next_instr == SETUP_FINALLY) {
 				/* Make the last opcode before
 				   a try: finally: block uninterruptable. */
 				goto fast_next_opcode;
 			}
-			_Py_Ticker = _Py_CheckInterval;
 			tstate->tick_counter++;
 #ifdef WITH_TSC
 			ticked = 1;
@@ -1184,39 +1232,31 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					why = WHY_EXCEPTION;
 					goto on_error;
 				}
-				if (pendingcalls_to_do)
-					/* MakePendingCalls() didn't succeed.
-					   Force early re-execution of this
-					   "periodic" code, possibly after
-					   a thread switch */
-					_Py_Ticker = 0;
 			}
+			if (gil_drop_request) {
 #ifdef WITH_THREAD
-			if (interpreter_lock) {
 				/* Give another thread a chance */
-
 				if (PyThreadState_Swap(NULL) != tstate)
 					Py_FatalError("ceval: tstate mix-up");
-				PyThread_release_lock(interpreter_lock);
-
+				drop_gil(tstate);
+	
 				/* Other threads may run now */
-
-				PyThread_acquire_lock(interpreter_lock, 1);
+	
+				take_gil(tstate);
 				if (PyThreadState_Swap(tstate) != NULL)
 					Py_FatalError("ceval: orphan tstate");
-
-				/* Check for thread interrupts */
-
-				if (tstate->async_exc != NULL) {
-					x = tstate->async_exc;
-					tstate->async_exc = NULL;
-					PyErr_SetNone(x);
-					Py_DECREF(x);
-					why = WHY_EXCEPTION;
-					goto on_error;
-				}
-			}
 #endif
+			}
+			/* Check for asynchronous exceptions. */
+			if (tstate->async_exc != NULL) {
+				x = tstate->async_exc;
+				tstate->async_exc = NULL;
+				UNSIGNAL_ASYNC_EXC();
+				PyErr_SetNone(x);
+				Py_DECREF(x);
+				why = WHY_EXCEPTION;
+				goto on_error;
+			}
 		}
 
 	fast_next_opcode:

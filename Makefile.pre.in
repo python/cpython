@@ -596,7 +596,7 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
 	$(OPCODETARGETGEN) $(OPCODETARGETS_H)
 
-Python/ceval.o: $(OPCODETARGETS_H)
+Python/ceval.o: $(OPCODETARGETS_H) Python/ceval_gil.h
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS) \
