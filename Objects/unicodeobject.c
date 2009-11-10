@@ -2513,7 +2513,9 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                 *p++ = (char)(0x80 | (ch & 0x3f));
                 continue;
             }
+#ifndef Py_UNICODE_WIDE
           encodeUCS4:
+#endif
             /* Encode UCS4 Unicode ordinals */
             *p++ = (char)(0xf0 | (ch >> 18));
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
