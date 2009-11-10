@@ -17,6 +17,7 @@ from unittest import TestCase, TestProgram
 import types
 from copy import deepcopy
 import io
+import pickle
 
 ### Support code
 ################################################################
@@ -3441,6 +3442,17 @@ class Test_TextTestRunner(TestCase):
         expected = ['startTestRun', 'stopTestRun']
         self.assertEqual(events, expected)
 
+    def test_pickle_unpickle(self):
+        # Issue #7197: a TextTestRunner should be (un)pickleable. This is
+        # required by test_multiprocessing under Windows (in verbose mode).
+        stream = io.StringIO("foo")
+        runner = unittest.TextTestRunner(stream)
+        for protocol in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(runner, protocol)
+            obj = pickle.loads(s)
+            # StringIO objects never compare equal, a cheap test instead.
+            self.assertEqual(obj.stream.getvalue(), stream.getvalue())
+
 
 class TestDiscovery(TestCase):
 
@@ -3729,7 +3741,7 @@ def test_main():
     support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
         Test_TestSkipping, Test_Assertions, TestLongMessage,
-        Test_TestProgram, TestCleanUp, TestDiscovery)
+        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner)
 
 if __name__ == "__main__":
     test_main()
