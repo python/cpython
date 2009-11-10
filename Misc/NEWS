@@ -426,6 +426,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7197: Allow unittest.TextTestRunner objects to be pickled and
+  unpickled. This fixes crashes under Windows when trying to run
+  test_multiprocessing in verbose mode.
+
 - Issue #7282: Fix a memory leak when an RLock was used in a thread other
   than those started through `threading.Thread` (for example, using
   `thread.start_new_thread()`.
