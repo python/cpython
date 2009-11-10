@@ -282,6 +282,9 @@ always available.
 
    Return the interpreter's "check interval"; see :func:`setcheckinterval`.
 
+   .. deprecated:: 3.2
+      Use :func:`getswitchinterval` instead.
+
 
 .. function:: getdefaultencoding()
 
@@ -343,6 +346,12 @@ always available.
    :func:`getsizeof` calls the object's ``__sizeof__`` method and adds an
    additional garbage collector overhead if the object is managed by the garbage
    collector.
+
+
+.. function:: getswitchinterval()
+
+   Return the interpreter's "thread switch interval"; see
+   :func:`setswitchinterval`.
 
 
 .. function:: _getframe([depth])
@@ -626,6 +635,11 @@ always available.
    performance for programs using threads.  Setting it to a value ``<=`` 0 checks
    every virtual instruction, maximizing responsiveness as well as overhead.
 
+   .. deprecated:: 3.2
+      This function doesn't have an effect anymore, as the internal logic
+      for thread switching and asynchronous tasks has been rewritten.
+      Use :func:`setswitchinterval` instead.
+
 
 .. function:: setdefaultencoding(name)
 
@@ -687,6 +701,17 @@ always available.
    limit higher when she has a program that requires deep recursion and a platform
    that supports a higher limit.  This should be done with care, because a too-high
    limit can lead to a crash.
+
+
+.. function:: setswitchinterval(interval)
+
+   Set the interpreter's thread switch interval (in seconds).  This floating-point
+   value determines the ideal duration of the "timeslices" allocated to
+   concurrently running Python threads.  Please note that the actual value
+   can be higher, especially if long-running internal functions or methods
+   are used.  Also, which thread becomes scheduled at the end of the interval
+   is the operating system's decision.  The interpreter doesn't have its
+   own scheduler.
 
 
 .. function:: settrace(tracefunc)

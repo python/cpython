@@ -85,6 +85,27 @@ New, Improved, and Deprecated Modules
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
+Multi-threading
+===============
+
+* The mechanism for serializing execution of concurrently running Python
+  threads (generally known as the GIL or Global Interpreter Lock) has been
+  rewritten.  Among the objectives were more predictable switching intervals
+  and reduced overhead due to lock contention and the number of ensuing
+  system calls.  The notion of a "check interval" to allow thread switches
+  has been abandoned and replaced by an absolute duration expressed in
+  seconds.  This parameter is tunable through :func:`sys.setswitchinterval()`.
+  It currently defaults to 5 milliseconds.
+
+  Additional details about the implementation can be read from a `python-dev
+  mailing-list message
+  <http://mail.python.org/pipermail/python-dev/2009-October/093321.html>`_
+  (however, "priority requests" as exposed in this message have not been
+  kept for inclusion).
+
+  (Contributed by Antoine Pitrou)
+
+
 Optimizations
 =============
 
