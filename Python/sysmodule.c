@@ -448,7 +448,6 @@ Return the profiling function set with sys.setprofile.\n\
 See the profiler chapter in the library manual."
 );
 
-/* TODO: deprecate */
 static int _check_interval = 100;
 
 static PyObject *
