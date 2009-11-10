@@ -506,8 +506,11 @@ class ThreadingExceptionTests(BaseTestCase):
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
 
-class RLockTests(lock_tests.RLockTests):
-    locktype = staticmethod(threading.RLock)
+class PyRLockTests(lock_tests.RLockTests):
+    locktype = staticmethod(threading._PyRLock)
+
+class CRLockTests(lock_tests.RLockTests):
+    locktype = staticmethod(threading._CRLock)
 
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
@@ -527,7 +530,7 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 
 
 def test_main():
-    test.support.run_unittest(LockTests, RLockTests, EventTests,
+    test.support.run_unittest(LockTests, PyRLockTests, CRLockTests, EventTests,
                               ConditionAsRLockTests, ConditionTests,
                               SemaphoreTests, BoundedSemaphoreTests,
                               ThreadTests,

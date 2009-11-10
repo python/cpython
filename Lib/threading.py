@@ -27,6 +27,10 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _get_ident = _thread.get_ident
 ThreadError = _thread.error
+try:
+    _CRLock = _thread.RLock
+except AttributeError:
+    _CRLock = None
 del _thread
 
 
@@ -79,8 +83,12 @@ def settrace(func):
 
 Lock = _allocate_lock
 
-def RLock(*args, **kwargs):
-    return _RLock(*args, **kwargs)
+def RLock(verbose=None, *args, **kwargs):
+    if verbose is None:
+        verbose = _VERBOSE
+    if (__debug__ and verbose) or _CRLock is None:
+        return _PyRLock(verbose, *args, **kwargs)
+    return _CRLock(*args, **kwargs)
 
 class _RLock(_Verbose):
 
@@ -155,6 +163,8 @@ class _RLock(_Verbose):
 
     def _is_owned(self):
         return self._owner == _get_ident()
+
+_PyRLock = _RLock
 
 
 def Condition(*args, **kwargs):
