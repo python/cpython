@@ -123,6 +123,10 @@ C-API
 Library
 -------
 
+- Issue #7197: Allow unittest.TextTestRunner objects to be pickled and
+  unpickled. This fixes crashes under Windows when trying to run
+  test_multiprocessing in verbose mode.
+
 - Issue #3001: Add a C implementation of recursive locks which is used by
   default when instantiating a `threading.RLock` object. This makes 
   recursive locks as fast as regular non-recursive locks (previously,
