@@ -1063,16 +1063,16 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             # Non-Unix -- use subprocess
             import subprocess
-            cmdline = scriptfile
+            cmdline = [scriptfile]
             if self.is_python(scriptfile):
                 interp = sys.executable
                 if interp.lower().endswith("w.exe"):
                     # On Windows, use python.exe, not pythonw.exe
                     interp = interp[:-5] + interp[-4:]
-                cmdline = "%s -u %s" % (interp, cmdline)
-            if '=' not in query and '"' not in query:
-                cmdline = '%s "%s"' % (cmdline, query)
-            self.log_message("command: %s", cmdline)
+                cmdline = [interp, '-u'] + cmdline
+            if '=' not in query:
+                cmdline.append(query)
+            self.log_message("command: %s", subprocess.list2cmdline(cmdline))
             try:
                 nbytes = int(length)
             except (TypeError, ValueError):
@@ -1080,7 +1080,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             p = subprocess.Popen(cmdline,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
+                                 stderr=subprocess.PIPE
                                  )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
