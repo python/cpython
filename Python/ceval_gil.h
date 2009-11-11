@@ -153,8 +153,20 @@ do { \
         Py_FatalError("ReleaseMutex(" #mut ") failed"); };
 
 /* We emulate condition variables with events. It is sufficient here.
-   (WaitForMultipleObjects() allows the event to be caught and the mutex
-   to be taken atomically) */
+   WaitForMultipleObjects() allows the event to be caught and the mutex
+   to be taken atomically.
+   As for SignalObjectAndWait(), its semantics are unfortunately a bit
+   more foggy. Many sources on the Web define it as atomically releasing
+   the first object while starting to wait on the second, but MSDN states
+   it is *not* atomic...
+
+   In any case, the emulation here is tailored for our particular use case.
+   For example, we don't care how many threads are woken up when a condition
+   gets signalled. Generic emulations of the pthread_cond_* API using
+   Win32 functions can be found on the Web.
+   The following read can be edificating (or not):
+   http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
+*/
 #define COND_T HANDLE
 #define COND_INIT(cond) \
     /* auto-reset, non-signalled */ \
@@ -168,12 +180,9 @@ do { \
         Py_FatalError("SetEvent(" #cond ") failed"); };
 #define COND_WAIT(cond, mut) \
     { \
-        DWORD r; \
-        HANDLE objects[2] = { cond, mut }; \
-        MUTEX_UNLOCK(mut); \
-        r = WaitForMultipleObjects(2, objects, TRUE, INFINITE); \
-        if (r != WAIT_OBJECT_0) \
-            Py_FatalError("WaitForSingleObject(" #cond ") failed"); \
+        if (SignalObjectAndWait(mut, cond, INFINITE, FALSE) != WAIT_OBJECT_0) \
+            Py_FatalError("SignalObjectAndWait(" #mut ", " #cond") failed"); \
+        MUTEX_LOCK(mut); \
     }
 #define COND_TIMED_WAIT(cond, mut, microseconds, timeout_result) \
     { \
@@ -257,7 +266,8 @@ static void drop_gil(PyThreadState *tstate)
     gil_locked = 0;
     COND_SIGNAL(gil_cond);
 #ifdef FORCE_SWITCHING
-    COND_PREPARE(switch_cond);
+    if (gil_drop_request)
+        COND_PREPARE(switch_cond);
 #endif
     MUTEX_UNLOCK(gil_mutex);
     
@@ -266,6 +276,11 @@ static void drop_gil(PyThreadState *tstate)
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
         if (gil_last_holder == tstate)
+            /* NOTE: if COND_WAIT does not atomically start waiting when
+               releasing the mutex, another thread can run through, take
+               the GIL and drop it again, and reset the condition
+               (COND_PREPARE above) before we even had a chance to wait
+               for it. */
             COND_WAIT(switch_cond, switch_mutex);
         MUTEX_UNLOCK(switch_mutex);
     }
