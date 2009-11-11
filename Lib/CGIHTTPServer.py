@@ -257,75 +257,44 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.server.handle_error(self.request, self.client_address)
                 os._exit(127)
 
-        elif self.have_popen2 or self.have_popen3:
-            # Windows -- use popen2 or popen3 to create a subprocess
-            import shutil
-            if self.have_popen3:
-                popenx = os.popen3
-            else:
-                popenx = os.popen2
-            cmdline = scriptfile
+        else:
+            # Non Unix - use subprocess
+            import subprocess
+            cmdline = [scriptfile]
             if self.is_python(scriptfile):
                 interp = sys.executable
                 if interp.lower().endswith("w.exe"):
                     # On Windows, use python.exe, not pythonw.exe
                     interp = interp[:-5] + interp[-4:]
-                cmdline = "%s -u %s" % (interp, cmdline)
-            if '=' not in query and '"' not in query:
-                cmdline = '%s "%s"' % (cmdline, query)
-            self.log_message("command: %s", cmdline)
+                cmdline = [interp, '-u'] + cmdline
+            if '=' not in query:
+                cmdline.append(query)
+
+            self.log_message("command: %s", subprocess.list2cmdline(cmdline))
             try:
                 nbytes = int(length)
             except (TypeError, ValueError):
                 nbytes = 0
-            files = popenx(cmdline, 'b')
-            fi = files[0]
-            fo = files[1]
-            if self.have_popen3:
-                fe = files[2]
+            files = subprocess.Popen(cmdline,
+                                    stdin = subprocess.PIPE,
+                                    stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE
+                                    )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
-                fi.write(data)
+            else:
+                data = None
             # throw away additional data [see bug #427345]
             while select.select([self.rfile._sock], [], [], 0)[0]:
                 if not self.rfile._sock.recv(1):
                     break
-            fi.close()
-            shutil.copyfileobj(fo, self.wfile)
-            if self.have_popen3:
-                errors = fe.read()
-                fe.close()
-                if errors:
-                    self.log_error('%s', errors)
-            sts = fo.close()
-            if sts:
-                self.log_error("CGI script exit status %#x", sts)
-            else:
-                self.log_message("CGI script exited OK")
-
-        else:
-            # Other O.S. -- execute script in this process
-            save_argv = sys.argv
-            save_stdin = sys.stdin
-            save_stdout = sys.stdout
-            save_stderr = sys.stderr
-            try:
-                save_cwd = os.getcwd()
-                try:
-                    sys.argv = [scriptfile]
-                    if '=' not in decoded_query:
-                        sys.argv.append(decoded_query)
-                    sys.stdout = self.wfile
-                    sys.stdin = self.rfile
-                    execfile(scriptfile, {"__name__": "__main__"})
-                finally:
-                    sys.argv = save_argv
-                    sys.stdin = save_stdin
-                    sys.stdout = save_stdout
-                    sys.stderr = save_stderr
-                    os.chdir(save_cwd)
-            except SystemExit, sts:
-                self.log_error("CGI script exit status %s", str(sts))
+            stdout, stderr = p.communicate(data)
+            self.wfile.write(stdout)
+            if stderr:
+                self.log_error('%s', stderr)
+            status = p.returncode
+            if status:
+                self.log_error("CGI script exit status %#x", status)
             else:
                 self.log_message("CGI script exited OK")
 
