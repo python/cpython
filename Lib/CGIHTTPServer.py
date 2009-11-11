@@ -275,11 +275,11 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 nbytes = int(length)
             except (TypeError, ValueError):
                 nbytes = 0
-            files = subprocess.Popen(cmdline,
-                                    stdin = subprocess.PIPE,
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE
-                                    )
+            p = subprocess.Popen(cmdline,
+                                 stdin = subprocess.PIPE,
+                                 stdout = subprocess.PIPE,
+                                 stderr = subprocess.PIPE
+                                )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
             else:
