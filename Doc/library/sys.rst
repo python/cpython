@@ -353,6 +353,8 @@ always available.
    Return the interpreter's "thread switch interval"; see
    :func:`setswitchinterval`.
 
+   .. versionadded:: 3.2
+
 
 .. function:: _getframe([depth])
 
@@ -712,6 +714,8 @@ always available.
    are used.  Also, which thread becomes scheduled at the end of the interval
    is the operating system's decision.  The interpreter doesn't have its
    own scheduler.
+
+   .. versionadded:: 3.2
 
 
 .. function:: settrace(tracefunc)
