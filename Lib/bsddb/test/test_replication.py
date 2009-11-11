@@ -116,7 +116,7 @@ class DBReplicationManager(unittest.TestCase):
         # is not generated if the master has no new transactions.
         # This is solved in BDB 4.6 (#15542).
         import time
-        timeout = time.time()+30
+        timeout = time.time()+60
         while (time.time()<timeout) and not (self.confirmed_master and self.client_startupdone) :
             time.sleep(0.02)
         # this fails on Windows as self.client_startupdone never gets set
