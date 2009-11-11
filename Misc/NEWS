@@ -373,6 +373,8 @@ Documentation
 Tests
 -----
 
+- Issue #7295: Do not use a hardcoded file name in test_tarfile.
+
 - Issue #7270: Add some dedicated unit tests for multi-thread synchronization
   primitives such as Lock, RLock, Condition, Event and Semaphore.
 
