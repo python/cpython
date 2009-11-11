@@ -27,11 +27,8 @@ except ImportError:
 def md5sum(data):
     return md5(data).hexdigest()
 
-def path(path):
-    return test_support.findfile(path)
-
-TEMPDIR = os.path.join(tempfile.gettempdir(), "test_tarfile_tmp")
-tarname = path("testtar.tar")
+TEMPDIR = os.path.abspath(test_support.TESTFN)
+tarname = test_support.findfile("testtar.tar")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 tmpname = os.path.join(TEMPDIR, "tmp.tar")
@@ -1165,8 +1162,7 @@ class Bz2PartialReadTest(unittest.TestCase):
 
 
 def test_main():
-    if not os.path.exists(TEMPDIR):
-        os.mkdir(TEMPDIR)
+    os.makedirs(TEMPDIR)
 
     tests = [
         UstarReadTest,
