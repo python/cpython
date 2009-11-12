@@ -105,6 +105,7 @@ tok_new(void)
 	tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
 	tok->done = E_OK;
 	tok->fp = NULL;
+	tok->input = NULL;
 	tok->tabsize = TABSIZE;
 	tok->indent = 0;
 	tok->indstack[0] = 0;
@@ -130,6 +131,17 @@ tok_new(void)
 	return tok;
 }
 
+static char *
+new_string(const char *s, Py_ssize_t len)
+{
+	char* result = (char *)PyMem_MALLOC(len + 1);
+	if (result != NULL) {
+		memcpy(result, s, len);
+		result[len] = '\0';
+	}
+	return result;
+}
+
 #ifdef PGEN
 
 static char *
@@ -144,10 +156,10 @@ decoding_feof(struct tok_state *tok)
 	return feof(tok->fp);
 }
 
-static const char *
-decode_str(const char *str, struct tok_state *tok)
+static char *
+decode_str(const char *str, int exec_input, struct tok_state *tok)
 {
-	return str;
+	return new_string(str, strlen(str));
 }
 
 #else /* PGEN */
@@ -162,16 +174,6 @@ error_ret(struct tok_state *tok) /* XXX */
 	return NULL;		/* as if it were EOF */
 }
 
-static char *
-new_string(const char *s, Py_ssize_t len)
-{
-	char* result = (char *)PyMem_MALLOC(len + 1);
-	if (result != NULL) {
-		memcpy(result, s, len);
-		result[len] = '\0';
-	}
-	return result;
-}
 
 static char *
 get_normal_name(char *s)	/* for utf-8 and latin-1 */
@@ -586,17 +588,63 @@ translate_into_utf8(const char* str, const char* enc) {
 }
 #endif
 
+
+static char *
+translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
+	int skip_next_lf = 0, length = strlen(s), final_length;
+	char *buf, *current;
+	char c;
+	buf = PyMem_MALLOC(length + 2);
+	if (buf == NULL) {
+		tok->done = E_NOMEM;
+		return NULL;
+	}
+	for (current = buf; (c = *s++);) {
+		if (skip_next_lf) {
+			skip_next_lf = 0;
+			if (c == '\n') {
+				c = *s;
+				s++;
+				if (!c)
+					break;
+			}
+		}
+		if (c == '\r') {
+			skip_next_lf = 1;
+			c = '\n';
+		}
+		*current = c;
+		current++;
+	}
+	/* If this is exec input, add a newline to the end of the file if
+	   there isn't one already. */
+	if (exec_input && *current != '\n') {
+		*current = '\n';
+		current++;
+	}
+	*current = '\0';
+	final_length = current - buf;
+	if (final_length < length && final_length)
+		/* should never fail */
+		buf = PyMem_REALLOC(buf, final_length + 1);
+	return buf;
+}
+
 /* Decode a byte string STR for use as the buffer of TOK.
    Look for encoding declarations inside STR, and record them
    inside TOK.  */
 
 static const char *
-decode_str(const char *str, struct tok_state *tok)
+decode_str(const char *input, int single, struct tok_state *tok)
 {
 	PyObject* utf8 = NULL;
+	const char *str;
 	const char *s;
 	const char *newl[2] = {NULL, NULL};
 	int lineno = 0;
+	tok->input = str = translate_newlines(input, single, tok);
+	if (str == NULL)
+		return NULL;
 	tok->enc = NULL;
 	tok->str = str;
 	if (!check_bom(buf_getc, buf_ungetc, buf_setreadl, tok))
@@ -651,12 +699,12 @@ decode_str(const char *str, struct tok_state *tok)
 /* Set up tokenizer for string */
 
 struct tok_state *
-PyTokenizer_FromString(const char *str)
+PyTokenizer_FromString(const char *str, int exec_input)
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
 		return NULL;
-	str = (char *)decode_str(str, tok);
+	str = (char *)decode_str(str, exec_input, tok);
 	if (str == NULL) {
 		PyTokenizer_Free(tok);
 		return NULL;
@@ -702,6 +750,8 @@ PyTokenizer_Free(struct tok_state *tok)
 #endif
 	if (tok->fp != NULL && tok->buf != NULL)
 		PyMem_FREE(tok->buf);
+	if (tok->input)
+		PyMem_FREE((char *)tok->input);
 	PyMem_FREE(tok);
 }
 
