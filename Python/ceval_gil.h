@@ -106,7 +106,7 @@ do { \
 #define COND_INIT(cond) \
     if (pthread_cond_init(&cond, NULL)) { \
         Py_FatalError("pthread_cond_init(" #cond ") failed"); };
-#define COND_PREPARE(cond)
+#define COND_RESET(cond)
 #define COND_SIGNAL(cond) \
     if (pthread_cond_signal(&cond)) { \
         Py_FatalError("pthread_cond_signal(" #cond ") failed"); };
@@ -172,7 +172,7 @@ do { \
     /* auto-reset, non-signalled */ \
     if (!(cond = CreateEvent(NULL, FALSE, FALSE, NULL))) { \
         Py_FatalError("CreateMutex(" #cond ") failed"); };
-#define COND_PREPARE(cond) \
+#define COND_RESET(cond) \
     if (!ResetEvent(cond)) { \
         Py_FatalError("ResetEvent(" #cond ") failed"); };
 #define COND_SIGNAL(cond) \
@@ -265,23 +265,21 @@ static void drop_gil(PyThreadState *tstate)
     MUTEX_LOCK(gil_mutex);
     gil_locked = 0;
     COND_SIGNAL(gil_cond);
-#ifdef FORCE_SWITCHING
-    if (gil_drop_request)
-        COND_PREPARE(switch_cond);
-#endif
     MUTEX_UNLOCK(gil_mutex);
     
 #ifdef FORCE_SWITCHING
-    if (gil_drop_request) {
+    if (gil_drop_request && tstate != NULL) {
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
-        if (gil_last_holder == tstate)
+        if (gil_last_holder == tstate) {
+	    RESET_GIL_DROP_REQUEST();
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
-               (COND_PREPARE above) before we even had a chance to wait
-               for it. */
+               before we even had a chance to wait for it. */
             COND_WAIT(switch_cond, switch_mutex);
+            COND_RESET(switch_cond);
+	}
         MUTEX_UNLOCK(switch_mutex);
     }
 #endif
@@ -299,7 +297,7 @@ static void take_gil(PyThreadState *tstate)
     if (!gil_locked)
         goto _ready;
     
-    COND_PREPARE(gil_cond);
+    COND_RESET(gil_cond);
     while (gil_locked) {
         int timed_out = 0;
         unsigned long saved_switchnum;
