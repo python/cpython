@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Fix several issues with compile().  The input can now contain Windows and Mac
+  newlines and is no longer required to end in a newline.
+
 - Remove length limitation when constructing a complex number from a
   unicode string.
 
