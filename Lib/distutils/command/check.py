@@ -92,7 +92,7 @@ class check(Command):
                 missing.append(attr)
 
         if missing:
-            self.warn("missing required meta-data: %s"  % ' ,'.join(missing))
+            self.warn("missing required meta-data: %s"  % ', '.join(missing))
         if metadata.author:
             if not metadata.author_email:
                 self.warn("missing meta-data: if 'author' supplied, " +

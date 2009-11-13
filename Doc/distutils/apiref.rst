@@ -1952,7 +1952,7 @@ This is described in more detail in :pep:`301`.
 
 
 The ``check`` command performs some tests on the meta-data of a package.
-It makes sure for example that all required meta-data are provided through
+For example, it verifies that all required meta-data are provided as
 the arguments passed to the :func:`setup` function.
 
 .. % todo

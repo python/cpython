@@ -531,6 +531,24 @@ pass the '-ucompiler' option to process the full directory.
     ...         break
     ... else: True
     True
+
+Evil tabs
+    >>> dump_tokens("def f():\\n\\tif x\\n        \\tpass")
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    NAME       'def'         (1, 0) (1, 3)
+    NAME       'f'           (1, 4) (1, 5)
+    OP         '('           (1, 5) (1, 6)
+    OP         ')'           (1, 6) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\n'          (1, 8) (1, 9)
+    INDENT     '\\t'          (2, 0) (2, 1)
+    NAME       'if'          (2, 1) (2, 3)
+    NAME       'x'           (2, 4) (2, 5)
+    NEWLINE    '\\n'          (2, 5) (2, 6)
+    INDENT     '        \\t'  (3, 0) (3, 9)
+    NAME       'pass'        (3, 9) (3, 13)
+    DEDENT     ''            (4, 0) (4, 0)
+    DEDENT     ''            (4, 0) (4, 0)
 """
 
 from test import support

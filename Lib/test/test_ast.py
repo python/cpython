@@ -140,6 +140,14 @@ class AST_Tests(unittest.TestCase):
                 self.assertEquals(to_tuple(ast_tree), o)
                 self._assertTrueorder(ast_tree, (0, 0))
 
+    def test_base_classes(self):
+        self.assertTrue(issubclass(ast.For, ast.stmt))
+        self.assertTrue(issubclass(ast.Name, ast.expr))
+        self.assertTrue(issubclass(ast.stmt, ast.AST))
+        self.assertTrue(issubclass(ast.expr, ast.AST))
+        self.assertTrue(issubclass(ast.comprehension, ast.AST))
+        self.assertTrue(issubclass(ast.Gt, ast.AST))
+
     def test_nodeclasses(self):
         x = ast.BinOp(1, 2, 3, lineno=0)
         self.assertEquals(x.left, 1)
