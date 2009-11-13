@@ -116,6 +116,9 @@ class _AssertRaisesContext(object):
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
+        #store exception, without traceback, for later retrieval
+        self.exc_value = exc_value
+        self.exc_value.with_traceback(None)
         if self.expected_regex is None:
             return True
 
