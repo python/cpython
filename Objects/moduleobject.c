@@ -312,7 +312,10 @@ module_dealloc(PyModuleObject *m)
 	if (m->md_def && m->md_def->m_free)
 		m->md_def->m_free(m);
 	if (m->md_dict != NULL) {
-		_PyModule_Clear((PyObject *)m);
+		/* If we are the only ones holding a reference, we can clear
+		   the dictionary. */
+		if (Py_REFCNT(m->md_dict) == 1)
+			_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
 	if (m->md_state != NULL)

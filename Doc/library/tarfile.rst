@@ -365,7 +365,7 @@ object, see :ref:`tarinfo-objects` for details.
    value. Depending on this value the respective file is either excluded
    (:const:`True`) or added (:const:`False`). If *filter* is specified it must
    be a function that takes a :class:`TarInfo` object argument and returns the
-   changed TarInfo object. If it instead returns :const:`None` the TarInfo
+   changed :class:`TarInfo` object. If it instead returns :const:`None` the :class:`TarInfo`
    object will be excluded from the archive. See :ref:`tar-examples` for an
    example.
 
