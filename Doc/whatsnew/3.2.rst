@@ -105,6 +105,12 @@ Multi-threading
 
   (Contributed by Antoine Pitrou)
 
+* Recursive locks (created with the :func:`threading.RLock` API) now benefit
+  from a C implementation which makes them as fast as regular locks, and
+  between 10x and 15x faster than their previous pure Python implementation.
+
+  (Contributed by Antoine Pitrou; :issue:`3001`.)
+
 
 Optimizations
 =============
