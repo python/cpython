@@ -143,15 +143,14 @@ class ImportHooksBaseTestCase(unittest.TestCase):
         self.meta_path = sys.meta_path[:]
         self.path_hooks = sys.path_hooks[:]
         sys.path_importer_cache.clear()
-        self.modules_before = sys.modules.copy()
+        self.modules_before = support.modules_setup()
 
     def tearDown(self):
         sys.path[:] = self.path
         sys.meta_path[:] = self.meta_path
         sys.path_hooks[:] = self.path_hooks
         sys.path_importer_cache.clear()
-        sys.modules.clear()
-        sys.modules.update(self.modules_before)
+        support.modules_cleanup(*self.modules_before)
 
 
 class ImportHooksTestCase(ImportHooksBaseTestCase):

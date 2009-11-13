@@ -919,6 +919,23 @@ def run_doctest(module, verbosity=None):
               (module.__name__, t))
     return f, t
 
+
+#=======================================================================
+# Support for saving and restoring the imported modules.
+
+def modules_setup():
+    return sys.modules.copy(),
+
+def modules_cleanup(oldmodules):
+    # Encoders/decoders are registered permanently within the internal
+    # codec cache. If we destroy the corresponding modules their
+    # globals will be set to None which will trip up the cached functions.
+    encodings = [(k, v) for k, v in sys.modules.items()
+                 if k.startswith('encodings.')]
+    sys.modules.clear()
+    sys.modules.update(encodings)
+    sys.modules.update(oldmodules)
+
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
