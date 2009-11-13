@@ -26,7 +26,7 @@ class PEP263Test(unittest.TestCase):
         try:
             compile(b"# coding: cp932\nprint '\x94\x4e'", "dummy", "exec")
         except SyntaxError as v:
-            self.assertEquals(v.text, "print '\u5e74'")
+            self.assertEquals(v.text, "print '\u5e74'\n")
         else:
             self.fail()
 

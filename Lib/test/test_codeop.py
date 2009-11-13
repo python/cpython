@@ -295,10 +295,6 @@ class CodeopTests(unittest.TestCase):
         self.assertNotEquals(compile_command("a = 1\n", "abc").co_filename,
                              compile("a = 1\n", "def", 'single').co_filename)
 
-    def test_no_universal_newlines(self):
-        code = compile_command("'\rfoo\r'", symbol='eval')
-        self.assertEqual(eval(code), '\rfoo\r')
-
 
 def test_main():
     run_unittest(CodeopTests)

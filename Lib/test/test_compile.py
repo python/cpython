@@ -5,6 +5,19 @@ from test import support
 
 class TestSpecifics(unittest.TestCase):
 
+    def test_no_ending_newline(self):
+        compile("hi", "<test>", "exec")
+        compile("hi\r", "<test>", "exec")
+
+    def test_empty(self):
+        compile("", "<test>", "exec")
+
+    def test_other_newlines(self):
+        compile("\r\n", "<test>", "exec")
+        compile("\r", "<test>", "exec")
+        compile("hi\r\nstuff\r\ndef f():\n    pass\r", "<test>", "exec")
+        compile("this_is\rreally_old_mac\rdef f():\n    pass", "<test>", "exec")
+
     def test_debug_assignment(self):
         # catch assignments to __debug__
         self.assertRaises(SyntaxError, compile, '__debug__ = 1', '?', 'single')

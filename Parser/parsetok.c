@@ -46,13 +46,14 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename,
 		          perrdetail *err_ret, int *flags)
 {
 	struct tok_state *tok;
+	int exec_input = start == file_input;
 
 	initerr(err_ret, filename);
 
 	if (*flags & PyPARSE_IGNORE_COOKIE)
-		tok = PyTokenizer_FromUTF8(s);
+		tok = PyTokenizer_FromUTF8(s, exec_input);
 	else
-		tok = PyTokenizer_FromString(s);
+		tok = PyTokenizer_FromString(s, exec_input);
 	if (tok == NULL) {
 		err_ret->error = PyErr_Occurred() ? E_DECODE : E_NOMEM;
 		return NULL;
