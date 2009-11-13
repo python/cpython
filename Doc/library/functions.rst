@@ -176,11 +176,15 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      When compiling a string with multi-line statements, line endings must be
-      represented by a single newline character (``'\n'``), and the input must
-      be terminated by at least one newline character.  If line endings are
-      represented by ``'\r\n'``, use :meth:`str.replace` to change them into
-      ``'\n'``.
+      When compiling a string with multi-line statements in ``'single'`` or
+      ``'eval'`` mode, input must be terminated by at least one newline
+      character.  This is to facilitate detection of incomplete and complete
+      statements in the :mod:`code` module.
+
+
+   .. versionchanged:: 3.2
+      Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
+      does not have to end in a newline anymore.
 
 
 .. function:: complex([real[, imag]])

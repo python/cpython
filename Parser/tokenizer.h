@@ -58,10 +58,11 @@ struct tok_state {
 #endif
 	const char* enc;        /* Encoding for the current str. */
 	const char* str;
+	const char* input; /* Tokenizer's newline translated copy of the string. */
 };
 
-extern struct tok_state *PyTokenizer_FromString(const char *);
-extern struct tok_state *PyTokenizer_FromUTF8(const char *);
+extern struct tok_state *PyTokenizer_FromString(const char *, int);
+extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
 extern struct tok_state *PyTokenizer_FromFile(FILE *, char*,
 					      char *, char *);
 extern void PyTokenizer_Free(struct tok_state *);
