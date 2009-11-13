@@ -344,21 +344,6 @@ class PyLoader:
             message = "a source path must exist to load {0}".format(fullname)
             raise ImportError(message)
         source = self.get_data(source_path)
-        # Convert to universal newlines.
-        line_endings = b'\n'
-        for index, c in enumerate(source):
-            if c == ord(b'\n'):
-                break
-            elif c == ord(b'\r'):
-                line_endings = b'\r'
-                try:
-                    if source[index+1] == ord(b'\n'):
-                        line_endings += b'\n'
-                except IndexError:
-                    pass
-                break
-        if line_endings != b'\n':
-            source = source.replace(line_endings, b'\n')
         return compile(source, source_path, 'exec', dont_inherit=True)
 
     # Never use in implementing import! Imports code within the method.
