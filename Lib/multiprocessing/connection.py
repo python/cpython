@@ -27,6 +27,8 @@ from multiprocessing.forking import duplicate, close
 #
 
 BUFSIZE = 8192
+# A very generous timeout when it comes to local connections...
+CONNECTION_TIMEOUT = 20.
 
 _mmap_counter = itertools.count()
 
@@ -40,6 +42,13 @@ if hasattr(socket, 'AF_UNIX'):
 if sys.platform == 'win32':
     default_family = 'AF_PIPE'
     families += ['AF_PIPE']
+
+
+def _init_timeout(timeout=CONNECTION_TIMEOUT):
+    return time.time() + timeout
+
+def _check_timeout(t):
+    return time.time() > t
 
 #
 #
@@ -247,12 +256,13 @@ def SocketClient(address):
     '''
     family = address_type(address)
     s = socket.socket( getattr(socket, family) )
+    t = _init_timeout()
 
     while 1:
         try:
             s.connect(address)
         except socket.error as e:
-            if e.args[0] != errno.ECONNREFUSED: # connection refused
+            if e.args[0] != errno.ECONNREFUSED or _check_timeout(t):
                 debug('failed to connect to address %s', address)
                 raise
             time.sleep(0.01)
@@ -322,6 +332,7 @@ if sys.platform == 'win32':
         '''
         Return a connection object connected to the pipe given by `address`
         '''
+        t = _init_timeout()
         while 1:
             try:
                 win32.WaitNamedPipe(address, 1000)
@@ -331,7 +342,7 @@ if sys.platform == 'win32':
                     )
             except WindowsError as e:
                 if e.args[0] not in (win32.ERROR_SEM_TIMEOUT,
-                                     win32.ERROR_PIPE_BUSY):
+                                     win32.ERROR_PIPE_BUSY) or _check_timeout(t):
                     raise
             else:
                 break
