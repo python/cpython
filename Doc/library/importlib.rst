@@ -252,8 +252,8 @@ are also provided to help in implementing the core ABCs.
         A concrete implementation of
         :meth:`importlib.abc.InspectLoader.get_code` that creates code objects
         from Python source code, by requesting the source code (using
-        :meth:`source_path` and :meth:`get_data`), converting it to standard
-        newlines, and compiling it with the built-in :func:`compile` function.
+        :meth:`source_path` and :meth:`get_data`) and compiling it with the
+        built-in :func:`compile` function.
 
     .. method:: get_source(fullname)
 
