@@ -173,10 +173,10 @@ available.  They are listed here in alphabetical order.
 
    .. note::
 
-      When compiling a string with multi-line statements in ``'single'``, input
-      must be terminated by at least one newline character.  This is to
-      facilitate detection of incomplete and complete statements in the
-      :mod:`code` module.
+      When compiling a string with multi-line statements in ``'single'`` or
+      ``'eval'`` mode, input must be terminated by at least one newline
+      character.  This is to facilitate detection of incomplete and complete
+      statements in the :mod:`code` module.
 
    .. versionchanged:: 2.3
       The *flags* and *dont_inherit* arguments were added.
