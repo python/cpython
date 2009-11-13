@@ -123,6 +123,11 @@ C-API
 Library
 -------
 
+- Issue #7318: multiprocessing now uses a timeout when it fails to establish
+  a connection with another process, rather than looping endlessly. The
+  default timeout is 20 seconds, which should be amply sufficient for
+  local connections.
+
 - Issue #7197: Allow unittest.TextTestRunner objects to be pickled and
   unpickled. This fixes crashes under Windows when trying to run
   test_multiprocessing in verbose mode.
