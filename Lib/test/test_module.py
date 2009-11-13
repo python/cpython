@@ -55,6 +55,14 @@ class ModuleTests(unittest.TestCase):
               {"__name__": "foo", "__doc__": "foodoc", "bar": 42})
         self.assertTrue(foo.__dict__ is d)
 
+    def test_dont_clear_dict(self):
+        # See issue 7140.
+        def f():
+            foo = ModuleType("foo")
+            foo.bar = 4
+            return foo
+        self.assertEqual(f().__dict__["bar"], 4)
+
 def test_main():
     run_unittest(ModuleTests)
 

@@ -2416,9 +2416,13 @@ changes, or look through the Subversion logs for all the details.
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)
 
-  A new function, :func:`create_connection`, takes an address
-  and connects to it using an optional timeout value, returning
-  the connected socket object.
+  A new function, :func:`create_connection`, takes an address and
+  connects to it using an optional timeout value, returning the
+  connected socket object.  This function also looks up the address's
+  type and connects to it using IPv4 or IPv6 as appropriate.  Changing
+  your code to use :func:`create_connection` instead of
+  ``socket(socket.AF_INET, ...)`` may be all that's required to make
+  your code work with IPv6.
 
 * The base classes in the :mod:`SocketServer` module now support
   calling a :meth:`handle_timeout` method after a span of inactivity
