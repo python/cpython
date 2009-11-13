@@ -600,9 +600,6 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
     assert((newline != NULL && newline_obj != Py_None) ||
            (newline == NULL && newline_obj == Py_None));
 
-    assert((newline != NULL && newline_obj != Py_None) ||
-           (newline == NULL && newline_obj == Py_None));
-
     if (newline) {
         self->readnl = PyUnicode_FromString(newline);
         if (self->readnl == NULL)

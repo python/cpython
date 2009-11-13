@@ -2,8 +2,8 @@
 ========================================
 
 .. module:: pty
-   :platform: IRIX, Linux
-   :synopsis: Pseudo-Terminal Handling for SGI and Linux.
+   :platform: Linux
+   :synopsis: Pseudo-Terminal Handling for Linux.
 .. moduleauthor:: Steen Lumholt
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
@@ -13,8 +13,8 @@ concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
 Because pseudo-terminal handling is highly platform dependent, there is code to
-do it only for SGI and Linux. (The Linux code is supposed to work on other
-platforms, but hasn't been tested yet.)
+do it only for Linux. (The Linux code is supposed to work on other platforms,
+but hasn't been tested yet.)
 
 The :mod:`pty` module defines the following functions:
 
@@ -31,8 +31,8 @@ The :mod:`pty` module defines the following functions:
 .. function:: openpty()
 
    Open a new pseudo-terminal pair, using :func:`os.openpty` if possible, or
-   emulation code for SGI and generic Unix systems. Return a pair of file
-   descriptors ``(master, slave)``, for the master and the slave end, respectively.
+   emulation code for generic Unix systems. Return a pair of file descriptors
+   ``(master, slave)``, for the master and the slave end, respectively.
 
 
 .. function:: spawn(argv[, master_read[, stdin_read]])

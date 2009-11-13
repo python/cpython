@@ -23,15 +23,15 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
-
 import re, string, sys
 from token import *
 from codecs import lookup, BOM_UTF8
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
 
 import token
-__all__ = [x for x in dir(token) if x[0] != '_'] + ["COMMENT", "tokenize",
-           "detect_encoding", "NL", "untokenize", "ENCODING", "TokenInfo"]
+__all__ = [x for x in dir(token) if not x.startswith("_")]
+__all__.extend(["COMMENT", "tokenize", "detect_encoding", "NL", "untokenize",
+                "ENCODING", "TokenInfo"])
 del token
 
 COMMENT = N_TOKENS
@@ -407,7 +407,7 @@ def _tokenize(readline, encoding):
 
         if encoding is not None:
             line = line.decode(encoding)
-        lnum = lnum + 1
+        lnum += 1
         pos, max = 0, len(line)
 
         if contstr:                            # continued string
@@ -435,12 +435,17 @@ def _tokenize(readline, encoding):
             if not line: break
             column = 0
             while pos < max:                   # measure leading whitespace
-                if line[pos] == ' ': column = column + 1
-                elif line[pos] == '\t': column = (column/tabsize + 1)*tabsize
-                elif line[pos] == '\f': column = 0
-                else: break
-                pos = pos + 1
-            if pos == max: break
+                if line[pos] == ' ':
+                    column += 1
+                elif line[pos] == '\t':
+                    column = (column//tabsize + 1)*tabsize
+                elif line[pos] == '\f':
+                    column = 0
+                else:
+                    break
+                pos += 1
+            if pos == max:
+                break
 
             if line[pos] in '#\r\n':           # skip comments or blank lines
                 if line[pos] == '#':
@@ -516,13 +521,15 @@ def _tokenize(readline, encoding):
                 elif initial == '\\':                      # continued stmt
                     continued = 1
                 else:
-                    if initial in '([{': parenlev = parenlev + 1
-                    elif initial in ')]}': parenlev = parenlev - 1
+                    if initial in '([{':
+                        parenlev += 1
+                    elif initial in ')]}':
+                        parenlev -= 1
                     yield TokenInfo(OP, token, spos, epos, line)
             else:
                 yield TokenInfo(ERRORTOKEN, line[pos],
                            (lnum, pos), (lnum, pos+1), line)
-                pos = pos + 1
+                pos += 1
 
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')

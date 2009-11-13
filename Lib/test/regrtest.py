@@ -193,6 +193,14 @@ if sys.platform == 'darwin':
         newsoft = min(hard, max(soft, 1024*2048))
         resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
 
+# Test result constants.
+PASSED = 1
+FAILED = 0
+ENV_CHANGED = -1
+SKIPPED = -2
+RESOURCE_DENIED = -3
+INTERRUPTED = -4
+
 from test import support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
@@ -352,7 +360,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             try:
                 result = runtest(*args, **kwargs)
             except BaseException as e:
-                result = -4, e.__class__.__name__
+                result = INTERRUPTED, e.__class__.__name__
             sys.stdout.flush()
             print()   # Force a newline (just in case)
             print(json.dumps(result))
@@ -443,19 +451,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     def accumulate_result(test, result):
         ok, test_time = result
         test_times.append((test_time, test))
-        if ok > 0:
+        if ok == PASSED:
             good.append(test)
-            return 'good'
-        elif -2 < ok <= 0:
+        elif ok == FAILED:
             bad.append(test)
-            if ok == -1:
-                environment_changed.append(test)
-            return 'bad'
-        else:
+        elif ok == ENV_CHANGED:
+            bad.append(test)
+            environment_changed.append(test)
+        elif ok == SKIPPED:
             skipped.append(test)
-            if ok == -3:
-                resource_denieds.append(test)
-            return 'skipped'
+        elif ok == RESOURCE_DENIED:
+            skipped.append(test)
+            resource_denieds.append(test)
 
     if use_mp:
         from threading import Thread
@@ -511,7 +518,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 print(stdout)
             if stderr:
                 print(stderr, file=sys.stderr)
-            if result[0] == -4:
+            if result[0] == INTERRUPTED:
                 assert result[1] == 'KeyboardInterrupt'
                 pending.clear()
                 raise KeyboardInterrupt   # What else?
@@ -532,8 +539,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 try:
                     result = runtest(test, verbose, quiet,
                                      testdir, huntrleaks, debug)
-                    which = accumulate_result(test, result)
-                    if verbose3 and which == 'bad':
+                    accumulate_result(test, result)
+                    if verbose3 and result[0] == FAILED:
                         print("Re-running test {} in verbose mode".format(test))
                         runtest(test, True, quiet, testdir, huntrleaks, debug)
                 except KeyboardInterrupt:
@@ -679,15 +686,14 @@ def runtest(test, verbose, quiet,
     testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
-    debug -- if true, print tracebacks for failed tests regardless of
-             verbose setting
-    Return:
-        -4  KeyboardInterrupt when run under -j
-        -3  test skipped because resource denied
-        -2  test skipped for some other reason
-        -1  test failed because it changed the execution environment
-         0  test failed
-         1  test passed
+
+    Returns one of the test result constants:
+        INTERRUPTED      KeyboardInterrupt when run under -j
+        RESOURCE_DENIED  test skipped because resource denied
+        SKIPPED          test skipped for some other reason
+        ENV_CHANGED      test failed because it changed the execution environment
+        FAILED           test failed
+        PASSED           test passed
     """
 
     support.verbose = verbose  # Tell tests to be moderately quiet
@@ -843,18 +849,18 @@ def runtest_inner(test, verbose, quiet,
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
-        return -3, test_time
+        return RESOURCE_DENIED, test_time
     except unittest.SkipTest as msg:
         if not quiet:
             print(test, "skipped --", msg)
             sys.stdout.flush()
-        return -2, test_time
+        return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
         print("test", test, "failed --", msg)
         sys.stdout.flush()
-        return 0, test_time
+        return FAILED, test_time
     except:
         type, value = sys.exc_info()[:2]
         print("test", test, "crashed --", str(type) + ":", value)
@@ -862,13 +868,13 @@ def runtest_inner(test, verbose, quiet,
         if verbose or debug:
             traceback.print_exc(file=sys.stdout)
             sys.stdout.flush()
-        return 0, test_time
+        return FAILED, test_time
     else:
         if refleak:
-            return 0, test_time
+            return FAILED, test_time
         if environment.changed:
-            return -1, test_time
-        return 1, test_time
+            return ENV_CHANGED, test_time
+        return PASSED, test_time
 
 def cleanup_test_droppings(testname, verbose):
     import shutil
