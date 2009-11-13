@@ -4,6 +4,7 @@ import sys, io, os
 import struct
 import subprocess
 import textwrap
+import warnings
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -148,11 +149,13 @@ class SysModuleTest(unittest.TestCase):
     # testing sys.setprofile() is done in test_profile.py
 
     def test_setcheckinterval(self):
-        self.assertRaises(TypeError, sys.setcheckinterval)
-        orig = sys.getcheckinterval()
-        for n in 0, 100, 120, orig: # orig last to restore starting state
-            sys.setcheckinterval(n)
-            self.assertEquals(sys.getcheckinterval(), n)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.assertRaises(TypeError, sys.setcheckinterval)
+            orig = sys.getcheckinterval()
+            for n in 0, 100, 120, orig: # orig last to restore starting state
+                sys.setcheckinterval(n)
+                self.assertEquals(sys.getcheckinterval(), n)
 
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
