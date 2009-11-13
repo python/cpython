@@ -144,6 +144,11 @@ Extension Modules
 Tests
 -----
 
+- Issue #6551: test_zipimport could import and then destroy some modules of
+  the encodings package, which would make other tests fail further down
+  the road because the internally cached encoders and decoders would point
+  to empty global variables.
+
 - Issue #7295: Do not use a hardcoded file name in test_tarfile.
 
 - Issue #7270: Add some dedicated unit tests for multi-thread synchronization

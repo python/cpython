@@ -48,13 +48,11 @@ class TestPkg(unittest.TestCase):
         self.root = None
         self.pkgname = None
         self.syspath = list(sys.path)
-        self.sysmodules = sys.modules.copy()
+        self.modules_before = support.modules_setup()
 
     def tearDown(self):
         sys.path[:] = self.syspath
-        sys.modules.clear()
-        sys.modules.update(self.sysmodules)
-        del self.sysmodules
+        support.modules_cleanup(*self.modules_before)
         cleanout(self.root)
 
         # delete all modules concerning the tested hiearchy
