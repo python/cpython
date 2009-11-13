@@ -901,7 +901,7 @@ Test cases
       .. deprecated:: 3.1
          :meth:`failUnlessRaises`.
 
-      .. versionchanged:: 3.1
+      .. versionchanged:: 3.2
          Added the :attr:`exc_value` attribute.
 
 
