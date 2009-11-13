@@ -342,12 +342,10 @@ class ThreadTests(BaseTestCase):
         # Try hard to trigger #1703448: a thread is still returned in
         # threading.enumerate() after it has been join()ed.
         enum = threading.enumerate
-        old_interval = sys.getcheckinterval()
+        old_interval = sys.getswitchinterval()
         try:
             for i in range(1, 100):
-                # Try a couple times at each thread-switching interval
-                # to get more interleavings.
-                sys.setcheckinterval(i // 5)
+                sys.setswitchinterval(i * 0.0002)
                 t = threading.Thread(target=lambda: None)
                 t.start()
                 t.join()
@@ -355,7 +353,7 @@ class ThreadTests(BaseTestCase):
                 self.assertFalse(t in l,
                     "#1703448 triggered after %d trials: %s" % (i, l))
         finally:
-            sys.setcheckinterval(old_interval)
+            sys.setswitchinterval(old_interval)
 
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):
