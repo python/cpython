@@ -379,10 +379,11 @@ def tokenize(readline):
     """
     # This import is here to avoid problems when the itertools module is not
     # built yet and tokenize is imported.
-    from itertools import chain
+    from itertools import chain, repeat
     encoding, consumed = detect_encoding(readline)
-    rl_iter = iter(readline, "")
-    return _tokenize(chain(consumed, rl_iter).__next__, encoding)
+    rl_gen = iter(readline, b"")
+    empty = repeat(b"")
+    return _tokenize(chain(consumed, rl_gen, empty).__next__, encoding)
 
 
 def _tokenize(readline, encoding):
