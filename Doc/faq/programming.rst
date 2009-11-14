@@ -277,39 +277,74 @@ confusing API to your users.
 Core Language
 =============
 
-How do you set a global variable in a function?
------------------------------------------------
+Why am I getting an UnboundLocalError when the variable has a value?
+--------------------------------------------------------------------
 
-Did you do something like this? ::
+It can be a surprise to get the UnboundLocalError in previously working
+code when it is modified by adding an assignment statement somewhere in
+the body of a function.
 
-   x = 1 # make a global
+This code:
 
-   def f():
-       print x # try to print the global
-       ...
-       for j in range(100):
-           if q > 3:
-               x = 4
+   >>> x = 10
+   >>> def bar():
+   ...     print(x)
+   >>> bar()
+   10
 
-Any variable assigned in a function is local to that function.  unless it is
-specifically declared global.  Since a value is bound to ``x`` as the last
-statement of the function body, the compiler assumes that ``x`` is
-local. Consequently the ``print x`` attempts to print an uninitialized local
-variable and will trigger a ``NameError``.
+works, but this code:
 
-The solution is to insert an explicit global declaration at the start of the
-function::
+   >>> x = 10
+   >>> def foo():
+   ...     print(x)
+   ...     x += 1
 
-   def f():
-       global x
-       print x # try to print the global
-       ...
-       for j in range(100):
-           if q > 3:
-               x = 4
+results in an UnboundLocalError:
 
-In this case, all references to ``x`` are interpreted as references to the ``x``
-from the module namespace.
+   >>> foo()
+   Traceback (most recent call last):
+     ...
+   UnboundLocalError: local variable 'x' referenced before assignment
+
+This is because when you make an assignment to a variable in a scope, that
+variable becomes local to that scope and shadows any similarly named variable
+in the outer scope.  Since the last statement in foo assigns a new value to
+``x``, the compiler recognizes it as a local variable.  Consequently when the
+earlier ``print x`` attempts to print the uninitialized local variable and
+an error results.
+
+In the example above you can access the outer scope variable by declaring it
+global:
+
+   >>> x = 10
+   >>> def foobar():
+   ...     global x
+   ...     print(x)
+   ...     x += 1
+   >>> foobar()
+   10
+
+This explicit declaration is required in order to remind you that (unlike the
+superficially analogous situation with class and instance variables) you are
+actually modifying the value of the variable in the outer scope:
+
+   >>> print(x)
+   11
+
+You can do a similar thing in a nested scope using the :keyword:`nonlocal`
+keyword:
+
+   >>> def foo():
+   ...    x = 10
+   ...    def bar():
+   ...        nonlocal x
+   ...        print(x)
+   ...        x += 1
+   ...    bar()
+   ...    print(x)
+   >>> foo()
+   10
+   11
 
 
 What are the rules for local and global variables in Python?
