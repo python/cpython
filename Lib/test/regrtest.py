@@ -45,6 +45,7 @@ Special runs
 -t/--threshold THRESHOLD
                 -- call gc.set_threshold(THRESHOLD)
 -n/--nowindows  -- suppress error message boxes on Windows
+-F/--forever    -- run the selected tests in a loop, until an error happens
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -147,6 +148,7 @@ option '-uall,-gui'.
 """
 
 import getopt
+import itertools
 import json
 import os
 import random
@@ -217,7 +219,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None, verbose3=False):
+         random_seed=None, use_mp=None, verbose3=False, forever=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -243,12 +245,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:wWM:nj:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
-             'runleaks', 'huntrleaks=', 'memlimit=', 'debug', 'start=',
-             'nowindows', 'randseed=', 'multiprocess=', 'slaveargs='])
+             'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
+             'multiprocess=', 'slaveargs=', 'forever', 'debug', 'start=',
+             'nowindows'])
     except getopt.error as msg:
         usage(msg)
 
@@ -353,6 +356,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
                     msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
                     msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+        elif o in ('-F', '--forever'):
+            forever = True
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
         elif o == '--slaveargs':
@@ -396,8 +401,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         filename = os.path.join(gettempdir(), 'pynexttest')
         try:
             fp = open(filename, 'r')
-            next = fp.read().strip()
-            tests = [next]
+            next_test = fp.read().strip()
+            tests = [next_test]
             fp.close()
         except IOError:
             pass
@@ -443,6 +448,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,
                                          tempfile.gettempdir()],
                              trace=False, count=True)
+
     test_times = []
     support.verbose = verbose      # Tell tests to be moderately quiet
     support.use_resources = use_resources
@@ -464,6 +470,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             skipped.append(test)
             resource_denieds.append(test)
 
+    if forever:
+        def test_forever(tests=list(tests)):
+            while True:
+                for test in tests:
+                    yield test
+                    if bad:
+                        return
+        tests = test_forever()
+    else:
+        tests = iter(tests)
+
     if use_mp:
         from threading import Thread
         from queue import Queue, Empty
@@ -472,20 +489,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         pending = deque()
         output = Queue()
-        for test in tests:
-            args_tuple = (
-                (test, verbose, quiet, testdir),
-                dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                     debug=debug)
-            )
-            pending.append((test, args_tuple))
+        def tests_and_args():
+            for test in tests:
+                args_tuple = (
+                    (test, verbose, quiet, testdir),
+                    dict(huntrleaks=huntrleaks, use_resources=use_resources,
+                        debug=debug)
+                )
+                yield (test, args_tuple)
+        pending = tests_and_args()
         def work():
             # A worker thread.
             try:
                 while True:
                     try:
-                        test, args_tuple = pending.popleft()
-                    except IndexError:
+                        test, args_tuple = next(pending)
+                    except StopIteration:
                         output.put((None, None, None, None))
                         return
                     # -E is needed by some tests, e.g. test_import
@@ -498,6 +517,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     # comes from the shutdown of the interpreter in the subcommand.
                     stderr = debug_output_pat.sub("", stderr)
                     stdout, _, result = stdout.strip().rpartition("\n")
+                    if not result:
+                        output.put((None, None, None, None))
+                        return
                     result = json.loads(result)
                     if not quiet:
                         stdout = test+'\n'+stdout
@@ -509,20 +531,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.start()
         finished = 0
-        while finished < use_mp:
-            test, stdout, stderr, result = output.get()
-            if test is None:
-                finished += 1
-                continue
-            if stdout:
-                print(stdout)
-            if stderr:
-                print(stderr, file=sys.stderr)
-            if result[0] == INTERRUPTED:
-                assert result[1] == 'KeyboardInterrupt'
-                pending.clear()
-                raise KeyboardInterrupt   # What else?
-            accumulate_result(test, result)
+        try:
+            while finished < use_mp:
+                test, stdout, stderr, result = output.get()
+                if test is None:
+                    finished += 1
+                    continue
+                if stdout:
+                    print(stdout)
+                if stderr:
+                    print(stderr, file=sys.stderr)
+                if result[0] == INTERRUPTED:
+                    assert result[1] == 'KeyboardInterrupt'
+                    raise KeyboardInterrupt   # What else?
+                accumulate_result(test, result)
+        except KeyboardInterrupt:
+            pending.close()
         for worker in workers:
             worker.join()
     else:
