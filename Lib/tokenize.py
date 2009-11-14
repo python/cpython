@@ -377,17 +377,12 @@ def tokenize(readline):
     The first token sequence will always be an ENCODING token
     which tells you which encoding was used to decode the bytes stream.
     """
+    # This import is here to avoid problems when the itertools module is not
+    # built yet and tokenize is imported.
+    from itertools import chain
     encoding, consumed = detect_encoding(readline)
-    def readline_generator(consumed):
-        for line in consumed:
-            yield line
-        while True:
-            try:
-                yield readline()
-            except StopIteration:
-                return
-    chained = readline_generator(consumed)
-    return _tokenize(chained.__next__, encoding)
+    rl_iter = iter(readline, "")
+    return _tokenize(chain(consumed, rl_iter).__next__, encoding)
 
 
 def _tokenize(readline, encoding):
