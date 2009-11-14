@@ -310,7 +310,7 @@ This is because when you make an assignment to a variable in a scope, that
 variable becomes local to that scope and shadows any similarly named variable
 in the outer scope.  Since the last statement in foo assigns a new value to
 ``x``, the compiler recognizes it as a local variable.  Consequently when the
-earlier ``print x`` attempts to print the uninitialized local variable and
+earlier ``print(x)`` attempts to print the uninitialized local variable and
 an error results.
 
 In the example above you can access the outer scope variable by declaring it
