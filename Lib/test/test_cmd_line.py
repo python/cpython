@@ -5,34 +5,16 @@
 import os
 import test.test_support, unittest
 import sys
-import subprocess
+from test.script_helper import spawn_python, kill_python, python_exit_code
 
-def _spawn_python(*args):
-    cmd_line = [sys.executable, '-E']
-    cmd_line.extend(args)
-    return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-def _kill_python(p):
-    p.stdin.close()
-    data = p.stdout.read()
-    p.stdout.close()
-    # try to cleanup the child so we don't appear to leak when running
-    # with regrtest -R.  This should be a no-op on Windows.
-    subprocess._cleanup()
-    return data
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, *args):
-        p = _spawn_python(*args)
-        return _kill_python(p)
+        p = spawn_python(*args)
+        return kill_python(p)
 
     def exit_code(self, *args):
-        cmd_line = [sys.executable, '-E']
-        cmd_line.extend(args)
-        with open(os.devnull, 'w') as devnull:
-            return subprocess.call(cmd_line, stdout=devnull,
-                                   stderr=subprocess.STDOUT)
+        return python_exit_code(*args)
 
     def test_directories(self):
         self.assertNotEqual(self.exit_code('.'), 0)
@@ -85,10 +67,10 @@ class CmdLineTest(unittest.TestCase):
         # -m and -i need to play well together
         # Runs the timeit module and checks the __main__
         # namespace has been populated appropriately
-        p = _spawn_python('-i', '-m', 'timeit', '-n', '1')
+        p = spawn_python('-i', '-m', 'timeit', '-n', '1')
         p.stdin.write('Timer\n')
         p.stdin.write('exit()\n')
-        data = _kill_python(p)
+        data = kill_python(p)
         self.assertTrue(data.startswith('1 loop'))
         self.assertTrue('__main__.Timer' in data)
 

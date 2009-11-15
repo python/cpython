@@ -14,6 +14,9 @@ import doctest
 import inspect
 import linecache
 import pdb
+from test.script_helper import (spawn_python, kill_python, run_python,
+                                temp_dir, make_script, compile_script,
+                                make_pkg, make_zip_script, make_zip_pkg)
 
 verbose = test.test_support.verbose
 
@@ -29,11 +32,6 @@ verbose = test.test_support.verbose
 # Retrieve some helpers from other test cases
 from test import test_doctest, sample_doctest
 from test.test_importhooks import ImportHooksBaseTestCase
-from test.test_cmd_line_script import temp_dir, _run_python,        \
-                                      _spawn_python, _kill_python,  \
-                                      _make_test_script,            \
-                                      _compile_test_script,         \
-                                      _make_test_zip, _make_test_pkg
 
 
 def _run_object_doctest(obj, module):
@@ -78,10 +76,10 @@ class ZipSupportTests(ImportHooksBaseTestCase):
     def test_inspect_getsource_issue4223(self):
         test_src = "def foo(): pass\n"
         with temp_dir() as d:
-            init_name = _make_test_script(d, '__init__', test_src)
+            init_name = make_script(d, '__init__', test_src)
             name_in_zip = os.path.join('zip_pkg',
                                        os.path.basename(init_name))
-            zip_name, run_name = _make_test_zip(d, 'test_zip',
+            zip_name, run_name = make_zip_script(d, 'test_zip',
                                                 init_name, name_in_zip)
             os.remove(init_name)
             sys.path.insert(0, zip_name)
@@ -106,9 +104,9 @@ class ZipSupportTests(ImportHooksBaseTestCase):
         sample_src = sample_src.replace("test.test_doctest",
                                         "test_zipped_doctest")
         with temp_dir() as d:
-            script_name = _make_test_script(d, 'test_zipped_doctest',
+            script_name = make_script(d, 'test_zipped_doctest',
                                             test_src)
-            zip_name, run_name = _make_test_zip(d, 'test_zip',
+            zip_name, run_name = make_zip_script(d, 'test_zip',
                                                 script_name)
             z = zipfile.ZipFile(zip_name, 'a')
             z.writestr("sample_zipped_doctest.py", sample_src)
@@ -184,17 +182,17 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                     """)
         pattern = 'File "%s", line 2, in %s'
         with temp_dir() as d:
-            script_name = _make_test_script(d, 'script', test_src)
-            exit_code, data = _run_python(script_name)
+            script_name = make_script(d, 'script', test_src)
+            exit_code, data = run_python(script_name)
             expected = pattern % (script_name, "__main__.Test")
             if verbose:
                 print "Expected line", expected
                 print "Got stdout:"
                 print data
             self.assertTrue(expected in data)
-            zip_name, run_name = _make_test_zip(d, "test_zip",
+            zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
-            exit_code, data = _run_python(zip_name)
+            exit_code, data = run_python(zip_name)
             expected = pattern % (run_name, "__main__.Test")
             if verbose:
                 print "Expected line", expected
@@ -211,16 +209,16 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                     pdb.runcall(f)
                     """)
         with temp_dir() as d:
-            script_name = _make_test_script(d, 'script', test_src)
-            p = _spawn_python(script_name)
+            script_name = make_script(d, 'script', test_src)
+            p = spawn_python(script_name)
             p.stdin.write('l\n')
-            data = _kill_python(p)
+            data = kill_python(p)
             self.assertTrue(script_name in data)
-            zip_name, run_name = _make_test_zip(d, "test_zip",
+            zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
-            p = _spawn_python(zip_name)
+            p = spawn_python(zip_name)
             p.stdin.write('l\n')
-            data = _kill_python(p)
+            data = kill_python(p)
             self.assertTrue(run_name in data)
 
 

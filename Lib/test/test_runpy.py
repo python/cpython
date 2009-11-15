@@ -5,8 +5,11 @@ import os.path
 import sys
 import tempfile
 from test.test_support import verbose, run_unittest, forget
-from runpy import _run_code, _run_module_code, run_module
+from test.script_helper import (temp_dir, make_script, compile_script,
+                                make_pkg, make_zip_script, make_zip_pkg)
 
+
+from runpy import _run_code, _run_module_code, run_module, run_path
 # Note: This module can't safely test _run_module_as_main as it
 # runs its tests in the current process, which would mess with the
 # real __main__ module (usually test.regrtest)
@@ -15,6 +18,7 @@ from runpy import _run_code, _run_module_code, run_module
 # Set up the test code and expected results
 
 class RunModuleCodeTest(unittest.TestCase):
+    """Unit tests for runpy._run_code and runpy._run_module_code"""
 
     expected_result = ["Top level assignment", "Lower level reference"]
     test_source = (
@@ -37,14 +41,14 @@ class RunModuleCodeTest(unittest.TestCase):
     def test_run_code(self):
         saved_argv0 = sys.argv[0]
         d = _run_code(self.test_source, {})
-        self.assertTrue(d["result"] == self.expected_result)
-        self.assertTrue(d["__name__"] is None)
-        self.assertTrue(d["__file__"] is None)
-        self.assertTrue(d["__loader__"] is None)
-        self.assertTrue(d["__package__"] is None)
-        self.assertTrue(d["run_argv0"] is saved_argv0)
-        self.assertTrue("run_name" not in d)
-        self.assertTrue(sys.argv[0] is saved_argv0)
+        self.assertEqual(d["result"], self.expected_result)
+        self.assertIs(d["__name__"], None)
+        self.assertIs(d["__file__"], None)
+        self.assertIs(d["__loader__"], None)
+        self.assertIs(d["__package__"], None)
+        self.assertIs(d["run_argv0"], saved_argv0)
+        self.assertNotIn("run_name", d)
+        self.assertIs(sys.argv[0], saved_argv0)
 
     def test_run_module_code(self):
         initial = object()
@@ -60,22 +64,23 @@ class RunModuleCodeTest(unittest.TestCase):
                               file,
                               loader,
                               package)
-        self.assertTrue("result" not in d1)
-        self.assertTrue(d2["initial"] is initial)
-        self.assertTrue(d2["result"] == self.expected_result)
-        self.assertTrue(d2["nested"]["x"] == 1)
-        self.assertTrue(d2["__name__"] is name)
+        self.assertNotIn("result", d1)
+        self.assertIs(d2["initial"], initial)
+        self.assertEqual(d2["result"], self.expected_result)
+        self.assertEqual(d2["nested"]["x"], 1)
+        self.assertIs(d2["__name__"], name)
         self.assertTrue(d2["run_name_in_sys_modules"])
         self.assertTrue(d2["module_in_sys_modules"])
-        self.assertTrue(d2["__file__"] is file)
-        self.assertTrue(d2["run_argv0"] is file)
-        self.assertTrue(d2["__loader__"] is loader)
-        self.assertTrue(d2["__package__"] is package)
-        self.assertTrue(sys.argv[0] is saved_argv0)
-        self.assertTrue(name not in sys.modules)
+        self.assertIs(d2["__file__"], file)
+        self.assertIs(d2["run_argv0"], file)
+        self.assertIs(d2["__loader__"], loader)
+        self.assertIs(d2["__package__"], package)
+        self.assertIs(sys.argv[0], saved_argv0)
+        self.assertNotIn(name, sys.modules)
 
 
 class RunModuleTest(unittest.TestCase):
+    """Unit tests for runpy.run_module"""
 
     def expect_import_error(self, mod_name):
         try:
@@ -272,9 +277,124 @@ from ..uncle.cousin import nephew
             self._check_relative_imports(depth, "__main__")
 
 
+class RunPathTest(unittest.TestCase):
+    """Unit tests for runpy.run_path"""
+    # Based on corresponding tests in test_cmd_line_script
+
+    test_source = """\
+# Script may be run with optimisation enabled, so don't rely on assert
+# statements being executed
+def assertEqual(lhs, rhs):
+    if lhs != rhs:
+        raise AssertionError('%r != %r' % (lhs, rhs))
+def assertIs(lhs, rhs):
+    if lhs is not rhs:
+        raise AssertionError('%r is not %r' % (lhs, rhs))
+# Check basic code execution
+result = ['Top level assignment']
+def f():
+    result.append('Lower level reference')
+f()
+assertEqual(result, ['Top level assignment', 'Lower level reference'])
+# Check the sys module
+import sys
+assertIs(globals(), sys.modules[__name__].__dict__)
+argv0 = sys.argv[0]
+"""
+
+    def _make_test_script(self, script_dir, script_basename, source=None):
+        if source is None:
+            source = self.test_source
+        return make_script(script_dir, script_basename, source)
+
+    def _check_script(self, script_name, expected_name, expected_file,
+                            expected_argv0, expected_package):
+        result = run_path(script_name)
+        self.assertEqual(result["__name__"], expected_name)
+        self.assertEqual(result["__file__"], expected_file)
+        self.assertIn("argv0", result)
+        self.assertEqual(result["argv0"], expected_argv0)
+        self.assertEqual(result["__package__"], expected_package)
+
+    def _check_import_error(self, script_name, msg):
+        self.assertRaisesRegexp(ImportError, msg, run_path, script_name)
+
+    def test_basic_script(self):
+        with temp_dir() as script_dir:
+            mod_name = 'script'
+            script_name = self._make_test_script(script_dir, mod_name)
+            self._check_script(script_name, "<run_path>", script_name,
+                               script_name, None)
+
+    def test_script_compiled(self):
+        with temp_dir() as script_dir:
+            mod_name = 'script'
+            script_name = self._make_test_script(script_dir, mod_name)
+            compiled_name = compile_script(script_name)
+            os.remove(script_name)
+            self._check_script(compiled_name, "<run_path>", compiled_name,
+                               compiled_name, None)
+
+    def test_directory(self):
+        with temp_dir() as script_dir:
+            mod_name = '__main__'
+            script_name = self._make_test_script(script_dir, mod_name)
+            self._check_script(script_dir, "<run_path>", script_name,
+                               script_dir, '')
+
+    def test_directory_compiled(self):
+        with temp_dir() as script_dir:
+            mod_name = '__main__'
+            script_name = self._make_test_script(script_dir, mod_name)
+            compiled_name = compile_script(script_name)
+            os.remove(script_name)
+            self._check_script(script_dir, "<run_path>", compiled_name,
+                               script_dir, '')
+
+    def test_directory_error(self):
+        with temp_dir() as script_dir:
+            mod_name = 'not_main'
+            script_name = self._make_test_script(script_dir, mod_name)
+            msg = "can't find '__main__' module in %r" % script_dir
+            self._check_import_error(script_dir, msg)
+
+    def test_zipfile(self):
+        with temp_dir() as script_dir:
+            mod_name = '__main__'
+            script_name = self._make_test_script(script_dir, mod_name)
+            zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
+            self._check_script(zip_name, "<run_path>", fname, zip_name, '')
+
+    def test_zipfile_compiled(self):
+        with temp_dir() as script_dir:
+            mod_name = '__main__'
+            script_name = self._make_test_script(script_dir, mod_name)
+            compiled_name = compile_script(script_name)
+            zip_name, fname = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, "<run_path>", fname, zip_name, '')
+
+    def test_zipfile_error(self):
+        with temp_dir() as script_dir:
+            mod_name = 'not_main'
+            script_name = self._make_test_script(script_dir, mod_name)
+            zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
+            msg = "can't find '__main__' module in %r" % zip_name
+            self._check_import_error(zip_name, msg)
+
+    def test_main_recursion_error(self):
+        with temp_dir() as script_dir, temp_dir() as dummy_dir:
+            mod_name = '__main__'
+            source = ("import runpy\n"
+                      "runpy.run_path(%r)\n") % dummy_dir
+            script_name = self._make_test_script(script_dir, mod_name, source)
+            zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
+            msg = "recursion depth exceeded"
+            self.assertRaisesRegexp(RuntimeError, msg, run_path, zip_name)
+
+
+
 def test_main():
-    run_unittest(RunModuleCodeTest)
-    run_unittest(RunModuleTest)
+    run_unittest(RunModuleCodeTest, RunModuleTest, RunPathTest)
 
 if __name__ == "__main__":
     test_main()
