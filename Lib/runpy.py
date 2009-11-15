@@ -11,15 +11,53 @@ importers when locating support scripts as well as when importing modules.
 
 import sys
 import imp
+from pkgutil import read_code
 try:
     from imp import get_loader
 except ImportError:
     from pkgutil import get_loader
 
 __all__ = [
-    "run_module",
+    "run_module", "run_path",
 ]
 
+class _TempModule(object):
+    """Temporarily replace a module in sys.modules with an empty namespace"""
+    def __init__(self, mod_name):
+        self.mod_name = mod_name
+        self.module = imp.new_module(mod_name)
+        self._saved_module = []
+
+    def __enter__(self):
+        mod_name = self.mod_name
+        try:
+            self._saved_module.append(sys.modules[mod_name])
+        except KeyError:
+            pass
+        sys.modules[mod_name] = self.module
+        return self
+
+    def __exit__(self, *args):
+        if self._saved_module:
+            sys.modules[self.mod_name] = self._saved_module[0]
+        else:
+            del sys.modules[self.mod_name]
+        self._saved_module = []
+
+class _ModifiedArgv0(object):
+    def __init__(self, value):
+        self.value = value
+        self._saved_value = self._sentinel = object()
+
+    def __enter__(self):
+        if self._saved_value is not self._sentinel:
+            raise RuntimeError("Already preserving saved value")
+        self._saved_value = sys.argv[0]
+        sys.argv[0] = self.value
+
+    def __exit__(self, *args):
+        self.value = self._sentinel
+        sys.argv[0] = self._saved_value
 
 def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_fname=None,
@@ -38,26 +76,10 @@ def _run_module_code(code, init_globals=None,
                     mod_name=None, mod_fname=None,
                     mod_loader=None, pkg_name=None):
     """Helper to run code in new namespace with sys modified"""
-    # Set up the top level namespace dictionary
-    temp_module = imp.new_module(mod_name)
-    mod_globals = temp_module.__dict__
-    # Modify sys.argv[0] and sys.module[mod_name]
-    saved_argv0 = sys.argv[0]
-    restore_module = mod_name in sys.modules
-    if restore_module:
-        saved_module = sys.modules[mod_name]
-    sys.argv[0] = mod_fname
-    sys.modules[mod_name] = temp_module
-    try:
+    with _TempModule(mod_name) as temp_module, _ModifiedArgv0(mod_fname):
+        mod_globals = temp_module.module.__dict__
         _run_code(code, mod_globals, init_globals,
-                    mod_name, mod_fname,
-                    mod_loader, pkg_name)
-    finally:
-        sys.argv[0] = saved_argv0
-        if restore_module:
-            sys.modules[mod_name] = saved_module
-        else:
-            del sys.modules[mod_name]
+                  mod_name, mod_fname, mod_loader, pkg_name)
     # Copy the globals of the temporary module, as they
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
@@ -95,10 +117,22 @@ def _get_module_details(mod_name):
     return mod_name, loader, code, filename
 
 
-# XXX ncoghlan: Should this be documented and made public?
-# (Current thoughts: don't repeat the mistake that lead to its
-# creation when run_module() no longer met the needs of
-# mainmodule.c, but couldn't be changed because it was public)
+def _get_main_module_details():
+    # Helper that gives a nicer error message when attempting to
+    # execute a zipfile or directory by invoking __main__.py
+    main_name = "__main__"
+    try:
+        return _get_module_details(main_name)
+    except ImportError as exc:
+        if main_name in str(exc):
+            raise ImportError("can't find %r module in %r" %
+                              (main_name, sys.path[0]))
+        raise
+
+# This function is the actual implementation of the -m switch and direct
+# execution of zipfiles and directories and is deliberately kept private.
+# This avoids a repeat of the situation where run_module() no longer met the
+# needs of mainmodule.c, but couldn't be changed because it was public
 def _run_module_as_main(mod_name, alter_argv=True):
     """Runs the designated module in the __main__ namespace
 
@@ -113,18 +147,12 @@ def _run_module_as_main(mod_name, alter_argv=True):
            __package__
     """
     try:
-        mod_name, loader, code, fname = _get_module_details(mod_name)
+        if alter_argv or mod_name != "__main__": # i.e. -m switch
+            mod_name, loader, code, fname = _get_module_details(mod_name)
+        else:          # i.e. directory or zipfile execution
+            mod_name, loader, code, fname = _get_main_module_details()
     except ImportError as exc:
-        # Try to provide a good error message
-        # for directories, zip files and the -m switch
-        if alter_argv:
-            # For -m switch, just display the exception
-            info = str(exc)
-        else:
-            # For directories/zipfiles, let the user
-            # know what the code was looking for
-            info = "can't find '__main__.py' in %r" % sys.argv[0]
-        msg = "%s: %s" % (sys.executable, info)
+        msg = "%s: %s" % (sys.executable, str(exc))
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
@@ -150,6 +178,95 @@ def run_module(mod_name, init_globals=None,
         # Leave the sys module alone
         return _run_code(code, {}, init_globals, run_name,
                          fname, loader, pkg_name)
+
+
+# XXX (ncoghlan): Perhaps expose the C API function
+# as imp.get_importer instead of reimplementing it in Python?
+def _get_importer(path_name):
+    """Python version of PyImport_GetImporter C API function"""
+    cache = sys.path_importer_cache
+    try:
+        importer = cache[path_name]
+    except KeyError:
+        # Not yet cached. Flag as using the
+        # standard machinery until we finish
+        # checking the hooks
+        cache[path_name] = None
+        for hook in sys.path_hooks:
+            try:
+                importer = hook(path_name)
+                break
+            except ImportError:
+                pass
+        else:
+            # The following check looks a bit odd. The trick is that
+            # NullImporter throws ImportError if the supplied path is a
+            # *valid* directory entry (and hence able to be handled
+            # by the standard import machinery)
+            try:
+                importer = imp.NullImporter(path_name)
+            except ImportError:
+                return None
+        cache[path_name] = importer
+    return importer
+
+def _get_code_from_file(fname):
+    # Check for a compiled file first
+    with open(fname, "rb") as f:
+        code = read_code(f)
+    if code is None:
+        # That didn't work, so try it as normal source code
+        with open(fname, "rU") as f:
+            code = compile(f.read(), fname, 'exec')
+    return code
+
+def run_path(path_name, init_globals=None, run_name=None):
+    """Execute code located at the specified filesystem location
+
+       Returns the resulting top level namespace dictionary
+
+       The file path may refer directly to a Python script (i.e.
+       one that could be directly executed with execfile) or else
+       it may refer to a zipfile or directory containing a top
+       level __main__.py script.
+    """
+    if run_name is None:
+        run_name = "<run_path>"
+    importer = _get_importer(path_name)
+    if isinstance(importer, imp.NullImporter):
+        # Not a valid sys.path entry, so run the code directly
+        # execfile() doesn't help as we want to allow compiled files
+        code = _get_code_from_file(path_name)
+        return _run_module_code(code, init_globals, run_name, path_name)
+    else:
+        # Importer is defined for path, so add it to
+        # the start of sys.path
+        sys.path.insert(0, path_name)
+        try:
+            # Here's where things are a little different from the run_module
+            # case. There, we only had to replace the module in sys while the
+            # code was running and doing so was somewhat optional. Here, we
+            # have no choice and we have to remove it even while we read the
+            # code. If we don't do this, a __loader__ attribute in the
+            # existing __main__ module may prevent location of the new module.
+            main_name = "__main__"
+            saved_main = sys.modules[main_name]
+            del sys.modules[main_name]
+            try:
+                mod_name, loader, code, fname = _get_main_module_details()
+            finally:
+                sys.modules[main_name] = saved_main
+            pkg_name = ""
+            with _TempModule(run_name) as temp_module, \
+                 _ModifiedArgv0(path_name):
+                mod_globals = temp_module.module.__dict__
+                return _run_code(code, mod_globals, init_globals,
+                                    run_name, fname, loader, pkg_name)
+        finally:
+            try:
+                sys.path.remove(path_name)
+            except ValueError:
+                pass
 
 
 if __name__ == "__main__":
