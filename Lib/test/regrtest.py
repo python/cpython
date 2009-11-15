@@ -330,6 +330,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                 for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
                     msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
                     msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+        else:
+            print(("No handler for option {}.  Please report this as a bug "
+                  "at http://bugs.python.org.").format(o), file=sys.stderr)
+            sys.exit(1)
     if generate and verbose:
         usage("-g and -v don't go together!")
     if single and fromfile:
