@@ -132,6 +132,8 @@ C-API
 Library
 -------
 
+- Issue #7328: pydoc no longer corrupts sys.path when run with the '-m' switch
+
 - Issue #4969: The mimetypes module now reads the MIME database from
   the registry under Windows.  Patch by Gabriel Genellina.
 
