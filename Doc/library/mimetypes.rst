@@ -77,9 +77,13 @@ behavior of the module.
 
    Initialize the internal data structures.  If given, *files* must be a sequence
    of file names which should be used to augment the default type map.  If omitted,
-   the file names to use are taken from :const:`knownfiles`.  Each file named in
-   *files* or :const:`knownfiles` takes precedence over those named before it.
-   Calling :func:`init` repeatedly is allowed.
+   the file names to use are taken from :const:`knownfiles`; on Windows, the
+   current registry settings are loaded.  Each file named in *files* or
+   :const:`knownfiles` takes precedence over those named before it.  Calling
+   :func:`init` repeatedly is allowed.
+
+   .. versionchanged:: 2.7
+      Previously, Windows registry settings were ignored.
 
 
 .. function:: read_mime_types(filename)
@@ -213,6 +217,12 @@ MimeTypes Objects
    of the object.
 
 
+.. method:: MimeTypes.guess_all_extensions(type[, strict])
+
+   Similar to the :func:`guess_all_extensions` function, using the tables stored as part
+   of the object.
+
+
 .. method:: MimeTypes.guess_type(url[, strict])
 
    Similar to the :func:`guess_type` function, using the tables stored as part of
@@ -230,3 +240,9 @@ MimeTypes Objects
    Load MIME type information from an open file.  The file must have the format of
    the standard :file:`mime.types` files.
 
+
+.. method:: MimeTypes.read_windows_registry()
+
+   Load MIME type information from the Windows registry.  Availability: Windows.
+
+   .. versionadded:: 2.7

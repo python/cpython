@@ -1,6 +1,7 @@
 import mimetypes
 import StringIO
 import unittest
+import sys
 
 from test import test_support
 
@@ -62,8 +63,31 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(all, [])
 
 
+@unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
+class Win32MimeTypesTestCase(unittest.TestCase):
+    def setUp(self):
+        # ensure all entries actually come from the Windows registry
+        self.original_types_map = mimetypes.types_map.copy()
+        mimetypes.types_map.clear()
+        mimetypes.init()
+        self.db = mimetypes.MimeTypes()
+
+    def tearDown(self):
+        # restore default settings
+        mimetypes.types_map.clear()
+        mimetypes.types_map.update(self.original_types_map)
+
+    def test_registry_parsing(self):
+        # the original, minimum contents of the MIME database in the
+        # Windows registry is undocumented AFAIK.
+        # Use file types that should *always* exist:
+        eq = self.assertEqual
+        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
+
 def test_main():
-    test_support.run_unittest(MimeTypesTestCase)
+    test_support.run_unittest(MimeTypesTestCase,
+        Win32MimeTypesTestCase
+        )
 
 
 if __name__ == "__main__":
