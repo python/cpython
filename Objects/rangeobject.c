@@ -664,24 +664,6 @@ range_iter(PyObject *seq)
         PyErr_Clear();
         goto long_range;
     }
-    /* round lstop to the next value congruent to lstart modulo lstep;
-       if the result would overflow, use PyLong version. */
-    if (lstep > 0 && lstart < lstop) {
-        long extra = (lstep - 1) - (long)((lstop - 1UL - lstart) % lstep);
-        if ((unsigned long)extra > (unsigned long)LONG_MAX - lstop)
-            goto long_range;
-        lstop += extra;
-    }
-    else if (lstep < 0 && lstart > lstop) {
-        long extra = (lstep + 1) + (long)((lstart - 1UL - lstop) %
-                                          (0UL - lstep));
-        if ((unsigned long)lstop - LONG_MIN < 0UL - extra)
-            goto long_range;
-        lstop += extra;
-    }
-    else
-        lstop = lstart;
-
     int_it = int_range_iter(lstart, lstop, lstep);
     if (int_it == NULL && PyErr_ExceptionMatches(PyExc_OverflowError)) {
         PyErr_Clear();
@@ -777,15 +759,6 @@ range_reverse(PyObject *seq)
         if (LONG_MAX - (unsigned long)lstart < 0UL - lstep)
             goto long_range;
     }
-
-    /* set lstop equal to the last element of the range, or to lstart if the
-       range is empty. */
-    if (lstep > 0 && lstart < lstop)
-        lstop += -1 - (long)((lstop - 1UL - lstart) % lstep);
-    else if (lstep < 0 && lstart > lstop)
-        lstop += 1 + (long)((lstart - 1UL - lstop) % (0UL - lstep));
-    else
-        lstop = lstart;
 
     ulen = get_len_of_range(lstart, lstop, lstep);
     if (ulen > (unsigned long)LONG_MAX)
