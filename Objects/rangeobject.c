@@ -411,7 +411,10 @@ static PyObject *
 rangeiter_next(rangeiterobject *r)
 {
     if (r->index < r->len)
-        return PyLong_FromLong(r->start + (r->index++) * r->step);
+        /* cast to unsigned to avoid possible signed overflow 
+           in intermediate calculations. */
+        return PyLong_FromLong((long)(r->start +
+                                      (unsigned long)(r->index++) * r->step));
     return NULL;
 }
 
