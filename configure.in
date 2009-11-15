@@ -3952,6 +3952,54 @@ else
   AC_MSG_RESULT(no)
 fi
 
+if test "$have_long_long" = yes
+then
+  AC_MSG_CHECKING(for %lld and %llu printf() format support)
+  AC_CACHE_VAL(ac_cv_have_long_long_format,
+  AC_TRY_RUN([[
+  #include <stdio.h>
+  #include <stddef.h>
+  #include <string.h>
+
+  #ifdef HAVE_SYS_TYPES_H
+  #include <sys/types.h>
+  #endif
+
+  int main()
+  {
+      char buffer[256];
+
+      if (sprintf(buffer, "%lld", (long long)123) < 0)
+          return 1;
+      if (strcmp(buffer, "123"))
+          return 1;
+
+      if (sprintf(buffer, "%lld", (long long)-123) < 0)
+          return 1;
+      if (strcmp(buffer, "-123"))
+          return 1;
+
+      if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
+          return 1;
+      if (strcmp(buffer, "123"))
+          return 1;
+
+      return 0;
+  }
+  ]], ac_cv_have_long_long_format=yes,
+      ac_cv_have_long_long_format=no,
+      ac_cv_have_long_long_format=no)
+  )
+  AC_MSG_RESULT($ac_cv_have_long_long_format)
+fi
+
+if test $ac_cv_have_long_long_format = yes
+then
+  AC_DEFINE(PY_FORMAT_LONG_LONG, "ll",
+  [Define to printf format modifier for long long type])
+fi
+
+
 AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
 AC_TRY_RUN([
 #include <stdio.h>
