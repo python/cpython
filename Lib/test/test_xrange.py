@@ -3,12 +3,49 @@
 import test.test_support, unittest
 import sys
 import pickle
+import itertools
 
 import warnings
 warnings.filterwarnings("ignore", "integer argument expected",
                         DeprecationWarning, "unittest")
 
+# pure Python implementations (3 args only), for comparison
+def pyrange(start, stop, step):
+    if (start - stop) // step < 0:
+        # replace stop with next element in the sequence of integers
+        # that are congruent to start modulo step.
+        stop += (start - stop) % step
+        while start != stop:
+            yield start
+            start += step
+
+def pyrange_reversed(start, stop, step):
+    stop += (start - stop) % step
+    return pyrange(stop - step, start - step, -step)
+
+
 class XrangeTest(unittest.TestCase):
+    def assert_iterators_equal(self, xs, ys, test_id, limit=None):
+        # check that an iterator xs matches the expected results ys,
+        # up to a given limit.
+        if limit is not None:
+            xs = itertools.islice(xs, limit)
+            ys = itertools.islice(ys, limit)
+        sentinel = object()
+        pairs = itertools.izip_longest(xs, ys, fillvalue=sentinel)
+        for i, (x, y) in enumerate(pairs):
+            if x == y:
+                continue
+            elif x == sentinel:
+                self.fail('{0}: iterator ended unexpectedly '
+                          'at position {1}; expected {2}'.format(test_id, i, y))
+            elif y == sentinel:
+                self.fail('{0}: unexpected excess element {1} at '
+                          'position {2}'.format(test_id, x, i))
+            else:
+                self.fail('{0}: wrong element at position {1};'
+                          'expected {2}, got {3}'.format(test_id, i, y, x))
+
     def test_xrange(self):
         self.assertEqual(list(xrange(3)), [0, 1, 2])
         self.assertEqual(list(xrange(1, 5)), [1, 2, 3, 4])
@@ -66,6 +103,38 @@ class XrangeTest(unittest.TestCase):
                 r = xrange(*t)
                 self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
                                   list(r))
+
+    def test_range_iterators(self):
+        # see issue 7298
+        limits = [base + jiggle
+                  for M in (2**32, 2**64)
+                  for base in (-M, -M//2, 0, M//2, M)
+                  for jiggle in (-2, -1, 0, 1, 2)]
+        test_ranges = [(start, end, step)
+                       for start in limits
+                       for end in limits
+                       for step in (-2**63, -2**31, -2, -1, 1, 2)]
+
+        for start, end, step in test_ranges:
+            try:
+                iter1 = xrange(start, end, step)
+            except OverflowError:
+                pass
+            else:
+                iter2 = pyrange(start, end, step)
+                test_id = "xrange({0}, {1}, {2})".format(start, end, step)
+                # check first 100 entries
+                self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
+
+            try:
+                iter1 = reversed(xrange(start, end, step))
+            except OverflowError:
+                pass
+            else:
+                iter2 = pyrange_reversed(start, end, step)
+                test_id = "reversed(xrange({0}, {1}, {2}))".format(
+                    start, end, step)
+                self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
 
 
 def test_main():
