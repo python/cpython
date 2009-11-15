@@ -9,33 +9,32 @@ typedef struct {
 	long	len;
 } rangeobject;
 
-/* Return number of items in range/xrange (lo, hi, step).  step > 0
- * required.  Return a value < 0 if & only if the true value is too
- * large to fit in a signed long.
+/* Return number of items in range (lo, hi, step).  step != 0
+ * required.  The result always fits in an unsigned long.
  */
-static long
+static unsigned long
 get_len_of_range(long lo, long hi, long step)
 {
-	/* -------------------------------------------------------------
-	If lo >= hi, the range is empty.
-	Else if n values are in the range, the last one is
-	lo + (n-1)*step, which must be <= hi-1.  Rearranging,
-	n <= (hi - lo - 1)/step + 1, so taking the floor of the RHS gives
-	the proper value.  Since lo < hi in this case, hi-lo-1 >= 0, so
-	the RHS is non-negative and so truncation is the same as the
-	floor.  Letting M be the largest positive long, the worst case
-	for the RHS numerator is hi=M, lo=-M-1, and then
-	hi-lo-1 = M-(-M-1)-1 = 2*M.  Therefore unsigned long has enough
-	precision to compute the RHS exactly.
-	---------------------------------------------------------------*/
-	long n = 0;
-	if (lo < hi) {
-		unsigned long uhi = (unsigned long)hi;
-		unsigned long ulo = (unsigned long)lo;
-		unsigned long diff = uhi - ulo - 1;
-		n = (long)(diff / (unsigned long)step + 1);
-	}
-	return n;
+    /* -------------------------------------------------------------
+    If step > 0 and lo >= hi, or step < 0 and lo <= hi, the range is empty.
+    Else for step > 0, if n values are in the range, the last one is
+    lo + (n-1)*step, which must be <= hi-1.  Rearranging,
+    n <= (hi - lo - 1)/step + 1, so taking the floor of the RHS gives
+    the proper value.  Since lo < hi in this case, hi-lo-1 >= 0, so
+    the RHS is non-negative and so truncation is the same as the
+    floor.  Letting M be the largest positive long, the worst case
+    for the RHS numerator is hi=M, lo=-M-1, and then
+    hi-lo-1 = M-(-M-1)-1 = 2*M.  Therefore unsigned long has enough
+    precision to compute the RHS exactly.  The analysis for step < 0
+    is similar.
+    ---------------------------------------------------------------*/
+    assert(step != 0);
+    if (step > 0 && lo < hi)
+        return 1UL + (hi - 1UL - lo) / step;
+    else if (step < 0 && lo > hi)
+        return 1UL + (lo - 1UL - hi) / (0UL - step);
+    else
+        return 0UL;
 }
 
 static PyObject *
@@ -43,7 +42,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	rangeobject *obj;
 	long ilow = 0, ihigh = 0, istep = 1;
-	long n;
+	unsigned long n;
 
 	if (!_PyArg_NoKeywords("xrange()", kw))
 		return NULL;
@@ -64,11 +63,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		PyErr_SetString(PyExc_ValueError, "xrange() arg 3 must not be zero");
 		return NULL;
 	}
-	if (istep > 0)
-		n = get_len_of_range(ilow, ihigh, istep);
-	else
-		n = get_len_of_range(ihigh, ilow, -istep);
-	if (n < 0) {
+	n = get_len_of_range(ilow, ihigh, istep);
+	if (n > (unsigned long)LONG_MAX || (long)n > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 				"xrange() result has too many items");
 		return NULL;
@@ -78,7 +74,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	if (obj == NULL)
 		return NULL;
 	obj->start = ilow;
-	obj->len   = n;
+	obj->len   = (long)n;
 	obj->step  = istep;
 	return (PyObject *) obj;
 }
@@ -98,7 +94,9 @@ range_item(rangeobject *r, Py_ssize_t i)
 				"xrange object index out of range");
 		return NULL;
 	}
-	return PyInt_FromSsize_t(r->start + i * r->step);
+	/* do calculation entirely using unsigned longs, to avoid
+	   undefined behaviour due to signed overflow. */
+	return PyInt_FromLong((long)(r->start + (unsigned long)i * r->step));
 }
 
 static Py_ssize_t
@@ -304,9 +302,21 @@ range_reverse(PyObject *seq)
 	len = ((rangeobject *)seq)->len;
 
 	it->index = 0;
-	it->start = start + (len-1) * step;
-	it->step = -step;
 	it->len = len;
+	/* the casts below guard against signed overflow by turning it
+	   into unsigned overflow instead.  The correctness of this
+	   code still depends on conversion from unsigned long to long
+	   wrapping modulo ULONG_MAX+1, which isn't guaranteed (see
+	   C99 6.3.1.3p3) but seems to hold in practice for all
+	   platforms we're likely to meet.
+
+	   If step == LONG_MIN then we still end up with LONG_MIN
+	   after negation; but this works out, since we've still got
+	   the correct value modulo ULONG_MAX+1, and the range_item
+	   calculation is also done modulo ULONG_MAX+1.
+	*/
+	it->start = (long)(start + (unsigned long)(len-1) * step);
+	it->step = (long)(-(unsigned long)step);
 
 	return (PyObject *)it;
 }
