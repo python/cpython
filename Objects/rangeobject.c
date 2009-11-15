@@ -488,16 +488,15 @@ PyTypeObject PyRangeIter_Type = {
 	rangeiter_new,				/* tp_new */
 };
 
-/* Return number of items in range (lo, hi, step).  step > 0
- * required.  Return a value < 0 if & only if the true value is too
- * large to fit in a signed long.
+/* Return number of items in range (lo, hi, step).  step != 0
+ * required.  The result always fits in an unsigned long.
  */
-static long
+static unsigned long
 get_len_of_range(long lo, long hi, long step)
 {
     /* -------------------------------------------------------------
-    If lo >= hi, the range is empty.
-    Else if n values are in the range, the last one is
+    If step > 0 and lo >= hi, or step < 0 and lo <= hi, the range is empty.
+    Else for step > 0, if n values are in the range, the last one is
     lo + (n-1)*step, which must be <= hi-1.  Rearranging,
     n <= (hi - lo - 1)/step + 1, so taking the floor of the RHS gives
     the proper value.  Since lo < hi in this case, hi-lo-1 >= 0, so
@@ -505,30 +504,37 @@ get_len_of_range(long lo, long hi, long step)
     floor.  Letting M be the largest positive long, the worst case
     for the RHS numerator is hi=M, lo=-M-1, and then
     hi-lo-1 = M-(-M-1)-1 = 2*M.  Therefore unsigned long has enough
-    precision to compute the RHS exactly.
+    precision to compute the RHS exactly.  The analysis for step < 0
+    is similar.
     ---------------------------------------------------------------*/
-    long n = 0;
-    if (lo < hi) {
-        unsigned long uhi = (unsigned long)hi;
-        unsigned long ulo = (unsigned long)lo;
-        unsigned long diff = uhi - ulo - 1;
-        n = (long)(diff / (unsigned long)step + 1);
-    }
-    return n;
+    assert(step != 0);
+    if (step > 0 && lo < hi)
+        return 1UL + (hi - 1UL - lo) / step;
+    else if (step < 0 && lo > hi)
+        return 1UL + (lo - 1UL - hi) / (0UL - step);
+    else
+        return 0UL;
 }
+
+/* Initialize a rangeiter object.  If the length of the rangeiter object
+   is not representable as a C long, OverflowError is raised. */
 
 static PyObject *
 int_range_iter(long start, long stop, long step)
 {
     rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
+    unsigned long ulen;
     if (it == NULL)
         return NULL;
     it->start = start;
     it->step = step;
-    if (step > 0)
-        it->len = get_len_of_range(start, stop, step);
-    else
-        it->len = get_len_of_range(stop, start, -step);
+    ulen = get_len_of_range(start, stop, step);
+    if (ulen > (unsigned long)LONG_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "range too large to represent as a range_iterator");
+        return NULL;
+    }
+    it->len = (long)ulen;
     it->index = 0;
     return (PyObject *)it;
 }
@@ -637,23 +643,53 @@ range_iter(PyObject *seq)
     rangeobject *r = (rangeobject *)seq;
     longrangeiterobject *it;
     long lstart, lstop, lstep;
+    PyObject *int_it;
 
     assert(PyRange_Check(seq));
 
-    /* If all three fields convert to long, use the int version */
+    /* If all three fields and the length convert to long, use the int
+     * version */
     lstart = PyLong_AsLong(r->start);
-    if (lstart != -1 || !PyErr_Occurred()) {
-	lstop = PyLong_AsLong(r->stop);
-	if (lstop != -1 || !PyErr_Occurred()) {
-	    lstep = PyLong_AsLong(r->step);
-	    if (lstep != -1 || !PyErr_Occurred())
-		return int_range_iter(lstart, lstop, lstep);
-	}
+    if (lstart == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
     }
-    /* Some conversion failed, so there is an error set. Clear it,
-       and try again with a long range. */
-    PyErr_Clear();
+    lstop = PyLong_AsLong(r->stop);
+    if (lstop == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    lstep = PyLong_AsLong(r->step);
+    if (lstep == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    /* round lstop to the next value congruent to lstart modulo lstep;
+       if the result would overflow, use PyLong version. */
+    if (lstep > 0 && lstart < lstop) {
+        long extra = (lstep - 1) - (long)((lstop - 1UL - lstart) % lstep);
+        if ((unsigned long)extra > (unsigned long)LONG_MAX - lstop)
+            goto long_range;
+        lstop += extra;
+    }
+    else if (lstep < 0 && lstart > lstop) {
+        long extra = (lstep + 1) + (long)((lstart - 1UL - lstop) %
+                                          (0UL - lstep));
+        if ((unsigned long)lstop - LONG_MIN < 0UL - extra)
+            goto long_range;
+        lstop += extra;
+    }
+    else
+        lstop = lstart;
 
+    int_it = int_range_iter(lstart, lstop, lstep);
+    if (int_it == NULL && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    return (PyObject *)int_it;
+
+  long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
@@ -686,34 +722,80 @@ range_reverse(PyObject *seq)
     rangeobject *range = (rangeobject*) seq;
     longrangeiterobject *it;
     PyObject *one, *sum, *diff, *len = NULL, *product;
-    long lstart, lstop, lstep;
+    long lstart, lstop, lstep, new_start, new_stop;
+    unsigned long ulen;
 
-    /* XXX(nnorwitz): do the calc for the new start/stop first,
-        then if they fit, call the proper iter()?
-    */
     assert(PyRange_Check(seq));
 
-    /* If all three fields convert to long, use the int version */
-    lstart = PyLong_AsLong(range->start);
-    if (lstart != -1 || !PyErr_Occurred()) {
-	lstop = PyLong_AsLong(range->stop);
-	if (lstop != -1 || !PyErr_Occurred()) {
-	    lstep = PyLong_AsLong(range->step);
-	    if (lstep != -1 || !PyErr_Occurred()) {
-		/* XXX(nnorwitz): need to check for overflow and simplify. */
-		long len = get_len_of_range(lstart, lstop, lstep);
-		long new_start = lstart + (len - 1) * lstep;
-		long new_stop = lstart;
-		if (lstep > 0)
-		    new_stop -= 1;
-		else
-		    new_stop += 1;
-		return int_range_iter(new_start, new_stop, -lstep);
-	    }
-	}
-    }
-    PyErr_Clear();
+    /* reversed(range(start, stop, step)) can be expressed as
+       range(start+(n-1)*step, start-step, -step), where n is the number of
+       integers in the range.
 
+       If each of start, stop, step, -step, start-step, and the length
+       of the iterator is representable as a C long, use the int
+       version.  This excludes some cases where the reversed range is
+       representable as a range_iterator, but it's good enough for
+       common cases and it makes the checks simple. */
+
+    lstart = PyLong_AsLong(range->start);
+    if (lstart == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    lstop = PyLong_AsLong(range->stop);
+    if (lstop == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    lstep = PyLong_AsLong(range->step);
+    if (lstep == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        goto long_range;
+    }
+    /* check for possible overflow of -lstep */
+    if (lstep == LONG_MIN)
+        goto long_range;
+
+    /* check for overflow of lstart - lstep:
+
+       for lstep > 0, need only check whether lstart - lstep < LONG_MIN.
+       for lstep < 0, need only check whether lstart - lstep > LONG_MAX
+
+       Rearrange these inequalities as:
+
+           lstart - LONG_MIN < lstep  (lstep > 0)
+           LONG_MAX - lstart < -lstep  (lstep < 0)
+
+       and compute both sides as unsigned longs, to avoid the
+       possibility of undefined behaviour due to signed overflow. */
+
+    if (lstep > 0) {
+         if ((unsigned long)lstart - LONG_MIN < (unsigned long)lstep)
+            goto long_range;
+    }
+    else {
+        if (LONG_MAX - (unsigned long)lstart < 0UL - lstep)
+            goto long_range;
+    }
+
+    /* set lstop equal to the last element of the range, or to lstart if the
+       range is empty. */
+    if (lstep > 0 && lstart < lstop)
+        lstop += -1 - (long)((lstop - 1UL - lstart) % lstep);
+    else if (lstep < 0 && lstart > lstop)
+        lstop += 1 + (long)((lstart - 1UL - lstop) % (0UL - lstep));
+    else
+        lstop = lstart;
+
+    ulen = get_len_of_range(lstart, lstop, lstep);
+    if (ulen > (unsigned long)LONG_MAX)
+        goto long_range;
+
+    new_stop = lstart - lstep;
+    new_start = (long)(new_stop + ulen * lstep);
+    return int_range_iter(new_start, new_stop, -lstep);
+
+long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
@@ -732,7 +814,8 @@ range_reverse(PyObject *seq)
     if (!diff)
         goto create_failure;
 
-    product = PyNumber_Multiply(len, range->step);
+    product = PyNumber_Multiply(diff, range->step);
+    Py_DECREF(diff);
     if (!product)
         goto create_failure;
 
@@ -741,11 +824,11 @@ range_reverse(PyObject *seq)
     it->start = sum;
     if (!it->start)
         goto create_failure;
+
     it->step = PyNumber_Negative(range->step);
     if (!it->step) {
         Py_DECREF(it->start);
-        PyObject_Del(it);
-        return NULL;
+        goto create_failure;
     }
 
     /* Steal reference to len. */
