@@ -82,6 +82,9 @@ Build
 Tests
 -----
 
+- Issue #7324: add a sanity check to regrtest argument parsing to
+  catch the case of an option with no handler.
+
 - Issue #7295: Do not use a hardcoded file name in test_tarfile.
 
 - Issue #7270: Add some dedicated unit tests for multi-thread synchronization
