@@ -30,7 +30,9 @@ handler, the argument will be installed instead of the default.
 install_opener -- Installs a new opener as the default opener.
 
 objects of interest:
-OpenerDirector --
+
+OpenerDirector -- Sets up the User Agent as the Python-urllib client and manages
+the Handler classes, while dealing with requests and responses.
 
 Request -- An object that encapsulates the state of a request.  The
 state can be as simple as the URL.  It can also include extra HTTP
@@ -440,7 +442,7 @@ def build_opener(*handlers):
     """Create an opener object from a list of handlers.
 
     The opener will use several default handlers, including support
-    for HTTP and FTP.
+    for HTTP, FTP and when applicable, HTTPS.
 
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
