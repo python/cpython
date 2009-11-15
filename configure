@@ -22945,15 +22945,15 @@ fi
 # correctly-rounded string <-> double conversion functions from
 # Python/dtoa.c, which in turn require that the FPU uses 53-bit
 # rounding; this is a problem on x86, where the x87 FPU has a default
-# rounding precision of 64 bits.  For gcc/x86, we try to fix this by
+# rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
-if test "$GCC" = yes && test -n "`$CC -dM -E - </dev/null | grep i386`"
-then
-    # Check that it's okay to use gcc inline assembler to get and set
-    # x87 control word.  It should be, but you never know...
-    { echo "$as_me:$LINENO: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
+
+# This inline assembler syntax may also work for suncc and icc,
+# so we try it on all platforms.
+
+{ echo "$as_me:$LINENO: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
 echo $ECHO_N "checking whether we can use gcc inline assembler to get and set x87 control word... $ECHO_C" >&6; }
-    cat >conftest.$ac_ext <<_ACEOF
+cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -22964,9 +22964,9 @@ int
 main ()
 {
 
-      unsigned short cw;
-      __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
-      __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
+  unsigned short cw;
+  __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
+  __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
 
   ;
   return 0;
@@ -22998,16 +22998,15 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    { echo "$as_me:$LINENO: result: $have_gcc_asm_for_x87" >&5
+{ echo "$as_me:$LINENO: result: $have_gcc_asm_for_x87" >&5
 echo "${ECHO_T}$have_gcc_asm_for_x87" >&6; }
-    if test "$have_gcc_asm_for_x87" = yes
-    then
+if test "$have_gcc_asm_for_x87" = yes
+then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GCC_ASM_FOR_X87 1
 _ACEOF
 
-    fi
 fi
 
 # Detect whether system arithmetic is subject to x87-style double
