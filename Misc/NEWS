@@ -358,6 +358,9 @@ Extension Modules
 Build
 -----
 
+- Issue #5792: Extend the short float repr support to x86 systems using
+  icc or suncc.
+
 - Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
   compiles correctly under gcc on x86-64.  This fixes a reported
   problem with the --with-tsc build on x86-64.
