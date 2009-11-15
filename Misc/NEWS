@@ -12,6 +12,12 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7298: fixes for range and reversed(range(...)).  Iteration
+  over range(a, b, c) incorrectly gave an empty iterator when a, b and
+  c fit in C long but the length of the range did not.  Also fix
+  several cases where reversed(range(a, b, c)) gave wrong results, and
+  fix a refleak for reversed(range(a, b, c)) with large arguments.
+
 - Issue #7244: itertools.izip_longest() no longer ignores exceptions
   raised during the formation of an output tuple.
 
