@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6970: Remove redundant calls when comparing objects that don't
+  implement the relevant rich comparison methods.
+
 - Issue #7298: fixes for range and reversed(range(...)).  Iteration
   over range(a, b, c) incorrectly gave an empty iterator when a, b and
   c fit in C long but the length of the range did not.  Also fix

@@ -544,10 +544,12 @@ do_richcompare(PyObject *v, PyObject *w, int op)
 {
 	richcmpfunc f;
 	PyObject *res;
+	int checked_reverse_op = 0;
 
 	if (v->ob_type != w->ob_type &&
 	    PyType_IsSubtype(w->ob_type, v->ob_type) &&
 	    (f = w->ob_type->tp_richcompare) != NULL) {
+		checked_reverse_op = 1;
 		res = (*f)(w, v, _Py_SwappedOp[op]);
 		if (res != Py_NotImplemented)
 			return res;
@@ -559,7 +561,7 @@ do_richcompare(PyObject *v, PyObject *w, int op)
 			return res;
 		Py_DECREF(res);
 	}
-	if ((f = w->ob_type->tp_richcompare) != NULL) {
+	if (!checked_reverse_op && (f = w->ob_type->tp_richcompare) != NULL) {
 		res = (*f)(w, v, _Py_SwappedOp[op]);
 		if (res != Py_NotImplemented)
 			return res;
