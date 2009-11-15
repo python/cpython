@@ -847,6 +847,7 @@ class AbstractDigestAuthHandler:
         self.add_password = self.passwd.add_password
         self.retried = 0
         self.nonce_count = 0
+        self.last_nonce = None
 
     def reset_retry_count(self):
         self.retried = 0
@@ -922,7 +923,11 @@ class AbstractDigestAuthHandler:
                         # XXX selector: what about proxies and full urls
                         req.selector)
         if qop == 'auth':
-            self.nonce_count += 1
+            if nonce == self.last_nonce:
+                self.nonce_count += 1
+            else:
+                self.nonce_count = 1
+                self.last_nonce = nonce
             ncvalue = '%08x' % self.nonce_count
             cnonce = self.get_cnonce(nonce)
             noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, qop, H(A2))
