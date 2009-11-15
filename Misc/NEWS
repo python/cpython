@@ -378,6 +378,9 @@ Documentation
 Tests
 -----
 
+- Issue #7324: add a sanity check to regrtest argument parsing to
+  catch the case of an option with no handler.
+
 - Issue #7312: Add a -F flag to run the selected tests in a loop until
   a test fails.  Can be combined with -j.
 

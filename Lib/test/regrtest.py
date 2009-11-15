@@ -370,6 +370,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print()   # Force a newline (just in case)
             print(json.dumps(result))
             sys.exit(0)
+        else:
+            print(("No handler for option {}.  Please report this as a bug "
+                  "at http://bugs.python.org.").format(o), file=sys.stderr)
+            sys.exit(1)
     if single and fromfile:
         usage("-s and -f don't go together!")
     if use_mp and trace:
