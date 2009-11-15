@@ -189,6 +189,9 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	/* step 1: figure out how large a buffer we need */
 	for (f = format; *f; f++) {
 		if (*f == '%') {
+#ifdef HAVE_LONG_LONG
+			int longlongflag = 0;
+#endif
 			const char* p = f;
 			while (*++f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				;
@@ -196,9 +199,21 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			/* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
 			 * they don't affect the amount of space we reserve.
 			 */
-			if ((*f == 'l' || *f == 'z') &&
-					(f[1] == 'd' || f[1] == 'u'))
+			if (*f == 'l') {
+				if (f[1] == 'd' || f[1] == 'u') {
+					++f;
+				}
+#ifdef HAVE_LONG_LONG
+				else if (f[1] == 'l' &&
+					 (f[2] == 'd' || f[2] == 'u')) {
+					longlongflag = 1;
+					f += 2;
+				}
+#endif
+			}
+			else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
 				++f;
+			}
 
 			switch (*f) {
 			case 'c':
@@ -209,10 +224,21 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				break;
 			case 'd': case 'u': case 'i': case 'x':
 				(void) va_arg(count, int);
-				/* 20 bytes is enough to hold a 64-bit
-				   integer.  Decimal takes the most space.
-				   This isn't enough for octal. */
-				n += 20;
+#ifdef HAVE_LONG_LONG
+				/* Need at most
+				   ceil(log10(256)*SIZEOF_LONG_LONG) digits,
+				   plus 1 for the sign.  53/22 is an upper
+				   bound for log10(256). */
+				if (longlongflag)
+					n += 2 + (SIZEOF_LONG_LONG*53-1) / 22;
+				else
+#endif
+					/* 20 bytes is enough to hold a 64-bit
+					   integer.  Decimal takes the most
+					   space.  This isn't enough for
+					   octal. */
+					n += 20;
+
 				break;
 			case 's':
 				s = va_arg(count, char*);
@@ -255,6 +281,9 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			const char* p = f++;
 			Py_ssize_t i;
 			int longflag = 0;
+#ifdef HAVE_LONG_LONG
+			int longlongflag = 0;
+#endif
 			int size_tflag = 0;
 			/* parse the width.precision part (we're only
 			   interested in the precision value, if any) */
@@ -269,14 +298,22 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			}
 			while (*f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				f++;
-			/* handle the long flag, but only for %ld and %lu.
-			   others can be added when necessary. */
-			if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
-				longflag = 1;
-				++f;
+			/* Handle %ld, %lu, %lld and %llu. */
+			if (*f == 'l') {
+				if (f[1] == 'd' || f[1] == 'u') {
+					longflag = 1;
+					++f;
+				}
+#ifdef HAVE_LONG_LONG
+				else if (f[1] == 'l' &&
+					 (f[2] == 'd' || f[2] == 'u')) {
+					longlongflag = 1;
+					f += 2;
+				}
+#endif
 			}
 			/* handle the size_t flag. */
-			if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
+			else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
 				size_tflag = 1;
 				++f;
 			}
@@ -288,6 +325,11 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			case 'd':
 				if (longflag)
 					sprintf(s, "%ld", va_arg(vargs, long));
+#ifdef HAVE_LONG_LONG
+				else if (longlongflag)
+					sprintf(s, "%" PY_FORMAT_LONG_LONG "d",
+						va_arg(vargs, PY_LONG_LONG));
+#endif
 				else if (size_tflag)
 					sprintf(s, "%" PY_FORMAT_SIZE_T "d",
 					        va_arg(vargs, Py_ssize_t));
@@ -299,6 +341,11 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				if (longflag)
 					sprintf(s, "%lu",
 						va_arg(vargs, unsigned long));
+#ifdef HAVE_LONG_LONG
+				else if (longlongflag)
+					sprintf(s, "%" PY_FORMAT_LONG_LONG "u",
+						va_arg(vargs, PY_LONG_LONG));
+#endif
 				else if (size_tflag)
 					sprintf(s, "%" PY_FORMAT_SIZE_T "u",
 					        va_arg(vargs, size_t));

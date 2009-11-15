@@ -78,6 +78,8 @@ called with a non-string parameter.
    .. % The descriptions for %zd and %zu are wrong, but the truth is complicated
    .. % because not all compilers support the %z width modifier -- we fake it
    .. % when necessary via interpolating PY_FORMAT_SIZE_T.
+   .. % Similar comments apply to the %ll width modifier and
+   .. % PY_FORMAT_LONG_LONG.
    .. % %u, %lu, %zu should have "new in Python 2.5" blurbs.
 
    +-------------------+---------------+--------------------------------+
@@ -99,6 +101,12 @@ called with a non-string parameter.
    +-------------------+---------------+--------------------------------+
    | :attr:`%lu`       | unsigned long | Exactly equivalent to          |
    |                   |               | ``printf("%lu")``.             |
+   +-------------------+---------------+--------------------------------+
+   | :attr:`%lld`      | long long     | Exactly equivalent to          |
+   |                   |               | ``printf("%lld")``.            |
+   +-------------------+---------------+--------------------------------+
+   | :attr:`%llu`      | unsigned      | Exactly equivalent to          |
+   |                   | long long     | ``printf("%llu")``.            |
    +-------------------+---------------+--------------------------------+
    | :attr:`%zd`       | Py_ssize_t    | Exactly equivalent to          |
    |                   |               | ``printf("%zd")``.             |
@@ -126,6 +134,14 @@ called with a non-string parameter.
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
+
+   .. note::
+
+      The `"%lld"` and `"%llu"` format specifiers are only available
+      when `HAVE_LONG_LONG` is defined.
+
+   .. versionchanged:: 2.7
+      Support for `"%lld"` and `"%llu"` added.
 
 
 .. cfunction:: PyObject* PyString_FromFormatV(const char *format, va_list vargs)

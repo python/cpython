@@ -229,6 +229,22 @@ typedef Py_intptr_t	Py_ssize_t;
 #   endif
 #endif
 
+/* PY_FORMAT_LONG_LONG is analogous to PY_FORMAT_SIZE_T above, but for
+ * the long long type instead of the size_t type.  It's only available
+ * when HAVE_LONG_LONG is defined. The "high level" Python format
+ * functions listed above will interpret "lld" or "llu" correctly on
+ * all platforms.
+ */
+#ifdef HAVE_LONG_LONG
+#   ifndef PY_FORMAT_LONG_LONG
+#       if defined(MS_WIN64) || defined(MS_WINDOWS)
+#           define PY_FORMAT_LONG_LONG "I64"
+#       else
+#           error "This platform's pyconfig.h needs to define PY_FORMAT_LONG_LONG"
+#       endif
+#   endif
+#endif
+
 /* Py_LOCAL can be used instead of static to get the fastest possible calling
  * convention for functions that are local to a given module.
  *
