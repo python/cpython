@@ -2,6 +2,7 @@
 
 import unittest
 from test import support
+from operator import eq, ne, lt, gt, le, ge
 
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""
@@ -305,9 +306,78 @@ class RatTestCase(unittest.TestCase):
 
     # XXX Ran out of steam; TO DO: divmod, div, future division
 
-def test_main():
-    support.run_unittest(RatTestCase)
 
+class OperationLogger:
+    """Base class for classes with operation logging."""
+    def __init__(self, logger):
+        self.logger = logger
+    def log_operation(self, *args):
+        self.logger(*args)
+
+def op_sequence(op, *classes):
+    """Return the sequence of operations that results from applying
+    the operation `op` to instances of the given classes."""
+    log = []
+    instances = []
+    for c in classes:
+        instances.append(c(log.append))
+
+    try:
+        op(*instances)
+    except TypeError:
+        pass
+    return log
+
+class A(OperationLogger):
+    def __eq__(self, other):
+        self.log_operation('A.__eq__')
+        return NotImplemented
+    def __le__(self, other):
+        self.log_operation('A.__le__')
+        return NotImplemented
+    def __ge__(self, other):
+        self.log_operation('A.__ge__')
+        return NotImplemented
+
+class B(OperationLogger):
+    def __eq__(self, other):
+        self.log_operation('B.__eq__')
+        return NotImplemented
+    def __le__(self, other):
+        self.log_operation('B.__le__')
+        return NotImplemented
+    def __ge__(self, other):
+        self.log_operation('B.__ge__')
+        return NotImplemented
+
+class C(B):
+    def __eq__(self, other):
+        self.log_operation('C.__eq__')
+        return NotImplemented
+    def __le__(self, other):
+        self.log_operation('C.__le__')
+        return NotImplemented
+    def __ge__(self, other):
+        self.log_operation('C.__ge__')
+        return NotImplemented
+
+class OperationOrderTests(unittest.TestCase):
+    def test_comparison_orders(self):
+        self.assertEqual(op_sequence(eq, A, A), ['A.__eq__', 'A.__eq__'])
+        self.assertEqual(op_sequence(eq, A, B), ['A.__eq__', 'B.__eq__'])
+        self.assertEqual(op_sequence(eq, B, A), ['B.__eq__', 'A.__eq__'])
+        # C is a subclass of B, so C.__eq__ is called first
+        self.assertEqual(op_sequence(eq, B, C), ['C.__eq__', 'B.__eq__'])
+        self.assertEqual(op_sequence(eq, C, B), ['C.__eq__', 'B.__eq__'])
+
+        self.assertEqual(op_sequence(le, A, A), ['A.__le__', 'A.__ge__'])
+        self.assertEqual(op_sequence(le, A, B), ['A.__le__', 'B.__ge__'])
+        self.assertEqual(op_sequence(le, B, A), ['B.__le__', 'A.__ge__'])
+        self.assertEqual(op_sequence(le, B, C), ['C.__ge__', 'B.__le__'])
+        self.assertEqual(op_sequence(le, C, B), ['C.__le__', 'B.__ge__'])
+
+def test_main():
+    support.run_unittest(RatTestCase, OperationOrderTests)
 
 if __name__ == "__main__":
     test_main()

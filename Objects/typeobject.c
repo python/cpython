@@ -5068,7 +5068,7 @@ static char *name_op[] = {
 };
 
 static PyObject *
-half_richcompare(PyObject *self, PyObject *other, int op)
+slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
 	PyObject *func, *args, *res;
 	static PyObject *op_str[6];
@@ -5088,28 +5088,6 @@ half_richcompare(PyObject *self, PyObject *other, int op)
 	}
 	Py_DECREF(func);
 	return res;
-}
-
-static PyObject *
-slot_tp_richcompare(PyObject *self, PyObject *other, int op)
-{
-	PyObject *res;
-
-	if (Py_TYPE(self)->tp_richcompare == slot_tp_richcompare) {
-		res = half_richcompare(self, other, op);
-		if (res != Py_NotImplemented)
-			return res;
-		Py_DECREF(res);
-	}
-	if (Py_TYPE(other)->tp_richcompare == slot_tp_richcompare) {
-		res = half_richcompare(other, self, _Py_SwappedOp[op]);
-		if (res != Py_NotImplemented) {
-			return res;
-		}
-		Py_DECREF(res);
-	}
-	Py_INCREF(Py_NotImplemented);
-	return Py_NotImplemented;
 }
 
 static PyObject *
