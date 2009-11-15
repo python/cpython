@@ -429,6 +429,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4969: The mimetypes module now reads the MIME database from
+  the registry under Windows.  Patch by Gabriel Genellina.
+
 - Issue #6816: runpy now provides a run_path function that allows Python code
   to execute file paths that refer to source or compiled Python files as well
   as zipfiles, directories and other valid sys.path entries that contain a
