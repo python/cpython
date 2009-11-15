@@ -132,6 +132,9 @@ C-API
 Library
 -------
 
+- Issue #4969: The mimetypes module now reads the MIME database from
+  the registry under Windows.  Patch by Gabriel Genellina.
+
 - Issue #7318: multiprocessing now uses a timeout when it fails to establish
   a connection with another process, rather than looping endlessly. The
   default timeout is 20 seconds, which should be amply sufficient for
