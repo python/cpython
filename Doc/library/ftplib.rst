@@ -49,6 +49,41 @@ The module defines the following items:
    .. versionchanged:: 2.6
       *timeout* was added.
 
+.. class:: FTP_TLS([host[, user[, passwd[, acct[, keyfile[, certfile[, timeout]]]]]]])
+
+   A :class:`FTP` subclass which adds TLS support to FTP as described in
+   :rfc:`4217`.
+   Connect as usual to port 21 implicitly securing the FTP control connection
+   before authenticating. Securing the data connection requires user to
+   explicitly ask for it by calling :exc:`prot_p()` method.
+   *keyfile* and *certfile* are optional - they can contain a PEM formatted
+   private key and certificate chain file for the SSL connection.
+
+   .. versionadded:: 2.7 Contributed by Giampaolo Rodola'
+
+
+   Here's a sample session using :class:`FTP_TLS` class:
+
+   >>> from ftplib import FTP_TLS
+   >>> ftps = FTP_TLS('ftp.python.org')
+   >>> ftps.login()              # login anonimously previously securing control channel
+   >>> ftps.prot_p()             # switch to secure data connection
+   >>> ftps.retrlines('LIST')    # list directory content securely
+   total 9
+   drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
+   drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 ..
+   drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 bin
+   drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 etc
+   d-wxrwxr-x   2 ftp      wheel        1024 Sep  5 13:43 incoming
+   drwxr-xr-x   2 root     wheel        1024 Nov 17  1993 lib
+   drwxr-xr-x   6 1094     wheel        1024 Sep 13 19:07 pub
+   drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
+   -rw-r--r--   1 root     root          312 Aug  1  1994 welcome.msg
+   '226 Transfer complete.'
+   >>> ftps.quit()
+   >>>
+
+
 
    .. attribute:: all_errors
 
@@ -328,4 +363,27 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    call the :class:`FTP` instance should not be used any more (after a call to
    :meth:`close` or :meth:`quit` you cannot reopen the connection by issuing
    another :meth:`login` method).
+
+
+FTP_TLS Objects
+---------------
+
+:class:`FTP_TLS` class inherits from :class:`FTP`, defining these additional objects:
+
+.. attribute:: FTP_TLS.ssl_version
+
+   The SSL version to use (defaults to *TLSv1*).
+
+.. method:: FTP_TLS.auth()
+
+   Set up secure control connection by using TLS or SSL, depending on what specified in :meth:`ssl_version` attribute.
+
+.. method:: FTP_TLS.prot_p()
+
+   Set up secure data connection.
+
+.. method:: FTP_TLS.prot_c()
+
+   Set up clear text data connection.
+
 

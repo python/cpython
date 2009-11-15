@@ -429,6 +429,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2054: ftplib now provides an FTP_TLS class to do secure FTP using
+  TLS or SSL.  Patch by Giampaolo Rodola'.
+
 - Issue #4969: The mimetypes module now reads the MIME database from
   the registry under Windows.  Patch by Gabriel Genellina.
 
