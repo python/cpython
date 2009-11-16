@@ -948,6 +948,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     fs = warnings.filters[:]
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    try:
+        import zipimport
+    except ImportError:
+        zdc = None # Run unmodified on platforms without zipimport support
+    else:
+        zdc = zipimport._zip_directory_cache.copy()
     abcs = {}
     modules = _abcoll, _pyio
     for abc in [getattr(mod, a) for mod in modules for a in mod.__all__]:
@@ -969,12 +975,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     repcount = nwarmup + ntracked
     print >> sys.stderr, "beginning", repcount, "repetitions"
     print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
-    dash_R_cleanup(fs, ps, pic, abcs)
+    dash_R_cleanup(fs, ps, pic, zdc, abcs)
     for i in range(repcount):
         rc = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
-        dash_R_cleanup(fs, ps, pic, abcs)
+        dash_R_cleanup(fs, ps, pic, zdc, abcs)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
     print >> sys.stderr
@@ -987,7 +993,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         return True
     return False
 
-def dash_R_cleanup(fs, ps, pic, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copy_reg
     import _strptime, linecache
     dircache = test_support.import_module('dircache', deprecated=True)
@@ -1006,6 +1012,13 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     copy_reg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
+    try:
+        import zipimport
+    except ImportError:
+        pass # Run unmodified on platforms without zipimport support
+    else:
+        zipimport._zip_directory_cache.clear()
+        zipimport._zip_directory_cache.update(zdc)
 
     # clear type cache
     sys._clear_type_cache()
