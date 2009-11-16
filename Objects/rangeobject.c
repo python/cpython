@@ -316,7 +316,7 @@ range_reverse(PyObject *seq)
 	   calculation is also done modulo ULONG_MAX+1.
 	*/
 	it->start = (long)(start + (unsigned long)(len-1) * step);
-	it->step = (long)(-(unsigned long)step);
+	it->step = (long)(0UL-step);
 
 	return (PyObject *)it;
 }
