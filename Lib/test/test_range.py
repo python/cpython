@@ -5,10 +5,6 @@ import sys
 import pickle
 import itertools
 
-import warnings
-warnings.filterwarnings("ignore", "integer argument expected",
-                        DeprecationWarning, "unittest")
-
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
     if (start - stop) // step < 0:
