@@ -533,6 +533,7 @@ int_range_iter(long start, long stop, long step)
     it->step = step;
     ulen = get_len_of_range(start, stop, step);
     if (ulen > (unsigned long)LONG_MAX) {
+        Py_DECREF(it);
         PyErr_SetString(PyExc_OverflowError,
                         "range too large to represent as a range_iterator");
         return NULL;
@@ -584,16 +585,14 @@ longrangeiter_next(longrangeiterobject *r)
     if (!one)
         return NULL;
 
-    product = PyNumber_Multiply(r->index, r->step);
-    if (!product) {
-        Py_DECREF(one);
-        return NULL;
-    }
-
     new_index = PyNumber_Add(r->index, one);
     Py_DECREF(one);
-    if (!new_index) {
-        Py_DECREF(product);
+    if (!new_index)
+        return NULL;
+
+    product = PyNumber_Multiply(r->index, r->step);
+    if (!product) {
+        Py_DECREF(new_index);
         return NULL;
     }
 
@@ -602,6 +601,9 @@ longrangeiter_next(longrangeiterobject *r)
     if (result) {
         Py_DECREF(r->index);
         r->index = new_index;
+    }
+    else {
+        Py_DECREF(new_index);
     }
 
     return result;
@@ -781,6 +783,9 @@ long_range:
     if (!len)
         goto create_failure;
 
+    /* Steal reference to len. */
+    it->len = len;
+
     one = PyLong_FromLong(1);
     if (!one)
         goto create_failure;
@@ -802,24 +807,16 @@ long_range:
         goto create_failure;
 
     it->step = PyNumber_Negative(range->step);
-    if (!it->step) {
-        Py_DECREF(it->start);
+    if (!it->step)
         goto create_failure;
-    }
-
-    /* Steal reference to len. */
-    it->len = len;
 
     it->index = PyLong_FromLong(0);
-    if (!it->index) {
-        Py_DECREF(it);
-        return NULL;
-    }
+    if (!it->index)
+        goto create_failure;
 
     return (PyObject *)it;
 
 create_failure:
-    Py_XDECREF(len);
-    PyObject_Del(it);
+    Py_DECREF(it);
     return NULL;
 }
