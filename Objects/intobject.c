@@ -1117,7 +1117,7 @@ int_to_decimal_string(PyIntObject *v) {
 	long n = v->ob_ival;
 	unsigned long absn;
 	p = bufend = buf + sizeof(buf);
-	absn = n < 0 ? -(unsigned long)n : n;
+	absn = n < 0 ? 0UL - n : n;
 	do {
 		*--p = '0' + absn % 10;
 		absn /= 10;
