@@ -667,7 +667,8 @@ PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
 #undef CONVERT_WCHAR_TO_SURROGATES
 
 static void
-makefmt(char *fmt, int longflag, int size_tflag, int zeropad, int width, int precision, char c)
+makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
+        int zeropad, int width, int precision, char c)
 {
     *fmt++ = '%';
     if (width) {
@@ -679,6 +680,19 @@ makefmt(char *fmt, int longflag, int size_tflag, int zeropad, int width, int pre
         fmt += sprintf(fmt, ".%d", precision);
     if (longflag)
         *fmt++ = 'l';
+    else if (longlongflag) {
+        /* longlongflag should only ever be nonzero on machines with
+           HAVE_LONG_LONG defined */
+#ifdef HAVE_LONG_LONG
+        char *f = PY_FORMAT_LONG_LONG;
+        while (*f)
+            *fmt++ = *f++;
+#else
+        /* we shouldn't ever get here */
+        assert(0);
+        *fmt++ = 'l';
+#endif
+    }
     else if (size_tflag) {
         char *f = PY_FORMAT_SIZE_T;
         while (*f)
@@ -689,6 +703,16 @@ makefmt(char *fmt, int longflag, int size_tflag, int zeropad, int width, int pre
 }
 
 #define appendstring(string) {for (copy = string;*copy;) *s++ = *copy++;}
+
+/* size of fixed-size buffer for formatting single arguments */
+#define ITEM_BUFFER_LEN 21
+/* maximum number of characters required for output of %ld.  21 characters
+   allows for 64-bit integers (in decimal) and an optional sign. */
+#define MAX_LONG_CHARS 21
+/* maximum number of characters required for output of %lld.
+   We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
+   plus 1 for the sign.  53/22 is an upper bound for log10(256). */
+#define MAX_LONG_LONG_CHARS (2 + (SIZEOF_LONG_LONG*53-1) / 22)
 
 PyObject *
 PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -705,13 +729,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     Py_UNICODE *s;
     PyObject *string;
     /* used by sprintf */
-    char buffer[21];
+    char buffer[ITEM_BUFFER_LEN+1];
     /* use abuffer instead of buffer, if we need more space
      * (which can happen if there's a format specifier with width). */
     char *abuffer = NULL;
     char *realbuffer;
     Py_ssize_t abuffersize = 0;
-    char fmt[60]; /* should be enough for %0width.precisionld */
+    char fmt[61]; /* should be enough for %0width.precisionlld */
     const char *copy;
 
 #ifdef VA_LIST_IS_ARRAY
@@ -754,6 +778,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     /* step 3: figure out how large a buffer we need */
     for (f = format; *f; f++) {
         if (*f == '%') {
+#ifdef HAVE_LONG_LONG
+            int longlongflag = 0;
+#endif
             const char* p = f;
             width = 0;
             while (ISDIGIT((unsigned)*f))
@@ -764,9 +791,21 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
              * they don't affect the amount of space we reserve.
              */
-            if ((*f == 'l' || *f == 'z') &&
-                (f[1] == 'd' || f[1] == 'u'))
+            if (*f == 'l') {
+                if (f[1] == 'd' || f[1] == 'u') {
+                    ++f;
+                }
+#ifdef HAVE_LONG_LONG
+                else if (f[1] == 'l' &&
+                         (f[2] == 'd' || f[2] == 'u')) {
+                    longlongflag = 1;
+                    f += 2;
+                }
+#endif
+            }
+            else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
                 ++f;
+            }
 
             switch (*f) {
             case 'c':
@@ -777,14 +816,21 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 break;
             case 'd': case 'u': case 'i': case 'x':
                 (void) va_arg(count, int);
-                /* 20 bytes is enough to hold a 64-bit
-                   integer.  Decimal takes the most space.
-                   This isn't enough for octal.
-                   If a width is specified we need more
-                   (which we allocate later). */
-                if (width < 20)
-                    width = 20;
+#ifdef HAVE_LONG_LONG
+                if (longlongflag) {
+                    if (width < MAX_LONG_LONG_CHARS)
+                        width = MAX_LONG_LONG_CHARS;
+                }
+                else
+#endif
+                    /* MAX_LONG_CHARS is enough to hold a 64-bit integer,
+                       including sign.  Decimal takes the most space.  This
+                       isn't enough for octal.  If a width is specified we
+                       need more (which we allocate later). */
+                    if (width < MAX_LONG_CHARS)
+                        width = MAX_LONG_CHARS;
                 n += width;
+                /* XXX should allow for large precision here too. */
                 if (abuffersize < width)
                     abuffersize = width;
                 break;
@@ -881,8 +927,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             n++;
     }
   expand:
-    if (abuffersize > 20) {
-        abuffer = PyObject_Malloc(abuffersize);
+    if (abuffersize > ITEM_BUFFER_LEN) {
+        /* add 1 for sprintf's trailing null byte */
+        abuffer = PyObject_Malloc(abuffersize + 1);
         if (!abuffer) {
             PyErr_NoMemory();
             goto fail;
@@ -906,6 +953,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
         if (*f == '%') {
             const char* p = f++;
             int longflag = 0;
+            int longlongflag = 0;
             int size_tflag = 0;
             zeropad = (*f == '0');
             /* parse the width.precision part */
@@ -918,11 +966,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 while (ISDIGIT((unsigned)*f))
                     precision = (precision*10) + *f++ - '0';
             }
-            /* handle the long flag, but only for %ld and %lu.
-               others can be added when necessary. */
-            if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
-                longflag = 1;
-                ++f;
+            /* Handle %ld, %lu, %lld and %llu. */
+            if (*f == 'l') {
+                if (f[1] == 'd' || f[1] == 'u') {
+                    longflag = 1;
+                    ++f;
+                }
+#ifdef HAVE_LONG_LONG
+                else if (f[1] == 'l' &&
+                         (f[2] == 'd' || f[2] == 'u')) {
+                    longlongflag = 1;
+                    f += 2;
+                }
+#endif
             }
             /* handle the size_t flag. */
             if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
@@ -935,9 +991,14 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 *s++ = va_arg(vargs, int);
                 break;
             case 'd':
-                makefmt(fmt, longflag, size_tflag, zeropad, width, precision, 'd');
+                makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
+                        width, precision, 'd');
                 if (longflag)
                     sprintf(realbuffer, fmt, va_arg(vargs, long));
+#ifdef HAVE_LONG_LONG
+                else if (longlongflag)
+                    sprintf(realbuffer, fmt, va_arg(vargs, PY_LONG_LONG));
+#endif
                 else if (size_tflag)
                     sprintf(realbuffer, fmt, va_arg(vargs, Py_ssize_t));
                 else
@@ -945,9 +1006,15 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 appendstring(realbuffer);
                 break;
             case 'u':
-                makefmt(fmt, longflag, size_tflag, zeropad, width, precision, 'u');
+                makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
+                        width, precision, 'u');
                 if (longflag)
                     sprintf(realbuffer, fmt, va_arg(vargs, unsigned long));
+#ifdef HAVE_LONG_LONG
+                else if (longlongflag)
+                    sprintf(realbuffer, fmt, va_arg(vargs,
+                                                    unsigned PY_LONG_LONG));
+#endif
                 else if (size_tflag)
                     sprintf(realbuffer, fmt, va_arg(vargs, size_t));
                 else
@@ -955,12 +1022,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 appendstring(realbuffer);
                 break;
             case 'i':
-                makefmt(fmt, 0, 0, zeropad, width, precision, 'i');
+                makefmt(fmt, 0, 0, 0, zeropad, width, precision, 'i');
                 sprintf(realbuffer, fmt, va_arg(vargs, int));
                 appendstring(realbuffer);
                 break;
             case 'x':
-                makefmt(fmt, 0, 0, zeropad, width, precision, 'x');
+                makefmt(fmt, 0, 0, 0, zeropad, width, precision, 'x');
                 sprintf(realbuffer, fmt, va_arg(vargs, int));
                 appendstring(realbuffer);
                 break;
