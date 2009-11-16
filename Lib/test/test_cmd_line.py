@@ -6,44 +6,41 @@ import os
 import test.support, unittest
 import os
 import sys
-import subprocess
+from test.script_helper import spawn_python, kill_python, python_exit_code
 
-def _spawn_python(*args):
+# XXX (ncoghlan): there are assorted gratuitous inconsistencies between the
+# support code in the Py3k version and the 2.x version that unnecessarily
+# complicate test suite merges. See issue 7331
+
+# spawn_python normally enforces use of -E to avoid environmental effects
+# but one test checks PYTHONPATH behaviour explicitly
+# XXX (ncoghlan): Give script_helper.spawn_python an option to switch
+# off the -E flag that is normally inserted automatically
+import subprocess
+def _spawn_python_with_env(*args):
     cmd_line = [sys.executable]
-    # When testing -S, we need PYTHONPATH to work (see test_site_flag())
-    if '-S' not in args:
-        cmd_line.append('-E')
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-def _kill_python(p):
-    return _kill_python_and_exit_code(p)[0]
 
+# XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
-    p.stdin.close()
-    data = p.stdout.read()
-    p.stdout.close()
-    # try to cleanup the child so we don't appear to leak when running
-    # with regrtest -R.  This should be a no-op on Windows.
-    subprocess._cleanup()
+    data = kill_python(p)
     returncode = p.wait()
     return data, returncode
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, *args):
-        return self.start_python_and_exit_code(*args)[0]
+        p = spawn_python(*args)
+        return kill_python(p)
 
     def start_python_and_exit_code(self, *args):
-        p = _spawn_python(*args)
+        p = spawn_python(*args)
         return _kill_python_and_exit_code(p)
 
     def exit_code(self, *args):
-        cmd_line = [sys.executable, '-E']
-        cmd_line.extend(args)
-        with open(os.devnull, 'w') as devnull:
-            return subprocess.call(cmd_line, stdout=devnull,
-                                   stderr=subprocess.STDOUT)
+        return python_exit_code(*args)
 
     def test_directories(self):
         self.assertNotEqual(self.exit_code('.'), 0)
@@ -107,10 +104,10 @@ class CmdLineTest(unittest.TestCase):
         # -m and -i need to play well together
         # Runs the timeit module and checks the __main__
         # namespace has been populated appropriately
-        p = _spawn_python('-i', '-m', 'timeit', '-n', '1')
+        p = spawn_python('-i', '-m', 'timeit', '-n', '1')
         p.stdin.write(b'Timer\n')
         p.stdin.write(b'exit()\n')
-        data = _kill_python(p)
+        data = kill_python(p)
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
@@ -154,7 +151,7 @@ class CmdLineTest(unittest.TestCase):
     def test_unbuffered_input(self):
         # sys.stdin still works with '-u'
         code = ("import sys; sys.stdout.write(sys.stdin.read(1))")
-        p = _spawn_python('-u', '-c', code)
+        p = spawn_python('-u', '-c', code)
         p.stdin.write(b'x')
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
@@ -166,7 +163,8 @@ class CmdLineTest(unittest.TestCase):
             path1 = "ABCDE" * 100
             path2 = "FGHIJ" * 100
             env['PYTHONPATH'] = path1 + os.pathsep + path2
-            p = _spawn_python('-S', '-c', 'import sys; print(sys.path)')
+            p = _spawn_python_with_env('-S', '-c',
+                                       'import sys; print(sys.path)')
             stdout, _ = p.communicate()
             self.assertTrue(path1.encode('ascii') in stdout)
             self.assertTrue(path2.encode('ascii') in stdout)

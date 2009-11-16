@@ -137,6 +137,12 @@ Library
 - Issue #4969: The mimetypes module now reads the MIME database from
   the registry under Windows.  Patch by Gabriel Genellina.
 
+- Issue #6816: runpy now provides a run_path function that allows Python code
+  to execute file paths that refer to source or compiled Python files as well
+  as zipfiles, directories and other valid sys.path entries that contain a
+  __main__.py file. This allows applications that run other Python scripts to
+  support the same flexibility as the CPython command line itself.
+
 - Issue #7318: multiprocessing now uses a timeout when it fails to establish
   a connection with another process, rather than looping endlessly. The
   default timeout is 20 seconds, which should be amply sufficient for
