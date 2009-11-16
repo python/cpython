@@ -317,6 +317,8 @@ argv0 = sys.argv[0]
         self.assertEqual(result["__package__"], expected_package)
 
     def _check_import_error(self, script_name, msg):
+        # Double backslashes to handle path separators on Windows
+        msg = msg.replace("\\", "\\\\")
         self.assertRaisesRegexp(ImportError, msg, run_path, script_name)
 
     def test_basic_script(self):
