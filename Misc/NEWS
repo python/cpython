@@ -110,6 +110,9 @@ Core and Builtins
 C-API
 -----
 
+- Issue #Add '%lld' and '%llu' support to PyString_FromFormat(V)
+  and PyErr_Format, on machines with HAVE_LONG_LONG defined.
+
 - Issue #6151: Made PyDescr_COMMON conform to standard C (like PyObject_HEAD
   in PEP 3123).  The PyDescr_TYPE and PyDescr_NAME macros should be
   should used for accessing the d_type and d_name members of structures

@@ -232,9 +232,12 @@ APIs:
    types and must correspond exactly to the format characters in the *format*
    string.  The following format characters are allowed:
 
+   .. % This should be exactly the same as the table in PyErr_Format.
    .. % The descriptions for %zd and %zu are wrong, but the truth is complicated
    .. % because not all compilers support the %z width modifier -- we fake it
    .. % when necessary via interpolating PY_FORMAT_SIZE_T.
+   .. % Similar comments apply to the %ll width modifier and
+   .. % PY_FORMAT_LONG_LONG.
 
    +-------------------+---------------------+--------------------------------+
    | Format Characters | Type                | Comment                        |
@@ -255,6 +258,12 @@ APIs:
    +-------------------+---------------------+--------------------------------+
    | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
    |                   |                     | ``printf("%lu")``.             |
+   +-------------------+---------------------+--------------------------------+
+   | :attr:`%lld`      | long long           | Exactly equivalent to          |
+   |                   |                     | ``printf("%lld")``.            |
+   +-------------------+---------------------+--------------------------------+
+   | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
+   |                   |                     | ``printf("%llu")``.            |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
    |                   |                     | ``printf("%zd")``.             |
@@ -300,6 +309,15 @@ APIs:
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
+
+   .. note::
+
+      The `"%lld"` and `"%llu"` format specifiers are only available
+      when `HAVE_LONG_LONG` is defined.
+
+   .. versionchanged:: 3.2
+      Support for `"%lld"` and `"%llu"` added.
+
 
 
 .. cfunction:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
