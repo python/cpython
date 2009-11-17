@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
+
 - Issue #6970: Remove redundant calls when comparing objects that don't
   implement the relevant rich comparison methods.
 
