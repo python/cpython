@@ -442,7 +442,7 @@ aliases = {
     'csptcp154'          : 'ptcp154',
     'pt154'              : 'ptcp154',
     'cp154'              : 'ptcp154',
-    'cyrillic-asian'     : 'ptcp154',
+    'cyrillic_asian'     : 'ptcp154',
 
     # quopri_codec codec
     'quopri'             : 'quopri_codec',
