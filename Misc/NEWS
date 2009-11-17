@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
+
 - Fix several issues with compile().  The input can now contain Windows and Mac
   newlines and is no longer required to end in a newline.
 
