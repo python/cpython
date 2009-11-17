@@ -224,7 +224,7 @@ static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
 	if (PyErr_WarnPy3k("callable() not supported in 3.x; "
-			   "use hasattr(o, '__call__')", 1) < 0)
+			   "use isinstance(x, collections.Callable)", 1) < 0)
 		return NULL;
 	return PyBool_FromLong((long)PyCallable_Check(v));
 }
