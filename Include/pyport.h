@@ -577,14 +577,6 @@ extern "C" {
 #define PY_NO_SHORT_FLOAT_REPR
 #endif
 
-/* temporarily disable the new float repr while the pieces are being
-   assembled, unless PY_SHORT_FLOAT_REPR is defined.  These 7 lines
-   should be gone by 01/01/10.  If they're still here, please complain
-   to Mark Dickinson (dickinsm@gmail.com). */
-#ifndef PY_SHORT_FLOAT_REPR
-#define PY_NO_SHORT_FLOAT_REPR
-#endif
-
 /* Py_DEPRECATED(version)
  * Declare a variable, type, or function deprecated.
  * Usage:
