@@ -1565,27 +1565,33 @@ class TarFile(object):
         self.inodes = {}        # dictionary caching the inodes of
                                 # archive members already added
 
-        if self.mode == "r":
-            self.firstmember = None
-            self.firstmember = self.next()
+        try:
+            if self.mode == "r":
+                self.firstmember = None
+                self.firstmember = self.next()
 
-        if self.mode == "a":
-            # Move to the end of the archive,
-            # before the first empty block.
-            self.firstmember = None
-            while True:
-                if self.next() is None:
-                    if self.offset > 0:
-                        self.fileobj.seek(- BLOCKSIZE, 1)
-                    break
+            if self.mode == "a":
+                # Move to the end of the archive,
+                # before the first empty block.
+                self.firstmember = None
+                while True:
+                    if self.next() is None:
+                        if self.offset > 0:
+                            self.fileobj.seek(- BLOCKSIZE, 1)
+                        break
 
-        if self.mode in "aw":
-            self._loaded = True
+            if self.mode in "aw":
+                self._loaded = True
 
-            if self.pax_headers:
-                buf = self.tarinfo.create_pax_global_header(self.pax_headers.copy())
-                self.fileobj.write(buf)
-                self.offset += len(buf)
+                if self.pax_headers:
+                    buf = self.tarinfo.create_pax_global_header(self.pax_headers.copy())
+                    self.fileobj.write(buf)
+                    self.offset += len(buf)
+        except:
+            if not self._extfileobj:
+                self.fileobj.close()
+            self.closed = True
+            raise
 
     def _getposix(self):
         return self.format == USTAR_FORMAT
