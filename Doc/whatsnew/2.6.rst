@@ -1633,11 +1633,6 @@ Some smaller changes made to the core Python language are:
   :cfunc:`PyObject_HashNotImplemented`.
   (Fixed by Nick Coghlan and Amaury Forgeot d'Arc; :issue:`2235`.)
 
-* Changes to the :class:`Exception` interface
-  as dictated by :pep:`352` continue to be made.  For 2.6,
-  the :attr:`message` attribute is being deprecated in favor of the
-  :attr:`args` attribute.
-
 * The :exc:`GeneratorExit` exception now subclasses
   :exc:`BaseException` instead of :exc:`Exception`.  This means
   that an exception handler that does ``except Exception:``
@@ -1774,44 +1769,14 @@ by Martin von Loewis.)
 
 .. ======================================================================
 
-New, Improved, and Deprecated Modules
-=====================================
+New and Improved Modules
+========================
 
 As in every release, Python's standard library received a number of
 enhancements and bug fixes.  Here's a partial list of the most notable
 changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
-
-* (3.0-warning mode) Python 3.0 will feature a reorganized standard
-  library that will drop many outdated modules and rename others.
-  Python 2.6 running in 3.0-warning mode will warn about these modules
-  when they are imported.
-
-  The list of deprecated modules is:
-  :mod:`audiodev`,
-  :mod:`bgenlocations`,
-  :mod:`buildtools`,
-  :mod:`bundlebuilder`,
-  :mod:`Canvas`,
-  :mod:`compiler`,
-  :mod:`dircache`,
-  :mod:`dl`,
-  :mod:`fpformat`,
-  :mod:`gensuitemodule`,
-  :mod:`ihooks`,
-  :mod:`imageop`,
-  :mod:`imgfile`,
-  :mod:`linuxaudiodev`,
-  :mod:`mhlib`,
-  :mod:`mimetools`,
-  :mod:`multifile`,
-  :mod:`new`,
-  :mod:`pure`,
-  :mod:`statvfs`,
-  :mod:`sunaudiodev`,
-  :mod:`test.testall`, and
-  :mod:`toaiff`.
 
 * The :mod:`asyncore` and :mod:`asynchat` modules are
   being actively maintained again, and a number of patches and bugfixes
@@ -1997,8 +1962,6 @@ changes, or look through the Subversion logs for all the details.
   a Unicode path was used and Unicode filenames are matched within the
   directory.  (:issue:`1001604`)
 
-* The :mod:`gopherlib` module has been removed.
-
 * A new function in the :mod:`heapq` module, ``merge(iter1, iter2, ...)``,
   takes any number of iterables returning data in sorted
   order, and returns a new generator that returns the contents of all
@@ -2158,13 +2121,6 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
-* The :mod:`MimeWriter` module and :mod:`mimify` module
-  have been deprecated; use the :mod:`email`
-  package instead.
-
-* The :mod:`md5` module has been deprecated; use the :mod:`hashlib` module
-  instead.
-
 * :class:`mmap` objects now have a :meth:`rfind` method that searches for a
   substring beginning at the end of the string and searching
   backwards.  The :meth:`find` method also gained an *end* parameter
@@ -2247,10 +2203,7 @@ changes, or look through the Subversion logs for all the details.
   and can optionally take new command-line arguments for the program.
   (Contributed by Rocky Bernstein; :issue:`1393667`.)
 
-* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
-  provides better locking.
-
-  The :func:`post_mortem` function, used to begin debugging a
+* The :func:`pdb.post_mortem` function, used to begin debugging a
   traceback, will now use the traceback returned by :func:`sys.exc_info`
   if no traceback is supplied.   (Contributed by Facundo Batista;
   :issue:`1106316`.)
@@ -2259,9 +2212,6 @@ changes, or look through the Subversion logs for all the details.
   that takes a string containing a pickle and removes some unused
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
-
-* The :mod:`popen2` module has been deprecated; use the :mod:`subprocess`
-  module.
 
 * A :func:`get_data` function was added to the :mod:`pkgutil`
   module that returns the contents of resource files included
@@ -2318,8 +2268,6 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Guido van Rossum from work for Google App Engine;
   :issue:`3487`.)
 
-* The :mod:`rgbimg` module has been removed.
-
 * The :mod:`rlcompleter` module's :meth:`Completer.complete()` method
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
@@ -2337,12 +2285,6 @@ changes, or look through the Subversion logs for all the details.
   or file object and an event mask, modifying the recorded event mask
   for that file.
   (Contributed by Christian Heimes; :issue:`1657`.)
-
-* The :mod:`sets` module has been deprecated; it's better to
-  use the built-in :class:`set` and :class:`frozenset` types.
-
-* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
-  instead.
 
 * The :func:`shutil.copytree` function now has an optional *ignore* argument
   that takes a callable object.  This callable will receive each directory path
@@ -2406,7 +2348,7 @@ changes, or look through the Subversion logs for all the details.
   e-mail between agents that don't manage a mail queue.  (LMTP
   implemented by Leif Hedstrom; :issue:`957003`.)
 
-  SMTP.starttls() now complies with :rfc:`3207` and forgets any
+  :meth:`SMTP.starttls` now complies with :rfc:`3207` and forgets any
   knowledge obtained from the server not obtained from the TLS
   negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
@@ -2952,6 +2894,73 @@ obtain certificate info by calling the :meth:`getpeercert` method.
 .. seealso::
 
    The documentation for the :mod:`ssl` module.
+
+.. ======================================================================
+
+Deprecations and Removals
+=========================
+
+* String exceptions have been removed.  Attempting to use them raises a
+  :exc:`TypeError`.
+
+* Changes to the :class:`Exception` interface
+  as dictated by :pep:`352` continue to be made.  For 2.6,
+  the :attr:`message` attribute is being deprecated in favor of the
+  :attr:`args` attribute.
+
+* (3.0-warning mode) Python 3.0 will feature a reorganized standard
+  library that will drop many outdated modules and rename others.
+  Python 2.6 running in 3.0-warning mode will warn about these modules
+  when they are imported.
+
+  The list of deprecated modules is:
+  :mod:`audiodev`,
+  :mod:`bgenlocations`,
+  :mod:`buildtools`,
+  :mod:`bundlebuilder`,
+  :mod:`Canvas`,
+  :mod:`compiler`,
+  :mod:`dircache`,
+  :mod:`dl`,
+  :mod:`fpformat`,
+  :mod:`gensuitemodule`,
+  :mod:`ihooks`,
+  :mod:`imageop`,
+  :mod:`imgfile`,
+  :mod:`linuxaudiodev`,
+  :mod:`mhlib`,
+  :mod:`mimetools`,
+  :mod:`multifile`,
+  :mod:`new`,
+  :mod:`pure`,
+  :mod:`statvfs`,
+  :mod:`sunaudiodev`,
+  :mod:`test.testall`, and
+  :mod:`toaiff`.
+
+* The :mod:`gopherlib` module has been removed.
+
+* The :mod:`MimeWriter` module and :mod:`mimify` module
+  have been deprecated; use the :mod:`email`
+  package instead.
+
+* The :mod:`md5` module has been deprecated; use the :mod:`hashlib` module
+  instead.
+
+* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
+  provides better locking.
+
+* The :mod:`popen2` module has been deprecated; use the :mod:`subprocess`
+  module.
+
+* The :mod:`rgbimg` module has been removed.
+
+* The :mod:`sets` module has been deprecated; it's better to
+  use the built-in :class:`set` and :class:`frozenset` types.
+
+* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
+  instead.
+
 
 .. ======================================================================
 
