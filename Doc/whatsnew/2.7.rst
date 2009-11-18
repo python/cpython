@@ -413,8 +413,8 @@ Several performance enhancements have been added:
 
 .. ======================================================================
 
-New, Improved, and Deprecated Modules
-=====================================
+New and Improved Modules
+========================
 
 As in every release, Python's standard library received a number of
 enhancements and bug fixes.  Here's a partial list of the most notable
@@ -890,6 +890,14 @@ The :mod:`ttk` module was written by Guilherme Polo and added in
 Martin Franklin and maintained by Kevin Walzer, was proposed for
 inclusion in :issue:`2618`, but the authors argued that Guilherme
 Polo's work was more comprehensive.
+
+
+Deprecations and Removals
+=========================
+
+* :func:`contextlib.nested`, which allows handling more than one context manager
+  with one :keyword:`with` statement, has been deprecated; :keyword:`with`
+  supports multiple context managers syntactically now.
 
 .. ======================================================================
 
