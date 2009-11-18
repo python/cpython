@@ -431,6 +431,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7293: distutils.test_msvc9compiler is fixed to work on any fresh
+  Windows box. Help provided by David Bolen.
+
 - Issue #7328: pydoc no longer corrupts sys.path when run with the '-m' switch
 
 - Issue #2054: ftplib now provides an FTP_TLS class to do secure FTP using
