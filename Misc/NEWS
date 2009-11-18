@@ -12,6 +12,15 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7117: Backport round implementation from Python 3.x.  round
+  now uses David Gay's correctly-rounded string <-> double conversions
+  (when available), and so produces correctly rounded results.  There
+  are two related small changes: (1) round now accepts any class with
+  an __index__ method for its second argument (but no longer accepts
+  floats for the second argument), and (2) an excessively large second
+  integer argument (e.g., round(1.234, 10**100)) no longer raises an
+  exception.
+
 - Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
 
 - Fix several issues with compile().  The input can now contain Windows and Mac

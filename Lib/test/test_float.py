@@ -5,7 +5,9 @@ from test import test_support
 import math
 from math import isinf, isnan, copysign, ldexp
 import operator
-import random, fractions
+import random
+import fractions
+import sys
 
 INF = float("inf")
 NAN = float("nan")
@@ -338,6 +340,141 @@ class ReprTestCase(unittest.TestCase):
             v = eval(line)
             self.assertEqual(v, eval(repr(v)))
         floats_file.close()
+
+@unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                     "test requires IEEE 754 doubles")
+class RoundTestCase(unittest.TestCase):
+    def test_second_argument_type(self):
+        # any type with an __index__ method should be permitted as
+        # a second argument
+        self.assertAlmostEqual(round(12.34, True), 12.3)
+
+        class MyIndex(object):
+            def __index__(self): return 4
+        self.assertAlmostEqual(round(-0.123456, MyIndex()), -0.1235)
+        # but floats should be illegal
+        self.assertRaises(TypeError, round, 3.14159, 2.0)
+
+    def test_inf_nan(self):
+        # rounding an infinity or nan returns the same number;
+        # (in py3k, rounding an infinity or nan raises an error,
+        #  since the result can't be represented as a long).
+        self.assertEqual(round(INF), INF)
+        self.assertEqual(round(-INF), -INF)
+        self.assertTrue(math.isnan(round(NAN)))
+        for n in range(-5, 5):
+            self.assertEqual(round(INF, n), INF)
+            self.assertEqual(round(-INF, n), -INF)
+            self.assertTrue(math.isnan(round(NAN, n)))
+
+    def test_large_n(self):
+        for n in [324, 325, 400, 2**31-1, 2**31, 2**32, 2**100]:
+            self.assertEqual(round(123.456, n), 123.456)
+            self.assertEqual(round(-123.456, n), -123.456)
+            self.assertEqual(round(1e300, n), 1e300)
+            self.assertEqual(round(1e-320, n), 1e-320)
+        self.assertEqual(round(1e150, 300), 1e150)
+        self.assertEqual(round(1e300, 307), 1e300)
+        self.assertEqual(round(-3.1415, 308), -3.1415)
+        self.assertEqual(round(1e150, 309), 1e150)
+        self.assertEqual(round(1.4e-315, 315), 1e-315)
+
+    def test_small_n(self):
+        for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
+            self.assertEqual(round(123.456, n), 0.0)
+            self.assertEqual(round(-123.456, n), -0.0)
+            self.assertEqual(round(1e300, n), 0.0)
+            self.assertEqual(round(1e-320, n), 0.0)
+
+    def test_overflow(self):
+        self.assertRaises(OverflowError, round, 1.6e308, -308)
+        self.assertRaises(OverflowError, round, -1.7e308, -308)
+
+    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
+                         "test applies only when using short float repr style")
+    def test_previous_round_bugs(self):
+        # particular cases that have occurred in bug reports
+        self.assertEqual(round(562949953421312.5, 1),
+                          562949953421312.5)
+        self.assertEqual(round(56294995342131.5, 3),
+                         56294995342131.5)
+
+    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
+                         "test applies only when using short float repr style")
+    def test_halfway_cases(self):
+        # Halfway cases need special attention, since the current
+        # implementation has to deal with them specially.  Note that
+        # 2.x rounds halfway values up (i.e., away from zero) while
+        # 3.x does round-half-to-even.
+        self.assertAlmostEqual(round(0.125, 2), 0.13)
+        self.assertAlmostEqual(round(0.375, 2), 0.38)
+        self.assertAlmostEqual(round(0.625, 2), 0.63)
+        self.assertAlmostEqual(round(0.875, 2), 0.88)
+        self.assertAlmostEqual(round(-0.125, 2), -0.13)
+        self.assertAlmostEqual(round(-0.375, 2), -0.38)
+        self.assertAlmostEqual(round(-0.625, 2), -0.63)
+        self.assertAlmostEqual(round(-0.875, 2), -0.88)
+
+        self.assertAlmostEqual(round(0.25, 1), 0.3)
+        self.assertAlmostEqual(round(0.75, 1), 0.8)
+        self.assertAlmostEqual(round(-0.25, 1), -0.3)
+        self.assertAlmostEqual(round(-0.75, 1), -0.8)
+
+        self.assertEqual(round(-6.5, 0), -7.0)
+        self.assertEqual(round(-5.5, 0), -6.0)
+        self.assertEqual(round(-1.5, 0), -2.0)
+        self.assertEqual(round(-0.5, 0), -1.0)
+        self.assertEqual(round(0.5, 0), 1.0)
+        self.assertEqual(round(1.5, 0), 2.0)
+        self.assertEqual(round(2.5, 0), 3.0)
+        self.assertEqual(round(3.5, 0), 4.0)
+        self.assertEqual(round(4.5, 0), 5.0)
+        self.assertEqual(round(5.5, 0), 6.0)
+        self.assertEqual(round(6.5, 0), 7.0)
+
+        # same but without an explicit second argument; in 3.x these
+        # will give integers
+        self.assertEqual(round(-6.5), -7.0)
+        self.assertEqual(round(-5.5), -6.0)
+        self.assertEqual(round(-1.5), -2.0)
+        self.assertEqual(round(-0.5), -1.0)
+        self.assertEqual(round(0.5), 1.0)
+        self.assertEqual(round(1.5), 2.0)
+        self.assertEqual(round(2.5), 3.0)
+        self.assertEqual(round(3.5), 4.0)
+        self.assertEqual(round(4.5), 5.0)
+        self.assertEqual(round(5.5), 6.0)
+        self.assertEqual(round(6.5), 7.0)
+
+        self.assertEqual(round(-25.0, -1), -30.0)
+        self.assertEqual(round(-15.0, -1), -20.0)
+        self.assertEqual(round(-5.0, -1), -10.0)
+        self.assertEqual(round(5.0, -1), 10.0)
+        self.assertEqual(round(15.0, -1), 20.0)
+        self.assertEqual(round(25.0, -1), 30.0)
+        self.assertEqual(round(35.0, -1), 40.0)
+        self.assertEqual(round(45.0, -1), 50.0)
+        self.assertEqual(round(55.0, -1), 60.0)
+        self.assertEqual(round(65.0, -1), 70.0)
+        self.assertEqual(round(75.0, -1), 80.0)
+        self.assertEqual(round(85.0, -1), 90.0)
+        self.assertEqual(round(95.0, -1), 100.0)
+        self.assertEqual(round(12325.0, -1), 12330.0)
+
+        self.assertEqual(round(350.0, -2), 400.0)
+        self.assertEqual(round(450.0, -2), 500.0)
+
+        self.assertAlmostEqual(round(0.5e21, -21), 1e21)
+        self.assertAlmostEqual(round(1.5e21, -21), 2e21)
+        self.assertAlmostEqual(round(2.5e21, -21), 3e21)
+        self.assertAlmostEqual(round(5.5e21, -21), 6e21)
+        self.assertAlmostEqual(round(8.5e21, -21), 9e21)
+
+        self.assertAlmostEqual(round(-1.5e22, -22), -2e22)
+        self.assertAlmostEqual(round(-0.5e22, -22), -1e22)
+        self.assertAlmostEqual(round(0.5e22, -22), 1e22)
+        self.assertAlmostEqual(round(1.5e22, -22), 2e22)
+
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan
@@ -859,6 +996,7 @@ def test_main():
         UnknownFormatTestCase,
         IEEEFormatTestCase,
         ReprTestCase,
+        RoundTestCase,
         InfNanTest,
         HexFloatTestCase,
         )

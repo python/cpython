@@ -127,6 +127,13 @@ PyAPI_FUNC(PyObject *) _PyFloat_FormatAdvanced(PyObject *obj,
 					       char *format_spec,
 					       Py_ssize_t format_spec_len);
 
+/* Round a C double x to the closest multiple of 10**-ndigits.  Returns a
+   Python float on success, or NULL (with an appropriate exception set) on
+   failure.  Used in builtin_round in bltinmodule.c. */
+PyAPI_FUNC(PyObject *) _Py_double_round(double x, int ndigits);
+
+
+
 #ifdef __cplusplus
 }
 #endif

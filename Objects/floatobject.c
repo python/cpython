@@ -999,6 +999,202 @@ float_long(PyObject *v)
 	return PyLong_FromDouble(x);
 }
 
+/* _Py_double_round: rounds a finite nonzero double to the closest multiple of
+   10**-ndigits; here ndigits is within reasonable bounds (typically, -308 <=
+   ndigits <= 323).  Returns a Python float, or sets a Python error and
+   returns NULL on failure (OverflowError and memory errors are possible). */
+
+#ifndef PY_NO_SHORT_FLOAT_REPR
+/* version of _Py_double_round that uses the correctly-rounded string<->double
+   conversions from Python/dtoa.c */
+
+/* FIVE_POW_LIMIT is the largest k such that 5**k is exactly representable as
+   a double.  Since we're using the code in Python/dtoa.c, it should be safe
+   to assume that C doubles are IEEE 754 binary64 format.  To be on the safe
+   side, we check this. */
+#if DBL_MANT_DIG == 53
+#define FIVE_POW_LIMIT 22
+#else
+#error "C doubles do not appear to be IEEE 754 binary64 format"
+#endif
+
+PyObject *
+_Py_double_round(double x, int ndigits) {
+
+	double rounded, m;
+	Py_ssize_t buflen, mybuflen=100;
+	char *buf, *buf_end, shortbuf[100], *mybuf=shortbuf;
+	int decpt, sign, val, halfway_case;
+	PyObject *result = NULL;
+
+	/* The basic idea is very simple: convert and round the double to a
+	   decimal string using _Py_dg_dtoa, then convert that decimal string
+	   back to a double with _Py_dg_strtod.  There's one minor difficulty:
+	   Python 2.x expects round to do round-half-away-from-zero, while
+	   _Py_dg_dtoa does round-half-to-even.  So we need some way to detect
+	   and correct the halfway cases.
+
+	   Detection: a halfway value has the form k * 0.5 * 10**-ndigits for
+	   some odd integer k.  Or in other words, a rational number x is
+	   exactly halfway between two multiples of 10**-ndigits if its
+	   2-valuation is exactly -ndigits-1 and its 5-valuation is at least
+	   -ndigits.  For ndigits >= 0 the latter condition is automatically
+	   satisfied for a binary float x, since any such float has
+	   nonnegative 5-valuation.  For 0 > ndigits >= -22, x needs to be an
+	   integral multiple of 5**-ndigits; we can check this using fmod.
+	   For -22 > ndigits, there are no halfway cases: 5**23 takes 54 bits
+	   to represent exactly, so any odd multiple of 0.5 * 10**n for n >=
+	   23 takes at least 54 bits of precision to represent exactly.
+
+	   Correction: a simple strategy for dealing with halfway cases is to
+	   (for the halfway cases only) call _Py_dg_dtoa with an argument of
+	   ndigits+1 instead of ndigits (thus doing an exact conversion to
+	   decimal), round the resulting string manually, and then convert
+	   back using _Py_dg_strtod.
+	*/
+
+	/* nans, infinities and zeros should have already been dealt
+	   with by the caller (in this case, builtin_round) */
+	assert(Py_IS_FINITE(x) && x != 0.0);
+
+	/* find 2-valuation val of x */
+	m = frexp(x, &val);
+	while (m != floor(m)) {
+		m *= 2.0;
+		val--;
+	}
+
+	/* determine whether this is a halfway case */
+	if (val == -ndigits-1) {
+		if (ndigits >= 0)
+			halfway_case = 1;
+		else if (ndigits >= -FIVE_POW_LIMIT) {
+			double five_pow = 1.0;
+			int i;
+			for (i=0; i < -ndigits; i++)
+				five_pow *= 5.0;
+			halfway_case = fmod(x, five_pow) == 0.0;
+		}
+		else
+			halfway_case = 0;
+	}
+	else
+		halfway_case = 0;
+
+	/* round to a decimal string; use an extra place for halfway case */
+	buf = _Py_dg_dtoa(x, 3, ndigits+halfway_case, &decpt, &sign, &buf_end);
+	if (buf == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	buflen = buf_end - buf;
+
+	/* in halfway case, do the round-half-away-from-zero manually */
+	if (halfway_case) {
+		int i, carry;
+		/* sanity check: _Py_dg_dtoa should not have stripped
+		   any zeros from the result: there should be exactly
+		   ndigits+1 places following the decimal point, and
+		   the last digit in the buffer should be a '5'.*/
+		assert(buflen - decpt == ndigits+1);
+		assert(buf[buflen-1] == '5');
+
+		/* increment and shift right at the same time. */
+		decpt += 1;
+		carry = 1;
+		for (i=buflen-1; i-- > 0;) {
+			carry += buf[i] - '0';
+			buf[i+1] = carry % 10 + '0';
+			carry /= 10;
+		}
+		buf[0] = carry + '0';
+	}
+
+	/* Get new buffer if shortbuf is too small.  Space needed <= buf_end -
+	   buf + 8: (1 extra for '0', 1 for sign, 5 for exp, 1 for '\0'). */
+	if (buflen + 8 > mybuflen) {
+		mybuflen = buflen+8;
+		mybuf = (char *)PyMem_Malloc(mybuflen);
+		if (mybuf == NULL) {
+			PyErr_NoMemory();
+			goto exit;
+		}
+	}
+	/* copy buf to mybuf, adding exponent, sign and leading 0 */
+	PyOS_snprintf(mybuf, mybuflen, "%s0%se%d", (sign ? "-" : ""),
+		      buf, decpt - (int)buflen);
+
+	/* and convert the resulting string back to a double */
+	errno = 0;
+	rounded = _Py_dg_strtod(mybuf, NULL);
+	if (errno == ERANGE && fabs(rounded) >= 1.)
+		PyErr_SetString(PyExc_OverflowError,
+				"rounded value too large to represent");
+	else
+		result = PyFloat_FromDouble(rounded);
+
+	/* done computing value;  now clean up */
+	if (mybuf != shortbuf)
+		PyMem_Free(mybuf);
+  exit:
+	_Py_dg_freedtoa(buf);
+	return result;
+}
+
+#undef FIVE_POW_LIMIT
+
+#else /* PY_NO_SHORT_FLOAT_REPR */
+
+/* fallback version, to be used when correctly rounded binary<->decimal
+   conversions aren't available */
+
+PyObject *
+_Py_double_round(double x, int ndigits) {
+	double pow1, pow2, y, z;
+	if (ndigits >= 0) {
+		if (ndigits > 22) {
+			/* pow1 and pow2 are each safe from overflow, but
+			   pow1*pow2 ~= pow(10.0, ndigits) might overflow */
+			pow1 = pow(10.0, (double)(ndigits-22));
+			pow2 = 1e22;
+		}
+		else {
+			pow1 = pow(10.0, (double)ndigits);
+			pow2 = 1.0;
+		}
+		y = (x*pow1)*pow2;
+		/* if y overflows, then rounded value is exactly x */
+		if (!Py_IS_FINITE(y))
+			return PyFloat_FromDouble(x);
+	}
+	else {
+		pow1 = pow(10.0, (double)-ndigits);
+		pow2 = 1.0; /* unused; silences a gcc compiler warning */
+		y = x / pow1;
+	}
+
+	z = round(y);
+	if (fabs(y-z) == 0.5)
+		/* halfway between two integers; use round-away-from-zero */
+		z = y + copysign(0.5, y);
+
+	if (ndigits >= 0)
+		z = (z / pow2) / pow1;
+	else
+		z *= pow1;
+
+	/* if computation resulted in overflow, raise OverflowError */
+	if (!Py_IS_FINITE(z)) {
+		PyErr_SetString(PyExc_OverflowError,
+				"overflow occurred during round");
+		return NULL;
+	}
+
+	return PyFloat_FromDouble(z);
+}
+
+#endif /* PY_NO_SHORT_FLOAT_REPR */
+
 static PyObject *
 float_float(PyObject *v)
 {

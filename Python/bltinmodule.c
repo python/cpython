@@ -8,6 +8,7 @@
 #include "eval.h"
 
 #include <ctype.h>
+#include <float.h> /* for DBL_MANT_DIG and friends */
 
 #ifdef RISCOS
 #include "unixstuff.h"
@@ -2120,29 +2121,47 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	double number;
-	double f;
-	int ndigits = 0;
-	int i;
+	double x;
+	PyObject *o_ndigits = NULL;
+	Py_ssize_t ndigits;
 	static char *kwlist[] = {"number", "ndigits", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|i:round",
-		kwlist, &number, &ndigits))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|O:round",
+		kwlist, &x, &o_ndigits))
 		return NULL;
-	f = 1.0;
-	i = abs(ndigits);
-	while  (--i >= 0)
-		f = f*10.0;
-	if (ndigits < 0)
-		number /= f;
+
+	/* nans, infinities and zeros round to themselves */
+	if (!Py_IS_FINITE(x) || x == 0.0)
+		return PyFloat_FromDouble(x);
+
+	if (o_ndigits == NULL) {
+		/* second argument defaults to 0 */
+		ndigits = 0;
+	}
+	else {
+		/* interpret 2nd argument as a Py_ssize_t; clip on overflow */
+		ndigits = PyNumber_AsSsize_t(o_ndigits, NULL);
+		if (ndigits == -1 && PyErr_Occurred())
+			return NULL;
+	}
+
+	/* Deal with extreme values for ndigits. For ndigits > NDIGITS_MAX, x
+	   always rounds to itself.  For ndigits < NDIGITS_MIN, x always
+	   rounds to +-0.0.  Here 0.30103 is an upper bound for log10(2). */
+#define NDIGITS_MAX ((int)((DBL_MANT_DIG-DBL_MIN_EXP) * 0.30103))
+#define NDIGITS_MIN (-(int)((DBL_MAX_EXP + 1) * 0.30103))
+	if (ndigits > NDIGITS_MAX)
+		/* return x */
+		return PyFloat_FromDouble(x);
+	else if (ndigits < NDIGITS_MIN)
+		/* return 0.0, but with sign of x */
+		return PyFloat_FromDouble(0.0*x);
 	else
-		number *= f;
-	number = round(number);
-	if (ndigits < 0)
-		number *= f;
-	else
-		number /= f;
-	return PyFloat_FromDouble(number);
+		/* finite x, and ndigits is not unreasonably large */
+		/* _Py_double_round is defined in floatobject.c */
+		return _Py_double_round(x, (int)ndigits);
+#undef NDIGITS_MAX
+#undef NDIGITS_MIN
 }
 
 PyDoc_STRVAR(round_doc,
