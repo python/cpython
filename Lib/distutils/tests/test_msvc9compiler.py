@@ -44,17 +44,17 @@ class msvc9compilerTestCase(unittest.TestCase):
 
         # looking for values that should exist on all
         # windows registeries versions.
-        path = r'Software\Microsoft\Notepad'
-        v = Reg.get_value(path, "lfitalic")
-        self.assertTrue(v in (0, 1))
+        path = r'Control Panel\Desktop'
+        v = Reg.get_value(path, 'dragfullwindows')
+        self.assertTrue(v in ('0', '1'))
 
         import winreg
         HKCU = winreg.HKEY_CURRENT_USER
         keys = Reg.read_keys(HKCU, 'xxxx')
         self.assertEquals(keys, None)
 
-        keys = Reg.read_keys(HKCU, r'Software\Microsoft')
-        self.assertTrue('Notepad' in keys)
+        keys = Reg.read_keys(HKCU, r'Control Panel')
+        self.assertTrue('Desktop' in keys)
 
 def test_suite():
     return unittest.makeSuite(msvc9compilerTestCase)

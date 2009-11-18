@@ -137,6 +137,9 @@ C-API
 Library
 -------
 
+- Issue #7293: distutils.test_msvc9compiler is fixed to work on any fresh
+  Windows box. Help provided by David Bolen.
+
 - Issue #2054: ftplib now provides an FTP_TLS class to do secure FTP using
   TLS or SSL.  Patch by Giampaolo Rodola'.
 
