@@ -724,6 +724,12 @@ changes, or look through the Subversion logs for all the details.
   :mod:`zipfile` now supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
 
+* The :mod:`ftplib` module gains the ability to establish secure FTP
+  connections using TLS encapsulation of authentication as well as
+  subsequent control and data transfers.  This is provided by the new
+  :class:`ftplib.FTP_TLS` class.
+  (Contributed by Giampaolo Rodola', :issue:`2054`.)
+
 .. ======================================================================
 .. whole new modules get described in subsections here
 
