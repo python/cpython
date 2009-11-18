@@ -3,6 +3,7 @@ import unittest
 import os
 import os.path
 import sys
+import re
 import tempfile
 from test.test_support import verbose, run_unittest, forget
 from test.script_helper import (temp_dir, make_script, compile_script,
@@ -317,8 +318,7 @@ argv0 = sys.argv[0]
         self.assertEqual(result["__package__"], expected_package)
 
     def _check_import_error(self, script_name, msg):
-        # Double backslashes to handle path separators on Windows
-        msg = msg.replace("\\", "\\\\")
+        msg = re.escape(msg)
         self.assertRaisesRegexp(ImportError, msg, run_path, script_name)
 
     def test_basic_script(self):
