@@ -488,8 +488,8 @@ consulted for longer descriptions.
   :meth:`format` method for both 8-bit and Unicode strings.  In 3.0,
   only the :class:`str` type (text strings with Unicode support)
   supports this method; the :class:`bytes` type does not.  The plan is
-  to eventually make this the only API for string formatting, and to
-  start deprecating the ``%`` operator in Python 3.1.
+  to make this the preferred API for string formatting and to
+  de-emphasize the ``%`` string formatting operator.
 
 * :ref:`pep-3105`.  This is now a standard feature and no longer needs
   to be imported from :mod:`__future__`.  More details were given above.
