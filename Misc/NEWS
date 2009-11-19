@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7085: Fix crash when importing some extensions in a thread
+  on MacOSX 10.6.
+
 - Issue #7298: fixes for range and reversed(range(...)).  Iteration
   over range(a, b, c) incorrectly gave an empty iterator when a, b and
   c fit in C long but the length of the range did not.  Also fix

@@ -3939,6 +3939,12 @@ else AC_MSG_RESULT(no)
 fi],
 [AC_MSG_RESULT(no)])
 
+if test $ac_sys_system = Darwin
+then
+	LIBS="$LIBS -framework CoreFoundation"
+fi
+
+
 
 AC_SUBST(THREADHEADERS)
 
