@@ -36,10 +36,10 @@ esac
 # Now ensure that our bin directory is on $P and before /usr/bin at that
 for elem in `echo $P | tr ':' ' '`
 do
-	if [ "${elem}" == "${PYTHON_ROOT}/bin" ]; then
+	if [ "${elem}" = "${PYTHON_ROOT}/bin" ]; then
 		echo "All right, you're a python lover already"
 		exit 0
-	elif [ "${elem}" == "/usr/bin" ]; then
+	elif [ "${elem}" = "/usr/bin" ]; then
 		break
 	fi
 done
