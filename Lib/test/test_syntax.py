@@ -447,9 +447,13 @@ class SyntaxTestCase(unittest.TestCase):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%r'" % (errtext,))
+                self.fail("%s did not contain '%r'" % (err, errtext,))
         else:
             self.fail("compile() did not raise SyntaxError")
+
+    def test_paren_arg_with_default(self):
+        self._check_error("def f((x)=23): pass",
+                          "parenthesized arg with default")
 
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
