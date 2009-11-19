@@ -435,6 +435,13 @@ proxy_checkref(PyWeakReference *proxy)
         return generic(proxy, v, w); \
     }
 
+#define WRAP_METHOD(method, special) \
+    static PyObject * \
+    method(PyObject *proxy) { \
+	    UNWRAP(proxy); \
+		return PyObject_CallMethod(proxy, special, ""); \
+	}
+
 
 /* direct slots */
 
@@ -576,6 +583,15 @@ proxy_iternext(PyWeakReference *proxy)
 }
 
 
+WRAP_METHOD(proxy_bytes, "__bytes__");
+
+
+static PyMethodDef proxy_methods[] = {
+	{"__bytes__", (PyCFunction)proxy_bytes, METH_NOARGS},
+	{NULL, NULL}
+};
+
+
 static PyNumberMethods proxy_as_number = {
     proxy_add,              /*nb_add*/
     proxy_sub,              /*nb_subtract*/
@@ -661,6 +677,7 @@ _PyWeakref_ProxyType = {
     0,                                  /* tp_weaklistoffset */
     (getiterfunc)proxy_iter,            /* tp_iter */
     (iternextfunc)proxy_iternext,       /* tp_iternext */
+	proxy_methods,                      /* tp_methods */
 };
 
 

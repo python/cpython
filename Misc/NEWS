@@ -137,6 +137,9 @@ C-API
 Library
 -------
 
+- Issue #5037: Proxy the __unicode__ special method instead to __unicode__
+  instead of __str__.
+
 - Issue #7341: Close the internal file object in the TarFile constructor in
   case of an error.
 
