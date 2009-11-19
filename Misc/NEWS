@@ -15,11 +15,40 @@ Core and Builtins
 - Issue #7085: Fix crash when importing some extensions in a thread
   on MacOSX 10.6.
 
+- Issue #7117: repr(x) for a float x returns a result based on the
+  shortest decimal string that's guaranteed to round back to x under
+  correct rounding (with round-half-to-even rounding mode).
+  Previously it gave a string based on rounding x to 17 decimal digits.
+  repr(x) for a complex number behaves similarly.  On platforms where
+  the correctly-rounded strtod and dtoa code is not supported (see below),
+  repr is unchanged.
+
+- Issue #7117: On almost all platforms: float-to-string and
+  string-to-float conversions within Python are now correctly rounded.
+  Places these conversions occur include: str for floats and complex
+  numbers; the float and complex constructors; old-style and new-style
+  numeric formatting; serialization and deserialization of floats and
+  complex numbers using marshal, pickle and json; parsing of float and
+  imaginary literals in Python code; Decimal-to-float conversion.
+
+  The conversions use a Python-adapted version of David Gay's
+  well-known dtoa.c, providing correctly-rounded strtod and dtoa C
+  functions.  This code is supported on Windows, and on Unix-like
+  platforms using gcc, icc or suncc as the C compiler.  There may be a
+  small number of platforms on which correct operation of this code
+  cannot be guaranteed, so the code is not used: notably, this applies
+  to platforms where the C double format is not IEEE 754 binary64, and
+  to platforms on x86 hardware where the x87 FPU is set to 64-bit
+  precision and Python's configure script is unable to determine how
+  to change the FPU precision.  On these platforms conversions use the
+  platform strtod and dtoa, as before.
+
 - Issue #7117: Backport round implementation from Python 3.x.  round
-  now uses David Gay's correctly-rounded string <-> double conversions
-  (when available), and so produces correctly rounded results.  There
-  are two related small changes: (1) round now accepts any class with
-  an __index__ method for its second argument (but no longer accepts
+  now uses the correctly-rounded string <-> float conversions
+  described above (when available), and so produces correctly rounded
+  results that will display nicely under the float repr.  There are
+  two related small changes: (1) round now accepts any class with an
+  __index__ method for its second argument (but no longer accepts
   floats for the second argument), and (2) an excessively large second
   integer argument (e.g., round(1.234, 10**100)) no longer raises an
   exception.
