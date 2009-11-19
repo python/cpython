@@ -2194,7 +2194,7 @@ empty:
 }
 
 PyDoc_STRVAR(combinations_doc,
-"combinations(iterable[, r]) --> combinations object\n\
+"combinations(iterable, r) --> combinations object\n\
 \n\
 Return successive r-length combinations of elements in the iterable.\n\n\
 combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
@@ -3542,6 +3542,11 @@ chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
+\n\
+Combinatoric generators:\n\
+product(p, q, ... [repeat=1]) --> cartesian product\n\
+permutations(p[, r])\n\
+combinations(p, r)\n\
 ");
 
 
