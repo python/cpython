@@ -12,6 +12,9 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #7085: Fix crash when importing some extensions in a thread
+  on MacOSX 10.6.
+
 - Issue #7070: Fix round bug for large odd integer arguments.
 
 - Issue #7078: Set struct.__doc__ from _struct.__doc__.
