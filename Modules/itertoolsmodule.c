@@ -2196,7 +2196,7 @@ empty:
 }
 
 PyDoc_STRVAR(combinations_doc,
-"combinations(iterable[, r]) --> combinations object\n\
+"combinations(iterable, r) --> combinations object\n\
 \n\
 Return successive r-length combinations of elements in the iterable.\n\n\
 combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
@@ -2441,7 +2441,7 @@ empty:
 }
 
 PyDoc_STRVAR(cwr_doc,
-"combinations_with_replacement(iterable[, r]) --> combinations_with_replacement object\n\
+"combinations_with_replacement(iterable, r) --> combinations_with_replacement object\n\
 \n\
 Return successive r-length combinations of elements in the iterable\n\
 allowing individual elements to have successive repeats.\n\
@@ -4018,8 +4018,8 @@ izip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
 Combinatoric generators:\n\
 product(p, q, ... [repeat=1]) --> cartesian product\n\
 permutations(p[, r])\n\
-combinations(p[, r])\n\
-combinations_with_replacement(p[, r])\n\
+combinations(p, r)\n\
+combinations_with_replacement(p, r)\n\
 ");
 
 
