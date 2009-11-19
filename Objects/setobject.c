@@ -1343,9 +1343,9 @@ set_intersection_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(intersection_doc,
-"Return the intersection of two sets as a new set.\n\
+"Return the intersection of two or more sets as a new set.\n\
 \n\
-(i.e. all elements that are in both sets.)");
+(i.e. elements that are common to all of the sets.)");
 
 static PyObject *
 set_intersection_update(PySetObject *so, PyObject *other)
