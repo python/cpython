@@ -46,7 +46,7 @@ class msvc9compilerTestCase(unittest.TestCase):
         # windows registeries versions.
         path = r'Control Panel\Desktop'
         v = Reg.get_value(path, 'dragfullwindows')
-        self.assertTrue(v in ('0', '1'))
+        self.assertTrue(v in ('0', '1', '2'))
 
         import winreg
         HKCU = winreg.HKEY_CURRENT_USER
