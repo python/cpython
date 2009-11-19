@@ -14,7 +14,7 @@ Core and Builtins
 
 - Add Py3k warnings for parameter names in parenthesis.
 
-- Issue #7362: Give a propery error message for def f((x)=3): pass.
+- Issue #7362: Give a proper error message for def f((x)=3): pass.
 
 - Issue #7085: Fix crash when importing some extensions in a thread
   on MacOSX 10.6.
