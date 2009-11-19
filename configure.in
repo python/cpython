@@ -3841,6 +3841,13 @@ do
   THREADHEADERS="$THREADHEADERS \$(srcdir)/$h"
 done
 
+if test $ac_sys_system = Darwin
+then
+	LIBS="$LIBS -framework CoreFoundation"
+fi
+
+
+
 AC_SUBST(SRCDIRS)
 SRCDIRS="Parser Grammar Objects Python Modules Mac"
 AC_MSG_CHECKING(for build directories)
