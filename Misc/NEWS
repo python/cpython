@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7085: Fix crash when importing some extensions in a thread
+  on MacOSX 10.6.
+
 - Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
 
 - Issue #6970: Remove redundant calls when comparing objects that don't
