@@ -682,7 +682,8 @@ ast_for_arguments(struct compiling *c, const node *n)
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
-            case fpdef:
+            case fpdef: {
+                int complex_args = 0, parenthesized = 0;
             handle_fpdef:
                 /* XXX Need to worry about checking if TYPE(CHILD(n, i+1)) is
                    anything other than EQUAL or a comma? */
@@ -697,6 +698,12 @@ ast_for_arguments(struct compiling *c, const node *n)
                     found_default = 1;
                 }
                 else if (found_default) {
+                    /* def f((x)=4): pass should raise an error.
+                       def f((x, (y))): pass will just incur the tuple unpacking warning. */
+                    if (parenthesized && !complex_args) {
+                        ast_error(n, "parenthesized arg with default");
+                        goto error;
+                    }
                     ast_error(n, 
                              "non-default argument follows default argument");
                     goto error;
@@ -709,6 +716,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                         if (Py_Py3kWarningFlag && !ast_warn(c, ch,
                             "tuple parameter unpacking has been removed in 3.x"))
                             goto error;
+                        complex_args = 1;
                         asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
                         if (!asdl_seq_GET(args, k-1))
                                 goto error;
@@ -716,6 +724,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                         /* def foo((x)): setup for checking NAME below. */
                         /* Loop because there can be many parens and tuple
                            unpacking mixed in. */
+                        parenthesized = 1;
                         ch = CHILD(ch, 0);
                         assert(TYPE(ch) == fpdef);
                         goto handle_fpdef;
@@ -737,7 +746,13 @@ ast_for_arguments(struct compiling *c, const node *n)
                                          
                 }
                 i += 2; /* the name and the comma */
+                if (parenthesized && Py_Py3kWarningFlag &&
+                    !ast_warn(c, ch, "parenthesized argument names "
+                              "are invalid in 3.x"))
+                    goto error;
+
                 break;
+            }
             case STAR:
                 if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
                     goto error;
