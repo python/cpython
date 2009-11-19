@@ -188,6 +188,17 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(L3[:5], p3[:5])
         self.assertEqual(L3[2:5], p3[2:5])
 
+    def test_proxy_unicode(self):
+        # See bug 5037
+        class C(object):
+            def __str__(self):
+                return "string"
+            def __unicode__(self):
+                return u"unicode"
+        instance = C()
+        self.assertTrue("__unicode__" in dir(weakref.proxy(instance)))
+        self.assertEqual(unicode(weakref.proxy(instance)), u"unicode")
+
     def test_proxy_index(self):
         class C:
             def __index__(self):
