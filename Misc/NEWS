@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #7085: Fix crash when importing some extensions in a thread
+  on MacOSX 10.6.
+
 - Issue #7117: Backport round implementation from Python 3.x.  round
   now uses David Gay's correctly-rounded string <-> double conversions
   (when available), and so produces correctly rounded results.  There

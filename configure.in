@@ -3999,6 +3999,11 @@ then
   [Define to printf format modifier for long long type])
 fi
 
+if test $ac_sys_system = Darwin
+then
+	LIBS="$LIBS -framework CoreFoundation"
+fi
+
 
 AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
 AC_TRY_RUN([
