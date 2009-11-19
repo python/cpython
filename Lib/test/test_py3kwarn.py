@@ -30,6 +30,18 @@ class TestPy3KWarnings(unittest.TestCase):
             exec "`2`" in {}
         self.assertWarning(None, w, expected)
 
+    def test_paren_arg_names(self):
+        expected = 'parenthesized argument names are invalid in 3.x'
+        def check(s):
+            exec s in {}
+            self.assertWarning(None, w, expected)
+        with check_warnings() as w:
+            check("def f((x)): pass")
+            check("def f((((x))), (y)): pass")
+            check("def f((x), (((y))), m=32): pass")
+            # Something like def f((a, (b))): pass will raise the tuple
+            # unpacking warning.
+
     def test_forbidden_names(self):
         # So we don't screw up our globals
         def safe_exec(expr):
