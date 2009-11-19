@@ -251,6 +251,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5037: Proxy the __unicode__ special method instead to __unicode__
+  instead of __str__.
+
 - Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment
 
 - Issue #6790: Make it possible again to pass an `array.array` to
