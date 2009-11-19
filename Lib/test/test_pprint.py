@@ -2,6 +2,7 @@ import pprint
 import test.support
 import unittest
 import test.test_set
+import random
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -24,6 +25,10 @@ class dict2(dict):
 class dict3(dict):
     def __repr__(self):
         return dict.__repr__(self)
+
+class Unorderable:
+    def __repr__(self):
+        return str(id(self))
 
 class QueryTestCase(unittest.TestCase):
 
@@ -407,6 +412,20 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat(nested_dict, depth=1), lv1_dict)
         self.assertEqual(pprint.pformat(nested_list, depth=1), lv1_list)
 
+    def test_sort_unorderable_values(self):
+        # Issue 3976:  sorted pprints fail for unorderable values.
+        n = 20
+        keys = [Unorderable() for i in range(n)]
+        random.shuffle(keys)
+        skeys = sorted(keys, key=id)
+        clean = lambda s: s.replace(' ', '').replace('\n','')
+
+        self.assertEqual(clean(pprint.pformat(set(keys))),
+            '{' + ','.join(map(repr, skeys)) + '}')
+        self.assertEqual(clean(pprint.pformat(frozenset(keys))),
+            'frozenset({' + ','.join(map(repr, skeys)) + '})')
+        self.assertEqual(clean(pprint.pformat(dict.fromkeys(keys))),
+            '{' + ','.join('%r:None' % k for k in skeys) + '}')
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
