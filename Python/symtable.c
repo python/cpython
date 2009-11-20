@@ -1193,9 +1193,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
-		/* XXX how to get line numbers for expressions */
 		if (!symtable_enter_block(st, lambda,
-                                          FunctionBlock, (void *)e, 0))
+                                          FunctionBlock, (void *)e, e->lineno))
 			return 0;
 		VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
 		VISIT_IN_BLOCK(st, expr, e->v.Lambda.body, (void*)e);
