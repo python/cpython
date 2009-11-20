@@ -3586,48 +3586,46 @@ static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
 	basicblock *b;
-	int bsize, totsize, extended_arg_count, last_extended_arg_count = 0;
+	int bsize, totsize, extended_arg_count = 0, last_extended_arg_count;
 	int i;
 
 	/* Compute the size of each block and fixup jump args.
 	   Replace block pointer with position in bytecode. */
-start:
-	totsize = 0;
-	for (i = a->a_nblocks - 1; i >= 0; i--) {
-		b = a->a_postorder[i];
-		bsize = blocksize(b);
-		b->b_offset = totsize;
-		totsize += bsize;
-	}
-	extended_arg_count = 0;
-	for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-		bsize = b->b_offset;
-		for (i = 0; i < b->b_iused; i++) {
-			struct instr *instr = &b->b_instr[i];
-			/* Relative jumps are computed relative to
-			   the instruction pointer after fetching
-			   the jump instruction.
-			*/
-			bsize += instrsize(instr);
-			if (instr->i_jabs)
-				instr->i_oparg = instr->i_target->b_offset;
-			else if (instr->i_jrel) {
-				int delta = instr->i_target->b_offset - bsize;
-				instr->i_oparg = delta;
-			}
-			else
-				continue;
-			if (instr->i_oparg > 0xffff)
-				extended_arg_count++;
+	do {
+		totsize = 0;
+		for (i = a->a_nblocks - 1; i >= 0; i--) {
+			b = a->a_postorder[i];
+			bsize = blocksize(b);
+			b->b_offset = totsize;
+			totsize += bsize;
 		}
-	}
+		last_extended_arg_count = extended_arg_count;
+		extended_arg_count = 0;
+		for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
+			bsize = b->b_offset;
+			for (i = 0; i < b->b_iused; i++) {
+				struct instr *instr = &b->b_instr[i];
+				/* Relative jumps are computed relative to
+				   the instruction pointer after fetching
+				   the jump instruction.
+				*/
+				bsize += instrsize(instr);
+				if (instr->i_jabs)
+					instr->i_oparg = instr->i_target->b_offset;
+				else if (instr->i_jrel) {
+					int delta = instr->i_target->b_offset - bsize;
+					instr->i_oparg = delta;
+				}
+				else
+					continue;
+				if (instr->i_oparg > 0xffff)
+					extended_arg_count++;
+			}
+		}
 
 	/* XXX: This is an awful hack that could hurt performance, but
 		on the bright side it should work until we come up
 		with a better solution.
-
-		In the meantime, should the goto be dropped in favor
-		of a loop?
 
 		The issue is that in the first loop blocksize() is called
 		which calls instrsize() which requires i_oparg be set
@@ -3639,10 +3637,7 @@ start:
 		ones in jump instructions.  So this should converge
 		fairly quickly.
 	*/
-	if (last_extended_arg_count != extended_arg_count) {
-		last_extended_arg_count = extended_arg_count;
-		goto start;
-	}
+	} while (last_extended_arg_count != extended_arg_count);
 }
 
 static PyObject *
