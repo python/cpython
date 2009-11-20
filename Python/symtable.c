@@ -1331,9 +1331,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
-		/* XXX how to get line numbers for expressions */
 		if (!symtable_enter_block(st, lambda,
-                                          FunctionBlock, (void *)e, 0))
+                                          FunctionBlock, (void *)e, e->lineno))
 			return 0;
 		VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
 		VISIT_IN_BLOCK(st, expr, e->v.Lambda.body, (void*)e);
@@ -1631,7 +1630,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 	VISIT(st, expr, outermost->iter);
 	/* Create comprehension scope for the rest */
 	if (!scope_name ||
-	    !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, 0)) {
+	    !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, e->lineno)) {
 		return 0;
 	}
 	st->st_cur->ste_generator = is_generator;
