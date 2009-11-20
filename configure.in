@@ -3387,6 +3387,41 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
+# For multiprocessing module, check that sem_open
+# actually works.  For FreeBSD versions <= 7.2,
+# the kernel module that provides POSIX semaphores
+# isn't loaded by default, so an attempt to call
+# sem_open results in a 'Signal 12' error.
+AC_MSG_CHECKING(whether POSIX semaphores are enabled)
+AC_CACHE_VAL(ac_cv_posix_semaphores_enabled,
+AC_TRY_RUN([
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+
+int main(void) {
+  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  if (a == SEM_FAILED) {
+    perror("sem_open");
+    return 1;
+  }
+  sem_close(a);
+  return 0;
+}
+], ac_cv_posix_semaphores_enabled=yes,
+   ac_cv_posix_semaphores_enabled=no,
+   ac_cv_posix_semaphores_enabled=yes)
+)
+AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
+if test $ac_cv_posix_semaphores_enabled = no
+then
+  AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
+            [Define if the Posix semaphores do not work on your system])
+fi
+
+
 # Multiprocessing check for broken sem_getvalue
 AC_MSG_CHECKING(for broken sem_getvalue)
 AC_CACHE_VAL(ac_cv_broken_sem_getvalue,

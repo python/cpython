@@ -17,7 +17,7 @@ import copy
 import socket
 import random
 import logging
-import test_support
+from test import test_support
 from StringIO import StringIO
 
 
