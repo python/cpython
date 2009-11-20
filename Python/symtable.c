@@ -1468,7 +1468,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	VISIT(st, expr, outermost->iter);
 	/* Create generator scope for the rest */
 	if (!GET_IDENTIFIER(genexpr) ||
-	    !symtable_enter_block(st, genexpr, FunctionBlock, (void *)e, 0)) {
+	    !symtable_enter_block(st, genexpr, FunctionBlock, (void *)e, e->lineno)) {
 		return 0;
 	}
 	st->st_cur->ste_generator = 1;
