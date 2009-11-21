@@ -47,8 +47,6 @@ class Queue(object):
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
 
-        self.getv = 0
-
     def __getstate__(self):
         assert_spawning(self)
         return (self._maxsize, self._reader, self._writer,
@@ -73,8 +71,6 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
-        if not isinstance(obj, list):
-            debug('put: %s', obj)
         assert not self._closed
         if not self._sem.acquire(block, timeout):
             raise Full
@@ -89,15 +85,11 @@ class Queue(object):
             self._notempty.release()
 
     def get(self, block=True, timeout=None):
-        self.getv += 1
-        debug('self.getv: %s', self.getv)
         if block and timeout is None:
             self._rlock.acquire()
             try:
                 res = self._recv()
                 self._sem.release()
-                if not isinstance(res, list):
-                    debug('get: %s', res)
                 return res
             finally:
                 self._rlock.release()
@@ -112,8 +104,6 @@ class Queue(object):
                     raise Empty
                 res = self._recv()
                 self._sem.release()
-                if not isinstance(res, list):
-                    debug('get: %s', res)
                 return res
             finally:
                 self._rlock.release()
@@ -239,22 +229,16 @@ class Queue(object):
                 try:
                     while 1:
                         obj = bpopleft()
-                        if not isinstance(obj, list):
-                            debug('feeder thread got: %s', obj)
                         if obj is sentinel:
                             debug('feeder thread got sentinel -- exiting')
                             close()
                             return
+
                         if wacquire is None:
-                            if not isinstance(obj, list):
-                                debug('sending to pipe: %s', obj)
                             send(obj)
                         else:
-                            debug('waiting on wacquire')
-                            wacquire(timeout=30)
+                            wacquire()
                             try:
-                                if not isinstance(obj, list):
-                                    debug('sending to pipe: %s', obj)
                                 send(obj)
                             finally:
                                 wrelease()
