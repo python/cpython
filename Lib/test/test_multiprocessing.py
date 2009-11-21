@@ -1723,6 +1723,26 @@ class _TestLogging(BaseTestCase):
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
 
+
+class _TestLoggingProcessName(BaseTestCase):
+
+    def handle(self, record):
+        assert record.processName == multiprocessing.current_process().name
+        self.__handled = True
+
+    def test_logging(self):
+        handler = logging.Handler()
+        handler.handle = self.handle
+        self.__handled = False
+        # Bypass getLogger() and side-effects
+        logger = logging.getLoggerClass()(
+                'multiprocessing.test.TestLoggingProcessName')
+        logger.addHandler(handler)
+        logger.propagate = False
+
+        logger.warn('foo')
+        assert self.__handled
+
 #
 # Test to verify handle verification, see issue 3321
 #
