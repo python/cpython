@@ -140,6 +140,9 @@ C-API
 Library
 -------
 
+- Issue #6123: tarfile now opens empty archives correctly and consistently
+  raises ReadError on empty files.
+
 - Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can 
   be 2.
 
