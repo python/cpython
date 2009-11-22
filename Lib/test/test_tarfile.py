@@ -135,7 +135,53 @@ class UstarReadTest(ReadTest):
         fobj.close()
 
 
-class MiscReadTest(ReadTest):
+class CommonReadTest(ReadTest):
+
+    def test_empty_tarfile(self):
+        # Test for issue6123: Allow opening empty archives.
+        # This test checks if tarfile.open() is able to open an empty tar
+        # archive successfully. Note that an empty tar archive is not the
+        # same as an empty file!
+        tarfile.open(tmpname, self.mode.replace("r", "w")).close()
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            tar.getnames()
+        except tarfile.ReadError:
+            self.fail("tarfile.open() failed on empty archive")
+        self.assertListEqual(tar.getmembers(), [])
+
+    def test_null_tarfile(self):
+        # Test for issue6123: Allow opening empty archives.
+        # This test guarantees that tarfile.open() does not treat an empty
+        # file as an empty tar archive.
+        open(tmpname, "wb").close()
+        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, self.mode)
+        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname)
+
+    def test_ignore_zeros(self):
+        # Test TarFile's ignore_zeros option.
+        if self.mode.endswith(":gz"):
+            _open = gzip.GzipFile
+        elif self.mode.endswith(":bz2"):
+            _open = bz2.BZ2File
+        else:
+            _open = open
+
+        for char in (b'\0', b'a'):
+            # Test if EOFHeaderError ('\0') and InvalidHeaderError ('a')
+            # are ignored correctly.
+            fobj = _open(tmpname, "wb")
+            fobj.write(char * 1024)
+            fobj.write(tarfile.TarInfo("foo").tobuf())
+            fobj.close()
+
+            tar = tarfile.open(tmpname, mode="r", ignore_zeros=True)
+            self.assertListEqual(tar.getnames(), ["foo"],
+                    "ignore_zeros=True should have skipped the %r-blocks" % char)
+            tar.close()
+
+
+class MiscReadTest(CommonReadTest):
 
     def test_no_name_argument(self):
         fobj = open(self.tarname, "rb")
@@ -264,7 +310,7 @@ class MiscReadTest(ReadTest):
         tar.close()
 
 
-class StreamReadTest(ReadTest):
+class StreamReadTest(CommonReadTest):
 
     mode="r|"
 
@@ -1079,12 +1125,12 @@ class AppendTest(unittest.TestCase):
         self._test()
 
     def test_empty(self):
-        open(self.tarname, "w").close()
+        tarfile.open(self.tarname, "w:").close()
         self._add_testfile()
         self._test()
 
     def test_empty_fileobj(self):
-        fobj = io.BytesIO()
+        fobj = io.BytesIO(b"\0" * 1024)
         self._add_testfile(fobj)
         fobj.seek(0)
         self._test(fileobj=fobj)
@@ -1113,6 +1159,29 @@ class AppendTest(unittest.TestCase):
             return
         self._create_testtar("w:bz2")
         self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, "a")
+
+    # Append mode is supposed to fail if the tarfile to append to
+    # does not end with a zero block.
+    def _test_error(self, data):
+        open(self.tarname, "wb").write(data)
+        self.assertRaises(tarfile.ReadError, self._add_testfile)
+
+    def test_null(self):
+        self._test_error(b"")
+
+    def test_incomplete(self):
+        self._test_error(b"\0" * 13)
+
+    def test_premature_eof(self):
+        data = tarfile.TarInfo("foo").tobuf()
+        self._test_error(data)
+
+    def test_trailing_garbage(self):
+        data = tarfile.TarInfo("foo").tobuf()
+        self._test_error(data + b"\0" * 13)
+
+    def test_invalid(self):
+        self._test_error(b"a" * 512)
 
 
 class LimitsTest(unittest.TestCase):
@@ -1228,10 +1297,16 @@ class Bz2PartialReadTest(unittest.TestCase):
                     raise AssertionError("infinite loop detected in tarfile.open()")
                 self.hit_eof = self.tell() == len(self.getvalue())
                 return super(MyBytesIO, self).read(n)
+            def seek(self, *args):
+                self.hit_eof = False
+                return super(MyBytesIO, self).seek(*args)
 
         data = bz2.compress(tarfile.TarInfo("foo").tobuf())
         for x in range(len(data) + 1):
-            tarfile.open(fileobj=MyBytesIO(data[:x]), mode=mode)
+            try:
+                tarfile.open(fileobj=MyBytesIO(data[:x]), mode=mode)
+            except tarfile.ReadError:
+                pass # we have no interest in ReadErrors
 
     def test_partial_input(self):
         self._test_partial_input("r")
