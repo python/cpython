@@ -195,7 +195,7 @@ def nti(s):
         try:
             n = int(nts(s) or "0", 8)
         except ValueError:
-            raise HeaderError("invalid header")
+            raise InvalidHeaderError("invalid header")
     else:
         n = 0L
         for i in xrange(len(s) - 1):
@@ -346,7 +346,22 @@ class StreamError(TarError):
     """Exception for unsupported operations on stream-like TarFiles."""
     pass
 class HeaderError(TarError):
+    """Base exception for header errors."""
+    pass
+class EmptyHeaderError(HeaderError):
+    """Exception for empty headers."""
+    pass
+class TruncatedHeaderError(HeaderError):
+    """Exception for truncated headers."""
+    pass
+class EOFHeaderError(HeaderError):
+    """Exception for end of file headers."""
+    pass
+class InvalidHeaderError(HeaderError):
     """Exception for invalid headers."""
+    pass
+class SubsequentHeaderError(HeaderError):
+    """Exception for missing and invalid extended headers."""
     pass
 
 #---------------------------
@@ -1179,14 +1194,16 @@ class TarInfo(object):
     def frombuf(cls, buf):
         """Construct a TarInfo object from a 512 byte string buffer.
         """
+        if len(buf) == 0:
+            raise EmptyHeaderError("empty header")
         if len(buf) != BLOCKSIZE:
-            raise HeaderError("truncated header")
+            raise TruncatedHeaderError("truncated header")
         if buf.count(NUL) == BLOCKSIZE:
-            raise HeaderError("empty header")
+            raise EOFHeaderError("end of file header")
 
         chksum = nti(buf[148:156])
         if chksum not in calc_chksums(buf):
-            raise HeaderError("bad checksum")
+            raise InvalidHeaderError("bad checksum")
 
         obj = cls()
         obj.buf = buf
@@ -1225,8 +1242,6 @@ class TarInfo(object):
            tarfile.
         """
         buf = tarfile.fileobj.read(BLOCKSIZE)
-        if not buf:
-            return
         obj = cls.frombuf(buf)
         obj.offset = tarfile.fileobj.tell() - BLOCKSIZE
         return obj._proc_member(tarfile)
@@ -1279,9 +1294,10 @@ class TarInfo(object):
         buf = tarfile.fileobj.read(self._block(self.size))
 
         # Fetch the next header and process it.
-        next = self.fromtarfile(tarfile)
-        if next is None:
-            raise HeaderError("missing subsequent header")
+        try:
+            next = self.fromtarfile(tarfile)
+        except HeaderError:
+            raise SubsequentHeaderError("missing or bad subsequent header")
 
         # Patch the TarInfo object from the next header with
         # the longname information.
@@ -1386,12 +1402,12 @@ class TarInfo(object):
             pos += length
 
         # Fetch the next header.
-        next = self.fromtarfile(tarfile)
+        try:
+            next = self.fromtarfile(tarfile)
+        except HeaderError:
+            raise SubsequentHeaderError("missing or bad subsequent header")
 
         if self.type in (XHDTYPE, SOLARIS_XHDTYPE):
-            if next is None:
-                raise HeaderError("missing subsequent header")
-
             # Patch the TarInfo object with the extended header info.
             next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
             next.offset = self.offset
@@ -1565,12 +1581,16 @@ class TarFile(object):
             if self.mode == "a":
                 # Move to the end of the archive,
                 # before the first empty block.
-                self.firstmember = None
                 while True:
-                    if self.next() is None:
-                        if self.offset > 0:
-                            self.fileobj.seek(- BLOCKSIZE, 1)
+                    self.fileobj.seek(self.offset)
+                    try:
+                        tarinfo = self.tarinfo.fromtarfile(self)
+                        self.members.append(tarinfo)
+                    except EOFHeaderError:
+                        self.fileobj.seek(self.offset)
                         break
+                    except HeaderError, e:
+                        raise ReadError(str(e))
 
             if self.mode in "aw":
                 self._loaded = True
@@ -1735,7 +1755,7 @@ class TarFile(object):
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except IOError:
+        except (IOError, EOFError):
             raise ReadError("not a bzip2 file")
         t._extfileobj = False
         return t
@@ -2307,23 +2327,36 @@ class TarFile(object):
 
         # Read the next block.
         self.fileobj.seek(self.offset)
+        tarinfo = None
         while True:
             try:
                 tarinfo = self.tarinfo.fromtarfile(self)
-                if tarinfo is None:
-                    return
-                self.members.append(tarinfo)
-
-            except HeaderError, e:
+            except EOFHeaderError, e:
                 if self.ignore_zeros:
                     self._dbg(2, "0x%X: %s" % (self.offset, e))
                     self.offset += BLOCKSIZE
                     continue
-                else:
-                    if self.offset == 0:
-                        raise ReadError(str(e))
-                    return None
+            except InvalidHeaderError, e:
+                if self.ignore_zeros:
+                    self._dbg(2, "0x%X: %s" % (self.offset, e))
+                    self.offset += BLOCKSIZE
+                    continue
+                elif self.offset == 0:
+                    raise ReadError(str(e))
+            except EmptyHeaderError:
+                if self.offset == 0:
+                    raise ReadError("empty file")
+            except TruncatedHeaderError, e:
+                if self.offset == 0:
+                    raise ReadError(str(e))
+            except SubsequentHeaderError, e:
+                raise ReadError(str(e))
             break
+
+        if tarinfo is not None:
+            self.members.append(tarinfo)
+        else:
+            self._loaded = True
 
         return tarinfo
 
