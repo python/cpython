@@ -20,6 +20,14 @@ class TestSFbugs(unittest.TestCase):
         diff_gen = difflib.unified_diff([], [])
         self.assertRaises(StopIteration, diff_gen.next)
 
+    def test_added_tab_hint(self):
+        # Check fix for bug #1488943
+        diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
+        self.assertEqual("- \tI am a buggy", diff[0])
+        self.assertEqual("?            --\n", diff[1])
+        self.assertEqual("+ \t\tI am a bug", diff[2])
+        self.assertEqual("? +\n", diff[3])
+
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
    2. Explicit is better than implicit.
