@@ -4379,72 +4379,36 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
-Py_LOCAL_INLINE(int)
-formatfloat(char *buf, size_t buflen, int flags,
-            int prec, int type, PyObject *v)
+/* Returns a new reference to a PyString object, or NULL on failure. */
+
+static PyObject *
+formatfloat(PyObject *v, int flags, int prec, int type)
 {
-	char *tmp;
+	char *p;
+	PyObject *result;
 	double x;
-	Py_ssize_t len;
 
 	x = PyFloat_AsDouble(v);
 	if (x == -1.0 && PyErr_Occurred()) {
 		PyErr_Format(PyExc_TypeError, "float argument required, "
 			     "not %.200s", Py_TYPE(v)->tp_name);
-		return -1;
+		return NULL;
 	}
+
 	if (prec < 0)
 		prec = 6;
-#if SIZEOF_INT > 4
-	/* make sure that the decimal representation of precision really does
-	   need at most 10 digits: platforms with sizeof(int) == 8 exist! */
-	if (prec > 0x7fffffff) {
-		PyErr_SetString(PyExc_OverflowError,
-				"outrageously large precision "
-				"for formatted float");
-		return -1;
-	}
-#endif
 
 	if (type == 'f' && fabs(x) >= 1e50)
 		type = 'g';
-	/* Worst case length calc to ensure no buffer overrun:
 
-	   'g' formats:
-	     fmt = %#.<prec>g
-	     buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-	        for any double rep.)
-	     len = 1 + prec + 1 + 2 + 5 = 9 + prec
+	p = PyOS_double_to_string(x, type, prec,
+				  (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
 
-	   'f' formats:
-	     buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
-	     len = 1 + 50 + 1 + prec = 52 + prec
-
-	   If prec=0 the effective precision is 1 (the leading digit is
-	   always given), therefore increase the length by one.
-
-	*/
-	if (((type == 'g' || type == 'G') &&
-              buflen <= (size_t)10 + (size_t)prec) ||
-	    (type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
-		PyErr_SetString(PyExc_OverflowError,
-			"formatted float is too long (precision too large?)");
-		return -1;
-	}
-	tmp = PyOS_double_to_string(x, type, prec,
-				    (flags&F_ALT)?Py_DTSF_ALT:0, NULL);
-	if (!tmp)
-		return -1;
-	len = strlen(tmp);
-	if (len >= buflen) {
-		PyErr_SetString(PyExc_OverflowError,
-			"formatted float is too long (precision too large?)");
-		PyMem_Free(tmp);
-		return -1;
-	}
-	strcpy(buf, tmp);
-	PyMem_Free(tmp);
-	return (int)len;
+	if (p == NULL)
+		return NULL;
+	result = PyString_FromStringAndSize(p, strlen(p));
+	PyMem_Free(p);
+	return result;
 }
 
 /* _PyString_FormatLong emulates the format codes d, u, o, x and X, and
@@ -4684,7 +4648,7 @@ formatchar(char *buf, size_t buflen, PyObject *v)
 
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
 
-   FORMATBUFLEN is the length of the buffer in which the floats, ints, &
+   FORMATBUFLEN is the length of the buffer in which the ints &
    chars are formatted. XXX This is a magic number. Each formatting
    routine does bounds checking to ensure no overflow, but a better
    solution may be to malloc a buffer of appropriate size for each
@@ -4754,7 +4718,7 @@ PyString_Format(PyObject *format, PyObject *args)
 			int sign;
 			Py_ssize_t len;
 			char formatbuf[FORMATBUFLEN];
-			     /* For format{float,int,char}() */
+			     /* For format{int,char}() */
 #ifdef Py_USING_UNICODE
 			char *fmt_start = fmt;
 			Py_ssize_t argidx_start = argidx;
@@ -5007,11 +4971,11 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'G':
 				if (c == 'F')
 					c = 'f';
-				pbuf = formatbuf;
-				len = formatfloat(pbuf, sizeof(formatbuf),
-						  flags, prec, c, v);
-				if (len < 0)
+				temp = formatfloat(v, flags, prec, c);
+				if (temp == NULL)
 					goto error;
+				pbuf = PyString_AS_STRING(temp);
+				len = PyString_GET_SIZE(temp);
 				sign = 1;
 				if (flags & F_ZERO)
 					fill = '0';

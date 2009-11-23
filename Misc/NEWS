@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Remove restrictions on precision when formatting floats.  E.g.,
+  "%.120g" % 1e-100 used to raise OverflowError, but now gives the
+  requested 120 significant digits instead.
+
 - Add Py3k warnings for parameter names in parenthesis.
 
 - Issue #7362: Give a proper error message for def f((x)=3): pass.
