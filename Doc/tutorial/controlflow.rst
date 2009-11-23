@@ -194,13 +194,13 @@ boundary::
    >>> def fib(n):    # write Fibonacci series up to n
    ...     """Print a Fibonacci series up to n."""
    ...     a, b = 0, 1
-   ...     while b < n:
-   ...         print b,
+   ...     while a < n:
+   ...         print a,
    ...         a, b = b, a+b
    ...
    >>> # Now call the function we just defined:
    ... fib(2000)
-   1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 
 .. index::
    single: documentation strings
@@ -244,7 +244,7 @@ mechanism::
    <function fib at 10042ed0>
    >>> f = fib
    >>> f(100)
-   1 1 2 3 5 8 13 21 34 55 89
+   0 1 1 2 3 5 8 13 21 34 55 89
 
 Coming from other languages, you might object that ``fib`` is not a function but
 a procedure since it doesn't return a value.  In fact, even functions without a
@@ -264,14 +264,14 @@ Fibonacci series, instead of printing it::
    ...     """Return a list containing the Fibonacci series up to n."""
    ...     result = []
    ...     a, b = 0, 1
-   ...     while b < n:
-   ...         result.append(b)    # see below
+   ...     while a < n:
+   ...         result.append(a)    # see below
    ...         a, b = b, a+b
    ...     return result
    ...
    >>> f100 = fib2(100)    # call it
    >>> f100                # write the result
-   [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+   [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 
 This example, as usual, demonstrates some new Python features:
 
@@ -279,7 +279,7 @@ This example, as usual, demonstrates some new Python features:
   :keyword:`return` without an expression argument returns ``None``. Falling off
   the end of a function also returns ``None``.
 
-* The statement ``result.append(b)`` calls a *method* of the list object
+* The statement ``result.append(a)`` calls a *method* of the list object
   ``result``.  A method is a function that 'belongs' to an object and is named
   ``obj.methodname``, where ``obj`` is some object (this may be an expression),
   and ``methodname`` is the name of a method that is defined by the object's type.
@@ -288,7 +288,7 @@ This example, as usual, demonstrates some new Python features:
   object types and methods, using *classes*, see :ref:`tut-classes`)
   The method :meth:`append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
-  ``result = result + [b]``, but more efficient.
+  ``result = result + [a]``, but more efficient.
 
 
 .. _tut-defining:
