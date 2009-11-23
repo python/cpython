@@ -343,7 +343,7 @@ The fine print:
      >>> assert "Easy!"
            >>> import math
                >>> math.floor(1.9)
-               1.0
+               1
 
   and as many leading whitespace characters are stripped from the expected output
   as appeared in the initial ``'>>> '`` line that started the example.
