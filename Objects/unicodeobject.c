@@ -8302,68 +8302,32 @@ longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
    shared with stringobject.c, converting from 8-bit to Unicode after the
    formatting is done. */
 
-static int
-formatfloat(Py_UNICODE *buf,
-            size_t buflen,
-            int flags,
-            int prec,
-            int type,
-            PyObject *v)
+/* Returns a new reference to a PyUnicode object, or NULL on failure. */
+
+static PyObject *
+formatfloat(PyObject *v, int flags, int prec, int type)
 {
+    char *p;
+    PyObject *result;
     double x;
-    Py_ssize_t result;
-    char *tmp;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
-        return -1;
+        return NULL;
+
     if (prec < 0)
         prec = 6;
-#if SIZEOF_INT > 4
-    /* make sure that the decimal representation of precision really does
-       need at most 10 digits: platforms with sizeof(int) == 8 exist! */
-    if (prec > 0x7fffffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "outrageously large precision "
-                        "for formatted float");
-        return -1;
-    }
-#endif
 
     if (type == 'f' && fabs(x) >= 1e50)
         type = 'g';
-    /* Worst case length calc to ensure no buffer overrun:
 
-       'g' formats:
-       fmt = %#.<prec>g
-       buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-       for any double rep.)
-       len = 1 + prec + 1 + 2 + 5 = 9 + prec
-
-       'f' formats:
-       buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
-       len = 1 + 50 + 1 + prec = 52 + prec
-
-       If prec=0 the effective precision is 1 (the leading digit is
-       always given), therefore increase the length by one.
-
-    */
-    if (((type == 'g' || type == 'G') &&
-         buflen <= (size_t)10 + (size_t)prec) ||
-        (type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "formatted float is too long (precision too large?)");
-        return -1;
-    }
-
-    tmp = PyOS_double_to_string(x, type, prec,
-                                (flags&F_ALT)?Py_DTSF_ALT:0, NULL);
-    if (!tmp)
-        return -1;
-
-    result = strtounicode(buf, tmp);
-    PyMem_Free(tmp);
-    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
+    p = PyOS_double_to_string(x, type, prec,
+                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (p == NULL)
+        return NULL;
+    result = PyUnicode_FromStringAndSize(p, strlen(p));
+    PyMem_Free(p);
+    return result;
 }
 
 static PyObject*
@@ -8516,7 +8480,7 @@ formatchar(Py_UNICODE *buf,
 
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
 
-   FORMATBUFLEN is the length of the buffer in which the floats, ints, &
+   FORMATBUFLEN is the length of the buffer in which the ints &
    chars are formatted. XXX This is a magic number. Each formatting
    routine does bounds checking to ensure no overflow, but a better
    solution may be to malloc a buffer of appropriate size for each
@@ -8587,7 +8551,7 @@ PyObject *PyUnicode_Format(PyObject *format,
             Py_UNICODE *pbuf;
             Py_UNICODE sign;
             Py_ssize_t len;
-            Py_UNICODE formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
+            Py_UNICODE formatbuf[FORMATBUFLEN]; /* For format{int,char}() */
 
             fmt++;
             if (*fmt == '(') {
@@ -8850,11 +8814,11 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 'G':
                 if (c == 'F')
                     c = 'f';
-                pbuf = formatbuf;
-                len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
-                                  flags, prec, c, v);
-                if (len < 0)
+                temp = formatfloat(v, flags, prec, c);
+                if (temp == NULL)
                     goto onError;
+                pbuf = PyUnicode_AS_UNICODE(temp);
+                len = PyUnicode_GET_SIZE(temp);
                 sign = 1;
                 if (flags & F_ZERO)
                     fill = '0';
