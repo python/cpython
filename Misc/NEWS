@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Remove switch from "%f" formatting to "%g" formatting for floats
+  larger than 1e50 in absolute value.
+
 - Remove restrictions on precision when formatting floats.  E.g.,
   "%.120g" % 1e-100 used to raise OverflowError, but now gives the
   requested 120 significant digits instead.
