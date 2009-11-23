@@ -162,8 +162,8 @@ class Fraction(numbers.Rational):
         Fraction(22, 7)
         >>> Fraction('3.141592653589793').limit_denominator(100)
         Fraction(311, 99)
-        >>> Fraction(1234, 5678).limit_denominator(10000)
-        Fraction(1234, 5678)
+        >>> Fraction(4321, 8765).limit_denominator(10000)
+        Fraction(4321, 8765)
 
         """
         # Algorithm notes: For any real number x, define a *best upper
