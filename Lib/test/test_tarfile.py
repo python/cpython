@@ -264,6 +264,24 @@ class MiscReadTest(ReadTest):
             self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
         tar.close()
 
+    def test_init_close_fobj(self):
+        # Issue #7341: Close the internal file object in the TarFile
+        # constructor in case of an error. For the test we rely on
+        # the fact that opening an invalid file raises a ReadError.
+        invalid = os.path.join(TEMPDIR, "invalid")
+        open(invalid, "wb").write("foo")
+
+        try:
+            tar = object.__new__(tarfile.TarFile)
+            try:
+                tar.__init__(invalid)
+            except tarfile.ReadError:
+                self.assertTrue(tar.fileobj.closed)
+            else:
+                self.fail("ReadError not raised")
+        finally:
+            os.remove(invalid)
+
 
 class StreamReadTest(ReadTest):
 
