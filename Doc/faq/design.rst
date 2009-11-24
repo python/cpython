@@ -75,9 +75,9 @@ necessary to make ``eval(repr(f)) == f`` true for any float f.  The ``str()``
 function prints fewer digits and this often results in the more sensible number
 that was probably intended::
 
-   >>> 0.2
-   0.20000000000000001
-   >>> print 0.2
+   >>> 1.1 - 0.9
+   0.20000000000000007
+   >>> print(1.1 - 0.9)
    0.2
 
 One of the consequences of this is that it is error-prone to compare the result
