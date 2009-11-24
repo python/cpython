@@ -2130,10 +2130,6 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 		kwlist, &x, &o_ndigits))
 		return NULL;
 
-	/* nans, infinities and zeros round to themselves */
-	if (!Py_IS_FINITE(x) || x == 0.0)
-		return PyFloat_FromDouble(x);
-
 	if (o_ndigits == NULL) {
 		/* second argument defaults to 0 */
 		ndigits = 0;
@@ -2144,6 +2140,10 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 		if (ndigits == -1 && PyErr_Occurred())
 			return NULL;
 	}
+
+	/* nans, infinities and zeros round to themselves */
+	if (!Py_IS_FINITE(x) || x == 0.0)
+		return PyFloat_FromDouble(x);
 
 	/* Deal with extreme values for ndigits. For ndigits > NDIGITS_MAX, x
 	   always rounds to itself.  For ndigits < NDIGITS_MIN, x always
