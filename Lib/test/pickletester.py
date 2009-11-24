@@ -1091,6 +1091,16 @@ class AbstractPickleModuleTests(unittest.TestCase):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
 
+    def test_restricted(self):
+        # issue7128: cPickle failed in restricted mode
+        builtins = {self.module.__name__: self.module,
+                    '__import__': __import__}
+        d = {}
+        teststr = "def f(): {0}.dumps(0)".format(self.module.__name__)
+        exec teststr in {'__builtins__': builtins}, d
+        d['f']()
+
+
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
