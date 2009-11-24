@@ -90,7 +90,7 @@ Number-theoretic and representation functions
    loss of precision by tracking multiple intermediate partial sums::
 
         >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        0.99999999999999989
+        0.9999999999999999
         >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
         1.0
 

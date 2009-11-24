@@ -115,7 +115,7 @@ Another consequence is that since 0.1 is not exactly 1/10, summing ten values of
    ...     sum += 0.1
    ...
    >>> sum
-   0.99999999999999989
+   0.9999999999999999
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"

@@ -49,10 +49,10 @@ Some examples::
    'Hello, world.'
    >>> repr(s)
    "'Hello, world.'"
-   >>> str(0.1)
-   '0.1'
-   >>> repr(0.1)
-   '0.10000000000000001'
+   >>> str(1.0/7.0)
+   '0.142857142857'
+   >>> repr(1.0/7.0)
+   '0.14285714285714285'
    >>> x = 10 * 3.25
    >>> y = 200 * 200
    >>> s = 'The value of x is ' + repr(x) + ', and y is ' + repr(y) + '...'
