@@ -417,6 +417,10 @@ class RoundTestCase(unittest.TestCase):
         self.assertRaises(OverflowError, round, INF)
         self.assertRaises(OverflowError, round, -INF)
         self.assertRaises(ValueError, round, NAN)
+        self.assertRaises(TypeError, round, INF, 0.0)
+        self.assertRaises(TypeError, round, -INF, 1.0)
+        self.assertRaises(TypeError, round, NAN, "ceci n'est pas un integer")
+        self.assertRaises(TypeError, round, -0.0, 1j)
 
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
