@@ -132,7 +132,7 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__reduce_ex___str,
   *write_str, *append_str,
   *read_str, *readline_str, *__main___str, 
-  *copyreg_str, *dispatch_table_str;
+  *dispatch_table_str;
 
 /*************************************************************************
  Internal Data type for pickle data.                                     */
@@ -2985,7 +2985,7 @@ newPicklerobject(PyObject *file, int proto)
 
 	if (PyEval_GetRestricted()) {
 		/* Restricted execution, get private tables */
-		PyObject *m = PyImport_Import(copyreg_str);
+		PyObject *m = PyImport_ImportModule("copy_reg");
 
 		if (m == NULL)
 			goto err;
@@ -5733,7 +5733,6 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(append);
 	INIT_STR(read);
 	INIT_STR(readline);
-	INIT_STR(copyreg);
 	INIT_STR(dispatch_table);
 
 	if (!( copyreg = PyImport_ImportModule("copy_reg")))
