@@ -590,7 +590,7 @@ class Filterer(object):
 #   Handler classes and functions
 #---------------------------------------------------------------------------
 
-_handlers = {}  #map of handler names to handlers
+_handlers = weakref.WeakValueDictionary()  #map of handler names to handlers
 _handlerList = [] # added to allow handlers to be removed in reverse of order initialized
 
 def _removeHandlerRef(wr):
