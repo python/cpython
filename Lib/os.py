@@ -249,7 +249,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             dirs.remove('CVS')  # don't visit CVS directories
     """
 
-    from os.path import join, isdir, islink
+    islink, join, isdir = path.islink, path.join, path.isdir
 
     # We may not have read permission for top, in which case we can't
     # get a list of the files the directory contains.  os.walk
@@ -275,9 +275,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     if topdown:
         yield top, dirs, nondirs
     for name in dirs:
-        path = join(top, name)
-        if followlinks or not islink(path):
-            for x in walk(path, topdown, onerror, followlinks):
+        new_path = join(top, name)
+        if followlinks or not islink(new_path):
+            for x in walk(new_path, topdown, onerror, followlinks):
                 yield x
     if not topdown:
         yield top, dirs, nondirs

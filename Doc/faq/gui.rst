@@ -25,27 +25,26 @@ For more info about Tk, including pointers to the source, see the Tcl/Tk home
 page at http://www.tcl.tk.  Tcl/Tk is fully portable to the MacOS, Windows, and
 Unix platforms.
 
-wxWindows
+wxWidgets
 '''''''''
 
-wxWindows is a portable GUI class library written in C++ that's a portable
-interface to various platform-specific libraries; wxWidgets is a Python
-interface to wxWindows.  wxWindows supports Windows and MacOS; on Unix variants,
-it supports both GTk+ and Motif toolkits.  wxWindows preserves the look and feel
-of the underlying graphics toolkit, and there is quite a rich widget set and
-collection of GDI classes.  See `the wxWindows page <http://www.wxwindows.org>`_
-for more details.
+wxWidgets is a GUI class library written in C++ that's a portable
+interface to various platform-specific libraries, and that has a
+Python interface called `wxPython <http://www.wxpython.org>`__.
 
-`wxWidgets <http://wxwidgets.org>`_ is an extension module that wraps many of
-the wxWindows C++ classes, and is quickly gaining popularity amongst Python
-developers.  You can get wxWidgets as part of the source or CVS distribution of
-wxWindows, or directly from its home page.
+wxWidgets preserves the look and feel of the
+underlying graphics toolkit, and has a large set of widgets and
+collection of GDI classes.  See `the wxWidgets page
+<http://www.wxwidgets.org>`_ for more details.
+
+wxWidgets supports Windows and MacOS; on Unix variants,
+it supports both GTk+ and Motif toolkits.
 
 Qt
 '''
 
 There are bindings available for the Qt toolkit (`PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (PyKDE).  If
+<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).  If
 you're writing open source software, you don't need to pay for PyQt, but if you
 want to write proprietary applications, you must buy a PyQt license from
 `Riverbank Computing <http://www.riverbankcomputing.co.uk>`_ and (up to Qt 4.4;
@@ -56,7 +55,7 @@ Gtk+
 ''''
 
 PyGtk bindings for the `Gtk+ toolkit <http://www.gtk.org>`_ have been
-implemented by by James Henstridge; see ftp://ftp.gtk.org/pub/gtk/python/.
+implemented by James Henstridge; see <http://www.pygtk.org>.
 
 FLTK
 ''''
@@ -85,14 +84,15 @@ What platform-specific GUI toolkits exist for Python?
 
 `The Mac port <http://python.org/download/mac>`_ by Jack Jansen has a rich and
 ever-growing set of modules that support the native Mac toolbox calls.  The port
-includes support for MacOS9 and MacOS X's Carbon libraries.  By installing the
-`PyObjc Objective-C bridge <http://pyobjc.sourceforge.net>`_, Python programs
-can use MacOS X's Cocoa libraries. See the documentation that comes with the Mac
-port.
+supports MacOS X's Carbon libraries.
+
+By installing the `PyObjc Objective-C bridge
+<http://pyobjc.sourceforge.net>`_, Python programs can use MacOS X's
+Cocoa libraries. See the documentation that comes with the Mac port.
 
 :ref:`Pythonwin <windows-faq>` by Mark Hammond includes an interface to the
-Microsoft Foundation Classes and a Python programming environment using it
-that's written mostly in Python.
+Microsoft Foundation Classes and a Python programming environment
+that's written mostly in Python using the MFC classes.
 
 
 Tkinter questions
@@ -105,23 +105,26 @@ Freeze is a tool to create stand-alone applications.  When freezing Tkinter
 applications, the applications will not be truly stand-alone, as the application
 will still need the Tcl and Tk libraries.
 
-One solution is to ship the application with the tcl and tk libraries, and point
+One solution is to ship the application with the Tcl and Tk libraries, and point
 to them at run-time using the :envvar:`TCL_LIBRARY` and :envvar:`TK_LIBRARY`
 environment variables.
 
 To get truly stand-alone applications, the Tcl scripts that form the library
 have to be integrated into the application as well. One tool supporting that is
 SAM (stand-alone modules), which is part of the Tix distribution
-(http://tix.mne.com).  Build Tix with SAM enabled, perform the appropriate call
-to Tclsam_init etc inside Python's Modules/tkappinit.c, and link with libtclsam
-and libtksam (you might include the Tix libraries as well).
+(http://tix.sourceforge.net/).
+
+Build Tix with SAM enabled, perform the appropriate call to
+:cfunc:`Tclsam_init`, etc. inside Python's
+:file:`Modules/tkappinit.c`, and link with libtclsam and libtksam (you
+might include the Tix libraries as well).
 
 
 Can I have Tk events handled while waiting for I/O?
 ---------------------------------------------------
 
 Yes, and you don't even need threads!  But you'll have to restructure your I/O
-code a bit.  Tk has the equivalent of Xt's XtAddInput() call, which allows you
+code a bit.  Tk has the equivalent of Xt's :cfunc:`XtAddInput()` call, which allows you
 to register a callback function which will be called from the Tk mainloop when
 I/O is possible on a file descriptor.  Here's what you need::
 

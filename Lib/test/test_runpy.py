@@ -100,8 +100,8 @@ class RunModuleTest(unittest.TestCase):
         self.expect_import_error("a.bee")
         self.expect_import_error(".howard")
         self.expect_import_error("..eaten")
-        # Package
-        self.expect_import_error("logging")
+        # Package without __main__.py
+        self.expect_import_error("multiprocessing")
 
     def test_library_module(self):
         run_module("runpy")
@@ -113,9 +113,9 @@ class RunModuleTest(unittest.TestCase):
         pkg_file.close()
         return pkg_fname
 
-    def _make_pkg(self, source, depth):
+    def _make_pkg(self, source, depth, mod_base="runpy_test"):
         pkg_name = "__runpy_pkg__"
-        test_fname = "runpy_test.py"
+        test_fname = mod_base+os.extsep+"py"
         pkg_dir = sub_dir = tempfile.mkdtemp()
         if verbose: print("  Package tree in:", sub_dir)
         sys.path.insert(0, pkg_dir)
@@ -130,7 +130,7 @@ class RunModuleTest(unittest.TestCase):
         mod_file.write(source)
         mod_file.close()
         if verbose: print("  Created:", mod_fname)
-        mod_name = (pkg_name+".")*depth + "runpy_test"
+        mod_name = (pkg_name+".")*depth + mod_base
         return pkg_dir, mod_fname, mod_name
 
     def _del_pkg(self, top, depth, mod_name):
@@ -178,6 +178,28 @@ class RunModuleTest(unittest.TestCase):
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose: print("Module executed successfully")
+
+    def _check_package(self, depth):
+        pkg_dir, mod_fname, mod_name = (
+               self._make_pkg("x=1\n", depth, "__main__"))
+        pkg_name, _, _ = mod_name.rpartition(".")
+        forget(mod_name)
+        try:
+            if verbose: print("Running from source:", pkg_name)
+            d1 = run_module(pkg_name) # Read from source
+            self.assertTrue("x" in d1)
+            self.assertTrue(d1["x"] == 1)
+            del d1 # Ensure __loader__ entry doesn't keep file open
+            __import__(mod_name)
+            os.remove(mod_fname)
+            if verbose: print("Running from compiled:", pkg_name)
+            d2 = run_module(pkg_name) # Read from bytecode
+            self.assertTrue("x" in d2)
+            self.assertTrue(d2["x"] == 1)
+            del d2 # Ensure __loader__ entry doesn't keep file open
+        finally:
+            self._del_pkg(pkg_dir, depth, pkg_name)
+        if verbose: print("Package executed successfully")
 
     def _add_relative_modules(self, base_dir, source, depth):
         if depth <= 1:
@@ -239,6 +261,11 @@ from ..uncle.cousin import nephew
         for depth in range(4):
             if verbose: print("Testing package depth:", depth)
             self._check_module(depth)
+
+    def test_run_package(self):
+        for depth in range(1, 4):
+            if verbose: print("Testing package depth:", depth)
+            self._check_package(depth)
 
     def test_explicit_relative_import(self):
         for depth in range(2, 5):

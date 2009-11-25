@@ -62,7 +62,7 @@ class _ModifiedArgv0(object):
 def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_fname=None,
               mod_loader=None, pkg_name=None):
-    """Helper for _run_module_code"""
+    """Helper to run code in nominated namespace"""
     if init_globals is not None:
         run_globals.update(init_globals)
     run_globals.update(__name__ = mod_name,
@@ -75,7 +75,7 @@ def _run_code(code, run_globals, init_globals=None,
 def _run_module_code(code, init_globals=None,
                     mod_name=None, mod_fname=None,
                     mod_loader=None, pkg_name=None):
-    """Helper for run_module"""
+    """Helper to run code in new namespace with sys modified"""
     with _TempModule(mod_name) as temp_module, _ModifiedArgv0(mod_fname):
         mod_globals = temp_module.module.__dict__
         _run_code(code, mod_globals, init_globals,
@@ -103,7 +103,7 @@ def _get_module_details(mod_name):
         raise ImportError("No module named %s" % mod_name)
     if loader.is_package(mod_name):
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
-            raise ImportError(("Cannot use package as __main__ module"))
+            raise ImportError("Cannot use package as __main__ module")
         try:
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name)
@@ -116,29 +116,22 @@ def _get_module_details(mod_name):
     filename = _get_filename(loader, mod_name)
     return mod_name, loader, code, filename
 
-
-def _get_main_module_details():
-    # Helper that gives a nicer error message when attempting to
-    # execute a zipfile or directory by invoking __main__.py
-    main_name = "__main__"
-    try:
-        return _get_module_details(main_name)
-    except ImportError as exc:
-        if main_name in str(exc):
-            raise ImportError("can't find %r module in %r" %
-                              (main_name, sys.path[0]))
-        raise
-
-# This function is the actual implementation of the -m switch and direct
-# execution of zipfiles and directories and is deliberately kept private.
-# This avoids a repeat of the situation where run_module() no longer met the
-# needs of mainmodule.c, but couldn't be changed because it was public
+# XXX ncoghlan: Should this be documented and made public?
+# (Current thoughts: don't repeat the mistake that lead to its
+# creation when run_module() no longer met the needs of
+# mainmodule.c, but couldn't be changed because it was public)
 def _run_module_as_main(mod_name, alter_argv=True):
     """Runs the designated module in the __main__ namespace
 
-       These __*__ magic variables will be overwritten:
+       Note that the executed module will have full access to the
+       __main__ namespace. If this is not desirable, the run_module()
+       function sbould be used to run the module code in a fresh namespace.
+
+       At the very least, these variables in __main__ will be overwritten:
+           __name__
            __file__
            __loader__
+           __package__
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch
@@ -146,7 +139,16 @@ def _run_module_as_main(mod_name, alter_argv=True):
         else:          # i.e. directory or zipfile execution
             mod_name, loader, code, fname = _get_main_module_details()
     except ImportError as exc:
-        msg = "%s: %s" % (sys.executable, str(exc))
+        # Try to provide a good error message
+        # for directories, zip files and the -m switch
+        if alter_argv:
+            # For -m switch, just display the exception
+            info = str(exc)
+        else:
+            # For directories/zipfiles, let the user
+            # know what the code was looking for
+            info = "can't find '__main__.py' in %r" % sys.argv[0]
+        msg = "%s: %s" % (sys.executable, info)
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
@@ -172,6 +174,18 @@ def run_module(mod_name, init_globals=None,
         # Leave the sys module alone
         return _run_code(code, {}, init_globals, run_name,
                          fname, loader, pkg_name)
+
+def _get_main_module_details():
+    # Helper that gives a nicer error message when attempting to
+    # execute a zipfile or directory by invoking __main__.py
+    main_name = "__main__"
+    try:
+        return _get_module_details(main_name)
+    except ImportError as exc:
+        if main_name in str(exc):
+            raise ImportError("can't find %r module in %r" %
+                              (main_name, sys.path[0]))
+        raise
 
 
 # XXX (ncoghlan): Perhaps expose the C API function
