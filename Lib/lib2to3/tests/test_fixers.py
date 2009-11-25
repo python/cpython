@@ -1753,6 +1753,8 @@ class Test_urllib(FixerTestCase):
         for old, changes in self.modules.items():
             for new, members in changes:
                 for member in members:
+                    new_import = ", ".join([n for (n, mems)
+                                            in self.modules[old]])
                     b = """
                         import %s
                         foo(%s.%s)
@@ -1760,9 +1762,16 @@ class Test_urllib(FixerTestCase):
                     a = """
                         import %s
                         foo(%s.%s)
-                        """ % (", ".join([n for (n, mems)
-                                           in self.modules[old]]),
-                                         new, member)
+                        """ % (new_import, new, member)
+                    self.check(b, a)
+                    b = """
+                        import %s
+                        %s.%s(%s.%s)
+                        """ % (old, old, member, old, member)
+                    a = """
+                        import %s
+                        %s.%s(%s.%s)
+                        """ % (new_import, new, member, new, member)
                     self.check(b, a)
 
 
