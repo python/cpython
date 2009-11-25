@@ -99,4 +99,4 @@ def find_assign(node):
 def is_subtree(root, node):
     if root == node:
         return True
-    return any([is_subtree(c, node) for c in root.children])
+    return any(is_subtree(c, node) for c in root.children)

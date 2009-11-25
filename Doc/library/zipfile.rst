@@ -19,7 +19,7 @@ documentation). It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GByte in size).  It supports
 decryption of encrypted files in ZIP archives, but it currently cannot
 create an encrypted file.  Decryption is extremely slow as it is
-implemented in native python rather than C.
+implemented in native Python rather than C.
 
 For other archive formats, see the :mod:`bz2`, :mod:`gzip`, and
 :mod:`tarfile` modules.

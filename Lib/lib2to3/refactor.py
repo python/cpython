@@ -18,7 +18,6 @@ import logging
 import operator
 import collections
 import io
-import warnings
 from itertools import chain
 
 # Local imports
@@ -139,26 +138,23 @@ def _detect_future_print(source):
                 if have_docstring:
                     break
                 have_docstring = True
-            elif tp == token.NAME:
-                if value == "from":
-                    tp, value = advance()
-                    if tp != token.NAME and value != "__future__":
-                        break
-                    tp, value = advance()
-                    if tp != token.NAME and value != "import":
-                        break
-                    tp, value = advance()
-                    if tp == token.OP and value == "(":
-                        tp, value = advance()
-                    while tp == token.NAME:
-                        if value == "print_function":
-                            return True
-                        tp, value = advance()
-                        if tp != token.OP and value != ",":
-                            break
-                        tp, value = advance()
-                else:
+            elif tp == token.NAME and value == "from":
+                tp, value = advance()
+                if tp != token.NAME and value != "__future__":
                     break
+                tp, value = advance()
+                if tp != token.NAME and value != "import":
+                    break
+                tp, value = advance()
+                if tp == token.OP and value == "(":
+                    tp, value = advance()
+                while tp == token.NAME:
+                    if value == "print_function":
+                        return True
+                    tp, value = advance()
+                    if tp != token.OP and value != ",":
+                        break
+                    tp, value = advance()
             else:
                 break
     except StopIteration:
@@ -172,7 +168,7 @@ class FixerError(Exception):
 
 class RefactoringTool(object):
 
-    _default_options = {}
+    _default_options = {"print_function" : False}
 
     CLASS_PREFIX = "Fix" # The prefix for fixer classes
     FILE_PREFIX = "fix_" # The prefix for modules with a fixer within
@@ -189,15 +185,16 @@ class RefactoringTool(object):
         self.explicit = explicit or []
         self.options = self._default_options.copy()
         if options is not None:
-            if "print_function" in options:
-                warnings.warn("the 'print_function' option is deprecated",
-                              DeprecationWarning)
             self.options.update(options)
+        if self.options["print_function"]:
+            self.grammar = pygram.python_grammar_no_print_statement
+        else:
+            self.grammar = pygram.python_grammar
         self.errors = []
         self.logger = logging.getLogger("RefactoringTool")
         self.fixer_log = []
         self.wrote = False
-        self.driver = driver.Driver(pygram.python_grammar,
+        self.driver = driver.Driver(self.grammar,
                                     convert=pytree.convert,
                                     logger=self.logger)
         self.pre_order, self.post_order = self.get_fixers()
@@ -353,7 +350,7 @@ class RefactoringTool(object):
                            name, err.__class__.__name__, err)
             return
         finally:
-            self.driver.grammar = pygram.python_grammar
+            self.driver.grammar = self.grammar
         self.log_debug("Refactoring %s", name)
         self.refactor_tree(tree, name)
         return tree
