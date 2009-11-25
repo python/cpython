@@ -610,7 +610,7 @@ def _addHandlerRef(handler):
     """
     _acquireLock()
     try:
-        _handlerList.insert(0, weakref.ref(handler, _removeHandlerRef))
+        _handlerList.append(weakref.ref(handler, _removeHandlerRef))
     finally:
         _releaseLock()
 
