@@ -176,7 +176,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      When compiling a string with multi-line statements in ``'single'`` or
+      When compiling a string with multi-line code in ``'single'`` or
       ``'eval'`` mode, input must be terminated by at least one newline
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.

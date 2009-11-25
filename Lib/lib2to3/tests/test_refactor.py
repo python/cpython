@@ -4,6 +4,7 @@ Unit tests for refactor.py.
 
 import sys
 import os
+import codecs
 import operator
 import io
 import tempfile
@@ -45,12 +46,10 @@ class TestRefactoringTool(unittest.TestCase):
         return refactor.RefactoringTool(fixers, options, explicit)
 
     def test_print_function_option(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            refactor.RefactoringTool(_DEFAULT_FIXERS, {"print_function" : True})
-        self.assertEqual(len(w), 1)
-        msg, = w
-        self.assertTrue(msg.category is DeprecationWarning)
+        rt = self.rt({"print_function" : True})
+        self.assertTrue(rt.grammar is pygram.python_grammar_no_print_statement)
+        self.assertTrue(rt.driver.grammar is
+                        pygram.python_grammar_no_print_statement)
 
     def test_fixer_loading_helpers(self):
         contents = ["explicit", "first", "last", "parrot", "preorder"]
@@ -179,10 +178,12 @@ from __future__ import print_function"""
 
         try:
             rt.refactor_file(test_file, True)
-            self.assertNotEqual(old_contents, read_file())
+            new_contents = read_file()
+            self.assertNotEqual(old_contents, new_contents)
         finally:
             with open(test_file, "wb") as fp:
                 fp.write(old_contents)
+        return new_contents
 
     def test_refactor_file(self):
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
@@ -222,6 +223,11 @@ from __future__ import print_function"""
     def test_file_encoding(self):
         fn = os.path.join(TEST_DATA_DIR, "different_encoding.py")
         self.check_file_refactoring(fn)
+
+    def test_bom(self):
+        fn = os.path.join(TEST_DATA_DIR, "bom.py")
+        data = self.check_file_refactoring(fn)
+        self.assertTrue(data.startswith(codecs.BOM_UTF8))
 
     def test_crlf_newlines(self):
         old_sep = os.linesep

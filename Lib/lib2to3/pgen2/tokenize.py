@@ -283,9 +283,13 @@ def detect_encoding(readline):
             # This behaviour mimics the Python interpreter
             raise SyntaxError("unknown encoding: " + encoding)
 
-        if bom_found and codec.name != 'utf-8':
-            # This behaviour mimics the Python interpreter
-            raise SyntaxError('encoding problem: utf-8')
+        if bom_found:
+            if codec.name != 'utf-8':
+                # This behaviour mimics the Python interpreter
+                raise SyntaxError('encoding problem: utf-8')
+            else:
+                # Allow it to be properly encoded and decoded.
+                encoding = 'utf-8-sig'
         return encoding
 
     first = read_or_stop()
