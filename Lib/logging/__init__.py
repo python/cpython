@@ -23,7 +23,7 @@ Copyright (C) 2001-2009 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings
+import sys, os, time, io, traceback, warnings, weakref
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -46,8 +46,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.9"
-__date__    = "09 October 2009"
+__version__ = "0.5.1.1"
+__date__    = "25 November 2009"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -193,9 +193,9 @@ def _checkLevel(level):
 
 #
 #_lock is used to serialize access to shared data structures in this module.
-#This needs to be an RLock because fileConfig() creates Handlers and so
-#might arbitrary user threads. Since Handler.__init__() updates the shared
-#dictionary _handlers, it needs to acquire the lock. But if configuring,
+#This needs to be an RLock because fileConfig() creates and configures
+#Handlers, and so might arbitrary user threads. Since Handler code updates the
+#shared dictionary _handlers, it needs to acquire the lock. But if configuring,
 #the lock would already have been acquired - so we need an RLock.
 #The same argument applies to Loggers and Manager.loggerDict.
 #
@@ -224,7 +224,7 @@ def _releaseLock():
 #   The logging record
 #---------------------------------------------------------------------------
 
-class LogRecord:
+class LogRecord(object):
     """
     A LogRecord instance represents an event being logged.
 
@@ -332,7 +332,7 @@ def makeLogRecord(dict):
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
 
-class Formatter:
+class Formatter(object):
     """
     Formatter instances are used to convert a LogRecord to text.
 
@@ -464,7 +464,7 @@ class Formatter:
 #
 _defaultFormatter = Formatter()
 
-class BufferingFormatter:
+class BufferingFormatter(object):
     """
     A formatter suitable for formatting a number of records.
     """
@@ -506,7 +506,7 @@ class BufferingFormatter:
 #   Filter classes and functions
 #---------------------------------------------------------------------------
 
-class Filter:
+class Filter(object):
     """
     Filter instances are used to perform arbitrary filtering of LogRecords.
 
@@ -543,7 +543,7 @@ class Filter:
             return 0
         return (record.name[self.nlen] == ".")
 
-class Filterer:
+class Filterer(object):
     """
     A base class for loggers and handlers which allows them to share
     common code.
@@ -587,8 +587,29 @@ class Filterer:
 #   Handler classes and functions
 #---------------------------------------------------------------------------
 
-_handlers = {}  #repository of handlers (for flushing when shutdown called)
+_handlers = weakref.WeakValueDictionary()  #map of handler names to handlers
 _handlerList = [] # added to allow handlers to be removed in reverse of order initialized
+
+def _removeHandlerRef(wr):
+    """
+    Remove a handler reference from the internal cleanup list.
+    """
+    _acquireLock()
+    try:
+        if wr in _handlerList:
+            _handlerList.remove(wr)
+    finally:
+        _releaseLock()
+
+def _addHandlerRef(handler):
+    """
+    Add a handler to the internal cleanup list using a weak reference.
+    """
+    _acquireLock()
+    try:
+        _handlerList.append(weakref.ref(handler, _removeHandlerRef))
+    finally:
+        _releaseLock()
 
 class Handler(Filterer):
     """
@@ -605,16 +626,28 @@ class Handler(Filterer):
         and the filter list to empty.
         """
         Filterer.__init__(self)
+        self._name = None
         self.level = _checkLevel(level)
         self.formatter = None
-        #get the module data lock, as we're updating a shared structure.
+        # Add the handler to the global _handlerList (for cleanup on shutdown)
+        _addHandlerRef(self)
+        self.createLock()
+
+    def get_name(self):
+        return self._name
+
+    def set_name(self, name):
         _acquireLock()
-        try:    #unlikely to raise an exception, but you never know...
-            _handlers[self] = 1
-            _handlerList.insert(0, self)
+        try:
+            if self._name in _handlers:
+                del _handlers[self._name]
+            self._name = name
+            if name:
+                _handlers[name] = self
         finally:
             _releaseLock()
-        self.createLock()
+
+    name = property(get_name, set_name)
 
     def createLock(self):
         """
@@ -705,16 +738,16 @@ class Handler(Filterer):
         """
         Tidy up any resources used by the handler.
 
-        This version does removes the handler from an internal list
-        of handlers which is closed when shutdown() is called. Subclasses
+        This version removes the handler from an internal map of handlers,
+        _handlers, which is used for handler lookup by name. Subclasses
         should ensure that this gets called from overridden close()
         methods.
         """
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
-            del _handlers[self]
-            _handlerList.remove(self)
+            if self._name and self._name in _handlers:
+                del _handlers[self._name]
         finally:
             _releaseLock()
 
@@ -866,7 +899,7 @@ class FileHandler(StreamHandler):
 #   Manager classes and functions
 #---------------------------------------------------------------------------
 
-class PlaceHolder:
+class PlaceHolder(object):
     """
     PlaceHolder instances are used in the Manager logger hierarchy to take
     the place of nodes for which no loggers have been defined. This class is
@@ -913,7 +946,7 @@ def getLoggerClass():
 
     return _loggerClass
 
-class Manager:
+class Manager(object):
     """
     There is [under normal circumstances] just one Manager instance, which
     holds the hierarchy of loggers.
@@ -1266,7 +1299,7 @@ class RootLogger(Logger):
 
 _loggerClass = Logger
 
-class LoggerAdapter:
+class LoggerAdapter(object):
     """
     An adapter for loggers which makes it easier to specify contextual
     information in logging output.
@@ -1512,10 +1545,11 @@ def shutdown(handlerList=_handlerList):
 
     Should be called at application exit.
     """
-    for h in handlerList[:]:
+    for wr in reversed(handlerList[:]):
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:
+            h = wr()
             h.flush()
             h.close()
         except:
