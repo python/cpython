@@ -140,6 +140,10 @@ C-API
 Library
 -------
 
+- Issue #5788: `datetime.timedelta` objects get a new `total_seconds()`
+  method returning the total number of seconds in the duration.  Patch by
+  Brian Quinlan.
+
 - Issue #7133: SSL objects now support the new buffer API.
 
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
