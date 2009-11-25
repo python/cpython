@@ -483,12 +483,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #6615: logging: Used weakrefs in internal handler list.
+
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
 
 - Issue #6123: tarfile now opens empty archives correctly and consistently
   raises ReadError on empty files.
 
-- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can 
+- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can
   be 2.
 
 - Issue #5037: Proxy the __unicode__ special method instead to __unicode__
@@ -563,7 +565,7 @@ Library
 - Issue #7071: byte-compilation in Distutils is now done with respect to
   sys.dont_write_bytecode.
 
-- Issue #7066: archive_util.make_archive now restores the cwd if an error is 
+- Issue #7066: archive_util.make_archive now restores the cwd if an error is
   raised. Initial patch by Ezio Melotti.
 
 - Issue #6218: io.StringIO and io.BytesIO instances are now picklable with
