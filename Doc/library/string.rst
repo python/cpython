@@ -521,13 +521,12 @@ these rules.  The methods of :class:`Template` are:
       templates containing dangling delimiters, unmatched braces, or
       placeholders that are not valid Python identifiers.
 
-:class:`Template` instances also provide one public data attribute:
+   :class:`Template` instances also provide one public data attribute:
 
+   .. attribute:: template
 
-.. attribute:: string.template
-
-   This is the object passed to the constructor's *template* argument.  In general,
-   you shouldn't change it, but read-only access is not enforced.
+      This is the object passed to the constructor's *template* argument.  In
+      general, you shouldn't change it, but read-only access is not enforced.
 
 Here is an example of how to use a Template:
 
