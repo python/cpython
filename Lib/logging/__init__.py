@@ -23,7 +23,7 @@ Copyright (C) 2001-2009 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, cStringIO, traceback, warnings
+import sys, os, time, cStringIO, traceback, warnings, weakref
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -46,8 +46,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.1.0"
-__date__    = "24 November 2009"
+__version__ = "0.5.1.1"
+__date__    = "25 November 2009"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -593,6 +593,27 @@ class Filterer(object):
 _handlers = {}  #map of handler names to handlers
 _handlerList = [] # added to allow handlers to be removed in reverse of order initialized
 
+def _removeHandlerRef(wr):
+    """
+    Remove a handler reference from the internal cleanup list.
+    """
+    _acquireLock()
+    try:
+        if wr in _handlerList:
+            _handlerList.remove(wr)
+    finally:
+        _releaseLock()
+
+def _addHandlerRef(handler):
+    """
+    Add a handler to the internal cleanup list using a weak reference.
+    """
+    _acquireLock()
+    try:
+        _handlerList.insert(0, weakref.ref(handler, _removeHandlerRef))
+    finally:
+        _releaseLock()
+
 class Handler(Filterer):
     """
     Handler instances dispatch logging events to specific destinations.
@@ -611,12 +632,8 @@ class Handler(Filterer):
         self._name = None
         self.level = _checkLevel(level)
         self.formatter = None
-        #get the module data lock, as we're updating a shared structure.
-        _acquireLock()
-        try:    #unlikely to raise an exception, but you never know...
-            _handlerList.insert(0, self)
-        finally:
-            _releaseLock()
+        # Add the handler to the global _handlerList (for cleanup on shutdown)
+        _addHandlerRef(self)
         self.createLock()
 
     def get_name(self):
@@ -724,8 +741,8 @@ class Handler(Filterer):
         """
         Tidy up any resources used by the handler.
 
-        This version does removes the handler from an internal list
-        of handlers which is closed when shutdown() is called. Subclasses
+        This version removes the handler from an internal map of handlers,
+        _handlers, which is used for handler lookup by name. Subclasses
         should ensure that this gets called from overridden close()
         methods.
         """
@@ -734,7 +751,6 @@ class Handler(Filterer):
         try:    #unlikely to raise an exception, but you never know...
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
-            _handlerList.remove(self)
         finally:
             _releaseLock()
 
@@ -1532,10 +1548,11 @@ def shutdown(handlerList=_handlerList):
 
     Should be called at application exit.
     """
-    for h in handlerList[:]:
+    for wr in reversed(handlerList[:]):
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:
+            h = wr()
             h.flush()
             h.close()
         except:
