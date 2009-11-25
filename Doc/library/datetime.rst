@@ -269,12 +269,22 @@ comparison is ``==`` or ``!=``.  The latter cases return :const:`False` or
 efficient pickling, and in Boolean contexts, a :class:`timedelta` object is
 considered to be true if and only if it isn't equal to ``timedelta(0)``.
 
+Instance methods:
+
+.. method:: timedelta.total_seconds()
+
+   Return the total number of seconds contained in the duration. Equivalent to
+   ``td.microseconds / 1000000 + td.seconds + td.days * 24 * 3600``.
+
+
 Example usage:
 
     >>> from datetime import timedelta
     >>> year = timedelta(days=365)
     >>> another_year = timedelta(weeks=40, days=84, hours=23,
     ...                          minutes=50, seconds=600)  # adds up to 365 days
+    >>> year.total_seconds()
+    31536000.0
     >>> year == another_year
     True
     >>> ten_years = 10 * year
