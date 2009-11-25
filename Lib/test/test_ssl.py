@@ -651,21 +651,23 @@ else:
         except Exception as x:
             raise support.TestFailed("Unexpected exception:  " + str(x))
         else:
-            if connectionchatty:
-                if support.verbose:
-                    sys.stdout.write(
-                        " client:  sending %s...\n" % (repr(indata)))
-            s.write(indata.encode('ASCII', 'strict'))
-            outdata = s.read()
-            if connectionchatty:
-                if support.verbose:
-                    sys.stdout.write(" client:  read %s\n" % repr(outdata))
-            outdata = str(outdata, 'ASCII', 'strict')
-            if outdata != indata.lower():
-                raise support.TestFailed(
-                    "bad data <<%s>> (%d) received; expected <<%s>> (%d)\n"
-                    % (repr(outdata[:min(len(outdata),20)]), len(outdata),
-                       repr(indata[:min(len(indata),20)].lower()), len(indata)))
+            bindata = indata.encode('ASCII', 'strict')
+            for arg in [bindata, bytearray(bindata), memoryview(bindata)]:
+                if connectionchatty:
+                    if support.verbose:
+                        sys.stdout.write(
+                            " client:  sending %s...\n" % (repr(indata)))
+                s.write(arg)
+                outdata = s.read()
+                if connectionchatty:
+                    if support.verbose:
+                        sys.stdout.write(" client:  read %s\n" % repr(outdata))
+                outdata = str(outdata, 'ASCII', 'strict')
+                if outdata != indata.lower():
+                    raise support.TestFailed(
+                        "bad data <<%s>> (%d) received; expected <<%s>> (%d)\n"
+                        % (repr(outdata[:min(len(outdata),20)]), len(outdata),
+                           repr(indata[:min(len(indata),20)].lower()), len(indata)))
             s.write("over\n".encode("ASCII", "strict"))
             if connectionchatty:
                 if support.verbose:

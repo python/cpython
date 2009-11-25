@@ -140,6 +140,8 @@ C-API
 Library
 -------
 
+- Issue #7133: SSL objects now support the new buffer API.
+
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
 
 - Issue #6123: tarfile now opens empty archives correctly and consistently
