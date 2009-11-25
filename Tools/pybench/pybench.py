@@ -228,7 +228,7 @@ class Test:
                 raise ValueError('at least one calibration run is required')
             self.calibration_runs = calibration_runs
         if timer is not None:
-            timer = timer
+            self.timer = timer
 
         # Init variables
         self.times = []
