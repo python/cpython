@@ -276,6 +276,8 @@ Instance methods:
    Return the total number of seconds contained in the duration. Equivalent to
    ``td.microseconds / 1000000 + td.seconds + td.days * 24 * 3600``.
 
+   .. versionadded:: 2.7
+
 
 Example usage:
 
