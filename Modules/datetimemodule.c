@@ -2089,6 +2089,14 @@ delta_getstate(PyDateTime_Delta *self)
 }
 
 static PyObject *
+delta_total_seconds(PyObject *self)
+{
+	return PyFloat_FromDouble(GET_TD_MICROSECONDS(self) / 1000000.0 +
+				  GET_TD_SECONDS(self) +
+				  GET_TD_DAYS(self) * 24.0 * 3600.0);
+}
+
+static PyObject *
 delta_reduce(PyDateTime_Delta* self)
 {
 	return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
@@ -2110,7 +2118,10 @@ static PyMemberDef delta_members[] = {
 };
 
 static PyMethodDef delta_methods[] = {
-	{"__reduce__", (PyCFunction)delta_reduce,     METH_NOARGS,
+	{"total_seconds", (PyCFunction)delta_total_seconds, METH_NOARGS,
+	 PyDoc_STR("Total seconds in the duration.")},
+
+	{"__reduce__", (PyCFunction)delta_reduce, METH_NOARGS,
 	 PyDoc_STR("__reduce__() -> (cls, state)")},
 
 	{NULL,	NULL},
