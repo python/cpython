@@ -90,8 +90,7 @@ def main(fixer_pkg, args=None):
     parser.add_option("-l", "--list-fixes", action="store_true",
                       help="List available transformations (fixes/fix_*.py)")
     parser.add_option("-p", "--print-function", action="store_true",
-                      help="DEPRECATED Modify the grammar so that print() is "
-                          "a function")
+                      help="Modify the grammar so that print() is a function")
     parser.add_option("-v", "--verbose", action="store_true",
                       help="More verbose logging")
     parser.add_option("--no-diffs", action="store_true",
@@ -103,12 +102,10 @@ def main(fixer_pkg, args=None):
 
     # Parse command line arguments
     refactor_stdin = False
+    flags = {}
     options, args = parser.parse_args(args)
     if not options.write and options.no_diffs:
         warn("not writing files and not printing diffs; that's not very useful")
-    if options.print_function:
-        warn("-p is deprecated; "
-             "detection of from __future__ import print_function is automatic")
     if not options.write and options.nobackups:
         parser.error("Can't use -n without -w")
     if options.list_fixes:
@@ -126,6 +123,8 @@ def main(fixer_pkg, args=None):
         if options.write:
             print("Can't write to stdin.", file=sys.stderr)
             return 2
+    if options.print_function:
+        flags["print_function"] = True
 
     # Set up logging handler
     level = logging.DEBUG if options.verbose else logging.INFO
@@ -146,7 +145,7 @@ def main(fixer_pkg, args=None):
     else:
         requested = avail_fixes.union(explicit)
     fixer_names = requested.difference(unwanted_fixes)
-    rt = StdoutRefactoringTool(sorted(fixer_names), None, sorted(explicit),
+    rt = StdoutRefactoringTool(sorted(fixer_names), flags, sorted(explicit),
                                options.nobackups, not options.no_diffs)
 
     # Refactor all files and directories passed as arguments

@@ -123,7 +123,7 @@ it's the base calendar for all computations.
       Print a month's calendar as returned by :meth:`formatmonth`.
 
 
-   .. method:: formatyear(theyear, themonth, w=2, l=1, c=6, m=3)
+   .. method:: formatyear(theyear, w=2, l=1, c=6, m=3)
 
       Return a *m*-column calendar for an entire year as a multi-line string.
       Optional parameters *w*, *l*, and *c* are for date column width, lines per
@@ -152,7 +152,7 @@ it's the base calendar for all computations.
       used.
 
 
-   .. method:: formatyear(theyear, themonth, width=3)
+   .. method:: formatyear(theyear, width=3)
 
       Return a year's calendar as an HTML table. *width* (defaulting to 3)
       specifies the number of months per row.
