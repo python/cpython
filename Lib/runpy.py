@@ -147,7 +147,7 @@ def _run_module_as_main(mod_name, alter_argv=True):
         else:
             # For directories/zipfiles, let the user
             # know what the code was looking for
-            info = "can't find '__main__.py' in %r" % sys.argv[0]
+            info = "can't find '__main__' module in %r" % sys.argv[0]
         msg = "%s: %s" % (sys.executable, info)
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
