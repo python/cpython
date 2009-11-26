@@ -1,6 +1,7 @@
 from test.test_support import run_unittest, open_urlresource
 import unittest
 
+from httplib import HTTPException
 import sys
 import os
 from unicodedata import normalize, unidata_version
@@ -43,7 +44,7 @@ class NormalizationTest(unittest.TestCase):
         # Hit the exception early
         try:
             open_urlresource(TESTDATAURL)
-        except IOError:
+        except (IOError, HTTPException):
             self.skipTest("Could not retrieve " + TESTDATAURL)
         for line in open_urlresource(TESTDATAURL):
             if '#' in line:
