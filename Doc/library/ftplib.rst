@@ -226,14 +226,18 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    Passive mode is on by default.
 
 
-.. method:: FTP.storbinary(cmd, file, blocksize=8192, callback=None)
+.. method:: FTP.storbinary(cmd, file, blocksize=8192, callback=None, rest=None)
 
    Store a file in binary transfer mode.  *cmd* should be an appropriate
    ``STOR`` command: ``"STOR filename"``. *file* is an open file object which is
    read until EOF using its :meth:`read` method in blocks of size *blocksize* to
    provide the data to be stored.  The *blocksize* argument defaults to 8192.
    *callback* is an optional single parameter callable that is called
-   on each block of data after it is sent.
+   on each block of data after it is sent. *rest* means the same thing as in
+   the :meth:`transfercmd` method.
+
+   .. versionchanged:: 3.2
+      *rest* parameter added.
 
 
 .. method:: FTP.storlines(cmd, file, callback=None)

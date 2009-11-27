@@ -140,6 +140,10 @@ C-API
 Library
 -------
 
+- Issue #6845: Add restart support for binary upload in ftplib.  The
+  `storbinary()` method of FTP and FTP_TLS objects gains an optional `rest`
+  argument.  Patch by Pablo Mouzo.
+
 - Issue #5788: `datetime.timedelta` objects get a new `total_seconds()`
   method returning the total number of seconds in the duration.  Patch by
   Brian Quinlan.
