@@ -196,6 +196,19 @@ process and user.
 
    Return the parent's process id. Availability: Unix.
 
+.. function:: getresgid()
+
+   Return a tuple (ruid, euid, suid) denoting the current process's
+   real, effective, and saved user ids. Availability: Unix.
+
+   .. versionadded:: 2.7/3.2
+
+.. function:: getresuid()
+
+   Return a tuple (rgid, egid, sgid) denoting the current process's
+   real, effective, and saved user ids. Availability: Unix.
+
+   .. versionadded:: 2.7/3.2
 
 .. function:: getuid()
 
@@ -267,14 +280,27 @@ process and user.
    for the semantics. Availability: Unix.
 
 
-.. function:: setreuid(ruid, euid)
-
-   Set the current process's real and effective user ids. Availability: Unix.
-
-
 .. function:: setregid(rgid, egid)
 
    Set the current process's real and effective group ids. Availability: Unix.
+
+.. function:: setresgid(rgid, egid, sgid)
+
+   Set the current process's real, effective, and saved group ids.
+   Availability: Unix.
+
+   .. versionadded:: 2.7/3.2
+
+.. function:: setresuid(ruid, euid, suid)
+
+   Set the current process's real, effective, and saved user ids.
+   Availibility: Unix.
+
+   .. versionadded:: 2.7/3.2
+
+.. function:: setreuid(ruid, euid)
+
+   Set the current process's real and effective user ids. Availability: Unix.
 
 
 .. function:: getsid(pid)
