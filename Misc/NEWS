@@ -483,6 +483,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7403: logging: Fixed possible race condition in lock creation.
+
 - Issue #6845: Add restart support for binary upload in ftplib.  The
   `storbinary()` method of FTP and FTP_TLS objects gains an optional `rest`
   argument.  Patch by Pablo Mouzo.
