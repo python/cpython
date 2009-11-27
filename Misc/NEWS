@@ -9,6 +9,11 @@ hat's New in Python 2.4.7?
 
 *Release date: XX-XXX-2009*
 
+Library
+-------
+
+- Issue #7403: logging: Fixed possible race condition in lock creation.
+
 
 What's New in Python 2.4.6?
 ===========================
