@@ -55,6 +55,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.last_received_cmd = None
         self.last_received_data = ''
         self.next_response = ''
+        self.rest = None
         self.push('220 welcome')
 
     def collect_incoming_data(self, data):
@@ -168,10 +169,19 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_stor(self, arg):
         self.push('125 stor ok')
 
+    def cmd_rest(self, arg):
+        self.rest = arg
+        self.push('350 rest ok')
+
     def cmd_retr(self, arg):
         self.push('125 retr ok')
-        self.dtp.push(RETR_DATA)
+        if self.rest is not None:
+            offset = int(self.rest)
+        else:
+            offset = 0
+        self.dtp.push(RETR_DATA[offset:])
         self.dtp.close_when_done()
+        self.rest = None
 
     def cmd_list(self, arg):
         self.push('125 list ok')
@@ -444,6 +454,15 @@ class TestFTPClass(TestCase):
         self.client.retrbinary('retr', received.append)
         self.assertEqual(''.join(received), RETR_DATA)
 
+    def test_retrbinary_rest(self):
+        for rest in (0, 10, 20):
+            received = []
+            self.client.retrbinary('retr', received.append, rest=rest)
+            self.assertEqual(''.join(received), RETR_DATA[rest:],
+                             msg='rest test case %d %d %d' % (rest,
+                                                              len(''.join(received)),
+                                                              len(RETR_DATA[rest:])))
+
     def test_retrlines(self):
         received = []
         self.client.retrlines('retr', received.append)
@@ -458,6 +477,13 @@ class TestFTPClass(TestCase):
         f.seek(0)
         self.client.storbinary('stor', f, callback=lambda x: flag.append(None))
         self.assertTrue(flag)
+
+    def test_storbinary_rest(self):
+        f = StringIO.StringIO(RETR_DATA)
+        for r in (30, '30'):
+            f.seek(0)
+            self.client.storbinary('stor', f, rest=r)
+            self.assertEqual(self.server.handler.rest, str(r))
 
     def test_storlines(self):
         f = StringIO.StringIO(RETR_DATA.replace('\r\n', '\n'))
