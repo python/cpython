@@ -176,7 +176,10 @@ def addLevelName(level, levelName):
 #the lock would already have been acquired - so we need an RLock.
 #The same argument applies to Loggers and Manager.loggerDict.
 #
-_lock = None
+if thread:
+    _lock = threading.RLock()
+else:
+    _lock = None
 
 def _acquireLock():
     """
@@ -184,9 +187,6 @@ def _acquireLock():
 
     This should be released with _releaseLock().
     """
-    global _lock
-    if (not _lock) and thread:
-        _lock = threading.RLock()
     if _lock:
         _lock.acquire()
 
