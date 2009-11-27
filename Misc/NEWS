@@ -18,6 +18,8 @@ Core and builtins
 Library
 -------
 
+- Issue #7403: logging: Fixed possible race condition in lock creation.
+
 - Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
   forever on incomplete input. That caused tarfile.open() to hang when used
   with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
