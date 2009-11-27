@@ -6953,6 +6953,82 @@ vms_urandom(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef HAVE_SETRESUID
+PyDoc_STRVAR(posix_setresuid__doc__,
+"setresuid(ruid, euid, suid)\n\n\
+Set the current process's real, effective, and saved user ids.");
+
+static PyObject*
+posix_setresuid (PyObject *self, PyObject *args)
+{
+	/* We assume uid_t is no larger than a long. */
+	long ruid, euid, suid;
+	if (!PyArg_ParseTuple(args, "lll", &ruid, &euid, &suid))
+		return NULL;
+	if (setresuid(ruid, euid, suid) < 0)
+		return posix_error();
+	Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_SETRESGID
+PyDoc_STRVAR(posix_setresgid__doc__,
+"setresgid(rgid, egid, sgid)\n\n\
+Set the current process's real, effective, and saved group ids.");
+
+static PyObject*
+posix_setresgid (PyObject *self, PyObject *args)
+{
+	/* We assume uid_t is no larger than a long. */
+	long rgid, egid, sgid;
+	if (!PyArg_ParseTuple(args, "lll", &rgid, &egid, &sgid))
+		return NULL;
+	if (setresgid(rgid, egid, sgid) < 0)
+		return posix_error();
+	Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_GETRESUID
+PyDoc_STRVAR(posix_getresuid__doc__,
+"getresuid() -> (ruid, euid, suid)\n\n\
+Get tuple of the current process's real, effective, and saved user ids.");
+
+static PyObject*
+posix_getresuid (PyObject *self, PyObject *noargs)
+{
+	uid_t ruid, euid, suid;
+	long l_ruid, l_euid, l_suid;
+	if (getresuid(&ruid, &euid, &suid) < 0)
+		return posix_error();
+	/* Force the values into long's as we don't know the size of uid_t. */
+	l_ruid = ruid;
+	l_euid = euid;
+	l_suid = suid;
+	return Py_BuildValue("(lll)", l_ruid, l_euid, l_suid);
+}
+#endif
+
+#ifdef HAVE_GETRESGID
+PyDoc_STRVAR(posix_getresgid__doc__,
+"getresgid() -> (rgid, egid, sgid)\n\n\
+Get tuple of the current process's real, effective, and saved user ids.");
+
+static PyObject*
+posix_getresgid (PyObject *self, PyObject *noargs)
+{
+	uid_t rgid, egid, sgid;
+	long l_rgid, l_egid, l_sgid;
+	if (getresgid(&rgid, &egid, &sgid) < 0)
+		return posix_error();
+	/* Force the values into long's as we don't know the size of uid_t. */
+	l_rgid = rgid;
+	l_egid = egid;
+	l_sgid = sgid;
+	return Py_BuildValue("(lll)", l_rgid, l_egid, l_sgid);
+}
+#endif
+
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -7242,6 +7318,19 @@ static PyMethodDef posix_methods[] = {
  #ifdef __VMS
  	{"urandom", vms_urandom, METH_VARARGS, vms_urandom__doc__},
  #endif
+#ifdef HAVE_SETRESUID
+        {"setresuid",	posix_setresuid, METH_VARARGS, posix_setresuid__doc__},
+#endif
+#ifdef HAVE_SETRESGID
+        {"setresgid",	posix_setresgid, METH_VARARGS, posix_setresgid__doc__},
+#endif
+#ifdef HAVE_GETRESUID
+        {"getresuid",	posix_getresuid, METH_NOARGS, posix_getresuid__doc__},
+#endif
+#ifdef HAVE_GETRESGID
+        {"getresgid",	posix_getresgid, METH_NOARGS, posix_getresgid__doc__},
+#endif
+
 	{NULL,		NULL}		 /* Sentinel */
 };
 

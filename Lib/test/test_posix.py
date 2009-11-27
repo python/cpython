@@ -40,6 +40,48 @@ class PosixTester(unittest.TestCase):
                 posix_func()
                 self.assertRaises(TypeError, posix_func, 1)
 
+    if hasattr(posix, 'getresuid'):
+        def test_getresuid(self):
+            user_ids = posix.getresuid()
+            self.assertEqual(len(user_ids), 3)
+            for val in user_ids:
+                self.assertGreaterEqual(val, 0)
+
+    if hasattr(posix, 'getresgid'):
+        def test_getresgid(self):
+            group_ids = posix.getresgid()
+            self.assertEqual(len(group_ids), 3)
+            for val in group_ids:
+                self.assertGreaterEqual(val, 0)
+
+    if hasattr(posix, 'setresuid'):
+        def test_setresuid(self):
+            current_user_ids = posix.getresuid()
+            self.assertIsNone(posix.setresuid(*current_user_ids))
+            # -1 means don't change that value.
+            self.assertIsNone(posix.setresuid(-1, -1, -1))
+
+        def test_setresuid_exception(self):
+            # Don't do this test if someone is silly enough to run us as root.
+            current_user_ids = posix.getresuid()
+            if 0 not in current_user_ids:
+                new_user_ids = (current_user_ids[0]+1, -1, -1)
+                self.assertRaises(OSError, posix.setresuid, *new_user_ids)
+
+    if hasattr(posix, 'setresgid'):
+        def test_setresgid(self):
+            current_group_ids = posix.getresgid()
+            self.assertIsNone(posix.setresgid(*current_group_ids))
+            # -1 means don't change that value.
+            self.assertIsNone(posix.setresgid(-1, -1, -1))
+
+        def test_setresgid_exception(self):
+            # Don't do this test if someone is silly enough to run us as root.
+            current_group_ids = posix.getresgid()
+            if 0 not in current_group_ids:
+                new_group_ids = (current_group_ids[0]+1, -1, -1)
+                self.assertRaises(OSError, posix.setresgid, *new_group_ids)
+
     def test_statvfs(self):
         if hasattr(posix, 'statvfs'):
             self.assertTrue(posix.statvfs(os.curdir))
