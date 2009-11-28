@@ -253,6 +253,26 @@ class BaseExceptionReportingTests:
         self.check_zero_div(blocks[0])
         self.assertTrue('inner_raise() # Marker' in blocks[2])
 
+    def test_cause_and_context(self):
+        # When both a cause and a context are set, only the cause should be
+        # displayed and the context should be muted.
+        def inner_raise():
+            try:
+                self.zero_div()
+            except ZeroDivisionError as _e:
+                e = _e
+            try:
+                xyzzy
+            except NameError:
+                raise KeyError from e
+        def outer_raise():
+            inner_raise() # Marker
+        blocks = boundaries.split(self.get_report(outer_raise))
+        self.assertEquals(len(blocks), 3)
+        self.assertEquals(blocks[1], cause_message)
+        self.check_zero_div(blocks[0])
+        self.assert_('inner_raise() # Marker' in blocks[2])
+
     def test_cause_recursive(self):
         def inner_raise():
             try:
