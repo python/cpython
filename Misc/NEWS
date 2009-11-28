@@ -140,6 +140,9 @@ C-API
 Library
 -------
 
+- Issue #1515: Enable use of deepcopy() with instance methods.  Patch by
+  Robert Collins.
+
 - Issue #7403: logging: Fixed possible race condition in lock creation.
 
 - Issue #6845: Add restart support for binary upload in ftplib.  The
