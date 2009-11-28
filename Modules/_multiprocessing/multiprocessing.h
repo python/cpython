@@ -27,7 +27,7 @@
 #  include <sys/socket.h>
 #  include <sys/uio.h>
 #  include <arpa/inet.h>             /* htonl() and ntohl() */
-#  if defined(HAVE_SEM_OPEN) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES)
+#  if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif

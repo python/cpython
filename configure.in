@@ -3419,8 +3419,8 @@ int main(void) {
 AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
 if test $ac_cv_posix_semaphores_enabled = no
 then
-  AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
-            [Define if the Posix semaphores do not work on your system])
+  AC_DEFINE(POSIX_SEMAPHORES_NOT_ENABLED, 1,
+            [Define if POSIX semaphores aren't enabled on your system])
 fi
 
 
