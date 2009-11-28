@@ -140,6 +140,10 @@ C-API
 Library
 -------
 
+- Issue #4486: When an exception has an explicit cause, do not print its
+  implicit context too.  This affects the `traceback` module as well as
+  built-in exception printing.
+
 - Issue #1515: Enable use of deepcopy() with instance methods.  Patch by
   Robert Collins.
 
