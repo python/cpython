@@ -909,6 +909,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Define if POSIX semaphores aren't enabled on your system */
+#undef POSIX_SEMAPHORES_NOT_ENABLED
+
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
