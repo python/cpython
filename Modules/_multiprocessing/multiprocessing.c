@@ -263,7 +263,8 @@ PyInit__multiprocessing(void)
 	Py_INCREF(&ConnectionType);	
 	PyModule_AddObject(module, "Connection", (PyObject*)&ConnectionType);
 
-#if defined(MS_WINDOWS) || defined(HAVE_SEM_OPEN)
+#if defined(MS_WINDOWS) ||						\
+  (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
 	/* Add SemLock type to module */
 	if (PyType_Ready(&SemLockType) < 0)
 		return NULL;
@@ -311,7 +312,7 @@ PyInit__multiprocessing(void)
 		Py_DECREF(temp); Py_DECREF(value); return NULL; }	  \
 	Py_DECREF(value)
 	
-#ifdef HAVE_SEM_OPEN
+#if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
 	ADD_FLAG(HAVE_SEM_OPEN);
 #endif
 #ifdef HAVE_SEM_TIMEDWAIT
