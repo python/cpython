@@ -1576,7 +1576,7 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 						cause_message, f);
 				}
 			}
-			if (context) {
+			else if (context) {
 				res = PySet_Contains(seen, context);
 				if (res == -1)
 					PyErr_Clear();

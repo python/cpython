@@ -120,13 +120,14 @@ def _iter_chain(exc, custom_tb=None, seen=None):
     seen.add(exc)
     its = []
     cause = exc.__cause__
-    context = exc.__context__
     if cause is not None and cause not in seen:
         its.append(_iter_chain(cause, None, seen))
         its.append([(_cause_message, None)])
-    if context is not None and context is not cause and context not in seen:
-        its.append(_iter_chain(context, None, seen))
-        its.append([(_context_message, None)])
+    else:
+        context = exc.__context__
+        if context is not None and context not in seen:
+            its.append(_iter_chain(context, None, seen))
+            its.append([(_context_message, None)])
     its.append([(exc, custom_tb or exc.__traceback__)])
     # itertools.chain is in an extension module and may be unavailable
     for it in its:
