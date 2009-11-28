@@ -672,6 +672,17 @@ class TestCopy(unittest.TestCase):
         del d
         self.assertEqual(len(v), 1)
 
+    def test_deepcopy_bound_method(self):
+        class Foo(object):
+            def m(self):
+                pass
+        f = Foo()
+        f.b = f.m
+        g = copy.deepcopy(f)
+        self.assertEqual(g.m, g.b)
+        self.assertTrue(g.b.im_self is g)
+        g.b()
+
 
 def global_foo(x, y): return x+y
 

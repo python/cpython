@@ -260,6 +260,10 @@ d[dict] = _deepcopy_dict
 if PyStringMap is not None:
     d[PyStringMap] = _deepcopy_dict
 
+def _deepcopy_method(x, memo): # Copy instance methods
+    return type(x)(x.im_func, deepcopy(x.im_self, memo), x.im_class)
+_deepcopy_dispatch[types.MethodType] = _deepcopy_method
+
 def _keep_alive(x, memo):
     """Keeps a reference to the object x in the memo.
 
