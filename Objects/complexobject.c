@@ -8,10 +8,6 @@
 #include "Python.h"
 #include "structmember.h"
 
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>
-#endif
-
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
