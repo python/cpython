@@ -4966,8 +4966,6 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'F':
 			case 'g':
 			case 'G':
-				if (c == 'F')
-					c = 'f';
 				temp = formatfloat(v, flags, prec, c);
 				if (temp == NULL)
 					goto error;

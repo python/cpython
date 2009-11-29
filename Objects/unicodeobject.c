@@ -8809,8 +8809,6 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 'F':
             case 'g':
             case 'G':
-                if (c == 'F')
-                    c = 'f';
                 temp = formatfloat(v, flags, prec, c);
                 if (temp == NULL)
                     goto onError;
