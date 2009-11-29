@@ -937,13 +937,6 @@ format_float_internal(PyObject *value,
            format the result. We take care of that later. */
         type = 'g';
 
-#if PY_VERSION_HEX < 0x0301000
-    /* 'F' is the same as 'f', per the PEP */
-    /* This is no longer the case in 3.x */
-    if (type == 'F')
-        type = 'f';
-#endif
-
     val = PyFloat_AsDouble(value);
     if (val == -1.0 && PyErr_Occurred())
         goto done;
@@ -1127,13 +1120,6 @@ format_complex_internal(PyObject *value,
         /* 'n' is the same as 'g', except for the locale used to
            format the result. We take care of that later. */
         type = 'g';
-
-#if PY_VERSION_HEX < 0x03010000
-    /* This is no longer the case in 3.x */
-    /* 'F' is the same as 'f', per the PEP */
-    if (type == 'F')
-        type = 'f';
-#endif
 
     if (precision < 0)
         precision = default_precision;

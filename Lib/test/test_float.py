@@ -309,6 +309,14 @@ class IEEEFormatTestCase(unittest.TestCase):
                 self.assertRaises(ValueError, format, 1e-100, format_spec)
                 self.assertRaises(ValueError, format, -1e-100, format_spec)
 
+        # issue 3382: 'f' and 'F' with inf's and nan's
+        self.assertEqual('{0:f}'.format(INF), 'inf')
+        self.assertEqual('{0:F}'.format(INF), 'INF')
+        self.assertEqual('{0:f}'.format(-INF), '-inf')
+        self.assertEqual('{0:F}'.format(-INF), '-INF')
+        self.assertEqual('{0:f}'.format(NAN), 'nan')
+        self.assertEqual('{0:F}'.format(NAN), 'NAN')
+
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
     def test_format_testfile(self):
@@ -321,8 +329,10 @@ class IEEEFormatTestCase(unittest.TestCase):
 
             lhs, rhs = map(str.strip, line.split('->'))
             fmt, arg = lhs.split()
-            self.assertEqual(fmt % float(arg), rhs)
-            self.assertEqual(fmt % -float(arg), '-' + rhs)
+            arg = float(arg)
+            self.assertEqual(fmt % arg, rhs)
+            if not math.isnan(arg) and copysign(1.0, arg) > 0.0:
+                self.assertEqual(fmt % -arg, '-' + rhs)
 
     def test_issue5864(self):
         self.assertEquals(format(123.456, '.4'), '123.5')

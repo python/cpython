@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #3382: 'F' formatting for float and complex now convert the
+  result to upper case. This only affects 'inf' and 'nan', since 'f'
+  no longer converts to 'g' for large values.
+  
 - Remove switch from "%f" formatting to "%g" formatting for floats
   larger than 1e50 in absolute value.
 

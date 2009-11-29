@@ -81,6 +81,14 @@
 %f 0.0000005001 -> 0.000001
 %f 0.0000004999 -> 0.000000
 
+-- nans and infinities
+%f nan -> nan
+%f inf -> inf
+%f -infinity -> -inf
+%F nan -> NAN
+%F infinity -> INF
+%F -inf -> -INF
+
 -- 'e' code formatting with explicit precision (>= 0). Output should
 -- always have exactly the number of places after the point that were
 -- requested.
@@ -202,6 +210,14 @@
 %#.1e 123.4 -> 1.2e+02
 %#.2e 0.0001357 -> 1.36e-04
 
+-- nans and infinities
+%e nan -> nan
+%e inf -> inf
+%e -infinity -> -inf
+%E nan -> NAN
+%E infinity -> INF
+%E -inf -> -INF
+
 -- 'g' code formatting.
 
 -- zeros
@@ -313,6 +329,14 @@
 %#.4g 234.56 -> 234.6
 %#.5g 234.56 -> 234.56
 %#.6g 234.56 -> 234.560
+
+-- nans and infinities
+%g nan -> nan
+%g inf -> inf
+%g -infinity -> -inf
+%G nan -> NAN
+%G infinity -> INF
+%G -inf -> -INF
 
 -- for repr formatting see the separate test_short_repr test in
 -- test_float.py.  Not all platforms use short repr for floats.
