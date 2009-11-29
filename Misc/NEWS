@@ -140,6 +140,10 @@ C-API
 Library
 -------
 
+- Issue #7408: Fixed distutils.tests.sdist so it doesn't check for group
+  ownership when the group is not forced, because the group may be different
+  from the user's group and inherit from its container when the test is run.
+
 - Issue #4486: When an exception has an explicit cause, do not print its
   implicit context too.  This affects the `traceback` module as well as
   built-in exception printing.
