@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7410: deepcopy of itertools.count was resetting the count.
+
 - Issue #4486: When an exception has an explicit cause, do not print its
   implicit context too.  This affects the `traceback` module as well as
   built-in exception printing.
