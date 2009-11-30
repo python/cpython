@@ -2906,6 +2906,21 @@ count_repr(countobject *lz)
 	return result;
 }
 
+static PyObject *
+count_reduce(countobject *lz)
+{
+	if (lz->cnt == PY_SSIZE_T_MAX)
+		return Py_BuildValue("O(O)", Py_TYPE(lz), lz->long_cnt);
+	return Py_BuildValue("O(n)", Py_TYPE(lz), lz->cnt);
+}
+
+PyDoc_STRVAR(count_reduce_doc, "Return state information for pickling.");
+
+static PyMethodDef count_methods[] = {
+	{"__reduce__",	(PyCFunction)count_reduce,	METH_NOARGS,
+	 count_reduce_doc},
+};
+
 PyDoc_STRVAR(count_doc,
 "count([firstval]) --> count object\n\
 \n\
@@ -2941,7 +2956,7 @@ static PyTypeObject count_type = {
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)count_next,	/* tp_iternext */
-	0,				/* tp_methods */
+	count_methods,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */
