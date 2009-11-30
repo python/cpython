@@ -3379,7 +3379,7 @@ static PyObject *
 count_reduce(countobject *lz)
 {
 	if (lz->cnt == PY_SSIZE_T_MAX)
-		return Py_BuildValue("O(O)", Py_TYPE(lz), lz->long_cnt);
+		return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->long_cnt, lz->long_step);
 	return Py_BuildValue("O(n)", Py_TYPE(lz), lz->cnt);
 }
 
@@ -3388,6 +3388,7 @@ PyDoc_STRVAR(count_reduce_doc, "Return state information for pickling.");
 static PyMethodDef count_methods[] = {
 	{"__reduce__",	(PyCFunction)count_reduce,	METH_NOARGS,
 	 count_reduce_doc},
+	{NULL,		NULL}	/* sentinel */
 };
 
 PyDoc_STRVAR(count_doc,
