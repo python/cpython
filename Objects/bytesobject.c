@@ -563,29 +563,15 @@ PyBytes_AsStringAndSize(register PyObject *obj,
 /* Methods */
 
 #include "stringlib/stringdefs.h"
-#define STRINGLIB_CHAR char
-
-#define STRINGLIB_CMP memcmp
-#define STRINGLIB_LEN PyBytes_GET_SIZE
-#define STRINGLIB_NEW PyBytes_FromStringAndSize
-#define STRINGLIB_STR PyBytes_AS_STRING
-/* #define STRINGLIB_WANT_CONTAINS_OBJ 1 */
-
-#define STRINGLIB_EMPTY nullstring
-#define STRINGLIB_CHECK_EXACT PyBytes_CheckExact
-#define STRINGLIB_MUTABLE 0
 
 #include "stringlib/fastsearch.h"
-
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 #include "stringlib/ctype.h"
-#include "stringlib/transmogrify.h"
 
-#define _Py_InsertThousandsGrouping _PyBytes_InsertThousandsGrouping
-#define _Py_InsertThousandsGroupingLocale _PyBytes_InsertThousandsGroupingLocale
-#include "stringlib/localeutil.h"
+#define STRINGLIB_MUTABLE 0
+#include "stringlib/transmogrify.h"
 
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
