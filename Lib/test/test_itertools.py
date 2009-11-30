@@ -5,6 +5,8 @@ from weakref import proxy
 import sys
 import operator
 import random
+import copy
+import pickle
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -214,6 +216,13 @@ class TestBasicOps(unittest.TestCase):
             r1 = repr(count(i)).replace('L', '')
             r2 = 'count(%r)'.__mod__(i).replace('L', '')
             self.assertEqual(r1, r2)
+
+        # check copy, deepcopy, pickle
+        for value in -3, 3, sys.maxint-5, sys.maxint+5:
+            c = count(value)
+            self.assertEqual(next(copy.copy(c)), value)
+            self.assertEqual(next(copy.deepcopy(c)), value)
+            self.assertEqual(next(pickle.loads(pickle.dumps(c))), value)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
