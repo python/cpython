@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6077: On Windows, files opened with tempfile.TemporaryFile in "wt+"
+  mode would appear truncated on the first '0x1a' byte (aka. Ctrl+Z).
+
 - Issue #7085: Fix crash when importing some extensions in a thread
   on MacOSX 10.6.
 
