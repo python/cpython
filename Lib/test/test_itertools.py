@@ -7,6 +7,8 @@ from fractions import Fraction
 import sys
 import operator
 import random
+import copy
+import pickle
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -345,6 +347,13 @@ class TestBasicOps(unittest.TestCase):
             r1 = repr(count(i)).replace('L', '')
             r2 = 'count(%r)'.__mod__(i).replace('L', '')
             self.assertEqual(r1, r2)
+
+        # check copy, deepcopy, pickle
+        for value in -3, 3, sys.maxint-5, sys.maxint+5:
+            c = count(value)
+            self.assertEqual(next(copy.copy(c)), value)
+            self.assertEqual(next(copy.deepcopy(c)), value)
+            self.assertEqual(next(pickle.loads(pickle.dumps(c))), value)
 
     def test_count_with_stride(self):
         self.assertEqual(zip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
