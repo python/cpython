@@ -309,8 +309,12 @@ class test__mkstemp_inner(TC):
         if not has_textmode:
             return            # ugh, can't use SkipTest.
 
-        self.do_create(bin=0).write(b"blat\n")
-        # XXX should test that the file really is a text file
+        # A text file is truncated at the first Ctrl+Z byte
+        f = self.do_create(bin=0)
+        f.write(b"blat\x1a")
+        f.write(b"extra\n")
+        os.lseek(f.fd, 0, os.SEEK_SET)
+        self.assertEquals(os.read(f.fd, 20), b"blat")
 
 test_classes.append(test__mkstemp_inner)
 
@@ -761,6 +765,10 @@ class test_SpooledTemporaryFile(TC):
         f.write("xyzzy\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\ndef\nxyzzy\n")
+        # Check that Ctrl+Z doesn't truncate the file
+        f.write("foo\x1abar\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "abc\ndef\nxyzzy\nfoo\x1abar\n")
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,

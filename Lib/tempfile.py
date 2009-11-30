@@ -169,7 +169,6 @@ def _get_default_tempdir():
 
     namer = _RandomNameSequence()
     dirlist = _candidate_tempdir_list()
-    flags = _text_openflags
 
     for dir in dirlist:
         if dir != _os.curdir:
@@ -179,7 +178,7 @@ def _get_default_tempdir():
             name = next(namer)
             filename = _os.path.join(dir, name)
             try:
-                fd = _os.open(filename, flags, 0o600)
+                fd = _os.open(filename, _bin_openflags, 0o600)
                 fp = _io.open(fd, 'wb')
                 fp.write(b'blat')
                 fp.close()
@@ -434,10 +433,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     if dir is None:
         dir = gettempdir()
 
-    if 'b' in mode:
-        flags = _bin_openflags
-    else:
-        flags = _text_openflags
+    flags = _bin_openflags
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
@@ -475,10 +471,7 @@ else:
         if dir is None:
             dir = gettempdir()
 
-        if 'b' in mode:
-            flags = _bin_openflags
-        else:
-            flags = _text_openflags
+        flags = _bin_openflags
 
         (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
         try:
