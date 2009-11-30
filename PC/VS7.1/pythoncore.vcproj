@@ -512,6 +512,9 @@
 			RelativePath="..\..\PC\dl_nt.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\dtoa.c">
+		</File>
+		<File
 			RelativePath="..\..\Python\dynload_win.c">
 		</File>
 		<File

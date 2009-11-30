@@ -329,6 +329,10 @@ SOURCE=..\dl_nt.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\dtoa.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\dynload_win.c
 # End Source File
 # Begin Source File

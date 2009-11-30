@@ -715,6 +715,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Include\dtoa.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\enumobject.h"
 				>
 			</File>
