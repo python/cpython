@@ -2919,6 +2919,7 @@ PyDoc_STRVAR(count_reduce_doc, "Return state information for pickling.");
 static PyMethodDef count_methods[] = {
 	{"__reduce__",	(PyCFunction)count_reduce,	METH_NOARGS,
 	 count_reduce_doc},
+	{NULL,		NULL}	/* sentinel */
 };
 
 PyDoc_STRVAR(count_doc,
