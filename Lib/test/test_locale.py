@@ -353,6 +353,17 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertRaises(TypeError, locale.strcoll, "a", None)
         self.assertRaises(TypeError, locale.strcoll, b"a", None)
 
+    def test_setlocale_category(self):
+        locale.setlocale(locale.LC_ALL)
+        locale.setlocale(locale.LC_TIME)
+        locale.setlocale(locale.LC_CTYPE)
+        locale.setlocale(locale.LC_COLLATE)
+        locale.setlocale(locale.LC_MONETARY)
+        locale.setlocale(locale.LC_NUMERIC)
+
+        # crasher from bug #7419
+        self.assertRaises(locale.Error, locale.setlocale, 12345)
+
 
 def test_main():
     tests = [
