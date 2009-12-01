@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7419: setlocale() could crash the interpreter on Windows when called
+  with invalid values.
+
 - Issue #6077: On Windows, files opened with tempfile.TemporaryFile in "wt+"
   mode would appear truncated on the first '0x1a' byte (aka. Ctrl+Z).
 
