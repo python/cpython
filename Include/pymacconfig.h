@@ -16,6 +16,8 @@
 # undef SIZEOF_TIME_T
 # undef SIZEOF_VOID_P
 # undef SIZEOF__BOOL
+# undef SIZEOF_UINTPTR_T
+# undef SIZEOF_PTHREAD_T
 # undef WORDS_BIGENDIAN
 # undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
 # undef DOUBLE_IS_BIG_ENDIAN_IEEE754
@@ -43,6 +45,8 @@
 #        define SIZEOF_SIZE_T 		8
 #        define SIZEOF_TIME_T 		8
 #        define SIZEOF_VOID_P 		8
+#        define SIZEOF_UINTPTR_T	8
+#        define SIZEOF_PTHREAD_T	8
 #    else
 #        ifdef __ppc__
 #	    define SIZEOF__BOOL		4
@@ -54,6 +58,8 @@
 #        define SIZEOF_SIZE_T 		4
 #        define SIZEOF_TIME_T 		4
 #        define SIZEOF_VOID_P 		4
+#        define SIZEOF_UINTPTR_T 	4
+#        define SIZEOF_PTHREAD_T 	4
 #    endif
 
 #    if defined(__LP64__)
