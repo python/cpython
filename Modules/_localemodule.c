@@ -163,6 +163,14 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "i|z:setlocale", &category, &locale))
         return NULL;
 
+#if defined(MS_WINDOWS)
+    if (category < LC_MIN || category > LC_MAX)
+    {
+        PyErr_SetString(Error, "invalid locale category");
+        return NULL;
+    }
+#endif
+
     if (locale) {
         /* set locale */
         result = setlocale(category, locale);
