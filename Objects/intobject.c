@@ -461,7 +461,8 @@ int_add(PyIntObject *v, PyIntObject *w)
 	register long a, b, x;
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
-	x = a + b;
+	/* casts in the line below avoid undefined behaviour on overflow */
+	x = (long)((unsigned long)a + b);
 	if ((x^a) >= 0 || (x^b) >= 0)
 		return PyInt_FromLong(x);
 	return PyLong_Type.tp_as_number->nb_add((PyObject *)v, (PyObject *)w);
@@ -473,7 +474,8 @@ int_sub(PyIntObject *v, PyIntObject *w)
 	register long a, b, x;
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
-	x = a - b;
+	/* casts in the line below avoid undefined behaviour on overflow */
+	x = (long)((unsigned long)a - b);
 	if ((x^a) >= 0 || (x^~b) >= 0)
 		return PyInt_FromLong(x);
 	return PyLong_Type.tp_as_number->nb_subtract((PyObject *)v,
@@ -516,7 +518,8 @@ int_mul(PyObject *v, PyObject *w)
 
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
-	longprod = a * b;
+	/* casts in the next line avoid undefined behaviour on overflow */
+	longprod = (long)((unsigned long)a * b);
 	doubleprod = (double)a * (double)b;
 	doubled_longprod = (double)longprod;
 
