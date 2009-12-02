@@ -3861,6 +3861,30 @@ posix_getgroups(PyObject *self, PyObject *noargs)
 }
 #endif
 
+#ifdef HAVE_INITGROUPS
+PyDoc_STRVAR(posix_initgroups__doc__,
+"initgroups(username, gid) -> None\n\n\
+Call the system initgroups() to initialize the group access list with all of\n\
+the groups of which the specified username is a member, plus the specified\n\
+group id.");
+
+static PyObject *
+posix_initgroups(PyObject *self, PyObject *args)
+{
+	char *username;
+	long gid;
+
+	if (!PyArg_ParseTuple(args, "sl:initgroups", &username, &gid))
+		return NULL;
+
+	if (initgroups(username, (gid_t) gid) == -1)
+		return PyErr_SetFromErrno(PyExc_OSError);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
+
 #ifdef HAVE_GETPGID
 PyDoc_STRVAR(posix_getpgid__doc__,
 "getpgid(pid) -> pgid\n\n\
@@ -8629,6 +8653,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SETGROUPS
 	{"setgroups",	posix_setgroups, METH_O, posix_setgroups__doc__},
 #endif /* HAVE_SETGROUPS */
+#ifdef HAVE_INITGROUPS
+	{"initgroups",	posix_initgroups, METH_VARARGS, posix_initgroups__doc__},
+#endif /* HAVE_INITGROUPS */
 #ifdef HAVE_GETPGID
 	{"getpgid",	posix_getpgid, METH_VARARGS, posix_getpgid__doc__},
 #endif /* HAVE_GETPGID */

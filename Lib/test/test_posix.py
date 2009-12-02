@@ -5,6 +5,7 @@ from test import test_support
 # Skip these tests if there is no posix module.
 posix = test_support.import_module('posix')
 
+import errno
 import time
 import os
 import pwd
@@ -82,6 +83,27 @@ class PosixTester(unittest.TestCase):
             if 0 not in current_group_ids:
                 new_group_ids = (current_group_ids[0]+1, -1, -1)
                 self.assertRaises(OSError, posix.setresgid, *new_group_ids)
+
+    @unittest.skipUnless(hasattr(posix, 'initgroups'),
+                         "test needs os.initgroups()")
+    def test_initgroups(self):
+        # It takes a string and an integer; check that it raises a TypeError
+        # for other argument lists.
+        self.assertRaises(TypeError, posix.initgroups)
+        self.assertRaises(TypeError, posix.initgroups, None)
+        self.assertRaises(TypeError, posix.initgroups, 3, "foo")
+        self.assertRaises(TypeError, posix.initgroups, "foo", 3, object())
+
+        # If a non-privileged user invokes it, it should fail with OSError
+        # EPERM.
+        if os.getuid() != 0:
+            name = pwd.getpwuid(posix.getuid()).pw_name
+            try:
+                posix.initgroups(name, 13)
+            except OSError as e:
+                self.assertEquals(e.errno, errno.EPERM)
+            else:
+                self.fail("Expected OSError to be raised by initgroups")
 
     def test_statvfs(self):
         if hasattr(posix, 'statvfs'):
