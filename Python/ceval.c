@@ -1321,7 +1321,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
-				i = a + b;
+				/* cast to avoid undefined behaviour
+				   on overflow */
+				i = (long)((unsigned long)a + b);
 				if ((i^a) < 0 && (i^b) < 0)
 					goto slow_add;
 				x = PyInt_FromLong(i);
@@ -1351,7 +1353,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
-				i = a - b;
+				/* cast to avoid undefined behaviour
+				   on overflow */
+				i = (long)((unsigned long)a - b);
 				if ((i^a) < 0 && (i^~b) < 0)
 					goto slow_sub;
 				x = PyInt_FromLong(i);
