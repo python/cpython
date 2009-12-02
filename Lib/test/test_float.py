@@ -495,6 +495,41 @@ class RoundTestCase(unittest.TestCase):
             self.assertEqual(float(format(x, '.3f')), round(x, 3))
 
 
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
+    def test_format_specials(self):
+        # Test formatting of nans and infs.
+
+        def test(fmt, value, expected):
+            # Test with both % and format().
+            self.assertEqual(fmt % value, expected, fmt)
+            if not '#' in fmt:
+                # Until issue 7094 is implemented, format() for floats doesn't
+                #  support '#' formatting
+                fmt = fmt[1:] # strip off the %
+                self.assertEqual(format(value, fmt), expected, fmt)
+
+        for fmt in ['%e', '%f', '%g', '%.0e', '%.6f', '%.20g',
+                    '%#e', '%#f', '%#g', '%#.20e', '%#.15f', '%#.3g']:
+            pfmt = '%+' + fmt[1:]
+            sfmt = '% ' + fmt[1:]
+            test(fmt, INF, 'inf')
+            test(fmt, -INF, '-inf')
+            test(fmt, NAN, 'nan')
+            test(fmt, -NAN, 'nan')
+            # When asking for a sign, it's always provided. nans are
+            #  always positive.
+            test(pfmt, INF, '+inf')
+            test(pfmt, -INF, '-inf')
+            test(pfmt, NAN, '+nan')
+            test(pfmt, -NAN, '+nan')
+            # When using ' ' for a sign code, only infs can be negative.
+            #  Others have a space.
+            test(sfmt, INF, ' inf')
+            test(sfmt, -INF, '-inf')
+            test(sfmt, NAN, ' nan')
+            test(sfmt, -NAN, ' nan')
+
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan
