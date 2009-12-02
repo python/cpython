@@ -161,6 +161,15 @@ process and user.
    Availability: Unix.
 
 
+.. function:: initgroups(username, gid)
+
+   Call the system initgroups() to initialize the group access list with all of
+   the groups of which the specified username is a member, plus the specified
+   group id. Availability: Unix.
+
+   .. versionadded:: 3.2
+
+
 .. function:: getlogin()
 
    Return the name of the user logged in on the controlling terminal of the
