@@ -146,6 +146,10 @@ C-API
 Library
 -------
 
+- Issue #7333: The `posix` module gains an `initgroups()` function providing
+  access to the initgroups(3) C library call on Unix systems which implement
+  it.  Patch by Jean-Paul Calderone.
+
 - Issue #7408: Fixed distutils.tests.sdist so it doesn't check for group
   ownership when the group is not forced, because the group may be different
   from the user's group and inherit from its container when the test is run.
