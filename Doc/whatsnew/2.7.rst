@@ -583,14 +583,14 @@ changes, or look through the Subversion logs for all the details.
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
   :issue:`4991`.)
 
-* New function: ``itertools.compress(*data*, *selectors*)`` takes two
+* New function: ``itertools.compress(data, selectors)`` takes two
   iterators.  Elements of *data* are returned if the corresponding
   value in *selectors* is true::
 
     itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
       A, C, E, F
 
-  New function: ``itertools.combinations_with_replacement(*iter*, *r*)``
+  New function: ``itertools.combinations_with_replacement(iter, r)``
   returns all the possible *r*-length combinations of elements from the
   iterable *iter*.  Unlike :func:`combinations`, individual elements
   can be repeated in the generated combinations::
@@ -1076,5 +1076,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: no one yet.
+article: Hugh Secker-Walker.
 
