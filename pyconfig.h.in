@@ -301,6 +301,9 @@
 /* Define to 1 if you have the `getpeername' function. */
 #undef HAVE_GETPEERNAME
 
+/* Define to 1 if you have the `initgroups' function. */
+#undef HAVE_INITGROUPS
+
 /* Define to 1 if you have the `getpgid' function. */
 #undef HAVE_GETPGID
 
