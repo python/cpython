@@ -616,6 +616,52 @@ test_s_code(PyObject *self)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_bug_7414(PyObject *self)
+{
+	/* Issue #7414: for PyArg_ParseTupleAndKeywords, 'C' code wasn't being
+	   skipped properly in skipitem() */
+	int a = 0, b = 0, result;
+	char *kwlist[] = {"a", "b", NULL};
+	PyObject *tuple = NULL, *dict = NULL, *b_str;
+
+	tuple = PyTuple_New(0);
+	if (tuple == NULL)
+		goto failure;
+	dict = PyDict_New();
+	if (dict == NULL)
+		goto failure;
+	b_str = PyUnicode_FromString("b");
+	if (b_str == NULL)
+		goto failure;
+	result = PyDict_SetItemString(dict, "b", b_str);
+	Py_DECREF(b_str);
+	if (result < 0)
+		goto failure;
+
+	result = PyArg_ParseTupleAndKeywords(tuple, dict, "|CC",
+					     kwlist, &a, &b);
+	if (!result)
+		goto failure;
+
+	if (a != 0)
+		return raiseTestError("test_bug_7414",
+			"C format code not skipped properly");
+	if (b != 'b')
+		return raiseTestError("test_bug_7414",
+			"C format code returned wrong value");
+
+	Py_DECREF(dict);
+	Py_DECREF(tuple);
+	Py_RETURN_NONE;
+
+  failure:
+	Py_XDECREF(dict);
+	Py_XDECREF(tuple);
+	return NULL;
+}
+
+
 static volatile int x;
 
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
@@ -1477,6 +1523,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
+	{"test_bug_7414", (PyCFunction)test_bug_7414, METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
 	{"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
