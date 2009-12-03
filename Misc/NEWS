@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4120: Drop reference to CRT from manifest when building extensions with
+  msvc9compiler.
+
 - Issue #7410: deepcopy of itertools.count() erroneously reset the count.
 
 - Issue #7403: logging: Fixed possible race condition in lock creation.
