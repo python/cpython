@@ -2,6 +2,21 @@
 
 #ifdef WITH_PYMALLOC
 
+#ifdef WITH_VALGRIND
+#include <valgrind/valgrind.h>
+
+/* If we're using GCC, use __builtin_expect() to reduce overhead of
+   the valgrind checks */
+#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#  define UNLIKELY(value) __builtin_expect((value), 0)
+#else
+#  define UNLIKELY(value) (value)
+#endif
+
+/* -1 indicates that we haven't checked that we're running on valgrind yet. */
+static int running_on_valgrind = -1;
+#endif
+
 /* An object allocator for Python.
 
    Here is an introduction to the layers of the Python memory architecture,
@@ -728,6 +743,13 @@ PyObject_Malloc(size_t nbytes)
 	poolp next;
 	uint size;
 
+#ifdef WITH_VALGRIND
+	if (UNLIKELY(running_on_valgrind == -1))
+		running_on_valgrind = RUNNING_ON_VALGRIND;
+	if (UNLIKELY(running_on_valgrind))
+		goto redirect;
+#endif
+
 	/*
 	 * Limit ourselves to PY_SSIZE_T_MAX bytes to prevent security holes.
 	 * Most python internals blindly use a signed Py_ssize_t to track
@@ -927,6 +949,11 @@ PyObject_Free(void *p)
 	if (p == NULL)	/* free(NULL) has no effect */
 		return;
 
+#ifdef WITH_VALGRIND
+	if (UNLIKELY(running_on_valgrind > 0))
+		goto redirect;
+#endif
+
 	pool = POOL_ADDR(p);
 	if (Py_ADDRESS_IN_RANGE(p, pool)) {
 		/* We allocated this address. */
@@ -1121,6 +1148,9 @@ PyObject_Free(void *p)
 		return;
 	}
 
+#ifdef WITH_VALGRIND
+redirect:
+#endif
 	/* We didn't allocate this address. */
 	free(p);
 }
@@ -1150,6 +1180,12 @@ PyObject_Realloc(void *p, size_t nbytes)
 	if (nbytes > PY_SSIZE_T_MAX)
 		return NULL;
 
+#ifdef WITH_VALGRIND
+	/* Treat running_on_valgrind == -1 the same as 0 */
+	if (UNLIKELY(running_on_valgrind > 0))
+		goto redirect;
+#endif
+
 	pool = POOL_ADDR(p);
 	if (Py_ADDRESS_IN_RANGE(p, pool)) {
 		/* We're in charge of this block */
@@ -1177,6 +1213,9 @@ PyObject_Realloc(void *p, size_t nbytes)
 		}
 		return bp;
 	}
+#ifdef WITH_VALGRIND
+ redirect:
+#endif
 	/* We're not managing this block.  If nbytes <=
 	 * SMALL_REQUEST_THRESHOLD, it's tempting to try to take over this
 	 * block.  However, if we do, we need to copy the valid data from
