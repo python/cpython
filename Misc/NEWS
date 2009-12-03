@@ -487,6 +487,11 @@ Core and Builtins
 - Issue #3739: The unicode-internal encoder now reports the number of characters
   consumed like any other encoder (instead of the number of bytes).
 
+- Issue #2422: When compiled with the ``--with-valgrind`` option, the
+  pymalloc allocator will be automatically disabled when running under
+  Valgrind.  This gives improved memory leak detection when running
+  under Valgrind, while taking advantage of pymalloc at other times.
+
 Library
 -------
 
