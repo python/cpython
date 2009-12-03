@@ -154,6 +154,9 @@ C-API
 Library
 -------
 
+- Issue #4120: Drop reference to CRT from manifest when building extensions with
+  msvc9compiler.
+
 - Issue #7333: The `posix` module gains an `initgroups()` function providing
   access to the initgroups(3) C library call on Unix systems which implement
   it.  Patch by Jean-Paul Calderone.
