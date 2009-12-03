@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4120: Drop reference to CRT from manifest when building extensions with
+  msvc9compiler.
+
 - Issue #7410: deepcopy of itertools.count was resetting the count.
 
 - Issue #4486: When an exception has an explicit cause, do not print its
