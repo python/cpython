@@ -1471,7 +1471,7 @@ class URLopener:
             try:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
-                del fp
+                fp.close()
                 return url2pathname(splithost(url1)[1]), hdrs
             except IOError as msg:
                 pass
@@ -1515,8 +1515,6 @@ class URLopener:
                 tfp.close()
         finally:
             fp.close()
-        del fp
-        del tfp
 
         # raise exception if actual size does not match content-length header
         if size >= 0 and read < size:
