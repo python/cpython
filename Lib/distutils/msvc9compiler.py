@@ -17,6 +17,7 @@ __revision__ = "$Id$"
 import os
 import subprocess
 import sys
+import re
 from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
     CompileError, LibError, LinkError)
 from distutils.ccompiler import (CCompiler, gen_preprocess_options,
@@ -641,7 +642,32 @@ class MSVCCompiler(CCompiler) :
             # will still consider the DLL up-to-date, but it will not have a
             # manifest.  Maybe we should link to a temp file?  OTOH, that
             # implies a build environment error that shouldn't go undetected.
-            mfid = 1 if target_desc == CCompiler.EXECUTABLE else 2
+            if target_desc == CCompiler.EXECUTABLE:
+                mfid = 1
+            else:
+                mfid = 2
+                try:
+                    # Remove references to the Visual C runtime, so they will
+                    # fall through to the Visual C dependency of Python.exe.
+                    # This way, when installed for a restricted user (e.g.
+                    # runtimes are not in WinSxS folder, but in Python's own
+                    # folder), the runtimes do not need to be in every folder
+                    # with .pyd's.
+                    manifest_f = open(temp_manifest, "rb")
+                    manifest_buf = manifest_f.read()
+                    manifest_f.close()
+                    pattern = re.compile(
+                        r"""<assemblyIdentity.*?name=("|')Microsoft\."""\
+                        r"""VC\d{2}\.CRT("|').*?(/>|</assemblyIdentity>)""",
+                        re.DOTALL)
+                    manifest_buf = re.sub(pattern, "", manifest_buf)
+                    pattern = "<dependentAssembly>\s*</dependentAssembly>"
+                    manifest_buf = re.sub(pattern, "", manifest_buf)
+                    manifest_f = open(temp_manifest, "wb")
+                    manifest_f.write(manifest_buf)
+                    manifest_f.close()
+                except IOError:
+                    pass
             out_arg = '-outputresource:%s;%s' % (output_filename, mfid)
             try:
                 self.spawn(['mt.exe', '-nologo', '-manifest',
