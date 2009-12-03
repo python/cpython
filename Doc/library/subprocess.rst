@@ -161,9 +161,10 @@ This module also defines four shortcut functions:
 
    .. warning::
 
-      Like :meth:`Popen.wait`, this will deadlock if the child process
-      generates enough output to a stdout or stderr pipe such that it blocks
-      waiting for the OS pipe buffer to accept more data.
+      Like :meth:`Popen.wait`, this will deadlock when using
+      ``stdout=PIPE`` and/or ``stderr=PIPE`` and the child process
+      generates enough output to a pipe such that it blocks waiting
+      for the OS pipe buffer to accept more data.
 
 
 .. function:: check_call(*popenargs, **kwargs)
@@ -286,9 +287,10 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. warning::
 
-      This will deadlock if the child process generates enough output to a
-      stdout or stderr pipe such that it blocks waiting for the OS pipe buffer
-      to accept more data.  Use :meth:`communicate` to avoid that.
+      This will deadlock when using ``stdout=PIPE`` and/or
+      ``stderr=PIPE`` and the child process generates enough output to
+      a pipe such that it blocks waiting for the OS pipe buffer to
+      accept more data.  Use :meth:`communicate` to avoid that.
 
 
 .. method:: Popen.communicate(input=None)
