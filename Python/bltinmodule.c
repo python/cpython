@@ -1754,7 +1754,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 	PyObject *curnum = NULL;
 	PyObject *v = NULL;
 	long bign;
-	int i, n;
+	Py_ssize_t i, n;
 	int cmp_result;
 
 	PyObject *zero = PyLong_FromLong(0);
@@ -1834,7 +1834,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 		Py_DECREF(neg_istep);
 	}
 
-	n = (int)bign;
+	n = (Py_ssize_t)bign;
 	if (bign < 0 || (long)n != bign) {
 		PyErr_SetString(PyExc_OverflowError,
 				"range() result has too many items");
@@ -1914,7 +1914,7 @@ builtin_range(PyObject *self, PyObject *args)
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	long bign;
-	int i, n;
+	Py_ssize_t i, n;
 
 	PyObject *v;
 
@@ -1943,7 +1943,7 @@ builtin_range(PyObject *self, PyObject *args)
 		bign = get_len_of_range(ilow, ihigh, istep);
 	else
 		bign = get_len_of_range(ihigh, ilow, -istep);
-	n = (int)bign;
+	n = (Py_ssize_t)bign;
 	if (bign < 0 || (long)n != bign) {
 		PyErr_SetString(PyExc_OverflowError,
 				"range() result has too many items");
