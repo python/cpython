@@ -143,6 +143,11 @@ C-API
   ``const char *`` as the string is stored beyond the call.
 
 
+- Issue #2422: When compiled with the ``--with-valgrind`` option, the
+  pymalloc allocator will be automatically disabled when running under
+  Valgrind.  This gives improved memory leak detection when running
+  under Valgrind, while taking advantage of pymalloc at other times.
+
 Library
 -------
 

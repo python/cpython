@@ -2345,6 +2345,19 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
+# Check for Valgrind support
+AC_MSG_CHECKING([for --with-valgrind])
+AC_ARG_WITH([valgrind],
+  AC_HELP_STRING([--with-valgrind], [Enable Valgrind support]),,
+  with_valgrind=no)
+AC_MSG_RESULT([$with_valgrind])
+if test "$with_valgrind" != no; then
+    AC_CHECK_HEADER([valgrind/valgrind.h],
+      [AC_DEFINE([WITH_VALGRIND], 1, [Define if you want pymalloc to be disabled when running under valgrind])],
+      [AC_MSG_ERROR([Valgrind support requested but headers not available])]
+    )
+fi
+
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
