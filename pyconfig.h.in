@@ -301,9 +301,6 @@
 /* Define to 1 if you have the `getpeername' function. */
 #undef HAVE_GETPEERNAME
 
-/* Define to 1 if you have the `initgroups' function. */
-#undef HAVE_INITGROUPS
-
 /* Define to 1 if you have the `getpgid' function. */
 #undef HAVE_GETPGID
 
@@ -357,6 +354,9 @@
 
 /* Define if you have the 'inet_pton' function. */
 #undef HAVE_INET_PTON
+
+/* Define to 1 if you have the `initgroups' function. */
+#undef HAVE_INITGROUPS
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -1060,6 +1060,9 @@
 
 /* Define to profile with the Pentium timestamp counter */
 #undef WITH_TSC
+
+/* Define if you want pymalloc to be disabled when running under valgrind */
+#undef WITH_VALGRIND
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
