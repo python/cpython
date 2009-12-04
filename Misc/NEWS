@@ -124,7 +124,7 @@ C-API
 - Issue #7414: 'C' code wasn't being skipped properly (for keyword arguments)
   in PyArg_ParseTupleAndKeywords.
 
-- Issue #Add '%lld' and '%llu' support to PyString_FromFormat(V)
+- Issue #7228: Add '%lld' and '%llu' support to PyString_FromFormat(V)
   and PyErr_Format, on machines with HAVE_LONG_LONG defined.
 
 - Issue #6151: Made PyDescr_COMMON conform to standard C (like PyObject_HEAD
