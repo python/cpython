@@ -603,7 +603,7 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 			PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (Py_EnterRecursiveCall(" in cmp"))
+	if (Py_EnterRecursiveCall(" in comparison"))
 		return NULL;
 	res = do_richcompare(v, w, op);
 	Py_LeaveRecursiveCall();
