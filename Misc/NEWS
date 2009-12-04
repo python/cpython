@@ -101,6 +101,10 @@ Build
 Tests
 -----
 
+- Issue #7431: use TESTFN in test_linecache instead of trying to create a 
+  file in the Lib/test directory, which might be read-only for the
+  user running the tests.
+
 - Issue #7324: add a sanity check to regrtest argument parsing to
   catch the case of an option with no handler.
 
