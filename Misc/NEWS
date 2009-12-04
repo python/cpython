@@ -1576,7 +1576,7 @@ Documentation
 C-API
 -----
 
-- Issue #Add '%lld' and '%llu' support to PyString_FromFormat(V)
+- Issue #7228: Add '%lld' and '%llu' support to PyString_FromFormat(V)
   and PyErr_Format, on machines with HAVE_LONG_LONG defined.
 
 - Add new C-API function PyOS_string_to_double, and deprecated
