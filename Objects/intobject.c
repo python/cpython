@@ -580,7 +580,16 @@ i_divmod(register long x, register long y,
 	if (y == -1 && UNARY_NEG_WOULD_OVERFLOW(x))
 		return DIVMOD_OVERFLOW;
 	xdivy = x / y;
-	xmody = x - xdivy * y;
+	/* xdiv*y can overflow on platforms where x/y gives floor(x/y)
+	 * for x and y with differing signs. (This is unusual
+	 * behaviour, and C99 prohibits it, but it's allowed by C89;
+	 * for an example of overflow, take x = LONG_MIN, y = 5 or x =
+	 * LONG_MAX, y = -5.)  However, x - xdivy*y is always
+	 * representable as a long, since it lies strictly between
+	 * -abs(y) and abs(y).  We add casts to avoid intermediate
+	 * overflow.
+	 */
+	xmody = (long)(x - (unsigned long)xdivy * y);
 	/* If the signs of x and y differ, and the remainder is non-0,
 	 * C89 doesn't define whether xdivy is now the floor or the
 	 * ceiling of the infinitely precise quotient.  We want the floor,
