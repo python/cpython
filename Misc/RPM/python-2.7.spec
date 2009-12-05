@@ -34,8 +34,8 @@
 
 %define name python
 #--start constants--
-%define version 2.6
-%define libver 2.6
+%define version 2.7a1
+%define libver 2.7
 #--end constants--
 %define release 1pydotorg
 %define __prefix /usr
