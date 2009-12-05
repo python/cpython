@@ -11,8 +11,8 @@ def gcd(a, b):
     return b
 
 def isint(x):
-    """Test whether an object is an instance of int or long."""
-    return isinstance(x, int) or isinstance(x, int)
+    """Test whether an object is an instance of int."""
+    return isinstance(x, int)
 
 def isnum(x):
     """Test whether an object is an instance of a built-in numeric type."""
@@ -27,18 +27,18 @@ def isRat(x):
 
 class Rat(object):
 
-    """Rational number implemented as a normalized pair of longs."""
+    """Rational number implemented as a normalized pair of ints."""
 
     __slots__ = ['_Rat__num', '_Rat__den']
 
     def __init__(self, num=0, den=1):
         """Constructor: Rat([num[, den]]).
 
-        The arguments must be ints or longs, and default to (0, 1)."""
+        The arguments must be ints, and default to (0, 1)."""
         if not isint(num):
-            raise TypeError("Rat numerator must be int or long (%r)" % num)
+            raise TypeError("Rat numerator must be int (%r)" % num)
         if not isint(den):
-            raise TypeError("Rat denominator must be int or long (%r)" % den)
+            raise TypeError("Rat denominator must be int (%r)" % den)
         # But the zero is always on
         if den == 0:
             raise ZeroDivisionError("zero denominator")
@@ -217,9 +217,6 @@ class RatTestCase(unittest.TestCase):
                 self.assertTrue(gcd(-i, -j) < 0)
 
     def test_constructor(self):
-        a = Rat(10, 15)
-        self.assertEqual(a.num, 2)
-        self.assertEqual(a.den, 3)
         a = Rat(10, 15)
         self.assertEqual(a.num, 2)
         self.assertEqual(a.den, 3)

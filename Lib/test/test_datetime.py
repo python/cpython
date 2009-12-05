@@ -22,7 +22,7 @@ assert len(pickle_choices) == 3
 
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
-OTHERSTUFF = (10, 10, 34.5, "abc", {}, [], ())
+OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 
 
 #############################################################################
@@ -232,8 +232,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
     def test_disallowed_computations(self):
         a = timedelta(42)
 
-        # Add/sub ints, longs, floats should be illegal
-        for i in 1, 1, 1.0:
+        # Add/sub ints or floats should be illegal
+        for i in 1, 1.0:
             self.assertRaises(TypeError, lambda: a+i)
             self.assertRaises(TypeError, lambda: a-i)
             self.assertRaises(TypeError, lambda: i+a)
@@ -250,9 +250,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
         # Division of int by timedelta doesn't make sense.
         # Division by zero doesn't make sense.
-        for zero in 0, 0:
-            self.assertRaises(TypeError, lambda: zero // a)
-            self.assertRaises(ZeroDivisionError, lambda: a // zero)
+        zero = 0
+        self.assertRaises(TypeError, lambda: zero // a)
+        self.assertRaises(ZeroDivisionError, lambda: a // zero)
 
     def test_basic_attributes(self):
         days, seconds, us = 1, 7, 31
@@ -685,8 +685,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(a - (a - week), week)
         self.assertEqual(a - (a - day), day)
 
-        # Add/sub ints, longs, floats should be illegal
-        for i in 1, 1, 1.0:
+        # Add/sub ints or floats should be illegal
+        for i in 1, 1.0:
             self.assertRaises(TypeError, lambda: a+i)
             self.assertRaises(TypeError, lambda: a-i)
             self.assertRaises(TypeError, lambda: i+a)
@@ -1376,8 +1376,8 @@ class TestDateTime(TestDate):
                          self.theclass(2002, 2, 22, 16, 5, 59, 999000))
         self.assertEqual(a - (week + day + hour + millisec),
                          (((a - week) - day) - hour) - millisec)
-        # Add/sub ints, longs, floats should be illegal
-        for i in 1, 1, 1.0:
+        # Add/sub ints or floats should be illegal
+        for i in 1, 1.0:
             self.assertRaises(TypeError, lambda: a+i)
             self.assertRaises(TypeError, lambda: a-i)
             self.assertRaises(TypeError, lambda: i+a)

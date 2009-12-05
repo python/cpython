@@ -1041,9 +1041,6 @@ class REX_five(object):
 class MyInt(int):
     sample = 1
 
-class MyLong(int):
-    sample = 1
-
 class MyFloat(float):
     sample = 1.0
 
@@ -1065,7 +1062,7 @@ class MyList(list):
 class MyDict(dict):
     sample = {"a": 1, "b": 2}
 
-myclasses = [MyInt, MyLong, MyFloat,
+myclasses = [MyInt, MyFloat,
              MyComplex,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict]

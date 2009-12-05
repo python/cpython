@@ -248,10 +248,6 @@ class OperatorsTest(unittest.TestCase):
         else:
             self.fail("NotImplemented should have caused TypeError")
 
-    def test_longs(self):
-        # Testing long operations...
-        self.number_operators(100, 3)
-
     def test_floats(self):
         # Testing float operations...
         self.number_operators(100.0, 3.0)
@@ -259,7 +255,7 @@ class OperatorsTest(unittest.TestCase):
     def test_complexes(self):
         # Testing complex operations...
         self.number_operators(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge',
-                                                  'int', 'long', 'float',
+                                                  'int', 'float',
                                                   'divmod', 'mod'])
 
         class Number(complex):
@@ -1161,15 +1157,6 @@ order (MRO) for bases """
         self.assertEqual(2*I(3), 6)
         self.assertEqual(I(3)*2, 6)
         self.assertEqual(I(3)*I(2), 6)
-
-        # Test handling of long*seq and seq*long
-        class L(int):
-            pass
-        self.assertEqual("a"*L(2), "aa")
-        self.assertEqual(L(2)*"a", "aa")
-        self.assertEqual(2*L(3), 6)
-        self.assertEqual(L(3)*2, 6)
-        self.assertEqual(L(3)*L(2), 6)
 
         # Test comparison of classes with dynamic metaclasses
         class dynamicmetaclass(type):
@@ -2231,10 +2218,7 @@ order (MRO) for bases """
         class octlong(int):
             __slots__ = []
             def __str__(self):
-                s = oct(self)
-                if s[-1] == 'L':
-                    s = s[:-1]
-                return s
+                return oct(self)
             def __add__(self, other):
                 return self.__class__(super(octlong, self).__add__(other))
             __radd__ = __add__

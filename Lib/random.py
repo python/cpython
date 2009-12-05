@@ -97,7 +97,7 @@ class Random(_random.Random):
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
 
-        If a is not None or an int or long, hash(a) is used instead.
+        If a is not None or an int, hash(a) is used instead.
         """
 
         if a is None:
