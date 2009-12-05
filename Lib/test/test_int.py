@@ -34,6 +34,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(-3.9), -3)
         self.assertEqual(int(3.5), 3)
         self.assertEqual(int(-3.5), -3)
+        self.assertEqual(int("-3"), -3)
         # Different base:
         self.assertEqual(int("10",16), 16)
         # Test conversion from strings and various anomalies

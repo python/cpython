@@ -328,13 +328,6 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(KeyError, d.pop, k)
 
-        # verify longs/ints get same value when key > 32 bits (for 64-bit archs)
-        # see SF bug #689659
-        x = 4503599627370496
-        y = 4503599627370496
-        h = {x: 'anything', y: 'something else'}
-        self.assertEqual(h[x], h[y])
-
         self.assertEqual(d.pop(k, v), v)
         d[k] = v
         self.assertEqual(d.pop(k, 1), v)

@@ -126,10 +126,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(0.0), 0.0)
         self.assertEqual(abs(3.14), 3.14)
         self.assertEqual(abs(-3.14), 3.14)
-        # long
-        self.assertEqual(abs(0), 0)
-        self.assertEqual(abs(1234), 1234)
-        self.assertEqual(abs(-1234), 1234)
         # str
         self.assertRaises(TypeError, abs, 'a')
 
@@ -163,7 +159,6 @@ class BuiltinTest(unittest.TestCase):
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
-        self.assertEqual(ascii(0), '0')
         self.assertEqual(ascii(0), '0')
         self.assertEqual(ascii(()), '()')
         self.assertEqual(ascii([]), '[]')
@@ -322,18 +317,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(divmod(12, -7), (-2, -2))
         self.assertEqual(divmod(-12, -7), (1, -5))
 
-        self.assertEqual(divmod(12, 7), (1, 5))
-        self.assertEqual(divmod(-12, 7), (-2, 2))
-        self.assertEqual(divmod(12, -7), (-2, -2))
-        self.assertEqual(divmod(-12, -7), (1, -5))
-
-        self.assertEqual(divmod(12, 7), (1, 5))
-        self.assertEqual(divmod(-12, 7), (-2, 2))
-        self.assertEqual(divmod(12, -7), (-2, -2))
-        self.assertEqual(divmod(-12, -7), (1, -5))
-
-        self.assertEqual(divmod(-sys.maxsize-1, -1),
-                         (sys.maxsize+1, 0))
+        self.assertEqual(divmod(-sys.maxsize-1, -1), (sys.maxsize+1, 0))
 
         self.assertTrue(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
         self.assertTrue(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
@@ -528,10 +512,6 @@ class BuiltinTest(unittest.TestCase):
             def __hash__(self):
                 return 2**100
         self.assertEquals(type(hash(X())), int)
-        class Y(object):
-            def __hash__(self):
-                return 2**100
-        self.assertEquals(type(hash(Y())), int)
         class Z(int):
             def __hash__(self):
                 return self
@@ -539,14 +519,11 @@ class BuiltinTest(unittest.TestCase):
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
-        self.assertEqual(hex(16), '0x10')
-        self.assertEqual(hex(-16), '-0x10')
         self.assertEqual(hex(-16), '-0x10')
         self.assertRaises(TypeError, hex, {})
 
     def test_id(self):
         id(None)
-        id(1)
         id(1)
         id(1.0)
         id('spam')
@@ -790,8 +767,6 @@ class BuiltinTest(unittest.TestCase):
 
     def test_oct(self):
         self.assertEqual(oct(100), '0o144')
-        self.assertEqual(oct(100), '0o144')
-        self.assertEqual(oct(-100), '-0o144')
         self.assertEqual(oct(-100), '-0o144')
         self.assertRaises(TypeError, oct, ())
 
@@ -799,7 +774,6 @@ class BuiltinTest(unittest.TestCase):
         # NB the first 4 lines are also used to test input, below
         fp = open(TESTFN, 'w')
         try:
-            fp.write('1+1\n')
             fp.write('1+1\n')
             fp.write('The quick brown fox jumps over the lazy dog')
             fp.write('.\n')
@@ -813,7 +787,6 @@ class BuiltinTest(unittest.TestCase):
         self.write_testfile()
         fp = open(TESTFN, 'r')
         try:
-            self.assertEqual(fp.readline(4), '1+1\n')
             self.assertEqual(fp.readline(4), '1+1\n')
             self.assertEqual(fp.readline(), 'The quick brown fox jumps over the lazy dog.\n')
             self.assertEqual(fp.readline(4), 'Dear')
@@ -867,21 +840,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(pow(-2,2), 4)
         self.assertEqual(pow(-2,3), -8)
 
-        self.assertEqual(pow(0,0), 1)
-        self.assertEqual(pow(0,1), 0)
-        self.assertEqual(pow(1,0), 1)
-        self.assertEqual(pow(1,1), 1)
-
-        self.assertEqual(pow(2,0), 1)
-        self.assertEqual(pow(2,10), 1024)
-        self.assertEqual(pow(2,20), 1024*1024)
-        self.assertEqual(pow(2,30), 1024*1024*1024)
-
-        self.assertEqual(pow(-2,0), 1)
-        self.assertEqual(pow(-2,1), -2)
-        self.assertEqual(pow(-2,2), 4)
-        self.assertEqual(pow(-2,3), -8)
-
         self.assertAlmostEqual(pow(0.,0), 1.)
         self.assertAlmostEqual(pow(0.,1), 0.)
         self.assertAlmostEqual(pow(1.,0), 1.)
@@ -897,9 +855,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-2.,2), 4.)
         self.assertAlmostEqual(pow(-2.,3), -8.)
 
-        for x in 2, 2, 2.0:
-            for y in 10, 10, 10.0:
-                for z in 1000, 1000, 1000.0:
+        for x in 2, 2.0:
+            for y in 10, 10.0:
+                for z in 1000, 1000.0:
                     if isinstance(x, float) or \
                        isinstance(y, float) or \
                        isinstance(z, float):
@@ -910,8 +868,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(TypeError, pow, -1, -2, 3)
-        self.assertRaises(ValueError, pow, 1, 2, 0)
         self.assertRaises(TypeError, pow, -1, -2, 3)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
@@ -943,7 +899,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(len(x), 4)
         self.assertEqual(len(list(x)), 4)
 
-        """ XXX(nnorwitz):
         # Now test range() with longs
         self.assertEqual(list(range(-2**100)), [])
         self.assertEqual(list(range(0, -2**100)), [])
@@ -978,6 +933,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, range, 1, 2, 0)
         self.assertRaises(ValueError, range, a, a + 1, int(0))
 
+        """ XXX(nnorwitz):
         class badzero(int):
             def __eq__(self, other):
                 raise RuntimeError
@@ -1008,7 +964,6 @@ class BuiltinTest(unittest.TestCase):
             sys.stdin = fp
             sys.stdout = BitBucket()
             self.assertEqual(input(), "1+1")
-            self.assertEqual(input('testing\n'), "1+1")
             self.assertEqual(input(), 'The quick brown fox jumps over the lazy dog.')
             self.assertEqual(input('testing\n'), 'Dear John')
 
@@ -1038,7 +993,6 @@ class BuiltinTest(unittest.TestCase):
 
     def test_repr(self):
         self.assertEqual(repr(''), '\'\'')
-        self.assertEqual(repr(0), '0')
         self.assertEqual(repr(0), '0')
         self.assertEqual(repr(()), '()')
         self.assertEqual(repr([]), '[]')
