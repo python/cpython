@@ -507,6 +507,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
+  generated in Distutils. Patch by Stephen Emslie.
+
 - Issue #4120: Drop reference to CRT from manifest when building extensions with
   msvc9compiler.
 

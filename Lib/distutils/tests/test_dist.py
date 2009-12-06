@@ -6,6 +6,7 @@ import StringIO
 import sys
 import unittest
 import warnings
+import textwrap
 
 from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
@@ -380,6 +381,21 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         output = [line for line in s.getvalue().split('\n')
                   if line.strip() != '']
         self.assertTrue(len(output) > 0)
+
+    def test_long_description(self):
+        long_desc = textwrap.dedent("""\
+        example::
+              We start here
+            and continue here
+          and end here.""")
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "long_description": long_desc}
+
+        dist = distutils.dist.Distribution(attrs)
+        meta = self.format_metadata(dist)
+        meta = meta.replace('\n' + 8 * ' ', '\n')
+        self.assertTrue(long_desc in meta)
 
 def test_suite():
     suite = unittest.TestSuite()
