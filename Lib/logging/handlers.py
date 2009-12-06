@@ -803,7 +803,8 @@ class SMTPHandler(logging.Handler):
     """
     A handler class which sends an SMTP email for each logging event.
     """
-    def __init__(self, mailhost, fromaddr, toaddrs, subject, credentials=None):
+    def __init__(self, mailhost, fromaddr, toaddrs, subject,
+                 credentials=None, secure=False):
         """
         Initialize the handler.
 
@@ -811,7 +812,9 @@ class SMTPHandler(logging.Handler):
         line of the email. To specify a non-standard SMTP port, use the
         (host, port) tuple format for the mailhost argument. To specify
         authentication credentials, supply a (username, password) tuple
-        for the credentials argument.
+        for the credentials argument.  To specify the use of a secure
+        protocol (TLS), pass in True for the secure argument. This will
+        only be used when authentication credentials are supplied.
         """
         logging.Handler.__init__(self)
         if isinstance(mailhost, tuple):
@@ -827,6 +830,7 @@ class SMTPHandler(logging.Handler):
             toaddrs = [toaddrs]
         self.toaddrs = toaddrs
         self.subject = subject
+        self.secure = secure
 
     def getSubject(self, record):
         """
@@ -878,6 +882,10 @@ class SMTPHandler(logging.Handler):
                             self.getSubject(record),
                             formatdate(), msg)
             if self.username:
+                if self.secure:
+                    smtp.ehlo()
+                    smtp.starttls()
+                    smtp.ehlo()
                 smtp.login(self.username, self.password)
             smtp.sendmail(self.fromaddr, self.toaddrs, msg)
             smtp.quit()
