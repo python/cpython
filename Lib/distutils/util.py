@@ -557,8 +557,8 @@ def rfc822_escape(header):
     """Return a version of the string escaped for inclusion in an
     RFC-822 header, by ensuring there are 8 spaces space after each newline.
     """
-    lines = [x.strip() for x in header.split('\n')]
-    sep = '\n' + 8*' '
+    lines = header.split('\n')
+    sep = '\n' + 8 * ' '
     return sep.join(lines)
 
 _RE_VERSION = re.compile(b'(\d+\.\d+(\.\d+)*)')
