@@ -9,6 +9,7 @@ import StringIO
 import sys
 import unittest
 import warnings
+import textwrap
 
 from test.test_support import TESTFN
 
@@ -282,6 +283,21 @@ class MetadataTestCase(unittest.TestCase):
                     continue
                 os.environ[key] = value
             os.remove(user_filename)
+
+    def test_long_description(self):
+        long_desc = textwrap.dedent("""\
+        example::
+              We start here
+            and continue here
+          and end here.""")
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "long_description": long_desc}
+
+        dist = distutils.dist.Distribution(attrs)
+        meta = self.format_metadata(dist)
+        meta = meta.replace('\n' + 8 * ' ', '\n')
+        self.assertTrue(long_desc in meta)
 
 def test_suite():
     suite = unittest.TestSuite()

@@ -559,6 +559,5 @@ def rfc822_escape (header):
     RFC-822 header, by ensuring there are 8 spaces space after each newline.
     """
     lines = string.split(header, '\n')
-    lines = map(string.strip, lines)
     header = string.join(lines, '\n' + 8*' ')
     return header
