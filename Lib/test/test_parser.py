@@ -214,7 +214,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
-        code = "def f(x):\n    return x + 1\n"
+        code = "def f(x):\n    return x + 1"
         st1 = parser.suite(code)
         st2 = st1.totuple(line_info=1, col_info=1)
 
@@ -243,9 +243,9 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
             (14, '+', 2, 13),
             (2, '1', 2, 15),
             (4, '', 2, 16),
-            (6, '', 3, -1),
-            (4, '', 3, -1),
-            (0, '', 3, -1)],
+            (6, '', 2, -1),
+            (4, '', 2, -1),
+            (0, '', 2, -1)],
                          terminals)
 
 
