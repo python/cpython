@@ -507,6 +507,9 @@ Core and Builtins
 Library
 -------
 
+- logging: Added optional `secure` parameter to SMTPHandler, to enable use of
+  TLS with authentication credentials.
+
 - Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
   generated in Distutils. Patch by Stephen Emslie.
 
