@@ -591,20 +591,20 @@ translate_into_utf8(const char* str, const char* enc) {
 
 static char *
 translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
-	int skip_next_lf = 0, length = strlen(s), final_length;
+	int skip_next_lf = 0, needed_length = strlen(s) + 2, final_length;
 	char *buf, *current;
-	char c;
-	buf = PyMem_MALLOC(length + 2);
+	char c = '\0';
+	buf = PyMem_MALLOC(needed_length);
 	if (buf == NULL) {
 		tok->done = E_NOMEM;
 		return NULL;
 	}
-	for (current = buf; (c = *s++);) {
+	for (current = buf; *s; s++, current++) {
+		c = *s;
 		if (skip_next_lf) {
 			skip_next_lf = 0;
 			if (c == '\n') {
-				c = *s;
-				s++;
+				c = *++s;
 				if (!c)
 					break;
 			}
@@ -614,19 +614,18 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
 			c = '\n';
 		}
 		*current = c;
-		current++;
 	}
-	/* If this is exec input, add a newline to the end of the file if
+	/* If this is exec input, add a newline to the end of the string if
 	   there isn't one already. */
-	if (exec_input && *current != '\n') {
+	if (exec_input && c != '\n') {
 		*current = '\n';
 		current++;
 	}
 	*current = '\0';
-	final_length = current - buf;
-	if (final_length < length && final_length)
+	final_length = current - buf + 1;
+	if (final_length < needed_length && final_length)
 		/* should never fail */
-		buf = PyMem_REALLOC(buf, final_length + 1);
+		buf = PyMem_REALLOC(buf, final_length);
 	return buf;
 }
 
