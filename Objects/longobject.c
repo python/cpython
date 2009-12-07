@@ -3231,7 +3231,7 @@ long_true_divide(PyObject *a, PyObject *b)
 
 	if (bd == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-			"int division or modulo by zero");
+			"integer division or modulo by zero");
 		return NULL;
 	}
 
