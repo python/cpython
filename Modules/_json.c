@@ -1731,6 +1731,8 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* PyString_AS_STRING is used on encoding */
     s->encoding = PyObject_GetAttrString(ctx, "encoding");
+    if (s->encoding == NULL)
+        goto bail;
     if (s->encoding == Py_None) {
         Py_DECREF(Py_None);
         s->encoding = PyString_InternFromString(DEFAULT_ENCODING);
@@ -1847,14 +1849,27 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
-    PyObject *allow_nan;
+    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
+    PyObject *item_separator, *sort_keys, *skipkeys, *allow_nan;
 
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOOOOOO:make_encoder", kwlist,
-        &s->markers, &s->defaultfn, &s->encoder, &s->indent, &s->key_separator, &s->item_separator, &s->sort_keys, &s->skipkeys, &allow_nan))
+        &markers, &defaultfn, &encoder, &indent, &key_separator, &item_separator,
+        &sort_keys, &skipkeys, &allow_nan))
         return -1;
+
+    s->markers = markers;
+    s->defaultfn = defaultfn;
+    s->encoder = encoder;
+    s->indent = indent;
+    s->key_separator = key_separator;
+    s->item_separator = item_separator;
+    s->sort_keys = sort_keys;
+    s->skipkeys = skipkeys;
+    s->fast_encode = (PyCFunction_Check(s->encoder) && PyCFunction_GetFunction(s->encoder) == (PyCFunction)py_encode_basestring_ascii);
+    s->allow_nan = PyObject_IsTrue(allow_nan);
 
     Py_INCREF(s->markers);
     Py_INCREF(s->defaultfn);
@@ -1864,8 +1879,6 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(s->item_separator);
     Py_INCREF(s->sort_keys);
     Py_INCREF(s->skipkeys);
-    s->fast_encode = (PyCFunction_Check(s->encoder) && PyCFunction_GetFunction(s->encoder) == (PyCFunction)py_encode_basestring_ascii);
-    s->allow_nan = PyObject_IsTrue(allow_nan);
     return 0;
 }
 
