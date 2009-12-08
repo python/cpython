@@ -154,6 +154,9 @@ C-API
 Library
 -------
 
+- Issue #6986: Fix crash in the JSON C accelerator when called with the
+  wrong parameter types.  Patch by Victor Stinner.
+
 - Issue #7457: added a read_pkg_file method to 
   distutils.dist.DistributionMetadata.
 
