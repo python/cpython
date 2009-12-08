@@ -7,7 +7,7 @@ being built/installed/distributed.
 __revision__ = "$Id$"
 
 import sys, os, re
-import rfc822
+from email import message_from_file
 
 try:
     import warnings
@@ -1007,20 +1007,6 @@ Common commands: (see '--help-commands' for more)
     # to self.metadata.get_XXX.  The actual code is in the
     # DistributionMetadata class, below.
 
-class _MetadataMessage(rfc822.Message):
-
-    def read_field(self, name):
-        value = self[name]
-        if value == 'UNKNOWN':
-            return None
-        return value
-
-    def getheaders(self, name, default):
-        values = rfc822.Message.getheaders(self, name)
-        if values == []:
-            return None
-        return values
-
 class DistributionMetadata:
     """Dummy class to hold the distribution meta-data: name, version,
     author, and so forth.
@@ -1061,38 +1047,51 @@ class DistributionMetadata:
 
     def read_pkg_file(self, file):
         """Reads the metadata values from a file object."""
-        msg = _MetadataMessage(file)
+        msg = message_from_file(file)
+
+        def _read_field(name):
+            value = msg[name]
+            if value == 'UNKNOWN':
+                return None
+            return value
+
+        def _read_list(name):
+            values = msg.get_all(name, None)
+            if values == []:
+                return None
+            return values
+
         metadata_version = msg['metadata-version']
-        self.name = msg.read_field('name')
-        self.version = msg.read_field('version')
-        self.description = msg.read_field('summary')
+        self.name = _read_field('name')
+        self.version = _read_field('version')
+        self.description = _read_field('summary')
         # we are filling author only.
-        self.author = msg.read_field('author')
+        self.author = _read_field('author')
         self.maintainer = None
-        self.author_email = msg.read_field('author-email')
+        self.author_email = _read_field('author-email')
         self.maintainer_email = None
-        self.url = msg.read_field('home-page')
-        self.license = msg.read_field('license')
+        self.url = _read_field('home-page')
+        self.license = _read_field('license')
 
         if 'download-url' in msg:
-            self.download_url = msg.read_field('download-url')
+            self.download_url = _read_field('download-url')
         else:
             self.download_url = None
 
-        self.long_description = msg.read_field('description')
-        self.description = msg.read_field('summary')
+        self.long_description = _read_field('description')
+        self.description = _read_field('summary')
 
         if 'keywords' in msg:
-            self.keywords = msg.read_field('keywords').split(',')
+            self.keywords = _read_field('keywords').split(',')
 
-        self.platforms = msg.getheaders('platform', None)
-        self.classifiers = msg.getheaders('classifier', None)
+        self.platforms = _read_list('platform')
+        self.classifiers = _read_list('classifier')
 
         # PEP 314 - these fields only exist in 1.1
         if metadata_version == '1.1':
-            self.requires = msg.getheaders('requires', None)
-            self.provides = msg.getheaders('provides', None)
-            self.obsoletes = msg.getheaders('obsoletes', None)
+            self.requires = _read_list('requires')
+            self.provides = _read_list('provides')
+            self.obsoletes = _read_list('obsoletes')
         else:
             self.requires = None
             self.provides = None
