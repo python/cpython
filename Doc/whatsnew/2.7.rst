@@ -70,7 +70,7 @@ A partial list of 3.1 features that were backported to 2.7:
 
 * A version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
-* The new format specified described in :ref:`pep-0378`.
+* The new format specifier described in :ref:`pep-0378`.
 * The :class:`memoryview` object.
 * A small subset of the :mod:`importlib` module `described below <#importlib-section>`__.
 
@@ -515,7 +515,7 @@ changes, or look through the Subversion logs for all the details.
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
 * Distutils is being more actively developed, thanks to Tarek Ziade
-  has taken over maintenance of the package.  A new
+  who has taken over maintenance of the package.  A new
   :file:`setup.py` subcommand, ``check``, will
   check that the arguments being passed to the :func:`setup` function
   are complete and correct (:issue:`5732`).
@@ -1076,5 +1076,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Hugh Secker-Walker.
+article: Ryan Lovett, Hugh Secker-Walker.
 
