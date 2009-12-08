@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6986: Fix crash in the JSON C accelerator when called with the
+  wrong parameter types.  Patch by Victor Stinner.
+
 - Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
   generated in Distutils. Patch by Stephen Emslie.
 
