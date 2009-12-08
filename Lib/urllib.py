@@ -95,6 +95,8 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
 def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
+    _safemaps.clear()
+    ftpcache.clear()
 
 # check for SSL
 try:
