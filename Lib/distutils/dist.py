@@ -7,6 +7,7 @@ being built/installed/distributed.
 __revision__ = "$Id$"
 
 import sys, os, re
+import rfc822
 
 try:
     import warnings
@@ -1006,6 +1007,20 @@ Common commands: (see '--help-commands' for more)
     # to self.metadata.get_XXX.  The actual code is in the
     # DistributionMetadata class, below.
 
+class _MetadataMessage(rfc822.Message):
+
+    def read_field(self, name):
+        value = self[name]
+        if value == 'UNKNOWN':
+            return None
+        return value
+
+    def getheaders(self, name, default):
+        values = rfc822.Message.getheaders(self, name)
+        if values == []:
+            return None
+        return values
+
 class DistributionMetadata:
     """Dummy class to hold the distribution meta-data: name, version,
     author, and so forth.
@@ -1021,25 +1036,67 @@ class DistributionMetadata:
                          "provides", "requires", "obsoletes",
                          )
 
-    def __init__ (self):
-        self.name = None
-        self.version = None
-        self.author = None
-        self.author_email = None
+    def __init__(self, path=None):
+        if path is not None:
+            self.read_pkg_file(open(path))
+        else:
+            self.name = None
+            self.version = None
+            self.author = None
+            self.author_email = None
+            self.maintainer = None
+            self.maintainer_email = None
+            self.url = None
+            self.license = None
+            self.description = None
+            self.long_description = None
+            self.keywords = None
+            self.platforms = None
+            self.classifiers = None
+            self.download_url = None
+            # PEP 314
+            self.provides = None
+            self.requires = None
+            self.obsoletes = None
+
+    def read_pkg_file(self, file):
+        """Reads the metadata values from a file object."""
+        msg = _MetadataMessage(file)
+        metadata_version = msg['metadata-version']
+        self.name = msg.read_field('name')
+        self.version = msg.read_field('version')
+        self.description = msg.read_field('summary')
+        # we are filling author only.
+        self.author = msg.read_field('author')
         self.maintainer = None
+        self.author_email = msg.read_field('author-email')
         self.maintainer_email = None
-        self.url = None
-        self.license = None
-        self.description = None
-        self.long_description = None
-        self.keywords = None
-        self.platforms = None
-        self.classifiers = None
-        self.download_url = None
-        # PEP 314
-        self.provides = None
-        self.requires = None
-        self.obsoletes = None
+        self.url = msg.read_field('home-page')
+        self.license = msg.read_field('license')
+
+        if 'download-url' in msg:
+            self.download_url = msg.read_field('download-url')
+        else:
+            self.download_url = None
+
+        self.long_description = msg.read_field('description')
+        self.description = msg.read_field('summary')
+
+        if 'keywords' in msg:
+            self.keywords = msg.read_field('keywords').split(',')
+
+        self.platforms = msg.getheaders('platform', None)
+        self.classifiers = msg.getheaders('classifier', None)
+
+        # PEP 314 - these fields only exist in 1.1
+        if metadata_version == '1.1':
+            self.requires = msg.getheaders('requires', None)
+            self.provides = msg.getheaders('provides', None)
+            self.obsoletes = msg.getheaders('obsoletes', None)
+        else:
+            self.requires = None
+            self.provides = None
+            self.obsoletes = None
 
     def write_pkg_info(self, base_dir):
         """Write the PKG-INFO file into the release tree.
