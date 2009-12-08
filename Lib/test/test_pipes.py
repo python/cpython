@@ -2,7 +2,7 @@ import pipes
 import os
 import string
 import unittest
-from test.test_support import TESTFN, run_unittest, unlink
+from test.test_support import TESTFN, run_unittest, unlink, reap_children
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
@@ -36,7 +36,8 @@ class SimplePipeTests(unittest.TestCase):
         file(TESTFN, 'w').write('hello world #2')
         t = pipes.Template()
         t.append(s_command + ' < $IN', pipes.FILEIN_STDOUT)
-        self.assertEqual(t.open(TESTFN, 'r').read(), 'HELLO WORLD #2')
+        with t.open(TESTFN, 'r') as f:
+            self.assertEqual(f.read(), 'HELLO WORLD #2')
 
     def testEmptyPipeline1(self):
         # copy through empty pipe
@@ -52,7 +53,8 @@ class SimplePipeTests(unittest.TestCase):
         d = 'empty pipeline test READ'
         file(TESTFN, 'w').write(d)
         t=pipes.Template()
-        self.assertEqual(t.open(TESTFN, 'r').read(), d)
+        with t.open(TESTFN, 'r') as f:
+            self.assertEqual(f.read(), d)
 
     def testEmptyPipeline3(self):
         # write through empty pipe
@@ -185,6 +187,7 @@ class SimplePipeTests(unittest.TestCase):
 
 def test_main():
     run_unittest(SimplePipeTests)
+    reap_children()
 
 if __name__ == "__main__":
     test_main()
