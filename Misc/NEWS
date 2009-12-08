@@ -154,6 +154,9 @@ C-API
 Library
 -------
 
+- Issue #7457: added a read_pkg_file method to 
+  distutils.dist.DistributionMetadata.
+
 - logging: Added optional `secure` parameter to SMTPHandler, to enable use of
   TLS with authentication credentials.
 
