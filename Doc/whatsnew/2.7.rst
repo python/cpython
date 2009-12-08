@@ -539,6 +539,10 @@ changes, or look through the Subversion logs for all the details.
   process, but instead simply not install the failing extension.
   (Contributed by Georg Brandl; :issue:`5583`.)
 
+  Issue #7457: added a read_pkg_file method to.distutils.dist.DistributionMetadata
+  see file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
+  (:issue:`7457`, added by Tarek).
+
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
