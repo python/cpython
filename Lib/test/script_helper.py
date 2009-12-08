@@ -30,7 +30,8 @@ def kill_python(p):
     data = p.stdout.read()
     p.stdout.close()
     # try to cleanup the child so we don't appear to leak when running
-    # with regrtest -R.  This should be a no-op on Windows.
+    # with regrtest -R.
+    p.wait()
     subprocess._cleanup()
     return data
 
