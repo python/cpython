@@ -41,8 +41,9 @@ MAX_CACHE_SIZE = 20
 _parse_cache = {}
 
 def clear_cache():
-    """Clear the parse cache."""
+    """Clear the parse cache and the quoters cache."""
     _parse_cache.clear()
+    _safe_quoters.clear()
 
 
 class ResultMixin(object):
