@@ -15,8 +15,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #5949: fixed IMAP4_SSL hang when the IMAP server response is
+  missing proper end-of-line termination.
+
 - Issue #7457: added a read_pkg_file method to 
   distutils.dist.DistributionMetadata.
+
 
 What's New in Python 2.7 alpha 1
 ================================
