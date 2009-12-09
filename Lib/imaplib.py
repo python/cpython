@@ -1001,6 +1001,8 @@ class IMAP4:
             raise self.abort('socket error: EOF')
 
         # Protocol mandates all lines terminated by CRLF
+        if not line.endswith('\r\n'):
+            raise self.abort('socket error: unterminated line')
 
         line = line[:-2]
         if __debug__:
@@ -1167,7 +1169,7 @@ else:
             while 1:
                 char = self.sslobj.read(1)
                 line.append(char)
-                if char == "\n": return ''.join(line)
+                if char in ("\n", ""): return ''.join(line)
 
 
         def send(self, data):
