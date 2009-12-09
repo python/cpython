@@ -650,6 +650,10 @@ class _wrap_close:
             return returncode
         else:
             return returncode << 8  # Shift left to match old behavior
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        self.close()
     def __getattr__(self, name):
         return getattr(self._stream, name)
     def __iter__(self):
