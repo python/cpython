@@ -10,12 +10,16 @@ import os.path
 import select
 import socket
 import SocketServer
-import ssl
 import sys
 import time
 
 from test_support import reap_threads, verbose
 import unittest
+
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 CERTFILE = None
 
@@ -33,14 +37,25 @@ class TestImaplib(unittest.TestCase):
             imaplib.Time2Internaldate(t)
 
 
-class SecureTCPServer(SocketServer.TCPServer):
+if ssl:
 
-    def get_request(self):
-        newsocket, fromaddr = self.socket.accept()
-        connstream = ssl.wrap_socket(newsocket,
-                                     server_side=True,
-                                     certfile=CERTFILE)
-        return connstream, fromaddr
+    class SecureTCPServer(SocketServer.TCPServer):
+
+        def get_request(self):
+            newsocket, fromaddr = self.socket.accept()
+            connstream = ssl.wrap_socket(newsocket,
+                                         server_side=True,
+                                         certfile=CERTFILE)
+            return connstream, fromaddr
+
+    IMAP4_SSL = imaplib.IMAP4_SSL
+
+else:
+
+    class SecureTCPServer:
+        pass
+
+    IMAP4_SSL = None
 
 
 class SimpleIMAPHandler(SocketServer.StreamRequestHandler):
@@ -159,10 +174,11 @@ class ThreadedNetworkedTests(BaseThreadedNetworkedTests):
     imap_class = imaplib.IMAP4
 
 
+@unittest.skipUnless(ssl, "SSL not available")
 class ThreadedNetworkedTestsSSL(BaseThreadedNetworkedTests):
 
     server_class = SecureTCPServer
-    imap_class = imaplib.IMAP4_SSL
+    imap_class = IMAP4_SSL
 
 
 def test_main():
@@ -170,11 +186,12 @@ def test_main():
     tests = [TestImaplib]
 
     if support.is_resource_enabled('network'):
-        global CERTFILE
-        CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
-                                "keycert.pem")
-        if not os.path.exists(CERTFILE):
-            raise support.TestFailed("Can't read certificate files!")
+        if ssl:
+            global CERTFILE
+            CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
+                                    "keycert.pem")
+            if not os.path.exists(CERTFILE):
+                raise support.TestFailed("Can't read certificate files!")
         tests.extend([ThreadedNetworkedTests, ThreadedNetworkedTestsSSL])
 
     support.run_unittest(*tests)
