@@ -49,6 +49,14 @@ class PopenTest(unittest.TestCase):
         else:
             self.assertEqual(os.popen("exit 42").close(), 42 << 8)
 
+    def test_contextmanager(self):
+        with os.popen("echo hello") as f:
+            self.assertEqual(f.read(), "hello\n")
+
+    def test_iterating(self):
+        with os.popen("echo hello") as f:
+            self.assertEqual(list(f), ["hello\n"])
+
 def test_main():
     support.run_unittest(PopenTest)
 
