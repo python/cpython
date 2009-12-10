@@ -204,6 +204,18 @@ class TestBasic(unittest.TestCase):
             self.assertTrue(val not in d)
         self.assertEqual(len(d), 0)
 
+    def test_reverse(self):
+        n = 500         # O(n**2) test, don't make this too big
+        data = [random.random() for i in range(n)]
+        for i in range(n):
+            d = deque(data[:i])
+            r = d.reverse()
+            self.assertEqual(list(d), list(reversed(data[:i])))
+            self.assert_(r is None)
+            d.reverse()
+            self.assertEqual(list(d), data[:i])
+        self.assertRaises(TypeError, d.reverse, 1)          # Arity is zero
+
     def test_rotate(self):
         s = tuple('abcde')
         n = len(s)

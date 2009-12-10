@@ -379,6 +379,11 @@ counts, but the output will exclude results with counts of zero or less.
 
       .. versionadded:: 2.5
 
+   .. method:: reverse()
+
+      Reverse the elements of the deque in-place and then return ``None``.
+
+      .. versionadded:: 2.7
 
    .. method:: rotate(n)
 
