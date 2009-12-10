@@ -537,7 +537,7 @@ def get_config_vars(*args):
                 # are in CFLAGS or LDFLAGS and remove them if they are.
                 # This is needed when building extensions on a 10.3 system
                 # using a universal build of python.
-                for key in ('LDFLAGS', 'BASECFLAGS',
+                for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
                         # a number of derived variables. These need to be
                         # patched up as well.
                         'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
@@ -556,7 +556,7 @@ def get_config_vars(*args):
 
                 if 'ARCHFLAGS' in os.environ:
                     arch = os.environ['ARCHFLAGS']
-                    for key in ('LDFLAGS', 'BASECFLAGS',
+                    for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
                         # a number of derived variables. These need to be
                         # patched up as well.
                         'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
@@ -580,7 +580,7 @@ def get_config_vars(*args):
                 if m is not None:
                     sdk = m.group(1)
                     if not os.path.exists(sdk):
-                        for key in ('LDFLAGS', 'BASECFLAGS',
+                        for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
                              # a number of derived variables. These need to be
                              # patched up as well.
                             'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
