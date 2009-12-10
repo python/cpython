@@ -78,24 +78,23 @@ typedef unsigned short mode_t;
 		      3040 (added signature annotations)
 		      3050 (print becomes a function)
 		      3060 (PEP 3115 metaclass syntax)
-		      3070 (PEP 3109 raise changes)
-		      3080 (PEP 3137 make __file__ and __name__ unicode)
-		      3090 (kill str8 interning)
-		      3100 (merge from 2.6a0, see 62151)
-		      3102 (__file__ points to source file)
-       Python 3.0a4: 3110 (WITH_CLEANUP optimization).
-       Python 3.0a5: 3130 (lexical exception stacking, including POP_EXCEPT)
-       Python 3.1a0: 3140 (optimize list, set and dict comprehensions:
+		      3061 (string literals become unicode)
+		      3071 (PEP 3109 raise changes)
+		      3081 (PEP 3137 make __file__ and __name__ unicode)
+		      3091 (kill str8 interning)
+		      3101 (merge from 2.6a0, see 62151)
+		      3103 (__file__ points to source file)
+       Python 3.0a4: 3111 (WITH_CLEANUP optimization).
+       Python 3.0a5: 3131 (lexical exception stacking, including POP_EXCEPT)
+       Python 3.1a0: 3141 (optimize list, set and dict comprehensions:
 			   change LIST_APPEND and SET_ADD, add MAP_ADD)
-       Python 3.1a0: 3150 (optimize conditional branches:
+       Python 3.1a0: 3151 (optimize conditional branches:
 			   introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
        Python 3.2a0: 3160 (add SETUP_WITH)
 */
 
 #define MAGIC (3160 | ((long)'\r'<<16) | ((long)'\n'<<24))
-/* Magic word as global; note that _PyImport_Init() can change the
-   value of this global to accommodate for alterations of how the
-   compiler works which are enabled by command line switches. */
+/* Magic word as global */
 static long pyc_magic = MAGIC;
 
 /* See _PyImport_FixupExtension() below */
@@ -160,13 +159,6 @@ _PyImport_Init(void)
 			if (strcmp(filetab->suffix, ".pyc") == 0)
 				filetab->suffix = ".pyo";
 		}
-	}
-
-	{
-		/* Fix the pyc_magic so that byte compiled code created
-		   using the all-Unicode method doesn't interfere with
-		   code created in normal operation mode. */
-		pyc_magic = MAGIC + 1;
 	}
 }
 
