@@ -103,6 +103,10 @@ Build
   compiles correctly under gcc on x86-64.  This fixes a reported
   problem with the --with-tsc build on x86-64.
 
+- Ensure that it possible to build extensions for the default
+  binary distribution on OSX 10.6 even when the user does not
+  have the 10.4u SDK installed.
+
 Tests
 -----
 
