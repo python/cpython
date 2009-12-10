@@ -7,36 +7,26 @@ from distutils.dep_util import newer, newer_pairwise, newer_group
 from distutils.errors import DistutilsFileError
 from distutils.tests import support
 
-# XXX needs to be tuned for the various platforms
-_ST_MIME_TIMER = 1
-
 class DepUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def test_newer(self):
+
         tmpdir = self.mkdtemp()
-        target = os.path.join(tmpdir, 'target')
-        source = os.path.join(tmpdir, 'source')
+        new_file = os.path.join(tmpdir, 'new')
+        old_file = os.path.abspath(__file__)
 
-        # Raise DistutilsFileError if 'source' does not exist.
-        self.assertRaises(DistutilsFileError, newer, target, source)
+        # Raise DistutilsFileError if 'new_file' does not exist.
+        self.assertRaises(DistutilsFileError, newer, new_file, old_file)
 
-        # Return true if 'source' exists and is more recently modified than
-        # 'target', or if 'source' exists and 'target' doesn't.
-        self.write_file(target)
-        self.assertTrue(newer(target, source))
-        self.write_file(source, 'xox')
-        time.sleep(_ST_MIME_TIMER)  # ensures ST_MTIME differs
-        self.write_file(target, 'xhx')
-        self.assertTrue(newer(target, source))
+        # Return true if 'new_file' exists and is more recently modified than
+        # 'old_file', or if 'new_file' exists and 'old_file' doesn't.
+        self.write_file(new_file)
+        self.assertTrue(newer(new_file, 'I_dont_exist'))
+        self.assertTrue(newer(new_file, old_file))
 
-        # Return false if both exist and 'target' is the same age or younger
-        # than 'source'.
-        self.write_file(source, 'xox'); self.write_file(target, 'xhx')
-        self.assertFalse(newer(target, source))
-        self.write_file(target, 'xox')
-        time.sleep(_ST_MIME_TIMER)
-        self.write_file(source, 'xhx')
-        self.assertFalse(newer(target, source))
+        # Return false if both exist and 'old_file' is the same age or younger
+        # than 'new_file'.
+        self.assertFalse(newer(old_file, new_file))
 
     def test_newer_pairwise(self):
         tmpdir = self.mkdtemp()
@@ -46,17 +36,14 @@ class DepUtilTestCase(support.TempdirManager, unittest.TestCase):
         os.mkdir(targets)
         one = os.path.join(sources, 'one')
         two = os.path.join(sources, 'two')
-        three = os.path.join(targets, 'three')
+        three = os.path.abspath(__file__)    # I am the old file
         four = os.path.join(targets, 'four')
-
         self.write_file(one)
-        self.write_file(three)
-        self.write_file(four)
-        time.sleep(_ST_MIME_TIMER)
         self.write_file(two)
+        self.write_file(four)
 
         self.assertEquals(newer_pairwise([one, two], [three, four]),
-                          ([two],[four]))
+                          ([one],[three]))
 
     def test_newer_group(self):
         tmpdir = self.mkdtemp()
@@ -65,32 +52,24 @@ class DepUtilTestCase(support.TempdirManager, unittest.TestCase):
         one = os.path.join(sources, 'one')
         two = os.path.join(sources, 'two')
         three = os.path.join(sources, 'three')
-        target = os.path.join(tmpdir, 'target')
+        old_file = os.path.abspath(__file__)
 
-        # return true if 'target' is out-of-date with respect to any file
+        # return true if 'old_file' is out-of-date with respect to any file
         # listed in 'sources'.
-        self.write_file(target)
-        time.sleep(_ST_MIME_TIMER)
         self.write_file(one)
         self.write_file(two)
         self.write_file(three)
-        self.assertTrue(newer_group([one, two, three], target))
-
-        self.write_file(one)
-        self.write_file(three)
-        self.write_file(two)
-        time.sleep(0.1)
-        self.write_file(target)
-        self.assertFalse(newer_group([one, two, three], target))
+        self.assertTrue(newer_group([one, two, three], old_file))
+        self.assertFalse(newer_group([one, two, old_file], three))
 
         # missing handling
         os.remove(one)
-        self.assertRaises(OSError, newer_group, [one, two, three], target)
+        self.assertRaises(OSError, newer_group, [one, two, old_file], three)
 
-        self.assertFalse(newer_group([one, two, three], target,
+        self.assertFalse(newer_group([one, two, old_file], three,
                                      missing='ignore'))
 
-        self.assertTrue(newer_group([one, two, three], target,
+        self.assertTrue(newer_group([one, two, old_file], three,
                                     missing='newer'))
 
 
