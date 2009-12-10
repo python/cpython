@@ -298,6 +298,17 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 {
 	PyObject *it, *item;
 
+	/* Handle case where id(deque) == id(iterable) */
+	if ((PyObject *)deque == iterable) {
+		PyObject *result;
+		PyObject *s = PySequence_List(iterable);
+		if (s == NULL)
+			return NULL;
+		result = deque_extend(deque, s);
+		Py_DECREF(s);
+		return result;
+	}
+
 	it = PyObject_GetIter(iterable);
 	if (it == NULL)
 		return NULL;
@@ -339,6 +350,17 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
 	PyObject *it, *item;
 
+	/* Handle case where id(deque) == id(iterable) */
+	if ((PyObject *)deque == iterable) {
+		PyObject *result;
+		PyObject *s = PySequence_List(iterable);
+		if (s == NULL)
+			return NULL;
+		result = deque_extendleft(deque, s);
+		Py_DECREF(s);
+		return result;
+	}
+
 	it = PyObject_GetIter(iterable);
 	if (it == NULL)
 		return NULL;
@@ -374,6 +396,19 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 
 PyDoc_STRVAR(extendleft_doc,
 "Extend the left side of the deque with elements from the iterable");
+
+static PyObject *
+deque_inplace_concat(dequeobject *deque, PyObject *other)
+{
+	PyObject *result;
+
+	result = deque_extend(deque, other);
+	if (result == NULL)
+		return result;
+	Py_DECREF(result);
+	Py_INCREF(deque);
+	return (PyObject *)deque;
+}
 
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
@@ -875,6 +910,11 @@ static PySequenceMethods deque_as_sequence = {
 	(ssizeargfunc)deque_item,	/* sq_item */
 	0,				/* sq_slice */
 	(ssizeobjargproc)deque_ass_item,	/* sq_ass_item */
+	0,				/* sq_ass_slice */
+	0,				/* sq_contains */
+	(binaryfunc)deque_inplace_concat,	/* sq_inplace_concat */
+	0,				/* sq_inplace_repeat */
+
 };
 
 /* deque object ********************************************************/
