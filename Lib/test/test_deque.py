@@ -109,12 +109,23 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, d.extend, 1)
         d.extend('bcd')
         self.assertEqual(list(d), list('abcd'))
+        d.extend(d)
+        self.assertEqual(list(d), list('abcdabcd'))
+
+    def test_iadd(self):
+        d = deque('a')
+        d += 'bcd'
+        self.assertEqual(list(d), list('abcd'))
+        d += d
+        self.assertEqual(list(d), list('abcdabcd'))
 
     def test_extendleft(self):
         d = deque('a')
         self.assertRaises(TypeError, d.extendleft, 1)
         d.extendleft('bcd')
         self.assertEqual(list(d), list(reversed('abcd')))
+        d.extendleft(d)
+        self.assertEqual(list(d), list('abcddcba'))
         d = deque()
         d.extendleft(range(1000))
         self.assertEqual(list(d), list(reversed(range(1000))))
