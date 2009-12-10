@@ -55,6 +55,8 @@ Core and Builtins
 Library
 -------
 
+- Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
+
 - Issue #6986: Fix crash in the JSON C accelerator when called with the
   wrong parameter types.  Patch by Victor Stinner.
 
