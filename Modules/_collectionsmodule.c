@@ -427,6 +427,48 @@ deque_rotate(dequeobject *deque, PyObject *args)
 PyDoc_STRVAR(rotate_doc,
 "Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
 
+static PyObject *
+deque_reverse(dequeobject *deque, PyObject *unused)
+{
+	block *leftblock = deque->leftblock;
+	block *rightblock = deque->rightblock;
+	Py_ssize_t leftindex = deque->leftindex;
+	Py_ssize_t rightindex = deque->rightindex;
+	Py_ssize_t n = (deque->len)/2;
+	Py_ssize_t i;
+	PyObject *tmp;
+
+	for (i=0 ; i<n ; i++) {
+		/* Validate that pointers haven't met in the middle */
+		assert(leftblock != rightblock || leftindex < rightindex);
+
+		/* Swap */
+		tmp = leftblock->data[leftindex];
+		leftblock->data[leftindex] = rightblock->data[rightindex];
+		rightblock->data[rightindex] = tmp;
+
+		/* Advance left block/index pair */
+		leftindex++;
+		if (leftindex == BLOCKLEN) {
+			assert (leftblock->rightlink != NULL);
+			leftblock = leftblock->rightlink;
+			leftindex = 0;
+		}
+
+		/* Step backwards with the right block/index pair */
+		rightindex--;
+		if (rightindex == -1) {
+			assert (rightblock->leftlink != NULL);
+			rightblock = rightblock->leftlink;
+			rightindex = BLOCKLEN - 1;
+		}
+	}
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(reverse_doc,
+"D.reverse() -- reverse *IN PLACE*");
+
 static Py_ssize_t
 deque_len(dequeobject *deque)
 {
@@ -865,6 +907,8 @@ static PyMethodDef deque_methods[] = {
 		METH_O,		 remove_doc},
 	{"__reversed__",	(PyCFunction)deque_reviter,
 		METH_NOARGS,	 reversed_doc},
+	{"reverse",		(PyCFunction)deque_reverse,
+		METH_NOARGS,	 reverse_doc},
 	{"rotate",		(PyCFunction)deque_rotate,
 		METH_VARARGS,	rotate_doc},
 	{NULL,		NULL}	/* sentinel */

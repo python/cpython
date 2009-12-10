@@ -357,6 +357,11 @@ counts, but the output will exclude results with counts of zero or less.
       Removed the first occurrence of *value*.  If not found, raises a
       :exc:`ValueError`.
 
+   .. method:: reverse()
+
+      Reverse the elements of the deque in-place and then return ``None``.
+
+      .. versionadded:: 3.2
 
    .. method:: rotate(n)
 
