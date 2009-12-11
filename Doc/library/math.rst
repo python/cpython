@@ -288,6 +288,14 @@ Special functions
    .. versionadded:: 3.2
 
 
+.. function:: lgamma(x)
+
+   Return the natural logarithm of the absolute value of the Gamma
+   function at *x*.
+
+   .. versionadded:: 2.7
+
+
 Constants
 ---------
 
