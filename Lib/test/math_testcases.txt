@@ -47,6 +47,111 @@
 -- MPFR homepage at http://www.mpfr.org for more information about the
 -- MPFR project.
 
+---------------------------------------------------------
+-- lgamma: log of absolute value of the gamma function --
+---------------------------------------------------------
+
+-- special values
+lgam0000 lgamma 0.0 -> inf      divide-by-zero
+lgam0001 lgamma -0.0 -> inf     divide-by-zero
+lgam0002 lgamma inf -> inf
+lgam0003 lgamma -inf -> inf
+lgam0004 lgamma nan -> nan
+
+-- negative integers
+lgam0010 lgamma -1 -> inf       divide-by-zero
+lgam0011 lgamma -2 -> inf       divide-by-zero
+lgam0012 lgamma -1e16 -> inf    divide-by-zero
+lgam0013 lgamma -1e300 -> inf   divide-by-zero
+lgam0014 lgamma -1.79e308 -> inf divide-by-zero
+
+-- small positive integers give factorials
+lgam0020 lgamma 1 -> 0.0
+lgam0021 lgamma 2 -> 0.0
+lgam0022 lgamma 3 -> 0.69314718055994529
+lgam0023 lgamma 4 -> 1.791759469228055
+lgam0024 lgamma 5 -> 3.1780538303479458
+lgam0025 lgamma 6 -> 4.7874917427820458
+
+-- half integers
+lgam0030 lgamma 0.5 -> 0.57236494292470008
+lgam0031 lgamma 1.5 -> -0.12078223763524522
+lgam0032 lgamma 2.5 -> 0.28468287047291918
+lgam0033 lgamma 3.5 -> 1.2009736023470743
+lgam0034 lgamma -0.5 -> 1.2655121234846454
+lgam0035 lgamma -1.5 -> 0.86004701537648098
+lgam0036 lgamma -2.5 -> -0.056243716497674054
+lgam0037 lgamma -3.5 -> -1.309006684993042
+
+-- values near 0
+lgam0040 lgamma 0.1 -> 2.252712651734206
+lgam0041 lgamma 0.01 -> 4.5994798780420219
+lgam0042 lgamma 1e-8 -> 18.420680738180209
+lgam0043 lgamma 1e-16 -> 36.841361487904734
+lgam0044 lgamma 1e-30 -> 69.077552789821368
+lgam0045 lgamma 1e-160 -> 368.41361487904732
+lgam0046 lgamma 1e-308 -> 709.19620864216608
+lgam0047 lgamma 5.6e-309 -> 709.77602713741896
+lgam0048 lgamma 5.5e-309 -> 709.79404564292167
+lgam0049 lgamma 1e-309 -> 711.49879373516012
+lgam0050 lgamma 1e-323 -> 743.74692474082133
+lgam0051 lgamma 5e-324 -> 744.44007192138122
+lgam0060 lgamma -0.1 -> 2.3689613327287886
+lgam0061 lgamma -0.01 -> 4.6110249927528013
+lgam0062 lgamma -1e-8 -> 18.420680749724522
+lgam0063 lgamma -1e-16 -> 36.841361487904734
+lgam0064 lgamma -1e-30 -> 69.077552789821368
+lgam0065 lgamma -1e-160 -> 368.41361487904732
+lgam0066 lgamma -1e-308 -> 709.19620864216608
+lgam0067 lgamma -5.6e-309 -> 709.77602713741896
+lgam0068 lgamma -5.5e-309 -> 709.79404564292167
+lgam0069 lgamma -1e-309 -> 711.49879373516012
+lgam0070 lgamma -1e-323 -> 743.74692474082133
+lgam0071 lgamma -5e-324 -> 744.44007192138122
+
+-- values near negative integers
+lgam0080 lgamma -0.99999999999999989 -> 36.736800569677101
+lgam0081 lgamma -1.0000000000000002 -> 36.043653389117154
+lgam0082 lgamma -1.9999999999999998 -> 35.350506208557213
+lgam0083 lgamma -2.0000000000000004 -> 34.657359027997266
+lgam0084 lgamma -100.00000000000001 -> -331.85460524980607
+lgam0085 lgamma -99.999999999999986 -> -331.85460524980596
+
+-- large inputs
+lgam0100 lgamma 170 -> 701.43726380873704
+lgam0101 lgamma 171 -> 706.57306224578736
+lgam0102 lgamma 171.624 -> 709.78077443669895
+lgam0103 lgamma 171.625 -> 709.78591682948365
+lgam0104 lgamma 172 -> 711.71472580228999
+lgam0105 lgamma 2000 -> 13198.923448054265
+lgam0106 lgamma 2.55998332785163e305 -> 1.7976931348623099e+308
+lgam0107 lgamma 2.55998332785164e305 -> inf overflow
+lgam0108 lgamma 1.7e308 -> inf overflow
+
+-- inputs for which gamma(x) is tiny
+lgam0120 lgamma -100.5 -> -364.90096830942736
+lgam0121 lgamma -160.5 -> -656.88005261126432
+lgam0122 lgamma -170.5 -> -707.99843314507882
+lgam0123 lgamma -171.5 -> -713.14301641168481
+lgam0124 lgamma -176.5 -> -738.95247590846486
+lgam0125 lgamma -177.5 -> -744.13144651738037
+lgam0126 lgamma -178.5 -> -749.3160351186001
+
+lgam0130 lgamma -1000.5 -> -5914.4377011168517
+lgam0131 lgamma -30000.5 -> -279278.6629959144
+lgam0132 lgamma -4503599627370495.5 -> -1.5782258434492883e+17
+
+-- results close to 0:  positive argument ...
+lgam0150 lgamma 0.99999999999999989 -> 6.4083812134800075e-17
+lgam0151 lgamma 1.0000000000000002 -> -1.2816762426960008e-16
+lgam0152 lgamma 1.9999999999999998 -> -9.3876980655431170e-17
+lgam0153 lgamma 2.0000000000000004 -> 1.8775396131086244e-16
+
+-- ... and negative argument
+lgam0160 lgamma -2.7476826467 -> -5.2477408147689136e-11
+lgam0161 lgamma -2.457024738 -> 3.3464637541912932e-10
+
+
 ---------------------------
 -- gamma: Gamma function --
 ---------------------------
