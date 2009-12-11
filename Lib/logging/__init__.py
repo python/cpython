@@ -821,9 +821,9 @@ class StreamHandler(Handler):
                 try:
                     if (isinstance(msg, unicode) and
                         getattr(stream, 'encoding', None)):
-                        fs = fs.decode(stream.encoding)
+                        ufs = fs.decode(stream.encoding)
                         try:
-                            stream.write(fs % msg)
+                            stream.write(ufs % msg)
                         except UnicodeEncodeError:
                             #Printing to terminals sometimes fails. For example,
                             #with an encoding of 'cp1251', the above write will
@@ -831,7 +831,7 @@ class StreamHandler(Handler):
                             #the codecs module, but fail when writing to a
                             #terminal even when the codepage is set to cp1251.
                             #An extra encoding step seems to be needed.
-                            stream.write((fs % msg).encode(stream.encoding))
+                            stream.write((ufs % msg).encode(stream.encoding))
                     else:
                         stream.write(fs % msg)
                 except UnicodeError:
