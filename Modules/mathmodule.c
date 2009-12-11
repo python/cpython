@@ -322,6 +322,60 @@ m_tgamma(double x)
 }
 
 /*
+   lgamma:  natural log of the absolute value of the Gamma function.
+   For large arguments, Lanczos' formula works extremely well here.
+*/
+
+static double
+m_lgamma(double x)
+{
+	double r, absx;
+
+	/* special cases */
+	if (!Py_IS_FINITE(x)) {
+		if (Py_IS_NAN(x))
+			return x;  /* lgamma(nan) = nan */
+		else
+			return Py_HUGE_VAL; /* lgamma(+-inf) = +inf */
+	}
+
+	/* integer arguments */
+	if (x == floor(x) && x <= 2.0) {
+		if (x <= 0.0) {
+			errno = EDOM;  /* lgamma(n) = inf, divide-by-zero for */
+			return Py_HUGE_VAL; /* integers n <= 0 */
+		}
+		else {
+			return 0.0; /* lgamma(1) = lgamma(2) = 0.0 */
+		}
+	}
+
+	absx = fabs(x);
+	/* tiny arguments: lgamma(x) ~ -log(fabs(x)) for small x */
+	if (absx < 1e-20)
+		return -log(absx);
+
+	/* Lanczos' formula */
+	if (x > 0.0) {
+		/* we could save a fraction of a ulp in accuracy by having a
+		   second set of numerator coefficients for lanczos_sum that
+		   absorbed the exp(-lanczos_g) term, and throwing out the
+		   lanczos_g subtraction below; it's probably not worth it. */
+		r = log(lanczos_sum(x)) - lanczos_g +
+			(x-0.5)*(log(x+lanczos_g-0.5)-1);
+	}
+	else {
+		r = log(pi) - log(fabs(sinpi(absx))) - log(absx) -
+			(log(lanczos_sum(absx)) - lanczos_g +
+			 (absx-0.5)*(log(absx+lanczos_g-0.5)-1));
+	}
+	if (Py_IS_INFINITY(r))
+		errno = ERANGE;
+	return r;
+}
+
+
+/*
    wrapper for atan2 that deals directly with special cases before
    delegating to the platform libm for the remaining cases.  This
    is necessary to get consistent behaviour across platforms.
@@ -694,6 +748,8 @@ PyDoc_STRVAR(math_floor_doc,
 
 FUNC1A(gamma, m_tgamma,
       "gamma(x)\n\nGamma function at x.")
+FUNC1A(lgamma, m_lgamma,
+      "lgamma(x)\n\nNatural logarithm of absolute value of Gamma function at x.")
 FUNC1(log1p, log1p, 1,
       "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n"
       "The result is computed in a way which is accurate for x near zero.")
@@ -1448,6 +1504,7 @@ static PyMethodDef math_methods[] = {
 	{"isinf",	math_isinf,	METH_O,		math_isinf_doc},
 	{"isnan",	math_isnan,	METH_O,		math_isnan_doc},
 	{"ldexp",	math_ldexp,	METH_VARARGS,	math_ldexp_doc},
+	{"lgamma",	math_lgamma,	METH_O,		math_lgamma_doc},
 	{"log",		math_log,	METH_VARARGS,	math_log_doc},
 	{"log1p",	math_log1p,	METH_O,		math_log1p_doc},
 	{"log10",	math_log10,	METH_O,		math_log10_doc},
