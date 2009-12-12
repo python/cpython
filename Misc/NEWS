@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7466: segmentation fault when the garbage collector is called
+  in the middle of populating a tuple.  Patch by Florent Xicluna.
+
 - Issue #7419: setlocale() could crash the interpreter on Windows when called
   with invalid values.
 
