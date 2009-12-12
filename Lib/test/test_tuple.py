@@ -146,6 +146,9 @@ class TupleTest(seq_tests.CommonTest):
             pass
         self.check_track_dynamic(MyTuple, True)
 
+    def test_bug7466(self):
+        # Trying to untrack an unfinished tuple could crash Python
+        self._not_tracked(tuple(gc.collect() for i in range(101)))
 
 def test_main():
     support.run_unittest(TupleTest)
