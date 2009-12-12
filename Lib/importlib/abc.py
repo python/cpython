@@ -132,7 +132,8 @@ class PyPycLoader(_bootstrap.PyPycLoader, PyLoader):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def write_bytecode(self, fullname:str, bytecode:bytes):
+    def write_bytecode(self, fullname:str, bytecode:bytes) -> bool:
         """Abstract method which when implemented should attempt to write the
-        bytecode for the module."""
+        bytecode for the module, returning a boolean representing whether the
+        bytecode was written or not."""
         raise NotImplementedError
