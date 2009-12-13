@@ -3905,9 +3905,8 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_MSG_CHECKING(for %zd printf() format support)
-AC_CACHE_VAL(ac_cv_have_size_t_format,
-AC_TRY_RUN([[
+AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
+AC_TRY_RUN([
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -3942,13 +3941,11 @@ int main()
 
     return 0;
 }
-]], ac_cv_have_size_t_format=yes,
+], ac_cv_have_size_t_format=yes,
     ac_cv_have_size_t_format=no,
-    ac_cv_have_size_t_format=no)
-)
-AC_MSG_RESULT($ac_cv_have_size_t_format)
-if test $ac_cv_have_size_t_format = yes
-then
+    [ac_cv_have_size_t_format="cross -- assuming yes"]
+)])
+if test "$ac_cv_have_size_t_format" != no ; then
   AC_DEFINE(PY_FORMAT_SIZE_T, "z",
   [Define to printf format modifier for Py_ssize_t])
 fi
