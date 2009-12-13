@@ -157,6 +157,10 @@ C-API
 Library
 -------
 
+- Issue #7349: Make methods of file objects in the io module accept None as an
+  argument where file-like objects (ie StringIO and BytesIO) accept them to mean
+  the same as passing no argument.
+
 - Issue #7357: tarfile no longer suppresses fatal extraction errors by
   default.
 
