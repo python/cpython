@@ -175,6 +175,3 @@ object)::
    Module :mod:`pickle`
       Object serialization used by :mod:`shelve`.
 
-   Module :mod:`cPickle`
-      High-performance version of :mod:`pickle`.
-
