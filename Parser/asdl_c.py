@@ -367,6 +367,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("obj2ast_%s(PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
+        self.emit("int isinstance;", 1)
         self.emit("", 0)
 
     def sumTrailer(self, name):
@@ -386,7 +387,13 @@ class Obj2ModVisitor(PickleVisitor):
     def simpleSum(self, sum, name):
         self.funcHeader(name)
         for t in sum.types:
-            self.emit("if (PyObject_IsInstance(obj, (PyObject*)%s_type)) {" % t.name, 1)
+            line = ("isinstance = PyObject_IsInstance(obj, "
+                    "(PyObject *)%s_type);")
+            self.emit(line % (t.name,), 1)
+            self.emit("if (isinstance == -1) {", 1)
+            self.emit("return 1;", 2)
+            self.emit("}", 1)
+            self.emit("if (isinstance) {", 1)
             self.emit("*out = %s;" % t.name, 2)
             self.emit("return 0;", 2)
             self.emit("}", 1)
@@ -408,7 +415,12 @@ class Obj2ModVisitor(PickleVisitor):
         for a in sum.attributes:
             self.visitField(a, name, sum=sum, depth=1)
         for t in sum.types:
-            self.emit("if (PyObject_IsInstance(obj, (PyObject*)%s_type)) {" % t.name, 1)
+            line = "isinstance = PyObject_IsInstance(obj, (PyObject*)%s_type);"
+            self.emit(line % (t.name,), 1)
+            self.emit("if (isinstance == -1) {", 1)
+            self.emit("return 1;", 2)
+            self.emit("}", 1)
+            self.emit("if (isinstance) {", 1)
             for f in t.fields:
                 self.visitFieldDeclaration(f, t.name, sum=sum, depth=2)
             self.emit("", 0)
@@ -1093,11 +1105,15 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     PyObject *req_type[] = {(PyObject*)Module_type, (PyObject*)Expression_type,
                             (PyObject*)Interactive_type};
     char *req_name[] = {"Module", "Expression", "Interactive"};
+    int isinstance;
     assert(0 <= mode && mode <= 2);
 
     init_types();
 
-    if (!PyObject_IsInstance(ast, req_type[mode])) {
+    isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1)
+        return NULL;
+    if (!isinstance) {
         PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
                      req_name[mode], Py_TYPE(ast)->tp_name);
         return NULL;
