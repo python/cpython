@@ -965,7 +965,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: set([iterable])
    :noindex:
 
-   Return a new set, optionally with elements are taken from *iterable*.
+   Return a new set, optionally with elements taken from *iterable*.
    The set type is described in :ref:`types-set`.
 
 
