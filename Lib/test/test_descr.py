@@ -1222,6 +1222,15 @@ order (MRO) for bases """
         # This used to crash
         self.assertRaises(TypeError, MyABC.a.__set__, u, 3)
 
+    def test_metaclass_cmp(self):
+        # See bug 7491.
+        class M(type):
+            def __cmp__(self, other):
+                return -1
+        class X(object):
+            __metaclass__ = M
+        self.assertTrue(X < M)
+
     def test_dynamics(self):
         # Testing class attribute propagation...
         class D(object):

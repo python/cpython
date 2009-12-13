@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #7491: Metaclass's __cmp__ method was ignored.
+
 - Issue #7466: segmentation fault when the garbage collector is called
   in the middle of populating a tuple.  Patch by Florent Xicluna.
 
