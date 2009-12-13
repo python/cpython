@@ -455,7 +455,7 @@ iobase_readline(PyObject *self, PyObject *args)
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
 
-    if (!PyArg_ParseTuple(args, "|n:readline", &limit)) {
+    if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
         return NULL;
     }
 
@@ -579,13 +579,8 @@ iobase_readlines(PyObject *self, PyObject *args)
     Py_ssize_t hint = -1, length = 0;
     PyObject *hintobj = Py_None, *result;
 
-    if (!PyArg_ParseTuple(args, "|O:readlines", &hintobj)) {
+    if (!PyArg_ParseTuple(args, "|O&:readlines", &_PyIO_ConvertSsize_t, &hint)) {
         return NULL;
-    }
-    if (hintobj != Py_None) {
-        hint = PyNumber_AsSsize_t(hintobj, PyExc_ValueError);
-        if (hint == -1 && PyErr_Occurred())
-            return NULL;
     }
 
     result = PyList_New(0);

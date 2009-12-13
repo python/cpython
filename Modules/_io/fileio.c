@@ -599,7 +599,7 @@ fileio_read(fileio *self, PyObject *args)
 	if (!self->readable)
 		return err_mode("reading");
 
-	if (!PyArg_ParseTuple(args, "|n", &size))
+	if (!PyArg_ParseTuple(args, "|O&", &_PyIO_ConvertSsize_t, &size))
 		return NULL;
 
         if (size < 0) {

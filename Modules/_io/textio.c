@@ -1479,7 +1479,7 @@ textiowrapper_read(textio *self, PyObject *args)
 
     CHECK_INITIALIZED(self);
 
-    if (!PyArg_ParseTuple(args, "|n:read", &n))
+    if (!PyArg_ParseTuple(args, "|O&:read", &_PyIO_ConvertSsize_t, &n))
         return NULL;
 
     CHECK_CLOSED(self);
