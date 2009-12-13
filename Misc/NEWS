@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7357: tarfile no longer suppresses fatal extraction errors by
+  default.
+
 - Issue #7470: logging: fix bug in Unicode encoding fallback.
 
 - Issue #5949: fixed IMAP4_SSL hang when the IMAP server response is
