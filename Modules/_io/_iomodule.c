@@ -561,6 +561,30 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
     return result;
 }
 
+
+/* Basically the "n" format code with the ability to turn None into -1. */
+int 
+_PyIO_ConvertSsize_t(PyObject *obj, void *result) {
+    Py_ssize_t limit;
+    if (obj == Py_None) {
+        limit = -1;
+    }
+    else if (PyNumber_Check(obj)) {
+        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
+        if (limit == -1 && PyErr_Occurred())
+            return 0;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "integer argument expected, got '%.200s'",
+                     Py_TYPE(obj)->tp_name);
+        return 0;
+    }
+    *((Py_ssize_t *)result) = limit;
+    return 1;
+}
+
+
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = IO_MOD_STATE(mod);
@@ -573,6 +597,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     Py_VISIT(state->unsupported_operation);
     return 0;
 }
+
 
 static int
 iomodule_clear(PyObject *mod) {
@@ -590,6 +615,7 @@ static void
 iomodule_free(PyObject *mod) {
     iomodule_clear(mod);
 }
+
 
 /*
  * Module definition
