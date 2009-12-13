@@ -720,7 +720,7 @@ buffered_read(buffered *self, PyObject *args)
     PyObject *res;
 
     CHECK_INITIALIZED(self)
-    if (!PyArg_ParseTuple(args, "|n:read", &n)) {
+    if (!PyArg_ParseTuple(args, "|O&:read", &_PyIO_ConvertSsize_t, &n)) {
         return NULL;
     }
     if (n < -1) {
@@ -950,25 +950,11 @@ end_unlocked:
 static PyObject *
 buffered_readline(buffered *self, PyObject *args)
 {
-    PyObject *limitobj = NULL;
     Py_ssize_t limit = -1;
 
     CHECK_INITIALIZED(self)
-
-    if (!PyArg_ParseTuple(args, "|O:readline", &limitobj)) {
+    if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit))
         return NULL;
-    }
-    if (limitobj) {
-        if (!PyNumber_Check(limitobj)) {
-            PyErr_Format(PyExc_TypeError,
-                         "integer argument expected, got '%.200s'",
-                         Py_TYPE(limitobj)->tp_name);
-            return NULL;
-        }
-        limit = PyNumber_AsSsize_t(limitobj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
-            return NULL;
-    }
     return _buffered_readline(self, limit);
 }
 

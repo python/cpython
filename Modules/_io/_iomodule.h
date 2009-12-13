@@ -19,6 +19,9 @@ extern PyTypeObject PyBufferedRandom_Type;
 extern PyTypeObject PyTextIOWrapper_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
+
+extern int _PyIO_ConvertSsize_t(PyObject *, void *);
+
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
