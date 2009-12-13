@@ -577,7 +577,7 @@ static PyObject *
 iobase_readlines(PyObject *self, PyObject *args)
 {
     Py_ssize_t hint = -1, length = 0;
-    PyObject *hintobj = Py_None, *result;
+    PyObject *result;
 
     if (!PyArg_ParseTuple(args, "|O&:readlines", &_PyIO_ConvertSsize_t, &hint)) {
         return NULL;
