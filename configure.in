@@ -3359,6 +3359,7 @@ int main(void) {
     return 1;
   }
   sem_close(a);
+  sem_unlink("/autoconf");
   return 0;
 }
 ], ac_cv_posix_semaphores_enabled=yes,
@@ -3382,7 +3383,7 @@ AC_TRY_RUN([
 #include <sys/stat.h>
 
 int main(void){
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
   int count;
   int res;
   if(a==SEM_FAILED){
@@ -3392,6 +3393,7 @@ int main(void){
   }
   res = sem_getvalue(a, &count);
   sem_close(a);
+  sem_unlink("/autocftw");
   return res==-1 ? 1 : 0;
 }
 ]
