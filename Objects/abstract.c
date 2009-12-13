@@ -1453,7 +1453,7 @@ PyNumber_ToBase(PyObject *n, int base)
 int
 PySequence_Check(PyObject *s)
 {
-	if (PyObject_IsInstance(s, (PyObject *)&PyDict_Type))
+	if (PyDict_Check(s))
 		return 0;
 	return s != NULL && s->ob_type->tp_as_sequence &&
 		s->ob_type->tp_as_sequence->sq_item != NULL;
