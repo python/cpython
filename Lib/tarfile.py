@@ -1481,7 +1481,7 @@ class TarFile(object):
     ignore_zeros = False        # If true, skips empty or invalid blocks and
                                 # continues processing.
 
-    errorlevel = 0              # If 0, fatal errors only appear in debug
+    errorlevel = 1              # If 0, fatal errors only appear in debug
                                 # messages (if debug >= 0). If > 0, errors
                                 # are passed to the caller as exceptions.
 
