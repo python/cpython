@@ -645,7 +645,11 @@ type_richcompare(PyObject *v, PyObject *w, int op)
 	int c;
 
 	/* Make sure both arguments are types. */
-	if (!PyType_Check(v) || !PyType_Check(w)) {
+	if (!PyType_Check(v) || !PyType_Check(w) ||
+	    /* If there is a __cmp__ method defined, let it be called instead
+	       of our dumb function designed merely to warn.  See bug
+	       #7491. */
+	    Py_TYPE(v)->tp_compare || Py_TYPE(w)->tp_compare) {
 		result = Py_NotImplemented;
 		goto out;
 	}
