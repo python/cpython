@@ -157,6 +157,9 @@ C-API
 Library
 -------
 
+- Issue #7357: tarfile no longer suppresses fatal extraction errors by
+  default.
+
 - Issue #5949: added check for correct lineends in input from IMAP server
   in imaplib.
 
