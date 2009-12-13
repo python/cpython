@@ -12,6 +12,8 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #7491: Metaclass's __cmp__ method was ignored.
+
 - Add Py3k warnings for parameter names in parenthesis.
 
 - Issue #7362: Give a proper error message for def f((x)=3): pass.
