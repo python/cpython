@@ -529,6 +529,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	int mode = -1;
 	int dont_inherit = 0;
 	int supplied_flags = 0;
+	int is_ast;
 	PyCompilerFlags cf;
 	PyObject *cmd;
 	static char *kwlist[] = {"source", "filename", "mode", "flags",
@@ -567,7 +568,10 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	if (PyAST_Check(cmd)) {
+	is_ast = PyAST_Check(cmd);
+	if (is_ast == -1)
+		return NULL;
+	if (is_ast) {
 		PyObject *result;
 		if (supplied_flags & PyCF_ONLY_AST) {
 			Py_INCREF(cmd);
