@@ -10,6 +10,7 @@
 #include "Python.h"
 #include <float.h>
 #include "structmember.h"
+#include "datetime.h"
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -935,6 +936,20 @@ raise_exception(PyObject *self, PyObject *args)
 
 #ifdef WITH_THREAD
 
+static PyObject *
+test_datetime_capi(PyObject *self, PyObject *args) {
+	if (PyDateTimeAPI) {
+		PyErr_SetString(PyExc_AssertionError,
+				"PyDateTime_CAPI somehow initialized");
+		return NULL;
+	}
+	PyDateTime_IMPORT;
+        if (PyDateTimeAPI)
+		Py_RETURN_NONE;
+	else
+		return NULL;
+}
+
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
  * thread finishes, because the thread uses a PyObject (the callable) that
@@ -1531,6 +1546,7 @@ static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
+	{"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
 	{"test_list_api",	(PyCFunction)test_list_api,	 METH_NOARGS},
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
 	{"test_lazy_hash_inheritance",	(PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
