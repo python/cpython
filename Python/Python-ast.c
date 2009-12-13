@@ -3379,13 +3379,18 @@ int
 obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
 
         if (obj == Py_None) {
                 *out = NULL;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Module_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Module_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* body;
 
                 if (PyObject_HasAttrString(obj, "body")) {
@@ -3417,7 +3422,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Interactive_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Interactive_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* body;
 
                 if (PyObject_HasAttrString(obj, "body")) {
@@ -3449,7 +3458,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Expression_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Expression_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty body;
 
                 if (PyObject_HasAttrString(obj, "body")) {
@@ -3468,7 +3481,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Suite_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Suite_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* body;
 
                 if (PyObject_HasAttrString(obj, "body")) {
@@ -3513,6 +3530,7 @@ int
 obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
         int lineno;
         int col_offset;
@@ -3545,7 +3563,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from stmt");
                 return 1;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)FunctionDef_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)FunctionDef_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 identifier name;
                 arguments_ty args;
                 asdl_seq* body;
@@ -3642,7 +3664,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)ClassDef_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)ClassDef_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 identifier name;
                 asdl_seq* bases;
                 asdl_seq* keywords;
@@ -3790,7 +3816,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Return_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Return_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
 
                 if (PyObject_HasAttrString(obj, "value")) {
@@ -3808,7 +3838,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Delete_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Delete_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* targets;
 
                 if (PyObject_HasAttrString(obj, "targets")) {
@@ -3840,7 +3874,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Assign_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Assign_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* targets;
                 expr_ty value;
 
@@ -3885,7 +3923,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)AugAssign_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)AugAssign_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty target;
                 operator_ty op;
                 expr_ty value;
@@ -3930,7 +3972,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)For_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)For_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty target;
                 expr_ty iter;
                 asdl_seq* body;
@@ -4015,7 +4061,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)While_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)While_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty test;
                 asdl_seq* body;
                 asdl_seq* orelse;
@@ -4086,7 +4136,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)If_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)If_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty test;
                 asdl_seq* body;
                 asdl_seq* orelse;
@@ -4157,7 +4211,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)With_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)With_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty context_expr;
                 expr_ty optional_vars;
                 asdl_seq* body;
@@ -4215,7 +4273,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Raise_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Raise_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty exc;
                 expr_ty cause;
 
@@ -4245,7 +4307,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)TryExcept_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)TryExcept_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* body;
                 asdl_seq* handlers;
                 asdl_seq* orelse;
@@ -4330,7 +4396,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)TryFinally_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)TryFinally_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* body;
                 asdl_seq* finalbody;
 
@@ -4388,7 +4458,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Assert_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Assert_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty test;
                 expr_ty msg;
 
@@ -4419,7 +4493,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Import_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Import_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* names;
 
                 if (PyObject_HasAttrString(obj, "names")) {
@@ -4451,7 +4529,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)ImportFrom_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)ImportFrom_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 identifier module;
                 asdl_seq* names;
                 int level;
@@ -4509,7 +4591,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Global_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Global_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* names;
 
                 if (PyObject_HasAttrString(obj, "names")) {
@@ -4541,7 +4627,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Nonlocal_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Nonlocal_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* names;
 
                 if (PyObject_HasAttrString(obj, "names")) {
@@ -4573,7 +4663,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Expr_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Expr_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
 
                 if (PyObject_HasAttrString(obj, "value")) {
@@ -4592,19 +4686,31 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Pass_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Pass_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
 
                 *out = Pass(lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Break_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Break_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
 
                 *out = Break(lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Continue_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Continue_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
 
                 *out = Continue(lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
@@ -4623,6 +4729,7 @@ int
 obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
         int lineno;
         int col_offset;
@@ -4655,7 +4762,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from expr");
                 return 1;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)BoolOp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)BoolOp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 boolop_ty op;
                 asdl_seq* values;
 
@@ -4700,7 +4811,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)BinOp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)BinOp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty left;
                 operator_ty op;
                 expr_ty right;
@@ -4745,7 +4860,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)UnaryOp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)UnaryOp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 unaryop_ty op;
                 expr_ty operand;
 
@@ -4777,7 +4896,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Lambda_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Lambda_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 arguments_ty args;
                 expr_ty body;
 
@@ -4809,7 +4932,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)IfExp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)IfExp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty test;
                 expr_ty body;
                 expr_ty orelse;
@@ -4854,7 +4981,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Dict_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Dict_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* keys;
                 asdl_seq* values;
 
@@ -4912,7 +5043,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Set_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Set_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* elts;
 
                 if (PyObject_HasAttrString(obj, "elts")) {
@@ -4944,7 +5079,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)ListComp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)ListComp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty elt;
                 asdl_seq* generators;
 
@@ -4989,7 +5128,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)SetComp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)SetComp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty elt;
                 asdl_seq* generators;
 
@@ -5034,7 +5177,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)DictComp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)DictComp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty key;
                 expr_ty value;
                 asdl_seq* generators;
@@ -5093,7 +5240,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)GeneratorExp_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)GeneratorExp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty elt;
                 asdl_seq* generators;
 
@@ -5138,7 +5289,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Yield_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Yield_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
 
                 if (PyObject_HasAttrString(obj, "value")) {
@@ -5156,7 +5311,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Compare_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Compare_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty left;
                 asdl_int_seq* ops;
                 asdl_seq* comparators;
@@ -5228,7 +5387,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Call_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Call_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty func;
                 asdl_seq* args;
                 asdl_seq* keywords;
@@ -5324,7 +5487,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Num_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Num_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 object n;
 
                 if (PyObject_HasAttrString(obj, "n")) {
@@ -5343,7 +5510,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Str_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Str_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 string s;
 
                 if (PyObject_HasAttrString(obj, "s")) {
@@ -5362,7 +5533,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Bytes_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Bytes_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 string s;
 
                 if (PyObject_HasAttrString(obj, "s")) {
@@ -5381,13 +5556,21 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Ellipsis_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Ellipsis_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
 
                 *out = Ellipsis(lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Attribute_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Attribute_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
                 identifier attr;
                 expr_context_ty ctx;
@@ -5432,7 +5615,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Subscript_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Subscript_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
                 slice_ty slice;
                 expr_context_ty ctx;
@@ -5477,7 +5664,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Starred_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Starred_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
                 expr_context_ty ctx;
 
@@ -5509,7 +5700,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Name_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Name_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 identifier id;
                 expr_context_ty ctx;
 
@@ -5541,7 +5736,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)List_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)List_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* elts;
                 expr_context_ty ctx;
 
@@ -5586,7 +5785,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Tuple_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Tuple_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* elts;
                 expr_context_ty ctx;
 
@@ -5644,28 +5847,53 @@ int
 obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
-        if (PyObject_IsInstance(obj, (PyObject*)Load_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Load_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Load;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Store_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Store_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Store;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Del_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Del_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Del;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)AugLoad_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)AugLoad_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = AugLoad;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)AugStore_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)AugStore_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = AugStore;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Param_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Param_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Param;
                 return 0;
         }
@@ -5682,13 +5910,18 @@ int
 obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
 
         if (obj == Py_None) {
                 *out = NULL;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Slice_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Slice_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty lower;
                 expr_ty upper;
                 expr_ty step;
@@ -5730,7 +5963,11 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)ExtSlice_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)ExtSlice_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 asdl_seq* dims;
 
                 if (PyObject_HasAttrString(obj, "dims")) {
@@ -5762,7 +5999,11 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Index_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Index_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty value;
 
                 if (PyObject_HasAttrString(obj, "value")) {
@@ -5794,12 +6035,21 @@ int
 obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
-        if (PyObject_IsInstance(obj, (PyObject*)And_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)And_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = And;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Or_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Or_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Or;
                 return 0;
         }
@@ -5816,52 +6066,101 @@ int
 obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
-        if (PyObject_IsInstance(obj, (PyObject*)Add_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Add_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Add;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Sub_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Sub_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Sub;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Mult_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Mult_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Mult;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Div_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Div_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Div;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Mod_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Mod_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Mod;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Pow_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Pow_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Pow;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)LShift_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)LShift_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = LShift;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)RShift_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)RShift_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = RShift;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)BitOr_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)BitOr_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = BitOr;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)BitXor_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)BitXor_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = BitXor;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)BitAnd_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)BitAnd_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = BitAnd;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)FloorDiv_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)FloorDiv_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = FloorDiv;
                 return 0;
         }
@@ -5878,20 +6177,37 @@ int
 obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
-        if (PyObject_IsInstance(obj, (PyObject*)Invert_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Invert_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Invert;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Not_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Not_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Not;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)UAdd_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)UAdd_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = UAdd;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)USub_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)USub_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = USub;
                 return 0;
         }
@@ -5908,44 +6224,85 @@ int
 obj2ast_cmpop(PyObject* obj, cmpop_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
-        if (PyObject_IsInstance(obj, (PyObject*)Eq_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Eq_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Eq;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)NotEq_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)NotEq_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = NotEq;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Lt_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Lt_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Lt;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)LtE_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)LtE_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = LtE;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Gt_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Gt_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Gt;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)GtE_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)GtE_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = GtE;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)Is_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)Is_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = Is;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)IsNot_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)IsNot_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = IsNot;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)In_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)In_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = In;
                 return 0;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)NotIn_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject *)NotIn_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 *out = NotIn;
                 return 0;
         }
@@ -6026,6 +6383,7 @@ int
 obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
+        int isinstance;
 
         int lineno;
         int col_offset;
@@ -6058,7 +6416,11 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from excepthandler");
                 return 1;
         }
-        if (PyObject_IsInstance(obj, (PyObject*)ExceptHandler_type)) {
+        isinstance = PyObject_IsInstance(obj, (PyObject*)ExceptHandler_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
                 expr_ty type;
                 identifier name;
                 asdl_seq* body;
@@ -6635,11 +6997,15 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     PyObject *req_type[] = {(PyObject*)Module_type, (PyObject*)Expression_type,
                             (PyObject*)Interactive_type};
     char *req_name[] = {"Module", "Expression", "Interactive"};
+    int isinstance;
     assert(0 <= mode && mode <= 2);
 
     init_types();
 
-    if (!PyObject_IsInstance(ast, req_type[mode])) {
+    isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1)
+        return NULL;
+    if (!isinstance) {
         PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
                      req_name[mode], Py_TYPE(ast)->tp_name);
         return NULL;
