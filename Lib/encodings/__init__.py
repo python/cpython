@@ -10,7 +10,7 @@
     Each codec module must export the following interface:
 
     * getregentry() -> codecs.CodecInfo object
-    The getregentry() API must a CodecInfo object with encoder, decoder,
+    The getregentry() API must return a CodecInfo object with encoder, decoder,
     incrementalencoder, incrementaldecoder, streamwriter and streamreader
     atttributes which adhere to the Python Codec Interface Standard.
 
