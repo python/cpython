@@ -508,7 +508,7 @@ Documentation
 Tests
 -----
 
-- Issue #7498: test_multiprocessing now uses test_support.find_unused_port
+- Issue #7498: test_multiprocessing now uses test.support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
 - Issue #7431: use TESTFN in test_linecache instead of trying to create a 
