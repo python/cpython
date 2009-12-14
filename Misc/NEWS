@@ -58,6 +58,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4757: `zlib.compress` and other methods in the zlib module now
+  raise a TypeError when given an `str` object (rather than a `bytes`-like
+  object).  Patch by Victor Stinner and Florent Xicluna.
+
 - Issue #7349: Make methods of file objects in the io module accept None as an
   argument where file-like objects (ie StringIO and BytesIO) accept them to mean
   the same as passing no argument.

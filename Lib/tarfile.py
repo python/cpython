@@ -400,7 +400,7 @@ class _Stream:
             except ImportError:
                 raise CompressionError("zlib module is not available")
             self.zlib = zlib
-            self.crc = zlib.crc32("")
+            self.crc = zlib.crc32(b"")
             if mode == "r":
                 self._init_read_gz()
             else:

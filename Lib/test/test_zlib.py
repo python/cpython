@@ -41,12 +41,12 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.adler32(b"penguin"),zlib.adler32(b"penguin",1))
 
     def test_crc32_adler32_unsigned(self):
-        foo = 'abcdefghijklmnop'
+        foo = b'abcdefghijklmnop'
         # explicitly test signed behavior
         self.assertEqual(zlib.crc32(foo), 2486878355)
-        self.assertEqual(zlib.crc32('spam'), 1138425661)
+        self.assertEqual(zlib.crc32(b'spam'), 1138425661)
         self.assertEqual(zlib.adler32(foo+foo), 3573550353)
-        self.assertEqual(zlib.adler32('spam'), 72286642)
+        self.assertEqual(zlib.adler32(b'spam'), 72286642)
 
     def test_same_as_binascii_crc32(self):
         foo = b'abcdefghijklmnop'
@@ -63,7 +63,18 @@ class ExceptionTestCase(unittest.TestCase):
         # specifying compression level out of range causes an error
         # (but -1 is Z_DEFAULT_COMPRESSION and apparently the zlib
         # accepts 0 too)
-        self.assertRaises(zlib.error, zlib.compress, 'ERROR', 10)
+        self.assertRaises(zlib.error, zlib.compress, b'ERROR', 10)
+
+    def test_badargs(self):
+        self.assertRaises(TypeError, zlib.adler32)
+        self.assertRaises(TypeError, zlib.crc32)
+        self.assertRaises(TypeError, zlib.compress)
+        self.assertRaises(TypeError, zlib.decompress)
+        for arg in (42, None, '', 'abc', (), []):
+            self.assertRaises(TypeError, zlib.adler32, arg)
+            self.assertRaises(TypeError, zlib.crc32, arg)
+            self.assertRaises(TypeError, zlib.compress, arg)
+            self.assertRaises(TypeError, zlib.decompress, arg)
 
     def test_badcompressobj(self):
         # verify failure on building compress object with bad params
@@ -93,8 +104,9 @@ class CompressTestCase(unittest.TestCase):
         # compress more data
         data = HAMLET_SCENE * 128
         x = zlib.compress(data)
-        self.assertEqual(zlib.decompress(x), data)
-
+        self.assertEqual(zlib.compress(bytearray(data)), x)
+        for ob in x, bytearray(x):
+            self.assertEqual(zlib.decompress(ob), data)
 
 
 
@@ -102,17 +114,22 @@ class CompressObjectTestCase(unittest.TestCase):
     # Test compression object
     def test_pair(self):
         # straightforward compress/decompress objects
-        data = HAMLET_SCENE * 128
-        co = zlib.compressobj()
-        x1 = co.compress(data)
-        x2 = co.flush()
-        self.assertRaises(zlib.error, co.flush) # second flush should not work
-        dco = zlib.decompressobj()
-        y1 = dco.decompress(x1 + x2)
-        y2 = dco.flush()
-        self.assertEqual(data, y1 + y2)
-        self.assertTrue(isinstance(dco.unconsumed_tail, bytes))
-        self.assertTrue(isinstance(dco.unused_data, bytes))
+        datasrc = HAMLET_SCENE * 128
+        datazip = zlib.compress(datasrc)
+        # should compress both bytes and bytearray data
+        for data in (datasrc, bytearray(datasrc)):
+            co = zlib.compressobj()
+            x1 = co.compress(data)
+            x2 = co.flush()
+            self.assertRaises(zlib.error, co.flush) # second flush should not work
+            self.assertEqual(x1 + x2, datazip)
+        for v1, v2 in ((x1, x2), (bytearray(x1), bytearray(x2))):
+            dco = zlib.decompressobj()
+            y1 = dco.decompress(v1 + v2)
+            y2 = dco.flush()
+            self.assertEqual(data, y1 + y2)
+            self.assertTrue(isinstance(dco.unconsumed_tail, bytes))
+            self.assertTrue(isinstance(dco.unused_data, bytes))
 
     def test_compressoptions(self):
         # specify lots of options to compressobj()
@@ -173,7 +190,7 @@ class CompressObjectTestCase(unittest.TestCase):
             bufs.append(dco.flush())
         else:
             while True:
-                chunk = dco.decompress('')
+                chunk = dco.decompress(b'')
                 if chunk:
                     bufs.append(chunk)
                 else:
@@ -241,7 +258,7 @@ class CompressObjectTestCase(unittest.TestCase):
             bufs.append(dco.flush())
         else:
             while chunk:
-                chunk = dco.decompress('', max_length)
+                chunk = dco.decompress(b'', max_length)
                 self.assertFalse(len(chunk) > max_length,
                             'chunk too big (%d>%d)' % (len(chunk),max_length))
                 bufs.append(chunk)
@@ -253,7 +270,7 @@ class CompressObjectTestCase(unittest.TestCase):
     def test_maxlenmisc(self):
         # Misc tests of max_length
         dco = zlib.decompressobj()
-        self.assertRaises(ValueError, dco.decompress, "", -1)
+        self.assertRaises(ValueError, dco.decompress, b"", -1)
         self.assertEqual(b'', dco.unconsumed_tail)
 
     def test_flushes(self):
