@@ -310,11 +310,11 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<http://python.org/download/>`_.  They are recommended production-ready version
-at this point in time.  At the moment, there are two branches of stable
-releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since currently
-there is more third party software available for Python 2 than for Python 3.
-Python 2 code will generally not run unchanged in Python 3.
+<http://python.org/download/>`_.  There are two recommended production-ready
+versions at this point in time, because at the moment there are two branches of
+stable releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since
+currently there is more third party software available for Python 2 than for
+Python 3.  Python 2 code will generally not run unchanged in Python 3.
 
 
 How many people are using Python?
