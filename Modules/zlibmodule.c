@@ -107,7 +107,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
     z_stream zst;
 
     /* require Python string object, optional 'level' arg */
-    if (!PyArg_ParseTuple(args, "s*|i:compress", &pinput, &level))
+    if (!PyArg_ParseTuple(args, "y*|i:compress", &pinput, &level))
 	return NULL;
     input = pinput.buf;
     length = pinput.len;
@@ -190,7 +190,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     Py_ssize_t r_strlen=DEFAULTALLOC;
     z_stream zst;
 
-    if (!PyArg_ParseTuple(args, "s*|in:decompress",
+    if (!PyArg_ParseTuple(args, "y*|in:decompress",
 			  &pinput, &wsize, &r_strlen))
 	return NULL;
     input = pinput.buf;
@@ -402,7 +402,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     Byte *input;
     unsigned long start_total_out;
 
-    if (!PyArg_ParseTuple(args, "s*:compress", &pinput))
+    if (!PyArg_ParseTuple(args, "y*:compress", &pinput))
 	return NULL;
     input = pinput.buf;
     inplen = pinput.len;
@@ -484,7 +484,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     Byte *input;
     unsigned long start_total_out;
 
-    if (!PyArg_ParseTuple(args, "s*|i:decompress", &pinput,
+    if (!PyArg_ParseTuple(args, "y*|i:decompress", &pinput,
 			  &max_length))
 	return NULL;
     input = pinput.buf;
@@ -912,8 +912,8 @@ PyZlib_adler32(PyObject *self, PyObject *args)
     unsigned int adler32val = 1;  /* adler32(0L, Z_NULL, 0) */
     Py_buffer pbuf;
 
-    if (!PyArg_ParseTuple(args, "s*|I:adler32", &pbuf, &adler32val))
-	return NULL;
+    if (!PyArg_ParseTuple(args, "y*|I:adler32", &pbuf, &adler32val))
+        return NULL;
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (pbuf.len > 1024*5) {
@@ -921,7 +921,7 @@ PyZlib_adler32(PyObject *self, PyObject *args)
         adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
         Py_END_ALLOW_THREADS
     } else {
-        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);    
+        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
     }
     PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(adler32val & 0xffffffffU);
@@ -940,7 +940,7 @@ PyZlib_crc32(PyObject *self, PyObject *args)
     Py_buffer pbuf;
     int signed_val;
 
-    if (!PyArg_ParseTuple(args, "s*|I:crc32", &pbuf, &crc32val))
+    if (!PyArg_ParseTuple(args, "y*|I:crc32", &pbuf, &crc32val))
 	return NULL;
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
