@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #1680159: unicode coercion during an 'in' operation no longer masks
+  the underlying error when the coercion fails for the left hand operand.
+
 - Issue #7491: Metaclass's __cmp__ method was ignored.
 
 - Issue #7466: segmentation fault when the garbage collector is called

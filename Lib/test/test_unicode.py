@@ -344,7 +344,8 @@ class UnicodeTest(
         # If the following fails either
         # the contains operator does not propagate UnicodeErrors or
         # someone has changed the default encoding
-        self.assertRaises(UnicodeError, 'g\xe2teau'.__contains__, u'\xe2')
+        self.assertRaises(UnicodeDecodeError, 'g\xe2teau'.__contains__, u'\xe2')
+        self.assertRaises(UnicodeDecodeError, u'g\xe2teau'.__contains__, '\xe2')
 
         self.assertTrue(u'' in '')
         self.assertTrue('' in u'')
@@ -375,6 +376,7 @@ class UnicodeTest(
         self.assertTrue(u'asdf' not in u'')
 
         self.assertRaises(TypeError, u"abc".__contains__)
+        self.assertRaises(TypeError, u"abc".__contains__, object())
 
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
