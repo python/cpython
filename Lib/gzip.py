@@ -147,7 +147,7 @@ class GzipFile:
 
     def _init_write(self, filename):
         self.name = filename
-        self.crc = zlib.crc32("") & 0xffffffff
+        self.crc = zlib.crc32(b"") & 0xffffffff
         self.size = 0
         self.writebuf = []
         self.bufsize = 0
@@ -178,7 +178,7 @@ class GzipFile:
             self.fileobj.write(fname + b'\000')
 
     def _init_read(self):
-        self.crc = zlib.crc32("") & 0xffffffff
+        self.crc = zlib.crc32(b"") & 0xffffffff
         self.size = 0
 
     def _read_gzip_header(self):
