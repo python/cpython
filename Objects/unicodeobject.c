@@ -6502,8 +6502,6 @@ int PyUnicode_Contains(PyObject *container,
     /* Coerce the two arguments */
     sub = PyUnicode_FromObject(element);
     if (!sub) {
-        PyErr_SetString(PyExc_TypeError,
-                        "'in <string>' requires string as left operand");
         return -1;
     }
 
