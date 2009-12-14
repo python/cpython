@@ -20,6 +20,7 @@ Core and Builtins
 - Issue #7466: segmentation fault when the garbage collector is called
   in the middle of populating a tuple.  Patch by Florent Xicluna.
 
+
 Library
 -------
 
@@ -40,6 +41,14 @@ Library
 
 - Issue #7457: added a read_pkg_file method to 
   distutils.dist.DistributionMetadata.
+
+
+Tests
+-----
+
+- Issue #7498: test_multiprocessing now uses test_support.find_unused_port
+  instead of a hardcoded port number in test_rapid_restart.
+
 
 
 What's New in Python 2.7 alpha 1
