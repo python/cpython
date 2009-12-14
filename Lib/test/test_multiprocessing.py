@@ -18,6 +18,7 @@ import socket
 import random
 import logging
 from StringIO import StringIO
+from test import test_support
 
 
 # Work around broken sem_open implementations
@@ -1204,8 +1205,9 @@ class _TestManagerRestart(BaseTestCase):
 
     def test_rapid_restart(self):
         authkey = os.urandom(32)
+        port = test_support.find_unused_port()
         manager = QueueManager(
-            address=('localhost', 9999), authkey=authkey, serializer=SERIALIZER)
+            address=('localhost', port), authkey=authkey, serializer=SERIALIZER)
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
@@ -1215,7 +1217,7 @@ class _TestManagerRestart(BaseTestCase):
         del queue
         manager.shutdown()
         manager = QueueManager(
-            address=('localhost', 9999), authkey=authkey, serializer=SERIALIZER)
+            address=('localhost', port), authkey=authkey, serializer=SERIALIZER)
         manager.start()
         manager.shutdown()
 
