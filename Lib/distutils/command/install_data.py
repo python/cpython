@@ -8,7 +8,6 @@ platform-independent data files."""
 __revision__ = "$Id$"
 
 import os
-from types import StringType
 from distutils.core import Command
 from distutils.util import change_root, convert_path
 
@@ -35,7 +34,7 @@ class install_data(Command):
         self.data_files = self.distribution.data_files
         self.warn_dir = 1
 
-    def finalize_options (self):
+    def finalize_options(self):
         self.set_undefined_options('install',
                                    ('install_data', 'install_dir'),
                                    ('root', 'root'),
@@ -45,7 +44,7 @@ class install_data(Command):
     def run(self):
         self.mkpath(self.install_dir)
         for f in self.data_files:
-            if type(f) is StringType:
+            if isinstance(f, str):
                 # it's a simple file, so copy it
                 f = convert_path(f)
                 if self.warn_dir:
