@@ -1007,7 +1007,7 @@ Here is what we get on Windows::
    >>>
 
 It is funny to see that on linux the sort function seems to work much more
-efficient, it is doing less comparisons::
+efficiently, it is doing less comparisons::
 
    >>> qsort(ia, len(ia), sizeof(c_int), cmp_func) # doctest: +LINUX
    py_cmp_func 5 1
