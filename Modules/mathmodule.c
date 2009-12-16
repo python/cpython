@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "_math.h"
 #include "longintrepr.h" /* just for SHIFT */
 
 #ifdef _OSF_SOURCE
@@ -686,6 +687,10 @@ FUNC1(cosh, cosh, 1,
       "cosh(x)\n\nReturn the hyperbolic cosine of x.")
 FUNC1(exp, exp, 1,
       "exp(x)\n\nReturn e raised to the power of x.")
+FUNC1(expm1, m_expm1, 1,
+      "expm1(x)\n\nReturn exp(x)-1.\n"
+      "This function avoids the loss of precision involved in the direct "
+      "evaluation of exp(x)-1 for small x.")
 FUNC1(fabs, fabs, 0,
       "fabs(x)\n\nReturn the absolute value of the float x.")
 FUNC1(floor, floor, 0,
@@ -1420,6 +1425,7 @@ static PyMethodDef math_methods[] = {
 	{"cosh",	math_cosh,	METH_O,		math_cosh_doc},
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},
 	{"exp",		math_exp,	METH_O,		math_exp_doc},
+	{"expm1",	math_expm1,	METH_O,		math_expm1_doc},
 	{"fabs",	math_fabs,	METH_O,		math_fabs_doc},
 	{"factorial",	math_factorial,	METH_O,		math_factorial_doc},
 	{"floor",	math_floor,	METH_O,		math_floor_doc},

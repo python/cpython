@@ -161,6 +161,10 @@ SOURCE=..\..\Modules\_lsprof.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_math.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_randommodule.c
 # End Source File
 # Begin Source File
