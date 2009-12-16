@@ -434,9 +434,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 stdtests.remove(arg)
             nottests.add(arg)
         args = []
-    tests = tests or args or findtests(testdir, stdtests, nottests)
+    alltests = findtests(testdir, stdtests, nottests)
+    tests = tests or args or alltests
     if single:
         tests = tests[:1]
+        try:
+            next_single_test = alltests[alltests.index(tests[0])+1]
+        except IndexError:
+            next_single_test = None
     # Remove all the tests that precede start if it's set.
     if start:
         try:
@@ -650,16 +655,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 raise
 
     if single:
-        alltests = findtests(testdir, stdtests, nottests)
-        for i in range(len(alltests)):
-            if tests[0] == alltests[i]:
-                if i == len(alltests) - 1:
-                    os.unlink(filename)
-                else:
-                    fp = open(filename, 'w')
-                    fp.write(alltests[i+1] + '\n')
-                    fp.close()
-                break
+        if next_single_test:
+            with open(filename, 'w') as fp:
+                fp.write(next_single_test + '\n')
         else:
             os.unlink(filename)
 
