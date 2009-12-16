@@ -987,17 +987,16 @@ class MathTests(unittest.TestCase):
                 if math.isnan(expected) and math.isnan(got):
                     continue
                 if not math.isnan(expected) and not math.isnan(got):
-                    # we use different closeness criteria for
-                    # different functions.
-                    if fn == 'gamma':
-                        accuracy_failure = ulps_check(expected, got, 20)
-                    elif fn == 'lgamma':
+                    if fn == 'lgamma':
+                        # we use a weaker accuracy test for lgamma;
+                        # lgamma only achieves an absolute error of
+                        # a few multiples of the machine accuracy, in
+                        # general.
                         accuracy_failure = acc_check(expected, got,
                                                   rel_err = 5e-15,
                                                   abs_err = 5e-15)
                     else:
-                        raise ValueError("don't know how to check accuracy "
-                                         "for this function")
+                        accuracy_failure = ulps_check(expected, got, 20)
                     if accuracy_failure is None:
                         continue
 

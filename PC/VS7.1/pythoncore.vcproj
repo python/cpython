@@ -389,6 +389,9 @@
 			RelativePath="..\..\Modules\_lsprof.c">
 		</File>
 		<File
+			RelativePath="..\..\Modules\_math.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_randommodule.c">
 		</File>
 		<File
