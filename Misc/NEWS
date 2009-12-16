@@ -46,6 +46,8 @@ Library
 Tests
 -----
 
+- Issue #7396: fix regrtest -s, which was broken by the -j enhancement.
+
 - Issue #7498: test_multiprocessing now uses test_support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
