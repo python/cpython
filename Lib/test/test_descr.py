@@ -1776,6 +1776,8 @@ order (MRO) for bases """
 
         # Safety test for __cmp__
         def unsafecmp(a, b):
+            if not hasattr(a.__class__, "__cmp__"):
+                return
             try:
                 a.__class__.__cmp__(a, b)
             except TypeError:
