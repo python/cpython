@@ -148,6 +148,20 @@ Power and logarithmic functions
    Return ``e**x``.
 
 
+.. function:: expm1(x)
+
+   Return ``e**x - 1``.  For small floats *x*, the subtraction in
+   ``exp(x) - 1`` can result in a significant loss of precision; the
+   :func:`expm1` function provides a way to compute this quantity to
+   full precision::
+
+      >>> from math import exp, expm1
+      >>> exp(1e-5) - 1  # gives result accurate to 11 places
+      1.0000050000069649e-05
+      >>> expm1(1e-5)    # result accurate to full precision
+      1.0000050000166668e-05
+
+
 .. function:: log(x[, base])
 
    With one argument, return the natural logarithm of *x* (to base *e*).
