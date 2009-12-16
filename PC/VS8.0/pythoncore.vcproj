@@ -1043,6 +1043,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\_math.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_math.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\_pickle.c"
 				>
 			</File>
