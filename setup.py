@@ -399,6 +399,7 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c', '_math.c'],
+                               depends=['_math.h'],
                                libraries=math_libs) )
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
