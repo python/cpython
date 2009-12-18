@@ -274,10 +274,11 @@ class StrptimeTests(unittest.TestCase):
         self.helper('S', 5)
 
     def test_fraction(self):
+        # Test microseconds
         import datetime
-        now = datetime.datetime.now()
-        tup, frac = _strptime._strptime(str(now), format="%Y-%m-%d %H:%M:%S.%f")
-        self.assertEqual(frac, now.microsecond)
+        d = datetime.datetime(2012, 12, 20, 12, 34, 56, 78987)
+        tup, frac = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
+        self.assertEqual(frac, d.microsecond)
 
     def test_weekday(self):
         # Test weekday directives
