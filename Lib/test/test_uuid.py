@@ -1,5 +1,6 @@
 from unittest import TestCase
 from test import support
+import builtins
 import uuid
 
 def importable(name):
@@ -176,6 +177,11 @@ class TestUUID(TestCase):
             for u in equivalents:
                 for v in equivalents:
                     equal(u, v)
+
+            # Bug 7380: "bytes" and "bytes_le" should give the same type.
+            equal(type(u.bytes), builtins.bytes)
+            equal(type(u.bytes_le), builtins.bytes)
+
             ascending.append(u)
 
         # Test comparison of UUIDs.
