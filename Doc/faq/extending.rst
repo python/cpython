@@ -434,7 +434,7 @@ How do I find undefined g++ symbols __builtin_new or __pure_virtual?
 --------------------------------------------------------------------
 
 To dynamically load g++ extension modules, you must recompile Python, relink it
-using g++ (change LINKCC in the python Modules Makefile), and link your
+using g++ (change LINKCC in the Python Modules Makefile), and link your
 extension module using g++ (e.g., ``g++ -shared -o mymodule.so mymodule.o``).
 
 

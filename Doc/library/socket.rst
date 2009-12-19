@@ -696,7 +696,7 @@ Note that the :meth:`connect` operation is subject to the timeout setting, and
 in general it is recommended to call :meth:`settimeout` before calling
 :meth:`connect` or pass a timeout parameter to :meth:`create_connection`.
 The system network stack may return a connection timeout error
-of its own regardless of any python socket timeout setting.
+of its own regardless of any Python socket timeout setting.
 
 
 .. method:: socket.setsockopt(level, optname, value)
