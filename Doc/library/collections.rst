@@ -469,7 +469,7 @@ added elements by appending to the right and popping to the left::
             yield s / n
 
 The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
-deletion.  For example, a pure python implementation of ``del d[n]`` relies on
+deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
 the :meth:`rotate` method to position elements to be popped::
 
    def delete_nth(d, n):

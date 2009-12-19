@@ -1591,7 +1591,7 @@ name then the package :file:`__init__.py` will be checked for ``load_tests``.
 
 .. note::
 
-   The default pattern is 'test*.py'. This matches all python files
+   The default pattern is 'test*.py'. This matches all Python files
    that start with 'test' but *won't* match any test directories.
 
    A pattern like 'test*' will match test packages as well as

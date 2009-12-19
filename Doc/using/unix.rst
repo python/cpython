@@ -131,14 +131,14 @@ which searches for the Python interpreter in the whole :envvar:`PATH`.  However,
 some Unices may not have the :program:`env` command, so you may need to hardcode
 ``/usr/bin/python`` as the interpreter path.
 
-To use shell commands in your python scripts, look at the :mod:`subprocess` module.
+To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
 
 
 Editors
 =======
 
 Vim and Emacs are excellent editors which support Python very well.  For more
-information on how to code in python in these editors, look at:
+information on how to code in Python in these editors, look at:
 
 * http://www.vim.org/scripts/script.php?script_id=790
 * http://sourceforge.net/projects/python-mode
