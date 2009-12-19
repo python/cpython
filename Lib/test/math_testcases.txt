@@ -47,6 +47,87 @@
 -- MPFR homepage at http://www.mpfr.org for more information about the
 -- MPFR project.
 
+
+-------------------------
+-- erf: error function --
+-------------------------
+
+erf0000 erf 0.0 -> 0.0
+erf0001 erf -0.0 -> -0.0
+erf0002 erf inf -> 1.0
+erf0003 erf -inf -> -1.0
+erf0004 erf nan -> nan
+
+-- tiny values
+erf0010 erf 1e-308 -> 1.1283791670955125e-308
+erf0011 erf 5e-324 -> 4.9406564584124654e-324
+erf0012 erf 1e-10 -> 1.1283791670955126e-10
+
+-- small integers
+erf0020 erf 1 -> 0.84270079294971489
+erf0021 erf 2 -> 0.99532226501895271
+erf0022 erf 3 -> 0.99997790950300136
+erf0023 erf 4 -> 0.99999998458274209
+erf0024 erf 5 -> 0.99999999999846256
+erf0025 erf 6 -> 1.0
+
+erf0030 erf -1 -> -0.84270079294971489
+erf0031 erf -2 -> -0.99532226501895271
+erf0032 erf -3 -> -0.99997790950300136
+erf0033 erf -4 -> -0.99999998458274209
+erf0034 erf -5 -> -0.99999999999846256
+erf0035 erf -6 -> -1.0
+
+-- huge values should all go to +/-1, depending on sign
+erf0040 erf -40 -> -1.0
+erf0041 erf 1e16 -> 1.0
+erf0042 erf -1e150 -> -1.0
+erf0043 erf 1.7e308 -> 1.0
+
+
+----------------------------------------
+-- erfc: complementary error function --
+----------------------------------------
+
+erfc0000 erfc 0.0 -> 1.0
+erfc0001 erfc -0.0 -> 1.0
+erfc0002 erfc inf -> 0.0
+erfc0003 erfc -inf -> 2.0
+erfc0004 erfc nan -> nan
+
+-- tiny values
+erfc0010 erfc 1e-308 -> 1.0
+erfc0011 erfc 5e-324 -> 1.0
+erfc0012 erfc 1e-10 -> 0.99999999988716204
+
+-- small integers
+erfc0020 erfc 1 -> 0.15729920705028513
+erfc0021 erfc 2 -> 0.0046777349810472662
+erfc0022 erfc 3 -> 2.2090496998585441e-05
+erfc0023 erfc 4 -> 1.541725790028002e-08
+erfc0024 erfc 5 -> 1.5374597944280349e-12
+erfc0025 erfc 6 -> 2.1519736712498913e-17
+
+erfc0030 erfc -1 -> 1.8427007929497148
+erfc0031 erfc -2 -> 1.9953222650189528
+erfc0032 erfc -3 -> 1.9999779095030015
+erfc0033 erfc -4 -> 1.9999999845827421
+erfc0034 erfc -5 -> 1.9999999999984626
+erfc0035 erfc -6 -> 2.0
+
+-- as x -> infinity, erfc(x) behaves like exp(-x*x)/x/sqrt(pi)
+erfc0040 erfc 20 -> 5.3958656116079012e-176
+erfc0041 erfc 25 -> 8.3001725711965228e-274
+erfc0042 erfc 27 -> 5.2370464393526292e-319
+erfc0043 erfc 28 -> 0.0
+
+-- huge values
+erfc0050 erfc -40 -> 2.0
+erfc0051 erfc 1e16 -> 0.0
+erfc0052 erfc -1e150 -> 2.0
+erfc0053 erfc 1.7e308 -> 0.0
+
+
 ---------------------------------------------------------
 -- lgamma: log of absolute value of the gamma function --
 ---------------------------------------------------------
@@ -249,6 +330,7 @@ gam0132 gamma -4503599627370495.5 -> 0.0
 -- thanks to loss of accuracy in 1-x
 gam0140 gamma -63.349078729022985 -> 4.1777971677761880e-88
 gam0141 gamma -127.45117632943295 -> 1.1831110896236810e-214
+
 
 -----------------------------------------------------------
 -- expm1: exp(x) - 1, without precision loss for small x --

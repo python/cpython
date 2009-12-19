@@ -69,6 +69,7 @@ extern double copysign(double, double);
 */
 
 static const double pi = 3.141592653589793238462643383279502884197;
+static const double sqrtpi = 1.772453850905516027298167483341145182798;
 
 static double
 sinpi(double x)
@@ -375,6 +376,141 @@ m_lgamma(double x)
 	return r;
 }
 
+/*
+   Implementations of the error function erf(x) and the complementary error
+   function erfc(x).
+
+   Method: following 'Numerical Recipes' by Flannery, Press et. al. (2nd ed.,
+   Cambridge University Press), we use a series approximation for erf for
+   small x, and a continued fraction approximation for erfc(x) for larger x;
+   combined with the relations erf(-x) = -erf(x) and erfc(x) = 1.0 - erf(x),
+   this gives us erf(x) and erfc(x) for all x.
+
+   The series expansion used is:
+
+      erf(x) = x*exp(-x*x)/sqrt(pi) * [
+                     2/1 + 4/3 x**2 + 8/15 x**4 + 16/105 x**6 + ...]
+
+   The coefficient of x**(2k-2) here is 4**k*factorial(k)/factorial(2*k).
+   This series converges well for smallish x, but slowly for larger x.
+
+   The continued fraction expansion used is:
+
+      erfc(x) = x*exp(-x*x)/sqrt(pi) * [1/(0.5 + x**2 -) 0.5/(2.5 + x**2 - )
+                              3.0/(4.5 + x**2 - ) 7.5/(6.5 + x**2 - ) ...]
+
+   after the first term, the general term has the form:
+
+      k*(k-0.5)/(2*k+0.5 + x**2 - ...).
+
+   This expansion converges fast for larger x, but convergence becomes
+   infinitely slow as x approaches 0.0.  The (somewhat naive) continued
+   fraction evaluation algorithm used below also risks overflow for large x;
+   but for large x, erfc(x) == 0.0 to within machine precision.  (For
+   example, erfc(30.0) is approximately 2.56e-393).
+
+   Parameters: use series expansion for abs(x) < ERF_SERIES_CUTOFF and
+   continued fraction expansion for ERF_SERIES_CUTOFF <= abs(x) <
+   ERFC_CONTFRAC_CUTOFF.  ERFC_SERIES_TERMS and ERFC_CONTFRAC_TERMS are the
+   numbers of terms to use for the relevant expansions.  */
+
+#define ERF_SERIES_CUTOFF 1.5
+#define ERF_SERIES_TERMS 25
+#define ERFC_CONTFRAC_CUTOFF 30.0
+#define ERFC_CONTFRAC_TERMS 50
+
+/*
+   Error function, via power series.
+
+   Given a finite float x, return an approximation to erf(x).
+   Converges reasonably fast for small x.
+*/
+
+static double
+m_erf_series(double x)
+{
+	double x2, acc, fk;
+	int i;
+
+	x2 = x * x;
+	acc = 0.0;
+	fk = (double)ERF_SERIES_TERMS + 0.5;
+	for (i = 0; i < ERF_SERIES_TERMS; i++) {
+		acc = 2.0 + x2 * acc / fk;
+		fk -= 1.0;
+	}
+	return acc * x * exp(-x2) / sqrtpi;
+}
+
+/*
+   Complementary error function, via continued fraction expansion.
+
+   Given a positive float x, return an approximation to erfc(x).  Converges
+   reasonably fast for x large (say, x > 2.0), and should be safe from
+   overflow if x and nterms are not too large.  On an IEEE 754 machine, with x
+   <= 30.0, we're safe up to nterms = 100.  For x >= 30.0, erfc(x) is smaller
+   than the smallest representable nonzero float.  */
+
+static double
+m_erfc_contfrac(double x)
+{
+	double x2, a, da, p, p_last, q, q_last, b;
+	int i;
+
+	if (x >= ERFC_CONTFRAC_CUTOFF)
+		return 0.0;
+
+	x2 = x*x;
+	a = 0.0;
+	da = 0.5;
+	p = 1.0; p_last = 0.0;
+	q = da + x2; q_last = 1.0;
+	for (i = 0; i < ERFC_CONTFRAC_TERMS; i++) {
+		double temp;
+		a += da;
+		da += 2.0;
+		b = da + x2;
+		temp = p; p = b*p - a*p_last; p_last = temp;
+		temp = q; q = b*q - a*q_last; q_last = temp;
+	}
+	return p / q * x * exp(-x2) / sqrtpi;
+}
+
+/* Error function erf(x), for general x */
+
+static double
+m_erf(double x)
+{
+	double absx, cf;
+
+	if (Py_IS_NAN(x))
+		return x;
+	absx = fabs(x);
+	if (absx < ERF_SERIES_CUTOFF)
+		return m_erf_series(x);
+	else {
+		cf = m_erfc_contfrac(absx);
+		return x > 0.0 ? 1.0 - cf : cf - 1.0;
+	}
+}
+
+/* Complementary error function erfc(x), for general x. */
+
+static double
+m_erfc(double x)
+{
+	double absx, cf;
+
+	if (Py_IS_NAN(x))
+		return x;
+	absx = fabs(x);
+	if (absx < ERF_SERIES_CUTOFF)
+		return 1.0 - m_erf_series(x);
+	else {
+		cf = m_erfc_contfrac(absx);
+		return x > 0.0 ? cf : 2.0 - cf;
+	}
+}
 
 /*
    wrapper for atan2 that deals directly with special cases before
@@ -721,6 +857,10 @@ FUNC1(cos, cos, 0,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh, 1,
       "cosh(x)\n\nReturn the hyperbolic cosine of x.")
+FUNC1A(erf, m_erf,
+       "erf(x)\n\nError function at x.")
+FUNC1A(erfc, m_erfc,
+       "erfc(x)\n\nComplementary error function at x.")
 FUNC1(exp, exp, 1,
       "exp(x)\n\nReturn e raised to the power of x.")
 FUNC1(expm1, m_expm1, 1,
@@ -1497,6 +1637,8 @@ static PyMethodDef math_methods[] = {
 	{"cos",		math_cos,	METH_O,		math_cos_doc},
 	{"cosh",	math_cosh,	METH_O,		math_cosh_doc},
 	{"degrees",	math_degrees,	METH_O,		math_degrees_doc},
+	{"erf",		math_erf,	METH_O,		math_erf_doc},
+	{"erfc",	math_erfc,	METH_O,		math_erfc_doc},
 	{"exp",		math_exp,	METH_O,		math_exp_doc},
 	{"expm1",	math_expm1,	METH_O,		math_expm1_doc},
 	{"fabs",	math_fabs,	METH_O,		math_fabs_doc},
