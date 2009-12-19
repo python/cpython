@@ -105,7 +105,9 @@ The constants defined in this module are:
 String Formatting
 -----------------
 
-Starting in Python 2.6, the built-in str and unicode classes provide the ability
+.. versionadded:: 2.6
+
+The built-in str and unicode classes provide the ability
 to do complex variable substitutions and value formatting via the
 :meth:`str.format` method described in :pep:`3101`.  The :class:`Formatter`
 class in the :mod:`string` module allows you to create and customize your own
@@ -488,6 +490,8 @@ The available presentation types for floating point and decimal values are:
 Template strings
 ----------------
 
+.. versionadded:: 2.4
+
 Templates provide simpler string substitutions as described in :pep:`292`.
 Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
 -based substitutions, using the following rules:
@@ -505,8 +509,6 @@ Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
 
 Any other appearance of ``$`` in the string will result in a :exc:`ValueError`
 being raised.
-
-.. versionadded:: 2.4
 
 The :mod:`string` module provides a :class:`Template` class that implements
 these rules.  The methods of :class:`Template` are:
