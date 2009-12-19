@@ -204,7 +204,7 @@ The important things to remember are:
    for developing code by experiment.
 
 
-How do I make python scripts executable?
+How do I make Python scripts executable?
 ----------------------------------------
 
 On Windows 2000, the standard Python installer already associates the .py

@@ -71,7 +71,7 @@ key features:
 
 `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
     Popular modules (such as PyWin32) with their respective documentation, tool
-    suite for building extensible python applications
+    suite for building extensible Python applications
 
 Notice that these packages are likely to install *older* versions of Python.
 

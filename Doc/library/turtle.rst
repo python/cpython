@@ -36,7 +36,7 @@ the module from within IDLE run with the ``-n`` switch.
 
 The turtle module provides turtle graphics primitives, in both object-oriented
 and procedure-oriented ways.  Because it uses :mod:`Tkinter` for the underlying
-graphics, it needs a version of python installed with Tk support.
+graphics, it needs a version of Python installed with Tk support.
 
 The object-oriented interface uses essentially two+two classes:
 
