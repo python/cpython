@@ -177,6 +177,8 @@ Power and logarithmic functions
       >>> expm1(1e-5)    # result accurate to full precision
       1.0000050000166668e-05
 
+   .. versionadded:: 2.7
+
 
 .. function:: log(x[, base])
 
@@ -324,6 +326,20 @@ Hyperbolic functions
 
 Special functions
 -----------------
+
+.. function:: erf(x)
+
+   Return the error function at *x*.
+
+   .. versionadded:: 2.7
+
+
+.. function:: erfc(x)
+
+   Return the complementary error function at *x*.
+
+   .. versionadded:: 2.7
+
 
 .. function:: gamma(x)
 
