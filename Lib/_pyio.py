@@ -87,11 +87,6 @@ def open(file, mode="r", buffering=None,
     returned as strings, the bytes having been first decoded using a
     platform-dependent encoding or using the specified encoding if given.
 
-    buffering is an optional integer used to set the buffering policy. By
-    default full buffering is on. Pass 0 to switch buffering off (only
-    allowed in binary mode), 1 to set line buffering, and an integer > 1
-    for full buffering.
-
     buffering is an optional integer used to set the buffering policy.
     Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
     line buffering (only usable in text mode), and an integer > 1 to indicate
