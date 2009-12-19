@@ -624,7 +624,7 @@ The :mod:`uu` module contains the following notice::
    - Use binascii module to do the actual line-by-line conversion
      between ascii and binary. This results in a 1000-fold speedup. The C
      version is still 5 times faster, though.
-   - Arguments more compliant with python standard
+   - Arguments more compliant with Python standard
 
 
 XML Remote Procedure Calls
