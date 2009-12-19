@@ -352,7 +352,7 @@ unalias *name*
       (Pdb)
 
 run [*args* ...]
-   Restart the debugged python program. If an argument is supplied, it is split
+   Restart the debugged Python program. If an argument is supplied, it is split
    with "shlex" and the result is used as the new sys.argv. History, breakpoints,
    actions and debugger options are preserved. "restart" is an alias for "run".
 
