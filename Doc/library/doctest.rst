@@ -1059,7 +1059,7 @@ capabilities, then you should use the advanced API.
 The advanced API revolves around two container classes, which are used to store
 the interactive examples extracted from doctest cases:
 
-* :class:`Example`: A single python :term:`statement`, paired with its expected
+* :class:`Example`: A single Python :term:`statement`, paired with its expected
   output.
 
 * :class:`DocTest`: A collection of :class:`Example`\ s, typically extracted

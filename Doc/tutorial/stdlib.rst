@@ -308,7 +308,7 @@ sophisticated and robust capabilities of its larger packages. For example:
 * The :mod:`xml.dom` and :mod:`xml.sax` packages provide robust support for
   parsing this popular data interchange format. Likewise, the :mod:`csv` module
   supports direct reads and writes in a common database format. Together, these
-  modules and packages greatly simplify data interchange between python
+  modules and packages greatly simplify data interchange between Python
   applications and other tools.
 
 * Internationalization is supported by a number of modules including
