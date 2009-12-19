@@ -821,7 +821,7 @@ pointer and a void argument.
 .. index:: single: setcheckinterval() (in module sys)
 
 Every check interval, when the global interpreter lock is released and
-reacquired, python will also call any such provided functions.  This can be used
+reacquired, Python will also call any such provided functions.  This can be used
 for example by asynchronous IO handlers.  The notification can be scheduled from
 a worker thread and the actual call than made at the earliest convenience by the
 main thread where it has possession of the global interpreter lock and can
@@ -839,7 +839,7 @@ perform any Python API calls.
    exception.  The notification function won't be interrupted to perform another
    asynchronous notification recursively, but it can still be interrupted to
    switch threads if the global interpreter lock is released, for example, if it
-   calls back into python code.
+   calls back into Python code.
 
    This function returns 0 on success in which case the notification has been
    scheduled.  Otherwise, for example if the notification buffer is full, it

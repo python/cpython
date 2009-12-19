@@ -61,7 +61,7 @@ interpreter is installed on your platform.
 
 If you would like the script to be independent of where the Python interpreter
 lives, you can use the "env" program.  Almost all Unix variants support the
-following, assuming the python interpreter is in a directory on the user's
+following, assuming the Python interpreter is in a directory on the user's
 $PATH::
 
   #!/usr/bin/env python

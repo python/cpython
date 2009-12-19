@@ -271,7 +271,7 @@ An :class:`SMTP` instance has the following methods:
    .. versionchanged:: 2.6
 
    :exc:`RuntimeError`
-     SSL/TLS support is not available to your python interpreter.
+     SSL/TLS support is not available to your Python interpreter.
 
 
 .. method:: SMTP.sendmail(from_addr, to_addrs, msg[, mail_options, rcpt_options])

@@ -127,7 +127,7 @@ objects.
 Example Usage
 -------------
 
-Note that this example runs the python "benchmark" pystones.  It can take some
+Note that this example runs the Python "benchmark" pystones.  It can take some
 time to run, and will produce large output files. ::
 
    >>> import hotshot, hotshot.stats, test.pystone

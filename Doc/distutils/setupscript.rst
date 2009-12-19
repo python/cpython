@@ -649,7 +649,7 @@ information is sometimes used to indicate sub-releases.  These are
 1.0.1a2
     the second alpha release of the first patch version of 1.0
 
-:option:`classifiers` are specified in a python list::
+:option:`classifiers` are specified in a Python list::
 
     setup(...,
           classifiers=[
