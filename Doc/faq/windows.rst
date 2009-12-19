@@ -8,6 +8,10 @@ Python on Windows FAQ
 
 .. contents::
 
+.. XXX need review for Python 3.
+   XXX need review for Windows Vista/Seven?
+
+
 How do I run a Python program under Windows?
 --------------------------------------------
 
@@ -67,7 +71,7 @@ Python statements or expressions interactively and have them executed or
 evaluated while you wait.  This is one of Python's strongest features.  Check it
 by entering a few expressions of your choice and seeing the results::
 
-    >>> print "Hello"
+    >>> print("Hello")
     Hello
     >>> "Hello" * 3
     HelloHelloHello
@@ -507,7 +511,7 @@ Example::
 
    import win32pipe
    f = win32pipe.popen('dir /c c:\\')
-   print f.readlines()
+   print(f.readlines())
    f.close()
 
 
