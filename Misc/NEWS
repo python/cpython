@@ -1683,7 +1683,8 @@ Extension Modules
 
 - Issue #7078: Set struct.__doc__ from _struct.__doc__.
 
-- Issue #3366: Add expm1, gamma, lgamma functions to math module.
+- Issue #3366: Add erf, erfc, expm1, gamma, lgamma functions to math
+  module.
 
 - Issue #6823: Allow time.strftime() to accept a tuple with a isdst field
   outside of the range of [-1, 1] by normalizing the value to within that
