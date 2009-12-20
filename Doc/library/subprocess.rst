@@ -126,9 +126,10 @@ This module defines one class called :class:`Popen`:
 
    .. note::
 
-      This feature is only available if Python is built with universal newline support
-      (the default).  Also, the newlines attribute of the file objects :attr:`stdout`,
-      :attr:`stdin` and :attr:`stderr` are not updated by the communicate() method.
+      This feature is only available if Python is built with universal newline
+      support (the default).  Also, the newlines attribute of the file objects
+      :attr:`stdout`, :attr:`stdin` and :attr:`stderr` are not updated by the
+      communicate() method.
 
    The *startupinfo* and *creationflags*, if given, will be passed to the
    underlying CreateProcess() function.  They can specify things such as appearance
@@ -162,7 +163,7 @@ This module also defines two shortcut functions:
 
    The arguments are the same as for the Popen constructor.  Example::
 
-      retcode = call(["ls", "-l"])
+      >>> retcode = subprocess.call(["ls", "-l"])
 
    .. warning::
 
@@ -181,7 +182,8 @@ This module also defines two shortcut functions:
 
    The arguments are the same as for the Popen constructor.  Example::
 
-      check_call(["ls", "-l"])
+      >>> subprocess.check_call(["ls", "-l"])
+      0
 
    .. versionadded:: 2.5
 
@@ -208,8 +210,8 @@ This module also defines two shortcut functions:
    To capture standard error in the result, use ``stderr=subprocess.STDOUT``::
 
       >>> subprocess.check_output(
-              ["/bin/sh", "-c", "ls non_existent_file ; exit 0"],
-              stderr=subprocess.STDOUT)
+      ...     ["/bin/sh", "-c", "ls non_existent_file; exit 0"],
+      ...     stderr=subprocess.STDOUT)
       'ls: non_existent_file: No such file or directory\n'
 
    .. versionadded:: 2.7
