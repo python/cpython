@@ -652,15 +652,24 @@ class HTTPConnection:
         self._method = None
         self._tunnel_host = None
         self._tunnel_port = None
+        self._tunnel_headers = {}
 
         self._set_hostport(host, port)
         if strict is not None:
             self.strict = strict
 
     def _set_tunnel(self, host, port=None):
-        """ Sets up the host and the port for the HTTP CONNECT Tunnelling."""
+        """ Sets up the host and the port for the HTTP CONNECT Tunnelling.
+
+        The headers argument should be a mapping of extra HTTP headers
+        to send with the CONNECT request.
+        """
         self._tunnel_host = host
         self._tunnel_port = port
+        if headers:
+            self._tunnel_headers = headers
+        else:
+            self._tunnel_headers.clear()
 
     def _set_hostport(self, host, port):
         if port is None:
@@ -684,7 +693,10 @@ class HTTPConnection:
 
     def _tunnel(self):
         self._set_hostport(self._tunnel_host, self._tunnel_port)
-        self.send("CONNECT %s:%d HTTP/1.0\r\n\r\n" % (self.host, self.port))
+        self.send("CONNECT %s:%d HTTP/1.0\r\n" % (self.host, self.port))
+        for header, value in self._tunnel_headers.iteritems():
+            self.send("%s: %s\r\n" % (header, value))
+        self.send("\r\n")
         response = self.response_class(self.sock, strict = self.strict,
                                        method = self._method)
         (version, code, message) = response._read_status()
