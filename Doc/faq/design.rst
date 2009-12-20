@@ -825,7 +825,7 @@ on the entrance and exit from the block.  Some language have a construct that
 looks like this::
 
    with obj:
-       a = 1    # equivalent to obj.a = 1
+       a = 1               # equivalent to obj.a = 1
        total = total + 1   # obj.total = obj.total + 1
 
 In Python, such a construct would be ambiguous.
