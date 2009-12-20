@@ -2611,27 +2611,31 @@ __test__ = {"_TestClass": _TestClass,
             """,
            }
 
+
 def _test():
     testfiles = [arg for arg in sys.argv[1:] if arg and arg[0] != '-']
-    if testfiles:
-        for filename in testfiles:
-            if filename.endswith(".py"):
-                # It is a module -- insert its dir into sys.path and try to
-                # import it. If it is part of a package, that possibly won't work
-                # because of package imports.
-                dirname, filename = os.path.split(filename)
-                sys.path.insert(0, dirname)
-                m = __import__(filename[:-3])
-                del sys.path[0]
-                failures, _ = testmod(m)
-            else:
-                failures, _ = testfile(filename, module_relative=False)
-            if failures:
-                return 1
-    else:
-        r = unittest.TextTestRunner()
-        r.run(DocTestSuite())
+    if not testfiles:
+        name = os.path.basename(sys.argv[0])
+        if '__loader__' in globals() and name.endswith('.py'):  # python -m
+            name, _ = os.path.splitext(name)
+        print("usage: {0} [-v] file ...".format(name))
+        return 2
+    for filename in testfiles:
+        if filename.endswith(".py"):
+            # It is a module -- insert its dir into sys.path and try to
+            # import it. If it is part of a package, that possibly
+            # won't work because of package imports.
+            dirname, filename = os.path.split(filename)
+            sys.path.insert(0, dirname)
+            m = __import__(filename[:-3])
+            del sys.path[0]
+            failures, _ = testmod(m)
+        else:
+            failures, _ = testfile(filename, module_relative=False)
+        if failures:
+            return 1
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(_test())
