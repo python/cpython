@@ -350,7 +350,8 @@ class MathTests(unittest.TestCase):
     def testFrexp(self):
         self.assertRaises(TypeError, math.frexp)
 
-        def testfrexp(name, (mant, exp), (emant, eexp)):
+        def testfrexp(name, result, expected):
+            (mant, exp), (emant, eexp) = result, expected
             if abs(mant-emant) > eps or exp != eexp:
                 self.fail('%s returned %r, expected %r'%\
                           (name, (mant, exp), (emant,eexp)))
@@ -540,7 +541,8 @@ class MathTests(unittest.TestCase):
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
 
-        def testmodf(name, (v1, v2), (e1, e2)):
+        def testmodf(name, result, expected):
+            (v1, v2), (e1, e2) = result, expected
             if abs(v1-e1) > eps or abs(v2-e2):
                 self.fail('%s returned %r, expected %r'%\
                           (name, (v1,v2), (e1,e2)))
