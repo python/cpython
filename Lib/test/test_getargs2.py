@@ -48,7 +48,8 @@ LARGE = 0x7FFFFFFF
 VERY_LARGE = 0xFF0000121212121212121242L
 
 from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
-     INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+     INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
+     SHRT_MIN, SHRT_MAX
 
 # fake, they are not defined in Python's header files
 LLONG_MAX = 2**63-1
@@ -150,6 +151,22 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(VERY_LARGE & ULONG_MAX, getargs_k(VERY_LARGE))
 
 class Signed_TestCase(unittest.TestCase):
+    def test_h(self):
+        from _testcapi import getargs_h
+        # h returns 'short', and does range checking (SHRT_MIN ... SHRT_MAX)
+        self.assertEqual(3, getargs_h(3.14))
+        self.assertEqual(99, getargs_h(Long()))
+        self.assertEqual(99, getargs_h(Int()))
+
+        self.assertRaises(OverflowError, getargs_h, SHRT_MIN-1)
+        self.assertEqual(SHRT_MIN, getargs_h(SHRT_MIN))
+        self.assertEqual(SHRT_MAX, getargs_h(SHRT_MAX))
+        self.assertRaises(OverflowError, getargs_h, SHRT_MAX+1)
+
+        self.assertEqual(42, getargs_h(42))
+        self.assertEqual(42, getargs_h(42L))
+        self.assertRaises(OverflowError, getargs_h, VERY_LARGE)
+
     def test_i(self):
         from _testcapi import getargs_i
         # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
