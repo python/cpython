@@ -455,6 +455,15 @@ getargs_B(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+getargs_h(PyObject *self, PyObject *args)
+{
+	short value;
+	if (!PyArg_ParseTuple(args, "h", &value))
+		return NULL;
+	return PyLong_FromLong((long)value);
+}
+
+static PyObject *
 getargs_H(PyObject *self, PyObject *args)
 {
 	unsigned short value;
@@ -1566,6 +1575,7 @@ static PyMethodDef TestMethods[] = {
 	  METH_VARARGS|METH_KEYWORDS},
 	{"getargs_b",		getargs_b,			 METH_VARARGS},
 	{"getargs_B",		getargs_B,			 METH_VARARGS},
+	{"getargs_h",		getargs_h,			 METH_VARARGS},
 	{"getargs_H",		getargs_H,			 METH_VARARGS},
 	{"getargs_I",		getargs_I,			 METH_VARARGS},
 	{"getargs_k",		getargs_k,			 METH_VARARGS},
