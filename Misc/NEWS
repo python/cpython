@@ -157,6 +157,9 @@ C-API
 Library
 -------
 
+- Issue #7231: urllib2 cannot handle https with proxy requiring auth.  Patch by
+  Tatsuhiro Tsujikawa.
+
 - Issue #4757: `zlib.compress` and other methods in the zlib module now
   raise a TypeError when given an `str` object (rather than a `bytes`-like
   object).  Patch by Victor Stinner and Florent Xicluna.
