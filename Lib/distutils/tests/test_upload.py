@@ -10,6 +10,25 @@ from distutils.core import Distribution
 from distutils.tests import support
 from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
 
+PYPIRC_LONG_PASSWORD = """\
+[distutils]
+
+index-servers =
+    server1
+    server2
+
+[server1]
+username:me
+password:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+[server2]
+username:meagain
+password: secret
+realm:acme
+repository:http://another.pypi/
+"""
+
+
 PYPIRC_NOPASSWORD = """\
 [distutils]
 
@@ -85,7 +104,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.write_file(path)
         command, pyversion, filename = 'xxx', '2.6', path
         dist_files = [(command, pyversion, filename)]
-        self.write_file(self.rc, PYPIRC)
+        self.write_file(self.rc, PYPIRC_LONG_PASSWORD)
 
         # lets run it
         pkg_dir, dist = self.create_dist(dist_files=dist_files)
@@ -101,6 +120,8 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.assertEquals(self.last_open.req.get_full_url(),
                           'http://pypi.python.org/pypi')
         self.assertTrue('xxx' in self.last_open.req.data)
+        auth = self.last_open.req.headers['Authorization']
+        self.assertFalse('\n' in auth)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)

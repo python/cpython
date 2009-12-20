@@ -24,7 +24,11 @@ Core and Builtins
 Library
 -------
 
-- Issue #7231: urllib2 cannot handle https with proxy requiring auth. 
+- Issue #7552: Removed line feed in the base64 Authorization header in
+  the Distutils upload command to avoid an error when PyPI reads it.
+  This occurs on long passwords. Initial patch by JP St. Pierre.
+
+- Issue #7231: urllib2 cannot handle https with proxy requiring auth.
   Patch by Tatsuhiro Tsujikawa.
 
 - Issue #7349: Make methods of file objects in the io module accept None as an
@@ -42,7 +46,7 @@ Library
 - Issue #5949: fixed IMAP4_SSL hang when the IMAP server response is
   missing proper end-of-line termination.
 
-- Issue #7457: added a read_pkg_file method to 
+- Issue #7457: added a read_pkg_file method to
   distutils.dist.DistributionMetadata.
 
 
@@ -560,7 +564,7 @@ Library
 - logging: Added optional `secure` parameter to SMTPHandler, to enable use of
   TLS with authentication credentials.
 
-- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
+- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is
   generated in Distutils. Patch by Stephen Emslie.
 
 - Issue #4120: Drop reference to CRT from manifest when building extensions with
@@ -1764,7 +1768,7 @@ Extension Modules
 Tests
 -----
 
-- Issue #7431: use TESTFN in test_linecache instead of trying to create a 
+- Issue #7431: use TESTFN in test_linecache instead of trying to create a
   file in the Lib/test directory, which might be read-only for the
   user running the tests.
 
