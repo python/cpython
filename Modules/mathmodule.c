@@ -1082,15 +1082,22 @@ math_factorial(PyObject *self, PyObject *arg)
 	PyObject *result, *iobj, *newresult;
 
 	if (PyFloat_Check(arg)) {
+		PyObject *lx;
 		double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
-		if (dx != floor(dx)) {
+		if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
 			PyErr_SetString(PyExc_ValueError, 
 				"factorial() only accepts integral values");
 			return NULL;
 		}
+		lx = PyLong_FromDouble(dx);
+		if (lx == NULL)
+			return NULL;
+		x = PyLong_AsLong(lx);
+		Py_DECREF(lx);
 	}
+	else
+		x = PyInt_AsLong(arg);
 
-	x = PyInt_AsLong(arg);
 	if (x == -1 && PyErr_Occurred())
 		return NULL;
 	if (x < 0) {
