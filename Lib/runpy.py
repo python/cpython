@@ -138,7 +138,7 @@ def _run_module_as_main(mod_name, alter_argv=True):
 
        Note that the executed module will have full access to the
        __main__ namespace. If this is not desirable, the run_module()
-       function sbould be used to run the module code in a fresh namespace.
+       function should be used to run the module code in a fresh namespace.
 
        At the very least, these variables in __main__ will be overwritten:
            __name__
