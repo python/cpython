@@ -176,31 +176,32 @@ Thus to get the same effect as::
 
 it is much shorter and far faster to use ::
 
-   L2 = list(L1[:3]) # "list" is redundant if L1 is a list.
+   L2 = list(L1[:3])  # "list" is redundant if L1 is a list.
 
 Note that the functionally-oriented builtins such as :func:`map`, :func:`zip`,
 and friends can be a convenient accelerator for loops that perform a single
 task.  For example to pair the elements of two lists together::
 
-   >>> zip([1,2,3], [4,5,6])
+   >>> zip([1, 2, 3], [4, 5, 6])
    [(1, 4), (2, 5), (3, 6)]
 
 or to compute a number of sines::
 
-   >>> map( math.sin, (1,2,3,4))
-   [0.841470984808, 0.909297426826, 0.14112000806,   -0.756802495308]
+   >>> map(math.sin, (1, 2, 3, 4))
+   [0.841470984808, 0.909297426826, 0.14112000806, -0.756802495308]
 
 The operation completes very quickly in such cases.
 
-Other examples include the ``join()`` and ``split()`` methods of string objects.
+Other examples include the ``join()`` and ``split()`` :ref:`methods
+of string objects <string-methods>`.
 For example if s1..s7 are large (10K+) strings then
 ``"".join([s1,s2,s3,s4,s5,s6,s7])`` may be far faster than the more obvious
 ``s1+s2+s3+s4+s5+s6+s7``, since the "summation" will compute many
 subexpressions, whereas ``join()`` does all the copying in one pass.  For
-manipulating strings, use the ``replace()`` method on string objects. Use
-regular expressions only when you're not dealing with constant string patterns.
-Consider using the string formatting operations ``string % tuple`` and ``string
-% dictionary``.
+manipulating strings, use the ``replace()`` and the ``format()`` :ref:`methods
+on string objects <string-methods>`.  Use regular expressions only when you're
+not dealing with constant string patterns.  You may still use :ref:`the old %
+operations <string-formatting>` ``string % tuple`` and ``string % dictionary``.
 
 Be sure to use the :meth:`list.sort` builtin method to do sorting, and see the
 `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
@@ -210,7 +211,7 @@ sorting in all but the most extreme circumstances.
 Another common trick is to "push loops into functions or methods."  For example
 suppose you have a program that runs slowly and you use the profiler to
 determine that a Python function ``ff()`` is being called lots of times.  If you
-notice that ``ff ()``::
+notice that ``ff()``::
 
    def ff(x):
        ... # do something with x computing result...
@@ -331,24 +332,6 @@ actually modifying the value of the variable in the outer scope:
    >>> print x
    11
 
-In Python3, you can do a similar thing in a nested scope using the
-:keyword:`nonlocal` keyword:
-
-.. doctest::
-   :options: +SKIP
-
-   >>> def foo():
-   ...    x = 10
-   ...    def bar():
-   ...        nonlocal x
-   ...        print x
-   ...        x += 1
-   ...    bar()
-   ...    print x
-   >>> foo()
-   10
-   11
-
 
 What are the rules for local and global variables in Python?
 ------------------------------------------------------------
@@ -411,7 +394,7 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``)
+1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
 2. third-party library modules (anything installed in Python's site-packages
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
 3. locally-developed modules
@@ -420,7 +403,7 @@ Never use relative package imports.  If you're writing code that's in the
 ``package.sub.m1`` module and want to import ``package.sub.m2``, do not just
 write ``import m2``, even though it's legal.  Write ``from package.sub import
 m2`` instead.  Relative imports can lead to a module being initialized twice,
-leading to confusing bugs.
+leading to confusing bugs.  See :pep:`328` for details.
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -648,9 +631,9 @@ callable. Consider the following code::
    a = B()
    b = a
    print b
-   <__main__.A instance at 016D07CC>
+   <__main__.A instance at 0x16D07CC>
    print a
-   <__main__.A instance at 016D07CC>
+   <__main__.A instance at 0x16D07CC>
 
 Arguably the class has a name: even though it is bound to two names and invoked
 through the name B the created instance is still reported as an instance of
@@ -680,7 +663,7 @@ What's up with the comma operator's precedence?
 Comma is not an operator in Python.  Consider this session::
 
     >>> "a" in "b", "a"
-    (False, '1')
+    (False, 'a')
 
 Since the comma is not an operator, but a separator between expressions the
 above is evaluated as if you had entered::
@@ -689,7 +672,7 @@ above is evaluated as if you had entered::
 
 not::
 
-    >>> "a" in ("5", "a")
+    >>> "a" in ("b", "a")
 
 The same is true of the various assignment operators (``=``, ``+=`` etc).  They
 are not truly operators but syntactic delimiters in assignment statements.
@@ -731,12 +714,12 @@ solution is to implement the ``?:`` operator as a function::
            if not isfunction(on_true):
                return on_true
            else:
-               return apply(on_true)
+               return on_true()
        else:
            if not isfunction(on_false):
                return on_false
            else:
-               return apply(on_false)
+               return on_false()
 
 In most cases you'll pass b and c directly: ``q(a, b, c)``.  To avoid evaluating
 b or c when they shouldn't be, encapsulate them within a lambda function, e.g.:
@@ -766,7 +749,7 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    map(lambda x,y=y:y%x,range(2,int(pow(y,0.5)+1))),1),range(2,1000)))
 
    # First 10 Fibonacci numbers
-   print map(lambda x,f=lambda x,f:(x<=1) or (f(x-1,f)+f(x-2,f)): f(x,f),
+   print map(lambda x,f=lambda x,f:(f(x-1,f)+f(x-2,f)) if x>1 else 1: f(x,f),
    range(10))
 
    # Mandelbrot set
@@ -792,10 +775,11 @@ Numbers and strings
 How do I specify hexadecimal and octal integers?
 ------------------------------------------------
 
-To specify an octal digit, precede the octal value with a zero.  For example, to
-set the variable "a" to the octal value "10" (8 in decimal), type::
+To specify an octal digit, precede the octal value with a zero, and then a lower
+or uppercase "o".  For example, to set the variable "a" to the octal value "10"
+(8 in decimal), type::
 
-   >>> a = 010
+   >>> a = 0o10
    >>> a
    8
 
@@ -811,23 +795,29 @@ or uppercase.  For example, in the Python interpreter::
    178
 
 
-Why does -22 / 10 return -3?
-----------------------------
+Why does -22 // 10 return -3?
+-----------------------------
 
 It's primarily driven by the desire that ``i % j`` have the same sign as ``j``.
 If you want that, and also want::
 
-    i == (i / j) * j + (i % j)
+    i == (i // j) * j + (i % j)
 
 then integer division has to return the floor.  C also requires that identity to
-hold, and then compilers that truncate ``i / j`` need to make ``i % j`` have the
-same sign as ``i``.
+hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
+the same sign as ``i``.
 
 There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
 is positive, there are many, and in virtually all of them it's more useful for
 ``i % j`` to be ``>= 0``.  If the clock says 10 now, what did it say 200 hours
 ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
+
+.. note::
+
+   On Python 2, ``a / b`` returns the same as ``a // b`` if
+   ``__future__.division`` is not in effect.  This is also known as "classic"
+   division.
 
 
 How do I convert a string to a number?
@@ -860,10 +850,11 @@ How do I convert a number to a string?
 
 To convert, e.g., the number 144 to the string '144', use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
-the built-in functions ``hex()`` or ``oct()``.  For fancy formatting, use
-:ref:`the % operator <string-formatting>` on strings, e.g. ``"%04d" % 144``
-yields ``'0144'`` and ``"%.3f" % (1/3.0)`` yields ``'0.333'``.  See the library
-reference manual for details.
+the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
+the :ref:`formatstrings` section, e.g. ``"{:04d}".format(144)`` yields
+``'0144'`` and ``"{:.3f}".format(1/3)`` yields ``'0.333'``.  You may also use
+:ref:`the % operator <string-formatting>` on strings.  See the library reference
+manual for details.
 
 
 How do I modify a string in place?
@@ -961,12 +952,12 @@ blank lines will be removed::
    ...          "\r\n"
    ...          "\r\n")
    >>> lines.rstrip("\n\r")
-   "line 1 "
+   'line 1 '
 
 Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
 
-For older versions of Python, There are two partial substitutes:
+For older versions of Python, there are two partial substitutes:
 
 - If you want to remove all trailing whitespace, use the ``rstrip()`` method of
   string objects.  This removes all trailing whitespace, not just a single
@@ -1092,26 +1083,26 @@ See the Python Cookbook for a long discussion of many ways to do this:
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
 
-   if List:
-       List.sort()
-       last = List[-1]
-       for i in range(len(List)-2, -1, -1):
-           if last == List[i]:
-               del List[i]
+   if mylist:
+       mylist.sort()
+       last = mylist[-1]
+       for i in range(len(mylist)-2, -1, -1):
+           if last == mylist[i]:
+               del mylist[i]
            else:
-               last = List[i]
+               last = mylist[i]
 
 If all elements of the list may be used as dictionary keys (i.e. they are all
 hashable) this is often faster ::
 
    d = {}
-   for x in List:
-       d[x] = x
-   List = d.values()
+   for x in mylist:
+       d[x] = 1
+   mylist = list(d.keys())
 
 In Python 2.5 and later, the following is possible instead::
 
-   List = list(set(List))
+   mylist = list(set(mylist))
 
 This converts the list into a set, thereby removing duplicates, and then back
 into a list.
@@ -1187,7 +1178,7 @@ How do I apply a method to a sequence of objects?
 
 Use a list comprehension::
 
-   result = [obj.method() for obj in List]
+   result = [obj.method() for obj in mylist]
 
 More generically, you can try the following function::
 
@@ -1212,23 +1203,17 @@ some changes and then compare it with some other printed dictionary.  In this
 case, use the ``pprint`` module to pretty-print the dictionary; the items will
 be presented in order sorted by the key.
 
-A more complicated solution is to subclass ``UserDict.UserDict`` to create a
+A more complicated solution is to subclass ``dict`` to create a
 ``SortedDict`` class that prints itself in a predictable order.  Here's one
 simpleminded implementation of such a class::
 
-   import UserDict, string
-
-   class SortedDict(UserDict.UserDict):
+   class SortedDict(dict):
        def __repr__(self):
-           result = []
-           append = result.append
-           keys = self.data.keys()
-           keys.sort()
-           for k in keys:
-               append("%s: %s" % (`k`, `self.data[k]`))
-           return "{%s}" % string.join(result, ", ")
+           keys = sorted(self.keys())
+           result = ("{!r}: {!r}".format(k, self[k]) for k in keys)
+           return "{{{}}}".format(", ".join(result))
 
-     __str__ = __repr__
+       __str__ = __repr__
 
 This will work for many common situations you might encounter, though it's far
 from a perfect solution. The largest flaw is that if some values in the
@@ -1250,14 +1235,14 @@ The ``key`` argument is new in Python 2.4, for older versions this kind of
 sorting is quite simple to do with list comprehensions.  To sort a list of
 strings by their uppercase values::
 
-  tmp1 = [(x.upper(), x) for x in L] # Schwartzian transform
+  tmp1 = [(x.upper(), x) for x in L]  # Schwartzian transform
   tmp1.sort()
   Usorted = [x[1] for x in tmp1]
 
 To sort by the integer value of a subfield extending from positions 10-15 in
 each string::
 
-  tmp2 = [(int(s[10:15]), s) for s in L] # Schwartzian transform
+  tmp2 = [(int(s[10:15]), s) for s in L]  # Schwartzian transform
   tmp2.sort()
   Isorted = [x[1] for x in tmp2]
 
@@ -1294,8 +1279,8 @@ out the element you want. ::
 
 An alternative for the last step is::
 
-   result = []
-   for p in pairs: result.append(p[1])
+   >>> result = []
+   >>> for p in pairs: result.append(p[1])
 
 If you find this more legible, you might prefer to use this instead of the final
 list comprehension.  However, it is almost twice as slow for long lists.  Why?
@@ -1363,7 +1348,7 @@ particular behaviour, instead of checking the object's class and doing a
 different thing based on what class it is.  For example, if you have a function
 that does something::
 
-   def search (obj):
+   def search(obj):
        if isinstance(obj, Mailbox):
            # ... code to search a mailbox
        elif isinstance(obj, Document):
@@ -1466,8 +1451,8 @@ of resources) which base class to use.  Example::
 How do I create static class data and static class methods?
 -----------------------------------------------------------
 
-Static data (in the sense of C++ or Java) is easy; static methods (again in the
-sense of C++ or Java) are not supported directly.
+Both static data and static methods (in the sense of C++ or Java) are supported
+in Python.
 
 For static data, simply define a class attribute.  To assign a new value to the
 attribute, you have to explicitly use the class name in the assignment::
@@ -1486,9 +1471,9 @@ C)`` holds, unless overridden by ``c`` itself or by some class on the base-class
 search path from ``c.__class__`` back to ``C``.
 
 Caution: within a method of C, an assignment like ``self.count = 42`` creates a
-new and unrelated instance vrbl named "count" in ``self``'s own dict.  Rebinding
-of a class-static data name must always specify the class whether inside a
-method or not::
+new and unrelated instance named "count" in ``self``'s own dict.  Rebinding of a
+class-static data name must always specify the class whether inside a method or
+not::
 
    C.count = 314
 
