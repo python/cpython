@@ -217,6 +217,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #7376: instead of running a self-test (which was failing) when called
+  with no arguments, doctest.py now gives a usage message.
+
 - Issue #7498: test_multiprocessing now uses test.support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
