@@ -648,9 +648,13 @@ class HTTPConnection:
         if strict is not None:
             self.strict = strict
 
-    def _set_tunnel(self, host, port=None):
+    def _set_tunnel(self, host, port=None, headers=None):
         self._tunnel_host = host
         self._tunnel_port = port
+        if headers:
+            self._tunnel_headers = headers
+        else:
+            self._tunnel_headers.clear()
 
     def _set_hostport(self, host, port):
         if port is None:
@@ -674,12 +678,18 @@ class HTTPConnection:
 
     def _tunnel(self):
         self._set_hostport(self._tunnel_host, self._tunnel_port)
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n\r\n" %(self.host, self.port)
+        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" %(self.host, self.port)
         connect_bytes = connect_str.encode("ascii")
         self.send(connect_bytes)
+        for header, value in self._tunnel_headers.iteritems():
+            header_str = "%s: %s\r\n" % (header, value)
+            header_bytes = header_str.encode("ascii")
+            self.send(header_bytes)
+
         response = self.response_class(self.sock, strict = self.strict,
-                                       method= self._method)
+                                       method = self._method)
         (version, code, message) = response._read_status()
+
         if code != 200:
             self.close()
             raise socket.error("Tunnel connection failed: %d %s" % (code,
