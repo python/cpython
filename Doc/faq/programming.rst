@@ -182,7 +182,7 @@ Note that the functionally-oriented builtins such as :func:`map`, :func:`zip`,
 and friends can be a convenient accelerator for loops that perform a single
 task.  For example to pair the elements of two lists together::
 
-   >>> list(zip([1,2,3], [4,5,6]))
+   >>> list(zip([1, 2, 3], [4, 5, 6]))
    [(1, 4), (2, 5), (3, 6)]
 
 or to compute a number of sines::
@@ -192,14 +192,16 @@ or to compute a number of sines::
 
 The operation completes very quickly in such cases.
 
-Other examples include the ``join()`` and ``split()`` methods of string objects.
+Other examples include the ``join()`` and ``split()`` :ref:`methods
+of string objects <string-methods>`.
+
 For example if s1..s7 are large (10K+) strings then
 ``"".join([s1,s2,s3,s4,s5,s6,s7])`` may be far faster than the more obvious
 ``s1+s2+s3+s4+s5+s6+s7``, since the "summation" will compute many
 subexpressions, whereas ``join()`` does all the copying in one pass.  For
-manipulating strings, use the ``replace()`` and the ``format()`` methods on
-string objects.  Use regular expressions only when you're not dealing with
-constant string patterns.
+manipulating strings, use the ``replace()`` and the ``format()`` :ref:`methods
+on string objects <string-methods>`.  Use regular expressions only when you're
+not dealing with constant string patterns.
 
 Be sure to use the :meth:`list.sort` builtin method to do sorting, and see the
 `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
@@ -414,8 +416,8 @@ It's good practice if you import modules in the following order:
 
 Never use relative package imports.  If you're writing code that's in the
 ``package.sub.m1`` module and want to import ``package.sub.m2``, do not just
-write ``from . import m2``, even though it's legal.  Write ``from package.sub import
-m2`` instead.  See :pep:`328` for details.
+write ``from . import m2``, even though it's legal.  Write ``from package.sub
+import m2`` instead.  See :pep:`328` for details.
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -860,7 +862,7 @@ To convert, e.g., the number 144 to the string '144', use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
 the :ref:`string-formatting` section, e.g. ``"{:04d}".format(144)`` yields
-``'0144'`` and ``"{:.3f}" % (1/3)`` yields ``'0.333'``.
+``'0144'`` and ``"{:.3f}".format(1/3)`` yields ``'0.333'``.
 
 
 How do I modify a string in place?
