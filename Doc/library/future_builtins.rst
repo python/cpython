@@ -1,5 +1,5 @@
-:mod:`future_builtins` --- Python 3 built-ins
-=============================================
+:mod:`future_builtins` --- Python 3 builtins
+============================================
 
 .. module:: future_builtins
 .. sectionauthor:: Georg Brandl
@@ -8,7 +8,7 @@
 This module provides functions that exist in 2.x, but have different behavior in
 Python 3, so they cannot be put into the 2.x builtins namespace.
 
-Instead, if you want to write code compatible with Python 3 built-ins, import
+Instead, if you want to write code compatible with Python 3 builtins, import
 them from this module, like this::
 
    from future_builtins import map, filter
@@ -16,17 +16,17 @@ them from this module, like this::
    ... code using Python 3-style map and filter ...
 
 The :term:`2to3` tool that ports Python 2 code to Python 3 will recognize
-this usage and leave the new built-ins alone.
+this usage and leave the new builtins alone.
 
 .. note::
 
-   The Python 3 :func:`print` function is already in the built-ins, but cannot be
+   The Python 3 :func:`print` function is already in the builtins, but cannot be
    accessed from Python 2 code unless you use the appropriate future statement::
 
       from __future__ import print_function
 
 
-Available built-ins are:
+Available builtins are:
 
 .. function:: ascii(object)
 
