@@ -94,15 +94,18 @@ function it uses to do this is available:
     (as a string) and a list of any lines (not decoded from bytes) it has read
     in.
 
-    It detects the encoding from the presence of a utf-8 bom or an encoding
-    cookie as specified in pep-0263. If both a bom and a cookie are present,
+    It detects the encoding from the presence of a UTF-8 BOM or an encoding
+    cookie as specified in :pep:`263`. If both a BOM and a cookie are present,
     but disagree, a SyntaxError will be raised.
 
-    If no encoding is specified, then the default of 'utf-8' will be returned.
+    If no encoding is specified, then the default of ``'utf-8'`` will be returned.
 
 
 Example of a script re-writer that transforms float literals into Decimal
 objects::
+
+    from tokenize import tokenize, untokenize, NUMBER, STRING, NAME, OP
+    from io import BytesIO
 
     def decistmt(s):
         """Substitute Decimals for floats in a string of statements.
