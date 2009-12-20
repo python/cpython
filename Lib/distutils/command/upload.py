@@ -11,7 +11,7 @@ import os
 import socket
 import platform
 import httplib
-import base64
+from base64 import standard_b64encode
 import urlparse
 import cStringIO as StringIO
 from ConfigParser import ConfigParser
@@ -115,7 +115,8 @@ class upload(PyPIRCCommand):
                                      open(filename+".asc").read())
 
         # set up the authentication
-        auth = "Basic " + base64.encodestring(self.username + ":" + self.password).strip()
+        auth = "Basic " + standard_b64encode(self.username + ":" +
+                                             self.password)
 
         # Build up the MIME payload for the POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
