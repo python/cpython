@@ -1120,7 +1120,14 @@ class AbstractHTTPHandler(BaseHandler):
             (name.title(), val) for name, val in headers.items())
 
         if req._tunnel_host:
-            h.set_tunnel(req._tunnel_host)
+            tunnel_headers = {}
+            proxy_auth_hdr = "Proxy-Authorization"
+            if proxy_auth_hdr in headers:
+                tunnel_headers[proxy_auth_hdr] = headers[proxy_auth_hdr]
+                # Proxy-Authorization should not be sent to origin
+                # server.
+                del headers[proxy_auth_hdr]
+            h.set_tunnel(req._tunnel_host, headers=tunnel_headers)
 
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
