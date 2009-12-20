@@ -259,6 +259,61 @@ class FakeMethod:
     def __call__(self, *args):
         return self.handle(self.meth_name, self.action, *args)
 
+class MockHTTPResponse(io.IOBase):
+    def __init__(self, fp, msg, status, reason):
+        self.fp = fp
+        self.msg = msg
+        self.status = status
+        self.reason = reason
+        self.code = 200
+
+    def read(self):
+        return ''
+
+    def info(self):
+        return {}
+
+    def geturl(self):
+        return self.url
+
+
+class MockHTTPClass:
+    def __init__(self):
+        self.level = 0
+        self.req_headers = []
+        self.data = None
+        self.raise_on_endheaders = False
+        self._tunnel_headers = {}
+
+    def __call__(self, host, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+        self.host = host
+        self.timeout = timeout
+        return self
+
+    def set_debuglevel(self, level):
+        self.level = level
+
+    def set_tunnel(self, host, port=None, headers=None):
+        self._tunnel_host = host
+        self._tunnel_port = port
+        if headers:
+            self._tunnel_headers = headers
+        else:
+            self._tunnel_headers.clear()
+
+    def request(self, method, url, body=None, headers={}):
+        self.method = method
+        self.selector = url
+        self.req_headers += headers.items()
+        self.req_headers.sort()
+        if body:
+            self.data = body
+        if self.raise_on_endheaders:
+            import socket
+            raise socket.error()
+    def getresponse(self):
+        return MockHTTPResponse(MockFile(), {}, 200, "OK")
+
 class MockHandler:
     # useful for testing handler machinery
     # see add_ordered_mock_handlers() docstring
@@ -365,6 +420,13 @@ class MockHTTPHandler(urllib.request.BaseHandler):
             self.req = req
             msg = email.message_from_string("\r\n\r\n")
             return MockResponse(200, "OK", msg, "", req.get_full_url())
+
+class MockHTTPSHandler(urllib.request.AbstractHTTPHandler):
+    # Useful for testing the Proxy-Authorization request by verifying the
+    # properties of httpcon
+    httpconn = MockHTTPClass()
+    def https_open(self, req):
+        return self.do_open(self.httpconn, req)
 
 class MockPasswordManager:
     def add_password(self, realm, uri, user, password):
@@ -677,43 +739,6 @@ class HandlerTests(unittest.TestCase):
                 self.assertEqual(req.type, "ftp")
 
     def test_http(self):
-        class MockHTTPResponse(io.IOBase):
-            def __init__(self, fp, msg, status, reason):
-                self.fp = fp
-                self.msg = msg
-                self.status = status
-                self.reason = reason
-                self.code = 200
-            def read(self):
-                return ''
-            def info(self):
-                return {}
-            def geturl(self):
-                return self.url
-        class MockHTTPClass:
-            def __init__(self):
-                self.level = 0
-                self.req_headers = []
-                self.data = None
-                self.raise_on_endheaders = False
-            def __call__(self, host, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-                self.host = host
-                self.timeout = timeout
-                return self
-            def set_debuglevel(self, level):
-                self.level = level
-            def request(self, method, url, body=None, headers={}):
-                self.method = method
-                self.selector = url
-                self.req_headers += headers.items()
-                self.req_headers.sort()
-                if body:
-                    self.data = body
-                if self.raise_on_endheaders:
-                    import socket
-                    raise socket.error()
-            def getresponse(self):
-                return MockHTTPResponse(MockFile(), {}, 200, "OK")
 
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
@@ -979,6 +1004,28 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "https_open")],
                          [tup[0:2] for tup in o.calls])
 
+    def test_proxy_https_proxy_authorization(self):
+        o = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(https='proxy.example.com:3128'))
+        o.add_handler(ph)
+        https_handler = MockHTTPSHandler()
+        o.add_handler(https_handler)
+        req = Request("https://www.example.com/")
+        req.add_header("Proxy-Authorization","FooBar")
+        req.add_header("User-Agent","Grail")
+        self.assertEqual(req.get_host(), "www.example.com")
+        self.assertIsNone(req._tunnel_host)
+        r = o.open(req)
+        # Verify Proxy-Authorization gets tunneled to request.
+        # httpsconn req_headers do not have the Proxy-Authorization header but
+        # the req will have.
+        self.assertFalse(("Proxy-Authorization","FooBar") in
+                         https_handler.httpconn.req_headers)
+        self.assertTrue(("User-Agent","Grail") in
+                        https_handler.httpconn.req_headers)
+        self.assertIsNotNone(req._tunnel_host)
+        self.assertEqual(req.get_host(), "proxy.example.com:3128")
+        self.assertEqual(req.get_header("Proxy-authorization"),"FooBar")
 
     def test_basic_auth(self, quote_char='"'):
         opener = OpenerDirector()
