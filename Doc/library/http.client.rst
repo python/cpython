@@ -386,10 +386,13 @@ HTTPConnection Objects
 
    .. versionadded:: 3.1
 
-.. method:: HTTPConnection.set_tunnel(host, port=None)
+.. method:: HTTPConnection.set_tunnel(host, port=None, headers=None)
 
    Set the host and the port for HTTP Connect Tunnelling. Normally used when it
    is required to a HTTPS Connection through a proxy server.
+
+   The headers argument should be a mapping of extra HTTP headers to to sent
+   with the CONNECT request.
 
    .. versionadded:: 3.2
 
