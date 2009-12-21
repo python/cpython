@@ -5,8 +5,11 @@ for the Distutils compiler abstraction model."""
 
 __revision__ = "$Id$"
 
-import sys, os, re
-from distutils.errors import *
+import sys
+import os
+import re
+
+from distutils.errors import CompileError, LinkError, UnknownFileError
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
