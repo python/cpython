@@ -394,9 +394,9 @@ class PyBuildExt(build_ext):
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
         # complex math library functions
-        exts.append( Extension('cmath', ['cmathmodule.c'],
+        exts.append( Extension('cmath', ['cmathmodule.c', '_math.c'],
+                               depends=['_math.h'],
                                libraries=math_libs) )
-
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c', '_math.c'],
                                depends=['_math.h'],
