@@ -359,6 +359,171 @@ test_longlong_api(PyObject* self, PyObject *args)
 #undef F_U_TO_PY
 #undef F_PY_TO_U
 
+/* Test the PyLong_AsLongAndOverflow API. General conversion to PY_LONG
+   is tested by test_long_api_inner. This test will concentrate on proper
+   handling of overflow.
+*/
+
+static PyObject *
+test_long_and_overflow(PyObject *self)
+{
+	PyObject *num, *one, *temp;
+	long value;
+	int overflow;
+
+	/* Test that overflow is set properly for a large value. */
+	/* num is a number larger than LONG_MAX even on 64-bit platforms */
+	num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != -1)
+		return raiseTestError("test_long_and_overflow",
+			"return value was not set to -1");
+	if (overflow != 1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to 1");
+
+	/* Same again, with num = LONG_MAX + 1 */
+	num = PyLong_FromLong(LONG_MAX);
+	if (num == NULL)
+		return NULL;
+	one = PyLong_FromLong(1L);
+	if (one == NULL) {
+		Py_DECREF(num);
+		return NULL;
+	}
+	temp = PyNumber_Add(num, one);
+	Py_DECREF(one);
+	Py_DECREF(num);
+	num = temp;
+	if (num == NULL)
+		return NULL;
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != -1)
+		return raiseTestError("test_long_and_overflow",
+			"return value was not set to -1");
+	if (overflow != 1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to 1");
+
+	/* Test that overflow is set properly for a large negative value. */
+	/* num is a number smaller than LONG_MIN even on 64-bit platforms */
+	num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != -1)
+		return raiseTestError("test_long_and_overflow",
+			"return value was not set to -1");
+	if (overflow != -1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to -1");
+
+	/* Same again, with num = LONG_MIN - 1 */
+	num = PyLong_FromLong(LONG_MIN);
+	if (num == NULL)
+		return NULL;
+	one = PyLong_FromLong(1L);
+	if (one == NULL) {
+		Py_DECREF(num);
+		return NULL;
+	}
+	temp = PyNumber_Subtract(num, one);
+	Py_DECREF(one);
+	Py_DECREF(num);
+	num = temp;
+	if (num == NULL)
+		return NULL;
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != -1)
+		return raiseTestError("test_long_and_overflow",
+			"return value was not set to -1");
+	if (overflow != -1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to -1");
+
+ 	/* Test that overflow is cleared properly for small values. */
+	num = PyLong_FromString("FF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != 0xFF)
+		return raiseTestError("test_long_and_overflow",
+			"expected return value 0xFF");
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not cleared");
+
+	num = PyLong_FromString("-FF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != -0xFF)
+		return raiseTestError("test_long_and_overflow",
+			"expected return value 0xFF");
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was set incorrectly");
+
+	num = PyLong_FromLong(LONG_MAX);
+	if (num == NULL)
+		return NULL;
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != LONG_MAX)
+		return raiseTestError("test_long_and_overflow",
+			"expected return value LONG_MAX");
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not cleared");
+
+	num = PyLong_FromLong(LONG_MIN);
+	if (num == NULL)
+		return NULL;
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	Py_DECREF(num);
+	if (value == -1 && PyErr_Occurred())
+		return NULL;
+	if (value != LONG_MIN)
+		return raiseTestError("test_long_and_overflow",
+			"expected return value LONG_MIN");
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not cleared");
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* Test the L code for PyArg_ParseTuple.  This should deliver a PY_LONG_LONG
    for both long and int arguments.  The test may leak a little memory if
    it fails.
@@ -1560,6 +1725,8 @@ static PyMethodDef TestMethods[] = {
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
 	{"test_lazy_hash_inheritance",	(PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
+	{"test_long_and_overflow", (PyCFunction)test_long_and_overflow,
+	 METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},

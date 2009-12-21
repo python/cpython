@@ -346,9 +346,10 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 
 	if (!PyLong_Check(vv)) {
 		PyNumberMethods *nb;
-		if ((nb = vv->ob_type->tp_as_number) == NULL ||
-		    nb->nb_int == NULL) {
-			PyErr_SetString(PyExc_TypeError, "an integer is required");
+		nb = vv->ob_type->tp_as_number;
+		if (nb == NULL || nb->nb_int == NULL) {
+			PyErr_SetString(PyExc_TypeError,
+					"an integer is required");
 			return -1;
 		}
 		vv = (*nb->nb_int) (vv);
@@ -388,13 +389,13 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 			prev = x;
 			x = (x << PyLong_SHIFT) | v->ob_digit[i];
 			if ((x >> PyLong_SHIFT) != prev) {
-				*overflow = Py_SIZE(v) > 0 ? 1 : -1;
+				*overflow = sign;
 				goto exit;
 			}
 		}
-		/* Haven't lost any bits, but casting to long requires extra care
-		 * (see comment above).
-	         */
+		/* Haven't lost any bits, but casting to long requires extra
+		 * care (see comment above).
+		 */
 		if (x <= (unsigned long)LONG_MAX) {
 			res = (long)x * sign;
 		}
@@ -402,9 +403,9 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 			res = LONG_MIN;
 		}
 		else {
-			*overflow = Py_SIZE(v) > 0 ? 1 : -1;
+			*overflow = sign;
 			/* res is already set to -1 */
-		}	
+		}
 	}
  exit:
 	if (do_decref) {
