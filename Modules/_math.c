@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include <float.h>
+#include "_math.h"
 
 /* The following copyright notice applies to the original
    implementations of acosh, asinh and atanh. */
@@ -67,7 +68,7 @@ _Py_acosh(double x)
 	}
 	else {				/* 1 < x <= 2 */
 		double t = x - 1.0;
-		return log1p(t + sqrt(2.0*t + t*t));
+		return m_log1p(t + sqrt(2.0*t + t*t));
 	}
 }
 
@@ -103,7 +104,7 @@ _Py_asinh(double x)
 	}
 	else {				/* 2**-28 <= |x| < 2= */
 		double t = x*x;
-		w = log1p(absx + t / (1.0 + sqrt(1.0 + t)));
+		w = m_log1p(absx + t / (1.0 + sqrt(1.0 + t)));
 	}
 	return copysign(w, x);
 	
@@ -149,10 +150,10 @@ _Py_atanh(double x)
 	}
 	if (absx < 0.5) {		/* |x| < 0.5 */
 		t = absx+absx;
-		t = 0.5 * log1p(t + t*absx / (1.0 - absx));
+		t = 0.5 * m_log1p(t + t*absx / (1.0 - absx));
 	} 
 	else {				/* 0.5 <= |x| <= 1.0 */
-		t = 0.5 * log1p((absx + absx) / (1.0 - absx));
+		t = 0.5 * m_log1p((absx + absx) / (1.0 - absx));
 	}
 	return copysign(t, x);
 }
