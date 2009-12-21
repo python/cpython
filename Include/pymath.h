@@ -8,9 +8,9 @@ Symbols and macros to supply platform-independent interfaces to mathematical
 functions and constants
 **************************************************************************/
 
-/* Python provides implementations for copysign, acosh, asinh, atanh, 
- * log1p and hypot in Python/pymath.c just in case your math library doesn't
- * provide the functions.
+/* Python provides implementations for copysign, round and hypot in
+ * Python/pymath.c just in case your math library doesn't provide the
+ * functions.
  *
  *Note: PC/pyconfig.h defines copysign as _copysign
  */
@@ -20,22 +20,6 @@ extern double copysign(double, double);
 
 #ifndef HAVE_ROUND
 extern double round(double);
-#endif
-
-#ifndef HAVE_ACOSH
-extern double acosh(double);
-#endif
-
-#ifndef HAVE_ASINH
-extern double asinh(double);
-#endif
-
-#ifndef HAVE_ATANH
-extern double atanh(double);
-#endif
-
-#ifndef HAVE_LOG1P
-extern double log1p(double);
 #endif
 
 #ifndef HAVE_HYPOT
