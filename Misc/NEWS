@@ -157,6 +157,10 @@ C-API
 Library
 -------
 
+- Issue #7552: Removed line feed in the base64 Authorization header in
+  the Distutils upload command to avoid an error when PyPI reads it.
+  This occurs on long passwords. Initial patch by JP St. Pierre.
+
 - Issue #7231: urllib2 cannot handle https with proxy requiring auth.  Patch by
   Tatsuhiro Tsujikawa.
 
