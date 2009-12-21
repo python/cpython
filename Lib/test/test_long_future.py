@@ -30,22 +30,20 @@ class TrueDivisionTests(unittest.TestCase):
         for overflow in ["float(huge)", "float(mhuge)",
                          "huge / 1", "huge / 2L", "huge / -1", "huge / -2L",
                          "mhuge / 100", "mhuge / 100L"]:
-            # XXX(cwinter) this test doesn't pass when converted to
-            # use assertRaises.
-            try:
+            # If the "eval" does not happen in this module,
+            # true division is not enabled
+            with self.assertRaises(OverflowError):
                 eval(overflow, namespace)
-                self.fail("expected OverflowError from %r" % overflow)
-            except OverflowError:
-                pass
 
         for underflow in ["1 / huge", "2L / huge", "-1 / huge", "-2L / huge",
                          "100 / mhuge", "100L / mhuge"]:
             result = eval(underflow, namespace)
-            self.assertEqual(result, 0.0,
-                             "expected underflow to 0 from %r" % underflow)
+            self.assertEqual(result, 0.0, 'expected underflow to 0 '
+                             'from {!r}'.format(underflow))
 
         for zero in ["huge / 0", "huge / 0L", "mhuge / 0", "mhuge / 0L"]:
-            self.assertRaises(ZeroDivisionError, eval, zero, namespace)
+            with self.assertRaises(ZeroDivisionError):
+                eval(zero, namespace)
 
 
 def test_main():
