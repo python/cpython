@@ -157,6 +157,10 @@ C-API
 Library
 -------
 
+- Issue #7556: Make sure Distutils' msvc9compile reads and writes the
+  MSVC XML Manifest file in text mode so string patterns can be used 
+  in regular expressions.
+
 - Issue #7552: Removed line feed in the base64 Authorization header in
   the Distutils upload command to avoid an error when PyPI reads it.
   This occurs on long passwords. Initial patch by JP St. Pierre.

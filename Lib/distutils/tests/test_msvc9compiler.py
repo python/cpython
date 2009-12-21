@@ -1,18 +1,73 @@
 """Tests for distutils.msvc9compiler."""
 import sys
 import unittest
+import os
 
 from distutils.errors import DistutilsPlatformError
+from distutils.tests import support
 
-class msvc9compilerTestCase(unittest.TestCase):
+_MANIFEST = """\
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
+          manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false">
+        </requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.VC90.CRT"
+         version="9.0.21022.8" processorArchitecture="x86"
+         publicKeyToken="XXXX">
+      </assemblyIdentity>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.VC90.MFC"
+        version="9.0.21022.8" processorArchitecture="x86"
+        publicKeyToken="XXXX"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>
+</assembly>
+"""
+
+_CLEANED_MANIFEST = """\
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
+          manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false">
+        </requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+
+  </dependency>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.VC90.MFC"
+        version="9.0.21022.8" processorArchitecture="x86"
+        publicKeyToken="XXXX"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>
+</assembly>"""
+
+@unittest.skip("These tests are only for win32")
+class msvc9compilerTestCase(support.TempdirManager,
+                            unittest.TestCase):
 
     def test_no_compiler(self):
         # makes sure query_vcvarsall throws
         # a DistutilsPlatformError if the compiler
         # is not found
-        if sys.platform != 'win32':
-            # this test is only for win32
-            return
         from distutils.msvccompiler import get_build_version
         if get_build_version() < 8.0:
             # this test is only for MSVC8.0 or above
@@ -31,9 +86,6 @@ class msvc9compilerTestCase(unittest.TestCase):
             msvc9compiler.find_vcvarsall = old_find_vcvarsall
 
     def test_reg_class(self):
-        if sys.platform != 'win32':
-            # this test is only for win32
-            return
         from distutils.msvccompiler import get_build_version
         if get_build_version() < 8.0:
             # this test is only for MSVC8.0 or above
@@ -55,6 +107,27 @@ class msvc9compilerTestCase(unittest.TestCase):
 
         keys = Reg.read_keys(HKCU, r'Control Panel')
         self.assertTrue('Desktop' in keys)
+
+    def test_remove_visual_c_ref(self):
+        from distutils.msvc9compiler import MSVCCompiler
+        tempdir = self.mkdtemp()
+        manifest = os.path.join(tempdir, 'manifest')
+        f = open(manifest, 'w')
+        f.write(_MANIFEST)
+        f.close()
+
+        compiler = MSVCCompiler()
+        compiler._remove_visual_c_ref(manifest)
+
+        # see what we got
+        f = open(manifest)
+        # removing trailing spaces
+        content = '\n'.join([line.rstrip() for line in f.readlines()])
+        f.close()
+
+        # makes sure the manifest was properly cleaned
+        self.assertEquals(content, _CLEANED_MANIFEST)
+
 
 def test_suite():
     return unittest.makeSuite(msvc9compilerTestCase)
