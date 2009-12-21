@@ -60,7 +60,7 @@ _CLEANED_MANIFEST = """\
   </dependency>
 </assembly>"""
 
-@unittest.skip("These tests are only for win32")
+@unittest.skipUnless(sys.platform=="win32", "These tests are only for win32")
 class msvc9compilerTestCase(support.TempdirManager,
                             unittest.TestCase):
 
