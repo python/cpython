@@ -388,6 +388,8 @@ test_long_and_overflow(PyObject *self)
 		return raiseTestError("test_long_and_overflow",
 			"overflow was not set to 0");
 
+	Py_DECREF(num);
+
 	/* a number smaller than LONG_MIN even on 64-bit platforms */
 	num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
 	if (num == NULL)
@@ -406,6 +408,8 @@ test_long_and_overflow(PyObject *self)
 		return raiseTestError("test_long_and_overflow",
 			"overflow was not set to 0");
 
+	Py_DECREF(num);
+
 	num = PyLong_FromString("FF", NULL, 16);
 	if (num == NULL)
 		return NULL;
@@ -422,6 +426,8 @@ test_long_and_overflow(PyObject *self)
 	if (overflow != 0)
 		return raiseTestError("test_long_and_overflow",
 			"overflow was set incorrectly");
+
+	Py_DECREF(num);
 
 	Py_INCREF(Py_None);
 	return Py_None;
